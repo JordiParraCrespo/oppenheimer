@@ -1,6 +1,6 @@
-import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { ProfileDetailsSkeleton } from '../components/profile-details-skeleton';
 import { ProfileDetailsRows } from './profile-details-rows';
 
 /**
@@ -14,13 +14,7 @@ export function ProfileDetailsSection() {
   return (
     <QueryState>
       <QueryState.Pending>
-        <SettingsGroup aria-busy>
-          {[0, 1, 2, 3].map((row) => (
-            <SettingsRow key={row} label={<Skeleton className="h-4 w-28" />}>
-              <Skeleton className="h-8 w-40" />
-            </SettingsRow>
-          ))}
-        </SettingsGroup>
+        <ProfileDetailsSkeleton />
       </QueryState.Pending>
       <QueryState.Error fallback={t('settings.profile.failed')} />
       <QueryState.Data>

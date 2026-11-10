@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RunHistorySkeleton } from '../components/run-history-skeleton';
 import { RunsSkeleton } from '../components/runs-skeleton';
+import { useRunsFilters } from '../hooks/use-runs-filters';
 import { AutomationHeader } from './automation-header';
 import { RunHistoryCard } from './run-history-card';
 import { RunsTable } from './runs-table';
@@ -18,6 +19,7 @@ import { RunsTable } from './runs-table';
 export function AutomationDetail({ automationId }: { automationId: string }) {
   const { t } = useTranslation();
   const { data: automation, error } = useSuspenseAutomation(automationId);
+  const { state } = useRunsFilters({ automationId });
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +39,7 @@ export function AutomationDetail({ automationId }: { automationId: string }) {
       </QueryState>
       <QueryState>
         <QueryState.Pending>
-          <RunsSkeleton />
+          <RunsSkeleton status={state.status} window={state.window} />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.runs.loadFailed')} />
         <QueryState.Data>

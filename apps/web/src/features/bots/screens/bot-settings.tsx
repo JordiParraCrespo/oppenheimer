@@ -3,13 +3,13 @@ import {
   RAIL_BAR_CLEARANCE,
   SettingsContent,
   SettingsMain,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotSettingsNav } from '@/features/bots/sections/bot-settings-nav';
 import { BotSettingsTopBar } from '@/features/bots/sections/bot-settings-top-bar';
+import { BotSettingsTopBarSkeleton } from '@/features/bots/sections/bot-settings-top-bar-skeleton';
 
 /**
  * A bot's settings, beside the console's rail: the bar saying whose they are
@@ -24,10 +24,7 @@ export function BotSettingsScreen({ botId, children }: { botId: string; children
     <div className={cn('flex min-w-0 flex-1 flex-col', RAIL_BAR_CLEARANCE)}>
       <QueryState>
         <QueryState.Pending>
-          <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border-subtle px-4">
-            <Skeleton shape="pill" className="size-7.5" />
-            <Skeleton className="h-4 w-32" />
-          </div>
+          <BotSettingsTopBarSkeleton botId={botId} />
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.settings.loadFailed')} className="m-4" />
         <QueryState.Data>

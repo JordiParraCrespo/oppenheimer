@@ -108,8 +108,24 @@ export interface BotTurnRequest {
    * and to-do list) beside `tools`. Default true; a completion turns them off.
    */
   engineTools?: boolean;
-  /** Model round trips before the turn ends with `max_steps`. Default 25. */
+  /**
+   * Model round trips before the turn ends with `max_steps`. Absent: no
+   * limit, and the turn runs until the model answers without a tool call
+   * (`25-bots.md` §2, 2026-11-09). A run with a narrow job (a completion,
+   * a subagent) passes one.
+   */
   maxSteps?: number;
+  /**
+   * The model's context window in tokens, when the caller knows it. Mid-turn
+   * compaction reads it against `BOT_COMPACTION_WINDOW`, whichever is
+   * smaller (`compactionThreshold`).
+   */
+  contextWindow?: number | null;
+  /**
+   * Whether the turn compacts mid-turn past `compactionThreshold`. Default
+   * true; a completion turns it off, being the call that writes a summary.
+   */
+  compaction?: boolean;
   signal: AbortSignal;
   /**
    * A directory the engine may write in for this turn; the caller creates and
@@ -173,6 +189,13 @@ export type BotEngineEvent =
    * how long. Nothing is lost: the turn goes on, or ends `failed`.
    */
   | { type: 'retrying'; reason: 'rate_limit' | 'unavailable'; delayMs: number | null }
+  /**
+   * The context was folded mid-turn: what the model had read so far was
+   * replaced by a summary, so the turn goes on below its window
+   * (`compactionThreshold`). The tokens are estimates of what the next
+   * call would have been sent, before and after.
+   */
+  | { type: 'compacted'; tokensBefore: number; tokensAfter: number }
   | {
       type: 'usage';
       /** Summed over every call the turn made, cached or not. */
@@ -252,6 +275,30 @@ export interface BotCompletion {
   usage: BotCompletionUsage | null;
 }
 
+/** What makes a run a completion: one step, none of our tools and none of the engine's. */
+const COMPLETION_MAX_STEPS = 1;
+
+/** A fresh one each call: the request's `tools` is a mutable array. */
+function completionShape(): Pick<
+  BotTurnRequest,
+  'tools' | 'engineTools' | 'maxSteps' | 'compaction'
+> {
+  return { tools: [], engineTools: false, maxSteps: COMPLETION_MAX_STEPS, compaction: false };
+}
+
+/**
+ * Whether `request` is one `BotEngine.complete` made, rather than a turn: the
+ * one test of it, next to the shape it tests, so a wrapper that tells the two
+ * apart (the API's engine metrics) cannot drift from what `complete` sends.
+ */
+export function isCompletionRequest(request: BotTurnRequest): boolean {
+  return (
+    request.maxSteps === COMPLETION_MAX_STEPS &&
+    request.tools.length === 0 &&
+    request.engineTools === false
+  );
+}
+
 /**
  * Runs one turn of a bot. The stream never throws once iteration starts:
  * every turn ends with exactly one `done`, and nothing follows it.
@@ -279,13 +326,7 @@ export abstract class BotEngine {
   async completeWithUsage(request: BotCompletionRequest): Promise<BotCompletion> {
     const texts: string[] = [];
     let usage: BotCompletionUsage | null = null;
-    for await (const event of this.run({
-      ...request,
-      history: [],
-      tools: [],
-      engineTools: false,
-      maxSteps: 1,
-    })) {
+    for await (const event of this.run({ ...request, history: [], ...completionShape() })) {
       if (event.type === 'text.done') texts.push(event.text);
       if (event.type === 'usage') {
         usage = {
@@ -307,4 +348,26 @@ export abstract class BotEngine {
   }
 }
 
-export const DEFAULT_MAX_STEPS = 25;
+/**
+ * The window a turn compacts against, whatever the model's own: a bot's turn
+ * stays small enough to be quick and cheap on every call, and the summary
+ * between turns keeps what matters (`25-bots.md` §2, "Compaction",
+ * 2026-11-09; from Codex, Grok Bot and OpenClaw, which compact at 90%, 70%
+ * and 75% of the model's window).
+ */
+export const BOT_COMPACTION_WINDOW = 128_000;
+
+/** The share of the window, in percent, past which a turn compacts. */
+export const BOT_COMPACTION_PERCENT = 70;
+
+/** What compaction keeps word for word: the newest of what the turn read, about this many tokens. */
+export const BOT_COMPACTION_KEEP_TOKENS = 20_000;
+
+/** The tokens past which a turn on a model of `window` compacts. */
+export function compactionThreshold(window: number | null | undefined): number {
+  const capped = Math.min(
+    window && window > 0 ? window : BOT_COMPACTION_WINDOW,
+    BOT_COMPACTION_WINDOW,
+  );
+  return Math.floor((capped * BOT_COMPACTION_PERCENT) / 100);
+}

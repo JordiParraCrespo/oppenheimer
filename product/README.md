@@ -1316,6 +1316,11 @@ earlier note:
   messages at the budget, so up to about 12,000 tokens were in neither. On
   2026-11-08 the fold starts below the budget, with room for the longest
   summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
+- `versions/mvp/20-plan-calendar.md` (2026-10-13) drew the calendar as a
+  month only and asked whether a week view came before Google
+  write-back. On 2026-11-08, after that day's `Tasks` frame, it opens on
+  Day, with Week and Month beside it, a task due at a time standing on
+  the hours at that time, and Plan gains To do, one day's tasks (§6).
 - `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
   the history, as the bot's own working, so a later turn knew what its
   tools did only from what it had said. On 2026-11-08 they come back as a
@@ -1348,3 +1353,95 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
+  "about the person (their name, their role, their preferences)", read by
+  all their bots. Bots filed their job there: Facturas read another bot's
+  XRP Mobile project and pull request notification setting. On 2026-11-08
+  the owner asked for two memories made plain, a general one and one per
+  bot: `remember` takes `memory: 'yours' | 'general'`, the prompt names
+  *Your memory* and *General memory*, and general takes only what a bot
+  with a completely different job would need (`scripts/evals/bot-memory`).
+- `versions/mvp/02-runner.md` §5 said a base that is not a branch on the
+  remote fails the create. On 2026-11-08 a project on an empty GitHub
+  repository could not start its first session for that reason, so an
+  empty repository (no ref at all) is the exception: the create pushes an
+  empty `Initial commit` to the base and cuts the session from it. A
+  prepare leaves it empty; a repository with other branches still fails.
+- `versions/mvp/25-bots.md` §2 bounded a bot's turn at 20 model round
+  trips and 4 minutes, and §4.1 a goal at 20 continuations with a reviewer
+  after each turn. On 2026-11-09 the owner asked for tasks that run for
+  hours: Codex, Grok Bot and OpenClaw cap neither
+  (`research/lessons-from-long-running-agents.md`). A turn now runs until
+  the model answers, compacting mid-turn on every engine, stopped only by
+  a silent model or the loop guard; a goal has no limit, the bot says when
+  it is done and the reviewer checks that claim, and a goal that goes
+  wrong pauses for the owner to resume instead of ending.
+- `versions/mvp/25-bots.md` §4.1 paused a goal on a provider's usage limit
+  for the owner to resume. On 2026-11-09, where the provider says when the
+  limit ends, the goal waits for that time and goes on by itself; it pauses
+  only when no time is known.
+- `versions/mvp/11-api-implementation-plan.md` (GitHub slice) had the
+  webhook read `request.rawBody`, the copy Better Auth's app-wide JSON
+  parser kept, so it needed no bootstrap change. That parser's 100 kB
+  default refused ordinary `push` and `pull_request` deliveries with a 500
+  (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
+  raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
+  a larger body is a 413, and the `rawBody` copy is gone.
+- `versions/mvp/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
+  as a row per project with its settings. On 2026-11-08, following that
+  day's `Tasks` artboards, each project is a card (its repositories, and
+  Needs input, Running or Idle from its sessions) that opens the project's
+  page, `/plan/projects/<id>`: its milestones, the tasks waiting on a
+  person, the ones in progress, and Settings. The artboard's Chat and Stats
+  tabs on that page are not built: there is no per-project agent or
+  per-project statistics yet.
+- The 2026-11-08 line above left the project page's Stats unbuilt, saying
+  there were no per-project statistics; `GET /plan/stats?projectId=`
+  (`versions/mvp/23-plan-milestones-stats-accounts.md` §4) had them. On
+  2026-11-09 the owner asked for it: the page switches between Overview and
+  Stats, which reads that endpoint over a period. Pull requests stay off it
+  until the endpoint carries them (23, decided 4).
+- `versions/mvp/25-bots.md` (2026-11-08) made `recap` something the person
+  asks for: `/recap` in a bot's chat, "recall" in a session. On 2026-11-09
+  the owner asked for it at the end of every finished task as well: a bot's
+  wake for a finished session ends with a recap of it, a session's agent
+  ends each task it finishes with one, and so do agents working in this
+  repository (the `recap` skill).
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
+  day's tasks by their due date. On 2026-11-09 the owner asked for it to be
+  what they mean to work on: a task has a focus date apart from its due
+  date, To do lists what is put on the day and what is due on it, keeps
+  unfinished work from earlier days until it is done, and opens a task's
+  dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
+- `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
+  §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
+  owner's `/start` went unanswered: the decision is
+  `next-steps/answering-on-telegram-and-whatsapp.md`.
+- `versions/mvp/05-screens.md` listed Fable 5.1 among Claude Code's four
+  current models. On 2026-11-09 the owner asked for Fable 5.2 in new
+  sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
+  "More models", since Claude still serves it. OpenCode's `anthropic/` row
+  moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
+- `versions/mvp/29-inbox.md`, "As built", had Plan open on its Inbox. On
+  2026-11-09 the owner asked that Plan open on the view dragged to the top
+  of its sidebar: the rail and the console's landing go through
+  `/plan/open`, which redirects there (the Inbox until another is dragged
+  above it).
+- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+  its calls, the trace at the reply's 15px in muted ink, and the live
+  line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
+  compactions, for quieter tool calls and for the solving and searching
+  orbs: the chat draws no compaction (the export keeps it), the trace is
+  13px in subtle ink, and the orb solves, or searches while the running
+  call only looks around (`versions/mvp/25-bots.md` §2 and §3).
+- `versions/mvp/18-plan-product.md` §4 had Start session always start from
+  one of the project's repositories. On 2026-11-09 the owner asked to start
+  one with only a host: the Repository chip offers No repository, which on
+  a host opens the session in the host's home folder.
+- `versions/mvp/27-bot-subscriptions.md` gave a task a bot hands off one
+  stall check and "no progress update", and its prompt told a bot asked to
+  monitor that "checking now adds nothing". On 2026-11-10 the owner had to
+  tell Facturas "you should be babysitting this" while two of its agents sat
+  idle: a bot now looks at a task still running every ten minutes after the
+  first check, up to an hour, staying quiet when it is on track, and checks
+  at once when asked (§4.2).

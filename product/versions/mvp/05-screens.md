@@ -53,7 +53,8 @@
   2026-11-05 the head also had a New project plus and each header a
   Project settings glyph; projects are now made and edited in Plan's
   Projects view (`/plan/projects`, 18 §1), each row's settings the
-  project dialog editing (Delete project on its footer is the archive
+  project dialog editing (since 2026-11-08 the Settings button on the
+  project's page, which its card opens) (Delete project on its footer is the archive
   behind a confirm, and is disabled while the project has unresolved
   sessions). Since 2026-11-07 the filter menu's Project facet ends in
   New project…, which opens the same dialog; editing stays in Plan. A
@@ -168,7 +169,8 @@
   until there is a name, a repository and one cloned by default; it
   closes the dialog with the project picked in the chip, its defaults
   applied. The same dialog, editing, is Project settings behind a
-  row's settings glyph in Plan's Projects view, Delete project on its
+  row's settings glyph in Plan's Projects view (since 2026-11-08 the
+  Settings button on a project's page), Delete project on its
   footer's left (until 2026-11-05 it was behind a sidebar header's glyph,
   and the sidebar's plus made a project and landed on New session with it
   picked). Picking a
@@ -202,9 +204,9 @@
 
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
-  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 5.5 (`claude-opus-5-5` and siblings), then under "More models" Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6 and Sonnet 4.6 (changed 2026-11-02; it was the newest four with Haiku 4.5) | yes | the model's levels: low to max, to max without extra high on the 4.6 pair; none for Haiku 4.5 |
+  | Claude Code | **Opus 5.5**, Fable 5.2, Sonnet 5.5, Haiku 5.5 (`claude-opus-5-5` and siblings), then under "More models" Fable 5.1, Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6 and Sonnet 4.6 (changed 2026-11-02; it was the newest four with Haiku 4.5. Changed 2026-11-09: Fable 5.2 took Fable 5.1's place, which moved under "More models") | yes | the model's levels: low to max, to max without extra high on the 4.6 pair; none for Haiku 4.5 |
   | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
-  | OpenCode | Opus 5.5, Fable 5.1, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/` | yes | the model's levels, OpenCode's variants per provider |
+  | OpenCode | Opus 5.5, Fable 5.2, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/`, then Fable 5.1 under "More models" (since 2026-11-09) | yes | the model's levels, OpenCode's variants per provider |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default), Grok 4.5 | yes | the model's levels: low to extra high, to high on 4.5 |
   | Blank terminal | none, picked outright | no | no |
 

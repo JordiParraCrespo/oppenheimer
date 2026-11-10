@@ -1,9 +1,4 @@
-import {
-  SettingsGroup,
-  SettingsRow,
-  SettingsTitle,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
+import { SettingsGroup, SettingsRow, SettingsTitle, Switch } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotMemorySkeleton } from '@/features/bots/components/bot-memory-skeleton';
@@ -29,7 +24,12 @@ export function BotMemoryScreen({ botId }: { botId: string }) {
       <QueryState>
         <QueryState.Pending>
           <SettingsGroup aria-busy>
-            <SettingsRow label={<Skeleton className="h-4 w-36" />} />
+            <SettingsRow
+              label={t('bots.settings.memory.learn')}
+              hint={t('bots.settings.memory.learnHint')}
+            >
+              <Switch disabled tabIndex={-1} aria-label={t('bots.settings.memory.learn')} />
+            </SettingsRow>
           </SettingsGroup>
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.settings.loadFailed')} />

@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
+import { createMetricsProvider } from '@oppenheimer/backend-core';
 import { AutomationsModule } from '../automations/automations.module';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
@@ -62,6 +63,7 @@ import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.polic
 import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
+import { BotTurnChannelPolicy } from './application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
@@ -73,6 +75,7 @@ import { BotHeartbeatDomainEventHandler } from './application/event-handlers/bot
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
+import { BotTelegramWakeDomainEventHandler } from './application/event-handlers/bot-telegram-wake.domain-event-handler';
 import { BotUnattendedRoutinesDomainEventHandler } from './application/event-handlers/bot-unattended-routines.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from './application/turn-write.factory';
@@ -134,12 +137,15 @@ import { DeleteBotPermissionRuleHttpController } from './commands/delete-bot-per
 import { DeleteBotToolGrantCommandHandler } from './commands/delete-bot-tool-grant/delete-bot-tool-grant.command-handler';
 import { DeleteBotToolGrantHttpController } from './commands/delete-bot-tool-grant/delete-bot-tool-grant.http.controller';
 import { DeliverBotAnswerCommandHandler } from './commands/deliver-bot-answer/deliver-bot-answer.command-handler';
+import { DeliverTelegramReplyCommandHandler } from './commands/deliver-telegram-reply/deliver-telegram-reply.command-handler';
 import { DismissBotQuestionCommandHandler } from './commands/dismiss-bot-question/dismiss-bot-question.command-handler';
 import { DismissBotQuestionHttpController } from './commands/dismiss-bot-question/dismiss-bot-question.http.controller';
 import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
 import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
 import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
+import { ResumeBotGoalCommandHandler } from './commands/resume-bot-goal/resume-bot-goal.command-handler';
+import { ResumeBotGoalHttpController } from './commands/resume-bot-goal/resume-bot-goal.http.controller';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotLoopCommandHandler } from './commands/run-bot-loop/run-bot-loop.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
@@ -155,12 +161,14 @@ import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachm
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
 import { WakeOnAgentNoticeCommandHandler } from './commands/wake-on-agent-notice/wake-on-agent-notice.command-handler';
 import { WakeOnPullRequestCommandHandler } from './commands/wake-on-pull-request/wake-on-pull-request.command-handler';
+import { WakeOnTelegramCommandHandler } from './commands/wake-on-telegram/wake-on-telegram.command-handler';
 import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
 import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
 import { BotAttachmentOrmEntity } from './database/bot-attachment.orm-entity';
 import { BotAttachmentRepository } from './database/bot-attachment.repository';
+import { BotConversationOrmEntity } from './database/bot-conversation.orm-entity';
 import { BotConversationRepository } from './database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from './database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
@@ -188,12 +196,18 @@ import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotUsageRepository } from './database/bot-usage.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
+import { BotBackgroundTurnsProcessor } from './infrastructure/bot-background-turns.processor';
 import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.processor';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
+import {
+  BotEngineMetrics,
+  INNER_BOT_ENGINE,
+  MeteredBotEngine,
+} from './infrastructure/metered-bot-engine.adapter';
 import { OutboxBotStallChecksAdapter } from './infrastructure/outbox-bot-stall-checks.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
@@ -239,6 +253,7 @@ const httpControllers = [
   ReadBotAttachmentHttpController,
   CancelBotTurnHttpController,
   ClearBotGoalHttpController,
+  ResumeBotGoalHttpController,
   FindBotGoalHttpController,
   ClearBotLoopHttpController,
   FindBotLoopHttpController,
@@ -266,6 +281,7 @@ const commandHandlers: Provider[] = [
   UploadBotAttachmentCommandHandler,
   SendBotPeerMessageCommandHandler,
   DeliverBotAnswerCommandHandler,
+  DeliverTelegramReplyCommandHandler,
   CancelBotTurnCommandHandler,
   ClearBotConversationCommandHandler,
   RunBotTurnCommandHandler,
@@ -282,8 +298,10 @@ const commandHandlers: Provider[] = [
   WakeOnAgentNoticeCommandHandler,
   WakeOnTerminalMatchCommandHandler,
   WakeOnPullRequestCommandHandler,
+  WakeOnTelegramCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
+  ResumeBotGoalCommandHandler,
   FindBotGoalQueryHandler,
   RunBotLoopCommandHandler,
   FinishBotLoopRunCommandHandler,
@@ -333,6 +351,7 @@ const queryHandlers: Provider[] = [
     TypeOrmModule.forFeature([
       BotTurnOrmEntity,
       BotMessageOrmEntity,
+      BotConversationOrmEntity,
       BotApprovalOrmEntity,
       BotQuestionOrmEntity,
       BotNoticeOrmEntity,
@@ -346,7 +365,7 @@ const queryHandlers: Provider[] = [
       BotToolPermissionOrmEntity,
       BotPermissionRuleOrmEntity,
     ]),
-    // The `bot-turns` queue the outbox stages each due turn on.
+    // The `bot-turns` and `bot-background-turns` queues the outbox stages each due turn on.
     QueueModule,
     BotsModule,
     // A routine is an automation whose run is a turn of its bot: this module
@@ -386,6 +405,7 @@ const queryHandlers: Provider[] = [
     BotDreamTriggerPolicy,
     BotDreamResolver,
     BotModelAccessResolver,
+    BotTurnChannelPolicy,
     BotApprovalRequestFactory,
     BotQuestionDecisionResolver,
     BotWaitingCardResolver,
@@ -445,7 +465,9 @@ const queryHandlers: Provider[] = [
     BotUnattendedRoutinesDomainEventHandler,
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,
+    BotTelegramWakeDomainEventHandler,
     TurnCancelWatchFactory,
+    BotBackgroundTurnsProcessor,
     BotTurnsProcessor,
     BotApprovalsProcessor,
     BotSummariesProcessor,
@@ -472,7 +494,11 @@ const queryHandlers: Provider[] = [
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.
-    { provide: BOT_ENGINE, useFactory: () => createBotEngine() },
+    // Every run goes through the meter (`bot_engine_*` metrics), the inner
+    // engine being the one the deployment's providers build.
+    { provide: INNER_BOT_ENGINE, useFactory: () => createBotEngine() },
+    ...createMetricsProvider(BotEngineMetrics),
+    { provide: BOT_ENGINE, useClass: MeteredBotEngine },
   ],
 })
 export class BotsChatModule {}

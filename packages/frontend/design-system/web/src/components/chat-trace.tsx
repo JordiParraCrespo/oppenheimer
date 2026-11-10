@@ -1,6 +1,5 @@
 'use client';
 
-import { LoaderIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { clipLine, linesOf } from '../internal/clip-output';
@@ -9,18 +8,19 @@ import { cn } from '../lib/utils';
 
 /**
  * A bot's chat draws its work as a trace (Bots, AI Elements), not as the
- * agent's tool-call groups in `chat-work`: a line per step at the reply's
- * own 15px, in muted ink, that opens to what the step returned.
+ * agent's tool-call groups in `chat-work`: a line per step at 13px in subtle
+ * ink, under the reply's 15px so the work never competes with the answer,
+ * that opens to what the step returned.
  *
  * - `Trace`: the steps of one run of work, a list.
  * - `TraceGroup`: several steps a bot ran together, folded into one quiet
- *   line with a step's 16px glyph ("Used 5 tools", "1 failed" in red after
+ *   line with a step's 14px glyph ("Used 5 tools", "1 failed" in red after
  *   it); open, its `TraceStep`s hang from a hairline under that glyph, each
  *   as it reads alone, their glyphs under the summary's first letter. A
  *   run of read-only steps is "Explored" with what it read in `detail`
  *   ("Read session · Listed hosts"), subtle after the summary.
- * - `TraceStep`: one step, 34px: the 16px glyph, its title (truncated)
- *   with its `target` after it in full ink, a mono meta ("14 results", "2
+ * - `TraceStep`: one step, 28px: the 14px glyph, its title (truncated)
+ *   with its `target` after it in muted ink, a mono meta ("14 results", "2
  *   failed"), and, when it has children, the chevron that opens them. `tone="danger"` sets the line in red (a
  *   failed command). Open, its children hang under the title. `action` is
  *   a control at the end of the line (Open session), outside the fold's
@@ -40,25 +40,25 @@ function Trace({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * The trace's line: 34px at the reply's 15px, muted, its words aligned with
- * the column (`-ml-2` takes back the hover pad). A step and a group's
- * summary are both this line.
+ * The trace's line: 28px at 13px, subtle, its words aligned with the column
+ * (`-ml-2` takes back the hover pad). A step and a group's summary are both
+ * this line.
  */
 const LINE_METRICS =
-  '-ml-2 inline-flex min-h-8.5 max-w-full items-center self-start rounded-sm px-2 text-[15px] tracking-[-0.011em] text-fg-muted';
+  '-ml-2 inline-flex min-h-7 max-w-full items-center self-start rounded-sm px-2 text-sm text-fg-subtle';
 
-const TRACE_LINE = cn(LINE_METRICS, 'gap-2.5 data-[tone=danger]:text-danger');
+const TRACE_LINE = cn(LINE_METRICS, 'gap-2 data-[tone=danger]:text-danger');
 
 /**
- * Where a group's steps hang: a hairline under the summary's glyph (7px in),
- * the steps' glyphs 18px past it, under the summary's first letter (26px).
+ * Where a group's steps hang: a hairline under the summary's glyph (6px in),
+ * the steps' glyphs 15px past it, under the summary's first letter (22px).
  */
-const GROUP_RAIL = 'ml-1.75 flex flex-col border-l border-border-subtle pl-4.5';
+const GROUP_RAIL = 'ml-1.5 flex flex-col border-l border-border-subtle pl-3.75';
 
-/** A line's glyph, at 16px: the width `GROUP_RAIL`'s indent is measured from. */
+/** A line's glyph, at 14px: the width `GROUP_RAIL`'s indent is measured from. */
 function TraceGlyph({ children }: { children: React.ReactNode }) {
   return (
-    <span aria-hidden className="flex shrink-0 [&_svg]:size-4">
+    <span aria-hidden className="flex shrink-0 [&_svg]:size-3.5">
       {children}
     </span>
   );
@@ -66,8 +66,7 @@ function TraceGlyph({ children }: { children: React.ReactNode }) {
 
 /**
  * A line's words and its mono meta ("1 failed", "14 results", the clock),
- * on one baseline and at one size: mono at 14px reads as tall as the 15px
- * words.
+ * on one baseline: mono a pixel under the words reads as tall as them.
  */
 function TraceWords({
   meta,
@@ -79,9 +78,13 @@ function TraceWords({
   children: React.ReactNode;
 }) {
   return (
-    <span className="flex min-w-0 items-baseline gap-2.5">
+    <span className="flex min-w-0 items-baseline gap-2">
       <span className="min-w-0 truncate">{children}</span>
-      {meta ? <span className={cn('figures shrink-0 font-mono text-[14px]', metaClassName)}>{meta}</span> : null}
+      {meta ? (
+        <span className={cn('figures shrink-0 font-mono text-xs', metaClassName)}>
+          {meta}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -99,7 +102,7 @@ function TraceGroup({
   icon: React.ReactNode;
   /** "Used 5 tools", "Searched the web 3 times". */
   summary: React.ReactNode;
-  /** What the steps acted on, after the summary in subtle ink ("Read session · Listed hosts"). */
+  /** What the steps acted on, after the summary ("Read session · Listed hosts"). */
   detail?: React.ReactNode;
   /** "1 failed", in red after the summary. */
   failed?: React.ReactNode;
@@ -111,12 +114,12 @@ function TraceGroup({
   return (
     <Fold data-slot="trace-group" defaultOpen={defaultOpen} className={cn('flex flex-col', className)}>
       <FoldTrigger
-        className={cn(LINE_METRICS, 'gap-2.5 transition-colors duration-instant hover:text-fg [&>svg:last-child]:size-3.75')}
+        className={cn(LINE_METRICS, 'gap-2 transition-colors duration-instant hover:text-fg-muted [&>svg:last-child]:size-3.25')}
       >
         <TraceGlyph>{icon}</TraceGlyph>
         <TraceWords meta={failed} metaClassName="text-danger">
           {summary}
-          {detail ? <span className="text-fg-subtle"> {detail}</span> : null}
+          {detail ? <span> {detail}</span> : null}
         </TraceWords>
       </FoldTrigger>
       <FoldPanel role="list" className={GROUP_RAIL}>
@@ -137,11 +140,11 @@ function TraceStep({
   className,
   children,
 }: {
-  /** The step's glyph, drawn at 16px. */
+  /** The step's glyph, drawn at 14px. */
   icon: React.ReactNode;
   /** The verb: "Searched", "Failed to run", "Get pull request". */
   title: React.ReactNode;
-  /** What the step was pointed at, after the verb in full ink: "abortSignal", "pnpm test". */
+  /** What the step was pointed at, after the verb in muted ink: "abortSignal", "pnpm test". */
   target?: React.ReactNode;
   /** "14 results", "2 failed", a `DiffStat`; in mono. */
   meta?: React.ReactNode;
@@ -162,7 +165,7 @@ function TraceStep({
         metaClassName={cn('flex gap-1.5', tone === 'danger' ? 'text-danger' : 'text-fg-subtle')}
       >
         {title}
-        {target ? <span className={tone === 'danger' ? undefined : 'text-fg'}> {target}</span> : null}
+        {target ? <span className={tone === 'danger' ? undefined : 'text-fg-muted'}> {target}</span> : null}
       </TraceWords>
     </>
   );
@@ -199,13 +202,13 @@ function TraceStep({
           data-tone={tone}
           className={cn(
             TRACE_LINE,
-            'transition-colors duration-instant data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.75',
+            'transition-colors duration-instant hover:text-fg-muted data-[tone=danger]:hover:text-danger [&>svg:last-child]:size-3.25',
           )}
         >
           {line}
         </FoldTrigger>,
       )}
-      <FoldPanel className="pl-6.5">{children}</FoldPanel>
+      <FoldPanel className="pl-5.5">{children}</FoldPanel>
     </Fold>
   );
 }
@@ -296,10 +299,13 @@ function TraceNote({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function TraceLive({
+  glyph,
   elapsed,
   className,
   children,
 }: {
+  /** What moves beside the words (a thinking orb); the agent glyph when none is given. */
+  glyph?: React.ReactNode;
   /** "12s", "00:12", in mono. */
   elapsed?: React.ReactNode;
   className?: string;
@@ -312,10 +318,16 @@ function TraceLive({
       role="status"
       className={cn('flex min-h-8.5 items-center gap-2.5 text-[15px] tracking-[-0.011em] text-fg-muted', className)}
     >
-      <LoaderIcon aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
-      <TraceWords meta={elapsed} metaClassName="text-fg-subtle">
-        <span className="motion-safe:animate-shimmer">{children}</span>
-      </TraceWords>
+      {glyph ?? (
+        <span
+          aria-hidden
+          className="flex size-4 shrink-0 items-center justify-center font-mono text-lg leading-none text-chat-spinner before:content-['✻'] motion-safe:before:animate-agent-glyph"
+        />
+      )}
+      <span className="flex min-w-0 items-baseline gap-2.5">
+        <span className="min-w-0 truncate motion-safe:animate-shimmer">{children}</span>
+        {elapsed ? <span className="figures shrink-0 font-mono text-[14px] text-fg-subtle">{elapsed}</span> : null}
+      </span>
     </div>
   );
 }

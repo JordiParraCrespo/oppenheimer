@@ -5,6 +5,7 @@ import {
   toolLine,
 } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
+import { looksAround } from '@/features/bots/lib/explored-steps';
 
 /**
  * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
@@ -98,21 +99,52 @@ export function liveWords(action: ToolAction) {
 }
 
 /**
+ * The words the live line thinks in, one per turn ("Pondering",
+ * "Percolating"), so a long wait does not read as the same stuck word.
+ */
+export const MUSINGS = [
+  'pondering',
+  'mulling',
+  'musing',
+  'noodling',
+  'ruminating',
+  'cogitating',
+  'brewing',
+  'percolating',
+  'scheming',
+  'puzzling',
+  'tinkering',
+  'conjuring',
+] as const;
+
+/**
+ * The turn's thinking word, picked from when it started: the same for the
+ * whole turn, wherever it is drawn, and a different one from turn to turn.
+ */
+export function musing(seed: number): (typeof MUSINGS)[number] {
+  const index = Math.abs(Math.trunc(seed)) % MUSINGS.length;
+  return MUSINGS[index] ?? MUSINGS[0];
+}
+
+/**
  * What the turn's live line says, as a translation key and what its words
  * take: Waiting while it queues; a running `delegate` call whose children
  * have started ending, with how many are done; what the running call is
- * doing; Writing while its words stream; Thinking otherwise.
+ * doing; Writing while its words stream; otherwise the turn's thinking word,
+ * picked by `seed` (when it started).
  */
 export function liveLabel({
   queued,
   step,
   subagents,
   writing,
+  seed,
 }: {
   queued: boolean;
   step: BotToolStep | undefined;
   subagents: readonly BotSubagentProgress[] | undefined;
   writing: boolean;
+  seed: number;
 }) {
   if (queued) return { key: 'bots.chat.turn.queued', values: {} } as const;
   const done = (subagents ?? []).filter(
@@ -127,7 +159,16 @@ export function liveLabel({
   if (step) return liveWords(toolAction(step));
   return writing
     ? ({ key: 'bots.chat.turn.writing', values: {} } as const)
-    : ({ key: 'bots.chat.turn.thinking', values: {} } as const);
+    : ({ key: `bots.chat.turn.musing.${musing(seed)}`, values: {} } as const);
+}
+
+/**
+ * Which animation the live line's orb plays: the searching globe while the
+ * running call only looks around (`looksAround`, the same calls an
+ * "Explored" run folds), the solving one otherwise, waiting and writing included.
+ */
+export function liveOrb(step: BotToolStep | undefined): 'searching' | 'solving' {
+  return step && looksAround(step) ? 'searching' : 'solving';
 }
 
 /** The call still running in a turn's work, if one is: the last with no output yet. */

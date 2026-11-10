@@ -5,11 +5,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { usePutSessionShare } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { ShareSessionSkeleton } from '../components/share-session-skeleton';
 import { ShareSessionPanes } from '../sections/share-session-panes';
 
 /**
@@ -39,10 +39,7 @@ export function ShareSessionDialog({
       <DialogContent size="form" closeLabel={t('common.close')}>
         <QueryState>
           <QueryState.Pending>
-            {header}
-            <DialogBody>
-              <Skeleton className="h-64 w-full" />
-            </DialogBody>
+            <ShareSessionSkeleton />
           </QueryState.Pending>
           <QueryState.Error>
             {(error, retry) => (

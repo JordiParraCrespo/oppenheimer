@@ -304,7 +304,7 @@ export class BotSessionEventResponseDto {
   @ApiProperty({
     enum: BOT_SESSION_EVENT_STATES,
     description:
-      'What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.',
+      'What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, `stalled` when its stall check found it stuck, or `progress` for the regular look at a task still running.',
   })
   state!: BotSessionEventState;
 
@@ -363,8 +363,13 @@ export class BotGoalEventResponseDto {
   })
   step!: number;
 
-  @ApiProperty({ description: 'The continuations the goal may take.' })
-  limit!: number;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09).',
+  })
+  limit!: number | null;
 
   @ApiProperty({
     nullable: true,
@@ -414,6 +419,20 @@ export class BotLoopEventResponseDto {
   reason!: string | null;
 }
 
+/** A turn folded what it had read into a summary (`25-bots.md` §2, "Compaction"). */
+export class BotCompactionEventResponseDto {
+  @ApiProperty({ enum: ['compaction'] })
+  kind!: 'compaction';
+
+  @ApiProperty({
+    description: 'The tokens the next call would have been sent before the fold, estimated.',
+  })
+  tokensBefore!: number;
+
+  @ApiProperty({ description: 'The tokens it is sent after it, estimated.' })
+  tokensAfter!: number;
+}
+
 export class BotDreamEventResponseDto {
   @ApiProperty({ enum: ['dream'] })
   kind!: 'dream';
@@ -445,7 +464,8 @@ export type BotMessageEventResponseDto =
   | BotPullRequestEventResponseDto
   | BotGoalEventResponseDto
   | BotLoopEventResponseDto
-  | BotDreamEventResponseDto;
+  | BotDreamEventResponseDto
+  | BotCompactionEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -459,6 +479,7 @@ export type BotMessageEventResponseDto =
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
   BotDreamEventResponseDto,
+  BotCompactionEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -494,6 +515,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
       { $ref: getSchemaPath(BotDreamEventResponseDto) },
+      { $ref: getSchemaPath(BotCompactionEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

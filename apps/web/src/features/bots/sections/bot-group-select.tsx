@@ -1,4 +1,4 @@
-import { FieldSelect, SettingsRow } from '@oppenheimer/design-system-web';
+import { FieldSelect, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import { useBotGroups } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useController } from 'react-hook-form';
@@ -13,7 +13,9 @@ const UNGROUPED = 'ungrouped';
  * workspace's groups, a pick in the card's draft; saved, the bot goes last
  * in its new group. A new group is made where groups live, in the sidebar
  * beside the chat, which the hint links to. The groups are this picker's own
- * read: the card around it never waits on them.
+ * read: the card around it never waits on them, and until they land a bot in
+ * a group shows a bar where the group's name goes, not Ungrouped, and the
+ * picker waits.
  */
 export function BotGroupSelect({
   botId,
@@ -26,7 +28,7 @@ export function BotGroupSelect({
   pending: boolean;
 }) {
   const { t } = useTranslation();
-  const { data: groups = [] } = useBotGroups();
+  const { data: groups = [], isPending: loading } = useBotGroups();
   const { field } = useController({ control, name: 'groupId' });
 
   return (
@@ -44,14 +46,16 @@ export function BotGroupSelect({
     >
       <FieldSelect
         aria-label={t('bots.settings.profile.group')}
-        disabled={pending}
+        disabled={pending || loading}
         value={field.value ?? UNGROUPED}
         onValueChange={(value) => field.onChange(value === UNGROUPED ? null : value)}
         options={[
           { value: UNGROUPED, label: t('bots.sidebar.ungrouped') },
           ...groups.map((group) => ({ value: group.id, label: group.name })),
         ]}
-        placeholder={t('bots.sidebar.ungrouped')}
+        placeholder={
+          loading ? <Skeleton shape="sm" className="h-3 w-24" /> : t('bots.sidebar.ungrouped')
+        }
         searchPlaceholder={t('bots.settings.profile.searchGroups')}
         emptyText={(query) => t('bots.settings.profile.noGroup', { query })}
       />

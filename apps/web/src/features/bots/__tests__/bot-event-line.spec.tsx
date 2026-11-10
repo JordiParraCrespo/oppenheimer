@@ -13,10 +13,12 @@ import { BotEventLine } from '../components/bot-event-line';
  * that hides what it said.
  */
 
-vi.mock('react-i18next', () => ({
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
     t: (key: string, values?: { summary?: string; name?: string; reason?: string }) =>
       [key, values?.summary ?? values?.name ?? '', values?.reason].filter(Boolean).join('|'),
+    i18n: { resolvedLanguage: 'en' },
   }),
   Trans: ({ i18nKey, values }: { i18nKey: string; values?: { name?: string } }) =>
     `${i18nKey}|${values?.name ?? ''}`,

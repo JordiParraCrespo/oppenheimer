@@ -54,11 +54,14 @@ changes behavior.
 2. Push only on a green run. A red step is yours to fix. Never skip a job
    with `--skip` to get green; `--skip` exists for re-running a job you have
    just fixed.
-3. Put `.ci-local/report.md` in the pull request's description, under a
+3. A step that fails on `apps/web/bundle-budget.json` is not fixed by
+   raising the number: a raise is Jordi's call. It goes in its own commit,
+   with the new number against `main`'s and a question in the description.
+4. Put `.ci-local/report.md` in the pull request's description, under a
    `## Local CI` heading. Replace it after each push, so the report always
    names the head commit.
 
-4. If the branch changes what the console shows (as
+5. If the branch changes what the console shows (as
    `.agents/hooks/visual-change.mjs` defines it), take its screenshots with the `local-stack`
    skill ("Show a visual change") before you push: light and dark, every
    route the change shows on. Look at each one, send them to the user, and
@@ -88,27 +91,40 @@ is the protocol: it says what the pull request waits for, and who merges.
 
 `/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when Jordi says so. A review
 is never an approval: the bot reviews post from Jordi's account. The
-lanes are the `ship`, `propose` and `research` skills.
+lanes are the `ship`, `propose` and `research` skills; all three merge
+through `ship` step 4, which also resolves conflicts with the target.
 
 ## Babysitting
 
-A `ship` or `propose` pull request stays mergeable until it merges or closes;
+A pull request an agent opened stays mergeable until it merges or closes;
 its session owns it. On every event and every check-in, fetch it fresh and
 work, in this order:
 
-1. **Conflict.** Merge `origin/main` into the branch (never rebase or
-   force-push), resolve, regenerate lockfiles and generated files with
-   their tooling, then the steps below for the new head.
+1. **Conflict**, or behind a base that must be current. Merge
+   `origin/<base>` into the branch (never rebase or force-push). Resolve
+   each conflict by reading both sides and the commits behind them
+   (`git log --merge -p <file>`): keep what each side meant, not one side
+   wholesale. Lockfiles and generated files are never hand-merged: take
+   either side and regenerate them with their tooling (`pnpm install`,
+   `pnpm generate:api-client`, the router's generator,
+   `pnpm generate:guide`, `product/brief.html` from its notes). A
+   conflict that needs a product call (both sides changed the same
+   behavior, or one deleted what the other built on) goes to Jordi with
+   the file, both sides in a sentence each and your default; the merge
+   stays uncommitted until he answers. Commit it staging files by path,
+   then the steps below for the new head.
 2. **Review comments.** Verify each against the code. Fix what is real and
    reply with the commit; answer the rest with the reason it stays. Resolve
    every thread you answered. A comment that asks for more than the task
    goes to Jordi.
 3. **Report.** After any push, `pnpm ci:local` on the new head and replace
-   the report. Code that changed needs its verdict again; a merge of `main`
-   alone does not.
+   the report. Code that changed needs its verdict again (and its
+   screenshots, for a visual file), including a conflict resolution that
+   changed behavior; a plain merge of the base does not.
 
 Keep one check-in armed about every four hours while it is open, so a
-conflict from another merge is caught without an event. When nothing is
+conflict from another merge is caught without an event; every hour once
+nothing but the merge is left (`ship` step 4). When nothing is
 left to do, say once what it waits for, then stay quiet until something
 changes.
 

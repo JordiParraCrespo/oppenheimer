@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { Test } from '@nestjs/testing';
 import {
@@ -10,17 +10,23 @@ import {
 } from '@oppenheimer/backend-core';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
+import {
+  BotEngineMetrics,
+  INNER_BOT_ENGINE,
+  MeteredBotEngine,
+} from '../bots-chat/infrastructure/metered-bot-engine.adapter';
 import { apiHttpMetricsOptions } from '../health/infrastructure/http-metrics.config';
 import { BacklogMetrics } from '../outbox/infrastructure/backlog-metrics.adapter';
+import { CacheMetrics } from '../redis/infrastructure/cache-metrics.adapter';
 
 /**
- * The alert rules and the dashboard in `deploy/dev/monitoring/` name metrics
+ * The alert rules and the dashboards in `deploy/dev/monitoring/` name metrics
  * by string, so a renamed metric leaves an alert that can never fire and a
  * panel that draws nothing, silently. This parses both files and checks every
  * metric they name against what the API's registry actually exports (its
- * process metrics, the HTTP metrics and the backlog gauges, registered as the
- * app registers them). It does not evaluate PromQL: there is no `promtool`
- * in the toolchain.
+ * process metrics, the HTTP metrics, the backlog gauges, the bot engine's and
+ * the cache's, registered as the app registers them). It does not evaluate
+ * PromQL: there is no `promtool` in the toolchain.
  */
 
 const MONITORING = resolve(__dirname, '../../../../deploy/dev/monitoring');
@@ -42,12 +48,33 @@ const rules: Rule[] = (
 interface Panel {
   id: number;
   type: string;
-  targets?: { expr: string }[];
+  datasource?: { type?: string };
+  targets?: { expr: string; datasource?: { type?: string } }[];
 }
-const dashboard = JSON.parse(readFileSync(join(MONITORING, 'grafana/api.json'), 'utf8')) as {
+interface Dashboard {
+  file: string;
   uid: string;
   panels: Panel[];
-};
+}
+const dashboards: Dashboard[] = readdirSync(join(MONITORING, 'grafana'))
+  .filter((file) => file.endsWith('.json'))
+  .map((file) => ({
+    file,
+    ...(JSON.parse(readFileSync(join(MONITORING, 'grafana', file), 'utf8')) as Omit<
+      Dashboard,
+      'file'
+    >),
+  }));
+const dashboard = dashboards.find((found) => found.file === 'api.json') as Dashboard;
+
+/** The PromQL targets of every dashboard; LogQL ones (Loki's) name streams, not metrics. */
+const promTargets = dashboards.flatMap((board) =>
+  board.panels.flatMap((panel) =>
+    (panel.targets ?? [])
+      .filter((target) => (target.datasource?.type ?? panel.datasource?.type) !== 'loki')
+      .map((target) => [`${board.file} panel ${panel.id}`, target.expr] as const),
+  ),
+);
 
 /** PromQL words that look like metric names but are functions, keywords or labels. */
 const PROMQL = new Set([
@@ -85,7 +112,14 @@ let exported: Set<string>;
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({
     imports: [MetricsModule.forRoot(), HttpMetricsModule.register(apiHttpMetricsOptions)],
-    providers: [...createMetricsProvider(BacklogMetrics)],
+    providers: [
+      ...createMetricsProvider(BacklogMetrics),
+      ...createMetricsProvider(BotEngineMetrics),
+      ...createMetricsProvider(CacheMetrics),
+      // The meter creates the bot series at zero, as it does at boot.
+      { provide: INNER_BOT_ENGINE, useValue: null },
+      MeteredBotEngine,
+    ],
   }).compile();
   await moduleRef.init();
   const registry = moduleRef.get<Registry>(METRICS_REGISTRY);
@@ -104,6 +138,9 @@ describe('monitoring config', () => {
     expect(exported.has('http_requests_total')).toBe(true);
     expect(exported.has('http_request_duration_seconds_bucket')).toBe(true);
     expect(exported.has('outbox_oldest_pending_age_seconds')).toBe(true);
+    expect(exported.has('bot_engine_tokens_total')).toBe(true);
+    expect(exported.has('cache_reads_total')).toBe(true);
+    expect(dashboards.map((board) => board.file).sort()).toEqual(['api.json', 'bots.json']);
   });
 
   it('gives every rule a name, an expression, a severity and a summary', () => {
@@ -128,9 +165,7 @@ describe('monitoring config', () => {
   it('names only metrics the API exports, in rules and panels alike', () => {
     const expressions = [
       ...rules.map((rule) => [`rule ${rule.alert}`, rule.expr ?? ''] as const),
-      ...dashboard.panels.flatMap((panel) =>
-        (panel.targets ?? []).map((target) => [`panel ${panel.id}`, target.expr] as const),
-      ),
+      ...promTargets,
     ];
     const unknown = expressions.flatMap(([where, expr]) =>
       metricsIn(expr)
@@ -140,8 +175,11 @@ describe('monitoring config', () => {
     expect(unknown).toEqual([]);
   });
 
-  it('gives every panel its own id', () => {
-    const ids = dashboard.panels.map((panel) => panel.id);
-    expect(new Set(ids).size).toBe(ids.length);
+  it('gives every panel its own id, and every dashboard its own uid', () => {
+    for (const board of dashboards) {
+      const ids = board.panels.map((panel) => panel.id);
+      expect(new Set(ids).size, board.file).toBe(ids.length);
+    }
+    expect(new Set(dashboards.map((board) => board.uid)).size).toBe(dashboards.length);
   });
 });

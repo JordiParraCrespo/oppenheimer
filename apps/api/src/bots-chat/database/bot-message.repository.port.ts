@@ -41,22 +41,29 @@ export interface BotMessageRepositoryPort {
     steer: { messageId: string; position: number },
     at: Date,
   ): Promise<void>;
-  /** The bot's newest `limit` messages, oldest first. */
-  findConversation(scope: AccessScope, botId: string, limit: number): Promise<BotMessageEntity[]>;
+  /**
+   * A conversation's newest `limit` messages, oldest first: the console
+   * chat's when `conversationId` is the bot's id.
+   */
+  findConversation(
+    scope: AccessScope,
+    conversationId: string,
+    limit: number,
+  ): Promise<BotMessageEntity[]>;
   /**
    * The person's and the bot's messages whose words match `query`
    * (Postgres web-search syntax over the `simple` configuration, so no
    * language is assumed), best matches first, then newest; up to `limit`.
-   * Activity lines and events are not searched.
+   * Activity lines and events are not searched. One conversation's.
    */
   search(
     scope: AccessScope,
-    botId: string,
+    conversationId: string,
     query: string,
     limit: number,
   ): Promise<BotMessageEntity[]>;
-  /** How many messages the chat holds in all: yours, the bot's and events, not activity lines. */
-  countConversation(scope: AccessScope, botId: string): Promise<number>;
+  /** How many messages a conversation holds in all: yours, the bot's and events, not activity lines. */
+  countConversation(scope: AccessScope, conversationId: string): Promise<number>;
   /**
    * How many blocks of text each of these turns has stored, in all: its
    * assistant messages with words (an image the bot showed has none). A
@@ -65,12 +72,13 @@ export interface BotMessageRepositoryPort {
    */
   countTextBlocks(scope: AccessScope, turnIds: readonly string[]): Promise<Map<string, number>>;
   /**
-   * One page of the whole chat for an export, oldest first: up to `limit`
-   * messages after `after` (the last of the page before; null from the start).
+   * One page of a whole conversation for an export, oldest first: up to
+   * `limit` messages after `after` (the last of the page before; null from
+   * the start).
    */
   findExportPage(
     scope: AccessScope,
-    botId: string,
+    conversationId: string,
     after: BotMessageEntity | null,
     limit: number,
   ): Promise<BotMessageEntity[]>;
@@ -78,14 +86,16 @@ export interface BotMessageRepositoryPort {
   findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null>;
   /** A turn's own text, in the order the bot wrote it: what an ask's answer is drawn from. */
   findTurnTexts(organizationId: string, turnId: string): Promise<string[]>;
+  /** Whether a turn called any tool: what a goal counts as progress (`BotGoalEntity.account`). */
+  turnCalledTools(organizationId: string, turnId: string): Promise<boolean>;
   /**
-   * What a turn reads back: the bot's newest `limit` messages before
-   * `turnId`'s and after the message `afterMessageId` (the summary's cutoff;
-   * null for none), oldest first. Activity lines are not read.
+   * What a turn reads back: its conversation's newest `limit` messages
+   * before `turnId`'s and after the message `afterMessageId` (the summary's
+   * cutoff; null for none), oldest first. Activity lines are not read.
    */
   findHistory(
     organizationId: string,
-    botId: string,
+    conversationId: string,
     turnId: string,
     afterMessageId: string | null,
     limit: number,
@@ -96,7 +106,7 @@ export interface BotMessageRepositoryPort {
    */
   findRecent(organizationId: string, botId: string, limit: number): Promise<BotMessageEntity[]>;
   /**
-   * What the summary does not cover yet: the bot's oldest `limit` messages
+   * What the summary does not cover yet: the console chat's oldest `limit` messages
    * after `afterMessageId` (null for all of them), oldest first, activity
    * lines left out, each with whether its turn has ended.
    */

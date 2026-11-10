@@ -11,8 +11,9 @@ import { PullRequestEventLine } from '@/features/bots/components/pull-request-ev
 import { QuestionEventLine } from '@/features/bots/components/question-event-line';
 import { RoutineEventLine } from '@/features/bots/components/routine-event-line';
 import { SessionEventLine } from '@/features/bots/components/session-event-line';
+import { type DrawnEventKind, isDrawnEvent } from '@/features/bots/lib/chat-turns';
 
-interface EventLineProps<Kind extends BotMessageEvent['kind']> {
+interface EventLineProps<Kind extends DrawnEventKind> {
   event: Extract<BotMessageEvent, { kind: Kind }>;
   message: BotMessageEntity;
   action?: ReactNode;
@@ -24,7 +25,7 @@ interface EventLineProps<Kind extends BotMessageEvent['kind']> {
  * another branch.
  */
 const EVENT_LINES: {
-  [Kind in BotMessageEvent['kind']]: (props: EventLineProps<Kind>) => ReactNode;
+  [Kind in DrawnEventKind]: (props: EventLineProps<Kind>) => ReactNode;
 } = {
   approval: ({ event }) => <ApprovalEventLine event={event} />,
   question: ({ event }) => <QuestionEventLine event={event} />,
@@ -46,7 +47,8 @@ const EVENT_LINES: {
  * What Oppenheimer told the bot, in the chat, drawn by its kind
  * (`EVENT_LINES`): a decided approval or card of questions, a routine's activity, another bot's
  * message or answer, a followed session or pull request that woke it, the bot's own goal
- * going on or ending, a run of its loop or how the loop ended, a dream of its memory. Read from the event's
+ * going on or ending, a run of its loop or how the loop ended, a dream of its memory.
+ * Read from the event's
  * own fields, never its words, which are the bot's. Never a bubble from you:
  * you did not write it. An event this client cannot read is its first line.
  */
@@ -61,8 +63,7 @@ export function BotEventLine({
   if (!event) {
     return <TranscriptDivider>{message.content.split('\n')[0]}</TranscriptDivider>;
   }
-  const draw = EVENT_LINES[event.kind] as (
-    props: EventLineProps<BotMessageEvent['kind']>,
-  ) => ReactNode;
+  if (!isDrawnEvent(event)) return null;
+  const draw = EVENT_LINES[event.kind] as (props: EventLineProps<DrawnEventKind>) => ReactNode;
   return draw({ event, message, action });
 }

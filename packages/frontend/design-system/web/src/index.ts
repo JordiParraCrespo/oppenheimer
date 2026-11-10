@@ -1,4 +1,6 @@
 export { AccessList, AccessRow } from './components/access-list';
+export type { AgendaEntryData } from './components/agenda-calendar';
+export { AgendaCalendar, agendaSlot, agendaSlotId } from './components/agenda-calendar';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type {
@@ -420,6 +422,16 @@ export {
   PopoverTitle,
   PopoverTrigger,
 } from './components/popover';
+export { ProjectCard, ProjectCardGrid, ProjectCardSkeleton } from './components/project-card';
+export {
+  ProjectMilestoneRow,
+  ProjectOverview,
+  ProjectOverviewColumn,
+  ProjectOverviewSkeleton,
+  ProjectPanel,
+  ProjectPanelEmpty,
+  ProjectTaskRow,
+} from './components/project-overview';
 export { Prose } from './components/prose';
 export { PullRequestHeader } from './components/pull-request-header';
 export {
@@ -463,12 +475,14 @@ export {
   RoutineTableEmpty,
   RoutineTableHead,
   RoutineTableRow,
+  RoutineTableRowSkeleton,
 } from './components/routine-table';
 export type { RunHistoryDay } from './components/run-history';
-export { RunHistory } from './components/run-history';
+export { RunHistory, RunHistorySkeleton } from './components/run-history';
 export type { RunState } from './components/runs-list';
 export {
   RunRow,
+  RunRowSkeleton,
   RunsList,
   RunsListEmpty,
   RunsListFilters,
@@ -480,7 +494,12 @@ export { SearchList } from './components/search-list';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
-export { SessionItem, SessionList, SortableSessionItem } from './components/session-item';
+export {
+  SessionItem,
+  SessionItemSkeleton,
+  SessionList,
+  SortableSessionItem,
+} from './components/session-item';
 export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
   SettingsAddRow,
@@ -488,6 +507,7 @@ export {
   SettingsGroup,
   SettingsHeading,
   SettingsListRow,
+  SettingsListRowSkeleton,
   SettingsRow,
   SettingsSaveRow,
 } from './components/settings-group';
@@ -524,7 +544,6 @@ export {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
@@ -558,8 +577,10 @@ export {
   TASK_STATUS_STATE,
   TaskBoard,
   TaskCard,
+  TaskCardSkeleton,
   TaskColumn,
   TaskColumnAdd,
+  TaskColumnMore,
   TaskComposer,
   TaskSessionChip,
 } from './components/task-board';
@@ -584,6 +605,7 @@ export {
 export { Textarea } from './components/textarea';
 export type { TimeGridCell, TimeGridGroup } from './components/time-grid';
 export { TimeGrid } from './components/time-grid';
+export { SortableTodoRow, TodoRow, TodoRowAdd, TodoRowSkeleton } from './components/todo-row';
 export {
   Tooltip,
   TooltipContent,

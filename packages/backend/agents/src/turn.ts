@@ -8,6 +8,7 @@ import type {
   BotTurnImage,
   BotTurnRequest,
 } from './bot-engine';
+import { LOOP_GUARD_DATA_KEY, ToolLoopGuard } from './tool-loop-guard';
 
 type ToolFinished = Extract<BotEngineEvent, { type: 'tool.finished' }>;
 
@@ -252,8 +253,11 @@ export function resetFromHeaders(
 export async function runTool(
   tool: BotEngineTool,
   input: unknown,
-  context: { signal: AbortSignal; apiKey: string; callId?: string },
+  context: { signal: AbortSignal; apiKey: string; callId?: string; guard?: ToolLoopGuard },
 ): Promise<{ content: string; isError: boolean; data?: BotToolData }> {
+  const refusal = context.guard?.refusal(tool.name, input);
+  if (refusal)
+    return { content: refusal, isError: true, data: { [LOOP_GUARD_DATA_KEY]: 'refused' } };
   let content: string;
   let isError: boolean;
   let data: BotToolData | undefined;
@@ -267,7 +271,8 @@ export async function runTool(
     content = describeError(error) || 'The tool failed.';
     isError = true;
   }
-  const redacted = wellFormed(redactSecret(content, context.apiKey));
+  const note = context.guard?.record(tool.name, input, content, isError) ?? null;
+  const redacted = wellFormed(redactSecret(note ? `${content}${note}` : content, context.apiKey));
   return data ? { content: redacted, isError, data } : { content: redacted, isError };
 }
 
@@ -298,6 +303,8 @@ function toolData(raw: unknown): BotToolData | undefined {
  * messages the person sent that rode its result (`deliverSteers`).
  */
 export class ToolCallData {
+  /** The turn's guard against calls that go round in circles: one per turn, as this is. */
+  readonly loops = new ToolLoopGuard();
   private readonly byCall = new Map<string, BotToolData>();
   private readonly steersByCall = new Map<string, readonly BotSteer[]>();
 

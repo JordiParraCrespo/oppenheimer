@@ -108,7 +108,8 @@ for them. Run ` + "`runner --skill`" + ` once for how, before you do.
 // session, adapted from pstack's `recall`: the session's own record (its
 // branch, its pull request, its helpers) rebuilt into one short brief. It is
 // in the note rather than `runner --skill` because the person asks for it,
-// not the agent.
+// not the agent. The agent also gives it unasked when it finishes a task, so
+// every session on Oppenheimer ends with one.
 const recallNote = `
 ## When the person asks you to recall
 
@@ -127,6 +128,11 @@ Then answer in this order, in plain words: where things stand (at most five
 bullets); each thread in one line, opening with its state (done, open, in
 progress, blocked, not started); what waits on the person, with your pick;
 and the one next move. Say "unknown" for what you could not find.
+
+## When you finish a task
+
+When you finish a task, end your last message with the recap above, unasked,
+kept to this session.
 `
 
 // previewNote is how a dev server reaches the console's Browser tab

@@ -677,9 +677,15 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         now,
       );
       await runs.insertFiring(run, 'correlation');
+      // The bot's console chat, which every turn but a channel's runs in.
+      await dataSource.query(
+        `INSERT INTO bot_conversation (id, "organizationId", "botId", kind)
+         VALUES ($2, $1, $2, 'console') ON CONFLICT (id) DO NOTHING`,
+        [organizationId, botId],
+      );
       const [turn]: { id: string }[] = await dataSource.query(
-        `INSERT INTO bot_turn ("organizationId", "botId", status, origin, provider, model)
-         VALUES ($1, $2, 'running', 'routine', 'glm', 'glm-5.3') RETURNING id`,
+        `INSERT INTO bot_turn ("organizationId", "botId", "conversationId", status, origin, provider, model)
+         VALUES ($1, $2, $2, 'running', 'routine', 'glm', 'glm-5.3') RETURNING id`,
         [organizationId, botId],
       );
       run.dispatched({ kind: 'bot_turn', turnId: turn.id }, routine.revision.id, now);

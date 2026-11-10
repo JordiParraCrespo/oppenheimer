@@ -391,6 +391,13 @@ function ChatElementsBody() {
       <ChatImageViewerDemo />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <ChatComposer
+        value="Run the unit tests and tell me what fails"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        caption="History 1/2"
+        placeholder="Message Release Bot"
+      />
+      <ChatComposer
         value="What is wrong in this run?"
         onValueChange={() => {}}
         onSubmit={() => {}}
@@ -443,6 +450,9 @@ function ChatElementsBody() {
 function ChatCardsBody() {
   return (
     <div className="flex w-full max-w-184 flex-col gap-6">
+      <ChangedFilesCard>
+        <ChangedFileRow path="product/research/unsupervised-work.md" additions={262} deletions={0} />
+      </ChangedFilesCard>
       <ChangedFilesCard
         title="3 files changed"
         additions={80}
@@ -1202,7 +1212,7 @@ export function ChatSection() {
         id="chatcards"
         title="Cards"
         meta="chat-cards.tsx"
-        desc="What a turn leaves in the transcript. ChangedFilesCard closes a turn that edited files, a row per file that opens its diff. BotExchange is what one bot said to another and the reply, the arrow pointing the way the words went. ProposedFile is the instructions a bot proposes for itself: the added lines in green, quiet ProposedFileActions and Accept while it waits, the outcome once decided. ProposedPlanCard is plan mode's answer on the 28px card, folding past ten lines, with Refine and the split Implement. SubagentRunCard lists the subagents a turn launched, live or finished, with Stop all. QuestionsPill folds questions asked without stopping; AnsweredQuestions keeps the record. ContextCard is an object made or given, one row that opens it."
+        desc="What a turn leaves in the transcript. ChangedFilesCard closes a turn that edited files: one file is its row alone, several sit under a head with the total, each row opening its diff. BotExchange is what one bot said to another and the reply, the arrow pointing the way the words went. ProposedFile is the instructions a bot proposes for itself: the added lines in green, quiet ProposedFileActions and Accept while it waits, the outcome once decided. ProposedPlanCard is plan mode's answer on the 28px card, folding past ten lines, with Refine and the split Implement. SubagentRunCard lists the subagents a turn launched, live or finished, with Stop all. QuestionsPill folds questions asked without stopping; AnsweredQuestions keeps the record. ContextCard is an object made or given, one row that opens it."
         code={`<ChangedFilesCard title="3 files changed" additions={80} deletions={12} actions={…}><ChangedFileRow path="runner/step.ts" additions={42} deletions={8} /></ChangedFilesCard>`}
       >
         <ChatCardsDemo />

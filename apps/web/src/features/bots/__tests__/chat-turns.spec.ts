@@ -33,6 +33,36 @@ const conversation = (
   }) as unknown as BotConversationEntity;
 
 describe('chatTurns', () => {
+  // What breaks this: a turn that compacted drawing a line for it, above the
+  // bot's work as if it opened the turn, and Retry resending its note as yours.
+  it('leaves a compaction out of the chat, and Retry on your message', () => {
+    const folded = {
+      id: 'm3',
+      turnId: 't1',
+      role: 'event',
+      content: 'Earlier in this turn, what you had read was summarized.',
+      attachments: [],
+      event: { kind: 'compaction', tokensBefore: 91_000, tokensAfter: 18_000 },
+    } as unknown as BotMessageEntity;
+    const asked = { ...message('m1', 't1', 'user'), content: 'Tag the invoices', attachments: [] };
+    const ended = { id: 't1', status: 'completed', isActive: false } as BotTurnEntity;
+    const blocks = chatTurns(
+      conversation(
+        [
+          asked as BotMessageEntity,
+          message('m2', 't1', 'activity'),
+          folded,
+          message('m4', 't1', 'activity'),
+        ],
+        [ended],
+      ),
+    );
+    expect(
+      blocks.map((block) => [block.asked.map((row) => row.id), block.answer.map((row) => row.id)]),
+    ).toEqual([[['m1'], ['m2', 'm4']]]);
+    expect(retryContent(blocks)).toBe('Tag the invoices');
+  });
+
   it('groups each turn’s messages under it, your message apart from the bot’s work', () => {
     const blocks = chatTurns(
       conversation(

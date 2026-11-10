@@ -49,7 +49,10 @@ test('a project made in the console starts a session its host builds', async ({ 
   await dialog.getByRole('button', { name: box.host.name }).click();
   await dialog.getByRole('button', { name: 'Create project' }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('button', { name: `${project} settings` })).toBeVisible();
+  // The new project is a card that opens its page, where its settings live.
+  await page.getByRole('link', { name: new RegExp(`^${project}`) }).click();
+  await expect(page.getByRole('heading', { name: project, level: 1 })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
 
   await page.goto('/sessions/new');
   await page.getByRole('button', { name: 'Project', exact: true }).click();

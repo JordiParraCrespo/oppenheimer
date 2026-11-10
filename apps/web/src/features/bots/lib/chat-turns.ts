@@ -3,6 +3,7 @@ import type {
   BotMessageEntity,
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
+import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
 
 /**
  * One turn as the chat draws it: what you said, then what the bot did with
@@ -22,13 +23,32 @@ export interface ChatTurnBlock {
 }
 
 /**
+ * The kinds of event the chat does not draw: a turn folding what it read into
+ * a summary is the engine's housekeeping, not something the reader acts on.
+ * The export keeps it (`chat-export.ts`). `BotEventLine` draws only the rest
+ * (`DrawnEventKind`), so a kind hidden here has no line to keep there.
+ */
+const HIDDEN_EVENT_KINDS = ['compaction'] as const satisfies readonly BotMessageEvent['kind'][];
+
+/** An event kind the chat draws: every kind but `HIDDEN_EVENT_KINDS`. */
+export type DrawnEventKind = Exclude<BotMessageEvent['kind'], (typeof HIDDEN_EVENT_KINDS)[number]>;
+
+/** The one policy for what the chat draws: an event of any kind but a hidden one. */
+export function isDrawnEvent(
+  event: BotMessageEvent,
+): event is Extract<BotMessageEvent, { kind: DrawnEventKind }> {
+  return !(HIDDEN_EVENT_KINDS as readonly string[]).includes(event.kind);
+}
+
+/**
  * The conversation as blocks, in the order they happened: each turn's
  * messages under it, your message apart from the bot's work, and each line
  * outside any turn as a block of its own, keyed by its id. An event opens
  * its block either way. A message of yours after the bot's work began is
  * one you steered in while it worked: it stays in the answer, where the bot
  * took it. A message waiting behind the turn under way is left out: it shows
- * on the composer until its turn starts or the turn takes it.
+ * on the composer until its turn starts or the turn takes it. An event the
+ * chat does not draw (`HIDDEN_EVENT_KINDS`) is left out too.
  */
 export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] {
   const waiting = new Set(conversation.waitingMessages.map((message) => message.turnId));
@@ -43,6 +63,7 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     return block;
   };
   for (const message of conversation.messages) {
+    if (message.event && !isDrawnEvent(message.event)) continue;
     if (message.turnId && waiting.has(message.turnId)) continue;
     const block = blockOf(message.turnId ?? message.id, message.turnId);
     const steered = message.role === 'user' && block.answer.length > 0;

@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -8,6 +13,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { PlanStats, PlanStatsQuery } from '../modules/tasks/plan-stats';
 import {
   type MilestoneEntity,
   type MilestoneInput,
@@ -122,6 +128,19 @@ export function useSuspenseTaskBoard() {
   };
 }
 
+/**
+ * Plan's statistics for a range under a Suspense `QueryState`: a project's
+ * when the query names one. Each range is its own read, so a range picked
+ * twice is answered from the cache.
+ */
+export function useSuspensePlanStats(query: PlanStatsQuery) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PlanStats>({
+    queryKey: tasksKeys.statsOf(query),
+    queryFn: () => app.tasks.findStats(query),
+  });
+}
+
 /** The milestones read, for every hook over it: the key and the fetch, once. */
 function useMilestoneListQuery() {
   const app = useConsumerApp();
@@ -151,6 +170,7 @@ async function settleTask(
   if (!boardKnown || movesMilestoneProgress(previous, task)) {
     void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
   }
+  void queryClient.invalidateQueries({ queryKey: tasksKeys.stats() });
 }
 
 /** A task joined or left a milestone, or one on a milestone turned Done or back. */
@@ -241,6 +261,9 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
     task.sessions,
     task.createdAt,
     new Date(),
+    move.status === 'done' ? null : task.blockedReason,
+    task.version,
+    task.focusDate,
   );
 }
 
@@ -249,11 +272,50 @@ export const useDeleteTask = mutation<void, string>({
   update: (queryClient, _data, id) => settleTask(queryClient, id, null),
 });
 
-export type StartTaskSessionVariables = StartTaskSessionInput & { id: string };
+/**
+ * A start's folder that is the host's home: only the host can say its path,
+ * so the start asks it before posting. A marker, never a path, so it cannot
+ * reach the API as one.
+ */
+export const HOST_HOME = Symbol('host home');
 
-/** Start a session for a task; the session list learns of it on its next read. */
+type HostSession = Extract<StartTaskSessionInput, { session: unknown }>['session'];
+
+/** New session's folder session, in the host's home before the host has named it. */
+export type HostHomeSessionInput = Omit<Extract<HostSession, { folder: string }>, 'folder'> & {
+  folder: typeof HOST_HOME;
+};
+
+type HostHomeStart = Omit<StartTaskSessionInput, 'session' | 'cloud'> & {
+  session: HostHomeSessionInput;
+  cloud?: never;
+};
+
+export type StartTaskSessionVariables = { id: string } & (StartTaskSessionInput | HostHomeStart);
+
+function inHostHome(input: StartTaskSessionInput | HostHomeStart): input is HostHomeStart {
+  return input.session?.folder === HOST_HOME;
+}
+
+/**
+ * The home each start resolved, by its idempotency key: a retry of the same
+ * start reaches the API's replay even when the host has gone away since.
+ */
+const resolvedHomes = new Map<string, string>();
+
+/**
+ * Start a session for a task; the session list learns of it on its next read.
+ * A folder of `HOST_HOME` is the host's home, asked of the host first.
+ */
 export const useStartTaskSession = mutation<StartedTaskSession, StartTaskSessionVariables>({
-  run: (app, variables) => app.tasks.startSession(variables.id, variables),
+  run: async (app, { id, ...input }) => {
+    if (!inHostHome(input)) return app.tasks.startSession(id, input);
+    const { session, idempotencyKey } = input;
+    const home =
+      resolvedHomes.get(idempotencyKey) ?? (await app.hosts.findFolders(session.hostId)).home;
+    resolvedHomes.set(idempotencyKey, home);
+    return app.tasks.startSession(id, { ...input, session: { ...session, folder: home } });
+  },
   update: (queryClient, started) => {
     void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     return settleTask(queryClient, started.task.id, started.task);

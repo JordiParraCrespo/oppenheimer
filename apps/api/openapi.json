@@ -17670,7 +17670,163 @@
         ]
       }
     },
+    "/api/v1/telegram/accounts/{id}/owner-link": {
+      "post": {
+        "description": "Answers a `t.me` link for the Telegram bot with a one-time code. Opening it in Telegram sends the bot `/start` with the code, and whoever sends it within ten minutes is recorded as the owner: the only person the bot answers. A new link replaces an open one; the code is stored hashed, so only this answer carries it.",
+        "operationId": "openTelegramOwnerLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Telegram bot.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramOwnerLinkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TELEGRAM_001 — No such Telegram bot",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TELEGRAM_007 — The host has not checked the bot yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a one-time link that records the owner",
+        "tags": [
+          "Telegram"
+        ]
+      }
+    },
     "/api/v1/telegram/accounts/{id}": {
+      "patch": {
+        "description": "Sets the caller’s Oppenheimer bot that answers them when they write to this Telegram bot, or none (`null`). Only the owner, recorded by the one-time `start` link, is answered. A bot that answers a Telegram bot cannot be deleted until it is unbound.",
+        "operationId": "updateTelegramAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Telegram bot.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTelegramAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of the caller’s\n\nTELEGRAM_001 — No such Telegram bot",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose which bot answers on a Telegram bot",
+        "tags": [
+          "Telegram"
+        ]
+      },
       "delete": {
         "description": "Asks the host to stop polling and forget the bot’s token, and forgets the bot and the messages kept for the caller’s bots. An offline host is told when it comes back. The bot stays on Telegram: revoke its token in @BotFather to end it there. An id that is not one of the caller’s does nothing.",
         "operationId": "removeTelegramAccount",
@@ -19767,6 +19923,16 @@
           },
           "404": {
             "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_042 — The bot answers on a Telegram bot",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22443,6 +22609,66 @@
           }
         ],
         "summary": "A bot's goal",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/goal/resume": {
+      "post": {
+        "description": "Runs a paused goal again from where it paused: its next continuation is queued, with a line in its chat saying you resumed it. A goal that is not paused, or none, changes nothing.",
+        "operationId": "resumeBotGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The goal runs, or there was no paused goal."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resume a bot's paused goal",
         "tags": [
           "Bots"
         ]
@@ -33126,6 +33352,13 @@
             "nullable": true,
             "example": "09:00"
           },
+          "focusDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "description": "The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.",
+            "example": "2026-10-06"
+          },
           "completedAt": {
             "type": "string",
             "nullable": true,
@@ -33216,6 +33449,11 @@
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "nullable": true
+          },
+          "focusDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
           }
         },
         "required": [
@@ -33251,6 +33489,11 @@
           "dueTime": {
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "focusDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "nullable": true
           },
           "blockedReason": {
@@ -34483,6 +34726,16 @@
             "nullable": true,
             "description": "Why the bot is revoked or unlinked, in the host’s words."
           },
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The Oppenheimer bot that answers the owner here; null while none does."
+          },
+          "ownerLinked": {
+            "type": "boolean",
+            "description": "Whether the owner’s Telegram account is recorded, by the one-time `start` link."
+          },
           "linkedAt": {
             "type": "string",
             "format": "date-time",
@@ -34499,6 +34752,8 @@
           "username",
           "displayName",
           "statusReason",
+          "answeringBotId",
+          "ownerLinked",
           "linkedAt"
         ]
       },
@@ -34522,6 +34777,39 @@
         "required": [
           "hostId",
           "token"
+        ]
+      },
+      "TelegramOwnerLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://t.me/shop_helper_bot?start=Q2xhdWRlIHdhcyBoZXJl",
+            "description": "Opens the bot in Telegram and sends it `/start` with the one-time code."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the link stops working: ten minutes after it was made."
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
+        ]
+      },
+      "UpdateTelegramAccountRequest": {
+        "type": "object",
+        "properties": {
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "answeringBotId"
         ]
       },
       "PullRequestLaneReasonDto": {
@@ -37173,9 +37461,10 @@
               "expired",
               "matched",
               "stalled",
+              "progress",
               "notice"
             ],
-            "description": "What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck."
+            "description": "What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, `stalled` when its stall check found it stuck, or `progress` for the regular look at a task still running."
           },
           "match": {
             "nullable": true,
@@ -37261,7 +37550,9 @@
               "impossible",
               "cleared",
               "exhausted",
-              "stopped"
+              "stopped",
+              "paused",
+              "resumed"
             ],
             "description": "`continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`)."
           },
@@ -37279,7 +37570,8 @@
           },
           "limit": {
             "type": "number",
-            "description": "The continuations the goal may take."
+            "nullable": true,
+            "description": "The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09)."
           },
           "reason": {
             "type": "string",
@@ -37386,6 +37678,30 @@
           "dreamId",
           "factsBefore",
           "factsAfter"
+        ]
+      },
+      "BotCompactionEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "compaction"
+            ]
+          },
+          "tokensBefore": {
+            "type": "number",
+            "description": "The tokens the next call would have been sent before the fold, estimated."
+          },
+          "tokensAfter": {
+            "type": "number",
+            "description": "The tokens it is sent after it, estimated."
+          }
+        },
+        "required": [
+          "kind",
+          "tokensBefore",
+          "tokensAfter"
         ]
       },
       "BotSubagentRunResponseDto": {
@@ -37629,6 +37945,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotDreamEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotCompactionEventResponseDto"
               }
             ],
             "nullable": true,
@@ -37754,6 +38073,8 @@
               "unavailable",
               "time_limit",
               "step_limit",
+              "stalled",
+              "loop",
               "interrupted",
               "storage",
               "other",
@@ -37890,6 +38211,43 @@
           }
         }
       },
+      "BotGoalPauseReason": {
+        "type": "string",
+        "enum": [
+          "blocked",
+          "usage_limit",
+          "no_progress",
+          "budget",
+          "stopped",
+          "failed"
+        ]
+      },
+      "BotGoalPausedResponseDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalPauseReason"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, in the bot’s or the reviewer’s words; null when only the reason says it."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "reason",
+          "note",
+          "at"
+        ]
+      },
       "BotGoalWaitingResponseDto": {
         "type": "object",
         "properties": {
@@ -37925,7 +38283,27 @@
           },
           "limit": {
             "type": "number",
-            "description": "The continuation turns it may queue."
+            "nullable": true,
+            "description": "The continuation turns it may queue; null when it has no limit (every goal since 2026-11-09)."
+          },
+          "tokensUsed": {
+            "type": "number",
+            "description": "The tokens its turns have spent, input and output."
+          },
+          "tokenBudget": {
+            "type": "number",
+            "nullable": true,
+            "description": "The tokens it may spend before it pauses; null when it has no budget."
+          },
+          "paused": {
+            "nullable": true,
+            "description": "Why it is paused; null while it runs. The owner resumes it.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalPausedResponseDto"
+              }
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -37947,6 +38325,9 @@
           "objective",
           "continuations",
           "limit",
+          "tokensUsed",
+          "tokenBudget",
+          "paused",
           "createdAt",
           "waiting"
         ]

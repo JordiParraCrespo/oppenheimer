@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import { Badge } from './badge';
 import { Button } from './button';
 import { DiffStat } from './diff-stat';
+import { FileIcon } from './file-icon';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from './dropdown-menu';
 import { IconButton } from './icon-button';
 
@@ -21,9 +22,11 @@ import { IconButton } from './icon-button';
 /* ── Changed files ───────────────────────────────────────────────────────── */
 
 /**
- * ChangedFilesCard — closes a turn that edited files: "3 files changed"
- * and the total `DiffStat` on the card, its actions (Review, Undo) on the
- * right, then one `ChangedFileRow` per file under a hairline.
+ * ChangedFilesCard — what a turn changed, as Claude's app draws a file it
+ * wrote: a card on a hairline, one `ChangedFileRow` per file. Over two or
+ * more files a head says how many with the total `DiffStat` and the card's
+ * actions (Review, Undo); one file is its row alone, so the card reads as
+ * that file (`title` left out).
  */
 function ChangedFilesCard({
   title,
@@ -33,27 +36,39 @@ function ChangedFilesCard({
   className,
   children,
 }: {
-  title: React.ReactNode;
-  additions: number;
-  deletions: number;
+  /** "3 files changed"; leave it out over a single file. */
+  title?: React.ReactNode;
+  additions?: number;
+  deletions?: number;
   actions?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div data-slot="changed-files-card" className={cn('overflow-hidden rounded-lg bg-card', className)}>
-      <div className="flex items-center gap-2 py-2.5 pr-2.5 pl-3.5">
-        <span className="text-[13.5px] font-medium text-fg">{title}</span>
-        <DiffStat additions={additions} deletions={deletions} className="text-[12px]" />
-        <span className="flex-1" />
-        {actions}
-      </div>
-      <div className="flex flex-col divide-y divide-border-subtle border-t border-border-subtle">{children}</div>
+    <div
+      data-slot="changed-files-card"
+      className={cn('overflow-hidden rounded-lg border border-border-subtle bg-card', className)}
+    >
+      {title ? (
+        <div className="flex min-h-11 items-center gap-2.5 border-b border-border-subtle pr-2.5 pl-4">
+          <span className="text-[14px] font-medium text-fg">{title}</span>
+          {additions !== undefined && deletions !== undefined ? (
+            <DiffStat additions={additions} deletions={deletions} className="text-[13px]" />
+          ) : null}
+          <span className="flex-1" />
+          {actions}
+        </div>
+      ) : null}
+      <div className="flex flex-col divide-y divide-border-subtle">{children}</div>
     </div>
   );
 }
 
-/** One file: the row opens its diff, the trailing button opens it in an editor. */
+/**
+ * One file: its type's mark, its name in the body face with the folder it
+ * sits in after it, quieter, and the stat at the far end. The row opens its
+ * diff when it can (`onOpen`); the trailing button opens it in an editor.
+ */
 function ChangedFileRow({
   path,
   additions,
@@ -67,28 +82,48 @@ function ChangedFileRow({
   path: string;
   additions: number;
   deletions: number;
+  /** In place of the file type's mark. */
   icon?: React.ReactNode;
   onOpen?: () => void;
   onOpenInEditor?: () => void;
   openInEditorLabel?: string;
   className?: string;
 }) {
+  const cut = path.lastIndexOf('/');
+  const name = cut === -1 ? path : path.slice(cut + 1);
+  const folder = cut === -1 ? '' : path.slice(0, cut);
+  // A row that opens its diff is a button; one that does not is the same line, inert.
+  const Line = onOpen ? 'button' : 'span';
+  const line = (
+    <>
+      <span aria-hidden className="flex text-fg-muted [&_svg]:size-4">
+        {icon ?? <FileIcon path={name} />}
+      </span>
+      <span className="flex min-w-0 flex-1 items-baseline gap-2" title={path}>
+        <span className="min-w-0 truncate text-[14px] text-fg">{name}</span>
+        {folder ? <span className="min-w-0 flex-1 truncate text-[13px] text-fg-subtle">{folder}</span> : null}
+      </span>
+      <DiffStat additions={additions} deletions={deletions} className="text-[13px]" />
+    </>
+  );
   return (
     <div
       data-slot="changed-file-row"
-      className={cn('flex min-h-9 items-center gap-2 pr-1.5 pl-3.5 transition-colors duration-instant hover:bg-hover-surface', className)}
+      className={cn(
+        'flex min-h-11 items-center gap-2 pr-2 pl-4',
+        onOpen && 'transition-colors duration-instant hover:bg-hover-surface',
+        className,
+      )}
     >
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      <Line
+        {...(onOpen ? { type: 'button' as const, onClick: onOpen } : {})}
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-3 self-stretch pr-2 text-left',
+          onOpen && 'outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
       >
-        <span aria-hidden className="flex text-fg-muted [&_svg]:size-3.5">
-          {icon ?? <FileTextIcon />}
-        </span>
-        <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-fg">{path}</span>
-        <DiffStat additions={additions} deletions={deletions} className="text-[12px]" />
-      </button>
+        {line}
+      </Line>
       {onOpenInEditor ? (
         <IconButton size="sm" aria-label={openInEditorLabel} onClick={onOpenInEditor}>
           <ExternalLinkIcon />

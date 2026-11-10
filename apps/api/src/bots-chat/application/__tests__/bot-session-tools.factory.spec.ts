@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { FIELD_BOUNDS } from '@oppenheimer/shared';
 import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
 import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
+import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import { SendSessionPromptCommand } from '../../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud-session/start-cloud-session.command';
@@ -97,6 +98,27 @@ function blockedSession(): WorkSessionEntity {
   return session;
 }
 
+/** A session a bot started whose host could not start it. */
+function failedBotSession(): WorkSessionEntity {
+  const session = WorkSessionEntity.request({
+    organizationId: 'org-1',
+    projectId: PROJECT,
+    createdByUserId: 'owner-1',
+    hostId: HOME,
+    slug: 'grey-finch-4m2p8x',
+    agent: 'claude-code',
+    name: 'Bump deps',
+    origin: 'bot',
+  });
+  session.recordEvent({
+    seq: 1,
+    kind: SESSION_EVENT_KINDS.FAILED,
+    payload: { reason: 'worktree_failed' },
+    occurredAt: new Date(),
+  });
+  return session;
+}
+
 /** A session Cursor launched on the owner's key, its agent's page at Cursor. */
 function cursorSession(): WorkSessionEntity {
   return WorkSessionEntity.requestCloud({
@@ -131,6 +153,7 @@ function cursorSession(): WorkSessionEntity {
 function cloudSession(
   cloudSessionId: string | null,
   agent: 'claude-code' | 'codex' = 'claude-code',
+  origin: 'person' | 'bot' = 'person',
 ): WorkSessionEntity {
   const session = WorkSessionEntity.request({
     organizationId: 'org-1',
@@ -140,6 +163,7 @@ function cloudSession(
     slug: 'bold-otter-3f9a7k',
     agent,
     place: 'cloud',
+    origin,
   });
   if (cloudSessionId) {
     session.recordEvent({
@@ -555,6 +579,16 @@ describe('BotSessionToolsFactory', () => {
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({ scope: owner, sessionId: HOME });
   });
 
+  // What breaks this: an offline host's stop was answered "sent when it comes
+  // back", but the API sends again only owed launches and closes, never a stop.
+  it('does not promise a stop to an offline host, and tells the bot to check and stop again', async () => {
+    const { commandBus, call, session } = setup('full');
+    commandBus.execute.mockResolvedValueOnce({ sessionId: session.id, hints: ['host_offline'] });
+    const result = await call('stop_session', { session_id: session.id });
+    expect(result.content).toContain('the stop did not reach it and is not sent again');
+    expect(result.content).not.toContain('when it comes back');
+  });
+
   it('asks before prompting a session, the card naming the session and the words', async () => {
     const { commandBus, approvals, call, session } = setup('auto');
     await call('send_to_session', { session_id: session.id, text: 'Now run the tests' });
@@ -613,6 +647,57 @@ describe('BotSessionToolsFactory', () => {
       scope: owner,
       sessionId: session.id,
       answer: { id: 'perm-1', option: 0 },
+    });
+  });
+  describe('close_session', () => {
+    it('asks first, the card naming the session and that its worktree goes, nothing closed', async () => {
+      const { queryBus, commandBus, approvals, call } = setup('auto');
+      const failed = failedBotSession();
+      queryBus.execute.mockResolvedValue(failed);
+      await call('close_session', { session_id: failed.id });
+      expect(approvals.request.mock.calls[0][0]).toMatchObject({
+        tool: 'close_session',
+        summary: `Close the session "Bump deps" (${failed.id}) and remove its worktree`,
+        subject: { kind: 'session', key: failed.id, label: 'Bump deps' },
+      });
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('closes a failed session a bot started through the sessions’ own close, keeping unpushed work', async () => {
+      const { queryBus, commandBus, call } = setup('full');
+      const failed = failedBotSession();
+      queryBus.execute.mockResolvedValue(failed);
+      const result = await call('close_session', { session_id: failed.id });
+      const command = commandBus.execute.mock.calls[0][0] as CloseSessionCommand;
+      expect(command).toBeInstanceOf(CloseSessionCommand);
+      expect(command).toMatchObject({
+        scope: owner,
+        sessionId: failed.id,
+        acceptUnpushedWork: false,
+      });
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toContain(`Asked session ${failed.id} to close.`);
+    });
+
+    // What breaks this: a cloud session's close was answered "closes once its
+    // host hears it", though it has no host and was already closed.
+    it('says a cloud session is closed, not that it waits on a host', async () => {
+      const { queryBus, call } = setup('full');
+      const cloud = cloudSession(null, 'claude-code', 'bot');
+      queryBus.execute.mockResolvedValue(cloud);
+      const result = await call('close_session', { session_id: cloud.id });
+      expect(result.content).toBe(`Session ${cloud.id} is closed.`);
+    });
+
+    it('refuses a session the person started, under either permission, closing nothing', async () => {
+      for (const permission of ['auto', 'full'] as const) {
+        const { commandBus, approvals, call, session } = setup(permission);
+        const result = await call('close_session', { session_id: session.id });
+        expect(result.isError).toBe(true);
+        expect(result.content).toContain('was not started by a bot (it is a person session)');
+        expect(approvals.request).not.toHaveBeenCalled();
+        expect(commandBus.execute).not.toHaveBeenCalled();
+      }
     });
   });
 });

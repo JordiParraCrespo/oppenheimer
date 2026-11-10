@@ -3,14 +3,16 @@ import { Send } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseTelegramSettings } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { TELEGRAM_ACCOUNTS_MAX } from '@oppenheimer/shared/schemas/telegram';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ConnectTelegramBotDialog } from '@/features/telegram/dialogs/connect-telegram-bot';
 import { telegramHostsOf } from '@/features/telegram/lib/telegram-hosts';
 import { TelegramAccountRow } from '@/features/telegram/sections/telegram-account-row';
+import { TelegramAnsweringRow } from '@/features/telegram/sections/telegram-answering-row';
 
 /**
- * The reader's connected bots, one row each, and Connect a bot up to three,
+ * The reader's connected bots, one row each with who answers them there
+ * under it, and Connect a bot up to three,
  * over a callout on what a bot hears in groups (privacy mode). With none yet,
  * the card that says what connecting gives the bots; with no host paired,
  * Connect is off with that as its reason. Read under Suspense, in the
@@ -18,7 +20,7 @@ import { TelegramAccountRow } from '@/features/telegram/sections/telegram-accoun
  */
 export function TelegramAccounts() {
   const { t } = useTranslation();
-  const { accounts, hosts, error } = useSuspenseTelegramSettings();
+  const { accounts, hosts, bots, error } = useSuspenseTelegramSettings();
   const [connecting, setConnecting] = useState(false);
   const choices = telegramHostsOf(hosts);
   const atLimit = accounts.length >= TELEGRAM_ACCOUNTS_MAX;
@@ -63,7 +65,10 @@ export function TelegramAccounts() {
         <>
           <SettingsGroup>
             {accounts.map((account) => (
-              <TelegramAccountRow key={account.id} account={account} hosts={choices} />
+              <Fragment key={account.id}>
+                <TelegramAccountRow account={account} hosts={choices} />
+                <TelegramAnsweringRow account={account} bots={bots} />
+              </Fragment>
             ))}
           </SettingsGroup>
           <div className="mt-4 flex justify-end">{connect}</div>

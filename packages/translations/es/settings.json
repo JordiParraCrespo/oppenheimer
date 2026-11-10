@@ -350,7 +350,23 @@
     "disconnecting": "Desconectando…",
     "disconnectTitle": "¿Desconectar {{label}}?",
     "disconnectDescription": "Tu host deja de consultar el bot y olvida su token. Tus bots pierden los chats guardados para ellos. El bot sigue siendo tuyo en Telegram; revoca su token en @BotFather para pararlo también allí.",
-    "disconnectFailed": "No se ha podido desconectar el bot."
+    "disconnectFailed": "No se ha podido desconectar el bot.",
+    "answering": {
+      "title": "Te responde",
+      "botLabel": "El bot que te responde en {{label}}",
+      "noBot": "Ningún bot",
+      "search": "Busca un bot",
+      "noMatch": "Ningún bot coincide",
+      "link": "Vincula tu Telegram",
+      "linkAgain": "Vincular de nuevo",
+      "openLink": "Abrir el enlace",
+      "linked": "Tu Telegram está vinculado: aquí solo te responde a ti.",
+      "notLinked": "Vincula tu Telegram para que el bot sepa que eres tú. Hasta entonces no responde a nadie.",
+      "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar. Crea un enlace nuevo si ha caducado.",
+      "failed": "No se ha guardado. Inténtalo de nuevo.",
+      "making": "Creando el enlace…",
+      "newLink": "Nuevo enlace"
+    }
   },
   "about": {
     "title": "Acerca de",

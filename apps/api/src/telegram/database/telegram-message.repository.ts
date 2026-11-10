@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { Repository } from 'typeorm';
+import { type EntityManager, Repository } from 'typeorm';
 import type {
   TelegramChat,
   TelegramMessage,
@@ -12,6 +13,7 @@ import { TelegramMessageOrmEntity } from './telegram-message.orm-entity';
 import type {
   TelegramAccountRef,
   TelegramMessageRepositoryPort,
+  TelegramMessagesOwed,
 } from './telegram-message.repository.port';
 
 @Injectable()
@@ -20,17 +22,64 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
     @InjectRepository(TelegramMessageOrmEntity)
     private readonly repository: Repository<TelegramMessageOrmEntity>,
     private readonly mapper: TelegramMessageMapper,
+    private readonly outbox: OutboxService,
   ) {}
 
-  async insertMany(messages: readonly TelegramMessageDraft[]): Promise<void> {
-    if (messages.length === 0) return;
-    await this.repository
-      .createQueryBuilder()
-      .insert()
-      .into(TelegramMessageOrmEntity)
-      .values(messages.map((message) => this.mapper.toPersistence(message)))
-      .orIgnore()
-      .execute();
+  async insertMany(
+    messages: readonly TelegramMessageDraft[],
+    owed?: TelegramMessagesOwed,
+  ): Promise<TelegramMessageDraft[]> {
+    if (messages.length === 0) return [];
+    return this.outbox.transaction(async (manager) => {
+      // UQ_telegram_message_external: what is already kept is skipped.
+      const result = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(TelegramMessageOrmEntity)
+        .values(messages.map((message) => this.mapper.toPersistence(message)))
+        .orIgnore()
+        .returning(['chatId', 'externalId'])
+        .execute();
+      const stored = new Set(
+        (result.raw as { chatId: string; externalId: string }[]).map(
+          (row) => `${row.chatId}/${row.externalId}`,
+        ),
+      );
+      const inserted = messages.filter((message) =>
+        stored.has(`${message.chatId}/${message.externalId}`),
+      );
+      const owing = inserted.flatMap((message) => {
+        const event = owed?.eventFor(message);
+        return event ? [{ message, event }] : [];
+      });
+      const starts = await lastNewWithin(
+        manager,
+        owing.map(({ message }) => message),
+        owed?.ownerTelegramId ?? null,
+      );
+      const events = owing.flatMap(({ message, event }) => {
+        const built = event(starts.get(`${message.chatId}/${message.externalId}`) ?? '0');
+        return built ? [built] : [];
+      });
+      if (events.length > 0) await this.outbox.stageEvents(manager, events);
+      return inserted;
+    });
+  }
+
+  async wroteInChatSince(
+    account: TelegramAccountRef,
+    chatId: string,
+    since: Date,
+  ): Promise<boolean> {
+    // IDX_telegram_message_chat.
+    const rows: unknown[] = await this.repository.query(
+      `SELECT 1 FROM telegram_message
+        WHERE "organizationId" = $1 AND "accountId" = $2 AND "chatId" = $3
+          AND "fromBot" AND "sentAt" >= $4
+        LIMIT 1`,
+      [account.organizationId, account.accountId, chatId, since],
+    );
+    return rows.length > 0;
   }
 
   async recordBotSend(message: TelegramMessageDraft): Promise<void> {
@@ -174,4 +223,47 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
 /** `%`, `_` and the escape itself, taken literally in an `ILIKE`. */
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+/**
+ * Whether a stored message is a `/new`, as `telegramInboundAction` reads one
+ * (an optional `@bot` and one word after it): the partial index
+ * `IDX_telegram_message_new` holds only these, so the predicate is written
+ * exactly as its `WHERE`.
+ */
+const TELEGRAM_NEW_COMMAND_SQL = `text ~* '^\\s*/new(@\\w+)?(\\s+\\S+)?\\s*$'`;
+
+/**
+ * For each message, keyed `chat/id`, the id of the owner's last `/new` in
+ * its chat at or before it, the whole batch included since it is stored in
+ * this transaction; '0' for none. Telegram numbers a chat's messages in
+ * order, so this is the same whatever order the batch's events are later
+ * delivered in. One query for the batch.
+ */
+async function lastNewWithin(
+  manager: EntityManager,
+  messages: readonly TelegramMessageDraft[],
+  ownerTelegramId: string | null,
+): Promise<Map<string, string>> {
+  if (!ownerTelegramId || messages.length === 0) return new Map();
+  const [first] = messages;
+  // IDX_telegram_message_new, once per message: the /new rows are a handful.
+  const rows: { key: string; startsAt: string }[] = await manager.query(
+    `SELECT m.chat || '/' || m.ext AS key,
+            COALESCE((
+              SELECT MAX(n."externalId"::bigint) FROM telegram_message n
+               WHERE n."organizationId" = $1 AND n."accountId" = $2 AND n."chatId" = m.chat
+                 AND ${TELEGRAM_NEW_COMMAND_SQL.replace('text', 'n.text')}
+                 AND n."senderId" = $3 AND n."externalId"::bigint <= m.ext::bigint
+            ), 0)::text AS "startsAt"
+       FROM unnest($4::text[], $5::text[]) AS m(chat, ext)`,
+    [
+      first.organizationId,
+      first.accountId,
+      ownerTelegramId,
+      messages.map((message) => message.chatId),
+      messages.map((message) => message.externalId),
+    ],
+  );
+  return new Map(rows.map((row) => [row.key, row.startsAt]));
 }

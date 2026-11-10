@@ -195,6 +195,7 @@ func New(version string) (*App, error) {
 	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
 	trust := agenttrust.New(agenttrust.Options{
 		ClaudeConfig: claudeConfigPath(paths), ClaudeProjects: claudeProjectsPath(paths),
+		CodexConfig: agentHomeFile(paths, "CODEX_HOME", ".codex", "config.toml"),
 	})
 	transcripts := transcript.New(transcript.Options{
 		ClaudeProjects: claudeProjectsPath(paths),
@@ -556,13 +557,19 @@ func claudeProjectsPath(paths Paths) string {
 // variable names (`CODEX_HOME`, `GROK_HOME`), else under its folder in the
 // user's home. "" when there is no home to look in.
 func agentSessionsPath(paths Paths, homeEnv, folder string) string {
+	return agentHomeFile(paths, homeEnv, folder, "sessions")
+}
+
+// agentHomeFile is name inside an agent CLI's home: `$<homeEnv>` when that is
+// set, `~/<folder>` otherwise; "" when there is no home to look in.
+func agentHomeFile(paths Paths, homeEnv, folder, name string) string {
 	if dir := os.Getenv(homeEnv); dir != "" {
-		return filepath.Join(dir, "sessions")
+		return filepath.Join(dir, name)
 	}
 	if paths.UserHome == "" {
 		return ""
 	}
-	return filepath.Join(paths.UserHome, folder, "sessions")
+	return filepath.Join(paths.UserHome, folder, name)
 }
 
 // freeLoopbackPort is a port on 127.0.0.1 nothing listens on now, which the

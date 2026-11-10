@@ -328,6 +328,25 @@ describe('tasks: the board (integration)', () => {
     expect((await reload(a.id)).blockedReason).toBeNull();
   });
 
+  it('keeps a focus date apart from the due date, clears it with null, and logs nothing for it', async () => {
+    const a = await add('a');
+    const due = await reload(a.id);
+    due.edit({ dueDate: '2026-11-20' });
+    await tasks.saveFields(due);
+
+    const planned = await reload(a.id);
+    planned.edit({ focusDate: '2026-11-09' });
+    expect(await tasks.saveFields(planned)).toBe('saved');
+    expect(await reload(a.id)).toMatchObject({ focusDate: '2026-11-09', dueDate: '2026-11-20' });
+
+    const dropped = await reload(a.id);
+    dropped.edit({ focusDate: null });
+    await tasks.saveFields(dropped);
+    expect(await reload(a.id)).toMatchObject({ focusDate: null, dueDate: '2026-11-20' });
+    // Planning a day is not a change Plan's log records; the due date is.
+    expect((await eventsOf(a.id)).map((e) => e.kind)).toEqual(['created', 'rescheduled']);
+  });
+
   it('keeps a completion when the task is reopened, and when it is deleted', async () => {
     const a = await add('a', 'done');
     await tasks.move(await reload(a.id), { status: 'todo', after: { kind: 'first' } });

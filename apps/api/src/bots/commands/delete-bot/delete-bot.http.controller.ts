@@ -40,6 +40,11 @@ export class DeleteBotHttpController {
   })
   @ApiResponse({ status: 204 })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The bot answers on a Telegram bot',
+    code: 'BOTS_042',
+  })
   async delete(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', new ParseUUIDPipe()) botId: string,

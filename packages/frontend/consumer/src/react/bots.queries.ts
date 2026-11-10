@@ -33,7 +33,7 @@ import { mutation } from './mutation';
 import { seedDetails } from './seed-details';
 
 /** The bots read: the key, and a fetch that fills each bot's detail. */
-function useBotListQuery() {
+export function useBotListQuery() {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return {

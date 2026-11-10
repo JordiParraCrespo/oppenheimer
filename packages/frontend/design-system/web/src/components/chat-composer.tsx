@@ -47,6 +47,11 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * row before the field (`inline`); `attachments` are what the message
  * carries, in a row over the text: a bot's `ChatImage` tiles, a session's
  * `ComposerFile` chips. `allowEmpty` lets a message of files alone be sent.
+ *
+ * `caption` is a quiet line inside the box over everything else: where the
+ * field's text came from when it is not a draft ("History 1/2" while a bot's
+ * sent messages are being stepped through). It is told to a screen reader as
+ * it changes.
  */
 function ChatComposer({
   value,
@@ -61,6 +66,7 @@ function ChatComposer({
   tools,
   engine,
   above,
+  caption,
   attachments,
   onAttach,
   allowEmpty = false,
@@ -88,6 +94,8 @@ function ChatComposer({
   engine?: React.ReactNode;
   /** A notice or an approval, fused to the field's top edge. */
   above?: React.ReactNode;
+  /** A quiet line inside the box over the field: where its text came from. */
+  caption?: React.ReactNode;
   /** The files the message carries (`ChatImage`s, `ComposerFile`s), in a row over the text. */
   attachments?: React.ReactNode;
   /** Present: shows the paperclip, first in the foot row (`stacked`) or the row (`inline`). */
@@ -176,6 +184,20 @@ function ChatComposer({
       <PaperclipIcon className="size-3.75" />
     </IconButton>
   ) : null;
+  // The live region stays mounted, empty without a caption: a screen reader
+  // reads a change inside a region it already knows, not one that arrives with its text.
+  const captioned = (
+    <div aria-live="polite">
+      {caption ? (
+        <div
+          data-slot="chat-composer-caption"
+          className={cn('text-xs text-fg-muted', inline ? 'px-3 pt-2.5' : '-mb-2 px-5 pt-3.5')}
+        >
+          {caption}
+        </div>
+      ) : null}
+    </div>
+  );
   const attached = attachments ? (
     <div
       data-slot="chat-composer-attachments"
@@ -215,6 +237,7 @@ function ChatComposer({
         {inline ? (
           (recorder ?? (
             <>
+              {captioned}
               {attached}
               <div className="flex items-end">
                 {paperclip ? <span className="flex shrink-0 items-center p-1.5 pr-0">{paperclip}</span> : null}
@@ -225,6 +248,7 @@ function ChatComposer({
           ))
         ) : (
           <>
+            {captioned}
             {attached}
             {field}
             {recorder ?? (

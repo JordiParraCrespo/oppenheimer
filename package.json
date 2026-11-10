@@ -44,12 +44,14 @@
     "docker:down": "docker compose -f docker/docker-compose.dev.yml down",
     "monitoring:up": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/monitoring/compose.mjs up -d",
     "monitoring:down": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/monitoring/compose.mjs down",
+    "logs": "node scripts/monitoring/logs.mjs",
     "docker:prod": "docker compose --env-file .env -f docker/docker-compose.prod.yml up -d",
     "docker:prod:down": "docker compose --env-file .env -f docker/docker-compose.prod.yml down",
     "generate:openapi": "pnpm --filter @oppenheimer/api generate:openapi",
     "migration:new": "pnpm --filter @oppenheimer/api migration:new",
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
     "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
+    "eval:bot-memory": "tsx scripts/evals/bot-memory/run.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"
@@ -62,6 +64,7 @@
     "@shadcn/lint": "0.1.0",
     "knip": "^6.38.0",
     "oxlint": "1.83.0",
+    "tsx": "^4.21.0",
     "turbo": "^2.10.7",
     "typescript": "^6.0.3"
   },

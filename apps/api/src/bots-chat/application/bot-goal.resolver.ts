@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { BotGoalPauseReason } from '@oppenheimer/shared';
 import { botDefaultModel } from '@oppenheimer/shared';
 import { BOT_GOAL_REPOSITORY, BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotGoalRepositoryPort } from '../database/bot-goal.repository.port';
@@ -6,20 +7,25 @@ import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import {
   type GoalEnding,
-  type goalContinuationTurn,
+  goalContinuationTurn,
   goalEndLine,
   goalKeyPrefix,
+  goalPauseLine,
 } from '../domain/bot-goal.policy';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 
+/** What a goal's continuation turn is queued as: the owner, the engine, the reach. */
+export type GoalContinuationProps = Parameters<typeof goalContinuationTurn>[0];
+
 /**
- * A bot's goal, as everything that ends or continues it shares it
- * (`25-bots.md` §4.1): an end is one write with its line, and the
- * continuations still waiting for that goal are cancelled with it, whoever
- * ended it (the bot's `end_goal`, a goal set in its place, the owner's Stop,
- * its limit, a failed turn). A continuation runs as the bot's owner.
+ * A bot's goal, as everything that ends, pauses, resumes or continues it
+ * shares it (`25-bots.md` §4.1): an end or a pause is one write with its
+ * line, and the continuations still waiting for that goal are cancelled with
+ * it, whoever did it (the bot's `end_goal`, a goal set in its place, the
+ * owner's Stop, a failed turn, the guards). A continuation runs as the bot's
+ * owner.
  */
 @Injectable()
 export class BotGoalResolver {
@@ -66,6 +72,53 @@ export class BotGoalResolver {
     return true;
   }
 
+  /** Pauses the goal in place, with its line; false when another writer moved it first. */
+  async pause(
+    goal: BotGoalEntity,
+    reason: BotGoalPauseReason,
+    note: string | null,
+  ): Promise<boolean> {
+    goal.pause(reason, note, new Date());
+    const line = goalPauseLine(goal, 'paused');
+    if (!(await this.goals.pause(goal, line))) return false;
+    await this.stream.publish(goal.botId, { type: 'message', turnId: null, messageId: line.id });
+    await this.cancelWaiting(goal, null);
+    this.logger.log({ message: 'A bot goal paused', goalId: goal.id, botId: goal.botId, reason });
+    return true;
+  }
+
+  /**
+   * Queues the goal's next continuation as `props`, its count claimed in the
+   * same transaction; `resumed` puts the owner's line before it. Answers
+   * whether it was queued (false when the goal moved meanwhile).
+   */
+  async queueContinuation(
+    goal: BotGoalEntity,
+    props: GoalContinuationProps,
+    reason: string | null,
+    lastStoppedAtLimit: boolean,
+    correlationId: string | null,
+    resumed = false,
+  ): Promise<boolean> {
+    const { turn, opening } = goalContinuationTurn(
+      props,
+      goal,
+      goal.advance(),
+      reason,
+      lastStoppedAtLimit,
+    );
+    const line = resumed ? goalPauseLine(goal, 'resumed') : null;
+    const queued = await this.turns.enqueueContinuation(turn, opening, correlationId, goal, line);
+    if (queued === 'lost') return false;
+    if (line) {
+      await this.stream.publish(goal.botId, { type: 'message', turnId: null, messageId: line.id });
+    }
+    if (queued === 'staged' || queued === 'waiting') {
+      await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: 'queued' });
+    }
+    return true;
+  }
+
   /** Cancels the goal's continuations still waiting: they exist only for it. */
   async cancelWaiting(goal: BotGoalEntity, correlationId: string | null): Promise<void> {
     const waiting = await this.turns.findQueuedBySourcePrefix(
@@ -90,9 +143,7 @@ export class BotGoalResolver {
    * it is now, with the setting turn's reach; null when the bot or its owner
    * is gone from the workspace, which ends the goal.
    */
-  async continuationProps(
-    goal: BotGoalEntity,
-  ): Promise<Parameters<typeof goalContinuationTurn>[0] | null> {
+  async continuationProps(goal: BotGoalEntity): Promise<GoalContinuationProps | null> {
     const bot = await this.access.findBot(goal.organizationId, goal.botId);
     const ownerUserId = bot?.createdByUserId;
     if (!bot || !ownerUserId) return null;

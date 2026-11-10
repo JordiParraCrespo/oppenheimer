@@ -106,10 +106,11 @@ const answer = streamOf(
 let server: Server;
 let baseUrl: string;
 let requests: ResponsesRequest[];
+let replies: string[];
 
 beforeEach(async () => {
   requests = [];
-  const replies = [callTool, answer];
+  replies = [callTool, answer];
   server = createServer((req, res) => {
     let body = '';
     req.on('data', (chunk) => {
@@ -144,6 +145,64 @@ afterEach(async () => {
 });
 
 describe('OpenAiBotEngine on the Agents SDK', () => {
+  // What breaks this: the compactor not wired as the SDK's input filter, so
+  // an OpenAI, ChatGPT or Grok turn past its threshold sends everything it
+  // read on every call and runs out of window, now that a turn has no step limit.
+  it(
+    'folds what the turn read into a summary before a call that would pass its threshold',
+    async () => {
+      const summary = streamOf('resp_s', {
+        type: 'message',
+        id: 'msg_s',
+        role: 'assistant',
+        status: 'completed',
+        content: [{ type: 'output_text', text: '## Goal\nTell the time.', annotations: [] }],
+      });
+      replies = [summary, callTool, answer];
+      const earlier = 'An earlier answer about clocks. '.repeat(120);
+      const events: BotEngineEvent[] = [];
+      for await (const event of new OpenAiBotEngine().run({
+        provider: 'openai',
+        apiKey: KEY,
+        baseUrl,
+        model: 'model-placeholder',
+        contextWindow: 1_000,
+        systemPrompt: 'You are a bot.',
+        history: [
+          { role: 'user', text: 'Tell me about clocks.' },
+          { role: 'assistant', text: earlier },
+        ],
+        message: 'What time is it?',
+        tools: [
+          {
+            name: 'get_time',
+            description: 'The time',
+            inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+            run: async () => ({ content: '13:37 UTC' }),
+          },
+        ],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(requests).toHaveLength(3);
+      const [summarize, firstCall, secondCall] = requests;
+      expect(JSON.stringify(summarize.body.input)).toContain('An earlier answer about clocks.');
+      expect(summarize.body.tools ?? []).toEqual([]);
+      for (const call of [firstCall, secondCall]) {
+        const sent = JSON.stringify(call.body.input);
+        expect(sent).toContain('## Goal');
+        expect(sent).toContain('What time is it?');
+        expect(sent).not.toContain('An earlier answer about clocks.');
+      }
+      expect(events).toContainEqual(expect.objectContaining({ type: 'compacted' }));
+      expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+    },
+    TURN_MS,
+  );
+
   it(
     'runs a turn with a tool call over the Responses API',
     async () => {
