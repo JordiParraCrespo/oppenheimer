@@ -90,6 +90,11 @@ describe('composeBotSystemPrompt', () => {
 
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
     expect(composeBotSystemPrompt(base)).toContain('# Getting started');
+    // 2026-11-10: a new bot's given name is a placeholder; it asks what to be
+    // called, without choosing one itself, after any work the message asks for.
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n1\. If their first message asks for real work, do that first.*\n2\. .*ask what they would like to call you\. Do not pick or suggest a name yourself/,
+    );
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
     expect(written).not.toContain('# Getting started');
@@ -104,10 +109,10 @@ describe('composeBotSystemPrompt', () => {
         { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
       ],
     });
-    expect(equipped).toMatch(/3\. Write it down\.\n4\. Remember them\.\n5\. If no step above/);
+    expect(equipped).toMatch(/5\. Write it down\.\n6\. Remember them\.\n7\. If no step above/);
 
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n3\. If no step above .*Settings → Instructions/,
+      /\n5\. If no step above .*Settings → Instructions/,
     );
   });
 

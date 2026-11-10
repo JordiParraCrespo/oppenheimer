@@ -174,6 +174,7 @@ export {
   useAnswerInboxReport,
   useDeleteInboxMark,
   useInboxCount,
+  useInboxPullsShown,
   useInboxReportImages,
   usePutInboxMark,
   useRefreshInbox,
