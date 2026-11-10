@@ -1434,3 +1434,10 @@ earlier note:
   orbs: the chat draws no compaction (the export keeps it), the trace is
   13px in subtle ink, and the orb solves, or searches while the running
   call only looks around (`versions/mvp/25-bots.md` §2 and §3).
+- `versions/mvp/27-bot-subscriptions.md` gave a task a bot hands off one
+  stall check and "no progress update", and its prompt told a bot asked to
+  monitor that "checking now adds nothing". On 2026-11-10 the owner had to
+  tell Facturas "you should be babysitting this" while two of its agents sat
+  idle: a bot now looks at a task still running every ten minutes after the
+  first check, up to an hour, staying quiet when it is on track, and checks
+  at once when asked (§4.2).

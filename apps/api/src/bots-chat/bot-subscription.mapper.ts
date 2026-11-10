@@ -236,6 +236,19 @@ export class BotSubscriptionMapper {
     };
   }
 
+  /** The regular look at a task still running (§4.2), check number `check`. */
+  toProgressWake(
+    subscription: BotSubscriptionEntity,
+    session: WorkSessionEntity,
+    task: WatchedTask,
+    check: number,
+  ): SessionWake {
+    return {
+      ...this.wakeOf(subscription, session, false),
+      cause: { kind: 'progress', task, check },
+    };
+  }
+
   /** What `watch_session` answers: what is followed now, and what the session is doing. */
   toWatchAnswer(subscription: BotSubscriptionEntity, session: WorkSessionEntity): string {
     const latest = session.latestTurn;
