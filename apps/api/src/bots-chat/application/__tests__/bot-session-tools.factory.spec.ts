@@ -314,6 +314,62 @@ describe('BotSessionToolsFactory', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
+  // A bot once told its owner "I can't choose the model when I start a
+  // session": the tool took no model, so every session ran the host's default.
+  it('launches on the model, effort, permission and base branch the person named, the card saying so', async () => {
+    const asked = setup('auto');
+    await asked.call('start_session', {
+      task: 'Fix the test',
+      project_id: PROJECT,
+      model: 'Opus 5.5',
+      effort: 'high',
+      permission: 'full',
+      base_branch: 'develop',
+    });
+    expect(asked.approvals.request.mock.calls[0][0].summary).toBe(
+      'Start Claude Code (Opus 5.5, high effort, full access) on build-02 in acme/xrp-mobile from develop, and hear back when it ends: Fix the test',
+    );
+
+    const { commandBus, call } = setup('full');
+    await call('start_session', {
+      task: 'Fix the test',
+      project_id: PROJECT,
+      model: 'Opus 5.5',
+      effort: 'high',
+      permission: 'ask',
+      base_branch: 'develop',
+    });
+    const command = commandBus.execute.mock.calls[0][0] as CreateSessionCommand;
+    expect(command.input).toMatchObject({
+      launch: { model: 'claude-opus-5-5', effort: 'high', permission: 'ask' },
+      checkouts: [{ githubRepoId: 42, baseBranch: 'develop' }],
+    });
+  });
+
+  // What breaks this: a grant given for sessions at approve for me, or the
+  // Full access preset, starting an agent with every check off unseen.
+  it('asks for a session at full access on a card of its own, offering only this call, under Full access too', async () => {
+    const { commandBus, approvals, call } = setup('full');
+    await call('start_session', { task: 'x', project_id: PROJECT, permission: 'full' });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'start_session', perCallOnly: true }),
+    );
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses a model the agent does not have before any card, naming the ones it has', async () => {
+    const { commandBus, approvals, call } = setup('auto');
+    const result = await call('start_session', {
+      task: 'x',
+      project_id: PROJECT,
+      model: 'gpt-6.1-sol',
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('Opus 5.5 (claude-opus-5-5, default)');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
   // The tool once took 20,000 characters while a session's first prompt holds
   // 2 KiB: a long brief got a card, then failed as "invalid (prompt)".
   describe('the task bound is the session prompt’s', () => {

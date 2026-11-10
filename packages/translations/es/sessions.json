@@ -346,7 +346,8 @@
     "selected": "Seleccionada",
     "openAtVendor": "Se abre en {{vendor}}",
     "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
-    "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
+    "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
+    "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",
@@ -399,6 +400,7 @@
     "shownAll": "Todos",
     "shownSome": "{{shown}} de {{total}}",
     "showAll": "Mostrar todos los proyectos",
+    "pinnedOnly": "Solo fijadas",
     "newProject": "Nuevo proyecto…"
   },
   "sort": {
@@ -582,6 +584,7 @@
     "failedCall": "falló",
     "failed_one": "{{count}} falló",
     "failed_other": "{{count}} fallaron",
+    "failed_many": "{{count}} fallaron",
     "files_one": "{{count}} archivo adjunto",
     "files_other": "{{count}} archivos adjuntos",
     "tasks_one": "{{done}} de {{count}} tarea hecha",
@@ -664,7 +667,9 @@
       "count_one": "{{count}} subagente",
       "count_other": "{{count}} subagentes",
       "running": "{{count}} en marcha",
-      "failed": "{{count}} fallidos",
+      "failed_one": "{{count}} fallido",
+      "failed_other": "{{count}} fallidos",
+      "failed_many": "{{count}} fallidos",
       "untitled": "Subagente",
       "calls_one": "{{count}} llamada",
       "calls_other": "{{count}} llamadas",
@@ -709,7 +714,8 @@
     "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
     "portsFailed": "No se pudieron listar los puertos de la sesión",
     "previewFailed": "No se pudo abrir la vista previa",
-    "opening": "Abriendo localhost:{{port}}…"
+    "opening": "Abriendo localhost:{{port}}…",
+    "desktop": "Escritorio"
   },
   "cloud": {
     "eyebrow": "Nube de Claude Code",
@@ -753,6 +759,7 @@
     "title": "En directo desde la nube de Claude Code",
     "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
     "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+    "waiting_many": "{{count}} de respuestas esperan a que el agente termine su turno.",
     "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
     "setup": {
       "title": "Activa el chat de esta sesión",

@@ -140,3 +140,26 @@ test.describe('API token scope ceiling', () => {
     expect(minted.status).toBe(403);
   });
 });
+
+test.describe('Channel owners are named in a browser session only', () => {
+  // What breaks this: a leaked token with telegram:write or whatsapp:write
+  // makes its holder's phone the owner's line, whose turns get the bot's full
+  // tools and memory.
+  test('a token with the channel write scopes cannot name a Telegram or WhatsApp owner', async () => {
+    const { api } = await signedUpContext('chanowner');
+    const minted = await mintToken(api, ['telegram:write', 'whatsapp:write'], 'channel owner');
+    expect(minted.status, JSON.stringify(minted.body)).toBe(201);
+    const asToken = await tokenContext(minted.secret as string);
+    const id = '00000000-0000-4000-8000-000000000000';
+    for (const [path, data] of [
+      [`/api/v1/telegram/accounts/${id}/owner-link`, {}],
+      [`/api/v1/whatsapp/accounts/${id}/owner`, { phone: '+34600999888' }],
+      [`/api/v1/whatsapp/accounts/${id}/owner/confirm`, { code: '123456' }],
+    ] as const) {
+      const response = await asToken.post(path, { data, failOnStatusCode: false });
+      expect(response.status(), path).toBe(403);
+      expect(((await response.json()) as { code?: string }).code, path).toBe('TOKEN_006');
+    }
+    await asToken.dispose();
+  });
+});

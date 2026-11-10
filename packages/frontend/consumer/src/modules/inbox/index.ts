@@ -9,3 +9,4 @@ export type {
 } from './inbox-item';
 export { inboxSubject, sessionItemKey } from './inbox-item';
 export type { InboxMark, InboxMarkEntity } from './inbox-mark.entity';
+export type { InboxReportEntity, InboxReportImage } from './inbox-report.entity';

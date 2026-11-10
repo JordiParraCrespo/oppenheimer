@@ -14,7 +14,14 @@ import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import { FindHostsQuery } from '../../hosts/queries/find-hosts/find-hosts.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
 import { FindProjectsQuery } from '../../projects/queries/find-projects/find-projects.query';
-import type { SessionEventPage } from '../../sessions/database/work-session.repository.port';
+import type {
+  SessionEventPage,
+  SessionSearchMatch,
+} from '../../sessions/database/work-session.repository.port';
+import {
+  SESSION_SEARCH_HITS_PER_SESSION,
+  SESSION_SEARCH_LIMIT_MAX,
+} from '../../sessions/domain/session-search.policy';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../../sessions/domain/work-session-event.entity';
 import {
@@ -25,6 +32,7 @@ import { FindSessionQuery } from '../../sessions/queries/find-session/find-sessi
 import { FindSessionEventsQuery } from '../../sessions/queries/find-session-events/find-session-events.query';
 import { FindSessionTranscriptQuery } from '../../sessions/queries/find-session-transcript/find-session-transcript.query';
 import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-sessions.query';
+import { SearchSessionsQuery } from '../../sessions/queries/search-sessions/search-sessions.query';
 import { describeDecision, groupScanOf, SESSION_GROUP_PHRASES } from '../bot-session-tool.mapper';
 import { describeSessionActivity } from '../domain/bot-session-activity.policy';
 import { describeTranscriptPage } from '../domain/bot-session-transcript.policy';
@@ -36,6 +44,7 @@ import {
   formatToolTime,
 } from '../domain/bot-tool-text.policy';
 import { describeCloudSession } from './bot-cloud-session.policy';
+import { describeSessionSearch } from './bot-session-search.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -105,8 +114,10 @@ export class BotHostToolsFactory implements BotToolArea {
       this.updateHostRunner(),
       this.listSessions(),
       this.getSession(),
+      this.showSession(),
       this.readSession(),
       this.readSessionTranscript(),
+      this.searchSessions(),
     ];
   }
 
@@ -166,11 +177,15 @@ export class BotHostToolsFactory implements BotToolArea {
         project_id: z
           .uuid()
           .optional()
-          .describe('Only sessions in this project (an id from list_projects).'),
+          .describe(
+            'Only sessions in this project (an id from list_projects). Pass it when the person names a project.',
+          ),
         host_id: z
           .uuid()
           .optional()
-          .describe('Only sessions on this host (an id from list_hosts).'),
+          .describe(
+            'Only sessions on this host (an id from list_hosts). Pass it when the person names a host.',
+          ),
         state: z
           .enum(SESSION_STATES)
           .optional()
@@ -270,6 +285,31 @@ export class BotHostToolsFactory implements BotToolArea {
     });
   }
 
+  /**
+   * The console's Open session button on the call's line, for a session the
+   * bot only found: the chat draws it from the call's session, never from
+   * the words, as it does for one `start_session` started.
+   */
+  private showSession(): BotToolDefinition {
+    return defineBotTool({
+      name: 'show_session',
+      readOnly: true,
+      scope: 'sessions:read',
+      description:
+        "Gives the person a button that opens a session in the console, on this call's line in the chat: use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer). A session you start with start_session already carries one. Do not write the session's address in your reply; this is the link. The button adds to your answer and is never the answer: still say in your reply, in words, what you found (what the session did, why it failed, what it waits on).",
+      input: z.object({ session_id: z.uuid().describe('A session id from list_sessions.') }),
+      run: async (input, context) => {
+        const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+          new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
+        );
+        return {
+          content: `The person has a button that opens session ${session.id} "${session.name}" on this call's line. It only opens the session and answers nothing: now write your reply as if there were no button, with what you found in words (what the session did, why it failed, what it waits on). The person reads your reply, never your thinking.`,
+          sessionId: session.id,
+        };
+      },
+    });
+  }
+
   private readSession(): BotToolDefinition {
     return defineBotTool({
       name: 'read_session',
@@ -348,6 +388,68 @@ export class BotHostToolsFactory implements BotToolArea {
     });
   }
 
+  private searchSessions(): BotToolDefinition {
+    return defineBotTool({
+      name: 'search_sessions',
+      readOnly: true,
+      scope: 'sessions:read',
+      description: `Searches every session of the person's workspace, on any host and closed ones too, for words in its name and its log: the tasks and follow-up prompts it was given, the agent's results, notes, questions and failures. Use it before saying you do not know whether or how something was done, and to find the session where a task, a bug or a decision was worked on; then read it with read_session or read_session_transcript. When the person names a project or a host, pass its id (project_id from list_projects, host_id from list_hosts), so other projects' or hosts' sessions do not crowd the hits. It does not search the agents' conversations. Takes web-search syntax: "exact phrase", -excluded, OR. Best matches first, at most ${SESSION_SEARCH_HITS_PER_SESSION} excerpts per session and ${SESSION_SEARCH_LIMIT_MAX} sessions per call.`,
+      input: z.strictObject({
+        query: z
+          .string()
+          .trim()
+          .min(1)
+          .max(200)
+          .describe(
+            'Words to look for, e.g. "auth bug" or migration -staging. Case does not matter.',
+          ),
+        host_id: z
+          .uuid()
+          .optional()
+          .describe(
+            'Only sessions on this host (an id from list_hosts). Pass it when the person names a host.',
+          ),
+        project_id: z
+          .uuid()
+          .optional()
+          .describe(
+            'Only sessions in this project (an id from list_projects). Pass it when the person names a project.',
+          ),
+        since: z
+          .union([z.iso.date(), z.iso.datetime({ offset: true })])
+          .optional()
+          .describe(
+            'Only what happened at or after this date or time, e.g. 2026-11-02 (UTC midnight) or 2026-11-02T09:00:00+01:00.',
+          ),
+        limit: z.number().int().min(1).max(SESSION_SEARCH_LIMIT_MAX).default(10),
+      }),
+      run: async (input, context) => {
+        const [matches, projects, hosts] = await Promise.all([
+          this.queryBus.execute<SearchSessionsQuery, SessionSearchMatch[]>(
+            new SearchSessionsQuery({
+              scope: context.owner,
+              query: input.query,
+              hostId: input.host_id,
+              projectId: input.project_id,
+              since: input.since ? new Date(input.since) : undefined,
+              limit: input.limit,
+            }),
+          ),
+          this.projectNames(context),
+          this.hostNames(context),
+        ]);
+        return describeSessionSearch({
+          query: input.query,
+          matches,
+          projects,
+          hosts,
+          timeZone: context.timeZone,
+          now: new Date(),
+        });
+      },
+    });
+  }
+
   /** The latest entries, or a page after one, with the session they belong to. */
   private async activity(
     context: BotToolCallContext,
@@ -381,6 +483,14 @@ export class BotHostToolsFactory implements BotToolArea {
       ),
     ]);
     return { session, events: page.events, nextSeq: page.nextSeq };
+  }
+
+  /** Every host the owner can read, by id; none when the read fails. */
+  private async hostNames(context: BotToolCallContext): Promise<ReadonlyMap<string, string>> {
+    const hosts = await this.queryBus
+      .execute<FindHostsQuery, HostView[]>(new FindHostsQuery({ scope: context.owner }))
+      .catch(() => []);
+    return new Map(hosts.map((view) => [view.host.id, view.host.name]));
   }
 
   /** The host's name as the owner sees it, quoted; its id when they cannot read it. */

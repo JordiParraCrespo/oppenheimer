@@ -60,4 +60,28 @@ export const WhatsappErrors = {
     message: 'No such WhatsApp chat',
     httpStatus: 404,
   },
+  /** The code entered is not the one the owner's number received, or it expired. */
+  OWNER_CODE_INVALID: {
+    code: 'WHATSAPP_011',
+    message: 'That code is wrong or has expired',
+    httpStatus: 422,
+  },
+  /** No number is waiting for its code: name your number first. */
+  OWNER_CODE_NONE: {
+    code: 'WHATSAPP_012',
+    message: 'No number is waiting to be confirmed',
+    httpStatus: 409,
+  },
+  /** Not a phone number, or the linked number itself: the owner writes from another. */
+  OWNER_NUMBER_INVALID: {
+    code: 'WHATSAPP_013',
+    message: 'That number cannot be your own number here',
+    httpStatus: 422,
+  },
+  /** Too many wrong codes for the waiting one: ask for a new code. */
+  OWNER_CODE_LOCKED: {
+    code: 'WHATSAPP_014',
+    message: 'Too many wrong codes',
+    httpStatus: 429,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

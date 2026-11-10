@@ -1,5 +1,10 @@
-import type { NewSessionEvent } from './database/work-session.repository.port';
+import type { NewSessionEvent, SessionSearchHit } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import {
+  SESSION_NAME_HIT,
+  type SessionSearchRow,
+  sessionSearchText,
+} from './domain/session-search.policy';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
 import { SessionEventResponseDto } from './dtos/session-event.response.dto';
 
@@ -95,6 +100,23 @@ export class WorkSessionEventMapper {
         recordedAt: row.recordedAt,
       },
     });
+  }
+
+  /**
+   * A row of the session search (`WorkSessionRepository.search`): which
+   * session, and the hit as the bot reads it, its words picked out of the
+   * payload by the same fields the index reads; a name hit's words are the
+   * name it carries.
+   */
+  static searchRowOf(row: unknown): SessionSearchRow<SessionSearchHit> {
+    const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+    const kind = String(record.kind);
+    const at = record.at instanceof Date ? record.at : new Date(String(record.at));
+    const text =
+      kind === SESSION_NAME_HIT
+        ? String(record.name ?? '')
+        : sessionSearchText(kind, record.payload);
+    return { sessionId: String(record.sessionId), hit: { kind, at, text } };
   }
 
   static toResponse(entity: WorkSessionEventEntity): SessionEventResponseDto {

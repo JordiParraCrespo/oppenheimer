@@ -25,6 +25,7 @@ export interface BotTurnPlanLimitsRecord {
 @Entity('bot_turn')
 @Unique('UQ_bot_turn_organization_id', ['organizationId', 'id'])
 @Index('IDX_bot_turn_bot', ['organizationId', 'botId', 'createdAt', 'id'])
+@Index('IDX_bot_turn_conversation', ['organizationId', 'conversationId'])
 @Index('IDX_bot_turn_active', ['organizationId', 'botId', 'createdAt'], {
   where: `"status" IN ('queued', 'running')`,
 })
@@ -43,7 +44,7 @@ export interface BotTurnPlanLimitsRecord {
 @Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
 @Check(
   'CHK_bot_turn_origin',
-  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop')`,
+  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp')`,
 )
 @Check(
   'CHK_bot_turn_failure',
@@ -77,6 +78,10 @@ export class BotTurnOrmEntity {
 
   @Column({ type: 'uuid' })
   botId!: string;
+
+  /** Its conversation (`1794241820830-AnswerOnTelegram`): the bot's id for its console chat. */
+  @Column({ type: 'uuid' })
+  conversationId!: string;
 
   @Column({ type: 'uuid', nullable: true })
   requestedByUserId!: string | null;

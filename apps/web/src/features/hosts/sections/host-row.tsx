@@ -1,8 +1,8 @@
 import { Button, HostCard } from '@oppenheimer/design-system-web';
-import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import { Monitor, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRenameHost } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -19,7 +19,9 @@ import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
  *
  * An online host offers **Open terminal**: New session as a folder session in
  * the host's home with the blank terminal, started on arrival
- * (`product/versions/mvp/24-session-places.md` §3).
+ * (`product/versions/mvp/24-session-places.md` §3), and **Desktop**: the
+ * machine's own screen, on its page (`HostDesktopScreen`). Whether the host
+ * shares it is its owner's call on the host; the page says how.
  *
  * Update runner asks first, in its own dialog; the row's runner version moves
  * once the runner reconnects on the new release, through the presence poll.
@@ -33,6 +35,7 @@ export function HostRow({ host }: { host: HostEntity }) {
   const [renaming, setRenaming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const desktopOffered = useFeatureFlag('host_desktop');
   const resolveError = useErrorMessage();
   const rename = useRenameHost({
     onSuccess: (renamed) => {
@@ -121,6 +124,16 @@ export function HostRow({ host }: { host: HostEntity }) {
               >
                 <SquareTerminal />
                 {t('hosts.settings.openTerminal')}
+              </Button>
+            ) : null}
+            {host.online && desktopOffered ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                render={<Link to="/settings/hosts/$hostId/desktop" params={{ hostId: host.id }} />}
+              >
+                <Monitor />
+                {t('hosts.desktop.label')}
               </Button>
             ) : null}
             <HostActionsMenu

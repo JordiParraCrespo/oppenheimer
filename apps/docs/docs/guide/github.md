@@ -1,6 +1,6 @@
 ---
 title: GitHub and pull requests
-description: Connecting GitHub by installing the Oppenheimer GitHub App, which repositories sessions can reach and how git access works in a session, and the Pull requests section as built (PR queue, lanes, filters, merging, Description, Changes, review sessions, Analytics, Watched repositories).
+description: Connecting GitHub by installing the Oppenheimer GitHub App, which repositories sessions can reach and how git access works in a session, and the Pull requests section as built (PR queue, the review deck, lanes, filters, merging, Description, Changes, review sessions, Analytics, Watched repositories).
 sidebar_position: 9
 ---
 
@@ -24,7 +24,7 @@ Only repositories an installation covers appear in the pickers. Archived reposit
 
 ## Pull requests
 
-The **Pull requests** rail item has two views in its sidebar, **PR queue** and **Analytics**, and **For review** listing your review sessions by repository.
+The **Pull requests** rail item has three views in its sidebar, **PR queue**, **Review** and **Analytics**, and **For review** listing your review sessions by repository.
 
 ### The PR queue
 
@@ -34,9 +34,20 @@ The queue reads the open pull requests of the repositories you watch.
 - **Lanes**: each pull request is placed in **Deep**, **Medium** or **Quick** by its difficulty. The order is fixed: Deep first, then Medium, then Quick, the longest wait first within a lane.
 - **Filters**: a repository picker, a search over title, repository, number and author, and facets for Difficulty, Checks (passing, failing, running) and Waiting (under 1 hour, 1 hour to 1 day, over 1 day). Filters live in the address.
 - Each row shows the lane, title, size, checks, conflicts and how long it has waited, with **Review** (opens the changes) and **Merge** (squash and merge into the base, after a confirm).
-- Keys: `j` and `k` move, Enter opens, `/` searches, `N` opens the next one.
+- Keys: `j` and `k` move, Enter opens, `/` searches, `N` starts the review deck on the next one.
 
 **Settings → Watched repositories** picks the repositories whose pull requests fill the Watching tab, even when nobody asked for your review.
+
+### Review: one pull request at a time
+
+**Review** walks the queue as a deck of cards, in the queue's order, with the scope and filters it was opened from. **Review next** in the queue opens it.
+
+- Each card shows the pull request's title, author and lane, a **brief** (one sentence of what it changes, the pictures from its description, a few points and where to look first), and its checks, conflicts, size and wait.
+- The brief is written by the deployment's language model from the description and the diff, once per head commit. Where no model is configured it is taken from the author's description instead. The card says which.
+- Pictures the description links to are shown when your browser can load them; pictures attached to a private repository's pull request usually cannot be, and are left out.
+- Actions, each of which moves to the next card: **Pass** (`←`); on your own pull requests **Merge** (`→`, press twice) and **Comment** (`C`); on others' **Approve** (`→`), **Approve and merge** (`M`, press twice) and **Request changes** (`C`). A held key does nothing after its first press.
+- A card stays at the high level and never shows the diff: **Review in depth** on the card (Enter) opens the pull request's changes, and Back returns to the same card.
+- After the last card you can walk them again or go back to the queue.
 
 ### One pull request
 

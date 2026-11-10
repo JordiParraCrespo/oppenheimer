@@ -6,16 +6,18 @@ import {
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import type { RunsFilter } from '../modules/automations/automation.entity';
 import { composeInbox, type InboxSources, type InboxView } from '../modules/inbox/inbox-item';
 import { type InboxMark, InboxMarkEntity } from '../modules/inbox/inbox-mark.entity';
+import type { InboxReportEntity } from '../modules/inbox/inbox-report.entity';
 import type { ProjectEntity } from '../modules/projects/project.entity';
 import { automationsKeys } from './automations.keys';
 import { usePendingBotApprovalsQuery } from './bot-approvals.queries';
 import { useBotNoticesQuery } from './bot-notices.queries';
 import { useConsumerApp } from './context';
 import { inboxKeys } from './inbox.keys';
+import { pollWhile } from './live-poll';
 import { useProjectListQuery } from './projects.queries';
 import { usePullRequestQueueQuery } from './pull-requests.queries';
 import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
@@ -67,6 +69,12 @@ function useInboxMarksQuery() {
   return { queryKey: inboxKeys.marks(), queryFn: () => app.inbox.findMarks() };
 }
 
+/** The open reports (`29-inbox.md`, "Reports"); `inboxReport.changed` refetches them. */
+function useInboxReportsQuery() {
+  const app = useConsumerApp();
+  return { queryKey: inboxKeys.reports(), queryFn: () => app.inbox.findReports() };
+}
+
 function useFailedRunsQuery() {
   const app = useConsumerApp();
   return {
@@ -76,11 +84,11 @@ function useFailedRunsQuery() {
 }
 
 /**
- * The Inbox's eight reads, side by side: the five sources, the two pull
+ * The Inbox's nine reads, side by side: the six sources, the two pull
  * request scopes counted as one, the projects every item is filed under, and
  * the caller's marks. Each keeps its own key, poll and stream coverage, so a
- * session, a run, an approval or a bot's notice that changes moves the Inbox
- * with it.
+ * session, a run, an approval, a bot's notice or a report that changes moves
+ * the Inbox with it.
  */
 function useInboxQueries() {
   return [
@@ -90,9 +98,26 @@ function useInboxQueries() {
     usePullRequestQueueQuery('mine'),
     useFailedRunsQuery(),
     useBotNoticesQuery(),
+    useInboxReportsQuery(),
     useProjectListQuery(),
     useInboxMarksQuery(),
   ] as const;
+}
+
+/**
+ * The `inbox` poll over the nine reads, as observers of their own: a read's
+ * own poll keeps its pace and its hidden-tab bit, and this one pauses on a
+ * hidden tab whatever those say. It draws nothing, so it never re-renders.
+ */
+function useInboxPoll() {
+  useQueries({
+    queries: useInboxQueries().map(({ queryKey, queryFn }) => ({
+      queryKey,
+      queryFn,
+      ...pollWhile('inbox', true),
+    })),
+    combine: () => null,
+  });
 }
 
 type InboxReads = ReturnType<typeof useInboxQueries>;
@@ -106,7 +131,8 @@ function sourcesOf(
   mine: Answer<3>,
   runs: Answer<4>,
   botNotices: Answer<5>,
-  projects: Answer<6>,
+  reports: Answer<6>,
+  projects: Answer<7>,
 ): InboxSources {
   return {
     sessions,
@@ -115,6 +141,7 @@ function sourcesOf(
     mine: mine.items,
     failedRuns: runs.items,
     botNotices,
+    reports,
     projects,
   };
 }
@@ -127,12 +154,14 @@ function sourcesOf(
  * is the first refetch that failed over data already drawn.
  *
  * `now` comes from the caller's clock (`useNow`), never read here, so a
- * snooze comes back on the caller's tick.
+ * snooze comes back on the caller's tick. Every read polls as `inbox` while
+ * it is mounted (`useInboxPoll`).
  */
 export function useSuspenseInbox(
   now: number,
 ): InboxView & { projects: ProjectEntity[]; answered: ReadonlySet<string>; error: Error | null } {
-  const [sessions, approvals, requested, mine, runs, botNotices, projects, marks] =
+  useInboxPoll();
+  const [sessions, approvals, requested, mine, runs, botNotices, reports, projects, marks] =
     useSuspenseQueries({
       queries: useInboxQueries(),
     });
@@ -147,6 +176,7 @@ export function useSuspenseInbox(
           mine.data,
           runs.data,
           botNotices.data,
+          reports.data,
           projects.data,
         ),
         marks.data,
@@ -160,6 +190,7 @@ export function useSuspenseInbox(
       mine.data,
       runs.data,
       botNotices.data,
+      reports.data,
       projects.data,
       marks.data,
       now,
@@ -173,6 +204,7 @@ export function useSuspenseInbox(
     mine.error ??
     runs.error ??
     botNotices.error ??
+    reports.error ??
     projects.error ??
     marks.error;
   return { ...view, projects: projects.data, answered, error };
@@ -185,7 +217,8 @@ export function useSuspenseInbox(
 export function useInboxCount(now: number): number | undefined {
   const results = useQueries({ queries: useInboxQueries() });
   const answered = useAnsweredKeys();
-  const [sessions, approvals, requested, mine, runs, botNotices, projects, marks] = results;
+  const [sessions, approvals, requested, mine, runs, botNotices, reports, projects, marks] =
+    results;
   if (
     !sessions?.data ||
     !approvals?.data ||
@@ -193,6 +226,7 @@ export function useInboxCount(now: number): number | undefined {
     !mine?.data ||
     !runs?.data ||
     !botNotices?.data ||
+    !reports?.data ||
     !projects?.data ||
     !marks?.data
   ) {
@@ -206,12 +240,32 @@ export function useInboxCount(now: number): number | undefined {
       mine.data as Answer<3>,
       runs.data as Answer<4>,
       botNotices.data as Answer<5>,
-      projects.data as Answer<6>,
+      reports.data as Answer<6>,
+      projects.data as Answer<7>,
     ),
     marks.data as InboxMarkEntity[],
     now,
     answered,
   ).open.length;
+}
+
+/**
+ * Reads the Inbox again now, every source at once, for its Refresh button;
+ * `refreshing` holds while any of them is still answering. A read that fails
+ * shows as the Inbox's `error`, as a poll's would.
+ */
+export function useRefreshInbox(): { refresh: () => void; refreshing: boolean } {
+  const queryClient = useQueryClient();
+  const keys = useInboxQueries().map((query) => query.queryKey);
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    void Promise.all(
+      keys.map((queryKey) => queryClient.refetchQueries({ queryKey, exact: true })),
+    ).finally(() => setRefreshing(false));
+  };
+  return { refresh, refreshing };
 }
 
 export interface PutInboxMarkVariables {
@@ -294,6 +348,73 @@ export function useDeleteInboxMark(
     onError: (error, itemKey, context, mutation) => {
       restoreMarks(queryClient, context);
       return options?.onError?.(error, itemKey, context, mutation);
+    },
+  });
+}
+
+/** A report's pictures, as `useInboxReportImages` reads them: each one's bytes once they are in. */
+export interface InboxReportImageReads {
+  blobs: readonly (Blob | undefined)[];
+  /** Which could not be read, by position. */
+  failed: readonly boolean[];
+}
+
+/** Module-level, so TanStack keeps the combined value while no read changes. */
+function combineImages(
+  results: { data: Blob | undefined; isError: boolean }[],
+): InboxReportImageReads {
+  return {
+    blobs: results.map((result) => result.data),
+    failed: results.map((result) => result.isError),
+  };
+}
+
+/**
+ * The pictures one report carries, each its bytes as a `Blob`, in order, for
+ * its card to draw and open. They never change under an id, so they are read
+ * once; like everything under `inbox`, they are never written to the
+ * persisted cache.
+ */
+export function useInboxReportImages(reportId: string, imageIds: readonly string[]) {
+  const app = useConsumerApp();
+  return useQueries({
+    queries: imageIds.map((imageId) => ({
+      queryKey: inboxKeys.reportImage(reportId, imageId),
+      queryFn: () => app.inbox.readReportImage(reportId, imageId),
+      staleTime: Number.POSITIVE_INFINITY,
+      structuralSharing: false,
+    })),
+    combine: combineImages,
+  });
+}
+
+export interface AnswerInboxReportVariables {
+  id: string;
+  text: string;
+}
+
+/**
+ * Answers a report from its card. The answered report replaces its row, so
+ * it leaves the Inbox without waiting for the stream to say so. A refusal
+ * reads the reports again: the one refusal a reader meets is a report
+ * answered somewhere else first (`INBOX_006`), which is no longer theirs to
+ * answer.
+ */
+export function useAnswerInboxReport(
+  options?: UseMutationOptions<InboxReportEntity, Error, AnswerInboxReportVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    ...withCacheOnSuccess(options, (answered) => {
+      queryClient.setQueryData<InboxReportEntity[]>(inboxKeys.reports(), (reports) =>
+        reports?.map((report) => (report.id === answered.id ? answered : report)),
+      );
+    }),
+    mutationFn: ({ id, text }: AnswerInboxReportVariables) => app.inbox.answerReport(id, text),
+    onError: (error, variables, context, mutation) => {
+      void queryClient.invalidateQueries({ queryKey: inboxKeys.reports() });
+      return options?.onError?.(error, variables, context, mutation);
     },
   });
 }

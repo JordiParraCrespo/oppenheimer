@@ -36,7 +36,6 @@ import (
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waCompanionReg"
-	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
@@ -287,8 +286,9 @@ func (d *Device) Logout(ctx context.Context) error {
 	return err
 }
 
-// Send sends a text message.
-func (d *Device) Send(ctx context.Context, chatID, text string) (string, time.Time, error) {
+// Send sends a text message, quoting the message it replies to when there is
+// one.
+func (d *Device) Send(ctx context.Context, chatID, text string, quote *domain.Quote) (string, time.Time, error) {
 	client, _ := d.current()
 	if client == nil || !client.IsLoggedIn() {
 		return "", time.Time{}, domain.ErrNotConnected
@@ -297,7 +297,7 @@ func (d *Device) Send(ctx context.Context, chatID, text string) (string, time.Ti
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("not a WhatsApp chat: %w", err)
 	}
-	resp, err := client.SendMessage(ctx, to, &waE2E.Message{Conversation: proto.String(text)})
+	resp, err := client.SendMessage(ctx, to, outgoing(text, quote))
 	if errors.Is(err, whatsmeow.ErrIQRateOverLimit) || (err != nil && strings.Contains(err.Error(), "rate-overlimit")) {
 		return "", time.Time{}, fmt.Errorf("%w: %w", domain.ErrRateLimited, err)
 	}
@@ -375,7 +375,10 @@ func (d *Device) onEvent(raw any) {
 	}
 	switch evt := raw.(type) {
 	case *events.Message:
-		listener.Received(received(evt, clientNames{d: d, client: client}))
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, logger: d.logger}
+		listener.Received(read.received(ctx, evt))
+		cancel()
 	case *events.Connected:
 		// Never online: presence is what makes a linked device look like a
 		// person at a keyboard, and a bot that never sleeps is what gets

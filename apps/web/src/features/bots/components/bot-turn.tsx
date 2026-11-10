@@ -16,12 +16,14 @@ import { BotSteerMessage } from '@/features/bots/components/bot-steer-message';
 import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
+import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
 import {
   type ChatTurnBlock,
   compactTokens,
   replyText,
   turnDurationMs,
   turnPhase,
+  turnTrail,
 } from '@/features/bots/lib/chat-turns';
 import { runningStep } from '@/features/bots/lib/tool-activity';
 
@@ -44,7 +46,7 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * it is the caller's to draw (`working`), in place of the live line; a turn
  * queued behind the one the bot is on draws neither (`current`), so the
  * chat shows one live line at a time; a turn that never reached its model has no
- * trail.
+ * trail, and neither does one that only ran tools while the chat hides them.
  */
 export function BotTurn({
   block,
@@ -95,6 +97,7 @@ export function BotTurn({
   // A turn that ended without a word or a token never reached its model: nothing to trail.
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const silent = phase === 'completed' && block.answer.length === 0 && tokens === 0;
+  const trail = turnTrail(block, phase, useToolCallsShownInChat(), Boolean(onRetry));
   const ran = turn ? turnDurationMs(turn) : null;
   const meta = turn
     ? [
@@ -172,7 +175,7 @@ export function BotTurn({
             onOpenProviders={onOpenProviders}
           />
         ) : null}
-        {turn && !active && !silent ? (
+        {turn && !active && !silent && trail !== 'none' ? (
           <MessageTrail
             actions={
               <>
@@ -191,7 +194,7 @@ export function BotTurn({
                 ) : null}
               </>
             }
-            meta={meta}
+            meta={trail === 'full' ? meta : undefined}
           />
         ) : null}
       </div>

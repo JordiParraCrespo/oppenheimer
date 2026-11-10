@@ -24,7 +24,7 @@ export type AttachVerdict =
   | { allowed: true; hostId: string }
   | { allowed: false; reason: AttachClosedReason; code: number };
 
-import { type WebSocket, WebSocketServer } from 'ws';
+import type { WebSocket } from 'ws';
 import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import { ABILITY, CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
@@ -57,8 +57,7 @@ import {
 } from './coalescing-sender.util';
 import { DeviceAttachment } from './device-attachment.util';
 import { type DirectPathOffer, DirectPathSignalling } from './direct-path-signalling.util';
-import { keepSocketAlive } from './socket-keepalive.util';
-import { refuseUpgrade } from './upgrade.util';
+import { type EarlyFrame, endSocket, TicketSocket, tellSocket } from './ticket-socket.util';
 
 /** The path the console opens, the one `POST /sessions/{id}/attach-ticket` names. */
 export const BROWSER_ATTACH_PATH = '/api/v1/relay/attach';
@@ -67,13 +66,6 @@ export const BROWSER_ATTACH_PATH = '/api/v1/relay/attach';
 export const VIEWPORT_TIMEOUT_MS = 2_000;
 
 const DEFAULT_VIEWPORT = { cols: 80, rows: 24 };
-
-/**
- * Frames held while a ticket is redeemed. The browser sends one, its viewport,
- * the moment the socket opens; anything past a handful is not a browser
- * waiting for an answer, and is dropped.
- */
-const MAX_EARLY_FRAMES = 8;
 
 /** Keystrokes larger than this are not keystrokes. */
 const MAX_INPUT_BYTES = 64 * 1024;
@@ -135,12 +127,13 @@ export class BrowserAttachGateway {
   /** `ATTACH_PING_INTERVAL_MS`; a field only so a test can shorten it. */
   pingIntervalMs = ATTACH_PING_INTERVAL_MS;
   private readonly logger = new Logger(BrowserAttachGateway.name);
-  private readonly server = new WebSocketServer({
-    noServer: true,
+  private readonly socket = new TicketSocket({
+    name: 'attach',
     maxPayload: MAX_INPUT_BYTES,
-    // Echo the ticket back as the accepted subprotocol: the browser's WebSocket
-    // refuses a handshake whose response names none of the ones it offered.
-    handleProtocols: (protocols) => protocols.values().next().value ?? false,
+    pingIntervalMs: () => this.pingIntervalMs,
+    frontendUrl: () => this.configService.get<string>('app.frontendUrl'),
+    logger: this.logger,
+    redeem: (ws, ticket, early) => this.judge(ws, ticket, early),
   });
 
   constructor(
@@ -164,72 +157,24 @@ export class BrowserAttachGateway {
     private readonly flags: FlagEvaluatorPort,
   ) {}
 
-  async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
-    if (!this.originAllowed(request.headers.origin)) {
-      refuseUpgrade(socket, 403, 'origin not allowed');
-      return;
-    }
-    const offered = request.headers['sec-websocket-protocol'];
-    const ticket = typeof offered === 'string' ? offered.split(',')[0]?.trim() : undefined;
-    if (!ticket) {
-      refuseUpgrade(socket, 401, 'an attach ticket is presented as the subprotocol');
-      return;
-    }
-    this.server.handleUpgrade(request, socket, head, (ws) => {
-      // `ws` emits 'error' for a frame it cannot accept (over maxPayload, bad
-      // UTF-8, unmasked…). An 'error' nobody listens for throws and takes the
-      // process with it, and this socket is not authenticated yet.
-      ws.on('error', (error) => {
-        this.logger.warn({ message: 'browser attach socket error', error: error.message });
-      });
-      // From the upgrade, not the attach: a socket that vanished while its
-      // ticket was judged is as dead as one that vanished mid-stream.
-      keepSocketAlive(ws, this.pingIntervalMs);
-      void this.redeem(ws, ticket).catch((error: unknown) => {
-        this.logger.error({ message: 'attach ticket could not be judged', error: String(error) });
-        // No `closed` message: every reason it can carry is a final verdict,
-        // and a store that did not answer is not one. 1011 rather than
-        // SESSION_UNAVAILABLE, which the console takes as final: 1011 it retries.
-        if (ws.readyState === ws.OPEN) ws.close(1011, 'try again');
-      });
-    });
-  }
-
-  private async redeem(ws: WebSocket, ticket: string): Promise<void> {
-    // The browser sends its viewport as soon as the socket opens, which is
-    // while the lookups below are still out. `ws` drops a frame nobody listens
-    // for, so without this hold the resize was lost whenever redemption was
-    // slower than the browser, and the relay sat out `VIEWPORT_TIMEOUT_MS`
-    // before attaching at 80x24: two seconds on some session switches.
-    const early: EarlyFrame[] = [];
-    const hold = (data: unknown, isBinary: boolean) => {
-      if (early.length < MAX_EARLY_FRAMES) early.push({ data: data as Buffer, isBinary });
-    };
-    ws.on('message', hold);
-    try {
-      await this.judge(ws, ticket, early);
-    } finally {
-      ws.off('message', hold);
-      // An attachment took its own copy; on a refusal nothing did, and a slow
-      // close handshake must not keep the frames alive.
-      early.length = 0;
-    }
+  handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
+    return this.socket.handleUpgrade(request, socket, head);
   }
 
   private async judge(ws: WebSocket, ticket: string, early: EarlyFrame[]): Promise<void> {
     const claim = await this.cache.take<AttachTicket>(`${ATTACH_TICKET_PREFIX}${ticket}`);
     if (!claim) {
-      this.end(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
+      endSocket(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }
     const verdict = await this.authorize(claim);
     if (!verdict.allowed) {
-      this.end(ws, verdict.reason, verdict.code);
+      endSocket(ws, verdict.reason, verdict.code);
       return;
     }
     const link = this.links.find(verdict.hostId);
     if (!link) {
-      this.tell(ws, { type: 'hint', kind: 'host_offline' });
+      tellSocket(ws, { type: 'hint', kind: 'host_offline' });
       ws.close(ATTACH_CLOSE_CODES.HOST_OFFLINE, 'host offline');
       return;
     }
@@ -272,7 +217,7 @@ export class BrowserAttachGateway {
       organizationId: claim.organizationId,
     });
     if (!enabled || !link.capabilities.includes('device.screen')) {
-      this.tell(ws, {
+      tellSocket(ws, {
         type: 'refused',
         code: 'DEV_001',
         detail: enabled ? "This session's host offers no device." : 'Device preview is off.',
@@ -409,41 +354,10 @@ export class BrowserAttachGateway {
     }
     return { allowed: true, hostId: target.hostId };
   }
-
-  /** A final answer: the reason as a control frame, then the code. */
-  private end(ws: WebSocket, reason: AttachClosedReason, code: number): void {
-    this.tell(ws, { type: 'closed', reason });
-    ws.close(code, reason);
-  }
-
-  private tell(ws: WebSocket, message: AttachServerMessage): void {
-    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
-  }
-
-  private originAllowed(origin: string | undefined): boolean {
-    // A non-browser client sends no Origin; the ticket is what authorises it.
-    if (!origin) return true;
-    const allowed = this.configService.get<string>('app.frontendUrl');
-    return Boolean(allowed) && sameOrigin(allowed as string, origin);
-  }
-}
-
-/** A frame the browser sent before its attachment was listening. */
-interface EarlyFrame {
-  data: Buffer;
-  isBinary: boolean;
 }
 
 function refuse(reason: AttachClosedReason, code: number): AttachVerdict {
   return { allowed: false, reason, code };
-}
-
-function sameOrigin(a: string, b: string): boolean {
-  try {
-    return new URL(a).origin === new URL(b).origin;
-  } catch {
-    return false;
-  }
 }
 
 /**

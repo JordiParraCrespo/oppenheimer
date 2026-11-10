@@ -154,6 +154,7 @@ export {
   useDisconnectCloudAgentProvider,
   useSuspenseCloudAgentStatus,
 } from './cloud-agents.queries';
+export { useHostDesktop } from './hosts.desktop';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
@@ -171,9 +172,12 @@ export {
 export {
   inboxAnswered,
   type PutInboxMarkVariables,
+  useAnswerInboxReport,
   useDeleteInboxMark,
   useInboxCount,
+  useInboxReportImages,
   usePutInboxMark,
+  useRefreshInbox,
   useSuspenseInbox,
 } from './inbox.queries';
 export {
@@ -243,6 +247,7 @@ export {
   useAddPullRequestComment,
   useCloseReviewSession,
   useMergePullRequest,
+  usePrefetchPullRequestBrief,
   usePullRequest,
   usePullRequestComments,
   usePullRequestQueue,
@@ -254,6 +259,7 @@ export {
   useSuspensePullRequestActivity,
   useSuspensePullRequestAnalytics,
   useSuspensePullRequestAndReviewSessions,
+  useSuspensePullRequestBrief,
   useSuspensePullRequestFiles,
   useSuspensePullRequestQueue,
   useSuspenseWatchedRepositories,
@@ -303,6 +309,8 @@ export {
   useSharedSessionStream,
 } from './sessions.stream';
 export {
+  HOST_HOME,
+  type HostHomeSessionInput,
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
   type StartTaskSessionVariables,
@@ -327,7 +335,9 @@ export {
   useUpdateTask,
 } from './tasks.queries';
 export {
+  useAnswerTelegramAs,
   useLinkTelegram,
+  useOpenTelegramOwnerLink,
   useSuspenseTelegramSettings,
   useUnlinkTelegram,
 } from './telegram.queries';
@@ -336,7 +346,10 @@ export {
   type VoiceDictation,
 } from './voice.queries';
 export {
+  useAnswerWhatsappAs,
+  useConfirmWhatsappOwner,
   useLinkWhatsapp,
+  useRequestWhatsappOwner,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

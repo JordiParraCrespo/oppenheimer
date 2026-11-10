@@ -415,6 +415,11 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
 - **Where the console lands.** Still the Inbox: a reader who never dragged
   the rail, or whose stored order led with the former Inbox item, lands on
   `/plan/inbox`; one who dragged another item first lands there.
+  *Changed 2026-11-09:* the owner asked that Plan open on whichever view is
+  at the top of its own sidebar. The rail's Plan item, and the console's
+  landing when Plan leads the rail, go to `/plan/open`, which redirects to
+  the first view the sidebar shows (a hidden Inbox is skipped, as the
+  sidebar skips it); the Inbox until the reader drags another above it.
 - **The shape.** The pane is two columns, as a mail client: the list column
   (its head with the sidebar toggle, "Inbox", the unread count and the
   filter; a search, `?q=`, over sender, subject, body and source; a row per
@@ -435,3 +440,49 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
   visit stays under Show done, struck through.
 - **Nothing needs you** replaces "You're clear", with the sessions still
   running.
+
+## Reports: a problem with its pictures, answered here (2026-11-09)
+
+The owner asked on 2026-11-09 for the agents that work unattended to send
+him the problems they find, with images, and to answer them only in the
+Inbox (`../../research/unsupervised-work.md` is where the ask came from).
+Until now the one thing an agent could post was a line of text
+(`runner sessions notify`, §6 slice 5), from a session on a paired host,
+with nothing to answer. A routine in a vendor's cloud has no host and no
+runner, and a picture had nowhere to go. What changed from the first
+version's "nothing stored but the marks":
+
+- **A report is stored.** `inbox_report`: a title, a body, who sent it in
+  its own words (`source`), a link to where the problem can be seen, and up
+  to four pictures (PNG, JPEG, GIF or WebP, 5 MB each, judged by their
+  bytes), kept in the deployment's storage. It is the only Inbox item with
+  a table, because no other source knows it.
+- **Anything with a token can send one.** `POST /v1/inbox/reports`, as
+  `multipart/form-data`, under a scope of its own, `inbox-reports:write`.
+  Reading them, their pictures and the answer is `inbox-reports:read`.
+- **The answer is given in the Inbox.** The card shows the pictures and a
+  box; `POST /v1/inbox/reports/:id/answer` takes the text under
+  `inbox:write`, the scope of the owner's own Inbox. A token that holds
+  only the two report scopes can send and read, and cannot answer what it
+  asked.
+- **The agent reads the answer by asking.** `GET /v1/inbox/reports/:id`
+  carries `status` and `answer`. Nothing is typed into a terminal and
+  nothing wakes the sender: a routine that runs once a day reads its open
+  reports at the start of its next run.
+- **In the list** a report is one more kind, keyed `report:<id>`, with the
+  marks every item has. An answered report has left the Inbox.
+- **The console hears of it** on the workspace stream
+  (`inboxReport.changed`), so a report sent while the Inbox is open appears
+  without a reload.
+
+Decided with the defaults below; each can be changed.
+
+1. **No notification outside the console yet.** The report is the
+   notification: it raises the Inbox's count. A browser notification and
+   phone push stay where `../../next-steps/agent-tools.md` §2 leaves them.
+2. **One answer, free text.** No options to pick from, and no thread: a
+   follow-up is a new report.
+3. **Reports are the workspace's**, not one person's: with one member a
+   workspace (`08-auth.md`) that is the owner.
+4. **A report is kept** after it is answered, with its pictures. Nothing
+   sweeps them yet.

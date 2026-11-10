@@ -323,9 +323,15 @@
       "HOSTS_007": "No file is waiting for that command.",
       "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
       "HOSTS_009": "Someone else changed this host while you were saving. Reload it and try again.",
+      "HOSTS_010": "The desktop could not be opened just now. Try again in a moment.",
       "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
       "INBOX_003": "A snooze has to end in the future. Pick a later time.",
       "INBOX_004": "That item has no mark any more. Reload the Inbox.",
+      "INBOX_005": "That report is not here any more. Reload the Inbox.",
+      "INBOX_006": "This report already has an answer.",
+      "INBOX_007": "A report takes at most 4 pictures.",
+      "INBOX_008": "That picture is too large. The limit is 5 MB.",
+      "INBOX_009": "A report takes PNG, JPEG, GIF or WebP pictures.",
       "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
       "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
       "AUTOMATIONS_004": "One of the repositories isn't available to this workspace.",
@@ -405,6 +411,10 @@
       "WHATSAPP_008": "WhatsApp didn't take the message. Try again in a moment.",
       "WHATSAPP_009": "That number has sent as many bot messages as it may for now. Try again later.",
       "WHATSAPP_010": "There's no such WhatsApp chat on that number.",
+      "WHATSAPP_011": "That code is wrong or has expired. Check the latest code sent to your number, or ask for a new one.",
+      "WHATSAPP_012": "No number is waiting for a code. Enter your number first.",
+      "WHATSAPP_013": "That can't be your own number here. Enter the number you write from, not the one linked.",
+      "WHATSAPP_014": "Too many wrong codes. Ask for a new code and try again.",
       "TELEGRAM_001": "That Telegram bot isn't connected any more.",
       "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
       "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
@@ -491,7 +501,9 @@
       "BOTS_038": "That skill could not be found.",
       "BOTS_039": "This bot already has a skill with that name. Pick another.",
       "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
-      "BOTS_041": "This bot has no tidy of its memory to undo."
+      "BOTS_041": "This bot has no tidy of its memory to undo.",
+      "BOTS_042": "This bot answers on a Telegram bot. Choose another bot, or none, under Settings → Telegram before you delete it.",
+      "BOTS_043": "This bot answers on a WhatsApp number. Choose another bot, or none, under Settings → WhatsApp before you delete it."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1079,7 +1091,8 @@
       "selected": "Selected",
       "openAtVendor": "Opens in {{vendor}}",
       "allHidden": "Every project is hidden. Show them again from the filter menu.",
-      "noSessions": "No sessions yet. Start one with New session above."
+      "noSessions": "No sessions yet. Start one with New session above.",
+      "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -1129,6 +1142,7 @@
       "shownAll": "All",
       "shownSome": "{{shown}} of {{total}}",
       "showAll": "Show all projects",
+      "pinnedOnly": "Pinned only",
       "newProject": "New project…"
     },
     "sort": {
@@ -1394,7 +1408,8 @@
         "count_one": "{{count}} subagent",
         "count_other": "{{count}} subagents",
         "running": "{{count}} running",
-        "failed": "{{count}} failed",
+        "failed_one": "{{count}} failed",
+        "failed_other": "{{count}} failed",
         "untitled": "Subagent",
         "calls_one": "{{count}} call",
         "calls_other": "{{count}} calls",
@@ -1439,7 +1454,8 @@
       "notSupportedDetail": "Update its runner to open the session's dev server here.",
       "portsFailed": "Couldn't list the session's ports",
       "previewFailed": "Couldn't open the preview",
-      "opening": "Opening localhost:{{port}}…"
+      "opening": "Opening localhost:{{port}}…",
+      "desktop": "Desktop"
     },
     "cloud": {
       "eyebrow": "Claude Code cloud",
@@ -1621,7 +1637,20 @@
           "rate_limit": "{{provider}} is limiting requests, retrying…",
           "unavailable": "{{provider}} is busy, retrying…"
         },
-        "thinking": "Thinking",
+        "musing": {
+          "pondering": "Pondering…",
+          "mulling": "Mulling…",
+          "musing": "Musing…",
+          "noodling": "Noodling…",
+          "ruminating": "Ruminating…",
+          "cogitating": "Cogitating…",
+          "brewing": "Brewing…",
+          "percolating": "Percolating…",
+          "scheming": "Scheming…",
+          "puzzling": "Puzzling…",
+          "tinkering": "Tinkering…",
+          "conjuring": "Conjuring…"
+        },
         "writing": "Writing",
         "stopped": "Stopped"
       },
@@ -1784,6 +1813,7 @@
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
           "stalled": "Session “{{name}}” looks stuck",
+          "progress": "Checked on session “{{name}}”",
           "notice": "Session “{{name}}” sent a message",
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
@@ -1814,8 +1844,6 @@
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
         "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
-        "compactionLine": "Summarized earlier work",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
           "undone": "You undid the tidy · {{before}} facts are back"
@@ -1833,6 +1861,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
+      "hideToolCalls": "Hide tool calls",
+      "showToolCalls": "Show tool calls",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -2081,7 +2111,9 @@
           "lastUndone": "Last tidy, {{date}}, was undone",
           "queued": "Tidying in the background. The chat says when it’s done.",
           "tidyNow": "Tidy now",
+          "tidying": "Tidying…",
           "undo": "Undo",
+          "undoing": "Undoing…",
           "loadFailed": "Could not load the memory’s last tidy.",
           "requestFailed": "Could not start tidying the memory.",
           "undoFailed": "Could not undo the tidy."
@@ -2618,6 +2650,7 @@
       "title": "Pull requests",
       "views": "Views",
       "queue": "PR queue",
+      "review": "Review",
       "analytics": "Analytics",
       "forReview": "For review",
       "searchReviews": "Search review sessions",
@@ -2729,6 +2762,7 @@
     },
     "detail": {
       "back": "Back to the queue",
+      "backToDeck": "Back to the review",
       "viewLabel": "View",
       "views": {
         "description": "Description",
@@ -2916,6 +2950,26 @@
       "stopped": "This review session has stopped. Restarting brings Claude Code back with the conversation where it left off.",
       "restart": "Restart review",
       "restarting": "Restarting…"
+    },
+    "deck": {
+      "title": "Review",
+      "position": "{{at}} of {{total}}",
+      "lookFirst": "Look first:",
+      "source": {
+        "model": "Brief written by the model.",
+        "description": "From the author’s description."
+      },
+      "briefFailed": "Could not load the brief.",
+      "waiting": "waiting",
+      "pass": "Pass",
+      "open": "Review in depth",
+      "confirmMerge": "Press again to merge",
+      "held": "Cannot merge yet: {{reason}}.",
+      "doneTitle": "That was the last one",
+      "doneHint": "You went through every pull request in this view.",
+      "again": "Go through them again",
+      "goneTitle": "This one left the queue",
+      "fromTop": "Start from the top"
     }
   },
   "tasks": {
@@ -3040,7 +3094,8 @@
       "deleteFailed": "Couldn’t delete the task.",
       "loadFailed": "Couldn’t load the board.",
       "gone": "This task no longer exists.",
-      "deleting": "Deleting…"
+      "deleting": "Deleting…",
+      "focus": "To do"
     },
     "link": {
       "search": "Search sessions",
@@ -3056,6 +3111,8 @@
       "prompt": "Prompt",
       "repository": "Repository",
       "repositoryPlaceholder": "Pick a repository",
+      "noRepository": "No repository",
+      "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
       "noRepositories": "This project has no repositories. Add one in its settings.",
       "where": "Where it runs",
@@ -3069,6 +3126,8 @@
       "placeCursorDesc": "Cursor’s cloud, on your Cursor key; no host",
       "placeCursorConnect": "Connect Cursor in Settings → Cloud agents first",
       "cloudNeedsTask": "A cloud session starts on a task: write what it should do.",
+      "cloudNeedsRepository": "A cloud session starts from a repository.",
+      "homeOffline": "{{host}} is offline, and only it knows its home folder: pick a repository, or wait for it.",
       "cloudAccount": "Runs on claude.ai as {{account}}, the account {{host}}’s Claude Code is signed in to.",
       "cloudAccountUnknown": "{{host}} hasn’t said which claude.ai account its Claude Code is signed in to.",
       "accountUnknown": "Account not reported yet",
@@ -3106,7 +3165,7 @@
       "todayWeek": "Today · Week {{week}}",
       "weekNumber": "Week {{week}}",
       "includeOverdue": "Include overdue",
-      "empty": "Nothing for this day yet. Add one below.",
+      "empty": "Nothing on this day yet. Add a task below, or pick some with Add tasks.",
       "noMatch": "No tasks match these filters.",
       "add": "Add a task",
       "addLabel": "Add a task for this day",
@@ -3117,18 +3176,22 @@
       "state": {
         "todo": "due today",
         "due": "due",
-        "overdue": "overdue since {{date}}"
+        "overdue": "overdue since {{date}}",
+        "since": "on To do since {{date}}",
+        "dueOn": "due {{date}}"
       },
       "schedule": {
-        "button": "Add undated tasks",
-        "title": "Add undated tasks",
-        "for": "Pick the tasks with no due date to put on {{date}}.",
+        "button": "Add tasks",
+        "title": "Add tasks to this day",
+        "for": "Pick the open tasks to put on {{date}}. Their due dates stay as they are.",
         "search": "Search tasks",
         "noMatch": "No task matches “{{query}}”.",
-        "none": "Every open task already has a due date.",
+        "none": "Every open task is already on this day.",
         "submit": "Add to {{date}}",
         "failed": "Couldn’t add some of those tasks.",
-        "loadFailed": "Couldn’t load your tasks."
+        "loadFailed": "Couldn’t load your tasks.",
+        "allStatuses": "All statuses",
+        "searchStatuses": "Search statuses"
       },
       "reorder": "Reorder {{title}}"
     }
@@ -3190,7 +3253,8 @@
       "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
       "connect": "Connect Google Calendar",
       "add": "Add account",
-      "atLimit": "You can connect up to {{count}} Google accounts.",
+      "atLimit_one": "You can connect up to {{count}} Google account.",
+      "atLimit_other": "You can connect up to {{count}} Google accounts.",
       "reconnect": "Reconnect",
       "connected": "Connected",
       "updatedNow": "Updated just now",
@@ -3302,6 +3366,52 @@
       "wipeOffline": "{{name}} is offline, so it can’t be cleaned up from here.",
       "openTerminal": "Open terminal",
       "openTerminalTitle": "Blank terminal in ~ on {{host}}"
+    },
+    "desktop": {
+      "label": "Desktop",
+      "open": "Open desktop",
+      "title": "{{name}}’s desktop",
+      "screen": "{{name}}’s screen",
+      "watching": "Watching {{name}}",
+      "inControl": "You’re controlling {{name}}",
+      "takeControl": "Take control",
+      "releaseControl": "Stop controlling",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen",
+      "tryAgain": "Try again",
+      "connecting": "Connecting to the desktop…",
+      "connectingDetail": "The screen appears once the host has signed in to its screen-sharing server.",
+      "dropped": "Reconnecting…",
+      "droppedDetail": "The connection to the desktop dropped. Trying again.",
+      "offline": "The host is offline",
+      "offlineDetail": "The desktop comes back when the host reconnects.",
+      "ended": "This desktop is no longer yours to open",
+      "endedDetail": "The host was removed, or you can no longer use it.",
+      "refused": {
+        "DESKTOP_001": {
+          "title": "This host doesn’t share its desktop",
+          "detail": "Whether its screen can be watched and driven from here is decided on the host. To share it, run this there, then try again:"
+        },
+        "DESKTOP_002": {
+          "title": "No screen-sharing server answers on the host",
+          "detail": "Turn on Screen Sharing (on a Mac: System Settings, General, Sharing), or start a VNC server listening on 127.0.0.1:5900, then try again."
+        },
+        "DESKTOP_003": {
+          "title": "The screen-sharing server refused the host’s sign-in",
+          "detail": "Give the host the account and password the server expects: runner desktop on --username <account> --password-file <file>."
+        },
+        "DESKTOP_004": {
+          "title": "The screen-sharing server asks for a sign-in the runner can’t do",
+          "detail": "Let the server take a VNC password, or no password on the loopback, then try again."
+        },
+        "other": {
+          "title": "The desktop could not be opened",
+          "detail": "The host could not reach its screen-sharing server."
+        }
+      },
+      "pageTitle": "Desktop",
+      "pageLead": "{{name}}’s own screen, live. You watch until you take control; then your clicks and keys reach it, the same screen its agents work on.",
+      "back": "Hosts"
     }
   },
   "inbox": {
@@ -3317,6 +3427,7 @@
       "back": "Back {{when}}",
       "unread": "{{count}} unread",
       "search": "Search inbox",
+      "refresh": "Refresh",
       "clearSearch": "Clear search"
     },
     "filter": {
@@ -3335,7 +3446,8 @@
       "pull": "Pull requests",
       "bots": "Bots",
       "session": "Sessions",
-      "run": "Automations"
+      "run": "Automations",
+      "report": "Reports"
     },
     "project": {
       "all": "All projects",
@@ -3354,7 +3466,8 @@
       "session": "Session",
       "approval": "Bot approval",
       "run": "Automation",
-      "botNotice": "Bot"
+      "botNotice": "Bot",
+      "report": "Report"
     },
     "session": {
       "blockedShort": "{{name}} is waiting on you",
@@ -3439,6 +3552,18 @@
       "title": "{{bot}} has news for you",
       "openChat": "Open chat",
       "done": "Done"
+    },
+    "report": {
+      "sender": "An agent",
+      "images": "Pictures",
+      "image": "Picture {{n}}",
+      "openLink": "Open link",
+      "answerLabel": "Your answer",
+      "answerPlaceholder": "What should it do?",
+      "send": "Send answer",
+      "sending": "Sending…",
+      "done": "Done",
+      "answerFailed": "Could not send the answer. Try again."
     }
   },
   "settings": {
@@ -3661,7 +3786,8 @@
       "emptyDescription": "Connect one and ask any bot things like “what did the accountant send last week?” or “summarise today’s unread mail”. Google will warn that the app isn’t verified yet; that is expected.",
       "connect": "Connect Gmail",
       "connectAnother": "Connect another account",
-      "atLimit": "You can connect up to {{count}} accounts.",
+      "atLimit_one": "You can connect up to {{count}} account.",
+      "atLimit_other": "You can connect up to {{count}} accounts.",
       "startFailed": "Couldn’t open Google’s sign-in.",
       "connected": "Connected",
       "needsReconnect": "Needs reconnecting",
@@ -3738,7 +3864,38 @@
       "qrStep1": "Open WhatsApp on the phone with this number.",
       "qrStep2": "Go to Settings → Linked devices → Link a device.",
       "qrStep3": "Point the phone at this code. It changes every few seconds.",
-      "qrWaiting": "Waiting for the host to issue a code…"
+      "qrWaiting": "Waiting for the host to issue a code…",
+      "answering": {
+        "title": "Answers you",
+        "botLabel": "The bot that answers you on {{label}}",
+        "noBot": "None (doesn’t answer)",
+        "search": "Find a bot",
+        "noMatch": "No bot matches",
+        "none": "No bot answers on this number yet. Pick one to answer your own number.",
+        "chosen": "Answers your own number. Write “Name: …” in the chat to talk to another of your bots.",
+        "failed": "That did not save. Try again."
+      },
+      "owner": {
+        "title": "Your number",
+        "none": "Only your own number is answered. This number sends it a code, and you enter the code here.",
+        "codeSent": "We sent a code to {{number}} from this number. Enter it here. It works until {{time}}.",
+        "expired": "The code sent to {{number}} has expired. Send a new one.",
+        "confirmed": "Only {{number}} is answered here.",
+        "replacing": "{{number}} is still answered until you confirm the new number.",
+        "hostOffline": "The host is offline. Start its runner to send a code.",
+        "numberLabel": "Your own WhatsApp number",
+        "numberPlaceholder": "+34 600 111 222",
+        "send": "Send code",
+        "sending": "Sending…",
+        "codeLabel": "The code your number received",
+        "codePlaceholder": "123456",
+        "confirm": "Confirm",
+        "confirming": "Confirming…",
+        "resend": "Send a new code",
+        "change": "Change",
+        "otherNumber": "Use another number",
+        "failed": "That did not work. Try again."
+      }
     },
     "telegram": {
       "title": "Telegram",
@@ -3751,7 +3908,8 @@
       "connectAnother": "Connect another bot",
       "connectAgain": "Connect again",
       "connectSubmit": "Connect",
-      "atLimit": "You can connect up to {{count}} bots.",
+      "atLimit_one": "You can connect up to {{count}} bot.",
+      "atLimit_other": "You can connect up to {{count}} bots.",
       "noHosts": "Pair a host first: the bot is polled by a host’s runner.",
       "connectTitle": "Connect a Telegram bot",
       "reconnectTitle": "Give {{label}} a new token",
@@ -3789,7 +3947,23 @@
       "disconnecting": "Disconnecting…",
       "disconnectTitle": "Disconnect {{label}}?",
       "disconnectDescription": "Your host stops polling the bot and forgets its token. Your bots lose the chats kept for them. The bot stays yours on Telegram; revoke its token in @BotFather to stop it there too.",
-      "disconnectFailed": "Couldn’t disconnect the bot."
+      "disconnectFailed": "Couldn’t disconnect the bot.",
+      "answering": {
+        "title": "Answers you",
+        "botLabel": "The bot that answers you on {{label}}",
+        "noBot": "No bot",
+        "search": "Find a bot",
+        "noMatch": "No bot matches",
+        "link": "Link your Telegram",
+        "linkAgain": "Link again",
+        "openLink": "Open the link",
+        "linked": "Your Telegram is linked: only you are answered here.",
+        "notLinked": "Link your Telegram so the bot knows it is you. Until then it answers nobody.",
+        "linkReady": "Open the link in Telegram within ten minutes and press Start. Make a new link if it has expired.",
+        "failed": "That did not save. Try again.",
+        "making": "Making the link…",
+        "newLink": "New link"
+      }
     },
     "about": {
       "title": "About",

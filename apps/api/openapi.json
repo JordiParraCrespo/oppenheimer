@@ -6712,6 +6712,93 @@
         ]
       }
     },
+    "/api/v1/hosts/{id}/desktop-ticket": {
+      "post": {
+        "description": "Single use, 60 seconds. Present it as a WebSocket subprotocol on the returned path, never in the query string; binary frames on that socket are RFB (VNC) both ways. The host shares its desktop only if its owner turned it on there (`runner desktop on`); a host that does not is refused on the socket with `DESKTOP_001`. The relay re-checks at consume, and every minute after, that the caller may still use the host.",
+        "operationId": "issueDesktopTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopTicketResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"host_desktop\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HOSTS_010 — A desktop ticket could not be issued",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mint a ticket for this host's desktop",
+        "tags": [
+          "Hosts"
+        ]
+      }
+    },
     "/api/v1/hosts/{id}/wipe": {
       "post": {
         "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
@@ -17492,6 +17579,83 @@
       }
     },
     "/api/v1/whatsapp/accounts/{id}": {
+      "patch": {
+        "description": "Sets the caller’s Oppenheimer bot that answers them by default when they write to this number from their own confirmed number, or none (`null`). \"Name: …\" in the chat switches it to another of their bots. A bot that is a number’s default cannot be deleted until it is unbound.",
+        "operationId": "updateWhatsappAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWhatsappAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of the caller’s\n\nWHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose which bot answers on a WhatsApp number",
+        "tags": [
+          "WhatsApp"
+        ]
+      },
       "delete": {
         "description": "Logs the device out of WhatsApp, deletes its keys from the host, and forgets the number and the messages kept for its bots. An offline host is told when it comes back. An id that is not one of the caller’s does nothing.",
         "operationId": "removeWhatsappAccount",
@@ -17538,6 +17702,234 @@
           }
         ],
         "summary": "Unlink a WhatsApp number",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts/{id}/owner": {
+      "post": {
+        "description": "The linked number sends a six-digit code to the caller’s own number, which they enter with `POST …/owner/confirm` within ten minutes. Once confirmed, it is the only number this one answers. A new request replaces a waiting code; the confirmed number stays until another is confirmed. Only the code’s hash is kept.",
+        "operationId": "requestWhatsappOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestWhatsappOwnerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WHATSAPP_004 / WHATSAPP_005 / WHATSAPP_007 — The host, older or offline, or the number, not connected, cannot send the code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WHATSAPP_013 — Not a phone number, or the linked number itself",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "WHATSAPP_009 — The host’s send budget is spent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "WHATSAPP_008 — WhatsApp did not take the code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Name your own number, and get a code on it",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts/{id}/owner/confirm": {
+      "post": {
+        "description": "Enters the six-digit code the linked number sent to the caller’s own number. The right code, within ten minutes, makes that number the owner: the only one this number answers, in its own chat. Five wrong codes lock it until a new one is asked for.",
+        "operationId": "confirmWhatsappOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmWhatsappOwnerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WHATSAPP_012 — No number is waiting for its code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WHATSAPP_011 — The code is wrong or has expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "WHATSAPP_014 — Too many wrong codes: ask for a new one",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm your own number with the code it received",
         "tags": [
           "WhatsApp"
         ]
@@ -17670,7 +18062,163 @@
         ]
       }
     },
+    "/api/v1/telegram/accounts/{id}/owner-link": {
+      "post": {
+        "description": "Answers a `t.me` link for the Telegram bot with a one-time code. Opening it in Telegram sends the bot `/start` with the code, and whoever sends it within ten minutes is recorded as the owner: the only person the bot answers. A new link replaces an open one; the code is stored hashed, so only this answer carries it.",
+        "operationId": "openTelegramOwnerLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Telegram bot.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramOwnerLinkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TELEGRAM_001 — No such Telegram bot",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TELEGRAM_007 — The host has not checked the bot yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a one-time link that records the owner",
+        "tags": [
+          "Telegram"
+        ]
+      }
+    },
     "/api/v1/telegram/accounts/{id}": {
+      "patch": {
+        "description": "Sets the caller’s Oppenheimer bot that answers them when they write to this Telegram bot, or none (`null`). Only the owner, recorded by the one-time `start` link, is answered. A bot that answers a Telegram bot cannot be deleted until it is unbound.",
+        "operationId": "updateTelegramAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Telegram bot.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTelegramAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of the caller’s\n\nTELEGRAM_001 — No such Telegram bot",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose which bot answers on a Telegram bot",
+        "tags": [
+          "Telegram"
+        ]
+      },
       "delete": {
         "description": "Asks the host to stop polling and forget the bot’s token, and forgets the bot and the messages kept for the caller’s bots. An offline host is told when it comes back. The bot stays on Telegram: revoke its token in @BotFather to end it there. An id that is not one of the caller’s does nothing.",
         "operationId": "removeTelegramAccount",
@@ -18589,6 +19137,141 @@
           }
         ],
         "summary": "A pull request’s files",
+        "tags": [
+          "Pull requests"
+        ]
+      }
+    },
+    "/api/v1/pulls/{installationId}/{githubRepoId}/{number}/brief": {
+      "get": {
+        "description": "What the review deck leads a pull request with, for its head commit: one sentence, a few points, where to look first and the description’s pictures. Written by the deployment’s language model and kept per commit; taken from the description when no model is configured or it did not answer.",
+        "operationId": "findPullRequestBrief",
+        "parameters": [
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "number",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "installationId",
+            "required": true,
+            "in": "path",
+            "description": "The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.",
+            "schema": {
+              "example": "tokens",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullRequestBriefResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PULLS_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After\n\nGITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A pull request’s brief",
         "tags": [
           "Pull requests"
         ]
@@ -19767,6 +20450,16 @@
           },
           "404": {
             "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_042 / BOTS_043 — The bot answers on a Telegram bot, or is a WhatsApp number’s default",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -24294,6 +24987,469 @@
         ]
       }
     },
+    "/api/v1/inbox/reports": {
+      "get": {
+        "description": "The workspace's reports in one status, the newest first, at most 100: the open ones, which wait on the owner, unless `status=answered`.",
+        "operationId": "findInboxReports",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "answered"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InboxReportResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Inbox reports",
+        "tags": [
+          "Inbox"
+        ]
+      },
+      "post": {
+        "description": "A problem for the workspace’s owner, with up to 4 PNG, JPEG, GIF or WebP pictures of up to 5 MB each under `images`, judged by their bytes. The owner answers it in the Inbox; read the answer with `GET /inbox/reports/:id`.",
+        "operationId": "postInboxReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "body": {
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "source": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "description": "Who is sending it."
+                  },
+                  "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Where the problem can be seen."
+                  },
+                  "images": {
+                    "type": "array",
+                    "maxItems": 4,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "INBOX_008 — Picture too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "INBOX_009 — Not a picture",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INBOX_007 — Too many pictures",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a report to the Inbox",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/reports/{id}": {
+      "get": {
+        "description": "One report with its `status` and, once the owner has answered, its `answer`. This is what a report’s sender asks to learn the answer.",
+        "operationId": "findInboxReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INBOX_005 — Report not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read an Inbox report",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/reports/{id}/images/{imageId}/content": {
+      "get": {
+        "description": "The bytes of a picture a report carries, with its type.",
+        "operationId": "readInboxReportImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "imageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture’s bytes"
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INBOX_005 — Report or picture not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a picture of an Inbox report",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/reports/{id}/answer": {
+      "post": {
+        "description": "What the person tells the agent that sent the report, once: the report leaves the Inbox, and its sender reads the answer with `GET /inbox/reports/:id`.",
+        "operationId": "answerInboxReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerInboxReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INBOX_005 — Report not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INBOX_006 — Already answered",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer an Inbox report",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -25239,6 +26395,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -25268,7 +26426,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25298,6 +26458,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -25327,7 +26489,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25399,6 +26563,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -25428,7 +26594,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25524,6 +26692,8 @@
               "tokens:write",
               "hosts:read",
               "hosts:write",
+              "host-desktops:read",
+              "host-desktops:write",
               "projects:read",
               "projects:write",
               "sessions:read",
@@ -25553,7 +26723,9 @@
               "flags:read",
               "flags:write",
               "inbox:read",
-              "inbox:write"
+              "inbox:write",
+              "inbox-reports:read",
+              "inbox-reports:write"
             ],
             "example": "users:read"
           },
@@ -25611,6 +26783,7 @@
               "workspaces",
               "tokens",
               "hosts",
+              "host-desktops",
               "projects",
               "sessions",
               "cloud-chat",
@@ -25625,7 +26798,8 @@
               "pulls",
               "repositories",
               "flags",
-              "inbox"
+              "inbox",
+              "inbox-reports"
             ],
             "example": "users"
           },
@@ -25692,6 +26866,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -25721,7 +26897,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           }
@@ -25765,6 +26943,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -25794,7 +26974,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25873,6 +27055,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -25902,7 +27086,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -27816,6 +29002,29 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "DesktopTicketResponseDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the desktop socket — never in the URL."
+          },
+          "url": {
+            "type": "string",
+            "description": "The path to open the WebSocket on, on this API’s own origin.",
+            "example": "/api/v1/relay/desktop"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket",
+          "url",
+          "expiresAt"
         ]
       },
       "AdminUserResponseDto": {
@@ -33186,6 +34395,13 @@
             "nullable": true,
             "example": "09:00"
           },
+          "focusDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "description": "The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.",
+            "example": "2026-10-06"
+          },
           "completedAt": {
             "type": "string",
             "nullable": true,
@@ -33276,6 +34492,11 @@
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "nullable": true
+          },
+          "focusDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
           }
         },
         "required": [
@@ -33311,6 +34532,11 @@
           "dueTime": {
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "focusDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "nullable": true
           },
           "blockedReason": {
@@ -34454,6 +35680,30 @@
             "nullable": true,
             "description": "Why the device is logged out or unlinked, in the host’s words."
           },
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The caller’s Oppenheimer bot that answers them on this number by default; null while none does. \"Name: …\" in the chat switches to another of their bots."
+          },
+          "ownerNumber": {
+            "type": "string",
+            "nullable": true,
+            "example": "+34600111222",
+            "description": "The owner’s own number, confirmed by the code it received; the only number this one answers. Null until confirmed."
+          },
+          "ownerPendingNumber": {
+            "type": "string",
+            "nullable": true,
+            "example": "+34600111222",
+            "description": "The number a code was sent to, waiting for the code to be entered."
+          },
+          "ownerCodeExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the waiting code stops working."
+          },
           "linkedAt": {
             "type": "string",
             "format": "date-time",
@@ -34471,6 +35721,10 @@
           "qr",
           "qrExpiresAt",
           "statusReason",
+          "answeringBotId",
+          "ownerNumber",
+          "ownerPendingNumber",
+          "ownerCodeExpiresAt",
           "linkedAt"
         ]
       },
@@ -34488,6 +35742,43 @@
         },
         "required": [
           "hostId"
+        ]
+      },
+      "UpdateWhatsappAccountRequest": {
+        "type": "object",
+        "properties": {
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "answeringBotId"
+        ]
+      },
+      "RequestWhatsappOwnerRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+?[1-9](?:[\\s-]?\\d){6,14}$"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "ConfirmWhatsappOwnerRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "code"
         ]
       },
       "TelegramAccountResponseDto": {
@@ -34543,6 +35834,16 @@
             "nullable": true,
             "description": "Why the bot is revoked or unlinked, in the host’s words."
           },
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The Oppenheimer bot that answers the owner here; null while none does."
+          },
+          "ownerLinked": {
+            "type": "boolean",
+            "description": "Whether the owner’s Telegram account is recorded, by the one-time `start` link."
+          },
           "linkedAt": {
             "type": "string",
             "format": "date-time",
@@ -34559,6 +35860,8 @@
           "username",
           "displayName",
           "statusReason",
+          "answeringBotId",
+          "ownerLinked",
           "linkedAt"
         ]
       },
@@ -34582,6 +35885,39 @@
         "required": [
           "hostId",
           "token"
+        ]
+      },
+      "TelegramOwnerLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://t.me/shop_helper_bot?start=Q2xhdWRlIHdhcyBoZXJl",
+            "description": "Opens the bot in Telegram and sends it `/start` with the one-time code."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the link stops working: ten minutes after it was made."
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
+        ]
+      },
+      "UpdateTelegramAccountRequest": {
+        "type": "object",
+        "properties": {
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "answeringBotId"
         ]
       },
       "PullRequestLaneReasonDto": {
@@ -35693,6 +37029,72 @@
           "status",
           "additions",
           "deletions"
+        ]
+      },
+      "PullRequestBriefImageDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The picture’s `https` address, as the description wrote it."
+          },
+          "alt": {
+            "type": "string",
+            "description": "Its alternative text; empty when the author gave none."
+          }
+        },
+        "required": [
+          "url",
+          "alt"
+        ]
+      },
+      "PullRequestBriefResponseDto": {
+        "type": "object",
+        "properties": {
+          "headSha": {
+            "type": "string",
+            "description": "The head commit the brief was written for."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "model",
+              "description"
+            ],
+            "description": "`model`: written by the deployment’s language model from the description and the diff. `description`: taken from the author’s own description, when no model is configured or it did not answer."
+          },
+          "headline": {
+            "type": "string",
+            "description": "One sentence: what the pull request changes."
+          },
+          "points": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lookFirst": {
+            "type": "string",
+            "nullable": true,
+            "description": "The riskiest part, or where to start reading; null when nothing stands out."
+          },
+          "images": {
+            "maxItems": 6,
+            "description": "The pictures in the description, in the order written.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PullRequestBriefImageDto"
+            }
+          }
+        },
+        "required": [
+          "headSha",
+          "source",
+          "headline",
+          "points",
+          "lookFirst",
+          "images"
         ]
       },
       "PullRequestCommentDto": {
@@ -37233,9 +38635,10 @@
               "expired",
               "matched",
               "stalled",
+              "progress",
               "notice"
             ],
-            "description": "What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck."
+            "description": "What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, `stalled` when its stall check found it stuck, or `progress` for the regular look at a task still running."
           },
           "match": {
             "nullable": true,
@@ -39237,6 +40640,116 @@
         },
         "required": [
           "mark"
+        ]
+      },
+      "InboxReportImageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mimeType": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/gif",
+              "image/webp"
+            ],
+            "description": "Judged by the file’s bytes."
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "description": "The file’s name as it was sent; only shown."
+          }
+        },
+        "required": [
+          "id",
+          "mimeType",
+          "sizeBytes",
+          "name"
+        ]
+      },
+      "InboxReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Empty when the report has none."
+          },
+          "source": {
+            "type": "string",
+            "description": "Who sent it, in the sender’s own words; empty when not said."
+          },
+          "link": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "description": "Where the problem can be seen."
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InboxReportImageResponseDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "answered"
+            ]
+          },
+          "answer": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the person answered; null while the report is open."
+          },
+          "answeredAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "source",
+          "link",
+          "images",
+          "status",
+          "answer",
+          "answeredAt",
+          "createdAt"
+        ]
+      },
+      "AnswerInboxReportRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "text"
         ]
       },
       "LivenessResponseDto": {

@@ -39,15 +39,16 @@ const more = () => screen.getByRole('button', { name: 'sessions.new.agent.moreMo
 describe('the engine button’s Claude Code tab', () => {
   it('lists the current models, and the earlier ones under More models', () => {
     const { onValueChange } = open('claude-opus-5-5');
-    expect(options()).toEqual(['Opus 5.5', 'Fable 5.1', 'Sonnet 5.5', 'Haiku 5.5']);
+    expect(options()).toEqual(['Opus 5.5', 'Fable 5.2', 'Sonnet 5.5', 'Haiku 5.5']);
     expect(more().getAttribute('aria-expanded')).toBe('false');
 
     fireEvent.click(more());
     expect(options()).toEqual([
       'Opus 5.5',
-      'Fable 5.1',
+      'Fable 5.2',
       'Sonnet 5.5',
       'Haiku 5.5',
+      'Fable 5.1',
       'Haiku 4.5',
       'Sonnet 5',
       'Opus 5',

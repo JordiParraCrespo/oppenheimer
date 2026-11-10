@@ -20,6 +20,13 @@ import {
 @Index('UQ_telegram_account_organization_id', ['organizationId', 'id'], { unique: true })
 @Index('IDX_telegram_account_owner', ['organizationId', 'userId'])
 @Index('IDX_telegram_account_user', ['userId'])
+@Index('IDX_telegram_account_answering_bot', ['organizationId', 'answeringBotId'], {
+  where: '"answeringBotId" IS NOT NULL',
+})
+@Check(
+  'CHK_telegram_account_owner_link',
+  `("ownerLinkCodeHash" IS NULL) = ("ownerLinkExpiresAt" IS NULL)`,
+)
 @Check(
   'CHK_telegram_account_status',
   `"status" IN ('connecting', 'connected', 'revoked', 'unlinked')`,
@@ -54,6 +61,19 @@ export class TelegramAccountOrmEntity {
 
   @Column({ type: 'varchar', length: 200, nullable: true })
   statusReason!: string | null;
+
+  /** The Oppenheimer bot that answers here (`1794241820830-AnswerOnTelegram`). */
+  @Column({ type: 'uuid', nullable: true })
+  answeringBotId!: string | null;
+
+  @Column({ type: 'varchar', length: 21, nullable: true })
+  ownerTelegramId!: string | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  ownerLinkCodeHash!: string | null;
+
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  ownerLinkExpiresAt!: Date | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

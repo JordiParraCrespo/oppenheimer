@@ -1,5 +1,5 @@
 import type { ProjectEntity } from '../../projects/domain/project.entity';
-import { planSession, sentTurnOf } from '../bot-session-tool.mapper';
+import { planSession, sentTurnOf, sessionSummary } from '../bot-session-tool.mapper';
 
 /**
  * How `start_session` decides what to start, before anything is dispatched:
@@ -75,10 +75,73 @@ describe('planSession', () => {
     });
   });
 
+  // What breaks this: a bot that answers "I can't choose the model when I
+  // start a session" because its session never carries the person's choice.
+  it('launches on the model, effort and permission the person named, from the branch they named', () => {
+    const plan = planSession(
+      {
+        task: 'Fix it',
+        model: 'Opus 5.5',
+        effort: 'high',
+        permission: 'full',
+        base_branch: 'develop',
+      },
+      project(),
+      HOME,
+    );
+    expect(plan).toMatchObject({
+      body: {
+        agent: 'claude-code',
+        launch: { model: 'claude-opus-5-5', effort: 'high', permission: 'full' },
+        checkouts: [{ githubRepoId: 42, baseBranch: 'develop' }],
+      },
+    });
+  });
+
+  it('checks the model against the agent the session runs, the project’s default included', () => {
+    expect(
+      planSession({ task: 'x', model: 'GPT-6.1 Sol' }, project({ defaultAgent: 'codex' }), HOME),
+    ).toMatchObject({ body: { agent: 'codex', launch: { model: 'gpt-6.1-sol' } } });
+    expect(planSession({ task: 'x', model: 'GPT-6.1 Sol' }, project(), HOME)).toMatchObject({
+      refusal: expect.stringContaining('Claude Code has no model "GPT-6.1 Sol"'),
+    });
+  });
+
+  it('refuses a base branch for a folder session, which checks nothing out', () => {
+    expect(
+      planSession({ task: 'x', folder: '/srv/app', base_branch: 'develop' }, null, HOME),
+    ).toMatchObject({ refusal: expect.stringContaining('base_branch') });
+  });
+
   it('names a rejected prompt as the tool’s task, the field the model wrote', () => {
     expect(planSession({ task: 'a'.repeat(5_000) }, project(), HOME)).toMatchObject({
       refusal: expect.stringContaining('(task)'),
     });
+  });
+});
+
+describe('sessionSummary', () => {
+  // What breaks this: a card that asks for a yes without saying the session
+  // runs with full access, or on which model.
+  it('names the launch the person is approving, and only what they chose', () => {
+    expect(
+      sessionSummary(
+        {
+          task: 'Fix it',
+          model: 'opus 5.5',
+          effort: 'high',
+          permission: 'full',
+          base_branch: 'develop',
+        },
+        project(),
+        'build-02',
+      ),
+    ).toBe(
+      'Start Claude Code (Opus 5.5, high effort, full access) on build-02 in acme/app from develop, and hear back when it ends: Fix it',
+    );
+    expect(sessionSummary({ task: 'Fix it' }, project(), 'build-02')).toBe(
+      'Start Claude Code on build-02 in acme/app, and hear back when it ends: Fix it',
+    );
   });
 });
 

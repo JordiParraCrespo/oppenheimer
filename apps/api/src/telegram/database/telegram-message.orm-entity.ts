@@ -14,6 +14,8 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
 @Index('IDX_telegram_message_chat', ['organizationId', 'accountId', 'chatId', 'sentAt'])
 @Index('IDX_telegram_message_account_sent', ['organizationId', 'accountId', 'sentAt'])
 @Index('IDX_telegram_message_bot', ['sentByBotId'], { where: '"sentByBotId" IS NOT NULL' })
+/** The `/new` commands of a chat by Telegram's id (`1794241820830-AnswerOnTelegram`). */
+@Index('IDX_telegram_message_new', { synchronize: false })
 @Check('CHK_telegram_message_chat_kind', `"chatKind" IN ('direct', 'group')`)
 export class TelegramMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')

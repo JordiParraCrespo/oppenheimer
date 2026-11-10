@@ -12,7 +12,12 @@ import type { Placement } from '../domain/bot.types';
 import type { BotDocumentEntity } from '../domain/bot-document.entity';
 import { placeInOrder } from '../domain/bot-order.policy';
 import { BotOrmEntity } from './bot.orm-entity';
-import type { BotCreatorCheck, BotRepositoryPort, BotWriteOutcome } from './bot.repository.port';
+import type {
+  BotCreatorCheck,
+  BotDeleteBinding,
+  BotRepositoryPort,
+  BotWriteOutcome,
+} from './bot.repository.port';
 import { BotDocumentOrmEntity } from './bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from './bot-document-revision.orm-entity';
 import { BotGroupOrmEntity } from './bot-group.orm-entity';
@@ -175,9 +180,19 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     });
   }
 
-  async delete(bot: BotEntity): Promise<void> {
-    // Documents, revisions and memory cascade with the bot (their composite keys).
-    await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
+  async delete(bot: BotEntity): Promise<'deleted' | { boundTo: BotDeleteBinding }> {
+    // Documents, revisions and memory cascade with the bot (their composite
+    // keys); a Telegram bot it answers on, or a WhatsApp number it is the
+    // default of, holds it (`NO ACTION`).
+    try {
+      await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
+      return 'deleted';
+    } catch (error) {
+      const constraint = constraintOf(error);
+      if (constraint === 'FK_telegram_account_answering_bot') return { boundTo: 'telegram' };
+      if (constraint === 'FK_whatsapp_account_answering_bot') return { boundTo: 'whatsapp' };
+      throw error;
+    }
   }
 
   /**
@@ -255,4 +270,11 @@ export function violated(error: unknown, code: string, constraint: string): bool
   return (
     (driver?.code ?? own.code) === code && (driver?.constraint ?? own.constraint) === constraint
   );
+}
+
+/** The constraint a refused write broke, as Postgres names it; null for anything else. */
+function constraintOf(error: unknown): string | null {
+  const own = error as { constraint?: unknown; driverError?: { constraint?: unknown } };
+  const name = own.driverError?.constraint ?? own.constraint;
+  return typeof name === 'string' ? name : null;
 }

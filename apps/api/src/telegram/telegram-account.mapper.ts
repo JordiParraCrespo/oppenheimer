@@ -22,6 +22,10 @@ export class TelegramAccountMapper
     record.username = entity.username;
     record.displayName = entity.displayName;
     record.statusReason = entity.statusReason;
+    record.answeringBotId = entity.answeringBotId;
+    record.ownerTelegramId = entity.ownerTelegramId;
+    record.ownerLinkCodeHash = entity.ownerLinkCodeHash;
+    record.ownerLinkExpiresAt = entity.ownerLinkExpiresAt;
     return record;
   }
 
@@ -40,6 +44,10 @@ export class TelegramAccountMapper
         username: record.username,
         displayName: record.displayName,
         statusReason: record.statusReason,
+        answeringBotId: record.answeringBotId,
+        ownerTelegramId: record.ownerTelegramId,
+        ownerLinkCodeHash: record.ownerLinkCodeHash,
+        ownerLinkExpiresAt: record.ownerLinkExpiresAt,
       },
     });
   }
@@ -56,6 +64,8 @@ export class TelegramAccountMapper
     dto.username = entity.username;
     dto.displayName = entity.displayName;
     dto.statusReason = entity.statusReason;
+    dto.answeringBotId = entity.answeringBotId;
+    dto.ownerLinked = entity.ownerTelegramId !== null;
     dto.linkedAt = entity.createdAt.toISOString();
     return dto;
   }

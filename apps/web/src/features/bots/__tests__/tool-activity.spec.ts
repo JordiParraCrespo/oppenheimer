@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
   liveLabel,
+  liveOrb,
   liveWords,
+  MUSINGS,
+  musing,
   readableOutput,
   runningStep,
   sharedKind,
@@ -70,6 +73,20 @@ describe('liveWords', () => {
   });
 });
 
+describe('liveOrb', () => {
+  const step = (name: string, input: Record<string, unknown> = {}) =>
+    ({ callId: 'c1', name, input, output: null }) as never;
+
+  // What breaks this: a read or a search showing the solving orb, or a call
+  // that changes something showing the searching globe.
+  it('searches while the running call only looks around, and solves otherwise', () => {
+    expect(liveOrb(step('get_session'))).toBe('searching');
+    expect(liveOrb(step('mcp__github__list_issues'))).toBe('searching');
+    expect(liveOrb(step('start_session'))).toBe('solving');
+    expect(liveOrb(undefined)).toBe('solving');
+  });
+});
+
 describe('liveLabel', () => {
   const delegate = {
     callId: 'c1',
@@ -98,17 +115,30 @@ describe('liveLabel', () => {
         step: delegate,
         subagents: [run('completed'), run('failed'), run('running')],
         writing: false,
+        seed: 0,
       }),
     ).toEqual({ key: 'bots.chat.activity.delegatingDone', values: { count: 3, done: 2 } });
   });
 
   it('says what the call is doing while none has ended, and Waiting before anything while queued', () => {
-    const live = { step: delegate, subagents: [run('running')], writing: false };
+    const live = { step: delegate, subagents: [run('running')], writing: false, seed: 0 };
     expect(liveLabel({ queued: false, ...live }).key).toBe('bots.chat.activity.delegating');
     expect(liveLabel({ queued: true, ...live }).key).toBe('bots.chat.turn.queued');
     expect(
-      liveLabel({ queued: false, step: undefined, subagents: undefined, writing: true }).key,
+      liveLabel({ queued: false, step: undefined, subagents: undefined, writing: true, seed: 0 })
+        .key,
     ).toBe('bots.chat.turn.writing');
+  });
+
+  /** What breaks this: the word changing under the person mid-turn, or every turn saying the same one. */
+  it('thinks in one word for the whole turn, picked from when it started', () => {
+    const idle = { queued: false, step: undefined, subagents: undefined, writing: false };
+    const started = Date.parse('2026-10-30T09:00:00.000Z');
+    const word = liveLabel({ ...idle, seed: started }).key;
+    expect(word).toMatch(/^bots\.chat\.turn\.musing\./);
+    expect(liveLabel({ ...idle, seed: started }).key).toBe(word);
+    const words = new Set(MUSINGS.map((_, offset) => musing(started + offset)));
+    expect(words.size).toBe(MUSINGS.length);
   });
 });
 

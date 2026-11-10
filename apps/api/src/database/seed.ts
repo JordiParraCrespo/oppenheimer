@@ -28,6 +28,7 @@ import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provide
 import { PersonMemoryOrmEntity } from '../bots/database/person-memory.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
+import { BotConversationOrmEntity } from '../bots-chat/database/bot-conversation.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotLoopOrmEntity } from '../bots-chat/database/bot-loop.orm-entity';
@@ -59,6 +60,7 @@ import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entit
 import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
+import { InboxReportOrmEntity } from '../inbox/database/inbox-report.orm-entity';
 import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
 import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
@@ -179,6 +181,7 @@ const dataSource = new DataSource({
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,
     BotMessageOrmEntity,
+    BotConversationOrmEntity,
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
     BotGoalOrmEntity,
@@ -186,6 +189,7 @@ const dataSource = new DataSource({
     BotNoticeOrmEntity,
     BotModelCallOrmEntity,
     InboxMarkOrmEntity,
+    InboxReportOrmEntity,
     BotApprovalOrmEntity,
     BotQuestionOrmEntity,
     BotToolPermissionOrmEntity,

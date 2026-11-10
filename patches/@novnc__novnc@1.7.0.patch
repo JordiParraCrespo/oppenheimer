@@ -1,0 +1,18 @@
+diff --git a/core/util/browser.js b/core/util/browser.js
+index 63596d211bc3f2ac0c1853d58488dcbb18bd8949..1e70d0133e76ddefb598f661b29483e0b4c36727 100644
+--- a/core/util/browser.js
++++ b/core/util/browser.js
+@@ -149,7 +149,12 @@ async function _checkWebCodecsH264DecodeSupport() {
+ 
+     return true;
+ }
+-supportsWebCodecsH264Decode = await _checkWebCodecsH264DecodeSupport();
++// Patched (Oppenheimer): no top-level await, which makes a bundler reorder
++// the console's shared chunks. The probe answers in the background; until it
++// does, H.264 is not offered.
++_checkWebCodecsH264DecodeSupport().then((supported) => {
++    supportsWebCodecsH264Decode = supported;
++}, () => {});
+ 
+ /*
+  * The functions for detection of platforms and browsers below are exported

@@ -58,7 +58,64 @@ export const whatsappAccountSchema = z.object({
   qr: z.string().nullable(),
   qrExpiresAt: z.string().nullable(),
   statusReason: z.string().nullable(),
+  /** The Oppenheimer bot that answers the owner on this number; null while none does. */
+  answeringBotId: z.string().uuid().nullable(),
+  /** The owner's own number, confirmed by the code it received, as `+digits`; null before. */
+  ownerNumber: z.string().nullable(),
+  /** The number a code was sent to and is waiting to be entered, as `+digits`. */
+  ownerPendingNumber: z.string().nullable(),
+  /** When the code waiting to be entered stops working. */
+  ownerCodeExpiresAt: z.string().nullable(),
   linkedAt: z.string(),
 });
 
 export type WhatsappAccount = z.infer<typeof whatsappAccountSchema>;
+
+/**
+ * `PATCH /whatsapp/accounts/:id`: which of the caller's Oppenheimer bots
+ * answers them on this number by default; null for none
+ * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1).
+ */
+export const updateWhatsappAccountSchema = z.object({
+  answeringBotId: z.string().uuid().nullable(),
+});
+
+export type UpdateWhatsappAccountDto = z.infer<typeof updateWhatsappAccountSchema>;
+
+/** How long the code sent to the owner's number can be entered. */
+export const WHATSAPP_OWNER_CODE_TTL_MINUTES = 10;
+
+/** Wrong codes allowed before a new one has to be asked for. */
+export const WHATSAPP_OWNER_CODE_ATTEMPTS_MAX = 5;
+
+/**
+ * A phone number in international form, as a person types it: an optional
+ * `+`, the country code and the number, 7 to 15 digits in all (E.164), with
+ * spaces or dashes between them allowed.
+ */
+export const WHATSAPP_PHONE_PATTERN = /^\+?[1-9](?:[\s-]?\d){6,14}$/;
+
+/** The digits of a number that matches `WHATSAPP_PHONE_PATTERN`: what its JID is made of. */
+export function whatsappPhoneDigits(phone: string): string {
+  return phone.replace(/\D/g, '');
+}
+
+/**
+ * `POST /whatsapp/accounts/:id/owner`: the owner's own number, which the
+ * spare number sends a six-digit code to, to be entered in Settings.
+ */
+export const requestWhatsappOwnerSchema = z.object({
+  phone: z.string().trim().regex(WHATSAPP_PHONE_PATTERN),
+});
+
+export type RequestWhatsappOwnerDto = z.infer<typeof requestWhatsappOwnerSchema>;
+
+/** `POST /whatsapp/accounts/:id/owner/confirm`: the code the owner's number received. */
+export const confirmWhatsappOwnerSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/),
+});
+
+export type ConfirmWhatsappOwnerDto = z.infer<typeof confirmWhatsappOwnerSchema>;

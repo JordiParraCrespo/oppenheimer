@@ -16,6 +16,7 @@ import { SidebarDragCopy } from '../components/sidebar-drag-copy';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
 import { useFoldedSessions } from '../hooks/use-folded-sessions';
 import { useHiddenProjects } from '../hooks/use-hidden-projects';
+import { usePinnedOnly } from '../hooks/use-pinned-only';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
   SessionSelectionContext,
@@ -36,7 +37,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { emptyListMessage, matchesQuery, shownGroups } from '../lib/session-groups';
+import { matchesQuery, sidebarList } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -75,7 +76,8 @@ const DeleteSessionsDialog = lazy(() =>
  * folded on the next visit (`useFoldedGroups`), and so do the projects the
  * reader hid from the filter menu (`useHiddenProjects`): a
  * hidden project's group and sessions are not drawn, unless the project
- * filter picks it, and its pinned sessions stay pinned.
+ * filter picks it, and its pinned sessions stay pinned. Pinned only
+ * (`usePinnedOnly`), kept on this device too, draws Pinned and no project.
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
@@ -95,6 +97,7 @@ export function SessionsSidebarBody() {
   const { folded: closed, setOpen } = useFoldedGroups();
   const list = useFoldedSessions();
   const { hidden, setShown, showAll } = useHiddenProjects();
+  const { pinnedOnly, setPinnedOnly } = usePinnedOnly();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -138,10 +141,11 @@ export function SessionsSidebarBody() {
     onWrite: setFailure,
   });
   const occupied = new Set(listing.sessions.map((session) => session.projectId));
-  const shown = shownGroups(groups, occupied, picked);
-  const empty = emptyListMessage(t, {
+  const { shown, count, empty } = sidebarList(t, {
+    pinnedOnly,
     groups,
-    shown,
+    occupied,
+    picked,
     pinned,
     hiddenCount: listing.hiddenCount,
     narrowed,
@@ -165,7 +169,7 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          sessionCount={pinned.length + listing.sessions.length}
+          sessionCount={count}
           filters={filters}
           options={options}
           dirty={dirty}
@@ -174,6 +178,8 @@ export function SessionsSidebarBody() {
             hiddenCount: listing.hiddenCount,
             onShownChange: setShown,
             onShowAll: showAll,
+            pinnedOnly,
+            onPinnedOnlyChange: setPinnedOnly,
           }}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}

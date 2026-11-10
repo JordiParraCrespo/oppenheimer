@@ -20,6 +20,7 @@ export const SCOPE_RESOURCES = [
   'workspaces',
   'tokens',
   'hosts',
+  'host-desktops',
   'projects',
   'sessions',
   'cloud-chat',
@@ -35,6 +36,7 @@ export const SCOPE_RESOURCES = [
   'repositories',
   'flags',
   'inbox',
+  'inbox-reports',
 ] as const;
 export type ScopeResource = (typeof SCOPE_RESOURCES)[number];
 
@@ -305,6 +307,31 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'update', subject: 'Host' },
           { action: 'delete', subject: 'Host' },
         ],
+      },
+    },
+  },
+  {
+    resource: 'host-desktops',
+    label: 'Host desktops',
+    description:
+      "The screens of the credential owner's hosts, live, where their owner shares them: watched, and clicked and typed into once in control.",
+    // A screen and its mouse and keyboard are the machine. Apart from `hosts`,
+    // so a credential that manages hosts never gains control of one, and no
+    // grant made before desktops existed carries it.
+    sensitive: true,
+    levels: {
+      read: {
+        scope: 'host-desktops:read',
+        label: 'Read',
+        description:
+          'Nothing on its own: a desktop is opened with Edit, since whoever watches one can take control.',
+        policies: [{ action: 'read', subject: 'Host' }],
+      },
+      write: {
+        scope: 'host-desktops:write',
+        label: 'Edit',
+        description: "Open a host's desktop, watch it, and take control of its mouse and keyboard.",
+        policies: [{ action: 'update', subject: 'Host' }],
       },
     },
   },
@@ -673,6 +700,30 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         scope: 'inbox:write',
         label: 'Edit',
         description: "Mark, snooze and bring back the owner's Inbox items.",
+        policies: [],
+      },
+    },
+  },
+  {
+    resource: 'inbox-reports',
+    label: 'Inbox reports',
+    description:
+      'Reports sent to the workspace’s Inbox: a problem with its pictures, and the answer the owner gives there.',
+    // The key an unattended agent holds: it sends and reads reports and
+    // reaches nothing else. Answering one is `inbox:write`, the owner's own
+    // Inbox, so a key with only these two levels cannot answer what it asked.
+    // Like `inbox`, no role grants it, so no CASL rule backs it.
+    levels: {
+      read: {
+        scope: 'inbox-reports:read',
+        label: 'Read',
+        description: "Read reports sent to the Inbox, their pictures and the owner's answers",
+        policies: [],
+      },
+      write: {
+        scope: 'inbox-reports:write',
+        label: 'Edit',
+        description: "Send a report with pictures to the workspace's Inbox",
         policies: [],
       },
     },

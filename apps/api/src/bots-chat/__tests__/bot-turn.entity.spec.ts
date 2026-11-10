@@ -137,6 +137,35 @@ describe('BotTurnEntity, between bots', () => {
     });
   });
 
+  // What breaks this: the answer to an ask made from the owner's WhatsApp
+  // chat picked up in the console, so it is never delivered to their phone.
+  it('answers an ask made on WhatsApp in that conversation, as a WhatsApp turn', () => {
+    const conversationId = randomUUID();
+    const asking = BotTurnEntity.queue({
+      organizationId: randomUUID(),
+      botId: randomUUID(),
+      requestedByUserId: randomUUID(),
+      ...engine,
+      conversationId,
+      origin: 'whatsapp',
+      lane: 'owner',
+      sourceKey: `whatsapp:${randomUUID()}:${randomUUID()}`,
+    });
+    const asked = BotTurnEntity.queueFromBot(asking, {
+      botId: randomUUID(),
+      ...engine,
+      replyRequested: true,
+    });
+    asked.start(new Date());
+    asked.end('completed', new Date());
+
+    const answer = BotTurnEntity.queueAnswer(asked, { botId: asking.botId, ...engine }, asking);
+
+    expect(answer.conversationId).toBe(conversationId);
+    expect(answer.origin).toBe('whatsapp');
+    expect(answer.inConsole).toBe(false);
+  });
+
   it('refuses to answer an ask still running, or a message that asked for no answer', () => {
     const yours = running();
     const asked = BotTurnEntity.queueFromBot(yours, {

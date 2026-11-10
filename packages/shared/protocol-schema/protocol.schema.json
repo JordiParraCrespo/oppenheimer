@@ -1882,6 +1882,82 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "desktop.open"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "control": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "attachmentId",
+        "control"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "desktop.opened"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "desktop.control"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "control": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "control"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "desktop.close"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "codex.environments.list"
         },
         "commandId": {
@@ -2171,6 +2247,25 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 8000
+        },
+        "replyTo": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "senderId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            }
+          },
+          "required": [
+            "id",
+            "senderId"
+          ]
         }
       },
       "required": [
@@ -2968,6 +3063,7 @@
       "attachment.chat.older",
       "device.screen",
       "port.forward",
+      "desktop.stream",
       "session.cloud",
       "session.cloud.codex",
       "session.teleport",

@@ -9,7 +9,7 @@ export type { InboxMark };
  */
 export class InboxMarkEntity {
   constructor(
-    /** The occurrence: `session:<id>:<wait>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>`. */
+    /** The occurrence: `session:<id>:<wait>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>`, `report:<id>`. */
     public readonly itemKey: string,
     public readonly mark: InboxMark,
     /** When a snooze ends; null for every other mark. */

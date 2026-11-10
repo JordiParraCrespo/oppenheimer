@@ -67,6 +67,7 @@
       "!.screenshots",
       "!e2e/tests/screens/local",
       "!scripts/evals/*/results",
+      "!scripts/evals/*/reports",
       "!**/node-compile-cache",
       "!!**/.claude/worktrees",
       "!**/.agents",

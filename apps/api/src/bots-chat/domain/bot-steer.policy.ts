@@ -20,6 +20,8 @@ export function takesSteer(running: BotTurnEntity, waiting: BotTurnEntity): bool
     waiting.id !== running.id &&
     waiting.organizationId === running.organizationId &&
     waiting.botId === running.botId &&
+    // A message in the console never steers a turn answering on Telegram, nor the other way.
+    waiting.conversationId === running.conversationId &&
     running.requestedByUserId !== null &&
     waiting.requestedByUserId === running.requestedByUserId &&
     sameScopes(running.credentialScopes, waiting.credentialScopes)

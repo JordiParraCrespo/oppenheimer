@@ -193,4 +193,15 @@ export class HostsRepository {
       );
     });
   }
+
+  /**
+   * A pass to open the host's desktop. Never cached and never retried on its
+   * own: the ticket is single use and sixty seconds.
+   */
+  issueDesktopTicket(id: string): Promise<{ ticket: string; url: string }> {
+    return callApi(HostsErrors.DESKTOP_TICKET_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.issueDesktopTicket({ path: { id } }));
+      return { ticket: data.ticket, url: data.url };
+    });
+  }
 }

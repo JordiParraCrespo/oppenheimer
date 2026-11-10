@@ -46,6 +46,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.botId = entity.botId;
+    record.conversationId = entity.conversationId;
     record.requestedByUserId = entity.requestedByUserId;
     record.status = entity.status;
     record.origin = entity.origin;
@@ -86,6 +87,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
       props: {
         organizationId: record.organizationId,
         botId: record.botId,
+        conversationId: record.conversationId,
         requestedByUserId: record.requestedByUserId ?? null,
         status: record.status as BotTurnStatus,
         origin: BOT_TURN_ORIGINS.find((origin) => origin === record.origin) ?? 'message',

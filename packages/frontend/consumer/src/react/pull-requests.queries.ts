@@ -14,6 +14,7 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
+  usePrefetchQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
@@ -23,6 +24,7 @@ import type {
   PullRequestAddress,
   PullRequestAnalytics,
   PullRequestAnalyticsRange,
+  PullRequestBrief,
   PullRequestComment,
   PullRequestDetailEntity,
   PullRequestFile,
@@ -137,6 +139,35 @@ export function useSuspensePullRequestFiles(address: PullRequestAddress) {
     queryKey: pullRequestsKeys.files(address),
     queryFn: () => app.pullRequests.files(address),
   });
+}
+
+/**
+ * A pull request's brief, read under a Suspense `QueryState` on its card of
+ * the review deck. It describes one head commit and the API keeps it per
+ * commit, so it is not read again while the deck is open: a new push shows on
+ * the next visit.
+ */
+export function useSuspensePullRequestBrief(address: PullRequestAddress) {
+  return useSuspenseQuery<PullRequestBrief, Error>(usePullRequestBriefQuery(address));
+}
+
+/**
+ * Asks for a pull request's brief ahead of its card, while the card before it
+ * is read, so the next card of the deck opens written.
+ */
+export function usePrefetchPullRequestBrief(address: PullRequestAddress) {
+  usePrefetchQuery(usePullRequestBriefQuery(address));
+}
+
+const BRIEF_STALE_MS = 10 * 60_000;
+
+function usePullRequestBriefQuery(address: PullRequestAddress) {
+  const app = useConsumerApp();
+  return {
+    queryKey: pullRequestsKeys.brief(address),
+    queryFn: () => app.pullRequests.brief(address),
+    staleTime: BRIEF_STALE_MS,
+  };
 }
 
 /** The line comments already posted on GitHub, drawn on the diff. */

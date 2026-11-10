@@ -1,3 +1,9 @@
+export type {
+  AttachDesktopConnection,
+  DesktopRefusal,
+  DesktopState,
+  DesktopStatus,
+} from './desktop/desktop-connection';
 export {
   type HostCodexEnvironment,
   type HostCodexEnvironments,
@@ -12,3 +18,4 @@ export {
 } from './host.entity';
 export { HostsModule } from './hosts.module';
 export { HostsRepository } from './hosts.repository';
+export { HostsService } from './hosts.service';

@@ -245,9 +245,14 @@ export async function insertPendingBotApproval(
 ): Promise<string> {
   const rows = await query<{ id: string }>(
     `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          console AS (
+            INSERT INTO bot_conversation (id, "organizationId", "botId", kind)
+            SELECT $1, bot."organizationId", $1, 'console' FROM bot
+            ON CONFLICT (id) DO NOTHING
+          ),
           turn AS (
-            INSERT INTO bot_turn ("organizationId", "botId", status, provider, model)
-            SELECT bot."organizationId", $1, 'completed', 'glm', 'glm-5'
+            INSERT INTO bot_turn ("organizationId", "botId", "conversationId", status, provider, model)
+            SELECT bot."organizationId", $1, $1, 'completed', 'glm', 'glm-5'
               FROM bot
             RETURNING id, "organizationId"
           )
@@ -271,14 +276,19 @@ export async function insertBotActivity(
 ): Promise<void> {
   await query(
     `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          console AS (
+            INSERT INTO bot_conversation (id, "organizationId", "botId", kind)
+            SELECT $1, bot."organizationId", $1, 'console' FROM bot
+            ON CONFLICT (id) DO NOTHING
+          ),
           turn AS (
-            INSERT INTO bot_turn ("organizationId", "botId", status, provider, model)
-            SELECT bot."organizationId", $1, 'completed', 'glm', 'glm-5'
+            INSERT INTO bot_turn ("organizationId", "botId", "conversationId", status, provider, model)
+            SELECT bot."organizationId", $1, $1, 'completed', 'glm', 'glm-5'
               FROM bot
             RETURNING id, "organizationId"
           )
-     INSERT INTO bot_message ("organizationId", "botId", "turnId", role, steps, position)
-     SELECT turn."organizationId", $1, turn.id, 'activity', $2::jsonb, 0 FROM turn`,
+     INSERT INTO bot_message ("organizationId", "botId", "conversationId", "turnId", role, steps, position)
+     SELECT turn."organizationId", $1, $1, turn.id, 'activity', $2::jsonb, 0 FROM turn`,
     [botId, JSON.stringify(steps)],
   );
 }
@@ -296,9 +306,14 @@ export async function insertWaitingBotGoal(
 ): Promise<void> {
   await query(
     `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          console AS (
+            INSERT INTO bot_conversation (id, "organizationId", "botId", kind)
+            SELECT $1, bot."organizationId", $1, 'console' FROM bot
+            ON CONFLICT (id) DO NOTHING
+          ),
           turn AS (
-            INSERT INTO bot_turn ("organizationId", "botId", status, provider, model)
-            SELECT bot."organizationId", $1, 'completed', 'glm', 'glm-5'
+            INSERT INTO bot_turn ("organizationId", "botId", "conversationId", status, provider, model)
+            SELECT bot."organizationId", $1, $1, 'completed', 'glm', 'glm-5'
               FROM bot
             RETURNING id, "organizationId"
           )

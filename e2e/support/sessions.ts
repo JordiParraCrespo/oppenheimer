@@ -113,7 +113,9 @@ const FACTS = {
  * wait instead, and a test that pairs is `test.slow()` at its call site.
  */
 const THROTTLE_RETRY_MS = 5_000;
-const THROTTLE_WINDOW_MS = 65_000;
+// Two windows: with every worker pairing at once, a caller can lose the first
+// window's five to the others and still fit a slow test's 180s.
+const THROTTLE_WINDOW_MS = 130_000;
 
 async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIResponse> {
   const deadline = Date.now() + THROTTLE_WINDOW_MS;

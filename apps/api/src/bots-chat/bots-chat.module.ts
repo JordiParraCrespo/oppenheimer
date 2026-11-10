@@ -13,6 +13,7 @@ import { BotApprovalStartedPolicy } from './application/bot-approval-started.pol
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
+import { BotChannelWakeResolver } from './application/bot-channel-wake.resolver';
 import { BotCompletionResolver } from './application/bot-completion.resolver';
 import { BotDreamResolver } from './application/bot-dream.resolver';
 import { BotDreamTriggerPolicy } from './application/bot-dream-trigger.policy';
@@ -63,6 +64,7 @@ import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.polic
 import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
+import { BotTurnChannelPolicy } from './application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
@@ -74,11 +76,14 @@ import { BotHeartbeatDomainEventHandler } from './application/event-handlers/bot
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
+import { BotTelegramWakeDomainEventHandler } from './application/event-handlers/bot-telegram-wake.domain-event-handler';
 import { BotUnattendedRoutinesDomainEventHandler } from './application/event-handlers/bot-unattended-routines.domain-event-handler';
+import { BotWhatsappWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from './application/turn-write.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotAttachmentMapper } from './bot-attachment.mapper';
+import { BotConversationMapper } from './bot-conversation.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
 import { BotGoalMapper } from './bot-goal.mapper';
 import { BotLoopMapper } from './bot-loop.mapper';
@@ -135,6 +140,7 @@ import { DeleteBotPermissionRuleHttpController } from './commands/delete-bot-per
 import { DeleteBotToolGrantCommandHandler } from './commands/delete-bot-tool-grant/delete-bot-tool-grant.command-handler';
 import { DeleteBotToolGrantHttpController } from './commands/delete-bot-tool-grant/delete-bot-tool-grant.http.controller';
 import { DeliverBotAnswerCommandHandler } from './commands/deliver-bot-answer/deliver-bot-answer.command-handler';
+import { DeliverChannelReplyCommandHandler } from './commands/deliver-channel-reply/deliver-channel-reply.command-handler';
 import { DismissBotQuestionCommandHandler } from './commands/dismiss-bot-question/dismiss-bot-question.command-handler';
 import { DismissBotQuestionHttpController } from './commands/dismiss-bot-question/dismiss-bot-question.http.controller';
 import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
@@ -158,12 +164,15 @@ import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachm
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
 import { WakeOnAgentNoticeCommandHandler } from './commands/wake-on-agent-notice/wake-on-agent-notice.command-handler';
 import { WakeOnPullRequestCommandHandler } from './commands/wake-on-pull-request/wake-on-pull-request.command-handler';
+import { WakeOnTelegramCommandHandler } from './commands/wake-on-telegram/wake-on-telegram.command-handler';
 import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
+import { WakeOnWhatsappCommandHandler } from './commands/wake-on-whatsapp/wake-on-whatsapp.command-handler';
 import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
 import { BotAttachmentOrmEntity } from './database/bot-attachment.orm-entity';
 import { BotAttachmentRepository } from './database/bot-attachment.repository';
+import { BotConversationOrmEntity } from './database/bot-conversation.orm-entity';
 import { BotConversationRepository } from './database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from './database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from './database/bot-conversation-summary.repository';
@@ -276,6 +285,7 @@ const commandHandlers: Provider[] = [
   UploadBotAttachmentCommandHandler,
   SendBotPeerMessageCommandHandler,
   DeliverBotAnswerCommandHandler,
+  DeliverChannelReplyCommandHandler,
   CancelBotTurnCommandHandler,
   ClearBotConversationCommandHandler,
   RunBotTurnCommandHandler,
@@ -292,6 +302,8 @@ const commandHandlers: Provider[] = [
   WakeOnAgentNoticeCommandHandler,
   WakeOnTerminalMatchCommandHandler,
   WakeOnPullRequestCommandHandler,
+  WakeOnTelegramCommandHandler,
+  WakeOnWhatsappCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
   ResumeBotGoalCommandHandler,
@@ -344,6 +356,7 @@ const queryHandlers: Provider[] = [
     TypeOrmModule.forFeature([
       BotTurnOrmEntity,
       BotMessageOrmEntity,
+      BotConversationOrmEntity,
       BotApprovalOrmEntity,
       BotQuestionOrmEntity,
       BotNoticeOrmEntity,
@@ -379,6 +392,7 @@ const queryHandlers: Provider[] = [
     BotNoticeMapper,
     BotToolPermissionMapper,
     BotPermissionRuleMapper,
+    BotConversationMapper,
     BotConversationSummaryMapper,
     BotMemoryDreamMapper,
     BotAttachmentMapper,
@@ -397,6 +411,8 @@ const queryHandlers: Provider[] = [
     BotDreamTriggerPolicy,
     BotDreamResolver,
     BotModelAccessResolver,
+    BotTurnChannelPolicy,
+    BotChannelWakeResolver,
     BotApprovalRequestFactory,
     BotQuestionDecisionResolver,
     BotWaitingCardResolver,
@@ -456,6 +472,8 @@ const queryHandlers: Provider[] = [
     BotUnattendedRoutinesDomainEventHandler,
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,
+    BotTelegramWakeDomainEventHandler,
+    BotWhatsappWakeDomainEventHandler,
     TurnCancelWatchFactory,
     BotBackgroundTurnsProcessor,
     BotTurnsProcessor,

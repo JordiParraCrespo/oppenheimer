@@ -1,3 +1,4 @@
+import type { DomainEvent } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
 import type {
   TelegramChat,
@@ -12,13 +13,33 @@ export interface TelegramAccountRef {
 }
 
 /**
+ * What new messages owe: an event built from the id of the owner's last
+ * `/new` in the message's chat at or before it ('0' for none), which only
+ * the store can say once the whole batch is in.
+ */
+export interface TelegramMessagesOwed {
+  ownerTelegramId: string | null;
+  eventFor: (message: TelegramMessageDraft) => ((lastNewId: string) => DomainEvent | null) | null;
+}
+
+/**
  * A Telegram bot's messages (`product/next-steps/telegram.md` §4). Reads take an
  * account the caller already proved is theirs (`TelegramAccountRepositoryPort`),
  * so this port holds no scope of its own; every list is bounded.
  */
 export interface TelegramMessageRepositoryPort {
-  /** Stores what is new; a message already kept (same chat and id) is left as it is. */
-  insertMany(messages: readonly TelegramMessageDraft[]): Promise<void>;
+  /**
+   * Stores what is new; a message already kept (same chat and id) is left as
+   * it is. Each new message's event (`owed`), if it owes one, is staged on
+   * the outbox in the same transaction, told the id of the owner's last
+   * `/new` in its chat at or before it. Answers the new messages.
+   */
+  insertMany(
+    messages: readonly TelegramMessageDraft[],
+    owed?: TelegramMessagesOwed,
+  ): Promise<TelegramMessageDraft[]>;
+  /** Whether the Telegram bot wrote anything in a chat since `since`: a stranger's daily line. */
+  wroteInChatSince(account: TelegramAccountRef, chatId: string, since: Date): Promise<boolean>;
   /**
    * Stores what a bot sent, marking it the bot's: a second record of the same
    * message (a retried send) gains the bot rather than a twin.

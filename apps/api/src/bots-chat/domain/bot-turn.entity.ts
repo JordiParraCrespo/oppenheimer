@@ -13,6 +13,7 @@ import {
   type BotTurnLane,
   type BotTurnOrigin,
   type BotTurnStatus,
+  isChannelOrigin,
   type Scope,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
@@ -21,6 +22,12 @@ import type { BotRateLimit } from './bot-rate-limit.policy';
 export interface BotTurnProps {
   organizationId: string;
   botId: string;
+  /**
+   * The conversation it runs in (`bot_conversation`), whose messages are its
+   * history: a Telegram chat's, or the bot's console chat, whose id is the
+   * bot's own, when left out.
+   */
+  conversationId?: string;
   /** Who sent the message; null once that account is gone. */
   requestedByUserId: string | null;
   status: BotTurnStatus;
@@ -163,6 +170,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   static queue(props: {
     organizationId: string;
     botId: string;
+    conversationId?: string;
     requestedByUserId: string;
     provider: BotProvider;
     model: string;
@@ -258,12 +266,21 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       model: string;
       effort: SessionEffort | null;
     },
+    /**
+     * The turn that asked, when it is still there: the answer is picked up in
+     * its conversation, and one asked on a channel (Telegram, WhatsApp) goes
+     * on as a turn of that channel, whose last words are sent back to that
+     * chat. The asker's console chat when it is gone.
+     */
+    asking: BotTurnEntity | null = null,
   ): BotTurnEntity {
     if (!answered.replyRequested || !answered.ended) {
       throw new ArgumentInvalidException('Only an ended ask is answered');
     }
     return BotTurnEntity.queue({
       ...props,
+      ...(asking && { conversationId: asking.conversationId }),
+      ...(asking && isChannelOrigin(asking.origin) && { origin: asking.origin }),
       organizationId: answered.organizationId,
       requestedByUserId: answered.requireRequester(),
       timeZone: answered.timeZone,
@@ -282,6 +299,13 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
   get botId(): string {
     return this.props.botId;
+  }
+  get conversationId(): string {
+    return this.props.conversationId ?? this.props.botId;
+  }
+  /** Whether it runs in the bot's console chat rather than a channel's conversation. */
+  get inConsole(): boolean {
+    return this.conversationId === this.botId;
   }
   get requestedByUserId(): string | null {
     return this.props.requestedByUserId;

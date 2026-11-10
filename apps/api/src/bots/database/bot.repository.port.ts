@@ -11,6 +11,9 @@ import type { BotDocumentEntity } from '../domain/bot-document.entity';
  */
 export type BotWriteOutcome = 'saved' | 'missing' | 'group-missing' | 'taken' | 'creator-changed';
 
+/** The channel setting that keeps a bot from being deleted: the bot answers there. */
+export type BotDeleteBinding = 'telegram' | 'whatsapp';
+
 /** The creating bot as the caller checked it: the write holds only while it is still so. */
 export interface BotCreatorCheck {
   botId: string;
@@ -56,6 +59,11 @@ export interface BotRepositoryPort {
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome>;
   save(bot: BotEntity): Promise<BotWriteOutcome>;
-  /** The bot, its documents, their history and its memory. */
-  delete(bot: BotEntity): Promise<void>;
+  /**
+   * The bot, its documents, their history and its memory; nothing deleted,
+   * and the channel that holds it, while it answers on a Telegram bot
+   * (`FK_telegram_account_answering_bot`) or is a WhatsApp number's default
+   * (`FK_whatsapp_account_answering_bot`).
+   */
+  delete(bot: BotEntity): Promise<'deleted' | { boundTo: BotDeleteBinding }>;
 }

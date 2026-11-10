@@ -2,7 +2,7 @@ import { searchFlag, searchText } from '@oppenheimer/frontend-web';
 import { z } from 'zod';
 
 /** The list's Type facet, in the frame's order; `all` is no key. */
-export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run'] as const;
+export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run', 'report'] as const;
 export type InboxTypeFilter = (typeof INBOX_TYPES)[number];
 
 /** The Project facet's first option: every project. Not a search value: it is no key. */

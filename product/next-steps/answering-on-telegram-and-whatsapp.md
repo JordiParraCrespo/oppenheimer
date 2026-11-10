@@ -61,8 +61,12 @@ so something has to choose.
   any contact's.
 - **Your line is your personal number** writing to the spare one, as
   channels.md §5 has it. You name your personal number when the spare one
-  starts answering, and the spare number sends it a code you send back,
-  so the number is yours and not a typo. A WhatsApp sender's number is
+  starts answering, and the spare number sends it a six-digit code you
+  enter in Settings → WhatsApp, so the number is yours and not a typo.
+  (Until 2026-11-09 this said a code you send back from that number; with
+  that, a stranger who owns a mistyped number would receive the code and
+  could send it back as your line. Typed in the console, a stray code is
+  useless to whoever got it.) A WhatsApp sender's number is
   WhatsApp's, not something a sender can set, so no one else can write as
   it. Your chat goes to the default bot, and a message starting with a
   bot's name and a colon ("Shop: what sold today?") moves that chat to
@@ -207,11 +211,28 @@ per-chat "Always allow" for sends are unchanged.
    owner link, the owner's turns and replies, the commands, the profile
    sync, strangers held with the fixed line, deleting a bound bot refused.
    Your `/start` is answered.
+   *Built 2026-11-09 on today's runner (one Telegram bot per host), the bot
+   chosen in Settings → Telegram; the owner's chat is a conversation of its
+   own (`bot_conversation`). Left for the runner's pull request: a host
+   polling one token per bot, the bot's profile kept in step, Telegram's
+   formatting and the typing action. Left for the Channels pull request:
+   the bot's own Channels section. The turn runs in UTC until the owner's
+   zone is known on Telegram.*
 2. **Contacts on Telegram.** Allowed contacts, Allow and Ignore, the
    contact's turn (§3), groups, the limits and the spend guard, Pause and
    Take over.
 3. **WhatsApp.** The owner's personal number confirmed, the default bot and switching
    by name, contacts and groups through routes.
+   *Being built 2026-11-09 for the owner only: the default bot on the
+   number (`whatsapp_account."answeringBotId"`, chosen in Settings →
+   WhatsApp, deleting it refused with `BOTS_043`); your number confirmed by
+   a code entered in the console; your messages as turns in a WhatsApp
+   conversation of their own, answered as a quoted reply; "Name: …" moving
+   the chat to the one bot of yours with that name, and `/new`, `/stop`,
+   `/help` as plain text. The chat's order is the order the control plane
+   stored the messages in (`whatsapp_message.seq`). Strangers, groups, the
+   number's own messages and its self-chat are stored and do nothing else.
+   Left for later: contacts and groups through routes.*
 4. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions

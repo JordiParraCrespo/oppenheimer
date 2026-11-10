@@ -43,10 +43,12 @@ import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
 import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
+import { Route as AuthenticatedPlanOpenRouteImport } from './routes/_authenticated/plan/open'
 import { Route as AuthenticatedPlanProjectsRouteImport } from './routes/_authenticated/plan/projects'
 import { Route as AuthenticatedPlanTodoRouteImport } from './routes/_authenticated/plan/todo'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
+import { Route as AuthenticatedPullsReviewRouteImport } from './routes/_authenticated/pulls/review'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
@@ -81,6 +83,7 @@ import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './ro
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
 import { Route as AuthenticatedBotsBotIdSettingsSkillsRouteImport } from './routes/_authenticated/bots_.$botId.settings/skills'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
+import { Route as AuthenticatedSettingsHostsHostIdDesktopRouteImport } from './routes/_authenticated/settings/hosts/$hostId.desktop'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -256,6 +259,11 @@ const AuthenticatedPlanMilestonesRoute =
     path: '/milestones',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanOpenRoute = AuthenticatedPlanOpenRouteImport.update({
+  id: '/open',
+  path: '/open',
+  getParentRoute: () => AuthenticatedPlanRoute,
+} as any)
 const AuthenticatedPlanProjectsRoute =
   AuthenticatedPlanProjectsRouteImport.update({
     id: '/projects',
@@ -276,6 +284,12 @@ const AuthenticatedPullsAnalyticsRoute =
   AuthenticatedPullsAnalyticsRouteImport.update({
     id: '/analytics',
     path: '/analytics',
+    getParentRoute: () => AuthenticatedPullsRoute,
+  } as any)
+const AuthenticatedPullsReviewRoute =
+  AuthenticatedPullsReviewRouteImport.update({
+    id: '/review',
+    path: '/review',
     getParentRoute: () => AuthenticatedPullsRoute,
   } as any)
 const AuthenticatedSessionsIndexRoute =
@@ -482,6 +496,12 @@ const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
     path: '/pulls/$installationId/$githubRepoId/$number',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsHostsHostIdDesktopRoute =
+  AuthenticatedSettingsHostsHostIdDesktopRouteImport.update({
+    id: '/hosts/$hostId/desktop',
+    path: '/hosts/$hostId/desktop',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -511,9 +531,11 @@ export interface FileRoutesByFullPath {
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/plan/open': typeof AuthenticatedPlanOpenRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
+  '/pulls/review': typeof AuthenticatedPullsReviewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -552,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
+  '/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -577,9 +600,11 @@ export interface FileRoutesByTo {
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/plan/open': typeof AuthenticatedPlanOpenRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
+  '/pulls/review': typeof AuthenticatedPullsReviewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -617,6 +642,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
+  '/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -651,9 +677,11 @@ export interface FileRoutesById {
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/_authenticated/plan/open': typeof AuthenticatedPlanOpenRoute
   '/_authenticated/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/_authenticated/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
+  '/_authenticated/pulls/review': typeof AuthenticatedPullsReviewRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -692,6 +720,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/_authenticated/bots_/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
+  '/_authenticated/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -724,9 +753,11 @@ export interface FileRouteTypes {
     | '/plan/calendar'
     | '/plan/inbox'
     | '/plan/milestones'
+    | '/plan/open'
     | '/plan/projects'
     | '/plan/todo'
     | '/pulls/analytics'
+    | '/pulls/review'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/about'
@@ -765,6 +796,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/runs-on'
     | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
+    | '/settings/hosts/$hostId/desktop'
     | '/bots/$botId/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -790,9 +822,11 @@ export interface FileRouteTypes {
     | '/plan/calendar'
     | '/plan/inbox'
     | '/plan/milestones'
+    | '/plan/open'
     | '/plan/projects'
     | '/plan/todo'
     | '/pulls/analytics'
+    | '/pulls/review'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/about'
@@ -830,6 +864,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/runs-on'
     | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
+    | '/settings/hosts/$hostId/desktop'
     | '/bots/$botId/settings'
   id:
     | '__root__'
@@ -863,9 +898,11 @@ export interface FileRouteTypes {
     | '/_authenticated/plan/calendar'
     | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
+    | '/_authenticated/plan/open'
     | '/_authenticated/plan/projects'
     | '/_authenticated/plan/todo'
     | '/_authenticated/pulls/analytics'
+    | '/_authenticated/pulls/review'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/settings/about'
@@ -904,6 +941,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/runs-on'
     | '/_authenticated/bots_/$botId/settings/skills'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
+    | '/_authenticated/settings/hosts/$hostId/desktop'
     | '/_authenticated/bots_/$botId/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -1158,6 +1196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanMilestonesRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/open': {
+      id: '/_authenticated/plan/open'
+      path: '/open'
+      fullPath: '/plan/open'
+      preLoaderRoute: typeof AuthenticatedPlanOpenRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/plan/projects': {
       id: '/_authenticated/plan/projects'
       path: '/projects'
@@ -1184,6 +1229,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/pulls/analytics'
       preLoaderRoute: typeof AuthenticatedPullsAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedPullsRoute
+    }
+    '/_authenticated/pulls/review': {
+      id: '/_authenticated/pulls/review'
+      path: '/review'
+      fullPath: '/pulls/review'
+      preLoaderRoute: typeof AuthenticatedPullsReviewRouteImport
       parentRoute: typeof AuthenticatedPullsRoute
     }
     '/_authenticated/sessions/': {
@@ -1424,6 +1476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/hosts/$hostId/desktop': {
+      id: '/_authenticated/settings/hosts/$hostId/desktop'
+      path: '/hosts/$hostId/desktop'
+      fullPath: '/settings/hosts/$hostId/desktop'
+      preLoaderRoute: typeof AuthenticatedSettingsHostsHostIdDesktopRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
   }
 }
 
@@ -1500,6 +1559,7 @@ interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
   AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
+  AuthenticatedPlanOpenRoute: typeof AuthenticatedPlanOpenRoute
   AuthenticatedPlanProjectsRoute: typeof AuthenticatedPlanProjectsRoute
   AuthenticatedPlanTodoRoute: typeof AuthenticatedPlanTodoRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
@@ -1511,6 +1571,7 @@ const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
   AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
+  AuthenticatedPlanOpenRoute: AuthenticatedPlanOpenRoute,
   AuthenticatedPlanProjectsRoute: AuthenticatedPlanProjectsRoute,
   AuthenticatedPlanTodoRoute: AuthenticatedPlanTodoRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
@@ -1524,11 +1585,13 @@ const AuthenticatedPlanRouteWithChildren =
 
 interface AuthenticatedPullsRouteChildren {
   AuthenticatedPullsAnalyticsRoute: typeof AuthenticatedPullsAnalyticsRoute
+  AuthenticatedPullsReviewRoute: typeof AuthenticatedPullsReviewRoute
   AuthenticatedPullsIndexRoute: typeof AuthenticatedPullsIndexRoute
 }
 
 const AuthenticatedPullsRouteChildren: AuthenticatedPullsRouteChildren = {
   AuthenticatedPullsAnalyticsRoute: AuthenticatedPullsAnalyticsRoute,
+  AuthenticatedPullsReviewRoute: AuthenticatedPullsReviewRoute,
   AuthenticatedPullsIndexRoute: AuthenticatedPullsIndexRoute,
 }
 
@@ -1549,6 +1612,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsMailGoogleRoute: typeof AuthenticatedSettingsMailGoogleRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
+  AuthenticatedSettingsHostsHostIdDesktopRoute: typeof AuthenticatedSettingsHostsHostIdDesktopRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -1567,6 +1631,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsMailGoogleRoute: AuthenticatedSettingsMailGoogleRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
+  AuthenticatedSettingsHostsHostIdDesktopRoute:
+    AuthenticatedSettingsHostsHostIdDesktopRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =

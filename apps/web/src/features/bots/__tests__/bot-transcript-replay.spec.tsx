@@ -183,9 +183,9 @@ describe('a settled week, replayed', () => {
   });
 });
 
-// What breaks this: a turn that compacted drawing its line above the bot's
-// work as if it opened the turn, or not at all, instead of where it folded.
-it('draws a compaction inside the turn, between the calls before and after it', async () => {
+// What breaks this: a turn that compacted drawing a line for it (the engine's
+// housekeeping, not something the reader acts on), or dropping the calls around it.
+it('draws no line where a turn compacted, and keeps the calls around it', async () => {
   const at = '2026-10-30T09:00:00.000Z';
   const step = (callId: string, title: string) => ({
     callId,
@@ -254,9 +254,10 @@ it('draws a compaction inside the turn, between the calls before and after it', 
   expect(lines.filter((line) => line.startsWith('you:'))).toEqual(['you: Tag the invoices']);
   const turn = chat.container.querySelector('[data-slot="bot-turn"]');
   const text = turn?.textContent ?? '';
-  const order = ['One', 'bots.chat.event.compactionLine', 'Two'].map((part) => text.indexOf(part));
+  expect(text).not.toContain('summarized');
+  expect(text).not.toContain('compaction');
+  const order = ['One', 'Two'].map((part) => text.indexOf(part));
   expect(order.every((index) => index >= 0)).toBe(true);
-  expect([...order].sort((a, b) => a - b)).toEqual(order);
 });
 
 describe('a turn recorded while it ran, replayed', () => {
@@ -266,7 +267,7 @@ describe('a turn recorded while it ran, replayed', () => {
     expect(outline(chat.container)).toEqual([
       'you: Summarise last night’s incident',
       'bot (thinking)',
-      '  … bots.chat.turn.thinking{} 12s',
+      '  … bots.chat.turn.musing.pondering{} 12s',
     ]);
 
     await chat.playTo('writing');
@@ -353,7 +354,9 @@ describe('a turn recorded while it ran, replayed', () => {
     });
     await chat.playAll();
 
-    expect(screen.getAllByRole('status').map(words)).toEqual(['bots.chat.turn.thinking{} 12s']);
+    expect(screen.getAllByRole('status').map(words)).toEqual([
+      'bots.chat.turn.musing.pondering{} 12s',
+    ]);
   });
 
   it('ends on the stored answer, with no live text, no live line and its trail', async () => {

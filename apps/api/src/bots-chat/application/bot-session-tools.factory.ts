@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
-import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
@@ -26,8 +26,10 @@ import {
   sentTurnOf,
   sessionActionAnswer,
   sessionHostId,
+  sessionLaunchRefusal,
   sessionSummary,
 } from '../bot-session-tool.mapper';
+import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
@@ -89,6 +91,9 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'start_session',
       scope: 'sessions:write',
       asks: true,
+      // A session at full access runs with every check off: the owner says yes
+      // to that session alone, whatever they allowed start_session before.
+      escalates: (input) => input.permission === 'full',
       subject: async (input, context) => {
         if (!input.project_id) return null;
         const project = await this.project(context, input.project_id).catch(() => null);
@@ -136,6 +141,36 @@ export class BotSessionToolsFactory implements BotToolArea {
           .enum(CODING_AGENT_IDS)
           .optional()
           .describe('Which coding agent; claude-code when omitted.'),
+        model: z
+          .string()
+          .trim()
+          .min(1)
+          .max(128)
+          .optional()
+          .describe(
+            `The agent's model, by id or by name as the person said it. ${modelChoicesByAgent()} A model the agent does not have is refused with the list it has.`,
+          ),
+        effort: z
+          .enum(SESSION_EFFORTS)
+          .optional()
+          .describe(
+            "How hard the model thinks, as the CLI names it (low, medium, high, xhigh, max; Codex also minimal and ultra). The model's own default when omitted; a level the model does not offer is refused with the ones it does.",
+          ),
+        permission: z
+          .enum(SESSION_PERMISSIONS)
+          .optional()
+          .describe(
+            'What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).',
+          ),
+        base_branch: z
+          .string()
+          .trim()
+          .min(1)
+          .max(255)
+          .optional()
+          .describe(
+            "The branch the session's own branch starts from; the repository's base branch when omitted. Not with folder.",
+          ),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
         watch: z
           .boolean()
@@ -147,6 +182,9 @@ export class BotSessionToolsFactory implements BotToolArea {
         const project = input.project_id
           ? await this.project(context, input.project_id).catch(() => null)
           : null;
+        // A launch the agent does not take is refused here, before it interrupts the owner with a card.
+        const refusal = sessionLaunchRefusal(input, project);
+        if (refusal) throw new BotToolRefusal(refusal);
         const hostId = sessionHostId(input, project, context.homeHostId);
         const host = hostId ? await this.hostName(context, hostId) : null;
         return sessionSummary(input, project, host);

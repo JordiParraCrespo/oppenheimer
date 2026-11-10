@@ -4,6 +4,7 @@ import type { WhatsappSendMessage } from '@oppenheimer/shared/protocol';
 import type {
   WhatsappDevicePort,
   WhatsappDeviceReach,
+  WhatsappQuote,
   WhatsappSendOutcome,
 } from '../../whatsapp/application/whatsapp-device.port';
 import type { LinkRegistryPort } from '../application/link-registry.port';
@@ -46,7 +47,12 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
     return this.command(hostId, 'whatsapp.unlink');
   }
 
-  async send(hostId: string, chatId: string, text: string): Promise<WhatsappSendOutcome> {
+  async send(
+    hostId: string,
+    chatId: string,
+    text: string,
+    replyTo?: WhatsappQuote,
+  ): Promise<WhatsappSendOutcome> {
     const link = this.links.find(hostId);
     if (!link) return { kind: 'host_offline' };
     if (!link.capabilities.includes('whatsapp')) return { kind: 'not_supported' };
@@ -55,6 +61,7 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
       commandId: randomUUID(),
       chatId,
       text,
+      ...(replyTo ? { replyTo: { id: replyTo.id, senderId: replyTo.senderId } } : {}),
     };
     // Waiting before sending, so an answer faster than this line cannot be missed.
     const pending = this.replies.expect(hostId, message.commandId, WHATSAPP_SEND_TIMEOUT_MS);

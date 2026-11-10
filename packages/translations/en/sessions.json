@@ -346,7 +346,8 @@
     "selected": "Selected",
     "openAtVendor": "Opens in {{vendor}}",
     "allHidden": "Every project is hidden. Show them again from the filter menu.",
-    "noSessions": "No sessions yet. Start one with New session above."
+    "noSessions": "No sessions yet. Start one with New session above.",
+    "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -396,6 +397,7 @@
     "shownAll": "All",
     "shownSome": "{{shown}} of {{total}}",
     "showAll": "Show all projects",
+    "pinnedOnly": "Pinned only",
     "newProject": "New project…"
   },
   "sort": {
@@ -661,7 +663,8 @@
       "count_one": "{{count}} subagent",
       "count_other": "{{count}} subagents",
       "running": "{{count}} running",
-      "failed": "{{count}} failed",
+      "failed_one": "{{count}} failed",
+      "failed_other": "{{count}} failed",
       "untitled": "Subagent",
       "calls_one": "{{count}} call",
       "calls_other": "{{count}} calls",
@@ -706,7 +709,8 @@
     "notSupportedDetail": "Update its runner to open the session's dev server here.",
     "portsFailed": "Couldn't list the session's ports",
     "previewFailed": "Couldn't open the preview",
-    "opening": "Opening localhost:{{port}}…"
+    "opening": "Opening localhost:{{port}}…",
+    "desktop": "Desktop"
   },
   "cloud": {
     "eyebrow": "Claude Code cloud",

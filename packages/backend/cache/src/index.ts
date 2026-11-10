@@ -7,3 +7,4 @@ export {
   type RedisCacheOptions,
   RedisCacheService,
 } from './redis-cache.service';
+export { issueSingleUseTicket, type SingleUseTicket } from './single-use-ticket';
