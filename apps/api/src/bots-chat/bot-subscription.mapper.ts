@@ -10,9 +10,9 @@ import {
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   type BotSubscriptionUntil,
   type BotWatchFrom,
+  type CheckFinding,
   knownStateOf,
   type SessionWake,
-  type StallDecision,
   type sessionWakeTurn,
   type WakeDecision,
   type WatchedTask,
@@ -223,17 +223,14 @@ export class BotSubscriptionMapper {
     };
   }
 
-  /** What a stall check tells the bot: the task as read now, still followed. */
-  toStallWake(
+  /** What a check of a handed-off task tells the bot (§4.1, §4.2): the task as read now, still followed. */
+  toCheckWake(
     subscription: BotSubscriptionEntity,
     session: WorkSessionEntity,
     task: WatchedTask,
-    decision: Extract<StallDecision, { kind: 'stalled' }>,
+    finding: CheckFinding,
   ): SessionWake {
-    return {
-      ...this.wakeOf(subscription, session, false),
-      cause: { kind: 'stall', task, reason: decision.reason },
-    };
+    return { ...this.wakeOf(subscription, session, false), cause: { ...finding, task } };
   }
 
   /** What `watch_session` answers: what is followed now, and what the session is doing. */

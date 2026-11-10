@@ -109,6 +109,11 @@ for, and a session is where it gets done.
   2026-10-29, not in the frames) is on a host, Claude Code's cloud from a
   host (Claude Code only), or Cursor's cloud with no host and on a task
   (`../../next-steps/cloud-agents.md`, "Tasks and automations").
+  **No repository** (added 2026-11-09) heads the Repository chip and is
+  the default for a project with none: on a host the session is a folder
+  session in the host's home, as Open terminal starts (24 §3), so an
+  offline host, which cannot say where home is, holds the start. A cloud
+  starts from a repository, so there it is not offered.
 - **One status rule for attaching a session.** Start and Link existing
   both link the session, and both move a task that is in To do (Later, before 2026-11-05)
   to **In progress**; In progress and Done stay as they are. So a card

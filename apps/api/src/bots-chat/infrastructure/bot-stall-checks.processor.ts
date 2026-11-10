@@ -21,8 +21,12 @@ export class BotStallChecksProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ subscriptionId?: string; turn?: number }>): Promise<void> {
+  async process(
+    job: Job<{ subscriptionId?: string; turn?: number; check?: number }>,
+  ): Promise<void> {
     const { subscriptionId, turn } = job.data;
+    // A job staged before checks repeated carries no number: it is the first.
+    const check = Number.isInteger(job.data.check) ? (job.data.check as number) : 1;
     if (job.name !== CHECK_STALLED_SESSION_JOB || !subscriptionId || !Number.isInteger(turn)) {
       this.logger.warn({
         message: 'Unknown bot-stall-checks job',
@@ -32,7 +36,7 @@ export class BotStallChecksProcessor extends WorkerHost {
       return;
     }
     await this.commandBus.execute(
-      new CheckStalledSessionCommand({ subscriptionId, turn: turn as number }),
+      new CheckStalledSessionCommand({ subscriptionId, turn: turn as number, check }),
     );
   }
 }
