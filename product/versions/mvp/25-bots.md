@@ -33,20 +33,16 @@ it lives.
 **A new bot.** Created blank, a bot takes the next of twenty first names
 the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
 no two with the same initial, so neighbours' avatars differ), on the next
-colour, with a `SOUL.md` that says its name and an empty
-`INSTRUCTIONS.md`. A name says who it is; the description says its job,
-and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
-its prompt carries a **Getting started** section instead (2026-10-16): take
-the job from the first message or ask for it, with examples that fit
-Oppenheimer; at most one follow-up, only for what cannot be defaulted (what
-never to do without asking, how to report); one focused job, a bot per
-unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
-asking, How I report), set the description to the job, remember what it
-learned about the person, and say in two or three lines what it set up and
-the first task it could do now. The steps that need a tool are the tools'
-own (`setupStep` on the tool's spec), listed only when the turn offers the
-tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
-person to paste in Settings. Names are given first-free, so a deleted
+colour, with a friendly, proactive `SOUL.md` that says its name
+(after OpenClaw's default, 2026-11-10) and an empty `INSTRUCTIONS.md`. The
+first name is a placeholder: a name says who it is, the description says
+its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
+its prompt carries a **Getting started** section instead (2026-10-16):
+work the first message asks for comes first, then it asks what to call it
+(2026-11-10, from OpenClaw's `BOOTSTRAP.md`) and learns one job, sets
+itself up and offers a first task. The steps are `gettingStarted` in
+`bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
+they are the specification, not this paragraph. Names are given first-free, so a deleted
 bot's name is the next one handed out.
 
 Postgres is the source of truth for all of it. A bot changes what it is
@@ -343,6 +339,15 @@ worker runs it and streams what happens back to the chat.
   refused, that call is stored as failed and the turn goes on; any other
   refused write ends the turn as `storage`, whose card says the fault is
   ours, not the provider's.
+- **A turn whose context filled up fails as `context`, not `refused`**
+  (2026-11-10). Claude Code ends a run whose context kept refilling right
+  after each compaction (autocompact thrashing), or that hit the window's
+  hard limit, with the error code it uses for an invalid request, so the
+  chat said the provider had refused the request and to change the message
+  or the model. The engine reads the run's `terminal_reason` instead; the
+  card says the context filled up and that the provider refused nothing,
+  and sending it again does not help (the earlier turns go back in as the
+  same transcript).
 
 ## 3. The chat
 
@@ -2137,6 +2142,14 @@ The decisions it produced:
   name and log, on any host and closed ones included, each session cut to
   its best 2 hits; the agents' transcripts on the hosts are not searched.
   `scripts/evals/bot-session-search` measures when a bot reaches for it.
+- 2026-11-10: **a new bot is friendly and proactive, and asks what to
+  call it** (§1). The default `SOUL.md` was a calm colleague with no
+  exclamation marks; it is now OpenClaw's stance in our words: friendly,
+  proactive (offer or take the next step, answers before questions),
+  helpful without filler, opinionated, and honest about what finished.
+  Its given first name is a placeholder: Getting started asks the person
+  what to call it before its job, after any work the first message asks
+  for, and `update_profile` no longer says to keep the name.
 - 2026-11-10: **the skill reminder is announced, `use_skill` says whose a
   skill is, and the reminder comes after 6 calls** (§4.1, Skills). The
   skills paragraph says Oppenheimer adds one `<oppenheimer_reminder>` line

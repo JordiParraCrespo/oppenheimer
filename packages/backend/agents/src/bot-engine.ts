@@ -235,7 +235,8 @@ export type BotEngineEvent =
  * Why a turn failed, as far as the engine can tell from the provider's
  * answer: a rate limit, a spent quota or credit, a refused key or sign-in,
  * a request the provider refused (its content, the model), the provider
- * down or unreachable, or none of those.
+ * down or unreachable, the turn's context full past what compaction could
+ * free, or none of those.
  */
 export const BOT_ENGINE_FAILURES = [
   'rate_limit',
@@ -243,6 +244,7 @@ export const BOT_ENGINE_FAILURES = [
   'credential',
   'refused',
   'unavailable',
+  'context',
   'other',
 ] as const;
 export type BotEngineFailure = (typeof BOT_ENGINE_FAILURES)[number];

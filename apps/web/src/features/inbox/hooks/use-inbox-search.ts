@@ -1,13 +1,15 @@
+import { useInboxPullsShown } from '@oppenheimer/frontend-consumer/react';
 import { getRouteApi } from '@tanstack/react-router';
 import type { InboxFilter } from '../lib/inbox-filter';
-import type { InboxSearch, InboxTypeFilter } from '../lib/inbox-search';
+import { type InboxSearch, type InboxTypeFilter, offeredType } from '../lib/inbox-search';
 
 const route = getRouteApi('/_authenticated/plan/inbox');
 
 /**
  * The Inbox's search, as `inboxSearchSchema` left it: the item in the
  * reading pane, the list's words and its facets. A default is no key, and a facet replaces the
- * history entry: a filter is not a page to go Back to.
+ * history entry: a filter is not a page to go Back to. A Type the Inbox
+ * does not offer now reads as All (`offeredType`).
  */
 export function useInboxSearch() {
   const search: InboxSearch = route.useSearch();
@@ -15,7 +17,11 @@ export function useInboxSearch() {
   const write = (patch: Partial<InboxSearch>) =>
     navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true });
 
-  const filter: InboxFilter = { type: search.type ?? 'all', project: search.project ?? null };
+  const [pullsShown] = useInboxPullsShown();
+  const filter: InboxFilter = {
+    type: offeredType(search.type ?? 'all', pullsShown),
+    project: search.project ?? null,
+  };
   return {
     item: search.item ?? null,
     query: search.q ?? '',
