@@ -341,6 +341,15 @@ describe('BotWatchToolsFactory', () => {
     expect(stallChecks.schedule.mock.calls[0][0]).toMatchObject({ turn: 2, check: 1 });
   });
 
+  it('stores nothing and stages nothing when the bot said not to watch', async () => {
+    const { resolver, context, subscriptions, stallChecks } = setup();
+    expect(await resolver.follow(context, SESSION, 'now', false)).toContain(
+      'You are not watching it',
+    );
+    expect(subscriptions.subscribe).not.toHaveBeenCalled();
+    expect(stallChecks.schedule).not.toHaveBeenCalled();
+  });
+
   it('keeps the watch it stored when its stall check cannot be staged', async () => {
     const { resolver, context, stallChecks } = setup();
     stallChecks.schedule.mockRejectedValueOnce(new Error('connection reset'));

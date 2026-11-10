@@ -220,10 +220,12 @@ export class BotSessionToolsFactory implements BotToolArea {
         const offline = result.hints.includes('host_offline')
           ? ' The host is offline: the session is queued and starts when it comes back.'
           : '';
-        const watched =
-          input.watch === false
-            ? 'You are not watching it; read it later with get_session.'
-            : await this.watches.follow(context, result.sessionId, 'first_task');
+        const watched = await this.watches.follow(
+          context,
+          result.sessionId,
+          'first_task',
+          input.watch,
+        );
         return {
           content: `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own. ${watched}`,
           sessionId: result.sessionId,
@@ -342,10 +344,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         const session = result.hints.includes('host_offline')
           ? null
           : await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
-        const watched =
-          input.watch === false
-            ? 'You are not watching it; read it later with get_session.'
-            : await this.watches.follow(context, sessionId, 'first_task');
+        const watched = await this.watches.follow(context, sessionId, 'first_task', input.watch);
         return { content: `${cloudStartAnswer(plan, sessionId, session)} ${watched}`, sessionId };
       },
     });
@@ -388,10 +387,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             sender: { kind: 'bot', botId: context.botId, turnId: context.turnId },
           }),
         );
-        const watched =
-          input.watch === false
-            ? 'Read how it goes with get_session or read_session.'
-            : await this.watches.follow(context, input.session_id, { turn });
+        const watched = await this.watches.follow(context, input.session_id, { turn }, input.watch);
         return `Sent the prompt to session ${input.session_id}. ${watched}${readAfterHint(sent.seq)}`;
       },
     });
@@ -472,10 +468,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             answer: decisionAnswerOf(input),
           }),
         );
-        const watched =
-          input.watch === false
-            ? 'get_session shows what it does next.'
-            : await this.watches.follow(context, input.session_id, 'now');
+        const watched = await this.watches.follow(context, input.session_id, 'now', input.watch);
         return `Answered session ${input.session_id}. The agent takes it from here. ${watched}${readAfterHint(answered.seq)}`;
       },
     });

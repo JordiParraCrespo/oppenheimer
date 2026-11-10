@@ -159,6 +159,46 @@ export const BOT_PROGRESS_CHECK_INTERVAL_MS = 10 * 60_000;
  */
 export const BOT_PROGRESS_CHECKS_PER_TASK = 6;
 
+/** What a new session watch follows: how long, why, and from which task. */
+export interface SessionWatchOptions {
+  until: BotSubscriptionUntil;
+  purpose: string | null;
+  from: BotWatchFrom;
+}
+
+/**
+ * What a tool that set a task going (`start_session`, `send_to_session`,
+ * `answer_session`) follows: that task, unless the bot already follows the
+ * session until it closes. Such a tool widens a watch and never narrows it,
+ * and a purpose the bot gave stays.
+ */
+export function followOptionsOf(
+  current: { until: BotSubscriptionUntil; purpose: string | null } | null,
+  from: BotWatchFrom,
+): SessionWatchOptions {
+  return {
+    until: current?.until === 'closed' ? 'closed' : 'task',
+    purpose: current?.purpose ?? null,
+    from,
+  };
+}
+
+/**
+ * The task a tool's follow owes its looks: the one the watch names, or, for
+ * a watch kept until the session closes, which names none, the one the tool
+ * set going. Null when there is none yet.
+ */
+export function checkTurnOf(
+  watchedTurn: number | null,
+  from: BotWatchFrom,
+  latest: Pick<WatchedTask, 'seq'> | null,
+): number | null {
+  if (watchedTurn !== null) return watchedTurn;
+  if (from === 'first_task') return 1;
+  if (from === 'now') return latest?.seq ?? null;
+  return from.turn;
+}
+
 /**
  * The task a new watch has to look in on: the one it follows, when that is
  * the session's latest and still queued or running. Null when the task it
@@ -442,6 +482,12 @@ export function sessionWakeText(wake: SessionWake): string {
   return lines.join('\n');
 }
 
+/** Which look a progress wake is, after "is still running": a regular one by its time, or the one the bot asked for. */
+function progressWhen(check: number): string {
+  if (isRequestedCheck(check)) return '. This is the look at how it is going you asked for.';
+  return `, about ${checkDelayMs(check) / 60_000} minutes after you started following it. This is your regular look at how it is going.`;
+}
+
 /** The wake's first line: what happened to the session, in Oppenheimer's words. */
 function headline(session: string, cause: SessionWakeCause): string {
   switch (cause.kind) {
@@ -450,9 +496,7 @@ function headline(session: string, cause: SessionWakeCause): string {
     case 'stall':
       return `${session} its task #${cause.task.seq} looks stuck: it ${STALL_PHRASES[cause.reason]}.`;
     case 'progress':
-      return isRequestedCheck(cause.check)
-        ? `${session} its task #${cause.task.seq} is still running. This is the look at how it is going you asked for.`
-        : `${session} its task #${cause.task.seq} is still running, about ${checkDelayMs(cause.check) / 60_000} minutes after you started following it. This is your regular look at how it is going.`;
+      return `${session} its task #${cause.task.seq} is still running${progressWhen(cause.check)}`;
     case 'match':
       return `${session} its terminal printed a line matching ${quotePattern(cause.pattern)} (${cause.count} matching line${cause.count === 1 ? '' : 's'} so far).`;
     case 'notice':

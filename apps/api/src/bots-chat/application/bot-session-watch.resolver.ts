@@ -15,10 +15,12 @@ import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTIONS_PER_BOT,
-  type BotSubscriptionUntil,
   type BotWatchFrom,
   checkDelayMs,
+  checkTurnOf,
+  followOptionsOf,
   requestedCheckNumber,
+  type SessionWatchOptions,
 } from '../domain/bot-subscription.policy';
 import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
@@ -26,6 +28,9 @@ import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 /** What `start_session`, `send_to_session` and `answer_session` answer once the task they set going is followed. */
 const HANDED_OFF =
   'You are subscribed to it and will be woken when the task needs input or ends, if it has not got going in a few minutes, and every few minutes while it runs so you can look at how it is going: end your turn now, and report when you are.';
+
+/** What a tool that set a task going answers when the bot said `watch: false`. */
+const NOT_FOLLOWED = 'You are not watching it; read how it goes with get_session or read_session.';
 
 /** What a watch came to: the subscription as stored, and the session as it stood. */
 export interface SessionWatch {
@@ -58,7 +63,9 @@ export class BotSessionWatchResolver {
    * did it: a session it started, from its first task (`start_session`), the
    * task its follow-up prompt opened, by number (`send_to_session`), or the
    * live task it unblocked (`answer_session`, `now`: the input it answered
-   * counts as known, so only what follows wakes it). The
+   * counts as known, so only what follows wakes it), unless the bot said
+   * `watch: false`. What it follows is `followOptionsOf`'s, and its looks
+   * go to `checkTurnOf`'s task. The
    * task may already have ended or blocked by the time the watch is stored
    * (a launch that failed at once), and its event then found nobody, so the
    * wake is asked for once now: it reads the session and wakes the bot if
@@ -70,22 +77,18 @@ export class BotSessionWatchResolver {
     context: BotToolCallContext,
     sessionId: string,
     from: BotWatchFrom,
+    watch = true,
   ): Promise<string> {
+    if (!watch) return NOT_FOLLOWED;
     try {
-      const { subscription, session } = await this.watch(
-        context,
-        sessionId,
-        { until: 'task', purpose: null, from },
-        { narrow: false },
+      const { subscription, session } = await this.store(context, sessionId, (current) =>
+        followOptionsOf(current, from),
       );
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
-      // A watch kept until the session closes names no task: the one set going is checked.
-      const turn =
-        subscription.watchedTurn ??
-        (from === 'first_task' ? 1 : from === 'now' ? session.latestTurn?.seq : from.turn);
-      if (turn !== undefined) await this.checkLater(subscription, sessionId, turn);
+      const turn = checkTurnOf(subscription.watchedTurn, from, session.latestTurn);
+      if (turn !== null) await this.stageLooks(subscription, sessionId, turn, null);
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -94,31 +97,24 @@ export class BotSessionWatchResolver {
   }
 
   /**
-   * Owes the task its first check (the stall check, then the looks at its
-   * progress), `checkDelayMs(1)` from now. The watch is stored either way,
-   * and its wakes still come, so a check that cannot be staged is logged,
-   * not said.
+   * Owes a followed task its looks: the first of the regular checks (the
+   * stall check, then the looks at its progress), `checkDelayMs(1)` from
+   * now, and, when the bot asked for one (`watch_session`'s
+   * `check_in_minutes`), one more that many minutes from now, numbered by
+   * the minute it is due (`requestedCheckNumber`) so no regular check
+   * already delivered swallows it. The watch is stored either way, and its
+   * wakes still come, so a check that cannot be staged is logged, not said.
    */
-  async checkLater(
+  async stageLooks(
     subscription: BotSubscriptionEntity,
     sessionId: string,
     turn: number,
+    checkInMinutes: number | null,
   ): Promise<void> {
-    await this.stageCheck(subscription, sessionId, turn, 1, new Date(Date.now() + checkDelayMs(1)));
-  }
-
-  /**
-   * Owes the task one look the bot asked for itself (`watch_session`'s
-   * `check_in_minutes`), at `at`, numbered by the minute it is due
-   * (`requestedCheckNumber`): it shares no key with the regular checks, so
-   * one of those already delivered never swallows it.
-   */
-  async checkInAt(
-    subscription: BotSubscriptionEntity,
-    sessionId: string,
-    turn: number,
-    at: Date,
-  ): Promise<void> {
+    const now = Date.now();
+    await this.stageCheck(subscription, sessionId, turn, 1, new Date(now + checkDelayMs(1)));
+    if (checkInMinutes === null) return;
+    const at = new Date(now + checkInMinutes * 60_000);
     await this.stageCheck(subscription, sessionId, turn, requestedCheckNumber(at), at);
   }
 
@@ -149,11 +145,20 @@ export class BotSessionWatchResolver {
     }
   }
 
-  async watch(
+  /** Follows a session as the bot asked (`watch_session`): what it says replaces what it followed. */
+  watch(
     context: BotToolCallContext,
     sessionId: string,
-    options: { until: BotSubscriptionUntil; purpose: string | null; from: BotWatchFrom },
-    replace: { narrow: boolean } = { narrow: true },
+    options: SessionWatchOptions,
+  ): Promise<SessionWatch> {
+    return this.store(context, sessionId, () => options);
+  }
+
+  /** Stores the watch `choose` decides from the bot's current one of the session, if any. */
+  private async store(
+    context: BotToolCallContext,
+    sessionId: string,
+    choose: (current: BotSubscriptionEntity | null) => SessionWatchOptions,
   ): Promise<SessionWatch> {
     const session = await this.queries.execute<FindSessionQuery, WorkSessionEntity>(
       new FindSessionQuery({ scope: context.owner, sessionId }),
@@ -172,18 +177,10 @@ export class BotSessionWatchResolver {
         `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests. Unwatch one you no longer need (list_watches shows them) first.`,
       );
     }
-    // A tool that follows the task it set going widens a watch, never
-    // narrows it: a session the bot follows until it closes, and why, stay so.
-    const kept =
-      current && !replace.narrow
-        ? {
-            ...options,
-            until: current.until === 'closed' ? ('closed' as const) : options.until,
-            purpose: options.purpose ?? current.purpose,
-          }
-        : options;
     const subscription = await this.subscriptions.subscribe(
-      BotSubscriptionEntity.subscribe(this.mapper.toSubscribeProps(context, session, kept)),
+      BotSubscriptionEntity.subscribe(
+        this.mapper.toSubscribeProps(context, session, choose(current ?? null)),
+      ),
     );
     return { subscription, session };
   }

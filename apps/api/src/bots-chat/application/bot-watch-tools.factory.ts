@@ -92,13 +92,13 @@ export class BotWatchToolsFactory implements BotToolArea {
           from: 'now',
         });
         const live = liveTaskOf(subscription.watchedTurn, session.latestTurn);
-        if (live !== null) await this.watches.checkLater(subscription, session.id, live);
-        const checkIn =
-          live !== null && input.check_in_minutes !== undefined
-            ? new Date(Date.now() + input.check_in_minutes * 60_000)
-            : null;
-        if (checkIn && live !== null) {
-          await this.watches.checkInAt(subscription, session.id, live, checkIn);
+        if (live !== null) {
+          await this.watches.stageLooks(
+            subscription,
+            session.id,
+            live,
+            input.check_in_minutes ?? null,
+          );
         }
         const answer = [
           this.mapper.toWatchAnswer(subscription, session),
