@@ -172,6 +172,12 @@ export class BotSessionToolsFactory implements BotToolArea {
             "The branch the session's own branch starts from; the repository's base branch when omitted. Not with folder.",
           ),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        hidden: z
+          .boolean()
+          .optional()
+          .describe(
+            "Start it hidden from the person's sidebar in the console (default false): for work they need not watch. It runs like any other, and they can show hidden sessions whenever they want.",
+          ),
         watch: z
           .boolean()
           .optional()
@@ -291,6 +297,12 @@ export class BotSessionToolsFactory implements BotToolArea {
           .optional()
           .describe("cursor only: one of Cursor's models; Cursor's own pick when omitted."),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        hidden: z
+          .boolean()
+          .optional()
+          .describe(
+            "Start it hidden from the person's sidebar in the console (default false): for work they need not watch. It runs like any other, and they can show hidden sessions whenever they want.",
+          ),
         watch: z
           .boolean()
           .optional()

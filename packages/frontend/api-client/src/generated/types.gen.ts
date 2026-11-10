@@ -1744,6 +1744,10 @@ export type SessionResponseDto = {
      */
     cloud: SessionCloudRunResponseDto | null;
     /**
+     * Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.
+     */
+    hidden: boolean;
+    /**
      * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
      */
     hints: Array<string>;
@@ -1821,6 +1825,7 @@ export type CreateSessionRequest = {
     };
     prompt?: string;
     attachmentIds?: Array<string>;
+    hidden?: boolean;
 };
 
 export type StartCloudSessionRequest = {
@@ -1834,6 +1839,7 @@ export type StartCloudSessionRequest = {
     };
     prompt: string;
     model?: string;
+    hidden?: boolean;
 };
 
 export type SessionAttachmentResponseDto = {
@@ -2151,6 +2157,10 @@ export type AddCheckoutRequest = {
 
 export type RenameSessionRequest = {
     name: string;
+};
+
+export type SetSessionVisibilityRequest = {
+    hidden: boolean;
 };
 
 export type MoveSessionRequest = {
@@ -2917,6 +2927,7 @@ export type StartTaskSessionRequest = {
         };
         prompt?: string;
         attachmentIds?: Array<string>;
+        hidden?: boolean;
     };
     seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
@@ -2941,6 +2952,7 @@ export type StartTaskCloudSessionRequest = {
         };
         prompt: string;
         model?: string;
+        hidden?: boolean;
     };
     seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
@@ -11279,6 +11291,38 @@ export type RenameSessionResponses = {
 };
 
 export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
+
+export type SetSessionVisibilityData = {
+    body: SetSessionVisibilityRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/visibility';
+};
+
+export type SetSessionVisibilityErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type SetSessionVisibilityError = SetSessionVisibilityErrors[keyof SetSessionVisibilityErrors];
+
+export type SetSessionVisibilityResponses = {
+    200: SessionResponseDto;
+};
+
+export type SetSessionVisibilityResponse = SetSessionVisibilityResponses[keyof SetSessionVisibilityResponses];
 
 export type MoveSessionData = {
     body: MoveSessionRequest;

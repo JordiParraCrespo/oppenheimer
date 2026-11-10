@@ -58,7 +58,7 @@ connects, but every workspace tool answers "not permitted".
 | Hosts and projects | `list_hosts`, `list_projects` | `hosts:read`, `projects:read` |
 | Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session` | `sessions:read` |
 | | `start_session` | `sessions:write`, `projects:read` |
-| | `send_to_session`, `stop_session`, `close_session` | `sessions:write` |
+| | `send_to_session`, `set_session_visibility`, `stop_session`, `close_session` | `sessions:write` |
 | Automations | `list_automations` | `automations:read` |
 | | `create_automation` | `automations:write`, `projects:read` |
 | | `run_automation`, `pause_automation`, `resume_automation` | `automations:write` |

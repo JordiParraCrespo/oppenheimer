@@ -53,6 +53,7 @@ The console has no page for API tokens; use `opp tokens`.
 | `opp hosts list \| get` | Your hosts and which are online |
 | `opp projects list` | Projects with their repositories, default host and agent |
 | `opp sessions list \| get \| run \| send \| wait \| stop \| close` | Sessions on your hosts |
+| `opp sessions run --hidden`, `opp sessions hide \| show <id>` | Keep a session out of the console's sidebar, or show it again; it runs the same |
 | `opp sessions transcript` | A session's conversation, a page at a time (`--cursor` reads on), secrets replaced |
 | `opp automations list \| create \| run \| pause \| resume \| delete` | Automations |
 | `opp bots list \| chat` | Your bots; `chat` waits for the answer |
@@ -94,7 +95,7 @@ The server runs over stdio with an API token, or as one hosted server over Strea
 | --- | --- |
 | Who | `whoami` (call it first when a tool is missing) |
 | Hosts and projects | `list_hosts`, `list_projects` |
-| Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session`, `start_session`, `send_to_session`, `stop_session`, `close_session` |
+| Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session`, `start_session`, `send_to_session`, `set_session_visibility`, `stop_session`, `close_session` |
 | Automations | `list_automations`, `create_automation`, `run_automation`, `pause_automation`, `resume_automation` |
 | Bots | `list_bots`, `ask_bot` |
 | Plan | `list_tasks`, `create_task`, `move_task` |

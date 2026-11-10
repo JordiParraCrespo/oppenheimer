@@ -28,6 +28,7 @@ there.
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
 | — | [Agent tools](agent-tools.md) | An agent in a session reaches the person: sends a file to the chat, notifies the Inbox, is woken by its pull request or at a time it set; started 2026-11-02, version not set |
 | — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
+| — | [Hidden sessions](hidden-sessions.md) | Sessions kept out of the sidebar until shown: a bot, `opp` or MCP can start one hidden, the person hides or shows one from its menu, Show hidden sessions in the filter menu; proposed 2026-11-10, version not set |
 | — | [Sentry](sentry.md) | Errors from the API, workers, bots and console reported to Sentry; a Sentry issue as an automation trigger that starts a fix; built from 2026-11-02, version not set |
 
 ## What this list does not place yet

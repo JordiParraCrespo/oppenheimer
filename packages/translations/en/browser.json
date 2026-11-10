@@ -1071,6 +1071,9 @@
       "pinned": "Pinned",
       "pin": "Pin",
       "unpin": "Unpin",
+      "hide": "Hide",
+      "show": "Show",
+      "hidden": "Hidden",
       "dropToPin": "Drop a session here to pin it.",
       "actions": "Session actions",
       "rename": "Rename",
@@ -1143,6 +1146,7 @@
       "shownSome": "{{shown}} of {{total}}",
       "showAll": "Show all projects",
       "pinnedOnly": "Pinned only",
+      "showHidden": "Show hidden sessions",
       "newProject": "New project…"
     },
     "sort": {
@@ -4259,6 +4263,8 @@
     "emailResent": "Email sent again.",
     "sessionRenamed": "Renamed to “{{name}}”.",
     "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionHidden": "“{{name}}” hidden. Show hidden sessions from the filter menu.",
+    "sessionShown": "“{{name}}” shown.",
     "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",

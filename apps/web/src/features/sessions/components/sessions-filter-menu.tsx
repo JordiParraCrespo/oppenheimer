@@ -41,6 +41,11 @@ export interface ProjectVisibility {
   onShowAll: () => void;
   pinnedOnly: boolean;
   onPinnedOnlyChange: (pinnedOnly: boolean) => void;
+  /** Whether the sessions hidden by a bot, a script or the reader are drawn. */
+  showHidden: boolean;
+  onShowHiddenChange: (showHidden: boolean) => void;
+  /** How many sessions are hidden, drawn beside the toggle so they are never lost. */
+  hiddenSessionCount: number;
 }
 
 /**
@@ -185,6 +190,15 @@ export function SessionsFilterMenu({
           onCheckedChange={(checked) => visibility.onPinnedOnlyChange(checked)}
         >
           {t('sessions.filters.pinnedOnly')}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={visibility.showHidden}
+          onCheckedChange={(checked) => visibility.onShowHiddenChange(checked)}
+        >
+          {t('sessions.filters.showHidden')}
+          {visibility.hiddenSessionCount > 0 ? (
+            <DropdownMenuValue>{visibility.hiddenSessionCount}</DropdownMenuValue>
+          ) : null}
         </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />

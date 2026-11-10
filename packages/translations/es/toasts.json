@@ -10,6 +10,8 @@
   "emailResent": "Correo enviado de nuevo.",
   "sessionRenamed": "Renombrada a «{{name}}».",
   "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+  "sessionHidden": "«{{name}}» ocultada. Muestra las sesiones ocultas desde el menú de filtros.",
+  "sessionShown": "«{{name}}» visible de nuevo.",
   "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
   "projectCreated": "Se ha creado «{{name}}».",
   "projectSaved": "Se ha guardado «{{name}}».",

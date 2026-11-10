@@ -23,8 +23,10 @@ import {
   useSelecting,
   useSessionSelectionStore,
 } from '../hooks/use-session-selection';
+import { useShowHidden } from '../hooks/use-show-hidden';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { listedProjects } from '../lib/hidden-projects';
+import { listedSessions } from '../lib/hidden-sessions';
 import {
   ALL,
   activeFilters,
@@ -78,6 +80,9 @@ const DeleteSessionsDialog = lazy(() =>
  * hidden project's group and sessions are not drawn, unless the project
  * filter picks it, and its pinned sessions stay pinned. Pinned only
  * (`usePinnedOnly`), kept on this device too, draws Pinned and no project.
+ * A session hidden through the API (a bot's, a script's, or one the reader
+ * hid from its menu) is not drawn anywhere, pinned or not, until Show hidden
+ * sessions (`useShowHidden`, kept on this device) draws it, marked Hidden.
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
@@ -98,6 +103,7 @@ export function SessionsSidebarBody() {
   const list = useFoldedSessions();
   const { hidden, setShown, showAll } = useHiddenProjects();
   const { pinnedOnly, setPinnedOnly } = usePinnedOnly();
+  const { showHidden, setShowHidden } = useShowHidden();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -118,7 +124,10 @@ export function SessionsSidebarBody() {
     agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
   };
-  const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
+  const hiddenSessions = listedSessions(all, showHidden);
+  const visible = applyFilters(hiddenSessions.sessions, filters).filter((session) =>
+    matchesQuery(session, query),
+  );
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
   const pins = useSessionPins();
@@ -180,6 +189,9 @@ export function SessionsSidebarBody() {
             onShowAll: showAll,
             pinnedOnly,
             onPinnedOnlyChange: setPinnedOnly,
+            showHidden,
+            onShowHiddenChange: setShowHidden,
+            hiddenSessionCount: hiddenSessions.hiddenCount,
           }}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
