@@ -44,7 +44,9 @@ function liveSession(state: string, seq = 1, isResolved = false) {
   } as unknown as WorkSessionEntity;
 }
 
-function stored(overrides: { resourceId?: string; wakes?: number } = {}) {
+function stored(
+  overrides: { resourceId?: string; wakes?: number; until?: 'task' | 'closed' } = {},
+) {
   return BotSubscriptionEntity.create({
     id: 'sub-1',
     createdAt: new Date('2026-10-22T10:00:00Z'),
@@ -55,8 +57,8 @@ function stored(overrides: { resourceId?: string; wakes?: number } = {}) {
       resourceId: overrides.resourceId ?? SESSION,
       originTurnId: 'turn-1',
       purpose: 'research',
-      until: 'task',
-      watchedTurn: 1,
+      until: overrides.until ?? 'task',
+      watchedTurn: overrides.until === 'closed' ? null : 1,
       credentialScopes: null,
       timeZone: 'UTC',
       lastTurn: null,
@@ -320,6 +322,21 @@ describe('BotWatchToolsFactory', () => {
       watchedTurn: 2,
       lastTurn: 2,
       lastState: 'requires_action',
+    });
+    expect(stallChecks.schedule.mock.calls[0][0]).toMatchObject({ turn: 2, check: 1 });
+  });
+
+  // What breaks this: a bot that follows a session until it closes unblocks
+  // it once, and is silently left following that one task.
+  it('never narrows a watch the bot already has when a tool follows the task it set going', async () => {
+    const { resolver, context, subscriptions, stallChecks } = setup({
+      read: liveSession('requires_action', 2),
+      following: [stored({ until: 'closed' })],
+    });
+    await resolver.follow(context, SESSION, 'now');
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      until: 'closed',
+      purpose: 'research',
     });
     expect(stallChecks.schedule.mock.calls[0][0]).toMatchObject({ turn: 2, check: 1 });
   });

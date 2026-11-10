@@ -72,17 +72,20 @@ export class BotSessionWatchResolver {
     from: BotWatchFrom,
   ): Promise<string> {
     try {
-      const { subscription } = await this.watch(context, sessionId, {
-        until: 'task',
-        purpose: null,
-        from,
-      });
+      const { subscription, session } = await this.watch(
+        context,
+        sessionId,
+        { until: 'task', purpose: null, from },
+        { narrow: false },
+      );
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
-      if (subscription.watchedTurn !== null) {
-        await this.checkLater(subscription, sessionId, subscription.watchedTurn);
-      }
+      // A watch kept until the session closes names no task: the one set going is checked.
+      const turn =
+        subscription.watchedTurn ??
+        (from === 'first_task' ? 1 : from === 'now' ? session.latestTurn?.seq : from.turn);
+      if (turn !== undefined) await this.checkLater(subscription, sessionId, turn);
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -150,6 +153,7 @@ export class BotSessionWatchResolver {
     context: BotToolCallContext,
     sessionId: string,
     options: { until: BotSubscriptionUntil; purpose: string | null; from: BotWatchFrom },
+    replace: { narrow: boolean } = { narrow: true },
   ): Promise<SessionWatch> {
     const session = await this.queries.execute<FindSessionQuery, WorkSessionEntity>(
       new FindSessionQuery({ scope: context.owner, sessionId }),
@@ -162,14 +166,24 @@ export class BotSessionWatchResolver {
       context.botId,
       BOT_SUBSCRIPTIONS_PER_BOT,
     );
-    const already = existing.some((subscription) => subscription.resourceId === sessionId);
-    if (!already && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
+    const current = existing.find((subscription) => subscription.resourceId === sessionId);
+    if (!current && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
         `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests. Unwatch one you no longer need (list_watches shows them) first.`,
       );
     }
+    // A tool that follows the task it set going widens a watch, never
+    // narrows it: a session the bot follows until it closes, and why, stay so.
+    const kept =
+      current && !replace.narrow
+        ? {
+            ...options,
+            until: current.until === 'closed' ? ('closed' as const) : options.until,
+            purpose: options.purpose ?? current.purpose,
+          }
+        : options;
     const subscription = await this.subscriptions.subscribe(
-      BotSubscriptionEntity.subscribe(this.mapper.toSubscribeProps(context, session, options)),
+      BotSubscriptionEntity.subscribe(this.mapper.toSubscribeProps(context, session, kept)),
     );
     return { subscription, session };
   }

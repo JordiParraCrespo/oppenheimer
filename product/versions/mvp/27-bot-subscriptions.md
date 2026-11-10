@@ -239,7 +239,7 @@ done: they look over the work every so often. So does a bot now:
   check like the others, numbered by the minute it is due
   (`requestedCheckNumber`), so it never shares a key with a regular check
   already delivered and stages none after it. A task not running sets
-  none, and the answer says so: its end or its next question wakes the bot.
+  none, and the answer says so: its end, or the next task, wakes the bot.
 - **Promises** (2026-11-10). The prompt says never to tell the person the
   bot will check back, report or carry on once something finishes unless
   something will wake it for it: the sessions it started, prompted or
