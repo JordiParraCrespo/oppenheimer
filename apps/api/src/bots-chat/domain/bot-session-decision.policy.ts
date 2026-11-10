@@ -33,15 +33,19 @@ const DESTRUCTIVE: readonly RegExp[] = [
   new RegExp(String.raw`\brm\b${ARGS}\s(?:-[a-z]*r[a-z]*\b|--recursive\b)`, 'i'),
   /\b(?:rimraf|shred|mkfs(?:\.\w+)?|wipefs)\b/i,
   new RegExp(String.raw`\bfind\b${ARGS}\s-delete\b`, 'i'),
+  // A forced push, or one that deletes on the remote (`--delete`, `-d`, `:main`, `--mirror`).
   new RegExp(
-    String.raw`${GIT}push\b${ARGS}(?:\s--force(?:-with-lease)?\b|\s-[a-z]*f[a-z]*\b|\s\+\S)`,
+    String.raw`${GIT}push\b${ARGS}(?:\s--(?:force(?:-with-lease)?|delete|mirror)\b|\s-[a-z]*[fd][a-z]*\b|\s[+:]\S)`,
     'i',
   ),
   new RegExp(String.raw`${GIT}reset\b${ARGS}\s--hard\b`, 'i'),
   new RegExp(String.raw`${GIT}clean\b${ARGS}\s(?:-[a-z]*f[a-z]*\b|--force\b)`, 'i'),
-  // `-D` is the forced delete; `-d` refuses an unmerged branch, so this one is case-sensitive.
+  // `-D` and `-M` delete or overwrite a branch whatever its state; `-d` alone
+  // refuses an unmerged one, so this one is case-sensitive.
+  new RegExp(String.raw`${GIT}branch\b${ARGS}\s-[a-zA-Z]*[DM][a-zA-Z]*\b`),
+  // `-d` with `-f` in any spelling (`-df`, `-d -f`, `--delete --force`) is `-D`.
   new RegExp(
-    String.raw`${GIT}branch\b${ARGS}\s(?:-[a-zA-Z]*D[a-zA-Z]*\b|--delete\s+--force\b|--force\s+--delete\b)`,
+    String.raw`${GIT}branch\b(?=${ARGS}\s(?:-[a-z]*d[a-z]*\b|--delete\b))(?=${ARGS}\s(?:-[a-z]*f[a-z]*\b|--force\b))`,
   ),
   new RegExp(String.raw`${GIT}filter-(?:branch|repo)\b`, 'i'),
   /\bdrop\s+(?:table|database|schema)\b/i,
