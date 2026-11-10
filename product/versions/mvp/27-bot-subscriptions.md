@@ -179,7 +179,7 @@ This is that check, for one task:
 - **What it reads.** The session, as the owner, as a wake does. Only
   Oppenheimer's records decide, never silence: the runner reports on
   change, so a quiet log is also what an agent working steadily looks like.
-- **What says stuck** (`stallFor`, pure). The task is still `queued` (it
+- **What says stuck** (`checkFor`, pure, since §4.2). The task is still `queued` (it
   never started), or it is an interactive task on a host, `in_progress`,
   whose agent was never seen working. A headless or cloud task reports its
   own progress, so the screen is no evidence for it. Anything else is

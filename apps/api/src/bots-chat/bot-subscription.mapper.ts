@@ -10,9 +10,9 @@ import {
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   type BotSubscriptionUntil,
   type BotWatchFrom,
+  type CheckFinding,
   knownStateOf,
   type SessionWake,
-  type StallReason,
   type sessionWakeTurn,
   type WakeDecision,
   type WatchedTask,
@@ -228,9 +228,9 @@ export class BotSubscriptionMapper {
     subscription: BotSubscriptionEntity,
     session: WorkSessionEntity,
     task: WatchedTask,
-    found: { kind: 'stall'; reason: StallReason } | { kind: 'progress'; check: number },
+    finding: CheckFinding,
   ): SessionWake {
-    return { ...this.wakeOf(subscription, session, false), cause: { ...found, task } };
+    return { ...this.wakeOf(subscription, session, false), cause: { ...finding, task } };
   }
 
   /** What `watch_session` answers: what is followed now, and what the session is doing. */

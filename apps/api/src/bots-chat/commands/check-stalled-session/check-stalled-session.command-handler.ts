@@ -61,14 +61,8 @@ export class CheckStalledSessionCommandHandler
     });
     if (decision.kind === 'skip' || !task) return;
 
-    const found =
-      decision.kind === 'stalled'
-        ? ({ kind: 'stall', reason: decision.reason } as const)
-        : decision.kind === 'progress'
-          ? ({ kind: 'progress', check } as const)
-          : null;
-    const wake = found && this.mapper.toCheckWake(subscription, session, task, found);
-    if (wake) {
+    if (decision.kind === 'wake') {
+      const wake = this.mapper.toCheckWake(subscription, session, task, decision.finding);
       const { turn, opening } = sessionWakeTurn(
         this.mapper.toWakeTurnProps(subscription, bot, ownerUserId),
         wake,

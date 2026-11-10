@@ -176,67 +176,39 @@ export interface StallTask {
   drive: string;
 }
 
+/** What a check found that wakes the bot: a stall (§4.1), or a task due its look (§4.2). */
+export type CheckFinding =
+  | { kind: 'stall'; reason: StallReason }
+  | { kind: 'progress'; check: number };
+
 /**
  * What one check of a handed-off task decides. `next` is whether another
  * check is owed after this one.
  *
  * - `skip`: the task is over, superseded or no longer this subscription's;
  *   the wakes tell the rest, and no more checks are owed.
- * - `quiet`: nothing to wake for now (the person was already told it waits
- *   on them, or it never started and that was said), but look again.
- * - `stalled`: stuck short of every state that wakes the bot (§4.1).
- * - `progress`: running, and due its regular look (§4.2).
+ * - `quiet`: nothing to wake for now, but look again.
+ * - `wake`: wake the bot with what the check found.
  */
 export type CheckDecision =
   | { kind: 'skip' }
   | { kind: 'quiet'; next: boolean }
-  | { kind: 'stalled'; reason: StallReason; turn: number; next: boolean }
-  | { kind: 'progress'; turn: number; next: boolean };
-
-/** The decision of the first check alone, as the stall check was before §4.2. */
-export type StallDecision =
-  | { kind: 'skip' }
-  | { kind: 'stalled'; reason: StallReason; turn: number };
+  | { kind: 'wake'; finding: CheckFinding; next: boolean };
 
 /**
- * Whether the task a bot handed off, checked a few minutes after
- * (`BOT_STALL_CHECK_DELAY_MS`), is stuck short of every state that wakes the
- * bot (§4.1). Silent unless it is: a task that moved on, ended, asks for
- * input or was seen working is the wakes' to tell, or nothing to tell.
+ * Check number `check` of a task the bot handed off (§4.1, §4.2), as one
+ * table. Only Oppenheimer's records decide, never a guess from silence: the
+ * runner reports on change, so a quiet log is also what an agent working
+ * steadily looks like.
  *
- * Only Oppenheimer's records decide, never a guess from silence: the runner
- * reports on change, so a quiet log is also what an agent working steadily
- * looks like. Two records say stuck:
- *
- * - `not_started`: the task is still `queued`. Its host never started the
- *   session (offline, or the launch never ran).
- * - `not_working`: the session started on a host and the agent was never seen
- *   working, which is where a folder-trust or sign-in prompt leaves it. Only
- *   an interactive turn on a host: a headless or cloud turn reports its own
- *   progress, so the screen is no evidence for it.
- */
-export function stallFor(
-  subject: WakeSubject,
-  checkedTurn: number,
-  task: StallTask | null,
-  session: { closed: boolean; place: string },
-): StallDecision {
-  const skip: StallDecision = { kind: 'skip' };
-  if (session.closed || !task || task.seq !== checkedTurn) return skip;
-  if (subject.watchedTurn !== null && subject.watchedTurn !== checkedTurn) return skip;
-  if (subject.lastTurn !== null && subject.lastTurn >= checkedTurn) return skip;
-  const reason = stallReasonOf(task, session.place);
-  return reason ? { kind: 'stalled', reason, turn: task.seq } : skip;
-}
-
-/**
- * Check number `check` of a task the bot handed off (§4.1, §4.2): a stall is
- * told first, as `stallFor` finds it; a task still running is otherwise due
- * the bot's look at its progress, every check, whatever its drive or place,
- * since what the agent has done is in its transcript, not in its state. A
- * task waiting on a person, or one whose stall was already told, is looked
- * at again later without a wake. Anything over, superseded or not this
- * subscription's ends the checks.
+ * - Over, superseded, not this subscription's, or the session closed: `skip`.
+ * - Waiting on a person: `quiet`; the input-needed wake told them.
+ * - Stuck, by the records (`stallReasonOf`): a `stall` wake, unless a wake
+ *   for this task already went out (the person was asked for input on it),
+ *   then `quiet`. A stall wake is keyed by the task, so a later check that
+ *   still finds it stuck is the same wake and tells the bot once.
+ * - Otherwise running: a `progress` wake, every check, whatever its drive or
+ *   place, since what the agent did is in its transcript, not its state.
  */
 export function checkFor(
   subject: WakeSubject,
@@ -251,13 +223,20 @@ export function checkFor(
   const next = check < BOT_PROGRESS_CHECKS_PER_TASK;
   if (task.state === 'requires_action') return { kind: 'quiet', next };
   if (task.state !== 'queued' && task.state !== 'in_progress') return { kind: 'skip' };
-  const stall = stallFor(subject, checkedTurn, task, session);
-  if (stall.kind === 'stalled') return { ...stall, next };
-  // Stuck and already told: looking again only repeats it.
-  if (stallReasonOf(task, session.place)) return { kind: 'quiet', next };
-  return { kind: 'progress', turn: task.seq, next };
+  const reason = stallReasonOf(task, session.place);
+  if (!reason) return { kind: 'wake', finding: { kind: 'progress', check }, next };
+  if (subject.lastTurn === checkedTurn) return { kind: 'quiet', next };
+  return { kind: 'wake', finding: { kind: 'stall', reason }, next };
 }
 
+/**
+ * Two records say stuck. `not_started`: the task is still `queued`, so its
+ * host never started the session (offline, or the launch never ran).
+ * `not_working`: the session started on a host and the agent was never seen
+ * working, which is where a folder-trust or sign-in prompt leaves it; only an
+ * interactive turn on a host, since a headless or cloud turn reports its own
+ * progress and the screen is no evidence for it.
+ */
 function stallReasonOf(task: StallTask, place: string): StallReason | null {
   if (task.state === 'queued') return 'not_started';
   const screenRead = task.drive === 'interactive' && place === 'host';
