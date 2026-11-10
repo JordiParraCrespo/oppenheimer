@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shownAgents, withAgentShown } from '../lib/hidden-agents';
+import { shownAgents, withAgentShown, withoutHidden } from '../lib/hidden-agents';
 import { toEngineAgents } from '../lib/session-options';
 
 /**
@@ -10,8 +10,8 @@ import { toEngineAgents } from '../lib/session-options';
  * stored the shown list would hide every new agent.
  */
 
-const ids = (hidden: readonly string[], current: string) =>
-  toEngineAgents(false, null, hidden, current).map((option) => option.id);
+const ids = (hidden: readonly string[], current: string, hostCloud = false) =>
+  withoutHidden(toEngineAgents(hostCloud, null), hidden, current).map((option) => option.id);
 
 describe('hidden agents', () => {
   it('leaves a hidden agent out of the picker, but never the draft’s own', () => {
@@ -29,15 +29,8 @@ describe('hidden agents', () => {
     expect(shownAgents(hidden)).toContain('omp');
   });
 
-  it('draws every agent rather than none when storage hides them all', () => {
-    const everything = shownAgents([]);
-
-    expect(ids(everything, '')).toEqual(everything);
-  });
-
-  it('offers Claude Code and Codex in a host’s cloud, hidden or not', () => {
-    expect(toEngineAgents(true, null, ['codex'], 'claude-code').map((option) => option.id)).toEqual(
-      ['claude-code', 'codex'],
-    );
+  it('hides in a host’s cloud too, keeping the draft’s agent', () => {
+    expect(ids(['codex'], 'claude-code', true)).toEqual(['claude-code']);
+    expect(ids(['codex'], 'codex', true)).toEqual(['claude-code', 'codex']);
   });
 });

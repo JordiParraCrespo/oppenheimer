@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
 import { useModelFavourites } from '../hooks/use-model-favourites';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
-import { HIDDEN_AGENTS_KEY } from '../lib/hidden-agents';
+import { HIDDEN_AGENTS_KEY, withoutHidden } from '../lib/hidden-agents';
 import {
   CLOUD_DEFAULT_MODEL,
   defaultModelFor,
@@ -37,8 +37,8 @@ import {
  * between them switches whose cloud it is; the place chip picks the place
  * with its engine (`engineForPlace`).
  *
- * The agents the reader hid in Settings → Agents are left out, except the
- * one the draft is on (`hidden-agents.ts`).
+ * The agents the reader hid in Settings → Agents are left out, in a host's
+ * cloud too, except the one the draft is on (`withoutHidden`).
  */
 export function NewSessionAgent() {
   const { t } = useTranslation();
@@ -76,7 +76,7 @@ export function NewSessionAgent() {
 
   return (
     <AgentSelect
-      agents={toEngineAgents(atHostCloud, cloudAgent, hidden, agent)}
+      agents={withoutHidden(toEngineAgents(atHostCloud, cloudAgent), hidden, agent)}
       value={
         inCloud
           ? { agent: cloudAgent.id, model: cloudModel ?? CLOUD_DEFAULT_MODEL }

@@ -42,11 +42,11 @@ describe('agent options', () => {
       typeof toEngineAgents
     >[1];
 
-    expect(toEngineAgents(true, cursor, [], 'claude-code').map((option) => option.id)).toEqual([
+    expect(toEngineAgents(true, cursor).map((option) => option.id)).toEqual([
       'claude-code',
       'codex',
     ]);
-    const elsewhere = toEngineAgents(false, cursor, [], 'claude-code').map((option) => option.id);
+    const elsewhere = toEngineAgents(false, cursor).map((option) => option.id);
     expect(elsewhere).toContain('codex');
     expect(elsewhere.at(-1)).toBe('cursor');
   });

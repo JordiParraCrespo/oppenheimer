@@ -6,7 +6,8 @@ import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents
  * kept is what is hidden, not what is shown, so an agent the catalog gains
  * later shows until somebody hides it. The reader's, not the workspace's: the
  * API never hears of it, and a session or automation already on a hidden
- * agent keeps it.
+ * agent keeps it. Settings → Agents never lets the last agent go, so the
+ * picker always has one to offer.
  */
 export const HIDDEN_AGENTS_KEY = 'oppenheimer.engine.hidden';
 
@@ -26,12 +27,15 @@ export function shownAgents(hidden: readonly string[]): CodingAgentId[] {
 }
 
 /**
- * Whether the picker draws `agent`: shown, or the one the draft is on, so a
- * draft whose agent was hidden after it was picked (a remembered last pick,
- * a project's default) still names it. With every agent hidden, which the
- * settings screen does not allow but a hand-edited storage might, the
- * picker draws them all rather than none.
+ * The options a picker draws: every one not hidden, and `current` whatever
+ * it is, so a draft whose agent was hidden after it was picked (a remembered
+ * last pick, a project's default) still names it. Pure, for any picker that
+ * takes the reader's hidden list.
  */
-export function isAgentDrawn(hidden: readonly string[], agent: string, current: string): boolean {
-  return agent === current || !hidden.includes(agent) || shownAgents(hidden).length === 0;
+export function withoutHidden<T extends { id: string }>(
+  options: readonly T[],
+  hidden: readonly string[],
+  current: string,
+): T[] {
+  return options.filter((option) => option.id === current || !hidden.includes(option.id));
 }
