@@ -507,6 +507,10 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 gave a new bot a calm, flat `SOUL.md` and a first name it kept.
+  On 2026-11-10 the soul became friendly and proactive, after OpenClaw's
+  default, and the first name a placeholder: its first chat asks the
+  person what to call it (25, "Decided").
 - Note 25 ran bots on three providers, each on a workspace's API key. On
   2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
   through OpenAI's device code flow, the way OpenClaw and the Codex CLI do

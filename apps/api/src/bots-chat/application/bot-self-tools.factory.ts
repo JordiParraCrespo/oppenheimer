@@ -193,7 +193,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'update_profile',
       scope: 'bots:write',
       setupStep:
-        'Set your description with `update_profile` to the job in a few words, specific enough to tell you apart from other bots (for example "Reviews pull requests on acme/web"). Keep your name unless they ask for another.',
+        'With `update_profile`, save the name they chose (and update the name in SOUL.md with `edit_soul` when the turn offers it), and set your description to the job in a few words, specific enough to tell you apart from other bots (for example "Reviews pull requests on acme/web").',
       description: `Changes your own name, description (what you are for, as the sidebar and other bots see it) and/or the console sections you show in beside Employees. Name 1 to ${BOT_NAME_MAX} characters, description at most ${BOT_DESCRIPTION_MAX}. Not a revision: the person sees it in the chat and changes it back in Settings → Profile. Persona and job go in edit_soul and edit_instructions.`,
       input: z
         .strictObject({
