@@ -71,11 +71,18 @@ export function routinePrefix(automationId: string): string {
   return `automation-run:${automationId}:`;
 }
 
-/** The words the bot reads when a routine fires: which one, then what it says to do. */
+/**
+ * The words the bot reads when a routine fires: which one, how to come back
+ * to the chat, then what it says to do. The chat shows no line for the run
+ * (2026-11-10), so what the bot writes is all the person sees of it: it has
+ * to read as the bot dropping by, never as a job's output.
+ */
 export function routineOpening(firing: RoutineFiring): string {
   return [
-    `Your routine "${firing.name}" is running now, on its own: nobody wrote to you.`,
-    'Do what it says, then report briefly what you did or found. If there is nothing worth saying, call nothing_to_report and write nothing.',
+    `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
+    `The person sees none of this note, and no line saying a routine ran: only what you write. So write as yourself dropping by, the way a colleague would. If you say something before you start, make it a friendly line in the first person about being back and what you are going to look at, for example "Hey, I'm back for my half-hour look at the pull requests, let me see what changed." Then tell them what you did or found, briefly, as you would tell a person.`,
+    'Never write like an automation: no run report, no routine name as a heading, no talk of queues, jobs or launchers for your own work.',
+    'If there is nothing worth saying, call nothing_to_report and write nothing.',
     '',
     firing.instructions,
   ].join('\n');
@@ -83,8 +90,9 @@ export function routineOpening(firing: RoutineFiring): string {
 
 /**
  * A routine's turn: queued in the background lane, on the bot's provider,
- * model and effort as they are now, opened by an event line that names the
- * routine, keyed so the run queues it once.
+ * model and effort as they are now, opened by an event that names the
+ * routine for the bot (the chat draws no line for it), keyed so the run
+ * queues it once.
  */
 export function routineTurn(
   props: Omit<Parameters<typeof BotTurnEntity.queue>[0], 'origin' | 'sourceKey'>,

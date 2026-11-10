@@ -1521,3 +1521,11 @@ earlier note:
   host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
   off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
   host; a program that wanted a literal ^V no longer gets one from it.
+- Note 26 §4 drew every routine activity as a line in its bot's chat: a
+  "Routine · *name*" divider over each run, and one for each save, change,
+  pause and delete. On 2026-11-10 the owner read a bot's chat as an
+  automation's log ("I'll refresh the queue, review evidence…" under a
+  "Routine · Automerge clean PRs" line). The chat now shows a routine only
+  when it needs the owner (a run that did not happen, a pause they did not
+  make), a run's turn reads as the bot writing to you, and the prompt has
+  the bot write as someone on the team in every turn.

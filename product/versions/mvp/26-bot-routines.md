@@ -122,8 +122,10 @@ export type RunDispatchRef = { kind: 'session'; sessionId: string } | { kind: 'b
 
 `BotMessageEvent` grows from `{ kind: 'approval' }` into a union with
 the one routine-activity shape of "In the chat" below; a run's opening is
-its `ran` activity, which the chat draws as one event line ("Routine ·
-Morning PR digest"). Its words for the
+its `ran` activity. Until 2026-11-10 the chat drew it as one event line
+("Routine · Morning PR digest"); it draws nothing for it now ("In the
+chat"), and the opening tells the bot so and to write as itself dropping
+by. Its words for the
 bot are the routine's prompt, then, for an event trigger, the event inside
 `<untrusted_external_data>` with note 16 §Q15's preamble: one pure
 function in bots-chat's domain, `routineOpening`, beside `decisionTurn`.
@@ -170,15 +172,21 @@ Routine activity in the chat is **one shape**: an event of kind
 `routine` with `activity` (`saved` \| `changed` \| `paused` \|
 `resumed` \| `deleted` \| `ran` \| `failed`), the routine's id and
 name, the run when there is one, and a `reason` in words for `paused` and
-`failed`. The chat draws them all as event lines; what differs is
-rendering, not kind:
+`failed`. The bot reads them all in its history. **The chat shows only
+the ones that need the owner** (2026-11-10; until then every one was an
+event line, and the owner read a bot's chat as an automation's log):
 
-- `saved` to `deleted` read "Created routine *Morning PR digest*", a
-  divider with the activity's mark. They belong to no turn (below), so
-  each is its own line; folding several into "Routines in this change",
-  as Grok Bot draws a turn's changes, waits until a line knows its turn.
-- `ran` opens the routine's turn: "Routine · *Morning PR digest*" (§4,
-  the opening message).
+- `saved` to `deleted` have no line: the bot says in its own words what
+  it saved or changed, and a change on the tab is the owner's own. A
+  pause the owner did not make is the exception, below. The export keeps
+  them all ("Created routine *Morning PR digest*").
+- `ran` opens the routine's turn and has no line either, nor the
+  routine's name anywhere in the chat: the turn reads as the bot writing
+  to you. Its opening (`routineOpening`) tells the bot that the person
+  sees only what it writes, so it comes back the way a colleague would
+  ("Hey, I'm back for my half-hour look at the pull requests") and never
+  writes a run report. The same voice is a rule of every turn (the
+  prompt's "How a turn goes").
 - `failed` is drawn as a notice, "Routine *Morning PR digest* did not
   run" with the reason, and **Open routines**: a run that expired, or one
   skipped by a run limit, a missed slot or an agent that cannot start. A
@@ -186,7 +194,7 @@ rendering, not kind:
   is not a failure. A run that could not start because the bot's
   provider has no credential is told by its `paused` line instead
   (`bot_provider_missing`), which is drawn as the same notice with its
-  reason; a pause the owner made is a plain line. A turn of a routine
+  reason; a pause the owner made has no line. A turn of a routine
   that ended `failed` says so in its own turn, as any turn does.
 - **Lines outside a turn.** A routine changed on the tab, paused by the
   dispatcher or failed before its turn existed happened in no turn, so
@@ -381,7 +389,7 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   a `RunDispatchRef`; no behaviour change.
 - **B. Bot routines in the API** — built. The automation columns of §3,
   `bot_turn."origin"` and `"sourceKey"`, `BotRoutineTarget`, the routine
-  opening message (its `ran` activity and "Routine · *name*" line), and
+  opening message (its `ran` activity; its "Routine · *name*" line was removed on 2026-11-10), and
   `update_routine` with its consent policy. The console's session lists
   leave routines out until C draws them.
 - **C. The Routines tab** of §7, in two pull requests. The first is the

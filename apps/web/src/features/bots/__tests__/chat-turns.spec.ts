@@ -63,6 +63,37 @@ describe('chatTurns', () => {
     expect(retryContent(blocks)).toBe('Tag the invoices');
   });
 
+  // What breaks this: a routine's run opening its turn with a line that names
+  // the routine, so the bot's message reads as an automation's output; or a
+  // run that did not happen, which the owner must hear of, dropped with it.
+  it('leaves a routine’s run and its changes out of the chat, and keeps what needs the owner', () => {
+    const routine = (id: string, turnId: string | null, activity: string, reason: string | null) =>
+      ({
+        ...message(id, turnId, 'event'),
+        event: { kind: 'routine', activity, automationId: 'a-1', runId: null, name: 'PRs', reason },
+      }) as unknown as BotMessageEntity;
+    const blocks = chatTurns(
+      conversation(
+        [
+          routine('r1', 't1', 'ran', null),
+          message('m1', 't1', 'assistant'),
+          routine('r2', null, 'saved', null),
+          routine('r3', null, 'paused', 'user'),
+          routine('r4', null, 'paused', 'bot_provider_missing'),
+          routine('r5', null, 'failed', 'missed'),
+        ],
+        [turn('t1')],
+      ),
+    );
+    expect(
+      blocks.map((block) => [block.asked.map((row) => row.id), block.answer.map((row) => row.id)]),
+    ).toEqual([
+      [[], ['m1']],
+      [['r4'], []],
+      [['r5'], []],
+    ]);
+  });
+
   it('groups each turn’s messages under it, your message apart from the bot’s work', () => {
     const blocks = chatTurns(
       conversation(

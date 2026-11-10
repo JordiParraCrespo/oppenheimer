@@ -4,11 +4,12 @@ import type {
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
+import { routineNeedsOwner } from './routine-event';
 
 /**
  * One turn as the chat draws it: what you said, then what the bot did with
- * it. A line that belongs to no turn (a routine changed on its tab, paused or
- * failed) is a block of its own, with no turn and that one event in `asked`.
+ * it. A line that belongs to no turn (a routine's run that did not happen, a
+ * pause its owner did not make) is a block of its own, with no turn and that one event in `asked`.
  */
 export interface ChatTurnBlock {
   /** The turn's id, or the line's for one outside any turn: what React keys it by. */
@@ -41,6 +42,19 @@ export function isDrawnEvent(
 }
 
 /**
+ * Whether the chat shows an event at all. A hidden kind never is, and of a
+ * routine's activity only what needs the owner (a run that did not happen, a
+ * pause they did not make): a routine's run reads as the bot writing to you,
+ * with no line naming the routine above it, and a routine saved, changed,
+ * paused or deleted is said by the bot or done by you on its tab. The export
+ * keeps them all.
+ */
+function isShownEvent(event: BotMessageEvent): boolean {
+  if (!isDrawnEvent(event)) return false;
+  return event.kind !== 'routine' || routineNeedsOwner(event);
+}
+
+/**
  * The conversation as blocks, in the order they happened: each turn's
  * messages under it, your message apart from the bot's work, and each line
  * outside any turn as a block of its own, keyed by its id. An event opens
@@ -48,7 +62,8 @@ export function isDrawnEvent(
  * one you steered in while it worked: it stays in the answer, where the bot
  * took it. A message waiting behind the turn under way is left out: it shows
  * on the composer until its turn starts or the turn takes it. An event the
- * chat does not draw (`HIDDEN_EVENT_KINDS`) is left out too.
+ * chat does not show (`isShownEvent`) is left out too, so a routine's turn
+ * opens with what the bot says.
  */
 export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] {
   const waiting = new Set(conversation.waitingMessages.map((message) => message.turnId));
@@ -63,7 +78,7 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     return block;
   };
   for (const message of conversation.messages) {
-    if (message.event && !isDrawnEvent(message.event)) continue;
+    if (message.event && !isShownEvent(message.event)) continue;
     if (message.turnId && waiting.has(message.turnId)) continue;
     const block = blockOf(message.turnId ?? message.id, message.turnId);
     const steered = message.role === 'user' && block.answer.length > 0;
