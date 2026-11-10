@@ -43,10 +43,8 @@ function resultText(content: unknown): string {
  *   that message's own usage (the run's usage sums every call, which is
  *   not what the context held), against the window the run's `modelUsage`
  *   gives the model it ran on.
- * - A run Claude Code ended because the context was full (its
- *   `terminal_reason`) is `context`, whatever code its synthetic error
- *   carried: autocompact thrashing comes as `invalid_request`, which
- *   would otherwise read as the provider refusing the request.
+ * - The kind of a failed end is `claudeFailureOf`, from the run's
+ *   `terminal_reason`, the last error's code and the API's status.
  * - A failure the provider refused for rate or quota (the SDK's
  *   `rate_limit` error, a `429` status, a rejected rate-limit event) ends
  *   with `rateLimit`, and with when it may be called again when the SDK
@@ -57,8 +55,8 @@ export class ClaudeEventTranslator {
   private readonly toolNames = new Map<string, string>();
   private result: SDKResultMessage | undefined;
   private lastError: string | undefined;
-  /** What kind of failure the last error was, from the SDK's own code for it. */
-  private lastFailure: BotEngineFailure = 'other';
+  /** The SDK's code for the last failed model call (`SDKAssistantMessageError`). */
+  private lastErrorCode: string | undefined;
   private rateLimited = false;
   private resetAt: Date | null = null;
   /** What the main thread's last answer was sent; none before the first. */
@@ -125,13 +123,7 @@ export class ClaudeEventTranslator {
         this.failed(this.lastError ?? diagnostics ?? 'Claude Code stopped without a result.'),
       ];
     }
-    if (result.terminal_reason && CONTEXT_FULL.has(result.terminal_reason)) {
-      this.lastFailure = 'context';
-    } else if (result.subtype === 'success' && typeof result.api_error_status === 'number') {
-      if (result.api_error_status === 429) this.rateLimited = true;
-      else if (this.lastFailure === 'other')
-        this.lastFailure = failureOf({ status: result.api_error_status });
-    }
+    if (result.subtype === 'success' && result.api_error_status === 429) this.rateLimited = true;
     const { usage } = result;
     const context = this.contextOf(result);
     const events: BotEngineEvent[] = [
@@ -185,9 +177,19 @@ export class ClaudeEventTranslator {
 
   /** A failed end, marked as a rate limit when the provider refused for one. */
   private failed(error: string): BotEngineEvent {
-    return this.rateLimited
-      ? failed(error, 'rate_limit', { resetAt: this.resetAt })
-      : failed(error, this.lastFailure);
+    if (this.rateLimited) return failed(error, 'rate_limit', { resetAt: this.resetAt });
+    const result = this.result;
+    return failed(
+      error,
+      claudeFailureOf({
+        errorCode: this.lastErrorCode,
+        terminalReason: result?.terminal_reason,
+        status:
+          result?.subtype === 'success' && typeof result.api_error_status === 'number'
+            ? result.api_error_status
+            : undefined,
+      }),
+    );
   }
 
   /**
@@ -263,7 +265,7 @@ export class ClaudeEventTranslator {
         .join('\n');
       this.lastError = text || String(error);
       if (error === 'rate_limit') this.rateLimited = true;
-      this.lastFailure = CLAUDE_FAILURES[String(error)] ?? 'other';
+      this.lastErrorCode = String(error);
       return [];
     }
     const events: BotEngineEvent[] = [];
@@ -319,6 +321,28 @@ const CONTEXT_FULL: ReadonlySet<string> = new Set([
   'blocking_limit',
   'prompt_too_long',
 ]);
+
+/**
+ * The kind of failure a Claude Code run ended with, from everything it said
+ * about it: how the run ended (`terminal_reason`), the SDK's code for the
+ * last failed model call, and the API's status. A full context wins: Claude
+ * Code reports it with the code it uses for an invalid request, which is not
+ * the provider refusing anything. Then the code, and the status when the
+ * code names nothing more specific.
+ */
+function claudeFailureOf(signals: {
+  errorCode?: string;
+  terminalReason?: string;
+  status?: number;
+}): BotEngineFailure {
+  if (signals.terminalReason !== undefined && CONTEXT_FULL.has(signals.terminalReason)) {
+    return 'context';
+  }
+  const byCode =
+    signals.errorCode === undefined ? 'other' : (CLAUDE_FAILURES[signals.errorCode] ?? 'other');
+  if (byCode !== 'other' || signals.status === undefined) return byCode;
+  return failureOf({ status: signals.status });
+}
 
 /**
  * The Claude Agent SDK's code for a failed model call (`SDKAssistantMessageError`)
