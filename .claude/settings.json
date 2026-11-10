@@ -105,6 +105,15 @@
             "statusMessage": "Installing dependencies if they are missing..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/oppenheimer-cloud-chat.mjs session-start",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -158,6 +167,15 @@
             "command": ".agents/hooks/arch-check.sh",
             "timeout": 180,
             "statusMessage": "Checking architecture boundaries and layout of the packages you changed..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/oppenheimer-cloud-chat.mjs stop",
+            "timeout": 150
           }
         ]
       }
