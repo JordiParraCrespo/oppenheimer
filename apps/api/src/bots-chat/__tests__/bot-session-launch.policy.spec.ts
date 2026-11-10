@@ -79,7 +79,9 @@ describe('planBotSessionLaunch', () => {
 
   it('refuses what the agent does not take, with what it does take', () => {
     const unknown = planBotSessionLaunch('claude-code', { model: 'gpt-6.1-sol' });
-    expect(unknown).toEqual({ refusal: expect.stringContaining('Opus 5.5 (claude-opus-5-5, default)') });
+    expect(unknown).toEqual({
+      refusal: expect.stringContaining('Opus 5.5 (claude-opus-5-5, default)'),
+    });
     expect(planBotSessionLaunch('claude-code', { model: 'Haiku 4.5', effort: 'high' })).toEqual({
       refusal: expect.stringContaining('takes no effort'),
     });
