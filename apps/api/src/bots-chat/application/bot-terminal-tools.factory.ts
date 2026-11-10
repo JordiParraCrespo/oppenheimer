@@ -13,13 +13,14 @@ import type { SessionTerminalOutcome } from '../../sessions/application/session-
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
 import { DriveSessionTerminalCommand } from '../../sessions/commands/drive-session-terminal/drive-session-terminal.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
-import { BOT_SESSION_PERMISSION, invalidBodyRefusal } from '../bot-session-tool.mapper';
+import { invalidBodyRefusal } from '../bot-session-tool.mapper';
 import {
   DEFAULT_TERMINAL_WAIT_SECONDS,
   type TerminalToolInput,
   terminalCommandIdOf,
   toTerminalDriveRequest,
 } from '../bot-terminal-tool.mapper';
+import { BOT_SESSION_PERMISSION } from '../domain/bot-session-launch.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { BotHostTargetResolver } from './bot-host-target.resolver';
 import { describeTerminal, terminalTypeSummary } from './bot-terminal.policy';
