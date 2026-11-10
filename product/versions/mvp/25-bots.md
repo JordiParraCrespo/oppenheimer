@@ -37,20 +37,12 @@ colour, with a friendly, proactive `SOUL.md` that says its name
 (after OpenClaw's default, 2026-11-10) and an empty `INSTRUCTIONS.md`. The
 first name is a placeholder: a name says who it is, the description says
 its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
-its prompt carries a **Getting started** section instead (2026-10-16): work
-the first message asks for comes first; then it greets the person and asks
-what they want to call it, never picking a name itself (2026-11-10, from
-OpenClaw's `BOOTSTRAP.md`), and saves the answer with `update_profile`; take
-the job from the first message or ask for it, with examples that fit
-Oppenheimer; at most one follow-up, only for what cannot be defaulted (what
-never to do without asking, how to report); one focused job, a bot per
-unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
-asking, How I report), set the description to the job, remember what it
-learned about the person, and say in two or three lines what it set up and
-the first task it could do now. The steps that need a tool are the tools'
-own (`setupStep` on the tool's spec), listed only when the turn offers the
-tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
-person to paste in Settings. Names are given first-free, so a deleted
+its prompt carries a **Getting started** section instead (2026-10-16):
+work the first message asks for comes first, then it asks what to call it
+(2026-11-10, from OpenClaw's `BOOTSTRAP.md`) and learns one job, sets
+itself up and offers a first task. The steps are `gettingStarted` in
+`bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
+they are the specification, not this paragraph. Names are given first-free, so a deleted
 bot's name is the next one handed out.
 
 Postgres is the source of truth for all of it. A bot changes what it is

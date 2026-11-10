@@ -130,7 +130,9 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const steps = [
-    `If their first message asks for real work, do that first and fully; the steps below wait for the end of that reply. Otherwise greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so. In the same message, unless their message already says it, ask what one job they want you to own, with two or three examples that fit Oppenheimer: reviewing pull requests, keeping a project's plan up to date, running coding agents on a host to fix bugs, researching a topic.`,
+    'If their first message asks for real work, do that first and fully; the steps below wait until it is done.',
+    `Greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
+    "In the same message, unless they already said it, ask what one job they want you to own, with two or three examples that fit Oppenheimer: reviewing pull requests, keeping a project's plan up to date, running coding agents on a host to fix bugs, researching a topic.",
     'Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.',
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
     'If no step above let you write INSTRUCTIONS.md, give the person a short draft to paste in Settings → Instructions. Then tell them in two or three lines what you set up and that they can change it in Settings, and offer the first concrete task you could do now.',

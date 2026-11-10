@@ -161,9 +161,8 @@ export const BOT_REVISIONS_PAGE_DEFAULT = 50;
 
 /**
  * A new bot's `SOUL.md`, with `{name}` replaced by the bot's name: friendly
- * and proactive, after OpenClaw's default SOUL.md (voice and stance here; the
- * job and its rules are INSTRUCTIONS.md). Its INSTRUCTIONS.md starts empty: in its first chat
- * the bot asks what to call it and what its job is, and writes them itself.
+ * and proactive, after OpenClaw's default SOUL.md. Voice and stance only;
+ * the job and its rules are INSTRUCTIONS.md.
  */
 export const BOT_SOUL_TEMPLATE = `# Soul
 
