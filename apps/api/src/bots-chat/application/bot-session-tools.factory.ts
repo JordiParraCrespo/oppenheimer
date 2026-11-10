@@ -458,6 +458,8 @@ export class BotSessionToolsFactory implements BotToolArea {
             'Give answers (for a question) or option (for a permission dialog), not both.',
           );
         }
+        // Read first: the task answered, so its end wakes the bot even if it comes before the watch.
+        const task = (await this.session(context, input.session_id)).latestTurn;
         const answered = await this.commandBus.execute<
           AnswerSessionDecisionCommand,
           SessionCommandResult
@@ -468,7 +470,12 @@ export class BotSessionToolsFactory implements BotToolArea {
             answer: decisionAnswerOf(input),
           }),
         );
-        const watched = await this.watches.follow(context, input.session_id, 'now', input.watch);
+        const watched = await this.watches.follow(
+          context,
+          input.session_id,
+          task ? { answered: task.seq } : 'now',
+          input.watch,
+        );
         return `Answered session ${input.session_id}. The agent takes it from here. ${watched}${readAfterHint(answered.seq)}`;
       },
     });

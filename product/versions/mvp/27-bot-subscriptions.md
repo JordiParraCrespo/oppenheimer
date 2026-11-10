@@ -98,7 +98,7 @@ turn stops after 4 minutes. A longer wait is a watch.
 |---|---|---|
 | `start_session` (subscribes by default; `watch: false` opts out) | the session's first task, even one that ended before the watch was stored: the wake is asked for once at once, so a launch that failed straight away is told | when that task ends |
 | `send_to_session` (subscribes by default; `watch: false` opts out) | the task its prompt opened, by number | when that task ends |
-| `answer_session` (subscribes by default; `watch: false` opts out; 2026-11-10) | the live task it unblocked, from now: the input it answered counts as known, so only what follows wakes it | when that task ends |
+| `answer_session` (subscribes by default; `watch: false` opts out; 2026-11-10) | the task it unblocked, by the number read before the answer went: the input it answered counts as known, so what follows wakes it, an end that came before the watch was stored included | when that task ends |
 | `watch_session` with `until: "task"` (the default) | the live task, or the next one if none is live | when that task ends |
 | `watch_session` with `until: "closed"` | every task of the session | when the session is closed, or after the wake limit |
 | `unwatch_session` | — | now |

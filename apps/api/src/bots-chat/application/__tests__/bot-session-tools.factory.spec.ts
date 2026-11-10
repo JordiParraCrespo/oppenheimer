@@ -10,6 +10,7 @@ import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
 import { SessionCloudRunEntity } from '../../../sessions/domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
+import type { SessionTurnFold } from '../../../sessions/domain/session-turn.policy';
 import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
@@ -754,14 +755,27 @@ describe('BotSessionToolsFactory', () => {
       answer: { id: 'perm-1', option: 0 },
     });
   });
-  it('follows the task it unblocked, unless told not to watch', async () => {
+  // What breaks this: an agent that finishes between the answer and the
+  // watch, so a watch taken from "now" counts its end as known and the bot
+  // is never told how the task it unblocked went.
+  it('follows the task it unblocked by the number read before answering, unless told not to watch', async () => {
     const { watches, call, session } = setup('full');
+    session.reseatLatestTurn({
+      ...(session.latestTurn ?? {}),
+      seq: 3,
+      state: 'requires_action',
+    } as SessionTurnFold);
     const result = await call('answer_session', {
       session_id: session.id,
       decision_id: 'perm-1',
       option: 0,
     });
-    expect(watches.follow).toHaveBeenCalledWith(expect.anything(), session.id, 'now', undefined);
+    expect(watches.follow).toHaveBeenCalledWith(
+      expect.anything(),
+      session.id,
+      { answered: 3 },
+      undefined,
+    );
     expect(result.content).toContain('You follow its task.');
 
     watches.follow.mockClear();
@@ -771,7 +785,12 @@ describe('BotSessionToolsFactory', () => {
       option: 0,
       watch: false,
     });
-    expect(watches.follow).toHaveBeenCalledWith(expect.anything(), session.id, 'now', false);
+    expect(watches.follow).toHaveBeenCalledWith(
+      expect.anything(),
+      session.id,
+      { answered: 3 },
+      false,
+    );
   });
 
   // What breaks this: Full access or a standing grant letting a bot approve

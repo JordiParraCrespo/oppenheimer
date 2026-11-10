@@ -341,6 +341,22 @@ describe('BotWatchToolsFactory', () => {
     expect(stallChecks.schedule.mock.calls[0][0]).toMatchObject({ turn: 2, check: 1 });
   });
 
+  // What breaks this: an agent that finishes between the answer and the
+  // watch, whose end then reads as already known, so the bot that unblocked
+  // it is never told how it went.
+  it('follows the task a bot answered by its number, so an end before the watch still wakes it', async () => {
+    const { resolver, context, subscriptions, commands } = setup({
+      read: liveSession('completed', 2),
+    });
+    await resolver.follow(context, SESSION, { answered: 2 });
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      watchedTurn: 2,
+      lastTurn: 2,
+      lastState: 'requires_action',
+    });
+    expect(commands.execute.mock.calls[0][0]).toBeInstanceOf(WakeSubscribedBotCommand);
+  });
+
   it('stores nothing and stages nothing when the bot said not to watch', async () => {
     const { resolver, context, subscriptions, stallChecks } = setup();
     expect(await resolver.follow(context, SESSION, 'now', false)).toContain(

@@ -23,11 +23,14 @@ export type BotSubscriptionUntil = (typeof BOT_SUBSCRIPTION_UNTIL)[number];
 
 /**
  * Where a new watch starts: the session's first task (the bot started it),
- * the live or next task (`watch_session`), or one task by its number (the one
- * the bot's own prompt opened). The first and a numbered task know nothing of
- * it yet, however far it got before the watch was stored.
+ * the live or next task (`watch_session`), one task by its number (the one
+ * the bot's own prompt opened), or the task the bot answered, by the number
+ * it had before the answer went (`answer_session`). The first and a numbered
+ * task know nothing of it yet, however far it got before the watch was
+ * stored; an answered one knows only the input the bot answered, so its end
+ * wakes the bot even when it came before the watch was stored.
  */
-export type BotWatchFrom = 'first_task' | 'now' | { turn: number };
+export type BotWatchFrom = 'first_task' | 'now' | { turn: number } | { answered: number };
 
 /**
  * The resources a bot can follow: a session, or a pull request on GitHub
@@ -127,6 +130,25 @@ export function watchedTurnFor(latest: Pick<WatchedTask, 'seq' | 'state'> | null
   return state && state !== 'requires_action' ? latest.seq + 1 : latest.seq;
 }
 
+/** The task a new watch follows, and what it counts as already known of the session. */
+export function watchStartOf(
+  from: BotWatchFrom,
+  latest: Pick<WatchedTask, 'seq' | 'state'> | null,
+): {
+  watchedTurn: number;
+  known: { lastTurn: number; lastState: BotSessionWakeState } | null;
+} {
+  if (from === 'first_task') return { watchedTurn: 1, known: null };
+  if (from === 'now') return { watchedTurn: watchedTurnFor(latest), known: knownStateOf(latest) };
+  if ('answered' in from) {
+    return {
+      watchedTurn: from.answered,
+      known: { lastTurn: from.answered, lastState: 'requires_action' },
+    };
+  }
+  return { watchedTurn: from.turn, known: null };
+}
+
 /**
  * The newest state a new subscription counts as already known: the latest
  * task's, when it is one that wakes, so a late event about it wakes nothing.
@@ -196,7 +218,7 @@ export function checkTurnOf(
   if (watchedTurn !== null) return watchedTurn;
   if (from === 'first_task') return 1;
   if (from === 'now') return latest?.seq ?? null;
-  return from.turn;
+  return 'answered' in from ? from.answered : from.turn;
 }
 
 /**
