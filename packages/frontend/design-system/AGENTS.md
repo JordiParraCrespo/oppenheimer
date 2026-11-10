@@ -277,7 +277,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   in words.
 - **A bot's chat is the Bots frame and AI Elements.** Your turns are
   28px bubbles, their time and copy on hover; the bot's answer has no
-  header: a `Trace` line per tool call at the reply's 15px, muted, each
+  header: a `Trace` line per tool call at 13px in subtle ink, under the reply, each
   opening to its `TraceOutput` (numbered mono lines on the card) or a
   `TraceNote`, failures in red, then the reply, its fenced code a
   `ChatCodeBlock` (a `ChatJsonBlock`, opening as a `JsonTree`, when it

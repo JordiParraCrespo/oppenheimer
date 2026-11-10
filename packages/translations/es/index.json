@@ -329,6 +329,11 @@
       "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
       "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
       "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
+      "INBOX_005": "Ese informe ya no está aquí. Recarga la bandeja de entrada.",
+      "INBOX_006": "Este informe ya tiene respuesta.",
+      "INBOX_007": "Un informe admite como máximo 4 imágenes.",
+      "INBOX_008": "Esa imagen es demasiado grande. El límite es de 5 MB.",
+      "INBOX_009": "Un informe admite imágenes PNG, JPEG, GIF o WebP.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
       "AUTOMATIONS_004": "Uno de los repositorios no está disponible en este espacio de trabajo.",
@@ -1323,6 +1328,7 @@
       "failedCall": "falló",
       "failed_one": "{{count}} falló",
       "failed_other": "{{count}} fallaron",
+      "failed_many": "{{count}} fallaron",
       "files_one": "{{count}} archivo adjunto",
       "files_other": "{{count}} archivos adjuntos",
       "tasks_one": "{{done}} de {{count}} tarea hecha",
@@ -1405,7 +1411,9 @@
         "count_one": "{{count}} subagente",
         "count_other": "{{count}} subagentes",
         "running": "{{count}} en marcha",
-        "failed": "{{count}} fallidos",
+        "failed_one": "{{count}} fallido",
+        "failed_other": "{{count}} fallidos",
+        "failed_many": "{{count}} fallidos",
         "untitled": "Subagente",
         "calls_one": "{{count}} llamada",
         "calls_other": "{{count}} llamadas",
@@ -1495,6 +1503,7 @@
       "title": "En directo desde la nube de Claude Code",
       "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
       "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+      "waiting_many": "{{count}} de respuestas esperan a que el agente termine su turno.",
       "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
       "setup": {
         "title": "Activa el chat de esta sesión",
@@ -1817,6 +1826,7 @@
           "cancelled": "La sesión «{{name}}» se detuvo",
           "expired": "La sesión «{{name}}» caducó sin ejecutarse",
           "stalled": "La sesión «{{name}}» parece atascada",
+          "progress": "Revisé la sesión «{{name}}»",
           "notice": "La sesión «{{name}}» envió un mensaje",
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
           "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
@@ -1847,8 +1857,6 @@
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
         },
         "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
-        "compactionLine": "Resumió el trabajo anterior",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
           "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -1866,11 +1874,14 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
+      "hideToolCalls": "Ocultar llamadas a herramientas",
+      "showToolCalls": "Mostrar llamadas a herramientas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
         "continuations_one": "{{count}} continuación",
         "continuations_other": "{{count}} continuaciones",
+        "continuations_many": "{{count}} continuaciones",
         "budget": "{{progress}} · {{used}} de {{budget}} tokens",
         "resume": "Reanudar",
         "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
@@ -2115,7 +2126,9 @@
           "lastUndone": "El último orden, del {{date}}, se deshizo",
           "queued": "Ordenando en segundo plano. El chat avisará cuando termine.",
           "tidyNow": "Ordenar ahora",
+          "tidying": "Ordenando…",
           "undo": "Deshacer",
+          "undoing": "Deshaciendo…",
           "loadFailed": "No se pudo cargar el último orden de la memoria.",
           "requestFailed": "No se pudo empezar a ordenar la memoria.",
           "undoFailed": "No se pudo deshacer el orden."
@@ -2658,6 +2671,7 @@
       "title": "Pull requests",
       "views": "Vistas",
       "queue": "Cola de PR",
+      "review": "Revisar",
       "analytics": "Analítica",
       "forReview": "Para revisar",
       "searchReviews": "Buscar sesiones de revisión",
@@ -2769,6 +2783,7 @@
     },
     "detail": {
       "back": "Volver a la cola",
+      "backToDeck": "Volver a la revisión",
       "viewLabel": "Vista",
       "views": {
         "description": "Descripción",
@@ -2956,6 +2971,26 @@
       "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
       "restart": "Reiniciar revisión",
       "restarting": "Reiniciando…"
+    },
+    "deck": {
+      "title": "Revisar",
+      "position": "{{at}} de {{total}}",
+      "lookFirst": "Mira primero:",
+      "source": {
+        "model": "Resumen escrito por el modelo a partir de la descripción y el diff.",
+        "description": "De la descripción del autor."
+      },
+      "briefFailed": "No se pudo cargar el resumen.",
+      "waiting": "esperando",
+      "pass": "Pasar",
+      "open": "Revisar a fondo",
+      "confirmMerge": "Pulsa otra vez para fusionar",
+      "held": "Aún no se puede fusionar: {{reason}}.",
+      "doneTitle": "Ese era el último",
+      "doneHint": "Has pasado por todos los pull requests de esta vista.",
+      "again": "Repasarlos otra vez",
+      "goneTitle": "Este ya no está en la cola",
+      "fromTop": "Seguir desde el principio"
     }
   },
   "tasks": {
@@ -3081,7 +3116,8 @@
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
       "gone": "Esta tarea ya no existe.",
-      "deleting": "Eliminando…"
+      "deleting": "Eliminando…",
+      "focus": "Por hacer"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -3097,6 +3133,8 @@
       "prompt": "Instrucciones",
       "repository": "Repositorio",
       "repositoryPlaceholder": "Elige un repositorio",
+      "noRepository": "Sin repositorio",
+      "noRepositoryDesc": "Se abre en la carpeta personal del host",
       "repositorySearch": "Buscar repositorios",
       "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
       "where": "Dónde se ejecuta",
@@ -3110,6 +3148,8 @@
       "placeCursorDesc": "La nube de Cursor, con tu clave de Cursor; sin host",
       "placeCursorConnect": "Conecta Cursor primero en Ajustes → Agentes en la nube",
       "cloudNeedsTask": "Una sesión en la nube empieza con una tarea: escribe qué debe hacer.",
+      "cloudNeedsRepository": "Una sesión en la nube parte de un repositorio.",
+      "homeOffline": "{{host}} está desconectado y solo él conoce su carpeta personal: elige un repositorio o espera a que vuelva.",
       "cloudAccount": "Se ejecuta en claude.ai como {{account}}, la cuenta con la que ha iniciado sesión Claude Code en {{host}}.",
       "cloudAccountUnknown": "{{host}} aún no ha dicho con qué cuenta de claude.ai ha iniciado sesión su Claude Code.",
       "accountUnknown": "Cuenta aún no informada",
@@ -3147,7 +3187,7 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Aún no hay nada para este día. Añade una tarea abajo.",
+      "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
       "addLabel": "Añadir una tarea para este día",
@@ -3158,18 +3198,22 @@
       "state": {
         "todo": "vence hoy",
         "due": "pendiente",
-        "overdue": "vencida desde el {{date}}"
+        "overdue": "vencida desde el {{date}}",
+        "since": "en Por hacer desde el {{date}}",
+        "dueOn": "vence el {{date}}"
       },
       "schedule": {
-        "button": "Añadir tareas sin fecha",
-        "title": "Añadir tareas sin fecha",
-        "for": "Elige las tareas sin fecha de vencimiento que quieres poner el {{date}}.",
+        "button": "Añadir tareas",
+        "title": "Añadir tareas a este día",
+        "for": "Elige las tareas abiertas que quieres poner el {{date}}. Su fecha de vencimiento no cambia.",
         "search": "Buscar tareas",
         "noMatch": "Ninguna tarea coincide con «{{query}}».",
-        "none": "Todas las tareas abiertas ya tienen fecha de vencimiento.",
+        "none": "Todas las tareas abiertas ya están en este día.",
         "submit": "Añadir al {{date}}",
         "failed": "No se pudieron añadir algunas de esas tareas.",
-        "loadFailed": "No se pudieron cargar tus tareas."
+        "loadFailed": "No se pudieron cargar tus tareas.",
+        "allStatuses": "Todos los estados",
+        "searchStatuses": "Buscar estados"
       },
       "reorder": "Reordenar {{title}}"
     }
@@ -3203,6 +3247,7 @@
     "grid": {
       "more_one": "{{count}} más",
       "more_other": "{{count}} más",
+      "more_many": "{{count}} más",
       "eventsFailed": "No se han podido cargar tus eventos.",
       "googleFailed": "No se ha podido leer Google Calendar.",
       "moveFailed": "No se ha podido mover a otro día.",
@@ -3231,7 +3276,9 @@
       "description": "Muestra tus eventos de Google junto a los tuyos. Solo lectura: no se escribe nada en Google.",
       "connect": "Conectar Google Calendar",
       "add": "Añadir cuenta",
-      "atLimit": "Puedes conectar hasta {{count}} cuentas de Google.",
+      "atLimit_one": "Puedes conectar hasta {{count}} cuenta de Google.",
+      "atLimit_other": "Puedes conectar hasta {{count}} cuentas de Google.",
+      "atLimit_many": "Puedes conectar hasta {{count}} de cuentas de Google.",
       "reconnect": "Volver a conectar",
       "connected": "Conectada",
       "updatedNow": "Actualizado ahora mismo",
@@ -3424,7 +3471,8 @@
       "pull": "Pull requests",
       "bots": "Bots",
       "session": "Sesiones",
-      "run": "Automatizaciones"
+      "run": "Automatizaciones",
+      "report": "Informes"
     },
     "project": {
       "all": "Todos los proyectos",
@@ -3443,7 +3491,8 @@
       "session": "Sesión",
       "approval": "Aprobación de bot",
       "run": "Automatización",
-      "botNotice": "Bot"
+      "botNotice": "Bot",
+      "report": "Informe"
     },
     "session": {
       "blockedShort": "{{name}} te está esperando",
@@ -3528,6 +3577,18 @@
       "title": "{{bot}} tiene novedades para ti",
       "openChat": "Abrir chat",
       "done": "Hecho"
+    },
+    "report": {
+      "sender": "Un agente",
+      "images": "Imágenes",
+      "image": "Imagen {{n}}",
+      "openLink": "Abrir enlace",
+      "answerLabel": "Tu respuesta",
+      "answerPlaceholder": "¿Qué debería hacer?",
+      "send": "Enviar respuesta",
+      "sending": "Enviando…",
+      "done": "Hecho",
+      "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
     }
   },
   "settings": {
@@ -3750,7 +3811,9 @@
       "emptyDescription": "Conecta una y pregunta a cualquier bot cosas como «¿qué envió la gestoría la semana pasada?» o «resume el correo sin leer de hoy». Google avisará de que la app aún no está verificada; es lo esperado.",
       "connect": "Conectar Gmail",
       "connectAnother": "Conectar otra cuenta",
-      "atLimit": "Puedes conectar hasta {{count}} cuentas.",
+      "atLimit_one": "Puedes conectar hasta {{count}} cuenta.",
+      "atLimit_other": "Puedes conectar hasta {{count}} cuentas.",
+      "atLimit_many": "Puedes conectar hasta {{count}} de cuentas.",
       "startFailed": "No se pudo abrir el inicio de sesión de Google.",
       "connected": "Conectada",
       "needsReconnect": "Hay que volver a conectarla",
@@ -3840,7 +3903,9 @@
       "connectAnother": "Conectar otro bot",
       "connectAgain": "Conectar de nuevo",
       "connectSubmit": "Conectar",
-      "atLimit": "Puedes conectar hasta {{count}} bots.",
+      "atLimit_one": "Puedes conectar hasta {{count}} bot.",
+      "atLimit_other": "Puedes conectar hasta {{count}} bots.",
+      "atLimit_many": "Puedes conectar hasta {{count}} de bots.",
       "noHosts": "Primero vincula un host: el bot lo consulta el runner de un host.",
       "connectTitle": "Conectar un bot de Telegram",
       "reconnectTitle": "Dar un token nuevo a {{label}}",

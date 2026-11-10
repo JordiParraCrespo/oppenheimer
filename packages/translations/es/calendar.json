@@ -27,6 +27,7 @@
   "grid": {
     "more_one": "{{count}} más",
     "more_other": "{{count}} más",
+    "more_many": "{{count}} más",
     "eventsFailed": "No se han podido cargar tus eventos.",
     "googleFailed": "No se ha podido leer Google Calendar.",
     "moveFailed": "No se ha podido mover a otro día.",
@@ -55,7 +56,9 @@
     "description": "Muestra tus eventos de Google junto a los tuyos. Solo lectura: no se escribe nada en Google.",
     "connect": "Conectar Google Calendar",
     "add": "Añadir cuenta",
-    "atLimit": "Puedes conectar hasta {{count}} cuentas de Google.",
+    "atLimit_one": "Puedes conectar hasta {{count}} cuenta de Google.",
+    "atLimit_other": "Puedes conectar hasta {{count}} cuentas de Google.",
+    "atLimit_many": "Puedes conectar hasta {{count}} de cuentas de Google.",
     "reconnect": "Volver a conectar",
     "connected": "Conectada",
     "updatedNow": "Actualizado ahora mismo",

@@ -1,9 +1,5 @@
-import type {
-  HostEntity,
-  ProjectEntity,
-  StartTaskSessionInput,
-  TaskEntity,
-} from '@oppenheimer/frontend-consumer';
+import type { HostEntity, ProjectEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
+import { HOST_HOME, type StartTaskSessionVariables } from '@oppenheimer/frontend-consumer/react';
 import {
   CODING_AGENTS,
   type CodingAgentId,
@@ -28,8 +24,8 @@ export type StartPlace = AutomationPlace;
 /** The Start session dialog's choices (`18-plan-product.md` §4). */
 export interface StartSessionValues {
   prompt: string;
-  /** The project repository's row id. */
-  repositoryId: string;
+  /** The project repository's row id; null starts on a host with none, in its home. */
+  repositoryId: string | null;
   place: StartPlace;
   /** The host it runs on or starts from; unread at a vendor. */
   hostId: string;
@@ -40,8 +36,53 @@ export interface StartSessionValues {
 
 /** The body Start session sends, without what the dialog itself adds. */
 export type StartSessionBody =
-  | Pick<Extract<StartTaskSessionInput, { session: unknown }>, 'session'>
-  | Pick<Extract<StartTaskSessionInput, { cloud: unknown }>, 'cloud'>;
+  | Pick<Extract<StartTaskSessionVariables, { session: unknown }>, 'session'>
+  | Pick<Extract<StartTaskSessionVariables, { cloud: unknown }>, 'cloud'>;
+
+/**
+ * The repository chip's value for "No repository" (`repositoryId: null`): on a
+ * host, a folder session in the host's home, as Open terminal starts
+ * (`24-session-places.md` §3). A cloud starts from a repository.
+ */
+export const NO_REPOSITORY = 'none';
+
+/** What holds the start: a cloud's missing task or repository, a host that must name its home, no hosts. */
+export type StartHold = 'task' | 'repository' | 'home' | 'host';
+
+/**
+ * Whether Start session can start now, and how (`18-plan-product.md` §4).
+ * A cloud starts on a task, from a repository. A host session with no
+ * repository needs its host online to say where home is; any other host
+ * session to an offline host is queued until the host is back.
+ */
+export function startReadiness({
+  place,
+  promptEmpty,
+  noRepository,
+  hasHosts,
+  hostOnline,
+}: {
+  place: StartPlace;
+  promptEmpty: boolean;
+  noRepository: boolean;
+  hasHosts: boolean;
+  /** The picked host's presence; null when none is picked. */
+  hostOnline: boolean | null;
+}): { hold: StartHold | null; queues: boolean } {
+  const rule = AUTOMATION_PLACE_RULES[place];
+  const inCloud = rule.host !== 'runs';
+  const hold: StartHold | null =
+    rule.host !== null && !hasHosts
+      ? 'host'
+      : inCloud && promptEmpty
+        ? 'task'
+        : inCloud && noRepository
+          ? 'repository'
+          : noRepository && hostOnline === false
+            ? 'home'
+            : null;
+  return { hold, queues: hold === null && rule.host !== null && hostOnline === false };
+}
 
 export function asPlace(value: string): StartPlace | null {
   return (AUTOMATION_PLACES as readonly string[]).includes(value) ? (value as StartPlace) : null;
@@ -96,7 +137,8 @@ type PlaceCopyKey =
 
 /**
  * What the dialog opens with: the task's title and notes as the prompt, and the
- * project's defaults — its first default repository, its host while the
+ * project's defaults — its first default repository (no repository when it
+ * has none), its host while the
  * workspace still has it (else an online one), its agent with that agent's
  * default model.
  */
@@ -113,7 +155,7 @@ export function startDefaults(
   const agent = project?.defaultAgent ?? 'claude-code';
   return {
     prompt: [task.title, task.notes.trim()].filter(Boolean).join('\n\n'),
-    repositoryId: repository?.id ?? '',
+    repositoryId: repository?.id ?? null,
     place: 'host',
     hostId: host?.id ?? '',
     agent,
@@ -122,32 +164,33 @@ export function startDefaults(
 }
 
 /**
- * The body the choices make: the one repository on its base branch, and
+ * The body the choices make, from the one repository on its base branch:
  * - on a host, the launch New session would send for this agent unpicked —
  *   the default permission level (`auto`) where the agent takes one, the
- *   CLI's own effort;
+ *   CLI's own effort; with no repository, a folder session in the host's
+ *   home (`HOST_HOME`, which the start asks the host for);
  * - in Claude Code's cloud, New session's `cloud: true` body from the host,
  *   on a task (the cloud takes no permission level);
  * - at a vendor, `POST /sessions/cloud`'s body, on a task, with no host.
- * Null when the repository is gone, or a cloud place has no task to start on.
+ * Null when the repository is gone, or a cloud place has no task or no
+ * repository to start from.
  */
 export function toStartSession(
   values: StartSessionValues,
   project: ProjectEntity,
 ): StartSessionBody | null {
   const repository = project.repositories.find((row) => row.id === values.repositoryId);
-  if (!repository) return null;
-  const githubRepoId = Number(repository.githubRepoId);
-  const checkout = {
-    installationId: repository.installationId,
-    githubRepoId,
-    baseBranch: repository.baseBranch,
-  };
+  if (values.repositoryId !== null && !repository) return null;
   const prompt = values.prompt.trim() || undefined;
   const rule = AUTOMATION_PLACE_RULES[values.place];
-  // A place whose host does not run the session (a cloud) starts on a task.
-  if (rule.host !== 'runs' && !prompt) return null;
-  if (isVendorPlace(values.place) && prompt) {
+  // A place whose host does not run the session (a cloud) starts on a task, from a repository.
+  if (rule.host !== 'runs' && (!prompt || !repository)) return null;
+  const checkout = repository && {
+    installationId: repository.installationId,
+    githubRepoId: Number(repository.githubRepoId),
+    baseBranch: repository.baseBranch,
+  };
+  if (isVendorPlace(values.place) && prompt && checkout) {
     return {
       cloud: {
         provider: values.place,
@@ -159,21 +202,28 @@ export function toStartSession(
   }
   const agent = agentFor(values.place, values.agent);
   const cloud = rule.host === 'starts';
+  const common = {
+    hostId: values.hostId,
+    agent,
+    launch: cloud ? { model: values.model } : hostLaunch(agent, values.model),
+    prompt,
+  };
+  if (!checkout) return { session: { ...common, folder: HOST_HOME } };
   return {
     session: {
-      hostId: values.hostId,
-      agent,
+      ...common,
       checkouts: [checkout],
-      cwdGithubRepoId: githubRepoId,
+      cwdGithubRepoId: checkout.githubRepoId,
       ...(cloud ? { cloud: true } : {}),
-      launch: {
-        model: values.model,
-        ...(!cloud && CODING_AGENTS[agent].launch.permission
-          ? { permission: DEFAULT_SESSION_PERMISSION }
-          : {}),
-      },
-      prompt,
     },
+  };
+}
+
+/** A session the host runs: the model, and the default permission level where the agent takes one. */
+function hostLaunch(agent: CodingAgentId, model: string | null) {
+  return {
+    model,
+    ...(CODING_AGENTS[agent].launch.permission ? { permission: DEFAULT_SESSION_PERMISSION } : {}),
   };
 }
 

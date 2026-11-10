@@ -292,6 +292,7 @@
         "cancelled": "La sesión «{{name}}» se detuvo",
         "expired": "La sesión «{{name}}» caducó sin ejecutarse",
         "stalled": "La sesión «{{name}}» parece atascada",
+        "progress": "Revisé la sesión «{{name}}»",
         "notice": "La sesión «{{name}}» envió un mensaje",
         "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
         "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
@@ -322,8 +323,6 @@
         "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
       },
       "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
-      "compactionLine": "Resumió el trabajo anterior",
-      "compactionTokens": "{{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
         "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -341,11 +340,14 @@
       "unknown": "algo salió mal"
     },
     "openSession": "Abrir sesión",
+    "hideToolCalls": "Ocultar llamadas a herramientas",
+    "showToolCalls": "Mostrar llamadas a herramientas",
     "goal": {
       "title": "Objetivo: {{objective}}",
       "progress": "{{step}} de {{limit}} continuaciones",
       "continuations_one": "{{count}} continuación",
       "continuations_other": "{{count}} continuaciones",
+      "continuations_many": "{{count}} continuaciones",
       "budget": "{{progress}} · {{used}} de {{budget}} tokens",
       "resume": "Reanudar",
       "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
@@ -590,7 +592,9 @@
         "lastUndone": "El último orden, del {{date}}, se deshizo",
         "queued": "Ordenando en segundo plano. El chat avisará cuando termine.",
         "tidyNow": "Ordenar ahora",
+        "tidying": "Ordenando…",
         "undo": "Deshacer",
+        "undoing": "Deshaciendo…",
         "loadFailed": "No se pudo cargar el último orden de la memoria.",
         "requestFailed": "No se pudo empezar a ordenar la memoria.",
         "undoFailed": "No se pudo deshacer el orden."

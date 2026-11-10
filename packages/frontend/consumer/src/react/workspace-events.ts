@@ -113,6 +113,8 @@ const REFRESHES: RefreshTable = {
   'botNotice.changed': [{ prefix: botsKeys.workspaceNotices(), announcesEvery: true }],
   // Every put and delete of the caller's marks.
   'inboxMark.changed': [{ prefix: inboxKeys.marks(), announcesEvery: true }],
+  // A report posted and a report answered each raise it: the Inbox's open reports.
+  'inboxReport.changed': [{ prefix: inboxKeys.reports(), announcesEvery: true }],
 };
 
 /** The reads one event refreshes, at the keys they already have. */

@@ -46,7 +46,7 @@ export function ConnectTelegramBotDialog({
         </DialogHeader>
         <DialogBody>
           <div className="flex flex-col gap-4 pb-7">
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-fg-muted">
               <li>{t('settings.telegram.step1')}</li>
               <li>{t('settings.telegram.step2')}</li>
               <li>{t('settings.telegram.step3')}</li>

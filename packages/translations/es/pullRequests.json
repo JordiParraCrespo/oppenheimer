@@ -3,6 +3,7 @@
     "title": "Pull requests",
     "views": "Vistas",
     "queue": "Cola de PR",
+    "review": "Revisar",
     "analytics": "Analítica",
     "forReview": "Para revisar",
     "searchReviews": "Buscar sesiones de revisión",
@@ -114,6 +115,7 @@
   },
   "detail": {
     "back": "Volver a la cola",
+    "backToDeck": "Volver a la revisión",
     "viewLabel": "Vista",
     "views": {
       "description": "Descripción",
@@ -301,5 +303,25 @@
     "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
     "restart": "Reiniciar revisión",
     "restarting": "Reiniciando…"
+  },
+  "deck": {
+    "title": "Revisar",
+    "position": "{{at}} de {{total}}",
+    "lookFirst": "Mira primero:",
+    "source": {
+      "model": "Resumen escrito por el modelo a partir de la descripción y el diff.",
+      "description": "De la descripción del autor."
+    },
+    "briefFailed": "No se pudo cargar el resumen.",
+    "waiting": "esperando",
+    "pass": "Pasar",
+    "open": "Revisar a fondo",
+    "confirmMerge": "Pulsa otra vez para fusionar",
+    "held": "Aún no se puede fusionar: {{reason}}.",
+    "doneTitle": "Ese era el último",
+    "doneHint": "Has pasado por todos los pull requests de esta vista.",
+    "again": "Repasarlos otra vez",
+    "goneTitle": "Este ya no está en la cola",
+    "fromTop": "Seguir desde el principio"
   }
 }

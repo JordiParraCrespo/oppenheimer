@@ -13,6 +13,7 @@ export {
   type PullRequestAnalytics,
   type PullRequestAnalyticsRange,
   type PullRequestBlocker,
+  type PullRequestBrief,
   type PullRequestChecks,
   type PullRequestComment,
   PullRequestDetailEntity,

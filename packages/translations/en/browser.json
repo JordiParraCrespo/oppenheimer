@@ -327,6 +327,11 @@
       "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
       "INBOX_003": "A snooze has to end in the future. Pick a later time.",
       "INBOX_004": "That item has no mark any more. Reload the Inbox.",
+      "INBOX_005": "That report is not here any more. Reload the Inbox.",
+      "INBOX_006": "This report already has an answer.",
+      "INBOX_007": "A report takes at most 4 pictures.",
+      "INBOX_008": "That picture is too large. The limit is 5 MB.",
+      "INBOX_009": "A report takes PNG, JPEG, GIF or WebP pictures.",
       "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
       "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
       "AUTOMATIONS_004": "One of the repositories isn't available to this workspace.",
@@ -1396,7 +1401,8 @@
         "count_one": "{{count}} subagent",
         "count_other": "{{count}} subagents",
         "running": "{{count}} running",
-        "failed": "{{count}} failed",
+        "failed_one": "{{count}} failed",
+        "failed_other": "{{count}} failed",
         "untitled": "Subagent",
         "calls_one": "{{count}} call",
         "calls_other": "{{count}} calls",
@@ -1800,6 +1806,7 @@
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
           "stalled": "Session “{{name}}” looks stuck",
+          "progress": "Checked on session “{{name}}”",
           "notice": "Session “{{name}}” sent a message",
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
@@ -1830,8 +1837,6 @@
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
         "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
-        "compactionLine": "Summarized earlier work",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
           "undone": "You undid the tidy · {{before}} facts are back"
@@ -1849,6 +1854,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
+      "hideToolCalls": "Hide tool calls",
+      "showToolCalls": "Show tool calls",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -2097,7 +2104,9 @@
           "lastUndone": "Last tidy, {{date}}, was undone",
           "queued": "Tidying in the background. The chat says when it’s done.",
           "tidyNow": "Tidy now",
+          "tidying": "Tidying…",
           "undo": "Undo",
+          "undoing": "Undoing…",
           "loadFailed": "Could not load the memory’s last tidy.",
           "requestFailed": "Could not start tidying the memory.",
           "undoFailed": "Could not undo the tidy."
@@ -2634,6 +2643,7 @@
       "title": "Pull requests",
       "views": "Views",
       "queue": "PR queue",
+      "review": "Review",
       "analytics": "Analytics",
       "forReview": "For review",
       "searchReviews": "Search review sessions",
@@ -2745,6 +2755,7 @@
     },
     "detail": {
       "back": "Back to the queue",
+      "backToDeck": "Back to the review",
       "viewLabel": "View",
       "views": {
         "description": "Description",
@@ -2932,6 +2943,26 @@
       "stopped": "This review session has stopped. Restarting brings Claude Code back with the conversation where it left off.",
       "restart": "Restart review",
       "restarting": "Restarting…"
+    },
+    "deck": {
+      "title": "Review",
+      "position": "{{at}} of {{total}}",
+      "lookFirst": "Look first:",
+      "source": {
+        "model": "Brief written by the model.",
+        "description": "From the author’s description."
+      },
+      "briefFailed": "Could not load the brief.",
+      "waiting": "waiting",
+      "pass": "Pass",
+      "open": "Review in depth",
+      "confirmMerge": "Press again to merge",
+      "held": "Cannot merge yet: {{reason}}.",
+      "doneTitle": "That was the last one",
+      "doneHint": "You went through every pull request in this view.",
+      "again": "Go through them again",
+      "goneTitle": "This one left the queue",
+      "fromTop": "Start from the top"
     }
   },
   "tasks": {
@@ -3056,7 +3087,8 @@
       "deleteFailed": "Couldn’t delete the task.",
       "loadFailed": "Couldn’t load the board.",
       "gone": "This task no longer exists.",
-      "deleting": "Deleting…"
+      "deleting": "Deleting…",
+      "focus": "To do"
     },
     "link": {
       "search": "Search sessions",
@@ -3072,6 +3104,8 @@
       "prompt": "Prompt",
       "repository": "Repository",
       "repositoryPlaceholder": "Pick a repository",
+      "noRepository": "No repository",
+      "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
       "noRepositories": "This project has no repositories. Add one in its settings.",
       "where": "Where it runs",
@@ -3085,6 +3119,8 @@
       "placeCursorDesc": "Cursor’s cloud, on your Cursor key; no host",
       "placeCursorConnect": "Connect Cursor in Settings → Cloud agents first",
       "cloudNeedsTask": "A cloud session starts on a task: write what it should do.",
+      "cloudNeedsRepository": "A cloud session starts from a repository.",
+      "homeOffline": "{{host}} is offline, and only it knows its home folder: pick a repository, or wait for it.",
       "cloudAccount": "Runs on claude.ai as {{account}}, the account {{host}}’s Claude Code is signed in to.",
       "cloudAccountUnknown": "{{host}} hasn’t said which claude.ai account its Claude Code is signed in to.",
       "accountUnknown": "Account not reported yet",
@@ -3122,7 +3158,7 @@
       "todayWeek": "Today · Week {{week}}",
       "weekNumber": "Week {{week}}",
       "includeOverdue": "Include overdue",
-      "empty": "Nothing for this day yet. Add one below.",
+      "empty": "Nothing on this day yet. Add a task below, or pick some with Add tasks.",
       "noMatch": "No tasks match these filters.",
       "add": "Add a task",
       "addLabel": "Add a task for this day",
@@ -3133,18 +3169,22 @@
       "state": {
         "todo": "due today",
         "due": "due",
-        "overdue": "overdue since {{date}}"
+        "overdue": "overdue since {{date}}",
+        "since": "on To do since {{date}}",
+        "dueOn": "due {{date}}"
       },
       "schedule": {
-        "button": "Add undated tasks",
-        "title": "Add undated tasks",
-        "for": "Pick the tasks with no due date to put on {{date}}.",
+        "button": "Add tasks",
+        "title": "Add tasks to this day",
+        "for": "Pick the open tasks to put on {{date}}. Their due dates stay as they are.",
         "search": "Search tasks",
         "noMatch": "No task matches “{{query}}”.",
-        "none": "Every open task already has a due date.",
+        "none": "Every open task is already on this day.",
         "submit": "Add to {{date}}",
         "failed": "Couldn’t add some of those tasks.",
-        "loadFailed": "Couldn’t load your tasks."
+        "loadFailed": "Couldn’t load your tasks.",
+        "allStatuses": "All statuses",
+        "searchStatuses": "Search statuses"
       },
       "reorder": "Reorder {{title}}"
     }
@@ -3206,7 +3246,8 @@
       "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
       "connect": "Connect Google Calendar",
       "add": "Add account",
-      "atLimit": "You can connect up to {{count}} Google accounts.",
+      "atLimit_one": "You can connect up to {{count}} Google account.",
+      "atLimit_other": "You can connect up to {{count}} Google accounts.",
       "reconnect": "Reconnect",
       "connected": "Connected",
       "updatedNow": "Updated just now",
@@ -3397,7 +3438,8 @@
       "pull": "Pull requests",
       "bots": "Bots",
       "session": "Sessions",
-      "run": "Automations"
+      "run": "Automations",
+      "report": "Reports"
     },
     "project": {
       "all": "All projects",
@@ -3416,7 +3458,8 @@
       "session": "Session",
       "approval": "Bot approval",
       "run": "Automation",
-      "botNotice": "Bot"
+      "botNotice": "Bot",
+      "report": "Report"
     },
     "session": {
       "blockedShort": "{{name}} is waiting on you",
@@ -3501,6 +3544,18 @@
       "title": "{{bot}} has news for you",
       "openChat": "Open chat",
       "done": "Done"
+    },
+    "report": {
+      "sender": "An agent",
+      "images": "Pictures",
+      "image": "Picture {{n}}",
+      "openLink": "Open link",
+      "answerLabel": "Your answer",
+      "answerPlaceholder": "What should it do?",
+      "send": "Send answer",
+      "sending": "Sending…",
+      "done": "Done",
+      "answerFailed": "Could not send the answer. Try again."
     }
   },
   "settings": {
@@ -3723,7 +3778,8 @@
       "emptyDescription": "Connect one and ask any bot things like “what did the accountant send last week?” or “summarise today’s unread mail”. Google will warn that the app isn’t verified yet; that is expected.",
       "connect": "Connect Gmail",
       "connectAnother": "Connect another account",
-      "atLimit": "You can connect up to {{count}} accounts.",
+      "atLimit_one": "You can connect up to {{count}} account.",
+      "atLimit_other": "You can connect up to {{count}} accounts.",
       "startFailed": "Couldn’t open Google’s sign-in.",
       "connected": "Connected",
       "needsReconnect": "Needs reconnecting",
@@ -3813,7 +3869,8 @@
       "connectAnother": "Connect another bot",
       "connectAgain": "Connect again",
       "connectSubmit": "Connect",
-      "atLimit": "You can connect up to {{count}} bots.",
+      "atLimit_one": "You can connect up to {{count}} bot.",
+      "atLimit_other": "You can connect up to {{count}} bots.",
       "noHosts": "Pair a host first: the bot is polled by a host’s runner.",
       "connectTitle": "Connect a Telegram bot",
       "reconnectTitle": "Give {{label}} a new token",

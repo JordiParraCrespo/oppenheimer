@@ -1,5 +1,5 @@
 import { RoutineItem, SidebarListHead, Skeleton } from '@oppenheimer/design-system-web';
-import { Activity, GitPullRequest } from '@oppenheimer/design-system-web/icons';
+import { Activity, GalleryVerticalEnd, GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -8,8 +8,8 @@ import { ReviewSessionsList } from './review-sessions-list';
 
 /**
  * The console's sidebar body on Pull requests
- * (`product/versions/mvp/design/version1/PullRequests.dc.html`): the two
- * views, the queue and analytics, the section's bots (`bots`, composed by
+ * (`product/versions/mvp/design/version1/PullRequests.dc.html`): the
+ * views, the queue, the review deck and analytics, the section's bots (`bots`, composed by
  * the route), then For review, the reader's review
  * sessions. The queue's count is every open pull
  * request in it, whatever the scope; while it is read a bar keeps its slot.
@@ -41,6 +41,12 @@ export function PullRequestsSidebar({ bots }: { bots?: ReactNode }) {
           }
           active={Boolean(matchRoute({ to: '/pulls' }))}
           render={<Link to="/pulls" />}
+        />
+        <RoutineItem
+          name={t('pullRequests.sidebar.review')}
+          icon={<GalleryVerticalEnd />}
+          active={Boolean(matchRoute({ to: '/pulls/review' }))}
+          render={<Link to="/pulls/review" />}
         />
         <RoutineItem
           name={t('pullRequests.sidebar.analytics')}

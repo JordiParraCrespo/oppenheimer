@@ -29,7 +29,8 @@
     "pull": "Pull requests",
     "bots": "Bots",
     "session": "Sessions",
-    "run": "Automations"
+    "run": "Automations",
+    "report": "Reports"
   },
   "project": {
     "all": "All projects",
@@ -48,7 +49,8 @@
     "session": "Session",
     "approval": "Bot approval",
     "run": "Automation",
-    "botNotice": "Bot"
+    "botNotice": "Bot",
+    "report": "Report"
   },
   "session": {
     "blockedShort": "{{name}} is waiting on you",
@@ -133,5 +135,17 @@
     "title": "{{bot}} has news for you",
     "openChat": "Open chat",
     "done": "Done"
+  },
+  "report": {
+    "sender": "An agent",
+    "images": "Pictures",
+    "image": "Picture {{n}}",
+    "openLink": "Open link",
+    "answerLabel": "Your answer",
+    "answerPlaceholder": "What should it do?",
+    "send": "Send answer",
+    "sending": "Sending…",
+    "done": "Done",
+    "answerFailed": "Could not send the answer. Try again."
   }
 }

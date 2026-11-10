@@ -172,8 +172,10 @@ export {
 export {
   inboxAnswered,
   type PutInboxMarkVariables,
+  useAnswerInboxReport,
   useDeleteInboxMark,
   useInboxCount,
+  useInboxReportImages,
   usePutInboxMark,
   useSuspenseInbox,
 } from './inbox.queries';
@@ -244,6 +246,7 @@ export {
   useAddPullRequestComment,
   useCloseReviewSession,
   useMergePullRequest,
+  usePrefetchPullRequestBrief,
   usePullRequest,
   usePullRequestComments,
   usePullRequestQueue,
@@ -255,6 +258,7 @@ export {
   useSuspensePullRequestActivity,
   useSuspensePullRequestAnalytics,
   useSuspensePullRequestAndReviewSessions,
+  useSuspensePullRequestBrief,
   useSuspensePullRequestFiles,
   useSuspensePullRequestQueue,
   useSuspenseWatchedRepositories,
@@ -304,6 +308,8 @@ export {
   useSharedSessionStream,
 } from './sessions.stream';
 export {
+  HOST_HOME,
+  type HostHomeSessionInput,
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
   type StartTaskSessionVariables,

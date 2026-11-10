@@ -87,6 +87,15 @@ export function stepExplore(step: Pick<BotToolStep, 'name' | 'input'>): ExploreT
 }
 
 /**
+ * Whether a call only looks around (`stepExplore` names what it read). The
+ * one definition for what folds into an "Explored" run and what the live
+ * line's orb searches for (`liveOrb`), so the two never drift apart.
+ */
+export function looksAround(step: Pick<BotToolStep, 'name' | 'input'>): boolean {
+  return stepExplore(step) !== null;
+}
+
+/**
  * A run of the bot's finished calls as its trace draws it: a stretch that
  * only looked around, with what it looked at and whether the call in flight
  * is one more read (`exploring`), or a stretch of the rest.
@@ -108,7 +117,7 @@ export type TraceRun =
  * A run with nothing finished yet is not drawn.
  */
 export function traceRuns(steps: readonly BotToolStep[], live: boolean): TraceRun[] {
-  return cutRuns(steps, (step) => stepExplore(step) !== null).flatMap((run): TraceRun[] => {
+  return cutRuns(steps, looksAround).flatMap((run): TraceRun[] => {
     const done = run.items.filter((step) => step.output !== null);
     const [first] = done;
     if (!first) return [];

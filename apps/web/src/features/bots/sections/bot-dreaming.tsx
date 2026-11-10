@@ -55,7 +55,8 @@ export function BotDreaming({ botId }: { botId: string }) {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={undo.isPending}
+                pending={undo.isPending}
+                pendingLabel={t('bots.settings.memory.dream.undoing')}
                 onClick={() => undo.mutate(botId)}
               >
                 {t('bots.settings.memory.dream.undo')}
@@ -64,7 +65,9 @@ export function BotDreaming({ botId }: { botId: string }) {
             <Button
               variant="secondary"
               size="sm"
-              disabled={!known || request.isPending || requested}
+              pending={request.isPending}
+              pendingLabel={t('bots.settings.memory.dream.tidying')}
+              disabled={!known || requested}
               onClick={() => request.mutate(botId)}
             >
               {t('bots.settings.memory.dream.tidyNow')}

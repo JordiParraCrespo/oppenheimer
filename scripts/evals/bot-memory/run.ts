@@ -26,12 +26,9 @@
 //
 // It passes when every case is right on a majority of its runs. The full
 // answers go to `reports/`.
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type Anthropic from '@anthropic-ai/sdk';
 import {
   REMEMBER_DESCRIPTION,
   REMEMBER_MEMORY,
@@ -39,6 +36,15 @@ import {
   REMEMBER_TIER_HINT,
 } from '../../../apps/api/src/bots-chat/domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
+import {
+  arg,
+  type EvalTool,
+  fromApi,
+  pool,
+  type Transport,
+  transport,
+  writeReport,
+} from '../bot-turn';
 
 type Memory = (typeof REMEMBER_MEMORY)[number];
 
@@ -65,24 +71,13 @@ interface Save {
   tier: string;
 }
 
-type Ask = (bot: Bot, general: string[], message: string) => Promise<Save[]>;
-
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MAX_PARALLEL = 6;
 
-// The repository root depends on none of these: take each from the
-// workspace package that does, so the versions are the ones the API runs.
-const fromApi = createRequire(join(HERE, '../../../apps/api/package.json'));
-const fromAgents = createRequire(join(HERE, '../../../packages/backend/agents/package.json'));
 const { BOT_MEMORY_FACT_MAX, BOT_MEMORY_TIERS } = fromApi(
   '@oppenheimer/shared',
 ) as typeof import('@oppenheimer/shared');
 const { z } = fromApi('zod') as typeof import('zod');
-
-function arg(name: string): string | undefined {
-  const at = process.argv.indexOf(`--${name}`);
-  return at === -1 ? undefined : process.argv[at + 1];
-}
 
 const REMEMBER_SCHEMA = {
   type: 'object' as const,
@@ -133,98 +128,34 @@ function saveOf(input: unknown): Save {
   return { memory: memory ?? 'yours', fact, tier: tier ?? 'log' };
 }
 
-function messagesApi(apiKey: string, model: string): Ask {
-  const AnthropicClient = (fromAgents('@anthropic-ai/sdk') as typeof import('@anthropic-ai/sdk'))
-    .default;
-  const client = new AnthropicClient({ apiKey });
-  return async (bot, general, message) => {
-    const response = await client.messages.create({
-      model,
-      max_tokens: 2048,
-      system: systemPrompt(bot, general),
-      tools: [
-        {
-          name: 'remember',
-          description: REMEMBER_DESCRIPTION,
-          input_schema: REMEMBER_SCHEMA,
-        } satisfies Anthropic.Tool,
-      ],
-      messages: [{ role: 'user', content: message }],
-    });
-    return response.content
-      .filter((block) => block.type === 'tool_use' && block.name === 'remember')
-      .map((block) => saveOf((block as Anthropic.ToolUseBlock).input));
-  };
-}
-
-function claudeCode(model: string): Ask {
-  const { query } = fromAgents(
-    '@anthropic-ai/claude-agent-sdk',
-  ) as typeof import('@anthropic-ai/claude-agent-sdk');
-  const { McpServer } = fromAgents(
-    '@modelcontextprotocol/sdk/server/mcp.js',
-  ) as typeof import('@modelcontextprotocol/sdk/server/mcp.js');
-  const { CallToolRequestSchema, ListToolsRequestSchema } = fromAgents(
-    '@modelcontextprotocol/sdk/types.js',
-  ) as typeof import('@modelcontextprotocol/sdk/types.js');
-
-  return async (bot, general, message) => {
-    const saves: Save[] = [];
-    // The tool server the Claude engine builds (`claude-tool-server.ts`):
-    // our tools as `mcp__oppenheimer__<name>`, schemas served as they are.
-    const mcp = new McpServer(
-      { name: 'oppenheimer', version: '1.0.0' },
-      { capabilities: { tools: {} } },
-    );
-    mcp.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: [
-        {
-          name: 'remember',
-          description: REMEMBER_DESCRIPTION,
-          inputSchema: REMEMBER_SCHEMA,
-          _meta: { 'anthropic/alwaysLoad': true },
-        },
-      ],
-    }));
-    mcp.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const save = saveOf(request.params.arguments);
+/**
+ * One turn with `remember` offered: every call it made, as what it would
+ * save. The Messages API answers once, as the eval always has; the Agent SDK
+ * runs its own loop, up to 4 turns.
+ */
+async function ask(via: Transport, bot: Bot, general: string[], message: string): Promise<Save[]> {
+  const saves: Save[] = [];
+  const remember: EvalTool = {
+    name: 'remember',
+    description: REMEMBER_DESCRIPTION,
+    inputSchema: REMEMBER_SCHEMA,
+    run: async (input) => {
+      const save = saveOf(input);
       saves.push(save);
       if (save.memory === 'invalid') {
-        return {
-          content: [{ type: 'text' as const, text: 'Invalid input: nothing was saved.' }],
-          isError: true,
-        };
+        return { content: 'Invalid input: nothing was saved.', isError: true };
       }
       const where = save.memory === 'general' ? 'general memory' : 'your memory';
-      return {
-        content: [{ type: 'text' as const, text: `Remembered (${where}): "${save.fact}".` }],
-      };
-    });
-    const cwd = mkdtempSync(join(tmpdir(), 'bot-memory-eval-'));
-    try {
-      for await (const _ of query({
-        prompt: message,
-        options: {
-          model,
-          systemPrompt: systemPrompt(bot, general),
-          cwd,
-          tools: [],
-          allowedTools: ['mcp__oppenheimer__remember'],
-          permissionMode: 'dontAsk',
-          mcpServers: { oppenheimer: { type: 'sdk', name: 'oppenheimer', instance: mcp } },
-          strictMcpConfig: true,
-          settingSources: [],
-          persistSession: false,
-          maxTurns: 4,
-        },
-      })) {
-        // Only the tool calls matter; the reply is not scored.
-      }
-    } finally {
-      rmSync(cwd, { recursive: true, force: true });
-    }
-    return saves;
+      return { content: `Remembered (${where}): "${save.fact}".` };
+    },
   };
+  await via.turn({
+    system: systemPrompt(bot, general),
+    message,
+    tools: [remember],
+    maxTurns: via.engine === 'messages-api' ? 1 : 4,
+  });
+  return saves;
 }
 
 /**
@@ -239,27 +170,10 @@ function rightRun(saves: Save[], expect: Memory): boolean {
   return saves.length > 0 && saves.every((save) => save.memory === 'yours');
 }
 
-/** Runs `work` over `items`, at most `limit` at a time, in order. */
-async function pool<T, R>(items: T[], limit: number, work: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) {
-      const at = next++;
-      results[at] = await work(items[at] as T);
-    }
-  });
-  await Promise.all(workers);
-  return results;
-}
-
 async function main(): Promise<void> {
   // biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
-  const model = process.env.BOT_MEMORY_EVAL_MODEL ?? 'claude-sonnet-5-5';
-  // biome-ignore lint/suspicious/noUndeclaredEnvVars: as above.
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const engine = apiKey ? 'messages-api' : 'claude-code';
-  const ask = apiKey ? messagesApi(apiKey, model) : claudeCode(model);
+  const via = transport(process.env.BOT_MEMORY_EVAL_MODEL ?? 'claude-sonnet-5-5');
+  const { model, engine } = via;
   const runs = Number(arg('runs') ?? 3);
   const only = arg('case');
   const { general, bots, cases } = JSON.parse(readFileSync(join(HERE, 'cases.json'), 'utf8')) as {
@@ -274,7 +188,7 @@ async function main(): Promise<void> {
   const answers = await pool(jobs, MAX_PARALLEL, (c) => {
     const bot = bots[c.bot];
     if (!bot) throw new Error(`Case ${c.id} names no bot "${c.bot}".`);
-    return ask(bot, general, c.message);
+    return ask(via, bot, general, c.message);
   });
   const results = chosen.map((c, i) => {
     const saves = answers.slice(i * runs, (i + 1) * runs);
@@ -319,10 +233,7 @@ async function main(): Promise<void> {
     `\n${model} (${engine}): ${right}/${total} runs right, ${leaked} leaked a job fact to the general memory, ${unsaved} saved nothing, ${doubled} kept a general fact in both memories; ${failed} of ${results.length} cases failed.`,
   );
 
-  mkdirSync(join(HERE, 'reports'), { recursive: true });
-  const report = join(HERE, 'reports', `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-  writeFileSync(report, `${JSON.stringify({ model, engine, runs, results }, null, 2)}\n`);
-  console.log(`Report: ${report}`);
+  console.log(`Report: ${writeReport(HERE, { model, engine, runs, results })}`);
   process.exit(failed === 0 ? 0 : 1);
 }
 
