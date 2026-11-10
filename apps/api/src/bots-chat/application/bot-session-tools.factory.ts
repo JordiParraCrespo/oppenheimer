@@ -389,10 +389,12 @@ export class BotSessionToolsFactory implements BotToolArea {
       scope: 'sessions:write',
       asks: true,
       // Letting a destructive dialog through is the person's call alone: a
-      // card of its own, under Full access and past every grant.
+      // card of its own, under Full access and past every grant. A decision
+      // that cannot be read is not taken as safe: it goes to the card too.
       escalates: async (input, context) => {
         const session = await this.session(context, input.session_id).catch(() => null);
-        return answerNeedsPerson(session?.pendingDecision ?? null, {
+        if (!session) return true;
+        return answerNeedsPerson(session.pendingDecision, {
           decisionId: input.decision_id,
           option: input.option,
         });

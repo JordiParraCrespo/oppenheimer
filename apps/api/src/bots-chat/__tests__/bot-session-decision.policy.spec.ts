@@ -28,6 +28,9 @@ describe('isDestructiveDecision', () => {
     'rm --recursive out',
     'git push --force origin main',
     'git push -f',
+    'git -C /repo push --force origin main',
+    'git -c core.hooksPath=/dev/null reset --hard HEAD~1',
+    'git --git-dir=.git clean -fd',
     'git reset --hard HEAD~3',
     'git clean -fdx',
     'psql -c "DROP TABLE users"',
@@ -42,6 +45,7 @@ describe('isDestructiveDecision', () => {
     'rm dist/index.js',
     'git push origin feature',
     'git status',
+    'git -C /repo push origin feature',
     'Edit file src/app.ts',
   ])('lets %s through to the bot', (command) => {
     expect(isDestructiveDecision(permission(`Bash command\n  ${command}`))).toBe(false);

@@ -14,15 +14,16 @@ import type { SessionDecision } from '@oppenheimer/shared';
  * What a permission dialog asks about when it names something that cannot
  * be taken back: a recursive delete, a history rewrite or a forced
  * push, wiping a disk or a database, root. Read on the dialog's title and
- * the command or file it shows.
+ * the command or file it shows. A git command is matched past its global
+ * options (`git -C <path> push --force`).
  */
 const DESTRUCTIVE: readonly RegExp[] = [
   /\brm\s+(?:-[a-z]*\s+)*-[a-z]*r/i,
   /\brm\s+(?:\S+\s+)*--recursive\b/i,
   /\b(?:rimraf|shred|mkfs(?:\.\w+)?|wipefs)\b/i,
   /\bfind\b[^\n]*\s-delete\b/i,
-  /\bgit\s+push\b[^\n]*(?:\s--force(?:-with-lease)?\b|\s-f\b|\s\+\S)/i,
-  /\bgit\s+(?:reset\s+--hard\b|clean\s+-[a-z]*f|branch\s+-D\b|filter-(?:branch|repo)\b)/i,
+  /\bgit\b[^\n]*?\spush\b[^\n]*(?:\s--force(?:-with-lease)?\b|\s-f\b|\s\+\S)/i,
+  /\bgit\b[^\n]*?\s(?:reset\s+--hard\b|clean\s+-[a-z]*f|branch\s+-D\b|filter-(?:branch|repo)\b)/i,
   /\bdrop\s+(?:table|database|schema)\b/i,
   /\btruncate\s+table\b/i,
   /\bdd\s+[^\n]*\bof=/i,

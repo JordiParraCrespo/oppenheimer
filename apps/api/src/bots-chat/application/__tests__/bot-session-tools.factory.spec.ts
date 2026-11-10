@@ -753,6 +753,18 @@ describe('BotSessionToolsFactory', () => {
     });
   });
 
+  // What breaks this: a lookup that fails here and succeeds in the command
+  // lets a destructive approval through unseen.
+  it('puts an answer whose decision it cannot read on a card, under Full access too', async () => {
+    const { queryBus, commandBus, approvals, call, session } = setup('full');
+    queryBus.execute.mockRejectedValueOnce(new Error('connection reset'));
+    await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 0 });
+    expect(commandBus.execute).not.toHaveBeenCalled();
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'answer_session', perCallOnly: true }),
+    );
+  });
+
   describe('close_session', () => {
     it('asks first, the card naming the session and that its worktree goes, nothing closed', async () => {
       const { queryBus, commandBus, approvals, call } = setup('auto');
