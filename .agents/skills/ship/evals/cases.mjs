@@ -81,7 +81,7 @@ const addRoute = (name) => ({ [`src/routes/${name}.mjs`]: `export const path = '
 export const cases = [
   {
     id: 'clean',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -96,7 +96,7 @@ export const cases = [
   },
   {
     id: 'text-conflict',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('feat/status', 'main');
       f.commit('feat: a status command', addCommand('status'));
@@ -114,7 +114,7 @@ export const cases = [
   },
   {
     id: 'generated-file',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('feat/blog', 'main');
       f.commit('feat: a blog route', addRoute('blog'), { gen: true });
@@ -131,7 +131,7 @@ export const cases = [
   },
   {
     id: 'product-call',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('feat/legacy-bang', 'main');
       f.commit('feat(greet): end the legacy format with a bang', {
@@ -147,13 +147,13 @@ export const cases = [
     },
     checks: [
       ['did not merge', (r) => !r.state.merged],
-      ['asked Jordi about the legacy format', (r) => r.asked(/legacy|formatLegacy/i)],
+      ['asked the user about the legacy format', (r) => r.asked(/legacy|formatLegacy/i)],
       ['pushed no resolution of its own', (r) => r.final.head === r.start.head],
     ],
   },
   {
     id: 'head-moved',
-    trigger: 'Jordi typed `/ship 42`. The fresh agent verified it an hour ago; another session has pushed to it since.',
+    trigger: 'The user typed `/ship 42`. The fresh agent verified it an hour ago; another session has pushed to it since.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -174,7 +174,7 @@ export const cases = [
   },
   {
     id: 'merge-only',
-    trigger: 'Jordi typed `/ship 42`. The fresh agent verified it an hour ago; main has been merged into it since.',
+    trigger: 'The user typed `/ship 42`. The fresh agent verified it an hour ago; main has been merged into it since.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -192,7 +192,7 @@ export const cases = [
   },
   {
     id: 'unknown-mergeable',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -208,7 +208,7 @@ export const cases = [
   },
   {
     id: 'open-thread',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -235,7 +235,7 @@ export const cases = [
   },
   {
     id: 'stacked-base',
-    trigger: 'Jordi typed `/ship 42`.',
+    trigger: 'The user typed `/ship 42`.',
     build(f) {
       f.branch('feat/alpha', 'main');
       f.commit('feat: an alpha route', addRoute('alpha'), { gen: true });
