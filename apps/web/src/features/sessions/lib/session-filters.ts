@@ -12,11 +12,13 @@ export type SessionSort = 'custom' | 'recent' | 'oldest' | 'name';
 /**
  * What the sidebar's filter menu holds
  * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): four
- * facets that narrow the list and one order that does not.
+ * facets that narrow the list and one order that does not. Repository is a
+ * set, empty for all of them: a session shows when any of its checkouts is
+ * one of the picked repositories.
  */
 export interface SessionFilters {
   project: string;
-  repository: string;
+  repository: readonly string[];
   agent: string;
   host: string;
   sort: SessionSort;
@@ -24,7 +26,7 @@ export interface SessionFilters {
 
 export const DEFAULT_FILTERS: SessionFilters = {
   project: ALL,
-  repository: ALL,
+  repository: [],
   agent: ALL,
   host: ALL,
   sort: 'custom',
@@ -45,7 +47,30 @@ export type SessionFacet = (typeof FACETS)[number];
  * from the list, and re-ordering hides nothing.
  */
 export function isFiltered(filters: SessionFilters): boolean {
-  return FACETS.some((facet) => filters[facet] !== ALL);
+  return FACETS.some((facet) => isNarrowing(filters, facet));
+}
+
+function isNarrowing(filters: SessionFilters, facet: SessionFacet): boolean {
+  return facet === 'repository' ? filters.repository.length > 0 : filters[facet] !== ALL;
+}
+
+/**
+ * The Repository facet after a pick in its list: "All repositories" empties
+ * the set, any other row is toggled in or out of it.
+ */
+export function toggleRepository(
+  picked: readonly string[],
+  repository: string,
+  selected: boolean,
+): string[] {
+  if (repository === ALL) return [];
+  const rest = picked.filter((item) => item !== repository);
+  return selected ? [...rest, repository] : rest;
+}
+
+/** The set the Repository list checks: "All repositories" while none is picked. */
+export function checkedRepositories(picked: readonly string[]): readonly string[] {
+  return picked.length > 0 ? picked : [ALL];
 }
 
 export function projectOptions(
@@ -134,9 +159,9 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
     .filter(
       (session) =>
         (filters.project === ALL || session.projectId === filters.project) &&
-        (filters.repository === ALL ||
-          session.checkouts.some(
-            (checkout) => checkout.repositoryFullName === filters.repository,
+        (filters.repository.length === 0 ||
+          session.checkouts.some((checkout) =>
+            filters.repository.includes(checkout.repositoryFullName),
           )) &&
         (filters.agent === ALL || session.agent === filters.agent) &&
         (filters.host === ALL || runsOn(session) === filters.host),
@@ -149,15 +174,37 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
     });
 }
 
+/**
+ * A chip under the header: one per narrowing facet, and one per picked
+ * repository so each can be dropped on its own. `value` is that repository.
+ */
+export interface FilterChipEntry {
+  key: SessionFacet;
+  value: string;
+  label: string;
+}
+
 /** The facets that are narrowing right now, for the chip row under the header. */
 export function activeFilters(
   filters: SessionFilters,
   options: Record<SessionFacet, FilterOption[]>,
-): { key: SessionFacet; label: string }[] {
-  return FACETS.filter((key) => filters[key] !== ALL).map((key) => ({
-    key,
-    label: options[key].find((option) => option.value === filters[key])?.label ?? filters[key],
-  }));
+): FilterChipEntry[] {
+  const labelOf = (key: SessionFacet, value: string) =>
+    options[key].find((option) => option.value === value)?.label ?? value;
+  return FACETS.flatMap((key): FilterChipEntry[] => {
+    if (key === 'repository') {
+      return filters.repository.map((value) => ({ key, value, label: labelOf(key, value) }));
+    }
+    const value = filters[key];
+    return value === ALL ? [] : [{ key, value, label: labelOf(key, value) }];
+  });
+}
+
+/** The filters with one chip's narrowing taken off. */
+export function withoutChip(filters: SessionFilters, chip: FilterChipEntry): SessionFilters {
+  return chip.key === 'repository'
+    ? { ...filters, repository: toggleRepository(filters.repository, chip.value, false) }
+    : { ...filters, [chip.key]: ALL };
 }
 
 /** Where a session runs, as one key a filter compares: its host, or `cloud:<vendor>`. */

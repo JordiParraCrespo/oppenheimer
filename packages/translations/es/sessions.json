@@ -393,6 +393,7 @@
     "remove": "Quitar filtro",
     "allProjects": "Todos los proyectos",
     "allRepositories": "Todos los repositorios",
+    "repositoriesSome": "{{count}} repositorios",
     "allAgents": "Todos los agentes",
     "allHosts": "Todos los equipos",
     "noMatches": "Ninguna sesión coincide con estos filtros.",

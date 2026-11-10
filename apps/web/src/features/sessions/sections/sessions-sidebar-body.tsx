@@ -36,6 +36,7 @@ import {
   projectOptions,
   repositoryOptions,
   type SessionFilters,
+  withoutChip,
 } from '../lib/session-filters';
 import { matchesQuery, sidebarList } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
@@ -186,7 +187,7 @@ export function SessionsSidebarBody() {
           onFiltersClear={() =>
             setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
           }
-          onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+          onFacetClear={(chip) => setFilters((current) => withoutChip(current, chip))}
           onNewProject={() => dialogs.open({ kind: 'project' })}
           query={query}
           onQueryChange={setQuery}

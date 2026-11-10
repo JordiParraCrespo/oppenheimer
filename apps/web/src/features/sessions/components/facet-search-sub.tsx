@@ -13,7 +13,9 @@ import type { FilterOption } from '../lib/session-filters';
  * A facet of the sessions filter over a list the workspace grows (Project,
  * Repository, Host): the submenu row with the current pick, opening the
  * Bots picker's search list (`SearchList`) instead of radio rows. A pick
- * applies at once and the menu stays open, as the radio facets do.
+ * applies at once and the menu stays open, as the radio facets do. `value`
+ * is the one row picked, or the set checked for a facet that takes several
+ * (Repository); `onPick` says whether the row was checked or unchecked.
  * `children` draw under the list, the caller's own foot.
  */
 export function FacetSearchSub({
@@ -22,16 +24,16 @@ export function FacetSearchSub({
   options,
   value,
   searchPlaceholder,
-  onValueChange,
+  onPick,
   children,
 }: {
   label: string;
   /** The picked option's label, beside the facet's name. */
   current: string;
   options: FilterOption[];
-  value: string;
+  value: string | readonly string[];
   searchPlaceholder: string;
-  onValueChange: (value: string) => void;
+  onPick: (value: string, selected: boolean) => void;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -46,7 +48,7 @@ export function FacetSearchSub({
           aria-label={label}
           options={options}
           value={value}
-          onPick={(option) => onValueChange(option.value)}
+          onPick={(option, selected) => onPick(option.value, selected)}
           searchPlaceholder={searchPlaceholder}
           emptyText={(query) => t('common.search.noMatch', { query })}
         />

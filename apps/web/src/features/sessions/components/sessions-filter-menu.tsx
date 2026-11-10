@@ -18,10 +18,12 @@ import { Plus, SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
   ALL,
+  checkedRepositories,
   type FilterOption,
   type SessionFacet,
   type SessionFilters,
   type SessionSort,
+  toggleRepository,
 } from '../lib/session-filters';
 import { FacetSearchSub } from './facet-search-sub';
 import { SearchListFoot } from './search-list-foot';
@@ -71,8 +73,15 @@ export function SessionsFilterMenu({
 }) {
   const { t } = useTranslation();
   const projects = options.project.filter((option) => option.value !== ALL);
-  const labelFor = (facet: SessionFacet) =>
+  const labelFor = (facet: Exclude<SessionFacet, 'repository'>) =>
     options[facet].find((option) => option.value === filters[facet])?.label ?? '';
+  const repositoryLabel =
+    filters.repository.length === 1
+      ? (options.repository.find((option) => option.value === filters.repository[0])?.label ??
+        filters.repository[0])
+      : filters.repository.length > 1
+        ? t('sessions.filters.repositoriesSome', { count: filters.repository.length })
+        : (options.repository.find((option) => option.value === ALL)?.label ?? '');
 
   return (
     <DropdownMenu>
@@ -91,14 +100,15 @@ export function SessionsFilterMenu({
 
       <DropdownMenuContent align="end" sideOffset={6} className="min-w-57.5">
         {/* Project, Repository and Host grow with the workspace and are
-            searched; the agents are a short fixed list of radio rows. */}
+            searched; the agents are a short fixed list of radio rows.
+            Repository takes several: each row is a check. */}
         <FacetSearchSub
           label={t('sessions.filters.project')}
           current={labelFor('project')}
           options={options.project}
           value={filters.project}
           searchPlaceholder={t('common.search.projects')}
-          onValueChange={(project) => onChange({ project })}
+          onPick={(project) => onChange({ project })}
         >
           <SearchListFoot>
             <DropdownMenuItem onClick={onNewProject}>
@@ -109,11 +119,13 @@ export function SessionsFilterMenu({
         </FacetSearchSub>
         <FacetSearchSub
           label={t('sessions.filters.repository')}
-          current={labelFor('repository')}
+          current={repositoryLabel}
           options={options.repository}
-          value={filters.repository}
+          value={checkedRepositories(filters.repository)}
           searchPlaceholder={t('common.search.repositories')}
-          onValueChange={(repository) => onChange({ repository })}
+          onPick={(repository, selected) =>
+            onChange({ repository: toggleRepository(filters.repository, repository, selected) })
+          }
         />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
@@ -139,7 +151,7 @@ export function SessionsFilterMenu({
           options={options.host}
           value={filters.host}
           searchPlaceholder={t('common.search.hosts')}
-          onValueChange={(host) => onChange({ host })}
+          onPick={(host) => onChange({ host })}
         />
 
         <DropdownMenuSeparator />
