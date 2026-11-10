@@ -3,6 +3,7 @@ import { BotMailDraftCard } from '@/features/bots/components/bot-mail-draft-card
 import { BotTrace } from '@/features/bots/components/bot-trace';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
 import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
+import { sessionsOf } from '@/features/bots/lib/tool-activity';
 
 /**
  * A run of the bot's tool calls in its chat: the trace, then what any call
@@ -21,7 +22,7 @@ export function BotActivity({
   live?: boolean;
 }) {
   const shown = useToolCallsShownInChat();
-  const sessions = shown ? [] : [...new Set(steps.flatMap((step) => step.sessionId ?? []))];
+  const sessions = shown ? [] : sessionsOf(steps);
   const drafts = steps.flatMap((step) =>
     step.mailDraft ? [<BotMailDraftCard key={step.callId} draft={step.mailDraft} />] : [],
   );
