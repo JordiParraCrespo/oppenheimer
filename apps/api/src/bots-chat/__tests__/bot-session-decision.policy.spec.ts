@@ -104,23 +104,47 @@ describe('isDestructiveDecision', () => {
 
 describe('answerNeedsPerson', () => {
   const destructive = permission('Bash command\n  rm -rf ../shared');
+  const waiting = (decision: SessionDecision | null) => ({ pendingDecision: decision });
 
-  it('puts letting a destructive dialog through to the person', () => {
-    expect(answerNeedsPerson(destructive, { decisionId: 'perm-1', option: 0 })).toBe(true);
-    expect(answerNeedsPerson(destructive, { decisionId: 'perm-1', option: 1 })).toBe(true);
+  it('under Approve for me, puts letting a destructive dialog through to the person', () => {
+    expect(
+      answerNeedsPerson(waiting(destructive), { decisionId: 'perm-1', option: 0 }, 'auto'),
+    ).toBe(true);
+    expect(
+      answerNeedsPerson(waiting(destructive), { decisionId: 'perm-1', option: 1 }, 'auto'),
+    ).toBe(true);
+  });
+
+  it('under Full access, leaves every answer to the bot, destructive and unread ones included', () => {
+    expect(
+      answerNeedsPerson(waiting(destructive), { decisionId: 'perm-1', option: 0 }, 'full'),
+    ).toBe(false);
+    expect(answerNeedsPerson(null, { decisionId: 'perm-1', option: 0 }, 'full')).toBe(false);
+  });
+
+  it('under Approve for me, puts an answer to a session it could not read to the person', () => {
+    expect(answerNeedsPerson(null, { decisionId: 'perm-1', option: 0 }, 'auto')).toBe(true);
   });
 
   it('lets the bot turn a destructive dialog down', () => {
-    expect(answerNeedsPerson(destructive, { decisionId: 'perm-1', option: 2 })).toBe(false);
+    expect(
+      answerNeedsPerson(waiting(destructive), { decisionId: 'perm-1', option: 2 }, 'auto'),
+    ).toBe(false);
   });
 
   it('leaves an ordinary dialog to the bot', () => {
     const ordinary = permission('Bash command\n  pnpm test');
-    expect(answerNeedsPerson(ordinary, { decisionId: 'perm-1', option: 0 })).toBe(false);
+    expect(answerNeedsPerson(waiting(ordinary), { decisionId: 'perm-1', option: 0 }, 'auto')).toBe(
+      false,
+    );
   });
 
   it('leaves a stale answer to the refusal that names the current decision', () => {
-    expect(answerNeedsPerson(destructive, { decisionId: 'perm-0', option: 0 })).toBe(false);
-    expect(answerNeedsPerson(null, { decisionId: 'perm-1', option: 0 })).toBe(false);
+    expect(
+      answerNeedsPerson(waiting(destructive), { decisionId: 'perm-0', option: 0 }, 'auto'),
+    ).toBe(false);
+    expect(answerNeedsPerson(waiting(null), { decisionId: 'perm-1', option: 0 }, 'auto')).toBe(
+      false,
+    );
   });
 });

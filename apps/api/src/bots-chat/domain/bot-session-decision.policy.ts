@@ -1,4 +1,4 @@
-import type { SessionDecision } from '@oppenheimer/shared';
+import type { BotPermission, SessionDecision } from '@oppenheimer/shared';
 
 /**
  * What a bot may answer on its own when a session it follows is blocked
@@ -79,15 +79,23 @@ export function isDestructiveDecision(decision: SessionDecision): boolean {
 }
 
 /**
- * Whether an answer must be the person's own call under Approve for me, past
- * any grant: it lets a destructive dialog through. Turning one down, or answering a question, is the bot's
- * to make within its permissions. An answer to a decision the session no
- * longer waits on is refused before this matters.
+ * Whether an answer must be the person's own call, on a card offering only
+ * it, past any grant. The bot's preset decides who answers: under Full
+ * access the bot does, always; under Approve for me the person does when the
+ * answer lets a destructive dialog through, or when the session could not
+ * be read (`session` null), since what it would let through is unknown.
+ * Turning a dialog down, or answering a question, follows the bot's
+ * permissions. An answer to a decision the session no longer waits on is
+ * refused before this matters.
  */
 export function answerNeedsPerson(
-  decision: SessionDecision | null,
+  session: { pendingDecision: SessionDecision | null } | null,
   answer: { decisionId: string; option?: number },
+  permission: BotPermission,
 ): boolean {
+  if (permission === 'full') return false;
+  if (!session) return true;
+  const decision = session.pendingDecision;
   if (!decision || decision.id !== answer.decisionId || decision.kind !== 'permission') {
     return false;
   }
