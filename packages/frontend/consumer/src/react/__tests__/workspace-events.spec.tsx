@@ -4,6 +4,7 @@ import { type Query, QueryClient, QueryClientProvider } from '@tanstack/react-qu
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { type ReactNode, Suspense } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CONSUMER_CONFIG } from '../../config';
 import { TOKENS } from '../../di/tokens';
 import type { WorkspaceStreamStatus } from '../../modules/organizations';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
@@ -18,7 +19,7 @@ import { pullRequestsKeys } from '../pull-requests.keys';
 import { sessionsKeys } from '../sessions.keys';
 import { useSessionStartProgress, useSessions, useSuspenseSession } from '../sessions.queries';
 import { tasksKeys } from '../tasks.keys';
-import { STREAM_REFETCH_GAP_MS, useWorkspaceEvents } from '../workspace-events';
+import { useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
 
 const flag = vi.hoisted(() => ({ on: true }));
@@ -86,7 +87,7 @@ afterEach(() => {
 });
 
 /** Lets the stream's refetch gap pass, so the next event refetches at once. */
-const quiet = () => act(() => vi.advanceTimersByTime(STREAM_REFETCH_GAP_MS));
+const quiet = () => act(() => vi.advanceTimersByTime(CONSUMER_CONFIG.workspaceEvents.refetchGapMs));
 
 describe('useWorkspaceEvents', () => {
   it('opens nothing while the flag is off or there is no workspace', () => {

@@ -4,6 +4,7 @@ import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { CONSUMER_CONFIG } from '../config';
 import { automationsKeys } from './automations.keys';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
@@ -148,53 +149,33 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
 }
 
 /**
- * The shortest gap between two refetches of one read that the stream asks for.
- *
- * Events come in bursts: a working agent reports each state it moves through
- * and each rewording of its status, and every one is a `session.changed` that
- * names the whole session list and the host list. Refetching on each would send
- * as many list reads as there are events, from every open tab, and the API's
- * per-route limit (`RATE_LIMIT_DEFAULT_LIMIT`, per browser session) answers the
- * excess with `RATE_001`, which the sidebar shows as "sending requests too
- * quickly". One read a second is as fresh as a person can see, and keeps a tab
- * under the limit whatever the agents do.
- */
-export const STREAM_REFETCH_GAP_MS = 1000;
-
-/**
- * Refetches a read at most once per {@link STREAM_REFETCH_GAP_MS}: the first
- * event after a quiet spell refetches at once, so a single change lands with no
- * delay; those within the gap after it collapse into one refetch at its end, so
- * the last change is never missed.
+ * Refetches a read at most once per gap
+ * (`CONSUMER_CONFIG.workspaceEvents.refetchGapMs`): the first event after a
+ * quiet spell refetches at once, so a single change lands with no delay; those
+ * within the gap after it collapse into one refetch at its end, so the last
+ * change is never missed.
  */
 function throttledInvalidate(queryClient: QueryClient) {
   const lastAt = new Map<string, number>();
   const pending = new Map<string, ReturnType<typeof setTimeout>>();
+  const run = (id: string, queryKey: QueryKey) => {
+    pending.delete(id);
+    lastAt.set(id, Date.now());
+    invalidate(queryClient, [queryKey]);
+  };
   return {
     invalidate(keys: readonly QueryKey[]): void {
-      const now = Date.now();
       for (const queryKey of keys) {
         const id = JSON.stringify(queryKey);
         if (pending.has(id)) continue;
-        const wait = (lastAt.get(id) ?? Number.NEGATIVE_INFINITY) + STREAM_REFETCH_GAP_MS - now;
-        if (wait <= 0) {
-          lastAt.set(id, now);
-          invalidate(queryClient, [queryKey]);
-          continue;
-        }
-        pending.set(
-          id,
-          setTimeout(() => {
-            pending.delete(id);
-            lastAt.set(id, Date.now());
-            invalidate(queryClient, [queryKey]);
-          }, wait),
-        );
+        const wait =
+          (lastAt.get(id) ?? 0) + CONSUMER_CONFIG.workspaceEvents.refetchGapMs - Date.now();
+        if (wait > 0) pending.set(id, setTimeout(run, wait, id, queryKey));
+        else run(id, queryKey);
       }
     },
     dispose(): void {
       for (const timer of pending.values()) clearTimeout(timer);
-      pending.clear();
     },
   };
 }
@@ -210,7 +191,7 @@ function throttledInvalidate(queryClient: QueryClient) {
  * screen's read and the subscription — the covered queries are refetched
  * once, for what the gap may have missed. A flag read off, or a workspace that
  * changes, closes the stream. An event's refetches are paced per read
- * ({@link STREAM_REFETCH_GAP_MS}); the catch-up is not.
+ * (`CONSUMER_CONFIG.workspaceEvents.refetchGapMs`); the catch-up is not.
  */
 export function useWorkspaceEvents(workspaceId: string | undefined): void {
   const app = useConsumerApp();
