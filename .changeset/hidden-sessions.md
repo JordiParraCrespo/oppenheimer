@@ -7,7 +7,6 @@
 "@oppenheimer/frontend-consumer": minor
 "@oppenheimer/api-client": minor
 "@oppenheimer/translations": minor
-"@oppenheimer/docs": patch
 ---
 
 Hidden sessions: a session can be kept out of the console's sidebar and
