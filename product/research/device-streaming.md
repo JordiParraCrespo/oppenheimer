@@ -114,7 +114,9 @@ Linux it can also start a TigerVNC and XFCE desktop of its own.
   `desktop.opened`, `desktop.control`, `desktop.close`, and RFB as binary
   frames under each direction's credit window (`desktop.stream`). The
   relay judges a host-scoped ticket (`POST /hosts/{id}/desktop-ticket`,
-  `update Host`, `hosts:write`, the `host_desktop` flag) at redemption and
+  `update Host`, the `host_desktop` flag, and for a token its own sensitive
+  scope, `host-desktops:write`, which `hosts:write` never carries) at
+  redemption and
   every minute, and carries bytes with back-pressure both ways; it reads no
   RFB.
 - **The console draws it with noVNC** (1.7.0, MPL-2.0, loaded with the

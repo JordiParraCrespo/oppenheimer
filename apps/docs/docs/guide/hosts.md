@@ -74,6 +74,8 @@ The host's owner decides whether its screen is shared, on the host itself:
 
 The desktop opens **watching**: you see the screen, and your clicks and keys reach nothing. **Take control** lets them through, until **Stop controlling**; the host itself drops your input while you only watch. Your session on the screen is shared, so watching never disconnects anyone else using it. **Full screen** gives the desktop the whole window; Escape leaves it.
 
+In the console you open a desktop as yourself. An [API token](./cli-and-mcp.md) needs the **Host desktops** permission (`host-desktops:write`), which no other permission includes: a token that manages hosts (`hosts:write`) cannot open their screens.
+
 When the desktop cannot open, it says why: the host does not share its desktop (with the command to run there), no screen-sharing server answers on the host, or the server refused the host's sign-in. Fix it on the host, then **Try again**. An offline host's desktop comes back when the host reconnects.
 
 

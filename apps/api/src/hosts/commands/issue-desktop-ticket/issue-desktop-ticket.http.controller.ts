@@ -34,9 +34,10 @@ export class IssueDesktopTicketHttpController {
 
   @Post(':id/desktop-ticket')
   @Version('1')
-  // Watching and driving a machine's screen is using the machine.
+  // Watching and driving a machine's screen is using the machine. Its own,
+  // sensitive scope: `hosts:write` manages hosts and never reaches a screen.
   @CheckPolicies({ action: 'update', subject: 'Host' })
-  @RequireScopes('hosts:write')
+  @RequireScopes('host-desktops:write')
   @RequireFlag('host_desktop')
   // Every reconnect mints a fresh ticket, as a terminal's does.
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
