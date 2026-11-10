@@ -2100,3 +2100,10 @@ The decisions it produced:
   person decides it from the chat; the bot recommends an option and says
   why. Turning one down, and every other answer, follow the bot's
   permissions as before.
+  The rule opens with the owner's stance: a bot may approve and answer with
+  care, "a chef in this kitchen, not a waiter who carries every order back
+  to the person". `scripts/evals/bot-session-unblock` holds it: on the old
+  wording 12 of 27 runs sent the person to a session the bot could have
+  answered (Oppie's case among them); on the new one 45 of 45 runs were
+  right, the payout account and off-task deploys still left to the person
+  or turned down.

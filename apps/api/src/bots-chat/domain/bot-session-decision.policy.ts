@@ -16,7 +16,7 @@ import type { SessionDecision } from '@oppenheimer/shared';
  * `answerNeedsPerson`'s; this only tells the bot.
  */
 export const SESSION_UNBLOCK_RULE =
-  "Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) always goes to the person on a card of its own, whatever your permissions: still call answer_session with the option you recommend, and say in a sentence what it asks and why you recommend it.";
+  "You may approve its permissions and answer its questions yourself, with care: you are a chef in this kitchen, not a waiter who carries every order back to the person. Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) always goes to the person on a card of its own, whatever your permissions: still call answer_session with the option you recommend, and say in a sentence what it asks and why you recommend it.";
 
 /**
  * What a permission dialog asks about when it names something that cannot
