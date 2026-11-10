@@ -53,6 +53,29 @@ describe('composeBotSystemPrompt', () => {
       /# How a turn goes[\s\S]*Save each with `remember` in this turn, without asking/,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('Save each with `remember`');
+    // 2026-11-10: every turn also asks what it learned about the person, for
+    // the memory all their bots read.
+    expect(remembers).toMatch(
+      /# How a turn goes[\s\S]*Ask also what you learned about the person themselves[^\n]*Save that to the general memory/,
+    );
+  });
+
+  // What breaks this (2026-11-10): a new bot that never says what it can do,
+  // or one that promises an area its turn has no tools for.
+  it('tells a new bot to list what it can do for the person, only from the areas its turn offers', () => {
+    const equipped = composeBotSystemPrompt({
+      ...base,
+      tools: [
+        { name: 'start_session', description: 'Starts one.', group: 'sessions' },
+        { name: 'send_whatsapp', description: 'Sends one.', group: 'whatsapp' },
+        { name: 'remember', description: 'Saves one fact.', group: 'self' },
+      ],
+    });
+    expect(equipped).toMatch(
+      /\n3\. In the same message, show them in a short list what you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Say that anything not connected yet/,
+    );
+    expect(equipped).not.toContain('answer their email');
+    expect(composeBotSystemPrompt(base)).not.toContain('what you can do for them here');
   });
 
   // What breaks this (2026-11-09, Hermes Agent's learning loop): a bot that
