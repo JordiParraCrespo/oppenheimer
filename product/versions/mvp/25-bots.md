@@ -2093,7 +2093,8 @@ The decisions it produced:
   also asks whether it learned who the person is (name, what they do for
   a living, language, time zone, how to address them) and saves that to the
   general memory; the choice rule is unchanged, so job facts stay its own. Getting started has it list, in the greeting, what
-  it can do for them, one phrase per area of tools its turn offers
+  it can do for them, one phrase per area whose acting tools its turn
+  offers (an area it can only read is not promised)
   (sessions on their computers, plan, Gmail, WhatsApp, Telegram, GitHub,
   automations, other bots, the web), and offer to help connect those of
   them that need connecting (a computer, Gmail, WhatsApp, Telegram, GitHub).

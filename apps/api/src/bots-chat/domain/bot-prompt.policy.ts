@@ -1,9 +1,4 @@
-import {
-  BOT_TOOL_GROUPS,
-  type BotApprovalEventStage,
-  type BotMessageEvent,
-  type BotToolGroup,
-} from '@oppenheimer/shared';
+import type { BotApprovalEventStage, BotMessageEvent, BotToolGroup } from '@oppenheimer/shared';
 import { approvalAsk } from './bot-approval.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
@@ -158,38 +153,63 @@ ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
 interface AreaIntro {
   /** What the bot can do there, in the greeting's list. */
   does: string;
+  /** The tools that do it: the area is offered when the turn has any of them. */
+  doneBy: readonly string[];
   /** What the person may still have to connect for it, named in the offer to help. */
   connects?: string;
 }
 
-const AREA_INTROS: Readonly<Partial<Record<BotToolGroup, AreaIntro>>> = {
-  sessions: {
-    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once, run commands and report back',
+/**
+ * Keyed by the tools that act, not by area, so an area the turn can only
+ * read (a read-only credential, a tool switched Off) is not promised: an
+ * eval of a bot with `list_hosts` alone offered to start coding agents
+ * (2026-11-10).
+ */
+const AREA_INTROS: readonly AreaIntro[] = [
+  {
+    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once and report back',
+    doneBy: ['start_session', 'start_cloud_session'],
     connects: 'a computer',
   },
-  plan: { does: 'keep their plan, projects and tasks up to date' },
-  mail: { does: 'read, sort and answer their email in Gmail', connects: 'Gmail' },
-  whatsapp: { does: 'talk with them and others on WhatsApp', connects: 'WhatsApp' },
-  telegram: { does: 'talk with them on Telegram', connects: 'Telegram' },
-  github: { does: 'follow, review and fix pull requests and issues on GitHub', connects: 'GitHub' },
-  automations: { does: 'run automations and routines on a schedule or when something happens' },
-  bots: { does: 'work with their other bots and create new ones' },
-  web: { does: 'search the web and research a topic' },
-};
+  { does: 'run commands on their computers', doneBy: ['run_command'] },
+  {
+    does: 'keep their plan, projects and tasks up to date',
+    doneBy: ['create_task', 'update_task'],
+  },
+  {
+    does: 'read, sort and answer their email in Gmail',
+    doneBy: ['send_mail', 'send_draft'],
+    connects: 'Gmail',
+  },
+  {
+    does: 'talk with them and others on WhatsApp',
+    doneBy: ['send_whatsapp_message'],
+    connects: 'WhatsApp',
+  },
+  { does: 'talk with them on Telegram', doneBy: ['send_telegram_message'], connects: 'Telegram' },
+  {
+    does: 'review, comment on and follow pull requests and issues on GitHub',
+    doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
+    connects: 'GitHub',
+  },
+  {
+    does: 'run automations and routines on a schedule or when something happens',
+    doneBy: ['update_routine'],
+  },
+  { does: 'work with their other bots and create new ones', doneBy: ['message_bot', 'create_bot'] },
+  { does: 'read pages on the web and research a topic', doneBy: ['web_fetch'] },
+];
 
 function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
-  const offered = new Set(tools.flatMap((tool) => (tool.group ? [tool.group] : [])));
-  const areas = BOT_TOOL_GROUPS.flatMap((group) => {
-    const intro = AREA_INTROS[group];
-    return intro && offered.has(group) ? [intro] : [];
-  });
+  const offered = new Set(tools.map((tool) => tool.name));
+  const areas = AREA_INTROS.filter((area) => area.doneBy.some((name) => offered.has(name)));
   if (areas.length === 0) return [];
   const connects = areas.flatMap((area) => (area.connects ? [area.connects] : []));
   const offer = connects.length
     ? ` Say that anything not connected yet (${connects.join(', ')}) you can help them connect.`
     : '';
   return [
-    `In the same message, show them in a short list what you can do for them here, in your own words and only as far as your tools under "What you can do" allow: ${areas.map((area) => area.does).join('; ')}.${offer}`,
+    `In the same message, show them in a short list what you can do for them here, in your own words: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond that list.${offer}`,
   ];
 }
 
