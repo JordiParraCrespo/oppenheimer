@@ -60,11 +60,21 @@ function refuses(label: string): boolean {
   return /^\s*(?:no\b|deny\b|reject\b|cancel\b)/i.test(label);
 }
 
+/**
+ * The dialog's words as a shell would read its command: a line continued
+ * with `\\` joined to the next, and quotes dropped, so `git push origin
+ * "+main"` and `rm "-rf" x` read as they run.
+ */
+function commandText(decision: { title: string; detail: string | null }): string {
+  return `${decision.title}\n${decision.detail ?? ''}`
+    .replace(/\\\r?\n\s*/g, ' ')
+    .replace(/["'`]/g, '');
+}
+
 /** Whether a dialog asks to let something destructive run. */
 export function isDestructiveDecision(decision: SessionDecision): boolean {
   if (decision.kind !== 'permission') return false;
-  const text = `${decision.title}\n${decision.detail ?? ''}`;
-  return DESTRUCTIVE.some((pattern) => pattern.test(text));
+  return DESTRUCTIVE.some((pattern) => pattern.test(commandText(decision)));
 }
 
 /**
