@@ -1,8 +1,4 @@
-import type {
-  BotEngineTool,
-  BotEngineToolResult,
-  BotTurnImage,
-} from '@oppenheimer/backend-agents';
+import type { BotEngineTool, BotEngineToolResult, BotTurnImage } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, upstreamRateLimitOf } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
