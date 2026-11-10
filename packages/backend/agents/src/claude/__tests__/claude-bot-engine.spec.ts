@@ -736,6 +736,31 @@ describe('ClaudeBotEngine', () => {
     },
   );
 
+  // A 429 Claude Code retried past is not why the run stopped; read as the
+  // rate limit, the chat offered Retry and a loop ran into the same wall.
+  it('reads a full context after a recovered rate limit as a full context', async () => {
+    scripted(() => [
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        retry_delay_ms: 30_000,
+        error_status: 429,
+        error: 'rate_limit',
+      } as unknown as SDKMessage,
+      assistant([{ type: 'text', text: 'Autocompact is thrashing' }], { error: 'invalid_request' }),
+      success({
+        is_error: true,
+        result: 'Autocompact is thrashing',
+        terminal_reason: 'rapid_refill_breaker',
+      }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure: 'context' });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
   // The chat shows the wait while Claude Code retries, rather than "thinking"
   // for the minutes a backoff can take.
   it('says it is retrying when Claude Code retries a refused call, and why', async () => {

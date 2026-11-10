@@ -177,19 +177,19 @@ export class ClaudeEventTranslator {
 
   /** A failed end, marked as a rate limit when the provider refused for one. */
   private failed(error: string): BotEngineEvent {
-    if (this.rateLimited) return failed(error, 'rate_limit', { resetAt: this.resetAt });
     const result = this.result;
-    return failed(
-      error,
-      claudeFailureOf({
-        errorCode: this.lastErrorCode,
-        terminalReason: result?.terminal_reason,
-        status:
-          result?.subtype === 'success' && typeof result.api_error_status === 'number'
-            ? result.api_error_status
-            : undefined,
-      }),
-    );
+    const failure = claudeFailureOf({
+      terminalReason: result?.terminal_reason,
+      rateLimited: this.rateLimited,
+      errorCode: this.lastErrorCode,
+      status:
+        result?.subtype === 'success' && typeof result.api_error_status === 'number'
+          ? result.api_error_status
+          : undefined,
+    });
+    return failure === 'rate_limit'
+      ? failed(error, failure, { resetAt: this.resetAt })
+      : failed(error, failure);
   }
 
   /**
@@ -324,20 +324,25 @@ const CONTEXT_FULL: ReadonlySet<string> = new Set([
 
 /**
  * The kind of failure a Claude Code run ended with, from everything it said
- * about it: how the run ended (`terminal_reason`), the SDK's code for the
- * last failed model call, and the API's status. A full context wins: Claude
- * Code reports it with the code it uses for an invalid request, which is not
- * the provider refusing anything. Then the code, and the status when the
- * code names nothing more specific.
+ * about it, in this order:
+ * - how the run ended (`terminal_reason`): a full context wins, since Claude
+ *   Code reports it with the code it uses for an invalid request, and a rate
+ *   limit it retried past earlier in the run is not why it stopped;
+ * - whether the provider refused a call for rate or quota during the run
+ *   (an SDK `rate_limit`, a `429`, a rejected rate-limit event);
+ * - the SDK's code for the last failed model call;
+ * - the API's status, when the code names nothing more specific.
  */
 function claudeFailureOf(signals: {
-  errorCode?: string;
   terminalReason?: string;
+  rateLimited: boolean;
+  errorCode?: string;
   status?: number;
 }): BotEngineFailure {
   if (signals.terminalReason !== undefined && CONTEXT_FULL.has(signals.terminalReason)) {
     return 'context';
   }
+  if (signals.rateLimited) return 'rate_limit';
   const byCode =
     signals.errorCode === undefined ? 'other' : (CLAUDE_FAILURES[signals.errorCode] ?? 'other');
   if (byCode !== 'other' || signals.status === undefined) return byCode;
