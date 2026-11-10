@@ -1502,3 +1502,12 @@ earlier note:
   through the screen-sharing server on its loopback, shared by its owner
   with `runner desktop on` (`research/device-streaming.md`, "A host's
   desktop"; the note's §11 is the read that led to it).
+- `versions/mvp/26-bot-routines.md` §6 built the routines' spend guard on
+  2026-11-07: a bot's routines paused after 3 reports its owner had not seen,
+  or 72 h away from its chat. On 2026-11-10 the owner asked for it to go: a
+  half-hourly Sentry triage that reports "no new events" paused within hours,
+  and OpenClaw, whose heartbeat the note follows, has no such guard. Removed
+  whole (the pause, the per-bot switch, the workspace thresholds, the Inbox
+  line, `POST /bots/:id/seen`); the migration resumes what it had paused.
+  Routines run until paused; the run budget, the overlap guard and quiet
+  turns bound the cost (26 §6, "Removed 2026-11-10").

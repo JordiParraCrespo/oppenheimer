@@ -1,8 +1,7 @@
 import { Inject } from '@nestjs/common';
-import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { ResumeUnattendedRoutinesCommand } from '../../../automations/commands/resume-unattended-routines/resume-unattended-routines.command';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { BotLookupResolver } from '../../application/bot-lookup.resolver';
@@ -29,7 +28,6 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
     private readonly groups: BotGroupRepositoryPort,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
-    private readonly commands: CommandBus,
   ) {}
 
   async execute({ scope, botId, input }: UpdateBotCommand): Promise<AggregateID> {
@@ -52,7 +50,6 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
         effort: input.effort,
         permission: input.permission,
         learnAutomatically: input.learnAutomatically,
-        routineSpendGuard: input.routineSpendGuard,
         sections: input.sections,
       });
     } catch (error) {
@@ -64,12 +61,6 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
     const outcome = await this.bots.save(bot);
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
     if (outcome === 'group-missing') throw new AppError(BotErrors.GROUP_NOT_FOUND);
-    // The spend guard turned off: what it paused runs again (`26-bot-routines.md` §6).
-    if (input.routineSpendGuard === false) {
-      await this.commands.execute(
-        new ResumeUnattendedRoutinesCommand({ organizationId: bot.organizationId, botId: bot.id }),
-      );
-    }
     return bot.id;
   }
 }

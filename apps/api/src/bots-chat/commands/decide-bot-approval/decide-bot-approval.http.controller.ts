@@ -22,7 +22,6 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { MarkBotSeenCommand } from '../../../bots/commands/mark-bot-seen/mark-bot-seen.command';
 import { BotApprovalMapper } from '../../bot-approval.mapper';
 import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotApprovalResponseDto } from '../../dtos/bot-approval.response.dto';
@@ -85,8 +84,6 @@ export class DecideBotApprovalHttpController {
         credentialScopes: credential ? credential.scopes : null,
       }),
     );
-    // The owner in the chat: the spend guard counts from here, and resumes their routines.
-    await this.commandBus.execute(new MarkBotSeenCommand({ scope, botId }));
     const approval = await this.queryBus.execute<FindBotApprovalQuery, BotApprovalEntity>(
       new FindBotApprovalQuery(scope, botId, approvalId),
     );
