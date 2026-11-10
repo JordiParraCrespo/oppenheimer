@@ -390,6 +390,8 @@
     "remove": "Clear filter",
     "allProjects": "All projects",
     "allRepositories": "All repositories",
+    "several_one": "{{count}} selected",
+    "several_other": "{{count}} selected",
     "allAgents": "All agents",
     "allHosts": "All hosts",
     "noMatches": "No sessions match these filters.",
