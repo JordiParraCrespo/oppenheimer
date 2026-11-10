@@ -532,6 +532,8 @@ export function AgentModelDemo() {
       favourites={favourites}
       onFavouritesChange={setFavourites}
       effort={engine.model ? { stops: EFFORT_LEVELS, value: effort, onValueChange: setEffort } : undefined}
+      // The console opens Settings → Agents here; the gallery has nowhere to go.
+      onConfigure={() => undefined}
     />
   );
 }
