@@ -365,7 +365,7 @@ describe('BotSessionToolsFactory', () => {
       model: 'gpt-6.1-sol',
     });
     expect(result.isError).toBe(true);
-    expect(result.content).toContain('Opus 5.5 (claude-opus-5-5)');
+    expect(result.content).toContain('Opus 5.5 (claude-opus-5-5, default)');
     expect(approvals.request).not.toHaveBeenCalled();
     expect(commandBus.execute).not.toHaveBeenCalled();
   });

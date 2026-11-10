@@ -35,7 +35,7 @@ export interface BotSessionLaunch {
  */
 export const BOT_SESSION_PERMISSION = 'auto' as const;
 
-/** How many models a refusal lists, so OpenCode's long catalog stays a sentence. */
+/** How many models a list names per agent, so OpenCode's long catalog stays a sentence. */
 const MODELS_IN_REFUSAL_MAX = 12;
 
 /** The words of a model's name without case or punctuation: `Opus 5.5` and `opus-5.5` are one. */
@@ -45,34 +45,66 @@ function keyOf(text: string): string {
 
 /**
  * The catalog row a person's words name: its id or its name, in any case or
- * punctuation, or a bare family (`opus`, `sonnet`) for that line's newest
- * model, which is how Claude Code's own `--model opus` reads. Null when
- * nothing matches.
+ * punctuation (`claude-opus-5-5`, `Opus 5.5`, `opus-5.5`), else the newest
+ * model of the family they name (`newestOfFamily`). Null when nothing matches.
  */
 export function modelNamed(agent: CodingAgentId, words: string): CodingAgentModel | null {
-  const { models } = CODING_AGENTS[agent];
   const key = keyOf(words);
   if (!key) return null;
-  const exact = models.find((model) => keyOf(model.id) === key || keyOf(model.label) === key);
-  if (exact) return exact;
-  if (/\d/.test(key)) return null;
-  const current = models.filter((model) => !model.legacy);
+  const exact = CODING_AGENTS[agent].models.find(
+    (model) => keyOf(model.id) === key || keyOf(model.label) === key,
+  );
+  return exact ?? newestOfFamily(agent, words);
+}
+
+/**
+ * A family is one word of a model's name with no digit in it (`opus`,
+ * `sonnet`, `sol`): the words a version number does not belong to. Its
+ * newest model is the first current (not legacy) row whose name holds that
+ * word, since each agent's catalog lists its current models newest first;
+ * that is how Claude Code's own `--model opus` reads. Words with a digit
+ * name a version, never a family, so a version the catalog lacks (`opus 9`)
+ * matches nothing rather than the family's newest.
+ */
+export function newestOfFamily(agent: CodingAgentId, words: string): CodingAgentModel | null {
+  const family = words.trim().toLowerCase();
+  if (!/^[a-z]+$/.test(family)) return null;
   return (
-    current.find((model) => keyOf(model.label).startsWith(key)) ??
-    current.find((model) => keyOf(model.id).includes(key)) ??
-    null
+    CODING_AGENTS[agent].models.find(
+      (model) => !model.legacy && familiesOf(model).includes(family),
+    ) ?? null
   );
 }
 
-/** The models an agent offers, as a refusal lists them: name and id, the current ones first. */
+/** The families a model's name holds: its words with no digit (`Opus 5.5` → `opus`). */
+function familiesOf(model: CodingAgentModel): string[] {
+  return model.label
+    .toLowerCase()
+    .split(/[^a-z0-9.]+/)
+    .filter((word) => /^[a-z]+$/.test(word));
+}
+
+/**
+ * The models an agent offers, as the tool's description and its refusals
+ * list them: name and id, the current ones first, the default marked, cut to
+ * a sentence (OpenCode's catalog is long) with "…" for the rest.
+ */
 export function modelChoices(agent: CodingAgentId): string {
   const { models } = CODING_AGENTS[agent];
   const ordered = [...models.filter((m) => !m.legacy), ...models.filter((m) => m.legacy)];
   const listed = ordered
     .slice(0, MODELS_IN_REFUSAL_MAX)
-    .map((model) => `${model.label} (${model.id})`);
+    .map((model) => `${model.label} (${model.id}${model.default ? ', default' : ''})`);
   const more = ordered.length > MODELS_IN_REFUSAL_MAX ? ', …' : '';
   return `${listed.join(', ')}${more}`;
+}
+
+/** Every agent's models, one sentence each, for `start_session`'s `model` field. */
+export function modelChoicesByAgent(): string {
+  return (Object.keys(CODING_AGENTS) as CodingAgentId[])
+    .filter((agent) => CODING_AGENTS[agent].models.length > 0)
+    .map((agent) => `${CODING_AGENTS[agent].label}: ${modelChoices(agent)}.`)
+    .join(' ');
 }
 
 /**

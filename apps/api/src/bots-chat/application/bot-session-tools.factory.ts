@@ -17,7 +17,6 @@ import type { WorkSessionEntity } from '../../sessions/domain/work-session.entit
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
   closeSummary,
-  currentModelChoices,
   decisionAnswerOf,
   decisionAnswerSummary,
   planSession,
@@ -30,6 +29,7 @@ import {
   sessionLaunchRefusal,
   sessionSummary,
 } from '../bot-session-tool.mapper';
+import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
@@ -148,7 +148,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(128)
           .optional()
           .describe(
-            `The agent's model, by id or by name as the person said it. ${currentModelChoices()} A model the agent does not have is refused with the list it has.`,
+            `The agent's model, by id or by name as the person said it. ${modelChoicesByAgent()} A model the agent does not have is refused with the list it has.`,
           ),
         effort: z
           .enum(SESSION_EFFORTS)

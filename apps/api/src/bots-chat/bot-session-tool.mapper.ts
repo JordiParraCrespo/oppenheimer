@@ -170,22 +170,6 @@ export function sessionLaunchRefusal(
   return 'refusal' in launch ? launch.refusal : null;
 }
 
-/**
- * The current models of each agent that has any, for `start_session`'s
- * `model` field: what the console's engine button offers first, so the model
- * matches the person's words to an id without a round trip.
- */
-export function currentModelChoices(): string {
-  return CODING_AGENT_IDS.flatMap((agent) => {
-    const current = CODING_AGENTS[agent].models.filter((model) => !model.legacy);
-    if (current.length === 0 || current.length > 8) return [];
-    const listed = current
-      .map((model) => `${model.label} (${model.id}${model.default ? ', default' : ''})`)
-      .join(', ');
-    return [`${CODING_AGENTS[agent].label}: ${listed}.`];
-  }).join(' ');
-}
-
 /** The agent a `start_session` call runs: the one named, the project's default, Claude Code. */
 function sessionAgentOf(
   input: Pick<StartSessionInput, 'agent'>,

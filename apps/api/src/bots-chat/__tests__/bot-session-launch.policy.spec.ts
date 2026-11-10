@@ -1,7 +1,9 @@
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS, CODING_AGENTS } from '@oppenheimer/shared/agents';
 import {
   launchPhrase,
+  modelChoicesByAgent,
   modelNamed,
+  newestOfFamily,
   planBotSessionLaunch,
 } from '../domain/bot-session-launch.policy';
 
@@ -36,6 +38,27 @@ describe('planBotSessionLaunch', () => {
     expect(modelNamed('claude-code', 'opus 9')).toBeNull();
   });
 
+  // The rule, over the whole catalog: a family word names the first current
+  // model whose name holds it, newest first, and never a legacy one.
+  it('reads every family in the catalog as its newest current model', () => {
+    for (const agent of CODING_AGENT_IDS) {
+      const current = CODING_AGENTS[agent].models.filter((model) => !model.legacy);
+      for (const model of current) {
+        for (const family of model.label.toLowerCase().split(/[^a-z0-9.]+/)) {
+          if (!/^[a-z]+$/.test(family)) continue;
+          const newest = current.find((row) =>
+            row.label
+              .toLowerCase()
+              .split(/[^a-z0-9.]+/)
+              .includes(family),
+          );
+          expect(newestOfFamily(agent, family)).toBe(newest);
+        }
+      }
+    }
+    expect(newestOfFamily('claude-code', 'opus 9')).toBeNull();
+  });
+
   it('carries the effort and the permission the person chose', () => {
     expect(
       planBotSessionLaunch('claude-code', {
@@ -56,7 +79,7 @@ describe('planBotSessionLaunch', () => {
 
   it('refuses what the agent does not take, with what it does take', () => {
     const unknown = planBotSessionLaunch('claude-code', { model: 'gpt-6.1-sol' });
-    expect(unknown).toEqual({ refusal: expect.stringContaining('Opus 5.5 (claude-opus-5-5)') });
+    expect(unknown).toEqual({ refusal: expect.stringContaining('Opus 5.5 (claude-opus-5-5, default)') });
     expect(planBotSessionLaunch('claude-code', { model: 'Haiku 4.5', effort: 'high' })).toEqual({
       refusal: expect.stringContaining('takes no effort'),
     });
@@ -69,6 +92,19 @@ describe('planBotSessionLaunch', () => {
     expect(planBotSessionLaunch('shell', { permission: 'full' })).toEqual({
       refusal: expect.stringContaining('no approvals'),
     });
+  });
+});
+
+describe('modelChoicesByAgent', () => {
+  // What breaks this: an agent with a long catalog (OpenCode) left out of the
+  // tool's description, so the bot never learns it can pick one of its models.
+  it('names every agent that has models, the long ones cut rather than dropped', () => {
+    const choices = modelChoicesByAgent();
+    for (const agent of CODING_AGENT_IDS) {
+      if (CODING_AGENTS[agent].models.length === 0) continue;
+      expect(choices).toContain(`${CODING_AGENTS[agent].label}: `);
+    }
+    expect(choices).toContain('Opus 5.5 (claude-opus-5-5, default)');
   });
 });
 
