@@ -81,6 +81,30 @@ function aligned(entries, indent) {
   );
 }
 
+/**
+ * A struct literal's fields in order, laid out as gofmt lays them: each run of
+ * consecutive single-line fields `aligned`, and a multi-line value (a map)
+ * on its own line, ending the run before it.
+ */
+function fieldLines(fields, indent) {
+  const lines = [];
+  let run = [];
+  const flush = () => {
+    if (run.length > 0) lines.push(...aligned(run, indent));
+    run = [];
+  };
+  for (const [key, value] of fields) {
+    if (value.includes('\n')) {
+      flush();
+      lines.push(`${indent}${key}: ${value},`);
+    } else {
+      run.push([key, value]);
+    }
+  }
+  flush();
+  return lines;
+}
+
 /** One permission level: its argv and its env, each omitted when empty. */
 function goLevel(level) {
   const fields = [];
@@ -139,46 +163,32 @@ function render() {
     const agent = CODING_AGENTS[id];
     const launch = agent.launch;
     lines.push(`\t${JSON.stringify(id)}: {`);
-    // Single-line fields align as a run; each multi-line map stands alone.
-    const head = [['command', JSON.stringify(agent.command)]];
-    if (launch.always) head.push(['always', goStrings(launch.always)]);
-    if (launch.model) head.push(['model', goStrings(launch.model)]);
+    // Every field in its order, as data; `fieldLines` lays them out the one
+    // way gofmt does, so no shape of entry needs a branch of its own here.
+    const fields = [['command', JSON.stringify(agent.command)]];
+    if (launch.always) fields.push(['always', goStrings(launch.always)]);
+    if (launch.model) fields.push(['model', goStrings(launch.model)]);
     const defaultModel = agent.models.find((model) => model.default);
-    if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
-    // The effort spelling joins the head's run when no multi-line permission
-    // map stands between them (an agent with no approvals, pi), since gofmt
-    // aligns the two as one run then.
-    let run = head;
-    if (launch.permission) {
-      lines.push(...aligned(head, '\t\t'));
-      lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
-      run = [];
-    }
+    if (defaultModel) fields.push(['defaultModel', JSON.stringify(defaultModel.id)]);
+    if (launch.permission) fields.push(['permission', goLevels(launch.permission)]);
     if (launch.effort) {
-      run.push(['effort', `launchLevel${goLevel(launch.effort)}`]);
-      if (launch.effort.unset) run.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
+      fields.push(['effort', `launchLevel${goLevel(launch.effort)}`]);
+      if (launch.effort.unset) fields.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
+      fields.push(['effortLevels', goEffortLevels(agent.models)]);
     }
-    if (run.length > 0) lines.push(...aligned(run, '\t\t'));
-    if (launch.effort) lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
-    // gofmt aligns a run of consecutive single-line fields, so these are
-    // emitted as one run rather than a line each — otherwise the generated
-    // file is not gofmt-clean and the Go linter fails on it.
-    const tail = [];
-    if (launch.prompt) tail.push(['prompt', goStrings(launch.prompt)]);
+    if (launch.prompt) fields.push(['prompt', goStrings(launch.prompt)]);
     if (launch.conversation?.create) {
-      tail.push(['conversationCreate', goStrings(launch.conversation.create)]);
+      fields.push(['conversationCreate', goStrings(launch.conversation.create)]);
     }
     if (launch.conversation?.resume) {
-      tail.push(['conversationResume', goStrings(launch.conversation.resume)]);
+      fields.push(['conversationResume', goStrings(launch.conversation.resume)]);
     }
-    if (launch.conversation?.resumeLeads) {
-      tail.push(['conversationResumeLeads', 'true']);
-    }
+    if (launch.conversation?.resumeLeads) fields.push(['conversationResumeLeads', 'true']);
     if (launch.teleport) {
-      tail.push(['teleportStart', goStrings(launch.teleport.start)]);
-      tail.push(['teleportResume', goStrings(launch.teleport.resume)]);
+      fields.push(['teleportStart', goStrings(launch.teleport.start)]);
+      fields.push(['teleportResume', goStrings(launch.teleport.resume)]);
     }
-    if (tail.length > 0) lines.push(...aligned(tail, '\t\t'));
+    lines.push(...fieldLines(fields, '\t\t'));
     lines.push('\t},');
   }
   lines.push('}', '');
