@@ -65,10 +65,9 @@ export function emptyMessage(t: TFunction, narrowed: boolean, query: string): st
 /**
  * What the sidebar says in place of its list, or null when it draws one: no
  * project at all, nothing that matches the search or the filters, every
- * project hidden, nothing pinned under Pinned only, or no session in any
- * project.
+ * project hidden, or no session in any project.
  */
-export function emptyListMessage(
+function emptyListMessage(
   t: TFunction,
   {
     groups,
@@ -77,7 +76,6 @@ export function emptyListMessage(
     hiddenCount,
     narrowed,
     query,
-    pinnedOnly = false,
   }: {
     groups: readonly ProjectGroup[];
     shown: readonly ProjectGroup[];
@@ -85,13 +83,11 @@ export function emptyListMessage(
     hiddenCount: number;
     narrowed: boolean;
     query: string;
-    pinnedOnly?: boolean;
   },
 ): string | null {
   if (groups.length === 0 && hiddenCount === 0) return t('sessions.sidebar.empty');
   if (shown.length > 0 || pinned.length > 0) return null;
   if (narrowed) return emptyMessage(t, true, query);
-  if (pinnedOnly) return t('sessions.sidebar.noPinned');
   return groups.length === 0 ? t('sessions.sidebar.allHidden') : t('sessions.sidebar.noSessions');
 }
 
@@ -132,4 +128,40 @@ export function moveProjectOptions(
 export function matchesQuery(session: SessionEntity, query: string): boolean {
   const term = query.trim().toLowerCase();
   return term ? session.name.toLowerCase().includes(term) : true;
+}
+
+/**
+ * What the list draws below Pinned, how many sessions that is with the pinned
+ * ones, and what it says instead when it draws nothing. Under Pinned only no
+ * project is drawn, and an empty Pinned says how to pin a session.
+ */
+export function sidebarList<T extends ProjectGroup>(
+  t: TFunction,
+  {
+    pinnedOnly,
+    groups,
+    occupied,
+    picked,
+    pinned,
+    hiddenCount,
+    narrowed,
+    query,
+  }: {
+    pinnedOnly: boolean;
+    groups: readonly T[];
+    occupied: ReadonlySet<string>;
+    picked: string | null;
+    pinned: readonly SessionEntity[];
+    hiddenCount: number;
+    narrowed: boolean;
+    query: string;
+  },
+): { shown: T[]; count: number; empty: string | null } {
+  const shown = pinnedOnly ? [] : shownGroups(groups, occupied, picked);
+  const count = pinned.length + shown.reduce((sum, group) => sum + group.sessions.length, 0);
+  const empty =
+    pinnedOnly && pinned.length === 0 && !narrowed && (groups.length > 0 || hiddenCount > 0)
+      ? t('sessions.sidebar.noPinned')
+      : emptyListMessage(t, { groups, shown, pinned, hiddenCount, narrowed, query });
+  return { shown, count, empty };
 }

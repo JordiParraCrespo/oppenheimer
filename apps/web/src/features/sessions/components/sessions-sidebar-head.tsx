@@ -26,8 +26,6 @@ export function SessionsSidebarHead({
   options,
   dirty,
   visibility,
-  pinnedOnly,
-  onPinnedOnlyChange,
   chips,
   onFiltersChange,
   onFiltersClear,
@@ -44,8 +42,6 @@ export function SessionsSidebarHead({
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   visibility: ProjectVisibility;
-  pinnedOnly: boolean;
-  onPinnedOnlyChange: (pinnedOnly: boolean) => void;
   chips: { key: SessionFacet; label: string }[];
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
@@ -75,8 +71,6 @@ export function SessionsSidebarHead({
             options={options}
             dirty={dirty}
             visibility={visibility}
-            pinnedOnly={pinnedOnly}
-            onPinnedOnlyChange={onPinnedOnlyChange}
             onChange={onFiltersChange}
             onClear={onFiltersClear}
             onNewProject={onNewProject}

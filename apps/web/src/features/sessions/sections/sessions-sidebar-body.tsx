@@ -37,7 +37,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { emptyListMessage, matchesQuery, shownGroups } from '../lib/session-groups';
+import { matchesQuery, sidebarList } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -141,16 +141,15 @@ export function SessionsSidebarBody() {
     onWrite: setFailure,
   });
   const occupied = new Set(listing.sessions.map((session) => session.projectId));
-  // Pinned only draws no project below Pinned, however the filters stand.
-  const shown = pinnedOnly ? [] : shownGroups(groups, occupied, picked);
-  const empty = emptyListMessage(t, {
+  const { shown, count, empty } = sidebarList(t, {
+    pinnedOnly,
     groups,
-    shown,
+    occupied,
+    picked,
     pinned,
     hiddenCount: listing.hiddenCount,
     narrowed,
     query,
-    pinnedOnly,
   });
   // A folded group's rows are not drawn, so a Shift-click does not reach them;
   // nor are any while the whole list is folded.
@@ -170,7 +169,7 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          sessionCount={pinned.length + (pinnedOnly ? 0 : listing.sessions.length)}
+          sessionCount={count}
           filters={filters}
           options={options}
           dirty={dirty}
@@ -179,9 +178,9 @@ export function SessionsSidebarBody() {
             hiddenCount: listing.hiddenCount,
             onShownChange: setShown,
             onShowAll: showAll,
+            pinnedOnly,
+            onPinnedOnlyChange: setPinnedOnly,
           }}
-          pinnedOnly={pinnedOnly}
-          onPinnedOnlyChange={setPinnedOnly}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
           onFiltersClear={() =>

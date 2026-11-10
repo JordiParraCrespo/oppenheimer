@@ -274,7 +274,7 @@ describe('SessionsSidebar', () => {
    */
   it('draws only the pinned rows under Pinned only', () => {
     window.localStorage.setItem(SESSION_PINS_KEY, JSON.stringify(['bravo']));
-    window.localStorage.setItem(PINNED_ONLY_KEY, JSON.stringify(['projects']));
+    window.localStorage.setItem(PINNED_ONLY_KEY, 'true');
     try {
       cleanup();
       render(

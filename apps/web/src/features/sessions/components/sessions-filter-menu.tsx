@@ -30,8 +30,8 @@ const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
  * Which projects the sidebar draws: every project in the Project facet's
- * options with a check, the ones in `hidden` without. Hiding is not
- * filtering, so Clear filters leaves it.
+ * options with a check, the ones in `hidden` without, or none under Pinned
+ * only. Hiding is not filtering, so Clear filters leaves it.
  */
 export interface ProjectVisibility {
   hidden: readonly string[];
@@ -39,6 +39,8 @@ export interface ProjectVisibility {
   hiddenCount: number;
   onShownChange: (id: string, shown: boolean) => void;
   onShowAll: () => void;
+  pinnedOnly: boolean;
+  onPinnedOnlyChange: (pinnedOnly: boolean) => void;
 }
 
 /**
@@ -54,8 +56,6 @@ export function SessionsFilterMenu({
   options,
   dirty,
   visibility,
-  pinnedOnly,
-  onPinnedOnlyChange,
   onChange,
   onClear,
   onNewProject,
@@ -64,9 +64,6 @@ export function SessionsFilterMenu({
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   visibility: ProjectVisibility;
-  /** Whether only the pinned sessions are drawn; like a hidden project, Clear filters leaves it. */
-  pinnedOnly: boolean;
-  onPinnedOnlyChange: (pinnedOnly: boolean) => void;
   onChange: (patch: Partial<SessionFilters>) => void;
   onClear: () => void;
   /** Opens the New project dialog, from the foot of the Project facet. */
@@ -85,7 +82,7 @@ export function SessionsFilterMenu({
             size="xs"
             variant="quiet"
             aria-label={t('sessions.filters.label')}
-            data-dirty={dirty || visibility.hiddenCount > 0 || pinnedOnly || undefined}
+            data-dirty={dirty || visibility.hiddenCount > 0 || visibility.pinnedOnly || undefined}
           />
         }
       >
@@ -184,8 +181,8 @@ export function SessionsFilterMenu({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuCheckboxItem
-          checked={pinnedOnly}
-          onCheckedChange={(checked) => onPinnedOnlyChange(checked)}
+          checked={visibility.pinnedOnly}
+          onCheckedChange={(checked) => visibility.onPinnedOnlyChange(checked)}
         >
           {t('sessions.filters.pinnedOnly')}
         </DropdownMenuCheckboxItem>
