@@ -17,7 +17,7 @@
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
  * that the same way. The script builders beside the install entries
- * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
+ * (`claudeRelease`, `npmUserInstall`, `bunUserInstall`) are private: they only spell data.
  */
 
 import {
@@ -29,6 +29,7 @@ import {
   levels,
 } from './effort-levels.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
+import { OMP_MODELS, PI_MODELS } from './pi-models.js';
 import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
 
 /**
@@ -39,7 +40,15 @@ import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './releas
  * because the console picks it from the same engine button and the runner
  * reads the same id off `session.create`.
  */
-export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
+export const CODING_AGENT_IDS = [
+  'claude-code',
+  'codex',
+  'opencode',
+  'grok',
+  'pi',
+  'omp',
+  'shell',
+] as const;
 
 export type CodingAgentId = (typeof CODING_AGENT_IDS)[number];
 
@@ -354,6 +363,22 @@ function npmUserInstall(pkg: string): string {
     'set -eu',
     'command -v npm >/dev/null 2>&1 || { echo "npm is not on PATH; install Node.js 22 first" >&2; exit 1; }',
     `npm install --global --prefix "$HOME/.local" ${pkg}`,
+  ].join('\n');
+}
+
+/**
+ * A package from the npm registry, installed with Bun into Bun's own global
+ * directory (`~/.bun/bin`), which is the person's and needs no root. For a CLI
+ * whose executable is a Bun script (`#!/usr/bin/env bun`), so npm could
+ * install it but nothing could run it without Bun. Bun checks each tarball
+ * against the registry's integrity hash, as npm does. Bun is a prerequisite
+ * the script names rather than installs.
+ */
+function bunUserInstall(pkg: string): string {
+  return [
+    'set -eu',
+    'command -v bun >/dev/null 2>&1 || { echo "bun is not on PATH; install Bun first (bun.sh)" >&2; exit 1; }',
+    `bun install --global ${pkg}`,
   ].join('\n');
 }
 
@@ -967,6 +992,135 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       macos: npmUserInstall('@xai-official/grok'),
       linux: npmUserInstall('@xai-official/grok'),
       bin: '~/.local/bin',
+    }),
+  }),
+  pi: Object.freeze({
+    id: 'pi',
+    label: 'Pi',
+    // Mario Zechner's pi coding agent (`@mariozechner/pi-coding-agent`),
+    // whose binary is `pi`. Everything below is read off 0.73.1's README and
+    // its `dist/cli/args.js`.
+    command: 'pi',
+    input: TYPED_INPUT,
+    // `/login` signs in to a subscription: Claude Pro/Max through
+    // `claude.ai/oauth/authorize`, ChatGPT through
+    // `auth.openai.com/oauth/authorize` (the two OAuth hosts pi-ai carries),
+    // and GitHub Copilot through GitHub's device flow.
+    loginTargets: Object.freeze([
+      Object.freeze({ host: 'claude.ai' }),
+      Object.freeze({ host: 'auth.openai.com' }),
+      Object.freeze({ host: 'github.com', path: '/login/device' }),
+    ]),
+    // "Sessions auto-save to `~/.pi/agent/sessions/` organized by working
+    // directory", as JSONL.
+    transcriptLocation: Object.freeze({
+      directory: '~/.pi/agent/sessions/',
+      keyedBy: 'working-directory',
+    }),
+    // "Override config directory (default: `~/.pi/agent`)", which holds
+    // `auth.json` along with the settings and the sessions, as
+    // `CLAUDE_CONFIG_DIR` holds Claude Code's.
+    configDirEnv: 'PI_CODING_AGENT_DIR',
+    models: PI_MODELS,
+    launch: Object.freeze({
+      // "Model pattern or ID (supports `provider/id` …)".
+      model: Object.freeze(['--model', '<model>']),
+      // `--session <id>` opens a session that exists and cannot name a new
+      // one, so like Codex's and OpenCode's the id is pi's. `--continue`
+      // ("Continue most recent session") is keyed by working directory, and a
+      // session's worktree is its own and never reused, so it reopens this
+      // session's conversation and nobody else's.
+      conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
+      // No `permission`. Pi has none by design ("No permission popups. Run
+      // in a container, or build your own confirmation flow with
+      // extensions"): every tool call runs, so the console hides the chip
+      // and records no level rather than offer an "Ask" pi would ignore.
+      effort: Object.freeze({
+        argv: Object.freeze(['--thinking', '<effort>']),
+        env: Object.freeze({}),
+      }),
+      // `pi [options] [messages...]`, "Interactive with initial prompt";
+      // `-p` is the one that answers and exits.
+      prompt: Object.freeze(['<prompt>']),
+    }),
+    // `pi update --self`: "Update pi only", through the package manager that
+    // installed it, asking nothing. Bare `pi update` would also update every
+    // extension the person installed, which is theirs to do.
+    update: Object.freeze(['update', '--self']),
+    // The npm package pi's README installs first.
+    install: Object.freeze({
+      macos: npmUserInstall('@mariozechner/pi-coding-agent'),
+      linux: npmUserInstall('@mariozechner/pi-coding-agent'),
+      bin: '~/.local/bin',
+    }),
+  }),
+  omp: Object.freeze({
+    id: 'omp',
+    label: 'Oh My Pi',
+    // can1357's fork of pi (`@oh-my-pi/pi-coding-agent`), whose binary is
+    // `omp`. Everything below is read off 18.18.6's `src/commands/launch-help.ts`
+    // and `src/cli/flag-tables.ts`.
+    command: 'omp',
+    input: TYPED_INPUT,
+    // Pi's `/login`, and so pi's hosts.
+    loginTargets: Object.freeze([
+      Object.freeze({ host: 'claude.ai' }),
+      Object.freeze({ host: 'auth.openai.com' }),
+      Object.freeze({ host: 'github.com', path: '/login/device' }),
+    ]),
+    // `~/.omp/agent/sessions/--<path>--/`, grouped by working directory as
+    // pi's are (the `--export` example in its own help).
+    transcriptLocation: Object.freeze({
+      directory: '~/.omp/agent/sessions/',
+      keyedBy: 'working-directory',
+    }),
+    // No `configDirEnv`. omp scopes a login with `--profile <name>` ("an
+    // isolated profile for auth, sessions, settings, and caches"), a flag and
+    // not a variable, and names no variable that moves `~/.omp/agent`.
+    models: OMP_MODELS,
+    launch: Object.freeze({
+      model: Object.freeze(['--model', '<model>']),
+      // Pi's, and for pi's reason: `--resume` takes an id omp chose, and
+      // `--continue` reopens the newest conversation in this worktree.
+      conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
+      // `--approval-mode always-ask|always-ask-cached|write|yolo`. Its tools
+      // are tiered read < write < exec, and a mode approves up to its tier:
+      // `always-ask` asks for anything past a read, `write` lets edits
+      // through and asks before a command, as Claude Code's `acceptEdits`
+      // does, and `yolo` asks nothing. omp's own default is `yolo`, which is
+      // why Ask has to be sent rather than left to the CLI.
+      permission: Object.freeze({
+        ask: Object.freeze({
+          argv: Object.freeze(['--approval-mode', 'always-ask']),
+          env: Object.freeze({}),
+        }),
+        auto: Object.freeze({
+          argv: Object.freeze(['--approval-mode', 'write']),
+          env: Object.freeze({}),
+        }),
+        full: Object.freeze({
+          argv: Object.freeze(['--approval-mode', 'yolo']),
+          env: Object.freeze({}),
+        }),
+      }),
+      effort: Object.freeze({
+        argv: Object.freeze(['--thinking', '<effort>']),
+        env: Object.freeze({}),
+      }),
+      // `omp [messages...]`, "Interactive mode with initial prompt".
+      prompt: Object.freeze(['<prompt>']),
+    }),
+    // `omp update`: "Check for updates and install", through whichever
+    // installer owns the running executable, asking nothing.
+    update: Object.freeze(['update']),
+    // From npm with Bun: `omp` is a Bun script and its package declares
+    // `engines.bun >= 1.4.4`, and `bun install -g` is the install its README
+    // recommends. Not `omp.sh/install`, which runs unchecked when Bun is
+    // present.
+    install: Object.freeze({
+      macos: bunUserInstall('@oh-my-pi/pi-coding-agent'),
+      linux: bunUserInstall('@oh-my-pi/pi-coding-agent'),
+      bin: '~/.bun/bin',
     }),
   }),
   shell: Object.freeze({

@@ -145,14 +145,21 @@ function render() {
     if (launch.model) head.push(['model', goStrings(launch.model)]);
     const defaultModel = agent.models.find((model) => model.default);
     if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
-    lines.push(...aligned(head, '\t\t'));
-    if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
-    if (launch.effort) {
-      const spelling = [['effort', `launchLevel${goLevel(launch.effort)}`]];
-      if (launch.effort.unset) spelling.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
-      lines.push(...aligned(spelling, '\t\t'));
-      lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
+    // The effort spelling joins the head's run when no multi-line permission
+    // map stands between them (an agent with no approvals, pi), since gofmt
+    // aligns the two as one run then.
+    let run = head;
+    if (launch.permission) {
+      lines.push(...aligned(head, '\t\t'));
+      lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
+      run = [];
     }
+    if (launch.effort) {
+      run.push(['effort', `launchLevel${goLevel(launch.effort)}`]);
+      if (launch.effort.unset) run.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
+    }
+    if (run.length > 0) lines.push(...aligned(run, '\t\t'));
+    if (launch.effort) lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
     // gofmt aligns a run of consecutive single-line fields, so these are
     // emitted as one run rather than a line each — otherwise the generated
     // file is not gofmt-clean and the Go linter fails on it.

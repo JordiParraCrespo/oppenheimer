@@ -290,7 +290,7 @@ func TestBundledManifestsLoad(t *testing.T) {
 			}
 		}
 	}
-	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentShell} {
+	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentPi, domain.AgentOmp, domain.AgentShell} {
 		if !agents[agent] {
 			t.Errorf("no bundled manifest for %q, which the runner can start", agent)
 		}

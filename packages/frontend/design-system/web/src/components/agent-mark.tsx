@@ -1,4 +1,4 @@
-import { BotIcon, SquareTerminalIcon } from 'lucide-react';
+import { BotIcon, PiIcon, SquareTerminalIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -8,6 +8,8 @@ type AgentId =
   | 'codex'
   | 'opencode'
   | 'grok'
+  | 'pi'
+  | 'omp'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -74,6 +76,8 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   codex: () => <OpenAIMark className={INKED} />,
   opencode: () => <OpenCodeMark className={INKED} />,
   grok: () => <GrokMark className={INKED} />,
+  pi: () => <PiIcon className={SHARED} strokeWidth={2} aria-hidden />,
+  omp: () => <PiIcon className={SHARED} strokeWidth={2} aria-hidden />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -96,6 +100,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
  * published mark of its own and wears OpenAI's, as Codex does. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
+ * Pi and its fork Oh My Pi publish no mark in their packages, so both take
+ * Lucide's π glyph rather than a drawing of one.
  *
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);

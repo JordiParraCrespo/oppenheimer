@@ -65,7 +65,7 @@ func TestUpdateEnvPointsNpmAtThePrefixTheCLILivesUnder(t *testing.T) {
 // The runner installs agents and gh itself, and never git or tmux: those
 // need root, so the person gets the exact command instead.
 func TestInstallScriptsByKindAndPlatform(t *testing.T) {
-	for _, agent := range []string{domain.ToolClaude, domain.ToolCodex, domain.ToolOpenCode, domain.ToolGrok} {
+	for _, agent := range []string{domain.ToolClaude, domain.ToolCodex, domain.ToolOpenCode, domain.ToolGrok, domain.ToolPi, domain.ToolOmp} {
 		for _, platform := range []domain.Platform{domain.PlatformMacOS, domain.PlatformUbuntu, domain.PlatformDebian} {
 			script, err := domain.InstallScript(agent, platform)
 			if kind, ok := domain.InstallKindOf(agent); err != nil || !ok || kind != domain.InstallAgent || script == "" {

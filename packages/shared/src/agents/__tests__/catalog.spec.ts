@@ -250,8 +250,9 @@ describe('launch mapping', () => {
   it('maps every permission level, for every agent that has approvals', () => {
     for (const id of CODING_AGENT_IDS) {
       const { permission } = CODING_AGENTS[id].launch;
-      // A blank terminal has no approvals; everything else states all three.
-      if (id === 'shell') {
+      // A blank terminal has no approvals, and neither has pi, which runs
+      // every tool call by design; everything else states all three.
+      if (id === 'shell' || id === 'pi') {
         expect(permission).toBeUndefined();
         continue;
       }
@@ -440,7 +441,9 @@ describe('agent installs', () => {
       for (const script of install ? [install.macos, install.linux] : []) {
         const verified = /^verify "\$tmp\/[^"]+" /m.test(script);
         const fromNpm = /^npm install --global --prefix "\$HOME\/\.local" \S+$/m.test(script);
-        expect(verified || fromNpm, id).toBe(true);
+        // Bun checks a registry tarball's integrity as npm does (omp).
+        const fromBun = /^bun install --global \S+$/m.test(script);
+        expect(verified || fromNpm || fromBun, id).toBe(true);
         // A fetched script run as it arrived, whole or not.
         expect(script, id).not.toMatch(/\b(ba)?sh "\$tmp"/);
       }
