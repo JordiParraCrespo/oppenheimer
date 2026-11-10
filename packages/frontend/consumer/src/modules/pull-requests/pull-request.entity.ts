@@ -277,6 +277,20 @@ export interface PullRequestFile {
   patch: string | null;
 }
 
+/**
+ * What the review deck leads a pull request with, for its head commit: one
+ * sentence, a few points, where to look first and the description's pictures.
+ */
+export interface PullRequestBrief {
+  headSha: string;
+  /** `model`: written from the diff. `description`: the author's own words. */
+  source: 'model' | 'description';
+  headline: string;
+  points: readonly string[];
+  lookFirst: string | null;
+  images: readonly { url: string; alt: string }[];
+}
+
 export interface PullRequestComment {
   id: number;
   path: string;

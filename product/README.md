@@ -1445,3 +1445,11 @@ earlier note:
   idle: a bot now looks at a task still running every ten minutes after the
   first check, up to an hour, staying quiet when it is on track, and checks
   at once when asked (§4.2).
+- `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
+  left a pull request with no generated summary until the chat came, and
+  the queue as a table. On 2026-11-09 the owner asked for the queue one pull
+  request at a time, summarized and with its pictures, the next one coming
+  up after each action: the **review deck** (`/pulls/review`, the same note,
+  "The review deck"), whose card leads with a brief of the head commit that
+  the deployment's model writes, or the description gives when there is no
+  model. The queue, the description page and Analytics are unchanged.
