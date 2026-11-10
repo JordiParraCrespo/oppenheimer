@@ -34,6 +34,8 @@ function renderMenu(currentProjectId: string | null = null) {
       onOpenChange={onOpenChange}
       pinned={false}
       onPinChange={() => {}}
+      hidden={false}
+      onHiddenChange={() => {}}
       onSelect={() => {}}
       onRename={() => {}}
       onMove={onMove}

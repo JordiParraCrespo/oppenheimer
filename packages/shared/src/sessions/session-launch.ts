@@ -58,6 +58,8 @@ export interface SessionLaunchInput {
   name?: string;
   permission?: 'ask' | 'auto' | 'full';
   model?: string;
+  /** Start it hidden from the console's sidebar. */
+  hidden?: boolean;
 }
 
 /**
@@ -93,5 +95,6 @@ export function sessionLaunchBody(input: SessionLaunchInput): Record<string, unk
     prompt: input.task,
     ...place,
     ...launch,
+    ...(input.hidden ? { hidden: true } : {}),
   };
 }

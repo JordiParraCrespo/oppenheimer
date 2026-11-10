@@ -308,6 +308,7 @@ export type {
   SetBotToolDecisionRequest,
   SetRepositoryWatchRequest,
   SetSessionSharePeopleRequest,
+  SetSessionVisibilityRequest,
   SetUserPasswordRequest,
   SetUserRoleRequest,
   SharedSessionResponseDto,
