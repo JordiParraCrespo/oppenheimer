@@ -345,6 +345,7 @@
       "progress": "{{step}} de {{limit}} continuaciones",
       "continuations_one": "{{count}} continuación",
       "continuations_other": "{{count}} continuaciones",
+      "continuations_many": "{{count}} continuaciones",
       "budget": "{{progress}} · {{used}} de {{budget}} tokens",
       "resume": "Reanudar",
       "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",

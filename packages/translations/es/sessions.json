@@ -582,6 +582,7 @@
     "failedCall": "falló",
     "failed_one": "{{count}} falló",
     "failed_other": "{{count}} fallaron",
+    "failed_many": "{{count}} fallaron",
     "files_one": "{{count}} archivo adjunto",
     "files_other": "{{count}} archivos adjuntos",
     "tasks_one": "{{done}} de {{count}} tarea hecha",
