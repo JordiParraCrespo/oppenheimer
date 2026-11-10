@@ -8,6 +8,7 @@ import { daysText, scheduleText } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
+  AUTOMATION_AGENTS,
   draftOf,
   emptyDraft,
   fitCards,
@@ -248,6 +249,15 @@ describe('the draft', () => {
       agent: 'codex',
       repositoryKeys: ['i-1:101'],
     });
+  });
+
+  // The API saves an automation only for an agent with permission levels
+  // (`automationAgentSupported`): offering Pi, which has none, would fail
+  // every save.
+  it('offers only the agents the API will save an automation for', () => {
+    expect(AUTOMATION_AGENTS).toContain('omp');
+    expect(AUTOMATION_AGENTS).not.toContain('pi');
+    expect(AUTOMATION_AGENTS).not.toContain('shell');
   });
 
   it('takes the first host there is for a project with no default host', () => {
