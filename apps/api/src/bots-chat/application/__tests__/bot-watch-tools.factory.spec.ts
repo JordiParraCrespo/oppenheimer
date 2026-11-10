@@ -275,6 +275,7 @@ describe('BotWatchToolsFactory', () => {
       botId: 'bot-1',
       sessionId: SESSION,
       turn: 1,
+      check: 1,
     });
     expect(sent.turn).toBe(3);
     expect(firstAt.getTime()).toBeGreaterThanOrEqual(before + BOT_STALL_CHECK_DELAY_MS);
