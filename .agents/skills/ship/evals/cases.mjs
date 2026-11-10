@@ -140,7 +140,7 @@ export const cases = [
       });
       f.branch('main');
       f.commit(
-        'feat(greet)!: drop the legacy greeting format\n\nJordi: nobody uses it any more, remove it.',
+        'feat(greet)!: drop the legacy greeting format\n\nThe user: nobody uses it any more, remove it.',
         { 'src/greet.mjs': 'export function greet(name) {\n  return `Hello, ${name}`;\n}\n', 'tests/legacy.test.mjs': null },
       );
       return { head: 'feat/legacy-bang', verified: true };
