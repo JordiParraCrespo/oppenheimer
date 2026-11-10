@@ -1,5 +1,5 @@
 import { AgentMark, SortableSessionItem } from '@oppenheimer/design-system-web';
-import { Cloud, Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import { Cloud, EyeOff, Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMoveSession,
@@ -111,13 +111,13 @@ export function SessionRow({
   const age = compactAge(session.createdAt, now);
   const glyph = sessionGlyph(session);
   // A deleted row back in the list is never back as it was (`useCloseSession`).
-  const status = session.closeRefusal
-    ? t('sessions.sidebar.notDeleted')
-    : session.isClosing
-      ? t('sessions.sidebar.deleting')
-      : session.hidden
-        ? t('sessions.sidebar.hidden')
-        : undefined;
+  const status = session.closeRefusal ? (
+    t('sessions.sidebar.notDeleted')
+  ) : session.isClosing ? (
+    t('sessions.sidebar.deleting')
+  ) : session.hidden ? (
+    <EyeOff role="img" aria-label={t('sessions.sidebar.hidden')} className="size-3.5" />
+  ) : undefined;
   const cloudUrl = session.cloud?.url ?? null;
   // The row has a menu unless the list is selecting (the bar acts) or its name
   // is being typed; every way of opening the menu reads this.
