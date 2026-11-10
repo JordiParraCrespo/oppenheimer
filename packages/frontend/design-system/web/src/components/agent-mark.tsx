@@ -1,5 +1,5 @@
-import { BotIcon, PiIcon, SquareTerminalIcon } from 'lucide-react';
-import type * as React from 'react';
+import { BotIcon, SquareTerminalIcon } from 'lucide-react';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -51,6 +51,38 @@ function GrokMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+/** Pi's three blocks, in its own colours, cropped to the drawing (`pi.dev/logo-auto.svg`). */
+function PiMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="165.29 165.29 469.43 469.43" aria-hidden {...props}>
+      <path fill="#F09082" d="M165.29 165.29H517.36V400H400V282.65H165.29Z" />
+      <path fill="#4D9ABF" d="M165.29 282.65H282.65V400H400V517.36H282.65V634.72H165.29Z" />
+      <path fill="#F1BE58" d="M517.36 400H634.72V634.72H517.36Z" />
+    </svg>
+  );
+}
+
+/**
+ * Oh My Pi's gradient π (`omp.sh/favicon.svg`), without the favicon's dark
+ * tile, which at 15px would read as a black square. The gradient's id is per
+ * instance, since several marks share one document.
+ */
+function OmpMark(props: React.ComponentProps<'svg'>) {
+  const id = React.useId();
+  return (
+    <svg viewBox="12 16 40 40" aria-hidden {...props}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ed4abf" />
+          <stop offset=".5" stopColor="#9b4dff" />
+          <stop offset="1" stopColor="#5ad8e6" />
+        </linearGradient>
+      </defs>
+      <path fill={`url(#${id})`} d="M14 16h36v8H40v32h-8V24h-6v22h-8V24h-4z" />
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -76,8 +108,8 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   codex: () => <OpenAIMark className={INKED} />,
   opencode: () => <OpenCodeMark className={INKED} />,
   grok: () => <GrokMark className={INKED} />,
-  pi: () => <PiIcon className={SHARED} strokeWidth={2} aria-hidden />,
-  omp: () => <PiIcon className={SHARED} strokeWidth={2} aria-hidden />,
+  pi: () => <PiMark className={SHARED} />,
+  omp: () => <OmpMark className={SHARED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -100,15 +132,17 @@ function markOf(agent: AgentId): React.ReactNode {
  * ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
  * published mark of its own and wears OpenAI's, as Codex does. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
- * Pi and its fork Oh My Pi publish no mark in their packages, so both take
- * Lucide's π glyph rather than a drawing of one.
+ * Pi's blocks and Oh My Pi's gradient π carry their own colours, which do not
+ * re-point in dark either.
  *
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
  * OpenCode's from the first glyph of `packages/web/src/assets/logo-ornate-dark.svg`
  * in github.com/sst/opencode; Grok's and GLM's (Z.ai's) from Lobe Icons
  * (`@lobehub/icons-static-svg` `icons/grok.svg` and `icons/zai.svg`, MIT);
- * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0).
+ * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0);
+ * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
+ * from its site's favicon (`omp.sh/favicon.svg`).
  *
  * ```tsx
  * <AgentMark agent="claude-code" />
