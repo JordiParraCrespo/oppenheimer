@@ -5,9 +5,16 @@ import {
   type SessionDecision,
   type SessionGroup,
 } from '@oppenheimer/shared';
-import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
+import {
+  CODING_AGENT_IDS,
+  CODING_AGENTS,
+  type CodingAgentId,
+  type SessionEffort,
+  type SessionPermission,
+} from '@oppenheimer/shared/agents';
 import type { ProjectEntity } from '../projects/domain/project.entity';
 import { isLiveTurn, type SessionTurnFold } from '../sessions/domain/session-turn.policy';
+import { launchPhrase, planBotSessionLaunch } from './domain/bot-session-launch.policy';
 import type { SessionWaitView } from './domain/bot-session-wait.policy';
 import { cut } from './domain/bot-tool-text.policy';
 
@@ -15,7 +22,8 @@ import { cut } from './domain/bot-tool-text.policy';
  * How `start_session`'s input becomes a session to create (`25-bots.md`
  * §4.2): the host (the one named, the project's default, the bot's home
  * host), the repository (the one named, or the project's default) or a folder,
- * and the body the sessions' own schema accepts; or, when one is missing or
+ * the branch it starts from, how the agent is launched (model, effort,
+ * permission: everything the composer's foot row offers), and the body the sessions' own schema accepts; or, when one is missing or
  * wrong, the sentence that tells the model what to ask. Pure.
  */
 export interface StartSessionInput {
@@ -25,19 +33,17 @@ export interface StartSessionInput {
   folder?: string;
   host_id?: string;
   agent?: CodingAgentId;
+  /** A catalog id or a model's name ("Opus 5.5"); the CLI's own default when omitted. */
+  model?: string;
+  effort?: SessionEffort;
+  /** `auto` when omitted (`BOT_SESSION_PERMISSION`). */
+  permission?: SessionPermission;
+  /** The branch the session's branch is created from; the repository's base branch when omitted. */
+  base_branch?: string;
   name?: string;
   /** Subscribe the bot to it (`27-bot-subscriptions.md` §3); true when omitted. */
   watch?: boolean;
 }
-
-/**
- * The level every session a bot starts runs at. Nobody sits at a bot's
- * terminal, so the API's own default (`ask`) would leave the agent waiting on
- * its first approval forever; `auto` lets it work while still checking each
- * action, and the runner marks its folder trusted for the same reason. An
- * agent with no approvals records no level whatever is sent.
- */
-export const BOT_SESSION_PERMISSION = 'auto' as const;
 
 export function planSession(
   input: StartSessionInput,
@@ -56,20 +62,31 @@ export function planSession(
         'No host given, and neither the project nor you have a default one. Ask which host to use (list_hosts).',
     };
   }
-  const checkout = input.folder ? null : pickRepository(project as ProjectEntity, input.repository);
-  if (checkout && 'reason' in checkout) return { refusal: checkout.reason };
+  if (input.folder && input.base_branch) {
+    return {
+      refusal:
+        'A folder session runs in the folder as it is: base_branch takes a repository. Leave one out.',
+    };
+  }
+  const picked = input.folder ? null : pickRepository(project as ProjectEntity, input.repository);
+  if (picked && 'reason' in picked) return { refusal: picked.reason };
+  const agent = sessionAgentOf(input, project);
+  const launch = planBotSessionLaunch(agent, input);
+  if ('refusal' in launch) return { refusal: launch.refusal };
+  const checkout =
+    picked && input.base_branch ? { ...picked, baseBranch: input.base_branch } : picked;
   const parsed = createSessionSchema.safeParse({
     hostId,
-    agent: input.agent ?? project?.defaultAgent ?? 'claude-code',
+    agent,
     projectId: project?.id,
     name: input.name,
     prompt: input.task,
-    launch: { permission: BOT_SESSION_PERMISSION },
+    launch: launch.launch,
     ...(input.folder
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
-  return parsedPlan(parsed, hostId, 'Check the task, folder and name.');
+  return parsedPlan(parsed, hostId, 'Check the task, folder, base branch and name.');
 }
 
 function parsedPlan(
@@ -98,6 +115,7 @@ const TOOL_FIELD_OF: Readonly<Record<string, keyof StartSessionInput>> = {
   prompt: 'task',
   hostId: 'host_id',
   projectId: 'project_id',
+  'checkouts.0.baseBranch': 'base_branch',
 };
 
 /** A rejected field of the session's body, as the tool's input names it. */
@@ -119,7 +137,7 @@ export function sessionHostId(
 
 /**
  * The Needs input card's line for a `start_session` call: "Start Claude Code
- * on build-02 in acme/xrp-mobile, and hear back when it ends: Fix the
+ * (Opus 5.5, high effort) on build-02 in acme/xrp-mobile, and hear back when it ends: Fix the
  * failing test", the task cut to fit. `hostName` is the host as the owner sees it, or null when none is set.
  */
 export function sessionSummary(
@@ -127,8 +145,9 @@ export function sessionSummary(
   project: ProjectEntity | null,
   hostName: string | null,
 ): string {
-  const id = input.agent ?? project?.defaultAgent;
-  const agent: CodingAgentId = CODING_AGENT_IDS.find((known) => known === id) ?? 'claude-code';
+  const agent = sessionAgentOf(input, project);
+  const launch = launchPhrase(agent, input);
+  const how = launch ? ` (${launch})` : '';
   const repository = project && !input.folder ? repositoryOf(project, input.repository) : null;
   const where = input.folder
     ? ` in ${input.folder}`
@@ -137,8 +156,27 @@ export function sessionSummary(
       : input.project_id
         ? ` in project ${input.project_id}`
         : '';
+  const from = input.base_branch && !input.folder ? ` from ${input.base_branch}` : '';
   const hearBack = input.watch === false ? '' : ', and hear back when it ends';
-  return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}${hearBack}: ${clippedTask(input.task)}`;
+  return `Start ${CODING_AGENTS[agent].label}${how} on ${hostName ?? 'no host yet'}${where}${from}${hearBack}: ${clippedTask(input.task)}`;
+}
+
+/** Why the launch a `start_session` call asks for cannot start, or null when the agent takes it. */
+export function sessionLaunchRefusal(
+  input: StartSessionInput,
+  project: ProjectEntity | null,
+): string | null {
+  const launch = planBotSessionLaunch(sessionAgentOf(input, project), input);
+  return 'refusal' in launch ? launch.refusal : null;
+}
+
+/** The agent a `start_session` call runs: the one named, the project's default, Claude Code. */
+function sessionAgentOf(
+  input: Pick<StartSessionInput, 'agent'>,
+  project: ProjectEntity | null,
+): CodingAgentId {
+  const id = input.agent ?? project?.defaultAgent;
+  return CODING_AGENT_IDS.find((known) => known === id) ?? 'claude-code';
 }
 
 /** A task in one line, cut to fit a card. */

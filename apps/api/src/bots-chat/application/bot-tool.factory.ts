@@ -207,6 +207,14 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * Allow in Settings, and a card offers only "this call". Only with `asks`.
    */
   perCallOnly?: boolean;
+  /**
+   * Whether this call reaches further than the tool's standing grants were
+   * given for (a session at full access, where the tool's default is approve
+   * for me): such a call is decided on its own, under every preset and past
+   * every grant, Settings' Allow and rule, on a card that offers only this
+   * call. Only with `asks`.
+   */
+  escalates?(input: z.output<Input>): boolean;
   /** A call sends what it carries out of Oppenheimer (a comment on GitHub); the card says so. */
   sharesOutside?: boolean;
   /**
@@ -302,7 +310,7 @@ export interface BotToolArea {
  * its schema (a bad call comes back as an error the model can correct), the
  * answer cut to a size a prompt can hold, and an `AppError` read back as its
  * code, title and detail rather than a bare message. An asking tool is the
- * same tool behind `askingFirst`.
+ * same tool behind `decidedFirst`.
  */
 export function defineBotTool<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
@@ -312,6 +320,9 @@ export function defineBotTool<Input extends z.ZodType>(
   }
   if (spec.perCallOnly && !spec.asks) {
     throw new Error(`${spec.name} is per call only, so it must ask first.`);
+  }
+  if (spec.escalates && !spec.asks) {
+    throw new Error(`${spec.name} can escalate a call, so it must ask first.`);
   }
   // A tool that always asks does so under Full access too, until the owner allows it.
   const always = spec.asks === 'always';
@@ -370,11 +381,11 @@ export function defineBotTool<Input extends z.ZodType>(
       };
       // Off never reaches here: the toolbox does not offer it.
       const asks = toolDecision(context.permissions, traits, context.permission) === 'ask';
-      if (asks) return askingFirst(tool, spec, traits, context);
       // An asking tool that would run: an ask rule may still stop the call.
-      const stops = traits.asks ? rulesToReview(context.permissions, 'allow') : [];
-      return stops.length > 0 && context.reviewer
-        ? reviewedFirst(tool, spec, { ...context, reviewer: context.reviewer })
+      const reviews =
+        !asks && traits.asks && rulesToReview(context.permissions, 'allow').length > 0;
+      return asks || reviews || spec.escalates
+        ? decidedFirst(tool, spec, traits, { ...context, asks })
         : tool;
     },
     runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
@@ -382,16 +393,24 @@ export function defineBotTool<Input extends z.ZodType>(
 }
 
 /**
- * An asking tool under Approve for me (`25-bots.md` §5): a valid call becomes
- * a Needs input card instead of running, and the model is told to end its
- * turn, or to wait when a card is already up. A bad call is the tool's own
- * error, unchanged.
+ * How an asking tool's call is decided, on the call itself (`25-bots.md` §5),
+ * read once and normalized once:
+ * - a call that `escalates` raises a card of its own offering only this call,
+ *   whatever the preset, Settings, a standing grant or a rule would let run;
+ * - under Approve for me (`asks`) a standing grant for the call's subject, or
+ *   an allow rule no ask rule overrides, runs it; otherwise it becomes a Needs
+ *   input card and the model is told to end its turn (or to wait when a card
+ *   is already up);
+ * - a call that would run (Full access, or set to Allow) is read against the
+ *   owner's rules first: a matching ask rule, or a review that cannot say,
+ *   raises the card instead.
+ * A bad call is the tool's own error, unchanged.
  */
-function askingFirst<Input extends z.ZodType>(
+function decidedFirst<Input extends z.ZodType>(
   tool: BotEngineTool,
   spec: BotToolSpec<Input>,
   traits: BotToolTraits,
-  context: BotToolContext,
+  context: BotToolContext & { asks: boolean },
 ): BotEngineTool {
   return {
     ...tool,
@@ -400,6 +419,18 @@ function askingFirst<Input extends z.ZodType>(
       if (!parsed.success) return tool.run(input, options);
       try {
         const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
+        if (spec.escalates?.(call)) {
+          const subject = await subjectOf(spec, call, context);
+          return carded(await askOwner({ ...spec, perCallOnly: true }, context, call, subject));
+        }
+        if (!context.asks) {
+          const rules = traits.asks ? rulesToReview(context.permissions, 'allow') : [];
+          if (rules.length === 0 || !context.reviewer) return tool.run(input, options);
+          const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
+          if (verdict.effect !== 'ask') return tool.run(input, options);
+          const subject = await subjectOf(spec, call, context);
+          return carded(await askOwner(spec, context, call, subject, verdict.note));
+        }
         const subject = await subjectOf(spec, call, context);
         // A standing grant for the very thing this call acts on: it runs.
         const granted = grantFor(context.permissions, traits, subject);
@@ -415,35 +446,6 @@ function askingFirst<Input extends z.ZodType>(
           reviewNote = verdict.note;
         }
         return carded(await askOwner(spec, context, call, subject, reviewNote));
-      } catch (error) {
-        return toEngineResult(failureOf(error));
-      }
-    },
-  };
-}
-
-/**
- * An asking tool's call that would run (Full access, or set to Allow), when
- * the owner has a rule that may make it ask: read against the rules first.
- * A matching ask rule, or a review that cannot say, raises the card instead.
- */
-function reviewedFirst<Input extends z.ZodType>(
-  tool: BotEngineTool,
-  spec: BotToolSpec<Input>,
-  context: BotToolContext & { reviewer: BotRuleReviewer },
-): BotEngineTool {
-  return {
-    ...tool,
-    run: async (input, options) => {
-      const parsed = spec.input.safeParse(input ?? {});
-      if (!parsed.success) return tool.run(input, options);
-      try {
-        const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
-        const rules = rulesToReview(context.permissions, 'allow');
-        const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
-        if (verdict.effect !== 'ask') return tool.run(input, options);
-        const subject = await subjectOf(spec, call, context);
-        return carded(await askOwner(spec, context, call, subject, verdict.note));
       } catch (error) {
         return toEngineResult(failureOf(error));
       }
