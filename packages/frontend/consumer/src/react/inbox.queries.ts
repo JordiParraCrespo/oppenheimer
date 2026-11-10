@@ -17,7 +17,7 @@ import { usePendingBotApprovalsQuery } from './bot-approvals.queries';
 import { useBotNoticesQuery } from './bot-notices.queries';
 import { useConsumerApp } from './context';
 import { inboxKeys } from './inbox.keys';
-import { eitherPoll, pollWhile } from './live-poll';
+import { pollWhile } from './live-poll';
 import { useProjectListQuery } from './projects.queries';
 import { usePullRequestQueueQuery } from './pull-requests.queries';
 import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
@@ -88,24 +88,36 @@ function useFailedRunsQuery() {
  * request scopes counted as one, the projects every item is filed under, and
  * the caller's marks. Each keeps its own key, poll and stream coverage, so a
  * session, a run, an approval, a bot's notice or a report that changes moves
- * the Inbox with it. `live` adds the `inbox` poll over all nine, for the
- * screen that draws them; the rail's count rides on it while that is open.
+ * the Inbox with it.
  */
-function useInboxQueries(live = false) {
-  const sessions = { ...useSessionListQuery(), ...useSessionListPoll() };
-  const requested = usePullRequestQueueQuery('requested');
-  const mine = usePullRequestQueueQuery('mine');
+function useInboxQueries() {
   return [
-    { ...sessions, ...eitherPoll(sessions, pollWhile('inbox', live)) },
-    { ...usePendingBotApprovalsQuery(), ...pollWhile('inbox', live) },
-    { ...requested, ...eitherPoll(requested, pollWhile('inbox', live)) },
-    { ...mine, ...eitherPoll(mine, pollWhile('inbox', live)) },
-    { ...useFailedRunsQuery(), ...pollWhile('inbox', live) },
-    { ...useBotNoticesQuery(), ...pollWhile('inbox', live) },
-    { ...useInboxReportsQuery(), ...pollWhile('inbox', live) },
-    { ...useProjectListQuery(), ...pollWhile('inbox', live) },
-    { ...useInboxMarksQuery(), ...pollWhile('inbox', live) },
+    { ...useSessionListQuery(), ...useSessionListPoll() },
+    usePendingBotApprovalsQuery(),
+    usePullRequestQueueQuery('requested'),
+    usePullRequestQueueQuery('mine'),
+    useFailedRunsQuery(),
+    useBotNoticesQuery(),
+    useInboxReportsQuery(),
+    useProjectListQuery(),
+    useInboxMarksQuery(),
   ] as const;
+}
+
+/**
+ * The `inbox` poll over the nine reads, as observers of their own: a read's
+ * own poll keeps its pace and its hidden-tab bit, and this one pauses on a
+ * hidden tab whatever those say. It draws nothing, so it never re-renders.
+ */
+function useInboxPoll() {
+  useQueries({
+    queries: useInboxQueries().map(({ queryKey, queryFn }) => ({
+      queryKey,
+      queryFn,
+      ...pollWhile('inbox', true),
+    })),
+    combine: () => null,
+  });
 }
 
 type InboxReads = ReturnType<typeof useInboxQueries>;
@@ -143,14 +155,15 @@ function sourcesOf(
  *
  * `now` comes from the caller's clock (`useNow`), never read here, so a
  * snooze comes back on the caller's tick. Every read polls as `inbox` while
- * it is mounted.
+ * it is mounted (`useInboxPoll`).
  */
 export function useSuspenseInbox(
   now: number,
 ): InboxView & { projects: ProjectEntity[]; answered: ReadonlySet<string>; error: Error | null } {
+  useInboxPoll();
   const [sessions, approvals, requested, mine, runs, botNotices, reports, projects, marks] =
     useSuspenseQueries({
-      queries: useInboxQueries(true),
+      queries: useInboxQueries(),
     });
   const answered = useAnsweredKeys();
   const view = useMemo(
