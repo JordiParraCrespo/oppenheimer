@@ -299,7 +299,7 @@ function TaskCard({
 /**
  * TaskSelectionBar — the board's toolbar while cards are picked: a pill on the
  * popover surface, centred at the foot of the viewport, so the columns do not
- * move when it comes and goes. `count` reads "3 selected"; `children` are the
+ * move when it comes and goes. Under 768px it sits above the rail's tab bar. `count` reads "3 selected"; `children` are the
  * actions (`IconButton`s or `Button`s), the last one usually the way out.
  */
 function TaskSelectionBar({
@@ -316,7 +316,7 @@ function TaskSelectionBar({
       role="toolbar"
       data-slot="task-selection-bar"
       className={cn(
-        'fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-pill border border-border bg-popover py-1 pr-1 pl-4 shadow-popover',
+        'fixed bottom-[calc(var(--spacing)*20+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-pill border border-border bg-popover py-1 pr-1 pl-4 shadow-popover md:bottom-6',
         className,
       )}
       {...props}
