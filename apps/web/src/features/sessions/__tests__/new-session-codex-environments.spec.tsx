@@ -26,7 +26,9 @@ vi.mock('../hooks/use-new-session-form', () => ({
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
-  useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
+  useErrorMessage: () => (error: unknown, fallback: string) => ({
+    message: error instanceof Error ? error.message : fallback,
+  }),
 }));
 
 let listing: {
@@ -78,11 +80,15 @@ describe('NewSessionCodexEnvironments', () => {
     expect(screen.getByText(LEGACY_ONLY)).toBeTruthy();
   });
 
-  it('leaves the failure’s own words alone when the host could not list', () => {
-    listing = { isPending: false, isError: true, error: new Error('signed out') };
+  it('says why the host could not list on lines of its own, not in a row’s one cut line', () => {
+    const refusal = 'Codex on the host isn’t signed in to ChatGPT. Run codex login on the host.';
+    listing = { isPending: false, isError: true, error: new Error(refusal) };
     open();
 
-    expect(screen.getByText('sessions.new.codexEnvironment.failed')).toBeTruthy();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(refusal);
+    expect(alert.className).not.toContain('truncate');
+    expect(screen.getByRole('option').textContent).not.toContain(refusal);
     expect(screen.queryByText(LEGACY_ONLY)).toBeNull();
   });
 });

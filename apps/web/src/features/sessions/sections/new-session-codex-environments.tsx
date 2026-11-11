@@ -100,11 +100,9 @@ export function NewSessionCodexEnvironments({
           selected={!picked}
           leading={<Cloud />}
           trailing={meta(
-            listing.isError
-              ? resolveError(listing.error, t('sessions.new.codexEnvironment.failed')).message
-              : recommended
-                ? t('sessions.new.codexEnvironment.autoLinked', { name: name(recommended) })
-                : t('sessions.new.codexEnvironment.autoByName'),
+            recommended
+              ? t('sessions.new.codexEnvironment.autoLinked', { name: name(recommended) })
+              : t('sessions.new.codexEnvironment.autoByName'),
             !picked,
           )}
           onClick={() => pick(null)}
@@ -136,7 +134,15 @@ export function NewSessionCodexEnvironments({
           {listing.data?.source === 'tasks' ? (
             <p>{t('sessions.new.codexEnvironment.partial')}</p>
           ) : null}
-          {listing.isError ? null : <p>{t('sessions.new.codexEnvironment.legacyOnly')}</p>}
+          {listing.isError ? (
+            // In full, on lines of its own: the refusal ends with what to do
+            // about it, which a row's one truncated line would cut off.
+            <p role="alert" className="text-danger">
+              {resolveError(listing.error, t('sessions.new.codexEnvironment.failed')).message}
+            </p>
+          ) : (
+            <p>{t('sessions.new.codexEnvironment.legacyOnly')}</p>
+          )}
         </div>
       )}
     </ChipSelectList>
