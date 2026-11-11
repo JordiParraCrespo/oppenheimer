@@ -112,6 +112,8 @@ export function EditorWhereStep({
                   t('automations.editor.noRepositories'),
               }))}
               onValueChange={(projectId) => {
+                // Picking the project already picked keeps its repositories.
+                if (projectId === draft.projectId) return;
                 const next = projects.find((row) => row.id === projectId);
                 onChange({
                   projectId,

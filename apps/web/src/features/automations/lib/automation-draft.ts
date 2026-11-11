@@ -155,12 +155,12 @@ export function scheduleCard(frequency: ScheduleFrequency, now: number, timezone
   return withFrequency({ hour: 9, minute: 0, timezone, key: nextKey() }, frequency, now);
 }
 
-/** The filter a new card of this event starts with ("main" for a pull request's base). */
 /** A copy of a trigger card under its own key, for Duplicate. */
 export function duplicateCard<Card extends TriggerCard>(card: Card): Card {
   return { ...structuredClone(card), key: nextKey() };
 }
 
+/** The filter a new card of this event starts with ("main" for a pull request's base). */
 export function defaultFilter(event: GithubEventType): TriggerFilter {
   return externalEventDefinition('github', event)?.defaultFilter ?? { op: 'any' };
 }
