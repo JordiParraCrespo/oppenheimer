@@ -35,12 +35,15 @@ describe('selecting Inbox rows for a bulk action', () => {
     expect(result.current.any).toBe(false);
   });
 
-  it('drops a row that leaves the list', () => {
+  it('drops a row that leaves the list, and does not select it again when it comes back', () => {
     const { result, rerender } = setup(['a', 'b', 'c']);
     act(() => result.current.toggleAll());
     rerender({ shown: ['a', 'c'] });
     expect(result.current.keys).toEqual(['a', 'c']);
     expect(result.current.all).toBe(true);
+
+    rerender({ shown: ['a', 'b', 'c'] });
+    expect(result.current.keys).toEqual(['a', 'c']);
   });
 
   it('clears on Escape', () => {
