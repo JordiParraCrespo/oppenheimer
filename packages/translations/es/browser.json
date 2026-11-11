@@ -1889,8 +1889,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas",
-      "showToolCalls": "Mostrar llamadas a herramientas",
+      "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
+      "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",

@@ -1553,3 +1553,9 @@ earlier note:
   stick"): the facets and the sort are kept on the device, not the
   account, since a filter is the reader's view; a remembered pick the menu
   no longer offers reads as all and is forgotten.
+- `versions/mvp/26-bot-routines.md` drew every routine run in its bot's
+  chat, and the chat showed its tool calls until the reader hid them. On
+  2026-11-11 the owner, scrolling a column of half-hourly "Routine ·
+  Triage Sentry errors" lines that found nothing, asked for less: the
+  chat now hides tool calls by default, and while they are hidden a
+  routine run that only ran tools is left out. The wrench shows both.

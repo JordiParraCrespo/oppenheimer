@@ -20,9 +20,11 @@ import { ApprovedCallLive } from '@/features/bots/components/approved-call-live'
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotTurn } from '@/features/bots/components/bot-turn';
 import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
+import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
 import { runningApprovedCalls } from '@/features/bots/lib/approval-event';
 import {
   chatTurns,
+  isQuietRoutineRun,
   markersBefore,
   newestSentId,
   newestTurn,
@@ -41,6 +43,8 @@ import { BotHello } from './bot-hello';
  * drawn as its decided line at once, until the stored line takes its place;
  * an approved call still running is held under the turn its yes opened.
  * Once the newest turn has ended, Retry sends your last message again.
+ * While the tool calls are hidden, a routine run that did nothing else is left
+ * out (`isQuietRoutineRun`).
  * What you send glides to the top of the pane, the answer beneath it.
  */
 export function BotTranscript({ botId, name }: { botId: string; name: string }) {
@@ -50,7 +54,11 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const live = useBotLive(botId);
   const retry = useSendBotMessage();
   const navigate = useNavigate();
-  const blocks = chatTurns(conversation);
+  const toolCallsShown = useToolCallsShownInChat();
+  // A routine run that only ran tools shows with the tool calls, not without them.
+  const blocks = chatTurns(conversation).filter(
+    (block) => !isQuietRoutineRun(block, toolCallsShown),
+  );
   // The approved calls still running, each held under the turn its yes opened.
   const working = new Map(
     [...runningApprovedCalls(conversation.messages)].map(([turnId, call]) => [

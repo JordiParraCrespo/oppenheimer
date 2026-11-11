@@ -178,7 +178,10 @@ rendering, not kind:
   each is its own line; folding several into "Routines in this change",
   as Grok Bot draws a turn's changes, waits until a line knows its turn.
 - `ran` opens the routine's turn: "Routine · *Morning PR digest*" (§4,
-  the opening message).
+  the opening message). While the chat hides its tool calls (the wrench in
+  its bar, off by default), a run that completed having only run tools,
+  with no reply, session or draft to show, is left out, line and all; the
+  wrench shows it again. A run that replied, failed or was stopped stays.
 - `failed` is drawn as a notice, "Routine *Morning PR digest* did not
   run" with the reason, and **Open routines**: a run that expired, or one
   skipped by a run limit, a missed slot or an agent that cannot start. A

@@ -115,6 +115,31 @@ export function turnTrail(
   return retryable ? 'retry' : 'none';
 }
 
+/**
+ * A routine's run with nothing to show while the chat hides its tool calls:
+ * the routine opened it, it completed, and all it did was run tools that
+ * left nothing the reader sees in full (a session to open, a draft). The
+ * chat leaves it out, divider and all, so a routine that checks every half
+ * hour and finds nothing does not fill the chat with its name. A run that
+ * replied, failed, was stopped or is still running stays.
+ */
+export function isQuietRoutineRun(block: ChatTurnBlock, toolCallsShown: boolean): boolean {
+  if (toolCallsShown || block.turn?.status !== 'completed') return false;
+  const byRoutine =
+    block.asked.length > 0 &&
+    block.asked.every(
+      (message) => message.event?.kind === 'routine' && message.event.activity === 'ran',
+    );
+  return (
+    byRoutine &&
+    block.answer.every(
+      (message) =>
+        message.role === 'activity' &&
+        message.steps.every((step) => !step.sessionId && !step.mailDraft),
+    )
+  );
+}
+
 /** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */
 export function replyText(block: ChatTurnBlock): string {
   return block.answer
