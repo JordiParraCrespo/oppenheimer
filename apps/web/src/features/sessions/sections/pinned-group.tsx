@@ -40,7 +40,13 @@ export function PinnedGroup({
       emptyHint={t('sessions.sidebar.dropToPin')}
       current={current}
     >
-      <SessionRows sessions={sessions} onShare={onShare} onDelete={onDelete} onWrite={onWrite} />
+      <SessionRows
+        sessions={sessions}
+        dragDisabled={false}
+        onShare={onShare}
+        onDelete={onDelete}
+        onWrite={onWrite}
+      />
     </SidebarPinnedGroup>
   );
 }

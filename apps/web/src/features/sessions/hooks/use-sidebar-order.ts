@@ -135,12 +135,30 @@ export function useSidebarOrder({
     if (project) value[project.id] = members.map((session) => session.id);
   }
 
-  // The whole list's order as the reader last saw it, the rows a filter hides included.
-  const wholeOrder = (stored: readonly string[]) =>
-    mergeOrder(
-      (custom ? orderSessions(every, stored) : every).map((session) => session.id),
-      stored,
+  // A drop's order with every row it did not see (filtered out, pinned, or in a
+  // project not drawn) kept in its place among its own project's rows, in the
+  // whole list's order as the reader last saw it.
+  const placeUnseen = (
+    next: SortableGroups,
+    projectIds: readonly string[],
+    stored: readonly string[],
+  ) => {
+    const projectOf = new Map(every.map((session) => [session.id, session.projectId]));
+    for (const projectId of projectIds) {
+      for (const id of next[projectId] ?? []) projectOf.set(id, projectId);
+    }
+    const whole = (custom ? orderSessions(every, stored) : every).map((session) => session.id);
+    const projectOrder = [
+      ...new Set([...projectIds, ...whole.flatMap((id) => projectOf.get(id) ?? [])]),
+    ];
+    const placed = projectOrder.flatMap((projectId) =>
+      mergeOrder(
+        next[projectId] ?? [],
+        whole.filter((id) => projectOf.get(id) === projectId),
+      ),
     );
+    return mergeOrder(placed, stored);
+  };
 
   const handlers = useSortableGroups(
     value,
@@ -162,13 +180,14 @@ export function useSidebarOrder({
         return;
       }
       const order = projectIds.flatMap((projectId) => next[projectId] ?? []);
+      const placed = (stored: readonly string[]) => placeUnseen(next, projectIds, stored);
       if (!custom) onReorder();
       if (from === PINNED_GROUP) pins.setPinned(id, false);
       const fromProject = from === PINNED_GROUP ? everyone.get(id)?.projectId : from;
       if (fromProject === to) {
         setStored((current) => ({
           ...current,
-          sessions: mergeOrder(order, wholeOrder(current.sessions)),
+          sessions: placed(current.sessions),
         }));
         return;
       }
@@ -179,7 +198,7 @@ export function useSidebarOrder({
           onSuccess: () => {
             setStored((current) => ({
               ...current,
-              sessions: mergeOrder(order, wholeOrder(current.sessions)),
+              sessions: placed(current.sessions),
             }));
             onWrite(null);
           },

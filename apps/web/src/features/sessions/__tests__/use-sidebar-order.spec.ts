@@ -156,6 +156,36 @@ describe('useSidebarOrder', () => {
     expect(storedSidebarOrder().sessions).toEqual(['s2', 's1', 'hidden']);
   });
 
+  it("keeps a hidden row in its own project's place when another project is reordered", () => {
+    // Newest first, the projects interleaved: a1, b1, hidden (a), a2, b2.
+    const every = [
+      session('a1', 'a'),
+      session('b1', 'b'),
+      session('hidden', 'a'),
+      session('a2', 'a'),
+      session('b2', 'b'),
+    ];
+    const hook = renderHook(() =>
+      useSidebarOrder({
+        projects: PROJECTS,
+        sessions: every.filter((s) => s.id !== 'hidden'),
+        every,
+        pinned: [],
+        pins: { setPinned: vi.fn(), placePins: vi.fn() },
+        custom: true,
+        onReorder: () => {},
+        onWrite: vi.fn(),
+      }),
+    );
+    act(() => {
+      const { handlers } = hook.result.current;
+      handlers.onDragStart(item('b2'));
+      handlers.onDragOver({ active: item('b2'), over: item('b1') });
+      handlers.onDragEnd({ active: item('b2'), over: item('b1') });
+    });
+    expect(storedSidebarOrder().sessions).toEqual(['a1', 'hidden', 'a2', 'b2', 'b1']);
+  });
+
   it('pins a session dropped on Pinned, where it lands', () => {
     const { drag, pins } = setup(PROJECTS, undefined, [session('s3', 'b')]);
     drag('s1', group(PINNED_GROUP));
