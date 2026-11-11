@@ -427,10 +427,10 @@ export interface PutInboxMarksVariables {
 }
 
 /**
- * Marks a selection at once: one write to the cached list, so every row moves
- * on the click, then a request per occurrence (the API marks one at a time).
- * Any refusal puts the list back and reads it again, which keeps the ones the
- * server did take.
+ * Marks a selection at once (`POST /inbox/marks/batch`): one write to the
+ * cached list, so every row moves on the click, then one request for all of
+ * them, whose answer is the marks in force. The API checks every key before
+ * it writes any, so a refusal puts the list back as it was.
  */
 export function usePutInboxMarks(
   options?: UseMutationOptions<InboxMarkEntity[], Error, PutInboxMarksVariables, MarksContext>,
@@ -438,27 +438,11 @@ export function usePutInboxMarks(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    ...withCacheOnSuccess(options, (saved, { itemKeys }) => {
-      const keys = new Set(itemKeys);
-      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) => [
-        ...(marks ?? []).filter((mark) => !keys.has(mark.itemKey)),
-        ...saved,
-      ]);
+    ...withCacheOnSuccess(options, (marks) => {
+      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), marks);
     }),
-    mutationFn: async ({ itemKeys, mark, until }: PutInboxMarksVariables) => {
-      const results = await Promise.allSettled(
-        itemKeys.map((itemKey) =>
-          mark === null
-            ? app.inbox.deleteMark(itemKey).then(() => null)
-            : app.inbox.putMark(itemKey, mark, until),
-        ),
-      );
-      const refused = results.find((result) => result.status === 'rejected');
-      if (refused) throw refused.reason;
-      return results.flatMap((result) =>
-        result.status === 'fulfilled' && result.value ? [result.value] : [],
-      );
-    },
+    mutationFn: ({ itemKeys, mark, until }: PutInboxMarksVariables) =>
+      app.inbox.putMarks(itemKeys, mark, until),
     onMutate: ({ itemKeys, mark, until }) => {
       const keys = new Set(itemKeys);
       return writeMarks(queryClient, (marks) => [

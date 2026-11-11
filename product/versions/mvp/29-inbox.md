@@ -526,11 +526,14 @@ at a time.
   the row menu's actions for all of them: Mark as done, Deprioritize (Restore
   priority when every selected row is already low), Snooze 1 hour or until
   tomorrow, and Delete. Each clears the selection.
-- **The API is unchanged.** A bulk action writes the cached marks once, so
-  every row leaves on the click, then puts one mark per item through
-  `PUT /v1/inbox/marks/{itemKey}`. A refusal for any of them puts the list
-  back and reads the marks again, which keeps the ones the server took. An
-  Inbox rarely holds more than a few dozen items, well under the default
-  hundred requests a minute; a bulk endpoint is the next step if that
-  changes.
+- **One request.** A bulk action writes the cached marks once, so every
+  row leaves on the click, then sends the whole selection to
+  `POST /v1/inbox/marks/batch` (`itemKeys`, at most 500, and a `mark`, or
+  `null` to clear each one's). The API checks every key and the snooze's
+  end before it writes any, writes each mark as a single put or delete
+  would, with its own event, and answers the marks in force. A first cut
+  sent one request per row; the review found that "select all" on a large
+  Inbox (up to a hundred failed runs alone) ran past the default hundred
+  requests a minute and left the selection half marked.
+- On a phone a hidden checkbox takes no tap: a tap on a row opens it.
 - E and L still act on the item in the pane, not on the selection.

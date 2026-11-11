@@ -57,9 +57,13 @@ function InboxListHead({
   );
 }
 
-/** When a row's checkbox shows: on hover, on focus within, or while the list is selecting. */
+/**
+ * When a row's checkbox shows: on hover, on focus within, or while the list is
+ * selecting. Hidden, it takes no press, so a tap on a phone (no hover) opens
+ * the row rather than checking it; its hit area stops short of the sender.
+ */
 const SELECT_SHOWN =
-  'group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-selecting/row:opacity-100';
+  'pointer-events-none group-hover/row:pointer-events-auto group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-selecting/row:pointer-events-auto group-data-selecting/row:opacity-100 [&_[data-slot=checkbox]]:after:-inset-x-1 [&_[data-slot=checkbox]]:after:-inset-y-1';
 /** The unread dot gives way to the checkbox wherever it shows. */
 const SELECT_TAKES_DOT =
   'group-hover/row:invisible group-focus-within/row:invisible group-data-selecting/row:invisible';

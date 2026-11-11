@@ -11,9 +11,10 @@ import { fakeKernel } from './fake-kernel';
 
 /**
  * A bulk action in the Inbox marks every selected row in one write to the
- * cached marks, so the rows leave together on the click, and a refusal from
- * the API for any of them puts the list back and reads it again rather than
- * leaving rows gone that the server never marked.
+ * cached marks, so the rows leave together on the click, and in one request:
+ * one per row hit the API's hundred-a-minute limit on a large Inbox. A
+ * refusal puts the list back rather than leaving rows gone that the server
+ * never marked.
  */
 
 const lowA = new InboxMarkEntity('a', 'low', null, new Date('2026-11-10T10:00:00Z'));
@@ -38,38 +39,45 @@ function setup(inbox: Record<string, unknown>) {
 }
 
 describe('marking a selection in the Inbox', () => {
-  it('marks every selected occurrence, replacing what each had', async () => {
-    const putMark = vi.fn(
-      async (itemKey: string, mark: 'done') => new InboxMarkEntity(itemKey, mark, null, new Date()),
+  it('marks every selected occurrence in one request, and keeps what the server answers', async () => {
+    const answer = [
+      new InboxMarkEntity('a', 'done', null, new Date()),
+      new InboxMarkEntity('b', 'done', null, new Date()),
+    ];
+    let settle: (marks: InboxMarkEntity[]) => void = () => {};
+    const putMarks = vi.fn(
+      () =>
+        new Promise<InboxMarkEntity[]>((resolve) => {
+          settle = resolve;
+        }),
     );
-    const { result, marks } = setup({ putMark, findMarks: vi.fn() });
+    const { result, marks } = setup({ putMarks });
 
     act(() => result.current.mutate({ itemKeys: ['a', 'b'], mark: 'done' }));
-    expect(marks()).toEqual(['a:done', 'b:done']);
+    await waitFor(() => expect(marks()).toEqual(['a:done', 'b:done']));
+    expect(putMarks).toHaveBeenCalledTimes(1);
+    expect(putMarks).toHaveBeenCalledWith(['a', 'b'], 'done', undefined);
 
+    act(() => settle(answer));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(putMark).toHaveBeenCalledTimes(2);
     expect(marks()).toEqual(['a:done', 'b:done']);
   });
 
-  it('clears each mark when restoring priority', async () => {
-    const deleteMark = vi.fn().mockResolvedValue(undefined);
-    const { result, marks } = setup({ deleteMark, findMarks: vi.fn() });
+  it('clears each mark on the click when restoring priority', async () => {
+    const putMarks = vi.fn().mockResolvedValue([]);
+    const { result, marks } = setup({ putMarks });
 
     act(() => result.current.mutate({ itemKeys: ['a'], mark: null }));
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(deleteMark).toHaveBeenCalledWith('a');
+    expect(putMarks).toHaveBeenCalledWith(['a'], null, undefined);
     expect(marks()).toEqual([]);
   });
 
-  it('puts the list back and reads it again when the API refuses one of them', async () => {
-    const putMark = vi.fn(async (itemKey: string) => {
-      if (itemKey === 'b') throw new Error('refused');
-      return new InboxMarkEntity(itemKey, 'deleted', null, new Date());
-    });
+  it('puts the list back when the API refuses the selection', async () => {
+    const putMarks = vi.fn().mockRejectedValue(new Error('refused'));
     const findMarks = vi.fn().mockResolvedValue([lowA]);
-    const { result, marks } = setup({ putMark, findMarks });
+    const { result, marks } = setup({ putMarks, findMarks });
 
     act(() => result.current.mutate({ itemKeys: ['a', 'b'], mark: 'deleted' }));
 

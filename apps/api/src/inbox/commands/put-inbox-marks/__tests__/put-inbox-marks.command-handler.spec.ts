@@ -1,0 +1,79 @@
+import { None, Some } from 'oxide.ts';
+import type { InboxMarkRepositoryPort } from '../../../database/inbox-mark.repository.port';
+import { InboxMarkEntity } from '../../../domain/inbox-mark.entity';
+import { PutInboxMarksCommand } from '../put-inbox-marks.command';
+import { PutInboxMarksCommandHandler } from '../put-inbox-marks.command-handler';
+
+/**
+ * POST /inbox/marks/batch, a bulk action from the Inbox: one request marks a
+ * whole selection (the console once sent one per row and hit the hundred a
+ * minute rate limit on a large Inbox). A refusal for any key writes none of
+ * them, so a selection is never left half marked.
+ */
+function setup(existing: string[] = []) {
+  const marks = {
+    upsert: vi.fn(async () => undefined),
+    delete: vi.fn(async () => true),
+    findOne: vi.fn(async (organizationId: string, userId: string, itemKey: string) =>
+      existing.includes(itemKey)
+        ? Some(
+            InboxMarkEntity.place(
+              { organizationId, userId, itemKey, mark: 'low', until: null },
+              new Date(),
+            ),
+          )
+        : None,
+    ),
+  };
+  return {
+    marks,
+    handler: new PutInboxMarksCommandHandler(marks as unknown as InboxMarkRepositoryPort),
+  };
+}
+
+function command(overrides: Partial<ConstructorParameters<typeof PutInboxMarksCommand>[0]> = {}) {
+  return new PutInboxMarksCommand({
+    organizationId: 'org-1',
+    userId: 'user-1',
+    itemKeys: ['approval:ap-1', 'run:r-1'],
+    mark: 'done',
+    until: null,
+    ...overrides,
+  });
+}
+
+describe('PutInboxMarksCommandHandler', () => {
+  it('stores the same mark on every occurrence, each with its event', async () => {
+    const { marks, handler } = setup();
+    await handler.execute(command({ itemKeys: ['approval:ap-1', 'run:r-1', 'run:r-1'] }));
+    const stored = marks.upsert.mock.calls.map(([mark]) => mark as unknown as InboxMarkEntity);
+    expect(stored.map((mark) => [mark.itemKey, mark.mark])).toEqual([
+      ['approval:ap-1', 'done'],
+      ['run:r-1', 'done'],
+    ]);
+    expect(stored.every((mark) => mark.domainEvents.length === 1)).toBe(true);
+  });
+
+  it('clears the marks there are when the mark is null, and skips the rest', async () => {
+    const { marks, handler } = setup(['run:r-1']);
+    await handler.execute(command({ mark: null }));
+    expect(marks.delete).toHaveBeenCalledTimes(1);
+    expect(marks.upsert).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['TENANT_001', 'a request in no workspace', { organizationId: null }],
+    ['INBOX_002', 'one key no occurrence has', { itemKeys: ['run:r-1', 'not/a key'] }],
+    ['INBOX_002', 'one bad key while clearing', { mark: null, itemKeys: ['run:r-1', 'nope'] }],
+    [
+      'INBOX_003',
+      'a snooze that has already ended',
+      { mark: 'snoozed' as const, until: new Date(Date.now() - 1000) },
+    ],
+  ])('refuses with %s for %s, and writes none of them', async (code, _, overrides) => {
+    const { marks, handler } = setup(['run:r-1']);
+    await expect(handler.execute(command(overrides))).rejects.toMatchObject({ code });
+    expect(marks.upsert).not.toHaveBeenCalled();
+    expect(marks.delete).not.toHaveBeenCalled();
+  });
+});
