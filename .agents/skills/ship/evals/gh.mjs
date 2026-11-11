@@ -12,7 +12,7 @@
  *   node gh.mjs reply <thread> <text>       answer a review thread
  *   node gh.mjs resolve <thread>
  *   node gh.mjs comment <text>              a comment on the pull request
- *   node gh.mjs ask <text>                  a message to Jordi
+ *   node gh.mjs ask <text>                  a message to the user
  *   node gh.mjs checkin <minutes>           arm a check-in
  */
 import { execFileSync, spawnSync } from 'node:child_process';
