@@ -84,6 +84,12 @@ describe('composeBotSystemPrompt', () => {
       tools: [{ name: 'list_hosts', description: 'Lists hosts.', group: 'sessions' }],
     });
     expect(readOnly).not.toContain('what you can do for them here');
+    // 2026-11-11: its job examples come from what it can act on too.
+    expect(readOnly).toContain(
+      'with these examples: answering questions about their work. Suggest no job',
+    );
+    expect(readOnly).not.toContain('running coding agents');
+    expect(equipped).toContain('with these examples: running coding agents on a host to fix bugs.');
   });
 
   // What breaks this (2026-11-09, Hermes Agent's learning loop): a bot that
@@ -125,6 +131,11 @@ describe('composeBotSystemPrompt', () => {
     // called, without choosing one itself, after any work the message asks for.
     expect(composeBotSystemPrompt(base)).toMatch(
       /\n1\. If their first message asks for real work, do that first.*\n2\. .*ask what they would like to call you\. Do not pick or suggest a name yourself/,
+    );
+    // 2026-11-11: work the first message asks for comes first, and the same
+    // reply still asks for its name and its job; in an eval it often did not.
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n1\. If their first message asks for real work, do that first and fully\. Then always end that same reply, however short, with two lines asking what they would like to call you and what one job they want you to own/,
     );
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
