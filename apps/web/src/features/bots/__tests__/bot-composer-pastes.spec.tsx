@@ -2,7 +2,7 @@ import { BOT_MESSAGE_MAX } from '@oppenheimer/shared/schemas/bot';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setBotDraft } from '../lib/bot-drafts';
-import { setBotPastes } from '../lib/bot-pastes';
+import { botPastes, setBotPastes } from '../lib/bot-pastes';
 import { BotComposer } from '../sections/bot-composer';
 
 /**
@@ -141,6 +141,32 @@ describe('BotComposer long pastes', () => {
 
     expect(field.value).toBe('a[Pasted text #1 +1000 lines]b');
     expect(field.selectionStart).toBe('a[Pasted text #1 +1000 lines]'.length);
+  });
+
+  it('sends a pasted transcript that holds another label as it was pasted', () => {
+    const field = composer();
+    const transcript = `${log}\n[Pasted text #2 1500 chars]`;
+    const second = 'x'.repeat(1500);
+
+    pasteText(field, transcript);
+    pasteText(field, second);
+
+    expect(field.value).toBe('[Pasted text #1 +1001 lines][Pasted text #2 1500 chars]');
+    fireEvent.click(sendButton());
+    expect(state.send).toHaveBeenCalledWith(
+      expect.objectContaining({ content: `${transcript}${second}` }),
+    );
+  });
+
+  it('lets go of a deleted paste instead of storing it with the next one', () => {
+    const field = composer();
+    pasteText(field, log);
+    fireEvent.keyDown(field, { key: 'Backspace' });
+
+    pasteText(field, 'x'.repeat(1500));
+
+    expect(field.value).toBe('[Pasted text #1 1500 chars]');
+    expect(botPastes('b1').map((paste) => paste.text)).toEqual(['x'.repeat(1500)]);
   });
 
   it('keeps send off for a message longer than a bot takes, and says why', () => {

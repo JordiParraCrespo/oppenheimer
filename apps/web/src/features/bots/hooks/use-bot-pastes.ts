@@ -8,6 +8,8 @@ import {
   collapsesPaste,
   deletePasteLabel,
   expandPastes,
+  type HeldPaste,
+  livePastes,
   nextPasteNumber,
   pasteLines,
   setBotPastes,
@@ -29,9 +31,18 @@ export function useBotPastes(botId: string, draft: string, setDraft: (next: stri
   // Through the draft, never the field's DOM value: React tracks the value it
   // last set, and an edit made behind its back (`setRangeText`) leaves that
   // stale, so a later select-all and delete back to it fires no change at all.
-  function replaceRange(field: HTMLTextAreaElement, start: number, end: number, text: string) {
-    const value = field.value;
-    flushSync(() => setDraft(value.slice(0, start) + text + value.slice(end)));
+  // Each edit also lets go of the pastes whose labels left the field, so a
+  // deleted log is not stored again with every paste after it.
+  function replaceRange(
+    field: HTMLTextAreaElement,
+    start: number,
+    end: number,
+    text: string,
+    added?: HeldPaste,
+  ) {
+    const next = field.value.slice(0, start) + text + field.value.slice(end);
+    setBotPastes(botId, [...livePastes(next, pastes), ...(added ? [added] : [])]);
+    flushSync(() => setDraft(next));
     field.setSelectionRange(start + text.length, start + text.length);
   }
 
@@ -41,14 +52,13 @@ export function useBotPastes(botId: string, draft: string, setDraft: (next: stri
     const text = event.clipboardData.getData?.('text/plain') ?? '';
     if (!collapsesPaste(text)) return;
     event.preventDefault();
-    const n = nextPasteNumber(pastes);
+    const n = nextPasteNumber(livePastes(field.value, pastes));
     const lines = pasteLines(text);
     const label =
       lines > 1
         ? t('bots.chat.pasted.lines', { n, lines })
         : t('bots.chat.pasted.chars', { n, chars: text.length });
-    setBotPastes(botId, [...pastes, { n, label, text }]);
-    replaceRange(field, field.selectionStart, field.selectionEnd, label);
+    replaceRange(field, field.selectionStart, field.selectionEnd, label, { n, label, text });
   }
 
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>): boolean {

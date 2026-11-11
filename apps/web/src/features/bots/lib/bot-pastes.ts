@@ -38,14 +38,22 @@ export function collapsesPaste(text: string): boolean {
 
 /**
  * The draft as it is sent: each held paste's label, wherever it still is,
- * replaced by its text. A label edited away leaves its paste out.
+ * replaced by its text. A label edited away leaves its paste out. One pass
+ * over the draft, so a pasted text that holds another paste's label (a copied
+ * transcript) is sent as it was pasted.
  */
 export function expandPastes(draft: string, pastes: readonly HeldPaste[]): string {
-  let expanded = draft;
-  for (const paste of pastes) {
-    if (expanded.includes(paste.label)) expanded = expanded.split(paste.label).join(paste.text);
-  }
-  return expanded;
+  const texts = new Map(livePastes(draft, pastes).map((paste) => [paste.label, paste.text]));
+  if (texts.size === 0) return draft;
+  const labels = [...texts.keys()]
+    .sort((a, b) => b.length - a.length)
+    .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return draft.replace(new RegExp(labels.join('|'), 'g'), (label) => texts.get(label) ?? label);
+}
+
+/** The pastes whose labels are still in `draft`: what is worth keeping. */
+export function livePastes(draft: string, pastes: readonly HeldPaste[]): HeldPaste[] {
+  return pastes.filter((paste) => draft.includes(paste.label));
 }
 
 /** The number the next paste takes: one past the highest held. */
