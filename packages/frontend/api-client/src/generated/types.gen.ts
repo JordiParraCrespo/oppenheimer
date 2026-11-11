@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2482,7 +2482,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | 'unattended' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -2522,7 +2522,7 @@ export type BotRoutineResponseDto = {
      * `running` while a run is queued or its turn runs, else `active` or `paused`.
      */
     status: 'active' | 'paused' | 'running';
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | 'unattended' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
     /**
      * The earliest next slot of its schedules. Null when paused or event-only.
      */
@@ -2571,7 +2571,7 @@ export type CreateAutomationRequest = {
         query?: string | null;
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2651,7 +2651,7 @@ export type UpdateAutomationRequest = {
         query?: string | null;
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2796,14 +2796,6 @@ export type AutomationSettingsResponseDto = {
     staleTtlSeconds: number;
     missedGraceSeconds: number;
     maxRunSeconds: number;
-    /**
-     * Routine reports a bot’s owner has not seen before its routines pause.
-     */
-    unattendedReports: number;
-    /**
-     * How long a bot’s owner may be away from its chat before its routines pause.
-     */
-    unattendedAwaySeconds: number;
 };
 
 export type UpdateAutomationSettingsRequest = {
@@ -2814,8 +2806,6 @@ export type UpdateAutomationSettingsRequest = {
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;
-    unattendedReports?: number | null;
-    unattendedAwaySeconds?: number | null;
 };
 
 export type UpdateBotRoutineRequest = {
@@ -2907,7 +2897,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -4003,10 +3993,6 @@ export type BotResponseDto = {
      */
     learnAutomatically: boolean;
     /**
-     * Whether its routines pause while its owner is away from its chat, and start again when they are back.
-     */
-    routineSpendGuard: boolean;
-    /**
      * The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.
      */
     sections: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
@@ -4049,7 +4035,6 @@ export type UpdateBotRequest = {
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
     learnAutomatically?: boolean;
-    routineSpendGuard?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
@@ -5252,6 +5237,12 @@ export type InboxMarkResponseDto = {
 
 export type PutInboxMarkRequest = {
     mark: 'done' | 'low' | 'snoozed' | 'deleted';
+    until?: string;
+};
+
+export type PutInboxMarksRequest = {
+    itemKeys: Array<string>;
+    mark: 'done' | 'low' | 'snoozed' | 'deleted' | null;
     until?: string;
 };
 
@@ -10054,7 +10045,7 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
         /**
          * A live checkout of it
          */
@@ -15321,38 +15312,6 @@ export type UpdatePersonAboutResponses = {
 
 export type UpdatePersonAboutResponse = UpdatePersonAboutResponses[keyof UpdatePersonAboutResponses];
 
-export type MarkBotSeenData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/bots/{id}/seen';
-};
-
-export type MarkBotSeenErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * BOTS_001 — Bot not found
-     */
-    404: ProblemDetailsDto;
-};
-
-export type MarkBotSeenError = MarkBotSeenErrors[keyof MarkBotSeenErrors];
-
-export type MarkBotSeenResponses = {
-    204: void;
-};
-
-export type MarkBotSeenResponse = MarkBotSeenResponses[keyof MarkBotSeenResponses];
-
 export type DeleteBotMemoryFactData = {
     body?: never;
     path: {
@@ -17141,6 +17100,42 @@ export type PutInboxMarkResponses = {
 };
 
 export type PutInboxMarkResponse = PutInboxMarkResponses[keyof PutInboxMarkResponses];
+
+export type PutInboxMarksData = {
+    body: PutInboxMarksRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/inbox/marks/batch';
+};
+
+export type PutInboxMarksErrors = {
+    /**
+     * INBOX_002 — Not an Inbox item key
+     *
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_003 — Snooze not in the future
+     */
+    422: ProblemDetailsDto;
+};
+
+export type PutInboxMarksError = PutInboxMarksErrors[keyof PutInboxMarksErrors];
+
+export type PutInboxMarksResponses = {
+    200: Array<InboxMarkResponseDto>;
+};
+
+export type PutInboxMarksResponse = PutInboxMarksResponses[keyof PutInboxMarksResponses];
 
 export type FindInboxReportsData = {
     body?: never;

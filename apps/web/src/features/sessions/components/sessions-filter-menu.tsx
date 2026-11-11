@@ -22,14 +22,13 @@ import {
   facetLabel,
   isMultiFacet,
   pickFacet,
+  SESSION_SORTS,
   type SessionFacet,
   type SessionFilters,
   type SessionSort,
 } from '../lib/session-filters';
 import { FacetSearchSub } from './facet-search-sub';
 import { SearchListFoot } from './search-list-foot';
-
-const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
  * Which projects the sidebar draws: every project in the Project facet's
@@ -224,7 +223,7 @@ export function SessionsFilterMenu({
               value={filters.sort}
               onValueChange={(next) => onChange({ sort: next as SessionSort })}
             >
-              {SORTS.map((sort) => (
+              {SESSION_SORTS.map((sort) => (
                 <DropdownMenuRadioItem key={sort} value={sort}>
                   {t(`sessions.sort.${sort}`)}
                 </DropdownMenuRadioItem>

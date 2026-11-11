@@ -9788,6 +9788,8 @@
                 "codex",
                 "opencode",
                 "grok",
+                "pi",
+                "omp",
                 "shell"
               ],
               "type": "string"
@@ -21232,66 +21234,6 @@
         ]
       }
     },
-    "/api/v1/bots/{id}/seen": {
-      "post": {
-        "description": "The console sends it when the chat opens, when its tab comes back into view, and at most once a minute while the owner is active in it. It resumes the routines the spend guard paused while the owner was away.",
-        "operationId": "markBotSeen",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "401": {
-            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "BOTS_001 — Bot not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Say the owner is in a bot’s chat",
-        "tags": [
-          "Bots"
-        ]
-      }
-    },
     "/api/v1/bots/{id}/memory/{factId}": {
       "patch": {
         "operationId": "updateBotMemoryFact",
@@ -25059,6 +25001,87 @@
           }
         ],
         "summary": "Remove an Inbox mark",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/marks/batch": {
+      "post": {
+        "description": "A bulk action on a selection: the same mark on every occurrence, replacing whatever the caller had on each, or `mark: null` to clear each one’s mark. Every key and the snooze’s end are checked before anything is written, and the marks are written in one transaction. Answers the caller’s marks in force afterwards, as `GET /inbox/marks` does.",
+        "operationId": "putInboxMarks",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutInboxMarksRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InboxMarkResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INBOX_003 — Snooze not in the future",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark several Inbox items at once",
         "tags": [
           "Inbox"
         ]
@@ -30245,6 +30268,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               null
             ],
@@ -30328,6 +30353,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               null
             ],
@@ -30391,6 +30418,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               null
             ],
@@ -30926,6 +30955,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               "cursor"
             ],
@@ -31191,6 +31222,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell"
             ]
           },
@@ -32954,7 +32987,6 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
-              "unattended",
               null
             ],
             "nullable": true
@@ -33066,7 +33098,6 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
-              "unattended",
               null
             ],
             "nullable": true
@@ -33371,6 +33402,8 @@
                   "codex",
                   "opencode",
                   "grok",
+                  "pi",
+                  "omp",
                   "shell"
                 ]
               },
@@ -33852,6 +33885,8 @@
                   "codex",
                   "opencode",
                   "grok",
+                  "pi",
+                  "omp",
                   "shell"
                 ]
               },
@@ -34307,14 +34342,6 @@
           },
           "maxRunSeconds": {
             "type": "number"
-          },
-          "unattendedReports": {
-            "type": "number",
-            "description": "Routine reports a bot’s owner has not seen before its routines pause."
-          },
-          "unattendedAwaySeconds": {
-            "type": "number",
-            "description": "How long a bot’s owner may be away from its chat before its routines pause."
           }
         },
         "required": [
@@ -34324,9 +34351,7 @@
           "overlap",
           "staleTtlSeconds",
           "missedGraceSeconds",
-          "maxRunSeconds",
-          "unattendedReports",
-          "unattendedAwaySeconds"
+          "maxRunSeconds"
         ]
       },
       "UpdateAutomationSettingsRequest": {
@@ -34386,22 +34411,6 @@
             "minimum": 60,
             "exclusiveMinimum": false,
             "maximum": 604800,
-            "exclusiveMaximum": false,
-            "nullable": true
-          },
-          "unattendedReports": {
-            "type": "integer",
-            "minimum": 1,
-            "exclusiveMinimum": false,
-            "maximum": 1000,
-            "exclusiveMaximum": false,
-            "nullable": true
-          },
-          "unattendedAwaySeconds": {
-            "type": "integer",
-            "minimum": 3600,
-            "exclusiveMinimum": false,
-            "maximum": 7776000,
             "exclusiveMaximum": false,
             "nullable": true
           }
@@ -34697,6 +34706,8 @@
                   "codex",
                   "opencode",
                   "grok",
+                  "pi",
+                  "omp",
                   "shell"
                 ]
               },
@@ -37619,10 +37630,6 @@
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
           },
-          "routineSpendGuard": {
-            "type": "boolean",
-            "description": "Whether its routines pause while its owner is away from its chat, and start again when they are back."
-          },
           "sections": {
             "type": "array",
             "description": "The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.",
@@ -37670,7 +37677,6 @@
           "permission",
           "createdByBotId",
           "learnAutomatically",
-          "routineSpendGuard",
           "sections",
           "createdAt",
           "updatedAt",
@@ -37858,9 +37864,6 @@
             ]
           },
           "learnAutomatically": {
-            "type": "boolean"
-          },
-          "routineSpendGuard": {
             "type": "boolean"
           },
           "sections": {
@@ -40746,6 +40749,40 @@
           }
         },
         "required": [
+          "mark"
+        ]
+      },
+      "PutInboxMarksRequest": {
+        "type": "object",
+        "properties": {
+          "itemKeys": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "pattern": "^[a-z]+:[A-Za-z0-9:#@._-]{1,190}$"
+            }
+          },
+          "mark": {
+            "type": "string",
+            "enum": [
+              "done",
+              "low",
+              "snoozed",
+              "deleted",
+              null
+            ],
+            "nullable": true
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "itemKeys",
           "mark"
         ]
       },

@@ -55,7 +55,7 @@ changes behavior.
    with `--skip` to get green; `--skip` exists for re-running a job you have
    just fixed.
 3. A step that fails on `apps/web/bundle-budget.json` is not fixed by
-   raising the number: a raise is Jordi's call. It goes in its own commit,
+   raising the number: a raise is the user's call. It goes in its own commit,
    with the new number against `main`'s and a question in the description.
 4. Put `.ci-local/report.md` in the pull request's description, under a
    `## Local CI` heading. Replace it after each push, so the report always
@@ -86,11 +86,11 @@ is the protocol: it says what the pull request waits for, and who merges.
 | Label | Started by | Waits for | Merged by |
 | --- | --- | --- | --- |
 | `ship` | `/ship` (a fix) | ready, and a `PASS` from a fresh agent that did not write it | the agent, on its own |
-| `propose` | `/propose` (a change Jordi signs off: a feature, a refactor, a fix he wants to see) | the same, and Jordi accepting it: `/ship`, or swapping the label to `ship` | the agent, once accepted |
+| `propose` | `/propose` (a change the user signs off: a feature, a refactor, a fix they want to see) | the same, and the user accepting it: `/ship`, or swapping the label to `ship` | the agent, once accepted |
 | `research` | `/research` (a note or a proof of concept) | ready | the agent, as soon as it is green |
 
-`/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when Jordi says so. A review
-is never an approval: the bot reviews post from Jordi's account. The
+`/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when the user says so. A review
+is never an approval: the bot reviews post from the user's account. The
 lanes are the `ship`, `propose` and `research` skills; all three merge
 through `ship` step 4, which also resolves conflicts with the target.
 
@@ -109,14 +109,14 @@ work, in this order:
    `pnpm generate:api-client`, the router's generator,
    `pnpm generate:guide`, `product/brief.html` from its notes). A
    conflict that needs a product call (both sides changed the same
-   behavior, or one deleted what the other built on) goes to Jordi with
+   behavior, or one deleted what the other built on) goes to the user with
    the file, both sides in a sentence each and your default; the merge
-   stays uncommitted until he answers. Commit it staging files by path,
+   stays uncommitted until they answer. Commit it staging files by path,
    then the steps below for the new head.
 2. **Review comments.** Verify each against the code. Fix what is real and
    reply with the commit; answer the rest with the reason it stays. Resolve
    every thread you answered. A comment that asks for more than the task
-   goes to Jordi.
+   goes to the user.
 3. **Report.** After any push, `pnpm ci:local` on the new head and replace
    the report. Code that changed needs its verdict again (and its
    screenshots, for a visual file), including a conflict resolution that

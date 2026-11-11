@@ -18,6 +18,7 @@ afterEach(cleanup);
 
 function open(model: string) {
   const onValueChange = vi.fn();
+  const onConfigure = vi.fn();
   render(
     <AgentSelect
       agents={toEngineAgents(false, null)}
@@ -27,10 +28,11 @@ function open(model: string) {
       onFavouritesChange={vi.fn()}
       effort={null}
       onEffortChange={vi.fn()}
+      onConfigure={onConfigure}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'sessions.new.agent.label' }));
-  return { onValueChange };
+  return { onValueChange, onConfigure };
 }
 
 const options = () => screen.getAllByRole('option').map((option) => option.textContent);
@@ -75,5 +77,23 @@ describe('the engine button’s Claude Code tab', () => {
     open('claude-opus-5-5');
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'opus 4' } });
     expect(options()).toEqual(['Opus 4.8', 'Opus 4.7', 'Opus 4.6']);
+  });
+});
+
+/**
+ * The gear at the end of the strip is how a reader with too many tabs finds
+ * Settings → Agents from the picker itself. What breaks this: the gear drawn
+ * as a tab (it would steal a tab's arrow-key place), or left open over the
+ * page it navigates to.
+ */
+describe('the engine popup’s configure glyph', () => {
+  it('sits outside the tabs, calls through and closes the popup', () => {
+    const { onConfigure } = open('claude-opus-5-5');
+    const gear = screen.getByRole('button', { name: 'sessions.new.agent.configure' });
+
+    expect(screen.getAllByRole('tab').includes(gear)).toBe(false);
+    fireEvent.click(gear);
+    expect(onConfigure).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 });

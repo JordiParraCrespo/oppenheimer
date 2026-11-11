@@ -12,6 +12,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
+import { overviewTabOf } from '../lib/overview-tabs';
 import { AutomationGroup } from './automation-group';
 
 /**
@@ -41,8 +42,7 @@ export function AutomationsSidebarList() {
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
   const all = useRouterState({
-    select: (state) =>
-      state.location.pathname === '/automations' || state.location.pathname === '/automations/runs',
+    select: (state) => overviewTabOf(state.location.pathname) !== undefined,
   });
 
   const term = query.trim().toLowerCase();

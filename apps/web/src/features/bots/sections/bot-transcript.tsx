@@ -20,6 +20,7 @@ import { ApprovedCallLive } from '@/features/bots/components/approved-call-live'
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotTurn } from '@/features/bots/components/bot-turn';
 import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
+import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
 import { runningApprovedCalls } from '@/features/bots/lib/approval-event';
 import {
   chatTurns,
@@ -27,6 +28,7 @@ import {
   newestSentId,
   newestTurn,
   retryContent,
+  visibleTurns,
 } from '@/features/bots/lib/chat-turns';
 import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
 import { BotHello } from './bot-hello';
@@ -41,6 +43,8 @@ import { BotHello } from './bot-hello';
  * drawn as its decided line at once, until the stored line takes its place;
  * an approved call still running is held under the turn its yes opened.
  * Once the newest turn has ended, Retry sends your last message again.
+ * While the tool calls are hidden, a routine run that did nothing else is left
+ * out (`isQuietRoutineRun`).
  * What you send glides to the top of the pane, the answer beneath it.
  */
 export function BotTranscript({ botId, name }: { botId: string; name: string }) {
@@ -50,7 +54,9 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const live = useBotLive(botId);
   const retry = useSendBotMessage();
   const navigate = useNavigate();
-  const blocks = chatTurns(conversation);
+  const toolCallsShown = useToolCallsShownInChat();
+  const all = chatTurns(conversation);
+  const blocks = visibleTurns(all, toolCallsShown);
   // The approved calls still running, each held under the turn its yes opened.
   const working = new Map(
     [...runningApprovedCalls(conversation.messages)].map(([turnId, call]) => [
@@ -59,15 +65,16 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
     ]),
   );
   const current = conversation.activeTurn?.id;
-  const again = retryContent(blocks);
-  const newest = newestTurn(blocks)?.turnId;
+  // Retry follows the newest turn, drawn or not: a run hidden after your turn takes it away.
+  const again = retryContent(all);
+  const newest = newestTurn(all)?.turnId;
   useSentGlide(newestSentId(blocks));
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
   return (
     <>
       <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-      {blocks.length === 0 ? (
+      {all.length === 0 ? (
         <BotHello botId={botId} name={name} />
       ) : (
         <ChatTranscript>

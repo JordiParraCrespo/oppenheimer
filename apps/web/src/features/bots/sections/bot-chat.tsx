@@ -15,7 +15,6 @@ import { BotTranscriptSkeleton } from '@/features/bots/components/bot-transcript
 import { ToolCallsToggle } from '@/features/bots/components/tool-calls-toggle';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
-import { useMarkSeen } from '@/features/bots/hooks/use-mark-seen';
 import {
   ToolCallsShownContext,
   useToolCallsShown,
@@ -53,7 +52,6 @@ export function BotChat({ botId }: { botId: string }) {
   const [deleting, setDeleting] = useState(false);
   const toolCalls = useToolCallsShown();
   useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
-  useMarkSeen(bot.id);
   // Starts the documents' read beside the conversation's, so a chat with no
   // messages yet greets with its hello as the transcript lands, not a round
   // trip later. Nothing here reads the result, and an empty

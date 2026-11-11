@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/nestjs';
-import { scrubEvent } from './scrub-event';
+import { isJobAttemptEvent, type JobAttemptCandidate } from './job-attempt-event';
+import { type ScrubbableEvent, scrubEvent } from './scrub-event';
 
 /** How the process reports errors; `dsn` unset leaves reporting off. */
 export interface ErrorReportingOptions {
@@ -33,10 +34,16 @@ export function initErrorReporting(options: ErrorReportingOptions): boolean {
     tracesSampleRate: options.tracesSampleRate ?? 0,
     sendDefaultPii: false,
     initialScope: { tags: { service: options.service } },
-    beforeSend: (event) => scrubEvent(event),
+    beforeSend,
     beforeSendTransaction: (event) => scrubEvent(event),
   });
   return true;
+}
+
+/** What is not sent at all, then what is scrubbed from the rest. */
+function beforeSend<T extends ScrubbableEvent & JobAttemptCandidate>(event: T): T | null {
+  if (isJobAttemptEvent(event)) return null;
+  return scrubEvent(event);
 }
 
 /** Whether `initErrorReporting` started the SDK in this process. */

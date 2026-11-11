@@ -13,6 +13,7 @@ import {
   mergeOrder,
   orderProjects,
   orderSessions,
+  placeDrop,
   rememberSidebarOrder,
   type SidebarOrder,
   storedSidebarOrder,
@@ -43,6 +44,11 @@ export const PINNED_GROUP = 'pinned';
  * the order the reader was looking at, and `onReorder` asks for `custom` so
  * it stays. Spread `handlers` on the sidebar's `DragProvider`.
  *
+ * A filter or the search can narrow what is drawn, and the rows still drag:
+ * a drop places the rows it saw, and every row it did not keeps its place
+ * among them as `every` draws it, the whole list in the sort's order, so
+ * clearing the filter shows the hidden rows where they were.
+ *
  * `projects` are all of them; `listed` says which are drawn. A project the
  * reader hid is not, but a drop of the drawn ones keeps its place, placed
  * by a drag or not, so showing it again puts it back where it was.
@@ -58,6 +64,7 @@ export function useSidebarOrder({
   projects,
   listed = () => true,
   sessions,
+  every = sessions,
   pinned,
   pins,
   custom,
@@ -67,6 +74,8 @@ export function useSidebarOrder({
   projects: readonly ProjectEntity[];
   listed?: (projectId: string) => boolean;
   sessions: readonly SessionEntity[];
+  /** Every session the list draws with no filter or search, in the sort's order. */
+  every?: readonly SessionEntity[];
   pinned: readonly SessionEntity[];
   pins: Pick<SessionPins, 'setPinned' | 'placePins'>;
   custom: boolean;
@@ -150,10 +159,18 @@ export function useSidebarOrder({
       if (!custom) onReorder();
       if (from === PINNED_GROUP) pins.setPinned(id, false);
       const fromProject = from === PINNED_GROUP ? everyone.get(id)?.projectId : from;
+      const placed = (stored: readonly string[]) =>
+        placeDrop({
+          dropped: next,
+          projectIds,
+          whole: custom ? orderSessions(every, stored) : every,
+          stored,
+          moved: fromProject === to ? undefined : id,
+        });
       if (fromProject === to) {
         setStored((current) => ({
           ...current,
-          sessions: mergeOrder(order, current.sessions),
+          sessions: placed(current.sessions),
         }));
         return;
       }
@@ -164,7 +181,7 @@ export function useSidebarOrder({
           onSuccess: () => {
             setStored((current) => ({
               ...current,
-              sessions: mergeOrder(order, current.sessions),
+              sessions: placed(current.sessions),
             }));
             onWrite(null);
           },

@@ -929,6 +929,7 @@
         "favourites": "Favoritos",
         "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
         "moreModels": "Más modelos",
+        "configure": "Elegir agentes",
         "addFavourite": "Añadir {{model}} a favoritos",
         "removeFavourite": "Quitar {{model}} de favoritos",
         "auto": "Auto"
@@ -1889,8 +1890,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas",
-      "showToolCalls": "Mostrar llamadas a herramientas",
+      "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
+      "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
@@ -2190,9 +2191,6 @@
         "title": "Rutinas",
         "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
         "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
-        "guard": "Pausar mientras no estás",
-        "guardHint": "Detén sus rutinas mientras no lees lo que dicen. Vuelven a funcionar cuando abres este chat.",
-        "guardFailed": "No se pudo cambiar si las rutinas se pausan mientras no estás.",
         "askInChat": "Pedir en el chat",
         "schedule": "Horario · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2332,9 +2330,6 @@
       "checkedHint": "Los bots marcados aparecen en {{section}}.",
       "manageAll": "Gestionar en {{employees}}",
       "hide": "Ocultar de {{section}}"
-    },
-    "routineGuard": {
-      "notice": "He pausado mis rutinas mientras no estabas. Vuelven a funcionar cuando abras este chat."
     }
   },
   "automations": {
@@ -2356,6 +2351,7 @@
     "page": {
       "tabs": {
         "automations": "Automatizaciones",
+        "routines": "Rutinas de bots",
         "runs": "Ejecuciones"
       },
       "new": "Nueva automatización",
@@ -2397,8 +2393,7 @@
       "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
       "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
       "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala.",
-      "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala.",
-      "unattended": "En pausa mientras no estabas en el chat de su bot. Vuelve a funcionar cuando abras el chat."
+      "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala."
     },
     "frequency": {
       "once": {
@@ -2584,6 +2579,7 @@
       "addAnother": "Añadir otro disparador",
       "groupSchedule": "Horario",
       "groupGithub": "GitHub",
+      "duplicateTrigger": "Duplicar disparador",
       "removeTrigger": "Quitar disparador",
       "on": "el",
       "at": "a las",
@@ -2598,6 +2594,7 @@
       "labelPlaceholder": "Nombre de la etiqueta",
       "anyOfRepos": "cualquiera de {{count}} repositorios",
       "someRepos": "{{count}} repositorios",
+      "reposToPick": "los repositorios que elijas",
       "reposHead": "Repositorios · elige uno o más",
       "atLeastOne": "Hace falta al menos uno",
       "hour": "Hora",
@@ -2678,7 +2675,8 @@
     "routines": {
       "routine": "Rutina de bot",
       "runsOn": "La ejecuta {{bot}}",
-      "loadFailed": "No se pudieron cargar las rutinas de los bots."
+      "loadFailed": "No se pudieron cargar las rutinas de los bots.",
+      "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
     }
   },
   "pullRequests": {
@@ -3471,6 +3469,20 @@
       "refresh": "Actualizar",
       "clearSearch": "Borrar búsqueda"
     },
+    "selection": {
+      "label": "Elementos seleccionados",
+      "count_one": "{{count}} seleccionado",
+      "count_many": "{{count}} seleccionados",
+      "count_other": "{{count}} seleccionados",
+      "selectAll": "Seleccionar todo",
+      "selectRow": "Seleccionar {{title}}",
+      "clear": "Quitar selección",
+      "done": "Marcar como hechos",
+      "low": "Bajar prioridad",
+      "restore": "Restaurar prioridad",
+      "snooze": "Posponer",
+      "delete": "Eliminar"
+    },
     "filter": {
       "label": "Filtrar la bandeja",
       "type": "Tipo",
@@ -3502,7 +3514,8 @@
       "restore": "Restaurar prioridad",
       "snoozeHour": "Posponer 1 hora",
       "snoozeTomorrow": "Posponer hasta mañana",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "select": "Seleccionar"
     },
     "from": {
       "session": "Sesión",
@@ -3623,6 +3636,7 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "app": "Oppenheimer",
+      "agents": "Agentes",
       "about": "Acerca de"
     },
     "profile": {
@@ -4008,6 +4022,12 @@
         "making": "Creando el enlace…",
         "newLink": "Nuevo enlace"
       }
+    },
+    "agents": {
+      "title": "Agentes",
+      "hint": "Qué agentes ofrece Nueva sesión en este dispositivo. Una sesión que ya usa uno que ocultes lo conserva.",
+      "show": "Mostrar {{agent}} en Nueva sesión",
+      "lastShown": "Nueva sesión necesita al menos un agente que ofrecer."
     },
     "about": {
       "title": "Acerca de",

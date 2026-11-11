@@ -4,6 +4,7 @@ import {
   mergeOrder,
   orderProjects,
   orderSessions,
+  placeDrop,
   rememberSidebarOrder,
   SIDEBAR_ORDER_KEY,
   storedSidebarOrder,
@@ -81,5 +82,56 @@ describe('mergeOrder', () => {
 
   it('keeps a hidden project in its place when the shown ones are dragged', () => {
     expect(mergeOrder(['p3', 'p1'], ['p1', 'hidden', 'p3'])).toEqual(['p3', 'p1', 'hidden']);
+  });
+});
+
+describe('placeDrop', () => {
+  const row = (id: string, projectId: string) => ({ id, projectId }) as SessionEntity;
+
+  it("keeps a hidden row among its own project's rows when another project is reordered", () => {
+    // Newest first, the projects interleave: a1, b1, hidden (a), a2, b2.
+    const whole = [
+      row('a1', 'a'),
+      row('b1', 'b'),
+      row('hidden', 'a'),
+      row('a2', 'a'),
+      row('b2', 'b'),
+    ];
+    const order = placeDrop({
+      dropped: { a: ['a1', 'a2'], b: ['b2', 'b1'] },
+      projectIds: ['a', 'b'],
+      whole,
+      stored: [],
+    });
+    expect(order).toEqual(['a1', 'hidden', 'a2', 'b2', 'b1']);
+  });
+
+  it('anchors nothing at the old place of a session moved in from another project', () => {
+    // a2 sat just above b's hidden row in the whole list, and is dropped after b1.
+    const whole = [
+      row('a1', 'a'),
+      row('b1', 'b'),
+      row('a2', 'a'),
+      row('hidden', 'b'),
+      row('b2', 'b'),
+    ];
+    const order = placeDrop({
+      dropped: { a: ['a1'], b: ['b1', 'a2', 'b2'] },
+      projectIds: ['a', 'b'],
+      whole,
+      stored: [],
+      moved: 'a2',
+    });
+    expect(order).toEqual(['a1', 'b1', 'hidden', 'a2', 'b2']);
+  });
+
+  it('keeps the place of a stored session the list does not draw', () => {
+    const order = placeDrop({
+      dropped: { a: ['a2', 'a1'] },
+      projectIds: ['a'],
+      whole: [row('a1', 'a'), row('a2', 'a')],
+      stored: ['a1', 'gone', 'a2'],
+    });
+    expect(order).toEqual(['a2', 'a1', 'gone']);
   });
 });

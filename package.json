@@ -51,6 +51,7 @@
     "migration:new": "pnpm --filter @oppenheimer/api migration:new",
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
     "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
+    "eval:bot-first-chat": "tsx scripts/evals/bot-first-chat/run.ts",
     "eval:bot-memory": "tsx scripts/evals/bot-memory/run.ts",
     "eval:bot-session-search": "tsx scripts/evals/bot-session-search/run.ts",
     "eval:bot-session-unblock": "tsx scripts/evals/bot-session-unblock/run.ts",

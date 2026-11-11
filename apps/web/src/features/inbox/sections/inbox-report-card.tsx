@@ -90,7 +90,7 @@ export function InboxReportCard({
             <Button
               variant="secondary"
               disabled={answer.isPending}
-              onClick={() => marks.done(item)}
+              onClick={() => marks.apply('done', item)}
             >
               {t('inbox.report.done')}
             </Button>

@@ -34,7 +34,7 @@ No. Sessions live in tmux, apart from the runner. The runner waits for a quiet m
 
 ## Which agents can a session run?
 
-Claude Code, Codex, OpenCode and Grok, or a blank terminal. Each uses the host's own installation and sign-in; you sign in once per host in the terminal. Claude Code, Codex and Cursor can also run in their vendors' clouds.
+Claude Code, Codex, OpenCode, Grok, Pi and Oh My Pi, or a blank terminal. Each uses the host's own installation and sign-in; you sign in once per host in the terminal. Claude Code, Codex and Cursor can also run in their vendors' clouds.
 
 ## Which models can bots use?
 

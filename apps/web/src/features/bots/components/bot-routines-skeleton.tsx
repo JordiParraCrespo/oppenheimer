@@ -1,10 +1,4 @@
-import {
-  RoutineCard,
-  SettingsGroup,
-  SettingsRow,
-  Skeleton,
-  Switch,
-} from '@oppenheimer/design-system-web';
+import { RoutineCard, Skeleton } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -17,25 +11,16 @@ const ROWS = [
 
 /**
  * The Routines tab while the bot and its routines load, laid out as the page
- * draws them: Pause while you're away with its label and hint written and
- * its switch off, then routine cards with their switch, Run now, Edit and
- * Delete drawn and out of reach, and a bar for each line the card draws (its
+ * draws them: routine cards with their switch, Run now, Edit and Delete drawn
+ * and out of reach, and a bar for each line the card draws (its
  * name, its when, its prompt, its last run), so nothing moves when the
  * routines land.
  */
 export function BotRoutinesSkeleton() {
   const { t } = useTranslation();
   return (
-    <div aria-busy className="flex flex-col gap-6">
+    <div aria-busy>
       <LoadingStatus />
-      <SettingsGroup>
-        <SettingsRow
-          label={t('bots.settings.routines.guard')}
-          hint={t('bots.settings.routines.guardHint')}
-        >
-          <Switch disabled tabIndex={-1} aria-label={t('bots.settings.routines.guard')} />
-        </SettingsRow>
-      </SettingsGroup>
       <section inert aria-hidden className="flex flex-col gap-3">
         {ROWS.map((row) => (
           <RoutineCard
@@ -51,7 +36,7 @@ export function BotRoutinesSkeleton() {
             onEdit={noop}
             onDelete={noop}
             labels={{
-              active: t('bots.settings.routines.guard'),
+              active: t('bots.settings.routines.switch', { name: '' }),
               pause: t('bots.settings.routines.pause'),
               resume: t('bots.settings.routines.resume'),
               run: t('bots.settings.routines.run'),

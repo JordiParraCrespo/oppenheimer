@@ -13,7 +13,7 @@ interface SentEvent {
   user?: Record<string, unknown>;
   extra?: Record<string, unknown>;
   fingerprint?: string[];
-  exception?: { values?: { value?: string }[] };
+  exception?: { values?: { value?: string; mechanism?: { type?: string } }[] };
 }
 
 /** What left the process: the events of every envelope the client built. */
@@ -81,5 +81,29 @@ describe('ErrorReportingModule with a DSN', () => {
     expect(second?.level).toBe('error');
     expect(second?.tags).not.toHaveProperty('queue');
     expect(second?.user).toBeUndefined();
+  });
+
+  // Regression (OPPENHEIMER-API-5): Sentry's wrapper around every
+  // `@Processor` reported each attempt of a retried job as an unhandled
+  // issue. This is the call that wrapper makes. The SDK also skips a second
+  // capture of an object it saw, so the job's final report is made with a
+  // fresh error (`JobFailureMapper.toReportedError` in the API).
+  it("sends none of Sentry's own captures of a job's attempts, and the job's final report", async () => {
+    sent.length = 0;
+    const attempt = new Error('attempt that the queue retried');
+    Sentry.captureException(attempt, {
+      mechanism: { handled: false, type: 'auto.queue.nestjs.bullmq' },
+    });
+    const last = new Error('last attempt');
+    Sentry.captureException(last, {
+      mechanism: { handled: false, type: 'auto.queue.nestjs.bullmq' },
+    });
+    reporter.capture(last);
+    const reported = Object.assign(new Error(last.message), { stack: last.stack });
+    reporter.capture(reported, { fingerprint: ['queue-job-failed', 'bot-summaries'] });
+    await reporter.flush(500);
+
+    expect(sent).toHaveLength(1);
+    expect(sentFor('last attempt')?.fingerprint).toEqual(['queue-job-failed', 'bot-summaries']);
   });
 });

@@ -3077,6 +3077,8 @@
         "codex",
         "opencode",
         "grok",
+        "pi",
+        "omp",
         "shell"
       ],
       "id": "codingAgentId"

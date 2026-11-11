@@ -8,14 +8,13 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RunHistorySkeleton } from '../components/run-history-skeleton';
 import { AutomationsTable } from '../sections/automations-table';
-import { BotRoutinesTable } from '../sections/bot-routines-table';
 import { OverviewTop } from '../sections/overview-top';
 import { RunHistoryCard } from '../sections/run-history-card';
 
 /**
  * The overview on its Automations tab: the tabs, the run history (whose
  * header links to the Runs tab), the table, which reads the automations
- * under Suspense, and below it the bots' routines, when there are any.
+ * under Suspense. The bots' routines are their own tab.
  */
 export function AutomationsOverviewScreen() {
   const { t } = useTranslation();
@@ -51,13 +50,6 @@ export function AutomationsOverviewScreen() {
         <QueryState.Error fallback={t('automations.page.loadFailed')} />
         <QueryState.Data>
           <AutomationsTable />
-        </QueryState.Data>
-      </QueryState>
-      <QueryState>
-        <QueryState.Pending>{null}</QueryState.Pending>
-        <QueryState.Error fallback={t('automations.routines.loadFailed')} />
-        <QueryState.Data>
-          <BotRoutinesTable />
         </QueryState.Data>
       </QueryState>
     </>

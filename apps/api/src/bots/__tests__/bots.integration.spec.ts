@@ -407,36 +407,6 @@ describe('bots (integration)', () => {
     expect((await documents.findRevision(scope(), bot.id, 'soul', 2 ** 40)).isNone()).toBe(true);
   });
 
-  // `26-bot-routines.md` §6. What breaks this: a visit not stored, so a late
-  // pause cannot tell the owner came back; two visits out of order moving it
-  // backwards; or another workspace's bot marked through a guessed id.
-  it('records every visit of the owner to the chat, never backwards, and only for its own bot', async () => {
-    const bot = await create('Seen Bot');
-    const seenAt = async () =>
-      ((await bots.findOneById(scope(), bot.id)).unwrap().ownerSeenAt as Date).getTime();
-    const born = await seenAt();
-
-    const soon = new Date(born + 5_000);
-    expect(await bots.markSeen(scope(), bot.id, soon)).toBe(true);
-    expect(await seenAt()).toBe(soon.getTime());
-
-    expect(await bots.markSeen(scope(), bot.id, new Date(born + 1_000))).toBe(true);
-    expect(await seenAt()).toBe(soon.getTime());
-
-    expect(await bots.markSeen(scopeOf(randomUUID()), bot.id, new Date(born + 60_000))).toBe(false);
-    expect(await seenAt()).toBe(soon.getTime());
-  });
-
-  it("keeps the owner's switch for the spend guard, on until turned off", async () => {
-    const bot = await create('Night Owl');
-    const read = async () => (await bots.findOneById(scope(), bot.id)).unwrap();
-    expect((await read()).routineSpendGuard).toBe(true);
-    const stored = await read();
-    stored.edit({ routineSpendGuard: false });
-    expect(await bots.save(stored)).toBe('saved');
-    expect((await read()).routineSpendGuard).toBe(false);
-  });
-
   it('lets only one of two adders take the last memory place', async () => {
     const bot = await create('Ana');
     const fact = (content: string) =>

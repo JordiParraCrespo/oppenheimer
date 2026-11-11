@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import { STUB_KEY_PREFIX } from '../../support/cursor-stub';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
-import { provisionedUser, signInAs } from '../../support/web';
+import { pickProjectAndRepository, provisionedUser, signInAs } from '../../support/web';
 
 /**
  * Cloud sessions from Plan's tasks and from automations, on the Cursor stub
@@ -87,6 +87,7 @@ test('an automation runs in Cursor’s cloud on its owner’s key', async ({ pag
   await editor.getByRole('button', { name: 'Next' }).click();
 
   // Runs in: Cursor, which has no host or agent to pick.
+  await pickProjectAndRepository(page, editor);
   await editor.getByRole('button', { name: 'Runs in' }).click();
   await page.getByRole('option', { name: /^Cursor/ }).click();
   await expect(editor.getByRole('button', { name: 'Runs in' })).toContainText('Cursor');

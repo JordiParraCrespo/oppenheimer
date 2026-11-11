@@ -78,7 +78,6 @@ import { BotPullRequestWakeDomainEventHandler } from './application/event-handle
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { BotTelegramWakeDomainEventHandler } from './application/event-handlers/bot-telegram-wake.domain-event-handler';
-import { BotUnattendedRoutinesDomainEventHandler } from './application/event-handlers/bot-unattended-routines.domain-event-handler';
 import { BotWhatsappWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from './application/turn-write.factory';
@@ -471,7 +470,6 @@ const queryHandlers: Provider[] = [
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
     BotHeartbeatDomainEventHandler,
     BotRoutineActivityDomainEventHandler,
-    BotUnattendedRoutinesDomainEventHandler,
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,
     BotTelegramWakeDomainEventHandler,

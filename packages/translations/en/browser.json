@@ -923,6 +923,7 @@
         "favourites": "Favourites",
         "favouritesEmpty": "Star a model to keep it here.",
         "moreModels": "More models",
+        "configure": "Choose agents",
         "addFavourite": "Add {{model}} to favourites",
         "removeFavourite": "Remove {{model}} from favourites",
         "auto": "Auto"
@@ -1868,8 +1869,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls",
-      "showToolCalls": "Show tool calls",
+      "hideToolCalls": "Hide tool calls and routine runs",
+      "showToolCalls": "Show tool calls and routine runs",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -2167,9 +2168,6 @@
         "title": "Routines",
         "subtitle": "Work the bot does on a schedule or when something happens.",
         "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
-        "guard": "Pause while you’re away",
-        "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
-        "guardFailed": "Could not change whether the routines pause while you’re away.",
         "askInChat": "Ask in chat",
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2305,9 +2303,6 @@
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
       "hide": "Hide from {{section}}"
-    },
-    "routineGuard": {
-      "notice": "I paused my routines while you were away. They start again when you open this chat."
     }
   },
   "automations": {
@@ -2329,6 +2324,7 @@
     "page": {
       "tabs": {
         "automations": "Automations",
+        "routines": "Bot routines",
         "runs": "Runs"
       },
       "new": "New automation",
@@ -2370,8 +2366,7 @@
       "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
       "owner_lost_access": "Paused because its owner can no longer run it.",
       "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
-      "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
+      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
     },
     "frequency": {
       "once": {
@@ -2556,6 +2551,7 @@
       "addAnother": "Add another trigger",
       "groupSchedule": "Schedule",
       "groupGithub": "GitHub",
+      "duplicateTrigger": "Duplicate trigger",
       "removeTrigger": "Remove trigger",
       "on": "on",
       "at": "at",
@@ -2570,6 +2566,7 @@
       "labelPlaceholder": "Label name",
       "anyOfRepos": "any of {{count}} repositories",
       "someRepos": "{{count}} repositories",
+      "reposToPick": "the repositories you pick",
       "reposHead": "Repositories · pick one or more",
       "atLeastOne": "At least one is required",
       "hour": "Hour",
@@ -2649,7 +2646,8 @@
     "routines": {
       "routine": "Bot routine",
       "runsOn": "Runs on {{bot}}",
-      "loadFailed": "Bot routines could not be loaded."
+      "loadFailed": "Bot routines could not be loaded.",
+      "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
     }
   },
   "pullRequests": {
@@ -3437,6 +3435,19 @@
       "refresh": "Refresh",
       "clearSearch": "Clear search"
     },
+    "selection": {
+      "label": "Selected items",
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "selectAll": "Select all",
+      "selectRow": "Select {{title}}",
+      "clear": "Clear selection",
+      "done": "Mark as done",
+      "low": "Deprioritize",
+      "restore": "Restore priority",
+      "snooze": "Snooze",
+      "delete": "Delete"
+    },
     "filter": {
       "label": "Filter the Inbox",
       "type": "Type",
@@ -3468,7 +3479,8 @@
       "restore": "Restore priority",
       "snoozeHour": "Snooze 1 hour",
       "snoozeTomorrow": "Snooze until tomorrow",
-      "delete": "Delete"
+      "delete": "Delete",
+      "select": "Select"
     },
     "from": {
       "session": "Session",
@@ -3589,6 +3601,7 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "app": "Oppenheimer",
+      "agents": "Agents",
       "about": "About"
     },
     "profile": {
@@ -3972,6 +3985,12 @@
         "making": "Making the link…",
         "newLink": "New link"
       }
+    },
+    "agents": {
+      "title": "Agents",
+      "hint": "Which agents New session offers on this device. A session that already runs one you hide keeps it.",
+      "show": "Show {{agent}} in New session",
+      "lastShown": "New session needs one agent to offer."
     },
     "about": {
       "title": "About",

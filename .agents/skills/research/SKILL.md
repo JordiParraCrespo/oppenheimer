@@ -20,7 +20,7 @@ is the `research` lane.
   note and the "decisions that changed" list).
 - A proof of concept keeps its code beside the note, in
   `product/research/<topic>/`, outside the workspace. Code that has to land
-  in `apps/` or `packages/` to work is a feature: say so and stop; Jordi
+  in `apps/` or `packages/` to work is a feature: say so and stop; the user
   can `/propose` it.
 
 ## 2. Merge it
@@ -31,5 +31,5 @@ is the `research` lane.
   without its verdict.
   No verifier and no wait: nothing in it ships to users. Review comments that arrive later are answered in a
   follow-up pull request.
-- Tell Jordi: the link, the answer in a few lines, and what it recommends
+- Tell the user: the link, the answer in a few lines, and what it recommends
   doing next.
