@@ -325,6 +325,7 @@
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
       "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "HOSTS_009": "Alguien cambió este host mientras lo guardabas. Vuelve a cargarlo e inténtalo de nuevo.",
+      "HOSTS_010": "No se pudo abrir el escritorio ahora mismo. Vuelve a intentarlo en un momento.",
       "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
       "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
       "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
@@ -928,6 +929,7 @@
         "favourites": "Favoritos",
         "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
         "moreModels": "Más modelos",
+        "configure": "Elegir agentes",
         "addFavourite": "Añadir {{model}} a favoritos",
         "removeFavourite": "Quitar {{model}} de favoritos",
         "auto": "Auto"
@@ -1076,6 +1078,9 @@
       "pinned": "Fijadas",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "hide": "Ocultar",
+      "show": "Mostrar",
+      "hidden": "Oculta",
       "dropToPin": "Suelta una sesión aquí para fijarla.",
       "actions": "Acciones de la sesión",
       "rename": "Renombrar",
@@ -1096,7 +1101,8 @@
       "selected": "Seleccionada",
       "openAtVendor": "Se abre en {{vendor}}",
       "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
-      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
+      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
+      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -1142,6 +1148,9 @@
       "remove": "Quitar filtro",
       "allProjects": "Todos los proyectos",
       "allRepositories": "Todos los repositorios",
+      "several_one": "{{count}} seleccionado",
+      "several_many": "{{count}} seleccionados",
+      "several_other": "{{count}} seleccionados",
       "allAgents": "Todos los agentes",
       "allHosts": "Todos los equipos",
       "noMatches": "Ninguna sesión coincide con estos filtros.",
@@ -1149,6 +1158,8 @@
       "shownAll": "Todos",
       "shownSome": "{{shown}} de {{total}}",
       "showAll": "Mostrar todos los proyectos",
+      "pinnedOnly": "Solo fijadas",
+      "showHidden": "Mostrar sesiones ocultas",
       "newProject": "Nuevo proyecto…"
     },
     "sort": {
@@ -1462,7 +1473,8 @@
       "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
-      "opening": "Abriendo localhost:{{port}}…"
+      "opening": "Abriendo localhost:{{port}}…",
+      "desktop": "Escritorio"
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
@@ -1609,6 +1621,7 @@
         "credential": "{{provider}} ha rechazado la clave o el inicio de sesión. Volver a enviarlo no servirá: revísalo en Proveedores de modelos.",
         "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
         "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
+        "context": "Este turno llenó el contexto de {{provider}} más rápido de lo que se podía compactar, así que se detuvo: {{provider}} no rechazó nada. Volver a enviarlo no servirá: pídele que lea menos de una vez (un archivo más pequeño, una salida más corta) o divide la petición.",
         "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
         "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
         "stalled": "{{provider}} no ha enviado nada en 5 minutos, así que este turno se ha detenido. Suele ser temporal: vuelve a intentarlo en un momento.",
@@ -1877,8 +1890,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas",
-      "showToolCalls": "Mostrar llamadas a herramientas",
+      "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
+      "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
@@ -2178,9 +2191,6 @@
         "title": "Rutinas",
         "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
         "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
-        "guard": "Pausar mientras no estás",
-        "guardHint": "Detén sus rutinas mientras no lees lo que dicen. Vuelven a funcionar cuando abres este chat.",
-        "guardFailed": "No se pudo cambiar si las rutinas se pausan mientras no estás.",
         "askInChat": "Pedir en el chat",
         "schedule": "Horario · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2320,9 +2330,6 @@
       "checkedHint": "Los bots marcados aparecen en {{section}}.",
       "manageAll": "Gestionar en {{employees}}",
       "hide": "Ocultar de {{section}}"
-    },
-    "routineGuard": {
-      "notice": "He pausado mis rutinas mientras no estabas. Vuelven a funcionar cuando abras este chat."
     }
   },
   "automations": {
@@ -2344,6 +2351,7 @@
     "page": {
       "tabs": {
         "automations": "Automatizaciones",
+        "routines": "Rutinas de bots",
         "runs": "Ejecuciones"
       },
       "new": "Nueva automatización",
@@ -2385,8 +2393,7 @@
       "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
       "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
       "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala.",
-      "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala.",
-      "unattended": "En pausa mientras no estabas en el chat de su bot. Vuelve a funcionar cuando abras el chat."
+      "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala."
     },
     "frequency": {
       "once": {
@@ -2572,6 +2579,7 @@
       "addAnother": "Añadir otro disparador",
       "groupSchedule": "Horario",
       "groupGithub": "GitHub",
+      "duplicateTrigger": "Duplicar disparador",
       "removeTrigger": "Quitar disparador",
       "on": "el",
       "at": "a las",
@@ -2586,6 +2594,7 @@
       "labelPlaceholder": "Nombre de la etiqueta",
       "anyOfRepos": "cualquiera de {{count}} repositorios",
       "someRepos": "{{count}} repositorios",
+      "reposToPick": "los repositorios que elijas",
       "reposHead": "Repositorios · elige uno o más",
       "atLeastOne": "Hace falta al menos uno",
       "hour": "Hora",
@@ -2666,7 +2675,8 @@
     "routines": {
       "routine": "Rutina de bot",
       "runsOn": "La ejecuta {{bot}}",
-      "loadFailed": "No se pudieron cargar las rutinas de los bots."
+      "loadFailed": "No se pudieron cargar las rutinas de los bots.",
+      "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
     }
   },
   "pullRequests": {
@@ -3395,6 +3405,52 @@
       "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
+    },
+    "desktop": {
+      "label": "Escritorio",
+      "open": "Abrir escritorio",
+      "title": "Escritorio de {{name}}",
+      "screen": "Pantalla de {{name}}",
+      "watching": "Viendo {{name}}",
+      "inControl": "Controlas {{name}}",
+      "takeControl": "Tomar el control",
+      "releaseControl": "Dejar de controlar",
+      "fullscreen": "Pantalla completa",
+      "exitFullscreen": "Salir de pantalla completa",
+      "tryAgain": "Volver a intentarlo",
+      "connecting": "Conectando con el escritorio…",
+      "connectingDetail": "La pantalla aparece cuando el host inicia sesión en su servidor de pantalla compartida.",
+      "dropped": "Reconectando…",
+      "droppedDetail": "Se cortó la conexión con el escritorio. Volviendo a intentarlo.",
+      "offline": "El host está desconectado",
+      "offlineDetail": "El escritorio vuelve cuando el host se reconecta.",
+      "ended": "Ya no puedes abrir este escritorio",
+      "endedDetail": "Se eliminó el host o ya no puedes usarlo.",
+      "refused": {
+        "DESKTOP_001": {
+          "title": "Este host no comparte su escritorio",
+          "detail": "Si su pantalla se puede ver y manejar desde aquí se decide en el host. Para compartirla, ejecuta esto allí y vuelve a intentarlo:"
+        },
+        "DESKTOP_002": {
+          "title": "Ningún servidor de pantalla compartida responde en el host",
+          "detail": "Activa Compartir pantalla (en un Mac: Ajustes del Sistema, General, Compartir) o inicia un servidor VNC en 127.0.0.1:5900 y vuelve a intentarlo."
+        },
+        "DESKTOP_003": {
+          "title": "El servidor de pantalla compartida rechazó el inicio de sesión del host",
+          "detail": "Dale al host la cuenta y la contraseña que espera el servidor: runner desktop on --username <cuenta> --password-file <archivo>."
+        },
+        "DESKTOP_004": {
+          "title": "El servidor de pantalla compartida pide un inicio de sesión que el runner no sabe hacer",
+          "detail": "Deja que el servidor acepte una contraseña VNC, o ninguna en el loopback, y vuelve a intentarlo."
+        },
+        "other": {
+          "title": "No se pudo abrir el escritorio",
+          "detail": "El host no pudo llegar a su servidor de pantalla compartida."
+        }
+      },
+      "pageTitle": "Escritorio",
+      "pageLead": "La pantalla de {{name}}, en directo. Miras hasta que tomas el control; entonces tus clics y teclas le llegan, la misma pantalla en la que trabajan sus agentes.",
+      "back": "Hosts"
     }
   },
   "inbox": {
@@ -3410,7 +3466,22 @@
       "back": "Vuelve {{when}}",
       "unread": "{{count}} sin leer",
       "search": "Buscar en la bandeja",
+      "refresh": "Actualizar",
       "clearSearch": "Borrar búsqueda"
+    },
+    "selection": {
+      "label": "Elementos seleccionados",
+      "count_one": "{{count}} seleccionado",
+      "count_many": "{{count}} seleccionados",
+      "count_other": "{{count}} seleccionados",
+      "selectAll": "Seleccionar todo",
+      "selectRow": "Seleccionar {{title}}",
+      "clear": "Quitar selección",
+      "done": "Marcar como hechos",
+      "low": "Bajar prioridad",
+      "restore": "Restaurar prioridad",
+      "snooze": "Posponer",
+      "delete": "Eliminar"
     },
     "filter": {
       "label": "Filtrar la bandeja",
@@ -3418,6 +3489,7 @@
       "project": "Proyecto",
       "any": "Cualquiera",
       "showDone": "Mostrar hechos",
+      "showPulls": "Mostrar pull requests",
       "clear": "Quitar filtros",
       "remove": "Quitar filtro",
       "typeChip": "Tipo: {{value}}",
@@ -3442,7 +3514,8 @@
       "restore": "Restaurar prioridad",
       "snoozeHour": "Posponer 1 hora",
       "snoozeTomorrow": "Posponer hasta mañana",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "select": "Seleccionar"
     },
     "from": {
       "session": "Sesión",
@@ -3563,6 +3636,7 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "app": "Oppenheimer",
+      "agents": "Agentes",
       "about": "Acerca de"
     },
     "profile": {
@@ -3949,6 +4023,12 @@
         "newLink": "Nuevo enlace"
       }
     },
+    "agents": {
+      "title": "Agentes",
+      "hint": "Qué agentes ofrece Nueva sesión en este dispositivo. Una sesión que ya usa uno que ocultes lo conserva.",
+      "show": "Mostrar {{agent}} en Nueva sesión",
+      "lastShown": "Nueva sesión necesita al menos un agente que ofrecer."
+    },
     "about": {
       "title": "Acerca de",
       "versionsHeading": "Versiones",
@@ -4243,6 +4323,8 @@
     "emailResent": "Correo enviado de nuevo.",
     "sessionRenamed": "Renombrada a «{{name}}».",
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+    "sessionHidden": "«{{name}}» ocultada. Muestra las sesiones ocultas desde el menú de filtros.",
+    "sessionShown": "«{{name}}» visible de nuevo.",
     "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",

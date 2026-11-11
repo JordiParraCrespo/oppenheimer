@@ -16,16 +16,19 @@ import { SidebarDragCopy } from '../components/sidebar-drag-copy';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
 import { useFoldedSessions } from '../hooks/use-folded-sessions';
 import { useHiddenProjects } from '../hooks/use-hidden-projects';
+import { usePinnedOnly } from '../hooks/use-pinned-only';
+import { useSessionFilters } from '../hooks/use-session-filters';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
   SessionSelectionContext,
   useSelecting,
   useSessionSelectionStore,
 } from '../hooks/use-session-selection';
+import { useShowHidden } from '../hooks/use-show-hidden';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { listedProjects } from '../lib/hidden-projects';
+import { listedSessions } from '../lib/hidden-sessions';
 import {
-  ALL,
   activeFilters,
   agentOptions,
   applyFilters,
@@ -34,9 +37,9 @@ import {
   isFiltered,
   projectOptions,
   repositoryOptions,
-  type SessionFilters,
+  withoutChip,
 } from '../lib/session-filters';
-import { emptyListMessage, matchesQuery, shownGroups } from '../lib/session-groups';
+import { matchesQuery, sidebarList } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';
@@ -64,10 +67,14 @@ const DeleteSessionsDialog = lazy(() =>
  * list). A refetch that fails keeps the groups and says so above them.
  *
  * Filters and search are state, not URL: the console's URL is the open
- * session, and a filter must not change which one that is.
+ * session, and a filter must not change which one that is. The filters and
+ * sort are kept on this device (`useSessionFilters`), so the list comes back
+ * narrowed the way it was left; a remembered pick the menu no longer offers
+ * reads as "all" and is forgotten. The search is not kept.
  *
  * The projects and their sessions drag into the reader's own order
- * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
+ * (`useSidebarOrder`), on the sidebar's own `DragProvider`, filtered or not:
+ * a drop keeps the places of the rows a filter or the search hides. The sessions the
  * reader pinned (`useSessionPins`), from a row's menu or by dropping it on
  * Pinned, are drawn above the projects instead of in them, still filtered
  * and searched like the rest; a project left with no session to draw is not
@@ -75,7 +82,11 @@ const DeleteSessionsDialog = lazy(() =>
  * folded on the next visit (`useFoldedGroups`), and so do the projects the
  * reader hid from the filter menu (`useHiddenProjects`): a
  * hidden project's group and sessions are not drawn, unless the project
- * filter picks it, and its pinned sessions stay pinned.
+ * filter picks it, and its pinned sessions stay pinned. Pinned only
+ * (`usePinnedOnly`), kept on this device too, draws Pinned and no project.
+ * A session hidden through the API (a bot's, a script's, or one the reader
+ * hid from its menu) is not drawn anywhere, pinned or not, until Show hidden
+ * sessions (`useShowHidden`, kept on this device) draws it, marked Hidden.
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
@@ -90,11 +101,12 @@ export function SessionsSidebarBody() {
   const navigate = useNavigate();
   const { sessions: all, projects, hosts: everyHost, error } = useSuspenseSessionsSidebar();
   const hosts = everyHost.map((host) => ({ id: host.id, name: host.name }));
-  const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
   const { folded: closed, setOpen } = useFoldedGroups();
   const list = useFoldedSessions();
   const { hidden, setShown, showAll } = useHiddenProjects();
+  const { pinnedOnly, setPinnedOnly } = usePinnedOnly();
+  const { showHidden, setShowHidden } = useShowHidden();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -115,12 +127,16 @@ export function SessionsSidebarBody() {
     agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
   };
-  const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
+  const [filters, setFilters] = useSessionFilters(options);
+  const hiddenSessions = listedSessions(all, showHidden);
+  const visible = applyFilters(hiddenSessions.sessions, filters).filter((session) =>
+    matchesQuery(session, query),
+  );
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
   const pins = useSessionPins();
   const { pinned, rest } = splitPinned(visible, pins.pins);
-  const picked = filters.project === ALL ? null : filters.project;
+  const picked = filters.project[0] ?? null;
   const listing = listedProjects(projects, rest, hidden, picked);
   const {
     groups,
@@ -131,6 +147,7 @@ export function SessionsSidebarBody() {
     projects,
     listed: listing.listed,
     sessions: listing.sessions,
+    every: applyFilters(hiddenSessions.sessions, { ...DEFAULT_FILTERS, sort: filters.sort }),
     pinned,
     pins,
     custom: filters.sort === 'custom',
@@ -138,10 +155,11 @@ export function SessionsSidebarBody() {
     onWrite: setFailure,
   });
   const occupied = new Set(listing.sessions.map((session) => session.projectId));
-  const shown = shownGroups(groups, occupied, picked);
-  const empty = emptyListMessage(t, {
+  const { shown, count, empty } = sidebarList(t, {
+    pinnedOnly,
     groups,
-    shown,
+    occupied,
+    picked,
     pinned,
     hiddenCount: listing.hiddenCount,
     narrowed,
@@ -165,7 +183,7 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          sessionCount={pinned.length + listing.sessions.length}
+          sessionCount={count}
           filters={filters}
           options={options}
           dirty={dirty}
@@ -174,13 +192,18 @@ export function SessionsSidebarBody() {
             hiddenCount: listing.hiddenCount,
             onShownChange: setShown,
             onShowAll: showAll,
+            pinnedOnly,
+            onPinnedOnlyChange: setPinnedOnly,
+            showHidden,
+            onShowHiddenChange: setShowHidden,
+            hiddenSessionCount: hiddenSessions.hiddenCount,
           }}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
           onFiltersClear={() =>
             setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
           }
-          onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+          onFacetClear={(chip) => setFilters((current) => withoutChip(current, chip))}
           onNewProject={() => dialogs.open({ kind: 'project' })}
           query={query}
           onQueryChange={setQuery}
@@ -233,7 +256,6 @@ export function SessionsSidebarBody() {
                 {pinnedRows.length > 0 || carrying ? (
                   <PinnedGroup
                     sessions={pinnedRows}
-                    narrowed={narrowed}
                     onShare={(target) =>
                       dialogs.open({ kind: 'share-session', sessionId: target.id })
                     }

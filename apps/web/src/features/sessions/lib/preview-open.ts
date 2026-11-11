@@ -22,8 +22,11 @@ export function rememberPreviewOpen(open: boolean) {
   }
 }
 
-/** The preview pane's two views (`SessionsConsole.dc.html`). */
-export type PreviewTab = 'browser' | 'simulator';
+/**
+ * The preview pane's views (`SessionsConsole.dc.html`), and the host's own
+ * desktop beside them.
+ */
+export type PreviewTab = 'browser' | 'simulator' | 'desktop';
 
 /** Which view the pane opens on, kept on this device like whether it is open. */
 const PREVIEW_TAB_KEY = 'oppenheimer.session.preview.tab';

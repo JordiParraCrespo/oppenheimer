@@ -361,6 +361,7 @@ export {
   InboxQuestionOption,
   InboxQuestionOptions,
   InboxQuestions,
+  InboxSelectionHead,
   InboxSnoozedRow,
   InboxToolbar,
 } from './components/inbox';

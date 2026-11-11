@@ -4,7 +4,7 @@ description: Start here. What Oppenheimer is, its parts (workspace, hosts, sessi
 sidebar_position: 1
 ---
 
-Oppenheimer is a browser console for running coding agents on machines you own. You connect a machine (a **host**), and Oppenheimer starts **sessions** on it: each session is a terminal on that host, usually in a fresh git worktree, with a coding agent (Claude Code, Codex, OpenCode or Grok) or a plain shell running in it. The terminal is streamed to your browser, so you can watch and type from a laptop or a phone, and the agent keeps working when you close the tab.
+Oppenheimer is a browser console for running coding agents on machines you own. You connect a machine (a **host**), and Oppenheimer starts **sessions** on it: each session is a terminal on that host, usually in a fresh git worktree, with a coding agent (Claude Code, Codex, OpenCode, Grok, Pi or Oh My Pi) or a plain shell running in it. The terminal is streamed to your browser, so you can watch and type from a laptop or a phone, and the agent keeps working when you close the tab.
 
 Around sessions sit the things that organise and automate the work: **projects** and **tasks** to plan it, **automations** that start sessions on a schedule or a GitHub event, **bots** (shown in the console as **Employees**) that you chat with and that can start and follow sessions for you, and an **Inbox** that collects everything waiting on you.
 

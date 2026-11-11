@@ -161,7 +161,7 @@ Each gets its own branch, `grok-bot-watch/<yyyy-mm-dd>-<slug>`, from
 4. Open it ready, labelled `propose` and `grok-bot-watch`, linking the
    research pull request and the row. A change to what the console shows
    carries light and dark screenshots (`/local-stack`).
-5. Never merge it. Jordi accepts it.
+5. Never merge it. The user accepts it.
 
 A row whose fix does not reach green gets no pull request; say why in the
 comment. Everything else in the table stays in the issue.

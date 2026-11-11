@@ -73,7 +73,6 @@ export {
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   useDeleteBotRoutine,
-  useMarkBotSeen,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
@@ -154,6 +153,7 @@ export {
   useDisconnectCloudAgentProvider,
   useSuspenseCloudAgentStatus,
 } from './cloud-agents.queries';
+export { useHostDesktop } from './hosts.desktop';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
@@ -170,12 +170,16 @@ export {
 } from './hosts.queries';
 export {
   inboxAnswered,
+  type PutInboxMarksVariables,
   type PutInboxMarkVariables,
   useAnswerInboxReport,
   useDeleteInboxMark,
   useInboxCount,
+  useInboxPullsShown,
   useInboxReportImages,
   usePutInboxMark,
+  usePutInboxMarks,
+  useRefreshInbox,
   useSuspenseInbox,
 } from './inbox.queries';
 export {
@@ -270,6 +274,7 @@ export {
   type MoveSessionVariables,
   type PutSessionShareVariables,
   type RenameSessionVariables,
+  type SetSessionHiddenVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
   useAnswerSessionDecision,
@@ -289,6 +294,7 @@ export {
   useSessionShare,
   useSessionStartProgress,
   useSessions,
+  useSetSessionHidden,
   useSetSessionSharePeople,
   useStartCloudSession,
   useStopSessionShare,

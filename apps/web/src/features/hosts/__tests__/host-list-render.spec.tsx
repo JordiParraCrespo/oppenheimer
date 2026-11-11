@@ -62,6 +62,12 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useRenameHost: () => ({ mutate: vi.fn(), isPending: false, error: null }),
 }));
 
+vi.mock('@oppenheimer/frontend-core/react', async (original) => ({
+  ...(await original<typeof import('@oppenheimer/frontend-core/react')>()),
+  // The row's Desktop button reads its flag; the flag's own clock is not this spec's.
+  useFeatureFlag: () => true,
+}));
+
 vi.mock('../components/host-actions-menu', () => ({ HostActionsMenu: () => null }));
 
 const MINUTE = 60_000;

@@ -23,7 +23,14 @@ import {
 import { localDate } from './time';
 
 export type ScheduleCard = Extract<TriggerInput, { source: 'schedule' }> & { key: string };
-export type GithubCard = Extract<TriggerInput, { source: 'github' }> & { key: string };
+/**
+ * `onAll`, the editor's alone and never sent: the card listens on every
+ * repository the automation has, so it follows that set as it changes.
+ */
+export type GithubCard = Extract<TriggerInput, { source: 'github' }> & {
+  key: string;
+  onAll: boolean;
+};
 export type TriggerCard = ScheduleCard | GithubCard;
 
 /**
@@ -44,24 +51,21 @@ export interface AutomationDraft {
   triggers: TriggerCard[];
 }
 
-/** The agents an automation can run: every one with a model to drive, not the blank terminal. */
+/**
+ * The agents an automation can run: the API's `automationAgentSupported`,
+ * every one with a model to drive and permission levels to set. Not the blank
+ * terminal, and not Pi, which has no approvals and so no unattended mode the
+ * API will save.
+ */
 export const AUTOMATION_AGENTS = (Object.keys(CODING_AGENTS) as CodingAgentId[]).filter(
-  (agent) => CODING_AGENTS[agent].models.length > 0,
+  (agent) =>
+    CODING_AGENTS[agent].models.length > 0 && CODING_AGENTS[agent].launch.permission !== undefined,
 );
 
 let cardSequence = 0;
 function nextKey(): string {
   cardSequence += 1;
   return `card-${cardSequence}`;
-}
-
-function projectRepositoryKeys(project: ProjectEntity | undefined): string[] {
-  return (project?.repositories ?? []).map((repository) =>
-    repositoryKey({
-      installationId: repository.installationId,
-      githubRepoId: repository.githubRepoId,
-    }),
-  );
 }
 
 /** GitHub's ids of the draft's repositories: what a GitHub card listens on. */
@@ -73,8 +77,9 @@ export function draftRepoIds(draft: Pick<AutomationDraft, 'repositoryKeys'>): nu
 }
 
 /**
- * A new automation's defaults: the project it was opened for (or the first
- * named one), all of that project's repositories, its default host and agent.
+ * A new automation's defaults: the project it was opened for, if any, with
+ * its default host and agent. No project is guessed and no repository is
+ * picked: those are the reader's to choose in Where it runs.
  */
 export function emptyDraft(
   projects: readonly ProjectEntity[],
@@ -82,14 +87,14 @@ export function emptyDraft(
   projectId: string | undefined,
 ): AutomationDraft {
   const named = projects.filter((project) => !project.isUnassigned);
-  const project = named.find((candidate) => candidate.id === projectId) ?? named[0];
+  const project = named.find((candidate) => candidate.id === projectId);
   const agent =
     project?.defaultAgent && AUTOMATION_AGENTS.includes(project.defaultAgent)
       ? project.defaultAgent
       : 'claude-code';
   return {
     projectId: project?.id ?? null,
-    repositoryKeys: projectRepositoryKeys(project),
+    repositoryKeys: [],
     place: 'host',
     hostId: project?.defaultHostId ?? hosts[0]?.id ?? null,
     agent,
@@ -114,6 +119,7 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
     model: revision.model,
     // A mail trigger belongs to a bot's routine, which this editor never opens.
     triggers: automation.triggers.flatMap((trigger): TriggerCard[] => {
+      const repositoryCount = revision.repositories.length;
       if (trigger.source === 'schedule') {
         const { id: _id, nextFireAt: _next, ...rule } = trigger;
         return [{ ...rule, key: nextKey() }];
@@ -126,6 +132,7 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
           repositories: trigger.repositories.map(Number),
           filter: trigger.filter,
           key: nextKey(),
+          onAll: trigger.repositories.length >= repositoryCount,
         },
       ];
     }),
@@ -163,6 +170,11 @@ export function scheduleCard(frequency: ScheduleFrequency, now: number, timezone
   return withFrequency({ hour: 9, minute: 0, timezone, key: nextKey() }, frequency, now);
 }
 
+/** A copy of a trigger card under its own key, for Duplicate. */
+export function duplicateCard<Card extends TriggerCard>(card: Card): Card {
+  return { ...structuredClone(card), key: nextKey() };
+}
+
 /** The filter a new card of this event starts with ("main" for a pull request's base). */
 export function defaultFilter(event: GithubEventType): TriggerFilter {
   return externalEventDefinition('github', event)?.defaultFilter ?? { op: 'any' };
@@ -175,19 +187,23 @@ export function githubCard(event: GithubEventType, repositories: number[]): Gith
     repositories,
     filter: defaultFilter(event),
     key: nextKey(),
+    onAll: true,
   };
 }
 
 /**
  * Keeps each GitHub card inside the automation's repositories after the set
- * changes: a card loses a repository that left, and a card left with none
- * listens on all of them rather than on nothing.
+ * changes: a card on all of them follows the set, a narrowed card loses a
+ * repository that left, and a card left with none listens on all of them
+ * rather than on nothing.
  */
 export function fitCards(triggers: TriggerCard[], repositories: number[]): TriggerCard[] {
   return triggers.map((card) => {
     if (card.source !== 'github') return card;
     const kept = card.repositories.filter((id) => repositories.includes(id));
-    return { ...card, repositories: kept.length ? kept : repositories };
+    return card.onAll || !kept.length
+      ? { ...card, repositories, onAll: true }
+      : { ...card, repositories: kept };
   });
 }
 
@@ -270,6 +286,10 @@ export function isAutomationAgent(agent: AutomationAgentId): agent is CodingAgen
 }
 
 function stripKey(card: TriggerCard): TriggerInput {
+  if (card.source === 'github') {
+    const { key: _key, onAll: _onAll, ...trigger } = card;
+    return trigger;
+  }
   const { key: _key, ...trigger } = card;
   return trigger;
 }

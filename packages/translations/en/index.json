@@ -323,6 +323,7 @@
       "HOSTS_007": "No file is waiting for that command.",
       "HOSTS_008": "The host is not connected, so its runner cannot be updated now. It checks for updates itself when it reconnects.",
       "HOSTS_009": "Someone else changed this host while you were saving. Reload it and try again.",
+      "HOSTS_010": "The desktop could not be opened just now. Try again in a moment.",
       "INBOX_002": "That Inbox item can’t be marked. Reload the Inbox and try again.",
       "INBOX_003": "A snooze has to end in the future. Pick a later time.",
       "INBOX_004": "That item has no mark any more. Reload the Inbox.",
@@ -922,6 +923,7 @@
         "favourites": "Favourites",
         "favouritesEmpty": "Star a model to keep it here.",
         "moreModels": "More models",
+        "configure": "Choose agents",
         "addFavourite": "Add {{model}} to favourites",
         "removeFavourite": "Remove {{model}} from favourites",
         "auto": "Auto"
@@ -1070,6 +1072,9 @@
       "pinned": "Pinned",
       "pin": "Pin",
       "unpin": "Unpin",
+      "hide": "Hide",
+      "show": "Show",
+      "hidden": "Hidden",
       "dropToPin": "Drop a session here to pin it.",
       "actions": "Session actions",
       "rename": "Rename",
@@ -1090,7 +1095,8 @@
       "selected": "Selected",
       "openAtVendor": "Opens in {{vendor}}",
       "allHidden": "Every project is hidden. Show them again from the filter menu.",
-      "noSessions": "No sessions yet. Start one with New session above."
+      "noSessions": "No sessions yet. Start one with New session above.",
+      "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -1133,6 +1139,8 @@
       "remove": "Clear filter",
       "allProjects": "All projects",
       "allRepositories": "All repositories",
+      "several_one": "{{count}} selected",
+      "several_other": "{{count}} selected",
       "allAgents": "All agents",
       "allHosts": "All hosts",
       "noMatches": "No sessions match these filters.",
@@ -1140,6 +1148,8 @@
       "shownAll": "All",
       "shownSome": "{{shown}} of {{total}}",
       "showAll": "Show all projects",
+      "pinnedOnly": "Pinned only",
+      "showHidden": "Show hidden sessions",
       "newProject": "New project…"
     },
     "sort": {
@@ -1451,7 +1461,8 @@
       "notSupportedDetail": "Update its runner to open the session's dev server here.",
       "portsFailed": "Couldn't list the session's ports",
       "previewFailed": "Couldn't open the preview",
-      "opening": "Opening localhost:{{port}}…"
+      "opening": "Opening localhost:{{port}}…",
+      "desktop": "Desktop"
     },
     "cloud": {
       "eyebrow": "Claude Code cloud",
@@ -1596,6 +1607,7 @@
         "credential": "{{provider}} refused the key or sign-in. Sending it again won't help: check it in Model providers.",
         "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
         "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
+        "context": "This turn filled {{provider}}'s context faster than it could be compacted, so it stopped: {{provider}} refused nothing. Sending it again won't help: ask it to read less at once (a smaller file, a shorter output), or split the request.",
         "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
         "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
         "stalled": "{{provider}} sent nothing for 5 minutes, so this turn stopped. This is usually temporary: try again in a moment.",
@@ -1857,8 +1869,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls",
-      "showToolCalls": "Show tool calls",
+      "hideToolCalls": "Hide tool calls and routine runs",
+      "showToolCalls": "Show tool calls and routine runs",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -2156,9 +2168,6 @@
         "title": "Routines",
         "subtitle": "Work the bot does on a schedule or when something happens.",
         "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
-        "guard": "Pause while you’re away",
-        "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
-        "guardFailed": "Could not change whether the routines pause while you’re away.",
         "askInChat": "Ask in chat",
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2294,9 +2303,6 @@
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
       "hide": "Hide from {{section}}"
-    },
-    "routineGuard": {
-      "notice": "I paused my routines while you were away. They start again when you open this chat."
     }
   },
   "automations": {
@@ -2318,6 +2324,7 @@
     "page": {
       "tabs": {
         "automations": "Automations",
+        "routines": "Bot routines",
         "runs": "Runs"
       },
       "new": "New automation",
@@ -2359,8 +2366,7 @@
       "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
       "owner_lost_access": "Paused because its owner can no longer run it.",
       "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
-      "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
+      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
     },
     "frequency": {
       "once": {
@@ -2545,6 +2551,7 @@
       "addAnother": "Add another trigger",
       "groupSchedule": "Schedule",
       "groupGithub": "GitHub",
+      "duplicateTrigger": "Duplicate trigger",
       "removeTrigger": "Remove trigger",
       "on": "on",
       "at": "at",
@@ -2559,6 +2566,7 @@
       "labelPlaceholder": "Label name",
       "anyOfRepos": "any of {{count}} repositories",
       "someRepos": "{{count}} repositories",
+      "reposToPick": "the repositories you pick",
       "reposHead": "Repositories · pick one or more",
       "atLeastOne": "At least one is required",
       "hour": "Hour",
@@ -2638,7 +2646,8 @@
     "routines": {
       "routine": "Bot routine",
       "runsOn": "Runs on {{bot}}",
-      "loadFailed": "Bot routines could not be loaded."
+      "loadFailed": "Bot routines could not be loaded.",
+      "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
     }
   },
   "pullRequests": {
@@ -3362,6 +3371,52 @@
       "wipeOffline": "{{name}} is offline, so it can’t be cleaned up from here.",
       "openTerminal": "Open terminal",
       "openTerminalTitle": "Blank terminal in ~ on {{host}}"
+    },
+    "desktop": {
+      "label": "Desktop",
+      "open": "Open desktop",
+      "title": "{{name}}’s desktop",
+      "screen": "{{name}}’s screen",
+      "watching": "Watching {{name}}",
+      "inControl": "You’re controlling {{name}}",
+      "takeControl": "Take control",
+      "releaseControl": "Stop controlling",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen",
+      "tryAgain": "Try again",
+      "connecting": "Connecting to the desktop…",
+      "connectingDetail": "The screen appears once the host has signed in to its screen-sharing server.",
+      "dropped": "Reconnecting…",
+      "droppedDetail": "The connection to the desktop dropped. Trying again.",
+      "offline": "The host is offline",
+      "offlineDetail": "The desktop comes back when the host reconnects.",
+      "ended": "This desktop is no longer yours to open",
+      "endedDetail": "The host was removed, or you can no longer use it.",
+      "refused": {
+        "DESKTOP_001": {
+          "title": "This host doesn’t share its desktop",
+          "detail": "Whether its screen can be watched and driven from here is decided on the host. To share it, run this there, then try again:"
+        },
+        "DESKTOP_002": {
+          "title": "No screen-sharing server answers on the host",
+          "detail": "Turn on Screen Sharing (on a Mac: System Settings, General, Sharing), or start a VNC server listening on 127.0.0.1:5900, then try again."
+        },
+        "DESKTOP_003": {
+          "title": "The screen-sharing server refused the host’s sign-in",
+          "detail": "Give the host the account and password the server expects: runner desktop on --username <account> --password-file <file>."
+        },
+        "DESKTOP_004": {
+          "title": "The screen-sharing server asks for a sign-in the runner can’t do",
+          "detail": "Let the server take a VNC password, or no password on the loopback, then try again."
+        },
+        "other": {
+          "title": "The desktop could not be opened",
+          "detail": "The host could not reach its screen-sharing server."
+        }
+      },
+      "pageTitle": "Desktop",
+      "pageLead": "{{name}}’s own screen, live. You watch until you take control; then your clicks and keys reach it, the same screen its agents work on.",
+      "back": "Hosts"
     }
   },
   "inbox": {
@@ -3377,7 +3432,21 @@
       "back": "Back {{when}}",
       "unread": "{{count}} unread",
       "search": "Search inbox",
+      "refresh": "Refresh",
       "clearSearch": "Clear search"
+    },
+    "selection": {
+      "label": "Selected items",
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "selectAll": "Select all",
+      "selectRow": "Select {{title}}",
+      "clear": "Clear selection",
+      "done": "Mark as done",
+      "low": "Deprioritize",
+      "restore": "Restore priority",
+      "snooze": "Snooze",
+      "delete": "Delete"
     },
     "filter": {
       "label": "Filter the Inbox",
@@ -3385,6 +3454,7 @@
       "project": "Project",
       "any": "Any",
       "showDone": "Show done",
+      "showPulls": "Show pull requests",
       "clear": "Clear filters",
       "remove": "Clear filter",
       "typeChip": "Type: {{value}}",
@@ -3409,7 +3479,8 @@
       "restore": "Restore priority",
       "snoozeHour": "Snooze 1 hour",
       "snoozeTomorrow": "Snooze until tomorrow",
-      "delete": "Delete"
+      "delete": "Delete",
+      "select": "Select"
     },
     "from": {
       "session": "Session",
@@ -3530,6 +3601,7 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "app": "Oppenheimer",
+      "agents": "Agents",
       "about": "About"
     },
     "profile": {
@@ -3914,6 +3986,12 @@
         "newLink": "New link"
       }
     },
+    "agents": {
+      "title": "Agents",
+      "hint": "Which agents New session offers on this device. A session that already runs one you hide keeps it.",
+      "show": "Show {{agent}} in New session",
+      "lastShown": "New session needs one agent to offer."
+    },
     "about": {
       "title": "About",
       "versionsHeading": "Versions",
@@ -4208,6 +4286,8 @@
     "emailResent": "Email sent again.",
     "sessionRenamed": "Renamed to “{{name}}”.",
     "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionHidden": "“{{name}}” hidden. Show hidden sessions from the filter menu.",
+    "sessionShown": "“{{name}}” shown.",
     "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",

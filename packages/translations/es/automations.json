@@ -17,6 +17,7 @@
   "page": {
     "tabs": {
       "automations": "Automatizaciones",
+      "routines": "Rutinas de bots",
       "runs": "Ejecuciones"
     },
     "new": "Nueva automatización",
@@ -58,8 +59,7 @@
     "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
     "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
     "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala.",
-    "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala.",
-    "unattended": "En pausa mientras no estabas en el chat de su bot. Vuelve a funcionar cuando abras el chat."
+    "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala."
   },
   "frequency": {
     "once": {
@@ -245,6 +245,7 @@
     "addAnother": "Añadir otro disparador",
     "groupSchedule": "Horario",
     "groupGithub": "GitHub",
+    "duplicateTrigger": "Duplicar disparador",
     "removeTrigger": "Quitar disparador",
     "on": "el",
     "at": "a las",
@@ -259,6 +260,7 @@
     "labelPlaceholder": "Nombre de la etiqueta",
     "anyOfRepos": "cualquiera de {{count}} repositorios",
     "someRepos": "{{count}} repositorios",
+    "reposToPick": "los repositorios que elijas",
     "reposHead": "Repositorios · elige uno o más",
     "atLeastOne": "Hace falta al menos uno",
     "hour": "Hora",
@@ -339,6 +341,7 @@
   "routines": {
     "routine": "Rutina de bot",
     "runsOn": "La ejecuta {{bot}}",
-    "loadFailed": "No se pudieron cargar las rutinas de los bots."
+    "loadFailed": "No se pudieron cargar las rutinas de los bots.",
+    "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
   }
 }

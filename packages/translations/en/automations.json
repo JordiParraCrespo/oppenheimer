@@ -17,6 +17,7 @@
   "page": {
     "tabs": {
       "automations": "Automations",
+      "routines": "Bot routines",
       "runs": "Runs"
     },
     "new": "New automation",
@@ -58,8 +59,7 @@
     "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
     "owner_lost_access": "Paused because its owner can no longer run it.",
     "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
-    "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
+    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
   },
   "frequency": {
     "once": {
@@ -244,6 +244,7 @@
     "addAnother": "Add another trigger",
     "groupSchedule": "Schedule",
     "groupGithub": "GitHub",
+    "duplicateTrigger": "Duplicate trigger",
     "removeTrigger": "Remove trigger",
     "on": "on",
     "at": "at",
@@ -258,6 +259,7 @@
     "labelPlaceholder": "Label name",
     "anyOfRepos": "any of {{count}} repositories",
     "someRepos": "{{count}} repositories",
+    "reposToPick": "the repositories you pick",
     "reposHead": "Repositories · pick one or more",
     "atLeastOne": "At least one is required",
     "hour": "Hour",
@@ -337,6 +339,7 @@
   "routines": {
     "routine": "Bot routine",
     "runsOn": "Runs on {{bot}}",
-    "loadFailed": "Bot routines could not be loaded."
+    "loadFailed": "Bot routines could not be loaded.",
+    "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
   }
 }

@@ -33,20 +33,17 @@ it lives.
 **A new bot.** Created blank, a bot takes the next of twenty first names
 the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
 no two with the same initial, so neighbours' avatars differ), on the next
-colour, with a `SOUL.md` that says its name and an empty
-`INSTRUCTIONS.md`. A name says who it is; the description says its job,
-and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
-its prompt carries a **Getting started** section instead (2026-10-16): take
-the job from the first message or ask for it, with examples that fit
-Oppenheimer; at most one follow-up, only for what cannot be defaulted (what
-never to do without asking, how to report); one focused job, a bot per
-unrelated job; then write `INSTRUCTIONS.md` (Job, How I work, Never without
-asking, How I report), set the description to the job, remember what it
-learned about the person, and say in two or three lines what it set up and
-the first task it could do now. The steps that need a tool are the tools'
-own (`setupStep` on the tool's spec), listed only when the turn offers the
-tool; without one that writes `INSTRUCTIONS.md` the bot drafts it for the
-person to paste in Settings. Names are given first-free, so a deleted
+colour, with a friendly, proactive `SOUL.md` that says its name
+(after OpenClaw's default, 2026-11-10) and an empty `INSTRUCTIONS.md`. The
+first name is a placeholder: a name says who it is, the description says
+its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
+its prompt carries a **Getting started** section instead (2026-10-16):
+work the first message asks for comes first, then it asks what to call it
+(2026-11-10, from OpenClaw's `BOOTSTRAP.md`), lists what it can do for
+them from the areas of tools its turn offers (2026-11-10) and learns one job, sets
+itself up and offers a first task. The steps are `gettingStarted` in
+`bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
+they are the specification, not this paragraph. Names are given first-free, so a deleted
 bot's name is the next one handed out.
 
 Postgres is the source of truth for all of it. A bot changes what it is
@@ -343,6 +340,15 @@ worker runs it and streams what happens back to the chat.
   refused, that call is stored as failed and the turn goes on; any other
   refused write ends the turn as `storage`, whose card says the fault is
   ours, not the provider's.
+- **A turn whose context filled up fails as `context`, not `refused`**
+  (2026-11-10). Claude Code ends a run whose context kept refilling right
+  after each compaction (autocompact thrashing), or that hit the window's
+  hard limit, with the error code it uses for an invalid request, so the
+  chat said the provider had refused the request and to change the message
+  or the model. The engine reads the run's `terminal_reason` instead; the
+  card says the context filled up and that the provider refused nothing,
+  and sending it again does not help (the earlier turns go back in as the
+  same transcript).
 
 ## 3. The chat
 
@@ -676,7 +682,10 @@ of `bot_memory_fact`, with two columns more:
   me Jordi", "write to me in Spanish"), and every bot that person made in
   the workspace reads it, in a section of the prompt of its own. The prompt
   names them *Your memory* and *General memory*, and one rule picks
-  between them, written once (`MEMORY_CHOICE_RULE`): `remember` carries it,
+  between them, written once (`MEMORY_CHOICE_RULE`). Every turn of a bot
+  that can remember also asks, before it replies, what it learned about the
+  person themselves, for the general memory, so each bot of theirs knows
+  them a little better (2026-11-10). `remember` carries the rule,
   the prompt points to it, and the dream reads the same text and the same
   `memory: yours | general` names: general only
   when a bot with a completely different job would need the fact; a fact
@@ -1120,7 +1129,7 @@ agent's, in a session, where Claude Code ships them.
 | `watch_pull_request` / `unwatch_pull_request` | Follow an open pull request of a repository the owner can read, so a check failing or passing, a review, a comment or the merge wakes the bot with the event's metadata, never anyone's words; a merge ends it; built 2026-11-03, note 27 §7.1. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
-| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
+| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27). The bot unblocks a session it follows with it rather than sending the person to the session, and says why it answered as it did. Under Full access every answer is the bot's, destructive ones included; under Approve for me letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, `sudo`) is a card of its own offering only that call, past every grant (2026-11-10) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
@@ -2091,6 +2100,31 @@ The decisions it produced:
   name and log, on any host and closed ones included, each session cut to
   its best 2 hits; the agents' transcripts on the hosts are not searched.
   `scripts/evals/bot-session-search` measures when a bot reaches for it.
+- 2026-11-11: **a new bot's first reply asks its name and job even after
+  work, and suggests only jobs it can do** (§1). Work the first message asks
+  for still comes first, but that reply always ends asking what to call the
+  bot and what its job is. Its job examples come from the same areas as its
+  list of what it can do (`AREA_INTROS`), so a bot that can only read hosts
+  no longer suggests running coding agents. Both were found by
+  `scripts/evals/bot-first-chat`, committed with them.
+- 2026-11-10: **a bot learns the person as it goes, and a new bot says
+  what it can do** (§1, §4.1). Before each reply a bot that can remember
+  also asks whether it learned who the person is (name, what they do for
+  a living, language, time zone, how to address them) and saves that to the
+  general memory; the choice rule is unchanged, so job facts stay its own. Getting started has it list, in the greeting, what
+  it can do for them, one phrase per area whose acting tools its turn
+  offers (an area it can only read is not promised)
+  (sessions on their computers, plan, Gmail, WhatsApp, Telegram, GitHub,
+  automations, other bots, the web), and offer to help connect those of
+  them that need connecting (a computer, Gmail, WhatsApp, Telegram, GitHub).
+- 2026-11-10: **a new bot is friendly and proactive, and asks what to
+  call it** (§1). The default `SOUL.md` was a calm colleague with no
+  exclamation marks; it is now OpenClaw's stance in our words: friendly,
+  proactive (offer or take the next step, answers before questions),
+  helpful without filler, opinionated, and honest about what finished.
+  Its given first name is a placeholder: Getting started asks the person
+  what to call it before its job, after any work the first message asks
+  for, and `update_profile` no longer says to keep the name.
 - 2026-11-10: **the skill reminder is announced, `use_skill` says whose a
   skill is, and the reminder comes after 6 calls** (§4.1, Skills). The
   skills paragraph says Oppenheimer adds one `<oppenheimer_reminder>` line
@@ -2100,3 +2134,30 @@ The decisions it produced:
   is reason enough to save, and the reminder comes after 6 tool calls, not
   8. `search_sessions` says to pass a named project's or host's id, and
   `show_session` that its button is never the answer (§4.2).
+- 2026-11-10: **a bot unblocks the sessions it follows** (§4.2,
+  `answer_session`). The owner saw a routine's bot find a session waiting on
+  a permission for a recursive delete and tell him to open the session and
+  decide it there. The needs-input wake, `get_session` and `answer_session`
+  now have the bot answer the agent itself (what the session's task and the
+  person's instructions point to, No to what goes against it) instead of
+  only what its instructions settle (2026-11-07). Letting a destructive
+  dialog through is never the bot's alone: `answer_session` escalates it to
+  a card of its own, Full access and standing grants included, so the
+  person decides it from the chat; the bot recommends an option and says
+  why. Turning one down, and every other answer, follow the bot's
+  permissions as before.
+  The rule opens with the owner's stance: a bot may approve and answer with
+  care, "a chef in this kitchen, not a waiter who carries every order back
+  to the person". `scripts/evals/bot-session-unblock` holds it: on the old
+  wording 12 of 27 runs sent the person to a session the bot could have
+  answered (Oppie's case among them); on the new one 45 of 45 runs were
+  right, the payout account and off-task deploys still left to the person
+  or turned down.
+- 2026-11-10: **the bot's preset decides who lets a destructive dialog
+  through** (§4.2, `answer_session`), replacing the same day's "never the
+  bot's alone". The owner: a bot on Full access acts on its own, always
+  with its reasoning; a bot on Approve for me asks. Under Full access
+  `answer_session` no longer escalates; under Approve for me a destructive
+  approval, or an answer to a decision that cannot be read, is still a card
+  offering only that call, past every grant. Every answer now says what the
+  session asked and why the bot answered as it did.

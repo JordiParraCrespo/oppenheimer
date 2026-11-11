@@ -15,5 +15,7 @@ Product decisions (what the product does) live in `product/README.md`,
 | Date | Question | Answer | Source |
 | --- | --- | --- | --- |
 | 2026-11-09 | Keep the user's preferences in a personal `-mode` skill? | No. Each lesson goes into the skill that owns that moment. | JordiParraCrespo/oppenheimer#779 (closed) |
-| 2026-11-09 | Name the user in `automate-me`? | No, it says "the user". | JordiParraCrespo/oppenheimer#787 |
+| 2026-11-10 | Name the user in the agent instructions (`.agents/`, `AGENTS.md`)? | No. Say "the user". | this file's pull request |
+| 2026-11-10 | Keep `automate-me`? | Not for now; removed. | this file's pull request |
 | 2026-11-09 | Ask the same question twice? | Never. Answers are recorded here. | this file's pull request |
+| 2026-11-11 | With no default repositories, how does a GitHub trigger added before any is picked work? | No default project or repository; the card listens on all picked repositories once Where it runs picks them. | this file's pull request |

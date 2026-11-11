@@ -11,7 +11,22 @@
     "back": "Vuelve {{when}}",
     "unread": "{{count}} sin leer",
     "search": "Buscar en la bandeja",
+    "refresh": "Actualizar",
     "clearSearch": "Borrar búsqueda"
+  },
+  "selection": {
+    "label": "Elementos seleccionados",
+    "count_one": "{{count}} seleccionado",
+    "count_many": "{{count}} seleccionados",
+    "count_other": "{{count}} seleccionados",
+    "selectAll": "Seleccionar todo",
+    "selectRow": "Seleccionar {{title}}",
+    "clear": "Quitar selección",
+    "done": "Marcar como hechos",
+    "low": "Bajar prioridad",
+    "restore": "Restaurar prioridad",
+    "snooze": "Posponer",
+    "delete": "Eliminar"
   },
   "filter": {
     "label": "Filtrar la bandeja",
@@ -19,6 +34,7 @@
     "project": "Proyecto",
     "any": "Cualquiera",
     "showDone": "Mostrar hechos",
+    "showPulls": "Mostrar pull requests",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
     "typeChip": "Tipo: {{value}}",
@@ -43,7 +59,8 @@
     "restore": "Restaurar prioridad",
     "snoozeHour": "Posponer 1 hora",
     "snoozeTomorrow": "Posponer hasta mañana",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "select": "Seleccionar"
   },
   "from": {
     "session": "Sesión",

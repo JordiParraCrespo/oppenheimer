@@ -16,8 +16,10 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. The script builders beside the install entries
- * (`claudeRelease`, `npmUserInstall`) are private: they only spell data.
+ * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, which this
+ * record composes. How the runner installs and updates each CLI is
+ * `host-setup.ts`, kept apart so the console, which never installs anything,
+ * does not load those scripts with the catalog.
  */
 
 import {
@@ -29,7 +31,8 @@ import {
   levels,
 } from './effort-levels.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
-import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
+import { OMP_AGENT, PI_AGENT } from './pi-family.js';
+import { TYPED_INPUT } from './typed-input.js';
 
 /**
  * Every agent id, in display order.
@@ -39,7 +42,15 @@ import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './releas
  * because the console picks it from the same engine button and the runner
  * reads the same id off `session.create`.
  */
-export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
+export const CODING_AGENT_IDS = [
+  'claude-code',
+  'codex',
+  'opencode',
+  'grok',
+  'pi',
+  'omp',
+  'shell',
+] as const;
 
 export type CodingAgentId = (typeof CODING_AGENT_IDS)[number];
 
@@ -302,62 +313,6 @@ export interface InstallMethod {
 }
 
 /**
- * Claude Code's latest native build, as `claude.ai/install.sh` finds it but
- * without running that script: the version `latest` names, that version's
- * `manifest.json`, the binary for this platform checked against the
- * manifest's SHA-256, and then the verified binary's own `claude install
- * <version>`, which puts it under `~/.local/share/claude/versions` with the
- * `~/.local/bin/claude` link. Linux tells musl from glibc and macOS an x64
- * shell under Rosetta from an Intel Mac, as the vendor's script does.
- */
-function claudeRelease(platform: ReleasePlatform): string {
-  const target =
-    platform === 'macos'
-      ? [
-          'if [ "$arch" = x64 ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ]; then arch=arm64; fi',
-          'platform="darwin-$arch"',
-        ]
-      : [
-          'if [ -f /lib/libc.musl-x86_64.so.1 ] || [ -f /lib/libc.musl-aarch64.so.1 ] || ldd /bin/ls 2>&1 | grep -q musl; then platform="linux-$arch-musl"; else platform="linux-$arch"; fi',
-        ];
-  return [
-    'set -eu',
-    'case "$(uname -m)" in x86_64|amd64) arch=x64 ;; aarch64|arm64) arch=arm64 ;; *) echo "claude: unsupported architecture $(uname -m)" >&2; exit 1 ;; esac',
-    ...target,
-    'base=https://downloads.claude.ai/claude-code-releases',
-    ...RELEASE_TEMP_DIR,
-    ...sha256Verifier(platform, 'claude'),
-    'version="$(curl -fsSL "$base/latest")"',
-    String.raw`printf '%s' "$version" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' || { echo "claude: could not read the latest version from $base/latest" >&2; exit 1; }`,
-    'curl -fsSL "$base/$version/manifest.json" -o "$tmp/manifest.json"',
-    // The platform's own object only: `[^{}]*` cannot leave it.
-    String.raw`checksum="$(tr -d ' \t\r\n' <"$tmp/manifest.json" | grep -o "\"$platform\":{[^{}]*}" | grep -o '"checksum":"[0-9a-f]*"' | cut -d '"' -f 4)"`,
-    // Before the binary's download, which is hundreds of megabytes.
-    'printf \'%s\' "$checksum" | grep -Eqx \'[0-9a-f]{64}\' || { echo "claude: the $version manifest has no checksum for $platform" >&2; exit 1; }',
-    'curl -fsSL "$base/$version/$platform/claude" -o "$tmp/claude"',
-    'verify "$tmp/claude" "$checksum"',
-    'chmod 0755 "$tmp/claude"',
-    '"$tmp/claude" install "$version" </dev/null',
-  ].join('\n');
-}
-
-/**
- * A package from the npm registry, installed under `~/.local` so the global
- * prefix is the person's own and `npm` needs no root. npm checks the tarball
- * against the registry's integrity hash before it unpacks it, and a package
- * with platform binaries (`opencode-ai`) gets them the same way, as its
- * optional dependencies. Node is a prerequisite the script names rather than
- * installs.
- */
-function npmUserInstall(pkg: string): string {
-  return [
-    'set -eu',
-    'command -v npm >/dev/null 2>&1 || { echo "npm is not on PATH; install Node.js 22 first" >&2; exit 1; }',
-    `npm install --global --prefix "$HOME/.local" ${pkg}`,
-  ].join('\n');
-}
-
-/**
  * How a message is typed into the agent's terminal by something other than
  * a person: another agent delegating work to it, or the runner on its
  * behalf. It is pasted (bracketed, when the CLI asked for that), then
@@ -375,13 +330,6 @@ export interface CodingAgentInput {
   /** How long to wait between the paste and `submit`, in milliseconds. */
   readonly pasteGapMs: number;
 }
-
-/** What every agent CLI here takes: Enter to send, Escape to interrupt, 200 ms. */
-const TYPED_INPUT: CodingAgentInput = Object.freeze({
-  submit: '\r',
-  stop: '\u001b',
-  pasteGapMs: 200,
-});
 
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
@@ -440,26 +388,6 @@ export interface CodingAgentDefinition {
    * terminal, which takes a line and Enter like any shell.
    */
   readonly input?: CodingAgentInput;
-  /**
-   * The argv, appended to `command`, that updates this CLI in place to its
-   * latest release **without asking**: the runner runs it unattended, with no
-   * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
-   *
-   * `<method>` in the argv is the install method `updateMethods` tells from
-   * the executable's path; when none matches, the runner leaves the CLI
-   * alone rather than run an updater that would stop to ask.
-   *
-   * Absent: this CLI has no updater that runs without asking (a plain
-   * shell's none), and the runner leaves it alone.
-   */
-  readonly update?: readonly string[];
-  /** What `<method>` in `update` is, by where the executable lives. */
-  readonly updateMethods?: readonly InstallMethod[];
-  /**
-   * How the runner installs this CLI when the person asks it to
-   * (`runner agents install`). Absent: it never does (a plain shell).
-   */
-  readonly install?: HostInstall;
 }
 
 const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
@@ -615,18 +543,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // session" — so this starts the TUI with the task already in it.
       prompt: Object.freeze(['<prompt>']),
     }),
-    // `claude update|upgrade`: "Check for updates and install if available",
-    // claude 2.1.284. It takes no options and asks nothing.
-    update: Object.freeze(['update']),
-    // The native build, the one Anthropic documents first: one binary in
-    // `~/.local/bin`, no Node, and it keeps itself current through `update`.
-    // Its latest release, checked against the release manifest's checksum,
-    // rather than `claude.ai/install.sh`, which would run unchecked.
-    install: Object.freeze({
-      macos: claudeRelease('macos'),
-      linux: claudeRelease('linux'),
-      bin: '~/.local/bin',
-    }),
   }),
   codex: Object.freeze({
     id: 'codex',
@@ -736,17 +652,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // non-interactive one and would give the person no terminal to take over.
       prompt: Object.freeze(['<prompt>']),
     }),
-    // `codex update`: "Update Codex to the latest version", codex-cli 0.158.0.
-    // Its options are config overrides only; it asks nothing.
-    update: Object.freeze(['update']),
-    // `@openai/codex` from npm, which is what OpenAI's README installs first
-    // and the one way that is the same on macOS and Linux. Under a `~/.local`
-    // prefix so it needs no root, and `codex update` finds it there.
-    install: Object.freeze({
-      macos: npmUserInstall('@openai/codex'),
-      linux: npmUserInstall('@openai/codex'),
-      bin: '~/.local/bin',
-    }),
   }),
   opencode: Object.freeze({
     id: 'opencode',
@@ -835,35 +740,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // `opencode [project] --prompt <text>`, which starts the TUI with the
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
-    }),
-    // `opencode upgrade` (1.18.33) asks "Install anyways?" whenever it cannot
-    // tell how it was installed, and has no flag that means "do not ask". It
-    // does take the method (`--method curl|npm|pnpm|bun|brew`), and told it,
-    // it detects nothing and asks nothing. So the runner tells it, from where
-    // the executable really lives; an OpenCode none of these match is one
-    // whose replacement is not ours to do, and it is left alone, as
-    // OpenCode's own launch-time autoupdate leaves it. `curl` is not one of
-    // them: that method runs `opencode.ai/install`, which checks nothing, so
-    // an OpenCode in `~/.opencode/bin` keeps its own autoupdate and no more.
-    // The runner's install below resolves to
-    // `~/.local/lib/node_modules/opencode-ai/`, the `npm` row, whose
-    // `npm install -g` the runner points at that `~/.local` prefix.
-    update: Object.freeze(['upgrade', '--method', '<method>']),
-    updateMethods: Object.freeze([
-      Object.freeze({ method: 'brew', pathContains: '/Cellar/' }),
-      Object.freeze({ method: 'bun', pathContains: '/.bun/' }),
-      Object.freeze({ method: 'pnpm', pathContains: '/pnpm/' }),
-      Object.freeze({ method: 'npm', pathContains: '/node_modules/' }),
-    ]),
-    // `opencode-ai` from npm rather than `opencode.ai/install`: the script
-    // checks nothing, and the GitHub releases publish no checksum for the CLI
-    // archives, while npm checks the package and the platform binary it
-    // pulls in (`opencode-<platform>`) against the registry's integrity hash,
-    // as it does Codex's and Grok's.
-    install: Object.freeze({
-      macos: npmUserInstall('opencode-ai'),
-      linux: npmUserInstall('opencode-ai'),
-      bin: '~/.local/bin',
     }),
   }),
   grok: Object.freeze({
@@ -957,18 +833,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // and exits.
       prompt: Object.freeze(['<prompt>']),
     }),
-    // `grok update`: "Check for updates or install a specific version", grok
-    // 1.0.44. Bare, it installs the latest and asks nothing.
-    update: Object.freeze(['update']),
-    // `@xai-official/grok` from npm rather than `x.ai/cli/install.sh`: the
-    // package lands in a directory this catalog can name, and the script's
-    // destination is not documented anywhere this repo can hold it to.
-    install: Object.freeze({
-      macos: npmUserInstall('@xai-official/grok'),
-      linux: npmUserInstall('@xai-official/grok'),
-      bin: '~/.local/bin',
-    }),
   }),
+  pi: PI_AGENT,
+  omp: OMP_AGENT,
   shell: Object.freeze({
     id: 'shell',
     // The design's own name for it (`product/versions/mvp/design/`).

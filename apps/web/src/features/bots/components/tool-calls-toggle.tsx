@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The wrench in a bot chat's bar that shows or hides the tool calls in the
- * transcript; lit while they are hidden, as a list header's button is while
- * it narrows the list. Props in, choice out.
+ * transcript, and the routine runs that did nothing else; lit while they are
+ * shown. Props in, choice out.
  */
 export function ToolCallsToggle({
   shown,
@@ -22,8 +22,8 @@ export function ToolCallsToggle({
       variant="quiet"
       aria-label={label}
       title={label}
-      aria-pressed={!shown}
-      data-dirty={shown ? undefined : ''}
+      aria-pressed={shown}
+      data-dirty={shown ? '' : undefined}
       onClick={() => onShownChange(!shown)}
     >
       <Wrench />

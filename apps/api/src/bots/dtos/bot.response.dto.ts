@@ -102,12 +102,6 @@ export class BotResponseDto {
   learnAutomatically!: boolean;
 
   @ApiProperty({
-    description:
-      'Whether its routines pause while its owner is away from its chat, and start again when they are back.',
-  })
-  routineSpendGuard!: boolean;
-
-  @ApiProperty({
     enum: BOT_SECTIONS,
     isArray: true,
     description:

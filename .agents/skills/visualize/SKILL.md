@@ -1,6 +1,6 @@
 ---
 name: visualize
-description: Draw a small diagram or chart when a picture explains something faster than sentences - how a design or flow works, which pull requests depend on which, a before and after, options side by side, a number over time. Mermaid for how things connect, an SVG or HTML chart for numbers, shown to Jordi in the chat or in a pull request. Use for /visualize, or when ketchup, propose or a reply needs a picture.
+description: Draw a small diagram or chart when a picture explains something faster than sentences - how a design or flow works, which pull requests depend on which, a before and after, options side by side, a number over time. Mermaid for how things connect, an SVG or HTML chart for numbers, shown to the user in the chat or in a pull request. Use for /visualize, or when ketchup, propose or a reply needs a picture.
 ---
 
 # Visualize
@@ -26,7 +26,7 @@ fact twice, in the text and the picture.
 
 - **How things connect: Mermaid** (`flowchart`, `sequenceDiagram`,
   `stateDiagram-v2`). At most six boxes, at most eight words in each,
-  labels in words a person would say ("waits for Jordi", not
+  labels in words a person would say ("waits for the user", not
   "status: PENDING").
 - **Numbers: a chart** as a self-contained SVG, or an HTML page with
   inline SVG and no external scripts. One message per chart: title it
@@ -40,7 +40,7 @@ fact twice, in the text and the picture.
 ## Show it
 
 - **In the chat:** write the file (`.mmd`, `.svg` or `.html`) in your
-  scratchpad and send it to Jordi so it renders inline, with a one-line
+  scratchpad and send it to the user so it renders inline, with a one-line
   caption.
 - **In a pull request or issue:** a fenced `mermaid` block in the body
   (GitHub draws it). A chart or screenshot goes in as an image only when

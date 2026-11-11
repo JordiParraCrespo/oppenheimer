@@ -16,7 +16,7 @@ Open **Sessions → New session**. The page is one box ("What should we work on?
 | Where it runs (one chip with the host, e.g. "mac-studio · New worktree") | **New worktree**: clone a repository onto a fresh branch. **Folder on host**: open a directory already on the host as it is; nothing is cloned. **Cloud**: Claude Code's or Codex's cloud started from a host, or Cursor's cloud (below). |
 | Host | Your hosts with their online state. An offline host is allowed: the session waits as Queued. |
 | Repositories | For a new worktree, one to five repositories, each on its own base branch. The agent starts in the first. "Manage repository access" opens the GitHub App's settings. |
-| Agent and model | Claude Code, Codex, OpenCode, Grok, or **Blank terminal** (a login shell, nothing launched). Each agent lists its models; older ones are under More models. Star a model to keep it under Favourites. |
+| Agent and model | Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, or **Blank terminal** (a login shell, nothing launched). Each agent lists its models; older ones are under More models. Star a model to keep it under Favourites. |
 | Permission level | **Ask for approval** (the agent asks before it runs anything), **Approve for me** (edits and safe commands run, the rest asks; the default), **Full access** (nothing is asked; it can change the machine unattended). Hidden for a blank terminal. |
 | Effort | How long the agent may think, where the model supports levels. |
 
@@ -30,7 +30,11 @@ A **folder session** works in your own folder, on whatever branch it is on, with
 
 ## The sidebar
 
-The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. A row's menu has **Rename**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+
+### Hidden sessions
+
+A hidden session keeps running but stays out of the sidebar. You hide one from its row's menu. A bot, a script or an agent can also start one hidden: `start_session` with `hidden` for a bot or over MCP, `opp sessions run --hidden` from the CLI. To see hidden sessions, turn on **Show hidden sessions** in the filter menu, which also counts them. They are listed with an eye-off icon, and **Show** in a row's menu brings that session back for good. Every device sees the same hidden sessions, and the toggle is kept per device.
 
 ## The state dot
 
@@ -52,7 +56,7 @@ Sessions that need input, failed, or have not started after a minute also appear
 The session pane has a bar with the name, the state, **Terminal / Chat**, the preview toggle and **Share**.
 
 - **Terminal** (the default) is the agent's real terminal. Type into it as you would locally. A plain drag selects and copies text. Paste or drop files onto it and their paths land in the agent's prompt.
-- **Chat** shows the same conversation read from the agent's transcript on the host: your messages, the agent's replies, its tool calls grouped ("read 3 files, ran 2 commands"), images it read, and files it shared. You can write to the agent and attach files from the chat's composer. Chat works for Claude Code, Codex, OpenCode and Grok; a blank terminal has none.
+- **Chat** shows the same conversation read from the agent's transcript on the host: your messages, the agent's replies, its tool calls grouped ("read 3 files, ran 2 commands"), images it read, and files it shared. You can write to the agent and attach files from the chat's composer. Chat works for Claude Code, Codex, OpenCode and Grok; Pi and Oh My Pi are terminal only for now, and a blank terminal has none.
 
 The console shows window 0, the agent's window. Extra shell windows can be made from the host with `runner sessions window`, but the console has no tab strip for them yet.
 

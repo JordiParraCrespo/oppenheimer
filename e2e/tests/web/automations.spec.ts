@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
-import { provisionedUser, signInAs } from '../../support/web';
+import { pickProjectAndRepository, provisionedUser, signInAs } from '../../support/web';
 
 /** A success toast (sonner) carrying this text. */
 const toast = (page: Page, text: string) =>
@@ -12,7 +12,8 @@ const toast = (page: Page, text: string) =>
  *
  * The rail's second list and its pages, then an automation's whole life as a
  * person drives it: made in the three-step editor, listed in the table and
- * the sidebar, run now from its page, paused and resumed, edited into its
+ * the sidebar (no project or repository picked for it until the person picks
+ * them, a trigger duplicated on its card), run now from its page, paused and resumed, edited into its
  * next revision, found on the Runs tab, duplicated, and deleted with its runs
  * kept: the copy from the table, behind a confirm, the original from its page. Only
  * GitHub is faked (`support/github-stub.ts`); the host is paired but has no
@@ -75,17 +76,29 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await expect(editor.getByRole('button', { name: 'Weekdays' })).toBeVisible();
   await expect(editor.getByRole('button', { name: '09:00' })).toBeVisible();
   await expect(editor.getByText('Next run')).toBeVisible();
-  // A GitHub card too: it listens on the project's repository.
+  // Duplicate puts a copy under it; Remove takes the copy away again.
+  await editor.getByRole('button', { name: 'Duplicate trigger' }).click();
+  await expect(editor.getByRole('button', { name: 'Weekdays' })).toHaveCount(2);
+  await editor.getByRole('button', { name: 'Remove trigger' }).last().click();
+  await expect(editor.getByRole('button', { name: 'Weekdays' })).toHaveCount(1);
+  // A GitHub card too, before any repository is picked: it waits for them.
   await editor.getByRole('button', { name: 'Add another trigger' }).click();
   await page.getByRole('menuitem', { name: /Pull request opened/ }).click();
-  await expect(editor.getByText(/Listening on xrp-mobile/)).toBeVisible();
+  await expect(editor.getByRole('button', { name: 'the repositories you pick' })).toBeVisible();
   await next.click();
 
-  // Where it runs: prefilled from the project and the paired host.
+  // Where it runs: no project or repository is guessed; the host is the paired one.
   await expect(editor.getByText('Runs on')).toBeVisible();
-  await expect(editor.getByRole('button', { name: 'Project' })).toContainText('XRP Mobile');
   await expect(editor.getByRole('button', { name: 'Host' })).toContainText('E2E box');
-  await editor.getByRole('button', { name: 'Create automation' }).click();
+  const create = editor.getByRole('button', { name: 'Create automation' });
+  await expect(editor.getByRole('button', { name: 'Project' })).not.toContainText('XRP Mobile');
+  await expect(create).toBeDisabled();
+  await pickProjectAndRepository(page, editor);
+  // The GitHub card listens on what was picked.
+  await editor.getByRole('tab', { name: /Trigger/ }).click();
+  await expect(editor.getByText(/Listening on xrp-mobile/)).toBeVisible();
+  await editor.getByRole('tab', { name: /Where it runs/ }).click();
+  await create.click();
   await expect(editor).toHaveCount(0);
 
   const row = page.getByRole('row', { name: 'Nightly audit' });

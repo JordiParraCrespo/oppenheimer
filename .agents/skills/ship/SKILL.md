@@ -1,13 +1,13 @@
 ---
 name: ship
-description: Finish a fix and merge it without asking, or merge a pull request Jordi has accepted. When it conflicts, merges its target in, resolves, reruns local CI and babysits it until it merges. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
+description: Finish a fix and merge it without asking, or merge a pull request the user has accepted. When it conflicts, merges its target in, resolves, reruns local CI and babysits it until it merges. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
 disable-model-invocation: true
 argument-hint: "[what to fix, or a pull request number]"
 ---
 
 # Ship
 
-`/ship` is Jordi's approval to merge **this one pull request**. The merge
+`/ship` is the user's approval to merge **this one pull request**. The merge
 protocol (the three labels and what each one waits for) is
 `.agents/skills/steward/SKILL.md`, "Merging"; this skill is the `ship` lane.
 
@@ -15,9 +15,9 @@ Two ways in:
 
 - **`/ship <task>`**: a fix. Do the work, then everything below.
 - **`/ship` on a `propose` pull request** (in its session, or with its
-  number): Jordi accepted it. Swap the label `propose` for `ship` and go
+  number): the user accepted it. Swap the label `propose` for `ship` and go
   to step 4; its verdict stands if the code has not changed since.
-- **`/ship` on any other open pull request**: Jordi wants it merged. Go to
+- **`/ship` on any other open pull request**: the user wants it merged. Go to
   step 4 with it as it is; one with no `PASS` gets step 3 first.
 
 ## 1. Fix it
@@ -29,7 +29,7 @@ Two ways in:
   the description as a follow-up.
 - Take the steps in the order `steward` writes down ("The order").
 
-A `/ship <task>` becomes a `/propose` (label `propose`, wait for Jordi),
+A `/ship <task>` becomes a `/propose` (label `propose`, wait for the user),
 and you say why, when the work turns out to need:
 
 - new behavior, an endpoint, a schema or a migration (it is a feature);
@@ -76,7 +76,7 @@ while GitHub computes it; read it again, it is not a conflict) and:
    unsubscribe, drop the check-in, and tell the user: the link, the merge
    commit, the verdict, what shipped, and the follow-ups.
 2. **Otherwise babysit it** per `steward`, "Babysitting" (a conflict is
-   its step 1), then back to 1. Tell Jordi what only he can clear: a
+   its step 1), then back to 1. Tell the user what only they can clear: a
    change request, a product call, a `main-red` that is not yours.
 
-Stop when it merges or closes, or when Jordi says to.
+Stop when it merges or closes, or when the user says to.

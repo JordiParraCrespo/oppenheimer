@@ -68,6 +68,10 @@ export class SessionsService {
     return this.repository.rename(id, name);
   }
 
+  setHidden(id: string, hidden: boolean): Promise<SessionEntity> {
+    return this.repository.setHidden(id, hidden);
+  }
+
   move(id: string, projectId: string): Promise<SessionEntity> {
     return this.repository.move(id, projectId);
   }

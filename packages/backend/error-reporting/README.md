@@ -23,6 +23,15 @@ behind it. With no `SENTRY_DSN` it is a no-op, so tests, local development and
 | `RunBotTurnCommandHandler` (`apps/api/src/bots-chat`) | A bot turn that threw outside the catalog, or that the engine failed without a kind (`other`) | error / warning |
 | The SDK itself | Uncaught exceptions and unhandled rejections | fatal / error |
 
+What the SDK captures from a `@Processor`'s `process()` is not sent
+(`job-attempt-event.ts`, in `beforeSend`). It wraps every processor and
+reports each throw as unhandled: each attempt BullMQ retries, and each
+`DelayedError` or `RateLimitError` a worker throws to wait. That made one job
+several issues (OPPENHEIMER-API-5). The SDK also skips a second capture of an
+object it saw, so the adapter reports a job's last failure with a fresh error
+carrying the same name, message, stack and cause
+(`JobFailureMapper.toReportedError`).
+
 Every report carries the request's correlation id (`correlation_id`), the same
 id a 5xx hands the client and every log line carries.
 

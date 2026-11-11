@@ -2,7 +2,12 @@ import { SidebarFoldLabel, SidebarListHead } from '@oppenheimer/design-system-we
 import { SidebarSearchField } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FilterOption, SessionFacet, SessionFilters } from '../lib/session-filters';
+import type {
+  FilterChipEntry,
+  FilterOption,
+  SessionFacet,
+  SessionFilters,
+} from '../lib/session-filters';
 import { SessionFilterChips } from './session-filter-chips';
 import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-menu';
 
@@ -42,10 +47,10 @@ export function SessionsSidebarHead({
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   visibility: ProjectVisibility;
-  chips: { key: SessionFacet; label: string }[];
+  chips: FilterChipEntry[];
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
-  onFacetClear: (key: SessionFacet) => void;
+  onFacetClear: (chip: FilterChipEntry) => void;
   onNewProject: () => void;
   query: string;
   onQueryChange: (query: string) => void;

@@ -1,6 +1,7 @@
 import type {
   BotConversationEntity,
   BotMessageEntity,
+  BotToolStep,
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
@@ -113,6 +114,50 @@ export function turnTrail(
     block.answer.every((message) => message.role === 'activity');
   if (toolCallsShown || !onlyRanTools) return 'full';
   return retryable ? 'retry' : 'none';
+}
+
+/**
+ * A routine's run with nothing to show while the chat hides its tool calls:
+ * the routine opened it, it completed, and all it did was run tools that
+ * left nothing the reader sees in full (a session to open, a draft). The
+ * chat leaves it out, divider and all, so a routine that checks every half
+ * hour and finds nothing does not fill the chat with its name. A run that
+ * replied, failed, was stopped or is still running stays.
+ */
+export function isQuietRoutineRun(block: ChatTurnBlock, toolCallsShown: boolean): boolean {
+  if (toolCallsShown || block.turn?.status !== 'completed') return false;
+  const byRoutine =
+    block.asked.length > 0 &&
+    block.asked.every(
+      (message) => message.event?.kind === 'routine' && message.event.activity === 'ran',
+    );
+  return (
+    byRoutine &&
+    block.answer.every(
+      (message) => message.role === 'activity' && !message.steps.some(stepShowsWithToolsHidden),
+    )
+  );
+}
+
+/**
+ * Whether a tool step made something the chat draws even while its tool
+ * calls are hidden (`BotActivity`): a session to open, a draft's card. A new
+ * thing of that kind is a line here, so a run that made one is never hidden.
+ */
+function stepShowsWithToolsHidden(step: BotToolStep): boolean {
+  return Boolean(step.sessionId || step.mailDraft);
+}
+
+/**
+ * The blocks the chat draws: all of them but a quiet routine run while the
+ * tool calls are hidden. The day and model markers are read between these,
+ * so a change that happened on a hidden run shows on the next drawn turn.
+ */
+export function visibleTurns(
+  blocks: readonly ChatTurnBlock[],
+  toolCallsShown: boolean,
+): ChatTurnBlock[] {
+  return blocks.filter((block) => !isQuietRoutineRun(block, toolCallsShown));
 }
 
 /** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */

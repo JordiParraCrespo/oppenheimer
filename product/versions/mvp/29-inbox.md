@@ -26,7 +26,7 @@ workspace has one member today (`08-auth.md`), so "workspace-wide" is
 |------|--------|----------------|---------------------|
 | **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more, the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
 | **A bot's approval** | `bot_approval` with `status = 'pending'`, at most one per bot | a bot stopped its turn on a tool the owner set to *ask* (`25-bots.md`) | **Approve / Deny** through the existing `POST /v1/bots/:id/approvals/:approvalId/decision` |
-| **A pull request for you** | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
+| **A pull request for you** (only once shown, see "Pull requests are opt-in") | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
 | **An automation that failed** | `GET /v1/automation-runs?status=failed&window=24h` | a run failed in the last day | **Run again** (`POST /v1/automations/:id/run`); **Open run** |
 
 **Order**, newest first, as a mail client lists: every kind together, by
@@ -486,3 +486,55 @@ Decided with the defaults below; each can be changed.
    workspace (`08-auth.md`) that is the owner.
 4. **A report is kept** after it is answered, with its pictures. Nothing
    sweeps them yet.
+
+## Pull requests are opt-in (2026-11-10)
+
+The agents open their pull requests under the owner's GitHub account, so
+every one of them with nothing holding it sat in the Inbox as "Merge #…",
+the owner's to merge, and buried what actually needed them. The owner
+asked for an Inbox that holds only what is stuck or waiting on an answer
+and what a bot or an agent sent: waiting and failed sessions, bots'
+approvals, reports, sessions' and bots' notices, and failed automation
+runs.
+
+- Both pull request items (a review asked of you, yours ready to merge) are
+  off by default. **Show pull requests**, in the list's filter menu beside
+  Show done, brings them back; Type offers Pull requests only while it is
+  on.
+- The choice is the reader's, kept on this device
+  (`oppenheimer.inbox.pulls`), like the sidebar's pins: a view preference,
+  not an account setting.
+- Off, the Inbox does not read the two pull request queues at all, so it
+  spends no GitHub calls on items it would not list. Every count (the
+  list's and Plan's sidebar) follows the switch at once.
+- Pull requests stay where they always were: the Pull requests page.
+
+## Bulk actions (2026-11-11)
+
+The owner asked to act on several items at once rather than one row's menu
+at a time.
+
+- **Selecting.** An open row has a checkbox in the unread dot's place, shown
+  on hover or focus, and on every row once one is checked. Shift-click picks
+  the run since the last row picked. Where there is no hover (a phone), the
+  row menu's **Select** checks that row. A done row (Show done) is not
+  selectable. The selection is the list's, for this visit: a row that leaves
+  the list (marked in another tab, filtered out) leaves it too, and Escape or
+  the bar's cross clears it.
+- **The bar.** While anything is selected, the list's head gives way to a
+  selection bar: select all (mixed while only some are), "N selected", and
+  the row menu's actions for all of them: Mark as done, Deprioritize (Restore
+  priority when every selected row is already low), Snooze 1 hour or until
+  tomorrow, and Delete. Each clears the selection.
+- **One request.** A bulk action writes the cached marks once, so every
+  row leaves on the click, then sends the whole selection to
+  `POST /v1/inbox/marks/batch` (`itemKeys`, at most 500, and a `mark`, or
+  `null` to clear each one's). The API checks every key and the snooze's
+  end before it writes any, writes every mark in one transaction, each
+  with its own event as a single put or delete would, and answers the
+  marks in force. A first cut
+  sent one request per row; the review found that "select all" on a large
+  Inbox (up to a hundred failed runs alone) ran past the default hundred
+  requests a minute and left the selection half marked.
+- On a phone a hidden checkbox takes no tap: a tap on a row opens it.
+- E and L still act on the item in the pane, not on the selection.

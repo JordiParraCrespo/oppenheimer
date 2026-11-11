@@ -1,5 +1,6 @@
 import {
   Button,
+  IconButton,
   InboxListHead,
   InboxList as InboxRows,
   InboxSnoozedRow,
@@ -8,6 +9,8 @@ import {
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
+import { RotateCwIcon } from '@oppenheimer/design-system-web/icons';
+import { useInboxPullsShown, useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
   ErrorAlert,
@@ -19,19 +22,23 @@ import {
 import { useTranslation } from 'react-i18next';
 import { InboxFilterChips } from '@/features/inbox/components/inbox-filter-chips';
 import { InboxFilterMenu } from '@/features/inbox/components/inbox-filter-menu';
+import { InboxSelectionBar } from '@/features/inbox/components/inbox-selection-bar';
 import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useInboxRead } from '@/features/inbox/hooks/use-inbox-read';
+import { useInboxSelection } from '@/features/inbox/hooks/use-inbox-selection';
 import { inboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { facetCounts } from '@/features/inbox/lib/inbox-filter';
+import type { InboxMarkActionName } from '@/features/inbox/lib/inbox-mark-actions';
 import { ALL_PROJECTS, NO_PROJECT } from '@/features/inbox/lib/inbox-search';
 import { InboxRow } from '@/features/inbox/sections/inbox-row';
 
 /**
  * The Inbox's list column (`29-inbox.md` §5, the 2026-10-29 frame): its head
- * with the unread count and the filter, the search, a mail row per item with
+ * with the unread count, Refresh and the filter, the search, a mail row per item with
  * its age (one minute tick for the list), the done ones of this visit under
- * Show done, and Snoozed with when each comes back. It reads the Inbox itself
+ * Show done, and Snoozed with when each comes back. Rows checked for a bulk
+ * action swap the head for the selection's bar. It reads the Inbox itself
  * because it draws it; the reading pane reads the same cache.
  */
 export function InboxList() {
@@ -42,6 +49,14 @@ export function InboxList() {
   const { inbox, search, open, done } = listing;
   const read = useInboxRead();
   const marks = useInboxMarks();
+  const reload = useRefreshInbox();
+  const [pullsShown, setPullsShown] = useInboxPullsShown();
+  const selection = useInboxSelection(open.map((item) => item.key));
+  const picked = open.filter((item) => selection.has(item.key));
+  const onPicked = (action: InboxMarkActionName) => {
+    marks.apply(action, picked);
+    selection.clear();
+  };
   // On a phone nothing is in the reading pane until an item is opened.
   const phone = useIsMobile();
   const current = phone && search.item === null ? null : listing.current;
@@ -100,23 +115,46 @@ export function InboxList() {
 
   return (
     <>
-      <InboxListHead
-        leading={<SidebarToggle />}
-        title={t('inbox.title')}
-        count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
-      >
-        <InboxFilterMenu
-          filter={search.filter}
-          typeCounts={counts.types}
-          projects={projectOptions}
-          showDone={search.showDone}
-          dirty={search.dirty}
-          onTypeChange={search.setType}
-          onProjectChange={search.setProject}
-          onShowDoneChange={search.setShowDone}
-          onClear={search.clear}
+      {selection.any ? (
+        <InboxSelectionBar
+          count={picked.length}
+          all={selection.all}
+          low={picked.every((item) => item.low)}
+          onToggleAll={selection.toggleAll}
+          onAction={onPicked}
+          onClear={selection.clear}
         />
-      </InboxListHead>
+      ) : (
+        <InboxListHead
+          leading={<SidebarToggle />}
+          title={t('inbox.title')}
+          count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
+        >
+          <IconButton
+            size="xs"
+            variant="quiet"
+            aria-label={t('inbox.list.refresh')}
+            title={t('inbox.list.refresh')}
+            aria-busy={reload.refreshing || undefined}
+            onClick={reload.refresh}
+          >
+            <RotateCwIcon className={reload.refreshing ? 'motion-safe:animate-spin' : undefined} />
+          </IconButton>
+          <InboxFilterMenu
+            filter={search.filter}
+            typeCounts={counts.types}
+            projects={projectOptions}
+            showDone={search.showDone}
+            pullsShown={pullsShown}
+            dirty={search.dirty}
+            onTypeChange={search.setType}
+            onProjectChange={search.setProject}
+            onShowDoneChange={search.setShowDone}
+            onPullsShownChange={setPullsShown}
+            onClear={search.clear}
+          />
+        </InboxListHead>
+      )}
       <div className="shrink-0 border-b border-border-subtle pt-2.5 pb-0.5">
         <SidebarSearchField
           value={search.query}
@@ -163,6 +201,9 @@ export function InboxList() {
                   active={active}
                   done={isDone}
                   marks={marks}
+                  selected={!isDone && selection.has(item.key)}
+                  selecting={selection.any}
+                  onSelect={(on, range) => selection.toggle(item.key, on, range)}
                 />
               );
             })}
@@ -183,7 +224,11 @@ export function InboxList() {
                   title={inboxCopy(item, t).short}
                   until={t('inbox.list.back', { when: until.format(back) })}
                   action={
-                    <Button size="xs" variant="secondary" onClick={() => marks.bringBack(item)}>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      onClick={() => marks.apply('bringBack', item)}
+                    >
                       {t('inbox.list.bringBack')}
                     </Button>
                   }

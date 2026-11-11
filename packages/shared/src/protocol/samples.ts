@@ -154,6 +154,10 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'port.open': { type: 'port.open', commandId, sessionId, attachmentId: 11, port: 5173 },
   'port.opened': { type: 'port.opened', attachmentId: 11 },
   'port.close': { type: 'port.close', attachmentId: 11 },
+  'desktop.open': { type: 'desktop.open', commandId, attachmentId: 13, control: false },
+  'desktop.opened': { type: 'desktop.opened', attachmentId: 13 },
+  'desktop.control': { type: 'desktop.control', attachmentId: 13, control: true },
+  'desktop.close': { type: 'desktop.close', attachmentId: 13 },
   'codex.environments.list': {
     type: 'codex.environments.list',
     commandId,
