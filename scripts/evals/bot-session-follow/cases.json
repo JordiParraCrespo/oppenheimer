@@ -1,0 +1,75 @@
+{
+  "now": "2026-11-10T22:50:00Z",
+  "bots": {
+    "facturas": {
+      "name": "Facturas",
+      "description": "Collects Jordi's monthly invoices and keeps the totals.",
+      "instructions": "Your job: every month, collect Jordi's invoices (ChatGPT, ElevenLabs, Higgsfield, Google Workspace, Anthropic) through coding sessions on his hosts, commit each PDF to the invoices repository, and send him the month's table with totals once every invoice is in."
+    }
+  },
+  "hosts": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "pop-os",
+      "online": true,
+      "runningSessions": 1
+    }
+  ],
+  "projects": [{ "id": "44444444-4444-4444-8444-444444444444", "name": "Invoices" }],
+  "sessions": {
+    "running": {
+      "name": "Google Workspace October invoice",
+      "task": "Download the Google Workspace invoice for October 2026 for hi@buenavibra.ai from the admin console, save it as invoices/2026-10/google-workspace.pdf, commit it and push.",
+      "log": [
+        { "at": "2026-11-10T22:30:00Z", "prompt": true },
+        { "at": "2026-11-10T22:30:20Z", "started": true },
+        { "at": "2026-11-10T22:30:40Z", "observed": "working" },
+        { "at": "2026-11-10T22:46:00Z", "note": "Signed in to the admin console; opening Billing." }
+      ]
+    },
+    "done": {
+      "name": "Google Workspace October invoice",
+      "task": "Download the Google Workspace invoice for October 2026 for hi@buenavibra.ai from the admin console, save it as invoices/2026-10/google-workspace.pdf, commit it and push.",
+      "log": [
+        { "at": "2026-11-10T22:30:00Z", "prompt": true },
+        { "at": "2026-11-10T22:30:20Z", "started": true },
+        { "at": "2026-11-10T22:30:40Z", "observed": "working" },
+        {
+          "at": "2026-11-10T22:47:00Z",
+          "result": "Saved invoices/2026-10/google-workspace.pdf (€41.40), committed it as 4f2a91c and pushed to main."
+        },
+        { "at": "2026-11-10T22:47:05Z", "observed": "idle" }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "tell-me-when-pushed",
+      "session": "running",
+      "message": "Is the Pop-os agent done with the Google Workspace invoice? Tell me when it has pushed it.",
+      "expect": { "kind": "watch" },
+      "why": "The screenshot: the agent is still working, and the person asks to hear when it pushes. Only a watch brings the bot back."
+    },
+    {
+      "id": "final-table-later",
+      "session": "running",
+      "message": "Now I only pay one ChatGPT subscription, the second one stopped in September. Send me the final October table once the Google Workspace invoice is in.",
+      "expect": { "kind": "watch" },
+      "why": "Facturas's own words: it will send the table when the invoice is in. That needs a wake when the session ends."
+    },
+    {
+      "id": "look-again-20",
+      "session": "running",
+      "message": "Look at the Google Workspace invoice session again in 20 minutes and tell me how it is going.",
+      "expect": { "kind": "check_in", "minutes": [15, 25] },
+      "why": "A time the person named: a watch with check_in_minutes near 20."
+    },
+    {
+      "id": "already-done",
+      "session": "done",
+      "message": "Did the Google Workspace invoice session finish?",
+      "expect": { "kind": "no_watch" },
+      "why": "The task already ended and was reported: nothing is left to come back to, so no watch."
+    }
+  ]
+}

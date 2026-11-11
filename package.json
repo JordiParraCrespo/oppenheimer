@@ -52,6 +52,7 @@
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
     "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
     "eval:bot-memory": "tsx scripts/evals/bot-memory/run.ts",
+    "eval:bot-session-follow": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-follow/run.ts",
     "eval:bot-session-search": "tsx scripts/evals/bot-session-search/run.ts",
     "eval:bot-session-unblock": "tsx scripts/evals/bot-session-unblock/run.ts",
     "eval:bot-skills": "tsx scripts/evals/bot-skills/run.ts",
