@@ -73,7 +73,9 @@ type linkHandler struct {
 	drives replays[link.TerminalScreen]
 	// shots answers a retried `computer.act` with the screen it already
 	// left, instead of clicking a second time.
-	shots    replays[link.ComputerScreen]
+	shots replays[link.ComputerScreen]
+	// pages answers a retried `browser.act` with the page it already left.
+	pages    replays[link.BrowserPage]
 	identity pairdomain.Identity
 	logger   *slog.Logger
 	client   linkSender
@@ -337,7 +339,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
-		link.CapabilityComputerUse,
+		link.CapabilityComputerUse, link.CapabilityBrowserUse,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -717,6 +719,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// One lane for the host: there is one mouse, so actions happen in
 			// the order they were sent.
 			h.lanes.run(laneComputer, func() { h.computerAct(h.life, m) })
+		}
+	case link.TypeBrowserAct:
+		var m link.BrowserAct
+		if msg.Decode(&m) == nil {
+			// One lane per bot's browser, so its actions keep their order
+			// and two bots never wait on each other.
+			h.lanes.run(laneBrowser+m.Browser, func() { h.browserAct(h.life, m) })
 		}
 	case link.TypeFsFind:
 		var m link.FsFind

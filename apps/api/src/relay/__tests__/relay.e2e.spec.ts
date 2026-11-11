@@ -25,6 +25,7 @@ import { HostEntity } from '../../hosts/domain/host.entity';
 import { keyFingerprint } from '../../hosts/infrastructure/host-assertion.util';
 import { InProcessLinkReplies } from '../../links/infrastructure/in-process-link-replies.adapter';
 import { InProcessLinkRegistry } from '../../links/infrastructure/link-registry.adapter';
+import { RelayHostBrowserAdapter } from '../../links/infrastructure/relay-host-browser.adapter';
 import { RelayHostComputerAdapter } from '../../links/infrastructure/relay-host-computer.adapter';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import type {
@@ -508,6 +509,65 @@ describe('the runner and the relay, end to end', () => {
       );
     },
     60_000,
+  );
+
+  // A bot's browser, from the API's port to a real Chrome on the host and
+  // back (`25-bots.md` §4.2): refused until the host's own switch is on, then
+  // a page read as refs, a click on a ref that changes it, and the browser
+  // closed. It needs Chrome or Chromium on this machine.
+  it.skipIf(!['google-chrome', 'chromium', 'chromium-browser'].some(onPath))(
+    'drives a browser of the bot’s own once the host turns it on, by the refs of the page',
+    async () => {
+      await until('the runner link', () => w.registry.find(HOST), 30_000);
+      const site = createServer((_request, response) => {
+        response.setHeader('content-type', 'text/html');
+        response.end(
+          '<!doctype html><title>Counter</title><p id="n">clicked 0 times</p>' +
+            '<button onclick="n.innerText = \'clicked 1 time\'">Add one</button>',
+        );
+      });
+      await new Promise<void>((r) => site.listen(0, '127.0.0.1', () => r()));
+      const url = `http://127.0.0.1:${(site.address() as AddressInfo).port}/`;
+      const browser = new RelayHostBrowserAdapter(w.registry, w.replies);
+      try {
+        await expect(
+          browser.act(HOST, { browser: 'juno', action: 'open', url }),
+        ).resolves.toMatchObject({ kind: 'failed', code: 'BROWSER_001' });
+
+        // What `runner browser on` writes; read on every action, so no restart.
+        writeFileSync(join(w.home, 'browser.json'), '{"enabled":true}\n', { mode: 0o600 });
+        await expect(
+          browser.act(HOST, { browser: 'juno', action: 'open', url: 'file:///etc/passwd' }),
+        ).resolves.toMatchObject({ kind: 'failed', code: 'BROWSER_003' });
+
+        const opened = await browser.act(HOST, {
+          browser: 'juno',
+          action: 'open',
+          url,
+          picture: true,
+        });
+        if (opened.kind !== 'page') throw new Error(`no page: ${JSON.stringify(opened)}`);
+        expect(opened.page).toMatchObject({ url, title: 'Counter' });
+        const button = opened.page.elements?.find((element) => element.name === 'Add one');
+        expect(button).toMatchObject({ role: 'button' });
+        // A JPEG of the page, small enough for one frame of the link.
+        const image = Buffer.from(opened.page.image ?? '', 'base64');
+        expect(image.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+        expect(image.length).toBeLessThanOrEqual(256 * 1024);
+
+        await browser.act(HOST, { browser: 'juno', action: 'click', ref: button?.ref });
+        const read = await browser.act(HOST, { browser: 'juno', action: 'read' });
+        if (read.kind !== 'page') throw new Error(`no page: ${JSON.stringify(read)}`);
+        expect(read.page.text).toContain('clicked 1 time');
+
+        await expect(
+          browser.act(HOST, { browser: 'juno', action: 'close' }),
+        ).resolves.toMatchObject({ kind: 'page', page: { closed: true } });
+      } finally {
+        await new Promise<void>((r) => site.close(() => r()));
+      }
+    },
+    90_000,
   );
 
   it('removed with a clean-up, closes the stopped session and deletes its worktree', async () => {

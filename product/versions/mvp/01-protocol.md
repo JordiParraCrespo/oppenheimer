@@ -364,6 +364,24 @@ runner does with it and point back.
   call) is answered with the screen it left, not done twice. Sent only to a
   runner whose `hello` names `computer.use`, and waited on for the action's
   own wait and 60 seconds more.
+- `browser.act` and `browser.page` — a bot driving a browser of its own on a
+  host (2026-11-11, `25-bots.md` §4.2, "Using a browser"): `{ commandId,
+  browser, action, url?, ref?, x?, y?, scrollY?, text?, keys?, seconds?,
+  picture? }`, where `browser` names whose it is (one per bot) and `action`
+  is one of `open`, `read`, `screenshot`, `click`, `type`, `key`, `scroll`,
+  `back`, `wait`, `close`. The runner answers `{ url, title, elements?,
+  moreElements?, text?, textTruncated?, image?, closed? }`: the visible
+  things one can act on, at most 150, each `{ ref, role, name, value? }`
+  with a ref good until the page changes; the page's text (its first 24 KB)
+  on a `read`; and a base64 JPEG of the 1280 by 800 page when `picture` asked
+  for one. Together they fit one frame. Or `command.failed`: `BROWSER_001`
+  the host's `runner browser` switch is off, `BROWSER_002` no browser is
+  installed, `BROWSER_003` the action does not fit (a ref the page no longer
+  has, an address that is not http or https, an action before any `open`),
+  `BROWSER_004` the browser or the page failed, `BROWSER_005` its setting
+  cannot be read. One lane per browser, a retried command id answered with
+  the page it left. Sent only to a runner whose `hello` names `browser.use`,
+  and waited on for the action's own wait and 75 seconds more.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/computerpolicy"
 	hostfake "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/fake"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/policyfile"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -28,13 +28,13 @@ const computerCommandID = "44444444-4444-4444-8444-444444444444"
 type computerHarness struct {
 	h       *linkHandler
 	sent    *capturedLink
-	policy  computerpolicy.File
+	policy  policyfile.Computer
 	desktop *hostfake.Desktop
 }
 
 func newComputerHarness(t *testing.T, desktop *hostfake.Desktop) *computerHarness {
 	t.Helper()
-	policy := computerpolicy.File{Path: filepath.Join(t.TempDir(), "computer.json")}
+	policy := policyfile.Computer{Path: filepath.Join(t.TempDir(), "computer.json")}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	sent := &capturedLink{}
 	h := &linkHandler{

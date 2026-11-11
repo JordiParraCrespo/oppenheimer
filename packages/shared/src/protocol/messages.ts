@@ -228,6 +228,12 @@ export const RUNNER_CAPABILITIES = [
    * "Using a computer").
    */
   'computer.use',
+  /**
+   * Answers `browser.act` with `browser.page`: a bot drives a browser of its
+   * own on this host, when the person on the host turned that on with `runner
+   * browser on` (`product/versions/mvp/25-bots.md` §4.2, "Using a browser").
+   */
+  'browser.use',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1132,6 +1138,119 @@ export const computerScreenSchema = z.object({
 
 export type ComputerScreenMessage = z.infer<typeof computerScreenSchema>;
 
+/** What one `browser.act` does before the page is read. */
+export const BROWSER_ACTIONS = [
+  'open',
+  'read',
+  'screenshot',
+  'click',
+  'type',
+  'key',
+  'scroll',
+  'back',
+  'wait',
+  'close',
+] as const;
+export type BrowserAction = (typeof BROWSER_ACTIONS)[number];
+
+/** The longest address `browser.act` opens. */
+export const BROWSER_URL_MAX = 2_048;
+
+/** The width and height of the browser's page, in pixels: the picture `browser.page` carries. */
+export const BROWSER_VIEWPORT_WIDTH = 1_280;
+export const BROWSER_VIEWPORT_HEIGHT = 800;
+
+/** The most elements `browser.page` lists, each with a ref a later `browser.act` may name. */
+export const BROWSER_ELEMENTS_MAX = 150;
+
+/** How much of a page's text `browser.page` carries: its first bytes. */
+export const BROWSER_TEXT_MAX_BYTES = 24_576;
+
+/** An element's ref in `browser.page`, as a later `browser.act` names it. */
+export const BROWSER_REF_PATTERN = /^e[1-9][0-9]{0,3}$/;
+
+/**
+ * Drive a browser of the bot's own on this host
+ * (`product/versions/mvp/25-bots.md` §4.2, "Using a browser"). `browser`
+ * names it: one per bot, started on its first `open` with a profile of its
+ * own under the runner home, never the person's. The runner does `action`
+ * and answers with the page:
+ *
+ * - `open` goes to `url` (http or https); `back` goes back one page; `close`
+ *   ends the browser and answers with no page.
+ * - `read` lists the page's elements and text; `screenshot` pictures it;
+ *   `wait` waits `seconds` first. Neither changes the page.
+ * - `click` clicks the element `ref` names (from the last `browser.page`),
+ *   or the point (`x`, `y`) of the last picture.
+ * - `type` types `text` into the element `ref` names, or where the focus is;
+ *   `key` presses each of `keys`, in `COMPUTER_KEY_PATTERN`'s grammar.
+ * - `scroll` turns the wheel `scrollY` notches down (negative is up).
+ *
+ * `picture` asks for a JPEG of the page with the answer. The host decides:
+ * it acts only when the person there ran `runner browser on`, and only where
+ * Chrome or Chromium is installed. Sent only to a runner whose `hello` named
+ * `browser.use`; answered by `browser.page` with the same `commandId`, or by
+ * `command.failed` (`BROWSER_001` it is off on this host, `BROWSER_002` no
+ * browser is installed, `BROWSER_003` the action does not fit, `BROWSER_004`
+ * the browser or the page failed, `BROWSER_005` the host's setting cannot be
+ * read).
+ */
+export const browserActSchema = z.object({
+  type: z.literal('browser.act'),
+  commandId: commandIdSchema,
+  browser: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/),
+  action: z.enum(BROWSER_ACTIONS),
+  url: z.string().min(1).max(BROWSER_URL_MAX).optional(),
+  ref: z.string().regex(BROWSER_REF_PATTERN).optional(),
+  x: z.number().int().min(0).max(BROWSER_VIEWPORT_WIDTH).optional(),
+  y: z.number().int().min(0).max(BROWSER_VIEWPORT_HEIGHT).optional(),
+  scrollY: z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX).optional(),
+  text: z.string().min(1).max(COMPUTER_TEXT_MAX).optional(),
+  keys: z.array(z.string().regex(COMPUTER_KEY_PATTERN)).min(1).max(COMPUTER_KEYS_MAX).optional(),
+  seconds: z.number().int().min(0).max(COMPUTER_WAIT_MAX_SECONDS).optional(),
+  picture: z.boolean().optional(),
+});
+
+export type BrowserActMessage = z.infer<typeof browserActSchema>;
+
+/** One thing on the page a bot can act on: a link, a button, a field. */
+export const browserElementSchema = z.object({
+  ref: z.string().regex(BROWSER_REF_PATTERN),
+  /** What it is: `link`, `button`, `textbox`, `checkbox`, `select`, … */
+  role: z.string().max(32),
+  /** What it says, or what it is labelled. */
+  name: z.string().max(200),
+  /** What a field holds now, when it holds something. */
+  value: z.string().max(200).optional(),
+});
+
+/**
+ * The page after a `browser.act`: where it is, what can be acted on, and
+ * what it says. `elements` are the visible links, buttons and fields, at most
+ * `BROWSER_ELEMENTS_MAX`, each with a `ref` good until the page changes;
+ * `text` is the page's visible text, its first `BROWSER_TEXT_MAX_BYTES`, on a
+ * `read`. `image` is a base64 JPEG of `BROWSER_VIEWPORT_WIDTH` by
+ * `BROWSER_VIEWPORT_HEIGHT` pixels when the act asked for a picture. After
+ * `close` only `closed` is set.
+ */
+export const browserPageSchema = z.object({
+  type: z.literal('browser.page'),
+  commandId: commandIdSchema,
+  url: z.string().max(BROWSER_URL_MAX),
+  title: z.string().max(300),
+  elements: z.array(browserElementSchema).max(BROWSER_ELEMENTS_MAX).optional(),
+  moreElements: z.boolean().optional(),
+  text: z.string().optional(),
+  textTruncated: z.boolean().optional(),
+  image: z
+    .string()
+    .max(Math.ceil(COMPUTER_SCREENSHOT_MAX_BYTES / 3) * 4)
+    .optional(),
+  closed: z.boolean().optional(),
+});
+
+export type BrowserPageMessage = z.infer<typeof browserPageSchema>;
+
 /**
  * Find folders under one directory by name, for the folder picker's search
  * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
@@ -1489,6 +1608,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   terminalScreenSchema,
   computerActSchema,
   computerScreenSchema,
+  browserActSchema,
+  browserPageSchema,
   attachmentDirectOfferSchema,
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,

@@ -1562,6 +1562,161 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "browser.act"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "browser": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "open",
+            "read",
+            "screenshot",
+            "click",
+            "type",
+            "key",
+            "scroll",
+            "back",
+            "wait",
+            "close"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "ref": {
+          "type": "string",
+          "pattern": "^e[1-9][0-9]{0,3}$"
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1280
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 800
+        },
+        "scrollY": {
+          "type": "integer",
+          "minimum": -50,
+          "maximum": 50
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "keys": {
+          "minItems": 1,
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?:(?:ctrl|alt|shift|cmd)\\+){0,4}(?:[a-z0-9]|f(?:[1-9]|1[0-2])|enter|tab|escape|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown)$"
+          }
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "picture": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "browser",
+        "action"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "browser.page"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "elements": {
+          "maxItems": 150,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string",
+                "pattern": "^e[1-9][0-9]{0,3}$"
+              },
+              "role": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "value": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "ref",
+              "role",
+              "name"
+            ]
+          }
+        },
+        "moreElements": {
+          "type": "boolean"
+        },
+        "text": {
+          "type": "string"
+        },
+        "textTruncated": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 349528
+        },
+        "closed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "url",
+        "title"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "attachment.direct.offer"
         },
         "attachmentId": {
@@ -3197,7 +3352,8 @@
       "transcript.read",
       "host.exec",
       "terminal.drive",
-      "computer.use"
+      "computer.use",
+      "browser.use"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

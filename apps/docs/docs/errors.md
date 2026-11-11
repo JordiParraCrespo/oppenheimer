@@ -1271,6 +1271,11 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `COMPUTER_003` <a id="computer_003" /> | The action does not fit the screen           | 400  |
 | `COMPUTER_004` <a id="computer_004" /> | The screen could not be read or used         | 424  |
 | `COMPUTER_005` <a id="computer_005" /> | The host's computer setting cannot be read   | 500  |
+| `BROWSER_001` <a id="browser_001" />   | Browsers for bots are off on this host       | 403  |
+| `BROWSER_002` <a id="browser_002" />   | This host has no browser the runner can start | 424 |
+| `BROWSER_003` <a id="browser_003" />   | The action does not fit the page             | 400  |
+| `BROWSER_004` <a id="browser_004" />   | The browser or the page failed               | 424  |
+| `BROWSER_005` <a id="browser_005" />   | The host's browser setting cannot be read    | 500  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |

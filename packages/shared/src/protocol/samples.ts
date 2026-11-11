@@ -324,6 +324,25 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     height: 800,
     display: ':99',
   },
+  'browser.act': {
+    type: 'browser.act',
+    commandId,
+    browser: 'juno-3f2a',
+    action: 'click',
+    ref: 'e7',
+    picture: true,
+  },
+  'browser.page': {
+    type: 'browser.page',
+    commandId,
+    url: 'https://example.com/pricing',
+    title: 'Pricing',
+    elements: [
+      { ref: 'e1', role: 'link', name: 'Home' },
+      { ref: 'e2', role: 'textbox', name: 'Email', value: 'jordi@example.com' },
+      { ref: 'e3', role: 'button', name: 'Start free trial' },
+    ],
+  },
   'transcript.page': {
     type: 'transcript.page',
     commandId,

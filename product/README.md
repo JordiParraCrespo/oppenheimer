@@ -1380,6 +1380,12 @@ earlier note:
   through the runner, on a Mac's own desktop or a Linux X display (a virtual
   one where there is none), only after `runner computer on` on that host.
   Nothing runs on the control plane, which is what §2 was protecting.
+- `versions/mvp/25-bots.md` gave a bot the web through fetching a public
+  page only. On 2026-11-11 the owner asked for browser use beside computer
+  use: `use_browser` drives a browser of the bot's own on a host through the
+  runner, reading a page as elements with refs and acting on a ref, only
+  after `runner browser on` on that host. Fetching stays for a public page a
+  bot only reads.
 - `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
   "about the person (their name, their role, their preferences)", read by
   all their bots. Bots filed their job there: Facturas read another bot's

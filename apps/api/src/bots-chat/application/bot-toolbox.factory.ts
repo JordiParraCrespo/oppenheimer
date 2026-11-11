@@ -17,6 +17,7 @@ import {
 import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
+import { BotBrowserToolsFactory } from './bot-browser-tools.factory';
 import { BotComputerToolsFactory } from './bot-computer-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
@@ -72,6 +73,7 @@ export class BotToolboxFactory {
     hostCommands: BotHostCommandToolsFactory,
     terminals: BotTerminalToolsFactory,
     computers: BotComputerToolsFactory,
+    browsers: BotBrowserToolsFactory,
     sessionFiles: BotSessionFileToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
@@ -108,6 +110,7 @@ export class BotToolboxFactory {
       hostCommands,
       terminals,
       computers,
+      browsers,
       sessionFiles,
       watches,
       plan,

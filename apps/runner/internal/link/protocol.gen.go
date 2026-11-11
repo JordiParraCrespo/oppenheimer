@@ -109,6 +109,7 @@ const (
 	CapabilityHostExec              = "host.exec"
 	CapabilityTerminalDrive         = "terminal.drive"
 	CapabilityComputerUse           = "computer.use"
+	CapabilityBrowserUse            = "browser.use"
 )
 
 // The `type` of every message on the link.
@@ -151,6 +152,8 @@ const (
 	TypeTerminalScreen          = "terminal.screen"
 	TypeComputerAct             = "computer.act"
 	TypeComputerScreen          = "computer.screen"
+	TypeBrowserAct              = "browser.act"
+	TypeBrowserPage             = "browser.page"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -232,6 +235,8 @@ var MessageTypes = []string{
 	TypeTerminalScreen,
 	TypeComputerAct,
 	TypeComputerScreen,
+	TypeBrowserAct,
+	TypeBrowserPage,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -353,6 +358,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(ComputerAct), true
 	case TypeComputerScreen:
 		return new(ComputerScreen), true
+	case TypeBrowserAct:
+		return new(BrowserAct), true
+	case TypeBrowserPage:
+		return new(BrowserPage), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -865,6 +874,45 @@ type ComputerScreen struct {
 	Width     int    `json:"width"`
 	Height    int    `json:"height"`
 	Display   string `json:"display,omitempty"`
+}
+
+// BrowserAct is the `browser.act` message.
+type BrowserAct struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Browser   string   `json:"browser"`
+	Action    string   `json:"action"`
+	URL       string   `json:"url,omitempty"`
+	Ref       string   `json:"ref,omitempty"`
+	X         int      `json:"x,omitempty"`
+	Y         int      `json:"y,omitempty"`
+	ScrollY   int      `json:"scrollY,omitempty"`
+	Text      string   `json:"text,omitempty"`
+	Keys      []string `json:"keys,omitempty"`
+	Seconds   int      `json:"seconds,omitempty"`
+	Picture   bool     `json:"picture,omitempty"`
+}
+
+// BrowserPage is the `browser.page` message.
+type BrowserPage struct {
+	Type          string                `json:"type"`
+	CommandID     string                `json:"commandId"`
+	URL           string                `json:"url"`
+	Title         string                `json:"title"`
+	Elements      []BrowserPageElements `json:"elements,omitempty"`
+	MoreElements  bool                  `json:"moreElements,omitempty"`
+	Text          string                `json:"text,omitempty"`
+	TextTruncated bool                  `json:"textTruncated,omitempty"`
+	Image         string                `json:"image,omitempty"`
+	Closed        bool                  `json:"closed,omitempty"`
+}
+
+// BrowserPageElements is BrowserPage.Elements.
+type BrowserPageElements struct {
+	Ref   string `json:"ref"`
+	Role  string `json:"role"`
+	Name  string `json:"name"`
+	Value string `json:"value,omitempty"`
 }
 
 // AttachmentDirectOffer is the `attachment.direct.offer` message.

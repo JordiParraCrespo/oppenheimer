@@ -89,6 +89,8 @@ From the host you can install more later: `oppenheimer-runner agents install cla
 
 A bot can look at a host's screen and use its mouse and keyboard, only after you run `runner computer on` on that host. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
 
+A bot can also drive a browser of its own on a host, only after `runner browser on` there: [Bots using a browser](./browser-use.md).
+
 ## Updates
 
 The runner keeps itself on the current signed release. It checks at boot and every six hours, then waits for a quiet moment (no agent working, no terminal attached) for up to 24 hours before updating; urgent updates apply within 15 minutes. A new version that will not stay up is rolled back automatically. Sessions keep running through an update; open terminals reconnect in a few seconds.

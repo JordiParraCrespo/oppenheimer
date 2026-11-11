@@ -91,6 +91,25 @@ type ComputerPolicies interface {
 	Save(domain.ComputerPolicy) error
 }
 
+// BrowserPolicies is where the host keeps whether bots may drive a browser
+// on it: a file only the person on the host writes (`runner browser`). Load
+// answers the default, off, when nothing was ever saved.
+type BrowserPolicies interface {
+	Load() (domain.BrowserPolicy, error)
+	Save(domain.BrowserPolicy) error
+}
+
+// Browsers is the bots' browsers on this host: one each, started on a bot's
+// first open and kept between its actions. A host with no browser to start
+// answers an error that wraps domain.ErrNoBrowser; a ref the page no longer
+// has, domain.ErrBrowserRef; an action before any page, domain.ErrBrowserNotOpen.
+type Browsers interface {
+	// Act does one action and answers with the page after it.
+	Act(ctx context.Context, req domain.BrowserRequest) (domain.BrowserPage, error)
+	// Available says which browser would be started, or why none can be.
+	Available() (string, error)
+}
+
 // Desktop is the host's screen, mouse and keyboard. A host with none it can
 // reach answers an error that wraps domain.ErrNoScreen, with what is missing;
 // any other error is a screen that is there and could not be read or used.

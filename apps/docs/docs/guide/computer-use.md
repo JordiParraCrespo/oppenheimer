@@ -6,6 +6,8 @@ sidebar_position: 5.5
 
 A bot can use a computer the way a person sitting at it does: look at the screen, move the mouse, click, type and press keys. The computer is one of your [hosts](./hosts.md), and the bot reaches it through that host's runner. It is for work that only has a graphical interface: an app, a simulator, a website that needs a real browser. It is off on every host until you turn it on there.
 
+For websites, a bot's own browser is faster and more exact, and does not touch your screen: [Bots using a browser](./browser-use.md).
+
 ## Turning it on
 
 On the host itself, in a terminal:

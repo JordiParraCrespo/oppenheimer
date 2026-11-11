@@ -99,6 +99,10 @@ const INTEGER_TYPES = {
   'computer.act.seconds': 'int',
   'computer.screen.width': 'int',
   'computer.screen.height': 'int',
+  'browser.act.x': 'int',
+  'browser.act.y': 'int',
+  'browser.act.scrollY': 'int',
+  'browser.act.seconds': 'int',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */

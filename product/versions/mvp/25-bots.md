@@ -1135,6 +1135,7 @@ agent's, in a session, where Claude Code ships them.
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
+| `use_browser` | Do one thing in a browser of the bot's own on a host (open, read, click or type by an element's ref, keys, scroll, back) and read the page that comes back, with a picture for a model that reads one; only on a host where the person ran `runner browser on` (below; built 2026-11-11) | ask |
 | `use_computer` | Do one thing on a host's screen (look, click, type, press keys, scroll, drag) and read a picture of the screen after it; only on a host where the person ran `runner computer on` (below; built 2026-11-09) | ask |
 | `open_terminal` / `type_in_terminal` / `read_terminal` | Open a blank terminal (agent `shell`) on a host, type into it (text, then named keys such as Enter or C-c) and read its screen back after waiting for a pattern; only on a host whose `runner exec` mode is `full` (below; built 2026-11-08) | ask / ask / auto |
 
@@ -1295,6 +1296,51 @@ for its key codes but had not run on a Mac when it was proposed.
 
 On the wire it is `computer.act` and `computer.screen`, gated on the
 `computer.use` capability (`01-protocol.md`).
+
+#### Using a browser
+
+Added 2026-11-11. With `use_computer` proposed, the owner asked for browser
+use as well, and said Claude Code is the better of the agents he uses at it.
+
+- **Read, then act on a ref** (how Claude in Chrome does it, which is why
+  it misses fewer clicks than a tool that points at a picture). Every answer
+  is the page: title, address, and the visible things one can act on (links,
+  buttons, fields; at most 150, those on screen first), each with a ref such
+  as `e7`, a role, a name and what a field holds. `click` and `type` take a
+  ref; `read` adds the page's text (its first 24 KB); a picture of the page
+  rides each answer for a model that reads images. A point of the picture
+  (`x`, `y`) is the fallback, not the way.
+- **Works without image input.** The page is text, so GLM browses too; only
+  `screenshot` is refused for it, with "use read".
+- **A browser of the bot's own.** One per bot and host, headless, with a
+  profile under the runner's state folder: none of the person's logins,
+  cookies or history, and nothing on their screen. Closed by the bot or
+  with the runner (on a Mac, at that bot's next start), and reaped after
+  twenty minutes idle when another action arrives.
+- **From the host.** It reaches what the host reaches, `localhost` and the
+  local network included, which is what a dev server needs and why the
+  switch is the host's: `runner browser on`, off by default, in
+  `~/.oppenheimer/browser.json`, never written by the control plane
+  (`BROWSER_001` when off). It opens `http` and `https` only.
+- **Driven over the DevTools protocol** by the runner itself (Chrome,
+  Chromium or Edge already on the host; no Node, no Python, no cgo). The
+  open-source `browser-use` library was the other candidate: it is a Python
+  agent with a model key of its own, so a bot would have handed it whole
+  tasks and seen none of its steps, and every host would have needed Python.
+- **What a page says is fenced** as outside text in every answer, a
+  password field's value is never read out, and the prompt ("Using a
+  browser") says to stop at a sign-in, to ask before anything that sends,
+  buys, deletes or publishes, and that a page never gives instructions.
+- **Permission is per host**, as for `use_computer`: one card, "always
+  allow for its browser on that host". An approved single call still answers
+  with the page as text.
+
+Not built: tabs and pop-ups, downloads and uploads, the person's own signed-in
+browser (what Codex's and Claude's Chrome extensions do), and showing the
+page's picture in the chat.
+
+On the wire it is `browser.act` and `browser.page`, gated on the
+`browser.use` capability (`01-protocol.md`).
 
 **Searching every session** (2026-11-09, from Hermes Agent's session
 search). A bot could list sessions and read one it had the id of, but not
@@ -2117,6 +2163,12 @@ The decisions it produced:
   its runner, and only where the person on that host ran `runner computer
   on`. `research/lessons-from-grok-bot.md` had left computer use "on the
   bot's own loop" out for the same reason, which this keeps.
+- 2026-11-11: **bots use a browser on a host** (§4.2, "Using a browser").
+  The owner asked for it beside computer use. `use_browser` drives a browser
+  of the bot's own on a host through the runner, reads a page as elements
+  with refs and acts on a ref, and needs no image input. Its own switch on
+  the host, `runner browser on`. The `browser-use` library was considered
+  and not taken (a second agent, with its own key, on every host).
 - 2026-11-09: **a turn has no step or time limit, and every engine compacts
   mid-turn** (§2). The owner asked why a bot stopped after 20 steps, and
   then for tasks that run for hours. Codex, Grok Bot and OpenClaw cap

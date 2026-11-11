@@ -97,6 +97,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return execPolicy(ctx, args)
 	case "computer":
 		return computerPolicy(ctx, args)
+	case "browser":
+		return browserPolicy(ctx, args)
 	case "desktop":
 		return desktopSharing(ctx, args)
 	case "credential-helper":
@@ -327,6 +329,21 @@ func tools(ctx context.Context, args []string) (int, error) {
 	usage(os.Stderr)
 	return cli.ExitUsage, errors.New("usage: runner tools [ls] | runner tools install <" +
 		strings.Join(hostdomain.Installable(hostdomain.InstallTool), "|") + ">")
+}
+
+// browserPolicy dispatches `runner browser`: whether bots may drive a
+// browser of their own on this host. Set here and nowhere else.
+func browserPolicy(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.BrowserShow(os.Stdout) })
+	case len(args) == 1 && (args[0] == "on" || args[0] == "off"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error {
+			return app.BrowserSet(os.Stdout, args[0] == "on")
+		})
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner browser [status] | runner browser on | runner browser off")
 }
 
 // computerPolicy dispatches `runner computer`: whether bots may use this
@@ -651,6 +668,9 @@ func usage(w *os.File) {
   runner exec allow <program|/abs/path|/abs/glob/*>...
   runner exec deny <entry>...     add or remove programs on the allowlist; bots run them with argv
                                   (no shell) in ~/oppenheimer/bots/<bot> unless they name a folder
+  runner browser [status]         whether bots may drive a browser of their own on this host (off
+                                  unless you say so), and the browser they would get
+  runner browser on|off           turn it on or off; each bot gets its own profile, never yours
   runner computer [status]        whether bots may see this host's screen and use its mouse and
                                   keyboard (off unless you say so), and the screen they would use
   runner computer on|off          turn it on or off; on a Mac, also allow the runner under Screen
