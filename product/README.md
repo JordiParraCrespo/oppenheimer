@@ -1536,3 +1536,9 @@ earlier note:
   reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
   owner asked for the text first: the block opens on Raw, Raw / Tree on its
   band, the tree one click away. A tool result's JSON still reads as a tree.
+- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+  the visit only: a reload came back unfiltered. On 2026-11-11 the owner
+  asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
+  stick"): the facets and the sort are kept on the device, not the
+  account, since a filter is the reader's view; a remembered pick the menu
+  no longer offers reads as all and is forgotten.

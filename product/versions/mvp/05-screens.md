@@ -35,7 +35,9 @@
   session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
   the header (since 2026-11-10 the Repository facet takes several
-  repositories, a chip each, and lists a session with any of them); the account menu at the bottom with appearance, language
+  repositories, a chip each, and lists a session with any of them; since
+  2026-11-11 the filters and sort stick on this device, like Plan's, and a
+  remembered pick the menu no longer offers reads as all); the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists — Sessions and Automations, both links, the one under
