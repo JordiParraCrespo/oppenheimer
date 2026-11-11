@@ -36,9 +36,10 @@ export function storedSessionFilters(): SessionFilters {
   }
 }
 
-export function rememberSessionFilters(filters: SessionFilters) {
+/** Keep the filters, already serialised, for the next visit. */
+export function rememberSessionFilters(serialised: string) {
   try {
-    window.localStorage.setItem(SESSION_FILTERS_KEY, JSON.stringify(filters));
+    window.localStorage.setItem(SESSION_FILTERS_KEY, serialised);
   } catch {
     // Private browsing or a full quota: the filters hold until the page reloads.
   }
