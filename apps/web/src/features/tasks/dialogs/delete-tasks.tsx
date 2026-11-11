@@ -47,7 +47,7 @@ export function DeleteTasksDialog({
   return (
     <ConfirmDialog
       title={t('tasks.deleteTasks.title', { count: left.length })}
-      description={t('tasks.dialog.deleteDescription')}
+      description={t('tasks.deleteTasks.description')}
       confirmLabel={t('tasks.deleteTasks.confirm')}
       pendingLabel={t('tasks.dialog.deleting')}
       pending={pending}

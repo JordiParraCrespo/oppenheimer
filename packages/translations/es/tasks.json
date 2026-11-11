@@ -234,6 +234,7 @@
     "title_one": "¿Eliminar {{count}} tarea?",
     "title_many": "¿Eliminar {{count}} de tareas?",
     "title_other": "¿Eliminar {{count}} tareas?",
+    "description": "Sus sesiones siguen como están.",
     "confirm": "Eliminar tareas",
     "partial_one": "{{count}} tarea no se ha eliminado",
     "partial_many": "{{count}} de tareas no se han eliminado",
