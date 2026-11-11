@@ -507,6 +507,11 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 had a bot save to the general memory only what it happened to
+  notice, and a new bot asked for its job without saying what it could do.
+  On 2026-11-10 every turn asks what it learned about the person, for the
+  general memory, and a new bot's greeting lists what it can do from the
+  tools its turn offers (25, "Decided").
 - Note 25 gave a new bot a calm, flat `SOUL.md` and a first name it kept.
   On 2026-11-10 the soul became friendly and proactive, after OpenClaw's
   default, and the first name a placeholder: its first chat asks the
@@ -1221,6 +1226,13 @@ earlier note:
   mail older than two days, spam, trash and chats never wake a routine, an
   any-mail trigger takes only the inbox, and rate-limited runs are one chat
   line a routine an hour.
+- `versions/mvp/09-runner-install-and-update.md` §2 said a
+  quarantine-stripped bare binary was all macOS needed, with no
+  notarization. It ran, but each release was a new program to macOS (an
+  ad-hoc signature in a new file per version), so every Mac asked for its
+  permissions again after every update. On 2026-11-04 the runner became a
+  Developer ID signed, notarized `OppenheimerRunner.app` at one fixed path
+  on macOS, swapped in place by updates (09 §2, §5).
 - `versions/mvp/05-screens.md` had the Sessions sidebar make projects (a
   plus in its head) and edit them (a settings glyph on each project's
   header). On 2026-11-05 the owner moved project management to Plan: a
@@ -1536,10 +1548,31 @@ earlier note:
   reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
   owner asked for the text first: the block opens on Raw, Raw / Tree on its
   band, the tree one click away. A tool result's JSON still reads as a tree.
-- `versions/mvp/09-runner-install-and-update.md` §2 said a
-  quarantine-stripped bare binary was all macOS needed, with no
-  notarization. It ran, but each release was a new program to macOS (an
-  ad-hoc signature in a new file per version), so every Mac asked for its
-  permissions again after every update. On 2026-11-04 the runner became a
-  Developer ID signed, notarized `OppenheimerRunner.app` at one fixed path
-  on macOS, swapped in place by updates (09 §2, §5).
+- `versions/mvp/05-screens.md` held the sidebar's sessions and projects
+  still while a filter or the search hid some of them, since a drop would
+  lose the hidden ones' places. On 2026-11-11 the owner tried to reorder
+  sessions with a repository filter on and could not. They drag now,
+  filtered or not: the drop is merged into the whole list's order, so a
+  hidden row keeps its place among the ones it was drawn with.
+- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+  the visit only: a reload came back unfiltered. On 2026-11-11 the owner
+  asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
+  stick"): the facets and the sort are kept on the device, not the
+  account, since a filter is the reader's view; a remembered pick the menu
+  no longer offers reads as all and is forgotten.
+- `versions/mvp/13-automations.md`'s editor prefilled a new automation
+  with a project (the one it was opened for, else the first) and all of
+  that project's repositories, and picking a project picked all of its
+  repositories. On 2026-11-11 the owner asked for no default repositories
+  and no default project: a new automation starts with neither unless it
+  was opened for a project, and picking a project picks no repository.
+- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+  `/automations` in a second table under the automations. On 2026-11-11
+  the owner asked for them in tabs: the overview reads Automations · Bot
+  routines · Runs, the routines at `/automations/routines`.
+- `versions/mvp/26-bot-routines.md` drew every routine run in its bot's
+  chat, and the chat showed its tool calls until the reader hid them. On
+  2026-11-11 the owner, scrolling a column of half-hourly "Routine ·
+  Triage Sentry errors" lines that found nothing, asked for less: the
+  chat now hides tool calls by default, and while they are hidden a
+  routine run that only ran tools is left out. The wrench shows both.

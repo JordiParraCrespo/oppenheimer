@@ -53,6 +53,37 @@ describe('composeBotSystemPrompt', () => {
       /# How a turn goes[\s\S]*Save each with `remember` in this turn, without asking/,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('Save each with `remember`');
+    // 2026-11-10: every turn also asks what it learned about the person, for
+    // the memory all their bots read.
+    expect(remembers).toMatch(
+      /# How a turn goes[\s\S]*Ask also whether you learned who the person is[^\n]*Save that to the general memory when the rule in `remember` puts it there/,
+    );
+  });
+
+  // What breaks this (2026-11-10): a new bot that never says what it can do,
+  // or one that promises an area its turn has no tools for.
+  it('tells a new bot to list what it can do for the person, only from the areas its turn offers', () => {
+    const equipped = composeBotSystemPrompt({
+      ...base,
+      tools: [
+        { name: 'start_session', description: 'Starts one.', group: 'sessions' },
+        { name: 'send_whatsapp_message', description: 'Sends one.', group: 'whatsapp' },
+        { name: 'remember', description: 'Saves one fact.', group: 'self' },
+      ],
+    });
+    expect(equipped).toMatch(
+      /\n3\. In the same message, show them in a short list what you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond that list\. Say that anything not connected yet/,
+    );
+    expect(equipped).not.toContain('Gmail');
+    expect(equipped).toContain('(a computer, WhatsApp) you can help them connect');
+    expect(composeBotSystemPrompt(base)).not.toContain('what you can do for them here');
+    // An area it can only read is not promised: a bot with `list_hosts` alone
+    // offered to start coding agents in the first eval (2026-11-10).
+    const readOnly = composeBotSystemPrompt({
+      ...base,
+      tools: [{ name: 'list_hosts', description: 'Lists hosts.', group: 'sessions' }],
+    });
+    expect(readOnly).not.toContain('what you can do for them here');
   });
 
   // What breaks this (2026-11-09, Hermes Agent's learning loop): a bot that

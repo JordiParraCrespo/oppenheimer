@@ -36,6 +36,7 @@ import { Route as AuthOnboardingReadyRouteImport } from './routes/_auth/onboardi
 import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onboarding/workspace'
 import { Route as AuthenticatedAutomationsIndexRouteImport } from './routes/_authenticated/automations/index'
 import { Route as AuthenticatedAutomationsAutomationIdRouteImport } from './routes/_authenticated/automations/$automationId'
+import { Route as AuthenticatedAutomationsRoutinesRouteImport } from './routes/_authenticated/automations/routines'
 import { Route as AuthenticatedAutomationsRunsRouteImport } from './routes/_authenticated/automations/runs'
 import { Route as AuthenticatedBotsIndexRouteImport } from './routes/_authenticated/bots/index'
 import { Route as AuthenticatedBotsBotIdRouteImport } from './routes/_authenticated/bots/$botId'
@@ -219,6 +220,12 @@ const AuthenticatedAutomationsAutomationIdRoute =
   AuthenticatedAutomationsAutomationIdRouteImport.update({
     id: '/$automationId',
     path: '/$automationId',
+    getParentRoute: () => AuthenticatedAutomationsRoute,
+  } as any)
+const AuthenticatedAutomationsRoutinesRoute =
+  AuthenticatedAutomationsRoutinesRouteImport.update({
+    id: '/routines',
+    path: '/routines',
     getParentRoute: () => AuthenticatedAutomationsRoute,
   } as any)
 const AuthenticatedAutomationsRunsRoute =
@@ -526,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
+  '/automations/routines': typeof AuthenticatedAutomationsRoutinesRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
@@ -595,6 +603,7 @@ export interface FileRoutesByTo {
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
+  '/automations/routines': typeof AuthenticatedAutomationsRoutinesRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
@@ -672,6 +681,7 @@ export interface FileRoutesById {
   '/_auth/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/_authenticated/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
+  '/_authenticated/automations/routines': typeof AuthenticatedAutomationsRoutinesRoute
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
@@ -748,6 +758,7 @@ export interface FileRouteTypes {
     | '/onboarding/ready'
     | '/onboarding/workspace'
     | '/automations/$automationId'
+    | '/automations/routines'
     | '/automations/runs'
     | '/bots/$botId'
     | '/plan/calendar'
@@ -817,6 +828,7 @@ export interface FileRouteTypes {
     | '/onboarding/ready'
     | '/onboarding/workspace'
     | '/automations/$automationId'
+    | '/automations/routines'
     | '/automations/runs'
     | '/bots/$botId'
     | '/plan/calendar'
@@ -893,6 +905,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/ready'
     | '/_auth/onboarding/workspace'
     | '/_authenticated/automations/$automationId'
+    | '/_authenticated/automations/routines'
     | '/_authenticated/automations/runs'
     | '/_authenticated/bots/$botId'
     | '/_authenticated/plan/calendar'
@@ -1145,6 +1158,13 @@ declare module '@tanstack/react-router' {
       path: '/$automationId'
       fullPath: '/automations/$automationId'
       preLoaderRoute: typeof AuthenticatedAutomationsAutomationIdRouteImport
+      parentRoute: typeof AuthenticatedAutomationsRoute
+    }
+    '/_authenticated/automations/routines': {
+      id: '/_authenticated/automations/routines'
+      path: '/routines'
+      fullPath: '/automations/routines'
+      preLoaderRoute: typeof AuthenticatedAutomationsRoutinesRouteImport
       parentRoute: typeof AuthenticatedAutomationsRoute
     }
     '/_authenticated/automations/runs': {
@@ -1538,6 +1558,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedAutomationsRouteChildren {
   AuthenticatedAutomationsAutomationIdRoute: typeof AuthenticatedAutomationsAutomationIdRoute
+  AuthenticatedAutomationsRoutinesRoute: typeof AuthenticatedAutomationsRoutinesRoute
   AuthenticatedAutomationsRunsRoute: typeof AuthenticatedAutomationsRunsRoute
   AuthenticatedAutomationsIndexRoute: typeof AuthenticatedAutomationsIndexRoute
 }
@@ -1546,6 +1567,8 @@ const AuthenticatedAutomationsRouteChildren: AuthenticatedAutomationsRouteChildr
   {
     AuthenticatedAutomationsAutomationIdRoute:
       AuthenticatedAutomationsAutomationIdRoute,
+    AuthenticatedAutomationsRoutinesRoute:
+      AuthenticatedAutomationsRoutinesRoute,
     AuthenticatedAutomationsRunsRoute: AuthenticatedAutomationsRunsRoute,
     AuthenticatedAutomationsIndexRoute: AuthenticatedAutomationsIndexRoute,
   }

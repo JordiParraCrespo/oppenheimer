@@ -79,7 +79,11 @@ fired, guarded and dispatched is 16; the tables and modules are 10.
   repositories, where the runs go (on a host, Claude Code's cloud from a
   host, or Cursor's cloud with no host, added 2026-10-29), host, agent and
   model, prefilled from the project. Create
-  and Save exist only on the last step.
+  and Save exist only on the last step. Since 2026-11-11 a new automation
+  guesses no project and picks no repository: the project it was opened
+  for, if any, sets the host and agent, and the reader picks the
+  repositories; a GitHub trigger added before them listens on all of them
+  once they are picked. Each trigger card has Duplicate beside Remove.
 - The feature is `apps/web/src/features/automations/` over the product
   package's `automations` module (`packages/frontend/consumer`).
 - Not built: templates (16 decides them as a fixed catalog; they come

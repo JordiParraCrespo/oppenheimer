@@ -8,6 +8,7 @@ import {
   type ChatTurnBlock,
   chatTurns,
   compactTokens,
+  isQuietRoutineRun,
   markersBefore,
   replyText,
   retryContent,
@@ -275,5 +276,56 @@ describe('events from Oppenheimer', () => {
     );
     expect(block.asked.map((row) => row.id)).toEqual(['e1']);
     expect(block.answer.map((row) => row.id)).toEqual(['m2']);
+  });
+});
+
+describe('isQuietRoutineRun', () => {
+  // What breaks this: a routine checking every half hour and finding nothing
+  // filling the chat with its name while the tool calls are hidden; or the
+  // hiding swallowing a run that replied, failed or started a session.
+  const ran = {
+    id: 'e1',
+    turnId: 't1',
+    role: 'event',
+    content: '',
+    attachments: [],
+    event: { kind: 'routine', activity: 'ran', name: 'Triage Sentry errors' },
+  } as unknown as BotMessageEntity;
+  const tools = (sessionId: string | null = null) =>
+    ({
+      id: 'a1',
+      turnId: 't1',
+      role: 'activity',
+      steps: [{ callId: 'c1', name: 'nothing_to_report', sessionId, mailDraft: null }],
+    }) as unknown as BotMessageEntity;
+  const block = (
+    status: string,
+    answer: BotMessageEntity[],
+    asked: BotMessageEntity[] = [ran],
+  ): ChatTurnBlock => ({
+    key: 't1',
+    turnId: 't1',
+    turn: { id: 't1', status } as BotTurnEntity,
+    asked,
+    answer,
+  });
+
+  it('leaves out a finished run that only ran tools, until the tool calls show', () => {
+    expect(isQuietRoutineRun(block('completed', [tools()]), false)).toBe(true);
+    expect(isQuietRoutineRun(block('completed', []), false)).toBe(true);
+    expect(isQuietRoutineRun(block('completed', [tools()]), true)).toBe(false);
+  });
+
+  it('keeps a run that replied, started a session, failed or still runs', () => {
+    const reply = { id: 'r1', turnId: 't1', role: 'assistant' } as BotMessageEntity;
+    expect(isQuietRoutineRun(block('completed', [tools(), reply]), false)).toBe(false);
+    expect(isQuietRoutineRun(block('completed', [tools('s1')]), false)).toBe(false);
+    expect(isQuietRoutineRun(block('failed', [tools()]), false)).toBe(false);
+    expect(isQuietRoutineRun(block('running', [tools()]), false)).toBe(false);
+  });
+
+  it('keeps a turn you opened, however little it said', () => {
+    const asked = { id: 'm1', turnId: 't1', role: 'user' } as BotMessageEntity;
+    expect(isQuietRoutineRun(block('completed', [tools()], [asked]), false)).toBe(false);
   });
 });

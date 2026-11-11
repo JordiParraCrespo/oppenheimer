@@ -38,7 +38,9 @@ export function InboxCurrent() {
   const copy = item ? inboxCopy(item, t) : null;
   useMarkRead(item?.key ?? null, search.item !== null);
   useInboxKeys(
-    item ? { onDone: () => marks.done(item), onLow: () => marks.toggleLow(item) } : null,
+    item
+      ? { onDone: () => marks.apply('done', item), onLow: () => marks.apply('toggleLow', item) }
+      : null,
   );
 
   const back = (
@@ -98,22 +100,22 @@ export function InboxCurrent() {
         position={t('inbox.pane.position', { n: open.indexOf(item) + 1, total: open.length })}
       >
         {back}
-        <IconButton aria-label={t('inbox.menu.done')} onClick={() => marks.done(item)}>
+        <IconButton aria-label={t('inbox.menu.done')} onClick={() => marks.apply('done', item)}>
           <Check />
         </IconButton>
         <IconButton
           aria-label={t('inbox.menu.snoozeTomorrow')}
-          onClick={() => marks.snoozeTomorrow(item)}
+          onClick={() => marks.apply('snoozeTomorrow', item)}
         >
           <Clock />
         </IconButton>
         <IconButton
           aria-label={item.low ? t('inbox.menu.restore') : t('inbox.menu.low')}
-          onClick={() => marks.toggleLow(item)}
+          onClick={() => marks.apply('toggleLow', item)}
         >
           {item.low ? <TrendingUp /> : <TrendingDown />}
         </IconButton>
-        <IconButton aria-label={t('inbox.menu.delete')} onClick={() => marks.remove(item)}>
+        <IconButton aria-label={t('inbox.menu.delete')} onClick={() => marks.apply('remove', item)}>
           <X />
         </IconButton>
       </InboxToolbar>

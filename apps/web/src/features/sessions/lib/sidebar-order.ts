@@ -103,3 +103,39 @@ export function mergeOrder(dropped: readonly string[], stored: readonly string[]
   }
   return merged;
 }
+
+/**
+ * A drop's session order with every row it did not see (filtered out,
+ * searched out, pinned, or in a project not drawn) kept in its place among
+ * its own project's rows. `dropped` holds each drawn project's ids as the
+ * drop left them, `projectIds` the drawn projects in order, and `whole`
+ * every session the list draws with no filter, in the order the reader last
+ * saw it. Each project is merged on its own, so a hidden row never anchors
+ * to another project's row. `moved` is a session dropped in from another
+ * project: it anchors nothing at the place it held before. Ids `stored`
+ * holds and `whole` does not (a session hidden through the API) keep theirs.
+ */
+export function placeDrop({
+  dropped,
+  projectIds,
+  whole,
+  stored,
+  moved,
+}: {
+  dropped: Readonly<Record<string, readonly string[]>>;
+  projectIds: readonly string[];
+  whole: readonly SessionEntity[];
+  stored: readonly string[];
+  moved?: string;
+}): string[] {
+  const projectOrder = [...new Set([...projectIds, ...whole.map((session) => session.projectId)])];
+  const placed = projectOrder.flatMap((projectId) =>
+    mergeOrder(
+      dropped[projectId] ?? [],
+      whole
+        .filter((session) => session.projectId === projectId && session.id !== moved)
+        .map((session) => session.id),
+    ),
+  );
+  return mergeOrder(placed, stored);
+}

@@ -1868,8 +1868,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls",
-      "showToolCalls": "Show tool calls",
+      "hideToolCalls": "Hide tool calls and routine runs",
+      "showToolCalls": "Show tool calls and routine runs",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -2323,6 +2323,7 @@
     "page": {
       "tabs": {
         "automations": "Automations",
+        "routines": "Bot routines",
         "runs": "Runs"
       },
       "new": "New automation",
@@ -2549,6 +2550,7 @@
       "addAnother": "Add another trigger",
       "groupSchedule": "Schedule",
       "groupGithub": "GitHub",
+      "duplicateTrigger": "Duplicate trigger",
       "removeTrigger": "Remove trigger",
       "on": "on",
       "at": "at",
@@ -2563,6 +2565,7 @@
       "labelPlaceholder": "Label name",
       "anyOfRepos": "any of {{count}} repositories",
       "someRepos": "{{count}} repositories",
+      "reposToPick": "the repositories you pick",
       "reposHead": "Repositories · pick one or more",
       "atLeastOne": "At least one is required",
       "hour": "Hour",
@@ -2642,7 +2645,8 @@
     "routines": {
       "routine": "Bot routine",
       "runsOn": "Runs on {{bot}}",
-      "loadFailed": "Bot routines could not be loaded."
+      "loadFailed": "Bot routines could not be loaded.",
+      "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
     }
   },
   "pullRequests": {
@@ -3430,6 +3434,19 @@
       "refresh": "Refresh",
       "clearSearch": "Clear search"
     },
+    "selection": {
+      "label": "Selected items",
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "selectAll": "Select all",
+      "selectRow": "Select {{title}}",
+      "clear": "Clear selection",
+      "done": "Mark as done",
+      "low": "Deprioritize",
+      "restore": "Restore priority",
+      "snooze": "Snooze",
+      "delete": "Delete"
+    },
     "filter": {
       "label": "Filter the Inbox",
       "type": "Type",
@@ -3461,7 +3478,8 @@
       "restore": "Restore priority",
       "snoozeHour": "Snooze 1 hour",
       "snoozeTomorrow": "Snooze until tomorrow",
-      "delete": "Delete"
+      "delete": "Delete",
+      "select": "Select"
     },
     "from": {
       "session": "Session",

@@ -7,7 +7,8 @@ export const ALL = 'all';
  * How the list is ordered, in the order the menu lists them: the reader's
  * own, dragged into place (`sidebar-order.ts`), then the artboard's three.
  */
-export type SessionSort = 'custom' | 'recent' | 'oldest' | 'name';
+export const SESSION_SORTS = ['custom', 'recent', 'oldest', 'name'] as const;
+export type SessionSort = (typeof SESSION_SORTS)[number];
 
 /**
  * What the sidebar's filter menu holds
@@ -33,7 +34,7 @@ export interface FilterOption {
 }
 
 /** The facets, in the order the menu and the chips show them. */
-const FACETS = ['project', 'repository', 'agent', 'host'] as const;
+export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
 export type SessionFacet = (typeof FACETS)[number];
 
 /**
