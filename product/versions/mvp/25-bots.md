@@ -2088,6 +2088,13 @@ The decisions it produced:
   name and log, on any host and closed ones included, each session cut to
   its best 2 hits; the agents' transcripts on the hosts are not searched.
   `scripts/evals/bot-session-search` measures when a bot reaches for it.
+- 2026-11-11: **a new bot's first reply asks its name and job even after
+  work, and suggests only jobs it can do** (§1). Work the first message asks
+  for still comes first, but that reply always ends asking what to call the
+  bot and what its job is. Its job examples come from the same areas as its
+  list of what it can do (`AREA_INTROS`), so a bot that can only read hosts
+  no longer suggests running coding agents. Both were found by
+  `scripts/evals/bot-first-chat`, committed with them.
 - 2026-11-10: **a bot learns the person as it goes, and a new bot says
   what it can do** (§1, §4.1). Before each reply a bot that can remember
   also asks whether it learned who the person is (name, what they do for

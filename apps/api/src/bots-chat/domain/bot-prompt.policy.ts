@@ -130,10 +130,10 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const steps = [
-    'If their first message asks for real work, do that first and fully; the steps below wait until it is done.',
+    'If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below; the rest waits for their answer.',
     `Greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
     ...whatYouCanDoForThem(tools),
-    "In the same message, unless they already said it, ask what one job they want you to own, with two or three examples that fit Oppenheimer: reviewing pull requests, keeping a project's plan up to date, running coding agents on a host to fix bugs, researching a topic.",
+    `In the same message, unless they already said it, ask what one job they want you to own, with these examples: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
     'Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.',
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
     'If no step above let you write INSTRUCTIONS.md, give the person a short draft to paste in Settings → Instructions. Then tell them in two or three lines what you set up and that they can change it in Settings, and offer the first concrete task you could do now.',
@@ -157,6 +157,8 @@ interface AreaIntro {
   doneBy: readonly string[];
   /** What the person may still have to connect for it, named in the offer to help. */
   connects?: string;
+  /** A job this area makes possible, among the examples Getting started offers. */
+  example?: string;
 }
 
 /**
@@ -170,16 +172,19 @@ const AREA_INTROS: readonly AreaIntro[] = [
     does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once and report back',
     doneBy: ['start_session', 'start_cloud_session'],
     connects: 'a computer',
+    example: 'running coding agents on a host to fix bugs',
   },
   { does: 'run commands on their computers', doneBy: ['run_command'] },
   {
     does: 'keep their plan, projects and tasks up to date',
     doneBy: ['create_task', 'update_task'],
+    example: "keeping a project's plan up to date",
   },
   {
     does: 'read, sort and answer their email in Gmail',
     doneBy: ['send_mail', 'send_draft'],
     connects: 'Gmail',
+    example: 'keeping their inbox sorted and answered',
   },
   {
     does: 'talk with them and others on WhatsApp',
@@ -191,18 +196,43 @@ const AREA_INTROS: readonly AreaIntro[] = [
     does: 'review, comment on and follow pull requests and issues on GitHub',
     doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
     connects: 'GitHub',
+    example: 'reviewing pull requests',
   },
   {
     does: 'run automations and routines on a schedule or when something happens',
     doneBy: ['update_routine'],
+    example: 'a morning report on a schedule',
   },
   { does: 'work with their other bots and create new ones', doneBy: ['message_bot', 'create_bot'] },
-  { does: 'read pages on the web and research a topic', doneBy: ['web_fetch'] },
+  {
+    does: 'read pages on the web and research a topic',
+    doneBy: ['web_fetch'],
+    example: 'researching a topic',
+  },
 ];
 
-function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
+function offeredAreas(tools: readonly BotPromptTool[]): readonly AreaIntro[] {
   const offered = new Set(tools.map((tool) => tool.name));
-  const areas = AREA_INTROS.filter((area) => area.doneBy.some((name) => offered.has(name)));
+  return AREA_INTROS.filter((area) => area.doneBy.some((name) => offered.has(name)));
+}
+
+/** The most job examples Getting started offers. */
+const MAX_JOB_EXAMPLES = 3;
+
+/**
+ * The jobs a new bot suggests, from the areas its turn can act in, so a bot
+ * without session tools never suggests running coding agents (2026-11-11).
+ * One that can act nowhere suggests answering questions.
+ */
+function jobExamples(tools: readonly BotPromptTool[]): string[] {
+  const examples = offeredAreas(tools).flatMap((area) => (area.example ? [area.example] : []));
+  return examples.length
+    ? examples.slice(0, MAX_JOB_EXAMPLES)
+    : ['answering questions about their work'];
+}
+
+function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
+  const areas = offeredAreas(tools);
   if (areas.length === 0) return [];
   const connects = areas.flatMap((area) => (area.connects ? [area.connects] : []));
   const offer = connects.length
