@@ -507,6 +507,11 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 had a bot save to the general memory only what it happened to
+  notice, and a new bot asked for its job without saying what it could do.
+  On 2026-11-10 every turn asks what it learned about the person, for the
+  general memory, and a new bot's greeting lists what it can do from the
+  tools its turn offers (25, "Decided").
 - Note 25 gave a new bot a calm, flat `SOUL.md` and a first name it kept.
   On 2026-11-10 the soul became friendly and proactive, after OpenClaw's
   default, and the first name a placeholder: its first chat asks the
