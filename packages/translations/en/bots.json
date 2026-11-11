@@ -632,9 +632,6 @@
       "title": "Routines",
       "subtitle": "Work the bot does on a schedule or when something happens.",
       "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
-      "guard": "Pause while you’re away",
-      "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
-      "guardFailed": "Could not change whether the routines pause while you’re away.",
       "askInChat": "Ask in chat",
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
@@ -770,8 +767,5 @@
     "checkedHint": "Checked bots show in {{section}}.",
     "manageAll": "Manage in {{employees}}",
     "hide": "Hide from {{section}}"
-  },
-  "routineGuard": {
-    "notice": "I paused my routines while you were away. They start again when you open this chat."
   }
 }

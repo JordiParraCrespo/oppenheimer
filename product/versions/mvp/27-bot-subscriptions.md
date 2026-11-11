@@ -261,7 +261,7 @@ What it does not reuse, and why:
 
 - **Not a routine** (26 §5). A routine with a `session_ended` trigger is a
   standing rule ("every session I start"), shown on the Routines tab, with
-  the run budget and the spend guard of an unattended job. A subscription is
+  the run budget of an unattended job. A subscription is
   one delegation: one session, created by the turn that delegated it, ended
   when the work ends, and waking on input needed too. Using routines for it
   would put a routine on the tab for every session a bot starts. 26 §5's

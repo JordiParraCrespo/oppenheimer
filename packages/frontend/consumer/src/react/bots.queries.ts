@@ -284,21 +284,11 @@ function reorders(input: UpdateBotInput): boolean {
   return 'groupId' in input || 'position' in input;
 }
 
-/**
- * Profile, the sidebar group, the home host, the composer's model, effort and
- * approval, and the spend guard's switch. Turning the guard off resumes the
- * routines it paused (`26-bot-routines.md` §6), so their lists read again.
- */
+/** Profile, the sidebar group, the home host, and the composer's model, effort and approval. */
 export const useUpdateBot = mutation<BotEntity, UpdateBotVariables>({
   run: (app, { id, input }) => app.bots.update(id, input),
   update: async (queryClient, saved, { input }) => {
     await settleBot(queryClient, saved, reorders(input));
-    if (input.routineSpendGuard === false) {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: botsKeys.routines(saved.id) }),
-        queryClient.invalidateQueries({ queryKey: botsKeys.allRoutines() }),
-      ]);
-    }
   },
 });
 

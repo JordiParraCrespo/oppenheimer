@@ -43,14 +43,7 @@ function routine() {
 }
 
 function setup(
-  options: {
-    model?: boolean;
-    outcome?: 'staged' | 'existing' | 'busy' | 'missing';
-    unread?: number;
-    seenAt?: Date;
-    cause?: 'schedule' | 'manual';
-    guard?: boolean;
-  } = {},
+  options: { model?: boolean; outcome?: 'staged' | 'existing' | 'busy' | 'missing' } = {},
 ) {
   const automation = routine();
   const run = AutomationRunEntity.fire(
@@ -59,7 +52,7 @@ function setup(
       automationId: automation.id,
       revisionId: automation.revision.id,
       triggerId: automation.triggers[0].id,
-      cause: options.cause ?? 'schedule',
+      cause: 'schedule',
       causeKey: 'schedule:1',
       causeSummary: { label: 'Daily', text: '', eventType: 'schedule' },
       inboundEventId: null,
@@ -78,18 +71,13 @@ function setup(
       model: 'glm-5.3',
       effort: null,
       createdAt: new Date(now.getTime() - 30 * 24 * 3_600_000),
-      ownerSeenAt: options.seenAt ?? now,
-      routineSpendGuard: options.guard ?? true,
     })),
   } as unknown as BotModelAccessResolver;
   const enqueueOnce = vi.fn(async (turn: { id: string }) => ({
     outcome: options.outcome ?? 'staged',
     turnId: options.outcome === 'existing' ? 'turn-first' : turn.id,
   }));
-  const countRoutineReportsSince = vi.fn<BotTurnRepositoryPort['countRoutineReportsSince']>(
-    async () => options.unread ?? 0,
-  );
-  const turns = { enqueueOnce, countRoutineReportsSince } as unknown as BotTurnRepositoryPort;
+  const turns = { enqueueOnce } as unknown as BotTurnRepositoryPort;
   const publish = vi.fn(async () => undefined);
   const target = new BotRoutineTarget(access, turns, { publish } as unknown as BotStreamPort);
   const context: RunTargetContext = {
@@ -100,7 +88,7 @@ function setup(
     event: null,
     now,
   };
-  return { target, context, enqueueOnce, publish, run, countRoutineReportsSince };
+  return { target, context, enqueueOnce, publish, run };
 }
 
 describe('BotRoutineTarget', () => {
@@ -175,64 +163,5 @@ describe('BotRoutineTarget', () => {
       pause: 'bot_provider_missing',
     });
     expect(target.refusalOf(new Error('database down'))).toBeNull();
-  });
-
-  // The spend guard (`26-bot-routines.md` §6). What breaks this: routines that
-  // keep spending while nobody reads them, a quiet heartbeat that never stops
-  // for an owner gone for good, or the owner's own Run now refused.
-  describe('while the owner is away', () => {
-    const HOUR = 3_600_000;
-
-    it('skips the run and pauses the routine once three reports went unseen', async () => {
-      const seenAt = new Date(now.getTime() - HOUR);
-      const { target, context, enqueueOnce, countRoutineReportsSince } = setup({
-        unread: 3,
-        seenAt,
-      });
-      expect(await target.decide(context)).toEqual({
-        kind: 'skip',
-        reason: 'unattended',
-        pause: 'unattended',
-      });
-      expect(countRoutineReportsSince).toHaveBeenCalledWith('org-1', 'bot-1', seenAt);
-      expect(enqueueOnce).not.toHaveBeenCalled();
-    });
-
-    it('skips the run after three days away, though every beat stayed quiet', async () => {
-      const { target, context } = setup({ unread: 0, seenAt: new Date(now.getTime() - 72 * HOUR) });
-      expect(await target.decide(context)).toMatchObject({ kind: 'skip', reason: 'unattended' });
-    });
-
-    it('runs with fewer reports unseen, and the owner seen within three days', async () => {
-      const { target, context } = setup({ unread: 2, seenAt: new Date(now.getTime() - 71 * HOUR) });
-      expect((await target.decide(context)).kind).toBe('launch');
-    });
-
-    it('reads the workspace’s own thresholds from the run’s limits', async () => {
-      const { target, context } = setup({ unread: 1, seenAt: new Date(now.getTime() - HOUR) });
-      expect((await target.decide(context)).kind).toBe('launch');
-      const strict = { ...context, limits: { ...context.limits, unattendedReports: 1 } };
-      expect(await target.decide(strict)).toMatchObject({ kind: 'skip', reason: 'unattended' });
-    });
-
-    it('runs every routine of a bot whose owner turned the guard off, counting nothing', async () => {
-      const { target, context, countRoutineReportsSince } = setup({
-        unread: 9,
-        seenAt: new Date(now.getTime() - 300 * HOUR),
-        guard: false,
-      });
-      expect((await target.decide(context)).kind).toBe('launch');
-      expect(countRoutineReportsSince).not.toHaveBeenCalled();
-    });
-
-    it("lets the owner's Run now through, however long they were away", async () => {
-      const { target, context, countRoutineReportsSince } = setup({
-        unread: 9,
-        seenAt: new Date(now.getTime() - 300 * HOUR),
-        cause: 'manual',
-      });
-      expect((await target.decide(context)).kind).toBe('launch');
-      expect(countRoutineReportsSince).not.toHaveBeenCalled();
-    });
   });
 });
