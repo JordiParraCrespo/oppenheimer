@@ -12,4 +12,4 @@ started from a host, and that a list read off recent tasks may be missing some.
 A start with no environment the CLI can use (`SESS_010`) names the two ways
 out, and also covers an account with no legacy environment and a picked
 environment that is gone. A host whose codex is not signed in to ChatGPT has
-its own refusal, `SESS_020` on a start and `SESSIONS_055` in the picker.
+its own refusal, `SESS_022` on a start and `SESSIONS_055` in the picker.

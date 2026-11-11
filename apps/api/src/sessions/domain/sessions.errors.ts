@@ -444,7 +444,7 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * The host's `codex` holds no ChatGPT sign-in (`SESS_020`), so it has no
+   * The host's `codex` holds no ChatGPT sign-in (`SESS_022`), so it has no
    * Codex environments to list and could start no cloud task either. Fixed on
    * the host, with `codex login`.
    */

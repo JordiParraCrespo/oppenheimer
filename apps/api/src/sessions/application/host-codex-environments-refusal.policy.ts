@@ -7,13 +7,13 @@ import type {
 
 /** The runner's refusal when ChatGPT asked it to wait (`SESS_011`). */
 const RUNNER_RATE_LIMITED = 'SESS_011';
-/** The runner's refusal when the host's `codex` has no ChatGPT sign-in (`SESS_020`). */
-const RUNNER_SIGNED_OUT = 'SESS_020';
+/** The runner's refusal when the host's `codex` has no ChatGPT sign-in (`SESS_022`). */
+const RUNNER_SIGNED_OUT = 'SESS_022';
 
 /**
  * The environments a host answered with, or the problem for why there are
  * none. A refusal of the runner's is ChatGPT's rate limit (`SESS_011`), a 429
- * of its own, a host that is not signed in (`SESS_020`), which only
+ * of its own, a host that is not signed in (`SESS_022`), which only
  * `codex login` on it fixes, or else Codex's (`SESS_009`: no `codex`, ChatGPT
  * unreachable); each way the runner's code is kept as `upstreamCode` and its
  * words are the detail.

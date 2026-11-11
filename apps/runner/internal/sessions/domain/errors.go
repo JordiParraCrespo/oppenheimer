@@ -59,7 +59,7 @@ var (
 	// ErrCodexCloudSignIn is the host's `codex` holding no ChatGPT sign-in,
 	// which every cloud command needs (an API key does not reach Codex cloud).
 	// Its detail is the CLI's own last words.
-	ErrCodexCloudSignIn = problem.New("SESS_020", http.StatusBadGateway, "Codex on this host is not signed in to ChatGPT")
+	ErrCodexCloudSignIn = problem.New("SESS_022", http.StatusBadGateway, "Codex on this host is not signed in to ChatGPT")
 	// ErrNotReady refuses a message for an agent that is not up yet: no
 	// status report and no screen the classifier can read, which is what a
 	// trust or login dialog the person must answer looks like.

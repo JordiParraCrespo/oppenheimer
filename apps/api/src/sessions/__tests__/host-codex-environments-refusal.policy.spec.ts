@@ -5,7 +5,7 @@ import { codexEnvironmentsOrThrow } from '../application/host-codex-environments
  * list can fail. The part worth a test is the runner's refusal: ChatGPT's rate
  * limit (`SESS_011`) is a 429 of its own, never folded into "Codex could not
  * list", which would tell the person to check a sign-in that works; and a
- * host that is not signed in (`SESS_020`) is its own code too, so the picker
+ * host that is not signed in (`SESS_022`) is its own code too, so the picker
  * can say the one thing that fixes it.
  */
 describe('codexEnvironmentsOrThrow', () => {
@@ -28,12 +28,12 @@ describe('codexEnvironmentsOrThrow', () => {
 
   it('answers a host that is not signed in with SESSIONS_055, keeping the runner’s words and code', () => {
     expect(() =>
-      codexEnvironmentsOrThrow({ kind: 'failed', code: 'SESS_020', detail: 'Not signed in' }, HOST),
+      codexEnvironmentsOrThrow({ kind: 'failed', code: 'SESS_022', detail: 'Not signed in' }, HOST),
     ).toThrow(
       expect.objectContaining({
         code: 'SESSIONS_055',
         detail: 'Not signed in',
-        extensions: { upstreamCode: 'SESS_020' },
+        extensions: { upstreamCode: 'SESS_022' },
       }),
     );
   });

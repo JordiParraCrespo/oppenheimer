@@ -15,7 +15,7 @@ export const CODEX_ENVIRONMENTS_MAX = 100;
  * The Codex environments the host's ChatGPT account can start a task in,
  * those linked to `repository` (`owner/name`) marked; absent, none is. Sent only to a runner
  * whose hello named `codex.environments`; answered by `codex.environments`
- * with the same `commandId`, or by `command.failed` (`SESS_020` the host's
+ * with the same `commandId`, or by `command.failed` (`SESS_022` the host's
  * `codex` is not signed in to ChatGPT, `SESS_011` ChatGPT asked it to wait,
  * `SESS_009` Codex could not answer for another reason).
  */

@@ -656,7 +656,7 @@ own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex 
 session still starts there, in an environment guessed from the repository's name.
 `046` carries the runner's own words as its `detail` (no `codex`, ChatGPT unreachable) and its
 code as `upstreamCode`. `SESSIONS_055` is the same list on a host whose `codex` has no ChatGPT
-sign-in (`SESS_020`): run `codex login` on the host, as the account the runner runs as, and open
+sign-in (`SESS_022`): run `codex login` on the host, as the account the runner runs as, and open
 the picker again. `047` is ChatGPT refusing the host's read for rate (`SESS_011`):
 the runner asks nothing more of that ChatGPT account until the time it named, which the
 `detail` says. A runner that did not answer in time is `SESSIONS_031`.
@@ -1331,7 +1331,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
 | `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
 | `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
-| `SESS_020` <a id="sess_020" />         | Codex on this host is not signed in to ChatGPT | 502 |
+| `SESS_022` <a id="sess_022" />         | Codex on this host is not signed in to ChatGPT | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1369,7 +1369,7 @@ tried and the environments the CLI can reach; when the host could only read
 the account's twenty newest tasks (`codex cloud list --json`) that list is
 partial, and the full one is `codex cloud` on the host.
 
-`SESS_020` is the host's `codex` saying it is not signed in to ChatGPT, which
+`SESS_022` is the host's `codex` saying it is not signed in to ChatGPT, which
 every cloud command needs (an API key does not reach Codex cloud). Run
 `codex login` on the host as the account the runner runs as, then press **Try
 again** on the session. `SESS_009` stays every other refusal, in the CLI's

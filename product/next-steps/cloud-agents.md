@@ -160,7 +160,7 @@ on an API key and API billing with sandboxes of its own. Decided:
   environments are available"), and a picked environment the CLI no longer
   has.
 - **Not signed in is its own code.** A host whose `codex` has no ChatGPT
-  sign-in refuses a start with `SESS_020` ("run codex login on the host"),
+  sign-in refuses a start with `SESS_022` ("run codex login on the host"),
   as Claude's does with `SESS_019`, and its picker with `SESSIONS_055`,
   instead of "Codex could not list its environments".
 

@@ -354,7 +354,7 @@
       "SESS_002": "Este host crea sesiones con un solo repositorio.",
       "SESS_010": "La CLI codex del host no puede iniciar una tarea en ningún entorno de Codex para este repositorio.",
       "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host.",
-      "SESS_020": "Sin sesión en ChatGPT. Ejecuta codex login en el host."
+      "SESS_022": "Sin sesión en ChatGPT. Ejecuta codex login en el host."
     },
     "help": {
       "SESS_010": {

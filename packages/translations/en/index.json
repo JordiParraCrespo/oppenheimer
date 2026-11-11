@@ -521,7 +521,7 @@
         "SESS_002": "This host makes sessions with one repository.",
         "SESS_010": "The host’s codex CLI can’t start a task in any Codex environment for this repository.",
         "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host.",
-        "SESS_020": "Not signed in to ChatGPT. Run codex login on the host."
+        "SESS_022": "Not signed in to ChatGPT. Run codex login on the host."
       },
       "help": {
         "SESS_010": {
