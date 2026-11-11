@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nestjs';
+import { isJobAttemptEvent } from './job-attempt-event';
 import { scrubEvent } from './scrub-event';
 
 /** How the process reports errors; `dsn` unset leaves reporting off. */
@@ -33,7 +34,7 @@ export function initErrorReporting(options: ErrorReportingOptions): boolean {
     tracesSampleRate: options.tracesSampleRate ?? 0,
     sendDefaultPii: false,
     initialScope: { tags: { service: options.service } },
-    beforeSend: (event) => scrubEvent(event),
+    beforeSend: (event) => (isJobAttemptEvent(event) ? null : scrubEvent(event)),
     beforeSendTransaction: (event) => scrubEvent(event),
   });
   return true;
