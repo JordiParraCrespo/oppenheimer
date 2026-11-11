@@ -71,6 +71,9 @@ func (s *Service) Check(ctx context.Context) (domain.Plan, error) {
 	}
 	state, _ := s.state.Load()
 	plan := domain.Decide(s.version, release, s.pinned, s.activities.Snapshot(), state.WaitingSince, s.now())
+	if plan.Action == domain.ActionNone && release.Version == s.version && s.binaries.NeedsReinstall() {
+		plan = domain.DecideReinstall(s.version, release, state, s.activities.Snapshot(), s.now())
+	}
 
 	// Remember when waiting started, so the 24-hour cap survives restarts.
 	if plan.Action == domain.ActionUpdate && state.WaitingSince.IsZero() {
@@ -237,7 +240,13 @@ func (s *Service) lock(ctx context.Context) error {
 func (s *Service) unlock() { <-s.applying }
 
 func (s *Service) rollBack(ctx context.Context, state domain.State, reason string) error {
-	if err := s.binaries.Activate(state.From); err != nil {
+	activate := s.binaries.Activate
+	if state.From == state.To {
+		// A reinstall: the version is the same, and what worked was its
+		// bare binary.
+		activate = s.binaries.ActivateBinary
+	}
+	if err := activate(state.From); err != nil {
 		return domain.ErrRolledBack.WithDetail(
 			"could not return to %s: %v", state.From, err).WithCause(err)
 	}

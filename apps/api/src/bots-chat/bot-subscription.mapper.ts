@@ -11,12 +11,11 @@ import {
   type BotSubscriptionUntil,
   type BotWatchFrom,
   type CheckFinding,
-  knownStateOf,
   type SessionWake,
   type sessionWakeTurn,
   type WakeDecision,
   type WatchedTask,
-  watchedTurnFor,
+  watchStartOf,
 } from './domain/bot-subscription.policy';
 import { formatToolTime, RUNNER_TOO_OLD_ADVICE } from './domain/bot-tool-text.policy';
 
@@ -111,9 +110,7 @@ export class BotSubscriptionMapper {
     session: WorkSessionEntity,
     options: { until: BotSubscriptionUntil; purpose: string | null; from: BotWatchFrom },
   ): Parameters<typeof BotSubscriptionEntity.subscribe>[0] {
-    const latest = session.latestTurn;
-    const from = options.from;
-    const known = from === 'now';
+    const { watchedTurn, known } = watchStartOf(options.from, session.latestTurn);
     return {
       organizationId: asker.organizationId,
       botId: asker.botId,
@@ -121,10 +118,10 @@ export class BotSubscriptionMapper {
       originTurnId: asker.turnId,
       purpose: options.purpose,
       until: options.until,
-      watchedTurn: from === 'first_task' ? 1 : from === 'now' ? watchedTurnFor(latest) : from.turn,
+      watchedTurn,
       credentialScopes: asker.credentialScopes,
       timeZone: asker.timeZone,
-      known: known ? knownStateOf(latest) : null,
+      known,
     };
   }
 

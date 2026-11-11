@@ -950,6 +950,42 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(theirs.isNone()).toBe(true);
     });
 
+    // What breaks this: a read that leaves the latest turn out, so a bot's
+    // wake finds "no task" and skips every end of the sessions it follows,
+    // and its looks at a running task skip too.
+    it('reads a session back with its latest turn, one by id and in the list', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, [
+        ...requested(),
+        {
+          idempotencyKey: `prompt.first:${randomUUID()}`,
+          source: 'api' as const,
+          kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
+          payload: { text: 'Fix the login test' },
+        },
+      ]);
+      await repository.appendEvents(work, [
+        {
+          idempotencyKey: `started:${randomUUID()}`,
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.STARTED,
+          payload: {},
+        },
+      ]);
+      const [stored] = await dataSource.query(
+        `SELECT "seq", "state" FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
+        [work.id],
+      );
+      expect(stored).toBeDefined();
+
+      const read = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(read.latestTurn).toMatchObject({ seq: stored.seq, state: stored.state });
+      const listed = (await repository.findAllPaginated(scope(), { page: 1, limit: 50 })).data.find(
+        (each) => each.id === work.id,
+      );
+      expect(listed?.latestTurn).toMatchObject({ seq: stored.seq, state: stored.state });
+    });
+
     it('reads a folder session back with its place and its path', async () => {
       const work = session({ folder: '/home/jordi/notes' });
       await repository.createIfUnclaimed(work, requested());

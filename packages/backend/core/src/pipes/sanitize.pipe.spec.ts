@@ -21,6 +21,21 @@ describe('SanitizePipe', () => {
     });
   });
 
+  it('strips spans and stray brackets the way the tag pattern did', () => {
+    const tagPattern = (input: string) => input.replace(/<[^>]*>/g, '').replace(/[<>]/g, '');
+    for (const input of ['a < b > c', '<<a>b>', 'x<y', '>>a<', '<a><b>c</b>', 'no tags', '']) {
+      expect(pipe.transform(input, from('body'))).toBe(tagPattern(input));
+    }
+  });
+
+  it('strips a large body of unclosed brackets in linear time', () => {
+    // 200k characters: the regex it replaced took about 19 s on this, the
+    // scan milliseconds, so the bound holds on a loaded machine either way.
+    const started = performance.now();
+    pipe.transform('a<'.repeat(100_000), from('body'));
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+
   it('strips HTML out of query and route parameters too', () => {
     expect(pipe.transform('<b>x</b>', from('query'))).toBe('x');
     expect(pipe.transform('<b>x</b>', from('param'))).toBe('x');

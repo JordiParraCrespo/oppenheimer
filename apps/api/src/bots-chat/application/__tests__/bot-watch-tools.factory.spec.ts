@@ -21,6 +21,7 @@ import { BotSubscriptionEntity } from '../../domain/bot-subscription.entity';
 import {
   BOT_STALL_CHECK_DELAY_MS,
   BOT_SUBSCRIPTIONS_PER_BOT,
+  requestedCheckNumber,
 } from '../../domain/bot-subscription.policy';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
@@ -43,7 +44,9 @@ function liveSession(state: string, seq = 1, isResolved = false) {
   } as unknown as WorkSessionEntity;
 }
 
-function stored(overrides: { resourceId?: string; wakes?: number } = {}) {
+function stored(
+  overrides: { resourceId?: string; wakes?: number; until?: 'task' | 'closed' } = {},
+) {
   return BotSubscriptionEntity.create({
     id: 'sub-1',
     createdAt: new Date('2026-10-22T10:00:00Z'),
@@ -54,8 +57,8 @@ function stored(overrides: { resourceId?: string; wakes?: number } = {}) {
       resourceId: overrides.resourceId ?? SESSION,
       originTurnId: 'turn-1',
       purpose: 'research',
-      until: 'task',
-      watchedTurn: 1,
+      until: overrides.until ?? 'task',
+      watchedTurn: overrides.until === 'closed' ? null : 1,
       credentialScopes: null,
       timeZone: 'UTC',
       lastTurn: null,
@@ -279,6 +282,101 @@ describe('BotWatchToolsFactory', () => {
     });
     expect(sent.turn).toBe(3);
     expect(firstAt.getTime()).toBeGreaterThanOrEqual(before + BOT_STALL_CHECK_DELAY_MS);
+  });
+
+  // What breaks this: a bot that watches a session it did not start (the
+  // person's, another bot's) hears nothing until the task ends, and an agent
+  // gone quiet half way sits unseen; or it says "I'll look again in 20
+  // minutes" and nothing wakes it then.
+  it('owes a watched running task its regular looks, and the one look the bot asked for', async () => {
+    const { stallChecks, call } = setup({ read: liveSession('in_progress', 2) });
+    const before = Date.now();
+    const result = await call('watch_session', { session_id: SESSION, check_in_minutes: 20 });
+    const [[regular, regularAt], [asked, askedAt]] = stallChecks.schedule.mock.calls;
+    expect(regular).toMatchObject({ turn: 2, check: 1 });
+    expect(regularAt.getTime()).toBeGreaterThanOrEqual(before + BOT_STALL_CHECK_DELAY_MS);
+    expect(asked).toMatchObject({ turn: 2, check: requestedCheckNumber(askedAt) });
+    expect(askedAt.getTime()).toBeGreaterThanOrEqual(before + 20 * 60_000);
+    expect(result.content).toContain('and once in 20 minutes, as you asked');
+  });
+
+  // What breaks this: a watch until the session closes names no task, so
+  // its running task got no looks and was reported as not running.
+  it('owes the running task of a watch until the session closes its looks too', async () => {
+    const { stallChecks, call } = setup({ read: liveSession('in_progress', 4) });
+    const result = await call('watch_session', {
+      session_id: SESSION,
+      until: 'closed',
+      check_in_minutes: 15,
+    });
+    expect(stallChecks.schedule.mock.calls.map(([check]) => check.turn)).toEqual([4, 4]);
+    expect(result.content).toContain('and once in 15 minutes, as you asked');
+  });
+
+  it('owes no look at a task that is not running, and says the asked-for one was not set', async () => {
+    const waiting = setup({ read: liveSession('requires_action', 2) });
+    await waiting.call('watch_session', { session_id: SESSION });
+    expect(waiting.stallChecks.schedule).not.toHaveBeenCalled();
+
+    const ended = setup({ read: liveSession('completed', 3) });
+    const result = await ended.call('watch_session', { session_id: SESSION, check_in_minutes: 10 });
+    expect(ended.stallChecks.schedule).not.toHaveBeenCalled();
+    expect(result.content).toContain('no look was set');
+  });
+
+  // What breaks this: a bot that unblocks a session and is never told how
+  // the task went, since the input it answered counted as its last news.
+  it('follows the live task a bot unblocked from now, the answered input already known', async () => {
+    const { resolver, context, subscriptions, stallChecks } = setup({
+      read: liveSession('requires_action', 2),
+    });
+    await resolver.follow(context, SESSION, 'now');
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      watchedTurn: 2,
+      lastTurn: 2,
+      lastState: 'requires_action',
+    });
+    expect(stallChecks.schedule.mock.calls[0][0]).toMatchObject({ turn: 2, check: 1 });
+  });
+
+  // What breaks this: a bot that follows a session until it closes unblocks
+  // it once, and is silently left following that one task.
+  it('never narrows a watch the bot already has when a tool follows the task it set going', async () => {
+    const { resolver, context, subscriptions, stallChecks } = setup({
+      read: liveSession('requires_action', 2),
+      following: [stored({ until: 'closed' })],
+    });
+    await resolver.follow(context, SESSION, 'now');
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      until: 'closed',
+      purpose: 'research',
+    });
+    expect(stallChecks.schedule.mock.calls[0][0]).toMatchObject({ turn: 2, check: 1 });
+  });
+
+  // What breaks this: an agent that finishes between the answer and the
+  // watch, whose end then reads as already known, so the bot that unblocked
+  // it is never told how it went.
+  it('follows the task a bot answered by its number, so an end before the watch still wakes it', async () => {
+    const { resolver, context, subscriptions, commands } = setup({
+      read: liveSession('completed', 2),
+    });
+    await resolver.follow(context, SESSION, { answered: 2 });
+    expect(subscriptions.subscribe.mock.calls[0][0]).toMatchObject({
+      watchedTurn: 2,
+      lastTurn: 2,
+      lastState: 'requires_action',
+    });
+    expect(commands.execute.mock.calls[0][0]).toBeInstanceOf(WakeSubscribedBotCommand);
+  });
+
+  it('stores nothing and stages nothing when the bot said not to watch', async () => {
+    const { resolver, context, subscriptions, stallChecks } = setup();
+    expect(await resolver.follow(context, SESSION, 'now', false)).toContain(
+      'You are not watching it',
+    );
+    expect(subscriptions.subscribe).not.toHaveBeenCalled();
+    expect(stallChecks.schedule).not.toHaveBeenCalled();
   });
 
   it('keeps the watch it stored when its stall check cannot be staged', async () => {

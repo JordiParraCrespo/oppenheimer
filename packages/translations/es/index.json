@@ -1603,6 +1603,15 @@
       "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
       "history": "Historial {{position}}/{{total}}",
+      "pasted": {
+        "lines": "[Texto pegado #{{n}} +{{lines}} líneas]",
+        "chars": "[Texto pegado #{{n}} {{chars}} caracteres]"
+      },
+      "fold": {
+        "showAll": "Mostrar las {{lines}} líneas",
+        "showLess": "Mostrar menos"
+      },
+      "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
       "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
       "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",
@@ -3884,7 +3893,9 @@
       "emptyDescription": "Vincula uno y pregunta a cualquier bot cosas como «¿qué dijo Marta del martes?» o «di al grupo de la familia que llego tarde».",
       "link": "Vincular un número",
       "linkAnother": "Vincular otro número",
-      "atLimit": "Puedes vincular hasta {{count}} números.",
+      "atLimit_one": "Puedes vincular hasta {{count}} número.",
+      "atLimit_other": "Puedes vincular hasta {{count}} números.",
+      "atLimit_many": "Puedes vincular hasta {{count}} de números.",
       "noHosts": "Empareja antes un host: el número lo mantiene el runner de un host.",
       "linkTitle": "Vincular un número de WhatsApp",
       "linkDescription": "Elige el host que tendrá el dispositivo. Seguirá vinculado mientras ese host esté encendido.",

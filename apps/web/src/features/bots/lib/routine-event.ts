@@ -21,15 +21,16 @@ function reasonText(reason: string | null, t: TFunction): string {
 }
 
 /**
- * Whether a routine's line is a notice rather than a divider: a run that did
- * not happen, or a pause the owner did not make, both of which need them.
+ * Whether a routine's activity needs its owner, which is the only kind the
+ * chat shows, as a notice: a run that did not happen, or a pause they did
+ * not make.
  */
 export function routineNeedsOwner(event: RoutineEvent): boolean {
   if (event.activity === 'failed') return true;
   return event.activity === 'paused' && event.reason !== null && event.reason !== 'user';
 }
 
-/** A routine's line in the chat and in an export: "Created routine “Morning PR digest”". */
+/** A routine's activity in words, for its notice in the chat and for an export: "Created routine “Morning PR digest”". */
 export function routineEventText(event: RoutineEvent, t: TFunction): string {
   const { name } = event;
   switch (event.activity) {

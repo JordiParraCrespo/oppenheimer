@@ -1226,6 +1226,13 @@ earlier note:
   mail older than two days, spam, trash and chats never wake a routine, an
   any-mail trigger takes only the inbox, and rate-limited runs are one chat
   line a routine an hour.
+- `versions/mvp/09-runner-install-and-update.md` §2 said a
+  quarantine-stripped bare binary was all macOS needed, with no
+  notarization. It ran, but each release was a new program to macOS (an
+  ad-hoc signature in a new file per version), so every Mac asked for its
+  permissions again after every update. On 2026-11-04 the runner became a
+  Developer ID signed, notarized `OppenheimerRunner.app` at one fixed path
+  on macOS, swapped in place by updates (09 §2, §5).
 - `versions/mvp/05-screens.md` had the Sessions sidebar make projects (a
   plus in its head) and edit them (a settings glyph on each project's
   header). On 2026-11-05 the owner moved project management to Plan: a
@@ -1550,6 +1557,22 @@ earlier note:
   host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
   off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
   host; a program that wanted a literal ^V no longer gets one from it.
+- `versions/mvp/27-bot-subscriptions.md` §4.2 looked in only on a task a bot
+  handed off itself (`start_session`, `send_to_session`). On 2026-11-10,
+  the same evening, Facturas told the owner it would check a session once
+  it pushed and was never woken: it had only read that session. A task a
+  bot unblocks with `answer_session` is now followed like one it handed
+  off, a running task it `watch_session`s gets the same looks,
+  `check_in_minutes` adds one at a time the bot names, and its prompt says
+  never to promise to come back to something nothing will wake it for.
+- Note 26 §4 drew every routine activity as a line in its bot's chat: a
+  "Routine · *name*" divider over each run, and one for each save, change,
+  pause and delete. On 2026-11-10 the owner read a bot's chat as an
+  automation's log ("I'll refresh the queue, review evidence…" under a
+  "Routine · Automerge clean PRs" line). The chat now shows a routine only
+  when it needs the owner (a run that did not happen, a pause they did not
+  make), a run's turn reads as the bot writing to you, and the prompt has
+  the bot write as someone on the team in every turn.
 - `next-steps/0.7-terminal-and-chat.md` ("Data reads as data") opened a
   reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
   owner asked for the text first: the block opens on Raw, Raw / Tree on its

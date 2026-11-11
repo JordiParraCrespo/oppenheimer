@@ -122,7 +122,9 @@ host: remove it under Settings → Hosts).
 ~/.oppenheimer/
   config.json   0600  host id, control plane, pinned fingerprint, channel
   host.key      0600  the Ed25519 key every dial is signed with
-  bin/                runner-<version> binaries and the `current` symlink
+  bin/                runner-<version> binaries and the `current` symlink; on
+                      macOS runner-<version>.app bundles, the live
+                      OppenheimerRunner.app, and `current` pointing into it
   state/              update.json, sessions.json
   state/program-status/ each wrapped agent's OSC 7501 report, while its `runner pty` runs
   bin/path/runner     a link to this binary, on every session's PATH

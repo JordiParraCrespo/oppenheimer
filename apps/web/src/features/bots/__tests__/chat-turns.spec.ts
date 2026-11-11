@@ -64,6 +64,64 @@ describe('chatTurns', () => {
     expect(retryContent(blocks)).toBe('Tag the invoices');
   });
 
+  // What breaks this: a routine's run opening its turn with a line that names
+  // the routine, so the bot's message reads as an automation's output; or a
+  // run that did not happen, which the owner must hear of, dropped with it.
+  it('leaves a routine’s run and its changes out of the chat, and keeps what needs the owner', () => {
+    const routine = (id: string, turnId: string | null, activity: string, reason: string | null) =>
+      ({
+        ...message(id, turnId, 'event'),
+        event: { kind: 'routine', activity, automationId: 'a-1', runId: null, name: 'PRs', reason },
+      }) as unknown as BotMessageEntity;
+    const blocks = chatTurns(
+      conversation(
+        [
+          routine('r1', 't1', 'ran', null),
+          message('m1', 't1', 'assistant'),
+          routine('r2', null, 'saved', null),
+          routine('r3', null, 'paused', 'user'),
+          routine('r4', null, 'paused', 'bot_provider_missing'),
+          routine('r5', null, 'failed', 'missed'),
+        ],
+        [turn('t1')],
+      ),
+    );
+    expect(
+      blocks.map((block) => [block.asked.map((row) => row.id), block.answer.map((row) => row.id)]),
+    ).toEqual([
+      [[], ['m1']],
+      [['r4'], []],
+      [['r5'], []],
+    ]);
+  });
+
+  // What breaks this: a routine's turn that failed before the bot wrote, or a
+  // heartbeat that found nothing, losing its place with its line: the first
+  // drawn under everything said since, the second as an empty gap every hour.
+  it('keeps a routine’s turn where it ran, and leaves out one that only ran tools', () => {
+    const ran = {
+      ...message('r1', 't1', 'event'),
+      event: { kind: 'routine', activity: 'ran', automationId: 'a-1', runId: 'r', name: 'PRs' },
+    } as unknown as BotMessageEntity;
+    const failed = { id: 't1', status: 'failed' } as BotTurnEntity;
+    const quiet = { id: 't3', status: 'completed' } as BotTurnEntity;
+    const blocks = chatTurns(
+      conversation(
+        [
+          ran,
+          message('m1', 't2', 'user'),
+          message('m2', 't2', 'assistant'),
+          { ...ran, id: 'r2', turnId: 't3' } as BotMessageEntity,
+          { ...message('m3', 't3', 'activity'), steps: [] } as unknown as BotMessageEntity,
+        ],
+        [failed, turn('t2'), quiet],
+      ),
+    );
+    expect(blocks.map((block) => block.turnId)).toEqual(['t1', 't2', 't3']);
+    expect(blocks.map((block) => isQuietRoutineRun(block, false))).toEqual([false, false, true]);
+    expect(blocks.map((block) => isQuietRoutineRun(block, true))).toEqual([false, false, false]);
+  });
+
   it('groups each turn’s messages under it, your message apart from the bot’s work', () => {
     const blocks = chatTurns(
       conversation(
@@ -281,16 +339,8 @@ describe('events from Oppenheimer', () => {
 
 describe('isQuietRoutineRun', () => {
   // What breaks this: a routine checking every half hour and finding nothing
-  // filling the chat with its name while the tool calls are hidden; or the
+  // leaving a gap in the chat each time while the tool calls are hidden; or the
   // hiding swallowing a run that replied, failed or started a session.
-  const ran = {
-    id: 'e1',
-    turnId: 't1',
-    role: 'event',
-    content: '',
-    attachments: [],
-    event: { kind: 'routine', activity: 'ran', name: 'Triage Sentry errors' },
-  } as unknown as BotMessageEntity;
   const tools = (sessionId: string | null = null) =>
     ({
       id: 'a1',
@@ -301,13 +351,14 @@ describe('isQuietRoutineRun', () => {
   const block = (
     status: string,
     answer: BotMessageEntity[],
-    asked: BotMessageEntity[] = [ran],
+    asked: BotMessageEntity[] = [],
   ): ChatTurnBlock => ({
     key: 't1',
     turnId: 't1',
     turn: { id: 't1', status } as BotTurnEntity,
     asked,
     answer,
+    openedUnseen: asked.length === 0,
   });
 
   it('leaves out a finished run that only ran tools, until the tool calls show', () => {

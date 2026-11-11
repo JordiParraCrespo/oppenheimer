@@ -18,19 +18,21 @@ import {
   usePaneDrop,
 } from '@oppenheimer/frontend-web';
 import {
+  BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
   type BotProvider,
   botModelOf,
   botTakesImages,
 } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
-import type { ClipboardEvent, ReactNode } from 'react';
+import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
 import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
+import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
@@ -71,6 +73,12 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
+ *
+ * A long paste (over 1,000 characters or 10 lines) goes into the field as one
+ * label, `[Pasted text #1 +1000 lines]`, the way Claude Code and Codex hold
+ * one: the field stays readable around it, and the send puts the text back
+ * in the label's place (`useBotPastes`). Backspace or Delete takes a label out
+ * whole. A message longer than the bot takes keeps send off and says so.
  * A built-in command the console runs itself (`/goal clear`, `/loop stop`, `/usage`, which
  * puts the usage card in the chat) sends nothing,
  * and one that cannot be sent as typed (`/goal` with no condition) keeps send
@@ -98,6 +106,7 @@ export function BotComposer({
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const recall = useSentHistory(botId, draft, setDraft);
+  const pastes = useBotPastes(botId, draft, setDraft);
   const active = useBotActiveTurn(botId);
   // How many wait decides whether the queue takes the top edge; `BotComposerTop` draws them.
   const waiting = useBotWaitingMessages(botId).length;
@@ -113,6 +122,7 @@ export function BotComposer({
   const send = useSendBotMessage({
     onSuccess: (_turn, sent) => {
       setBotDraft(sent.id, '');
+      pastes.clear();
       images.clear();
     },
   });
@@ -123,15 +133,19 @@ export function BotComposer({
   const { data: loop } = useBotLoop(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
+  const length = pastes.content.trim().length;
+  const tooLong =
+    length > BOT_MESSAGE_MAX ? t('bots.chat.tooLong', { length, max: BOT_MESSAGE_MAX }) : undefined;
   const blocked =
     noKey ??
+    tooLong ??
     (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined) ??
     builtIn.notice;
   const failure = send.error ?? cancel.error ?? builtIn.error;
   const running = active?.status === 'running';
   const message = (steer: boolean) => ({
     id: botId,
-    content: draft,
+    content: pastes.content,
     attachmentIds: images.images.flatMap((image) =>
       image.attachmentId ? [image.attachmentId] : [],
     ),
@@ -163,9 +177,18 @@ export function BotComposer({
   }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
-    // Nothing is prevented: text pasted with an image still lands in the field.
+    // Text pasted with an image still lands in the field, as itself or as a long paste's label.
     const pasted = Array.from(event.clipboardData.files);
     if (pasted.length > 0) images.hold(pasted);
+    pastes.onPaste(event);
+  }
+
+  // A long paste's label is taken out whole first; the rest of the keys belong
+  // to the `/` menu while it is open, else to the walk through what you sent.
+  function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+    if (pastes.onKeyDownCapture(event)) return;
+    if (slash.open) slash.onKeyDownCapture(event);
+    else recall.onKeyDownCapture(event);
   }
 
   const top = composerTopOf({
@@ -217,8 +240,7 @@ export function BotComposer({
           />
         ) : null}
         <ChatComposer
-          // The field's keys belong to the `/` menu while it is open, else to the walk through what you sent.
-          onKeyDownCapture={slash.open ? slash.onKeyDownCapture : recall.onKeyDownCapture}
+          onKeyDownCapture={onKeyDownCapture}
           value={draft}
           onValueChange={setDraft}
           inputRef={field}

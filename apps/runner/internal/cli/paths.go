@@ -209,6 +209,11 @@ func (p Paths) Bin() string { return filepath.Join(p.Home, DirBin) }
 // Current is the symlink the service unit executes.
 func (p Paths) Current() string { return filepath.Join(p.Bin(), "current") }
 
+// AppBundle is the macOS app bundle's directory name, the same in the release
+// archive and in Bin: the live bundle is Bin/AppBundle, and `current` points
+// at the executable inside it.
+const AppBundle = "OppenheimerRunner.app"
+
 // Commands holds a `runner` link to this binary, on every session's PATH,
 // so an agent types `runner` whatever the versioned file is called.
 func (p Paths) Commands() string { return filepath.Join(p.Bin(), "path") }

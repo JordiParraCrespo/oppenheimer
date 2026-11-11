@@ -11,8 +11,23 @@
 # is being rolled in; RELEASE_BASE_URL is where the manifest and artifacts
 # will be served, which every artifact URL in the manifest is built from.
 #
+# macOS archives carry the binary inside OppenheimerRunner.app, signed with a
+# Developer ID and notarized, because macOS keeps a permission for a signed
+# bundle's identity and loses it for a bare binary on every update
+# (product/versions/mvp/09-runner-install-and-update.md §2). That needs
+# rcodesign (or RCODESIGN=<path>) and:
+#
+#   MACOS_SIGN_P12           the Developer ID Application certificate, .p12
+#   MACOS_SIGN_P12_PASSWORD  its password (MACOS_SIGN_P12_PASSWORD_FILE works too)
+#   MACOS_NOTARY_KEY         an App Store Connect API key, as the JSON file
+#                            `rcodesign encode-app-store-connect-api-key` writes
+#
+# Without them the build stops, unless MACOS_UNSIGNED=1 asks for bundles with
+# only the linker's ad-hoc signature: fine to test with, and every Mac that
+# installs one asks for its permissions again after each update.
+#
 # Output, in dist/runner/:
-#   runner_<version>_<os>_<arch>.tar.gz   one static binary each
+#   runner_<version>_<os>_<arch>.tar.gz   one static binary each, in a bundle on macOS
 #   SHA256SUMS                            what a person verifies by hand
 #   <channel>.json                        the manifest, still unsigned
 #   install.sh                            the installer, release keys stamped in
@@ -52,6 +67,44 @@ https://?*) BASE_URL="${BASE_URL%/}" ;;
 esac
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+BUNDLE="OppenheimerRunner.app"
+RCODESIGN="${RCODESIGN:-rcodesign}"
+P12_PASSWORD_FILE="${MACOS_SIGN_P12_PASSWORD_FILE:-}"
+if [ "${MACOS_UNSIGNED:-}" != 1 ]; then
+	missing=""
+	[ -n "${MACOS_SIGN_P12:-}" ] || missing="$missing MACOS_SIGN_P12"
+	[ -n "${MACOS_SIGN_P12_PASSWORD:-}" ] || [ -n "$P12_PASSWORD_FILE" ] || missing="$missing MACOS_SIGN_P12_PASSWORD"
+	[ -n "${MACOS_NOTARY_KEY:-}" ] || missing="$missing MACOS_NOTARY_KEY"
+	if [ -n "$missing" ]; then
+		echo "error: the macOS bundles cannot be signed and notarized: set$missing." >&2
+		echo "       MACOS_UNSIGNED=1 builds them unsigned, and every Mac then asks for its permissions" >&2
+		echo "       again after each update." >&2
+		exit 1
+	fi
+	command -v "$RCODESIGN" >/dev/null || { echo "error: $RCODESIGN is not installed; set RCODESIGN=<path>" >&2; exit 1; }
+fi
+case "$VERSION" in
+*[!A-Za-z0-9.+-]*) echo "error: version $VERSION has characters a bundle's Info.plist cannot hold" >&2; exit 1 ;;
+esac
+
+# bundle <binary> <dir> — wrap the binary in $BUNDLE under <dir>, then sign
+# and notarize it. The ticket is stapled into the bundle, so a Mac checks it
+# without asking Apple.
+bundle() {
+	local app="$2/$BUNDLE"
+	mkdir -p "$app/Contents/MacOS"
+	mv "$1" "$app/Contents/MacOS/runner"
+	sed "s|@VERSION@|$VERSION|g" "$ROOT/apps/runner/packaging/macos/Info.plist" >"$app/Contents/Info.plist"
+	[ "${MACOS_UNSIGNED:-}" != 1 ] || return 0
+	if [ -z "$P12_PASSWORD_FILE" ]; then
+		P12_PASSWORD_FILE="$(mktemp)"
+		trap 'rm -f "$P12_PASSWORD_FILE"' EXIT
+		printf '%s' "$MACOS_SIGN_P12_PASSWORD" >"$P12_PASSWORD_FILE"
+	fi
+	"$RCODESIGN" sign --p12-file "$MACOS_SIGN_P12" --p12-password-file "$P12_PASSWORD_FILE" \
+		--code-signature-flags runtime "$app"
+	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --staple "$app"
+}
 OUT="$ROOT/dist/runner"
 KEYS_VAR="github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release.PublicKeys"
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -69,6 +122,7 @@ for target in "${targets[@]}"; do
 	( cd "$ROOT/apps/runner" && CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
 		-ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X '${KEYS_VAR}=${PUBLIC_KEYS}'" \
 		-o "$stage/runner" ./cmd/runner )
+	[ "$os" != darwin ] || bundle "$stage/runner" "$stage"
 	cp "$ROOT/LICENSE" "$stage/" 2>/dev/null || true
 	tar -czf "$OUT/runner_${VERSION}_${os}_${arch}.tar.gz" -C "$OUT/stage" "runner_${VERSION}_${os}_${arch}"
 done

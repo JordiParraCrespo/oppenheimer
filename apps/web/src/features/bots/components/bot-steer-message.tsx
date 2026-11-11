@@ -2,6 +2,7 @@ import { ChatMarker, ChatUserMessage } from '@oppenheimer/design-system-web';
 import { CornerDownRight } from '@oppenheimer/design-system-web/icons';
 import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
+import { BotMessageText } from '@/features/bots/components/bot-message-text';
 import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 
 /**
@@ -20,7 +21,7 @@ export function BotSteerMessage({ message, time }: { message: BotMessageEntity; 
         time={time}
         actions={<CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />}
       >
-        {message.content}
+        <BotMessageText text={message.content} />
       </ChatUserMessage>
     </div>
   );

@@ -127,6 +127,29 @@ func Decide(current string, release Release, pinned string, activity Activity, w
 		plan.Action, plan.Reason = ActionNone, fmt.Sprintf("%s is already the newest version on the %s channel", current, release.Channel)
 		return plan
 	}
+	return whenToApply(plan, release, activity, waitedSince, now)
+}
+
+// DecideReinstall answers when to install the running version again, for a
+// host where it is installed in a form the platform no longer runs (a bare
+// binary on macOS). It waits for a quiet moment, capped, as an update does,
+// and is never tried again once a reinstall of this version rolled back:
+// the next release installs in the new form anyway.
+func DecideReinstall(current string, release Release, state State, activity Activity, now time.Time) Plan {
+	plan := Plan{From: current, To: release.Version, Release: release}
+	if state.Phase == PhaseRolled && state.From == current && state.To == current {
+		plan.Action = ActionNone
+		plan.Reason = fmt.Sprintf("installing %s again as the app bundle rolled back; the next release installs as the bundle", current)
+		return plan
+	}
+	plan = whenToApply(plan, release, activity, state.WaitingSince, now)
+	if plan.Action == ActionUpdateNow {
+		plan.Reason = fmt.Sprintf("%s is installed as a bare binary; installing it again as the app bundle macOS keeps its permissions for (%s)", current, plan.Reason)
+	}
+	return plan
+}
+
+func whenToApply(plan Plan, release Release, activity Activity, waitedSince time.Time, now time.Time) Plan {
 	switch {
 	case release.Urgent:
 		plan.Action, plan.Reason = ActionUpdateNow, "the release is marked urgent"

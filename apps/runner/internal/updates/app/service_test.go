@@ -48,6 +48,9 @@ type releaseServer struct {
 	corrupt bool
 	// signWith replaces the signing key, to fake a forged manifest.
 	signWith ed25519.PrivateKey
+	// bundle ships the binary inside a macOS app bundle of that name, and
+	// the harness installs on the macOS layout.
+	bundle string
 }
 
 func newReleaseServer(t *testing.T, version string) *releaseServer {
@@ -107,14 +110,25 @@ func (rs *releaseServer) manifest(t *testing.T, digest string, size int64) []byt
 func (rs *releaseServer) archive(t *testing.T) []byte {
 	t.Helper()
 	script := "#!/bin/sh\nexit " + string(rune('0'+rs.selfCheckExit)) + "\n"
+	// A slice, not a map: the archive is rebuilt per request, and the
+	// manifest and its signature must describe the same bytes.
+	files := [][2]string{{"runner", script}}
+	if rs.bundle != "" {
+		files = [][2]string{
+			{rs.bundle + "/Contents/MacOS/runner", script},
+			{rs.bundle + "/Contents/Info.plist", "<key>CFBundleVersion</key><string>" + rs.version + "</string>"},
+		}
+	}
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
-	if err := tw.WriteHeader(&tar.Header{Name: "runner", Mode: 0o755, Size: int64(len(script)), Typeflag: tar.TypeReg}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := tw.Write([]byte(script)); err != nil {
-		t.Fatal(err)
+	for _, f := range files {
+		if err := tw.WriteHeader(&tar.Header{Name: f[0], Mode: 0o755, Size: int64(len(f[1])), Typeflag: tar.TypeReg}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write([]byte(f[1])); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := tw.Close(); err != nil {
 		t.Fatal(err)
@@ -136,7 +150,7 @@ type harness struct {
 func newHarness(t *testing.T, rs *releaseServer, running string) *harness {
 	t.Helper()
 	home := t.TempDir()
-	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client()})
+	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client(), Bundle: rs.bundle})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,5 +414,59 @@ func TestApplyRefusesAPinnedHostAndForceOverridesIt(t *testing.T) {
 	}
 	if got, _ := h.store.Current(); got != "1.1.0" {
 		t.Fatalf("current = %q", got)
+	}
+}
+
+// A Mac that a runner from before the app bundle updated runs the new
+// version as a bare binary, and every update would cost it its permissions
+// again. Being current is not enough: the update loop, unforced, reinstalls
+// its own version as the bundle at a quiet moment.
+func TestACurrentMacRunningABareBinaryReinstallsItselfAsTheBundle(t *testing.T) {
+	rs := newReleaseServer(t, "1.4.0")
+	rs.bundle = "OppenheimerRunner.app"
+	h := newHarness(t, rs, "1.4.0")
+
+	plan, err := h.svc.Apply(context.Background(), app.ApplyOptions{})
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if plan.Action != domain.ActionUpdateNow || h.store.NeedsReinstall() || h.restarts.calls != 1 {
+		t.Fatalf("plan %s (%s): needs reinstall %v, restarts %d; want the bundle installed",
+			plan.Action, plan.Reason, h.store.NeedsReinstall(), h.restarts.calls)
+	}
+	live, err := filepath.EvalSymlinks(filepath.Join(h.home, "bin", "current"))
+	if err != nil || live != filepath.Join(h.home, "bin", rs.bundle, "Contents", "MacOS", "runner") {
+		t.Fatalf("current runs %q (%v), want the live bundle", live, err)
+	}
+	if plan, err := h.svc.Check(context.Background()); err != nil || plan.Action != domain.ActionNone {
+		t.Fatalf("once on the bundle, plan = %s, %v; want none", plan.Action, err)
+	}
+}
+
+// A bundle that does not stay up rolls back to the bare binary that did,
+// is not kept for a later rollback, and is not tried again.
+func TestAReinstallThatDoesNotStayUpReturnsToTheBareBinary(t *testing.T) {
+	rs := newReleaseServer(t, "1.4.0")
+	rs.bundle = "OppenheimerRunner.app"
+	h := newHarness(t, rs, "1.4.0")
+	if _, err := h.svc.Apply(context.Background(), app.ApplyOptions{}); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+
+	for range domain.MaxAttempts {
+		if _, err := h.svc.NoteBoot(context.Background()); err != nil {
+			t.Fatalf("boot: %v", err)
+		}
+	}
+	live, err := filepath.EvalSymlinks(filepath.Join(h.home, "bin", "current"))
+	if err != nil || live != filepath.Join(h.home, "bin", "runner-1.4.0") {
+		t.Fatalf("after the rollback current runs %q (%v), want the bare runner-1.4.0", live, err)
+	}
+	// Kept, it would be what the next release's rollback returns to.
+	if _, err := os.Stat(filepath.Join(h.home, "bin", "runner-1.4.0.app")); !os.IsNotExist(err) {
+		t.Fatalf("the bundle that failed is still installed: %v", err)
+	}
+	if plan, err := h.svc.Check(context.Background()); err != nil || plan.Action != domain.ActionNone {
+		t.Fatalf("after a rolled-back reinstall, plan = %s (%s), %v; want none", plan.Action, plan.Reason, err)
 	}
 }

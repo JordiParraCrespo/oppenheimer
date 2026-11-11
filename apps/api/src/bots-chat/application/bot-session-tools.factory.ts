@@ -220,10 +220,12 @@ export class BotSessionToolsFactory implements BotToolArea {
         const offline = result.hints.includes('host_offline')
           ? ' The host is offline: the session is queued and starts when it comes back.'
           : '';
-        const watched =
-          input.watch === false
-            ? 'You are not watching it; read it later with get_session.'
-            : await this.watches.follow(context, result.sessionId, 'first_task');
+        const watched = await this.watches.follow(
+          context,
+          result.sessionId,
+          'first_task',
+          input.watch,
+        );
         return {
           content: `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own. ${watched}`,
           sessionId: result.sessionId,
@@ -342,10 +344,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         const session = result.hints.includes('host_offline')
           ? null
           : await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
-        const watched =
-          input.watch === false
-            ? 'You are not watching it; read it later with get_session.'
-            : await this.watches.follow(context, sessionId, 'first_task');
+        const watched = await this.watches.follow(context, sessionId, 'first_task', input.watch);
         return { content: `${cloudStartAnswer(plan, sessionId, session)} ${watched}`, sessionId };
       },
     });
@@ -388,10 +387,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             sender: { kind: 'bot', botId: context.botId, turnId: context.turnId },
           }),
         );
-        const watched =
-          input.watch === false
-            ? 'Read how it goes with get_session or read_session.'
-            : await this.watches.follow(context, input.session_id, { turn });
+        const watched = await this.watches.follow(context, input.session_id, { turn }, input.watch);
         return `Sent the prompt to session ${input.session_id}. ${watched}${readAfterHint(sent.seq)}`;
       },
     });
@@ -411,7 +407,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           context.permission,
         ),
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared.`,
+      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared. You are subscribed to the task you unblocked unless watch is false.`,
       input: z.object({
         session_id: z.uuid().describe('The session (from list_sessions).'),
         decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),
@@ -441,6 +437,12 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(8)
           .optional()
           .describe("For a permission dialog: the option's index."),
+        watch: z
+          .boolean()
+          .optional()
+          .describe(
+            'Be woken when the task you unblocked needs input again or ends (default true).',
+          ),
       }),
       summarize: async (input, context) => {
         const summary = decisionAnswerSummary(input, await this.session(context, input.session_id));
@@ -453,6 +455,8 @@ export class BotSessionToolsFactory implements BotToolArea {
             'Give answers (for a question) or option (for a permission dialog), not both.',
           );
         }
+        // Read first: the task answered, so its end wakes the bot even if it comes before the watch.
+        const task = (await this.session(context, input.session_id)).latestTurn;
         const answered = await this.commandBus.execute<
           AnswerSessionDecisionCommand,
           SessionCommandResult
@@ -463,7 +467,13 @@ export class BotSessionToolsFactory implements BotToolArea {
             answer: decisionAnswerOf(input),
           }),
         );
-        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.${readAfterHint(answered.seq)}`;
+        const watched = await this.watches.follow(
+          context,
+          input.session_id,
+          task ? { answered: task.seq } : 'now',
+          input.watch,
+        );
+        return `Answered session ${input.session_id}. The agent takes it from here. ${watched}${readAfterHint(answered.seq)}`;
       },
     });
   }

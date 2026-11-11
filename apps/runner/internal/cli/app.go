@@ -278,9 +278,13 @@ func New(version string) (*App, error) {
 	app.WorkFolder = places
 	app.Terminals = terminals
 
-	binStore, err := binaries.New(binaries.Options{
+	binOpts := binaries.Options{
 		Dir: paths.Bin(), Name: "runner", HTTP: &http.Client{Timeout: 10 * time.Minute},
-	})
+	}
+	if runtime.GOOS == "darwin" {
+		binOpts.Bundle = AppBundle
+	}
+	binStore, err := binaries.New(binOpts)
 	if err != nil {
 		return nil, err
 	}
