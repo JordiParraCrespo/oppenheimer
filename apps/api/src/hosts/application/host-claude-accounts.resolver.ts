@@ -19,17 +19,15 @@ export class HostClaudeAccountsResolver implements HostClaudeAccountsPort {
   ) {}
 
   async signedInLike(hostId: string, ownerUserId: string): Promise<string[]> {
-    const found = await this.hosts.findOneByIdForMachine(hostId);
-    if (found.isNone() || found.unwrap().isUnpaired) return [];
-    const account = this.mapper.toClaudeAccount(found.unwrap().capabilities);
+    // The inventory, not the row: a host signed in after it was paired says
+    // so only on its heartbeats.
+    const hosts = await this.hosts.findPairedWithInventoryForMachine(hostId, ownerUserId);
+    const started = hosts.find((host) => host.id === hostId);
+    const account = started ? this.mapper.toClaudeAccount(started.capabilities) : null;
     if (!account) return [];
-    const owned = await this.hosts.findOwnedBySystem(ownerUserId);
-    const others = owned
+    const others = hosts
       .filter(
-        (host) =>
-          host.id !== hostId &&
-          !host.isUnpaired &&
-          this.mapper.toClaudeAccount(host.capabilities) === account,
+        (host) => host.id !== hostId && this.mapper.toClaudeAccount(host.capabilities) === account,
       )
       .map((host) => host.id);
     return [hostId, ...others];

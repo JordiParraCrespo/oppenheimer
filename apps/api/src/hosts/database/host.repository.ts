@@ -83,6 +83,19 @@ export class HostRepository
     return records.map((record) => this.mapper.toDomain(record));
   }
 
+  async findPairedWithInventoryForMachine(
+    hostId: string,
+    ownerUserId: string,
+  ): Promise<HostEntity[]> {
+    const records = await this.unscopedQuery(
+      'a session the control plane launched is sent a message from its own host or its launcher’s; there is no person on the request to scope by',
+    )
+      .where('(host.id = :hostId OR host.ownerUserId = :ownerUserId)', { hostId, ownerUserId })
+      .andWhere('host.unpairedAt IS NULL')
+      .getMany();
+    return (await this.withMetadata(records)).map((presence) => presence.host);
+  }
+
   /**
    * The row, the outbox entries its events owe, and the timeline entries they
    * stand for, in one transaction. An unpaired host's current network stops
