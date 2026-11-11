@@ -132,6 +132,7 @@ function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const steps = [
     'If their first message asks for real work, do that first and fully; the steps below wait until it is done.',
     `Greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
+    ...whatYouCanDoForThem(tools),
     "In the same message, unless they already said it, ask what one job they want you to own, with two or three examples that fit Oppenheimer: reviewing pull requests, keeping a project's plan up to date, running coding agents on a host to fix bugs, researching a topic.",
     'Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.',
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
@@ -145,6 +146,74 @@ ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
 }
 
 /**
+ * What a new bot tells the person it can do for them, one phrase per area of
+ * tools its turn offers (2026-11-10), so a person who knows nothing yet hears
+ * what Oppenheimer's bots are for and a tool the turn lacks is never promised.
+ */
+interface AreaIntro {
+  /** What the bot can do there, in the greeting's list. */
+  does: string;
+  /** The tools that do it: the area is offered when the turn has any of them. */
+  doneBy: readonly string[];
+  /** What the person may still have to connect for it, named in the offer to help. */
+  connects?: string;
+}
+
+/**
+ * Keyed by the tools that act, not by area, so an area the turn can only
+ * read (a read-only credential, a tool switched Off) is not promised: an
+ * eval of a bot with `list_hosts` alone offered to start coding agents
+ * (2026-11-10).
+ */
+const AREA_INTROS: readonly AreaIntro[] = [
+  {
+    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once and report back',
+    doneBy: ['start_session', 'start_cloud_session'],
+    connects: 'a computer',
+  },
+  { does: 'run commands on their computers', doneBy: ['run_command'] },
+  {
+    does: 'keep their plan, projects and tasks up to date',
+    doneBy: ['create_task', 'update_task'],
+  },
+  {
+    does: 'read, sort and answer their email in Gmail',
+    doneBy: ['send_mail', 'send_draft'],
+    connects: 'Gmail',
+  },
+  {
+    does: 'talk with them and others on WhatsApp',
+    doneBy: ['send_whatsapp_message'],
+    connects: 'WhatsApp',
+  },
+  { does: 'talk with them on Telegram', doneBy: ['send_telegram_message'], connects: 'Telegram' },
+  {
+    does: 'review, comment on and follow pull requests and issues on GitHub',
+    doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
+    connects: 'GitHub',
+  },
+  {
+    does: 'run automations and routines on a schedule or when something happens',
+    doneBy: ['update_routine'],
+  },
+  { does: 'work with their other bots and create new ones', doneBy: ['message_bot', 'create_bot'] },
+  { does: 'read pages on the web and research a topic', doneBy: ['web_fetch'] },
+];
+
+function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
+  const offered = new Set(tools.map((tool) => tool.name));
+  const areas = AREA_INTROS.filter((area) => area.doneBy.some((name) => offered.has(name)));
+  if (areas.length === 0) return [];
+  const connects = areas.flatMap((area) => (area.connects ? [area.connects] : []));
+  const offer = connects.length
+    ? ` Say that anything not connected yet (${connects.join(', ')}) you can help them connect.`
+    : '';
+  return [
+    `In the same message, show them in a short list what you can do for them here, in your own words: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond that list.${offer}`,
+  ];
+}
+
+/**
  * How a turn goes. With `remember` offered it also says to save as it goes:
  * Grok Bot saves without asking, and a bot told only in the tool's own
  * description saved almost nothing past its first chat.
@@ -153,8 +222,10 @@ function howATurnGoes(remembers: boolean): string {
   return remembers ? `${HOW_A_TURN_GOES}\n${SAVE_AS_YOU_GO}` : HOW_A_TURN_GOES;
 }
 
-const SAVE_AS_YOU_GO =
-  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.';
+const SAVE_AS_YOU_GO = [
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.',
+  '- Ask also whether you learned who the person is or how they want any bot to treat them: their name, what they do for a living and for whom, their language and time zone, how to address them. Save that to the general memory when the rule in `remember` puts it there, so every bot of theirs knows them a little better each time. When a general fact in your prompt is out of date, remember the new one and tell them.',
+].join('\n');
 
 const HOW_A_TURN_GOES = `# How a turn goes
 

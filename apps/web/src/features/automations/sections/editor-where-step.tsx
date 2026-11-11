@@ -45,7 +45,7 @@ function isAutomationPlace(value: string): value is AutomationPlace {
  * model, as far as that place has them), each a hairline card of rows with
  * the pick on the right. Cursor is offered once the reader has a key for it. A run clones only from
  * the project, so the repositories offered are the project's; a new project
- * picks all of them.
+ * starts with none picked.
  */
 export function EditorWhereStep({
   draft,
@@ -112,15 +112,12 @@ export function EditorWhereStep({
                   t('automations.editor.noRepositories'),
               }))}
               onValueChange={(projectId) => {
+                // Picking the project already picked keeps its repositories.
+                if (projectId === draft.projectId) return;
                 const next = projects.find((row) => row.id === projectId);
                 onChange({
                   projectId,
-                  repositoryKeys: (next?.repositories ?? []).map((repository) =>
-                    repositoryKey({
-                      installationId: repository.installationId,
-                      githubRepoId: repository.githubRepoId,
-                    }),
-                  ),
+                  repositoryKeys: [],
                   ...(next?.defaultHostId ? { hostId: next.defaultHostId } : {}),
                 });
               }}

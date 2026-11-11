@@ -220,9 +220,20 @@ describe('the draft', () => {
   });
 
   it('keeps each card inside the automation’s repositories', () => {
-    const card = githubCard('push', [101, 202]);
-    expect(fitCards([card], [202])[0]).toMatchObject({ repositories: [202] });
-    expect(fitCards([githubCard('push', [101])], [303])[0]).toMatchObject({ repositories: [303] });
+    const narrowed = { ...githubCard('push', [101]), onAll: false };
+    expect(fitCards([narrowed], [303])[0]).toMatchObject({ repositories: [303] });
+    // A card added before any repository was picked follows the picks one at a time.
+    const pending = fitCards(fitCards([githubCard('push', [])], [101]), [101, 202]);
+    expect(pending[0]).toMatchObject({ repositories: [101, 202] });
+    // A narrowed card stays narrowed, even after the set shrinks to its own
+    // repository and grows back.
+    const shrunk = fitCards([narrowed], [101]);
+    expect(fitCards(shrunk, [101, 202])[0]).toMatchObject({ repositories: [101] });
+    // Whether it follows the set is the editor's: the request never carries it.
+    const draft = { ...draftOf(automation()), triggers: [githubCard('push', [101])] };
+    expect(toCreateInput(draft, { name: 'x', prompt: 'y' })?.triggers[0]).not.toHaveProperty(
+      'onAll',
+    );
   });
 
   it('round-trips an automation into the requests the API takes', () => {
@@ -239,15 +250,17 @@ describe('the draft', () => {
     expect(toUpdateInput(draft, task, 3)).toMatchObject({ version: 3, launch: {} });
   });
 
-  it('prefills a new automation from the project it was opened for', () => {
+  it('prefills a new automation from the project it was opened for, with no repository picked', () => {
     const projects = [project({ id: 'p-1' }), project({ id: 'p-2', defaultHostId: 'h-2' })];
 
     expect(emptyDraft(projects, [host('h-9')], 'p-2')).toMatchObject({
       projectId: 'p-2',
       hostId: 'h-2',
       agent: 'codex',
-      repositoryKeys: ['i-1:101'],
+      repositoryKeys: [],
     });
+    // Opened from no project, it guesses none.
+    expect(emptyDraft(projects, [host('h-9')], undefined).projectId).toBeNull();
   });
 
   it('takes the first host there is for a project with no default host', () => {

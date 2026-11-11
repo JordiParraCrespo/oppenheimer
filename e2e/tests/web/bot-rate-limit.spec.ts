@@ -48,6 +48,8 @@ test('draws a step a rate limit stopped as a wait with its time, not as failed',
 
   await signInAs(page, owner.user);
   await page.goto(`/bots/${bot.id}`);
+  // The chat hides its tool calls until the wrench shows them.
+  await page.getByRole('button', { name: 'Show tool calls and routine runs' }).click();
   const group = page.getByRole('button', { name: /Used 2 tools|Archived/ });
   await expect(group).toBeVisible();
   await expect(group).not.toContainText('failed');

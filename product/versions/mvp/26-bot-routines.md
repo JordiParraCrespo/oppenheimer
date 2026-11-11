@@ -187,9 +187,12 @@ event line, and the owner read a bot's chat as an automation's log):
   ("Hey, I'm back for my half-hour look at the pull requests") and never
   writes a run report. The same voice is a rule of every turn (the
   prompt's "How a turn goes").
-  A run that ends quiet (§6, `nothing_to_report`) draws nothing at all
-  while the chat hides tool calls, so an hourly heartbeat leaves no gap;
-  a run that failed before the bot wrote keeps its place, with why.
+  While the chat hides its tool calls (the wrench in its bar, off by
+  default), a run that completed having only run tools, with no reply,
+  session or draft to show, is left out altogether, so an hourly
+  heartbeat leaves no gap; the wrench shows it again. A run that replied,
+  failed or was stopped stays, and one that failed before the bot wrote
+  keeps its place, with why.
 - `failed` is drawn as a notice, "Routine *Morning PR digest* did not
   run" with the reason, and **Open routines**: a run that expired, or one
   skipped by a run limit, a missed slot or an agent that cannot start. A
@@ -394,7 +397,8 @@ what it is.
 The switch, Run now and Delete are the owner acting, so there is no
 card. They dispatch the same commands `update_routine` does, so their
 activity lines come from the same listener (§4, "In the chat").
-`/automations` lists bot routines too, with the bot that runs them.
+`/automations` lists bot routines too, with the bot that runs them, on a
+tab of their own (`/automations/routines`) between Automations and Runs.
 
 ## 8. Slices
 
@@ -463,7 +467,10 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   "Routines in this change" group waits until a line knows its turn.
   `/automations` lists bot routines in their own table under the
   automations, each opening its bot's Routines tab
-  (`GET /automations/routines`).
+  (`GET /automations/routines`). On 2026-11-11 the owner asked for the
+  two in tabs: the table moved to a Bot routines tab,
+  `/automations/routines`, which says where routines are made when there
+  are none.
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.

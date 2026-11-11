@@ -36,10 +36,13 @@ const FIVES = Array.from({ length: 12 }, (_, i) => i * 5);
 export function ScheduleTriggerCard({
   card,
   onChange,
+  onDuplicate,
   onRemove,
 }: {
   card: ScheduleCard;
   onChange: (card: ScheduleCard) => void;
+  /** Absent when the automation already holds its most triggers. */
+  onDuplicate?: () => void;
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
@@ -64,6 +67,8 @@ export function ScheduleTriggerCard({
   return (
     <TriggerCard
       icon={<Clock />}
+      onDuplicate={onDuplicate}
+      duplicateLabel={t('automations.editor.duplicateTrigger')}
       onRemove={onRemove}
       removeLabel={t('automations.editor.removeTrigger')}
       preview={<SchedulePreview card={card} />}

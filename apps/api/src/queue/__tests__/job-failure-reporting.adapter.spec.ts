@@ -61,7 +61,7 @@ describe('JobFailureReportingAdapter', () => {
     worker.emit('failed', job(8, 8), error);
     expect(reporter.reports).toEqual([
       {
-        error,
+        error: expect.objectContaining({ name: 'Error', message: 'boom', stack: error.stack }),
         context: {
           level: 'error',
           tags: { 'queue.name': 'automation-runs', 'queue.job': 'run', 'queue.attempts': 8 },
@@ -79,7 +79,30 @@ describe('JobFailureReportingAdapter', () => {
     worker.emit('failed', job(1, 8), unrecoverable);
     expect(reporter.reports.map((report) => report.error)).toEqual([
       expect.objectContaining({ message: 'once' }),
-      unrecoverable,
+      expect.objectContaining({ name: 'UnrecoverableError', message: 'stop' }),
     ]);
+  });
+
+  // What breaks this: reporting the worker's own error object. The error
+  // tracker's wrapper around `process()` captured it already (that capture is
+  // dropped), and the tracker skips an object it saw, so the job's one report
+  // never left (OPPENHEIMER-API-5).
+  it("reports a fresh error that keeps the failed one's name, message, stack and cause", async () => {
+    const { reporter, worker } = await boot();
+    const cause = new Error('provider overloaded');
+    const error = Object.assign(new Error('summary failed', { cause }), { name: 'SummaryError' });
+
+    worker.emit('failed', job(8, 8), error);
+
+    const [report] = reporter.reports;
+    expect(report?.error).not.toBe(error);
+    expect(report?.error).toEqual(
+      expect.objectContaining({
+        name: 'SummaryError',
+        message: 'summary failed',
+        stack: error.stack,
+        cause,
+      }),
+    );
   });
 });

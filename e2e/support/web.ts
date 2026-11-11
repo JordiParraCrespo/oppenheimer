@@ -127,3 +127,13 @@ export async function clickRowAction(
 export function linkLive(page: Page): Locator {
   return page.locator('[data-slot="terminal"][data-host-link="live"]');
 }
+
+/** Where it runs' Code rows: the stub project, then its one repository. */
+export async function pickProjectAndRepository(page: Page, editor: Locator) {
+  await editor.getByRole('button', { name: 'Project' }).click();
+  await page.getByRole('option', { name: /^XRP Mobile/ }).click();
+  await editor.getByRole('button', { name: 'Repositories' }).click();
+  await page.getByRole('option', { name: /^xrp-mobile/ }).click();
+  await page.keyboard.press('Escape');
+  await expect(editor.getByRole('button', { name: 'Repositories' })).toContainText('xrp-mobile');
+}

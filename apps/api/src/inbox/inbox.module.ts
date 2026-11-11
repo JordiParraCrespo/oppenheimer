@@ -9,6 +9,8 @@ import { PostInboxReportCommandHandler } from './commands/post-inbox-report/post
 import { PostInboxReportHttpController } from './commands/post-inbox-report/post-inbox-report.http.controller';
 import { PutInboxMarkCommandHandler } from './commands/put-inbox-mark/put-inbox-mark.command-handler';
 import { PutInboxMarkHttpController } from './commands/put-inbox-mark/put-inbox-mark.http.controller';
+import { PutInboxMarksCommandHandler } from './commands/put-inbox-marks/put-inbox-marks.command-handler';
+import { PutInboxMarksHttpController } from './commands/put-inbox-marks/put-inbox-marks.http.controller';
 import { InboxMarkOrmEntity } from './database/inbox-mark.orm-entity';
 import { InboxMarkRepository } from './database/inbox-mark.repository';
 import { InboxReportOrmEntity } from './database/inbox-report.orm-entity';
@@ -43,6 +45,7 @@ import { ReadInboxReportImageQueryHandler } from './queries/read-inbox-report-im
   controllers: [
     FindInboxMarksHttpController,
     PutInboxMarkHttpController,
+    PutInboxMarksHttpController,
     DeleteInboxMarkHttpController,
     FindInboxReportsHttpController,
     FindInboxReportHttpController,
@@ -52,6 +55,7 @@ import { ReadInboxReportImageQueryHandler } from './queries/read-inbox-report-im
   ],
   providers: [
     PutInboxMarkCommandHandler,
+    PutInboxMarksCommandHandler,
     DeleteInboxMarkCommandHandler,
     FindInboxMarksQueryHandler,
     FindInboxMarkQueryHandler,
