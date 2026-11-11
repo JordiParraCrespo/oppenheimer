@@ -200,6 +200,13 @@ const createSessionFields = z.object({
    * link each in its task instead, since the host only starts it.
    */
   attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_FILES).optional(),
+  /**
+   * Start it hidden: the console's sidebar leaves it out until the person shows
+   * hidden sessions, and it runs like any other. For a bot, a script or an
+   * agent that starts work the person need not watch
+   * (`product/next-steps/hidden-sessions.md`).
+   */
+  hidden: z.boolean().optional(),
 });
 
 /**
@@ -285,6 +292,8 @@ export const startCloudSessionSchema = z.object({
   /** A vendor's agent runs on a task, so it is required, unlike a host session's. */
   prompt: promptSchema,
   model: z.string().trim().min(1).max(128).optional(),
+  /** Start it hidden from the console's sidebar, as `POST /sessions`'s `hidden`. */
+  hidden: z.boolean().optional(),
 });
 
 export type StartCloudSessionDto = z.infer<typeof startCloudSessionSchema>;
@@ -360,6 +369,16 @@ export const renameSessionSchema = z.object({
 });
 
 export type RenameSessionDto = z.infer<typeof renameSessionSchema>;
+
+/**
+ * `PUT /sessions/{id}/visibility`: hide a session from the console's sidebar,
+ * or show it again. Display only; the session runs the same either way.
+ */
+export const setSessionVisibilitySchema = z.object({
+  hidden: z.boolean(),
+});
+
+export type SetSessionVisibilityDto = z.infer<typeof setSessionVisibilitySchema>;
 
 /**
  * `POST /sessions/{id}/prompt`: a follow-up typed into a running session's

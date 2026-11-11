@@ -54,7 +54,17 @@ describe('classifyKey', () => {
 
   it('leaves ordinary typing alone', () => {
     expect(classifyKey(chord('a'), selected)).toEqual({ kind: 'terminal' });
-    expect(classifyKey(chord('v', { ctrlKey: true }), none)).toEqual({ kind: 'terminal' });
+  });
+
+  // As a ^V to the PTY, Claude Code reads the host's clipboard and says
+  // "No image found in clipboard" for an image copied in the browser.
+  it('pastes on Ctrl+V off the Mac, so a copied image reaches the session', () => {
+    expect(classifyKey(chord('v', { ctrlKey: true }), none)).toEqual({ kind: 'browser' });
+    expect(classifyKey(chord('v', { ctrlKey: true }), shell)).toEqual({ kind: 'browser' });
+  });
+
+  it('leaves Ctrl+V to the program on the Mac, where ⌘V pastes', () => {
+    expect(classifyKey(chord('v', { ctrlKey: true }), mac)).toEqual({ kind: 'terminal' });
   });
 
   it('copies on Ctrl+Shift+C off the Mac, rather than opening the inspector', () => {

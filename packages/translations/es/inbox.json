@@ -20,6 +20,7 @@
     "project": "Proyecto",
     "any": "Cualquiera",
     "showDone": "Mostrar hechos",
+    "showPulls": "Mostrar pull requests",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
     "typeChip": "Tipo: {{value}}",

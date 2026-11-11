@@ -1,4 +1,4 @@
-import type { BotEngineEvent, BotPlanLimits } from '../bot-engine';
+import type { BotEngineEvent, BotEngineFailure, BotPlanLimits } from '../bot-engine';
 import { describeError, failed, failureOf, resetFromHeaders, type ToolCallData } from '../turn';
 
 /**
@@ -11,6 +11,8 @@ export type OpenAiStreamEvent =
       data: {
         type: string;
         delta?: string;
+        /** The Responses API's own event, on a `model` event. */
+        event?: { type?: string; response?: { error?: unknown } };
         response?: {
           usage?: {
             inputTokens?: number;
@@ -88,6 +90,11 @@ export class OpenAiEventTranslator {
   private cachedTokens = 0;
   private sawUsage = false;
   private lastInput = 0;
+  /**
+   * OpenAI's error for a `response.failed`, read off the raw event: the
+   * error the SDK then ends the run with keeps none of it.
+   */
+  private failedResponse: Error | null = null;
 
   constructor(
     private readonly toolFailed: (callId: string) => boolean,
@@ -97,6 +104,8 @@ export class OpenAiEventTranslator {
   translate(event: OpenAiStreamEvent): BotEngineEvent[] {
     if (event.type === 'raw_model_stream_event') {
       const { data } = event;
+      if (data.type === 'model' && data.event?.type === 'response.failed')
+        this.failedResponse = responseError(data.event.response?.error);
       if (data.type === 'output_text_delta' && data.delta)
         return [{ type: 'text.delta', text: data.delta }];
       if (data.type === 'response_done' && data.response?.usage) {
@@ -145,7 +154,8 @@ export class OpenAiEventTranslator {
    * ended. `limits` are the subscription's windows as its last answer said
    * them, for an endpoint that reports them (ChatGPT's).
    */
-  finish(error: unknown, limits: BotPlanLimits | null = null): BotEngineEvent[] {
+  finish(thrown: unknown, limits: BotPlanLimits | null = null): BotEngineEvent[] {
+    const error = this.failedResponse ?? thrown;
     const events: BotEngineEvent[] = [];
     if (this.sawUsage) {
       events.push({
@@ -162,13 +172,34 @@ export class OpenAiEventTranslator {
     } else if (error instanceof Error && error.name === 'MaxTurnsExceededError') {
       events.push({ type: 'done', reason: 'max_steps' });
     } else {
-      const failure = failureOf(error);
+      const failure = openAiFailureOf(error);
       // A spent quota is a 429 too, but waiting for Retry-After does not bring it back.
       const rateLimit = failure === 'rate_limit' ? rateLimitOf(error) : null;
       events.push(failed(describeError(error), failure, rateLimit ?? undefined));
     }
     return events;
   }
+}
+
+/**
+ * The kind of an OpenAI failure. A stream OpenAI opened with a 200 and then
+ * failed has no status for `failureOf` to read; its error's own `code` (an
+ * `error` event) or `type` (a Chat Completions-shaped one) says whose
+ * failure it was.
+ */
+function openAiFailureOf(error: unknown): BotEngineFailure {
+  const { code, type } = (error ?? {}) as { code?: unknown; type?: unknown };
+  if (code === 'server_error' || type === 'server_error') return 'unavailable';
+  return failureOf(error);
+}
+
+/** A `response.failed`'s error as the error the run ended with: OpenAI's words, and its code. */
+function responseError(raw: unknown): Error {
+  const { code, message } = (raw ?? {}) as { code?: unknown; message?: unknown };
+  const error = new Error(
+    typeof message === 'string' && message ? message : 'OpenAI failed the response.',
+  );
+  return Object.assign(error, { code });
 }
 
 /**

@@ -221,6 +221,7 @@ export type SessionEntityProps = Pick<
       | 'notice'
       | 'cloud'
       | 'cloudSessionId'
+      | 'hidden'
     >
   >;
 
@@ -293,6 +294,11 @@ export class SessionEntity {
    * before, and for every other session.
    */
   readonly cloudSessionId: string | null = null;
+  /**
+   * Left out of the sidebar until the reader shows hidden sessions: one a bot,
+   * a script or the reader hid. Kept by the API, so every device agrees.
+   */
+  readonly hidden: boolean = false;
 
   constructor(props: SessionEntityProps) {
     assignProps(this, props);

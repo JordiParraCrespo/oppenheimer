@@ -10,7 +10,7 @@ import {
   useNow,
 } from '@oppenheimer/design-system-web';
 import { RotateCwIcon } from '@oppenheimer/design-system-web/icons';
-import { useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
+import { useInboxPullsShown, useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
   ErrorAlert,
@@ -46,6 +46,7 @@ export function InboxList() {
   const read = useInboxRead();
   const marks = useInboxMarks();
   const reload = useRefreshInbox();
+  const [pullsShown, setPullsShown] = useInboxPullsShown();
   // On a phone nothing is in the reading pane until an item is opened.
   const phone = useIsMobile();
   const current = phone && search.item === null ? null : listing.current;
@@ -124,10 +125,12 @@ export function InboxList() {
           typeCounts={counts.types}
           projects={projectOptions}
           showDone={search.showDone}
+          pullsShown={pullsShown}
           dirty={search.dirty}
           onTypeChange={search.setType}
           onProjectChange={search.setProject}
           onShowDoneChange={search.setShowDone}
+          onPullsShownChange={setPullsShown}
           onClear={search.clear}
         />
       </InboxListHead>

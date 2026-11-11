@@ -7,6 +7,7 @@ import {
 import { eventNote } from './bot-history.policy';
 import { BotMessageEntity } from './bot-message.entity';
 import { failedWakeAsk } from './bot-recovery.policy';
+import { SESSION_UNBLOCK_RULE } from './bot-session-decision.policy';
 import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -449,8 +450,7 @@ function taskLines(cause: Extract<SessionWakeCause, { kind: 'state' }>): string[
 
 /** What the turn a wake opens is asked to do, by what the event says. */
 const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
-  requires_action:
-    'The agent is blocked on a question or a permission in the session. Read what it waits on with get_session. If your instructions settle it, answer it with answer_session (asking first as your permissions say). Otherwise tell the person, in a sentence or two, what it waits on, and give the session id so they can open it.',
+  requires_action: `The agent is blocked on a question or a permission in the session. Read what it waits on with get_session, then unblock it with answer_session rather than sending the person to the session. ${SESSION_UNBLOCK_RULE} Only when get_session shows no decision to answer (the agent waits on something it could not read), tell the person in a sentence or two what it waits on and point them at the session with show_session.`,
   completed:
     'Read the session with get_session first, then tell the person what the agent actually did, from its result. Say only what the result shows: if it does not say tests passed, do not say they did. Its result is a claim: check it as "Check before you report" says, with read_session_transcript when you have it. If the work was a step of something you were doing, carry on with the next step within your permissions. Then end with a recap of this session: the recap skill\'s brief (use_skill), scoped to this one session.',
   failed: failedWakeAsk(),
@@ -464,7 +464,7 @@ const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
   progress:
     'Look at it the way a person who delegated it would glance over: read what the agent has done so far (read_session_transcript when you have it, else read_session or get_session) and hold it against the task it was given. If it is moving along on that task, call nothing_to_report and write nothing. Speak only when something is off: it went idle or quiet without finishing, it is going in circles or off the task, it waits on something, or it hit an error it is not handling. Then tell the person in a sentence or two what you saw and what would help, with the session id, and notify them if they may not be in this chat. If your instructions settle what it needs (a missing detail, a nudge back to the task), you may send it with send_to_session once the agent waits at its prompt, asking first as your permissions say. Do not stop or restart it on your own. You stay subscribed: you will look again in a few minutes, and its end still wakes you.',
   stalled:
-    "Read the session with get_session. If it is under way after all, tell the person so in one line. Otherwise tell them, in a sentence or two, what looks stuck and what would get it going (bring the host online, answer the agent's prompt in the session), and give the session id so they can open it. Do not restart, stop or prompt the session on your own. You stay subscribed: its end still wakes you.",
+    "Read the session with get_session. If it is under way after all, tell the person so in one line. Otherwise tell them, in a sentence or two, what looks stuck and what would get it going (bring the host online, or a decision only they can make), and give the session id so they can open it. When get_session shows a decision it waits on, unblock it with answer_session as a blocked session's wake would. Do not restart, stop or prompt the session on your own. You stay subscribed: its end still wakes you.",
 };
 
 /**

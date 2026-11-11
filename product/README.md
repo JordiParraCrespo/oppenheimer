@@ -507,6 +507,10 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 gave a new bot a calm, flat `SOUL.md` and a first name it kept.
+  On 2026-11-10 the soul became friendly and proactive, after OpenClaw's
+  default, and the first name a placeholder: its first chat asks the
+  person what to call it (25, "Decided").
 - Note 25 ran bots on three providers, each on a workspace's API key. On
   2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
   through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
@@ -810,7 +814,12 @@ earlier note:
   event log in words, never the terminal or the agent's conversation, which
   stay on the host; `send_to_session` came with it, gated on the agent
   waiting at its prompt and logged with the bot as sender, and so did
-  `answer_session`, which the table did not have.
+  `answer_session`, which the table did not have. On 2026-11-07 a bot
+  answered only what its instructions settled; on 2026-11-10 it unblocks
+  the sessions it follows itself. That day a destructive approval was first
+  always a card; the owner then made it the bot's preset's call: Full access
+  acts on its own with its reasoning, Approve for me asks
+  (`versions/mvp/25-bots.md`).
 - `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
   Claude, and said Claude would give no status. On 2026-10-27 the owner
   asked for Claude end to end first: a `cloud` place started by the host's
@@ -1187,6 +1196,12 @@ earlier note:
   the most recent first, so the list is newest first across every kind,
   Low items still last; the order is held by the consumer's
   `composeInbox` test, no longer by the fleet stress suite.
+- `versions/mvp/29-inbox.md` §1 listed pull requests for you (a review
+  asked of you, yours ready to merge) in the Inbox. On 2026-11-10 the
+  owner asked to stop: agents open pull requests under the owner's account,
+  so each one waited there as theirs to merge. They are off by default
+  and come back with Show pull requests in the Inbox's filter menu, kept
+  on the device (the note's "Pull requests are opt-in").
 - `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
@@ -1502,3 +1517,9 @@ earlier note:
   through the screen-sharing server on its loopback, shared by its owner
   with `runner desktop on` (`research/device-streaming.md`, "A host's
   desktop"; the note's §11 is the read that led to it).
+- `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
+  the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
+  screenshot into the terminal with Ctrl+V and Claude Code, reading the
+  host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
+  off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
+  host; a program that wanted a literal ^V no longer gets one from it.

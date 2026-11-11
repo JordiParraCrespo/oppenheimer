@@ -327,6 +327,9 @@
     "pinned": "Fijadas",
     "pin": "Fijar",
     "unpin": "Desfijar",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "hidden": "Oculta",
     "dropToPin": "Suelta una sesión aquí para fijarla.",
     "actions": "Acciones de la sesión",
     "rename": "Renombrar",
@@ -405,6 +408,7 @@
     "shownSome": "{{shown}} de {{total}}",
     "showAll": "Mostrar todos los proyectos",
     "pinnedOnly": "Solo fijadas",
+    "showHidden": "Mostrar sesiones ocultas",
     "newProject": "Nuevo proyecto…"
   },
   "sort": {

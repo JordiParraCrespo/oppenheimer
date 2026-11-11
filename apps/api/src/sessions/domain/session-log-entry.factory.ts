@@ -107,6 +107,7 @@ export function requestEntries(props: {
       payload: { checkoutId: props.cwdCheckoutId },
     });
   }
+  if (input.hidden) events.push(hiddenEntry(props.commandId));
   if (input.prompt) {
     events.push({
       idempotencyKey: firstPromptKey(props.commandId),
@@ -152,7 +153,29 @@ export function cloudRequestEntries(props: {
       kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
       payload: { text: props.input.prompt },
     },
+    ...(props.input.hidden ? [hiddenEntry(props.commandId)] : []),
   ];
+}
+
+/**
+ * The entry that hides or shows a session in the console's sidebar. A create
+ * asked to start hidden writes it with its request, so the row is hidden from
+ * its first read.
+ */
+export function visibilityEntry(commandId: string, hidden: boolean): NewSessionEvent {
+  return {
+    idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+      commandId,
+      SESSION_EVENT_KINDS.VISIBILITY_SET,
+    ),
+    source: 'api',
+    kind: SESSION_EVENT_KINDS.VISIBILITY_SET,
+    payload: { hidden },
+  };
+}
+
+function hiddenEntry(commandId: string): NewSessionEvent {
+  return visibilityEntry(commandId, true);
 }
 
 /** The entries a vendor's report owes the log (`cloudRunLogEntries`), as the API writes them. */
