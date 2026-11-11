@@ -37,7 +37,26 @@ export class SanitizePipe implements PipeTransform {
     return value;
   }
 
+  /**
+   * Drops each `<…>` span (a `<` to the next `>`), then any `<` or `>` left.
+   * A scan rather than `/<[^>]*>/g`: that regex scans to the end of the text
+   * for every `<` with no `>` after it, so a body of `<`s took seconds per
+   * 100k characters and held the event loop while it did.
+   */
   private stripHtml(input: string): string {
-    return input.replace(/<[^>]*>/g, '').replace(/[<>]/g, '');
+    let kept = '';
+    let from = 0;
+    while (from < input.length) {
+      const open = input.indexOf('<', from);
+      const close = open === -1 ? -1 : input.indexOf('>', open + 1);
+      // No span left: a `<` with no `>` after it means no later `<` has one either.
+      if (close === -1) {
+        kept += input.slice(from);
+        break;
+      }
+      kept += input.slice(from, open);
+      from = close + 1;
+    }
+    return kept.replace(/[<>]/g, '');
   }
 }

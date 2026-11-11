@@ -120,6 +120,29 @@ describe('BotComposer long pastes', () => {
     expect(state.send).toHaveBeenCalledWith(expect.objectContaining({ content: 'See ' }));
   });
 
+  it('sends nothing of a label taken out by select-all and delete', () => {
+    const field = composer();
+    pasteText(field, log);
+
+    fireEvent.change(field, { target: { value: '' } });
+
+    expect(field.value).toBe('');
+    fireEvent.keyDown(field, { key: 'Enter' });
+    fireEvent.click(sendButton());
+    expect(state.send).not.toHaveBeenCalled();
+  });
+
+  it('leaves the caret after the label it put in', () => {
+    const field = composer();
+    fireEvent.change(field, { target: { value: 'ab' } });
+    field.setSelectionRange(1, 1);
+
+    pasteText(field, log);
+
+    expect(field.value).toBe('a[Pasted text #1 +1000 lines]b');
+    expect(field.selectionStart).toBe('a[Pasted text #1 +1000 lines]'.length);
+  });
+
   it('keeps send off for a message longer than a bot takes, and says why', () => {
     const field = composer();
 

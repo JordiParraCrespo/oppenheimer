@@ -1,5 +1,6 @@
 import { useStoredText } from '@oppenheimer/frontend-web';
 import type { ClipboardEvent, KeyboardEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   botPastes,
@@ -25,6 +26,15 @@ export function useBotPastes(botId: string, draft: string, setDraft: (next: stri
   useStoredText(botPasteTexts, botId);
   const pastes = botPastes(botId);
 
+  // Through the draft, never the field's DOM value: React tracks the value it
+  // last set, and an edit made behind its back (`setRangeText`) leaves that
+  // stale, so a later select-all and delete back to it fires no change at all.
+  function replaceRange(field: HTMLTextAreaElement, start: number, end: number, text: string) {
+    const value = field.value;
+    flushSync(() => setDraft(value.slice(0, start) + text + value.slice(end)));
+    field.setSelectionRange(start + text.length, start + text.length);
+  }
+
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
     const field = event.target;
     if (!(field instanceof HTMLTextAreaElement)) return;
@@ -38,8 +48,7 @@ export function useBotPastes(botId: string, draft: string, setDraft: (next: stri
         ? t('bots.chat.pasted.lines', { n, lines })
         : t('bots.chat.pasted.chars', { n, chars: text.length });
     setBotPastes(botId, [...pastes, { n, label, text }]);
-    field.setRangeText(label, field.selectionStart, field.selectionEnd, 'end');
-    setDraft(field.value);
+    replaceRange(field, field.selectionStart, field.selectionEnd, label);
   }
 
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>): boolean {
@@ -55,8 +64,7 @@ export function useBotPastes(botId: string, draft: string, setDraft: (next: stri
     );
     if (!range) return false;
     event.preventDefault();
-    field.setRangeText('', range.start, range.end, 'end');
-    setDraft(field.value);
+    replaceRange(field, range.start, range.end, '');
     return true;
   }
 
