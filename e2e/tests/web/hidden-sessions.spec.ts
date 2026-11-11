@@ -4,7 +4,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * A session a bot or a script started hidden stays out of the sidebar until
- * Show hidden sessions lists it, marked Hidden; Show in its menu brings it
+ * Show hidden sessions lists it, marked by its eye; Show in its menu brings it
  * back for good, and Hide in another row's menu takes that one out.
  */
 test('a session started hidden is listed only once hidden sessions are shown', async ({ page }) => {
@@ -32,12 +32,12 @@ test('a session started hidden is listed only once hidden sessions are shown', a
   await page.getByRole('menuitemcheckbox', { name: /Show hidden sessions/ }).click();
   await page.keyboard.press('Escape');
   await expect(row(hiddenName)).toBeVisible();
-  await expect(row(hiddenName)).toContainText('Hidden');
+  await expect(row(hiddenName).getByRole('img', { name: 'Hidden' })).toBeVisible();
 
   // Show is the session's own: it stays listed once the toggle is off again.
   await row(hiddenName).click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Show', exact: true }).click();
-  await expect(row(hiddenName)).not.toContainText('Hidden');
+  await expect(row(hiddenName).getByRole('img', { name: 'Hidden' })).toHaveCount(0);
 
   // And Hide takes the other one out of the list.
   await row(shownName).click({ button: 'right' });

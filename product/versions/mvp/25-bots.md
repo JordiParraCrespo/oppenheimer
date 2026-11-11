@@ -1129,7 +1129,7 @@ agent's, in a session, where Claude Code ships them.
 | `watch_pull_request` / `unwatch_pull_request` | Follow an open pull request of a repository the owner can read, so a check failing or passing, a review, a comment or the merge wakes the bot with the event's metadata, never anyone's words; a merge ends it; built 2026-11-03, note 27 §7.1. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
-| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27). The bot unblocks a session it follows with it rather than sending the person to the session; letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, `sudo`) is a card of its own offering only that call, under every preset and past every grant, while turning one down is the bot's (2026-11-10) | ask |
+| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27). The bot unblocks a session it follows with it rather than sending the person to the session, and says why it answered as it did. Under Full access every answer is the bot's, destructive ones included; under Approve for me letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, `sudo`) is a card of its own offering only that call, past every grant (2026-11-10) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
@@ -2134,3 +2134,11 @@ The decisions it produced:
   answered (Oppie's case among them); on the new one 45 of 45 runs were
   right, the payout account and off-task deploys still left to the person
   or turned down.
+- 2026-11-10: **the bot's preset decides who lets a destructive dialog
+  through** (§4.2, `answer_session`), replacing the same day's "never the
+  bot's alone". The owner: a bot on Full access acts on its own, always
+  with its reasoning; a bot on Approve for me asks. Under Full access
+  `answer_session` no longer escalates; under Approve for me a destructive
+  approval, or an answer to a decision that cannot be read, is still a card
+  offering only that call, past every grant. Every answer now says what the
+  session asked and why the bot answered as it did.
