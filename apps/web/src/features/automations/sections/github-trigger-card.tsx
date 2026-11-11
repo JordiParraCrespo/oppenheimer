@@ -37,12 +37,15 @@ export function GithubTriggerCard({
   card,
   repositories,
   onChange,
+  onDuplicate,
   onRemove,
 }: {
   card: GithubCard;
   /** The automation's repositories: GitHub's id and the short name. */
   repositories: { id: number; name: string }[];
   onChange: (card: GithubCard) => void;
+  /** Absent when the automation already holds its most triggers. */
+  onDuplicate?: () => void;
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
@@ -52,8 +55,9 @@ export function GithubTriggerCard({
   const preview = useTriggerPreview(card.repositories.length ? trigger : undefined);
 
   const picked = repositories.filter((repository) => card.repositories.includes(repository.id));
-  const reposLabel =
-    picked.length === 1
+  const reposLabel = !repositories.length
+    ? t('automations.editor.reposToPick')
+    : picked.length === 1
       ? (picked[0]?.name ?? '')
       : picked.length === repositories.length
         ? t('automations.editor.anyOfRepos', { count: picked.length })
@@ -73,6 +77,8 @@ export function GithubTriggerCard({
   return (
     <TriggerCard
       icon={<BrandGlyph name="github" size={14} />}
+      onDuplicate={onDuplicate}
+      duplicateLabel={t('automations.editor.duplicateTrigger')}
       onRemove={onRemove}
       removeLabel={t('automations.editor.removeTrigger')}
       preview={

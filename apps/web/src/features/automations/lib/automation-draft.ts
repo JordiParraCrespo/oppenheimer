@@ -55,15 +55,6 @@ function nextKey(): string {
   return `card-${cardSequence}`;
 }
 
-function projectRepositoryKeys(project: ProjectEntity | undefined): string[] {
-  return (project?.repositories ?? []).map((repository) =>
-    repositoryKey({
-      installationId: repository.installationId,
-      githubRepoId: repository.githubRepoId,
-    }),
-  );
-}
-
 /** GitHub's ids of the draft's repositories: what a GitHub card listens on. */
 export function draftRepoIds(draft: Pick<AutomationDraft, 'repositoryKeys'>): number[] {
   return draft.repositoryKeys.flatMap((key) => {
@@ -73,8 +64,9 @@ export function draftRepoIds(draft: Pick<AutomationDraft, 'repositoryKeys'>): nu
 }
 
 /**
- * A new automation's defaults: the project it was opened for (or the first
- * named one), all of that project's repositories, its default host and agent.
+ * A new automation's defaults: the project it was opened for, if any, with
+ * its default host and agent. No project is guessed and no repository is
+ * picked: those are the reader's to choose in Where it runs.
  */
 export function emptyDraft(
   projects: readonly ProjectEntity[],
@@ -82,14 +74,14 @@ export function emptyDraft(
   projectId: string | undefined,
 ): AutomationDraft {
   const named = projects.filter((project) => !project.isUnassigned);
-  const project = named.find((candidate) => candidate.id === projectId) ?? named[0];
+  const project = named.find((candidate) => candidate.id === projectId);
   const agent =
     project?.defaultAgent && AUTOMATION_AGENTS.includes(project.defaultAgent)
       ? project.defaultAgent
       : 'claude-code';
   return {
     projectId: project?.id ?? null,
-    repositoryKeys: projectRepositoryKeys(project),
+    repositoryKeys: [],
     place: 'host',
     hostId: project?.defaultHostId ?? hosts[0]?.id ?? null,
     agent,
@@ -164,6 +156,11 @@ export function scheduleCard(frequency: ScheduleFrequency, now: number, timezone
 }
 
 /** The filter a new card of this event starts with ("main" for a pull request's base). */
+/** A copy of a trigger card under its own key, for Duplicate. */
+export function duplicateCard<Card extends TriggerCard>(card: Card): Card {
+  return { ...structuredClone(card), key: nextKey() };
+}
+
 export function defaultFilter(event: GithubEventType): TriggerFilter {
   return externalEventDefinition('github', event)?.defaultFilter ?? { op: 'any' };
 }

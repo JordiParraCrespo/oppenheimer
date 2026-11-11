@@ -16,13 +16,16 @@ import { MAX_AUTOMATION_TRIGGERS } from '@oppenheimer/shared/schemas/automation'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScheduleTriggerCard } from '../components/schedule-trigger-card';
-import { githubCard, scheduleCard, type TriggerCard } from '../lib/automation-draft';
+import { duplicateCard, githubCard, scheduleCard, type TriggerCard } from '../lib/automation-draft';
 import { GithubTriggerCard } from './github-trigger-card';
 
 /**
  * The editor's Trigger step: "Any trigger starts a run.", a card per
- * trigger, and Add trigger, whose menu groups the schedules and the GitHub
+ * trigger (each with Duplicate, which puts the copy right under it, and
+ * Remove), and Add trigger, whose menu groups the schedules and the GitHub
  * events with a line each. A new schedule is set in the viewer's own zone.
+ * A GitHub card added before any repository is picked listens on none until
+ * Where it runs picks some, then on all of them (`fitCards`).
  */
 export function EditorTriggerStep({
   triggers,
@@ -39,6 +42,12 @@ export function EditorTriggerStep({
     onChange(triggers.map((current) => (current.key === card.key ? card : current)));
   const remove = (key: string) => onChange(triggers.filter((current) => current.key !== key));
   const full = triggers.length >= MAX_AUTOMATION_TRIGGERS;
+  const duplicate = (key: string) =>
+    onChange(
+      triggers.flatMap((current) =>
+        current.key === key ? [current, duplicateCard(current)] : [current],
+      ),
+    );
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -49,6 +58,7 @@ export function EditorTriggerStep({
             key={card.key}
             card={card}
             onChange={replace}
+            onDuplicate={full ? undefined : () => duplicate(card.key)}
             onRemove={() => remove(card.key)}
           />
         ) : (
@@ -57,6 +67,7 @@ export function EditorTriggerStep({
             card={card}
             repositories={repositories}
             onChange={replace}
+            onDuplicate={full ? undefined : () => duplicate(card.key)}
             onRemove={() => remove(card.key)}
           />
         ),
@@ -94,7 +105,6 @@ export function EditorTriggerStep({
               {GITHUB_EVENT_TYPES.map((event) => (
                 <DropdownMenuItem
                   key={event}
-                  disabled={!repositories.length}
                   onClick={() =>
                     onChange([
                       ...triggers,
