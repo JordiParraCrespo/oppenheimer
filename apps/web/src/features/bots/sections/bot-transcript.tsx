@@ -24,11 +24,11 @@ import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-sh
 import { runningApprovedCalls } from '@/features/bots/lib/approval-event';
 import {
   chatTurns,
-  isQuietRoutineRun,
   markersBefore,
   newestSentId,
   newestTurn,
   retryContent,
+  visibleTurns,
 } from '@/features/bots/lib/chat-turns';
 import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
 import { BotHello } from './bot-hello';
@@ -56,8 +56,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const navigate = useNavigate();
   const toolCallsShown = useToolCallsShownInChat();
   const all = chatTurns(conversation);
-  // A routine run that only ran tools shows with the tool calls, not without them.
-  const blocks = all.filter((block) => !isQuietRoutineRun(block, toolCallsShown));
+  const blocks = visibleTurns(all, toolCallsShown);
   // The approved calls still running, each held under the turn its yes opened.
   const working = new Map(
     [...runningApprovedCalls(conversation.messages)].map(([turnId, call]) => [

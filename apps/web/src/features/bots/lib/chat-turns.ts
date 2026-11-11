@@ -1,6 +1,7 @@
 import type {
   BotConversationEntity,
   BotMessageEntity,
+  BotToolStep,
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
@@ -133,11 +134,30 @@ export function isQuietRoutineRun(block: ChatTurnBlock, toolCallsShown: boolean)
   return (
     byRoutine &&
     block.answer.every(
-      (message) =>
-        message.role === 'activity' &&
-        message.steps.every((step) => !step.sessionId && !step.mailDraft),
+      (message) => message.role === 'activity' && !message.steps.some(stepShowsWithToolsHidden),
     )
   );
+}
+
+/**
+ * Whether a tool step made something the chat draws even while its tool
+ * calls are hidden (`BotActivity`): a session to open, a draft's card. A new
+ * thing of that kind is a line here, so a run that made one is never hidden.
+ */
+function stepShowsWithToolsHidden(step: BotToolStep): boolean {
+  return Boolean(step.sessionId || step.mailDraft);
+}
+
+/**
+ * The blocks the chat draws: all of them but a quiet routine run while the
+ * tool calls are hidden. The day and model markers are read between these,
+ * so a change that happened on a hidden run shows on the next drawn turn.
+ */
+export function visibleTurns(
+  blocks: readonly ChatTurnBlock[],
+  toolCallsShown: boolean,
+): ChatTurnBlock[] {
+  return blocks.filter((block) => !isQuietRoutineRun(block, toolCallsShown));
 }
 
 /** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */
