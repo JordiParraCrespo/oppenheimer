@@ -77,11 +77,12 @@ function SessionItem({
   /** Relative age, mono ("2m", "4h"). */
   age?: string;
   /**
-   * A word for what the row is waiting on ("Deleting…", "Not deleted"), in the
-   * age's place and shown at all times: unlike the age, the reader needs it
-   * without pointing at the row. It gives way to the ellipsis like the age.
+   * A word for what the row is waiting on ("Deleting…", "Not deleted"), or a
+   * labelled icon for what it is (a hidden session's eye), in the age's place
+   * and shown at all times: unlike the age, the reader needs it without
+   * pointing at the row. It gives way to the ellipsis like the age.
    */
-  status?: string;
+  status?: React.ReactNode;
   state?: StatusState;
   /** Whether the agent is at work: the name shimmers while it is. */
   working?: boolean;

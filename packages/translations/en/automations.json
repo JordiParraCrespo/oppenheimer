@@ -58,8 +58,7 @@
     "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
     "owner_lost_access": "Paused because its owner can no longer run it.",
     "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
-    "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
+    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
   },
   "frequency": {
     "once": {

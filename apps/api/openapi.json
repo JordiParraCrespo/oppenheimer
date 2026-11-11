@@ -12485,6 +12485,83 @@
         ]
       }
     },
+    "/api/v1/sessions/{id}/visibility": {
+      "put": {
+        "description": "Display only: a hidden session runs, wakes and answers like any other, and the list endpoint still returns it with `hidden` set. The console leaves it out of the sidebar until the person shows hidden sessions. Idempotent: asking for what the session already is changes nothing.",
+        "operationId": "setSessionVisibility",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSessionVisibilityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hide a session from the console’s sidebar, or show it again",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/sessions/{id}/move": {
       "post": {
         "description": "Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.",
@@ -21150,66 +21227,6 @@
           }
         ],
         "summary": "Write what your bots know about you",
-        "tags": [
-          "Bots"
-        ]
-      }
-    },
-    "/api/v1/bots/{id}/seen": {
-      "post": {
-        "description": "The console sends it when the chat opens, when its tab comes back into view, and at most once a minute while the owner is active in it. It resumes the routines the spend guard paused while the owner was away.",
-        "operationId": "markBotSeen",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "401": {
-            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "BOTS_001 — Bot not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Say the owner is in a bot’s chat",
         "tags": [
           "Bots"
         ]
@@ -30949,6 +30966,11 @@
               }
             ]
           },
+          "hidden": {
+            "type": "boolean",
+            "description": "Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.",
+            "example": false
+          },
           "hints": {
             "description": "What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.",
             "example": [],
@@ -31034,6 +31056,7 @@
           "stateSeq",
           "checkouts",
           "cloud",
+          "hidden",
           "hints",
           "decision",
           "agentReport",
@@ -31215,6 +31238,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -31272,6 +31298,9 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -32144,6 +32173,17 @@
           "name"
         ]
       },
+      "SetSessionVisibilityRequest": {
+        "type": "object",
+        "properties": {
+          "hidden": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hidden"
+        ]
+      },
       "MoveSessionRequest": {
         "type": "object",
         "properties": {
@@ -32854,7 +32894,6 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
-              "unattended",
               null
             ],
             "nullable": true
@@ -32966,7 +33005,6 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
-              "unattended",
               null
             ],
             "nullable": true
@@ -34207,14 +34245,6 @@
           },
           "maxRunSeconds": {
             "type": "number"
-          },
-          "unattendedReports": {
-            "type": "number",
-            "description": "Routine reports a bot’s owner has not seen before its routines pause."
-          },
-          "unattendedAwaySeconds": {
-            "type": "number",
-            "description": "How long a bot’s owner may be away from its chat before its routines pause."
           }
         },
         "required": [
@@ -34224,9 +34254,7 @@
           "overlap",
           "staleTtlSeconds",
           "missedGraceSeconds",
-          "maxRunSeconds",
-          "unattendedReports",
-          "unattendedAwaySeconds"
+          "maxRunSeconds"
         ]
       },
       "UpdateAutomationSettingsRequest": {
@@ -34286,22 +34314,6 @@
             "minimum": 60,
             "exclusiveMinimum": false,
             "maximum": 604800,
-            "exclusiveMaximum": false,
-            "nullable": true
-          },
-          "unattendedReports": {
-            "type": "integer",
-            "minimum": 1,
-            "exclusiveMinimum": false,
-            "maximum": 1000,
-            "exclusiveMaximum": false,
-            "nullable": true
-          },
-          "unattendedAwaySeconds": {
-            "type": "integer",
-            "minimum": 3600,
-            "exclusiveMinimum": false,
-            "maximum": 7776000,
             "exclusiveMaximum": false,
             "nullable": true
           }
@@ -34704,6 +34716,9 @@
                   "type": "string",
                   "format": "uuid"
                 }
+              },
+              "hidden": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -34799,6 +34814,9 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 128
+              },
+              "hidden": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -37513,10 +37531,6 @@
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
           },
-          "routineSpendGuard": {
-            "type": "boolean",
-            "description": "Whether its routines pause while its owner is away from its chat, and start again when they are back."
-          },
           "sections": {
             "type": "array",
             "description": "The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.",
@@ -37564,7 +37578,6 @@
           "permission",
           "createdByBotId",
           "learnAutomatically",
-          "routineSpendGuard",
           "sections",
           "createdAt",
           "updatedAt",
@@ -37752,9 +37765,6 @@
             ]
           },
           "learnAutomatically": {
-            "type": "boolean"
-          },
-          "routineSpendGuard": {
             "type": "boolean"
           },
           "sections": {
@@ -39245,6 +39255,7 @@
               "credential",
               "refused",
               "unavailable",
+              "context",
               "time_limit",
               "step_limit",
               "stalled",

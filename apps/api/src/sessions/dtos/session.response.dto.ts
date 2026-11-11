@@ -315,6 +315,13 @@ export class SessionResponseDto {
   cloud!: SessionCloudRunResponseDto | null;
 
   @ApiProperty({
+    description:
+      'Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.',
+    example: false,
+  })
+  hidden!: boolean;
+
+  @ApiProperty({
     isArray: true,
     type: String,
     description:

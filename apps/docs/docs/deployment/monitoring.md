@@ -103,7 +103,7 @@ Every series also carries `app="api"`.
   run ended (`completed`, `cancelled`, `max_steps`, `failed`, or `incomplete`
   when the stream stopped without saying); `failure` is the engine's kind of
   failure (`rate_limit`, `usage_limit`, `credential`, `refused`,
-  `unavailable`, `other`). Tokens are as the provider reported them, `type`
+  `unavailable`, `context`, `other`). Tokens are as the provider reported them, `type`
   `input`, `output`, `cache_read`, `cache_write`; `input` includes
   `cache_read`, so **the prompt cache hit rate is `cache_read / input`**. No
   label names a bot, a workspace or a model: per-bot spend is in the

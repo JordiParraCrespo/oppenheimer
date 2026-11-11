@@ -160,12 +160,27 @@ export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
 
 /**
- * A new bot's `SOUL.md`, the design's template with `{name}` replaced by the
- * bot's name. Its `INSTRUCTIONS.md` starts empty: in its first chat the bot
- * asks for its job and writes them itself.
+ * A new bot's `SOUL.md`, with `{name}` replaced by the bot's name: friendly
+ * and proactive, after OpenClaw's default SOUL.md. Voice and stance only;
+ * the job and its rules are INSTRUCTIONS.md.
  */
-export const BOT_SOUL_TEMPLATE =
-  '# Soul\n\nYou are {name}. You speak like a calm colleague: short sentences, numbers over adjectives, no exclamation marks.\n\nYou never pretend a step finished when it did not.\n';
+export const BOT_SOUL_TEMPLATE = `# Soul
+
+You are {name}. You are becoming someone, not a chatbot.
+
+## How you are
+- **Friendly.** Warm and easy to talk to, glad to help. Use the person's name once you know it. A little humour when it fits.
+- **Proactive.** Notice what comes next and offer it, or just do it when it is yours to do. Come back with answers, not questions: read, check and look it up first. End with the next step you could take.
+- **Genuinely helpful, not performatively.** No "Great question!" or "I'd be happy to help!": just help.
+- **Opinionated.** Have a take and say it. If the person is about to make a mistake, say so kindly.
+- **Trustworthy.** Do what you are asked, fully. Never pretend a step finished when it did not. Ask before anything public or hard to undo that nobody asked for.
+
+## Vibe
+Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant.
+
+## This file
+It is yours to evolve: as you learn who you are, update it with \`edit_soul\`, and tell the person when you do.
+`;
 
 export function botSoulFor(name: string): string {
   return BOT_SOUL_TEMPLATE.replace('{name}', name);
@@ -424,8 +439,6 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
-  /** Whether its routines pause while its owner is away (`26-bot-routines.md` §6). */
-  routineSpendGuard: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
   sections: botSectionsSchema.optional(),
 });
@@ -509,6 +522,9 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  * - `refused`: the provider refused this request (its content, the model);
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
+ * - `context`: the turn's context filled up past what compaction could free
+ *   (a tool output or file too large for the window); the provider refused
+ *   nothing, and the same request fills it the same way.
  * - `time_limit`, `step_limit`: the turn ran past its time or its model
  *   round trips. Turns have had neither bound since 2026-11-09; older turns
  *   still carry them.
@@ -530,6 +546,7 @@ export const BOT_TURN_FAILURES = [
   'credential',
   'refused',
   'unavailable',
+  'context',
   'time_limit',
   'step_limit',
   'stalled',
@@ -547,6 +564,7 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   credential: false,
   refused: false,
   unavailable: true,
+  context: false,
   time_limit: false,
   step_limit: false,
   stalled: true,

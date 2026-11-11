@@ -1,4 +1,5 @@
 import { fileSharedPayloadSchema } from '@oppenheimer/shared';
+import { hiddenOf } from '../../sessions/domain/session-state.policy';
 import { sharedFileLine } from './bot-shared-file.policy';
 import { cut, formatToolTime } from './bot-tool-text.policy';
 
@@ -64,6 +65,8 @@ function describeEntry(entry: SessionActivityEntry, lastObserved: string | null)
       return `named "${words('name')}"`;
     case 'session.moved':
       return 'moved to another project';
+    case 'session.visibility_set':
+      return hiddenOf(payload) ? 'hidden from the sidebar' : 'shown in the sidebar again';
     case 'prompt.first':
       return `first task: ${words('text')}`;
     case 'prompt.sent':

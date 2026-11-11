@@ -455,6 +455,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.sharedFiles;
   }
 
+  /** Left out of the console's sidebar until the person shows hidden sessions. */
+  get hidden(): boolean {
+    return this.props.hidden;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -524,6 +529,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       notice: this.props.notice,
       watchedPulls: this.props.watchedPulls,
       sharedFiles: this.props.sharedFiles,
+      hidden: this.props.hidden,
     };
   }
 
@@ -558,6 +564,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.notice = fold.notice;
     this.props.watchedPulls = fold.watchedPulls;
     this.props.sharedFiles = fold.sharedFiles;
+    this.props.hidden = fold.hidden;
   }
 
   /**

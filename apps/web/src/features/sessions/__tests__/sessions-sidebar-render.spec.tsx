@@ -94,6 +94,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useProjectsSnapshot: () => () => [],
   useRenameSession: () => ({ mutate: vi.fn(), error: null }),
   useMoveSession: () => ({ mutate: vi.fn(), error: null }),
+  useSetSessionHidden: () => ({ mutate: vi.fn(), error: null }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', async (original) => ({

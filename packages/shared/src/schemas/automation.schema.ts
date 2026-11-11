@@ -313,16 +313,6 @@ export const updateAutomationSettingsSchema = z.object({
     .max(7 * 24 * 3600)
     .nullable()
     .optional(),
-  /** The spend guard on bots' routines: reports their owner has not seen before they pause. */
-  unattendedReports: z.number().int().min(1).max(1000).nullable().optional(),
-  /** How long a bot's owner may be away from its chat before its routines pause. */
-  unattendedAwaySeconds: z
-    .number()
-    .int()
-    .min(3600)
-    .max(90 * 24 * 3600)
-    .nullable()
-    .optional(),
 });
 
 export type UpdateAutomationSettingsDto = z.infer<typeof updateAutomationSettingsSchema>;

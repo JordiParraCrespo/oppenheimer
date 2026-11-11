@@ -729,7 +729,7 @@ export class WorkSessionRepository
                 "pendingDecision" = $22::jsonb, "launchEnvironment" = $23,
                 "agentReport" = $24::jsonb, "notice" = $25::jsonb,
                 "watchedPulls" = $26::jsonb, "sharedFiles" = $27::jsonb,
-                "launchTeleport" = $28,
+                "launchTeleport" = $28, "hidden" = $29,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -761,6 +761,7 @@ export class WorkSessionRepository
           JSON.stringify(record.watchedPulls ?? []),
           JSON.stringify(record.sharedFiles ?? []),
           record.launchTeleport,
+          record.hidden,
         ],
       );
       await this.turns.writeChanged(manager, session);

@@ -106,21 +106,3 @@ export function useDeleteBotRoutine(
     options,
   );
 }
-
-/**
- * The owner is in the bot's chat (the spend guard, `26-bot-routines.md` §6):
- * its routines paused while they were away resume, so the lists read again.
- */
-export function useMarkBotSeen(options?: UseMutationOptions<void, Error, { id: string }>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id }: { id: string }) => app.bots.markSeen(id),
-    ...withCacheOnSuccess(options, (_data, { id }) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: botsKeys.routines(id) }),
-        queryClient.invalidateQueries({ queryKey: botsKeys.allRoutines() }),
-      ]),
-    ),
-  });
-}

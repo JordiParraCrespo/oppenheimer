@@ -226,7 +226,6 @@
   "POST /v1/bots/:id/questions/:questionId/answer": ["bots:write"],
   "POST /v1/bots/:id/questions/:questionId/dismiss": ["bots:write"],
   "POST /v1/bots/:id/routines/:routineId/run": ["automations:write"],
-  "POST /v1/bots/:id/seen": ["bots:write"],
   "POST /v1/bots/:id/turns/:turnId/cancel": ["bots:write"],
   "POST /v1/calendar/events": ["calendar:write"],
   "POST /v1/calendar/google/connection": ["calendar:write"],
@@ -319,6 +318,7 @@
   "PUT /v1/pulls/repositories/:installationId/:githubRepoId": ["pulls:write"],
   "PUT /v1/roles/:id/permissions": ["roles:write"],
   "PUT /v1/sessions/:id/share": ["sessions:write"],
+  "PUT /v1/sessions/:id/visibility": ["sessions:write"],
   "PUT /v1/tasks/:id/sessions/:sessionId": ["tasks:write"],
   "PUT /v1/users/:userId/roles": ["roles:write"]
 }

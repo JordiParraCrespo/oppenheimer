@@ -54,6 +54,16 @@ describe('planSession', () => {
     });
   });
 
+  // What breaks this: a bot asked to start work in the background whose
+  // session still lands in the person's sidebar.
+  it('starts the session hidden when the bot asks, and shown otherwise', () => {
+    expect(planSession({ task: 'Fix it', hidden: true }, project(), HOME)).toMatchObject({
+      body: { hidden: true },
+    });
+    const shown = planSession({ task: 'Fix it' }, project(), HOME);
+    expect('body' in shown && shown.body.hidden).toBeFalsy();
+  });
+
   it('asks for a project or a folder, and for a host when there is no default', () => {
     expect(planSession({ task: 'x' }, null, HOME)).toEqual({
       refusal: 'Give a project_id (to work in one of its repositories) or a folder on the host.',
