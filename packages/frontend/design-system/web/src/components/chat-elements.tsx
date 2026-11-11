@@ -202,7 +202,7 @@ function ChatJsonBlock({
   children?: React.ReactNode;
 }) {
   const label = { tree: 'Tree', raw: 'Raw', ...labels };
-  const [view, setView] = React.useState<'tree' | 'raw'>('tree');
+  const [view, setView] = React.useState<'tree' | 'raw'>('raw');
   return (
     <div data-slot="chat-json-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
       <CodeBlockBand
@@ -211,17 +211,17 @@ function ChatJsonBlock({
         labels={labels}
         views={
           <SegmentedControl value={view} onValueChange={(next) => setView(next as 'tree' | 'raw')}>
-            <SegmentedControlItem value="tree">{label.tree}</SegmentedControlItem>
             <SegmentedControlItem value="raw">{label.raw}</SegmentedControlItem>
+            <SegmentedControlItem value="tree">{label.tree}</SegmentedControlItem>
           </SegmentedControl>
         }
       />
-      {view === 'tree' ? (
+      {view === 'raw' ? (
+        <NumberedCode code={code}>{children}</NumberedCode>
+      ) : (
         <div className="overflow-x-auto pt-2 pr-5.5 pb-4 pl-3">
           <JsonTree value={value} annotate={annotate} moreLabel={moreLabel} />
         </div>
-      ) : (
-        <NumberedCode code={code}>{children}</NumberedCode>
       )}
     </div>
   );
