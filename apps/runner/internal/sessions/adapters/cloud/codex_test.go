@@ -113,7 +113,7 @@ echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to lis
 		"acme-labs/oppenheimer or oppenheimer",
 		"recent tasks: kallista, woocommerce-elementor-ai-template (",
 		"only in Codex Cloud (Legacy) environments",
-		"can only be started from ChatGPT",
+		"starts only from ChatGPT",
 	} {
 		if !strings.Contains(pe.Detail, want) {
 			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)

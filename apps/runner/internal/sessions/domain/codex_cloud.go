@@ -23,10 +23,12 @@ type CodexEnvironmentRefusal struct {
 // as read in openai/codex on 2026-11-11 (product/research/cloud-agents.md
 // §7): `codex cloud` starts tasks only in Codex Cloud (Legacy) environments,
 // and nothing headless starts one in the environments of ChatGPT Settings →
-// Codex Cloud.
-const codexLegacyOnly = "The codex CLI starts tasks only in Codex Cloud (Legacy) environments, the ones `codex cloud` lists on the host; " +
-	"an environment made in ChatGPT Settings → Codex Cloud can only be started from ChatGPT (web, desktop or mobile). " +
-	"Pick a legacy environment when you start the session, or start this task in ChatGPT."
+// Codex Cloud. It closes the detail, after the environments: a session's log
+// keeps a failure's first 500 characters, and the names are what only the
+// host knows.
+const codexLegacyOnly = "The codex CLI starts tasks only in Codex Cloud (Legacy) environments; " +
+	"one made in ChatGPT Settings → Codex Cloud starts only from ChatGPT. " +
+	"Pick a legacy environment, or start this task in ChatGPT."
 
 // Problem is the refusal as ErrCodexCloudEnvironment.
 func (r CodexEnvironmentRefusal) Problem() *problem.Error {
@@ -39,10 +41,10 @@ func (r CodexEnvironmentRefusal) Problem() *problem.Error {
 	}
 	if r.Complete {
 		return ErrCodexCloudEnvironment.WithDetail(
-			"No Codex environment the CLI can reach is linked to the repository or labelled %s. %s Environments the CLI can reach: %s.",
-			strings.Join(r.Tried, " or "), codexLegacyOnly, visible)
+			"No Codex environment the CLI can reach is linked to the repository or labelled %s. Environments the CLI can reach: %s. %s",
+			strings.Join(r.Tried, " or "), visible, codexLegacyOnly)
 	}
 	return ErrCodexCloudEnvironment.WithDetail(
-		"codex cloud exec found no environment named %s. %s Environments in this account's recent tasks: %s (partial: codex-cli lists its environments only in its TUI, `codex cloud`).",
-		strings.Join(r.Tried, " or "), codexLegacyOnly, visible)
+		"codex cloud exec found no environment named %s. Environments in this account's recent tasks: %s (partial: `codex cloud` on the host lists them all). %s",
+		strings.Join(r.Tried, " or "), visible, codexLegacyOnly)
 }
