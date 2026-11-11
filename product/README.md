@@ -1532,3 +1532,9 @@ earlier note:
   host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
   off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
   host; a program that wanted a literal ^V no longer gets one from it.
+- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+  the visit only: a reload came back unfiltered. On 2026-11-11 the owner
+  asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
+  stick"): the facets and the sort are kept on the device, not the
+  account, since a filter is the reader's view; a remembered pick the menu
+  no longer offers reads as all and is forgotten.
