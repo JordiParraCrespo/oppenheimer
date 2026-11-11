@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
-import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
@@ -26,8 +26,11 @@ import {
   sentTurnOf,
   sessionActionAnswer,
   sessionHostId,
+  sessionLaunchRefusal,
   sessionSummary,
 } from '../bot-session-tool.mapper';
+import { answerNeedsPerson, SESSION_UNBLOCK_RULE } from '../domain/bot-session-decision.policy';
+import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
@@ -61,6 +64,18 @@ const CLOUD_START_WAIT_MAX_SECONDS = 120;
  * the card what it will do, by name. A bot's session is the owner's, started
  * in their scope, marked `bot`; a prompt it sends is logged as the bot's.
  */
+
+/**
+ * `start_session`'s and `start_cloud_session`'s `hidden`: one contract for
+ * both, so the wording a bot reads cannot drift between them.
+ */
+const HIDDEN_SESSION_INPUT = z
+  .boolean()
+  .optional()
+  .describe(
+    "Start it hidden from the person's sidebar in the console (default false): for work they need not watch. It runs like any other, and they can show hidden sessions whenever they want.",
+  );
+
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
   /** Where Settings → Permissions lists these tools. */
@@ -89,6 +104,9 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'start_session',
       scope: 'sessions:write',
       asks: true,
+      // A session at full access runs with every check off: the owner says yes
+      // to that session alone, whatever they allowed start_session before.
+      escalates: (input) => input.permission === 'full',
       subject: async (input, context) => {
         if (!input.project_id) return null;
         const project = await this.project(context, input.project_id).catch(() => null);
@@ -136,7 +154,38 @@ export class BotSessionToolsFactory implements BotToolArea {
           .enum(CODING_AGENT_IDS)
           .optional()
           .describe('Which coding agent; claude-code when omitted.'),
+        model: z
+          .string()
+          .trim()
+          .min(1)
+          .max(128)
+          .optional()
+          .describe(
+            `The agent's model, by id or by name as the person said it. ${modelChoicesByAgent()} A model the agent does not have is refused with the list it has.`,
+          ),
+        effort: z
+          .enum(SESSION_EFFORTS)
+          .optional()
+          .describe(
+            "How hard the model thinks, as the CLI names it (low, medium, high, xhigh, max; Codex also minimal and ultra). The model's own default when omitted; a level the model does not offer is refused with the ones it does.",
+          ),
+        permission: z
+          .enum(SESSION_PERMISSIONS)
+          .optional()
+          .describe(
+            'What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).',
+          ),
+        base_branch: z
+          .string()
+          .trim()
+          .min(1)
+          .max(255)
+          .optional()
+          .describe(
+            "The branch the session's own branch starts from; the repository's base branch when omitted. Not with folder.",
+          ),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        hidden: HIDDEN_SESSION_INPUT,
         watch: z
           .boolean()
           .optional()
@@ -147,6 +196,9 @@ export class BotSessionToolsFactory implements BotToolArea {
         const project = input.project_id
           ? await this.project(context, input.project_id).catch(() => null)
           : null;
+        // A launch the agent does not take is refused here, before it interrupts the owner with a card.
+        const refusal = sessionLaunchRefusal(input, project);
+        if (refusal) throw new BotToolRefusal(refusal);
         const hostId = sessionHostId(input, project, context.homeHostId);
         const host = hostId ? await this.hostName(context, hostId) : null;
         return sessionSummary(input, project, host);
@@ -253,6 +305,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .optional()
           .describe("cursor only: one of Cursor's models; Cursor's own pick when omitted."),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        hidden: HIDDEN_SESSION_INPUT,
         watch: z
           .boolean()
           .optional()
@@ -349,9 +402,16 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'answer_session',
       scope: 'sessions:write',
       asks: true,
+      // Who answers is `answerNeedsPerson`'s: the bot under Full access; the
+      // person, past every grant, for a destructive or unread one otherwise.
+      escalates: async (input, context) =>
+        answerNeedsPerson(
+          await this.session(context, input.session_id).catch(() => null),
+          { decisionId: input.decision_id, option: input.option },
+          context.permission,
+        ),
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description:
-        "Answers what a session's agent is waiting on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Answer only what the person's instructions settle; otherwise tell them. Afterwards get_session shows whether the decision cleared.",
+      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared.`,
       input: z.object({
         session_id: z.uuid().describe('The session (from list_sessions).'),
         decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),

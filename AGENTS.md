@@ -98,13 +98,16 @@ When you add a file that mentions an optional app (CI, compose,
   schedule; a red run opens a `main-red` issue, which comes before new work.
   Driving a pull request, and the order of its steps, is the `/steward` skill.
   Every agent pull request is `/ship` (a fix, merged on its own once a fresh
-  agent verifies it), `/propose` (merged once Jordi accepts) or
+  agent verifies it), `/propose` (merged once the user accepts) or
   `/research` (merged once green), and carries that label. **Every task that
   changes the repository starts with `/cook`**, typed or not: it picks the
   lane, says why, and runs it. Only a lane the user names themselves, or a
   plain question, skips it. The protocol is `/steward`, "Merging".
   **Every task ends with `/recap`**, typed or not, questions included: its
   last message is the recap's brief.
+- **Ask the user once.** Before asking the user anything, read
+  `.agents/answers.md`; when the user answers a question that could come up
+  again, add it there. The file says how.
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for

@@ -51,7 +51,11 @@
     "migration:new": "pnpm --filter @oppenheimer/api migration:new",
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
     "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
+    "eval:bot-first-chat": "tsx scripts/evals/bot-first-chat/run.ts",
     "eval:bot-memory": "tsx scripts/evals/bot-memory/run.ts",
+    "eval:bot-session-search": "tsx scripts/evals/bot-session-search/run.ts",
+    "eval:bot-session-unblock": "tsx scripts/evals/bot-session-unblock/run.ts",
+    "eval:bot-skills": "tsx scripts/evals/bot-skills/run.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"
@@ -80,7 +84,8 @@
     },
     "patchedDependencies": {
       "nestjs-zod@4.3.1": "patches/nestjs-zod@4.3.1.patch",
-      "@xterm/addon-webgl@0.19.0": "patches/@xterm__addon-webgl@0.19.0.patch"
+      "@xterm/addon-webgl@0.19.0": "patches/@xterm__addon-webgl@0.19.0.patch",
+      "@novnc/novnc@1.7.0": "patches/@novnc__novnc@1.7.0.patch"
     }
   }
 }

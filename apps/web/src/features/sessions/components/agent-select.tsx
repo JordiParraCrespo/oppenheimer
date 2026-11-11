@@ -27,6 +27,7 @@ export function AgentSelect({
   onFavouritesChange,
   effort,
   onEffortChange,
+  onConfigure,
   disabled,
 }: {
   agents: AgentOption[];
@@ -37,6 +38,8 @@ export function AgentSelect({
   /** The current model's levels and the one shown; none for a model without effort. */
   effort: Pick<EffortChoice, 'levels' | 'value'> | null;
   onEffortChange: (value: SessionEffort) => void;
+  /** Opens where the reader chooses which agents the popup's strip holds. */
+  onConfigure: () => void;
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
@@ -66,6 +69,7 @@ export function AgentSelect({
             }
           : undefined
       }
+      onConfigure={onConfigure}
       disabled={disabled}
       aria-label={t('sessions.new.agent.label')}
       searchPlaceholder={t('sessions.new.agent.search')}
@@ -80,6 +84,7 @@ export function AgentSelect({
         smarter: t('sessions.new.effort.smarter'),
         effortHint: t('sessions.new.effort.hint'),
         moreModels: t('sessions.new.agent.moreModels'),
+        configure: t('sessions.new.agent.configure'),
       }}
     />
   );

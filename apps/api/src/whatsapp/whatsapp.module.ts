@@ -4,14 +4,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
+import { WhatsappAnswerResolver } from './application/whatsapp-answer.resolver';
 import { WhatsappChatResolver } from './application/whatsapp-chat.resolver';
+import { WhatsappReplyResolver } from './application/whatsapp-reply.resolver';
+import { ConfirmWhatsappOwnerCommandHandler } from './commands/confirm-whatsapp-owner/confirm-whatsapp-owner.command-handler';
+import { ConfirmWhatsappOwnerHttpController } from './commands/confirm-whatsapp-owner/confirm-whatsapp-owner.http.controller';
 import { LinkWhatsappCommandHandler } from './commands/link-whatsapp/link-whatsapp.command-handler';
 import { LinkWhatsappHttpController } from './commands/link-whatsapp/link-whatsapp.http.controller';
 import { ReceiveWhatsappMessagesCommandHandler } from './commands/receive-whatsapp-messages/receive-whatsapp-messages.command-handler';
 import { RecordWhatsappStateCommandHandler } from './commands/record-whatsapp-state/record-whatsapp-state.command-handler';
 import { RemoveWhatsappAccountCommandHandler } from './commands/remove-whatsapp-account/remove-whatsapp-account.command-handler';
 import { RemoveWhatsappAccountHttpController } from './commands/remove-whatsapp-account/remove-whatsapp-account.http.controller';
+import { ReplyOnWhatsappCommandHandler } from './commands/reply-on-whatsapp/reply-on-whatsapp.command-handler';
+import { RequestWhatsappOwnerCommandHandler } from './commands/request-whatsapp-owner/request-whatsapp-owner.command-handler';
+import { RequestWhatsappOwnerHttpController } from './commands/request-whatsapp-owner/request-whatsapp-owner.http.controller';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
+import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
+import { UpdateWhatsappAccountHttpController } from './commands/update-whatsapp-account/update-whatsapp-account.http.controller';
 import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from './database/whatsapp-account.repository';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
@@ -29,15 +38,23 @@ import { WhatsappMessageMapper } from './whatsapp-message.mapper';
 const httpControllers = [
   FindWhatsappAccountsHttpController,
   LinkWhatsappHttpController,
+  UpdateWhatsappAccountHttpController,
+  RequestWhatsappOwnerHttpController,
+  ConfirmWhatsappOwnerHttpController,
   RemoveWhatsappAccountHttpController,
 ];
 
 /**
  * The relay dispatches the host's reports (`RecordWhatsappState`,
- * `ReceiveWhatsappMessages`); a bot's tools dispatch the send.
+ * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, and the end of
+ * a WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`).
  */
 const commandHandlers: Provider[] = [
   LinkWhatsappCommandHandler,
+  UpdateWhatsappAccountCommandHandler,
+  RequestWhatsappOwnerCommandHandler,
+  ConfirmWhatsappOwnerCommandHandler,
+  ReplyOnWhatsappCommandHandler,
   RemoveWhatsappAccountCommandHandler,
   RecordWhatsappStateCommandHandler,
   ReceiveWhatsappMessagesCommandHandler,
@@ -78,6 +95,8 @@ const queryHandlers: Provider[] = [
     WhatsappAccountMapper,
     WhatsappMessageMapper,
     WhatsappChatResolver,
+    WhatsappReplyResolver,
+    WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },
   ],

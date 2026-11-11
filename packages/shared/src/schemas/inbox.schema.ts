@@ -46,3 +46,99 @@ export const putInboxMarkSchema = z
     path: ['until'],
   });
 export type PutInboxMarkDto = z.infer<typeof putInboxMarkSchema>;
+
+/** The most occurrences one batch marks: more than the Inbox lists at once. */
+export const INBOX_MARKS_BATCH_MAX = 500;
+
+/**
+ * `POST /inbox/marks/batch`: a bulk action on a selection, one request for
+ * all of it. `mark: null` clears each one's mark (Restore priority); `until`
+ * comes with a snooze and only with one, as on a single put.
+ */
+export const putInboxMarksSchema = z
+  .object({
+    itemKeys: z.array(inboxItemKeySchema).min(1).max(INBOX_MARKS_BATCH_MAX),
+    mark: inboxMarkSchema.nullable(),
+    until: z.string().datetime({ offset: true }).optional(),
+  })
+  .refine((value) => (value.mark === 'snoozed') === (value.until !== undefined), {
+    path: ['until'],
+  });
+export type PutInboxMarksDto = z.infer<typeof putInboxMarksSchema>;
+
+/**
+ * A **report**: the one Inbox item that is stored, because nothing else knows
+ * it. An agent that found a problem posts it with its pictures
+ * (`POST /inbox/reports`), the person reads it in the Inbox and answers
+ * there, and the agent reads the answer back (`GET /inbox/reports/:id`).
+ *
+ * - `open`: waiting on the person.
+ * - `answered`: the person answered; it has left the Inbox.
+ */
+export const INBOX_REPORT_STATUSES = ['open', 'answered'] as const;
+export const inboxReportStatusSchema = z.enum(INBOX_REPORT_STATUSES);
+export type InboxReportStatus = z.infer<typeof inboxReportStatusSchema>;
+
+export const INBOX_REPORT_TITLE_MAX = 200;
+export const INBOX_REPORT_BODY_MAX = 4_000;
+/** Who sent it, in the sender's own words: a routine's name, `qa-explorer`. */
+export const INBOX_REPORT_SOURCE_MAX = 80;
+export const INBOX_REPORT_LINK_MAX = 2_000;
+export const INBOX_REPORT_ANSWER_MAX = 2_000;
+export const INBOX_REPORT_IMAGES_MAX = 4;
+export const INBOX_REPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const INBOX_REPORT_IMAGE_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+] as const;
+export type InboxReportImageMimeType = (typeof INBOX_REPORT_IMAGE_MIME_TYPES)[number];
+export const INBOX_REPORT_IMAGE_NAME_MAX = 255;
+
+/** The most reports one read returns, the newest first. */
+export const INBOX_REPORTS_MAX = 100;
+
+/**
+ * The text fields of `POST /inbox/reports`, which is `multipart/form-data` so
+ * the pictures travel with them under `images`. A link is where the problem
+ * can be seen: a pull request, a page, a run.
+ */
+export const createInboxReportSchema = z.object({
+  title: z.string().trim().min(1).max(INBOX_REPORT_TITLE_MAX),
+  body: z.string().trim().max(INBOX_REPORT_BODY_MAX).optional(),
+  source: z.string().trim().max(INBOX_REPORT_SOURCE_MAX).optional(),
+  link: z
+    .string()
+    .trim()
+    .max(INBOX_REPORT_LINK_MAX)
+    .url()
+    .refine((value) => /^https?:\/\//i.test(value))
+    .optional(),
+});
+export type CreateInboxReportDto = z.infer<typeof createInboxReportSchema>;
+
+/** `POST /inbox/reports/:id/answer`: what the person tells the agent. */
+export const answerInboxReportSchema = z.object({
+  text: z.string().trim().min(1).max(INBOX_REPORT_ANSWER_MAX),
+});
+export type AnswerInboxReportDto = z.infer<typeof answerInboxReportSchema>;
+
+/** `GET /inbox/reports?status=`: the open ones when it is left out. */
+export const findInboxReportsSchema = z.object({
+  status: inboxReportStatusSchema.optional(),
+});
+export type FindInboxReportsDto = z.infer<typeof findInboxReportsSchema>;
+
+/** A picture a report carries; its bytes are read by its id. */
+export interface InboxReportImage {
+  id: string;
+  mimeType: InboxReportImageMimeType;
+  sizeBytes: number;
+  name: string;
+}
+
+/** The Inbox key of a report's one occurrence. */
+export function inboxReportItemKey(reportId: string): string {
+  return `report:${reportId}`;
+}

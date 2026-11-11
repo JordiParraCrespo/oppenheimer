@@ -507,6 +507,15 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 had a bot save to the general memory only what it happened to
+  notice, and a new bot asked for its job without saying what it could do.
+  On 2026-11-10 every turn asks what it learned about the person, for the
+  general memory, and a new bot's greeting lists what it can do from the
+  tools its turn offers (25, "Decided").
+- Note 25 gave a new bot a calm, flat `SOUL.md` and a first name it kept.
+  On 2026-11-10 the soul became friendly and proactive, after OpenClaw's
+  default, and the first name a placeholder: its first chat asks the
+  person what to call it (25, "Decided").
 - Note 25 ran bots on three providers, each on a workspace's API key. On
   2026-10-15 ChatGPT became a fourth, signed in with a ChatGPT subscription
   through OpenAI's device code flow, the way OpenClaw and the Codex CLI do
@@ -810,7 +819,12 @@ earlier note:
   event log in words, never the terminal or the agent's conversation, which
   stay on the host; `send_to_session` came with it, gated on the agent
   waiting at its prompt and logged with the bot as sender, and so did
-  `answer_session`, which the table did not have.
+  `answer_session`, which the table did not have. On 2026-11-07 a bot
+  answered only what its instructions settled; on 2026-11-10 it unblocks
+  the sessions it follows itself. That day a destructive approval was first
+  always a card; the owner then made it the bot's preset's call: Full access
+  acts on its own with its reasoning, Approve for me asks
+  (`versions/mvp/25-bots.md`).
 - `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
   Claude, and said Claude would give no status. On 2026-10-27 the owner
   asked for Claude end to end first: a `cloud` place started by the host's
@@ -1187,6 +1201,12 @@ earlier note:
   the most recent first, so the list is newest first across every kind,
   Low items still last; the order is held by the consumer's
   `composeInbox` test, no longer by the fleet stress suite.
+- `versions/mvp/29-inbox.md` §1 listed pull requests for you (a review
+  asked of you, yours ready to merge) in the Inbox. On 2026-11-10 the
+  owner asked to stop: agents open pull requests under the owner's account,
+  so each one waited there as theirs to merge. They are off by default
+  and come back with Show pull requests in the Inbox's filter menu, kept
+  on the device (the note's "Pull requests are opt-in").
 - `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
@@ -1407,10 +1427,30 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
+  day's tasks by their due date. On 2026-11-09 the owner asked for it to be
+  what they mean to work on: a task has a focus date apart from its due
+  date, To do lists what is put on the day and what is due on it, keeps
+  unfinished work from earlier days until it is done, and opens a task's
+  dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
 - `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
   `next-steps/answering-on-telegram-and-whatsapp.md`.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §1 (2026-11-09) had the
+  spare WhatsApp number send your personal number a code you send back from
+  it. On 2026-11-09, building slice 3, the code became one you enter in
+  Settings → WhatsApp instead: sent back from the named number, a stranger
+  who owns a mistyped number would receive it and become your line. A bot's
+  reply to your own message there counts only against the host's send
+  budget, not the 100 bot sends a day (`next-steps/whatsapp.md` §4).
+- `versions/mvp/29-inbox.md` said, from 2026-10-25, that the Inbox stores
+  nothing but your marks and that no agent posts into it. On 2026-11-09 the
+  owner asked for the unattended agents to send him problems with images
+  and to answer them only in the Inbox: a report is now stored
+  (`inbox_report`, up to four pictures), sent by anything holding a token
+  with `inbox-reports:write`, answered from its card, and read back by the
+  agent that sent it (29, "Reports").
 - `versions/mvp/05-screens.md` listed Fable 5.1 among Claude Code's four
   current models. On 2026-11-09 the owner asked for Fable 5.2 in new
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
@@ -1421,3 +1461,111 @@ earlier note:
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
+- `versions/mvp/25-bots.md` §4.1 (2026-10-31) had a bot save a skill only
+  when the person asked. On 2026-11-09, from Hermes Agent's learning loop,
+  a bot may save one on its own after hard work likely to come again (at
+  most one a turn, never anything private), a turn someone waits on that
+  has run 8 tool calls with no skill used or saved reminds it once, and
+  `patch_skill` fixes one passage of a skill. Either tool changes a skill
+  the person wrote last only when they asked, and neither touches the
+  skills Oppenheimer gives every bot.
+- `versions/mvp/25-bots.md` §4.1 (2026-11-09) reminded a bot after 8 tool
+  calls, in a line it was never told about, and `use_skill` did not say
+  who wrote a skill. On 2026-11-10 the skills paragraph announces the
+  reminder (Oppenheimer's own `<oppenheimer_reminder>` line at the end of
+  a tool's result, which a tool's output cannot forge), the reminder comes
+  after 6 calls, work the person says comes back is reason enough to save,
+  and `use_skill` says whether the bot or the person wrote the skill last.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
+  by listing them, newest first, and read one it already had the id of. On
+  2026-11-09, from Hermes Agent's session search, a bot searches every
+  session of the workspace, on any host and closed ones included, for words
+  in its name and log (`search_sessions`); the agents' transcripts on the
+  hosts are not searched. The `recap` skill searches its topic the same way.
+- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+  its calls, the trace at the reply's 15px in muted ink, and the live
+  line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
+  compactions, for quieter tool calls and for the solving and searching
+  orbs: the chat draws no compaction (the export keeps it), the trace is
+  13px in subtle ink, and the orb solves, or searches while the running
+  call only looks around (`versions/mvp/25-bots.md` §2 and §3).
+- `versions/mvp/18-plan-product.md` §4 had Start session always start from
+  one of the project's repositories. On 2026-11-09 the owner asked to start
+  one with only a host: the Repository chip offers No repository, which on
+  a host opens the session in the host's home folder.
+- `versions/mvp/27-bot-subscriptions.md` gave a task a bot hands off one
+  stall check and "no progress update", and its prompt told a bot asked to
+  monitor that "checking now adds nothing". On 2026-11-10 the owner had to
+  tell Facturas "you should be babysitting this" while two of its agents sat
+  idle: a bot now looks at a task still running every ten minutes after the
+  first check, up to an hour, staying quiet when it is on track, and checks
+  at once when asked (§4.2).
+- `versions/mvp/25-bots.md` §4.2 had `start_session` launch every session
+  at `auto` on the host's default model, decided 2026-10-18. On 2026-11-10
+  a bot told the owner it could not start a session on Opus 5.5: the tool
+  now takes everything the composer offers (model by id or name, effort,
+  permission, base branch), refuses what the agent does not take with what
+  it does, and names each choice on the card. `auto` stays the default,
+  and a session at full access is approved on its own card, every time.
+  An eval holds it (`scripts/evals/bot-session-launch/`).
+- `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
+  left a pull request with no generated summary until the chat came, and
+  the queue as a table. On 2026-11-09 the owner asked for the queue one pull
+  request at a time, summarized and with its pictures, the next one coming
+  up after each action: the **review deck** (`/pulls/review`, the same note,
+  "The review deck"), whose card leads with a brief of the head commit that
+  the deployment's model writes, or the description gives when there is no
+  model. The queue, the description page and Analytics are unchanged.
+- `research/lessons-from-grok-bot.md` §3 left "VNC inside the box for
+  computer use" for later. On 2026-11-09 the owner asked to watch and click
+  the machine an agent runs on: a host's own desktop streams to the console
+  through the screen-sharing server on its loopback, shared by its owner
+  with `runner desktop on` (`research/device-streaming.md`, "A host's
+  desktop"; the note's §11 is the read that led to it).
+- `versions/mvp/26-bot-routines.md` §6 built the routines' spend guard on
+  2026-11-07: a bot's routines paused after 3 reports its owner had not seen,
+  or 72 h away from its chat. On 2026-11-10 the owner asked for it to go: a
+  half-hourly Sentry triage that reports "no new events" paused within hours,
+  and OpenClaw, whose heartbeat the note follows, has no such guard. Removed
+  whole (the pause, the per-bot switch, the workspace thresholds, the Inbox
+  line, `POST /bots/:id/seen`); the migration resumes what it had paused.
+  Routines run until paused; the run budget, the overlap guard and quiet
+  turns bound the cost (26 §6, "Removed 2026-11-10").
+- `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
+  the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
+  screenshot into the terminal with Ctrl+V and Claude Code, reading the
+  host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
+  off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
+  host; a program that wanted a literal ^V no longer gets one from it.
+- `next-steps/0.7-terminal-and-chat.md` ("Data reads as data") opened a
+  reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
+  owner asked for the text first: the block opens on Raw, Raw / Tree on its
+  band, the tree one click away. A tool result's JSON still reads as a tree.
+- `versions/mvp/05-screens.md` held the sidebar's sessions and projects
+  still while a filter or the search hid some of them, since a drop would
+  lose the hidden ones' places. On 2026-11-11 the owner tried to reorder
+  sessions with a repository filter on and could not. They drag now,
+  filtered or not: the drop is merged into the whole list's order, so a
+  hidden row keeps its place among the ones it was drawn with.
+- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+  the visit only: a reload came back unfiltered. On 2026-11-11 the owner
+  asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
+  stick"): the facets and the sort are kept on the device, not the
+  account, since a filter is the reader's view; a remembered pick the menu
+  no longer offers reads as all and is forgotten.
+- `versions/mvp/13-automations.md`'s editor prefilled a new automation
+  with a project (the one it was opened for, else the first) and all of
+  that project's repositories, and picking a project picked all of its
+  repositories. On 2026-11-11 the owner asked for no default repositories
+  and no default project: a new automation starts with neither unless it
+  was opened for a project, and picking a project picks no repository.
+- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+  `/automations` in a second table under the automations. On 2026-11-11
+  the owner asked for them in tabs: the overview reads Automations · Bot
+  routines · Runs, the routines at `/automations/routines`.
+- `versions/mvp/26-bot-routines.md` drew every routine run in its bot's
+  chat, and the chat showed its tool calls until the reader hid them. On
+  2026-11-11 the owner, scrolling a column of half-hourly "Routine ·
+  Triage Sentry errors" lines that found nothing, asked for less: the
+  chat now hides tool calls by default, and while they are hidden a
+  routine run that only ran tools is left out. The wrench shows both.

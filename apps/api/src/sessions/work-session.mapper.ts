@@ -83,6 +83,7 @@ export class WorkSessionMapper
     record.notice = fold.notice;
     record.watchedPulls = fold.watchedPulls;
     record.sharedFiles = fold.sharedFiles;
+    record.hidden = fold.hidden;
     return record;
   }
 
@@ -195,6 +196,7 @@ export class WorkSessionMapper
       notice: readNotice(record.notice),
       watchedPulls: readWatchedPulls(record.watchedPulls),
       sharedFiles: readSharedFiles(record.sharedFiles),
+      hidden: record.hidden,
     };
   }
 
@@ -256,6 +258,7 @@ export class WorkSessionMapper
       SessionCheckoutMapper.toResponse(checkout),
     );
     dto.cloud = entity.cloudRun ? SessionCloudRunMapper.toResponse(entity.cloudRun) : null;
+    dto.hidden = entity.hidden;
     return dto;
   }
 

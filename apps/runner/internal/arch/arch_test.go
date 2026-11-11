@@ -30,7 +30,7 @@ const (
 	sharedPrefix = "github.com/jordiparracrespo/oppenheimer/packages/go/"
 )
 
-var contexts = []string{"apikeys", "devices", "host", "pairing", "ports", "service", "sessions", "telegram", "updates", "whatsapp"}
+var contexts = []string{"apikeys", "desktop", "devices", "host", "pairing", "ports", "service", "sessions", "telegram", "updates", "whatsapp"}
 
 // confined lists third-party modules only one package may import: the
 // adapter that owns the system they speak to. whatsmeow is an unofficial

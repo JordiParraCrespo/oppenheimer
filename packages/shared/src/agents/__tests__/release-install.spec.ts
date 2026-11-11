@@ -18,7 +18,7 @@ import {
 import { arch, platform, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CODING_AGENTS } from '../catalog.js';
+import { AGENT_HOST_SETUP } from '../host-setup.js';
 import { HOST_TOOLS } from '../host-tools.js';
 
 // Serves https://<path> from $RELEASES/<path>, `-I -w %{url_effective}` from
@@ -77,7 +77,7 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe.runIf(platform() === 'linux')('Claude Code from its latest release', () => {
   const base = 'downloads.claude.ai/claude-code-releases';
-  const script = CODING_AGENTS['claude-code'].install?.linux ?? '';
+  const script = AGENT_HOST_SETUP['claude-code']?.install?.linux ?? '';
   // Stands in for the real binary: `claude install <version>` records itself.
   const binary = '#!/bin/sh\necho "$@" >"$HOME/claude-ran"\n';
 

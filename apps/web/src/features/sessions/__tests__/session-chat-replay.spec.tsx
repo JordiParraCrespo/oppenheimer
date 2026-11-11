@@ -127,7 +127,7 @@ describe('a session replayed from its transcript', () => {
       `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  answered: Which fix? Wait for the toast',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
+      '  changes: sign-in.spec.ts tests +2 −1',
     ]);
 
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
@@ -140,7 +140,7 @@ describe('a session replayed from its transcript', () => {
       '  answered: Which fix? Wait for the toast',
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
+      '  changes: sign-in.spec.ts tests +2 −1',
     ]);
     // The composer is back, with the list the agent last wrote within reach.
     expect(composer().closest('[hidden]')).toBeNull();
@@ -175,7 +175,7 @@ describe('a session replayed from its transcript', () => {
       `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  answered: Which fix? Wait for the toast',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
+      '  changes: sign-in.spec.ts tests +2 −1',
       'you: Now run the whole suite',
       '… sessions.chat.turn.working 15s',
       '  reply: Running the suite.',
@@ -215,7 +215,7 @@ describe('a session replayed from its transcript', () => {
       '  answered: Which fix? Wait for the toast',
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
-      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
+      '  changes: sign-in.spec.ts tests +2 −1',
     ]);
     expect(within(chat.container).getAllByText(/Fixed: the test now/)).toHaveLength(1);
   });

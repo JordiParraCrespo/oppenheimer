@@ -65,8 +65,6 @@ export function workspaceLimitsOf(record: AutomationSettingsOrmEntity | null): W
     staleTtlSeconds: record.staleTtlSeconds,
     missedGraceSeconds: record.missedGraceSeconds,
     maxRunSeconds: record.maxRunSeconds,
-    unattendedReports: record.unattendedReports,
-    unattendedAwaySeconds: record.unattendedAwaySeconds,
   };
 }
 

@@ -110,4 +110,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_025',
     message: "Failed to create the cloud chat's key",
   },
+  VISIBILITY_FAILED: {
+    code: 'SESSIONS_CLIENT_026',
+    message: 'Failed to hide or show the session',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

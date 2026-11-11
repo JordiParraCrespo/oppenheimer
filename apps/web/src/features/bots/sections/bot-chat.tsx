@@ -12,9 +12,13 @@ import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { BotTranscriptSkeleton } from '@/features/bots/components/bot-transcript-skeleton';
+import { ToolCallsToggle } from '@/features/bots/components/tool-calls-toggle';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
-import { useMarkSeen } from '@/features/bots/hooks/use-mark-seen';
+import {
+  ToolCallsShownContext,
+  useToolCallsShown,
+} from '@/features/bots/hooks/use-tool-calls-shown';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
@@ -25,7 +29,8 @@ import { BotUsageCard } from './bot-usage-card';
 
 /**
  * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
- * `PageBar`, the sidebar toggle, the bot's face and name and its menu; the
+ * `PageBar`, the sidebar toggle, the bot's face and name, the wrench that
+ * shows or hides its tool calls (kept on this device) and its menu; the
  * transcript, which follows the latest line while you are there and offers
  * the way back when you scroll up; and the
  * composer, whose chips are how the bot's turns start (its model, effort and
@@ -45,12 +50,13 @@ export function BotChat({ botId }: { botId: string }) {
   const { data: bot, error } = useSuspenseBot(botId);
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
+  const toolCalls = useToolCallsShown();
   useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
-  useMarkSeen(bot.id);
   // Starts the documents' read beside the conversation's, so a chat with no
   // messages yet greets with its hello as the transcript lands, not a round
-  // trip later. Nothing here reads the result, so it renders nothing again.
-  useBotDocuments(bot.id);
+  // trip later. Nothing here reads the result, and an empty
+  // `notifyOnChangeProps` keeps the read's fetch states from redrawing the chat.
+  useBotDocuments(bot.id, { notifyOnChangeProps: [] });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -58,29 +64,34 @@ export function BotChat({ botId }: { botId: string }) {
         leading={<BotAvatar option={{ initials: bot.initials }} size={26} face={bot.face} />}
         title={bot.name}
         actions={
-          <BotActionsMenu
-            onSettings={() =>
-              navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
-            }
-            onDelete={() => setDeleting(true)}
-          />
+          <>
+            <ToolCallsToggle shown={toolCalls.shown} onShownChange={toolCalls.setShown} />
+            <BotActionsMenu
+              onSettings={() =>
+                navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
+              }
+              onDelete={() => setDeleting(true)}
+            />
+          </>
         }
       />
-      <BotChatScroller>
-        <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-        <QueryState>
-          <QueryState.Pending>
-            <div aria-busy>
-              <BotTranscriptSkeleton />
-            </div>
-          </QueryState.Pending>
-          <QueryState.Error fallback={t('bots.chat.loadFailed')} />
-          <QueryState.Data>
-            <BotTranscript botId={bot.id} name={bot.name} />
-          </QueryState.Data>
-        </QueryState>
-        <BotUsageCard botId={bot.id} />
-      </BotChatScroller>
+      <ToolCallsShownContext value={toolCalls.shown}>
+        <BotChatScroller>
+          <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
+          <QueryState>
+            <QueryState.Pending>
+              <div aria-busy>
+                <BotTranscriptSkeleton />
+              </div>
+            </QueryState.Pending>
+            <QueryState.Error fallback={t('bots.chat.loadFailed')} />
+            <QueryState.Data>
+              <BotTranscript botId={bot.id} name={bot.name} />
+            </QueryState.Data>
+          </QueryState>
+          <BotUsageCard botId={bot.id} />
+        </BotChatScroller>
+      </ToolCallsShownContext>
       <div className="px-4 pb-4 sm:px-8">
         <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <BotApprovalCard botId={bot.id} name={bot.name} />

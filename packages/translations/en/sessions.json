@@ -178,6 +178,7 @@
       "favourites": "Favourites",
       "favouritesEmpty": "Star a model to keep it here.",
       "moreModels": "More models",
+      "configure": "Choose agents",
       "addFavourite": "Add {{model}} to favourites",
       "removeFavourite": "Remove {{model}} from favourites",
       "auto": "Auto"
@@ -326,6 +327,9 @@
     "pinned": "Pinned",
     "pin": "Pin",
     "unpin": "Unpin",
+    "hide": "Hide",
+    "show": "Show",
+    "hidden": "Hidden",
     "dropToPin": "Drop a session here to pin it.",
     "actions": "Session actions",
     "rename": "Rename",
@@ -346,7 +350,8 @@
     "selected": "Selected",
     "openAtVendor": "Opens in {{vendor}}",
     "allHidden": "Every project is hidden. Show them again from the filter menu.",
-    "noSessions": "No sessions yet. Start one with New session above."
+    "noSessions": "No sessions yet. Start one with New session above.",
+    "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -389,6 +394,8 @@
     "remove": "Clear filter",
     "allProjects": "All projects",
     "allRepositories": "All repositories",
+    "several_one": "{{count}} selected",
+    "several_other": "{{count}} selected",
     "allAgents": "All agents",
     "allHosts": "All hosts",
     "noMatches": "No sessions match these filters.",
@@ -396,6 +403,8 @@
     "shownAll": "All",
     "shownSome": "{{shown}} of {{total}}",
     "showAll": "Show all projects",
+    "pinnedOnly": "Pinned only",
+    "showHidden": "Show hidden sessions",
     "newProject": "New project…"
   },
   "sort": {
@@ -661,7 +670,8 @@
       "count_one": "{{count}} subagent",
       "count_other": "{{count}} subagents",
       "running": "{{count}} running",
-      "failed": "{{count}} failed",
+      "failed_one": "{{count}} failed",
+      "failed_other": "{{count}} failed",
       "untitled": "Subagent",
       "calls_one": "{{count}} call",
       "calls_other": "{{count}} calls",
@@ -706,7 +716,8 @@
     "notSupportedDetail": "Update its runner to open the session's dev server here.",
     "portsFailed": "Couldn't list the session's ports",
     "previewFailed": "Couldn't open the preview",
-    "opening": "Opening localhost:{{port}}…"
+    "opening": "Opening localhost:{{port}}…",
+    "desktop": "Desktop"
   },
   "cloud": {
     "eyebrow": "Claude Code cloud",

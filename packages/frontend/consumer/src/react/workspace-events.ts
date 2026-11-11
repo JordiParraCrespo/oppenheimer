@@ -4,6 +4,7 @@ import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import type { WorkspaceEvent } from '@oppenheimer/shared/workspace-events';
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { CONSUMER_CONFIG } from '../config';
 import { automationsKeys } from './automations.keys';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
@@ -113,6 +114,8 @@ const REFRESHES: RefreshTable = {
   'botNotice.changed': [{ prefix: botsKeys.workspaceNotices(), announcesEvery: true }],
   // Every put and delete of the caller's marks.
   'inboxMark.changed': [{ prefix: inboxKeys.marks(), announcesEvery: true }],
+  // A report posted and a report answered each raise it: the Inbox's open reports.
+  'inboxReport.changed': [{ prefix: inboxKeys.reports(), announcesEvery: true }],
 };
 
 /** The reads one event refreshes, at the keys they already have. */
@@ -121,8 +124,11 @@ function keysFor(event: WorkspaceEvent): readonly QueryKey[] {
   return refreshes.map((r) => r.key?.(event) ?? r.prefix);
 }
 
+/** A query key's identity, for telling two keys apart: the console's keys are plain data. */
+const keyId = (key: QueryKey): string => JSON.stringify(key);
+
 function unique(keys: readonly QueryKey[]): readonly QueryKey[] {
-  const seen = new Map(keys.map((key) => [JSON.stringify(key), key]));
+  const seen = new Map(keys.map((key) => [keyId(key), key]));
   return [...seen.values()];
 }
 
@@ -146,6 +152,44 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
 }
 
 /**
+ * Refetches a read at most once per gap
+ * (`CONSUMER_CONFIG.workspaceEvents.refetchGapMs`): the first event after a
+ * quiet spell refetches at once, so a single change lands with no delay; those
+ * within the gap after it collapse into one refetch at its end, so the last
+ * change is never missed.
+ */
+function throttledInvalidate(queryClient: QueryClient) {
+  // A read refetched within the gap, and whether another event named it since.
+  const cooling = new Map<string, boolean>();
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  const run = (id: string, queryKey: QueryKey) => {
+    cooling.set(id, false);
+    invalidate(queryClient, [queryKey]);
+    const timer = setTimeout(() => {
+      timers.delete(timer);
+      if (cooling.get(id)) run(id, queryKey);
+      else cooling.delete(id);
+    }, CONSUMER_CONFIG.workspaceEvents.refetchGapMs);
+    timers.add(timer);
+  };
+  return {
+    invalidate(keys: readonly QueryKey[]): void {
+      for (const queryKey of keys) {
+        const id = keyId(queryKey);
+        if (cooling.has(id)) cooling.set(id, true);
+        else run(id, queryKey);
+      }
+    },
+    /** Cancels every gap still running, a trailing refetch it owes included. */
+    dispose(): void {
+      for (const timer of timers) clearTimeout(timer);
+      timers.clear();
+      cooling.clear();
+    },
+  };
+}
+
+/**
  * The workspace's change feed, while `workspaceId` names one and the
  * `workspace_event_stream` flag is on: one stream per tab, whose events
  * refetch the queries they name the moment the change commits.
@@ -155,7 +199,8 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
  * it comes up — the first connect included, since a change can land between a
  * screen's read and the subscription — the covered queries are refetched
  * once, for what the gap may have missed. A flag read off, or a workspace that
- * changes, closes the stream.
+ * changes, closes the stream. An event's refetches are paced per read
+ * (`CONSUMER_CONFIG.workspaceEvents.refetchGapMs`); the catch-up is not.
  */
 export function useWorkspaceEvents(workspaceId: string | undefined): void {
   const app = useConsumerApp();
@@ -173,10 +218,12 @@ export function useWorkspaceEvents(workspaceId: string | undefined): void {
       live = now;
       setWorkspaceStream(queryClient, now, covers);
     });
-    const offEvent = stream.onEvent((event) => invalidate(queryClient, keysFor(event)));
+    const refetch = throttledInvalidate(queryClient);
+    const offEvent = stream.onEvent((event) => refetch.invalidate(keysFor(event)));
     return () => {
       offStatus();
       offEvent();
+      refetch.dispose();
       stream.dispose();
       setWorkspaceStream(queryClient, false, covers);
     };

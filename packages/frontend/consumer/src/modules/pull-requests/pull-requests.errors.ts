@@ -22,4 +22,5 @@ export const PullRequestsErrors = {
     message: 'Failed to load the review sessions',
   },
   START_REVIEW_FAILED: { code: 'PULLS_CLIENT_012', message: 'Failed to start the review session' },
+  FETCH_BRIEF_FAILED: { code: 'PULLS_CLIENT_013', message: 'Failed to load the brief' },
 } as const satisfies Record<string, ErrorDefinition>;

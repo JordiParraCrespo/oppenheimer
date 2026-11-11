@@ -2,8 +2,18 @@ import { searchFlag, searchText } from '@oppenheimer/frontend-web';
 import { z } from 'zod';
 
 /** The list's Type facet, in the frame's order; `all` is no key. */
-export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run'] as const;
+export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run', 'report'] as const;
 export type InboxTypeFilter = (typeof INBOX_TYPES)[number];
+
+/** The Type options the Inbox offers: Pull requests only while they are shown. */
+export function typesFor(pullsShown: boolean): readonly InboxTypeFilter[] {
+  return pullsShown ? INBOX_TYPES : INBOX_TYPES.filter((type) => type !== 'pull');
+}
+
+/** A type the Inbox does not offer now (a link to Pull requests while they are hidden) reads as All. */
+export function offeredType(type: InboxTypeFilter, pullsShown: boolean): InboxTypeFilter {
+  return typesFor(pullsShown).includes(type) ? type : 'all';
+}
 
 /** The Project facet's first option: every project. Not a search value: it is no key. */
 export const ALL_PROJECTS = 'all';

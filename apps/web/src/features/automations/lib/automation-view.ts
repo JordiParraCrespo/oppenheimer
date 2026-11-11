@@ -169,3 +169,13 @@ export function automationSubline(
     .filter(Boolean)
     .join(' · ');
 }
+
+/** The bot routines table's column heads, for the table and its placeholder. */
+export function botRoutineColumns(t: TFunction): [string, string, string, string] {
+  return [
+    t('automations.routines.routine'),
+    t('automations.table.trigger'),
+    t('automations.table.next'),
+    t('automations.table.status'),
+  ];
+}

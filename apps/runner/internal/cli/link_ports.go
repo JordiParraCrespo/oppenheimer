@@ -38,7 +38,17 @@ type tunnel struct {
 	flow *flowWindow
 	// input is the relay's bytes waiting for the socket.
 	input chan []byte
-	once  sync.Once
+	// filter, when set, sees what the relay sent before the socket does and
+	// says what the socket gets instead (a desktop's, link_desktop.go). Nil on
+	// a port, whose bytes pass untouched.
+	filter tunnelFilter
+	once   sync.Once
+}
+
+// tunnelFilter rewrites the relay's bytes for a tunnel's socket: forward is
+// what the socket takes, which may be nothing; false is a tunnel that ended.
+type tunnelFilter interface {
+	filter(ctx context.Context, chunk []byte) (forward []byte, ok bool)
 }
 
 func (t *tunnel) credit(bytes int) { t.flow.credit(bytes) }
@@ -91,20 +101,29 @@ func (h *linkHandler) portOpen(m link.PortOpen, epoch uint64) {
 		id: m.AttachmentID, sessionID: m.SessionID, conn: conn, cancel: cancel,
 		flow: newFlowWindow(), input: make(chan []byte, tunnelInput),
 	}
+	if !h.registerTunnel(t, epoch) {
+		return
+	}
+	_ = h.client.Send(link.PortOpened{Type: link.TypePortOpened, AttachmentID: t.id})
+	go h.tunnelUp(ctx, t)
+	go h.tunnelDown(ctx, t)
+}
+
+// registerTunnel puts a dialled tunnel in the table, unless the relay hung
+// it up while it was dialled or the link it was for is gone: then it closes
+// it and reports false.
+func (h *linkHandler) registerTunnel(t *tunnel, epoch uint64) bool {
 	h.mu.Lock()
 	cancelled := h.opening[t.id]
 	delete(h.opening, t.id)
 	if cancelled || !h.linkUp || h.epoch != epoch {
 		h.mu.Unlock()
 		t.close()
-		return
+		return false
 	}
 	h.tunnels[t.id] = t
 	h.mu.Unlock()
-
-	_ = h.client.Send(link.PortOpened{Type: link.TypePortOpened, AttachmentID: t.id})
-	go h.tunnelUp(ctx, t)
-	go h.tunnelDown(ctx, t)
+	return true
 }
 
 // tunnelUp sends what the port says to the relay, a chunk at a time, while
@@ -139,9 +158,18 @@ func (h *linkHandler) tunnelDown(ctx context.Context, t *tunnel) {
 		case <-ctx.Done():
 			return
 		case chunk := <-t.input:
-			if _, err := t.conn.Write(chunk); err != nil {
-				h.endTunnel(t, "port closed")
-				return
+			out := chunk
+			if t.filter != nil {
+				var ok bool
+				if out, ok = t.filter.filter(ctx, chunk); !ok {
+					return
+				}
+			}
+			if len(out) > 0 {
+				if _, err := t.conn.Write(out); err != nil {
+					h.endTunnel(t, "port closed")
+					return
+				}
 			}
 			_ = h.client.Send(link.AttachmentCredit{Type: "attachment.credit", AttachmentID: t.id, Bytes: len(chunk)})
 		}

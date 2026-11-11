@@ -14,17 +14,17 @@ import { WakeSubscribedBotCommand } from '../commands/wake-subscribed-bot/wake-s
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import {
-  BOT_STALL_CHECK_DELAY_MS,
   BOT_SUBSCRIPTIONS_PER_BOT,
   type BotSubscriptionUntil,
   type BotWatchFrom,
+  checkDelayMs,
 } from '../domain/bot-subscription.policy';
 import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
 /** What `start_session` and `send_to_session` answer once the task they handed off is followed. */
 const HANDED_OFF =
-  'You are subscribed to it and will be woken when the task needs input or ends, or if it has not got going in a few minutes: end your turn now, and report when you are.';
+  'You are subscribed to it and will be woken when the task needs input or ends, if it has not got going in a few minutes, and every few minutes while it runs so you can look at how it is going: end your turn now, and report when you are.';
 
 /** What a watch came to: the subscription as stored, and the session as it stood. */
 export interface SessionWatch {
@@ -86,7 +86,7 @@ export class BotSessionWatchResolver {
   }
 
   /**
-   * Owes the task its stall check. The watch is stored either way, and its
+   * Owes the task its first check (the stall check, then the looks at its progress). The watch is stored either way, and its
    * wakes still come, so a check that cannot be staged is logged, not said.
    */
   private async checkLater(
@@ -101,8 +101,9 @@ export class BotSessionWatchResolver {
           botId: subscription.botId,
           sessionId,
           turn,
+          check: 1,
         },
-        new Date(Date.now() + BOT_STALL_CHECK_DELAY_MS),
+        new Date(Date.now() + checkDelayMs(1)),
         RequestContextService.getCorrelationId() ?? null,
       );
     } catch (error) {

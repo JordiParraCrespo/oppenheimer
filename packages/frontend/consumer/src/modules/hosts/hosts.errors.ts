@@ -37,4 +37,8 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_008',
     message: 'Failed to search the folders on the host',
   },
+  DESKTOP_TICKET_FAILED: {
+    code: 'HOSTS_CLIENT_009',
+    message: "Failed to open the host's desktop",
+  },
 } as const satisfies Record<string, ErrorDefinition>;

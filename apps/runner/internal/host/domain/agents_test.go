@@ -17,6 +17,8 @@ func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
 		{domain.ToolClaude, true},
 		{domain.ToolCodex, true},
 		{domain.ToolGrok, true},
+		{domain.ToolPi, true},
+		{domain.ToolOmp, true},
 		{domain.ToolGit, false},
 		{domain.ToolTmux, false},
 		{domain.ToolOpenCode, true},

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Duplex } from 'node:stream';
+import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
 import type {
   AttachmentClosedReason,
   AttachmentSink,
@@ -13,7 +14,19 @@ import { CreditWindow } from './credit-window.util';
  */
 const CHUNK_BYTES = 64 * 1024;
 
-/** The runner refused to open the port (`PORT_001` not the session's, `PORT_002` nothing answers). */
+/**
+ * What a stream is a connection to: the message that opens it on a fresh
+ * attachment, and the one that hangs it up.
+ */
+interface LinkStreamTarget {
+  open(commandId: string, attachmentId: number): ProtocolMessage;
+  close(attachmentId: number): ProtocolMessage;
+}
+
+/**
+ * The runner refused to open the stream: a port (`PORT_001` not the
+ * session's, `PORT_002` nothing answers), or a desktop (`DESKTOP_*`).
+ */
 export class PortRefusedError extends Error {
   constructor(
     readonly code: string,
@@ -33,9 +46,11 @@ export class PortClosedError extends Error {
 }
 
 /**
- * One TCP connection to a port a session listens on, through its host's
- * runner (`product/versions/mvp/30-session-previews.md`): `port.open` on a
- * new attachment, then the connection's bytes as binary frames both ways.
+ * One TCP connection through a host's runner, as an attachment: a port a
+ * session listens on (`product/versions/mvp/30-session-previews.md`), opened
+ * with `port.open`, or the host's desktop, opened with `desktop.open` and
+ * signed in to by the runner. Then the connection's bytes as binary frames
+ * both ways.
  * Each direction is under the link's credit window (the contract is in
  * `@oppenheimer/shared/protocol`'s `ports.ts`): this side sends while the
  * runner has credited room (`CreditWindow`), and credits the runner for what
@@ -71,10 +86,36 @@ export class LinkPortStream extends Duplex {
     credit: (bytes) => this.onCredit(bytes),
   };
 
-  constructor(
+  /** A connection to one of a session's ports. */
+  static toPort(link: RunnerLink, sessionId: string, port: number): LinkPortStream {
+    return new LinkPortStream(link, {
+      open: (commandId, attachmentId) => ({
+        type: 'port.open',
+        commandId,
+        sessionId,
+        attachmentId,
+        port,
+      }),
+      close: (attachmentId) => ({ type: 'port.close', attachmentId }),
+    });
+  }
+
+  /** A connection to the host's desktop, watching or in control. */
+  static toDesktop(link: RunnerLink, control: boolean): LinkPortStream {
+    return new LinkPortStream(link, {
+      open: (commandId, attachmentId) => ({
+        type: 'desktop.open',
+        commandId,
+        attachmentId,
+        control,
+      }),
+      close: (attachmentId) => ({ type: 'desktop.close', attachmentId }),
+    });
+  }
+
+  private constructor(
     private readonly link: RunnerLink,
-    sessionId: string,
-    port: number,
+    private readonly target: LinkStreamTarget,
   ) {
     super({ allowHalfOpen: false });
     this.ready = new Promise((resolve, reject) => {
@@ -85,14 +126,18 @@ export class LinkPortStream extends Duplex {
     this.ready.catch(() => {});
     const commandId = randomUUID();
     this.attachmentId = link.openAttachment(this.sink, commandId);
-    const sent = link.send({
-      type: 'port.open',
-      commandId,
-      sessionId,
-      attachmentId: this.attachmentId,
-      port,
-    });
+    const sent = link.send(target.open(commandId, this.attachmentId));
     if (!sent) queueMicrotask(() => this.destroy(new PortClosedError('link_lost')));
+  }
+
+  /** The attachment id the runner knows this stream by. */
+  get id(): number {
+    return this.attachmentId;
+  }
+
+  /** Settles once the runner has connected, or fails with the attachment. */
+  whenOpen(): Promise<void> {
+    return this.ready;
   }
 
   // ---- what the runner says about this attachment
@@ -144,7 +189,7 @@ export class LinkPortStream extends Duplex {
     const id = this.attachmentId;
     if (this.link.attachment(id) === this.sink) {
       this.link.closeAttachment(id);
-      if (!this.remoteEnded) this.link.send({ type: 'port.close', attachmentId: id });
+      if (!this.remoteEnded) this.link.send(this.target.close(id));
     }
     const failure = error ?? new PortClosedError('runner_closed');
     this.markFailed(failure);

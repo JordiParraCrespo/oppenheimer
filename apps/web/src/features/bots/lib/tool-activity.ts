@@ -5,6 +5,7 @@ import {
   toolLine,
 } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
+import { looksAround } from '@/features/bots/lib/explored-steps';
 
 /**
  * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
@@ -161,6 +162,15 @@ export function liveLabel({
     : ({ key: `bots.chat.turn.musing.${musing(seed)}`, values: {} } as const);
 }
 
+/**
+ * Which animation the live line's orb plays: the searching globe while the
+ * running call only looks around (`looksAround`, the same calls an
+ * "Explored" run folds), the solving one otherwise, waiting and writing included.
+ */
+export function liveOrb(step: BotToolStep | undefined): 'searching' | 'solving' {
+  return step && looksAround(step) ? 'searching' : 'solving';
+}
+
 /** The call still running in a turn's work, if one is: the last with no output yet. */
 export function runningStep(answer: readonly BotMessageEntity[]): BotToolStep | undefined {
   const steps = answer.flatMap((message) => (message.role === 'activity' ? message.steps : []));
@@ -176,4 +186,9 @@ export function readableOutput(output: string): string {
   } catch {
     return output;
   }
+}
+
+/** The sessions these calls started or pointed at, each once, in the order the calls ran. */
+export function sessionsOf(steps: readonly Pick<BotToolStep, 'sessionId'>[]): string[] {
+  return [...new Set(steps.flatMap((step) => step.sessionId ?? []))];
 }

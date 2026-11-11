@@ -8,6 +8,7 @@ import { SessionsModule } from '../sessions/sessions.module';
 import { HostUnpairedDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { BrowserAttachGateway } from './infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from './infrastructure/credentials.processor';
+import { DesktopAttachGateway } from './infrastructure/desktop-attach.gateway';
 import { PreviewProxyGateway } from './infrastructure/preview-proxy.gateway';
 import { RelayEventsProcessor } from './infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from './infrastructure/relay-upgrade.gateway';
@@ -40,6 +41,7 @@ import { WhatsappLinkProcessor } from './infrastructure/whatsapp-link.processor'
     TelegramLinkProcessor,
     RunnerLinkGateway,
     BrowserAttachGateway,
+    DesktopAttachGateway,
     PreviewProxyGateway,
     RelayUpgradeGateway,
     HostUnpairedDomainEventHandler,

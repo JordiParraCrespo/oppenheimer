@@ -1,6 +1,6 @@
 ---
 title: Bots (Employees)
-description: What a bot is and how to create one, its settings (Profile, Instructions with SOUL.md and INSTRUCTIONS.md, Memory, Skills, Permissions, Routines, Home host), model providers and keys, how a bot does code work through sessions, its tools, slash commands, the built-in skills oppenheimer and /recap, the built-ins /goal /usage /loop /schedule, approvals, and its limits.
+description: What a bot is and how to create one, its settings (Profile, Instructions with SOUL.md and INSTRUCTIONS.md, Memory, Skills, Permissions, Routines, Home host), model providers and keys, how a bot does code work through sessions, its tools, approvals, and its limits; its skills and commands are their own page.
 sidebar_position: 5
 ---
 
@@ -8,7 +8,7 @@ A **bot** is an LLM worker you chat with. The console calls the section **Employ
 
 ## Creating a bot
 
-In **Employees**, press **New bot**. A new bot gets a first name (Juno, Milo, Wren…), a colour and a drawn face: a round face in its colour wearing a hat, with eyes and a mouth taken from the bot itself, so it keeps its face through a rename. Its first chat walks it through one job: tell it what it is for in a message, and it writes its own `INSTRUCTIONS.md` and description, remembers what it learned about you, and offers a first task. One bot per job works best.
+In **Employees**, press **New bot**. A new bot gets a first name (Juno, Milo, Wren…), a colour and a drawn face: a round face in its colour wearing a hat, with eyes and a mouth taken from the bot itself, so it keeps its face through a rename. That first name is a placeholder: the bot is friendly and proactive by default, and in its first chat it asks what you want to call it (after any work your first message asks for) and saves your answer. It also tells you what it can do for you here, from the tools it has, and offers to help connect what is not connected yet. Its first chat also walks it through one job: tell it what it is for in a message, and it writes its own `INSTRUCTIONS.md` and description, remembers what it learned about you, and offers a first task. One bot per job works best.
 
 The Employees sidebar holds your bots in groups (New group, Move to group) in an order you drag. A bot can also be shown in the Sessions, Automations, Plan and Pull requests sidebars: use the plus on a section's Bots heading, or **Shows in** on the bot's Profile. Its chat opens in place there; it is the same bot and the same conversation everywhere.
 
@@ -27,7 +27,7 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 | --- | --- |
 | Profile | Name, description, colour, face (pick a hat, eyes and a mouth, or **Use its own face**), sidebar group, Shows in, and the chat history (Export, Clear history). |
 | Instructions | Two files read before every message: **SOUL.md** (personality and tone) and **INSTRUCTIONS.md** (its job and rules). Each save is a revision; Revision history can Revert. |
-| Memory | Facts it remembers, with who added each. **Learn automatically** lets it save facts without asking. A bot has two memories: its own, which only it reads and where everything about its job goes (your projects, repositories, folders, hosts, accounts, how you want that work done), and the **general memory** about you, which all your bots read and which only takes what a bot with another job would need too (your name, language, time zone, how you like to work everywhere). A fact can also be kept in mind in every chat or looked up only when needed. Up to 500 facts. What every bot knows about you is also one page of its own, **Settings → Memory** at the account: an **About you** text you write (up to 4,000 characters), in every bot's prompt and never changed by a bot, and every fact about you your bots learned, each naming the bot that keeps it. About once a day, after it has saved enough and while Learn automatically is on, the bot **tidies its memory**: its own model merges repeats, drops what is stale or contradicted and rewrites each fact it wrote as one clear sentence, leaving the facts you wrote word for word. The chat shows a line ("Tidied its memory · 40 facts → 22"); **Tidy now** runs one whenever you like, and **Undo** puts the latest tidy back. |
+| Memory | Facts it remembers, with who added each. **Learn automatically** lets it save facts without asking. A bot has two memories: its own, which only it reads and where everything about its job goes (your projects, repositories, folders, hosts, accounts, how you want that work done), and the **general memory** about you, which all your bots read and which only takes what a bot with another job would need too (your name, language, time zone, how you like to work everywhere). Every bot looks for something new about you in each conversation and adds it to the general memory, so all your bots get to know you better over time. A fact can also be kept in mind in every chat or looked up only when needed. Up to 500 facts. What every bot knows about you is also one page of its own, **Settings → Memory** at the account: an **About you** text you write (up to 4,000 characters), in every bot's prompt and never changed by a bot, and every fact about you your bots learned, each naming the bot that keeps it. About once a day, after it has saved enough and while Learn automatically is on, the bot **tidies its memory**: its own model merges repeats, drops what is stale or contradicted and rewrites each fact it wrote as one clear sentence, leaving the facts you wrote word for word. The chat shows a line ("Tidied its memory · 40 facts → 22"); **Tidy now** runs one whenever you like, and **Undo** puts the latest tidy back. |
 | Skills | Saved recipes for a task, at most 50. |
 | Permissions | Each tool set to Allow, Ask or Off; standing grants; plain-language rules. |
 | Routines | Its scheduled and event routines ([Routines and watches](./routines-and-watches.md)). |
@@ -49,9 +49,9 @@ Keys live in **Settings → Model providers**, one per provider for the workspac
 
 ## How a bot works on code
 
-A bot answers what its own tools, web search and web fetch can answer. When the work needs a shell or a checkout (tests, a build, a fix) it starts a session: a coding agent on a host, always at Approve for me, in a known project's repository or a folder it was given, on the host you named, else the project's default, else its home host. It follows that session, is woken when the agent needs input, finishes, fails or looks stuck, and reports what the session shows.
+A bot answers what its own tools, web search and web fetch can answer. When the work needs a shell or a checkout (tests, a build, a fix) it starts a session: a coding agent on a host, in a known project's repository or a folder it was given, on the host you named, else the project's default, else its home host. Name a model, effort, permission level or base branch ("on Opus 5.5 at high effort, from develop") and it uses them; the rest is the CLI's default, at Approve for me. Full access is approved session by session. It follows that session, is woken when the agent needs input, finishes, fails or looks stuck, and reports what the session shows.
 
-It can also prompt a session whose agent waits at its prompt, answer an agent's question or permission dialog, stop a session, close a session a bot started, such as one that failed (`close_session`), read a session's log and conversation, and start cloud sessions.
+It can also prompt a session whose agent waits at its prompt, answer an agent's question or permission dialog, stop a session, close a session a bot started, such as one that failed (`close_session`), read a session's log and conversation, and start cloud sessions. When a session it follows stops on a question or a permission, the bot answers it itself so the work carries on, rather than sending you to the session; it always says why it answered as it did. On **Full access** it decides even a dialog that would let something destructive run (a recursive delete, a forced push, `sudo`); on **Approve for me** it asks you first, and such a dialog gets a card of its own, whatever you allowed before. To find a session, it can search every session of your workspace, on any host and closed ones included, for words in its name and log: the tasks and prompts it was given, the agent's results, notes, questions and failures (`search_sessions`). It does not search the agents' own conversations, which stay on the host.
 
 ## What else it can do
 
@@ -66,22 +66,7 @@ It can also prompt a session whose agent waits at its prompt, answer an agent's 
 
 ## Skills and slash commands
 
-A **skill** is a saved way of doing one task: when it applies, the steps, how to check, what to report. Ask the bot to "save that as a skill", or add one in **Settings → Skills**. Run it by typing `/` and its name in the chat; the bot can also use a skill on its own when a request fits, if you allow that on the skill.
-
-Every bot also has one built-in skill, `oppenheimer`: before it answers a question about Oppenheimer itself, how to set something up in it, or what bots can do, it reads this guide with `read_oppenheimer_docs`, answers from the pages, and says so when the guide does not cover it. You do not run it; ask your question and the bot reads. No skill of yours can take that name.
-
-A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. When a session the bot follows finishes, its report ends with a recap of that session, unasked. A Claude Code session does the same when you ask it to recall or catch you up, and ends each task it finishes with one; a Codex session does not yet.
-
-Built-in commands work for every bot:
-
-| Command | Does |
-| --- | --- |
-| `/goal <condition>` | Keep working across turns, with no limit, until the condition holds. When the bot says it is met, a reviewer on the bot's model checks what it showed. The goal pauses, and keeps its place, when a turn of it fails or is stopped (a provider's usage limit whose end is known is waited out, and the goal goes on by itself), after 3 turns that call no tool, when it spends its token budget (if the bot set one) or when the bot says it needs you; **Resume** above the composer or `/goal resume` runs it again. Stop or `/goal clear` ends it. |
-| `/usage` | A card with this chat's turns, tokens, cache hits, and plan limits where reported. No prices. |
-| `/loop [interval] [prompt]` | Run a prompt now and every 1 minute to 1 day, or when the bot chooses. One per bot; ends after 3 days, on `/loop stop`, or when the bot ends it. |
-| `/schedule <request>` | Save a routine from your words (what and when). `/schedule` alone opens Routines. |
-
-`/plan` and `/grill-me` are planned, not available.
+A bot keeps **skills**, saved ways of doing one task, which you run by typing `/` and a name; it also has built-in skills (`oppenheimer`, `/recap`) and built-in commands (`/goal`, `/usage`, `/loop`, `/schedule`). See [Bot skills and commands](./bot-skills.md).
 
 ## Permissions and approvals
 

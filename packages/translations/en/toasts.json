@@ -10,6 +10,8 @@
   "emailResent": "Email sent again.",
   "sessionRenamed": "Renamed to “{{name}}”.",
   "sessionMoved": "“{{name}}” moved to {{project}}.",
+  "sessionHidden": "“{{name}}” hidden. Show hidden sessions from the filter menu.",
+  "sessionShown": "“{{name}}” shown.",
   "sessionsMoved": "{{n}} sessions moved to {{project}}.",
   "projectCreated": "“{{name}}” created.",
   "projectSaved": "“{{name}}” saved.",

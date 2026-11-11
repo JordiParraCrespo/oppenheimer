@@ -32,6 +32,18 @@ var toolInstalls = map[string]toolInstall{
 		linux: "set -eu\ncommand -v npm >/dev/null 2>&1 || { echo \"npm is not on PATH; install Node.js 22 first\" >&2; exit 1; }\nnpm install --global --prefix \"$HOME/.local\" @xai-official/grok",
 		bin:   ".local/bin",
 	},
+	"pi": {
+		kind:  "agent",
+		macos: "set -eu\ncommand -v npm >/dev/null 2>&1 || { echo \"npm is not on PATH; install Node.js 22 first\" >&2; exit 1; }\nnpm install --global --prefix \"$HOME/.local\" @mariozechner/pi-coding-agent",
+		linux: "set -eu\ncommand -v npm >/dev/null 2>&1 || { echo \"npm is not on PATH; install Node.js 22 first\" >&2; exit 1; }\nnpm install --global --prefix \"$HOME/.local\" @mariozechner/pi-coding-agent",
+		bin:   ".local/bin",
+	},
+	"omp": {
+		kind:  "agent",
+		macos: "set -eu\ncommand -v bun >/dev/null 2>&1 || { echo \"bun is not on PATH; install Bun first (bun.sh)\" >&2; exit 1; }\nbun install --global @oh-my-pi/pi-coding-agent",
+		linux: "set -eu\ncommand -v bun >/dev/null 2>&1 || { echo \"bun is not on PATH; install Bun first (bun.sh)\" >&2; exit 1; }\nbun install --global @oh-my-pi/pi-coding-agent",
+		bin:   ".bun/bin",
+	},
 	"gh": {
 		kind:  "tool",
 		macos: "set -eu\ncommand -v brew >/dev/null 2>&1 || { echo \"Homebrew is not on PATH; install it from https://brew.sh first\" >&2; exit 1; }\nHOMEBREW_NO_AUTO_UPDATE=1 brew install gh",

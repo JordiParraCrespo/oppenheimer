@@ -485,3 +485,37 @@ cost the prompt cache; "How a turn goes" asks the bot to save what it
 learned in the turn, without asking; no duplicate check; a full memory
 drops its oldest log entry. Left out: a background turn that saves for the
 bot, which Grok Bot does not have either.
+
+## 11. Grok Bot 0.78.4: the box's desktop (2026-11-04)
+
+A static read of the Linux `.deb` of 0.78.4, from Cursor's apt repository
+(`downloads.cursor.com/aptrepo`, suite `grok-bot`; sha256 `90930f14…5cf1aa`),
+newer than the 0.78.1 its download page still offered, for how a person
+watches and clicks the computer its agent runs on. Nothing was run and no
+code is taken.
+
+- **The desktop is the box's, not the person's.** An X display, `:1`, in the
+  cloud box; the agent's computer use is `xdotool` (or a backend named
+  `native_x11`): click, move, drag, scroll, type, key, screenshot, wait,
+  cursor position, with the model's coordinates scaled to the display's.
+  On the person's own Mac it uses a local helper over a Unix socket that
+  needs Accessibility and Screen Recording, and no VNC at all.
+- **The box serves noVNC itself.** Fixed ports: exec daemon 1337, PTY
+  1338, window router 1339, gateway 1340, noVNC with websockify on 6080
+  (and 6081 for a fork), an egress proxy on 8791. The coordinator rewrites
+  the box's `localhost:6080/vnc.html` into the gateway's VNC proxy, with a
+  port token or the network token, and `resume_lower_s`/`resume_upper_s`
+  (900 to 18,000 seconds) for when the box may sleep.
+- **The app shows it in a webview of its own** (a `box-vnc` partition whose
+  IPC answers that webview only). Its preload hides noVNC's chrome, patches
+  noVNC's key and pointer events so nothing is sent until **Take control**
+  ("hand back" returns it to the agent), remaps the Mac's keys, adds a field
+  for composed input, syncs the clipboard both ways, measures the link and
+  lowers noVNC's quality on a slow one, and reports a stall after three
+  missed ten-second beacons.
+
+§3's "VNC in the box for computer use … revisit if remote GUI sessions ever
+matter" changed on 2026-11-09: a host's own desktop is in the console,
+built on OpenClaw's shape rather than Grok Bot's (`device-streaming.md`, "A
+host's desktop"). Its input gate is in the client; ours is on the host.
+

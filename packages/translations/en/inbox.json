@@ -11,7 +11,21 @@
     "back": "Back {{when}}",
     "unread": "{{count}} unread",
     "search": "Search inbox",
+    "refresh": "Refresh",
     "clearSearch": "Clear search"
+  },
+  "selection": {
+    "label": "Selected items",
+    "count_one": "{{count}} selected",
+    "count_other": "{{count}} selected",
+    "selectAll": "Select all",
+    "selectRow": "Select {{title}}",
+    "clear": "Clear selection",
+    "done": "Mark as done",
+    "low": "Deprioritize",
+    "restore": "Restore priority",
+    "snooze": "Snooze",
+    "delete": "Delete"
   },
   "filter": {
     "label": "Filter the Inbox",
@@ -19,6 +33,7 @@
     "project": "Project",
     "any": "Any",
     "showDone": "Show done",
+    "showPulls": "Show pull requests",
     "clear": "Clear filters",
     "remove": "Clear filter",
     "typeChip": "Type: {{value}}",
@@ -29,7 +44,8 @@
     "pull": "Pull requests",
     "bots": "Bots",
     "session": "Sessions",
-    "run": "Automations"
+    "run": "Automations",
+    "report": "Reports"
   },
   "project": {
     "all": "All projects",
@@ -42,13 +58,15 @@
     "restore": "Restore priority",
     "snoozeHour": "Snooze 1 hour",
     "snoozeTomorrow": "Snooze until tomorrow",
-    "delete": "Delete"
+    "delete": "Delete",
+    "select": "Select"
   },
   "from": {
     "session": "Session",
     "approval": "Bot approval",
     "run": "Automation",
-    "botNotice": "Bot"
+    "botNotice": "Bot",
+    "report": "Report"
   },
   "session": {
     "blockedShort": "{{name}} is waiting on you",
@@ -133,5 +151,17 @@
     "title": "{{bot}} has news for you",
     "openChat": "Open chat",
     "done": "Done"
+  },
+  "report": {
+    "sender": "An agent",
+    "images": "Pictures",
+    "image": "Picture {{n}}",
+    "openLink": "Open link",
+    "answerLabel": "Your answer",
+    "answerPlaceholder": "What should it do?",
+    "send": "Send answer",
+    "sending": "Sending…",
+    "done": "Done",
+    "answerFailed": "Could not send the answer. Try again."
   }
 }

@@ -214,6 +214,7 @@ would confirm the id.
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
 | `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
 | `HOSTS_009` <a id="hosts_009" /> | The host changed while this was being saved  | 409  |
+| `HOSTS_010` <a id="hosts_010" /> | A desktop ticket could not be issued         | 503  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -802,6 +803,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 | `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
+| `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -892,7 +894,7 @@ a card already answered or dismissed, or retired because a message reached
 the bot first.
 
 `BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
-own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+own `save_skill` and `patch_skill`). `BOTS_038` is a skill that is not this bot's or not in the
 caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
 skill's name is its slash command, so rename one of them. `BOTS_040` is a
 skill past the bot's fifty: delete one first.
@@ -902,6 +904,10 @@ never dreamed, or its latest dream was undone already: only the latest can be.
 
 `BOTS_042` is a delete of a bot that answers you on a Telegram bot. Choose
 another bot, or none, to answer there (Settings → Telegram), then delete it.
+
+`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default: it
+answers you there. Choose another bot, or none (Settings → WhatsApp), then
+delete it.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -929,17 +935,30 @@ falls back to the deployment's server when there is one; a rate limit
 ## Inbox
 
 The marks a person leaves on Inbox items: done, low, snoozed until a time,
-or deleted. See `product/versions/mvp/29-inbox.md`.
+or deleted, and the reports an agent sends there with pictures. See
+`product/versions/mvp/29-inbox.md`.
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
 | `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
 | `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
 | `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
+| `INBOX_005` <a id="inbox_005" />     | Inbox report not found                                       | 404  |
+| `INBOX_006` <a id="inbox_006" />     | This report is already answered                              | 409  |
+| `INBOX_007` <a id="inbox_007" />     | Too many pictures on one report                              | 422  |
+| `INBOX_008` <a id="inbox_008" />     | That picture is too large                                    | 413  |
+| `INBOX_009` <a id="inbox_009" />     | A report takes PNG, JPEG, GIF or WebP pictures               | 415  |
 
 An item key is `<kind>:<id>` in letters, digits and `:#@._-`, at most 200
 characters, URL-encoded in the path. `INBOX_003` compares `until` with the
 server's clock.
+
+A report (`POST /v1/inbox/reports`) carries at most 4 pictures of at most 5 MB
+each; `INBOX_007` and `INBOX_008` say so with `maxImages` and `maxBytes`. A
+picture is judged by its bytes, never by the type it was sent as, and
+`INBOX_009` lists what is taken in `acceptedMimeTypes`. `INBOX_005` is also
+the answer for a picture its report does not carry, and for a report of
+another workspace. A report is answered once: `INBOX_006` on a second answer.
 
 ## Tasks
 
@@ -1097,6 +1116,10 @@ one of their hosts, and the messages it sees, kept for their bots. See
 | `WHATSAPP_008` <a id="whatsapp_008" /> | WhatsApp did not take the message                           | 502  |
 | `WHATSAPP_009` <a id="whatsapp_009" /> | That number has sent as many bot messages as it may for now | 429  |
 | `WHATSAPP_010` <a id="whatsapp_010" /> | No such WhatsApp chat                                       | 404  |
+| `WHATSAPP_011` <a id="whatsapp_011" /> | That code is wrong or has expired                           | 422  |
+| `WHATSAPP_012` <a id="whatsapp_012" /> | No number is waiting to be confirmed                        | 409  |
+| `WHATSAPP_013` <a id="whatsapp_013" /> | That number cannot be your own number here                  | 422  |
+| `WHATSAPP_014` <a id="whatsapp_014" /> | Too many wrong codes                                        | 429  |
 
 `WHATSAPP_005` is a runner that predates WhatsApp, or one started with
 `RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
@@ -1104,6 +1127,15 @@ already holding someone else's number: a runner holds one device. A
 `WHATSAPP_008` whose detail says the host did not answer in time may still
 have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
 from one number), or the host's own budget (`WA_004`).
+
+`WHATSAPP_011` to `WHATSAPP_014` are the owner's own number
+(`POST /v1/whatsapp/accounts/{id}/owner` and `…/owner/confirm`): the linked
+number sends a six-digit code to the number named, and it is entered in
+Settings, never sent back in WhatsApp. `WHATSAPP_013` is a number that is not
+a phone number, or is the linked number itself. `WHATSAPP_011` is a wrong
+code, or one past its ten minutes; after five wrong codes it is locked
+(`WHATSAPP_014`) and a new one has to be asked for. `WHATSAPP_012` is a
+confirm with no code waiting.
 
 ## Telegram
 
@@ -1262,6 +1294,12 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `PORT_001` <a id="port_001" />         | The session does not listen on that port     | 404  |
 | `PORT_002` <a id="port_002" />         | Nothing answers on that port                 | 502  |
 | `PORT_003` <a id="port_003" />         | This host cannot list a session's ports      | 501  |
+| `DESKTOP_001` <a id="desktop_001" /> | This host does not share its desktop | 409  |
+| `DESKTOP_002` <a id="desktop_002" /> | No screen-sharing server answers on this host | 502  |
+| `DESKTOP_003` <a id="desktop_003" /> | The screen-sharing server refused this host's credentials | 502  |
+| `DESKTOP_004` <a id="desktop_004" /> | The screen-sharing server asks for a kind of sign-in the runner does not speak | 502  |
+| `DESKTOP_005` <a id="desktop_005" /> | This host's desktop settings could not be read or written | 500  |
+| `DESKTOP_006` <a id="desktop_006" /> | That is not a valid desktop setting | 400  |
 | `WA_001` <a id="wa_001" />           | This host already holds a WhatsApp device    | 409  |
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |

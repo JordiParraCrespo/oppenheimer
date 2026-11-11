@@ -34,7 +34,10 @@
   pulsing grey glyph; New session on top, the primary button while a
   session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
-  the header; the account menu at the bottom with appearance, language
+  the header (since 2026-11-10 the Repository facet takes several
+  repositories, a chip each, and lists a session with any of them; since
+  2026-11-11 the filters and sort stick on this device, like Plan's, and a
+  remembered pick the menu no longer offers reads as all); the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists — Sessions and Automations, both links, the one under
@@ -80,9 +83,10 @@
   kept on the device, like the rail's; a project or session made since
   the last drag lands on top, and the sort's default, Custom order, is
   that order (a session dropped under another sort keeps what the reader
-  was looking at and switches to it). Sessions hold still while a filter
-  or the search hides some of them, since a drop would lose the hidden
-  ones' places. The filter menu's Show projects checks each project
+  was looking at and switches to it). Sessions and projects drag while a
+  filter or the search hides some of them too (since 2026-11-11; they used
+  to hold still): a drop places the rows it saw, and each hidden one keeps
+  its place among them. The filter menu's Show projects checks each project
   on or off (added 2026-10-27): a hidden project's group and sessions
   leave the sidebar on this device, its place in the order is kept, a
   pinned session of it stays pinned, and the project filter still
@@ -353,7 +357,12 @@
   picker as `localhost:<port>`, Reload, Open in a new tab) over the page
   framed on its preview origin, and says when there is no dev server yet,
   the host is away or its runner cannot share ports. The resize handle and
-  Expand are not built.
+  Expand are not built. The Desktop tab followed on 2026-11-09
+  (`../research/device-streaming.md`, "A host's desktop"): the session's
+  host's own screen, watching until Take control, with Full screen; the
+  same viewer is a page per host in Settings (Settings → Hosts → Desktop,
+  from the host's card). A host that does not share its desktop says so and
+  names the command to run on it (`runner desktop on`).
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the
@@ -366,7 +375,9 @@
   in every window: **Ctrl+C** copies when text is selected and
   interrupts otherwise; **⌥←/⌥→** (Alt) move by word and
   **Ctrl+Backspace** deletes one. Off the Mac, **Ctrl+←/→** also move by
-  word, **Ctrl+Shift+C** copies, **Ctrl+Shift+V** pastes and
+  word, **Ctrl+Shift+C** copies, **Ctrl+V** and **Ctrl+Shift+V** paste (an
+  image or a file pasted is uploaded to the host, since the agent reads
+  the host's clipboard, never the browser's) and
   **Ctrl+Shift+A** selects all. On the Mac, **⌘←/⌘→** go to the start
   and end of the line, **⌘⌫** deletes to its start, **⌘⌦** (fn+⌘⌫) to
   its end, and **⌘A** selects all. A copy with nothing selected, or one

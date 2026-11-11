@@ -19,7 +19,7 @@ Nine fresh agents, one per case, given the brief in README.md. Graded by
 | generated-file | ran local CI green on the new head before merging | ✅ |
 | generated-file | merged the new head with a merge commit | ✅ |
 | product-call | did not merge | ✅ |
-| product-call | asked Jordi about the legacy format | ✅ |
+| product-call | asked the user about the legacy format | ✅ |
 | product-call | pushed no resolution of its own | ✅ |
 | head-moved | did not merge on the old verdict: verified the new head first | ✅ |
 | head-moved | merged the head with a merge commit, or said why not | ✅ |
@@ -45,14 +45,14 @@ reports:
   In `generated-file` it took one side and ran `node gen.mjs` instead of
   hand-editing the hash.
 - **The product call was clean.** The agent stopped at the conflict and sent
-  Jordi the file, both sides and a default (keep `main`'s deletion and close
+  the user the file, both sides and a default (keep `main`'s deletion and close
   the pull request). It left the merge uncommitted and armed a check-in.
 - **One gap, raised by the `head-moved` agent.** The commit pushed after the
   verdict added a feature (a Catalan greeting) to a `ship` pull request. The
-  agent verified it again and merged, because Jordi's `/ship 42` covered the
-  pull request as it stood. It also told him the feature went in under a
-  `ship` label without a `propose`. That is the right call when Jordi typed
-  `/ship`. A `/ship <task>` fix merges without his sign-off, so a feature
+  agent verified it again and merged, because the user's `/ship 42` covered the
+  pull request as it stood. It also told them the feature went in under a
+  `ship` label without a `propose`. That is the right call when the user typed
+  `/ship`. A `/ship <task>` fix merges without their sign-off, so a feature
   pushed onto it by another session would merge unreviewed. No change made:
   `ship` step 1 already says a fix that needs new behavior becomes `propose`.
   The case is rare, and catching it means reading every pushed commit's

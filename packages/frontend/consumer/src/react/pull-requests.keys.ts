@@ -14,7 +14,7 @@ import type {
  * ```
  * ['pullRequests', 'queue', scope]
  * ['pullRequests', 'detail', installationId, githubRepoId, number]
- * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity']
+ * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity' | 'brief']
  * ['pullRequests', 'repositories']
  * ['pullRequests', 'analytics', range]
  * ```
@@ -37,6 +37,8 @@ export const pullRequestsKeys = {
     [...pullRequestsKeys.detail(address), 'comments'] as const,
   activity: (address: PullRequestAddress | undefined) =>
     [...pullRequestsKeys.detail(address), 'activity'] as const,
+  brief: (address: PullRequestAddress | undefined) =>
+    [...pullRequestsKeys.detail(address), 'brief'] as const,
   repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
   reviewSessions: () => [...pullRequestsKeys.all, 'review-sessions'] as const,
   analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,

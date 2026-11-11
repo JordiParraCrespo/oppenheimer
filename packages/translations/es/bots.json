@@ -81,6 +81,7 @@
       "credential": "{{provider}} ha rechazado la clave o el inicio de sesión. Volver a enviarlo no servirá: revísalo en Proveedores de modelos.",
       "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
       "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
+      "context": "Este turno llenó el contexto de {{provider}} más rápido de lo que se podía compactar, así que se detuvo: {{provider}} no rechazó nada. Volver a enviarlo no servirá: pídele que lea menos de una vez (un archivo más pequeño, una salida más corta) o divide la petición.",
       "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
       "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
       "stalled": "{{provider}} no ha enviado nada en 5 minutos, así que este turno se ha detenido. Suele ser temporal: vuelve a intentarlo en un momento.",
@@ -301,6 +302,7 @@
         "cancelled": "La sesión «{{name}}» se detuvo",
         "expired": "La sesión «{{name}}» caducó sin ejecutarse",
         "stalled": "La sesión «{{name}}» parece atascada",
+        "progress": "Revisé la sesión «{{name}}»",
         "notice": "La sesión «{{name}}» envió un mensaje",
         "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
         "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
@@ -331,8 +333,6 @@
         "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
       },
       "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
-      "compactionLine": "Resumió el trabajo anterior",
-      "compactionTokens": "{{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
         "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -350,11 +350,14 @@
       "unknown": "algo salió mal"
     },
     "openSession": "Abrir sesión",
+    "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
+    "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
     "goal": {
       "title": "Objetivo: {{objective}}",
       "progress": "{{step}} de {{limit}} continuaciones",
       "continuations_one": "{{count}} continuación",
       "continuations_other": "{{count}} continuaciones",
+      "continuations_many": "{{count}} continuaciones",
       "budget": "{{progress}} · {{used}} de {{budget}} tokens",
       "resume": "Reanudar",
       "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
@@ -599,7 +602,9 @@
         "lastUndone": "El último orden, del {{date}}, se deshizo",
         "queued": "Ordenando en segundo plano. El chat avisará cuando termine.",
         "tidyNow": "Ordenar ahora",
+        "tidying": "Ordenando…",
         "undo": "Deshacer",
+        "undoing": "Deshaciendo…",
         "loadFailed": "No se pudo cargar el último orden de la memoria.",
         "requestFailed": "No se pudo empezar a ordenar la memoria.",
         "undoFailed": "No se pudo deshacer el orden."
@@ -646,9 +651,6 @@
       "title": "Rutinas",
       "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
       "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
-      "guard": "Pausar mientras no estás",
-      "guardHint": "Detén sus rutinas mientras no lees lo que dicen. Vuelven a funcionar cuando abres este chat.",
-      "guardFailed": "No se pudo cambiar si las rutinas se pausan mientras no estás.",
       "askInChat": "Pedir en el chat",
       "schedule": "Horario · {{when}}",
       "github": "GitHub · {{when}}",
@@ -788,8 +790,5 @@
     "checkedHint": "Los bots marcados aparecen en {{section}}.",
     "manageAll": "Gestionar en {{employees}}",
     "hide": "Ocultar de {{section}}"
-  },
-  "routineGuard": {
-    "notice": "He pausado mis rutinas mientras no estabas. Vuelven a funcionar cuando abras este chat."
   }
 }

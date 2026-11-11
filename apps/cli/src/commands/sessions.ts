@@ -32,6 +32,8 @@ export function sessionsCommand(): Command {
   sessions.addCommand(waitCommand());
   sessions.addCommand(stopCommand());
   sessions.addCommand(closeCommand());
+  sessions.addCommand(visibilityCommand('hide'));
+  sessions.addCommand(visibilityCommand('show'));
 
   return sessions;
 }
@@ -136,6 +138,7 @@ function runCommand(): Command {
     )
     .option('--model <model>', 'Model id or alias the agent’s CLI takes')
     .option('--name <name>', 'Name for the session')
+    .option('--hidden', 'Keep it out of the console’s sidebar until you show hidden sessions')
     .option('--wait', 'Wait until the agent is through, or needs you')
     .option('--timeout <duration>', 'With --wait, how long to wait', '30m')
     .action(async function (this: Command, words: string[]) {
@@ -207,6 +210,29 @@ function stopCommand(): Command {
       const context = contextFor(this);
       const session = await context.client.post<Session>(`/sessions/${id}/stop`);
       render(context.json, session, () => `${style.green('✓')} Stopped ${session.name}.`);
+    });
+}
+
+/** `opp sessions hide <id>` and `opp sessions show <id>`: the console's sidebar only. */
+function visibilityCommand(verb: 'hide' | 'show'): Command {
+  const hidden = verb === 'hide';
+  return new Command(verb)
+    .description(
+      hidden
+        ? 'Hide a session from the console’s sidebar; it keeps running'
+        : 'Show a hidden session in the console’s sidebar again',
+    )
+    .argument('<id>', 'Session id')
+    .action(async function (this: Command, id: string) {
+      const context = contextFor(this);
+      const session = await context.client.put<Session>(`/sessions/${id}/visibility`, {
+        body: { hidden },
+      });
+      render(
+        context.json,
+        session,
+        () => `${style.green('✓')} ${hidden ? 'Hid' : 'Showed'} ${session.name}.`,
+      );
     });
 }
 

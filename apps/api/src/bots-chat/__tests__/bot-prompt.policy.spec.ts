@@ -53,10 +53,90 @@ describe('composeBotSystemPrompt', () => {
       /# How a turn goes[\s\S]*Save each with `remember` in this turn, without asking/,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('Save each with `remember`');
+    // 2026-11-10: every turn also asks what it learned about the person, for
+    // the memory all their bots read.
+    expect(remembers).toMatch(
+      /# How a turn goes[\s\S]*Ask also whether you learned who the person is[^\n]*Save that to the general memory when the rule in `remember` puts it there/,
+    );
+  });
+
+  // What breaks this (2026-11-10): a new bot that never says what it can do,
+  // or one that promises an area its turn has no tools for.
+  it('tells a new bot to list what it can do for the person, only from the areas its turn offers', () => {
+    const equipped = composeBotSystemPrompt({
+      ...base,
+      tools: [
+        { name: 'start_session', description: 'Starts one.', group: 'sessions' },
+        { name: 'send_whatsapp_message', description: 'Sends one.', group: 'whatsapp' },
+        { name: 'remember', description: 'Saves one fact.', group: 'self' },
+      ],
+    });
+    expect(equipped).toMatch(
+      /\n3\. In the same message, show them in a short list what you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond that list\. Say that anything not connected yet/,
+    );
+    expect(equipped).not.toContain('Gmail');
+    expect(equipped).toContain('(a computer, WhatsApp) you can help them connect');
+    expect(composeBotSystemPrompt(base)).not.toContain('what you can do for them here');
+    // An area it can only read is not promised: a bot with `list_hosts` alone
+    // offered to start coding agents in the first eval (2026-11-10).
+    const readOnly = composeBotSystemPrompt({
+      ...base,
+      tools: [{ name: 'list_hosts', description: 'Lists hosts.', group: 'sessions' }],
+    });
+    expect(readOnly).not.toContain('what you can do for them here');
+    // 2026-11-11: its job examples come from what it can act on too.
+    expect(readOnly).toContain(
+      'with these examples: answering questions about their work. Suggest no job',
+    );
+    expect(readOnly).not.toContain('running coding agents');
+    expect(equipped).toContain('with these examples: running coding agents on a host to fix bugs.');
+  });
+
+  // What breaks this (2026-11-09, Hermes Agent's learning loop): a bot that
+  // only saves a skill when asked, one told to save with no `save_skill` to
+  // save with, or a section whose bytes move with the skills it lists.
+  it('tells a bot that can save a skill when to save one unasked, in the same words whatever its skills', () => {
+    const tools = [
+      { name: 'use_skill', description: 'Reads a skill.' },
+      { name: 'save_skill', description: 'Saves a skill.' },
+    ];
+    const skill = {
+      name: 'triage',
+      description: 'Sorts issues.',
+      body: 'Label each.',
+      userInvocable: true,
+      modelInvocable: true,
+    };
+    const none = composeBotSystemPrompt({ ...base, tools });
+    const one = composeBotSystemPrompt({ ...base, tools, skills: [skill] });
+    const saving = /You may save a skill without being asked[^\n]*/;
+    expect(none).toMatch(/# Your skills\n\nYou may save a skill without being asked/);
+    expect(none).toContain('at most one new skill a turn');
+    expect(none).toContain("A skill never holds a secret or anyone's personal data");
+    expect(none).toContain('no bank or card details');
+    // 2026-11-10: work the person says recurs is saved; the reminder after a
+    // tool's result is announced, so it is not read as the tool steering it.
+    expect(none).toContain('When the person says the request comes back');
+    expect(none).toContain(
+      "Oppenheimer itself adds one reminder to the end of a tool's result, once a turn, after anything fenced in it, in a <oppenheimer_reminder> tag",
+    );
+    expect(one.match(saving)?.[0]).toBe(none.match(saving)?.[0]);
+    expect(one).toContain('- `triage`: Sorts issues.');
+    expect(composeBotSystemPrompt({ ...base, tools: tools.slice(0, 1) })).not.toMatch(saving);
   });
 
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
     expect(composeBotSystemPrompt(base)).toContain('# Getting started');
+    // 2026-11-10: a new bot's given name is a placeholder; it asks what to be
+    // called, without choosing one itself, after any work the message asks for.
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n1\. If their first message asks for real work, do that first.*\n2\. .*ask what they would like to call you\. Do not pick or suggest a name yourself/,
+    );
+    // 2026-11-11: work the first message asks for comes first, and the same
+    // reply still asks for its name and its job; in an eval it often did not.
+    expect(composeBotSystemPrompt(base)).toMatch(
+      /\n1\. If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below/,
+    );
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
     expect(written).not.toContain('# Getting started');
@@ -71,10 +151,10 @@ describe('composeBotSystemPrompt', () => {
         { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
       ],
     });
-    expect(equipped).toMatch(/3\. Write it down\.\n4\. Remember them\.\n5\. If no step above/);
+    expect(equipped).toMatch(/5\. Write it down\.\n6\. Remember them\.\n7\. If no step above/);
 
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n3\. If no step above .*Settings → Instructions/,
+      /\n5\. If no step above .*Settings → Instructions/,
     );
   });
 

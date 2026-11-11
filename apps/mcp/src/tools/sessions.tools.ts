@@ -63,6 +63,7 @@ export function sessionBody(input: {
   agent?: CodingAgentId;
   name?: string;
   permission?: 'ask' | 'auto' | 'full';
+  hidden?: boolean;
 }): Record<string, unknown> {
   const hostId = input.host_id ?? input.project?.defaultHostId ?? undefined;
   if (!hostId) {
@@ -77,6 +78,7 @@ export function sessionBody(input: {
     projectId: input.project?.id,
     name: input.name,
     permission: input.permission,
+    hidden: input.hidden,
   };
   if (input.folder) return sessionLaunchBody({ ...launch, folder: input.folder });
   if (!input.project) {
@@ -201,7 +203,7 @@ export const sessionTools = [
     name: 'start_session',
     title: 'Start a session',
     description:
-      'Start a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project’s repositories, or in a folder already on the host. Returns at once with the session; the agent works on its own, so follow it with wait_for_session (after_seq 0, so the wait is on this first task) or get_session. The host defaults to the project’s default host. The person sees the session in their console.',
+      'Start a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project’s repositories, or in a folder already on the host. Returns at once with the session; the agent works on its own, so follow it with wait_for_session (after_seq 0, so the wait is on this first task) or get_session. The host defaults to the project’s default host. The person sees the session in their console, unless hidden: then it stays out of their sidebar until they show hidden sessions.',
     requiredScopes: ['sessions:write', 'projects:read'],
     inputSchema: z.object({
       task: promptInput(
@@ -228,6 +230,12 @@ export const sessionTools = [
         .enum(['ask', 'auto', 'full'])
         .optional()
         .describe('What the agent may do without asking; ask when omitted'),
+      hidden: z
+        .boolean()
+        .optional()
+        .describe(
+          'Keep it out of the person’s console sidebar until they show hidden sessions, for work they need not watch; false when omitted',
+        ),
     }),
     handler: async (args, { client }) => {
       const project = args.project_id
@@ -272,6 +280,21 @@ export const sessionTools = [
     annotations: { readOnlyHint: true, idempotentHint: true },
     handler: ({ session_id, after_seq, wait_seconds }, { client }) =>
       waitForSession(client, session_id, wait_seconds, after_seq),
+  }),
+
+  defineTool({
+    name: 'set_session_visibility',
+    title: 'Hide or show a session',
+    description:
+      'Hide a session from the person’s console sidebar, or show it again. Display only: a hidden session keeps running, and list_sessions still returns it with hidden set.',
+    requiredScopes: ['sessions:write'],
+    inputSchema: z.object({
+      session_id: sessionId,
+      hidden: z.boolean().describe('true hides it, false shows it again'),
+    }),
+    annotations: { idempotentHint: true },
+    handler: ({ session_id, hidden }, { client }) =>
+      client.put(`/sessions/${session_id}/visibility`, { hidden }),
   }),
 
   defineTool({

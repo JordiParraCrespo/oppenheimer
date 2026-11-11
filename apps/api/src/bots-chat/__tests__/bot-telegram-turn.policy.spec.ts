@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  telegramConversationFor,
   telegramMessageIdOf,
-  telegramReplyOf,
   telegramSourceKey,
   telegramTurn,
 } from '../domain/bot-telegram-turn.policy';
@@ -10,7 +8,7 @@ import { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /**
  * A message of the owner's on Telegram is a turn of its own conversation,
- * once however often it is delivered, and its answer always goes back.
+ * once however often it is delivered, and an ask made from it goes on there.
  */
 
 const CONVERSATION = '0b3e2a1c-5555-4c5d-8e6f-70819203b4c5';
@@ -54,20 +52,6 @@ describe('telegramTurn', () => {
   });
 });
 
-describe('telegramReplyOf', () => {
-  // What breaks this: the person on their phone left without an answer.
-  it('sends the last words, and says what happened when there are none', () => {
-    expect(telegramReplyOf({ status: 'completed', error: null }, ['first', 'last', ' '])).toBe(
-      'last',
-    );
-    expect(telegramReplyOf({ status: 'failed', error: 'No key.' }, ['partial'])).toBe(
-      'I could not finish that: No key.',
-    );
-    expect(telegramReplyOf({ status: 'cancelled', error: null }, [])).toBe('Stopped.');
-    expect(telegramReplyOf({ status: 'completed', error: null }, [])).toMatch(/console/);
-  });
-});
-
 describe('an ask made on Telegram', () => {
   // What breaks this: the answer of an ask_bot from a Telegram turn picked up
   // in the console, so the person on their phone never gets the result.
@@ -96,23 +80,5 @@ describe('an ask made on Telegram', () => {
 
     expect(answer.conversationId).toBe(CONVERSATION);
     expect(answer.origin).toBe('telegram');
-  });
-});
-
-describe('telegramConversationFor', () => {
-  const start = (botId: string, startsAt: string) => ({
-    id: `${botId}@${startsAt}`,
-    botId,
-    startsAt,
-  });
-
-  // What breaks this: a message after /new read with the old history, or a
-  // bot bound back resuming where it left off.
-  it('keeps the bot’s current conversation, starts at a later /new, and afresh after another bot', () => {
-    expect(telegramConversationFor(start('a', '0'), '0', '9', 'a')).toEqual({ use: 'a@0' });
-    expect(telegramConversationFor(start('a', '0'), '8', '9', 'a')).toEqual({ start: '8' });
-    expect(telegramConversationFor(null, '0', '1', 'a')).toEqual({ start: '0' });
-    expect(telegramConversationFor(start('b', '20'), '0', '40', 'a')).toEqual({ start: '40' });
-    expect(telegramConversationFor(start('a', '40'), '0', '41', 'a')).toEqual({ use: 'a@40' });
   });
 });

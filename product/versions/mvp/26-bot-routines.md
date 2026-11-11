@@ -178,7 +178,10 @@ rendering, not kind:
   each is its own line; folding several into "Routines in this change",
   as Grok Bot draws a turn's changes, waits until a line knows its turn.
 - `ran` opens the routine's turn: "Routine · *Morning PR digest*" (§4,
-  the opening message).
+  the opening message). While the chat hides its tool calls (the wrench in
+  its bar, off by default), a run that completed having only run tools,
+  with no reply, session or draft to show, is left out, line and all; the
+  wrench shows it again. A run that replied, failed or was stopped stays.
 - `failed` is drawn as a notice, "Routine *Morning PR digest* did not
   run" with the reason, and **Open routines**: a run that expired, or one
   skipped by a run limit, a missed slot or an agent that cannot start. A
@@ -338,6 +341,19 @@ before this get no heartbeat until asked.
     more. A run the guard was already skipping as the switch flipped may
     leave its own routine paused; the owner's next visit to the chat
     resumes it.
+
+  **Removed 2026-11-10** (asked by the owner: "I do not want to have my
+  routines stopped … it is causing more problems than nothing"). A routine
+  that reports every half hour ("no new Sentry events") paused after an hour
+  and a half without opening the chat, so the guard stopped exactly the
+  watches the owner set up to run without them. OpenClaw, whose heartbeat
+  this note follows, has no such guard: it saves cost with active hours, a
+  `HEARTBEAT_OK` reply that is dropped, and skipping a heartbeat with nothing
+  to do. So routines run on their schedule until the owner pauses them, and
+  what bounds their cost is the run budget, the overlap guard and quiet
+  turns. What was removed is migration `RemoveRoutineSpendGuard` and the
+  decision log below. If cost needs a bound again, active hours per routine
+  is the shape to reach for first.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through
@@ -370,7 +386,8 @@ what it is.
 The switch, Run now and Delete are the owner acting, so there is no
 card. They dispatch the same commands `update_routine` does, so their
 activity lines come from the same listener (§4, "In the chat").
-`/automations` lists bot routines too, with the bot that runs them.
+`/automations` lists bot routines too, with the bot that runs them, on a
+tab of their own (`/automations/routines`) between Automations and Runs.
 
 ## 8. Slices
 
@@ -396,8 +413,8 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   guard with its two cards. **Built 2026-11-06:** `nothing_to_report` and a
   heartbeat by default once a bot has a job, spread by the bot's id rather than by a
   trigger's `spread` setting. **Built 2026-11-07:** the spend guard,
-  without its cards (§6, "Changed 2026-11-07"). The general `spread` is
-  still to build.
+  without its cards (§6, "Changed 2026-11-07"); **removed 2026-11-10** (§6).
+  The general `spread` is still to build.
 - **E. More triggers.** "When a session ends" (§5), then a webhook with a
   key per routine (`POST /automations/webhook/{id}`, `Authorization:
   Bearer`), as Grok Bot offers.
@@ -439,7 +456,10 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   "Routines in this change" group waits until a line knows its turn.
   `/automations` lists bot routines in their own table under the
   automations, each opening its bot's Routines tab
-  (`GET /automations/routines`).
+  (`GET /automations/routines`). On 2026-11-11 the owner asked for the
+  two in tabs: the table moved to a Bot routines tab,
+  `/automations/routines`, which says where routines are made when there
+  are none.
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.
@@ -455,3 +475,8 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   a pause after 3 unseen reports or 72 h away (the workspace's settings),
   one Inbox line, a resume as soon as the owner is back in the chat, and a
   per-bot switch to turn it off (§6).
+- 2026-11-10, asked by the owner: **no spend guard.** It paused a
+  half-hourly Sentry triage within hours of the owner looking away, which is
+  the opposite of what a routine is for; OpenClaw has none. Routines run
+  until paused; the run budget, the overlap guard and quiet turns bound the
+  cost (§6, "Removed 2026-11-10").

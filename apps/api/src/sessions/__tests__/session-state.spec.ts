@@ -148,6 +148,20 @@ describe('the session fold', () => {
     expect(fold.nameSource).toBe(nameSource);
   });
 
+  it('hides and shows the session with the last visibility entry, through a close, and ignores a malformed one', () => {
+    expect(foldSessionLog([entry(SESSION_EVENT_KINDS.REQUESTED)]).hidden).toBe(false);
+    const hidden = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.VISIBILITY_SET, { hidden: true }),
+      entry(SESSION_EVENT_KINDS.VISIBILITY_SET, { hidden: 'no' }),
+      entry(SESSION_EVENT_KINDS.CLOSED),
+    ]);
+    expect(hidden.hidden).toBe(true);
+    expect(
+      foldSessionEvent(hidden, entry(SESSION_EVENT_KINDS.VISIBILITY_SET, { hidden: false })).hidden,
+    ).toBe(false);
+  });
+
   it('moves the session with the last moved event, and leaves the row’s project alone otherwise', () => {
     expect(foldSessionLog([entry(SESSION_EVENT_KINDS.REQUESTED)]).projectId).toBeNull();
     const moved = foldSessionLog([

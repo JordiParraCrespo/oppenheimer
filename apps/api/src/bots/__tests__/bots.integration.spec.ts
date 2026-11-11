@@ -3,6 +3,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
+import { BotLookupResolver } from '../application/bot-lookup.resolver';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
@@ -11,6 +12,8 @@ import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
 import { BotSkillMapper } from '../bot-skill.mapper';
 import { CreateBotCommand } from '../commands/create-bot/create-bot.command';
 import { CreateBotCommandHandler } from '../commands/create-bot/create-bot.command-handler';
+import { DeleteBotCommand } from '../commands/delete-bot/delete-bot.command';
+import { DeleteBotCommandHandler } from '../commands/delete-bot/delete-bot.command-handler';
 import { BotOrmEntity } from '../database/bot.orm-entity';
 import { BotRepository } from '../database/bot.repository';
 import { BotDocumentOrmEntity } from '../database/bot-document.orm-entity';
@@ -404,36 +407,6 @@ describe('bots (integration)', () => {
     expect((await documents.findRevision(scope(), bot.id, 'soul', 2 ** 40)).isNone()).toBe(true);
   });
 
-  // `26-bot-routines.md` §6. What breaks this: a visit not stored, so a late
-  // pause cannot tell the owner came back; two visits out of order moving it
-  // backwards; or another workspace's bot marked through a guessed id.
-  it('records every visit of the owner to the chat, never backwards, and only for its own bot', async () => {
-    const bot = await create('Seen Bot');
-    const seenAt = async () =>
-      ((await bots.findOneById(scope(), bot.id)).unwrap().ownerSeenAt as Date).getTime();
-    const born = await seenAt();
-
-    const soon = new Date(born + 5_000);
-    expect(await bots.markSeen(scope(), bot.id, soon)).toBe(true);
-    expect(await seenAt()).toBe(soon.getTime());
-
-    expect(await bots.markSeen(scope(), bot.id, new Date(born + 1_000))).toBe(true);
-    expect(await seenAt()).toBe(soon.getTime());
-
-    expect(await bots.markSeen(scopeOf(randomUUID()), bot.id, new Date(born + 60_000))).toBe(false);
-    expect(await seenAt()).toBe(soon.getTime());
-  });
-
-  it("keeps the owner's switch for the spend guard, on until turned off", async () => {
-    const bot = await create('Night Owl');
-    const read = async () => (await bots.findOneById(scope(), bot.id)).unwrap();
-    expect((await read()).routineSpendGuard).toBe(true);
-    const stored = await read();
-    stored.edit({ routineSpendGuard: false });
-    expect(await bots.save(stored)).toBe('saved');
-    expect((await read()).routineSpendGuard).toBe(false);
-  });
-
   it('lets only one of two adders take the last memory place', async () => {
     const bot = await create('Ana');
     const fact = (content: string) =>
@@ -621,6 +594,50 @@ describe('bots (integration)', () => {
       [bot.id],
     );
     expect(left).toEqual({ documents: 0, revisions: 0, facts: 0 });
+  });
+
+  // What breaks this: a bot deleted while a channel answers with it, or the
+  // refusal naming the wrong setting (the console's message comes from the
+  // code). FK_telegram_account_answering_bot and
+  // FK_whatsapp_account_answering_bot are the guard; the code is the handler's.
+  it('refuses to delete a bot a channel answers with: BOTS_042 for Telegram, BOTS_043 for WhatsApp', async () => {
+    const remove = new DeleteBotCommandHandler(new BotLookupResolver(bots), bots);
+    const deleting = (bot: BotEntity) =>
+      remove.execute(new DeleteBotCommand({ scope: scope(), botId: bot.id }));
+    const host = async () => {
+      const hostId = randomUUID();
+      await dataSource.query(
+        `INSERT INTO "host" ("id", "ownerUserId", "name", "publicKey", "publicKeyFingerprint")
+         VALUES ($1, $2, 'devbox', 'key', $3)`,
+        [hostId, userId, randomUUID()],
+      );
+      return hostId;
+    };
+    const onTelegram = await create('Juno');
+    const onWhatsapp = await create('Shop');
+    await dataSource.query(
+      `INSERT INTO telegram_account ("organizationId", "userId", "hostId", label, "answeringBotId")
+       VALUES ($1, $2, $3, 'Bot', $4)`,
+      [organizationId, userId, await host(), onTelegram.id],
+    );
+    await dataSource.query(
+      `INSERT INTO whatsapp_account ("organizationId", "userId", "hostId", label, "answeringBotId")
+       VALUES ($1, $2, $3, 'Spare', $4)`,
+      [organizationId, userId, await host(), onWhatsapp.id],
+    );
+
+    await expect(deleting(onTelegram)).rejects.toMatchObject({
+      code: 'BOTS_042',
+      detail: expect.stringContaining('Settings → Telegram'),
+    });
+    await expect(deleting(onWhatsapp)).rejects.toMatchObject({
+      code: 'BOTS_043',
+      detail: expect.stringContaining('Settings → WhatsApp'),
+    });
+    expect((await bots.findOneById(scope(), onWhatsapp.id)).isSome()).toBe(true);
+
+    await dataSource.query(`UPDATE whatsapp_account SET "answeringBotId" = NULL`);
+    expect(await deleting(onWhatsapp)).toBe(onWhatsapp.id);
   });
 
   describe('skills', () => {

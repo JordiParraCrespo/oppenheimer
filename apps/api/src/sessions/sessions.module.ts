@@ -81,6 +81,8 @@ import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
+import { SetSessionVisibilityCommandHandler } from './commands/set-session-visibility/set-session-visibility.command-handler';
+import { SetSessionVisibilityHttpController } from './commands/set-session-visibility/set-session-visibility.http.controller';
 import { StartCloudSessionCommandHandler } from './commands/start-cloud-session/start-cloud-session.command-handler';
 import { StartCloudSessionHttpController } from './commands/start-cloud-session/start-cloud-session.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
@@ -134,6 +136,7 @@ import { FindSharedSessionHttpController } from './queries/find-shared-session/f
 import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
 import { SearchHostFoldersHttpController } from './queries/search-host-folders/search-host-folders.http.controller';
 import { SearchHostFoldersQueryHandler } from './queries/search-host-folders/search-host-folders.query-handler';
+import { SearchSessionsQueryHandler } from './queries/search-sessions/search-sessions.query-handler';
 import { SessionShareMapper } from './session-share.mapper';
 import { SessionTerminalWatchMapper } from './session-terminal-watch.mapper';
 import {
@@ -188,6 +191,7 @@ const httpControllers = [
   RemoveCheckoutHttpController,
   FindSessionHttpController,
   RenameSessionHttpController,
+  SetSessionVisibilityHttpController,
   MoveSessionHttpController,
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
@@ -203,6 +207,7 @@ const commandHandlers: Provider[] = [
   CreateSessionCommandHandler,
   StartCloudSessionCommandHandler,
   RenameSessionCommandHandler,
+  SetSessionVisibilityCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
   WatchSessionTerminalCommandHandler,
@@ -248,6 +253,7 @@ const queryHandlers: Provider[] = [
   FindSessionTranscriptQueryHandler,
   FindCloudFileQueryHandler,
   FindCloudChatQueryHandler,
+  SearchSessionsQueryHandler,
 ];
 
 const adapters: Provider[] = [

@@ -90,22 +90,25 @@ export function SessionPane({
   // The preview pane beside the terminal: its toggle is in the bar, the pane
   // in the row under it, so the one state both read lives here.
   // Which of the pane's views this console and deployment can show: the
-  // Browser needs a preview domain, the Simulator only its flag.
+  // Browser needs a preview domain, the Simulator only its flag, the Desktop
+  // its flag and a host (a cloud session has none).
   const { data: deployment } = useDeploymentCapabilities();
   const browserOffered =
     useFeatureFlag('session_browser_preview') && Boolean(deployment?.session_previews);
   const simulatorOffered = useFeatureFlag('session_device_preview');
-  const previewTabs: PreviewTab[] = [
-    ...(browserOffered ? (['browser'] as const) : []),
-    ...(simulatorOffered ? (['simulator'] as const) : []),
-  ];
-  const previewOffered = previewTabs.length > 0 && Boolean(bar);
+  const desktopFlag = useFeatureFlag('host_desktop');
   const preview = usePreviewPane();
   const chat = useSessionChat(sessionId);
   // Made once: the terminal delivers the files it catches over the chat, the
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
   const { data: session, error } = useSuspenseSession(sessionId);
+  const previewTabs: PreviewTab[] = [
+    ...(browserOffered ? (['browser'] as const) : []),
+    ...(simulatorOffered ? (['simulator'] as const) : []),
+    ...(desktopFlag && session.hostId ? (['desktop'] as const) : []),
+  ];
+  const previewOffered = previewTabs.length > 0 && Boolean(bar);
   const reading: PaneReading = {
     chat,
     view,
@@ -277,6 +280,7 @@ export function SessionPane({
             <Suspense fallback={null}>
               <SessionPreview
                 sessionId={session.id}
+                hostId={session.hostId}
                 offered={previewTabs}
                 onClose={() => preview.toggle(false)}
               />

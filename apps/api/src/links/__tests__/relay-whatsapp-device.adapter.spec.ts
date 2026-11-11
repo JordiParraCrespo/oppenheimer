@@ -66,6 +66,18 @@ describe('RelayWhatsappDeviceAdapter', () => {
     });
   });
 
+  // What breaks this: the owner's answer arriving unquoted, or a frame the runner's strict decode refuses.
+  it('puts the quoted message on the frame only when the send quotes one', async () => {
+    const { adapter, link } = harness(true);
+    void adapter.send(HOST, CHAT, 'Sold 3.', { id: '3EB0', senderId: CHAT });
+    void adapter.send(HOST, CHAT, 'And 2 more.');
+    const [quoted, plain] = vi
+      .mocked(link.send)
+      .mock.calls.map(([frame]) => whatsappSendSchema.strict().parse(frame));
+    expect(quoted?.replyTo).toEqual({ id: '3EB0', senderId: CHAT });
+    expect(plain).not.toHaveProperty('replyTo');
+  });
+
   it('passes the runner’s refusal on with its code', async () => {
     const { adapter, link, replies } = harness(true);
     const pending = adapter.send(HOST, CHAT, 'hi');

@@ -31,6 +31,26 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("grok argv = %q, want %q", got, want)
 	}
+	// omp's default approval mode is `yolo`, so Ask is sent, never left out.
+	got = Launch{Model: "anthropic/claude-opus-5-5", Permission: "ask", Effort: "max", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentOmp)
+	want = []string{"--model", "anthropic/claude-opus-5-5", "--approval-mode", "always-ask", "--thinking", "max", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("omp argv = %q, want %q", got, want)
+	}
+}
+
+// Pi has no approvals: a permission level that reaches the runner anyway
+// becomes no flag at all, rather than one pi would refuse to start on. Its
+// thinking levels stop at `xhigh`, so omp's `max` is dropped for it.
+func TestPiTakesNoPermissionAndItsOwnThinkingLevels(t *testing.T) {
+	got := Launch{Model: "anthropic/claude-opus-5-5", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "go"}.Args(AgentPi)
+	want := []string{"--model", "anthropic/claude-opus-5-5", "--thinking", "xhigh", "go"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("pi argv = %q, want %q", got, want)
+	}
+	if got := (Launch{Model: "anthropic/claude-opus-5-5", Effort: "max", EffortIsLevel: true}).Args(AgentPi); len(got) != 2 {
+		t.Fatalf("pi has no max, want only the model, got %q", got)
+	}
 }
 
 // The levels are the model's, so a level one model has and another lacks is

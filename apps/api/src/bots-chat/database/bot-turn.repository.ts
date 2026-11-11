@@ -2,7 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { BOT_ACTIVE_TURN_STATUSES, type BotTurnLane, QUEUE_NAMES } from '@oppenheimer/shared';
+import {
+  BOT_ACTIVE_TURN_STATUSES,
+  type BotTurnLane,
+  isChannelOrigin,
+  QUEUE_NAMES,
+} from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
@@ -47,7 +52,12 @@ export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 
 /** The job that queues an ask's answer on the bot that asked; its payload is `{ turnId }`, the asked turn. */
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
-/** Sends a Telegram turn's answer to the chat its message came from. */
+/** Sends a channel turn's answer (Telegram, WhatsApp) to the chat its message came from. */
+export const DELIVER_CHANNEL_REPLY_JOB = 'deliver-channel-reply';
+/**
+ * The name the Telegram slice staged that job under. Outbox rows still in
+ * flight on a deployment carry it, so the worker accepts it for one release.
+ */
 export const DELIVER_TELEGRAM_REPLY_JOB = 'deliver-telegram-reply';
 /** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
@@ -374,27 +384,6 @@ export class BotTurnRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async countRoutineReportsSince(
-    organizationId: string,
-    botId: string,
-    since: Date,
-  ): Promise<number> {
-    // By when it was said, not when its turn was queued: a turn queued before
-    // the owner's visit that reports after they left is unseen too.
-    // IDX_bot_message_bot for the bot's messages since then, the turn's
-    // primary key for its origin. A routine turn opens with its event line,
-    // so only an assistant message counts as something it said.
-    const rows: { count: string }[] = await this.repository.manager.query(
-      `SELECT count(DISTINCT message."turnId") AS count FROM bot_message message
-         JOIN bot_turn turn ON turn.id = message."turnId"
-        WHERE message."organizationId" = $1 AND message."botId" = $2
-          AND message."createdAt" > $3 AND message.role = 'assistant'
-          AND turn.origin = 'routine'`,
-      [organizationId, botId, since],
-    );
-    return Number(rows[0]?.count ?? 0);
-  }
-
   async findQueuedBySourcePrefix(
     organizationId: string,
     botId: string,
@@ -491,12 +480,12 @@ export class BotTurnRepository
       if (result.affected !== 1) return false;
       turn.markPersisted();
       await stageNext(this.outbox, manager, turn, correlationId);
-      if (turn.origin === 'telegram') {
+      if (isChannelOrigin(turn.origin)) {
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: DELIVER_TELEGRAM_REPLY_JOB,
+          jobName: DELIVER_CHANNEL_REPLY_JOB,
           payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} answers a message on Telegram`,
+          reason: `bot ${turn.botId}: turn ${turn.id} answers a message on ${turn.origin}`,
           aggregateId: turn.id,
           correlationId,
         });
@@ -604,7 +593,7 @@ export class BotTurnRepository
       // The lock a send takes: no turn can be queued between the check and the deletes.
       if (!(await lockBot(manager, { organizationId, botId }))) return 'missing';
       // IDX_bot_turn_active, the console chat's turns only (its
-      // conversation's id is the bot's): a Telegram chat is not cleared here.
+      // conversation's id is the bot's): a channel's chat is not cleared here.
       const [{ active }]: { active: number }[] = await manager.query(
         `SELECT count(*)::int AS active FROM bot_turn
           WHERE "organizationId" = $1 AND "botId" = $2 AND "conversationId" = $2

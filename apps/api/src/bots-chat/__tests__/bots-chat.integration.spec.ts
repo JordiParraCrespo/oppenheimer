@@ -33,6 +33,7 @@ import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-k
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
+import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
@@ -47,6 +48,7 @@ import { TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
+import { BotConversationMapper } from '../bot-conversation.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
@@ -220,7 +222,7 @@ describe('bots chat (integration)', () => {
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
-      new BotConversationRepository(dataSource),
+      new BotConversationRepository(dataSource, new BotConversationMapper()),
       new BotGoalMapper(),
       new BotLoopMapper(),
     );
@@ -460,60 +462,6 @@ describe('bots chat (integration)', () => {
     });
   });
 
-  // The spend guard's count (`26-bot-routines.md` §6). What breaks this: a
-  // quiet heartbeat counted as a report nobody read, a report from before the
-  // owner was last in the chat counted again, a report written after it from
-  // a turn queued before it missed, or another bot's counted.
-  it('counts the routine turns that said something since a time, and nothing else', async () => {
-    const bot = await create('Guarded Bot');
-    const other = await create('Other Bot');
-    const props = (botId: string) => ({
-      organizationId: bot.organizationId,
-      botId,
-      requestedByUserId: userId,
-      provider: 'glm' as const,
-      model: 'glm-5.3',
-      effort: null,
-    });
-    const queueRoutineTurn = async (botId: string, n: number, says: boolean) => {
-      const { turn, opening } = routineTurn(props(botId), {
-        automationId: `7b2d5a0f-0000-4000-8000-00000000000${n}`,
-        runId: `7b2d5a0f-0000-4000-8000-00000000010${n}`,
-        name: 'Heartbeat',
-        instructions: 'Check in.',
-      });
-      await turns.enqueueOnce(turn, opening, null, null);
-      if (says) {
-        await dataSource.query(
-          `INSERT INTO bot_message ("organizationId", "botId", "conversationId", "turnId", role, content, position)
-           VALUES ($1, $2, $2, $3, 'assistant', 'Two PRs need you.', 1)`,
-          [bot.organizationId, botId, turn.id],
-        );
-      }
-      return turn;
-    };
-    const since = new Date(Date.now() - 60_000);
-    const earlier = new Date(since.getTime() - 60_000);
-    // Said before the owner's visit: seen.
-    const said = await queueRoutineTurn(bot.id, 1, true);
-    await dataSource.query(`UPDATE bot_message SET "createdAt" = $2 WHERE "turnId" = $1`, [
-      said.id,
-      earlier,
-    ]);
-    // Queued before the visit, said after it: unseen (the regression).
-    const late = await queueRoutineTurn(bot.id, 2, true);
-    await dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [
-      late.id,
-      earlier,
-    ]);
-    await queueRoutineTurn(bot.id, 3, false);
-    await queueRoutineTurn(bot.id, 4, true);
-    await queueRoutineTurn(other.id, 5, true);
-
-    expect(await turns.countRoutineReportsSince(bot.organizationId, bot.id, since)).toBe(2);
-    expect(await turns.countRoutineReportsSince(bot.organizationId, other.id, since)).toBe(1);
-  });
-
   it('never strands a message sent while the running turn ends: it is staged by one or the other', async () => {
     // The two transactions serialize on the bot's row. Without that, the send
     // can count the ending turn as active while the end looks for a queued
@@ -631,8 +579,9 @@ describe('bots chat (integration)', () => {
   // channel's conversation behind.
   it('keeps a Telegram chat’s conversations apart from the console chat, split by /new in message order', async () => {
     const bot = await create('Telegram Bot');
-    const conversations = new BotConversationRepository(dataSource);
+    const conversations = new BotConversationRepository(dataSource, new BotConversationMapper());
     const chat = {
+      kind: 'telegram' as const,
       organizationId,
       botId: bot.id,
       telegramAccountId: await insertTelegramAccount(),
@@ -643,7 +592,7 @@ describe('bots chat (integration)', () => {
 
     const conversationId = await conversations.conversationAt(chat, '0', '10');
     expect(await conversations.conversationAt(chat, '0', '11')).toBe(conversationId);
-    expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
+    expect(await conversations.findChannelChat(organizationId, conversationId)).toMatchObject(chat);
     const props = {
       organizationId,
       botId: bot.id,
@@ -714,11 +663,11 @@ describe('bots chat (integration)', () => {
     expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
     expect(await messages.findConversation(scope(), bot.id, 10)).toEqual([]);
     // The Telegram conversation with a turn at work stays; the idle ones go.
-    expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
-    expect(await conversations.findTelegram(organizationId, next)).toBeNull();
+    expect(await conversations.findChannelChat(organizationId, conversationId)).toMatchObject(chat);
+    expect(await conversations.findChannelChat(organizationId, next)).toBeNull();
     await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1`, [bot.id]);
     expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
-    expect(await conversations.findTelegram(organizationId, conversationId)).toBeNull();
+    expect(await conversations.findChannelChat(organizationId, conversationId)).toBeNull();
   });
 
   // What breaks this: a bot deleted while it answers on Telegram, leaving the
@@ -730,7 +679,7 @@ describe('bots chat (integration)', () => {
       accountId,
       bot.id,
     ]);
-    expect(await bots.delete(bot)).toBe('answering');
+    expect(await bots.delete(bot)).toEqual({ boundTo: 'telegram' });
     expect((await bots.findForTurn(organizationId, bot.id)).isSome()).toBe(true);
     await dataSource.query(`UPDATE telegram_account SET "answeringBotId" = NULL WHERE id = $1`, [
       accountId,
@@ -750,9 +699,11 @@ describe('bots chat (integration)', () => {
       // The real bot lookup; a wake never reads a credential.
       const access = new BotModelAccessResolver(bots, {} as TurnCredentialsPort);
       wakeOn = new WakeOnTelegramCommandHandler(
-        new BotConversationRepository(dataSource),
-        turns,
-        access,
+        new BotChannelWakeResolver(
+          new BotConversationRepository(dataSource, new BotConversationMapper()),
+          turns,
+          access,
+        ),
       );
     });
 
@@ -872,7 +823,7 @@ describe('bots chat (integration)', () => {
 
     // What breaks this: FK_bot_conversation_telegram_account turned into ON
     // DELETE CASCADE, wiping the owner's Telegram conversations on disconnect;
-    // or findTelegram losing its "telegramAccountId" IS NOT NULL filter, so a
+    // or findChannelChat losing its account check, so a
     // queued turn runs and answers on a deleted account.
     it('keeps the Telegram conversations and their messages when the Telegram bot is disconnected, and its queued turn has nowhere to answer', async () => {
       const inConsole = sent(bot, 'In the console');
@@ -880,7 +831,7 @@ describe('bots chat (integration)', () => {
       await wake('60');
       const [queued] = await telegramTurns();
       const conversationId = queued?.conversationId ?? '';
-      const conversations = new BotConversationRepository(dataSource);
+      const conversations = new BotConversationRepository(dataSource, new BotConversationMapper());
       const channel = new BotTurnChannelPolicy(conversations);
       const onTelegram = (await turns.findForRun(queued?.id ?? '')).unwrap();
       expect(await channel.answerable(onTelegram)).toBe(true);
@@ -897,7 +848,7 @@ describe('bots chat (integration)', () => {
         [conversationId],
       );
       expect(said.map((row) => row.content)).toEqual(['Message 60']);
-      expect(await conversations.findTelegram(organizationId, conversationId)).toBeNull();
+      expect(await conversations.findChannelChat(organizationId, conversationId)).toBeNull();
       expect(await channel.answerable((await turns.findForRun(onTelegram.id)).unwrap())).toBe(
         false,
       );
@@ -927,11 +878,189 @@ describe('bots chat (integration)', () => {
 
       const jobs: { payload: { turnId: string } }[] = await dataSource.query(
         `SELECT payload FROM outbox_message
-          WHERE topic = 'bot-turns' AND "eventName" = 'deliver-telegram-reply'
+          WHERE topic = 'bot-turns' AND "eventName" = 'deliver-channel-reply'
             AND payload->>'turnId' = ANY ($1)`,
         [[onTelegram.id, inConsole.id]],
       );
       expect(jobs.map((job) => job.payload.turnId)).toEqual([onTelegram.id]);
+    });
+  });
+
+  describe('a WhatsApp chat as a channel (answering-on-telegram-and-whatsapp.md)', () => {
+    /** A linked number of the test's person, on a host of theirs. */
+    async function insertWhatsappAccount(): Promise<string> {
+      const hostId = randomUUID();
+      await dataSource.query(
+        `INSERT INTO "host" ("id", "ownerUserId", "name", "publicKey", "publicKeyFingerprint")
+         VALUES ($1, $2, 'phonebox', 'key', $3)`,
+        [hostId, userId, randomUUID()],
+      );
+      const [{ id }]: { id: string }[] = await dataSource.query(
+        `INSERT INTO whatsapp_account ("organizationId", "userId", "hostId", label)
+         VALUES ($1, $2, $3, 'Spare') RETURNING id`,
+        [organizationId, userId, hostId],
+      );
+      return id;
+    }
+
+    let bot: BotEntity;
+    let whatsappAccountId: string;
+    let conversations: BotConversationRepository;
+    // A JID at the column's full width: what `chatId` widened to.
+    const chatId = `${'3'.repeat(113)}@s.whatsapp.net`;
+    const chat = () => ({
+      kind: 'whatsapp' as const,
+      organizationId,
+      botId: bot.id,
+      whatsappAccountId,
+      chatId,
+    });
+
+    beforeEach(async () => {
+      bot = await create('Shop');
+      whatsappAccountId = await insertWhatsappAccount();
+      conversations = new BotConversationRepository(dataSource, new BotConversationMapper());
+    });
+
+    /** The turn the owner's message queues there (wave 2's `whatsappTurn`). */
+    async function queueOnWhatsapp(conversationId: string, text: string): Promise<BotTurnEntity> {
+      const props = {
+        organizationId,
+        botId: bot.id,
+        requestedByUserId: userId,
+        provider: bot.provider,
+        model: 'glm-5.3',
+        effort: null,
+      };
+      const turn = BotTurnEntity.queue({
+        ...props,
+        conversationId,
+        origin: 'whatsapp',
+        lane: 'owner',
+        sourceKey: `whatsapp:${whatsappAccountId}:${randomUUID()}`,
+      });
+      const opening = BotMessageEntity.createNew({
+        organizationId,
+        botId: bot.id,
+        conversationId,
+        turnId: turn.id,
+        role: 'user',
+        content: text,
+        steps: [],
+        position: 0,
+      });
+      await turns.enqueueOnce(turn, opening, null, null);
+      return turn;
+    }
+
+    // What breaks this: a WhatsApp chat's conversation made twice for one
+    // start (two histories for one chat), the start compared as text, or a
+    // JID longer than Telegram's 21-character ids refused by the column.
+    it('opens one conversation per start in a WhatsApp chat, keyed by seq, and reads it back as that chat', async () => {
+      const first = await conversations.conversationAt(chat(), '0', '9');
+      expect(await conversations.conversationAt(chat(), '0', '10')).toBe(first);
+      const [opened, again] = await Promise.all([
+        conversations.conversationAt(chat(), '10', '11'),
+        conversations.conversationAt(chat(), '10', '11'),
+      ]);
+      expect(opened).toBe(again);
+      expect(opened).not.toBe(first);
+      // seq 9 sorts before 10 as a number, so it stays in the first conversation.
+      expect(await conversations.conversationAt(chat(), '0', '9')).toBe(first);
+      const rows: { startsAt: string }[] = await dataSource.query(
+        `SELECT "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
+          WHERE "whatsappAccountId" = $1 ORDER BY "startsAtMessageId"`,
+        [whatsappAccountId],
+      );
+      expect(rows).toEqual([{ startsAt: '0' }, { startsAt: '10' }]);
+      expect(await conversations.findChannelChat(organizationId, opened)).toEqual(chat());
+      expect(await conversations.findChannelChat(organizationId, bot.id)).toBeNull();
+    });
+
+    // What breaks this: a WhatsApp answer never sent because finish() still
+    // stages the reply only for Telegram.
+    it('stages the channel reply job when a WhatsApp turn ends', async () => {
+      const conversationId = await conversations.conversationAt(chat(), '0', '1');
+      const queued = await queueOnWhatsapp(conversationId, 'What sold today?');
+      const running = (await turns.findForRun(queued.id)).unwrap();
+      running.start(new Date());
+      expect(await turns.claim(running)).toBe('claimed');
+      running.end('completed', new Date());
+      expect(await turns.finish(running, null)).toBe(true);
+
+      const jobs: { eventName: string }[] = await dataSource.query(
+        `SELECT "eventName" FROM outbox_message
+          WHERE topic = 'bot-turns' AND payload->>'turnId' = $1
+            AND "eventName" LIKE 'deliver-%'`,
+        [running.id],
+      );
+      expect(jobs).toEqual([{ eventName: 'deliver-channel-reply' }]);
+    });
+
+    // What breaks this: FK_bot_conversation_whatsapp_account cascading, so
+    // unlinking the number wipes the owner's history; or a queued turn
+    // running after it, with nowhere to send its answer.
+    it('keeps a WhatsApp conversation when its number is unlinked, and its queued turn has nowhere to answer', async () => {
+      const conversationId = await conversations.conversationAt(chat(), '0', '1');
+      const queued = await queueOnWhatsapp(conversationId, 'Still there?');
+      const channel = new BotTurnChannelPolicy(conversations);
+      expect(await channel.answerable(queued)).toBe(true);
+
+      await dataSource.query(`DELETE FROM whatsapp_account WHERE id = $1`, [whatsappAccountId]);
+
+      const kept: { whatsappAccountId: string | null }[] = await dataSource.query(
+        `SELECT "whatsappAccountId" FROM bot_conversation WHERE id = $1`,
+        [conversationId],
+      );
+      expect(kept).toEqual([{ whatsappAccountId: null }]);
+      expect(await conversations.findChannelChat(organizationId, conversationId)).toBeNull();
+      expect(await channel.answerable((await turns.findForRun(queued.id)).unwrap())).toBe(false);
+    });
+
+    // What breaks this: Clear history deleting only Telegram conversations,
+    // so a WhatsApp chat's history survives it.
+    it('clears idle WhatsApp and Telegram conversations with the console chat', async () => {
+      const onWhatsapp = await conversations.conversationAt(chat(), '0', '1');
+      const onTelegram = await conversations.conversationAt(
+        {
+          kind: 'telegram',
+          organizationId,
+          botId: bot.id,
+          telegramAccountId: await insertTelegramAccount(),
+          chatId: '123456789',
+        },
+        '0',
+        '1',
+      );
+      const queued = await queueOnWhatsapp(onWhatsapp, 'Hello');
+      await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE id = $1`, [queued.id]);
+
+      expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
+
+      const left: { id: string }[] = await dataSource.query(
+        `SELECT id FROM bot_conversation WHERE id = ANY ($1)`,
+        [[onWhatsapp, onTelegram]],
+      );
+      expect(left).toEqual([]);
+      const said: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_message WHERE "conversationId" = $1`,
+        [onWhatsapp],
+      );
+      expect(said).toEqual([]);
+    });
+
+    // What breaks this: a bot that is a number's default deleted, leaving the
+    // number answering as nobody (FK_whatsapp_account_answering_bot).
+    it('refuses to delete a bot while it is a WhatsApp number’s default, and deletes it once unbound', async () => {
+      await dataSource.query(`UPDATE whatsapp_account SET "answeringBotId" = $2 WHERE id = $1`, [
+        whatsappAccountId,
+        bot.id,
+      ]);
+      expect(await bots.delete(bot)).toEqual({ boundTo: 'whatsapp' });
+      await dataSource.query(`UPDATE whatsapp_account SET "answeringBotId" = NULL WHERE id = $1`, [
+        whatsappAccountId,
+      ]);
+      expect(await bots.delete(bot)).toBe('deleted');
     });
   });
 
@@ -1227,7 +1356,9 @@ describe('bots chat (integration)', () => {
       owners,
       hosts,
       turns,
-      new BotTurnChannelPolicy(new BotConversationRepository(dataSource)),
+      new BotTurnChannelPolicy(
+        new BotConversationRepository(dataSource, new BotConversationMapper()),
+      ),
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,

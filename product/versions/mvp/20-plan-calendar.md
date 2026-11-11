@@ -208,6 +208,35 @@ overdue** leaves out (`?overdue=off`); a past day lists only its own. It narrows
 it the same way), ticks a task Done or back, opens it on the board, and
 adds a task due that day from the dashed row under the list.
 
+> Changed on 2026-11-09, twice. Opening a task from To do now opens its
+> dialog on To do (`?task=`), and saving or closing it stays on the day.
+> Then the owner asked that To do be what they mean to work on, not what
+> is due: "one thing is when is the deadline of the task and another is
+> when I am working on it", and some tasks take days. So a task has a
+> **focus date** apart from its due date (`task."focusDate"`, a calendar
+> day like `dueDate`; the API's create and update take it, `null` takes a
+> task off). To do lists, for a day:
+>
+> 1. the tasks put on that day and those due on it, timed ones first;
+> 2. on today or a later day, the open tasks put on an earlier day: they
+>    stay until done, which is how work that takes days stays on the list
+>    with no range, each saying since when ("on To do since Mon");
+> 3. with Include overdue on, the open tasks due before today, as before.
+>
+> A carried or overdue task ticked done stays on the day it was done, so
+> finishing it does not make it vanish; a past day lists its own and what
+> was finished on it. The owner chose (2026-11-09) that what is due today
+> or overdue is on the list on its own, not only suggested; that unfinished
+> work carries over rather than starting each day empty; and that the day
+> picker stays, so tomorrow can be planned. The dashed row adds a task put
+> on that day with no due date, and **Add tasks** (formerly Add undated
+> tasks) puts any open task not on the day there, its due date unchanged.
+> The task dialog has a **To do** day above **Due**. The sidebar's count
+> is what is left on today's list. Nothing is logged for a focus date:
+> planning a day is not a change Plan's log records (`23`, §4). Left for
+> later: a way to take a task off today from its row, and the bots' plan
+> tools setting a focus date.
+
 A row's grip, six dots at its right end, drags it into the reader's own
 order for that day, kept on this device as Plan's sidebar order is (the
 frame keeps it in the browser too); a task the stored order does not

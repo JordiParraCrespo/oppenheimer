@@ -1,0 +1,71 @@
+{
+  "$comment": "Each case is one message to the bot, as the person would type it in its chat or on Telegram. {{project}} is BOT_EVAL_PROJECT. `card` is text the start_session card must contain (the server's own reading of the launch); `input` is fields the call must carry exactly; `absent` is fields it must not carry (a choice nobody made, so the default holds); `refused` is a case where the start must not reach a card and the reply must name one of `mentions`.",
+  "cases": [
+    {
+      "id": "model-by-name",
+      "message": "Start a Claude Code session on {{project}} with Opus 5.5 to add a CONTRIBUTING.md that explains how to run the tests.",
+      "card": ["Opus 5.5"],
+      "absent": ["effort", "permission", "base_branch"]
+    },
+    {
+      "id": "model-by-family",
+      "message": "Use sonnet for this one: open a session on {{project}} and make the README's install section shorter.",
+      "card": ["Sonnet 5.5"],
+      "absent": ["permission"]
+    },
+    {
+      "id": "model-and-effort",
+      "message": "On {{project}}, start Fable 5.2 at max effort to find why the login test is flaky and fix it.",
+      "card": ["Fable 5.2", "max effort"],
+      "input": { "effort": "max" }
+    },
+    {
+      "id": "effort-only",
+      "message": "Spin up a session on {{project}} at low effort to bump the patch version in package.json.",
+      "card": ["low effort"],
+      "input": { "effort": "low" },
+      "absent": ["model"]
+    },
+    {
+      "id": "full-access",
+      "message": "Start a session on {{project}} with full access, Opus 5.5, high effort: upgrade the dependencies and make the build pass.",
+      "card": ["Opus 5.5", "high effort", "full access"],
+      "input": { "effort": "high", "permission": "full" }
+    },
+    {
+      "id": "ask-permission",
+      "message": "I want to approve every step myself: start a session on {{project}} that asks before each action, and have it remove the unused exports.",
+      "card": ["asking for approval"],
+      "input": { "permission": "ask" }
+    },
+    {
+      "id": "base-branch",
+      "message": "Start a session on {{project}} from the develop branch, on Haiku 5.5, to fix the typos in docs/.",
+      "card": ["Haiku 5.5", "from develop"],
+      "input": { "base_branch": "develop" }
+    },
+    {
+      "id": "codex-model",
+      "message": "Have Codex on GPT-6.1 Sol, high effort, write unit tests for the date helpers in {{project}}.",
+      "card": ["Codex", "GPT-6.1 Sol", "high effort"],
+      "input": { "agent": "codex", "effort": "high" }
+    },
+    {
+      "id": "spanish",
+      "message": "Arranca una sesión en {{project}} con Opus 5.5 y esfuerzo alto para revisar los mensajes de error del formulario de registro.",
+      "card": ["Opus 5.5", "high effort"],
+      "input": { "effort": "high" }
+    },
+    {
+      "id": "nothing-chosen",
+      "message": "Start a session on {{project}} to delete the dead code in the scripts folder.",
+      "absent": ["model", "effort", "permission", "base_branch"]
+    },
+    {
+      "id": "unknown-model",
+      "message": "Start a session on {{project}} with Opus 9 to rewrite the changelog.",
+      "refused": true,
+      "mentions": ["Opus 5.5", "Opus", "model"]
+    }
+  ]
+}

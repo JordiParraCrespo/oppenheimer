@@ -22,12 +22,22 @@ A project is a saved scope with a name, zero or more repositories (each with a b
 
 **Plan → Tasks** is one board for the workspace, filtered by **Project** and **Milestone** at the top (each view remembers its filter on this device). Columns, in order: **To do**, **In progress**, **In review**, **Done**. The header counts open, in progress, done and overdue tasks.
 
-- **New task** (or `n`) opens the task dialog: title, notes, Status, Project, Milestone, Sessions and Due (a date with Today, Tomorrow, Next Monday, and an optional time).
+- **New task** (or `n`) opens the task dialog: title, notes, Status, Project, Milestone, Sessions, To do (the day it goes on your To do list, apart from when it is due) and Due (a date with Today, Tomorrow, Next Monday, and an optional time).
 - **Add task** at a column's foot adds a one-line task to that column under the current filter.
 - Drag cards within and across columns. Ticking a card's checkbox moves it to Done.
 - A card shows its title, notes, project, milestone, due date (red when overdue) and its session line.
 
 Tasks have no assignee, since a workspace has one person. Tasks are Oppenheimer's own; there is no import from GitHub Issues or Linear.
+
+## To do
+
+**Plan → To do** is what you mean to work on, one day at a time (today unless you step to another day). A task's **To do** day is separate from its **Due** date: a deadline does not have to be the day you work on it. For a day, the list shows:
+
+- the tasks put on that day and those due on it, timed ones first;
+- on today or a later day, open tasks put on an earlier day: they stay until they are done, so work that takes several days stays on the list ("on To do since …");
+- with **Include overdue** on, open tasks due before today.
+
+A task ticked done stays on the day it was done. The dashed row at the foot adds a task put on that day with no due date, and **Add tasks** puts any open task on the day without changing its due date. Clicking a task opens its dialog over To do; clear its To do day there to take it off the list. The count beside To do in the sidebar is what is left on today's list.
 
 ## Tasks and sessions
 

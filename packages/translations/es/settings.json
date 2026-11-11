@@ -13,6 +13,7 @@
     "whatsapp": "WhatsApp",
     "telegram": "Telegram",
     "app": "Oppenheimer",
+    "agents": "Agentes",
     "about": "Acerca de"
   },
   "profile": {
@@ -218,7 +219,9 @@
     "emptyDescription": "Conecta una y pregunta a cualquier bot cosas como «¿qué envió la gestoría la semana pasada?» o «resume el correo sin leer de hoy». Google avisará de que la app aún no está verificada; es lo esperado.",
     "connect": "Conectar Gmail",
     "connectAnother": "Conectar otra cuenta",
-    "atLimit": "Puedes conectar hasta {{count}} cuentas.",
+    "atLimit_one": "Puedes conectar hasta {{count}} cuenta.",
+    "atLimit_other": "Puedes conectar hasta {{count}} cuentas.",
+    "atLimit_many": "Puedes conectar hasta {{count}} de cuentas.",
     "startFailed": "No se pudo abrir el inicio de sesión de Google.",
     "connected": "Conectada",
     "needsReconnect": "Hay que volver a conectarla",
@@ -295,7 +298,38 @@
     "qrStep1": "Abre WhatsApp en el teléfono con este número.",
     "qrStep2": "Ve a Ajustes → Dispositivos vinculados → Vincular un dispositivo.",
     "qrStep3": "Apunta el teléfono a este código. Cambia cada pocos segundos.",
-    "qrWaiting": "Esperando a que el host genere un código…"
+    "qrWaiting": "Esperando a que el host genere un código…",
+    "answering": {
+      "title": "Te responde",
+      "botLabel": "El bot que te responde en {{label}}",
+      "noBot": "Ninguno (no responde)",
+      "search": "Busca un bot",
+      "noMatch": "Ningún bot coincide",
+      "none": "Aún no responde ningún bot en este número. Elige uno para que responda a tu propio número.",
+      "chosen": "Responde a tu propio número. Escribe «Nombre: …» en el chat para hablar con otro de tus bots.",
+      "failed": "No se ha guardado. Inténtalo de nuevo."
+    },
+    "owner": {
+      "title": "Tu número",
+      "none": "Solo se responde a tu propio número. Este número le envía un código, y tú lo introduces aquí.",
+      "codeSent": "Hemos enviado un código a {{number}} desde este número. Introdúcelo aquí. Vale hasta las {{time}}.",
+      "expired": "El código enviado a {{number}} ha caducado. Pide uno nuevo.",
+      "confirmed": "Aquí solo se responde a {{number}}.",
+      "replacing": "Se sigue respondiendo a {{number}} hasta que confirmes el número nuevo.",
+      "hostOffline": "El host está desconectado. Inicia su runner para enviar un código.",
+      "numberLabel": "Tu propio número de WhatsApp",
+      "numberPlaceholder": "+34 600 111 222",
+      "send": "Enviar código",
+      "sending": "Enviando…",
+      "codeLabel": "El código que ha recibido tu número",
+      "codePlaceholder": "123456",
+      "confirm": "Confirmar",
+      "confirming": "Confirmando…",
+      "resend": "Enviar un código nuevo",
+      "change": "Cambiar",
+      "otherNumber": "Usar otro número",
+      "failed": "No ha funcionado. Inténtalo de nuevo."
+    }
   },
   "telegram": {
     "title": "Telegram",
@@ -308,7 +342,9 @@
     "connectAnother": "Conectar otro bot",
     "connectAgain": "Conectar de nuevo",
     "connectSubmit": "Conectar",
-    "atLimit": "Puedes conectar hasta {{count}} bots.",
+    "atLimit_one": "Puedes conectar hasta {{count}} bot.",
+    "atLimit_other": "Puedes conectar hasta {{count}} bots.",
+    "atLimit_many": "Puedes conectar hasta {{count}} de bots.",
     "noHosts": "Primero vincula un host: el bot lo consulta el runner de un host.",
     "connectTitle": "Conectar un bot de Telegram",
     "reconnectTitle": "Dar un token nuevo a {{label}}",
@@ -363,6 +399,12 @@
       "making": "Creando el enlace…",
       "newLink": "Nuevo enlace"
     }
+  },
+  "agents": {
+    "title": "Agentes",
+    "hint": "Qué agentes ofrece Nueva sesión en este dispositivo. Una sesión que ya usa uno que ocultes lo conserva.",
+    "show": "Mostrar {{agent}} en Nueva sesión",
+    "lastShown": "Nueva sesión necesita al menos un agente que ofrecer."
   },
   "about": {
     "title": "Acerca de",

@@ -26,7 +26,7 @@ workspace has one member today (`08-auth.md`), so "workspace-wide" is
 |------|--------|----------------|---------------------|
 | **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more, the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
 | **A bot's approval** | `bot_approval` with `status = 'pending'`, at most one per bot | a bot stopped its turn on a tool the owner set to *ask* (`25-bots.md`) | **Approve / Deny** through the existing `POST /v1/bots/:id/approvals/:approvalId/decision` |
-| **A pull request for you** | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
+| **A pull request for you** (only once shown, see "Pull requests are opt-in") | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
 | **An automation that failed** | `GET /v1/automation-runs?status=failed&window=24h` | a run failed in the last day | **Run again** (`POST /v1/automations/:id/run`); **Open run** |
 
 **Order**, newest first, as a mail client lists: every kind together, by
@@ -440,3 +440,101 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
   visit stays under Show done, struck through.
 - **Nothing needs you** replaces "You're clear", with the sessions still
   running.
+
+## Reports: a problem with its pictures, answered here (2026-11-09)
+
+The owner asked on 2026-11-09 for the agents that work unattended to send
+him the problems they find, with images, and to answer them only in the
+Inbox (`../../research/unsupervised-work.md` is where the ask came from).
+Until now the one thing an agent could post was a line of text
+(`runner sessions notify`, §6 slice 5), from a session on a paired host,
+with nothing to answer. A routine in a vendor's cloud has no host and no
+runner, and a picture had nowhere to go. What changed from the first
+version's "nothing stored but the marks":
+
+- **A report is stored.** `inbox_report`: a title, a body, who sent it in
+  its own words (`source`), a link to where the problem can be seen, and up
+  to four pictures (PNG, JPEG, GIF or WebP, 5 MB each, judged by their
+  bytes), kept in the deployment's storage. It is the only Inbox item with
+  a table, because no other source knows it.
+- **Anything with a token can send one.** `POST /v1/inbox/reports`, as
+  `multipart/form-data`, under a scope of its own, `inbox-reports:write`.
+  Reading them, their pictures and the answer is `inbox-reports:read`.
+- **The answer is given in the Inbox.** The card shows the pictures and a
+  box; `POST /v1/inbox/reports/:id/answer` takes the text under
+  `inbox:write`, the scope of the owner's own Inbox. A token that holds
+  only the two report scopes can send and read, and cannot answer what it
+  asked.
+- **The agent reads the answer by asking.** `GET /v1/inbox/reports/:id`
+  carries `status` and `answer`. Nothing is typed into a terminal and
+  nothing wakes the sender: a routine that runs once a day reads its open
+  reports at the start of its next run.
+- **In the list** a report is one more kind, keyed `report:<id>`, with the
+  marks every item has. An answered report has left the Inbox.
+- **The console hears of it** on the workspace stream
+  (`inboxReport.changed`), so a report sent while the Inbox is open appears
+  without a reload.
+
+Decided with the defaults below; each can be changed.
+
+1. **No notification outside the console yet.** The report is the
+   notification: it raises the Inbox's count. A browser notification and
+   phone push stay where `../../next-steps/agent-tools.md` §2 leaves them.
+2. **One answer, free text.** No options to pick from, and no thread: a
+   follow-up is a new report.
+3. **Reports are the workspace's**, not one person's: with one member a
+   workspace (`08-auth.md`) that is the owner.
+4. **A report is kept** after it is answered, with its pictures. Nothing
+   sweeps them yet.
+
+## Pull requests are opt-in (2026-11-10)
+
+The agents open their pull requests under the owner's GitHub account, so
+every one of them with nothing holding it sat in the Inbox as "Merge #…",
+the owner's to merge, and buried what actually needed them. The owner
+asked for an Inbox that holds only what is stuck or waiting on an answer
+and what a bot or an agent sent: waiting and failed sessions, bots'
+approvals, reports, sessions' and bots' notices, and failed automation
+runs.
+
+- Both pull request items (a review asked of you, yours ready to merge) are
+  off by default. **Show pull requests**, in the list's filter menu beside
+  Show done, brings them back; Type offers Pull requests only while it is
+  on.
+- The choice is the reader's, kept on this device
+  (`oppenheimer.inbox.pulls`), like the sidebar's pins: a view preference,
+  not an account setting.
+- Off, the Inbox does not read the two pull request queues at all, so it
+  spends no GitHub calls on items it would not list. Every count (the
+  list's and Plan's sidebar) follows the switch at once.
+- Pull requests stay where they always were: the Pull requests page.
+
+## Bulk actions (2026-11-11)
+
+The owner asked to act on several items at once rather than one row's menu
+at a time.
+
+- **Selecting.** An open row has a checkbox in the unread dot's place, shown
+  on hover or focus, and on every row once one is checked. Shift-click picks
+  the run since the last row picked. Where there is no hover (a phone), the
+  row menu's **Select** checks that row. A done row (Show done) is not
+  selectable. The selection is the list's, for this visit: a row that leaves
+  the list (marked in another tab, filtered out) leaves it too, and Escape or
+  the bar's cross clears it.
+- **The bar.** While anything is selected, the list's head gives way to a
+  selection bar: select all (mixed while only some are), "N selected", and
+  the row menu's actions for all of them: Mark as done, Deprioritize (Restore
+  priority when every selected row is already low), Snooze 1 hour or until
+  tomorrow, and Delete. Each clears the selection.
+- **One request.** A bulk action writes the cached marks once, so every
+  row leaves on the click, then sends the whole selection to
+  `POST /v1/inbox/marks/batch` (`itemKeys`, at most 500, and a `mark`, or
+  `null` to clear each one's). The API checks every key and the snooze's
+  end before it writes any, writes every mark in one transaction, each
+  with its own event as a single put or delete would, and answers the
+  marks in force. A first cut
+  sent one request per row; the review found that "select all" on a large
+  Inbox (up to a hundred failed runs alone) ran past the default hundred
+  requests a minute and left the selection half marked.
+- On a phone a hidden checkbox takes no tap: a tap on a row opens it.
+- E and L still act on the item in the pane, not on the selection.

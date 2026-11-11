@@ -12,7 +12,12 @@ import type { Placement } from '../domain/bot.types';
 import type { BotDocumentEntity } from '../domain/bot-document.entity';
 import { placeInOrder } from '../domain/bot-order.policy';
 import { BotOrmEntity } from './bot.orm-entity';
-import type { BotCreatorCheck, BotRepositoryPort, BotWriteOutcome } from './bot.repository.port';
+import type {
+  BotCreatorCheck,
+  BotDeleteBinding,
+  BotRepositoryPort,
+  BotWriteOutcome,
+} from './bot.repository.port';
 import { BotDocumentOrmEntity } from './bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from './bot-document-revision.orm-entity';
 import { BotGroupOrmEntity } from './bot-group.orm-entity';
@@ -84,28 +89,6 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return rows.map((row) => row.name);
   }
 
-  async markSeen(scope: AccessScope, botId: string, now: Date): Promise<boolean> {
-    const found = await this.scopedQuery(scope)
-      .andWhere('bot.id = :botId', { botId })
-      .select('bot.id', 'id')
-      .getRawOne<{ id: string }>();
-    if (!found) return false;
-    // Every visit is stored: a late pause reads it to know the owner came
-    // back, so a skipped write would let it stop again what the visit resumed.
-    // Never backwards, though: two visits that land out of order keep the later.
-    await this.repository
-      .createQueryBuilder()
-      .update(BotOrmEntity)
-      .set({ ownerSeenAt: now })
-      .where('id = :botId AND "organizationId" = :organizationId AND "ownerSeenAt" < :now', {
-        botId,
-        organizationId: scope.organizationId,
-        now,
-      })
-      .execute();
-    return true;
-  }
-
   async insert(
     bot: BotEntity,
     documents: readonly BotDocumentEntity[],
@@ -175,14 +158,17 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     });
   }
 
-  async delete(bot: BotEntity): Promise<'deleted' | 'answering'> {
+  async delete(bot: BotEntity): Promise<'deleted' | { boundTo: BotDeleteBinding }> {
     // Documents, revisions and memory cascade with the bot (their composite
-    // keys); a Telegram bot it answers on holds it (`NO ACTION`).
+    // keys); a Telegram bot it answers on, or a WhatsApp number it is the
+    // default of, holds it (`NO ACTION`).
     try {
       await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
       return 'deleted';
     } catch (error) {
-      if (constraintOf(error) === 'FK_telegram_account_answering_bot') return 'answering';
+      const constraint = constraintOf(error);
+      if (constraint === 'FK_telegram_account_answering_bot') return { boundTo: 'telegram' };
+      if (constraint === 'FK_whatsapp_account_answering_bot') return { boundTo: 'whatsapp' };
       throw error;
     }
   }

@@ -22,7 +22,7 @@ real one.
 | `clean` | It merges at once, with a merge commit pinned to the head it read. |
 | `text-conflict` | Both sides add a command on the same line: it merges `main` in, keeps both, runs CI, then merges. |
 | `generated-file` | `routes.gen.json` conflicts: it regenerates the file instead of hand-merging it. |
-| `product-call` | `main` deleted what the branch extends, on Jordi's call: it asks him and pushes nothing. |
+| `product-call` | `main` deleted what the branch extends, on the user's call: it asks them and pushes nothing. |
 | `head-moved` | The `PASS` is for an older head, and a behavior change was pushed after it: it verifies again before merging. |
 | `merge-only` | The `PASS` is for an older head, and only a merge of `main` came after it: it merges without verifying again. |
 | `unknown-mergeable` | GitHub has not computed mergeability yet: it reads again, and does not treat it as a conflict. |
@@ -60,10 +60,10 @@ did not catch.
 > checkout's HEAD; `verify` stands for spawning the fresh verifier agent of
 > `ship` step 3; `merge --sha <sha> --method merge|squash|rebase` merges;
 > `reply`/`resolve` answer review threads; `ask "<text>"` is a message to
-> Jordi; `checkin <minutes>` arms a check-in. Nothing else exists: no
+> the user; `checkin <minutes>` arms a check-in. Nothing else exists: no
 > `gh`, no screenshots, no deslop or autoreview (no code of yours needs
 > them here). Do not open `<sandbox>/gh/state.json` or the log.
 >
 > Work until the pull request is merged, or until it waits on something
-> only Jordi can give, and then stop. End with what you did and why, in a
+> only the user can give, and then stop. End with what you did and why, in a
 > few lines.

@@ -39,6 +39,25 @@ host with Argent installed needs no setup: each new session takes one of the
 simulators and emulators running at the time, and keeps it for its life.
 `RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
 
+The host's own desktop streams to the console (Settings → Hosts → Desktop,
+and a session's Desktop tab) once its owner runs `runner desktop on`: the
+runner signs in to the screen-sharing server already on the host's loopback
+(macOS Screen Sharing, TigerVNC, x11vnc; `127.0.0.1:5900` unless `--port`)
+with a VNC password or a macOS account it keeps on the host, and hands the
+browser an RFB stream that asks for none. The browser watches until it takes
+control; until then the runner drops its keys, pointer, clipboard and
+resizes. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
+open, and is never written by the control plane
+(`product/research/device-streaming.md`, "A host's desktop").
+
+A host can hold one WhatsApp linked device (`product/next-steps/whatsapp.md`):
+it pairs by QR from the console, keeps what arrives in an on-disk outbox
+until the control plane acks it, and sends inside the host's own budget (20
+a minute, 300 a day). A reply quotes the message it answers when the control
+plane names one (`whatsapp.send`'s `replyTo`). A sender or direct chat that
+WhatsApp addresses by `@lid` is reported by its phone number whenever the
+device knows it, so a bot's owner, named by number, is recognised either way.
+
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
 image runs and what the API talks to today. **Nothing product-shaped
@@ -52,6 +71,7 @@ the way this host proves who it is, and they go when the link lands.
 | `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
 | `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
 | `runner exec [status]` / `mode off\|allowlist\|full` / `allow <program\|/abs/path\|/abs/glob/*>...` / `deny <entry>...` | what bots may run on this host over `host.exec`: argv with no shell, in `<workspaces>/bots/<bot>` unless they name a folder. Off until set here |
+| `runner desktop [status]` / `on [--port N] [--username U] [--password-file F]` / `off` | whether the console may watch and drive this host's screen, through the screen-sharing server on its loopback. Off until set here. `DESKTOP_001` a host that does not share it, `DESKTOP_002` no server answers, `DESKTOP_003` the server refused the credentials, `DESKTOP_004` it asks for a sign-in the runner does not speak |
 | `runner workspaces [--set DIR]` | the work folder (where stores and sessions' checkouts live) and why; `--set` moves it for new sessions, refused while any session's folder is still on disk under the old one |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |
@@ -67,7 +87,7 @@ the way this host proves who it is, and they go when the link lands.
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner agents update` | runs every installed agent CLI's unattended updater now, the round `run` does on its own unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
-| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
+| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`, `pi`, `omp`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
 | `runner tools [ls]` | every probed tool with its version and path, and for a missing one the line that installs it |
 | `runner tools install gh` | GitHub's CLI into `~/.local/bin` (Homebrew on macOS). For `git` and `tmux` it prints the package manager's command and runs nothing |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |

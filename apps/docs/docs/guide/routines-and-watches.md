@@ -1,6 +1,6 @@
 ---
 title: Routines and watches
-description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its hourly heartbeat, quiet runs, routines pausing while you are away, loops and goals, watches on sessions and pull requests, the stall check, and the full list of what wakes a bot.
+description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its hourly heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
 sidebar_position: 6
 ---
 
@@ -28,7 +28,7 @@ A routine is skipped and paused when it cannot run, with the reason in the chat:
 
 **Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message.
 
-**While you're away.** A bot's routines stop on their own when you stop reading them: after 3 routine reports you have not seen (quiet runs do not count), or 72 hours since you were last in the bot's chat. You are told once in the Inbox, and every routine stopped that way starts again as soon as you are back: you open or look at the bot's chat, write to it, or decide one of its cards. A routine you paused yourself, or one paused for a missing key, stays paused. Your own **Run now** always runs. The two numbers are workspace settings for automations, and **Pause while you're away**, a switch on the bot's Routines tab, turns this off for a bot that should run unattended.
+**While you're away.** Routines keep running on their schedule whether or not you read what they say; nothing pauses them because you have not opened the chat. To stop one, pause it on the Routines tab or ask the bot.
 
 Mail older than two days, spam, trash and chats never wake a Gmail routine; email and event text reach the bot marked as outside data, never as instructions.
 
@@ -58,6 +58,8 @@ A watch can also wake on a line the terminal prints that matches a pattern; the 
 
 **The stall check.** Five minutes after a bot starts a session or sends one a prompt, Oppenheimer checks once whether the task never started or its agent was never seen working (an offline host, an agent stuck at a sign-in). If so the bot is woken once to tell you what looks stuck. It does not restart or prompt the session on its own.
 
+**Looking at the work.** While that task keeps running, the bot looks at it again every ten minutes, for up to an hour: it reads what the agent has done against the task it gave. When the work is on track it says nothing, and the chat shows only "Checked on session …". When the agent has gone idle without finishing, is going in circles or off the task, waits on something or hits an error, the bot tells you, and it may nudge the agent when its instructions cover what the agent needs. Ask it "how is it going?" and it looks right away.
+
 **Waiting inside a turn.** A bot can also wait up to 120 seconds inside one turn for a session to need input or end, at most three times a turn.
 
 **Pull requests.** `watch_pull_request` follows an open pull request on a repository you can read. A check failing or passing, a review, a comment or the merge wakes the bot with the event's facts (kind, number, check name, reviewer's login), never anyone's words; the bot reads the pull request itself. The merge ends the watch. A pull request closed without merging does not end it yet.
@@ -72,10 +74,11 @@ Ask a bot "what are you watching?" and it lists its watches. There is no list of
 | Another bot's message or ask, or the answer to its own ask | that bot |
 | A routine's schedule, GitHub event or Gmail mail, or Run now | the routine |
 | A loop's run, a goal's continuation | the loop or goal |
-| A watched session or pull request, a session's notice, the stall check | the watch |
+| A watched session or pull request, a session's notice, the stall check, the regular look at a running task | the watch |
 
 Turns run one at a time per bot: your messages first, then other bots', then background work (routines, loops, wakes).
 
 ## Not available yet
 
 Spreading the run times of routines other than the heartbeat, routines triggered by a session ending or by a webhook, and WhatsApp or Telegram messages as a trigger.
+

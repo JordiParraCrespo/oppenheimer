@@ -57,7 +57,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   multi-repo pane. A foot action with `href` is a new-tab link.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
-  Grok's slashed circle and Cursor's cube from their published brand assets,
+  Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's
+  gradient π from their published brand assets,
   and for a bot's providers Z.ai's mark for GLM and OpenAI's for ChatGPT (it
   publishes none of its own), in the vendor's colour where it has one
   and the current ink otherwise. An agent with no published mark takes the
@@ -277,11 +278,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   in words.
 - **A bot's chat is the Bots frame and AI Elements.** Your turns are
   28px bubbles, their time and copy on hover; the bot's answer has no
-  header: a `Trace` line per tool call at the reply's 15px, muted, each
+  header: a `Trace` line per tool call at 13px in subtle ink, under the reply, each
   opening to its `TraceOutput` (numbered mono lines on the card) or a
   `TraceNote`, failures in red, then the reply, its fenced code a
-  `ChatCodeBlock` (a `ChatJsonBlock`, opening as a `JsonTree`, when it
-  holds JSON), then a `MessageTrail` (copy, retry, model and tokens).
+  `ChatCodeBlock` (a `ChatJsonBlock`, opening on Raw with a `JsonTree`
+  behind Tree, when it holds JSON), then a `MessageTrail` (copy, retry, model and tokens).
   While it runs a `TraceLive` line says what it is doing, with its clock.
   Between turns a `ChatMarker` notes a model switch and a
   `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;

@@ -179,7 +179,7 @@ This is that check, for one task:
 - **What it reads.** The session, as the owner, as a wake does. Only
   Oppenheimer's records decide, never silence: the runner reports on
   change, so a quiet log is also what an agent working steadily looks like.
-- **What says stuck** (`stallFor`, pure). The task is still `queued` (it
+- **What says stuck** (`checkFor`, pure, since §4.2). The task is still `queued` (it
   never started), or it is an interactive task on a host, `in_progress`,
   whose agent was never seen working. A headless or cloud task reports its
   own progress, so the screen is no evidence for it. Anything else is
@@ -194,6 +194,43 @@ This is that check, for one task:
   it does not restart, stop or prompt the session on its own. The check
   records nothing on the subscription, so the task's end still wakes the bot.
 - **Cost.** One read per task handed off, and a turn only when it is stuck.
+
+### 4.2 Looking at the work, every few minutes
+
+The wakes and the stall check speak for a task that changed state or never
+got going. A task that got going and then drifts (the agent idle at its
+prompt without the task folding to an end, going in circles, off the task,
+waiting on something the screen does not show as a question) told the bot
+nothing, and the owner had to say "you should be babysitting this"
+(Facturas, 2026-11-10). A person who delegates does not wait to be told it is
+done: they look over the work every so often. So does a bot now:
+
+- **When.** The stall check is the first of up to six checks of the task
+  (`BOT_PROGRESS_CHECKS_PER_TASK`): at five minutes, then every ten
+  (`BOT_PROGRESS_CHECK_INTERVAL_MS`), the last at 55. Each stages the next
+  while the task is live. Past that the bot's hourly heartbeat
+  (`26-bot-routines.md` §6) covers it with everything else it looks after.
+- **What it decides** (`checkFor`, pure). A stall, as §4.1, first, once. A
+  task still `queued` or `in_progress` otherwise wakes the bot for a look,
+  once per check (`subscription:<id>:<seq>:progress:<n>`), whatever its drive
+  or place: what the agent has done is in its transcript, not its state. A
+  task waiting on a person, or whose stall was told, is looked at again later
+  without a wake. A task over, superseded or a session closed ends the checks.
+- **What the bot does.** Reads what the agent did (`read_session_transcript`,
+  else `get_session`) against the task. On track: `nothing_to_report`, so the
+  chat shows only "Checked on session *name*". Off: it tells the person in a
+  sentence or two, with `notify`, and may nudge the agent with
+  `send_to_session` when its instructions settle what it needs, asking first
+  as always. It never stops or restarts the session on its own.
+- **Asked.** "Monitor it" or "how is it going" is a look now, not "I already
+  follow it": the prompt no longer says checking adds nothing.
+- **Cost.** Up to six short turns per task handed off, most ending quiet.
+
+Codex, for comparison (`codex-rs`, 2026-11-10): its parent pulls, with
+`wait_agent` (30 s by default, up to an hour) and `list_agents`, and learns a
+subagent's end as a note on its next turn; it has no timer that looks at a
+running subagent, and its prompt says to wait "very sparingly". A bot is a
+chat the person leaves, not a turn that blocks, so ours looks on a timer.
 
 ## 5. Authorization
 
@@ -224,7 +261,7 @@ What it does not reuse, and why:
 
 - **Not a routine** (26 §5). A routine with a `session_ended` trigger is a
   standing rule ("every session I start"), shown on the Routines tab, with
-  the run budget and the spend guard of an unattended job. A subscription is
+  the run budget of an unattended job. A subscription is
   one delegation: one session, created by the turn that delegated it, ended
   when the work ends, and waking on input needed too. Using routines for it
   would put a routine on the tab for every session a bot starts. 26 §5's
@@ -362,6 +399,11 @@ share their words (`github/domain/github-pull-event.policy.ts`).
   minutes later, that wakes it only when the task never started or its agent
   was never seen working (§4.1). It changes §2's "`queued` and `in_progress`
   never wake" for that one case; there is still no progress update.
+- 2026-11-10: **a bot looks at the work it handed off every few minutes**
+  (§4.2): the stall check is the first of six checks, each a quiet wake
+  while the task runs. It changes the 2026-10-29 "there is still no
+  progress update" and §2's "`in_progress` never wakes" for a task the bot
+  handed off; the person still hears only when something is off.
 - 2026-11-03: **a bot follows a pull request** (§7.1). The wake is the
   GitHub event's metadata, not a re-read as the owner: it changes §1's
   "the event is thin, the read is fresh" for this kind, because the pull

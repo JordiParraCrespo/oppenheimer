@@ -15,26 +15,12 @@ export interface AutomationLimits {
   maxRunSeconds: number;
   /** A host reporting less free disk than this is not given a run: a worktree needs room. */
   diskFloorBytes: number;
-  /**
-   * The spend guard on a bot's routines (`26-bot-routines.md` §6): reports
-   * its owner has not seen before they stop, and how long the owner may be
-   * away from the bot's chat. A workspace's preference, with no ceiling.
-   */
-  unattendedReports: number;
-  unattendedAwaySeconds: number;
 }
 
 /** The platform's defaults (what a workspace gets) and ceilings (what nobody exceeds). */
 export interface PlatformLimits {
   defaults: AutomationLimits;
-  ceilings: Omit<
-    AutomationLimits,
-    | 'overlap'
-    | 'missedGraceSeconds'
-    | 'diskFloorBytes'
-    | 'unattendedReports'
-    | 'unattendedAwaySeconds'
-  >;
+  ceilings: Omit<AutomationLimits, 'overlap' | 'missedGraceSeconds' | 'diskFloorBytes'>;
 }
 
 /** The workspace row: every field optional, null is the platform default. */
@@ -57,8 +43,6 @@ export const DEFAULT_PLATFORM_LIMITS: PlatformLimits = {
     missedGraceSeconds: 15 * 60,
     maxRunSeconds: 60 * 60,
     diskFloorBytes: 5 * 1024 ** 3,
-    unattendedReports: 3,
-    unattendedAwaySeconds: 72 * 60 * 60,
   },
   ceilings: {
     maxRunsPerAutomationHour: 60,
@@ -109,7 +93,5 @@ export function resolveAutomationLimits(
     ),
     // The deployment's, not a workspace's: the machine's floor is not a preference.
     diskFloorBytes: defaults.diskFloorBytes,
-    unattendedReports: workspace.unattendedReports ?? defaults.unattendedReports,
-    unattendedAwaySeconds: workspace.unattendedAwaySeconds ?? defaults.unattendedAwaySeconds,
   };
 }

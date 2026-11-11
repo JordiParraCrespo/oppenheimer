@@ -98,6 +98,30 @@ function blockedSession(): WorkSessionEntity {
   return session;
 }
 
+/** A running session whose agent asks to delete a folder recursively. */
+function destructiveSession(): WorkSessionEntity {
+  const session = blockedSession();
+  session.recordEvent({
+    seq: 4,
+    kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+    payload: {
+      decision: {
+        kind: 'permission',
+        id: 'perm-2',
+        title: 'Do you want to proceed?',
+        detail: 'Bash command\n  rm -rf ./node_modules ../shared',
+        options: [
+          { label: 'Yes' },
+          { label: "Yes, and don't ask again for rm commands" },
+          { label: 'No, and tell Claude what to do differently (esc)' },
+        ],
+      },
+    },
+    occurredAt: new Date(),
+  });
+  return session;
+}
+
 /** A session a bot started whose host could not start it. */
 function failedBotSession(): WorkSessionEntity {
   const session = WorkSessionEntity.request({
@@ -311,6 +335,62 @@ describe('BotSessionToolsFactory', () => {
     expect(result.content).toContain('acme/xrp-mobile');
     // An error, so an approved call that refuses ends failed rather than approved.
     expect(result.isError).toBe(true);
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  // A bot once told its owner "I can't choose the model when I start a
+  // session": the tool took no model, so every session ran the host's default.
+  it('launches on the model, effort, permission and base branch the person named, the card saying so', async () => {
+    const asked = setup('auto');
+    await asked.call('start_session', {
+      task: 'Fix the test',
+      project_id: PROJECT,
+      model: 'Opus 5.5',
+      effort: 'high',
+      permission: 'full',
+      base_branch: 'develop',
+    });
+    expect(asked.approvals.request.mock.calls[0][0].summary).toBe(
+      'Start Claude Code (Opus 5.5, high effort, full access) on build-02 in acme/xrp-mobile from develop, and hear back when it ends: Fix the test',
+    );
+
+    const { commandBus, call } = setup('full');
+    await call('start_session', {
+      task: 'Fix the test',
+      project_id: PROJECT,
+      model: 'Opus 5.5',
+      effort: 'high',
+      permission: 'ask',
+      base_branch: 'develop',
+    });
+    const command = commandBus.execute.mock.calls[0][0] as CreateSessionCommand;
+    expect(command.input).toMatchObject({
+      launch: { model: 'claude-opus-5-5', effort: 'high', permission: 'ask' },
+      checkouts: [{ githubRepoId: 42, baseBranch: 'develop' }],
+    });
+  });
+
+  // What breaks this: a grant given for sessions at approve for me, or the
+  // Full access preset, starting an agent with every check off unseen.
+  it('asks for a session at full access on a card of its own, offering only this call, under Full access too', async () => {
+    const { commandBus, approvals, call } = setup('full');
+    await call('start_session', { task: 'x', project_id: PROJECT, permission: 'full' });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'start_session', perCallOnly: true }),
+    );
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses a model the agent does not have before any card, naming the ones it has', async () => {
+    const { commandBus, approvals, call } = setup('auto');
+    const result = await call('start_session', {
+      task: 'x',
+      project_id: PROJECT,
+      model: 'gpt-6.1-sol',
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('Opus 5.5 (claude-opus-5-5, default)');
+    expect(approvals.request).not.toHaveBeenCalled();
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
@@ -649,6 +729,55 @@ describe('BotSessionToolsFactory', () => {
       answer: { id: 'perm-1', option: 0 },
     });
   });
+  // Who decides is the bot's preset (Jordi, 2026-11-10): under Approve for
+  // me the person, on a card of its own past every grant; under Full access
+  // the bot. What breaks this: a grant given for answering tests letting a
+  // recursive delete through unseen, or a card stopping a Full access bot.
+  it('under Approve for me, puts letting a destructive dialog through on a card offering only this call', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('auto');
+    const destructive = destructiveSession();
+    queryBus.execute.mockResolvedValue(destructive);
+    await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 0 });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'answer_session', perCallOnly: true }),
+    );
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('under Full access, lets a destructive dialog through on its own', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('full');
+    const destructive = destructiveSession();
+    queryBus.execute.mockResolvedValue(destructive);
+    await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 0 });
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      answer: { id: 'perm-2', option: 0 },
+    });
+  });
+
+  it('turns a destructive dialog down on its own under Full access', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('full');
+    const destructive = destructiveSession();
+    queryBus.execute.mockResolvedValue(destructive);
+    await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 2 });
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      answer: { id: 'perm-2', option: 2 },
+    });
+  });
+
+  // What breaks this: under Approve for me, a lookup that fails here and
+  // succeeds in the command lets a destructive approval through on a grant.
+  it('under Approve for me, puts an answer whose decision it cannot read on a card of its own', async () => {
+    const { queryBus, commandBus, approvals, call, session } = setup('auto');
+    queryBus.execute.mockRejectedValueOnce(new Error('connection reset'));
+    await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 0 });
+    expect(commandBus.execute).not.toHaveBeenCalled();
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'answer_session', perCallOnly: true }),
+    );
+  });
+
   describe('close_session', () => {
     it('asks first, the card naming the session and that its worktree goes, nothing closed', async () => {
       const { queryBus, commandBus, approvals, call } = setup('auto');

@@ -95,6 +95,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return tools(ctx, args)
 	case "exec":
 		return execPolicy(ctx, args)
+	case "desktop":
+		return desktopSharing(ctx, args)
 	case "credential-helper":
 		// git calls this with the operation as its one argument.
 		operation := ""
@@ -343,6 +345,29 @@ func execPolicy(ctx context.Context, args []string) (int, error) {
 		"runner exec allow <program|/abs/path|/abs/glob/*> [more] | runner exec deny <entry> [more]")
 }
 
+// desktopSharing dispatches `runner desktop`: whether the console may watch
+// and drive this host's screen, decided here and never over the link.
+func desktopSharing(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.DesktopShow(os.Stdout) })
+	case args[0] == "on":
+		fs := flag.NewFlagSet("desktop on", flag.ContinueOnError)
+		opts := cli.DesktopOptions{}
+		fs.IntVar(&opts.Port, "port", 0, "the screen-sharing server's loopback port (default 5900)")
+		fs.StringVar(&opts.Username, "username", "", "the macOS account Screen Sharing signs in")
+		fs.StringVar(&opts.PasswordFile, "password-file", "", "a file, readable by this account only, holding the server's password")
+		if err := fs.Parse(args[1:]); err != nil {
+			return cli.ExitUsage, err
+		}
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.DesktopOn(os.Stdout, opts) })
+	case len(args) == 1 && args[0] == "off":
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.DesktopOff(os.Stdout) })
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner desktop [status] | runner desktop on [--port N] [--username U] [--password-file F] | runner desktop off")
+}
+
 // sessions dispatches the session subcommands. They are what a person uses on
 // the host itself; the console drives the same use cases over the link.
 func sessions(ctx context.Context, args []string) (int, error) {
@@ -363,7 +388,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
 		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
 		fs.StringVar(&opts.Name, "name", "", "name for the session")
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp or shell")
 		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
 		if err := fs.Parse(args); err != nil {
 			return cli.ExitUsage, err
@@ -379,7 +404,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		// From inside a session: start a child session with a task.
 		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
 		opts := cli.ChildOptions{}
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp or shell")
 		fs.StringVar(&opts.Name, "name", "", "name for the child")
 		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
 		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
@@ -595,11 +620,14 @@ func usage(w *os.File) {
   runner update [--check|--force|--pin V|--unpin|--rollback]
   runner agents update            bring every installed agent CLI to its latest release
                                   (run does it on its own unless RUNNER_AGENT_UPDATES=off)
-  runner agents install <name>    install an agent CLI (claude, codex, opencode, grok) as you,
+  runner agents install <name>    install an agent CLI (claude, codex, opencode, grok, pi, omp) as you,
                                   from a checksum-verified release or npm; no sudo
   runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
                                   manager's command is printed, the runner never uses sudo)
+  runner desktop [status]         whether the console may watch and drive this screen (off unless you say so)
+  runner desktop on [--port N] [--username U] [--password-file F]
+  runner desktop off              share this host's screen-sharing server (127.0.0.1:5900) with the console, or stop
   runner exec [status]            what bots may run on this host (off unless you say so)
   runner exec mode off|allowlist|full
                                   off runs nothing, allowlist runs the programs listed, full runs anything

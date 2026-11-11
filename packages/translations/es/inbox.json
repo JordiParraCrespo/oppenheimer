@@ -11,7 +11,22 @@
     "back": "Vuelve {{when}}",
     "unread": "{{count}} sin leer",
     "search": "Buscar en la bandeja",
+    "refresh": "Actualizar",
     "clearSearch": "Borrar búsqueda"
+  },
+  "selection": {
+    "label": "Elementos seleccionados",
+    "count_one": "{{count}} seleccionado",
+    "count_many": "{{count}} seleccionados",
+    "count_other": "{{count}} seleccionados",
+    "selectAll": "Seleccionar todo",
+    "selectRow": "Seleccionar {{title}}",
+    "clear": "Quitar selección",
+    "done": "Marcar como hechos",
+    "low": "Bajar prioridad",
+    "restore": "Restaurar prioridad",
+    "snooze": "Posponer",
+    "delete": "Eliminar"
   },
   "filter": {
     "label": "Filtrar la bandeja",
@@ -19,6 +34,7 @@
     "project": "Proyecto",
     "any": "Cualquiera",
     "showDone": "Mostrar hechos",
+    "showPulls": "Mostrar pull requests",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
     "typeChip": "Tipo: {{value}}",
@@ -29,7 +45,8 @@
     "pull": "Pull requests",
     "bots": "Bots",
     "session": "Sesiones",
-    "run": "Automatizaciones"
+    "run": "Automatizaciones",
+    "report": "Informes"
   },
   "project": {
     "all": "Todos los proyectos",
@@ -42,13 +59,15 @@
     "restore": "Restaurar prioridad",
     "snoozeHour": "Posponer 1 hora",
     "snoozeTomorrow": "Posponer hasta mañana",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "select": "Seleccionar"
   },
   "from": {
     "session": "Sesión",
     "approval": "Aprobación de bot",
     "run": "Automatización",
-    "botNotice": "Bot"
+    "botNotice": "Bot",
+    "report": "Informe"
   },
   "session": {
     "blockedShort": "{{name}} te está esperando",
@@ -133,5 +152,17 @@
     "title": "{{bot}} tiene novedades para ti",
     "openChat": "Abrir chat",
     "done": "Hecho"
+  },
+  "report": {
+    "sender": "Un agente",
+    "images": "Imágenes",
+    "image": "Imagen {{n}}",
+    "openLink": "Abrir enlace",
+    "answerLabel": "Tu respuesta",
+    "answerPlaceholder": "¿Qué debería hacer?",
+    "send": "Enviar respuesta",
+    "sending": "Enviando…",
+    "done": "Hecho",
+    "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
   }
 }
