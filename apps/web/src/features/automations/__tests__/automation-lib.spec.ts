@@ -221,11 +221,18 @@ describe('the draft', () => {
 
   it('keeps each card inside the automation’s repositories', () => {
     const card = githubCard('push', [101, 202]);
-    expect(fitCards([card], [202])[0]).toMatchObject({ repositories: [202] });
-    expect(fitCards([githubCard('push', [101])], [303])[0]).toMatchObject({ repositories: [303] });
-    // A card added before any repository was picked listens on all of them once some are.
-    expect(fitCards([githubCard('push', [])], [101, 202])[0]).toMatchObject({
+    expect(fitCards([card], [202], [101, 202])[0]).toMatchObject({ repositories: [202] });
+    expect(fitCards([githubCard('push', [101])], [303], [101])[0]).toMatchObject({
+      repositories: [303],
+    });
+    // A card added before any repository was picked follows the picks one at a time.
+    const [first] = fitCards([githubCard('push', [])], [101], []);
+    expect(fitCards(first ? [first] : [], [101, 202], [101])[0]).toMatchObject({
       repositories: [101, 202],
+    });
+    // A card narrowed to one of them stays narrowed when another is picked.
+    expect(fitCards([githubCard('push', [101])], [101, 202, 303], [101, 202])[0]).toMatchObject({
+      repositories: [101],
     });
   });
 

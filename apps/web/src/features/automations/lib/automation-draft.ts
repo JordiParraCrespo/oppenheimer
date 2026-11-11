@@ -177,14 +177,22 @@ export function githubCard(event: GithubEventType, repositories: number[]): Gith
 
 /**
  * Keeps each GitHub card inside the automation's repositories after the set
- * changes: a card loses a repository that left, and a card left with none
- * listens on all of them rather than on nothing.
+ * changes: a card loses a repository that left, a card that listened on all
+ * of the `previous` ones (or on none yet) follows the set as it grows, and a
+ * card left with none listens on all of them rather than on nothing.
  */
-export function fitCards(triggers: TriggerCard[], repositories: number[]): TriggerCard[] {
+export function fitCards(
+  triggers: TriggerCard[],
+  repositories: number[],
+  previous: number[],
+): TriggerCard[] {
   return triggers.map((card) => {
     if (card.source !== 'github') return card;
+    const onAll =
+      card.repositories.length === previous.length &&
+      previous.every((id) => card.repositories.includes(id));
     const kept = card.repositories.filter((id) => repositories.includes(id));
-    return { ...card, repositories: kept.length ? kept : repositories };
+    return { ...card, repositories: onAll || !kept.length ? repositories : kept };
   });
 }
 
