@@ -18,7 +18,6 @@ import { botsKeys } from '../bots.keys';
 import {
   useDeleteBotFact,
   useSuspenseBot,
-  useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
 } from '../bots.queries';
@@ -167,52 +166,5 @@ describe('a fact about the person', () => {
       own.result.current.update.mutateAsync({ id: 'bot-1', factId: 'f-1', content: 'Rebase.' }),
     );
     expect(own.stale('bot-2')).toBe(false);
-  });
-});
-
-/**
- * Turning a bot's spend guard off resumes the routines it paused
- * (`26-bot-routines.md` §6). The regression: the Routines tab under the
- * switch went on drawing them paused until something else read the list.
- */
-describe('useUpdateBot and the spend guard', () => {
-  function setupGuard() {
-    const update = vi.fn(async () => bot());
-    const app = fakeKernel({ [TOKENS.BotsRepository]: { update } });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
-    });
-    queryClient.setQueryData(botsKeys.routineList('bot-1'), []);
-    queryClient.setQueryData(botsKeys.allRoutines(), []);
-    function wrapper({ children }: { children: ReactNode }) {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <OppenheimerProvider app={app}>{children}</OppenheimerProvider>
-        </QueryClientProvider>
-      );
-    }
-    const { result } = renderHook(() => useUpdateBot(), { wrapper });
-    const stale = () =>
-      [botsKeys.routineList('bot-1'), botsKeys.allRoutines()].map(
-        (key) => queryClient.getQueryState(key)?.isInvalidated ?? false,
-      );
-    return { result, stale };
-  }
-
-  it('reads the routines again when the guard is turned off', async () => {
-    const { result, stale } = setupGuard();
-    await act(() =>
-      result.current.mutateAsync({ id: 'bot-1', input: { routineSpendGuard: false } }),
-    );
-    expect(stale()).toEqual([true, true]);
-  });
-
-  it('leaves them alone for any other edit, the guard turned on included', async () => {
-    const { result, stale } = setupGuard();
-    await act(() => result.current.mutateAsync({ id: 'bot-1', input: { name: 'Bea' } }));
-    await act(() =>
-      result.current.mutateAsync({ id: 'bot-1', input: { routineSpendGuard: true } }),
-    );
-    expect(stale()).toEqual([false, false]);
   });
 });

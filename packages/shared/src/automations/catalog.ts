@@ -406,8 +406,9 @@ export const AUTOMATION_SKIP_REASONS = [
   /** The host cannot run the agent (never probed, or no headless mode). */
   'agent_unavailable',
   /**
-   * A bot's routine, while its owner is away: it has said what nobody read, or
-   * nobody opened its chat for days (`26-bot-routines.md` §6, the spend guard).
+   * A bot's routine while its owner was away, from the spend guard
+   * (`26-bot-routines.md` §6), removed on 2026-11-10. Nothing records it now;
+   * it stays for the runs that did.
    */
   'unattended',
 ] as const;
@@ -416,7 +417,7 @@ export type AutomationSkipReason = (typeof AUTOMATION_SKIP_REASONS)[number];
 export const AUTOMATION_RUN_CAUSES = ['schedule', 'event', 'manual'] as const;
 export type AutomationRunCause = (typeof AUTOMATION_RUN_CAUSES)[number];
 
-/** Why an automation is paused. `user` and `unattended` are the ones a person resumes without fixing anything. */
+/** Why an automation is paused. `user` is the one a person resumes without fixing anything. */
 export const AUTOMATION_PAUSED_REASONS = [
   'user',
   'project_archived',
@@ -424,8 +425,6 @@ export const AUTOMATION_PAUSED_REASONS = [
   'owner_lost_access',
   'bot_provider_missing',
   'cloud_key_missing',
-  /** A bot's routines, while its owner is away; they resume when the owner is back in its chat. */
-  'unattended',
 ] as const;
 export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
 

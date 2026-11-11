@@ -266,12 +266,4 @@ export class AutomationSettingsResponseDto {
   @ApiProperty() staleTtlSeconds!: number;
   @ApiProperty() missedGraceSeconds!: number;
   @ApiProperty() maxRunSeconds!: number;
-  @ApiProperty({
-    description: 'Routine reports a bot’s owner has not seen before its routines pause.',
-  })
-  unattendedReports!: number;
-  @ApiProperty({
-    description: 'How long a bot’s owner may be away from its chat before its routines pause.',
-  })
-  unattendedAwaySeconds!: number;
 }

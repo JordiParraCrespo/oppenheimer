@@ -226,7 +226,6 @@
   "POST /v1/bots/:id/questions/:questionId/answer": ["bots:write"],
   "POST /v1/bots/:id/questions/:questionId/dismiss": ["bots:write"],
   "POST /v1/bots/:id/routines/:routineId/run": ["automations:write"],
-  "POST /v1/bots/:id/seen": ["bots:write"],
   "POST /v1/bots/:id/turns/:turnId/cancel": ["bots:write"],
   "POST /v1/calendar/events": ["calendar:write"],
   "POST /v1/calendar/google/connection": ["calendar:write"],
