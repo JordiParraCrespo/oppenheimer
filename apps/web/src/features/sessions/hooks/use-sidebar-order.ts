@@ -13,6 +13,7 @@ import {
   mergeOrder,
   orderProjects,
   orderSessions,
+  placeDrop,
   rememberSidebarOrder,
   type SidebarOrder,
   storedSidebarOrder,
@@ -135,35 +136,6 @@ export function useSidebarOrder({
     if (project) value[project.id] = members.map((session) => session.id);
   }
 
-  // A drop's order with every row it did not see (filtered out, pinned, or in a
-  // project not drawn) kept in its place among its own project's rows, in the
-  // whole list's order as the reader last saw it.
-  const placeUnseen = (
-    next: SortableGroups,
-    projectIds: readonly string[],
-    stored: readonly string[],
-  ) => {
-    const projectOf = new Map(every.map((session) => [session.id, session.projectId]));
-    const cameFrom = new Map(projectOf);
-    for (const projectId of projectIds) {
-      for (const id of next[projectId] ?? []) projectOf.set(id, projectId);
-    }
-    const whole = (custom ? orderSessions(every, stored) : every).map((session) => session.id);
-    const projectOrder = [
-      ...new Set([...projectIds, ...whole.flatMap((id) => projectOf.get(id) ?? [])]),
-    ];
-    const placed = projectOrder.flatMap((projectId) =>
-      mergeOrder(
-        next[projectId] ?? [],
-        // A row dropped in from another project anchors nothing at its old place.
-        whole.filter(
-          (id) => projectOf.get(id) === projectId && (cameFrom.get(id) ?? projectId) === projectId,
-        ),
-      ),
-    );
-    return mergeOrder(placed, stored);
-  };
-
   const handlers = useSortableGroups(
     value,
     (next, { settled }) => setLive(settled ? null : next),
@@ -184,10 +156,17 @@ export function useSidebarOrder({
         return;
       }
       const order = projectIds.flatMap((projectId) => next[projectId] ?? []);
-      const placed = (stored: readonly string[]) => placeUnseen(next, projectIds, stored);
       if (!custom) onReorder();
       if (from === PINNED_GROUP) pins.setPinned(id, false);
       const fromProject = from === PINNED_GROUP ? everyone.get(id)?.projectId : from;
+      const placed = (stored: readonly string[]) =>
+        placeDrop({
+          dropped: next,
+          projectIds,
+          whole: custom ? orderSessions(every, stored) : every,
+          stored,
+          moved: fromProject === to ? undefined : id,
+        });
       if (fromProject === to) {
         setStored((current) => ({
           ...current,
