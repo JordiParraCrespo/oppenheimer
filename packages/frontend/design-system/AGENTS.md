@@ -280,8 +280,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   header: a `Trace` line per tool call at 13px in subtle ink, under the reply, each
   opening to its `TraceOutput` (numbered mono lines on the card) or a
   `TraceNote`, failures in red, then the reply, its fenced code a
-  `ChatCodeBlock` (a `ChatJsonBlock`, opening as a `JsonTree`, when it
-  holds JSON), then a `MessageTrail` (copy, retry, model and tokens).
+  `ChatCodeBlock` (a `ChatJsonBlock`, opening on Raw with a `JsonTree`
+  behind Tree, when it holds JSON), then a `MessageTrail` (copy, retry, model and tokens).
   While it runs a `TraceLive` line says what it is doing, with its clock.
   Between turns a `ChatMarker` notes a model switch and a
   `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;

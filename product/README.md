@@ -1540,3 +1540,7 @@ earlier note:
   when it needs the owner (a run that did not happen, a pause they did not
   make), a run's turn reads as the bot writing to you, and the prompt has
   the bot write as someone on the team in every turn.
+- `next-steps/0.7-terminal-and-chat.md` ("Data reads as data") opened a
+  reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
+  owner asked for the text first: the block opens on Raw, Raw / Tree on its
+  band, the tree one click away. A tool result's JSON still reads as a tree.
