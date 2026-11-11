@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,7 +112,7 @@ echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to lis
 	}
 	for _, want := range []string{
 		"acme-labs/oppenheimer or oppenheimer",
-		"recent tasks: kallista, woocommerce-elementor-ai-template (",
+		"recent tasks: kallista, woocommerce-elementor-ai-template (a partial list)",
 		"only in Codex Cloud (Legacy) environments",
 		"starts only from ChatGPT",
 	} {
@@ -153,6 +154,32 @@ func TestCodexStartReadsAnAccountWithNoLegacyEnvironmentAsTheSameRefusal(t *test
 	}
 	if !strings.Contains(pe.Detail, "recent tasks: none") || !strings.Contains(pe.Detail, "start this task in ChatGPT") {
 		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// A session's log keeps a failure's first 500 characters. An account whose
+// environments have long names must not push the way out past that cut: the
+// refusal names as many as fit and counts the rest.
+func TestCodexStartKeepsTheWayOutInsideTheLogsCutWhateverTheNames(t *testing.T) {
+	var tasks []string
+	for i := range 8 {
+		tasks = append(tasks, fmt.Sprintf(
+			`{"id": "task_e_%d", "status": "ready", "environment_label": "a-rather-long-environment-name-for-client-number-%d"}`, i, i))
+	}
+	bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
+	withTasks(t, bin, `{"tasks": [`+strings.Join(tasks, ",")+`]}`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	if len(err.Error()) > 500 {
+		t.Fatalf("the refusal is %d characters, past the log's 500: %s", len(err.Error()), err)
+	}
+	for _, want := range []string{"client-number-0, and 7 more", "start this task in ChatGPT."} {
+		if !strings.Contains(pe.Detail, want) {
+			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
+		}
 	}
 }
 

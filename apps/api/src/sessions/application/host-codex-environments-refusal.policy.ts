@@ -1,14 +1,29 @@
 import { AppError } from '@oppenheimer/backend-core';
+import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 import { SessionErrors } from '../domain/sessions.errors';
 import type {
   HostCodexEnvironments,
   HostCodexEnvironmentsOutcome,
 } from './host-codex-environments.port';
 
-/** The runner's refusal when ChatGPT asked it to wait (`SESS_011`). */
-const RUNNER_RATE_LIMITED = 'SESS_011';
-/** The runner's refusal when the host's `codex` has no ChatGPT sign-in (`SESS_022`). */
-const RUNNER_SIGNED_OUT = 'SESS_022';
+/**
+ * The runner's refusals that have an answer of their own, and the words for
+ * one that came with none: ChatGPT asking it to wait (`SESS_011`), and a
+ * `codex` with no ChatGPT sign-in (`SESS_022`). A code not here is Codex's
+ * own refusal, `CODEX_ENVIRONMENTS_UNAVAILABLE`.
+ */
+const RUNNER_REFUSALS: Readonly<
+  Record<string, { error: ErrorDefinition; detail: (hostId: string) => string }>
+> = {
+  SESS_011: {
+    error: SessionErrors.CODEX_ENVIRONMENTS_RATE_LIMITED,
+    detail: (hostId) => `ChatGPT asked host ${hostId} to wait`,
+  },
+  SESS_022: {
+    error: SessionErrors.CODEX_ENVIRONMENTS_SIGNED_OUT,
+    detail: (hostId) => `Codex on host ${hostId} is not signed in to ChatGPT`,
+  },
+};
 
 /**
  * The environments a host answered with, or the problem for why there are
@@ -37,22 +52,15 @@ export function codexEnvironmentsOrThrow(
       throw new AppError(SessionErrors.FOLDERS_TIMED_OUT, {
         detail: `Host ${hostId} did not list its Codex environments in time`,
       });
-    case 'failed':
-      if (outcome.code === RUNNER_RATE_LIMITED) {
-        throw new AppError(SessionErrors.CODEX_ENVIRONMENTS_RATE_LIMITED, {
-          detail: outcome.detail ?? `ChatGPT asked host ${hostId} to wait`,
-          extensions: { upstreamCode: outcome.code },
-        });
-      }
-      if (outcome.code === RUNNER_SIGNED_OUT) {
-        throw new AppError(SessionErrors.CODEX_ENVIRONMENTS_SIGNED_OUT, {
-          detail: outcome.detail ?? `Codex on host ${hostId} is not signed in to ChatGPT`,
-          extensions: { upstreamCode: outcome.code },
-        });
-      }
-      throw new AppError(SessionErrors.CODEX_ENVIRONMENTS_UNAVAILABLE, {
-        detail: outcome.detail ?? `Host ${hostId} could not list its Codex environments`,
+    case 'failed': {
+      const known = RUNNER_REFUSALS[outcome.code];
+      throw new AppError(known?.error ?? SessionErrors.CODEX_ENVIRONMENTS_UNAVAILABLE, {
+        detail:
+          outcome.detail ??
+          known?.detail(hostId) ??
+          `Host ${hostId} could not list its Codex environments`,
         extensions: { upstreamCode: outcome.code },
       });
+    }
   }
 }

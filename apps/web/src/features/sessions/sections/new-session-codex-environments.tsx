@@ -5,7 +5,7 @@ import {
   useInstallationRepositoriesFor,
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useController, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
@@ -41,7 +41,6 @@ export function NewSessionCodexEnvironments({
   const { control } = useNewSessionDraft();
   const scope = useWatch({ control, name: 'scope' });
   const { field } = useController({ control, name: 'codexEnvironment' });
-  const resolveError = useErrorMessage();
 
   const ref = scope.length === 1 && scope[0] ? parseRepositoryKey(scope[0].id) : null;
   const installations = useInstallations();
@@ -137,9 +136,10 @@ export function NewSessionCodexEnvironments({
           {listing.isError ? (
             // In full, on lines of its own: the refusal ends with what to do
             // about it, which a row's one truncated line would cut off.
-            <p role="alert" className="text-danger">
-              {resolveError(listing.error, t('sessions.new.codexEnvironment.failed')).message}
-            </p>
+            <ErrorAlert
+              error={listing.error}
+              fallback={t('sessions.new.codexEnvironment.failed')}
+            />
           ) : (
             <p>{t('sessions.new.codexEnvironment.legacyOnly')}</p>
           )}

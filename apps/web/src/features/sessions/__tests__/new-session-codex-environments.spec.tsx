@@ -25,10 +25,11 @@ vi.mock('../hooks/use-new-session-form', () => ({
   useNewSessionDraft: () => ({ control: {} }),
 }));
 
-vi.mock('@oppenheimer/frontend-core/react', () => ({
-  useErrorMessage: () => (error: unknown, fallback: string) => ({
-    message: error instanceof Error ? error.message : fallback,
-  }),
+// The kit's alert resolves the failure's sentence; here it says the error's own.
+vi.mock('@oppenheimer/frontend-web', () => ({
+  ErrorAlert: ({ error, fallback }: { error: unknown; fallback: string }) => (
+    <div role="alert">{error instanceof Error ? error.message : fallback}</div>
+  ),
 }));
 
 let listing: {
@@ -87,7 +88,6 @@ describe('NewSessionCodexEnvironments', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe(refusal);
-    expect(alert.className).not.toContain('truncate');
     expect(screen.getByRole('option').textContent).not.toContain(refusal);
     expect(screen.queryByText(LEGACY_ONLY)).toBeNull();
   });

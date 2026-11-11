@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -36,7 +37,7 @@ func (r CodexEnvironmentRefusal) Problem() *problem.Error {
 	if r.Listed {
 		visible = "none"
 		if len(r.Visible) > 0 {
-			visible = strings.Join(r.Visible, ", ")
+			visible = withinBudget(r.Visible)
 		}
 	}
 	if r.Complete {
@@ -45,6 +46,24 @@ func (r CodexEnvironmentRefusal) Problem() *problem.Error {
 			strings.Join(r.Tried, " or "), visible, codexLegacyOnly)
 	}
 	return ErrCodexCloudEnvironment.WithDetail(
-		"codex cloud exec found no environment named %s. Environments in this account's recent tasks: %s (partial: `codex cloud` on the host lists them all). %s",
+		"codex cloud exec found no environment named %s. Environments in this account's recent tasks: %s (a partial list). %s",
 		strings.Join(r.Tried, " or "), visible, codexLegacyOnly)
+}
+
+// codexVisibleBudget is how many characters of environment names a refusal
+// carries: what is left of the log's 500 once the sentence around them and
+// the way out are said.
+const codexVisibleBudget = 70
+
+// withinBudget joins names until the next would pass codexVisibleBudget, and
+// says more follow; the first is kept whole whatever its length.
+func withinBudget(names []string) string {
+	out := names[0]
+	for i, name := range names[1:] {
+		if len(out)+len(", ")+len(name) > codexVisibleBudget {
+			return out + ", and " + strconv.Itoa(len(names)-1-i) + " more"
+		}
+		out += ", " + name
+	}
+	return out
 }
