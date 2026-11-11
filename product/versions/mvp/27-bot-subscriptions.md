@@ -245,6 +245,17 @@ done: they look over the work every so often. So does a bot now:
   something will wake it for it: the sessions it started, prompted or
   unblocked are followed already, any other it `watch_session`s before its
   turn ends. Nothing else brings a bot back but the hourly heartbeat.
+- **The read wakes decide from** (2026-11-11). A session read by id or in
+  a list carried no latest turn (it was loaded only when a fold took the row
+  lock), so every wake and every look read "no task": no session a bot
+  followed ever woke it on its end, and the looks skipped. Found running
+  bots against the local stack; a read now loads each session's latest
+  turn in one query (`findLatestForSessions`).
+- **A cloud session is heard when it is read.** Its vendor is asked where
+  the run stands only when something reads the session (the console, a
+  bot's look), so a followed Cursor run that ends is told at the next look,
+  up to ten minutes later, not at once. A sync of the cloud sessions bots
+  follow, on their own clock, is not built.
 - **Cost.** Up to six short turns per task followed, most ending quiet,
   and one per look the bot asks for.
 
