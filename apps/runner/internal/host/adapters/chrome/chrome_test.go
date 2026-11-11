@@ -284,3 +284,51 @@ func TestOnlyABrowserOnTheProfileIsALeftover(t *testing.T) {
 		t.Fatal("a process that is no browser of this profile was taken for one")
 	}
 }
+
+// A sign-in outlives the browser: close was a kill, and a cookie set moments
+// before it was never written to the profile. CloseAll ends what is open.
+func TestACookieSurvivesACloseRightAfterItWasSet(t *testing.T) {
+	browsers := New(Options{Dir: t.TempDir()})
+	if _, err := browsers.Available(); err != nil {
+		t.Skipf("no browser: %v", err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/in", func(w http.ResponseWriter, _ *http.Request) {
+		http.SetCookie(w, &http.Cookie{Name: "who", Value: "juno", Path: "/", MaxAge: 3600})
+		_, _ = w.Write([]byte("<title>In</title>"))
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		who := "nobody"
+		if cookie, err := r.Cookie("who"); err == nil {
+			who = cookie.Value
+		}
+		_, _ = w.Write([]byte("<title>Hello " + who + "</title>"))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	t.Cleanup(browsers.CloseAll)
+
+	open := request(domain.BrowserOpen)
+	open.URL = server.URL + "/in"
+	if _, err := browsers.Act(ctx, open); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := browsers.Act(ctx, request(domain.BrowserClose)); err != nil {
+		t.Fatal(err)
+	}
+	open.URL = server.URL
+	page, err := browsers.Act(ctx, open)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Title != "Hello juno" {
+		t.Fatalf("after closing and opening again the site says %q, want the sign-in kept", page.Title)
+	}
+
+	browsers.CloseAll()
+	if _, err := browsers.Act(ctx, request(domain.BrowserRead)); !errors.Is(err, domain.ErrBrowserNotOpen) {
+		t.Fatalf("read after CloseAll = %v, want ErrBrowserNotOpen", err)
+	}
+}

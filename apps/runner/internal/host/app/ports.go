@@ -108,6 +108,8 @@ type Browsers interface {
 	Act(ctx context.Context, req domain.BrowserRequest) (domain.BrowserPage, error)
 	// Available says which browser would be started, or why none can be.
 	Available() (string, error)
+	// CloseAll ends every browser that is open.
+	CloseAll()
 }
 
 // Desktop is the host's screen, mouse and keyboard. A host with none it can

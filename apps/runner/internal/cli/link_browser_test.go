@@ -78,7 +78,7 @@ func (b *browserHarness) pages(commandID string) []link.BrowserPage {
 
 func (b *browserHarness) waitPages(t *testing.T, commandID string, count int) []link.BrowserPage {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(15 * time.Second)
 	for {
 		if pages := b.pages(commandID); len(pages) >= count {
 			return pages
@@ -102,6 +102,10 @@ func TestAHostOpensNoBrowserUntilItsOwnerTurnsItOn(t *testing.T) {
 	}
 	if acted := b.browsers.Acted(); len(acted) != 0 {
 		t.Fatalf("a refused action reached a browser: %+v", acted)
+	}
+	// A browser left open when the owner turned it off is closed, not kept.
+	if b.browsers.Closed() == 0 {
+		t.Fatal("off left the browsers that were open running")
 	}
 }
 

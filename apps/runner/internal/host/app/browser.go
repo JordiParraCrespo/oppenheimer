@@ -53,6 +53,10 @@ func (s *Service) Browser(ctx context.Context, req domain.BrowserRequest) (domai
 		return domain.BrowserPage{}, err
 	}
 	if !policy.Enabled {
+		// Off also closes what was open when it was turned off.
+		if s.browsers != nil {
+			s.browsers.CloseAll()
+		}
 		return domain.BrowserPage{}, domain.ErrBrowserOff.WithDetail(
 			"the person on this host can turn it on with `runner browser on`")
 	}

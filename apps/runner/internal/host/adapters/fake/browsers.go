@@ -16,8 +16,23 @@ type Browsers struct {
 	Page domain.BrowserPage
 	Err  error
 
-	mu    sync.Mutex
-	acted []domain.BrowserRequest
+	mu     sync.Mutex
+	acted  []domain.BrowserRequest
+	closed int
+}
+
+// CloseAll counts the call.
+func (b *Browsers) CloseAll() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.closed++
+}
+
+// Closed is how many times CloseAll was called.
+func (b *Browsers) Closed() int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.closed
 }
 
 // Act records the request.

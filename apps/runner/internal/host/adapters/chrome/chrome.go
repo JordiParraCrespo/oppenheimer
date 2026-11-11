@@ -37,6 +37,8 @@ const (
 	startTimeout = 20 * time.Second
 	loadTimeout  = 15 * time.Second
 	callTimeout  = 20 * time.Second
+	// closeTimeout is how long a browser asked to close is waited for.
+	closeTimeout = 5 * time.Second
 	// settle is how long the page is left after an action before it is read:
 	// a click answered with the page as it was says nothing happened.
 	settle = 400 * time.Millisecond
@@ -155,6 +157,20 @@ func (b *Browsers) Act(ctx context.Context, req domain.BrowserRequest) (domain.B
 		b.forget(req.Browser, inst)
 	}
 	return page, err
+}
+
+// CloseAll ends every bot's browser, for a host whose owner turned browser
+// use off while some were open.
+func (b *Browsers) CloseAll() {
+	b.mu.Lock()
+	open := b.instances
+	b.instances = map[string]*instance{}
+	b.mu.Unlock()
+	for _, inst := range open {
+		inst.mu.Lock()
+		inst.stop()
+		inst.mu.Unlock()
+	}
 }
 
 func (b *Browsers) forget(id string, inst *instance) {
@@ -343,14 +359,34 @@ func (i *instance) onEvent(session, method string, _ json.RawMessage) {
 	}()
 }
 
+// stop asks the browser to close, which is when it writes its cookies to the
+// profile, and ends it when it has not gone within closeTimeout.
 func (i *instance) stop() {
+	exited := make(chan struct{})
+	if i.cmd != nil && i.cmd.Process != nil {
+		cmd := i.cmd
+		go func() {
+			_ = cmd.Wait()
+			close(exited)
+		}()
+	} else {
+		close(exited)
+	}
 	if i.conn != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), closeTimeout)
+		if i.conn.call(ctx, "", "Browser.close", nil, nil) == nil {
+			select {
+			case <-exited:
+			case <-ctx.Done():
+			}
+		}
+		cancel()
 		i.conn.close()
 		i.conn = nil
 	}
 	if i.cmd != nil && i.cmd.Process != nil {
 		_ = syscall.Kill(-i.cmd.Process.Pid, syscall.SIGKILL)
-		_ = i.cmd.Wait()
+		<-exited
 		i.cmd = nil
 	}
 	_ = os.Remove(filepath.Join(i.dir, "runner.pid"))

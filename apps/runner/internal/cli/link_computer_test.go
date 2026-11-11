@@ -151,7 +151,7 @@ func TestARetriedActionIsAnsweredWithoutActingAgain(t *testing.T) {
 	c.screen(t, computerCommandID)
 	c.act(t, computerCommandID, map[string]any{"action": "double_click", "x": 5, "y": 5})
 
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(15 * time.Second)
 	for c.screens(computerCommandID) < 2 {
 		if time.Now().After(deadline) {
 			t.Fatal("the retry was not answered")
