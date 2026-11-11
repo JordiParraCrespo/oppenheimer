@@ -29,6 +29,7 @@ import { useInboxRead } from '@/features/inbox/hooks/use-inbox-read';
 import { useInboxSelection } from '@/features/inbox/hooks/use-inbox-selection';
 import { inboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { facetCounts } from '@/features/inbox/lib/inbox-filter';
+import type { InboxMarkActionName } from '@/features/inbox/lib/inbox-mark-actions';
 import { ALL_PROJECTS, NO_PROJECT } from '@/features/inbox/lib/inbox-search';
 import { InboxRow } from '@/features/inbox/sections/inbox-row';
 
@@ -52,8 +53,8 @@ export function InboxList() {
   const [pullsShown, setPullsShown] = useInboxPullsShown();
   const selection = useInboxSelection(open.map((item) => item.key));
   const picked = open.filter((item) => selection.has(item.key));
-  const onPicked = (act: (items: typeof picked) => void) => () => {
-    act(picked);
+  const onPicked = (action: InboxMarkActionName) => {
+    marks.apply(action, picked);
     selection.clear();
   };
   // On a phone nothing is in the reading pane until an item is opened.
@@ -120,11 +121,7 @@ export function InboxList() {
           all={selection.all}
           low={picked.every((item) => item.low)}
           onToggleAll={selection.toggleAll}
-          onDone={onPicked(marks.allDone)}
-          onToggleLow={onPicked(marks.allToggleLow)}
-          onSnoozeHour={onPicked(marks.allSnoozeHour)}
-          onSnoozeTomorrow={onPicked(marks.allSnoozeTomorrow)}
-          onRemove={onPicked(marks.allRemove)}
+          onAction={onPicked}
           onClear={selection.clear}
         />
       ) : (
@@ -227,7 +224,11 @@ export function InboxList() {
                   title={inboxCopy(item, t).short}
                   until={t('inbox.list.back', { when: until.format(back) })}
                   action={
-                    <Button size="xs" variant="secondary" onClick={() => marks.bringBack(item)}>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      onClick={() => marks.apply('bringBack', item)}
+                    >
                       {t('inbox.list.bringBack')}
                     </Button>
                   }

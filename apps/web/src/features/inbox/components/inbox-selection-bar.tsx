@@ -16,6 +16,7 @@ import {
   X,
 } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
+import type { InboxMarkActionName } from '@/features/inbox/lib/inbox-mark-actions';
 
 /**
  * The list column's head while rows are selected: select all (mixed while
@@ -28,11 +29,7 @@ export function InboxSelectionBar({
   all,
   low,
   onToggleAll,
-  onDone,
-  onToggleLow,
-  onSnoozeHour,
-  onSnoozeTomorrow,
-  onRemove,
+  onAction,
   onClear,
 }: {
   count: number;
@@ -40,11 +37,8 @@ export function InboxSelectionBar({
   /** Every selected row is already low: the toggle restores them. */
   low: boolean;
   onToggleAll: () => void;
-  onDone: () => void;
-  onToggleLow: () => void;
-  onSnoozeHour: () => void;
-  onSnoozeTomorrow: () => void;
-  onRemove: () => void;
+  /** One of the Inbox's actions, on every selected row. */
+  onAction: (action: InboxMarkActionName) => void;
   onClear: () => void;
 }) {
   const { t } = useTranslation();
@@ -69,7 +63,7 @@ export function InboxSelectionBar({
         variant="quiet"
         aria-label={t('inbox.selection.done')}
         title={t('inbox.selection.done')}
-        onClick={onDone}
+        onClick={() => onAction('done')}
       >
         <Check />
       </IconButton>
@@ -78,7 +72,7 @@ export function InboxSelectionBar({
         variant="quiet"
         aria-label={lowLabel}
         title={lowLabel}
-        onClick={onToggleLow}
+        onClick={() => onAction('toggleLow')}
       >
         {low ? <TrendingUp /> : <TrendingDown />}
       </IconButton>
@@ -96,11 +90,11 @@ export function InboxSelectionBar({
           <Clock />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-50">
-          <DropdownMenuItem onClick={onSnoozeHour}>
+          <DropdownMenuItem onClick={() => onAction('snoozeHour')}>
             <Clock />
             {t('inbox.menu.snoozeHour')}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onSnoozeTomorrow}>
+          <DropdownMenuItem onClick={() => onAction('snoozeTomorrow')}>
             <Clock />
             {t('inbox.menu.snoozeTomorrow')}
           </DropdownMenuItem>
@@ -111,7 +105,7 @@ export function InboxSelectionBar({
         variant="quiet"
         aria-label={t('inbox.selection.delete')}
         title={t('inbox.selection.delete')}
-        onClick={onRemove}
+        onClick={() => onAction('remove')}
       >
         <Trash2 />
       </IconButton>

@@ -38,23 +38,16 @@ export class PutInboxMarksCommandHandler implements ICommandHandler<PutInboxMark
       }
     }
 
-    const keys = [...new Set(itemKeys)];
-    if (mark !== null) {
-      await this.marks.upsertAll(
-        keys.map((itemKey) =>
-          InboxMarkEntity.place({ organizationId, userId, itemKey, mark, until }, now),
-        ),
-      );
+    // In one order, so two overlapping batches lock their rows alike.
+    const keys = [...new Set(itemKeys)].sort();
+    if (mark === null) {
+      await this.marks.clear(organizationId, userId, keys);
       return;
     }
-    const found: InboxMarkEntity[] = [];
-    for (const itemKey of keys) {
-      const existing = await this.marks.findOne(organizationId, userId, itemKey);
-      if (existing.isNone()) continue;
-      const removed = existing.unwrap();
-      removed.remove();
-      found.push(removed);
-    }
-    await this.marks.deleteAll(found);
+    await this.marks.upsertAll(
+      keys.map((itemKey) =>
+        InboxMarkEntity.place({ organizationId, userId, itemKey, mark, until }, now),
+      ),
+    );
   }
 }

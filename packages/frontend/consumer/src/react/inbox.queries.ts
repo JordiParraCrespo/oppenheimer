@@ -362,6 +362,21 @@ async function writeMarks(
   return { previous };
 }
 
+/**
+ * The marks list with `keys` taking `next`: every row on those keys goes, and
+ * `next` comes in their place (none, to clear them). Rows on other keys, a
+ * write still in flight among them, are left as they are. Both the click and
+ * the server's answer go through it, for one occurrence or a selection.
+ */
+function replaceMarks(
+  marks: readonly InboxMarkEntity[] | undefined,
+  keys: Iterable<string>,
+  next: readonly InboxMarkEntity[],
+): InboxMarkEntity[] {
+  const replaced = new Set(keys);
+  return [...(marks ?? []).filter((mark) => !replaced.has(mark.itemKey)), ...next];
+}
+
 function restoreMarks(queryClient: ReturnType<typeof useQueryClient>, context?: MarksContext) {
   if (context?.previous) queryClient.setQueryData(inboxKeys.marks(), context.previous);
   void queryClient.invalidateQueries({ queryKey: inboxKeys.marks() });
@@ -379,18 +394,20 @@ export function usePutInboxMark(
   const queryClient = useQueryClient();
   return useMutation({
     ...withCacheOnSuccess(options, (saved) => {
-      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) => [
-        ...(marks ?? []).filter((mark) => mark.itemKey !== saved.itemKey),
-        saved,
-      ]);
+      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) =>
+        replaceMarks(marks, [saved.itemKey], [saved]),
+      );
     }),
     mutationFn: ({ itemKey, mark, until }: PutInboxMarkVariables) =>
       app.inbox.putMark(itemKey, mark, until),
     onMutate: ({ itemKey, mark, until }) =>
-      writeMarks(queryClient, (marks) => [
-        ...marks.filter((row) => row.itemKey !== itemKey),
-        new InboxMarkEntity(itemKey, mark, until ?? null, new Date()),
-      ]),
+      writeMarks(queryClient, (marks) =>
+        replaceMarks(
+          marks,
+          [itemKey],
+          [new InboxMarkEntity(itemKey, mark, until ?? null, new Date())],
+        ),
+      ),
     onError: (error, variables, context, mutation) => {
       restoreMarks(queryClient, context);
       return options?.onError?.(error, variables, context, mutation);
@@ -409,8 +426,7 @@ export function useDeleteInboxMark(
       queryClient.invalidateQueries({ queryKey: inboxKeys.marks() }),
     ),
     mutationFn: (itemKey: string) => app.inbox.deleteMark(itemKey),
-    onMutate: (itemKey) =>
-      writeMarks(queryClient, (marks) => marks.filter((row) => row.itemKey !== itemKey)),
+    onMutate: (itemKey) => writeMarks(queryClient, (marks) => replaceMarks(marks, [itemKey], [])),
     onError: (error, itemKey, context, mutation) => {
       restoreMarks(queryClient, context);
       return options?.onError?.(error, itemKey, context, mutation);
@@ -442,24 +458,28 @@ export function usePutInboxMarks(
     // in flight keeps its provisional row.
     ...withCacheOnSuccess(options, (saved, { itemKeys }) => {
       const keys = new Set(itemKeys);
-      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) => [
-        ...(marks ?? []).filter((mark) => !keys.has(mark.itemKey)),
-        ...saved.filter((mark) => keys.has(mark.itemKey)),
-      ]);
+      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) =>
+        replaceMarks(
+          marks,
+          keys,
+          saved.filter((mark) => keys.has(mark.itemKey)),
+        ),
+      );
     }),
     mutationFn: ({ itemKeys, mark, until }: PutInboxMarksVariables) =>
       app.inbox.putMarks(itemKeys, mark, until),
-    onMutate: ({ itemKeys, mark, until }) => {
-      const keys = new Set(itemKeys);
-      return writeMarks(queryClient, (marks) => [
-        ...marks.filter((row) => !keys.has(row.itemKey)),
-        ...(mark === null
-          ? []
-          : itemKeys.map(
-              (itemKey) => new InboxMarkEntity(itemKey, mark, until ?? null, new Date()),
-            )),
-      ]);
-    },
+    onMutate: ({ itemKeys, mark, until }) =>
+      writeMarks(queryClient, (marks) =>
+        replaceMarks(
+          marks,
+          itemKeys,
+          mark === null
+            ? []
+            : itemKeys.map(
+                (itemKey) => new InboxMarkEntity(itemKey, mark, until ?? null, new Date()),
+              ),
+        ),
+      ),
     onError: (error, variables, context, mutation) => {
       restoreMarks(queryClient, context);
       return options?.onError?.(error, variables, context, mutation);

@@ -81,11 +81,11 @@ export function InboxRow({
           done={done}
           low={item.low}
           keys={active}
-          onDone={() => marks.done(item)}
-          onToggleLow={() => marks.toggleLow(item)}
-          onSnoozeHour={() => marks.snoozeHour(item)}
-          onSnoozeTomorrow={() => marks.snoozeTomorrow(item)}
-          onRemove={() => marks.remove(item)}
+          onDone={() => marks.apply('done', item)}
+          onToggleLow={() => marks.apply('toggleLow', item)}
+          onSnoozeHour={() => marks.apply('snoozeHour', item)}
+          onSnoozeTomorrow={() => marks.apply('snoozeTomorrow', item)}
+          onRemove={() => marks.apply('remove', item)}
           onSelect={() => onSelect(true, false)}
         />
       }

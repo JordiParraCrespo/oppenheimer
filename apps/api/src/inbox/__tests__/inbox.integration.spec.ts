@@ -152,7 +152,7 @@ describe('inbox marks (integration)', () => {
     });
   });
 
-  it('stores a selection in one transaction: one row the table refuses stores none of them', async () => {
+  it('writes a selection in one transaction: one row the table refuses stores none, and clearing touches only the caller', async () => {
     // A person who does not exist: the second row breaks its foreign key.
     const refused = mark({ itemKey: 'run:batch-bad', userId: randomUUID() });
     await expect(marks.upsertAll([mark({ itemKey: 'run:batch-ok' }), refused])).rejects.toThrow();
@@ -160,14 +160,17 @@ describe('inbox marks (integration)', () => {
     expect(await staged('run:batch-ok')).toBe(0);
 
     await marks.upsertAll([mark({ itemKey: 'run:batch-a' }), mark({ itemKey: 'run:batch-b' })]);
-    const stored = [
-      (await marks.findOne(organizationId, userId, 'run:batch-a')).unwrap(),
-      (await marks.findOne(organizationId, userId, 'run:batch-b')).unwrap(),
-    ];
-    for (const each of stored) each.remove();
-    expect(await marks.deleteAll(stored)).toBe(2);
+    expect(await staged('run:batch-a')).toBe(1);
+    const someoneElse = await insertUser();
+    await marks.upsert(mark({ userId: someoneElse, itemKey: 'run:batch-a' }));
+
+    expect(
+      await marks.clear(organizationId, userId, ['run:batch-a', 'run:batch-b', 'run:none']),
+    ).toBe(2);
     expect(await staged('run:batch-a')).toBe(2);
+    expect(await staged('run:none')).toBe(0);
     expect((await marks.findOne(organizationId, userId, 'run:batch-b')).isNone()).toBe(true);
+    expect((await marks.findOne(organizationId, someoneElse, 'run:batch-a')).isSome()).toBe(true);
   });
 
   it('deletes a mark with its event, and a second delete finds nothing and stages nothing', async () => {
