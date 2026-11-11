@@ -2,7 +2,9 @@ import { z } from 'zod';
 import {
   ALL,
   DEFAULT_FILTERS,
+  FACETS,
   type FilterOption,
+  SESSION_SORTS,
   type SessionFacet,
   type SessionFilters,
 } from './session-filters';
@@ -17,11 +19,11 @@ export const SESSION_FILTERS_KEY = 'oppenheimer.sidebar.filters';
 const picks = z.array(z.string()).catch([]);
 
 const SCHEMA = z.object({
-  project: picks,
-  repository: picks,
-  agent: picks,
-  host: picks,
-  sort: z.enum(['custom', 'recent', 'oldest', 'name']).catch(DEFAULT_FILTERS.sort),
+  ...(Object.fromEntries(FACETS.map((facet) => [facet, picks])) as Record<
+    SessionFacet,
+    typeof picks
+  >),
+  sort: z.enum(SESSION_SORTS).catch(DEFAULT_FILTERS.sort),
 });
 
 /** What storage holds, field by field: an unreadable field is its default, not the whole set. */
@@ -60,10 +62,10 @@ export function withinOptions(
       (value) => value !== ALL && options[facet].some((option) => option.value === value),
     );
   return {
-    project: offered('project'),
-    repository: offered('repository'),
-    agent: offered('agent'),
-    host: offered('host'),
+    ...(Object.fromEntries(FACETS.map((facet) => [facet, offered(facet)])) as Record<
+      SessionFacet,
+      string[]
+    >),
     sort: filters.sort,
   };
 }

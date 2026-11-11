@@ -17,8 +17,12 @@ export function useSessionFilters(options: Record<SessionFacet, FilterOption[]>)
   const [stored, setStored] = useState<SessionFilters>(storedSessionFilters);
   const filters = withinOptions(stored, options);
   const kept = JSON.stringify(filters);
-  // A pick dropped while drawing is dropped from state too, in this render,
-  // so it cannot come back with its value in the same visit.
+  // Invariant: state always holds what is drawn. A pick the options dropped
+  // is dropped from state too, here in render (React's "adjusting state when
+  // a prop changes"; an effect may not derive state), so it cannot come back
+  // with its value later in the visit. `withinOptions` of its own result is
+  // that result, key order included, so the next render compares equal and
+  // this settles after one extra render.
   if (kept !== JSON.stringify(stored)) setStored(filters);
 
   // localStorage: the filters as drawn, for the next visit on this device.
