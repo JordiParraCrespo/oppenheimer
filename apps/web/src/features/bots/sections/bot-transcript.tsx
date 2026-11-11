@@ -55,10 +55,9 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const retry = useSendBotMessage();
   const navigate = useNavigate();
   const toolCallsShown = useToolCallsShownInChat();
+  const all = chatTurns(conversation);
   // A routine run that only ran tools shows with the tool calls, not without them.
-  const blocks = chatTurns(conversation).filter(
-    (block) => !isQuietRoutineRun(block, toolCallsShown),
-  );
+  const blocks = all.filter((block) => !isQuietRoutineRun(block, toolCallsShown));
   // The approved calls still running, each held under the turn its yes opened.
   const working = new Map(
     [...runningApprovedCalls(conversation.messages)].map(([turnId, call]) => [
@@ -67,15 +66,16 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
     ]),
   );
   const current = conversation.activeTurn?.id;
-  const again = retryContent(blocks);
-  const newest = newestTurn(blocks)?.turnId;
+  // Retry follows the newest turn, drawn or not: a run hidden after your turn takes it away.
+  const again = retryContent(all);
+  const newest = newestTurn(all)?.turnId;
   useSentGlide(newestSentId(blocks));
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
   return (
     <>
       <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-      {blocks.length === 0 ? (
+      {all.length === 0 ? (
         <BotHello botId={botId} name={name} />
       ) : (
         <ChatTranscript>
