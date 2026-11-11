@@ -278,8 +278,9 @@ to Cursor.
 - **The console.** The place chip's **Cloud** section lists Cursor, or
   Connect when the person has no key. Picking it puts Cursor's models in
   the engine button (Auto is Cursor's own pick) and hides the permission
-  chip; files cannot be attached. Send opens Cursor in a tab and goes to
-  the session. The session's row carries Cursor's mark and opens Cursor;
+  chip; files cannot be attached. Send goes to the session (until
+  2026-11-11 it also opened Cursor in a tab; `product/README.md` says
+  why that changed). The session's row carries Cursor's mark and opens Cursor;
   its page says the run's state and links there.
 - **Settings → Cloud agents** stays where the key is stored.
 

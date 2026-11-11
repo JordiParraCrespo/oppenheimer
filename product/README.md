@@ -1592,3 +1592,9 @@ earlier note:
   Triage Sentry errors" lines that found nothing, asked for less: the
   chat now hides tool calls by default, and while they are hidden a
   routine run that only ran tools is left out. The wrench shows both.
+- `next-steps/cloud-agents.md` ("Cloud sessions are sessions") had send
+  open Cursor in a tab of its own, opened blank in the press and pointed
+  at Cursor once it answered. On 2026-11-11 the owner found that tab
+  weird (it sat blank while Cursor answered and flashed open and shut on
+  a refusal): send now goes to the session's page only, which links to
+  Cursor, and the row still opens Cursor when clicked.
