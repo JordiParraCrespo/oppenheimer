@@ -392,3 +392,88 @@ its PR, and that is where Claude and Codex cloud sessions get their
    (<https://developers.openai.com/siwc/quickstart>), which would be the
    sanctioned route to a hosted Codex? It is a limited trial for
    commercial partners.
+
+## 7. Read again on 2026-11-11: current Codex Cloud environments and the Agents API
+
+Asked by issue 835: the `oppenheimer` environment exists in ChatGPT
+Settings → Codex Cloud, and a start from a host still fails with `SESS_010`.
+Is there now a supported way to discover and start tasks in those
+environments? This section adds to §3 and changes none of it.
+
+How it was read. `openai/codex` at `d27e7c1` (2026-11-11), the source of the
+CLI. OpenAI's docs hosts (`learn.chatgpt.com`, `developers.openai.com`,
+`help.openai.com`) were not reachable from the session that read this, so
+what is said of the docs below comes from search results quoting them and
+is marked **unread**; the source is the evidence.
+
+### The CLI
+
+- **`codex cloud` is the same command, still `[EXPERIMENTAL]`**
+  (`codex-rs/cli/src/main.rs`): `exec`, `status`, `list`, `apply`, `diff`
+  and the TUI (`codex-rs/cloud-tasks/src/cli.rs`). Nothing was added for
+  environments.
+- **It reads the older list only.** `--env` is resolved against
+  `GET {base}/wham/environments` (`cloud-tasks/src/lib.rs`,
+  `resolve_environment_id`; `env_detect.rs`). ChatGPT calls that product
+  **Codex Cloud (Legacy)** now. An id or label not in it is
+  `environment '<x>' not found`; an account with none there is
+  `no cloud environments are available for this workspace`.
+- **The current environments are another service.** The CLI has a new
+  client for it, `codex-rs/cloud-client`: gRPC `ThreadService` on
+  `https://codex-cloud-backend.chatgpt.com`, with the same ChatGPT token and
+  account id. It is reached from one place, the interactive TUI, as an
+  extra backend behind the feature `tui_multi_backend`
+  (`Stage::UnderDevelopment`, off by default; the code calls it "the
+  internal Cloud preview", `app-server-client/src/cloud_backend/auth.rs`).
+  - It lists and resumes cloud threads, and starts one in the *default*
+    managed environment (`prewarm_thread`, `environment_config_id:
+    "asenvcfg_base"`, the local checkout's GitHub origins as overrides).
+  - It has no call that lists the account's environments and none that
+    starts a thread in a named one.
+  - Nothing headless uses it: not `codex cloud`, not `codex exec`.
+  - Its README says public ingress "is a rollout assumption".
+- **So the owner's diagnosis stands, and no CLI upgrade fixes it.** A host
+  cannot start a task in an environment made in Settings → Codex Cloud, on
+  any released or unreleased CLI read here.
+
+### The docs (unread)
+
+- The help centre's "Using Codex Cloud" is quoted as: tasks start from
+  desktop, web and mobile by choosing a published environment; supported
+  legacy environments can be migrated to the new experience, by the person,
+  the original staying as it was; Code Review, Security Review and the
+  Linear and GitHub integrations stay on Codex Cloud (Legacy) for now. No
+  result names a CLI or API route into the new environments.
+- Migration has open bug reports (`openai/codex` issues 49568, 50251,
+  51695, 52901): migrated environments left read-only or duplicated. Not a
+  thing to send a person to do casually.
+
+### The Agents API
+
+Public beta since September 2026 (unread:
+`developers.openai.com/api/docs/guides/agents-api/overview`, its quickstart
+and the help centre's FAQ).
+
+| | Codex cloud from a host (today) | Agents API |
+|---|---|---|
+| Credential | The host's own ChatGPT sign-in, in the CLI | An OpenAI Platform project API key, scoped `api.agents.read`/`write` and `api.responses.write` |
+| Billed to | The ChatGPT plan's Codex limits | The API account: model tokens, tools and hosted container time at API rates. A ChatGPT plan does not cover it |
+| Runs in | A ChatGPT Codex environment (legacy ones only, from a CLI) | A sandbox the caller names per session (`openai_hosted`, a partner's, or self-hosted) |
+| ChatGPT-made environments | The legacy ones | Nothing found that says a session can run in one; its environments are its own |
+| Surface | `codex cloud` (experimental) | `POST /v1/agents/sessions`, `OpenAI-Beta: agents=v1` |
+
+It is the Codex harness as a platform product, not a door into a person's
+ChatGPT Codex Cloud. Taking it would be a second Codex place with its own
+key and its own bill, the Cursor model (`next-steps/cloud-agents.md`, "What
+landed"), and would not make the `oppenheimer` environment usable. That is
+a product decision and none is taken here.
+
+### What follows
+
+- Keep the host's CLI and its sign-in as the one driver of Codex cloud.
+- Say the limit where a person meets it: in the picker, before a start,
+  and in the refusal, with the two ways out that exist (a legacy
+  environment, or starting the task in ChatGPT).
+- Come back when `codex cloud` gains a way to start a task in a current
+  environment, or `tui_multi_backend` leaves under-development with a
+  headless route. Either is one adapter, `sessions/adapters/cloud`.

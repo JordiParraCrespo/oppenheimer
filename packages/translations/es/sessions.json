@@ -136,7 +136,9 @@
       "linked": "Vinculado",
       "pinned": "Fijado",
       "failed": "No se han podido listar los entornos de Codex del equipo.",
-      "lives": "Los entornos viven en tu cuenta de Codex"
+      "lives": "Los entornos viven en tu cuenta de Codex",
+      "legacyOnly": "Solo se listan los entornos de Codex Cloud (Legacy). El equipo no puede iniciar una tarea en uno creado en Configuración de ChatGPT → Codex Cloud.",
+      "partial": "El equipo no ha podido leer la lista completa de ChatGPT, así que solo se listan los entornos de sus tareas recientes. Pueden faltar otros."
     },
     "branch": {
       "label": "Rama",

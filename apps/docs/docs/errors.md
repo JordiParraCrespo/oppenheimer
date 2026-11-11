@@ -585,6 +585,7 @@ are never reissued.
 | `SESSIONS_052` <a id="sessions_052" /> | Only a session whose start failed can be tried again | 409 |
 | `SESSIONS_053` <a id="sessions_053" /> | No cloud session of this workspace has that id | 404 |
 | `SESSIONS_054` <a id="sessions_054" /> | This session has no cloud chat | 409 |
+| `SESSIONS_055` <a id="sessions_055" /> | Codex on the host is not signed in to ChatGPT | 502 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -653,8 +654,10 @@ so lookaround and backreferences are refused (`SESSIONS_042`), and a session hol
 (`GET /v1/hosts/:id/codex-environments`), which the host's runner answers with its
 own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex cloud
 session still starts there, in an environment guessed from the repository's name.
-`046` carries the runner's own words as its `detail` (no `codex`, no sign-in) and its
-code as `upstreamCode`. `047` is ChatGPT refusing the host's read for rate (`SESS_011`):
+`046` carries the runner's own words as its `detail` (no `codex`, ChatGPT unreachable) and its
+code as `upstreamCode`. `SESSIONS_055` is the same list on a host whose `codex` has no ChatGPT
+sign-in (`SESS_020`): run `codex login` on the host, as the account the runner runs as, and open
+the picker again. `047` is ChatGPT refusing the host's read for rate (`SESS_011`):
 the runner asks nothing more of that ChatGPT account until the time it named, which the
 `detail` says. A runner that did not answer in time is `SESSIONS_031`.
 
@@ -1328,6 +1331,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
 | `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
 | `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
+| `SESS_020` <a id="sess_020" />         | Codex on this host is not signed in to ChatGPT | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1351,17 +1355,24 @@ the service (`systemctl --user restart oppenheimer-runner` or
 another account owns is fixed with `chown`; a mode looser than `0700` is
 tightened by the runner itself.
 
-`SESS_010` is `codex cloud exec` refusing every label a Codex cloud session
-was tried under (the repository's `owner/name`, then its bare name) as "not
-found". ChatGPT has two lists of Codex environments: the one `codex cloud`
-browses (`/wham/environments`), and the newer one in ChatGPT's Settings →
-Codex Cloud, with publish and snapshots, which codex-cli does not read yet
-(0.166.0). An environment that exists only in the second is not one the CLI
-can start a task in. The detail names the labels tried and the environment
-labels the CLI showed in the account's twenty newest tasks
-(`codex cloud list --json`): codex-cli has no command that lists environments
-outside its interactive TUI, so that list is partial, and the full one is
-`codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
+`SESS_010` is `codex cloud exec` having no environment to start a Codex cloud
+session in: every label tried for the repository (its `owner/name`, then its
+bare name) or the environment picked is "not found", or the account has none
+the CLI lists. ChatGPT has two kinds of Codex environment. The CLI starts tasks
+only in the older kind, **Codex Cloud (Legacy)**, the ones `codex cloud` browses
+on the host. An environment made in ChatGPT's Settings → Codex Cloud runs on
+another service, which no command of the CLI starts a task in (read in
+`openai/codex` on 2026-11-11); it starts only from ChatGPT on the web, desktop
+or mobile. So either pick a legacy environment in the **Codex environment**
+chip and try again, or start the task in ChatGPT. The detail names what was
+tried and the environments the CLI can reach; when the host could only read
+the account's twenty newest tasks (`codex cloud list --json`) that list is
+partial, and the full one is `codex cloud` on the host.
+
+`SESS_020` is the host's `codex` saying it is not signed in to ChatGPT, which
+every cloud command needs (an API key does not reach Codex cloud). Run
+`codex login` on the host as the account the runner runs as, then press **Try
+again** on the session. `SESS_009` stays every other refusal, in the CLI's
 words.
 
 `SESS_019` is `claude --cloud` saying the host's Claude Code has no claude.ai

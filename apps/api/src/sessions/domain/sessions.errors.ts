@@ -359,8 +359,9 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * Codex on the host could not list its environments: no `codex` on it, or
-   * no ChatGPT sign-in. The runner's own words are the detail.
+   * Codex on the host could not list its environments for a reason with no
+   * code of its own: no `codex` on it, ChatGPT unreachable. The runner's own
+   * words are the detail. A host that is not signed in is `SESSIONS_055`.
    */
   CODEX_ENVIRONMENTS_UNAVAILABLE: {
     code: 'SESSIONS_046',
@@ -441,5 +442,15 @@ export const SessionErrors = {
     code: 'SESSIONS_054',
     message: 'This session has no cloud chat',
     httpStatus: 409,
+  },
+  /**
+   * The host's `codex` holds no ChatGPT sign-in (`SESS_020`), so it has no
+   * Codex environments to list and could start no cloud task either. Fixed on
+   * the host, with `codex login`.
+   */
+  CODEX_ENVIRONMENTS_SIGNED_OUT: {
+    code: 'SESSIONS_055',
+    message: 'Codex on the host is not signed in to ChatGPT',
+    httpStatus: 502,
   },
 } as const satisfies Record<string, ErrorDefinition>;

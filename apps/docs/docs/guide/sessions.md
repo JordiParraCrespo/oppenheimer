@@ -89,7 +89,7 @@ A host reboot leaves sessions stopped, waiting for Restart. A session marked **k
 Under **Cloud** in the where-it-runs chip:
 
 - **Claude Code**: a host starts it with `claude --cloud`, under the Claude account that host is signed in to; it runs on claude.ai/code. Its state comes from the Oppenheimer Chrome extension while you are signed in to claude.ai. **Continue on a host** brings it back as a worktree session.
-- **Codex**: a host starts a Codex cloud task in a Codex environment (Auto, or picked in the Codex environment chip) and reports its status while online. `codex apply` brings its changes into a checkout.
+- **Codex**: a host starts a Codex cloud task in a Codex environment (Auto, or picked in the Codex environment chip) and reports its status while online. `codex apply` brings its changes into a checkout. The host's `codex` must be signed in with ChatGPT (`codex login`), and it can only use Codex Cloud (Legacy) environments, the ones `codex cloud` lists on the host: an environment made in ChatGPT Settings → Codex Cloud starts only from ChatGPT itself.
 - **Cursor**: runs in Cursor's cloud on your own key, no host. Connect the key in **Settings → Cloud agents**.
 
 A cloud session needs a task and has no terminal here. Follow-ups go to the vendor, except Cursor's, which take one through Oppenheimer after the last run ends. Deleting one removes it from Oppenheimer only.

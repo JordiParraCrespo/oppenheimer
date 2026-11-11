@@ -4,7 +4,9 @@ import { codexEnvironmentsOrThrow } from '../application/host-codex-environments
  * What the composer's Codex environment picker answers for each way the host's
  * list can fail. The part worth a test is the runner's refusal: ChatGPT's rate
  * limit (`SESS_011`) is a 429 of its own, never folded into "Codex could not
- * list", which would tell the person to check a sign-in that works.
+ * list", which would tell the person to check a sign-in that works; and a
+ * host that is not signed in (`SESS_020`) is its own code too, so the picker
+ * can say the one thing that fixes it.
  */
 describe('codexEnvironmentsOrThrow', () => {
   const HOST = 'host-1';
@@ -24,10 +26,22 @@ describe('codexEnvironmentsOrThrow', () => {
     );
   });
 
+  it('answers a host that is not signed in with SESSIONS_055, keeping the runner’s words and code', () => {
+    expect(() =>
+      codexEnvironmentsOrThrow({ kind: 'failed', code: 'SESS_020', detail: 'Not signed in' }, HOST),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'SESSIONS_055',
+        detail: 'Not signed in',
+        extensions: { upstreamCode: 'SESS_020' },
+      }),
+    );
+  });
+
   it('answers any other refusal with SESSIONS_046', () => {
     expect(() =>
-      codexEnvironmentsOrThrow({ kind: 'failed', code: 'SESS_009', detail: 'Not signed in' }, HOST),
-    ).toThrow(expect.objectContaining({ code: 'SESSIONS_046', detail: 'Not signed in' }));
+      codexEnvironmentsOrThrow({ kind: 'failed', code: 'SESS_009', detail: 'no codex' }, HOST),
+    ).toThrow(expect.objectContaining({ code: 'SESSIONS_046', detail: 'no codex' }));
   });
 
   it('answers a host that holds no link, and a runner that cannot list, with their own codes', () => {

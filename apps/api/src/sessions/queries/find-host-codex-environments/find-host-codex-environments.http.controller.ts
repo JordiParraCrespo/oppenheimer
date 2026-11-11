@@ -58,6 +58,11 @@ export class FindHostCodexEnvironmentsHttpController {
   @ApiProblemResponse({ status: 409, description: 'Runner cannot list', code: 'SESSIONS_044' })
   @ApiProblemResponse({ status: 429, description: 'ChatGPT asked to wait', code: 'SESSIONS_047' })
   @ApiProblemResponse({ status: 502, description: 'Codex could not list', code: 'SESSIONS_046' })
+  @ApiProblemResponse({
+    status: 502,
+    description: 'Codex on the host is not signed in to ChatGPT',
+    code: 'SESSIONS_055',
+  })
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_045' })
   @ApiProblemResponse({ status: 504, description: 'No answer in time', code: 'SESSIONS_031' })
   async list(

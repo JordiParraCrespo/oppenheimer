@@ -112,7 +112,8 @@ echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to lis
 	for _, want := range []string{
 		"acme-labs/oppenheimer or oppenheimer",
 		"recent tasks: kallista, woocommerce-elementor-ai-template (",
-		"Settings → Codex Cloud are not reachable by the CLI",
+		"only in Codex Cloud (Legacy) environments",
+		"can only be started from ChatGPT",
 	} {
 		if !strings.Contains(pe.Detail, want) {
 			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
@@ -128,7 +129,7 @@ echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to lis
 // The labels are a courtesy: a list the CLI cannot answer still ends in the
 // same code, saying it could not read them.
 func TestCodexStartNamesNoEnvironmentsWhenTheyCannotBeRead(t *testing.T) {
-	bin, _ := fakeCodex(t, `[ "$2" = list ] && { echo "Not signed in." >&2; exit 1; }
+	bin, _ := fakeCodex(t, `[ "$2" = list ] && { echo "Error: backend unavailable" >&2; exit 1; }
 echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
 	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
 	pe := problem.From(err)
@@ -137,6 +138,54 @@ echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
 	}
 	if !strings.Contains(pe.Detail, "recent tasks: could not be read") {
 		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// An account with only ChatGPT's newer environments has none the CLI lists,
+// and the CLI says so in other words than "not found". It is the same
+// refusal, with the way out, and not the CLI's bare sentence under SESS_009.
+func TestCodexStartReadsAnAccountWithNoLegacyEnvironmentAsTheSameRefusal(t *testing.T) {
+	bin, _ := fakeCodex(t, `echo "Error: no cloud environments are available for this workspace" >&2; exit 1`)
+	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	if !strings.Contains(pe.Detail, "recent tasks: none") || !strings.Contains(pe.Detail, "start this task in ChatGPT") {
+		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// A pick outlives its environment: one deleted, or moved to ChatGPT's newer
+// Codex Cloud, after the composer remembered it. The CLI's "not found" for it
+// is the environment refusal naming the pick, not SESS_009.
+func TestCodexStartRefusesAPickedEnvironmentTheCLINoLongerHas(t *testing.T) {
+	bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
+	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "e_gone")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	if !strings.Contains(pe.Detail, "no environment named e_gone") {
+		t.Fatalf("detail = %q", pe.Detail)
+	}
+}
+
+// A host whose codex holds no ChatGPT sign-in cannot start anything in the
+// cloud. That is its own code, so the console can say "run codex login on the
+// host", and no label is tried: the CLI would refuse each the same way.
+func TestCodexStartSaysTheHostIsNotSignedIn(t *testing.T) {
+	bin, args := fakeCodex(t, `echo "Not signed in. Please run 'codex login' to sign in with ChatGPT, then re-run 'codex cloud'." >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudSignIn.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudSignIn", err)
+	}
+	if !strings.Contains(pe.Detail, "codex login") {
+		t.Fatalf("detail = %q, want the CLI's own words", pe.Detail)
+	}
+	if got := strings.Join(readArgs(t, args), " "); strings.Contains(got, "exec") {
+		t.Fatalf("args = %q, want no start tried", got)
 	}
 }
 
@@ -158,14 +207,14 @@ func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
 // A refusal other than a missing environment is not tried again under
 // another label: it is the CLI's answer, in its own words.
 func TestCodexStartSaysWhyTheCLIRefused(t *testing.T) {
-	bin, args := fakeCodex(t, `echo "Not signed in. Please run 'codex login' to sign in with ChatGPT, then re-run 'codex cloud'." >&2
+	bin, args := fakeCodex(t, `echo "Error: GitHub is not connected for this workspace" >&2
 exit 1`)
 	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 	pe := problem.From(err)
 	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
 		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
 	}
-	if !strings.Contains(pe.Detail, "codex login") {
+	if !strings.Contains(pe.Detail, "GitHub is not connected") {
 		t.Fatalf("detail = %v, want the CLI's words", err)
 	}
 	if got := readArgs(t, args); len(got) != 6 {

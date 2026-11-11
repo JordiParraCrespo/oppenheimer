@@ -18,6 +18,9 @@ import { parseRepositoryKey, pickedEnvironment } from '../lib/session-options';
  * host knows of it on the right, and the line that says where they live
  * (`product/next-steps/cloud-agents.md`, "Which Codex environment"). Auto is
  * the host's own pick, the environment linked to the repository, and leads.
+ * Under the list it says what the list leaves out: the environments of
+ * ChatGPT Settings → Codex Cloud, which the host's CLI cannot start a task
+ * in, and, when the host could only read its recent tasks, the rest.
  *
  * Mounted only while the pane shows, so the host is asked then and not
  * before. The repository's name comes off the list the repository chip
@@ -128,9 +131,13 @@ export function NewSessionCodexEnvironments({
         </ChipSelectItem>
       ))}
       {listing.isPending ? null : (
-        <p className="px-2.5 pt-2 pb-1 text-xs text-fg-subtle">
-          {t('sessions.new.codexEnvironment.lives')}
-        </p>
+        <div className="flex flex-col gap-1 px-2.5 pt-2 pb-1 text-xs text-fg-subtle">
+          <p>{t('sessions.new.codexEnvironment.lives')}</p>
+          {listing.data?.source === 'tasks' ? (
+            <p>{t('sessions.new.codexEnvironment.partial')}</p>
+          ) : null}
+          {listing.isError ? null : <p>{t('sessions.new.codexEnvironment.legacyOnly')}</p>}
+        </div>
       )}
     </ChipSelectList>
   );

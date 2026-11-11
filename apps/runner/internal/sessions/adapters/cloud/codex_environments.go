@@ -145,6 +145,12 @@ func isRateLimited(err error) bool {
 	return pe != nil && pe.Code == domain.ErrCodexRateLimited.Code
 }
 
+// isSignedOut reports whether err is the CLI holding no ChatGPT sign-in.
+func isSignedOut(err error) bool {
+	pe := problem.From(err)
+	return pe != nil && pe.Code == domain.ErrCodexCloudSignIn.Code
+}
+
 // retryAfter reads a Retry-After header in seconds or as an HTTP date.
 func retryAfter(header string, now time.Time) time.Duration {
 	if seconds, err := strconv.Atoi(strings.TrimSpace(header)); err == nil && seconds > 0 {
@@ -161,7 +167,8 @@ var errNoChatGPTSignIn = errors.New("no ChatGPT sign-in in the Codex auth file")
 
 // Environments answers the environments the host's ChatGPT account can start
 // a task in, marking those linked to repository (`owner/name`), with the one
-// a task for it starts in when none is picked.
+// a task for it starts in when none is picked. A host whose CLI is not signed
+// in to ChatGPT answers domain.ErrCodexCloudSignIn, whichever read found out.
 func (c Codex) Environments(ctx context.Context, repository string) (CodexEnvironments, error) {
 	envs, err := c.chatGPTEnvironments(ctx, repository)
 	if isRateLimited(err) {
@@ -169,6 +176,9 @@ func (c Codex) Environments(ctx context.Context, repository string) (CodexEnviro
 	}
 	if err != nil {
 		fromTasks, taskErr := c.taskEnvironments(ctx)
+		if isSignedOut(taskErr) {
+			return CodexEnvironments{}, taskErr
+		}
 		if taskErr != nil {
 			return CodexEnvironments{}, domain.ErrCodexCloudStart.WithDetail(
 				"Codex could not list its environments: %v; and from its tasks: %s", err, problemDetail(taskErr)).WithCause(taskErr)

@@ -235,3 +235,34 @@ func TestCodexEnvironmentsWithNoRepositoryListsTheAccounts(t *testing.T) {
 		t.Fatalf("envs = %+v", envs)
 	}
 }
+
+// The picker's list on a host that is not signed in is the sign-in refusal
+// itself, not "Codex could not list its environments": ChatGPT has no token
+// to answer, and the CLI says why.
+func TestCodexEnvironmentsSaysTheHostIsNotSignedIn(t *testing.T) {
+	bin, _ := fakeCodex(t, `echo "Not signed in. Please run 'codex login' to sign in with ChatGPT, then re-run 'codex cloud'." >&2; exit 1`)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Environments(context.Background(), "acme-labs/xrp-mobile")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudSignIn.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudSignIn", err)
+	}
+}
+
+// A sign-in ChatGPT no longer takes (401) with a CLI that still lists its
+// tasks is incomplete discovery, said as such: the tasks' environments, marked
+// as that source, and not a failure.
+func TestCodexEnvironmentsListsFromTasksWhenChatGPTRefusesTheToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(server.Close)
+	bin, _ := fakeCodex(t, `exit 1`)
+	withTasks(t, bin, `{"tasks": [{"id": "task_e_1", "status": "ready", "environment_id": "e_app", "environment_label": "Wallet app"}]}`)
+	envs, err := Codex{Command: bin, Home: signedIn(t), BaseURL: server.URL}.Environments(context.Background(), "acme-labs/xrp-mobile")
+	if err != nil {
+		t.Fatalf("Environments: %v", err)
+	}
+	if envs.Source != CodexSourceTasks || len(envs.Environments) != 1 {
+		t.Fatalf("envs = %+v, want the tasks' one environment", envs)
+	}
+}

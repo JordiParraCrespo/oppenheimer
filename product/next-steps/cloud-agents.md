@@ -132,6 +132,38 @@ and `xrp-mobile`, published and unusable. Decided:
   back when the CLI lists environments non-interactively, or reads the
   Settings ones.
 
+### Still out of reach, and said earlier (2026-11-11)
+
+Issue 835 asked whether a newer integration reaches the Settings → Codex
+Cloud environments. It does not (`research/cloud-agents.md` §7, read in
+`openai/codex` at `d27e7c1`): `codex cloud` still resolves `--env` against
+the older list, which ChatGPT now calls Codex Cloud (Legacy); the current
+environments sit behind a service the CLI reaches only from its
+interactive TUI, under a feature that is off and under development, with
+no way to name an environment; and the Agents API is a platform product
+on an API key and API billing with sandboxes of its own. Decided:
+
+- **The host's CLI and its sign-in stay the driver.** Nothing about who
+  signs in or who is billed changes. The Agents API as a second Codex place
+  is a product decision for the owner, not taken.
+- **The picker says what it leaves out.** Under the list: only Codex Cloud
+  (Legacy) environments are listed, and the host cannot start a task in one
+  made in Settings → Codex Cloud. When the host could only read its recent
+  tasks (`source: tasks`), it says the list may be missing some. This is
+  the cheap half of "The place picker does not predict it" above: no mark
+  per repository, one sentence for every reader.
+- **The refusal gives the ways out.** `SESS_010` and its pane now say that
+  such an environment starts only from ChatGPT, and to pick a legacy
+  environment or start the task there; "not reachable yet" promised a fix
+  nobody has announced. Two more refusals read as `SESS_010` instead of the
+  CLI's bare words: an account with no legacy environment at all ("no cloud
+  environments are available"), and a picked environment the CLI no longer
+  has.
+- **Not signed in is its own code.** A host whose `codex` has no ChatGPT
+  sign-in refuses a start with `SESS_020` ("run codex login on the host"),
+  as Claude's does with `SESS_019`, and its picker with `SESSIONS_055`,
+  instead of "Codex could not list its environments".
+
 ### Which Codex environment (2026-10-31)
 
 A Codex task runs in one of the ChatGPT account's environments, and an

@@ -483,6 +483,7 @@
       "SESSIONS_052": "Only a session that failed to start can be tried again.",
       "SESSIONS_053": "No cloud session in this workspace has that id. Only sessions started from the console send their chat here.",
       "SESSIONS_054": "This session’s chat isn’t shown here.",
+      "SESSIONS_055": "Codex on the host isn’t signed in to ChatGPT. Run codex login on the host, then open this list again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
       "VOICE_004": "That recording couldn’t be read. Try dictating again.",
@@ -518,12 +519,13 @@
     "startFailure": {
       "codes": {
         "SESS_002": "This host makes sessions with one repository.",
-        "SESS_010": "Codex's CLI has no cloud environment for this repository.",
-        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
+        "SESS_010": "The host’s codex CLI can’t start a task in any Codex environment for this repository.",
+        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host.",
+        "SESS_020": "Not signed in to ChatGPT. Run codex login on the host."
       },
       "help": {
         "SESS_010": {
-          "body": "The host starts Codex cloud tasks with its codex CLI, which reaches only the environments codex cloud lists. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet, so one there named for this repository cannot be used from here. Run codex cloud on the host to see the environments it can use.",
+          "body": "The host starts Codex cloud tasks with its codex CLI, which only reaches Codex Cloud (Legacy) environments: the ones codex cloud lists on the host. An environment made in ChatGPT Settings → Codex Cloud can only be started from ChatGPT itself, on the web, desktop or mobile. Pick a legacy environment in the Codex environment chip and try again, or start this task in ChatGPT.",
           "link": "Open Codex Cloud settings"
         }
       },
@@ -881,7 +883,9 @@
         "linked": "Linked",
         "pinned": "Pinned",
         "failed": "Could not list the host’s Codex environments.",
-        "lives": "Environments live in your Codex account"
+        "lives": "Environments live in your Codex account",
+        "legacyOnly": "Only Codex Cloud (Legacy) environments are listed. The host can’t start a task in one made in ChatGPT Settings → Codex Cloud.",
+        "partial": "The host couldn’t read the full list from ChatGPT, so only the environments of its recent tasks are listed. Others may be missing."
       },
       "branch": {
         "label": "Branch",

@@ -12958,7 +12958,7 @@
             }
           },
           "502": {
-            "description": "SESSIONS_046 — Codex could not list",
+            "description": "SESSIONS_055 — Codex on the host is not signed in to ChatGPT\n\nSESSIONS_046 — Codex could not list",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -39472,7 +39472,7 @@
         "properties": {
           "content": {
             "type": "string",
-            "maxLength": 16000,
+            "maxLength": 80000,
             "default": ""
           },
           "attachmentIds": {

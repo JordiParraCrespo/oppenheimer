@@ -16,12 +16,15 @@ package cloud
 // its environment.
 //
 // `--env` resolves only against the environments the CLI's TUI lists
-// (`/wham/environments`). ChatGPT's newer Settings → Codex Cloud keeps its
-// environments elsewhere, and codex-cli (0.166.0) cannot reach them, so a
+// (`/wham/environments`), which ChatGPT now calls Codex Cloud (Legacy).
+// ChatGPT's Settings → Codex Cloud keeps its environments in another service,
+// and the CLI has no command that starts a task in one (read again in
+// openai/codex on 2026-11-11: product/research/cloud-agents.md §7), so a
 // repository whose only environment is there fails as "not found" however it
-// is named. The CLI has no command that lists environments outside the TUI;
-// the labels on the account's recent tasks are the one non-interactive view
-// of them, partial by construction.
+// is named, and an account with none of the older kind as "no cloud
+// environments are available". The CLI has no command that lists environments
+// outside the TUI; the labels on the account's recent tasks are the one
+// non-interactive view of them, partial by construction.
 
 import (
 	"bytes"
@@ -108,17 +111,25 @@ var codexTaskURL = regexp.MustCompile(`https?://\S+/codex/tasks/([A-Za-z0-9_-]+)
 // domain.CodexEnvironmentRefusal naming every environment the CLI can reach.
 // Only when the account's whole list could not be read (none, or only its
 // tasks' environments) are the repository's names handed to the CLI as
-// labels, and its refusal of both is that refusal with what the tasks show;
-// any other refusal is the CLI's own, in its words.
+// labels, and its refusal of both is that refusal with what the tasks show.
+// A picked environment the CLI no longer has (deleted, or moved to ChatGPT's
+// newer Codex Cloud since the pick) is that refusal too. A CLI with no ChatGPT
+// sign-in is domain.ErrCodexCloudSignIn; any other refusal is the CLI's own,
+// in its words.
 func (c Codex) Start(ctx context.Context, repository, branch, prompt, environment string) (Started, error) {
 	if environment != "" {
-		return c.exec(ctx, environment, branch, prompt)
+		started, err := c.exec(ctx, environment, branch, prompt)
+		if err != nil && codexEnvironmentMissing(err, environment) {
+			return Started{}, c.environmentRefusal(ctx, []string{environment}).Problem()
+		}
+		return started, err
 	}
 	envs, listErr := c.Environments(ctx, repository)
 	switch {
-	// The CLI resolves a label by reading the same environments, so a refusal
-	// for rate is not worked around by asking it instead.
-	case isRateLimited(listErr):
+	// The CLI resolves a label by reading the same environments with the same
+	// sign-in, so a refusal for rate or for no sign-in is not worked around by
+	// asking it instead.
+	case isRateLimited(listErr), isSignedOut(listErr):
 		return Started{}, listErr
 	case listErr == nil && envs.Recommended != "":
 		return c.exec(ctx, envs.Recommended, branch, prompt)
@@ -171,14 +182,31 @@ func unreachable(repository string, envs CodexEnvironments) domain.CodexEnvironm
 }
 
 // codexMissing is the CLI's refusal of a label it has no environment for
-// (codex-rs/cloud-tasks, 0.166.0): "environment '<label>' not found; run
-// `codex cloud` to list available environments".
+// (codex-rs/cloud-tasks/src/lib.rs, resolve_environment_id): "environment
+// '<label>' not found; run `codex cloud` to list available environments".
 var codexMissing = regexp.MustCompile(`environment '([^']*)' not found`)
 
+// codexNoEnvironments is the same function's refusal for an account whose
+// list is empty, which is every account that has only ChatGPT's newer
+// environments.
+const codexNoEnvironments = "no cloud environments are available"
+
+// codexSignedOut is the CLI saying it holds no ChatGPT sign-in, in the
+// wording seen, pinned like the Claude adapter's signedOut: a release that
+// rewords it only loses the code of its own, and the refusal reads as
+// SESS_009 in its own words. "Not signed in. Please run 'codex login' to sign
+// in with ChatGPT, then re-run 'codex cloud'." (codex-rs/cloud-tasks/src/lib.rs).
+var codexSignedOut = regexp.MustCompile(`(?i)not (signed|logged) in|run 'codex login'`)
+
 // codexEnvironmentMissing reports whether err is the CLI refusing env itself
-// as missing, and not some other refusal that happens to say "not found".
+// as missing, or having no environment at all, and not some other refusal
+// that happens to say "not found".
 func codexEnvironmentMissing(err error, env string) bool {
-	match := codexMissing.FindStringSubmatch(err.Error())
+	text := err.Error()
+	if strings.Contains(text, codexNoEnvironments) {
+		return true
+	}
+	match := codexMissing.FindStringSubmatch(text)
 	return match != nil && match[1] == env
 }
 
@@ -240,7 +268,8 @@ func (c Codex) List(ctx context.Context, cursor string) (CodexPage, error) {
 }
 
 // run runs the CLI with no input and answers what it printed; a non-zero exit
-// is ErrCodexCloudStart with the CLI's own last words.
+// is ErrCodexCloudStart with the CLI's own last words, or ErrCodexCloudSignIn
+// when those words are that it is not signed in.
 func (c Codex) run(ctx context.Context, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout())
 	defer cancel()
@@ -263,6 +292,9 @@ func (c Codex) run(ctx context.Context, args ...string) (string, error) {
 		detail = err.Error()
 	}
 	problemErr := domain.ErrCodexCloudStart.WithDetail("%s", detail)
+	if codexSignedOut.MatchString(detail) {
+		problemErr = domain.ErrCodexCloudSignIn.WithDetail("%s", detail)
+	}
 	var exit *exec.ExitError
 	if !errors.As(err, &exit) {
 		return "", problemErr.WithCause(err)

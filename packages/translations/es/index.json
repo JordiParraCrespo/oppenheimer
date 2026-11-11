@@ -485,6 +485,7 @@
       "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
       "SESSIONS_053": "Ninguna sesión en la nube de este espacio de trabajo tiene ese id. Solo las sesiones iniciadas desde la consola envían su chat aquí.",
       "SESSIONS_054": "El chat de esta sesión no se muestra aquí.",
+      "SESSIONS_055": "Codex no tiene la sesión de ChatGPT iniciada en el equipo. Ejecuta codex login en el equipo y vuelve a abrir esta lista.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
       "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
@@ -520,12 +521,13 @@
     "startFailure": {
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio.",
-        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
-        "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
+        "SESS_010": "La CLI codex del host no puede iniciar una tarea en ningún entorno de Codex para este repositorio.",
+        "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host.",
+        "SESS_020": "Sin sesión en ChatGPT. Ejecuta codex login en el host."
       },
       "help": {
         "SESS_010": {
-          "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos que lista codex cloud. Los entornos creados en Configuración de ChatGPT → Codex Cloud todavía no son accesibles para la CLI, así que uno de ahí con el nombre de este repositorio no se puede usar desde aquí. Ejecuta codex cloud en el host para ver los entornos que puede usar.",
+          "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos de Codex Cloud (Legacy): los que lista codex cloud en el host. Un entorno creado en Configuración de ChatGPT → Codex Cloud solo se puede iniciar desde el propio ChatGPT, en la web, el escritorio o el móvil. Elige un entorno legacy en el selector de entorno de Codex y vuelve a intentarlo, o inicia esta tarea en ChatGPT.",
           "link": "Abrir la configuración de Codex Cloud"
         }
       },
@@ -887,7 +889,9 @@
         "linked": "Vinculado",
         "pinned": "Fijado",
         "failed": "No se han podido listar los entornos de Codex del equipo.",
-        "lives": "Los entornos viven en tu cuenta de Codex"
+        "lives": "Los entornos viven en tu cuenta de Codex",
+        "legacyOnly": "Solo se listan los entornos de Codex Cloud (Legacy). El equipo no puede iniciar una tarea en uno creado en Configuración de ChatGPT → Codex Cloud.",
+        "partial": "El equipo no ha podido leer la lista completa de ChatGPT, así que solo se listan los entornos de sus tareas recientes. Pueden faltar otros."
       },
       "branch": {
         "label": "Rama",

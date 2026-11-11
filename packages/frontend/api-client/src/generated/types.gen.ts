@@ -11491,6 +11491,8 @@ export type FindHostCodexEnvironmentsErrors = {
      */
     429: ProblemDetailsDto;
     /**
+     * SESSIONS_055 — Codex on the host is not signed in to ChatGPT
+     *
      * SESSIONS_046 — Codex could not list
      */
     502: ProblemDetailsDto;
