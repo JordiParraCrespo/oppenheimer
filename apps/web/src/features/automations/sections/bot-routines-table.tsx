@@ -5,6 +5,7 @@ import { ErrorAlert, triggerListText, useLocale } from '@oppenheimer/frontend-we
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BotRoutineTableRow } from '../components/bot-routine-table-row';
+import { botRoutineColumns } from '../lib/automation-view';
 
 /**
  * The workspace's bot routines, the overview's Bot routines tab
@@ -27,41 +28,34 @@ export function BotRoutinesTable() {
   return (
     <div className="flex flex-col gap-3">
       <ErrorAlert error={error} fallback={t('automations.routines.loadFailed')} />
-      {routines.length === 0 ? (
-        <RoutineTable>
+      <RoutineTable>
+        {routines.length === 0 ? (
           <RoutineTableEmpty>
             <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
               <Bot />
             </span>
             <span>{t('automations.routines.empty')}</span>
           </RoutineTableEmpty>
-        </RoutineTable>
-      ) : (
-        <RoutineTable>
-          <RoutineTableHead
-            columns={[
-              t('automations.routines.routine'),
-              t('automations.table.trigger'),
-              t('automations.table.next'),
-              t('automations.table.status'),
-            ]}
-          />
-          {routines.map((routine) => (
-            <BotRoutineTableRow
-              key={routine.id}
-              routine={routine}
-              botName={botNames?.get(routine.botId)}
-              trigger={triggerListText(routine.triggers, locale, t)}
-              onOpen={() =>
-                navigate({
-                  to: '/bots/$botId/settings/routines',
-                  params: { botId: routine.botId },
-                })
-              }
-            />
-          ))}
-        </RoutineTable>
-      )}
+        ) : (
+          <>
+            <RoutineTableHead columns={botRoutineColumns(t)} />
+            {routines.map((routine) => (
+              <BotRoutineTableRow
+                key={routine.id}
+                routine={routine}
+                botName={botNames?.get(routine.botId)}
+                trigger={triggerListText(routine.triggers, locale, t)}
+                onOpen={() =>
+                  navigate({
+                    to: '/bots/$botId/settings/routines',
+                    params: { botId: routine.botId },
+                  })
+                }
+              />
+            ))}
+          </>
+        )}
+      </RoutineTable>
     </div>
   );
 }

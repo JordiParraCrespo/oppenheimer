@@ -5,6 +5,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { botRoutineColumns } from '../lib/automation-view';
 import { BotRoutinesTable } from '../sections/bot-routines-table';
 import { OverviewTop } from '../sections/overview-top';
 
@@ -17,15 +18,7 @@ export function RoutinesOverviewScreen() {
       <QueryState>
         <QueryState.Pending>
           <RoutineTable aria-busy>
-            <RoutineTableHead
-              aria-hidden
-              columns={[
-                t('automations.routines.routine'),
-                t('automations.table.trigger'),
-                t('automations.table.next'),
-                t('automations.table.status'),
-              ]}
-            />
+            <RoutineTableHead aria-hidden columns={botRoutineColumns(t)} />
             <RoutineTableRowSkeleton index={0} />
             <RoutineTableRowSkeleton index={1} />
           </RoutineTable>
