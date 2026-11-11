@@ -53,7 +53,10 @@ export function codexEnvironmentsOrThrow(
         detail: `Host ${hostId} did not list its Codex environments in time`,
       });
     case 'failed': {
-      const known = RUNNER_REFUSALS[outcome.code];
+      // Own keys only: a code is the runner's word, and `toString` is not a refusal.
+      const known = Object.hasOwn(RUNNER_REFUSALS, outcome.code)
+        ? RUNNER_REFUSALS[outcome.code]
+        : undefined;
       throw new AppError(known?.error ?? SessionErrors.CODEX_ENVIRONMENTS_UNAVAILABLE, {
         detail:
           outcome.detail ??

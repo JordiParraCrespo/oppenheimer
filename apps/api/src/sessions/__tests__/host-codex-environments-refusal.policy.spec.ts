@@ -44,6 +44,14 @@ describe('codexEnvironmentsOrThrow', () => {
     ).toThrow(expect.objectContaining({ code: 'SESSIONS_046', detail: 'no codex' }));
   });
 
+  it('answers a code that is no refusal of the runner’s with SESSIONS_046, whatever its spelling', () => {
+    for (const code of ['toString', '__proto__', 'constructor']) {
+      expect(() => codexEnvironmentsOrThrow({ kind: 'failed', code }, HOST)).toThrow(
+        expect.objectContaining({ code: 'SESSIONS_046', extensions: { upstreamCode: code } }),
+      );
+    }
+  });
+
   it('answers a host that holds no link, and a runner that cannot list, with their own codes', () => {
     expect(() => codexEnvironmentsOrThrow({ kind: 'host_offline' }, HOST)).toThrow(
       expect.objectContaining({ code: 'SESSIONS_045' }),

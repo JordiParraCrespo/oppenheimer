@@ -31,39 +31,55 @@ const codexLegacyOnly = "The codex CLI starts tasks only in Codex Cloud (Legacy)
 	"one made in ChatGPT Settings → Codex Cloud starts only from ChatGPT. " +
 	"Pick a legacy environment, or start this task in ChatGPT."
 
-// Problem is the refusal as ErrCodexCloudEnvironment.
+// codexLogCut is how much of a failure a session's log keeps
+// (`failurePayload` in internal/cli/link.go).
+const codexLogCut = 500
+
+// Problem is the refusal as ErrCodexCloudEnvironment. The names it carries
+// are bounded by what the log's cut leaves once everything else is said, so
+// that the way out, which closes the detail, is not what gets cut: as many
+// names as fit, and the rest counted.
 func (r CodexEnvironmentRefusal) Problem() *problem.Error {
-	visible := "could not be read"
-	if r.Listed {
-		visible = "none"
-		if len(r.Visible) > 0 {
-			visible = withinBudget(r.Visible)
-		}
-	}
+	format := "codex cloud exec found no environment named %s. Environments in this account's recent tasks: %s (a partial list). %s"
 	if r.Complete {
-		return ErrCodexCloudEnvironment.WithDetail(
-			"No Codex environment the CLI can reach is linked to the repository or labelled %s. Environments the CLI can reach: %s. %s",
-			strings.Join(r.Tried, " or "), visible, codexLegacyOnly)
+		format = "No Codex environment the CLI can reach is linked to the repository or labelled %s. Environments the CLI can reach: %s. %s"
 	}
-	return ErrCodexCloudEnvironment.WithDetail(
-		"codex cloud exec found no environment named %s. Environments in this account's recent tasks: %s (a partial list). %s",
-		strings.Join(r.Tried, " or "), visible, codexLegacyOnly)
+	tried := strings.Join(r.Tried, " or ")
+	detail := func(visible string) *problem.Error {
+		return ErrCodexCloudEnvironment.WithDetail(format, tried, visible, codexLegacyOnly)
+	}
+	switch {
+	case !r.Listed:
+		return detail("could not be read")
+	case len(r.Visible) == 0:
+		return detail("none")
+	}
+	return detail(withinBudget(r.Visible, codexLogCut-len(detail("").Error())))
 }
 
-// codexVisibleBudget is how many characters of environment names a refusal
-// carries: what is left of the log's 500 once the sentence around them and
-// the way out are said.
-const codexVisibleBudget = 70
-
-// withinBudget joins names until the next would pass codexVisibleBudget, and
-// says more follow; the first is kept whole whatever its length.
-func withinBudget(names []string) string {
-	out := names[0]
-	for i, name := range names[1:] {
-		if len(out)+len(", ")+len(name) > codexVisibleBudget {
-			return out + ", and " + strconv.Itoa(len(names)-1-i) + " more"
+// withinBudget joins names for as long as they, and the count of the rest,
+// fit in budget characters; with room for none, it is the count alone, which
+// is all that can be done for a repository whose own name fills the log.
+func withinBudget(names []string, budget int) string {
+	rest := func(n int) string { return "and " + strconv.Itoa(n) + " more" }
+	out := ""
+	for i, name := range names {
+		next := name
+		if out != "" {
+			next = out + ", " + name
 		}
-		out += ", " + name
+		left := len(names) - 1 - i
+		need := len(next)
+		if left > 0 {
+			need += len(", " + rest(left))
+		}
+		if need > budget {
+			if out == "" {
+				return strconv.Itoa(len(names)) + ", not named here"
+			}
+			return out + ", " + rest(len(names)-i)
+		}
+		out = next
 	}
 	return out
 }

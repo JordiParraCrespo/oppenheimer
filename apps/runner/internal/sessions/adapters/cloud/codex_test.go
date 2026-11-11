@@ -157,28 +157,34 @@ func TestCodexStartReadsAnAccountWithNoLegacyEnvironmentAsTheSameRefusal(t *test
 	}
 }
 
-// A session's log keeps a failure's first 500 characters. An account whose
-// environments have long names must not push the way out past that cut: the
-// refusal names as many as fit and counts the rest.
-func TestCodexStartKeepsTheWayOutInsideTheLogsCutWhateverTheNames(t *testing.T) {
+// A session's log keeps a failure's first 500 characters, and the refusal
+// closes with the way out. Long environment names, and a long repository
+// name said twice before them, must not push it past that cut: the refusal
+// names as many environments as still fit and counts the rest.
+func TestCodexStartKeepsTheWayOutInsideTheLogsCut(t *testing.T) {
 	var tasks []string
 	for i := range 8 {
 		tasks = append(tasks, fmt.Sprintf(
 			`{"id": "task_e_%d", "status": "ready", "environment_label": "a-rather-long-environment-name-for-client-number-%d"}`, i, i))
 	}
-	bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
-	withTasks(t, bin, `{"tasks": [`+strings.Join(tasks, ",")+`]}`)
-	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
-	}
-	if len(err.Error()) > 500 {
-		t.Fatalf("the refusal is %d characters, past the log's 500: %s", len(err.Error()), err)
-	}
-	for _, want := range []string{"client-number-0, and 7 more", "start this task in ChatGPT."} {
-		if !strings.Contains(pe.Detail, want) {
-			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
+	for repository, names := range map[string]string{
+		"acme-labs/oppenheimer": "client-number-0, and 7 more (",
+		"a-long-organization-name/a-repository-with-quite-a-long-name": ": 8, not named here (",
+	} {
+		bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
+		withTasks(t, bin, `{"tasks": [`+strings.Join(tasks, ",")+`]}`)
+		_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), repository, "main", "task", "")
+		pe := problem.From(err)
+		if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+			t.Fatalf("%s: err = %v, want ErrCodexCloudEnvironment", repository, err)
+		}
+		if len(err.Error()) > 500 {
+			t.Errorf("%s: the refusal is %d characters, past the log's 500: %s", repository, len(err.Error()), err)
+		}
+		for _, want := range []string{names, "start this task in ChatGPT."} {
+			if !strings.Contains(pe.Detail, want) {
+				t.Errorf("%s: detail = %q, want it to say %q", repository, pe.Detail, want)
+			}
 		}
 	}
 }
