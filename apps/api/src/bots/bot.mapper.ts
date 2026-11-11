@@ -34,7 +34,6 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.effort = entity.effort;
     record.permission = entity.permission;
     record.learnAutomatically = entity.learnAutomatically;
-    record.routineSpendGuard = entity.routineSpendGuard;
     record.sections = [...entity.sections];
     return record;
   }
@@ -61,11 +60,9 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         effort: (record.effort ?? null) as SessionEffort | null,
         permission: record.permission as BotPermission,
         learnAutomatically: record.learnAutomatically,
-        routineSpendGuard: record.routineSpendGuard ?? true,
         sections: (record.sections ?? []) as BotSection[],
         lastMessageAt: record.lastMessageAt ?? null,
         lastMessagePreview: record.lastMessagePreview ?? null,
-        ownerSeenAt: record.ownerSeenAt ?? null,
       },
     });
   }
@@ -86,7 +83,6 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.permission = entity.permission;
     dto.createdByBotId = entity.createdByBotId;
     dto.learnAutomatically = entity.learnAutomatically;
-    dto.routineSpendGuard = entity.routineSpendGuard;
     dto.sections = [...entity.sections];
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();
