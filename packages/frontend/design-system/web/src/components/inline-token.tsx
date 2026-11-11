@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDownIcon, PlusIcon, XIcon } from 'lucide-react';
+import { ChevronDownIcon, CopyIcon, PlusIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -15,7 +15,7 @@ import { cn } from '../lib/utils';
  *
  * `TokenSentence` is the line the tokens sit in, muted 14px text between
  * them. `TriggerCard` is the band a trigger lives in inside the editor,
- * with its glyph, the sentence, a remove button, and the preview line
+ * with its glyph, the sentence, duplicate and remove buttons, and the preview line
  * under it. `WeekdayStrip` is that preview for a weekly schedule; `AddRow`
  * the dashed "Add trigger" button under the cards.
  */
@@ -72,6 +72,8 @@ function TokenSentence({ className, ...props }: React.ComponentProps<'div'>) {
 
 function TriggerCard({
   icon,
+  onDuplicate,
+  duplicateLabel = 'Duplicate trigger',
   onRemove,
   removeLabel = 'Remove trigger',
   preview,
@@ -80,6 +82,8 @@ function TriggerCard({
   ...props
 }: React.ComponentProps<'div'> & {
   icon: React.ReactNode;
+  onDuplicate?: () => void;
+  duplicateLabel?: string;
   onRemove?: () => void;
   removeLabel?: string;
   /** The line under the sentence: next run, weekday strip, live matches. */
@@ -99,6 +103,17 @@ function TriggerCard({
           {icon}
         </span>
         {children}
+        {onDuplicate ? (
+          <button
+            type="button"
+            aria-label={duplicateLabel}
+            title={duplicateLabel}
+            onClick={onDuplicate}
+            className="flex size-7 shrink-0 items-center justify-center rounded-pill text-fg-subtle transition-colors duration-fast hover:bg-card hover:text-fg"
+          >
+            <CopyIcon className="size-3.5" />
+          </button>
+        ) : null}
         {onRemove ? (
           <button
             type="button"

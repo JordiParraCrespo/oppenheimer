@@ -386,7 +386,8 @@ what it is.
 The switch, Run now and Delete are the owner acting, so there is no
 card. They dispatch the same commands `update_routine` does, so their
 activity lines come from the same listener (§4, "In the chat").
-`/automations` lists bot routines too, with the bot that runs them.
+`/automations` lists bot routines too, with the bot that runs them, on a
+tab of their own (`/automations/routines`) between Automations and Runs.
 
 ## 8. Slices
 
@@ -455,7 +456,10 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   "Routines in this change" group waits until a line knows its turn.
   `/automations` lists bot routines in their own table under the
   automations, each opening its bot's Routines tab
-  (`GET /automations/routines`).
+  (`GET /automations/routines`). On 2026-11-11 the owner asked for the
+  two in tabs: the table moved to a Bot routines tab,
+  `/automations/routines`, which says where routines are made when there
+  are none.
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.

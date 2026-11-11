@@ -1553,6 +1553,16 @@ earlier note:
   stick"): the facets and the sort are kept on the device, not the
   account, since a filter is the reader's view; a remembered pick the menu
   no longer offers reads as all and is forgotten.
+- `versions/mvp/13-automations.md`'s editor prefilled a new automation
+  with a project (the one it was opened for, else the first) and all of
+  that project's repositories, and picking a project picked all of its
+  repositories. On 2026-11-11 the owner asked for no default repositories
+  and no default project: a new automation starts with neither unless it
+  was opened for a project, and picking a project picks no repository.
+- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+  `/automations` in a second table under the automations. On 2026-11-11
+  the owner asked for them in tabs: the overview reads Automations · Bot
+  routines · Runs, the routines at `/automations/routines`.
 - `versions/mvp/26-bot-routines.md` drew every routine run in its bot's
   chat, and the chat showed its tool calls until the reader hid them. On
   2026-11-11 the owner, scrolling a column of half-hourly "Routine ·
