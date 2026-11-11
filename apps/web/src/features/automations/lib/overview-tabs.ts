@@ -11,7 +11,11 @@ export const OVERVIEW_TABS = [
 
 export type OverviewTab = (typeof OVERVIEW_TABS)[number]['value'];
 
-/** The overview tab a pathname opens, or `undefined` off the overview. */
+/**
+ * The overview tab a pathname opens, or `undefined` off the overview. A
+ * trailing slash opens the same view, as the router matches it.
+ */
 export function overviewTabOf(pathname: string): OverviewTab | undefined {
-  return OVERVIEW_TABS.find((tab) => tab.to === pathname)?.value;
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return OVERVIEW_TABS.find((tab) => tab.to === path)?.value;
 }
