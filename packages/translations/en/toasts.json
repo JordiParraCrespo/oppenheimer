@@ -24,6 +24,7 @@
   "passwordChanged": "Password changed. Other devices are signed out.",
   "taskAdded": "Task added.",
   "taskDeleted": "Task deleted.",
+  "tasksDeleted": "{{n}} tasks deleted.",
   "milestoneAdded": "Milestone added.",
   "taskSessionStarted": "Session started.",
   "taskSessionQueued": "Session queued. It starts when its host reconnects.",

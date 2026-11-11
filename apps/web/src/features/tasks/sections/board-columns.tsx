@@ -1,13 +1,16 @@
 import {
   DragProvider,
+  IconButton,
   SortableItem,
   TaskBoard,
   TaskCard,
   TaskColumn,
   TaskColumnAdd,
   TaskColumnMore,
+  TaskSelectionBar,
   TaskSessionChip,
 } from '@oppenheimer/design-system-web';
+import { Trash2, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import {
   useCreateTask,
@@ -26,10 +29,13 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ColumnComposer } from '../components/column-composer';
+import { DeleteTasksDialog } from '../dialogs/delete-tasks';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
+import { useCardSelection } from '../hooks/use-card-selection';
 import { useToday } from '../hooks/use-today';
 import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
+import { cardClickPick } from '../lib/card-selection';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -46,6 +52,12 @@ const board = getRouteApi('/_authenticated/plan/');
  * column does not grow without end. It reads under Suspense, in the
  * screen's `QueryState`; a refetch that fails keeps the columns and says so
  * above them.
+ *
+ * Cards can be picked to act on together (`useCardSelection`): ⌘/Ctrl-click
+ * toggles one, Shift-click takes the run from the last one toggled, and while
+ * any are picked a plain click toggles too. The picked cards' bar floats at
+ * the foot of the page, with Delete (asked first) and the way out; Escape
+ * leaves as well.
  */
 export function BoardColumns() {
   const { t } = useTranslation();
@@ -79,6 +91,8 @@ export function BoardColumns() {
     ),
     (next) => move.mutate(next),
   );
+  const selection = useCardSelection(TASK_STATUSES.flatMap((status) => drag.groups[status] ?? []));
+  const [deleting, setDeleting] = useState<TaskEntity[] | null>(null);
   const toggleOlder = () =>
     navigate({ search: (previous) => ({ ...previous, older: showOlder ? undefined : true }) });
 
@@ -113,6 +127,7 @@ export function BoardColumns() {
         onToggleDone={() =>
           move.mutate({ id: task.id, status: task.isDone ? 'todo' : 'done', afterTaskId: null })
         }
+        selected={!lifted && selection.isPicked(task.id)}
         project={view.projectName ?? undefined}
         milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
@@ -126,6 +141,14 @@ export function BoardColumns() {
         onClick={(event) => {
           // The card's own controls (the check, Start, the session) are theirs.
           if ((event.target as HTMLElement).closest('button, a, input, [role="checkbox"]')) return;
+          const how = cardClickPick(event, selection.selecting);
+          if (how) {
+            // Shift-click would otherwise select the text between the two cards.
+            event.preventDefault();
+            window.getSelection()?.removeAllRanges();
+            selection.pick(task.id, how);
+            return;
+          }
           navigate({ search: (previous) => ({ ...previous, task: task.id }) });
         }}
         session={
@@ -232,6 +255,38 @@ export function BoardColumns() {
           })}
         </TaskBoard>
       </DragProvider>
+      {selection.selecting ? (
+        <TaskSelectionBar
+          aria-label={t('tasks.selection.label')}
+          count={t('tasks.selection.count', { count: selection.picked.length })}
+        >
+          <IconButton
+            size="sm"
+            variant="quiet"
+            aria-label={t('tasks.selection.delete')}
+            title={t('tasks.selection.delete')}
+            onClick={() => setDeleting(selection.picked.flatMap((id) => byId.get(id) ?? []))}
+          >
+            <Trash2 />
+          </IconButton>
+          <IconButton
+            size="sm"
+            variant="quiet"
+            aria-label={t('tasks.selection.clear')}
+            title={t('tasks.selection.clear')}
+            onClick={selection.clear}
+          >
+            <X />
+          </IconButton>
+        </TaskSelectionBar>
+      ) : null}
+      {deleting ? (
+        <DeleteTasksDialog
+          tasks={deleting}
+          onLeft={selection.keep}
+          onClose={() => setDeleting(null)}
+        />
+      ) : null}
     </div>
   );
 }

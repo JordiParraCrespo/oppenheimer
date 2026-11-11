@@ -34,6 +34,10 @@ import { variedWidth } from '../internal/varied-width';
  *   done, the title then struck and muted), the title, two lines of notes,
  *   the project and milestone, the due date in mono (red when overdue, full ink
  *   when due within a day), the linked session, and Start session on hover.
+ *   A `selected` card (picked to act on with others) takes the selected wash
+ *   and a ring in the focus ink.
+ * - `TaskSelectionBar`: what the picked cards can do together, floating at
+ *   the foot of the viewport — how many, then `children` (the actions).
  * - `TaskCardSkeleton`: a card's place before the tasks answer, on the
  *   card's own frame.
  */
@@ -191,6 +195,7 @@ function TaskCard({
   session,
   onStart,
   startLabel = 'Start session',
+  selected = false,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'title'> & {
@@ -210,6 +215,8 @@ function TaskCard({
   /** Shown on hover while the task has no session and is not done. */
   onStart?: () => void;
   startLabel?: string;
+  /** Picked, with others, to act on together. */
+  selected?: boolean;
 }) {
   const offerStart = Boolean(onStart) && !session && !done;
   const hasMeta = Boolean(project || milestone || (due && !done));
@@ -217,8 +224,10 @@ function TaskCard({
     <div
       data-slot="task-card"
       data-done={done || undefined}
+      data-selected={selected || undefined}
+      aria-selected={selected || undefined}
       className={cn(
-        'group/task relative flex cursor-grab gap-2.5 rounded-md border border-border-subtle bg-card py-3 pr-3 pl-2.5 transition-[border-color] duration-instant ease-standard hover:border-border',
+        'group/task relative flex cursor-grab gap-2.5 rounded-md border border-border-subtle bg-card py-3 pr-3 pl-2.5 transition-[border-color,background-color] duration-instant ease-standard hover:border-border data-selected:border-ring data-selected:bg-selected-surface',
         className,
       )}
       {...props}
@@ -283,6 +292,37 @@ function TaskCard({
           <PlayIcon className="size-3.5" aria-hidden />
         </button>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * TaskSelectionBar — the board's toolbar while cards are picked: a pill on the
+ * popover surface, centred at the foot of the viewport, so the columns do not
+ * move when it comes and goes. Under 768px it sits above the rail's tab bar. `count` reads "3 selected"; `children` are the
+ * actions (`IconButton`s or `Button`s), the last one usually the way out.
+ */
+function TaskSelectionBar({
+  count,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /** "3 selected". */
+  count: React.ReactNode;
+}) {
+  return (
+    <div
+      role="toolbar"
+      data-slot="task-selection-bar"
+      className={cn(
+        'fixed bottom-[calc(var(--spacing)*20+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-pill border border-border bg-popover py-1 pr-1 pl-4 shadow-popover md:bottom-6',
+        className,
+      )}
+      {...props}
+    >
+      <span className="mr-2 text-[13px] font-medium whitespace-nowrap text-fg">{count}</span>
+      {children}
     </div>
   );
 }
@@ -425,5 +465,5 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSessionChip };
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSelectionBar, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };

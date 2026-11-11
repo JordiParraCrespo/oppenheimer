@@ -4,7 +4,7 @@ import { Button } from '@oppenheimer/design-system-web/button';
 import { DragProvider, type SortableGroups, SortableItem, useSortableGroups } from '@oppenheimer/design-system-web/drag';
 import { MilestoneCard, MilestoneEmpty, MilestoneGrid } from '@oppenheimer/design-system-web/milestone-card';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
-import { EllipsisIcon, PlusIcon } from '@oppenheimer/design-system-web/icons';
+import { EllipsisIcon, PlusIcon, Trash2Icon, XIcon } from '@oppenheimer/design-system-web/icons';
 import {
   PageHeader,
   PageHeaderMeta,
@@ -21,6 +21,7 @@ import {
   TaskColumnAdd,
   TaskColumnMore,
   TaskComposer,
+  TaskSelectionBar,
   TaskSessionChip,
   type TaskStatus,
 } from '@oppenheimer/design-system-web/task-board';
@@ -280,6 +281,46 @@ export function TaskStatusDots() {
           {c.label}
         </StatusDot>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Cards picked to act on together: ⌘/Ctrl-click or Shift-click a card, and
+ * TaskSelectionBar floats at the foot of the viewport with what they can do.
+ * Here the bar sits in the flow, under the cards, so the gallery shows it.
+ */
+export function TaskSelectionDemo() {
+  const [picked, setPicked] = React.useState<string[]>(['a', 'c']);
+  const cards = [
+    { id: 'a', title: 'Draft the beta waitlist email', project: 'Atlas' },
+    { id: 'b', title: 'Review the pricing page copy', project: 'Atlas' },
+    { id: 'c', title: 'Move Julia website to Hetzner', project: 'Julia' },
+  ];
+  const toggle = (id: string) =>
+    setPicked((now) => (now.includes(id) ? now.filter((each) => each !== id) : [...now, id]));
+  return (
+    <div className="flex w-full max-w-72 flex-col gap-2">
+      {cards.map((card) => (
+        <TaskCard
+          key={card.id}
+          title={card.title}
+          project={card.project}
+          checkLabel="Mark as done"
+          selected={picked.includes(card.id)}
+          onClick={() => toggle(card.id)}
+        />
+      ))}
+      {picked.length > 0 ? (
+        <TaskSelectionBar count={`${picked.length} selected`} className="static mt-2 translate-x-0 self-start">
+          <IconButton size="xs" variant="quiet" aria-label="Delete selected">
+            <Trash2Icon />
+          </IconButton>
+          <IconButton size="xs" variant="quiet" aria-label="Clear selection" onClick={() => setPicked([])}>
+            <XIcon />
+          </IconButton>
+        </TaskSelectionBar>
+      ) : null}
     </div>
   );
 }
