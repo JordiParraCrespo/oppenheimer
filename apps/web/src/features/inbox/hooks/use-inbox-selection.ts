@@ -14,7 +14,7 @@ export function useInboxSelection(shown: readonly string[]) {
   const any = keys.length > 0;
   // A row that left the list leaves the selection for good, so it is not
   // selected again when a search or filter brings it back.
-  if (keys.length !== picked.size) setPicked(selected);
+  if (selected.size !== picked.size) setPicked(selected);
 
   // Syncs with the document's key events: Escape, while anything is selected.
   useEffect(() => {

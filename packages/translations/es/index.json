@@ -3467,6 +3467,7 @@
     "selection": {
       "label": "Elementos seleccionados",
       "count_one": "{{count}} seleccionado",
+      "count_many": "{{count}} seleccionados",
       "count_other": "{{count}} seleccionados",
       "selectAll": "Seleccionar todo",
       "selectRow": "Seleccionar {{title}}",
