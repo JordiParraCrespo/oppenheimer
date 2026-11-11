@@ -57,6 +57,46 @@ function InboxListHead({
   );
 }
 
+/** When a row's checkbox shows: on hover, on focus within, or while the list is selecting. */
+const SELECT_SHOWN =
+  'group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-selecting/row:opacity-100';
+/** The unread dot gives way to the checkbox wherever it shows. */
+const SELECT_TAKES_DOT =
+  'group-hover/row:invisible group-focus-within/row:invisible group-data-selecting/row:invisible';
+
+/**
+ * InboxSelectionHead — the list column's head while rows are selected, in the
+ * place of `InboxListHead`: `leading` (the select-all checkbox), how many are
+ * selected, and `children` (what can be done to all of them) on the right.
+ */
+function InboxSelectionHead({
+  count,
+  leading,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /** "3 selected". */
+  count: React.ReactNode;
+  leading?: React.ReactNode;
+}) {
+  return (
+    <div
+      role="toolbar"
+      data-slot="inbox-selection-head"
+      className={cn(
+        'flex h-12 shrink-0 items-center gap-2.5 border-b border-border-subtle bg-selected-surface pr-2.5 pl-[13px]',
+        className,
+      )}
+      {...props}
+    >
+      {leading}
+      <span className="figures text-[13px] font-medium">{count}</span>
+      <div className="ml-auto flex items-center gap-0.5">{children}</div>
+    </div>
+  );
+}
+
 /** The row's box, shared by `InboxItem` and its skeleton so the two cannot drift. */
 const ITEM_FRAME =
   'grid w-full grid-cols-[8px_minmax(0,1fr)_auto] gap-x-2.5 gap-y-[3px] border-b border-border-subtle py-3 pr-3.5 pl-2.5';
@@ -67,7 +107,10 @@ const ITEM_FRAME =
  * a line of its body. Unread rows set the sender and subject in semibold. The
  * item in the reading pane is `active`, on the selected wash; a `done` row
  * (Show done) is struck through at half strength. `action` is the row's
- * ellipsis, shown on hover, focus or while open, over the age.
+ * ellipsis, shown on hover, focus or while open, over the age. `select` is its
+ * checkbox (a `Checkbox`), in the dot's place on hover or focus, and
+ * on every row while the list is `selecting`; a `selected` row takes the
+ * selected wash.
  */
 function InboxItem({
   sender,
@@ -79,6 +122,9 @@ function InboxItem({
   done,
   action,
   menuOpen,
+  select,
+  selected,
+  selecting,
   className,
   render,
   nativeButton,
@@ -98,21 +144,27 @@ function InboxItem({
   action?: React.ReactNode;
   /** Keeps the row lit and the action visible while its menu is open. */
   menuOpen?: boolean;
+  /** The row's checkbox, a small `Checkbox`, over the unread dot. */
+  select?: React.ReactNode;
+  selected?: boolean;
+  /** Something in the list is selected: every row shows its checkbox. */
+  selecting?: boolean;
 }) {
-  const withAction = action !== undefined;
+  const withAction = action !== undefined || select !== undefined;
   const button = (
     <ButtonPrimitive
       data-slot="inbox-item"
       data-active={active || undefined}
       data-done={done || undefined}
       data-unread={unread || undefined}
+      data-selected={selected || undefined}
       role={withAction ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
         ITEM_FRAME,
-        'group/inbox items-baseline text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50',
+        'group/inbox items-baseline text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-selected-surface data-selected:bg-selected-surface data-done:opacity-50',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -120,7 +172,10 @@ function InboxItem({
     >
       <span
         aria-hidden
-        className="col-start-1 row-start-1 size-[7px] self-center rounded-pill group-data-unread/inbox:bg-primary"
+        className={cn(
+          'col-start-1 row-start-1 size-[7px] self-center rounded-pill group-data-unread/inbox:bg-primary',
+          select !== undefined && SELECT_TAKES_DOT,
+        )}
       />
       <span className="col-start-2 row-start-1 truncate text-[13.5px] group-data-unread/inbox:font-semibold">
         {sender}
@@ -152,9 +207,20 @@ function InboxItem({
       slot="inbox-row"
       action={action}
       menuOpen={menuOpen}
+      data-selecting={selecting || undefined}
       className="[&>span:last-child]:top-2.5 [&>span:last-child]:right-2 [&>span:last-child]:translate-y-0"
     >
       {button}
+      {select !== undefined ? (
+        <span
+          className={cn(
+            'absolute top-[13px] left-[5px] flex opacity-0 transition-opacity duration-fast',
+            SELECT_SHOWN,
+          )}
+        >
+          {select}
+        </span>
+      ) : null}
     </SidebarRow>
   );
 }
@@ -532,6 +598,7 @@ export {
   InboxQuestionOption,
   InboxQuestionOptions,
   InboxQuestions,
+  InboxSelectionHead,
   InboxSnoozedRow,
   InboxToolbar,
 };

@@ -3430,6 +3430,19 @@
       "refresh": "Refresh",
       "clearSearch": "Clear search"
     },
+    "selection": {
+      "label": "Selected items",
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "selectAll": "Select all",
+      "selectRow": "Select {{title}}",
+      "clear": "Clear selection",
+      "done": "Mark as done",
+      "low": "Deprioritize",
+      "restore": "Restore priority",
+      "snooze": "Snooze",
+      "delete": "Delete"
+    },
     "filter": {
       "label": "Filter the Inbox",
       "type": "Type",
@@ -3461,7 +3474,8 @@
       "restore": "Restore priority",
       "snoozeHour": "Snooze 1 hour",
       "snoozeTomorrow": "Snooze until tomorrow",
-      "delete": "Delete"
+      "delete": "Delete",
+      "select": "Select"
     },
     "from": {
       "session": "Session",

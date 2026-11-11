@@ -508,3 +508,29 @@ runs.
   spends no GitHub calls on items it would not list. Every count (the
   list's and Plan's sidebar) follows the switch at once.
 - Pull requests stay where they always were: the Pull requests page.
+
+## Bulk actions (2026-11-11)
+
+The owner asked to act on several items at once rather than one row's menu
+at a time.
+
+- **Selecting.** An open row has a checkbox in the unread dot's place, shown
+  on hover or focus, and on every row once one is checked. Shift-click picks
+  the run since the last row picked. Where there is no hover (a phone), the
+  row menu's **Select** checks that row. A done row (Show done) is not
+  selectable. The selection is the list's, for this visit: a row that leaves
+  the list (marked in another tab, filtered out) leaves it too, and Escape or
+  the bar's cross clears it.
+- **The bar.** While anything is selected, the list's head gives way to a
+  selection bar: select all (mixed while only some are), "N selected", and
+  the row menu's actions for all of them: Mark as done, Deprioritize (Restore
+  priority when every selected row is already low), Snooze 1 hour or until
+  tomorrow, and Delete. Each clears the selection.
+- **The API is unchanged.** A bulk action writes the cached marks once, so
+  every row leaves on the click, then puts one mark per item through
+  `PUT /v1/inbox/marks/{itemKey}`. A refusal for any of them puts the list
+  back and reads the marks again, which keeps the ones the server took. An
+  Inbox rarely holds more than a few dozen items, well under the default
+  hundred requests a minute; a bulk endpoint is the next step if that
+  changes.
+- E and L still act on the item in the pane, not on the selection.

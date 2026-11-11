@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ApprovalCommand } from '@oppenheimer/design-system-web/chat-decisions';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { Button } from '@oppenheimer/design-system-web/button';
+import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import {
   Check,
@@ -13,6 +14,7 @@ import {
   PanelLeft,
   SlidersVertical,
   Terminal,
+  Trash2,
   TrendingDown,
   X,
 } from '@oppenheimer/design-system-web/icons';
@@ -31,6 +33,7 @@ import {
   InboxQuestionOption,
   InboxQuestionOptions,
   InboxQuestions,
+  InboxSelectionHead,
   InboxSnoozedRow,
   InboxToolbar,
 } from '@oppenheimer/design-system-web/inbox';
@@ -101,6 +104,71 @@ function InboxListDemo() {
           }
         />
       </div>
+    </div>
+  );
+}
+
+function InboxSelectionDemo() {
+  const menu = (
+    <IconButton size="xs" variant="quiet" aria-label="Item actions">
+      <EllipsisIcon />
+    </IconButton>
+  );
+  return (
+    <div className="w-90 border border-border-subtle">
+      <InboxSelectionHead
+        aria-label="Selected items"
+        count="2 selected"
+        leading={<Checkbox className="size-3.5" indeterminate aria-label="Select all" />}
+      >
+        <IconButton size="xs" variant="quiet" aria-label="Mark as done">
+          <Check />
+        </IconButton>
+        <IconButton size="xs" variant="quiet" aria-label="Deprioritize">
+          <TrendingDown />
+        </IconButton>
+        <IconButton size="xs" variant="quiet" aria-label="Snooze">
+          <Clock />
+        </IconButton>
+        <IconButton size="xs" variant="quiet" aria-label="Delete">
+          <Trash2 />
+        </IconButton>
+        <IconButton size="xs" variant="quiet" aria-label="Clear selection">
+          <X />
+        </IconButton>
+      </InboxSelectionHead>
+      <InboxList>
+        <InboxItem
+          sender="Oppie"
+          title="Oppie has news for you"
+          preview="Sentry API-5: four background-summary failures."
+          meta="1h"
+          selecting
+          selected
+          select={<Checkbox className="size-3.5" checked aria-label="Select" />}
+          action={menu}
+        />
+        <InboxItem
+          sender="Juno"
+          title="Juno has news for you"
+          preview="Eight tasks are now overdue."
+          meta="1d"
+          unread
+          selecting
+          select={<Checkbox className="size-3.5" aria-label="Select" />}
+          action={menu}
+        />
+        <InboxItem
+          sender="Pullpo"
+          title="Pullpo has news for you"
+          preview="I paused my routines while you were away."
+          meta="3d"
+          selecting
+          selected
+          select={<Checkbox className="size-3.5" checked aria-label="Select" />}
+          action={menu}
+        />
+      </InboxList>
     </div>
   );
 }
@@ -238,7 +306,7 @@ export function InboxSpec() {
       id="inbox"
       title="Inbox"
       meta="inbox.tsx"
-      desc="One place for what needs you, laid out as a mail client inside Plan (Inbox.dc.html). The list column opens on InboxListHead (the sidebar toggle, the name, the unread count, the filter); InboxItem is a mail row: an unread dot, who it is from with a mono age or Low, the subject and a line of its body, unread rows in semibold, the one in the reading pane on the selected wash, a done row (Show done) struck through at half strength, and the ellipsis over the age on hover. InboxItemSkeleton holds a row's place while the Inbox loads; InboxSnoozedRow lists a snoozed item with when it comes back and Bring back. The reading pane opens on InboxToolbar (Mark as done, Snooze, Deprioritize, Delete and the item's place), then InboxMessage: the question as a heading, the sender on a round glyph with where it comes from and how long ago, then InboxMessageBody, InboxMessageFacts and InboxMessageActions with Later and a link on the left and the answers on the right; InboxClear says nothing needs you. A session waiting on a decision answers in the message: a permission's options as InboxMessageChoices in the agent's order (the command in an ApprovalCommand above), a question's as InboxQuestions, each InboxQuestion numbered with its tag, its InboxQuestionOptions pills (one, or several) and a field for an answer of its own."
+      desc="One place for what needs you, laid out as a mail client inside Plan (Inbox.dc.html). The list column opens on InboxListHead (the sidebar toggle, the name, the unread count, the filter); InboxItem is a mail row: an unread dot, who it is from with a mono age or Low, the subject and a line of its body, unread rows in semibold, the one in the reading pane on the selected wash, a done row (Show done) struck through at half strength, and the ellipsis over the age on hover. InboxItemSkeleton holds a row's place while the Inbox loads; InboxSnoozedRow lists a snoozed item with when it comes back and Bring back. A row's select is its Checkbox, in the unread dot's place on hover and on every row once the list is selecting; a selected row takes the selected wash, and InboxSelectionHead takes the head's place with select all, the count and the bulk actions. The reading pane opens on InboxToolbar (Mark as done, Snooze, Deprioritize, Delete and the item's place), then InboxMessage: the question as a heading, the sender on a round glyph with where it comes from and how long ago, then InboxMessageBody, InboxMessageFacts and InboxMessageActions with Later and a link on the left and the answers on the right; InboxClear says nothing needs you. A session waiting on a decision answers in the message: a permission's options as InboxMessageChoices in the agent's order (the command in an ApprovalCommand above), a question's as InboxQuestions, each InboxQuestion numbered with its tag, its InboxQuestionOptions pills (one, or several) and a field for an answer of its own."
       code={`<InboxList><InboxItem sender="pau-g" title="Merge #121" preview="It can merge now." meta="6m" unread action={menu} /></InboxList>
 <InboxMessage icon={<Bot />} sender="Ops" meta="Bot approval" title="Approve start_session?" age="14m ago"><InboxMessageBody>…</InboxMessageBody><InboxMessageActions leading={<Button variant="ghost">Later</Button>}><Button>Approve</Button></InboxMessageActions></InboxMessage>`}
     >
@@ -247,6 +315,7 @@ export function InboxSpec() {
           <InboxListDemo />
           <InboxPaneDemo />
         </div>
+        <InboxSelectionDemo />
         <InboxDecisionDemo />
       </ThemePair>
     </Spec>

@@ -418,6 +418,65 @@ export function useDeleteInboxMark(
   });
 }
 
+export interface PutInboxMarksVariables {
+  itemKeys: readonly string[];
+  /** `null` clears each one's mark (Restore priority on a selection). */
+  mark: InboxMark | null;
+  /** With a snooze, and only with one. */
+  until?: Date;
+}
+
+/**
+ * Marks a selection at once: one write to the cached list, so every row moves
+ * on the click, then a request per occurrence (the API marks one at a time).
+ * Any refusal puts the list back and reads it again, which keeps the ones the
+ * server did take.
+ */
+export function usePutInboxMarks(
+  options?: UseMutationOptions<InboxMarkEntity[], Error, PutInboxMarksVariables, MarksContext>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    ...withCacheOnSuccess(options, (saved, { itemKeys }) => {
+      const keys = new Set(itemKeys);
+      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) => [
+        ...(marks ?? []).filter((mark) => !keys.has(mark.itemKey)),
+        ...saved,
+      ]);
+    }),
+    mutationFn: async ({ itemKeys, mark, until }: PutInboxMarksVariables) => {
+      const results = await Promise.allSettled(
+        itemKeys.map((itemKey) =>
+          mark === null
+            ? app.inbox.deleteMark(itemKey).then(() => null)
+            : app.inbox.putMark(itemKey, mark, until),
+        ),
+      );
+      const refused = results.find((result) => result.status === 'rejected');
+      if (refused) throw refused.reason;
+      return results.flatMap((result) =>
+        result.status === 'fulfilled' && result.value ? [result.value] : [],
+      );
+    },
+    onMutate: ({ itemKeys, mark, until }) => {
+      const keys = new Set(itemKeys);
+      return writeMarks(queryClient, (marks) => [
+        ...marks.filter((row) => !keys.has(row.itemKey)),
+        ...(mark === null
+          ? []
+          : itemKeys.map(
+              (itemKey) => new InboxMarkEntity(itemKey, mark, until ?? null, new Date()),
+            )),
+      ]);
+    },
+    onError: (error, variables, context, mutation) => {
+      restoreMarks(queryClient, context);
+      return options?.onError?.(error, variables, context, mutation);
+    },
+  });
+}
+
 /** A report's pictures, as `useInboxReportImages` reads them: each one's bytes once they are in. */
 export interface InboxReportImageReads {
   blobs: readonly (Blob | undefined)[];

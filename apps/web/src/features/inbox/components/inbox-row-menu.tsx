@@ -11,6 +11,7 @@ import {
   Check,
   Clock,
   Ellipsis,
+  SquareCheck,
   TrendingDown,
   TrendingUp,
   X,
@@ -19,7 +20,8 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * A row's ellipsis menu (the 2026-10-26 frame): Mark as done, Deprioritize or
- * Restore priority, the two snoozes and Delete; a done row has Delete alone.
+ * Restore priority, the two snoozes, Select (a bulk action's first row, where
+ * there is no hover to show the checkbox) and Delete; a done row has Delete alone.
  * The keys are painted only on the item in the pane, the one E and L act on.
  */
 export function InboxRowMenu({
@@ -33,6 +35,7 @@ export function InboxRowMenu({
   onSnoozeHour,
   onSnoozeTomorrow,
   onRemove,
+  onSelect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -44,6 +47,7 @@ export function InboxRowMenu({
   onSnoozeHour: () => void;
   onSnoozeTomorrow: () => void;
   onRemove: () => void;
+  onSelect: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -75,6 +79,11 @@ export function InboxRowMenu({
             <DropdownMenuItem onClick={onSnoozeTomorrow}>
               <Clock />
               {t('inbox.menu.snoozeTomorrow')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onSelect}>
+              <SquareCheck />
+              {t('inbox.menu.select')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
