@@ -15,8 +15,8 @@ Long pastes in a bot's chat, the way Claude Code and Codex hold them.
   longer than a bot takes keeps send off and says so. A long message you sent
   is folded in the chat to its first twelve lines, with Show all.
 - `@oppenheimer/shared`: `BOT_MESSAGE_MAX` is 80,000 characters (was 16,000),
-  room for a pasted log of a thousand lines or more and still inside the
-  history a follow-up turn re-sends.
+  room for a pasted log of a thousand lines or more, and never larger than the
+  history a turn re-sends.
 - `@oppenheimer/api`: the JSON body limit is 512 KB (was Express's 100 KB), so a
   message at that length reaches the API.
 - `@oppenheimer/backend-core`: `SanitizePipe` strips tags with a linear scan;
