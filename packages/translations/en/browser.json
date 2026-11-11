@@ -1589,6 +1589,15 @@
       "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
       "history": "History {{position}}/{{total}}",
+      "pasted": {
+        "lines": "[Pasted text #{{n}} +{{lines}} lines]",
+        "chars": "[Pasted text #{{n}} {{chars}} chars]"
+      },
+      "fold": {
+        "showAll": "Show all {{lines}} lines",
+        "showLess": "Show less"
+      },
+      "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
       "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
       "steered": "Steered in while it worked",
       "send": "Send",

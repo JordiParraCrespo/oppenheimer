@@ -1136,8 +1136,15 @@ export const BOT_MESSAGE_EVENT_KINDS = [
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
-/** A message's length; long enough for a pasted page, short enough to keep a turn's prompt bounded. */
-export const BOT_MESSAGE_MAX = 16_000;
+/**
+ * A message's length in characters: room for a pasted log or file of a
+ * thousand lines or more (about 20k tokens), and short of the history a turn
+ * re-sends (`BOT_HISTORY_TOKEN_BUDGET`, 24k tokens), so one message never
+ * outgrows the history on its own. The turn it starts reads it whole; once
+ * the conversation folds (`bot-summary.policy`), a paste over the 9k tokens
+ * a fold keeps is read through the summary.
+ */
+export const BOT_MESSAGE_MAX = 80_000;
 /** The most messages one conversation read returns, newest first. */
 export const BOT_CONVERSATION_PAGE_MAX = 200;
 export const BOT_CONVERSATION_PAGE_DEFAULT = 100;
