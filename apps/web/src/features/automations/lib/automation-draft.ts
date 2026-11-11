@@ -23,7 +23,14 @@ import {
 import { localDate } from './time';
 
 export type ScheduleCard = Extract<TriggerInput, { source: 'schedule' }> & { key: string };
-export type GithubCard = Extract<TriggerInput, { source: 'github' }> & { key: string };
+/**
+ * `onAll`, the editor's alone and never sent: the card listens on every
+ * repository the automation has, so it follows that set as it changes.
+ */
+export type GithubCard = Extract<TriggerInput, { source: 'github' }> & {
+  key: string;
+  onAll: boolean;
+};
 export type TriggerCard = ScheduleCard | GithubCard;
 
 /**
@@ -106,6 +113,7 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
     model: revision.model,
     // A mail trigger belongs to a bot's routine, which this editor never opens.
     triggers: automation.triggers.flatMap((trigger): TriggerCard[] => {
+      const repositoryCount = revision.repositories.length;
       if (trigger.source === 'schedule') {
         const { id: _id, nextFireAt: _next, ...rule } = trigger;
         return [{ ...rule, key: nextKey() }];
@@ -118,6 +126,7 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
           repositories: trigger.repositories.map(Number),
           filter: trigger.filter,
           key: nextKey(),
+          onAll: trigger.repositories.length >= repositoryCount,
         },
       ];
     }),
@@ -172,27 +181,23 @@ export function githubCard(event: GithubEventType, repositories: number[]): Gith
     repositories,
     filter: defaultFilter(event),
     key: nextKey(),
+    onAll: true,
   };
 }
 
 /**
  * Keeps each GitHub card inside the automation's repositories after the set
- * changes: a card loses a repository that left, a card that listened on all
- * of the `previous` ones (or on none yet) follows the set as it grows, and a
- * card left with none listens on all of them rather than on nothing.
+ * changes: a card on all of them follows the set, a narrowed card loses a
+ * repository that left, and a card left with none listens on all of them
+ * rather than on nothing.
  */
-export function fitCards(
-  triggers: TriggerCard[],
-  repositories: number[],
-  previous: number[],
-): TriggerCard[] {
+export function fitCards(triggers: TriggerCard[], repositories: number[]): TriggerCard[] {
   return triggers.map((card) => {
     if (card.source !== 'github') return card;
-    const onAll =
-      card.repositories.length === previous.length &&
-      previous.every((id) => card.repositories.includes(id));
     const kept = card.repositories.filter((id) => repositories.includes(id));
-    return { ...card, repositories: onAll || !kept.length ? repositories : kept };
+    return card.onAll || !kept.length
+      ? { ...card, repositories, onAll: true }
+      : { ...card, repositories: kept };
   });
 }
 
@@ -275,6 +280,10 @@ export function isAutomationAgent(agent: AutomationAgentId): agent is CodingAgen
 }
 
 function stripKey(card: TriggerCard): TriggerInput {
+  if (card.source === 'github') {
+    const { key: _key, onAll: _onAll, ...trigger } = card;
+    return trigger;
+  }
   const { key: _key, ...trigger } = card;
   return trigger;
 }

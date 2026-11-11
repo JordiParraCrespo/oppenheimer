@@ -220,20 +220,20 @@ describe('the draft', () => {
   });
 
   it('keeps each card inside the automation’s repositories', () => {
-    const card = githubCard('push', [101, 202]);
-    expect(fitCards([card], [202], [101, 202])[0]).toMatchObject({ repositories: [202] });
-    expect(fitCards([githubCard('push', [101])], [303], [101])[0]).toMatchObject({
-      repositories: [303],
-    });
+    const narrowed = { ...githubCard('push', [101]), onAll: false };
+    expect(fitCards([narrowed], [303])[0]).toMatchObject({ repositories: [303] });
     // A card added before any repository was picked follows the picks one at a time.
-    const [first] = fitCards([githubCard('push', [])], [101], []);
-    expect(fitCards(first ? [first] : [], [101, 202], [101])[0]).toMatchObject({
-      repositories: [101, 202],
-    });
-    // A card narrowed to one of them stays narrowed when another is picked.
-    expect(fitCards([githubCard('push', [101])], [101, 202, 303], [101, 202])[0]).toMatchObject({
-      repositories: [101],
-    });
+    const pending = fitCards(fitCards([githubCard('push', [])], [101]), [101, 202]);
+    expect(pending[0]).toMatchObject({ repositories: [101, 202] });
+    // A narrowed card stays narrowed, even after the set shrinks to its own
+    // repository and grows back.
+    const shrunk = fitCards([narrowed], [101]);
+    expect(fitCards(shrunk, [101, 202])[0]).toMatchObject({ repositories: [101] });
+    // Whether it follows the set is the editor's: the request never carries it.
+    const draft = { ...draftOf(automation()), triggers: [githubCard('push', [101])] };
+    expect(toCreateInput(draft, { name: 'x', prompt: 'y' })?.triggers[0]).not.toHaveProperty(
+      'onAll',
+    );
   });
 
   it('round-trips an automation into the requests the API takes', () => {

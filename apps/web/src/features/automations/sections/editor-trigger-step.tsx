@@ -42,12 +42,15 @@ export function EditorTriggerStep({
     onChange(triggers.map((current) => (current.key === card.key ? card : current)));
   const remove = (key: string) => onChange(triggers.filter((current) => current.key !== key));
   const full = triggers.length >= MAX_AUTOMATION_TRIGGERS;
-  const duplicate = (key: string) =>
-    onChange(
-      triggers.flatMap((current) =>
-        current.key === key ? [current, duplicateCard(current)] : [current],
-      ),
-    );
+  // Gone once the automation holds its most triggers.
+  const duplicate = full
+    ? undefined
+    : (key: string) =>
+        onChange(
+          triggers.flatMap((current) =>
+            current.key === key ? [current, duplicateCard(current)] : [current],
+          ),
+        );
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -58,7 +61,7 @@ export function EditorTriggerStep({
             key={card.key}
             card={card}
             onChange={replace}
-            onDuplicate={full ? undefined : () => duplicate(card.key)}
+            onDuplicate={duplicate && (() => duplicate(card.key))}
             onRemove={() => remove(card.key)}
           />
         ) : (
@@ -67,7 +70,7 @@ export function EditorTriggerStep({
             card={card}
             repositories={repositories}
             onChange={replace}
-            onDuplicate={full ? undefined : () => duplicate(card.key)}
+            onDuplicate={duplicate && (() => duplicate(card.key))}
             onRemove={() => remove(card.key)}
           />
         ),

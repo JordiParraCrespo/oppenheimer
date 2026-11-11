@@ -79,7 +79,7 @@ export function AutomationEditor({
       return patch.repositoryKeys
         ? {
             ...next,
-            triggers: fitCards(next.triggers, draftRepoIds(next), draftRepoIds(current)),
+            triggers: fitCards(next.triggers, draftRepoIds(next)),
           }
         : next;
     });
