@@ -34,7 +34,7 @@ The Sessions sidebar lists sessions under their projects, with **Pinned** at the
 
 ### Hidden sessions
 
-A hidden session keeps running but stays out of the sidebar. You hide one from its row's menu. A bot, a script or an agent can also start one hidden: `start_session` with `hidden` for a bot or over MCP, `opp sessions run --hidden` from the CLI. To see hidden sessions, turn on **Show hidden sessions** in the filter menu, which also counts them. They are listed marked **Hidden**, and **Show** in a row's menu brings that session back for good. Every device sees the same hidden sessions, and the toggle is kept per device.
+A hidden session keeps running but stays out of the sidebar. You hide one from its row's menu. A bot, a script or an agent can also start one hidden: `start_session` with `hidden` for a bot or over MCP, `opp sessions run --hidden` from the CLI. To see hidden sessions, turn on **Show hidden sessions** in the filter menu, which also counts them. They are listed with an eye-off icon, and **Show** in a row's menu brings that session back for good. Every device sees the same hidden sessions, and the toggle is kept per device.
 
 ## The state dot
 

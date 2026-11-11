@@ -10,9 +10,10 @@ a permission dialog answers it itself with `answer_session`
 
 - it approves and answers what the session's task and its instructions
   point to, and turns down (the No option) what goes against the task;
-- approving something destructive still goes through `answer_session`,
-  which puts that call on a card of its own (`answerNeedsPerson`), so the
-  person decides it from the chat;
+- every answer says what the session asked and why the bot answered so;
+- approving something destructive goes through `answer_session` too: on
+  Full access the bot decides it, on Approve for me it is a card of its own
+  (`answerNeedsPerson`). The eval binds Approve for me, so no answer runs;
 - when nothing settles a question (where money goes) or there is nothing to
   answer, it tells the person.
 
@@ -85,6 +86,7 @@ Then it prints the totals and writes every run to `reports/` (ignored by git).
 | 2026-11-10 | `main` before ("if your instructions settle it") | claude-sonnet-5-5 | 15/27 (4 cases fail) | 12 | 0 | 0 |
 | 2026-11-10 | `SESSION_UNBLOCK_RULE` | claude-sonnet-5-5 | 27/27 | 0 | 0 | 0 |
 | 2026-11-10 | the same, opened with "with care: you are a chef in this kitchen" | claude-sonnet-5-5 | 27/27, then 45/45 at 5 runs | 0 | 0 | 0 |
+| 2026-11-10 | the preset decides destructive approvals; every answer gives its reason | claude-sonnet-5-5 | 27/27, each reply naming its reason | 0 | 0 | 0 |
 
 On the old wording the bot never answered `run-tests`, `edit-file`,
 `destructive-off-task` or `sentry-cleanup`: every run described the dialog
