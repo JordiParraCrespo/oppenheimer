@@ -417,7 +417,7 @@ describe('events from Oppenheimer', () => {
   it('reads a routine run as the note it is, and a followed session by its state', () => {
     const routine = botTurnPrompt({
       role: 'event',
-      content: 'Your routine "Digest" is running now',
+      content: 'It is time for your routine "Digest".',
       event: {
         kind: 'routine',
         activity: 'ran',
@@ -427,7 +427,7 @@ describe('events from Oppenheimer', () => {
         reason: null,
       },
     });
-    expect(routine).toContain('Your routine "Digest" is running now');
+    expect(routine).toContain('It is time for your routine "Digest".');
     expect(routine).not.toContain('approval card');
     const session = botTurnPrompt({
       role: 'event',

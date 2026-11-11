@@ -45,7 +45,7 @@ const EVENT_LINES: {
 
 /**
  * What Oppenheimer told the bot, in the chat, drawn by its kind
- * (`EVENT_LINES`): a decided approval or card of questions, a routine's activity, another bot's
+ * (`EVENT_LINES`): a decided approval or card of questions, a routine's activity that needs you, another bot's
  * message or answer, a followed session or pull request that woke it, the bot's own goal
  * going on or ending, a run of its loop or how the loop ended, a dream of its memory.
  * Read from the event's

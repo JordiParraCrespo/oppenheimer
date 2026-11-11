@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEventLine } from '../components/bot-event-line';
 
 /**
- * A decided approval's trace line, a routine's, a followed session's, and
+ * A decided approval's trace line, a routine's notice, a followed session's, and
  * another bot's message or answer as a card naming the bot Oppenheimer
  * recorded. What breaks this:
  * the line read from the event's words (which are the bot's, in English, and
@@ -72,24 +72,6 @@ describe('BotEventLine', () => {
     expect(screen.getByText('bots.chat.question.dismissed|Which repository?')).toBeTruthy();
   });
 
-  it('names the routine that woke the bot, not the words it was told', () => {
-    const message = {
-      id: 'e2',
-      role: 'event',
-      content: 'Your routine "Morning PR digest" is running now…',
-      event: {
-        kind: 'routine',
-        activity: 'ran',
-        automationId: 'a-1',
-        runId: 'r-1',
-        name: 'Morning PR digest',
-        reason: null,
-      },
-    } as unknown as BotMessageEntity;
-    render(<BotEventLine message={message} />);
-    expect(screen.getByText('bots.chat.event.routine|Morning PR digest')).toBeTruthy();
-  });
-
   const routine = (activity: string, reason: string | null) =>
     ({
       id: 'e3',
@@ -106,13 +88,19 @@ describe('BotEventLine', () => {
       },
     }) as unknown as BotMessageEntity;
 
-  // What breaks this: a pause the owner made drawn as an alarm, or a pause
-  // the owner must fix, or a run that never happened, drawn as a quiet line.
-  it('draws what the owner did as a line, and what needs them as a notice that says why', () => {
-    render(<BotEventLine message={routine('paused', 'user')} action={<a href="/x">open</a>} />);
-    expect(screen.getByText('bots.chat.event.routinePaused|Morning PR digest')).toBeTruthy();
-    expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.queryByText('open')).toBeNull();
+  // What breaks this: a pause the owner made, or a routine's run, drawn as a
+  // line in the middle of the chat; or a pause the owner must fix, or a run
+  // that never happened, drawn as nothing.
+  it('draws nothing for what the owner did or a run, and a notice that says why for what needs them', () => {
+    for (const activity of ['ran', 'saved', 'changed', 'resumed', 'deleted']) {
+      const { container } = render(<BotEventLine message={routine(activity, null)} />);
+      expect(container.textContent).toBe('');
+      cleanup();
+    }
+    const { container } = render(
+      <BotEventLine message={routine('paused', 'user')} action={<a href="/x">open</a>} />,
+    );
+    expect(container.textContent).toBe('');
     cleanup();
 
     render(
