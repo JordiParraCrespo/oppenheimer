@@ -1,7 +1,7 @@
 import { BOT_SUBAGENT_PROGRESS_TASK_MAX, botStreamEventSchema } from '@oppenheimer/shared';
 import { BotMessageMapper, toQueuedSubagentProgress, toSubagentRuns } from '../bot-message.mapper';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
-import { stoppedLine } from '../domain/bot-approval.policy';
+import { approvalFinishedTurn, stoppedLine } from '../domain/bot-approval.policy';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalPauseLine } from '../domain/bot-goal.policy';
 import { BotMessageEntity } from '../domain/bot-message.entity';
@@ -95,6 +95,42 @@ describe('an approval line through the mapper', () => {
       kind: 'approval',
       outcome: 'stopped',
       approvalId: approval.id,
+    });
+  });
+
+  /** The regression: the read dropped the stage, so the report's "Done: …" read "You approved: …" a second time. */
+  it('keeps which of an approved call’s two lines it is, from the row back to the response', () => {
+    const approval = BotApprovalEntity.request({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      turnId: 'turn-1',
+      tool: 'start_session',
+      input: {},
+      summary: 'Start it',
+    });
+    const { opening } = approvalFinishedTurn(
+      {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        requestedByUserId: 'user-1',
+        provider: 'anthropic',
+        model: 'm',
+        effort: null,
+        timeZone: null,
+        credentialScopes: null,
+      },
+      approval,
+      'Ana',
+    );
+    const mapper = new BotMessageMapper();
+    const record = mapper.toPersistence(opening);
+    record.createdAt = new Date();
+    record.updatedAt = record.createdAt;
+    record.event = JSON.parse(JSON.stringify(record.event));
+    expect(mapper.toResponse(mapper.toDomain(record)).event).toMatchObject({
+      kind: 'approval',
+      approvalId: approval.id,
+      stage: 'finished',
     });
   });
 });
