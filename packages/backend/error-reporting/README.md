@@ -27,9 +27,10 @@ What the SDK captures from a `@Processor`'s `process()` is not sent
 (`job-attempt-event.ts`, in `beforeSend`). It wraps every processor and
 reports each throw as unhandled: each attempt BullMQ retries, and each
 `DelayedError` or `RateLimitError` a worker throws to wait. That made one job
-several issues (OPPENHEIMER-API-5). It also marked the error, so the SDK
-skipped the adapter's grouped report of the job's last failure. An explicit
-`capture` now clears that mark, so the job's grouped report is sent.
+several issues (OPPENHEIMER-API-5). The SDK also skips a second capture of an
+object it saw, so the adapter reports a job's last failure with a fresh error
+carrying the same name, message, stack and cause
+(`JobFailureMapper.toReportedError`).
 
 Every report carries the request's correlation id (`correlation_id`), the same
 id a 5xx hands the client and every log line carries.

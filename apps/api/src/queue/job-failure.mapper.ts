@@ -22,4 +22,23 @@ export class JobFailureMapper {
       fingerprint: ['queue-job-failed', queue, name, error?.name ?? 'Error'],
     };
   }
+
+  /**
+   * The error a final failure is reported with: a fresh one with the failed
+   * job's name, message, stack and cause. The worker's own error may already
+   * have been captured by the error tracker's wrapper around `process()`.
+   * That capture is dropped (`isJobAttemptEvent`), but the tracker would still
+   * skip a second capture of the same object, and the job's one report would
+   * never leave (OPPENHEIMER-API-5).
+   */
+  static toReportedError(error: Error): Error {
+    const cause: unknown = error?.cause;
+    const reported = new Error(
+      String(error?.message ?? error),
+      cause === undefined ? undefined : { cause },
+    );
+    reported.name = error?.name ?? 'Error';
+    if (error?.stack) reported.stack = error.stack;
+    return reported;
+  }
 }
