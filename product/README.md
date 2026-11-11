@@ -1559,3 +1559,7 @@ earlier note:
   repositories. On 2026-11-11 the owner asked for no default repositories
   and no default project: a new automation starts with neither unless it
   was opened for a project, and picking a project picks no repository.
+- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+  `/automations` in a second table under the automations. On 2026-11-11
+  the owner asked for them in tabs: the overview reads Automations · Bot
+  routines · Runs, the routines at `/automations/routines`.
