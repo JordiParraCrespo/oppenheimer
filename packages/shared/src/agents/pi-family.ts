@@ -6,7 +6,6 @@
  */
 import type { CodingAgentDefinition, CodingAgentModel, SessionEffort } from './catalog.js';
 import { levels } from './effort-levels.js';
-import { bunUserInstall, npmUserInstall } from './install-scripts.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { TYPED_INPUT } from './typed-input.js';
 
@@ -117,16 +116,6 @@ export const PI_AGENT: CodingAgentDefinition = Object.freeze({
     // `-p` is the one that answers and exits.
     prompt: Object.freeze(['<prompt>']),
   }),
-  // `pi update --self`: "Update pi only", through the package manager that
-  // installed it, asking nothing. Bare `pi update` would also update every
-  // extension the person installed, which is theirs to do.
-  update: Object.freeze(['update', '--self']),
-  // The npm package pi's README installs first.
-  install: Object.freeze({
-    macos: npmUserInstall('@mariozechner/pi-coding-agent'),
-    linux: npmUserInstall('@mariozechner/pi-coding-agent'),
-    bin: '~/.local/bin',
-  }),
 });
 
 export const OMP_AGENT: CodingAgentDefinition = Object.freeze({
@@ -184,17 +173,5 @@ export const OMP_AGENT: CodingAgentDefinition = Object.freeze({
     }),
     // `omp [messages...]`, "Interactive mode with initial prompt".
     prompt: Object.freeze(['<prompt>']),
-  }),
-  // `omp update`: "Check for updates and install", through whichever
-  // installer owns the running executable, asking nothing.
-  update: Object.freeze(['update']),
-  // From npm with Bun: `omp` is a Bun script and its package declares
-  // `engines.bun >= 1.4.4`, and `bun install -g` is the install its README
-  // recommends. Not `omp.sh/install`, which runs unchecked when Bun is
-  // present.
-  install: Object.freeze({
-    macos: bunUserInstall('@oh-my-pi/pi-coding-agent'),
-    linux: bunUserInstall('@oh-my-pi/pi-coding-agent'),
-    bin: '~/.bun/bin',
   }),
 });

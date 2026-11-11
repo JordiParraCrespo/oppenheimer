@@ -8,6 +8,7 @@ import {
   isCodingAgentId,
   SESSION_PERMISSIONS,
 } from '../catalog.js';
+import { AGENT_HOST_SETUP } from '../host-setup.js';
 import { loginUrlPattern } from '../login.js';
 
 describe('coding agent catalog', () => {
@@ -404,26 +405,26 @@ describe('the runner launch table', () => {
 describe('agent updates', () => {
   it('names each CLI’s unattended updater, and none where the updater asks', () => {
     // Read off each CLI's own `--help`; the runner runs these with no terminal.
-    expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
-    expect(CODING_AGENTS.codex.update).toEqual(['update']);
+    expect(AGENT_HOST_SETUP['claude-code']?.update).toEqual(['update']);
+    expect(AGENT_HOST_SETUP.codex?.update).toEqual(['update']);
     // `opencode upgrade` asks "Install anyways?" unless told the method, which
     // the runner reads off where the binary lives. Never `curl`: that method
     // reruns `opencode.ai/install`, which checks nothing.
-    expect(CODING_AGENTS.opencode.update).toEqual(['upgrade', '--method', '<method>']);
-    const methods = CODING_AGENTS.opencode.updateMethods ?? [];
+    expect(AGENT_HOST_SETUP.opencode?.update).toEqual(['upgrade', '--method', '<method>']);
+    const methods = AGENT_HOST_SETUP.opencode?.updateMethods ?? [];
     expect(methods.map((m) => m.method)).not.toContain('curl');
     // The runner's own install, which is npm's global layout under ~/.local.
     const installed = '/home/j/.local/lib/node_modules/opencode-ai/bin/opencode.exe';
     expect(methods.find((m) => installed.includes(m.pathContains))?.method).toBe('npm');
-    expect(CODING_AGENTS.grok.update).toEqual(['update']);
-    expect(CODING_AGENTS.shell.update).toBeUndefined();
+    expect(AGENT_HOST_SETUP.grok?.update).toEqual(['update']);
+    expect(AGENT_HOST_SETUP.shell?.update).toBeUndefined();
   });
 });
 
 describe('agent installs', () => {
   it('installs every agent as the person, never with sudo, and the blank terminal not at all', () => {
     for (const id of CODING_AGENT_IDS) {
-      const install = CODING_AGENTS[id].install;
+      const install = AGENT_HOST_SETUP[id]?.install;
       if (id === 'shell') {
         expect(install).toBeUndefined();
         continue;
@@ -437,7 +438,7 @@ describe('agent installs', () => {
 
   it('installs every agent from a download something checks: a verified release or an npm package', () => {
     for (const id of CODING_AGENT_IDS) {
-      const install = CODING_AGENTS[id].install;
+      const install = AGENT_HOST_SETUP[id]?.install;
       for (const script of install ? [install.macos, install.linux] : []) {
         const verified = /^verify "\$tmp\/[^"]+" /m.test(script);
         const fromNpm = /^npm install --global --prefix "\$HOME\/\.local" \S+$/m.test(script);
@@ -448,12 +449,12 @@ describe('agent installs', () => {
         expect(script, id).not.toMatch(/\b(ba)?sh "\$tmp"/);
       }
     }
-    expect(CODING_AGENTS.opencode.install?.bin).toBe('~/.local/bin');
+    expect(AGENT_HOST_SETUP.opencode?.install?.bin).toBe('~/.local/bin');
   });
 
   it('never pipes a download straight into a shell', () => {
     for (const id of CODING_AGENT_IDS) {
-      const install = CODING_AGENTS[id].install;
+      const install = AGENT_HOST_SETUP[id]?.install;
       for (const script of [install?.macos, install?.linux]) {
         expect(script ?? '').not.toMatch(/curl[^\n]*\|\s*(ba)?sh/);
       }
