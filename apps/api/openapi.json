@@ -25004,6 +25004,87 @@
         ]
       }
     },
+    "/api/v1/inbox/marks/batch": {
+      "post": {
+        "description": "A bulk action on a selection: the same mark on every occurrence, replacing whatever the caller had on each, or `mark: null` to clear each one’s mark. Every key and the snooze’s end are checked before anything is written, and the marks are written in one transaction. Answers the caller’s marks in force afterwards, as `GET /inbox/marks` does.",
+        "operationId": "putInboxMarks",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutInboxMarksRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InboxMarkResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INBOX_002 — Not an Inbox item key\n\nTENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INBOX_003 — Snooze not in the future",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark several Inbox items at once",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
     "/api/v1/inbox/reports": {
       "get": {
         "description": "The workspace's reports in one status, the newest first, at most 100: the open ones, which wait on the owner, unless `status=answered`.",
@@ -40650,6 +40731,40 @@
           }
         },
         "required": [
+          "mark"
+        ]
+      },
+      "PutInboxMarksRequest": {
+        "type": "object",
+        "properties": {
+          "itemKeys": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "pattern": "^[a-z]+:[A-Za-z0-9:#@._-]{1,190}$"
+            }
+          },
+          "mark": {
+            "type": "string",
+            "enum": [
+              "done",
+              "low",
+              "snoozed",
+              "deleted",
+              null
+            ],
+            "nullable": true
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "itemKeys",
           "mark"
         ]
       },

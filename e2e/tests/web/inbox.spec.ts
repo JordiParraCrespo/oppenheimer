@@ -74,3 +74,56 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
 
   await owner.api.dispose();
 });
+
+/**
+ * Bulk actions (`29-inbox.md`, "Bulk actions"): checking rows swaps the
+ * list's head for the selection bar, and Mark as done there marks every
+ * checked row in one request, leaving the unchecked one in the list.
+ */
+test('the Inbox: select rows and mark them done at once', async ({ page }) => {
+  const owner = await provisionedUser('inbox-bulk');
+  await signInAs(page, owner.user);
+
+  // A bot holds one pending approval at a time: one bot per row.
+  const ids: string[] = [];
+  for (const name of ['Ops', 'Docs', 'Release']) {
+    const bot = (await (
+      await owner.api.post('/api/v1/bots', { data: { name, provider: 'glm' } })
+    ).json()) as { id: string };
+    ids.push(await insertPendingBotApproval(bot.id, 'start_session', `${name} wants a session.`));
+  }
+  await page.goto('/plan/inbox');
+  const rows = page.locator('[data-slot="inbox-row"]');
+  await expect(rows).toHaveCount(3);
+
+  const batch = page.waitForRequest(
+    (request) => request.method() === 'POST' && request.url().endsWith('/inbox/marks/batch'),
+  );
+  await rows.nth(0).hover();
+  await rows.nth(0).getByRole('checkbox').click();
+  await rows.nth(1).getByRole('checkbox').click();
+  const bar = page.getByRole('toolbar', { name: 'Selected items' });
+  await expect(bar.getByText('2 selected')).toBeVisible();
+  await bar.getByRole('button', { name: 'Mark as done' }).click();
+
+  await batch;
+  await expect(bar).toBeHidden();
+  await expect(page.locator('[data-slot="inbox-row"]:not(:has([data-done]))')).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const marks = (await (await owner.api.get('/api/v1/inbox/marks')).json()) as {
+        itemKey: string;
+        mark: string;
+      }[];
+      return marks.map((mark) => mark.mark);
+    })
+    .toEqual(['done', 'done']);
+  const marked = (await (await owner.api.get('/api/v1/inbox/marks')).json()) as {
+    itemKey: string;
+  }[];
+  expect(ids.filter((id) => marked.some((mark) => mark.itemKey === `approval:${id}`))).toHaveLength(
+    2,
+  );
+
+  await owner.api.dispose();
+});

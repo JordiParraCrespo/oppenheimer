@@ -1542,3 +1542,9 @@ earlier note:
   sessions with a repository filter on and could not. They drag now,
   filtered or not: the drop is merged into the whole list's order, so a
   hidden row keeps its place among the ones it was drawn with.
+- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+  the visit only: a reload came back unfiltered. On 2026-11-11 the owner
+  asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
+  stick"): the facets and the sort are kept on the device, not the
+  account, since a filter is the reader's view; a remembered pick the menu
+  no longer offers reads as all and is forgotten.

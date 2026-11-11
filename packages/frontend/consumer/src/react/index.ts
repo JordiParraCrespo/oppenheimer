@@ -170,6 +170,7 @@ export {
 } from './hosts.queries';
 export {
   inboxAnswered,
+  type PutInboxMarksVariables,
   type PutInboxMarkVariables,
   useAnswerInboxReport,
   useDeleteInboxMark,
@@ -177,6 +178,7 @@ export {
   useInboxPullsShown,
   useInboxReportImages,
   usePutInboxMark,
+  usePutInboxMarks,
   useRefreshInbox,
   useSuspenseInbox,
 } from './inbox.queries';

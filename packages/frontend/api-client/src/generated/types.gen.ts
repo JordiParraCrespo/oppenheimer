@@ -5240,6 +5240,12 @@ export type PutInboxMarkRequest = {
     until?: string;
 };
 
+export type PutInboxMarksRequest = {
+    itemKeys: Array<string>;
+    mark: 'done' | 'low' | 'snoozed' | 'deleted' | null;
+    until?: string;
+};
+
 export type InboxReportImageResponseDto = {
     id: string;
     /**
@@ -17094,6 +17100,42 @@ export type PutInboxMarkResponses = {
 };
 
 export type PutInboxMarkResponse = PutInboxMarkResponses[keyof PutInboxMarkResponses];
+
+export type PutInboxMarksData = {
+    body: PutInboxMarksRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/inbox/marks/batch';
+};
+
+export type PutInboxMarksErrors = {
+    /**
+     * INBOX_002 — Not an Inbox item key
+     *
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_003 — Snooze not in the future
+     */
+    422: ProblemDetailsDto;
+};
+
+export type PutInboxMarksError = PutInboxMarksErrors[keyof PutInboxMarksErrors];
+
+export type PutInboxMarksResponses = {
+    200: Array<InboxMarkResponseDto>;
+};
+
+export type PutInboxMarksResponse = PutInboxMarksResponses[keyof PutInboxMarksResponses];
 
 export type FindInboxReportsData = {
     body?: never;

@@ -60,7 +60,7 @@ export function InboxBotNoticeCard({
           </>
         }
       >
-        <Button onClick={() => marks.done(item)}>{t('inbox.botNotice.done')}</Button>
+        <Button onClick={() => marks.apply('done', item)}>{t('inbox.botNotice.done')}</Button>
       </InboxMessageActions>
     </InboxMessage>
   );

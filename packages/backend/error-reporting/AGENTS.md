@@ -13,6 +13,7 @@ src/
 ├── sentry-error-reporter.service.ts   # Sentry driver: one scope per report, the correlation id on each
 ├── noop-error-reporter.service.ts     # no DSN: reports nothing
 ├── init-error-reporting.ts            # Sentry.init, before Nest; errorReportingEnabled()
+├── job-attempt-event.ts               # beforeSend: the SDK's own capture of a queued job's attempt is not sent
 ├── init.ts                            # the ./init entry: init only, no Nest
 ├── scrub-event.ts                     # beforeSend: what never leaves the API
 ├── error-reporting.module.ts          # global module, picks the driver

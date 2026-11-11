@@ -58,6 +58,25 @@ export class InboxRepository {
     });
   }
 
+  /**
+   * Marks a selection in one request, or clears each one's mark (`null`), and
+   * answers the caller's marks in force afterwards.
+   */
+  putMarks(
+    itemKeys: readonly string[],
+    mark: InboxMark | null,
+    until?: Date,
+  ): Promise<InboxMarkEntity[]> {
+    return callApi(InboxErrors.PUT_MARK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.putInboxMarks({
+          body: { itemKeys: [...itemKeys], mark, ...(until ? { until: until.toISOString() } : {}) },
+        }),
+      );
+      return data.map(toEntity);
+    });
+  }
+
   /** Clears an occurrence's mark: Bring back, Restore priority. Idempotent. */
   deleteMark(itemKey: string): Promise<void> {
     return callApi(InboxErrors.DELETE_MARK_FAILED, async (api) => {
