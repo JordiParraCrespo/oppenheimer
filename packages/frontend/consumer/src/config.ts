@@ -35,6 +35,20 @@ export const CONSUMER_CONFIG = {
     /** The delays between reconnect attempts, with jitter on top (`product/research/lessons-from-grok-bot.md`). */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
   },
+  /** The workspace event stream (`src/react/workspace-events.ts`). */
+  workspaceEvents: {
+    /**
+     * The shortest gap between two refetches of one read the stream asks for.
+     * A burst of events (a working agent reports each state and each rewording
+     * of its status, each one naming the session and host lists) is one
+     * refetch at its start and one at its end. The API's per-route limit
+     * (`RATE_LIMIT_DEFAULT_LIMIT`, 100 a minute) is one budget for every tab of
+     * a signed-in browser; two seconds is the session list's own poll pace, so
+     * a busy workspace costs a tab at most 30 list reads a minute, as it did
+     * before the stream.
+     */
+    refetchGapMs: 2000,
+  },
   automations: {
     /** How long a GitHub trigger's "would have matched" preview stays fresh. */
     triggerPreviewStaleMs: 30_000,
