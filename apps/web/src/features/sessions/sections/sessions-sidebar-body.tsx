@@ -17,6 +17,7 @@ import { useFoldedGroups } from '../hooks/use-folded-groups';
 import { useFoldedSessions } from '../hooks/use-folded-sessions';
 import { useHiddenProjects } from '../hooks/use-hidden-projects';
 import { usePinnedOnly } from '../hooks/use-pinned-only';
+import { useSessionFilters } from '../hooks/use-session-filters';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
   SessionSelectionContext,
@@ -27,6 +28,7 @@ import { useShowHidden } from '../hooks/use-show-hidden';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { listedProjects } from '../lib/hidden-projects';
 import { listedSessions } from '../lib/hidden-sessions';
+import { withinOptions } from '../lib/session-filter-memory';
 import {
   activeFilters,
   agentOptions,
@@ -36,7 +38,6 @@ import {
   isFiltered,
   projectOptions,
   repositoryOptions,
-  type SessionFilters,
   withoutChip,
 } from '../lib/session-filters';
 import { matchesQuery, sidebarList } from '../lib/session-groups';
@@ -67,7 +68,10 @@ const DeleteSessionsDialog = lazy(() =>
  * list). A refetch that fails keeps the groups and says so above them.
  *
  * Filters and search are state, not URL: the console's URL is the open
- * session, and a filter must not change which one that is.
+ * session, and a filter must not change which one that is. The filters and
+ * sort are kept on this device (`useSessionFilters`), so the list comes back
+ * narrowed the way it was left; a remembered pick the menu no longer offers
+ * reads as "all" (`withinOptions`). The search is not kept.
  *
  * The projects and their sessions drag into the reader's own order
  * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
@@ -97,7 +101,7 @@ export function SessionsSidebarBody() {
   const navigate = useNavigate();
   const { sessions: all, projects, hosts: everyHost, error } = useSuspenseSessionsSidebar();
   const hosts = everyHost.map((host) => ({ id: host.id, name: host.name }));
-  const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
+  const [stored, setFilters] = useSessionFilters();
   const [query, setQuery] = useState('');
   const { folded: closed, setOpen } = useFoldedGroups();
   const list = useFoldedSessions();
@@ -124,6 +128,7 @@ export function SessionsSidebarBody() {
     agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
   };
+  const filters = withinOptions(stored, options);
   const hiddenSessions = listedSessions(all, showHidden);
   const visible = applyFilters(hiddenSessions.sessions, filters).filter((session) =>
     matchesQuery(session, query),
