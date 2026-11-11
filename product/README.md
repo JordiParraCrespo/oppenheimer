@@ -1522,9 +1522,22 @@ earlier note:
   through the screen-sharing server on its loopback, shared by its owner
   with `runner desktop on` (`research/device-streaming.md`, "A host's
   desktop"; the note's §11 is the read that led to it).
+- `versions/mvp/26-bot-routines.md` §6 built the routines' spend guard on
+  2026-11-07: a bot's routines paused after 3 reports its owner had not seen,
+  or 72 h away from its chat. On 2026-11-10 the owner asked for it to go: a
+  half-hourly Sentry triage that reports "no new events" paused within hours,
+  and OpenClaw, whose heartbeat the note follows, has no such guard. Removed
+  whole (the pause, the per-bot switch, the workspace thresholds, the Inbox
+  line, `POST /bots/:id/seen`); the migration resumes what it had paused.
+  Routines run until paused; the run budget, the overlap guard and quiet
+  turns bound the cost (26 §6, "Removed 2026-11-10").
 - `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
   the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
   screenshot into the terminal with Ctrl+V and Claude Code, reading the
   host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
   off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
   host; a program that wanted a literal ^V no longer gets one from it.
+- `next-steps/0.7-terminal-and-chat.md` ("Data reads as data") opened a
+  reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
+  owner asked for the text first: the block opens on Raw, Raw / Tree on its
+  band, the tree one click away. A tool result's JSON still reads as a tree.

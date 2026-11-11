@@ -25,7 +25,7 @@ import { SegmentedControl, SegmentedControlItem } from './segmented-control';
  *   then the code at 13.5px mono on 1.7, its lines numbered in the gutter,
  *   scrolling sideways rather than wrapping.
  * - `ChatJsonBlock`: a fenced block that parses as JSON, the same card
- *   opening as a `JsonTree`, Tree / Raw on its band.
+ *   opening on the code as written, Raw / Tree on its band.
  */
 function ChatMarker({
   icon,
@@ -174,8 +174,8 @@ type ChatJsonBlockLabels = ChatCodeBlockLabels & { tree: string; raw: string };
 
 /**
  * A fenced block that holds JSON, on the same card as `ChatCodeBlock`: it
- * opens as a `JsonTree` of `value` and switches to the code as written
- * (Tree / Raw on its band). Copy always copies the code as written.
+ * opens on the code as written and switches to a `JsonTree` of `value`
+ * (Raw / Tree on its band). Copy always copies the code as written.
  */
 function ChatJsonBlock({
   code,
@@ -202,7 +202,7 @@ function ChatJsonBlock({
   children?: React.ReactNode;
 }) {
   const label = { tree: 'Tree', raw: 'Raw', ...labels };
-  const [view, setView] = React.useState<'tree' | 'raw'>('tree');
+  const [view, setView] = React.useState<'tree' | 'raw'>('raw');
   return (
     <div data-slot="chat-json-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
       <CodeBlockBand
@@ -211,17 +211,17 @@ function ChatJsonBlock({
         labels={labels}
         views={
           <SegmentedControl value={view} onValueChange={(next) => setView(next as 'tree' | 'raw')}>
-            <SegmentedControlItem value="tree">{label.tree}</SegmentedControlItem>
             <SegmentedControlItem value="raw">{label.raw}</SegmentedControlItem>
+            <SegmentedControlItem value="tree">{label.tree}</SegmentedControlItem>
           </SegmentedControl>
         }
       />
-      {view === 'tree' ? (
+      {view === 'raw' ? (
+        <NumberedCode code={code}>{children}</NumberedCode>
+      ) : (
         <div className="overflow-x-auto pt-2 pr-5.5 pb-4 pl-3">
           <JsonTree value={value} annotate={annotate} moreLabel={moreLabel} />
         </div>
-      ) : (
-        <NumberedCode code={code}>{children}</NumberedCode>
       )}
     </div>
   );

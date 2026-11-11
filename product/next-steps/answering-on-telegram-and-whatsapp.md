@@ -181,7 +181,7 @@ apart, as OpenClaw and Hermes do.
 - **Limits:**
   - **20 turns an hour per contact**; past it their messages are kept and
     wait, silently.
-  - **A channel spend guard per bot**, beside `routineSpendGuard`: a
+  - **A channel spend guard per bot**: a
     daily budget for turns started from Telegram and WhatsApp. Past it,
     contacts get nothing more that day, the owner is told once, and the
     owner's own turns still run.
