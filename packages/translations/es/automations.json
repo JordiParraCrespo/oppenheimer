@@ -17,6 +17,7 @@
   "page": {
     "tabs": {
       "automations": "Automatizaciones",
+      "routines": "Rutinas de bots",
       "runs": "Ejecuciones"
     },
     "new": "Nueva automatización",
@@ -338,6 +339,7 @@
   "routines": {
     "routine": "Rutina de bot",
     "runsOn": "La ejecuta {{bot}}",
-    "loadFailed": "No se pudieron cargar las rutinas de los bots."
+    "loadFailed": "No se pudieron cargar las rutinas de los bots.",
+    "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
   }
 }

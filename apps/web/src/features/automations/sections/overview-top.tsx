@@ -4,14 +4,18 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 
 /**
- * The overview's first row: the two views as tabs, each the router's link,
+ * The overview's first row: its three views as tabs, each the router's link,
  * so the address is what says which is open; and New automation on the
  * right, which asks the console for its editor dialog.
  */
 export function OverviewTop() {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
-  const tab = matchRoute({ to: '/automations/runs' }) ? 'runs' : 'automations';
+  const tab = matchRoute({ to: '/automations/runs' })
+    ? 'runs'
+    : matchRoute({ to: '/automations/routines' })
+      ? 'routines'
+      : 'automations';
   const dialogs = useConsoleDialog();
 
   return (
@@ -19,6 +23,9 @@ export function OverviewTop() {
       <PillTabs value={tab} onValueChange={() => {}}>
         <PillTab value="automations" render={<Link to="/automations" />}>
           {t('automations.page.tabs.automations')}
+        </PillTab>
+        <PillTab value="routines" render={<Link to="/automations/routines" />}>
+          {t('automations.page.tabs.routines')}
         </PillTab>
         <PillTab value="runs" render={<Link to="/automations/runs" />}>
           {t('automations.page.tabs.runs')}

@@ -17,6 +17,7 @@
   "page": {
     "tabs": {
       "automations": "Automations",
+      "routines": "Bot routines",
       "runs": "Runs"
     },
     "new": "New automation",
@@ -336,6 +337,7 @@
   "routines": {
     "routine": "Bot routine",
     "runsOn": "Runs on {{bot}}",
-    "loadFailed": "Bot routines could not be loaded."
+    "loadFailed": "Bot routines could not be loaded.",
+    "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
   }
 }

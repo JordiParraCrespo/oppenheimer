@@ -42,7 +42,9 @@ export function AutomationsSidebarList() {
   const dialogs = useConsoleDialog();
   const all = useRouterState({
     select: (state) =>
-      state.location.pathname === '/automations' || state.location.pathname === '/automations/runs',
+      state.location.pathname === '/automations' ||
+      state.location.pathname === '/automations/routines' ||
+      state.location.pathname === '/automations/runs',
   });
 
   const term = query.trim().toLowerCase();

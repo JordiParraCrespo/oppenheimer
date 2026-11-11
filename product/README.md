@@ -1553,3 +1553,7 @@ earlier note:
   stick"): the facets and the sort are kept on the device, not the
   account, since a filter is the reader's view; a remembered pick the menu
   no longer offers reads as all and is forgotten.
+- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+  `/automations` in a second table under the automations. On 2026-11-11
+  the owner asked for them in tabs: the overview reads Automations · Bot
+  routines · Runs, the routines at `/automations/routines`.
