@@ -144,6 +144,7 @@ export function useSidebarOrder({
     stored: readonly string[],
   ) => {
     const projectOf = new Map(every.map((session) => [session.id, session.projectId]));
+    const cameFrom = new Map(projectOf);
     for (const projectId of projectIds) {
       for (const id of next[projectId] ?? []) projectOf.set(id, projectId);
     }
@@ -154,7 +155,10 @@ export function useSidebarOrder({
     const placed = projectOrder.flatMap((projectId) =>
       mergeOrder(
         next[projectId] ?? [],
-        whole.filter((id) => projectOf.get(id) === projectId),
+        // A row dropped in from another project anchors nothing at its old place.
+        whole.filter(
+          (id) => projectOf.get(id) === projectId && (cameFrom.get(id) ?? projectId) === projectId,
+        ),
       ),
     );
     return mergeOrder(placed, stored);
