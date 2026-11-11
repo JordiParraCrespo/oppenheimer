@@ -1375,11 +1375,12 @@ the same task (`POST /v1/sessions/{id}/retry`). Every other refusal of
 
 `SESS_020` is `claude -p <reply> --cloud <id>` not taking a reply typed in a
 Claude Code cloud session's chat for that session: the session is not on the
-host's claude.ai account, or the CLI is too old to send to one. Claude Code
-certainly did not send it, so the reply is not lost: it goes back to waiting
+host's claude.ai account, the CLI is too old to send to one, or the reply
+waited its whole 45 seconds behind an earlier one to the same session. Claude
+Code certainly did not send it, so the reply is not lost: it goes back to waiting
 for the session's Stop hook, and the console shows it waiting again. A host
 that is not signed in answers `SESS_019`. `SESS_021` is the same command giving
-no answer within 45 seconds: the message may have reached the session, so the
+no answer within the 45 seconds a reply has from when it reaches the host: the message may have reached the session, so the
 control plane counts it sent and never hands it to the Stop hook as well.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's

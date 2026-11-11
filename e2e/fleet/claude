@@ -13,11 +13,13 @@
 # CLI answers `{"ok":true,…}`. Each send is a line in ~/claude-cloud-replies.log
 # (the session's id and the message, its newlines as \n). A
 # ~/claude-cloud-refuse file makes it refuse instead, as the real one does for a
-# session its account does not have.
+# session its account does not have, and logs the refusal in
+# ~/claude-cloud-refused.log.
 if [ "$1" = "-p" ] && [ "$2" = "--cloud" ]; then
   id="$3"
   shift 6
   if [ -e "$HOME/claude-cloud-refuse" ]; then
+    printf '%s\n' "$id" >> "$HOME/claude-cloud-refused.log"
     printf '{"ok":false,"error":"Session %s not found"}\n' "$id"
     exit 1
   fi

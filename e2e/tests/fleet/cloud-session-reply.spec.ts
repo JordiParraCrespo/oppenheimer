@@ -99,13 +99,16 @@ test('a reply no Stop hook takes wakes the session from the host on its account,
   await api.post(`/api/v1/sessions/${sessionId}/cloud-replies`, {
     data: { text: 'And write the notes' },
   });
-  await new Promise((resolve) => setTimeout(resolve, 25_000));
-  const [, refused] = await replies();
-  expect(refused).toMatchObject({
-    text: 'And write the notes',
-    collectedAt: null,
-    deliveredVia: null,
-  });
+  // Waited on the refusal itself, so a wake that never ran cannot pass.
+  await expect
+    .poll(() => box.host.exec('cat ~/claude-cloud-refused.log 2>/dev/null || true').trim(), {
+      timeout: 60_000,
+      intervals: [2_000],
+    })
+    .toBe(session.cloudSessionId);
+  await expect
+    .poll(async () => (await replies())[1], { timeout: 15_000 })
+    .toMatchObject({ text: 'And write the notes', collectedAt: null, deliveredVia: null });
   expect(sends()).toHaveLength(1);
   const taken = await api.post('/api/v1/sessions/cloud-replies/take', {
     headers: { Authorization: `Bearer ${token}` },

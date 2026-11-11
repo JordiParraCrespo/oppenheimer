@@ -380,7 +380,9 @@ answered `{"ok":true,…}` and the idle session ran the message.
   the launcher's other hosts on the same account. The first online one
   whose runner named `session.cloud.reply` in its hello gets `cloud.reply`
   and runs `claude -p <reply> --cloud <id> --output-format json`, answering
-  `cloud.replied` on `"ok": true`.
+  `cloud.replied` on `"ok": true`. A reply has 45 seconds from when it
+  reaches the host, its wait behind an earlier one to the session included,
+  so the control plane (which waits 60) always hears how it went.
 - **Never twice.** The hook's take and the wake claim the same row by the
   same `collectedAt IS NULL` update, which also records which way it went
   (`session_cloud_reply."deliveredVia"`, `hook` or `host`). Whichever comes

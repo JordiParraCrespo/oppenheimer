@@ -616,7 +616,8 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			// A round trip to claude.ai: off the read loop, one at a time per
 			// cloud session so two replies reach it in the order they came.
-			h.lanes.run(laneCloudReply+m.CloudSessionID, func() { h.cloudReply(h.life, m) })
+			received := time.Now()
+			h.lanes.run(laneCloudReply+m.CloudSessionID, func() { h.cloudReply(h.life, m, received) })
 		}
 	case link.TypePortList:
 		var m link.PortList
