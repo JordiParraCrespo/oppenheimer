@@ -1592,3 +1592,11 @@ earlier note:
   Triage Sentry errors" lines that found nothing, asked for less: the
   chat now hides tool calls by default, and while they are hidden a
   routine run that only ran tools is left out. The wrench shows both.
+- `next-steps/cloud-agents.md` ("The chat of a cloud session") had a reply
+  typed in a Claude Code cloud session's chat reach the agent only while
+  its Stop hook waited (up to two minutes); one typed later sat until a
+  next turn that never came. On 2026-11-11, as decision 2 there said, a
+  reply no hook takes within 15 seconds is sent from an online host signed
+  in to the session's claude.ai account (`claude -p … --cloud <id>`, the
+  link's `cloud.reply`), which wakes the session; the console shows it as
+  sent until the transcript has it.

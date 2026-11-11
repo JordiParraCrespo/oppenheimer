@@ -13,6 +13,7 @@ export class SessionCloudChatMapper {
       authorId: reply.authorId,
       createdAt: reply.createdAt,
       collectedAt: reply.collectedAt,
+      deliveredVia: reply.deliveredVia,
     };
   }
 

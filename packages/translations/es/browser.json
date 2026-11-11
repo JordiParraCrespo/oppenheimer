@@ -1518,7 +1518,10 @@
       "title": "En directo desde la nube de Claude Code",
       "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
       "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+      "sent_one": "Tu respuesta se ha enviado a la sesión; aparecerá aquí cuando el agente la recoja.",
+      "sent_other": "{{count}} respuestas se han enviado a la sesión; aparecerán aquí cuando el agente las recoja.",
       "waiting_many": "{{count}} de respuestas esperan a que el agente termine su turno.",
+      "sent_many": "{{count}} de respuestas se han enviado a la sesión; aparecerán aquí cuando el agente las recoja.",
       "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
       "setup": {
         "title": "Activa el chat de esta sesión",

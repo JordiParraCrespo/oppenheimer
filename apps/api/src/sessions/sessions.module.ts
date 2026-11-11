@@ -92,6 +92,7 @@ import { StopSessionShareHttpController } from './commands/stop-session-share/st
 import { UnwatchSessionTerminalCommandHandler } from './commands/unwatch-session-terminal/unwatch-session-terminal.command-handler';
 import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
+import { WakeCloudSessionCommandHandler } from './commands/wake-cloud-session/wake-cloud-session.command-handler';
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionCloudChatRepository } from './database/session-cloud-chat.repository';
@@ -107,6 +108,7 @@ import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import { CloudReplyWakesProcessor } from './infrastructure/cloud-reply-wakes.processor';
 import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
 import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
@@ -232,6 +234,7 @@ const commandHandlers: Provider[] = [
   AnswerSessionDecisionCommandHandler,
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
+  WakeCloudSessionCommandHandler,
   RunHostCommandCommandHandler,
   DriveSessionTerminalCommandHandler,
   UploadSessionAttachmentCommandHandler,
@@ -335,6 +338,7 @@ const adapters: Provider[] = [
     SessionWakeRequestedDomainEventHandler,
     SessionPromptTyperResolver,
     SessionWakesProcessor,
+    CloudReplyWakesProcessor,
     { provide: SESSION_WAKES, useClass: OutboxSessionWakesAdapter },
     HostUnpairedClosesSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
