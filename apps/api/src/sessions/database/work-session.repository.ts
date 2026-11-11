@@ -783,15 +783,27 @@ export class WorkSessionRepository
     return entities.map((record) => ({ record, sortKey: keys.get(record.id) ?? '' }));
   }
 
-  /** The sessions with their members: checkouts, and a cloud session's run. */
+  /**
+   * The sessions with their members: checkouts, a cloud session's run, and
+   * its latest turn, which a fold re-reads under the row lock but a read
+   * takes from here (a bot's wake and its looks decide from it).
+   */
   private async withCheckoutsAll(records: WorkSessionOrmEntity[]): Promise<WorkSessionEntity[]> {
-    const [checkouts, runs] = await Promise.all([
-      this.checkouts.findForSessions(records.map((record) => record.id)),
+    const ids = records.map((record) => record.id);
+    const [checkouts, runs, turns] = await Promise.all([
+      this.checkouts.findForSessions(ids),
       this.cloudRuns.findForSessions(records),
+      this.turns.findLatestForSessions(this.repository.manager, ids),
     ]);
-    return records.map((record) =>
-      this.mapper.toDomain(record, checkouts.get(record.id) ?? [], runs.get(record.id) ?? null),
-    );
+    return records.map((record) => {
+      const session = this.mapper.toDomain(
+        record,
+        checkouts.get(record.id) ?? [],
+        runs.get(record.id) ?? null,
+      );
+      session.reseatLatestTurn(turns.get(record.id) ?? null);
+      return session;
+    });
   }
 
   private async withCheckouts(

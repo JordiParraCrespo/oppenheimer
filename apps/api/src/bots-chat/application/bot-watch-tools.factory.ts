@@ -9,9 +9,12 @@ import {
   BOT_SESSION_WAITS_PER_TURN,
 } from '../domain/bot-session-wait.policy';
 import {
+  BOT_CHECK_IN_MINUTES,
   BOT_SUBSCRIPTION_PURPOSE_MAX,
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   BOT_SUBSCRIPTIONS_PER_BOT,
+  checkInAnswer,
+  liveTaskOf,
 } from '../domain/bot-subscription.policy';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
@@ -51,7 +54,7 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_session',
       scope: 'sessions:read',
-      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. Sessions you start with start_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. With pattern (a regular expression, matched line by line), you are also woken when its terminal prints a new line matching it, such as "FAIL|Error" or "Tests: \\d+ passed": you are told it matched and how often, never the line, so read the session to see why. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch, matches included, and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions and pull requests.`,
+      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. While the task you follow runs you are also woken every few minutes for a look at how it is going, and check_in_minutes adds a look at a time you choose. Sessions you start with start_session, prompt with send_to_session or unblock with answer_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. With pattern (a regular expression, matched line by line), you are also woken when its terminal prints a new line matching it, such as "FAIL|Error" or "Tests: \\d+ passed": you are told it matched and how often, never the line, so read the session to see why. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch, matches included, and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions and pull requests.`,
       input: z.object({
         session_id: z.uuid().describe('The session to follow (from list_sessions).'),
         until: z
@@ -72,6 +75,15 @@ export class BotWatchToolsFactory implements BotToolArea {
           .describe(
             'A regular expression (RE2: no lookaround or backreferences) to be woken by when a new line of the terminal matches it.',
           ),
+        check_in_minutes: z
+          .number()
+          .int()
+          .min(BOT_CHECK_IN_MINUTES.min)
+          .max(BOT_CHECK_IN_MINUTES.max)
+          .optional()
+          .describe(
+            'Also look at its running task once, this many minutes from now, even if nothing has happened: for when you told the person you would check back at a time.',
+          ),
       }),
       run: async (input, context) => {
         const { subscription, session } = await this.watches.watch(context, input.session_id, {
@@ -79,7 +91,21 @@ export class BotWatchToolsFactory implements BotToolArea {
           purpose: input.purpose ?? null,
           from: 'now',
         });
-        const answer = this.mapper.toWatchAnswer(subscription, session);
+        const live = liveTaskOf(subscription.watchedTurn, session.latestTurn);
+        if (live !== null) {
+          await this.watches.stageLooks(
+            subscription,
+            session.id,
+            live,
+            input.check_in_minutes ?? null,
+          );
+        }
+        const answer = [
+          this.mapper.toWatchAnswer(subscription, session),
+          checkInAnswer(live !== null, input.check_in_minutes ?? null),
+        ]
+          .filter(Boolean)
+          .join(' ');
         if (!input.pattern) return answer;
         const hints = await this.watches.watchTerminal(context, subscription, input.pattern);
         return `${answer} ${this.mapper.toPatternAnswer(input.pattern, hints)}`;

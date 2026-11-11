@@ -20,6 +20,25 @@ export class SessionTurnRepository {
   }
 
   /**
+   * Each session's latest turn, for the sessions a read loads: what its task
+   * is doing now, which a bot's wake and its looks decide from. One query for
+   * the page, newest turn per session.
+   */
+  async findLatestForSessions(
+    manager: EntityManager,
+    sessionIds: readonly string[],
+  ): Promise<Map<string, SessionTurnFold>> {
+    if (sessionIds.length === 0) return new Map();
+    const rows: SessionTurnOrmEntity[] = await manager.query(
+      `SELECT DISTINCT ON ("sessionId") * FROM "session_turn"
+        WHERE "sessionId" = ANY($1::uuid[])
+        ORDER BY "sessionId", "seq" DESC`,
+      [sessionIds],
+    );
+    return new Map(rows.map((row) => [row.sessionId, SessionTurnMapper.toDomain(row)]));
+  }
+
+  /**
    * Write back the turns this append's folds moved: an upsert on
    * `(sessionId, seq)`, because a fold both opens turns and moves them.
    */

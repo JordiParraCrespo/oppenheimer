@@ -1544,6 +1544,14 @@ earlier note:
   host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
   off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
   host; a program that wanted a literal ^V no longer gets one from it.
+- `versions/mvp/27-bot-subscriptions.md` §4.2 looked in only on a task a bot
+  handed off itself (`start_session`, `send_to_session`). On 2026-11-10,
+  the same evening, Facturas told the owner it would check a session once
+  it pushed and was never woken: it had only read that session. A task a
+  bot unblocks with `answer_session` is now followed like one it handed
+  off, a running task it `watch_session`s gets the same looks,
+  `check_in_minutes` adds one at a time the bot names, and its prompt says
+  never to promise to come back to something nothing will wake it for.
 - Note 26 §4 drew every routine activity as a line in its bot's chat: a
   "Routine · *name*" divider over each run, and one for each save, change,
   pause and delete. On 2026-11-10 the owner read a bot's chat as an

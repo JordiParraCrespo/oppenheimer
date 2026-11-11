@@ -10,6 +10,7 @@ import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
 import { SessionCloudRunEntity } from '../../../sessions/domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
+import type { SessionTurnFold } from '../../../sessions/domain/session-turn.policy';
 import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
@@ -220,8 +221,12 @@ function setup(permission: BotToolContext['permission']) {
     execute: vi.fn(async () => ({ sessionId: 'session-1', hints: [] as string[], seq: 7 })),
   };
   const watches = {
-    follow: vi.fn<BotSessionWatchResolver['follow']>(async (_context, _sessionId, from) =>
-      from === 'first_task' ? 'You are subscribed to it.' : 'You follow its task.',
+    follow: vi.fn<BotSessionWatchResolver['follow']>(async (_context, _sessionId, from, watch) =>
+      watch === false
+        ? 'You are not watching it.'
+        : from === 'first_task'
+          ? 'You are subscribed to it.'
+          : 'You follow its task.',
     ),
   };
   const factory = new BotSessionToolsFactory(
@@ -303,6 +308,7 @@ describe('BotSessionToolsFactory', () => {
       expect.objectContaining({ turnId: 'turn-1' }),
       'session-1',
       'first_task',
+      undefined,
     );
     expect(result.content).toContain('You are subscribed to it.');
   });
@@ -310,7 +316,12 @@ describe('BotSessionToolsFactory', () => {
   it('starts without a watch when asked not to', async () => {
     const { watches, call } = setup('full');
     const unwatched = await call('start_session', { task: 'A', project_id: PROJECT, watch: false });
-    expect(watches.follow).not.toHaveBeenCalled();
+    expect(watches.follow).toHaveBeenCalledWith(
+      expect.anything(),
+      'session-1',
+      'first_task',
+      false,
+    );
     expect(unwatched.content).toContain('You are not watching it');
   });
 
@@ -482,12 +493,22 @@ describe('BotSessionToolsFactory', () => {
       const { queryBus, watches, call } = setup('full');
       readsBack(queryBus, cloudSession(CLOUD_ID));
       const followed = await call('start_cloud_session', { task: 'x', project_id: PROJECT });
-      expect(watches.follow).toHaveBeenCalledWith(expect.anything(), 'session-1', 'first_task');
+      expect(watches.follow).toHaveBeenCalledWith(
+        expect.anything(),
+        'session-1',
+        'first_task',
+        undefined,
+      );
       expect(followed.content).toContain('You are subscribed to it.');
 
       watches.follow.mockClear();
       await call('start_cloud_session', { task: 'x', project_id: PROJECT, watch: false });
-      expect(watches.follow).not.toHaveBeenCalled();
+      expect(watches.follow).toHaveBeenCalledWith(
+        expect.anything(),
+        'session-1',
+        'first_task',
+        false,
+      );
     });
 
     it('answers without a URL when the host has not named the session within the wait', async () => {
@@ -691,7 +712,12 @@ describe('BotSessionToolsFactory', () => {
       sender: { kind: 'bot', botId: 'bot-1', turnId: 'turn-1' },
     });
     // The session had no task yet, so the prompt opens task 1, and that is the one watched.
-    expect(watches.follow).toHaveBeenCalledWith(expect.anything(), session.id, { turn: 1 });
+    expect(watches.follow).toHaveBeenCalledWith(
+      expect.anything(),
+      session.id,
+      { turn: 1 },
+      undefined,
+    );
     expect(result.content).toContain('You follow its task.');
     // Where the log stood once the prompt was in, so the next read starts after it.
     expect(result.content).toContain('read_session with after_seq 7 reads only what followed');
@@ -729,6 +755,44 @@ describe('BotSessionToolsFactory', () => {
       answer: { id: 'perm-1', option: 0 },
     });
   });
+  // What breaks this: an agent that finishes between the answer and the
+  // watch, so a watch taken from "now" counts its end as known and the bot
+  // is never told how the task it unblocked went.
+  it('follows the task it unblocked by the number read before answering, unless told not to watch', async () => {
+    const { watches, call, session } = setup('full');
+    session.reseatLatestTurn({
+      ...(session.latestTurn ?? {}),
+      seq: 3,
+      state: 'requires_action',
+    } as SessionTurnFold);
+    const result = await call('answer_session', {
+      session_id: session.id,
+      decision_id: 'perm-1',
+      option: 0,
+    });
+    expect(watches.follow).toHaveBeenCalledWith(
+      expect.anything(),
+      session.id,
+      { answered: 3 },
+      undefined,
+    );
+    expect(result.content).toContain('You follow its task.');
+
+    watches.follow.mockClear();
+    await call('answer_session', {
+      session_id: session.id,
+      decision_id: 'perm-1',
+      option: 0,
+      watch: false,
+    });
+    expect(watches.follow).toHaveBeenCalledWith(
+      expect.anything(),
+      session.id,
+      { answered: 3 },
+      false,
+    );
+  });
+
   // Who decides is the bot's preset (Jordi, 2026-11-10): under Approve for
   // me the person, on a card of its own past every grant; under Full access
   // the bot. What breaks this: a grant given for answering tests letting a
