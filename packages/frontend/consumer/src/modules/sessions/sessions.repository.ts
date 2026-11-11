@@ -161,6 +161,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
         }
       : null,
     cloudSessionId: data.cloudSessionId ?? null,
+    hidden: data.hidden ?? false,
   });
 }
 
@@ -333,6 +334,16 @@ export class SessionsRepository {
   rename(id: string, name: string): Promise<SessionEntity> {
     return callApi(SessionsErrors.RENAME_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.renameSession({ path: { id }, body: { name } }));
+      return toEntity(data);
+    });
+  }
+
+  /** Hidden from the sidebar, or shown again. Display only; the session runs the same. */
+  setHidden(id: string, hidden: boolean): Promise<SessionEntity> {
+    return callApi(SessionsErrors.VISIBILITY_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.setSessionVisibility({ path: { id }, body: { hidden } }),
+      );
       return toEntity(data);
     });
   }

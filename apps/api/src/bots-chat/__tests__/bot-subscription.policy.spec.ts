@@ -443,10 +443,11 @@ describe('sessionWakePrompt', () => {
   });
 
   it('asks for what each state calls for', () => {
-    // A bot told it could not answer left questions its instructions
-    // settled waiting on the person, though it has answer_session.
+    // A bot told to answer only what its instructions settled sent the
+    // person to open the session for every dialog, though it has
+    // answer_session, which puts the person's call on a card in the chat.
     expect(sessionWakePrompt(event('requires_action'), '')).toContain(
-      'If your instructions settle it, answer it with answer_session',
+      'then unblock it with answer_session rather than sending the person to the session',
     );
     expect(sessionWakePrompt(event('cancelled'), '')).toContain(
       'Do not start it again on your own',

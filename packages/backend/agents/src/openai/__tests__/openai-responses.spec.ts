@@ -74,6 +74,11 @@ function streamOf(id: string, item: Record<string, unknown>, deltas: string[] = 
     { type: 'response.output_item.done', output_index: 0, item },
     { type: 'response.completed', response },
   ];
+  return sse(events);
+}
+
+/** Events as the SSE body the Responses API streams them in. */
+function sse(events: Array<{ type: string }>): string {
   return events
     .map(
       (event, sequence) =>
@@ -81,6 +86,23 @@ function streamOf(id: string, item: Record<string, unknown>, deltas: string[] = 
     )
     .join('');
 }
+
+/** OpenAI's words for a failure on its side, whatever the request was (a placeholder of their shape). */
+const PROCESSING_ERROR =
+  'An error occurred while processing your request. You can retry your request.';
+
+const failedResponse = {
+  id: 'resp_f',
+  object: 'response',
+  status: 'failed',
+  model: 'model-placeholder',
+  output: [],
+};
+
+const started = {
+  type: 'response.created',
+  response: { ...failedResponse, status: 'in_progress' },
+};
 
 const callTool = streamOf('resp_1', {
   type: 'function_call',
@@ -465,6 +487,56 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         expect(sent.body).not.toHaveProperty('extraHeaders');
         expect(sent.body).not.toHaveProperty('extra_headers');
       }
+    },
+    TURN_MS,
+  );
+
+  // What breaks this: reading a failure's kind only from the HTTP status.
+  // A stream the provider opened with a 200 and then failed carries none, so
+  // OpenAI's own outage ("An error occurred while processing your request")
+  // read as `other`: the chat could not say a retry may help, and every one
+  // was reported as ours to fix (OPPENHEIMER-API-4).
+  it.each([
+    [
+      'an error event',
+      { type: 'error', code: 'server_error', message: PROCESSING_ERROR, param: null },
+    ],
+    [
+      'a failed response',
+      {
+        type: 'response.failed',
+        response: {
+          ...failedResponse,
+          error: { code: 'server_error', message: PROCESSING_ERROR },
+        },
+      },
+    ],
+  ])(
+    'reads a stream the provider failed with %s as the provider unavailable',
+    async (_, end) => {
+      replies = [sse([started, end])];
+      const events: BotEngineEvent[] = [];
+      for await (const event of new OpenAiBotEngine().run({
+        provider: 'openai',
+        apiKey: KEY,
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'Hi',
+        tools: [],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events.at(-1)).toEqual({
+        type: 'done',
+        reason: 'failed',
+        error: PROCESSING_ERROR,
+        failure: 'unavailable',
+      });
     },
     TURN_MS,
   );

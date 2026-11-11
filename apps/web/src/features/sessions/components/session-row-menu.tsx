@@ -29,6 +29,8 @@ export function SessionRowMenu({
   onOpenChange,
   pinned,
   onPinChange,
+  hidden,
+  onHiddenChange,
   onSelect,
   onRename,
   onMove,
@@ -41,6 +43,8 @@ export function SessionRowMenu({
   onOpenChange: (open: boolean) => void;
   pinned: boolean;
   onPinChange: (pinned: boolean) => void;
+  hidden: boolean;
+  onHiddenChange: (hidden: boolean) => void;
   onSelect: () => void;
   onRename: () => void;
   onMove: (projectId: string) => void;
@@ -75,6 +79,9 @@ export function SessionRowMenu({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onHiddenChange(!hidden)}>
+              {hidden ? t('sessions.sidebar.show') : t('sessions.sidebar.hide')}
+            </DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}
             </DropdownMenuPaneItem>

@@ -226,9 +226,10 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * given for (a session at full access, where the tool's default is approve
    * for me): such a call is decided on its own, under every preset and past
    * every grant, Settings' Allow and rule, on a card that offers only this
-   * call. Only with `asks`.
+   * call. Only with `asks`. It may read what the call acts on (the
+   * dialog an answer lets through).
    */
-  escalates?(input: z.output<Input>): boolean;
+  escalates?(input: z.output<Input>, context: BotToolCallContext): boolean | Promise<boolean>;
   /** A call sends what it carries out of Oppenheimer (a comment on GitHub); the card says so. */
   sharesOutside?: boolean;
   /**
@@ -434,7 +435,7 @@ function decidedFirst<Input extends z.ZodType>(
       if (!parsed.success) return tool.run(input, options);
       try {
         const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
-        if (spec.escalates?.(call)) {
+        if (await spec.escalates?.(call, context)) {
           const subject = await subjectOf(spec, call, context);
           return carded(await askOwner({ ...spec, perCallOnly: true }, context, call, subject));
         }
