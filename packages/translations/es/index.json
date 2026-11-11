@@ -929,6 +929,7 @@
         "favourites": "Favoritos",
         "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
         "moreModels": "Más modelos",
+        "configure": "Elegir agentes",
         "addFavourite": "Añadir {{model}} a favoritos",
         "removeFavourite": "Quitar {{model}} de favoritos",
         "auto": "Auto"
@@ -1889,8 +1890,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas",
-      "showToolCalls": "Mostrar llamadas a herramientas",
+      "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
+      "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
@@ -2350,6 +2351,7 @@
     "page": {
       "tabs": {
         "automations": "Automatizaciones",
+        "routines": "Rutinas de bots",
         "runs": "Ejecuciones"
       },
       "new": "Nueva automatización",
@@ -2577,6 +2579,7 @@
       "addAnother": "Añadir otro disparador",
       "groupSchedule": "Horario",
       "groupGithub": "GitHub",
+      "duplicateTrigger": "Duplicar disparador",
       "removeTrigger": "Quitar disparador",
       "on": "el",
       "at": "a las",
@@ -2591,6 +2594,7 @@
       "labelPlaceholder": "Nombre de la etiqueta",
       "anyOfRepos": "cualquiera de {{count}} repositorios",
       "someRepos": "{{count}} repositorios",
+      "reposToPick": "los repositorios que elijas",
       "reposHead": "Repositorios · elige uno o más",
       "atLeastOne": "Hace falta al menos uno",
       "hour": "Hora",
@@ -2671,7 +2675,8 @@
     "routines": {
       "routine": "Rutina de bot",
       "runsOn": "La ejecuta {{bot}}",
-      "loadFailed": "No se pudieron cargar las rutinas de los bots."
+      "loadFailed": "No se pudieron cargar las rutinas de los bots.",
+      "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
     }
   },
   "pullRequests": {
@@ -3464,6 +3469,20 @@
       "refresh": "Actualizar",
       "clearSearch": "Borrar búsqueda"
     },
+    "selection": {
+      "label": "Elementos seleccionados",
+      "count_one": "{{count}} seleccionado",
+      "count_many": "{{count}} seleccionados",
+      "count_other": "{{count}} seleccionados",
+      "selectAll": "Seleccionar todo",
+      "selectRow": "Seleccionar {{title}}",
+      "clear": "Quitar selección",
+      "done": "Marcar como hechos",
+      "low": "Bajar prioridad",
+      "restore": "Restaurar prioridad",
+      "snooze": "Posponer",
+      "delete": "Eliminar"
+    },
     "filter": {
       "label": "Filtrar la bandeja",
       "type": "Tipo",
@@ -3495,7 +3514,8 @@
       "restore": "Restaurar prioridad",
       "snoozeHour": "Posponer 1 hora",
       "snoozeTomorrow": "Posponer hasta mañana",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "select": "Seleccionar"
     },
     "from": {
       "session": "Sesión",
@@ -3616,6 +3636,7 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "app": "Oppenheimer",
+      "agents": "Agentes",
       "about": "Acerca de"
     },
     "profile": {
@@ -3863,7 +3884,9 @@
       "emptyDescription": "Vincula uno y pregunta a cualquier bot cosas como «¿qué dijo Marta del martes?» o «di al grupo de la familia que llego tarde».",
       "link": "Vincular un número",
       "linkAnother": "Vincular otro número",
-      "atLimit": "Puedes vincular hasta {{count}} números.",
+      "atLimit_one": "Puedes vincular hasta {{count}} número.",
+      "atLimit_other": "Puedes vincular hasta {{count}} números.",
+      "atLimit_many": "Puedes vincular hasta {{count}} de números.",
       "noHosts": "Empareja antes un host: el número lo mantiene el runner de un host.",
       "linkTitle": "Vincular un número de WhatsApp",
       "linkDescription": "Elige el host que tendrá el dispositivo. Seguirá vinculado mientras ese host esté encendido.",
@@ -4001,6 +4024,12 @@
         "making": "Creando el enlace…",
         "newLink": "Nuevo enlace"
       }
+    },
+    "agents": {
+      "title": "Agentes",
+      "hint": "Qué agentes ofrece Nueva sesión en este dispositivo. Una sesión que ya usa uno que ocultes lo conserva.",
+      "show": "Mostrar {{agent}} en Nueva sesión",
+      "lastShown": "Nueva sesión necesita al menos un agente que ofrecer."
     },
     "about": {
       "title": "Acerca de",

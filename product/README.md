@@ -507,6 +507,11 @@ earlier note:
   2026-10-15 it became ours from the first line, with a closed list of
   what the bot can do and the sender's time, home host and hosts, and a
   turn stops after 4 minutes (25, "Decided").
+- Note 25 had a bot save to the general memory only what it happened to
+  notice, and a new bot asked for its job without saying what it could do.
+  On 2026-11-10 every turn asks what it learned about the person, for the
+  general memory, and a new bot's greeting lists what it can do from the
+  tools its turn offers (25, "Decided").
 - Note 25 gave a new bot a calm, flat `SOUL.md` and a first name it kept.
   On 2026-11-10 the soul became friendly and proactive, after OpenClaw's
   default, and the first name a placeholder: its first chat asks the
@@ -1540,7 +1545,43 @@ earlier note:
   off, a running task it `watch_session`s gets the same looks,
   `check_in_minutes` adds one at a time the bot names, and its prompt says
   never to promise to come back to something nothing will wake it for.
+- Note 26 §4 drew every routine activity as a line in its bot's chat: a
+  "Routine · *name*" divider over each run, and one for each save, change,
+  pause and delete. On 2026-11-10 the owner read a bot's chat as an
+  automation's log ("I'll refresh the queue, review evidence…" under a
+  "Routine · Automerge clean PRs" line). The chat now shows a routine only
+  when it needs the owner (a run that did not happen, a pause they did not
+  make), a run's turn reads as the bot writing to you, and the prompt has
+  the bot write as someone on the team in every turn.
 - `next-steps/0.7-terminal-and-chat.md` ("Data reads as data") opened a
   reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
   owner asked for the text first: the block opens on Raw, Raw / Tree on its
   band, the tree one click away. A tool result's JSON still reads as a tree.
+- `versions/mvp/05-screens.md` held the sidebar's sessions and projects
+  still while a filter or the search hid some of them, since a drop would
+  lose the hidden ones' places. On 2026-11-11 the owner tried to reorder
+  sessions with a repository filter on and could not. They drag now,
+  filtered or not: the drop is merged into the whole list's order, so a
+  hidden row keeps its place among the ones it was drawn with.
+- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+  the visit only: a reload came back unfiltered. On 2026-11-11 the owner
+  asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
+  stick"): the facets and the sort are kept on the device, not the
+  account, since a filter is the reader's view; a remembered pick the menu
+  no longer offers reads as all and is forgotten.
+- `versions/mvp/13-automations.md`'s editor prefilled a new automation
+  with a project (the one it was opened for, else the first) and all of
+  that project's repositories, and picking a project picked all of its
+  repositories. On 2026-11-11 the owner asked for no default repositories
+  and no default project: a new automation starts with neither unless it
+  was opened for a project, and picking a project picks no repository.
+- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+  `/automations` in a second table under the automations. On 2026-11-11
+  the owner asked for them in tabs: the overview reads Automations · Bot
+  routines · Runs, the routines at `/automations/routines`.
+- `versions/mvp/26-bot-routines.md` drew every routine run in its bot's
+  chat, and the chat showed its tool calls until the reader hid them. On
+  2026-11-11 the owner, scrolling a column of half-hourly "Routine ·
+  Triage Sentry errors" lines that found nothing, asked for less: the
+  chat now hides tool calls by default, and while they are hidden a
+  routine run that only ran tools is left out. The wrench shows both.

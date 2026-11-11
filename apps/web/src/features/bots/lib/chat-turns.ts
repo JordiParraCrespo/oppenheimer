@@ -1,14 +1,16 @@
 import type {
   BotConversationEntity,
   BotMessageEntity,
+  BotToolStep,
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
+import { routineNeedsOwner } from './routine-event';
 
 /**
  * One turn as the chat draws it: what you said, then what the bot did with
- * it. A line that belongs to no turn (a routine changed on its tab, paused or
- * failed) is a block of its own, with no turn and that one event in `asked`.
+ * it. A line that belongs to no turn (a routine's run that did not happen, a
+ * pause its owner did not make) is a block of its own, with no turn and that one event in `asked`.
  */
 export interface ChatTurnBlock {
   /** The turn's id, or the line's for one outside any turn: what React keys it by. */
@@ -20,6 +22,8 @@ export interface ChatTurnBlock {
   asked: BotMessageEntity[];
   /** What the bot did, with any message you steered in while it worked where it took it. */
   answer: BotMessageEntity[];
+  /** Whether an event the chat does not show opened it: a routine's run, which has no line. */
+  openedUnseen?: boolean;
 }
 
 /**
@@ -41,6 +45,19 @@ export function isDrawnEvent(
 }
 
 /**
+ * Whether the chat shows an event at all. A hidden kind never is, and of a
+ * routine's activity only what needs the owner (a run that did not happen, a
+ * pause they did not make): a routine's run reads as the bot writing to you,
+ * with no line naming the routine above it, and a routine saved, changed,
+ * paused or deleted is said by the bot or done by you on its tab. The export
+ * keeps them all.
+ */
+function isShownEvent(event: BotMessageEvent): boolean {
+  if (!isDrawnEvent(event)) return false;
+  return event.kind !== 'routine' || routineNeedsOwner(event);
+}
+
+/**
  * The conversation as blocks, in the order they happened: each turn's
  * messages under it, your message apart from the bot's work, and each line
  * outside any turn as a block of its own, keyed by its id. An event opens
@@ -48,7 +65,8 @@ export function isDrawnEvent(
  * one you steered in while it worked: it stays in the answer, where the bot
  * took it. A message waiting behind the turn under way is left out: it shows
  * on the composer until its turn starts or the turn takes it. An event the
- * chat does not draw (`HIDDEN_EVENT_KINDS`) is left out too.
+ * chat does not show (`isShownEvent`) is left out too, so a routine's turn
+ * opens with what the bot says.
  */
 export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] {
   const waiting = new Set(conversation.waitingMessages.map((message) => message.turnId));
@@ -63,9 +81,16 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     return block;
   };
   for (const message of conversation.messages) {
-    if (message.event && !isDrawnEvent(message.event)) continue;
     if (message.turnId && waiting.has(message.turnId)) continue;
+    const shown = !message.event || isShownEvent(message.event);
+    if (!shown && !message.turnId) continue;
+    // A turn stands where its first message is, shown or not.
+    const opening = !blocks.has(message.turnId ?? message.id);
     const block = blockOf(message.turnId ?? message.id, message.turnId);
+    if (!shown) {
+      if (opening) block.openedUnseen = true;
+      continue;
+    }
     const steered = message.role === 'user' && block.answer.length > 0;
     const opens = !steered && (message.role === 'user' || message.role === 'event');
     (opens ? block.asked : block.answer).push(message);
@@ -113,6 +138,46 @@ export function turnTrail(
     block.answer.every((message) => message.role === 'activity');
   if (toolCallsShown || !onlyRanTools) return 'full';
   return retryable ? 'retry' : 'none';
+}
+
+/**
+ * A routine's run with nothing to show while the chat hides its tool calls:
+ * the routine opened it (an opening the chat draws no line for), it
+ * completed, and all it did was run tools that left nothing the reader sees
+ * in full (a session to open, a draft). The chat leaves it out, so a routine
+ * that checks every half hour and finds nothing leaves no gap. A run that
+ * replied, failed, was stopped or is still running stays.
+ */
+export function isQuietRoutineRun(block: ChatTurnBlock, toolCallsShown: boolean): boolean {
+  if (toolCallsShown || block.turn?.status !== 'completed') return false;
+  return (
+    block.openedUnseen === true &&
+    block.asked.length === 0 &&
+    block.answer.every(
+      (message) => message.role === 'activity' && !message.steps.some(stepShowsWithToolsHidden),
+    )
+  );
+}
+
+/**
+ * Whether a tool step made something the chat draws even while its tool
+ * calls are hidden (`BotActivity`): a session to open, a draft's card. A new
+ * thing of that kind is a line here, so a run that made one is never hidden.
+ */
+function stepShowsWithToolsHidden(step: BotToolStep): boolean {
+  return Boolean(step.sessionId || step.mailDraft);
+}
+
+/**
+ * The blocks the chat draws: all of them but a quiet routine run while the
+ * tool calls are hidden. The day and model markers are read between these,
+ * so a change that happened on a hidden run shows on the next drawn turn.
+ */
+export function visibleTurns(
+  blocks: readonly ChatTurnBlock[],
+  toolCallsShown: boolean,
+): ChatTurnBlock[] {
+  return blocks.filter((block) => !isQuietRoutineRun(block, toolCallsShown));
 }
 
 /** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */

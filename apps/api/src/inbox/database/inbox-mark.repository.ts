@@ -23,26 +23,35 @@ export class InboxMarkRepository implements InboxMarkRepositoryPort {
   ) {}
 
   async upsert(mark: InboxMarkEntity): Promise<void> {
-    const record = this.mapper.toPersistence(mark);
+    await this.upsertAll([mark]);
+  }
+
+  async upsertAll(marks: readonly InboxMarkEntity[]): Promise<void> {
+    if (marks.length === 0) return;
+    const records = marks.map((mark) => this.mapper.toPersistence(mark));
     await this.outbox.transaction(async (manager) => {
-      // UQ_inbox_mark_item: the occurrence's row keeps its id and createdAt.
+      // One statement for the set; UQ_inbox_mark_item keeps each occurrence's
+      // row, its id and createdAt.
       await manager.query(
         `INSERT INTO inbox_mark (id, "organizationId", "userId", "itemKey", mark, "until")
-         VALUES ($1, $2, $3, $4, $5, $6)
+         SELECT * FROM unnest($1::uuid[], $2::uuid[], $3::uuid[], $4::varchar[], $5::varchar[], $6::timestamptz[])
          ON CONFLICT ("organizationId", "userId", "itemKey")
          DO UPDATE SET mark = EXCLUDED.mark, "until" = EXCLUDED."until", "updatedAt" = now()`,
         [
-          record.id,
-          record.organizationId,
-          record.userId,
-          record.itemKey,
-          record.mark,
-          record.until,
+          records.map((record) => record.id),
+          records.map((record) => record.organizationId),
+          records.map((record) => record.userId),
+          records.map((record) => record.itemKey),
+          records.map((record) => record.mark),
+          records.map((record) => record.until),
         ],
       );
-      await this.outbox.stageEvents(manager, mark.domainEvents);
+      await this.outbox.stageEvents(
+        manager,
+        marks.flatMap((mark) => mark.domainEvents),
+      );
     });
-    mark.clearEvents();
+    for (const mark of marks) mark.clearEvents();
   }
 
   async findOne(
@@ -89,5 +98,35 @@ export class InboxMarkRepository implements InboxMarkRepositoryPort {
     });
     if (deleted) mark.clearEvents();
     return deleted;
+  }
+
+  async clear(
+    organizationId: string,
+    userId: string,
+    itemKeys: readonly string[],
+  ): Promise<number> {
+    if (itemKeys.length === 0) return 0;
+    return this.outbox.transaction(async (manager) => {
+      // UQ_inbox_mark_item's prefix, then the keys; only the rows there were come back.
+      const result = await manager
+        .createQueryBuilder()
+        .delete()
+        .from(InboxMarkOrmEntity)
+        .where('"organizationId" = :organizationId AND "userId" = :userId', {
+          organizationId,
+          userId,
+        })
+        .andWhere('"itemKey" IN (:...itemKeys)', { itemKeys: [...itemKeys] })
+        .returning('*')
+        .execute();
+      const rows = result.raw as InboxMarkOrmEntity[];
+      const removed = rows.map((row) => this.mapper.toDomain(row));
+      for (const mark of removed) mark.remove();
+      await this.outbox.stageEvents(
+        manager,
+        removed.flatMap((mark) => mark.domainEvents),
+      );
+      return removed.length;
+    });
   }
 }

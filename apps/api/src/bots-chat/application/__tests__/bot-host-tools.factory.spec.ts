@@ -14,6 +14,10 @@ import { FindSessionEventsQuery } from '../../../sessions/queries/find-session-e
 import { FindSessionTranscriptQuery } from '../../../sessions/queries/find-session-transcript/find-session-transcript.query';
 import { FindSessionsQuery } from '../../../sessions/queries/find-sessions/find-sessions.query';
 import { SearchSessionsQuery } from '../../../sessions/queries/search-sessions/search-sessions.query';
+import {
+  SESSION_READ_BUDGET_KEY,
+  SESSION_READ_CHARS_PER_TURN,
+} from '../../domain/bot-session-read-budget.policy';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotHostToolsFactory } from '../bot-host-tools.factory';
@@ -654,6 +658,73 @@ describe('BotHostToolsFactory', () => {
       const definition = factory.definitions().find((tool) => tool.name === 'search_sessions');
       expect(definition?.readOnly).toBe(true);
       expect(definition?.scope).toBe('sessions:read');
+    });
+  });
+
+  /**
+   * The regression: a broad turn (a recap) reads `read_session` and
+   * `read_session_transcript` across dozens of large sessions, the pages pile
+   * into the bot's own context faster than autocompaction sheds them, and the
+   * provider refuses the whole turn. The two share one per-turn budget,
+   * counted in the characters they return, so a turn that has read its fill is
+   * made to answer rather than overflow (`25-bots.md` §4.2).
+   */
+  describe('the per-turn session-read budget', () => {
+    const work = finished();
+    const transcriptPage = {
+      status: 'complete',
+      reason: null,
+      detail: null,
+      vendorUrl: null,
+      entries: [],
+      nextCursor: null,
+      atEnd: true,
+      restarted: false,
+      dropped: 0,
+      redactions: 0,
+    };
+
+    /** The two read tools, bound to a given turn's budget. */
+    function readsWith(budget: BotTurnBudget) {
+      const queryBus = {
+        execute: vi.fn(async (query: unknown) => {
+          if (query instanceof FindProjectsQuery) return [];
+          if (query instanceof FindSessionTranscriptQuery) return transcriptPage;
+          if (query instanceof FindLatestSessionEventsQuery) return { session: work, events: [] };
+          if (query instanceof FindSessionQuery) return work;
+          throw new Error(`unexpected ${String(query)}`);
+        }),
+      };
+      const factory = new BotHostToolsFactory(
+        queryBus as unknown as QueryBus,
+        { execute: vi.fn() } as unknown as CommandBus,
+      );
+      const bind = (name: string) => {
+        const definition = factory.definitions().find((tool) => tool.name === name);
+        if (!definition) throw new Error(`no tool ${name}`);
+        return definition.bind({ ...context, budget } as BotToolContext);
+      };
+      return (name: string, input: unknown) =>
+        bind(name).run(input, { signal: new AbortController().signal });
+    }
+
+    it('reads under budget and charges the turn, then refuses either read once the turn has read its fill', async () => {
+      const budget = new BotTurnBudget();
+      const call = readsWith(budget);
+
+      const first = await call('read_session_transcript', { session_id: work.id });
+      expect(first.isError).toBeFalsy();
+      // The read charged the turn, so a later broad turn is bounded.
+      expect(budget.overspent(SESSION_READ_BUDGET_KEY, 1)).toBe(true);
+
+      budget.spend(SESSION_READ_BUDGET_KEY, SESSION_READ_CHARS_PER_TURN);
+      const transcript = await call('read_session_transcript', { session_id: work.id });
+      expect(transcript.isError).toBe(true);
+      expect(transcript.content).toContain('per-turn limit');
+      // read_session shares the same budget, so it is refused too.
+      const activity = await call('read_session', { session_id: work.id });
+      expect(activity.isError).toBe(true);
+      expect(activity.content).toContain('per-turn limit');
     });
   });
 });

@@ -35,7 +35,9 @@
   session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
   the header (since 2026-11-10 the Repository facet takes several
-  repositories, a chip each, and lists a session with any of them); the account menu at the bottom with appearance, language
+  repositories, a chip each, and lists a session with any of them; since
+  2026-11-11 the filters and sort stick on this device, like Plan's, and a
+  remembered pick the menu no longer offers reads as all); the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists — Sessions and Automations, both links, the one under
@@ -81,9 +83,10 @@
   kept on the device, like the rail's; a project or session made since
   the last drag lands on top, and the sort's default, Custom order, is
   that order (a session dropped under another sort keeps what the reader
-  was looking at and switches to it). Sessions hold still while a filter
-  or the search hides some of them, since a drop would lose the hidden
-  ones' places. The filter menu's Show projects checks each project
+  was looking at and switches to it). Sessions and projects drag while a
+  filter or the search hides some of them too (since 2026-11-11; they used
+  to hold still): a drop places the rows it saw, and each hidden one keeps
+  its place among them. The filter menu's Show projects checks each project
   on or off (added 2026-10-27): a hidden project's group and sessions
   leave the sidebar on this device, its place in the order is kept, a
   pinned session of it stays pinned, and the project filter still

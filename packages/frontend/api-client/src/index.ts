@@ -245,6 +245,7 @@ export type {
   PullRequestScopeCountsDto,
   PutCloudAgentCredentialRequest,
   PutInboxMarkRequest,
+  PutInboxMarksRequest,
   PutModelProviderCredentialRequest,
   PutSessionShareRequest,
   ReadinessChecksDto,

@@ -10,20 +10,16 @@ import { SessionRows } from './session-rows';
  * `SidebarPinnedGroup`. A pinned row is drawn here instead of in its
  * project, in the order it was pinned, with the menu it has there. A session
  * dropped on it is pinned, and its rows drag up or down it or out into a
- * project (`useSidebarOrder`), unless a filter or the search is narrowing the
- * list. With nothing pinned it is drawn only while a session is carried, as
+ * project (`useSidebarOrder`), filtered or not. With nothing pinned it is drawn only while a session is carried, as
  * the place to drop it.
  */
 export function PinnedGroup({
   sessions,
-  narrowed,
   onShare,
   onDelete,
   onWrite,
 }: {
   sessions: SessionEntity[];
-  /** Whether a filter or the search is narrowing the list, which holds the rows still. */
-  narrowed: boolean;
   onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
   onWrite: (error: Error | null) => void;
@@ -44,13 +40,7 @@ export function PinnedGroup({
       emptyHint={t('sessions.sidebar.dropToPin')}
       current={current}
     >
-      <SessionRows
-        sessions={sessions}
-        dragDisabled={narrowed}
-        onShare={onShare}
-        onDelete={onDelete}
-        onWrite={onWrite}
-      />
+      <SessionRows sessions={sessions} onShare={onShare} onDelete={onDelete} onWrite={onWrite} />
     </SidebarPinnedGroup>
   );
 }

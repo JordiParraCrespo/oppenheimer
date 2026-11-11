@@ -16,7 +16,7 @@ The runner holds one outbound connection to Oppenheimer. It opens no port, and n
 | User | An ordinary user account. The installer refuses to run as root. |
 | Tools | `git` and `tmux`. The installer offers to install them with Homebrew or apt, but only on a typed yes; without them it stops before using the token. |
 | A lasting machine | The runner refuses machines that look temporary (Docker or Podman containers, CI, Codespaces, dev containers, Kubernetes pods). |
-| Agent CLIs | Optional at install: Claude Code, Codex, OpenCode, Grok and GitHub's `gh`. The default is Claude Code and `gh`. |
+| Agent CLIs | Optional at install: Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi (`omp`, which needs Bun) and GitHub's `gh`. The default is Claude Code and `gh`. |
 
 Sessions are capped at 20 per host by default.
 

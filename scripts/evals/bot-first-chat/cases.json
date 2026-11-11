@@ -1,0 +1,95 @@
+{
+  "bot": { "name": "Juno" },
+  "toolsets": {
+    "full": [
+      { "name": "remember", "group": "self" },
+      {
+        "name": "update_profile",
+        "group": "self",
+        "description": "Changes your own name and/or description."
+      },
+      {
+        "name": "list_hosts",
+        "group": "sessions",
+        "description": "Lists the person's hosts (their computers)."
+      },
+      {
+        "name": "start_session",
+        "group": "sessions",
+        "description": "Starts a coding agent session on a host."
+      },
+      { "name": "send_mail", "group": "mail", "description": "Sends an email from their Gmail." },
+      {
+        "name": "send_whatsapp_message",
+        "group": "whatsapp",
+        "description": "Sends a WhatsApp message."
+      },
+      {
+        "name": "update_routine",
+        "group": "automations",
+        "description": "Creates or changes a routine."
+      }
+    ],
+    "read-only": [
+      { "name": "remember", "group": "self" },
+      {
+        "name": "list_hosts",
+        "group": "sessions",
+        "description": "Lists the person's hosts (their computers)."
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "hola-es",
+      "toolset": "full",
+      "message": "hola!",
+      "want": {
+        "asksName": true,
+        "asksJob": true,
+        "listsCapabilities": true,
+        "promisesSessions": true,
+        "spanish": true
+      }
+    },
+    {
+      "id": "hi-en",
+      "toolset": "full",
+      "message": "hi",
+      "want": {
+        "asksName": true,
+        "asksJob": true,
+        "listsCapabilities": true,
+        "promisesSessions": true,
+        "spanish": false
+      }
+    },
+    {
+      "id": "work-first",
+      "toolset": "full",
+      "message": "What hosts do I have paired?",
+      "want": { "answersQuestion": true, "asksName": true, "asksJob": true },
+      "wantCalls": ["list_hosts"]
+    },
+    {
+      "id": "read-only",
+      "toolset": "read-only",
+      "message": "hey",
+      "want": {
+        "asksName": true,
+        "asksJob": true,
+        "promisesSessions": false,
+        "suggestsCodingAgents": false
+      }
+    },
+    {
+      "id": "person-facts",
+      "toolset": "full",
+      "instructions": "# Job\nWatch Jordi's hosts and tell him when one goes offline.",
+      "message": "Soy Jordi, founder de una startup en Barcelona. Háblame de tú. ¿Qué hosts tengo?",
+      "want": { "answersQuestion": true },
+      "wantCalls": ["list_hosts"],
+      "wantGeneralMemory": true
+    }
+  ]
+}

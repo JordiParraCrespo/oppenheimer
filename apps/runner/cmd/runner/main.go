@@ -388,7 +388,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
 		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
 		fs.StringVar(&opts.Name, "name", "", "name for the session")
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp or shell")
 		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
 		if err := fs.Parse(args); err != nil {
 			return cli.ExitUsage, err
@@ -404,7 +404,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		// From inside a session: start a child session with a task.
 		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
 		opts := cli.ChildOptions{}
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp or shell")
 		fs.StringVar(&opts.Name, "name", "", "name for the child")
 		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
 		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
@@ -620,7 +620,7 @@ func usage(w *os.File) {
   runner update [--check|--force|--pin V|--unpin|--rollback]
   runner agents update            bring every installed agent CLI to its latest release
                                   (run does it on its own unless RUNNER_AGENT_UPDATES=off)
-  runner agents install <name>    install an agent CLI (claude, codex, opencode, grok) as you,
+  runner agents install <name>    install an agent CLI (claude, codex, opencode, grok, pi, omp) as you,
                                   from a checksum-verified release or npm; no sudo
   runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package

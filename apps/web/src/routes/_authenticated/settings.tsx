@@ -1,5 +1,6 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
 import {
+  Bot,
   Brain,
   Cloud,
   Cpu,
@@ -56,7 +57,10 @@ function SettingsLayout() {
           },
           {
             labelKey: 'app',
-            items: [{ to: '/settings/about', icon: Info, labelKey: 'about' }],
+            items: [
+              { to: '/settings/agents', icon: Bot, labelKey: 'agents' },
+              { to: '/settings/about', icon: Info, labelKey: 'about' },
+            ],
           },
         ]}
         // The rows with a number: a section of their own, so the list each

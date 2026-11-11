@@ -47,6 +47,25 @@ export const putInboxMarkSchema = z
   });
 export type PutInboxMarkDto = z.infer<typeof putInboxMarkSchema>;
 
+/** The most occurrences one batch marks: more than the Inbox lists at once. */
+export const INBOX_MARKS_BATCH_MAX = 500;
+
+/**
+ * `POST /inbox/marks/batch`: a bulk action on a selection, one request for
+ * all of it. `mark: null` clears each one's mark (Restore priority); `until`
+ * comes with a snooze and only with one, as on a single put.
+ */
+export const putInboxMarksSchema = z
+  .object({
+    itemKeys: z.array(inboxItemKeySchema).min(1).max(INBOX_MARKS_BATCH_MAX),
+    mark: inboxMarkSchema.nullable(),
+    until: z.string().datetime({ offset: true }).optional(),
+  })
+  .refine((value) => (value.mark === 'snoozed') === (value.until !== undefined), {
+    path: ['until'],
+  });
+export type PutInboxMarksDto = z.infer<typeof putInboxMarksSchema>;
+
 /**
  * A **report**: the one Inbox item that is stored, because nothing else knows
  * it. An agent that found a problem posts it with its pictures

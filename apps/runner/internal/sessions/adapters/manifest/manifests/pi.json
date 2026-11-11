@@ -1,0 +1,17 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "pi",
+  "version": "2026.11.10.1",
+  "minEngine": 1,
+  "notes": "One rule, read off pi 0.73.1's interactive mode and not yet watched in a live session: while a turn runs its loader reads `Working...`, or `Thinking...` while the model's thinking is hidden. Pi asks nothing before a tool runs (it has no approvals, by design), so there is no blocked rule to write. Everything else is `unknown` until a soak produces patterns of pi's own.",
+  "rules": [
+    {
+      "id": "working",
+      "state": "working",
+      "priority": 970,
+      "region": "bottom:12",
+      "any": ["(?i)\\b(working|thinking)\\.\\.\\."],
+      "note": "Pi's loader during a turn: `defaultWorkingMessage = \"Working...\"` and `defaultHiddenThinkingLabel = \"Thinking...\"` in 0.73.1's interactive mode. Read off the package, not yet watched."
+    }
+  ]
+}

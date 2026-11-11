@@ -13,6 +13,7 @@
     "whatsapp": "WhatsApp",
     "telegram": "Telegram",
     "app": "Oppenheimer",
+    "agents": "Agents",
     "about": "About"
   },
   "profile": {
@@ -259,7 +260,8 @@
     "emptyDescription": "Link one and ask any bot things like “what did Marta say about Tuesday?” or “tell the family group I’m running late”.",
     "link": "Link a number",
     "linkAnother": "Link another number",
-    "atLimit": "You can link up to {{count}} numbers.",
+    "atLimit_one": "You can link up to {{count}} number.",
+    "atLimit_other": "You can link up to {{count}} numbers.",
     "noHosts": "Pair a host first: the number is held by a host’s runner.",
     "linkTitle": "Link a WhatsApp number",
     "linkDescription": "Pick the host that will hold the device. It stays linked while that host is on.",
@@ -396,6 +398,12 @@
       "making": "Making the link…",
       "newLink": "New link"
     }
+  },
+  "agents": {
+    "title": "Agents",
+    "hint": "Which agents New session offers on this device. A session that already runs one you hide keeps it.",
+    "show": "Show {{agent}} in New session",
+    "lastShown": "New session needs one agent to offer."
   },
   "about": {
     "title": "About",

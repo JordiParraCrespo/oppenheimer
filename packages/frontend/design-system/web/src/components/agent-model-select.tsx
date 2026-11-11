@@ -5,6 +5,7 @@ import {
   ChevronRightIcon,
   CircleQuestionMarkIcon,
   SearchIcon,
+  Settings2Icon,
   StarIcon,
 } from 'lucide-react';
 import * as React from 'react';
@@ -45,6 +46,7 @@ type AgentModelSelectLabels = {
   smarter: string;
   effortHint: string;
   moreModels: string;
+  configure: string;
 };
 
 const DEFAULT_LABELS: AgentModelSelectLabels = {
@@ -58,6 +60,7 @@ const DEFAULT_LABELS: AgentModelSelectLabels = {
   effortHint:
     'How long the agent may think before it answers. Higher effort costs more and takes longer.',
   moreModels: 'More models',
+  configure: 'Choose agents',
 };
 
 /** Rows visible before the list scrolls. */
@@ -131,15 +134,19 @@ function AgentModelTabs({
   tabs,
   selected,
   onSelect,
+  configure,
   'aria-label': ariaLabel,
 }: {
   tabs: { id: string; label: string }[];
   selected: string | null;
   onSelect: (id: string) => void;
+  /** Present: a settings glyph ends the strip, outside the tabs, and calls `onClick`. */
+  configure?: { label: string; onClick: () => void };
   'aria-label': string;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className="flex gap-0.5 border-b border-border-subtle px-1 pt-1">
+    <div className="flex items-start border-b border-border-subtle px-1 pt-1">
+    <div role="tablist" aria-label={ariaLabel} className="flex min-w-0 flex-1 gap-0.5">
       {tabs.map((item) => {
         const on = selected === item.id;
         return (
@@ -169,6 +176,21 @@ function AgentModelTabs({
           </button>
         );
       })}
+    </div>
+    {configure ? (
+      <button
+        type="button"
+        aria-label={configure.label}
+        title={configure.label}
+        onClick={configure.onClick}
+        className="group/tab flex shrink-0 flex-col items-center gap-1 pt-0.5 pl-0.5 outline-none"
+      >
+        <span className="flex h-6 w-7 items-center justify-center rounded-sm text-fg-muted opacity-55 transition-[background-color,opacity] duration-fast group-hover/tab:bg-hover-surface group-hover/tab:opacity-100 group-focus-visible/tab:outline-2 group-focus-visible/tab:outline-ring">
+          <Settings2Icon className="size-3.5" aria-hidden />
+        </span>
+        <span className="h-0.5 w-4" />
+      </button>
+    ) : null}
     </div>
   );
 }
@@ -269,9 +291,11 @@ function AgentModelEffortFoot<V extends string>({
  * models" row at the foot of its tab, open from the start when one of them is
  * the current model; a search finds them like any other.
  *
- * Two parts are the caller's to switch on. With `onFavouritesChange`, a
+ * Three parts are the caller's to switch on. With `onFavouritesChange`, a
  * Favourites tab leads the strip and each row ends in a star; the caller keeps
- * the list, as `engineKey`s. With `effort`, the popup ends in the effort
+ * the list, as `engineKey`s. With `onConfigure`, a settings glyph ends the
+ * strip, outside the tabs, for where the caller chooses which agents the
+ * strip holds; the popup closes as it is pressed. With `effort`, the popup ends in the effort
  * slider for the current model and the button names the level, in a cell as
  * wide as the longest level so the button never changes width under the
  * popup anchored to it.
@@ -294,6 +318,7 @@ function AgentModelSelect<V extends string = string>({
   favourites = [],
   onFavouritesChange,
   effort,
+  onConfigure,
   labels: labelsProp,
   searchPlaceholder = 'Search models…',
   emptyText: emptyTextProp,
@@ -309,6 +334,8 @@ function AgentModelSelect<V extends string = string>({
   /** Present: the Favourites tab and the stars show. */
   onFavouritesChange?: (favourites: string[]) => void;
   effort?: AgentModelEffort<V>;
+  /** Present: the strip ends in a settings glyph that calls it. */
+  onConfigure?: () => void;
   labels?: Partial<AgentModelSelectLabels>;
   searchPlaceholder?: string;
   emptyText?: (query: string) => React.ReactNode;
@@ -435,6 +462,17 @@ function AgentModelSelect<V extends string = string>({
             setQuery('');
             setMoreOpen(null);
           }}
+          configure={
+            onConfigure
+              ? {
+                  label: label.configure,
+                  onClick: () => {
+                    onOpenChange(false);
+                    onConfigure();
+                  },
+                }
+              : undefined
+          }
           aria-label={ariaLabel}
         />
         <div className="px-1.5 pt-1.5">

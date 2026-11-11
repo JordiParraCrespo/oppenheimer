@@ -130,9 +130,10 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const steps = [
-    'If their first message asks for real work, do that first and fully; the steps below wait until it is done.',
+    'If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below; the rest waits for their answer.',
     `Greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
-    "In the same message, unless they already said it, ask what one job they want you to own, with two or three examples that fit Oppenheimer: reviewing pull requests, keeping a project's plan up to date, running coding agents on a host to fix bugs, researching a topic.",
+    ...whatYouCanDoForThem(tools),
+    `In the same message, unless they already said it, ask what one job they want you to own, with these examples: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
     'Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.',
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
     'If no step above let you write INSTRUCTIONS.md, give the person a short draft to paste in Settings → Instructions. Then tell them in two or three lines what you set up and that they can change it in Settings, and offer the first concrete task you could do now.',
@@ -145,6 +146,104 @@ ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
 }
 
 /**
+ * What a new bot tells the person it can do for them, one phrase per area of
+ * tools its turn offers (2026-11-10), so a person who knows nothing yet hears
+ * what Oppenheimer's bots are for and a tool the turn lacks is never promised.
+ */
+interface AreaIntro {
+  /** What the bot can do there, in the greeting's list. */
+  does: string;
+  /** The tools that do it: the area is offered when the turn has any of them. */
+  doneBy: readonly string[];
+  /** What the person may still have to connect for it, named in the offer to help. */
+  connects?: string;
+  /** A job this area makes possible, among the examples Getting started offers. */
+  example?: string;
+}
+
+/**
+ * Keyed by the tools that act, not by area, so an area the turn can only
+ * read (a read-only credential, a tool switched Off) is not promised: an
+ * eval of a bot with `list_hosts` alone offered to start coding agents
+ * (2026-11-10).
+ */
+const AREA_INTROS: readonly AreaIntro[] = [
+  {
+    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once and report back',
+    doneBy: ['start_session', 'start_cloud_session'],
+    connects: 'a computer',
+    example: 'running coding agents on a host to fix bugs',
+  },
+  { does: 'run commands on their computers', doneBy: ['run_command'] },
+  {
+    does: 'keep their plan, projects and tasks up to date',
+    doneBy: ['create_task', 'update_task'],
+    example: "keeping a project's plan up to date",
+  },
+  {
+    does: 'read, sort and answer their email in Gmail',
+    doneBy: ['send_mail', 'send_draft'],
+    connects: 'Gmail',
+    example: 'keeping their inbox sorted and answered',
+  },
+  {
+    does: 'talk with them and others on WhatsApp',
+    doneBy: ['send_whatsapp_message'],
+    connects: 'WhatsApp',
+  },
+  { does: 'talk with them on Telegram', doneBy: ['send_telegram_message'], connects: 'Telegram' },
+  {
+    does: 'review, comment on and follow pull requests and issues on GitHub',
+    doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
+    connects: 'GitHub',
+    example: 'reviewing pull requests',
+  },
+  {
+    does: 'run automations and routines on a schedule or when something happens',
+    doneBy: ['update_routine'],
+    example: 'a morning report on a schedule',
+  },
+  { does: 'work with their other bots and create new ones', doneBy: ['message_bot', 'create_bot'] },
+  {
+    does: 'read pages on the web and research a topic',
+    doneBy: ['web_fetch'],
+    example: 'researching a topic',
+  },
+];
+
+function offeredAreas(tools: readonly BotPromptTool[]): readonly AreaIntro[] {
+  const offered = new Set(tools.map((tool) => tool.name));
+  return AREA_INTROS.filter((area) => area.doneBy.some((name) => offered.has(name)));
+}
+
+/** The most job examples Getting started offers. */
+const MAX_JOB_EXAMPLES = 3;
+
+/**
+ * The jobs a new bot suggests, from the areas its turn can act in, so a bot
+ * without session tools never suggests running coding agents (2026-11-11).
+ * One that can act nowhere suggests answering questions.
+ */
+function jobExamples(tools: readonly BotPromptTool[]): string[] {
+  const examples = offeredAreas(tools).flatMap((area) => (area.example ? [area.example] : []));
+  return examples.length
+    ? examples.slice(0, MAX_JOB_EXAMPLES)
+    : ['answering questions about their work'];
+}
+
+function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
+  const areas = offeredAreas(tools);
+  if (areas.length === 0) return [];
+  const connects = areas.flatMap((area) => (area.connects ? [area.connects] : []));
+  const offer = connects.length
+    ? ` Say that anything not connected yet (${connects.join(', ')}) you can help them connect.`
+    : '';
+  return [
+    `In the same message, show them in a short list what you can do for them here, in your own words: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond that list.${offer}`,
+  ];
+}
+
+/**
  * How a turn goes. With `remember` offered it also says to save as it goes:
  * Grok Bot saves without asking, and a bot told only in the tool's own
  * description saved almost nothing past its first chat.
@@ -153,12 +252,15 @@ function howATurnGoes(remembers: boolean): string {
   return remembers ? `${HOW_A_TURN_GOES}\n${SAVE_AS_YOU_GO}` : HOW_A_TURN_GOES;
 }
 
-const SAVE_AS_YOU_GO =
-  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.';
+const SAVE_AS_YOU_GO = [
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.',
+  '- Ask also whether you learned who the person is or how they want any bot to treat them: their name, what they do for a living and for whom, their language and time zone, how to address them. Save that to the general memory when the rule in `remember` puts it there, so every bot of theirs knows them a little better each time. When a general fact in your prompt is out of date, remember the new one and tell them.',
+].join('\n');
 
 const HOW_A_TURN_GOES = `# How a turn goes
 
-- Answer straight away when you can. When the work takes tool calls, say in one short sentence what you are about to do, do it, then give the result.
+- You are someone on the person's team, not an automation. Write in the first person, warmly and plainly, the way a colleague writes in a chat: "Let me check the open pull requests", never "I'll refresh the queue, review evidence and existing launchers". This holds in every turn, whoever or whatever started it. No status-report voice, and no names of your own machinery (routines, runs, queues, trackers, wakes) unless the person asks about them.
+- Answer straight away when you can. When the work takes tool calls, say in one short, friendly sentence what you are about to do, do it, then give the result.
 - Keep going until the request is done or you are blocked, then stop. A turn has no time or step limit, and what you read early on is summarised as you go, so finish the work rather than stopping half way. Do not repeat a call that keeps failing or answering the same: change approach, or report the blocker.
 ${recoveryBullets()}
 - Report what actually happened. Before you say an action worked, check it (see "Check before you report").

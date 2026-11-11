@@ -39,7 +39,8 @@ first name is a placeholder: a name says who it is, the description says
 its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
 its prompt carries a **Getting started** section instead (2026-10-16):
 work the first message asks for comes first, then it asks what to call it
-(2026-11-10, from OpenClaw's `BOOTSTRAP.md`) and learns one job, sets
+(2026-11-10, from OpenClaw's `BOOTSTRAP.md`), lists what it can do for
+them from the areas of tools its turn offers (2026-11-10) and learns one job, sets
 itself up and offers a first task. The steps are `gettingStarted` in
 `bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
 they are the specification, not this paragraph. Names are given first-free, so a deleted
@@ -681,7 +682,10 @@ of `bot_memory_fact`, with two columns more:
   me Jordi", "write to me in Spanish"), and every bot that person made in
   the workspace reads it, in a section of the prompt of its own. The prompt
   names them *Your memory* and *General memory*, and one rule picks
-  between them, written once (`MEMORY_CHOICE_RULE`): `remember` carries it,
+  between them, written once (`MEMORY_CHOICE_RULE`). Every turn of a bot
+  that can remember also asks, before it replies, what it learned about the
+  person themselves, for the general memory, so each bot of theirs knows
+  them a little better (2026-11-10). `remember` carries the rule,
   the prompt points to it, and the dream reads the same text and the same
   `memory: yours | general` names: general only
   when a bot with a completely different job would need the fact; a fact
@@ -1158,6 +1162,18 @@ as the person does and act on them. Three rules hold it:
   cancels the turn the prompt opened. The console does not draw the log
   yet; until it does, the bot's chat (the call's activity line and the
   approval card) and the log are where the person sees it.
+- **A turn reads only so much of its sessions.** `read_session` and
+  `read_session_transcript` share one per-turn budget, counted in the
+  characters they return (`bot-session-read-budget.policy.ts`); once a turn
+  has read about 300,000 of them, further reads are refused with a note to
+  answer from what it has or read a narrower slice. Each page is already cut
+  to `BOT_TOOL_OUTPUT_MAX`, so one call is bounded, but a broad turn — a
+  recap over a day — calls the two across dozens of sessions, some huge, and
+  the pages pile into the bot's own context faster than its autocompaction
+  sheds them, until the provider refuses the whole turn ("change the message
+  or the model") and the turn's work is lost, not just a read (2026-11-10,
+  seen on a Facturas bot's recap turns on dev). The budget spends a read to
+  save the turn.
 
 #### Commands on a host
 
@@ -2084,6 +2100,23 @@ The decisions it produced:
   name and log, on any host and closed ones included, each session cut to
   its best 2 hits; the agents' transcripts on the hosts are not searched.
   `scripts/evals/bot-session-search` measures when a bot reaches for it.
+- 2026-11-11: **a new bot's first reply asks its name and job even after
+  work, and suggests only jobs it can do** (§1). Work the first message asks
+  for still comes first, but that reply always ends asking what to call the
+  bot and what its job is. Its job examples come from the same areas as its
+  list of what it can do (`AREA_INTROS`), so a bot that can only read hosts
+  no longer suggests running coding agents. Both were found by
+  `scripts/evals/bot-first-chat`, committed with them.
+- 2026-11-10: **a bot learns the person as it goes, and a new bot says
+  what it can do** (§1, §4.1). Before each reply a bot that can remember
+  also asks whether it learned who the person is (name, what they do for
+  a living, language, time zone, how to address them) and saves that to the
+  general memory; the choice rule is unchanged, so job facts stay its own. Getting started has it list, in the greeting, what
+  it can do for them, one phrase per area whose acting tools its turn
+  offers (an area it can only read is not promised)
+  (sessions on their computers, plan, Gmail, WhatsApp, Telegram, GitHub,
+  automations, other bots, the web), and offer to help connect those of
+  them that need connecting (a computer, Gmail, WhatsApp, Telegram, GitHub).
 - 2026-11-10: **a new bot is friendly and proactive, and asks what to
   call it** (§1). The default `SOUL.md` was a calm colleague with no
   exclamation marks; it is now OpenClaw's stance in our words: friendly,

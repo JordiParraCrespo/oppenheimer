@@ -58,12 +58,16 @@ test("a bot's routine on its Routines tab, from the card to Delete", async ({ pa
 });
 
 /**
- * What became of a routine reaches its bot's chat whatever changed it, and
- * the workspace's routines are on `/automations` (§4 "In the chat", §7).
- * What breaks this: a change on the tab that the chat never hears of, a line
- * written twice, or a routine `/automations` does not list.
+ * What became of a routine reaches its bot's history whatever changed it,
+ * without a line in the chat for a change the owner made, and the
+ * workspace's routines are on the automations overview's Bot routines tab
+ * (§4 "In the chat", §7). What breaks this: a change on the tab that the bot
+ * never hears of or hears of twice, a line for it in the middle of the chat,
+ * or a routine the Bot routines tab does not list.
  */
-test("a routine's change in its bot's chat, and the routine on /automations", async ({ page }) => {
+test("a routine's change in its bot's chat, and the routine on the Bot routines tab", async ({
+  page,
+}) => {
   const owner = await provisionedUser('botroutineline');
   await owner.api.put('/api/v1/model-providers/glm', { data: { apiKey: 'e2e-placeholder' } });
   const bot = (await (
@@ -72,16 +76,31 @@ test("a routine's change in its bot's chat, and the routine on /automations", as
   const routineId = await insertBotRoutine(bot.id, 'Morning PR digest', 'List the open PRs.');
   await signInAs(page, owner.user);
 
-  // Paused from the tab while the chat is open: the line arrives on its own, once.
+  // Paused from the tab while the chat is open: the bot's history has it once, the chat no line.
   await page.goto(`/bots/${bot.id}`);
   const paused = await owner.api.patch(`/api/v1/bots/${bot.id}/routines/${routineId}`, {
     data: { enabled: false },
   });
   expect(paused.ok()).toBeTruthy();
-  await expect(page.getByText('Paused routine “Morning PR digest”')).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const conversation = (await (
+        await owner.api.get(`/api/v1/bots/${bot.id}/conversation`)
+      ).json()) as { messages?: { event?: { kind: string; activity?: string } | null }[] };
+      return (conversation.messages ?? []).filter(
+        (message) => message.event?.kind === 'routine' && message.event.activity === 'paused',
+      ).length;
+    })
+    .toBe(1);
+  await page.reload();
+  await expect(page.getByPlaceholder('Message Juno')).toBeVisible();
+  await expect(page.getByText(/Morning PR digest/)).toHaveCount(0);
 
-  // `/automations` lists it under its bot, and the row opens the bot's Routines tab.
+  // The overview's Bot routines tab lists it under its bot, and the row opens
+  // the bot's Routines tab.
   await page.goto('/automations');
+  await page.getByRole('link', { name: 'Bot routines', exact: true }).click();
+  await expect(page).toHaveURL(/\/automations\/routines$/);
   const row = page.getByRole('row', { name: 'Morning PR digest' });
   await expect(row).toContainText('Runs on Juno');
   await row.click();

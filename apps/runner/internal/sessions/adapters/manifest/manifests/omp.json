@@ -1,0 +1,25 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "omp",
+  "version": "2026.11.10.1",
+  "minEngine": 1,
+  "notes": "Two rules, read off omp 18.18.6's source and not yet watched in a live session. Its tool-approval prompt offers `Approve` (or `Approve Once` beside a remembered grant) with `Deny`, and `Always Approve` where a grant can be remembered; its loader reads `Working…` during a turn. Everything else is `unknown` until a soak produces patterns of omp's own.",
+  "rules": [
+    {
+      "id": "approval",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:12",
+      "any": ["(?i)\\b(approve once|always approve( file)?|allow once)\\b"],
+      "note": "omp's approval prompt (`src/tools/approval.ts`: `Approve Once`, `Always Approve`, `Always Approve File`; `Allow once` in its config prompt). A bare `Approve` is left out: an agent's own prose says it too often. Read off 18.18.6, not yet watched."
+    },
+    {
+      "id": "working",
+      "state": "working",
+      "priority": 970,
+      "region": "bottom:12",
+      "any": ["(?i)\\bworking(\\.\\.\\.|…)"],
+      "note": "omp's loader during a turn, `Working…`, as pi's `Working...` is. Read off 18.18.6, not yet watched."
+    }
+  ]
+}
