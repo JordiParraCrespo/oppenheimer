@@ -583,6 +583,7 @@ export {
   TaskColumnAdd,
   TaskColumnMore,
   TaskComposer,
+  TaskSelectionBar,
   TaskSessionChip,
 } from './components/task-board';
 export {

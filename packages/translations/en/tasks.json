@@ -220,5 +220,19 @@
       "searchStatuses": "Search statuses"
     },
     "reorder": "Reorder {{title}}"
+  },
+  "selection": {
+    "count_one": "{{count}} selected",
+    "count_other": "{{count}} selected",
+    "label": "Selected tasks",
+    "delete": "Delete selected",
+    "clear": "Clear selection"
+  },
+  "deleteTasks": {
+    "title_one": "Delete {{count}} task?",
+    "title_other": "Delete {{count}} tasks?",
+    "confirm": "Delete tasks",
+    "partial_one": "{{count}} task was not deleted",
+    "partial_other": "{{count}} tasks were not deleted"
   }
 }

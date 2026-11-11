@@ -74,7 +74,7 @@ import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
-import { TaskBoardDemo, TaskStatusDots } from '../components/task-board-demos';
+import { TaskBoardDemo, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
 import {
   AccountMenuDemo,
 
@@ -1318,7 +1318,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="taskboard"
         title="TaskBoard · MilestoneCard"
         meta="task-board.tsx · milestone-card.tsx · page-header.tsx"
-        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: To do idle, In progress running, In review pending, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
+        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. A selected card (⌘/Ctrl- or Shift-clicked, to act on with others) takes the selected wash and a ring, and TaskSelectionBar floats at the viewport's foot with how many and what they can do together. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: To do idle, In progress running, In review pending, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
         code={`<DragProvider {...useSortableGroups(groups, setGroups, save)} overlay={(a) => <TaskCard title={titleOf(a.id)} />}>
   <TaskBoard>
     <TaskColumn id="todo" status="todo" label="To do" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>
@@ -1336,6 +1336,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         <div className="flex w-full flex-col gap-6">
           <TaskStatusDots />
           <TaskBoardDemo />
+          <TaskSelectionDemo />
         </div>
       </Spec>
 

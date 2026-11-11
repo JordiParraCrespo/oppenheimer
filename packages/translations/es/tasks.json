@@ -221,5 +221,22 @@
       "searchStatuses": "Buscar estados"
     },
     "reorder": "Reordenar {{title}}"
+  },
+  "selection": {
+    "count_one": "{{count}} seleccionada",
+    "count_many": "{{count}} seleccionadas",
+    "count_other": "{{count}} seleccionadas",
+    "label": "Tareas seleccionadas",
+    "delete": "Eliminar las seleccionadas",
+    "clear": "Quitar la selección"
+  },
+  "deleteTasks": {
+    "title_one": "¿Eliminar {{count}} tarea?",
+    "title_many": "¿Eliminar {{count}} de tareas?",
+    "title_other": "¿Eliminar {{count}} tareas?",
+    "confirm": "Eliminar tareas",
+    "partial_one": "{{count}} tarea no se ha eliminado",
+    "partial_many": "{{count}} de tareas no se han eliminado",
+    "partial_other": "{{count}} tareas no se han eliminado"
   }
 }
