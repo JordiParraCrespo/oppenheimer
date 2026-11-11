@@ -45,6 +45,7 @@ import {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const { botSoulFor } = fromApi('@oppenheimer/shared') as typeof import('@oppenheimer/shared');
+type BotToolGroup = import('@oppenheimer/shared').BotToolGroup;
 
 /** What the grader is asked about a reply, by the key a case names. */
 const QUESTIONS = {
@@ -62,7 +63,7 @@ type Question = keyof typeof QUESTIONS;
 
 interface StubTool {
   name: string;
-  group: string;
+  group: BotToolGroup;
   description?: string;
 }
 interface Case {
@@ -134,23 +135,22 @@ async function runOnce(via: Transport, data: Cases, item: Case) {
     tools: stubs.map((stub, i) => ({
       name: stub.name,
       description: tools[i].description,
-      group: stub.group as never,
+      group: stub.group,
     })),
   });
   const turn = await via.turn({ system, message: item.message, tools, maxTurns: 6 });
   const keys = Object.keys(item.want) as Question[];
   const grades = keys.length ? await grade(via, turn.answer, keys) : {};
-  const misses = keys.filter((key) => grades[key] !== item.want[key]);
+  const misses: string[] = keys.filter((key) => grades[key] !== item.want[key]);
   const called = new Set(turn.calls.map((call) => call.tool));
-  for (const name of item.wantCalls ?? [])
-    if (!called.has(name)) misses.push(`called ${name}` as never);
+  for (const name of item.wantCalls ?? []) if (!called.has(name)) misses.push(`called ${name}`);
   if (item.wantGeneralMemory) {
     const general = turn.calls.some(
       (call) =>
         call.tool === 'remember' &&
         (call.input as { memory?: string } | undefined)?.memory === 'general',
     );
-    if (!general) misses.push('saved to the general memory' as never);
+    if (!general) misses.push('saved to the general memory');
   }
   return {
     right: misses.length === 0,

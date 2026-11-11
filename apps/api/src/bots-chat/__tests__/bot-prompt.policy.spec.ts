@@ -135,7 +135,7 @@ describe('composeBotSystemPrompt', () => {
     // 2026-11-11: work the first message asks for comes first, and the same
     // reply still asks for its name and its job; in an eval it often did not.
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n1\. If their first message asks for real work, do that first and fully\. Then always end that same reply, however short, with two lines asking what they would like to call you and what one job they want you to own/,
+      /\n1\. If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below/,
     );
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');

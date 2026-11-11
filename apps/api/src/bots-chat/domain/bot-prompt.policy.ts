@@ -130,7 +130,7 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const steps = [
-    'If their first message asks for real work, do that first and fully. Then always end that same reply, however short, with two lines asking what they would like to call you and what one job they want you to own, as the steps below put it; the rest of these steps waits for their answer.',
+    'If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below; the rest waits for their answer.',
     `Greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
     ...whatYouCanDoForThem(tools),
     `In the same message, unless they already said it, ask what one job they want you to own, with these examples: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
@@ -216,6 +216,9 @@ function offeredAreas(tools: readonly BotPromptTool[]): readonly AreaIntro[] {
   return AREA_INTROS.filter((area) => area.doneBy.some((name) => offered.has(name)));
 }
 
+/** The most job examples Getting started offers. */
+const MAX_JOB_EXAMPLES = 3;
+
 /**
  * The jobs a new bot suggests, from the areas its turn can act in, so a bot
  * without session tools never suggests running coding agents (2026-11-11).
@@ -223,7 +226,9 @@ function offeredAreas(tools: readonly BotPromptTool[]): readonly AreaIntro[] {
  */
 function jobExamples(tools: readonly BotPromptTool[]): string[] {
   const examples = offeredAreas(tools).flatMap((area) => (area.example ? [area.example] : []));
-  return examples.length ? examples.slice(0, 3) : ['answering questions about their work'];
+  return examples.length
+    ? examples.slice(0, MAX_JOB_EXAMPLES)
+    : ['answering questions about their work'];
 }
 
 function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
