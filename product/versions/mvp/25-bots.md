@@ -1323,7 +1323,11 @@ use as well, and said Claude Code is the better of the agents he uses at it.
   `~/.oppenheimer/browser.json`, never written by the control plane
   (`BROWSER_001` when off). It opens `http` and `https` only.
 - **Driven over the DevTools protocol** by the runner itself (Chrome,
-  Chromium or Edge already on the host; no Node, no Python, no cgo). The
+  Chromium or Edge already on the host; no Node, no Python, no cgo), over
+  a pipe the browser inherits rather than a debugging port, so no other
+  account on the host can drive it. The page is read from a script world
+  of the runner's own and its address is the browser's, so a page's
+  scripts cannot answer for it; downloads are refused. The
   open-source `browser-use` library was the other candidate: it is a Python
   agent with a model key of its own, so a bot would have handed it whole
   tasks and seen none of its steps, and every host would have needed Python.

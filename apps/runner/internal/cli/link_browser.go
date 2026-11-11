@@ -8,6 +8,8 @@ package cli
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
+	"strings"
 	"time"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -18,7 +20,8 @@ import (
 const laneBrowser = "browser:"
 
 // The limits of one `browser.page`, as packages/shared's browserPageSchema
-// states them: together with a picture they fit one frame of the link.
+// states them. They do not bound the frame: JSON writes some characters as
+// six bytes, so fitBrowserPage trims a page that came out too large.
 const (
 	browserElementsMax = 150
 	browserTextMax     = 24 << 10
@@ -57,8 +60,39 @@ func (h *linkHandler) browserAct(ctx context.Context, m link.BrowserAct) {
 	if len(page.JPEG) > 0 {
 		left.Image = base64.StdEncoding.EncodeToString(page.JPEG)
 	}
+	if !fitBrowserPage(&left, link.MaxFrameBytes) {
+		h.fail(m.CommandID, hostdomain.ErrBrowserFailed.WithDetail("the page is too large to send, even cut down"))
+		return
+	}
 	h.pages.putWithin(m.CommandID, left, shotsRemembered)
-	_ = h.client.Send(left)
+	if err := h.client.Send(left); err != nil {
+		h.fail(m.CommandID, hostdomain.ErrBrowserFailed.WithDetail("the page could not be sent: %v", err))
+	}
+}
+
+// fitBrowserPage trims page until it is a frame of at most limit bytes: its
+// text first, by halves, then its elements, each cut marked the way a longer
+// page is. It answers false when even the bare page does not fit.
+func fitBrowserPage(page *link.BrowserPage, limit int) bool {
+	for {
+		body, err := json.Marshal(page)
+		if err != nil {
+			return false
+		}
+		if len(body) <= limit {
+			return true
+		}
+		switch {
+		case page.Text != "":
+			page.Text = strings.ToValidUTF8(page.Text[:len(page.Text)/2], "")
+			page.TextTruncated = true
+		case len(page.Elements) > 0:
+			page.Elements = page.Elements[:len(page.Elements)/2]
+			page.MoreElements = true
+		default:
+			return false
+		}
+	}
 }
 
 // cutTo keeps the first max bytes of text: the link's schema bounds it.

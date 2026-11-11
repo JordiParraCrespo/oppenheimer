@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -39,9 +40,19 @@ const (
 	// settle is how long the page is left after an action before it is read:
 	// a click answered with the page as it was says nothing happened.
 	settle = 400 * time.Millisecond
+	// The most of each part of a page that is answered, as the link's
+	// browser.page states them.
+	urlMax   = 2048
+	titleMax = 300
+	roleMax  = 32
+	nameMax  = 200
 	// idleFor is how long a browser nobody acts in is kept.
 	idleFor = 20 * time.Minute
 )
+
+var refPattern = regexp.MustCompile(`^e[1-9][0-9]{0,3}$`)
+
+const profileFlag = "--user-data-dir="
 
 // candidates are the programs tried, in order, when Options names none.
 var candidates = []string{
@@ -109,7 +120,9 @@ func (b *Browsers) Act(ctx context.Context, req domain.BrowserRequest) (domain.B
 			b.mu.Unlock()
 			return domain.BrowserPage{}, fmt.Errorf("%w: open an address first", domain.ErrBrowserNotOpen)
 		}
-		inst = &instance{dir: filepath.Join(b.opts.Dir, req.Browser)}
+		// used is set here, before the lock is let go: another bot's action
+		// must not reap a browser that has not started yet.
+		inst = &instance{dir: filepath.Join(b.opts.Dir, req.Browser), used: time.Now()}
 		b.instances[req.Browser] = inst
 	}
 	b.mu.Unlock()
@@ -189,10 +202,19 @@ func (i *instance) start(ctx context.Context, program string) error {
 		return err
 	}
 	i.endLeftover()
-	portFile := filepath.Join(i.dir, "DevToolsActivePort")
-	_ = os.Remove(portFile)
+	// The browser reads commands on its descriptor 3 and answers on 4.
+	commandsOut, commandsIn, err := os.Pipe()
+	if err != nil {
+		return err
+	}
+	answersOut, answersIn, err := os.Pipe()
+	if err != nil {
+		_ = commandsOut.Close()
+		_ = commandsIn.Close()
+		return err
+	}
 	args := []string{
-		"--headless=new", "--remote-debugging-port=0", "--user-data-dir=" + i.dir,
+		"--headless=new", "--remote-debugging-pipe", profileFlag + i.dir,
 		"--no-first-run", "--no-default-browser-check", "--disable-gpu",
 		"--password-store=basic", "--use-mock-keychain",
 		"--window-size=" + strconv.Itoa(viewportWidth) + "," + strconv.Itoa(viewportHeight),
@@ -206,42 +228,29 @@ func (i *instance) start(ctx context.Context, program string) error {
 	// Not bound to ctx: the browser outlives the action that first needed it.
 	cmd := exec.Command(program, args...) //nolint:gosec,noctx // a browser found on this host, fixed arguments
 	tieToRunner(cmd)
-	if err := cmd.Start(); err != nil {
+	cmd.ExtraFiles = []*os.File{commandsOut, answersIn}
+	err = cmd.Start()
+	_ = commandsOut.Close()
+	_ = answersIn.Close()
+	if err != nil {
+		_ = commandsIn.Close()
+		_ = answersOut.Close()
 		return fmt.Errorf("%w: start %s: %w", domain.ErrNoBrowser, program, err)
 	}
 	i.cmd = cmd
+	i.conn = newCDP(commandsIn, answersOut, i.onEvent)
+	conn := i.conn
 	_ = os.WriteFile(filepath.Join(i.dir, "runner.pid"), []byte(strconv.Itoa(cmd.Process.Pid)), 0o600)
 
 	startCtx, cancel := context.WithTimeout(ctx, startTimeout)
 	defer cancel()
-	endpoint, err := waitForEndpoint(startCtx, portFile)
+	// A page saves nothing on the host: a download is refused.
+	if err := conn.call(startCtx, "", "Browser.setDownloadBehavior", map[string]any{"behavior": "deny"}, nil); err != nil {
+		return fmt.Errorf("the browser did not start: %w", err)
+	}
+	target, err := firstPage(startCtx, conn)
 	if err != nil {
 		return err
-	}
-	conn, err := dialCDP(startCtx, endpoint, i.onEvent)
-	if err != nil {
-		return fmt.Errorf("connect to the browser: %w", err)
-	}
-	i.conn = conn
-
-	var targets struct {
-		TargetInfos []struct {
-			TargetID string `json:"targetId"`
-			Type     string `json:"type"`
-		} `json:"targetInfos"`
-	}
-	if err := conn.call(startCtx, "", "Target.getTargets", nil, &targets); err != nil {
-		return err
-	}
-	target := ""
-	for _, info := range targets.TargetInfos {
-		if info.Type == "page" {
-			target = info.TargetID
-			break
-		}
-	}
-	if target == "" {
-		return errors.New("the browser opened no page")
 	}
 	var attached struct {
 		SessionID string `json:"sessionId"`
@@ -259,37 +268,62 @@ func (i *instance) start(ctx context.Context, program string) error {
 	}, nil)
 }
 
+// firstPage is the page the browser opened with, which may be a moment
+// after it first answers.
+func firstPage(ctx context.Context, conn *cdp) (string, error) {
+	for {
+		var targets struct {
+			TargetInfos []struct {
+				TargetID string `json:"targetId"`
+				Type     string `json:"type"`
+			} `json:"targetInfos"`
+		}
+		if err := conn.call(ctx, "", "Target.getTargets", nil, &targets); err != nil {
+			return "", err
+		}
+		for _, info := range targets.TargetInfos {
+			if info.Type == "page" {
+				return info.TargetID, nil
+			}
+		}
+		if err := sleep(ctx, 100*time.Millisecond); err != nil {
+			return "", errors.New("the browser opened no page")
+		}
+	}
+}
+
 // endLeftover ends a browser an earlier runner left on this profile: where
 // the kernel does not end a child with its parent, it would hold the profile.
+// The pid file may be older than a restart of the machine, so the process is
+// ended only when it is a browser on this very profile.
 func (i *instance) endLeftover() {
-	raw, err := os.ReadFile(filepath.Join(i.dir, "runner.pid"))
+	pidFile := filepath.Join(i.dir, "runner.pid")
+	raw, err := os.ReadFile(pidFile) //nolint:gosec // the profile this runner made
 	if err != nil {
 		return
 	}
+	_ = os.Remove(pidFile)
 	pid, err := strconv.Atoi(strings.TrimSpace(string(raw)))
 	if err != nil || pid <= 1 {
 		return
 	}
-	// The group, which is the browser and its helpers; nothing else was
-	// ever started with this profile's pid file.
+	command, err := exec.Command("ps", "-ww", "-o", "command=", "-p", strconv.Itoa(pid)).Output() //nolint:gosec,noctx // a number
+	if err != nil || !runsOnProfile(string(command), i.dir) {
+		return
+	}
+	// The group, which is the browser and its helpers.
 	_ = syscall.Kill(-pid, syscall.SIGKILL)
-	_ = os.Remove(filepath.Join(i.dir, "runner.pid"))
 }
 
-func waitForEndpoint(ctx context.Context, portFile string) (string, error) {
-	for {
-		if raw, err := os.ReadFile(portFile); err == nil { //nolint:gosec // the profile this runner made
-			lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
-			if len(lines) >= 2 {
-				return "ws://127.0.0.1:" + strings.TrimSpace(lines[0]) + strings.TrimSpace(lines[1]), nil
-			}
-		}
-		select {
-		case <-ctx.Done():
-			return "", fmt.Errorf("the browser did not start within %s", startTimeout)
-		case <-time.After(100 * time.Millisecond):
+// runsOnProfile is whether a process's command line is a browser started on
+// the profile dir.
+func runsOnProfile(command, dir string) bool {
+	for _, field := range strings.Fields(command) {
+		if field == profileFlag+dir {
+			return true
 		}
 	}
+	return false
 }
 
 // onEvent answers a page's dialog at once: an alert left open stops every
@@ -328,8 +362,29 @@ func (i *instance) call(ctx context.Context, method string, params, out any) err
 	return i.conn.call(callCtx, i.session, method, params, out)
 }
 
-// eval runs an expression in the page and answers its string value.
+// eval runs an expression against the page and answers its string value.
+// It runs in a world of the runner's own: it sees the page's document but
+// none of the page's scripts, so a page cannot swap the functions the
+// runner's scripts call and answer in their place.
 func (i *instance) eval(ctx context.Context, expression string) (string, error) {
+	var tree struct {
+		FrameTree struct {
+			Frame struct {
+				ID  string `json:"id"`
+				URL string `json:"url"`
+			} `json:"frame"`
+		} `json:"frameTree"`
+	}
+	if err := i.call(ctx, "Page.getFrameTree", nil, &tree); err != nil {
+		return "", err
+	}
+	var world struct {
+		ExecutionContextID int `json:"executionContextId"`
+	}
+	if err := i.call(ctx, "Page.createIsolatedWorld",
+		map[string]any{"frameId": tree.FrameTree.Frame.ID, "worldName": "oppenheimer"}, &world); err != nil {
+		return "", err
+	}
 	var out struct {
 		Result struct {
 			Value any `json:"value"`
@@ -338,8 +393,9 @@ func (i *instance) eval(ctx context.Context, expression string) (string, error) 
 			Text string `json:"text"`
 		} `json:"exceptionDetails"`
 	}
-	if err := i.call(ctx, "Runtime.evaluate",
-		map[string]any{"expression": expression, "returnByValue": true}, &out); err != nil {
+	if err := i.call(ctx, "Runtime.evaluate", map[string]any{
+		"expression": expression, "returnByValue": true, "contextId": world.ExecutionContextID,
+	}, &out); err != nil {
 		return "", err
 	}
 	if out.ExceptionDetails != nil {
@@ -500,7 +556,6 @@ func (i *instance) read(ctx context.Context, req domain.BrowserRequest) (domain.
 		return domain.BrowserPage{}, err
 	}
 	var listed struct {
-		URL      string `json:"url"`
 		Title    string `json:"title"`
 		Elements []struct {
 			Ref   string `json:"ref"`
@@ -514,10 +569,26 @@ func (i *instance) read(ctx context.Context, req domain.BrowserRequest) (domain.
 	if err := json.Unmarshal([]byte(raw), &listed); err != nil {
 		return domain.BrowserPage{}, errors.New("the page could not be read")
 	}
-	page := domain.BrowserPage{URL: listed.URL, Title: listed.Title, MoreElements: listed.More}
-	for _, element := range listed.Elements {
+	address, err := i.address(ctx)
+	if err != nil {
+		return domain.BrowserPage{}, err
+	}
+	// The page's document is the page's to write, so what was read from it
+	// is held to the answer's limits here, not by the script that read it.
+	page := domain.BrowserPage{
+		URL: cutUnits(address, urlMax), Title: cutUnits(listed.Title, titleMax), MoreElements: listed.More,
+	}
+	for index, element := range listed.Elements {
+		if req.MaxElements > 0 && index >= req.MaxElements {
+			page.MoreElements = true
+			break
+		}
+		if !refPattern.MatchString(element.Ref) {
+			continue
+		}
 		page.Elements = append(page.Elements, domain.BrowserElement{
-			Ref: element.Ref, Role: element.Role, Name: element.Name, Value: element.Value,
+			Ref: element.Ref, Role: cutUnits(element.Role, roleMax),
+			Name: cutUnits(element.Name, nameMax), Value: cutUnits(element.Value, nameMax),
 		})
 	}
 	page.Text, page.TextTruncated = cutText(listed.Text, req.MaxTextBytes)
@@ -527,6 +598,41 @@ func (i *instance) read(ctx context.Context, req domain.BrowserRequest) (domain.
 		}
 	}
 	return page, nil
+}
+
+// address is where the page is, as the browser says it: the page's own
+// scripts have no say in it.
+func (i *instance) address(ctx context.Context) (string, error) {
+	var history struct {
+		CurrentIndex int `json:"currentIndex"`
+		Entries      []struct {
+			URL string `json:"url"`
+		} `json:"entries"`
+	}
+	if err := i.call(ctx, "Page.getNavigationHistory", nil, &history); err != nil {
+		return "", err
+	}
+	if history.CurrentIndex < 0 || history.CurrentIndex >= len(history.Entries) {
+		return "", nil
+	}
+	return history.Entries[history.CurrentIndex].URL, nil
+}
+
+// cutUnits keeps the first max UTF-16 units of text, which is how the
+// link's schema counts, on a whole character.
+func cutUnits(text string, max int) string {
+	units := 0
+	for index, r := range text {
+		size := 1
+		if r > 0xFFFF {
+			size = 2
+		}
+		if units+size > max {
+			return text[:index]
+		}
+		units += size
+	}
+	return text
 }
 
 // picture is the page as a JPEG of at most maxBytes: the best quality that fits.

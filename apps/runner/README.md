@@ -48,7 +48,7 @@ A bot can also drive a browser of its own here (`browser.act`, `25-bots.md`
 `~/.oppenheimer/browser.json`. The runner starts the host's Chrome, Chromium
 or Edge headless, one per bot with a profile under
 `~/.oppenheimer/state/browsers/<bot>`, and drives it over the DevTools
-protocol: the page is read as elements with refs, and a ref is what a click
+protocol on a pipe (no debugging port is opened; downloads are refused): the page is read as elements with refs, and a ref is what a click
 or typed text acts on.
 
 A session's Simulator tab streams the iOS simulator or Android emulator its

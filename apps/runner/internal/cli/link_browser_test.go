@@ -2,10 +2,13 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -153,5 +156,35 @@ func TestABrowserRefusalSaysWhy(t *testing.T) {
 				t.Fatalf("code = %s, want %s", failed.Code, c.want)
 			}
 		})
+	}
+}
+
+// A page whose text and names are all characters JSON writes as six bytes
+// came out over the link's frame, and the answer was dropped: it is trimmed
+// to fit, text first, and says it was cut.
+func TestAPageTooLargeForAFrameIsTrimmedNotDropped(t *testing.T) {
+	page := link.BrowserPage{
+		Type: link.TypeBrowserPage, CommandID: "c1", URL: "https://example.com/", Title: "Big",
+		Text:  strings.Repeat("<", browserTextMax),
+		Image: strings.Repeat("A", link.ComputerScreenshotMaxBytes/3*4),
+	}
+	for index := 0; index < browserElementsMax; index++ {
+		page.Elements = append(page.Elements, link.BrowserPageElements{
+			Ref: "e" + strconv.Itoa(index+1), Role: "link", Name: strings.Repeat("<", 200), Value: strings.Repeat("&", 200),
+		})
+	}
+	if !fitBrowserPage(&page, link.MaxFrameBytes) {
+		t.Fatal("the page was given up on, want it trimmed")
+	}
+	body, err := json.Marshal(page)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(body) > link.MaxFrameBytes {
+		t.Fatalf("the frame is %d bytes, over the link's %d", len(body), link.MaxFrameBytes)
+	}
+	if !page.TextTruncated || page.Image == "" || len(page.Elements) == 0 {
+		t.Fatalf("truncated=%v, picture kept=%v, %d elements: want the text cut and the rest kept",
+			page.TextTruncated, page.Image != "", len(page.Elements))
 	}
 }

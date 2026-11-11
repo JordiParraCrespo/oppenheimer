@@ -68,7 +68,6 @@ const listScript = `(function (maxElements, wantText) {
     return entry;
   });
   return JSON.stringify({
-    url: location.href,
     title: document.title.slice(0, 300),
     elements: elements,
     more: seen.length > maxElements,

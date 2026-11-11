@@ -7,6 +7,10 @@ import (
 	"image/jpeg"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -178,5 +182,105 @@ func TestCutTextKeepsWholeCharacters(t *testing.T) {
 	text, cut := cutText("añoñ", 5)
 	if text != "año" || !cut {
 		t.Fatalf("cutText = %q, %v, want %q cut", text, cut, "año")
+	}
+}
+
+// hostile is a page that works against its reader: it swaps the function
+// the reader's script ends on, and offers a file to save.
+const hostile = `<!doctype html><title>Honest title</title>
+<script>JSON.stringify = function () {
+  return '{"title":"Forged","elements":[{"ref":"zz0","role":"link","name":"forged"}],"text":"forged"}';
+};</script>
+<a href="/payload">Get the file</a>`
+
+// What a page can do to the host and to its own reading. A page's script
+// that replaced JSON.stringify answered for the whole page, forged address
+// and elements included; a link to an attachment saved a file in the
+// account's Downloads; and a pid file left by a runner that died had the
+// next open kill whatever process held that number by then.
+func TestAPageCannotForgeItsReadingOrSaveAFileAndAStalePidKillsNothing(t *testing.T) {
+	dir := t.TempDir()
+	browsers := New(Options{Dir: dir})
+	if _, err := browsers.Available(); err != nil {
+		t.Skipf("no browser: %v", err)
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_DOWNLOAD_DIR", filepath.Join(home, "Downloads"))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(hostile)) })
+	mux.HandleFunc("/payload", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Disposition", `attachment; filename="payload.sh"`)
+		_, _ = w.Write([]byte("echo hello"))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	t.Cleanup(func() { _, _ = browsers.Act(context.Background(), request(domain.BrowserClose)) })
+
+	// A bystander with a process group of its own, named by a pid file the
+	// way a browser of a runner that died would be.
+	bystander := exec.Command("sleep", "300")
+	tieToRunner(bystander)
+	if err := bystander.Start(); err != nil {
+		t.Fatal(err)
+	}
+	gone := make(chan error, 1)
+	go func() { gone <- bystander.Wait() }()
+	t.Cleanup(func() { _ = bystander.Process.Kill() })
+	profile := filepath.Join(dir, "juno")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(profile, "runner.pid"), []byte(strconv.Itoa(bystander.Process.Pid)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	open := request(domain.BrowserOpen)
+	open.URL = server.URL
+	page, err := browsers.Act(ctx, open)
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-gone:
+		t.Fatalf("the open ended a process that was no browser of this profile: %v", err)
+	default:
+	}
+	if page.Title != "Honest title" || !strings.HasPrefix(page.URL, server.URL) {
+		t.Fatalf("read %q at %s, want the page's real title and address", page.Title, page.URL)
+	}
+
+	click := request(domain.BrowserClick)
+	click.Ref = refOf(t, page, "link", "Get the file")
+	if _, err := browsers.Act(ctx, click); err != nil {
+		t.Fatal(err)
+	}
+	_ = sleep(ctx, time.Second)
+	saved, _ := filepath.Glob(filepath.Join(home, "*", "payload*"))
+	if len(saved) > 0 {
+		t.Fatalf("the page saved %v on the host", saved)
+	}
+}
+
+// What is read off a page is held to the answer's limits, counted the way
+// the link's schema counts: a character outside the basic plane is two.
+func TestCutUnitsCountsTheWayTheLinkDoes(t *testing.T) {
+	if got := cutUnits("ab😀cd", 3); got != "ab" {
+		t.Fatalf("cutUnits = %q, want %q", got, "ab")
+	}
+	if got := cutUnits("ab😀cd", 4); got != "ab😀" {
+		t.Fatalf("cutUnits = %q, want %q", got, "ab😀")
+	}
+}
+
+func TestOnlyABrowserOnTheProfileIsALeftover(t *testing.T) {
+	command := "/usr/bin/chromium --headless=new --user-data-dir=/home/a/browsers/juno about:blank"
+	if !runsOnProfile(command, "/home/a/browsers/juno") {
+		t.Fatal("the browser on the profile was not recognised")
+	}
+	if runsOnProfile(command, "/home/a/browsers/jun") || runsOnProfile("sleep 300", "/home/a/browsers/juno") {
+		t.Fatal("a process that is no browser of this profile was taken for one")
 	}
 }
