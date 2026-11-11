@@ -83,9 +83,10 @@
   kept on the device, like the rail's; a project or session made since
   the last drag lands on top, and the sort's default, Custom order, is
   that order (a session dropped under another sort keeps what the reader
-  was looking at and switches to it). Sessions hold still while a filter
-  or the search hides some of them, since a drop would lose the hidden
-  ones' places. The filter menu's Show projects checks each project
+  was looking at and switches to it). Sessions and projects drag while a
+  filter or the search hides some of them too (since 2026-11-11; they used
+  to hold still): a drop places the rows it saw, and each hidden one keeps
+  its place among them. The filter menu's Show projects checks each project
   on or off (added 2026-10-27): a hidden project's group and sessions
   leave the sidebar on this device, its place in the order is kept, a
   pinned session of it stays pinned, and the project filter still

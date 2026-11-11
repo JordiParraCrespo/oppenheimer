@@ -10,13 +10,13 @@ import { SessionRow } from './session-row';
  */
 export function SessionRows({
   sessions,
-  dragDisabled,
+  dragDisabled = false,
   onShare,
   onDelete,
   onWrite,
 }: {
   sessions: SessionEntity[];
-  dragDisabled: boolean;
+  dragDisabled?: boolean;
   onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
   onWrite: (error: Error | null) => void;
