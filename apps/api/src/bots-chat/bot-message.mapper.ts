@@ -3,6 +3,7 @@ import type { BotSteer } from '@oppenheimer/backend-agents';
 import { storableJson, storableText } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
+  BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
@@ -330,6 +331,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
   if (raw.kind === 'approval') {
     const outcome = BOT_EVENT_OUTCOMES.find((known) => known === raw.outcome);
     if (!outcome) return null;
+    const stage = BOT_APPROVAL_EVENT_STAGES.find((known) => known === raw.stage);
     return {
       kind: 'approval',
       outcome,
@@ -337,6 +339,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       summary: String(raw.summary ?? ''),
       sessionId: typeof raw.sessionId === 'string' ? raw.sessionId : null,
       ...(typeof raw.approvalId === 'string' && { approvalId: raw.approvalId }),
+      ...(stage && { stage }),
     };
   }
   if (raw.kind === 'question') {
