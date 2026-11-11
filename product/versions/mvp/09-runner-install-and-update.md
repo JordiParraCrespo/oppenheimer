@@ -127,10 +127,29 @@ failure every `curl | sh` has unless it is written this way.
    file inside the release archive and the layout is `runner`, because
    the layout is already `~/.oppenheimer/bin`; the service unit executes
    `current`, never a version. These notes write `runner <subcommand>`
-   for brevity and mean the shim. On macOS strip the quarantine
-   attribute (`xattr -d com.apple.quarantine`) until the binary is
-   signed; a plain binary and a launchd user agent need no notarization,
-   only a `.app` would.
+   for brevity and mean the shim.
+
+   **On macOS the runner is an app bundle** (decided 2026-11-04; this
+   step first said a quarantine-stripped bare binary needs no
+   notarization, which held, but cost every Mac its permissions on every
+   update). macOS keeps a grant — Documents, Desktop, network volumes,
+   Full Disk Access, the local network — for a program's identity, and
+   for the runner that program is also everything its sessions start,
+   because launchd makes it their responsible process. A bare binary
+   with the linker's ad-hoc signature is identified by its own hash, in
+   a new file per version, so each release was a stranger. The macOS
+   archive therefore carries `OppenheimerRunner.app` (bundle id
+   `dev.oppenheimer.runner`, `LSUIElement`, a usage string per
+   permission, `apps/runner/packaging/macos/Info.plist`), signed with a
+   Developer ID under the hardened runtime and notarized with the
+   ticket stapled. The installer keeps a copy per version as
+   `~/.oppenheimer/bin/runner-<version>.app`, installs the one that runs
+   at **`~/.oppenheimer/bin/OppenheimerRunner.app`, a path that never
+   changes**, and points `current` at
+   `OppenheimerRunner.app/Contents/MacOS/runner`, which never changes
+   either. A Mac grants its permissions once, to "Oppenheimer Runner"
+   by the team that signed it, and keeps them across updates. Quarantine
+   is still stripped, for a copy that came through a browser.
 8. **Register** (§3) with `--keep-existing`, the token in the runner's
    environment, and **install the service** (§4).
 9. **Install the chosen agent CLIs** with `runner agents install` and
@@ -253,7 +272,11 @@ putting the user's credentials on it.
   can live on a machine with no toolchain on it
   (`scripts/runner/sign-release.sh`). A build made without a key refuses
   every update rather than trusting one: the alternative to "no key" is
-  "no updates", never "unsigned updates".
+  "no updates", never "unsigned updates". The macOS bundles are signed
+  and notarized in the same CI job (§2), with a Developer ID
+  certificate and an App Store Connect key held as CI secrets: that
+  signature decides what macOS calls the runner and keeps permissions
+  for, not what code a host accepts, which stays the offline key's.
 - **The manifest.** The release host serves `<base>/<channel>.json` and
   its detached signature; the base is pinned in `config.json` at
   registration. The runner installs only what the offline key signed,
@@ -286,10 +309,23 @@ putting the user's credentials on it.
      the rename is atomic.
   2. Verify digest and signature. Any mismatch aborts and the staging
      directory is emptied.
-  3. `chmod 0700`, strip quarantine on macOS, then run
-     `runner-<version> selfcheck`.
+  3. `chmod 0700`, then run `runner-<version> selfcheck` (on macOS the
+     executable inside the staged bundle).
   4. `rename()` into place, then repoint `current` by creating a temp
-     symlink and renaming it over the old one.
+     symlink and renaming it over the old one. On macOS (§2) the bundle
+     is renamed in as `runner-<version>.app`, copied into staging, and
+     the copy swapped with the live `OppenheimerRunner.app` in one
+     `renamex_np(RENAME_SWAP)`, so there is no instant without a live
+     bundle and the versioned copies stay as installed; `current` already
+     points into the live bundle and is left alone. A rollback is the
+     same swap from the previous version's copy. A Mac that a runner
+     from before the bundle updated runs the bare binary out of the new
+     archive; its runner sees that `current` does not point into the
+     bundle and installs its own version again as the bundle, at the
+     next quiet moment, like any update. If that bundle does not stay
+     up, the rollback returns to the bare binary and the reinstall is not
+     tried again; the next release installs as the bundle. A release without a bundle
+     (one from before it) still installs as a bare binary.
   5. Record the update, then restart through the service manager —
      `launchctl kickstart -k` or `systemctl --user restart` — and if
      that fails, exit so `KeepAlive` or `Restart=always` brings the new

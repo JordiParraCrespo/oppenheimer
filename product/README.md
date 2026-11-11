@@ -1226,6 +1226,13 @@ earlier note:
   mail older than two days, spam, trash and chats never wake a routine, an
   any-mail trigger takes only the inbox, and rate-limited runs are one chat
   line a routine an hour.
+- `versions/mvp/09-runner-install-and-update.md` §2 said a
+  quarantine-stripped bare binary was all macOS needed, with no
+  notarization. It ran, but each release was a new program to macOS (an
+  ad-hoc signature in a new file per version), so every Mac asked for its
+  permissions again after every update. On 2026-11-04 the runner became a
+  Developer ID signed, notarized `OppenheimerRunner.app` at one fixed path
+  on macOS, swapped in place by updates (09 §2, §5).
 - `versions/mvp/05-screens.md` had the Sessions sidebar make projects (a
   plus in its head) and edit them (a settings glyph on each project's
   header). On 2026-11-05 the owner moved project management to Plan: a

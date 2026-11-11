@@ -31,10 +31,19 @@ type Binaries interface {
 	Promote(stagedPath, version string) error
 	// Activate points `current` at an installed version.
 	Activate(version string) error
+	// ActivateBinary points `current` at a version's bare binary even where
+	// a bundle of it is installed too, and drops that bundle: what a
+	// reinstall that failed rolls back to, now and on any later rollback.
+	ActivateBinary(version string) error
 	// Current is the version `current` points at.
 	Current() (string, error)
 	// Prune deletes every version except the ones named.
 	Prune(keep ...string) error
+	// NeedsReinstall reports that the running version is installed in a
+	// form this platform no longer runs (a bare binary on macOS, where the
+	// runner is an app bundle), so the same version is worth installing
+	// again from the release.
+	NeedsReinstall() bool
 }
 
 // Restarter restarts the runner's service unit; the composition root satisfies

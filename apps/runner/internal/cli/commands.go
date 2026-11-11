@@ -20,6 +20,7 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	pairapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/binaries"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 	upddomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -627,8 +628,12 @@ func (a *App) LinkRunning() error {
 		resolved = executable
 	}
 	// Already inside the layout (an update installed it): just link.
-	if filepath.Dir(resolved) == a.Paths.Bin() {
+	if filepath.Dir(resolved) == a.Paths.Bin() || strings.HasPrefix(resolved, a.Paths.Bin()+string(filepath.Separator)) {
 		return a.Binaries.Activate(a.Version)
+	}
+	// Run from inside an app bundle: the bundle is what gets installed.
+	if bundle, ok := binaries.BundleOf(resolved); ok {
+		resolved = bundle
 	}
 	if err := a.Binaries.Promote(resolved, a.Version); err != nil {
 		if !strings.Contains(err.Error(), "exist") {
