@@ -42,7 +42,10 @@ export class JobFailureReportingAdapter implements OnApplicationBootstrap {
       if (!worker) continue;
       worker.on('failed', (job: Job | undefined, error: Error) => {
         if (!isFinalFailure(job, error)) return;
-        reporter.capture(error, JobFailureMapper.toErrorReport(worker.name, job, error));
+        reporter.capture(
+          JobFailureMapper.toReportedError(error),
+          JobFailureMapper.toErrorReport(worker.name, job, error),
+        );
       });
     }
   }
