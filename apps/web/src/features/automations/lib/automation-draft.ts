@@ -51,9 +51,15 @@ export interface AutomationDraft {
   triggers: TriggerCard[];
 }
 
-/** The agents an automation can run: every one with a model to drive, not the blank terminal. */
+/**
+ * The agents an automation can run: the API's `automationAgentSupported`,
+ * every one with a model to drive and permission levels to set. Not the blank
+ * terminal, and not Pi, which has no approvals and so no unattended mode the
+ * API will save.
+ */
 export const AUTOMATION_AGENTS = (Object.keys(CODING_AGENTS) as CodingAgentId[]).filter(
-  (agent) => CODING_AGENTS[agent].models.length > 0,
+  (agent) =>
+    CODING_AGENTS[agent].models.length > 0 && CODING_AGENTS[agent].launch.permission !== undefined,
 );
 
 let cardSequence = 0;

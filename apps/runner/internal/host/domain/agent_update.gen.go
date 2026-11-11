@@ -11,4 +11,6 @@ var agentUpdates = map[string][]string{
 	"codex":    {"update"},
 	"opencode": {"upgrade", "--method", "<method>"},
 	"grok":     {"update"},
+	"pi":       {"update", "--self"},
+	"omp":      {"update"},
 }

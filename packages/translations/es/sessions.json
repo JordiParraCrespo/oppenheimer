@@ -178,6 +178,7 @@
       "favourites": "Favoritos",
       "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
       "moreModels": "Más modelos",
+      "configure": "Elegir agentes",
       "addFavourite": "Añadir {{model}} a favoritos",
       "removeFavourite": "Quitar {{model}} de favoritos",
       "auto": "Auto"

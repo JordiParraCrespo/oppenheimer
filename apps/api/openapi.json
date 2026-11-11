@@ -9788,6 +9788,8 @@
                 "codex",
                 "opencode",
                 "grok",
+                "pi",
+                "omp",
                 "shell"
               ],
               "type": "string"
@@ -30266,6 +30268,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               null
             ],
@@ -30349,6 +30353,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               null
             ],
@@ -30412,6 +30418,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               null
             ],
@@ -30947,6 +30955,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell",
               "cursor"
             ],
@@ -31212,6 +31222,8 @@
               "codex",
               "opencode",
               "grok",
+              "pi",
+              "omp",
               "shell"
             ]
           },
@@ -33390,6 +33402,8 @@
                   "codex",
                   "opencode",
                   "grok",
+                  "pi",
+                  "omp",
                   "shell"
                 ]
               },
@@ -33871,6 +33885,8 @@
                   "codex",
                   "opencode",
                   "grok",
+                  "pi",
+                  "omp",
                   "shell"
                 ]
               },
@@ -34690,6 +34706,8 @@
                   "codex",
                   "opencode",
                   "grok",
+                  "pi",
+                  "omp",
                   "shell"
                 ]
               },

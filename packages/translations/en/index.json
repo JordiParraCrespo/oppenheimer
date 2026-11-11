@@ -923,6 +923,7 @@
         "favourites": "Favourites",
         "favouritesEmpty": "Star a model to keep it here.",
         "moreModels": "More models",
+        "configure": "Choose agents",
         "addFavourite": "Add {{model}} to favourites",
         "removeFavourite": "Remove {{model}} from favourites",
         "auto": "Auto"
@@ -3600,6 +3601,7 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "app": "Oppenheimer",
+      "agents": "Agents",
       "about": "About"
     },
     "profile": {
@@ -3983,6 +3985,12 @@
         "making": "Making the link…",
         "newLink": "New link"
       }
+    },
+    "agents": {
+      "title": "Agents",
+      "hint": "Which agents New session offers on this device. A session that already runs one you hide keeps it.",
+      "show": "Show {{agent}} in New session",
+      "lastShown": "New session needs one agent to offer."
     },
     "about": {
       "title": "About",

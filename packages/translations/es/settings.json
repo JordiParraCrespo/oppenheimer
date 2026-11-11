@@ -13,6 +13,7 @@
     "whatsapp": "WhatsApp",
     "telegram": "Telegram",
     "app": "Oppenheimer",
+    "agents": "Agentes",
     "about": "Acerca de"
   },
   "profile": {
@@ -398,6 +399,12 @@
       "making": "Creando el enlace…",
       "newLink": "Nuevo enlace"
     }
+  },
+  "agents": {
+    "title": "Agentes",
+    "hint": "Qué agentes ofrece Nueva sesión en este dispositivo. Una sesión que ya usa uno que ocultes lo conserva.",
+    "show": "Mostrar {{agent}} en Nueva sesión",
+    "lastShown": "Nueva sesión necesita al menos un agente que ofrecer."
   },
   "about": {
     "title": "Acerca de",

@@ -1,11 +1,14 @@
 import { useCloudAgentModels, useCloudAgentStatus } from '@oppenheimer/frontend-consumer/react';
+import { useStoredList } from '@oppenheimer/frontend-web';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import { CLOUD_AGENT_PROVIDERS } from '@oppenheimer/shared/schemas/cloud-agent';
+import { useNavigate } from '@tanstack/react-router';
 import { useController, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
 import { useModelFavourites } from '../hooks/use-model-favourites';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
+import { AGENT_CHOICES_KEY, withoutHidden } from '../lib/agent-choices';
 import {
   CLOUD_DEFAULT_MODEL,
   defaultModelFor,
@@ -34,6 +37,11 @@ import {
  * (`isHostCloud`), so there the button offers those two alone, and switching
  * between them switches whose cloud it is; the place chip picks the place
  * with its engine (`engineForPlace`).
+ *
+ * Only the agents offered on this device are drawn (`agent-choices.ts`: four
+ * and the blank terminal by default, the rest switched on in Settings →
+ * Agents), in a host's cloud too, plus the one the draft is on; the gear at
+ * the end of the popup's strip opens that page.
  */
 export function NewSessionAgent() {
   const { t } = useTranslation();
@@ -49,6 +57,8 @@ export function NewSessionAgent() {
   });
   const { field: efforts } = useController({ control, name: 'efforts' });
   const [favourites, setFavourites] = useModelFavourites();
+  const [agentChoices] = useStoredList(AGENT_CHOICES_KEY);
+  const navigate = useNavigate();
   const status = useCloudAgentStatus();
   // The vendor whose tab the button shows: the one picked, or else the first
   // the reader holds a key for.
@@ -70,7 +80,7 @@ export function NewSessionAgent() {
 
   return (
     <AgentSelect
-      agents={toEngineAgents(atHostCloud, cloudAgent)}
+      agents={withoutHidden(toEngineAgents(atHostCloud, cloudAgent), agentChoices, agent)}
       value={
         inCloud
           ? { agent: cloudAgent.id, model: cloudModel ?? CLOUD_DEFAULT_MODEL }
@@ -95,6 +105,7 @@ export function NewSessionAgent() {
       onFavouritesChange={setFavourites}
       effort={inCloud ? null : effortChoiceFor(agent, model, efforts.value[agent])}
       onEffortChange={(level) => efforts.onChange({ ...efforts.value, [agent]: level })}
+      onConfigure={() => navigate({ to: '/settings/agents' })}
     />
   );
 }
