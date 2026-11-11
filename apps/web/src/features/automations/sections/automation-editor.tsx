@@ -1,5 +1,4 @@
 import { DialogBody, DialogHeader, DialogTitle } from '@oppenheimer/design-system-web';
-import { parseRepositoryKey } from '@oppenheimer/frontend-consumer';
 import { useProjects, useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import {
   dictateIntoField,
@@ -80,13 +79,7 @@ export function AutomationEditor({
       return patch.repositoryKeys
         ? {
             ...next,
-            triggers: fitCards(
-              next.triggers,
-              next.repositoryKeys.flatMap((key) => {
-                const ref = parseRepositoryKey(key);
-                return ref ? [Number(ref.githubRepoId)] : [];
-              }),
-            ),
+            triggers: fitCards(next.triggers, draftRepoIds(next)),
           }
         : next;
     });

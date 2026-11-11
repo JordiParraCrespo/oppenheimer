@@ -13,6 +13,7 @@ import {
   GITHUB_EVENT_TYPES,
   type GithubEventType,
 } from '@oppenheimer/shared/automations';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { ChoiceToken } from '../components/choice-token';
 import { FilterToken } from '../components/filter-token';
@@ -28,6 +29,18 @@ const FILTER_WORD = {
 } as const;
 
 /**
+ * The repositories token: none to pick from yet, the one picked, all of
+ * them, or how many.
+ */
+function reposLabelOf(offered: number, picked: { name: string }[], t: TFunction): string {
+  if (!offered) return t('automations.editor.reposToPick');
+  if (picked.length === 1) return picked[0]?.name ?? '';
+  return picked.length === offered
+    ? t('automations.editor.anyOfRepos', { count: picked.length })
+    : t('automations.editor.someRepos', { count: picked.length });
+}
+
+/**
  * A GitHub trigger as a sentence (the frame's editor): "[Pull request opened]
  * in [xrp-mobile] targeting [main]". Under it, the live line: what the card
  * would have matched in the last week, replayed by the API against what the
@@ -37,27 +50,25 @@ export function GithubTriggerCard({
   card,
   repositories,
   onChange,
+  onDuplicate,
   onRemove,
 }: {
   card: GithubCard;
   /** The automation's repositories: GitHub's id and the short name. */
   repositories: { id: number; name: string }[];
   onChange: (card: GithubCard) => void;
+  /** Absent when the automation already holds its most triggers. */
+  onDuplicate?: () => void;
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
   const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const definition = externalEventDefinition('github', card.event);
-  const { key: _key, ...trigger } = card;
+  const { key: _key, onAll: _onAll, ...trigger } = card;
   const preview = useTriggerPreview(card.repositories.length ? trigger : undefined);
 
   const picked = repositories.filter((repository) => card.repositories.includes(repository.id));
-  const reposLabel =
-    picked.length === 1
-      ? (picked[0]?.name ?? '')
-      : picked.length === repositories.length
-        ? t('automations.editor.anyOfRepos', { count: picked.length })
-        : t('automations.editor.someRepos', { count: picked.length });
+  const reposLabel = reposLabelOf(repositories.length, picked, t);
   const listeningOn =
     picked.length === 1
       ? (picked[0]?.name ?? '')
@@ -73,6 +84,8 @@ export function GithubTriggerCard({
   return (
     <TriggerCard
       icon={<BrandGlyph name="github" size={14} />}
+      onDuplicate={onDuplicate}
+      duplicateLabel={t('automations.editor.duplicateTrigger')}
       onRemove={onRemove}
       removeLabel={t('automations.editor.removeTrigger')}
       preview={
@@ -128,7 +141,13 @@ export function GithubTriggerCard({
             value: String(repository.id),
             label: repository.name,
           }))}
-          onValueChange={(ids) => onChange({ ...card, repositories: ids.map(Number) })}
+          onValueChange={(ids) =>
+            onChange({
+              ...card,
+              repositories: ids.map(Number),
+              onAll: ids.length === repositories.length,
+            })
+          }
         />
         {definition?.filterField ? (
           <>
