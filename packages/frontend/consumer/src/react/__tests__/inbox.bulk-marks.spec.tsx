@@ -35,7 +35,7 @@ function setup(inbox: Record<string, unknown>) {
     (queryClient.getQueryData<InboxMarkEntity[]>(inboxKeys.marks()) ?? [])
       .map((mark) => `${mark.itemKey}:${mark.mark}`)
       .sort();
-  return { ...hook, marks };
+  return { ...hook, marks, queryClient };
 }
 
 describe('marking a selection in the Inbox', () => {
@@ -61,6 +61,25 @@ describe('marking a selection in the Inbox', () => {
     act(() => settle(answer));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(marks()).toEqual(['a:done', 'b:done']);
+  });
+
+  it('keeps a mark still in flight elsewhere when the selection settles', async () => {
+    const putMarks = vi
+      .fn()
+      .mockResolvedValue([
+        new InboxMarkEntity('b', 'done', null, new Date()),
+        new InboxMarkEntity('a', 'low', null, new Date()),
+      ]);
+    const { result, marks, queryClient } = setup({ putMarks });
+    queryClient.setQueryData(inboxKeys.marks(), [
+      lowA,
+      new InboxMarkEntity('c', 'deleted', null, new Date()),
+    ]);
+
+    act(() => result.current.mutate({ itemKeys: ['b'], mark: 'done' }));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(marks()).toEqual(['a:low', 'b:done', 'c:deleted']);
   });
 
   it('clears each mark on the click when restoring priority', async () => {

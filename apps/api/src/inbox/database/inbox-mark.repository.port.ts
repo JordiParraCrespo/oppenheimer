@@ -9,6 +9,9 @@ export interface InboxMarkRepositoryPort {
    */
   upsert(mark: InboxMarkEntity): Promise<void>;
 
+  /** Stores each mark as `upsert` does, all in one transaction: a failure stores none. */
+  upsertAll(marks: readonly InboxMarkEntity[]): Promise<void>;
+
   /** The person's mark on one occurrence in the workspace. */
   findOne(
     organizationId: string,
@@ -29,4 +32,7 @@ export interface InboxMarkRepositoryPort {
 
   /** Removes the mark, with its event; whether there was one to remove. */
   delete(mark: InboxMarkEntity): Promise<boolean>;
+
+  /** Removes each mark as `delete` does, all in one transaction; how many there were. */
+  deleteAll(marks: readonly InboxMarkEntity[]): Promise<number>;
 }

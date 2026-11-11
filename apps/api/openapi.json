@@ -25006,7 +25006,7 @@
     },
     "/api/v1/inbox/marks/batch": {
       "post": {
-        "description": "A bulk action on a selection: the same mark on every occurrence, replacing whatever the caller had on each, or `mark: null` to clear each one’s mark. Every key and the snooze’s end are checked before anything is written. Answers the caller’s marks in force afterwards, as `GET /inbox/marks` does.",
+        "description": "A bulk action on a selection: the same mark on every occurrence, replacing whatever the caller had on each, or `mark: null` to clear each one’s mark. Every key and the snooze’s end are checked before anything is written, and the marks are written in one transaction. Answers the caller’s marks in force afterwards, as `GET /inbox/marks` does.",
         "operationId": "putInboxMarks",
         "parameters": [],
         "requestBody": {

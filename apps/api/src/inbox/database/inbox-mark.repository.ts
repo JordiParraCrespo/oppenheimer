@@ -23,26 +23,32 @@ export class InboxMarkRepository implements InboxMarkRepositoryPort {
   ) {}
 
   async upsert(mark: InboxMarkEntity): Promise<void> {
-    const record = this.mapper.toPersistence(mark);
+    await this.upsertAll([mark]);
+  }
+
+  async upsertAll(marks: readonly InboxMarkEntity[]): Promise<void> {
     await this.outbox.transaction(async (manager) => {
-      // UQ_inbox_mark_item: the occurrence's row keeps its id and createdAt.
-      await manager.query(
-        `INSERT INTO inbox_mark (id, "organizationId", "userId", "itemKey", mark, "until")
-         VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT ("organizationId", "userId", "itemKey")
-         DO UPDATE SET mark = EXCLUDED.mark, "until" = EXCLUDED."until", "updatedAt" = now()`,
-        [
-          record.id,
-          record.organizationId,
-          record.userId,
-          record.itemKey,
-          record.mark,
-          record.until,
-        ],
-      );
-      await this.outbox.stageEvents(manager, mark.domainEvents);
+      for (const mark of marks) {
+        const record = this.mapper.toPersistence(mark);
+        // UQ_inbox_mark_item: the occurrence's row keeps its id and createdAt.
+        await manager.query(
+          `INSERT INTO inbox_mark (id, "organizationId", "userId", "itemKey", mark, "until")
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT ("organizationId", "userId", "itemKey")
+           DO UPDATE SET mark = EXCLUDED.mark, "until" = EXCLUDED."until", "updatedAt" = now()`,
+          [
+            record.id,
+            record.organizationId,
+            record.userId,
+            record.itemKey,
+            record.mark,
+            record.until,
+          ],
+        );
+        await this.outbox.stageEvents(manager, mark.domainEvents);
+      }
     });
-    mark.clearEvents();
+    for (const mark of marks) mark.clearEvents();
   }
 
   async findOne(
@@ -77,17 +83,25 @@ export class InboxMarkRepository implements InboxMarkRepositoryPort {
   }
 
   async delete(mark: InboxMarkEntity): Promise<boolean> {
+    return (await this.deleteAll([mark])) > 0;
+  }
+
+  async deleteAll(marks: readonly InboxMarkEntity[]): Promise<number> {
     const deleted = await this.outbox.transaction(async (manager) => {
-      const result = await manager.getRepository(InboxMarkOrmEntity).delete({
-        organizationId: mark.organizationId,
-        userId: mark.userId,
-        itemKey: mark.itemKey,
-      });
-      if ((result.affected ?? 0) === 0) return false;
-      await this.outbox.stageEvents(manager, mark.domainEvents);
-      return true;
+      const gone: InboxMarkEntity[] = [];
+      for (const mark of marks) {
+        const result = await manager.getRepository(InboxMarkOrmEntity).delete({
+          organizationId: mark.organizationId,
+          userId: mark.userId,
+          itemKey: mark.itemKey,
+        });
+        if ((result.affected ?? 0) === 0) continue;
+        await this.outbox.stageEvents(manager, mark.domainEvents);
+        gone.push(mark);
+      }
+      return gone;
     });
-    if (deleted) mark.clearEvents();
-    return deleted;
+    for (const mark of deleted) mark.clearEvents();
+    return deleted.length;
   }
 }

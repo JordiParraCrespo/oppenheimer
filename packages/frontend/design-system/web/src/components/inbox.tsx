@@ -95,7 +95,7 @@ function InboxSelectionHead({
       {...props}
     >
       {leading}
-      <span className="figures text-[13px] font-medium">{count}</span>
+      <span className="text-[13px] font-medium">{count}</span>
       <div className="ml-auto flex items-center gap-0.5">{children}</div>
     </div>
   );

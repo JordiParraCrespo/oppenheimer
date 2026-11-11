@@ -37,7 +37,7 @@ export class PutInboxMarksHttpController {
   @ApiOperation({
     summary: 'Mark several Inbox items at once',
     description:
-      'A bulk action on a selection: the same mark on every occurrence, replacing whatever the caller had on each, or `mark: null` to clear each one’s mark. Every key and the snooze’s end are checked before anything is written. Answers the caller’s marks in force afterwards, as `GET /inbox/marks` does.',
+      'A bulk action on a selection: the same mark on every occurrence, replacing whatever the caller had on each, or `mark: null` to clear each one’s mark. Every key and the snooze’s end are checked before anything is written, and the marks are written in one transaction. Answers the caller’s marks in force afterwards, as `GET /inbox/marks` does.',
   })
   @ApiResponse({ status: 200, type: [InboxMarkResponseDto] })
   @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })

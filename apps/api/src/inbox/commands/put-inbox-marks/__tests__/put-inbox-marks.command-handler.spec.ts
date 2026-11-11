@@ -8,12 +8,13 @@ import { PutInboxMarksCommandHandler } from '../put-inbox-marks.command-handler'
  * POST /inbox/marks/batch, a bulk action from the Inbox: one request marks a
  * whole selection (the console once sent one per row and hit the hundred a
  * minute rate limit on a large Inbox). A refusal for any key writes none of
- * them, so a selection is never left half marked.
+ * them, and the marks are stored in one transaction (the repository's
+ * `upsertAll` and `deleteAll`), so a selection is never left half marked.
  */
 function setup(existing: string[] = []) {
   const marks = {
-    upsert: vi.fn(async () => undefined),
-    delete: vi.fn(async () => true),
+    upsertAll: vi.fn(async (_marks: InboxMarkEntity[]) => undefined),
+    deleteAll: vi.fn(async (gone: InboxMarkEntity[]) => gone.length),
     findOne: vi.fn(async (organizationId: string, userId: string, itemKey: string) =>
       existing.includes(itemKey)
         ? Some(
@@ -46,7 +47,8 @@ describe('PutInboxMarksCommandHandler', () => {
   it('stores the same mark on every occurrence, each with its event', async () => {
     const { marks, handler } = setup();
     await handler.execute(command({ itemKeys: ['approval:ap-1', 'run:r-1', 'run:r-1'] }));
-    const stored = marks.upsert.mock.calls.map(([mark]) => mark as unknown as InboxMarkEntity);
+    expect(marks.upsertAll).toHaveBeenCalledTimes(1);
+    const stored = marks.upsertAll.mock.calls[0][0];
     expect(stored.map((mark) => [mark.itemKey, mark.mark])).toEqual([
       ['approval:ap-1', 'done'],
       ['run:r-1', 'done'],
@@ -57,8 +59,9 @@ describe('PutInboxMarksCommandHandler', () => {
   it('clears the marks there are when the mark is null, and skips the rest', async () => {
     const { marks, handler } = setup(['run:r-1']);
     await handler.execute(command({ mark: null }));
-    expect(marks.delete).toHaveBeenCalledTimes(1);
-    expect(marks.upsert).not.toHaveBeenCalled();
+    expect(marks.deleteAll).toHaveBeenCalledTimes(1);
+    expect(marks.deleteAll.mock.calls[0][0].map((mark) => mark.itemKey)).toEqual(['run:r-1']);
+    expect(marks.upsertAll).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -73,7 +76,7 @@ describe('PutInboxMarksCommandHandler', () => {
   ])('refuses with %s for %s, and writes none of them', async (code, _, overrides) => {
     const { marks, handler } = setup(['run:r-1']);
     await expect(handler.execute(command(overrides))).rejects.toMatchObject({ code });
-    expect(marks.upsert).not.toHaveBeenCalled();
-    expect(marks.delete).not.toHaveBeenCalled();
+    expect(marks.upsertAll).not.toHaveBeenCalled();
+    expect(marks.deleteAll).not.toHaveBeenCalled();
   });
 });

@@ -530,8 +530,9 @@ at a time.
   row leaves on the click, then sends the whole selection to
   `POST /v1/inbox/marks/batch` (`itemKeys`, at most 500, and a `mark`, or
   `null` to clear each one's). The API checks every key and the snooze's
-  end before it writes any, writes each mark as a single put or delete
-  would, with its own event, and answers the marks in force. A first cut
+  end before it writes any, writes every mark in one transaction, each
+  with its own event as a single put or delete would, and answers the
+  marks in force. A first cut
   sent one request per row; the review found that "select all" on a large
   Inbox (up to a hundred failed runs alone) ran past the default hundred
   requests a minute and left the selection half marked.

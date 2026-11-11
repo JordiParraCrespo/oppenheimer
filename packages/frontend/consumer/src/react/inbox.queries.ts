@@ -429,8 +429,8 @@ export interface PutInboxMarksVariables {
 /**
  * Marks a selection at once (`POST /inbox/marks/batch`): one write to the
  * cached list, so every row moves on the click, then one request for all of
- * them, whose answer is the marks in force. The API checks every key before
- * it writes any, so a refusal puts the list back as it was.
+ * them. The API checks every key and writes them in one transaction, so a
+ * refusal puts the list back as it was.
  */
 export function usePutInboxMarks(
   options?: UseMutationOptions<InboxMarkEntity[], Error, PutInboxMarksVariables, MarksContext>,
@@ -438,8 +438,14 @@ export function usePutInboxMarks(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation({
-    ...withCacheOnSuccess(options, (marks) => {
-      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), marks);
+    // Only the selection's rows take the server's answer: another mark still
+    // in flight keeps its provisional row.
+    ...withCacheOnSuccess(options, (saved, { itemKeys }) => {
+      const keys = new Set(itemKeys);
+      queryClient.setQueryData<InboxMarkEntity[]>(inboxKeys.marks(), (marks) => [
+        ...(marks ?? []).filter((mark) => !keys.has(mark.itemKey)),
+        ...saved.filter((mark) => keys.has(mark.itemKey)),
+      ]);
     }),
     mutationFn: ({ itemKeys, mark, until }: PutInboxMarksVariables) =>
       app.inbox.putMarks(itemKeys, mark, until),

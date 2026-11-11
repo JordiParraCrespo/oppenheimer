@@ -13,8 +13,9 @@ import { PutInboxMarksCommand } from './put-inbox-marks.command';
  * A bulk action from the Inbox (`product/versions/mvp/29-inbox.md`, "Bulk
  * actions"): the same mark on every occurrence of a selection, or each one's
  * mark cleared. Every key and the snooze's end are checked before anything is
- * written, so a refusal leaves the selection as it was; each mark then lands
- * as a single put or delete would, with its own event.
+ * written, and the marks are written in one transaction, so a selection is
+ * never left half marked; each mark carries its own event, as a single put or
+ * delete would.
  */
 @CommandHandler(PutInboxMarksCommand)
 export class PutInboxMarksCommandHandler implements ICommandHandler<PutInboxMarksCommand, void> {
@@ -37,18 +38,23 @@ export class PutInboxMarksCommandHandler implements ICommandHandler<PutInboxMark
       }
     }
 
-    for (const itemKey of new Set(itemKeys)) {
-      if (mark !== null) {
-        await this.marks.upsert(
+    const keys = [...new Set(itemKeys)];
+    if (mark !== null) {
+      await this.marks.upsertAll(
+        keys.map((itemKey) =>
           InboxMarkEntity.place({ organizationId, userId, itemKey, mark, until }, now),
-        );
-        continue;
-      }
-      const found = await this.marks.findOne(organizationId, userId, itemKey);
-      if (found.isNone()) continue;
-      const existing = found.unwrap();
-      existing.remove();
-      await this.marks.delete(existing);
+        ),
+      );
+      return;
     }
+    const found: InboxMarkEntity[] = [];
+    for (const itemKey of keys) {
+      const existing = await this.marks.findOne(organizationId, userId, itemKey);
+      if (existing.isNone()) continue;
+      const removed = existing.unwrap();
+      removed.remove();
+      found.push(removed);
+    }
+    await this.marks.deleteAll(found);
   }
 }

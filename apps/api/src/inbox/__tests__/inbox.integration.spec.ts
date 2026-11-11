@@ -152,6 +152,24 @@ describe('inbox marks (integration)', () => {
     });
   });
 
+  it('stores a selection in one transaction: one row the table refuses stores none of them', async () => {
+    // A person who does not exist: the second row breaks its foreign key.
+    const refused = mark({ itemKey: 'run:batch-bad', userId: randomUUID() });
+    await expect(marks.upsertAll([mark({ itemKey: 'run:batch-ok' }), refused])).rejects.toThrow();
+    expect((await marks.findOne(organizationId, userId, 'run:batch-ok')).isNone()).toBe(true);
+    expect(await staged('run:batch-ok')).toBe(0);
+
+    await marks.upsertAll([mark({ itemKey: 'run:batch-a' }), mark({ itemKey: 'run:batch-b' })]);
+    const stored = [
+      (await marks.findOne(organizationId, userId, 'run:batch-a')).unwrap(),
+      (await marks.findOne(organizationId, userId, 'run:batch-b')).unwrap(),
+    ];
+    for (const each of stored) each.remove();
+    expect(await marks.deleteAll(stored)).toBe(2);
+    expect(await staged('run:batch-a')).toBe(2);
+    expect((await marks.findOne(organizationId, userId, 'run:batch-b')).isNone()).toBe(true);
+  });
+
   it('deletes a mark with its event, and a second delete finds nothing and stages nothing', async () => {
     await marks.upsert(mark({ itemKey: 'run:gone' }));
     const found = (await marks.findOne(organizationId, userId, 'run:gone')).unwrap();
