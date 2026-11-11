@@ -1536,3 +1536,9 @@ earlier note:
   reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
   owner asked for the text first: the block opens on Raw, Raw / Tree on its
   band, the tree one click away. A tool result's JSON still reads as a tree.
+- `versions/mvp/05-screens.md` held the sidebar's sessions and projects
+  still while a filter or the search hid some of them, since a drop would
+  lose the hidden ones' places. On 2026-11-11 the owner tried to reorder
+  sessions with a repository filter on and could not. They drag now,
+  filtered or not: the drop is merged into the whole list's order, so a
+  hidden row keeps its place among the ones it was drawn with.

@@ -70,7 +70,8 @@ const DeleteSessionsDialog = lazy(() =>
  * session, and a filter must not change which one that is.
  *
  * The projects and their sessions drag into the reader's own order
- * (`useSidebarOrder`), on the sidebar's own `DragProvider`. The sessions the
+ * (`useSidebarOrder`), on the sidebar's own `DragProvider`, filtered or not:
+ * a drop keeps the places of the rows a filter or the search hides. The sessions the
  * reader pinned (`useSessionPins`), from a row's menu or by dropping it on
  * Pinned, are drawn above the projects instead of in them, still filtered
  * and searched like the rest; a project left with no session to draw is not
@@ -143,6 +144,7 @@ export function SessionsSidebarBody() {
     projects,
     listed: listing.listed,
     sessions: listing.sessions,
+    every: applyFilters(hiddenSessions.sessions, { ...DEFAULT_FILTERS, sort: filters.sort }),
     pinned,
     pins,
     custom: filters.sort === 'custom',
@@ -251,7 +253,6 @@ export function SessionsSidebarBody() {
                 {pinnedRows.length > 0 || carrying ? (
                   <PinnedGroup
                     sessions={pinnedRows}
-                    narrowed={narrowed}
                     onShare={(target) =>
                       dialogs.open({ kind: 'share-session', sessionId: target.id })
                     }
