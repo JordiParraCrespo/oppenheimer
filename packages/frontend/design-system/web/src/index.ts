@@ -165,6 +165,7 @@ export {
 export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
 export {
   ChatAttachment,
+  ChatCommand,
   ChatMention,
   ChatReply,
   ChatTranscript,

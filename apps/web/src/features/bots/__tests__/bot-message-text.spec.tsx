@@ -36,4 +36,13 @@ describe('BotMessageText', () => {
     expect(container.textContent).toBe('two\nlines');
     expect(screen.queryByRole('button')).toBeNull();
   });
+
+  it('marks the /command a message starts with, and nothing in a message without one', () => {
+    const { container, rerender } = render(<BotMessageText text="/ship fix the build" />);
+
+    expect(container.querySelector('[data-slot="chat-command"]')?.textContent).toBe('/ship');
+    expect(container.textContent).toBe('/ship fix the build');
+    rerender(<BotMessageText text="run /ship later" />);
+    expect(container.querySelector('[data-slot="chat-command"]')).toBeNull();
+  });
 });

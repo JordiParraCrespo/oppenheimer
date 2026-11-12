@@ -115,3 +115,12 @@ export function slashMenuRows(
 export function pickedDraft(command: Pick<SlashCommand, 'name'>): string {
   return `/${command.name} `;
 }
+
+/**
+ * The `/command` a message starts with (`/ship` in `/ship fix the build`),
+ * marked in the composer and in the sent bubble; null when it does not start
+ * with one. Any name a skill could take counts, whether or not the bot has it.
+ */
+export function leadingCommand(text: string): string | null {
+  return /^\/[a-z0-9][a-z0-9-]{0,31}(?=\s|$)/.exec(text)?.[0] ?? null;
+}

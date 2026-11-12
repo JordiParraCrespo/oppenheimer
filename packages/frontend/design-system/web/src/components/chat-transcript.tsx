@@ -82,6 +82,26 @@ function ChatUserMessage({
   );
 }
 
+/**
+ * ChatCommand — the `/command` a message starts with (`/ship`, `/usage`),
+ * in the link blue on the selected wash, an `@file` mention's colours, in a
+ * sent message and in the composer as it is written. The wash reaches past
+ * the letters by a shadow, not padding, so the composer's copy of the text
+ * lays out exactly as the textarea's.
+ */
+function ChatCommand({ className, ...props }: React.ComponentProps<'span'>) {
+  return (
+    <span
+      data-slot="chat-command"
+      className={cn(
+        'rounded-[4px] bg-selected-surface text-link shadow-[0_0_0_2px_var(--color-selected-surface)]',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 function ChatAttachment({
   icon,
   name,
@@ -361,5 +381,5 @@ function StreamingCaret({ className }: { className?: string }) {
   );
 }
 
-export { ChatAttachment, ChatMention, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
+export { ChatAttachment, ChatCommand, ChatMention, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
 export type { TurnHeaderLabels, TurnState };

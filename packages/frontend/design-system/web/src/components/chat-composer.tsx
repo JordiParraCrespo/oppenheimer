@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import {
   ComposerFoot,
@@ -12,6 +12,7 @@ import {
 } from '../internal/composer-send';
 import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
+import { ChatCommand } from './chat-transcript';
 import { IconButton } from './icon-button';
 
 type ChatComposerLabels = { send: string; stop: string; attach: string };
@@ -74,6 +75,7 @@ function ChatComposer({
   dictation,
   labels,
   layout = 'stacked',
+  command,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
@@ -114,6 +116,12 @@ function ChatComposer({
    * conversation above it.
    */
   layout?: 'stacked' | 'inline';
+  /**
+   * The `/command` the text starts with, marked the way a sent message marks
+   * it (`ChatCommand`) while it is written. A prefix of `value`; anything
+   * else is ignored.
+   */
+  command?: string;
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
   const { blocked, canSend, submit, onKeyDown } = useComposerSend({
@@ -130,23 +138,59 @@ function ChatComposer({
   });
 
   const inline = layout === 'inline';
-  const field = (
+  const backdrop = React.useRef<HTMLDivElement>(null);
+  const marked = command && value.startsWith(command) ? command : undefined;
+  // One box for the text, in the textarea and the backdrop under it alike, so the two lay out the same.
+  const textBox = cn(
+    'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
+    inline ? cn('min-h-11 py-2.5 pr-0', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+  );
+  const textarea = (
     <textarea
       ref={inputRef}
       data-slot="chat-composer-input"
       value={value}
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={onKeyDown}
+      onScroll={(event) => {
+        if (backdrop.current) backdrop.current.scrollTop = event.currentTarget.scrollTop;
+      }}
       placeholder={placeholder}
       disabled={disabled}
       rows={inline ? 1 : 2}
       // Grows with what is written, from its opening lines (`min-h`, since
       // `field-sizing-content` overrides `rows`) to eight, then scrolls.
       className={cn(
-        'field-sizing-content max-h-52 w-full resize-none bg-transparent text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-        inline ? cn('min-h-11 flex-1 py-2.5', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+        'field-sizing-content relative max-h-52 resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder',
+        textBox,
+        // With a command marked, the backdrop draws the words and the textarea only the caret and the selection.
+        marked && 'text-transparent caret-fg',
       )}
     />
+  );
+  // A textarea cannot colour part of its text, so a marked command is drawn
+  // by a copy of the text under it, scrolled with it. The wrapper stays put
+  // either way, so the textarea keeps focus as a command comes and goes.
+  const field = (
+    <div data-slot="chat-composer-field" className={cn('relative grid', inline && 'flex-1')}>
+      {marked ? (
+        <div
+          ref={backdrop}
+          aria-hidden
+          data-slot="chat-composer-backdrop"
+          className={cn(
+            'pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap wrap-break-word text-fg',
+            textBox,
+          )}
+        >
+          <ChatCommand>{marked}</ChatCommand>
+          {value.slice(marked.length)}
+          {/* A final newline takes a line in the textarea; this keeps the copy as tall. */}
+          {value.endsWith('\n') ? ' ' : null}
+        </div>
+      ) : null}
+      {textarea}
+    </div>
   );
   const send = (
     <>
