@@ -16,9 +16,12 @@ import { IconButton } from '../components/icon-button';
  *   a new line, never mid-composition (an IME). While busy, submitting
  *   stops instead. With `onAltSubmit`, Alt+Enter is a second way to send
  *   (a bot's "queue it for after"), under the same rules as send. With
- *   `beforeSend`, a send first waits for it, and goes ahead only when it
- *   answers true, with the box as it is then: the caller holds a send for
- *   something still landing in the draft (a recording being heard).
+ *   `onEmptyEnter`, Enter on a field with nothing to send is the caller's
+ *   (a session's chat sends the message waiting first in its queue) rather
+ *   than Stop. With `settle`, something is still landing in the draft (a
+ *   recording being heard), and a send only lands it: nothing is sent, and
+ *   the field (`fieldRef`) takes the focus with the caret at its end, so
+ *   what was said is read first and the next Enter sends it.
  * - `ComposerRecorder`: the recorder in the field's place, while dictating.
  * - `ComposerSendButton`: the round primary button in the foot's corner.
  *   Blocked, it stays focusable (`aria-disabled`, not `disabled`) with the
@@ -35,7 +38,8 @@ function useComposerSend({
   onSubmit,
   onStop,
   onAltSubmit,
-  beforeSend,
+  onEmptyEnter,
+  settle,
 }: {
   value: string;
   busy: boolean;
@@ -46,25 +50,24 @@ function useComposerSend({
   onSubmit: (value: string) => void;
   onStop?: () => void;
   onAltSubmit?: (value: string) => void;
-  /** Settles before a send; true lets it go, with the box as it is by then. */
-  beforeSend?: () => Promise<boolean>;
+  /** Enter with nothing to send: the caller's, in place of Stop. */
+  onEmptyEnter?: () => void;
+  /** Lands what is still on its way into the draft; while present, a send does only that. */
+  settle?: () => Promise<boolean>;
 }) {
   const blocked = !busy && sendBlockedReason !== undefined;
   const emptyAllowed = allowEmpty && attachmentCount === 0;
   const canSend = (emptyAllowed || value.trim().length > 0) && !disabled && !blocked;
-  // A held send goes ahead seconds later, with the box as it is then; this
-  // follows the latest render.
-  const latest = React.useRef({ value, canSend, onSubmit });
-  React.useLayoutEffect(() => {
-    latest.current = { value, canSend, onSubmit };
-  });
+  const fieldRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   function submit() {
-    // Before Stop: a busy agent is not stopped by a send that is still landing.
-    if (beforeSend) {
-      void beforeSend().then((go) => {
-        const now = latest.current;
-        if (go && now.canSend) now.onSubmit(now.value);
+    // Before Stop: a busy agent is not stopped by a draft that is still landing.
+    if (settle) {
+      void settle().then(() => {
+        const field = fieldRef.current;
+        if (!field) return;
+        field.focus();
+        field.setSelectionRange(field.value.length, field.value.length);
       });
       return;
     }
@@ -79,18 +82,26 @@ function useComposerSend({
         if (canSend) onAltSubmit(value);
         return;
       }
+      if (onEmptyEnter && !settle && !canSend && value.trim() === '') return onEmptyEnter();
       submit();
     }
   }
 
-  return { blocked, canSend, submit, onKeyDown };
+  return { blocked, canSend, submit, onKeyDown, fieldRef };
+}
+
+/** Hands a node to a caller's ref, beside the composer's own on the same field. */
+function assignRef<T>(ref: React.Ref<T> | undefined, node: T | null) {
+  if (typeof ref === 'function') ref(node);
+  else if (ref) ref.current = node;
 }
 
 /**
  * The recorder bar where a composer's foot (or its whole line) was, while
  * dictating. The mic that started it unmounts as it appears, which drops
  * focus to the page; so it takes the focus then, and Enter on it is
- * `onEnter` (the composer's send). Enter on the bar's own buttons is theirs:
+ * `onEnter` (the composer's send, which ends the recording and sends
+ * nothing). Enter on the bar's own buttons is theirs:
  * Stop stops and Cancel cancels.
  */
 function ComposerRecorder({
@@ -244,4 +255,4 @@ function ComposerFoot({
   );
 }
 
-export { ComposerFoot, ComposerFrame, ComposerRecorder, ComposerSendButton, useComposerSend };
+export { assignRef, ComposerFoot, ComposerFrame, ComposerRecorder, ComposerSendButton, useComposerSend };

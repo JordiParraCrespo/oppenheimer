@@ -149,7 +149,7 @@ interface DictationSlot {
   /**
    * Ends the recording and settles once what was said is in the field: true
    * when it landed (or there was nothing to hear), false when it failed. A
-   * composer's send while the recorder shows waits on it.
+   * composer's Enter while the recorder shows calls it, and sends nothing.
    */
   finish?: () => Promise<boolean>;
 }

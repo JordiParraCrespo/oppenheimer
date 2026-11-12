@@ -43,12 +43,14 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * reach. One row under the conversation, its width, with the agent on the
  * left of the line under it and the model it last answered with on the right.
  * The mic before send dictates into the draft, added to its end, to be read
- * before it is sent.
+ * before it is sent: Enter while it records ends the recording, and the
+ * next Enter sends.
  *
  * **The queue**: a message sent while the agent works waits on the stack,
  * under the tasks, until the turn ends (`SessionChat.post`). Each can be
  * sent now, taken back into the field to edit (ahead of whatever is being
- * written), or dropped. **The room left**: how full the agent's context is,
+ * written), or dropped. Enter on the empty field sends the first of them
+ * now, so Enter twice sends a message into the turn under way. **The room left**: how full the agent's context is,
  * beside the model, opening to the context in tokens (with Compact) and the
  * plan's usage limits (`ChatUsage`).
  *
@@ -145,6 +147,7 @@ export function SessionChatComposer({
         ))}
       </ComposerStack>
     ) : undefined;
+  const first = queued[0];
   const meter =
     context || limits.fiveHour || limits.sevenDay ? (
       <ChatUsage
@@ -194,6 +197,7 @@ export function SessionChatComposer({
         onValueChange={setDraft}
         onSubmit={(text) => void submit(text)}
         onStop={onStop}
+        onEmptyEnter={first ? () => onSendQueued(first.id) : undefined}
         busy={busy && draft.trim() === '' && files.length === 0}
         sendBlockedReason={sending ? t('sessions.chat.composer.attaching') : undefined}
         allowEmpty={files.length > 0}
