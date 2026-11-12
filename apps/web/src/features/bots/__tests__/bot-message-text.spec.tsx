@@ -11,7 +11,7 @@ import { BotMessageText } from '../components/bot-message-text';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) =>
-      values?.lines ? `${key}:${values.lines}` : key,
+      values?.count ? `${key}:${values.count}` : key,
   }),
 }));
 

@@ -24,7 +24,7 @@ export function BotMessageText({ text }: { text: string }) {
           aria-expanded={open}
           onClick={() => setOpen(!open)}
         >
-          {open ? t('bots.chat.fold.showLess') : t('bots.chat.fold.showAll', { lines: fold.lines })}
+          {open ? t('bots.chat.fold.showLess') : t('bots.chat.fold.showAll', { count: fold.lines })}
         </Button>
       </span>
     </>
