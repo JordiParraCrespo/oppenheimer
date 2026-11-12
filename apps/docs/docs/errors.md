@@ -1328,6 +1328,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
 | `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
 | `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
+| `SESS_020` <a id="sess_020" />         | Claude Code could not send the message to the cloud session | 502 |
+| `SESS_021` <a id="sess_021" />         | Claude Code did not confirm the message to the cloud session in time | 504 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1370,6 +1372,16 @@ runner runs as (`claude auth login`, or `/login` in an interactive `claude`),
 then press **Try again** on the session: it sends the host the same start, with
 the same task (`POST /v1/sessions/{id}/retry`). Every other refusal of
 `claude --cloud` stays `SESS_008`, in the CLI's own words.
+
+`SESS_020` is `claude -p <reply> --cloud <id>` not taking a reply typed in a
+Claude Code cloud session's chat for that session: the session is not on the
+host's claude.ai account, the CLI is too old to send to one, or the reply
+waited its whole 45 seconds behind an earlier one to the same session. Claude
+Code certainly did not send it, so the reply is not lost: it goes back to waiting
+for the session's Stop hook, and the console shows it waiting again. A host
+that is not signed in answers `SESS_019`. `SESS_021` is the same command giving
+no answer within the 45 seconds a reply has from when it reaches the host: the message may have reached the session, so the
+control plane counts it sent and never hands it to the Stop hook as well.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is

@@ -444,6 +444,7 @@ export class SessionsRepository {
           text: reply.text,
           createdAt: new Date(reply.createdAt),
           collectedAt: reply.collectedAt ? new Date(reply.collectedAt) : null,
+          deliveredVia: reply.deliveredVia ?? null,
         })),
       };
     });

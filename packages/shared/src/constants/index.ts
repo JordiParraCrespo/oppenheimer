@@ -93,6 +93,12 @@ export const QUEUE_NAMES = {
    * pull request it watches moved, or a time it set came.
    */
   SESSION_WAKES: 'session-wakes',
+  /**
+   * A reply typed in a Claude Code cloud session's chat that its Stop hook did
+   * not take in time, sent from a host signed in to the session's claude.ai
+   * account so it wakes the session.
+   */
+  CLOUD_REPLY_WAKES: 'cloud-reply-wakes',
   /** The daily sweep of chat images: uploads never sent, and those whose message is gone. */
   BOT_ATTACHMENT_RETENTION: 'bot-attachment-retention',
   /** The one-minute tick that sends scheduled bot mail and reads the mail routines watch. */

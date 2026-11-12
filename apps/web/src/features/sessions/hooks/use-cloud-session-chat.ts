@@ -1,19 +1,21 @@
-import type { CloudChatReply, SessionChat } from '@oppenheimer/frontend-consumer';
+import type { PendingCloudReply, SessionChat } from '@oppenheimer/frontend-consumer';
 import { useCloudChatFeed } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useState } from 'react';
 import { useSessionChat } from './use-session-chat';
 
-/** Replies listed by id, so a read that changes none of them changes nothing on screen. */
-const idsOf = (replies: readonly CloudChatReply[]) => replies.map((reply) => reply.id).join();
+/** Replies listed by id and state, so a read that changes none of them changes nothing on screen. */
+const keyOf = (replies: readonly PendingCloudReply[]) =>
+  replies.map((reply) => `${reply.id}:${reply.state}`).join();
 
 /**
  * A Claude Code cloud session's chat, kept current from what its hook sent:
- * the same chat a host session's terminal feeds, the replies the agent has
- * not taken yet, and a reply that did not reach the API.
+ * the same chat a host session's terminal feeds, the replies it does not show
+ * yet (waiting for the agent's turn to end, or sent from a host to wake it),
+ * and a reply that did not reach the API.
  */
 export function useCloudSessionChat(sessionId: string): {
   chat: SessionChat;
-  waiting: readonly CloudChatReply[];
+  pending: readonly PendingCloudReply[];
   failure: unknown;
   dismissFailure: () => void;
 } {
@@ -22,7 +24,7 @@ export function useCloudSessionChat(sessionId: string): {
   // and the bar offers no Terminal/Chat switch.
   const chat = useSessionChat(`cloud:${sessionId}`);
   const open = useCloudChatFeed(sessionId);
-  const [waiting, setWaiting] = useState<readonly CloudChatReply[]>([]);
+  const [pending, setPending] = useState<readonly PendingCloudReply[]>([]);
   const [failure, setFailure] = useState<unknown>(null);
   // Effect: reads the session's chat from the API on a timer, and lends the
   // chat's composer the way to send a reply, until the pane goes.
@@ -30,7 +32,7 @@ export function useCloudSessionChat(sessionId: string): {
     let stop: (() => void) | null = null;
     let gone = false;
     void open(chat, {
-      onWaiting: (next) => setWaiting((now) => (idsOf(now) === idsOf(next) ? now : next)),
+      onPending: (next) => setPending((now) => (keyOf(now) === keyOf(next) ? now : next)),
       onReplyFailed: setFailure,
     }).then((feed) => {
       if (!gone) stop = feed.start();
@@ -40,5 +42,5 @@ export function useCloudSessionChat(sessionId: string): {
       stop?.();
     };
   }, [open, chat]);
-  return { chat, waiting, failure, dismissFailure: () => setFailure(null) };
+  return { chat, pending, failure, dismissFailure: () => setFailure(null) };
 }

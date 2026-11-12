@@ -19,6 +19,8 @@ export const SESSION_SHARED_FILES = Symbol('SESSION_SHARED_FILES');
 export const SESSION_TRANSCRIPT = Symbol('SESSION_TRANSCRIPT');
 /** The composer's listing of a host's Codex cloud environments; bound by `links/` like `HOST_FOLDERS`. */
 export const HOST_CODEX_ENVIRONMENTS = Symbol('HOST_CODEX_ENVIRONMENTS');
+/** A reply sent to a Claude Code cloud session from a host (`cloud.reply`); bound by `links/` like `HOST_CODEX_ENVIRONMENTS`. */
+export const CLOUD_SESSION_REPLY = Symbol('CLOUD_SESSION_REPLY');
 /** A bot's command run on a host by its runner (`host.exec`); bound by `links/` like `HOST_FOLDERS`. */
 export const HOST_EXEC = Symbol('HOST_EXEC');
 /** A bot typing into a blank terminal and reading it back (`terminal.drive`); bound by `links/`. */

@@ -95,6 +95,13 @@ export interface HostRepositoryPort {
    */
   findOwnedBySystem(ownerUserId: string): Promise<HostEntity[]>;
   /**
+   * `hostId` and every host `ownerUserId` owns, paired only, with what their
+   * runners last reported (`capabilities` off the inventory, as the console
+   * reads them), and no access scope: the control plane acting for a session
+   * it launched, which started on `hostId`.
+   */
+  findPairedWithInventoryForMachine(hostId: string, ownerUserId: string): Promise<HostEntity[]>;
+  /**
    * Writes a loaded host back, only if nobody has written it since it was
    * loaded; otherwise `VersionConflictException` and nothing is written,
    * staged or put on the timeline. A host is created by `redeemAndRegister`,

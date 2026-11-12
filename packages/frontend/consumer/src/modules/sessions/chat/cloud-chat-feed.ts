@@ -1,4 +1,7 @@
-import { CLOUD_REPLY_PREAMBLE } from '@oppenheimer/shared/schemas/session-cloud-chat';
+import {
+  CLOUD_REPLY_PREAMBLE,
+  type CloudReplyDelivery,
+} from '@oppenheimer/shared/schemas/session-cloud-chat';
 import type { SessionChat } from './session-chat';
 
 /** A reply typed in a cloud session's chat, and whether the agent has taken it. */
@@ -6,8 +9,22 @@ export interface CloudChatReply {
   id: string;
   text: string;
   createdAt: Date;
-  /** When the session's Stop hook took it to the agent; null while it waits. */
+  /** When it reached the agent, by either way; null while it waits. */
   collectedAt: Date | null;
+  /**
+   * `hook`: the session's Stop hook took it at the end of a turn; `host`: a
+   * host sent it with `claude -p … --cloud`, which wakes an idle session.
+   * Null while it waits.
+   */
+  deliveredVia: CloudReplyDelivery | null;
+}
+
+/**
+ * A reply the chat does not show yet, and why: `waiting` for the session's
+ * Stop hook, or `sent` from a host and not yet back in the transcript.
+ */
+export interface PendingCloudReply extends CloudChatReply {
+  state: 'waiting' | 'sent';
 }
 
 /** What one read of a cloud session's chat answers. */
@@ -37,21 +54,37 @@ const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
  * feedback" line; that line is the person's message, at the point the agent
  * took it, so it is read as one. Every other line is as it was written.
  */
-function asChatLine(raw: string): string {
-  if (!raw.includes(CLOUD_REPLY_PREAMBLE)) return raw;
+function asChatLine(raw: string): { line: string; reply: string | null } {
+  const unchanged = { line: raw, reply: null };
+  if (!raw.includes(CLOUD_REPLY_PREAMBLE)) return unchanged;
   let line: Record<string, unknown>;
   try {
     line = JSON.parse(raw) as Record<string, unknown>;
   } catch {
-    return raw;
+    return unchanged;
   }
   const message = line.message as { role?: unknown; content?: unknown } | undefined;
-  if (line.type !== 'user' || typeof message?.content !== 'string') return raw;
-  const body = message.content.replace(FEEDBACK, '');
+  const content = textOf(message?.content);
+  if (line.type !== 'user' || content === null) return unchanged;
+  const body = content.replace(FEEDBACK, '');
   const at = body.indexOf(CLOUD_REPLY_PREAMBLE);
-  if (at < 0) return raw;
+  if (at < 0) return unchanged;
   const text = body.slice(at + CLOUD_REPLY_PREAMBLE.length).trim();
-  return JSON.stringify({ ...line, isMeta: false, message: { ...message, content: text } });
+  return {
+    line: JSON.stringify({ ...line, isMeta: false, message: { ...message, content: text } }),
+    reply: text,
+  };
+}
+
+/**
+ * A user line's words: a string, as the Stop hook's feedback is kept, or the
+ * one text block of a prompt, as a message a host sent with `claude -p` may be.
+ */
+function textOf(content: unknown): string | null {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content) || content.length !== 1) return null;
+  const [block] = content as { type?: unknown; text?: unknown }[];
+  return block?.type === 'text' && typeof block.text === 'string' ? block.text : null;
 }
 
 /**
@@ -68,6 +101,8 @@ function asChatLine(raw: string): string {
  */
 export class CloudChatFeed {
   private next = 0;
+  /** How many times each reply's words came back in the transcript. */
+  private readonly echoed = new Map<string, number>();
   private typed = '';
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -77,8 +112,12 @@ export class CloudChatFeed {
     private readonly chat: SessionChat,
     private readonly options: {
       everyMs: number;
-      /** The replies the agent has not taken yet, after every read. */
-      onWaiting: (waiting: readonly CloudChatReply[]) => void;
+      /**
+       * After every read, the replies the chat does not show yet, oldest
+       * first: those waiting for the Stop hook, and those a host sent that
+       * have not come back in the transcript.
+       */
+      onPending: (pending: readonly PendingCloudReply[]) => void;
       /** A reply that did not reach the API, and why; the chat draws it. */
       onReplyFailed: (error: unknown) => void;
     },
@@ -109,20 +148,45 @@ export class CloudChatFeed {
     if (text) this.source.reply(text).catch(this.options.onReplyFailed);
   }
 
+  /**
+   * A hook's reply is in the transcript the moment it is taken, since the hook
+   * hands it over as the turn ends. A host's comes back only once the
+   * session has run it, so it reads as sent until the transcript holds its
+   * words, matched oldest first and each line once.
+   */
+  private pending(replies: readonly CloudChatReply[]): PendingCloudReply[] {
+    const unmatched = new Map(this.echoed);
+    const pending: PendingCloudReply[] = [];
+    for (const reply of replies) {
+      if (reply.collectedAt === null) {
+        pending.push({ ...reply, state: 'waiting' });
+        continue;
+      }
+      const seen = unmatched.get(reply.text) ?? 0;
+      if (seen > 0) unmatched.set(reply.text, seen - 1);
+      else if (reply.deliveredVia === 'host') pending.push({ ...reply, state: 'sent' });
+    }
+    return pending;
+  }
+
   private async read(first: boolean): Promise<void> {
     if (this.timer) clearTimeout(this.timer);
     try {
       const page = await this.source.read(this.next);
       if (this.stopped) return;
-      if (first || page.lines.length > 0) {
+      const read = page.lines.map(asChatLine);
+      for (const { reply } of read) {
+        if (reply !== null) this.echoed.set(reply, (this.echoed.get(reply) ?? 0) + 1);
+      }
+      if (first || read.length > 0) {
         this.chat.apply({
           reset: first,
           history: first ? 'end' : undefined,
-          entries: page.lines.map(asChatLine),
+          entries: read.map((each) => each.line),
         });
       }
       this.next = page.next;
-      this.options.onWaiting(page.replies.filter((reply) => reply.collectedAt === null));
+      this.options.onPending(this.pending(page.replies));
     } catch {
       // A failed read is tried again on the next tick; the chat keeps what it drew.
     }

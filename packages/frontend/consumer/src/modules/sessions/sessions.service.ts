@@ -3,7 +3,7 @@ import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-sha
 import { inject, injectable, optional } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
 import { TOKENS } from '../../di/tokens';
-import type { CloudChatFeed, CloudChatReply } from './chat/cloud-chat-feed';
+import type { CloudChatFeed, PendingCloudReply } from './chat/cloud-chat-feed';
 import type { SessionChat } from './chat/session-chat';
 import type {
   AttachTicket,
@@ -106,7 +106,7 @@ export class SessionsService {
     id: string,
     chat: SessionChat,
     callbacks: {
-      onWaiting: (waiting: readonly CloudChatReply[]) => void;
+      onPending: (pending: readonly PendingCloudReply[]) => void;
       onReplyFailed: (error: unknown) => void;
     },
   ): Promise<CloudChatFeed> {

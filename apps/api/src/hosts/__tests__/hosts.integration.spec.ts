@@ -7,10 +7,16 @@ import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
+import type { HostClaudeAccountsPort } from '../application/host-claude-accounts.port';
 import type { HostPresencePort } from '../application/host-presence.port';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
-import { HOST_METADATA_REPOSITORY, HOST_PRESENCE, HOST_REPOSITORY } from '../hosts.di-tokens';
+import {
+  HOST_CLAUDE_ACCOUNTS,
+  HOST_METADATA_REPOSITORY,
+  HOST_PRESENCE,
+  HOST_REPOSITORY,
+} from '../hosts.di-tokens';
 
 /**
  * Pairing, against a real Postgres and Redis, for two properties only the database
@@ -827,6 +833,65 @@ describe('Hosts & pairing (integration)', () => {
       } finally {
         spy.mockRestore();
       }
+    });
+  });
+
+  describe('the hosts a cloud session is sent a reply from', () => {
+    let presence: HostPresencePort;
+    let accounts: HostClaudeAccountsPort;
+
+    const signedIn = (claudeAccount?: string) => ({
+      facts: claudeAccount ? { ...FACTS, claudeAccount } : FACTS,
+    });
+
+    async function pairedHost(name: string): Promise<string> {
+      const registered = await register((await mintPairingToken(name)).secret, hostKey(), name);
+      expect(registered.status, JSON.stringify(registered.body)).toBe(201);
+      return registered.body?.hostId as string;
+    }
+
+    beforeAll(() => {
+      presence = app.get<HostPresencePort>(HOST_PRESENCE);
+      accounts = app.get<HostClaudeAccountsPort>(HOST_CLAUDE_ACCOUNTS);
+    });
+
+    it('reads the account a heartbeat reported after pairing, and lists only the owner’s hosts on it', async () => {
+      const started = await pairedHost('Cloud starter');
+      const twin = await pairedHost('Cloud twin');
+      const elsewhere = await pairedHost('Other account');
+      // Registration reported no account; each sign-in arrives on a heartbeat.
+      await presence.observe(started, signedIn('ana@example.com'));
+      await presence.observe(twin, signedIn('ana@example.com'));
+      await presence.observe(elsewhere, signedIn('bea@example.com'));
+
+      // Another person's host on the same claude.ai account is never one.
+      const stranger = await signUp(`stranger-${randomUUID()}@example.com`);
+      const key = hostKey();
+      const strangerHost = randomUUID();
+      await dataSource.query(
+        `INSERT INTO "host" ("id", "ownerUserId", "name", "publicKey", "publicKeyFingerprint")
+         VALUES ($1, $2, 'Stranger box', $3, $4)`,
+        [strangerHost, stranger.id, key.base64, key.fingerprint],
+      );
+      await presence.observe(strangerHost, signedIn('ana@example.com'));
+
+      // Breaks if the account is read off the row (the facts at pairing),
+      // or the owner's filter lets another person's host through.
+      const listed = await accounts.signedInLike(started, user.id);
+      expect(listed[0]).toBe(started);
+      expect(listed).toContain(twin);
+      expect(listed).not.toContain(elsewhere);
+      expect(listed).not.toContain(strangerHost);
+    });
+
+    it('lists nothing for a starting host that signed out or was unpaired', async () => {
+      const started = await pairedHost('Signed out');
+      await presence.observe(started, signedIn());
+      expect(await accounts.signedInLike(started, user.id)).toEqual([]);
+
+      await presence.observe(started, signedIn('ana@example.com'));
+      await dataSource.query(`UPDATE "host" SET "unpairedAt" = now() WHERE "id" = $1`, [started]);
+      expect(await accounts.signedInLike(started, user.id)).toEqual([]);
     });
   });
 

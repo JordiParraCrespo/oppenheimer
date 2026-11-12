@@ -1,4 +1,5 @@
 import type {
+  CloudRepliedMessage,
   CodexEnvironmentsMessage,
   CommandFailedMessage,
   FsFoundMessage,
@@ -15,7 +16,7 @@ import type {
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
- * `codex.environments`, `whatsapp.sent`, `telegram.sent`, `shared.preview`,
+ * `codex.environments`, `cloud.replied`, `whatsapp.sent`, `telegram.sent`, `shared.preview`,
  * `transcript.page`, `host.exec.result` or `terminal.screen`.
  */
 export type LinkReply =
@@ -23,6 +24,7 @@ export type LinkReply =
   | FsFoundMessage
   | PortListingMessage
   | CodexEnvironmentsMessage
+  | CloudRepliedMessage
   | WhatsappSentMessage
   | TelegramSentMessage
   | SharedPreviewMessage

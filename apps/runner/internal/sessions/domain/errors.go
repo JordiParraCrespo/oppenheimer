@@ -41,6 +41,15 @@ var (
 	// fixes on the host, with `claude auth login`. Its detail is the CLI's
 	// own last words.
 	ErrCloudSignIn = problem.New("SESS_019", http.StatusBadGateway, "Claude Code on this host is not signed in to claude.ai")
+	// ErrCloudReply is `claude -p … --cloud <id>` not taking a reply for a
+	// cloud session: no such session on the host's claude.ai account, or a
+	// CLI too old to send one (not signed in is ErrCloudSignIn). Claude Code
+	// certainly did not send it. Its detail is the CLI's own words.
+	ErrCloudReply = problem.New("SESS_020", http.StatusBadGateway, "Claude Code could not send the message to the cloud session")
+	// ErrCloudReplyUnconfirmed is `claude -p … --cloud <id>` giving no answer
+	// in time: the message may have reached the session, so the control plane
+	// never hands it to anyone again.
+	ErrCloudReplyUnconfirmed = problem.New("SESS_021", http.StatusGatewayTimeout, "Claude Code did not confirm the message to the cloud session in time")
 	// ErrCodexCloudStart is `codex cloud` refusing or failing: not signed in
 	// to ChatGPT, no Codex cloud environment for the repository, or a CLI too
 	// old to know the command. Its detail is the CLI's own last words.
