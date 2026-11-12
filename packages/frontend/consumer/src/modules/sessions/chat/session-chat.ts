@@ -76,9 +76,11 @@ export interface ChatToolCall {
   diff: { additions: number; deletions: number } | null;
   /**
    * What an edit or a write put in the file, as far as the host sent it: a
-   * long text arrives as its head, and `truncated` says so.
+   * long text arrives as its head, and `editsTruncated` says so.
    */
   edits: ChatFileEdit[] | null;
+  /** The host cut the call's input, so `edits` is not the whole change (`truncated` is also a cut result). */
+  editsTruncated: boolean;
   todos: ChatTodo[] | null;
   /** The plan text `ExitPlanMode` proposes. */
   plan: string | null;
@@ -1233,6 +1235,7 @@ function toolCall(block: Loose): ChatToolCall {
     output: null,
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
     edits: kind === 'edit' || kind === 'write' ? editsOf(name, input) : null,
+    editsTruncated: block.truncated === true,
     todos: kind === 'todo' ? todosOf(input.todos) : null,
     plan: kind === 'plan' ? fieldOf(input, ['plan']) : null,
     questions: kind === 'question' ? questionsOf(input.questions) : null,

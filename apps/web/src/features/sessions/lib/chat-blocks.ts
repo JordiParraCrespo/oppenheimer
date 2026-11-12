@@ -209,7 +209,7 @@ function changedFiles(steps: readonly ChatStep[]): ChangedFile[] {
     file.additions += step.call.diff.additions;
     file.deletions += step.call.diff.deletions;
     file.edits.push(...(step.call.edits ?? []));
-    file.truncated ||= step.call.truncated;
+    file.truncated ||= step.call.editsTruncated;
     files.set(file.path, file);
   }
   return [...files.values()];

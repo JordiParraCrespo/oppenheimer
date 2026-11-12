@@ -1,8 +1,8 @@
 import { ChangedFileRow, ChangedFilesCard } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatFileViewer } from '../dialogs/chat-file-viewer';
 import type { ChangedFile } from '../lib/chat-blocks';
-import { ChatFileViewer } from './chat-file-viewer';
 
 /**
  * What a settled turn changed: the files and their line counts, as Codex

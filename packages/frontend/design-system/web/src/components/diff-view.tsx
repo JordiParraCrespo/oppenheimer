@@ -5,7 +5,7 @@ import { PatchDiff } from '@pierre/diffs/react';
 import { BotIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MessageSquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { DIFF_THEME, useDiffHighlighter } from '../hooks/use-diff-highlighter';
+import { DIFF_THEME, useDiffHighlighter } from '../internal/use-diff-highlighter';
 import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
 import { DictationFrame, type DictationSlot } from './chat-composer-extras';
