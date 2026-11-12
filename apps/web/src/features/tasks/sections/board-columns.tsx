@@ -37,7 +37,7 @@ import { useBoardMarquee } from '../hooks/use-board-marquee';
 import { useCardSelection } from '../hooks/use-card-selection';
 import { useToday } from '../hooks/use-today';
 import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
-import { cardClickPick } from '../lib/card-selection';
+import { cardClickPick, OWNS_PRESS } from '../lib/card-selection';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -150,7 +150,7 @@ export function BoardColumns() {
         }
         onClick={(event) => {
           // The card's own controls (the check, Start, the session) are theirs.
-          if ((event.target as HTMLElement).closest('button, a, input, [role="checkbox"]')) return;
+          if ((event.target as HTMLElement).closest(OWNS_PRESS)) return;
           const how = cardClickPick(event, selection.selecting);
           if (how) {
             // Shift-click would otherwise select the text between the two cards.

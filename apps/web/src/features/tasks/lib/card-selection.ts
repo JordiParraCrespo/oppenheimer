@@ -53,6 +53,14 @@ export function cardClickPick(
   return null;
 }
 
+/**
+ * The elements on the board that take their own press: a card's check,
+ * Start and session chip, the column's add row, the composer. A click there
+ * neither opens nor picks the card, and a press there draws no marquee.
+ */
+export const OWNS_PRESS =
+  'button, a, input, textarea, select, [role="checkbox"], [contenteditable]';
+
 /** A rectangle in viewport pixels, as `getBoundingClientRect` reads one. */
 export type Box = { left: number; top: number; width: number; height: number };
 
@@ -69,24 +77,31 @@ export function marqueeBox(from: { x: number; y: number }, to: { x: number; y: n
   };
 }
 
+function overlap(a: Box, b: Box): Box | null {
+  const left = Math.max(a.left, b.left);
+  const top = Math.max(a.top, b.top);
+  const width = Math.min(a.left + a.width, b.left + b.width) - left;
+  const height = Math.min(a.top + a.height, b.top + b.height) - top;
+  return width > 0 && height > 0 ? { left, top, width, height } : null;
+}
+
 /**
  * The ids the marquee picks: `kept` (what was picked before an additive,
  * ⌘/Ctrl/Shift drag; empty otherwise) and every card the box touches, in
- * that order, each once. Touching is enough, as in a file manager.
+ * that order, each once. Touching is enough, as in a file manager. `visible`
+ * is the board scroller's box: a card scrolled out of it cannot be touched.
  */
 export function marqueePick(
   box: Box,
   cards: readonly { id: string; box: Box }[],
   kept: readonly string[],
+  visible: Box,
 ): string[] {
   const touched = cards
-    .filter(
-      ({ box: card }) =>
-        card.left < box.left + box.width &&
-        box.left < card.left + card.width &&
-        card.top < box.top + box.height &&
-        box.top < card.top + card.height,
-    )
+    .filter(({ box: card }) => {
+      const shown = overlap(card, visible);
+      return shown !== null && overlap(shown, box) !== null;
+    })
     .map(({ id }) => id);
   return [...new Set([...kept, ...touched])];
 }

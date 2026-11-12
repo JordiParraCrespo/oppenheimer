@@ -50,14 +50,22 @@ describe('marqueePick', () => {
     { id: 'b', box: { left: 0, top: 60, width: 100, height: 50 } },
     { id: 'c', box: { left: 120, top: 0, width: 100, height: 50 } },
   ];
+  const everywhere = { left: -1000, top: -1000, width: 5000, height: 5000 };
 
   it('picks every card the rectangle touches, drawn either way round, and none it misses', () => {
     const box = marqueeBox({ x: 90, y: 100 }, { x: 10, y: 40 });
-    expect(marqueePick(box, cards, [])).toEqual(['a', 'b']);
+    expect(marqueePick(box, cards, [], everywhere)).toEqual(['a', 'b']);
   });
 
   it('keeps what an additive drag started with, once each', () => {
     const box = marqueeBox({ x: 130, y: 10 }, { x: 140, y: 20 });
-    expect(marqueePick(box, cards, ['b', 'c'])).toEqual(['b', 'c']);
+    expect(marqueePick(box, cards, ['b', 'c'], everywhere)).toEqual(['b', 'c']);
+  });
+
+  it('cannot touch a card the board has scrolled out of view, nor its hidden part', () => {
+    const board = { left: 110, top: 0, width: 500, height: 500 };
+    expect(marqueePick({ left: 0, top: 0, width: 300, height: 120 }, cards, [], board)).toEqual([
+      'c',
+    ]);
   });
 });

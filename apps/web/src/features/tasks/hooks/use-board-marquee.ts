@@ -1,9 +1,14 @@
 import { type PointerEvent, useEffect, useRef, useState } from 'react';
-import { type Box, MARQUEE_THRESHOLD, marqueeBox, marqueePick } from '../lib/card-selection';
+import {
+  type Box,
+  MARQUEE_THRESHOLD,
+  marqueeBox,
+  marqueePick,
+  OWNS_PRESS,
+} from '../lib/card-selection';
 
-/** Where a press is the element's own, not the start of a marquee. */
-const NOT_EMPTY =
-  '[data-task-id], button, a, input, textarea, select, [role="checkbox"], [contenteditable], [data-slot="task-selection-bar"]';
+/** A card is dragged from, never marqueed from; the selection bar is its own. */
+const NOT_EMPTY = `[data-task-id], [data-slot="task-selection-bar"], ${OWNS_PRESS}`;
 
 /**
  * Drag-to-pick on the board, as in a file manager: a mouse press on the
@@ -11,7 +16,8 @@ const NOT_EMPTY =
  * rectangle, and every card it touches is picked as it goes. ⌘, Ctrl or Shift
  * held at the press adds to what is picked; otherwise the drag starts over.
  * A press that does not move clears the selection. Cards are found by their
- * `data-task-id` under the element that takes `onPointerDown`. Touch keeps
+ * `data-task-id` under the element that takes `onPointerDown`, and hit only
+ * where the board's scroller shows them (`[data-slot="task-board"]`). Touch keeps
  * scrolling the board, so only a mouse draws.
  */
 export function useBoardMarquee({
@@ -52,8 +58,9 @@ export function useBoardMarquee({
         id: el.dataset.taskId ?? '',
         box: el.getBoundingClientRect(),
       }));
+      const board = container.querySelector('[data-slot="task-board"]');
       setBox(next);
-      onPick(marqueePick(next, cards, kept));
+      onPick(marqueePick(next, cards, kept, (board ?? container).getBoundingClientRect()));
     };
     const onEnd = () => {
       controller.abort();
