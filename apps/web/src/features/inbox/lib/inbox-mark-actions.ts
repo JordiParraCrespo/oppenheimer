@@ -43,8 +43,8 @@ const taskOf = (item: InboxItem): string | null => (item.kind === 'task' ? item.
  * takes them out of it (Decided 4). Deprioritize restores priority instead
  * when every item is already low. Delete also takes up a task an agent made,
  * as Dismiss does; Mark as done does not, so a task marked done stays under
- * Show done and Bring back returns it, like every other item (the mark is the
- * person's, on every device).
+ * Show done for the visit like every other item (the mark is the person's,
+ * on every device).
  */
 export const INBOX_MARK_ACTIONS: Record<InboxMarkActionName, InboxMarkAction> = {
   done: { write: () => ({ mark: 'done' }), visit: (key) => inboxVisit.done(key) },

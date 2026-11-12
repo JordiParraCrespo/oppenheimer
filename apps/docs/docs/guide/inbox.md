@@ -26,7 +26,7 @@ Items are not stored, with one exception: an item is there while its source says
 
 Pull requests are off by default: agents open theirs under your GitHub account, so every one would wait here as yours to merge. Turn on **Show pull requests** in the filter menu to list review requests and ready merges; the choice is kept in this browser. The **Pull requests** page lists them either way.
 
-A task an agent made leaves the Inbox once you take it up: you give it a TODO day (here or in its dialog), start or link a session on it, or dismiss it. **Delete** on one dismisses it too; **Mark as done** only hides it for you, as for any item, and it stays under Show done with Bring back. Only you take a task up: a session or a TODO day an agent gives it leaves it waiting. A task you make in the console never lands here. Tasks made through the CLI or an API token count as an agent's, even when you typed the command.
+A task an agent made leaves the Inbox once you take it up: you give it a TODO day (here or in its dialog), start or link a session on it, or dismiss it. **Delete** on one dismisses it too; **Mark as done** only hides it for you, as for any item: it stays under Show done for your visit and the task still waits to be taken up. Only you take a task up: a session or a TODO day an agent gives it leaves it waiting. A task you make in the console never lands here. Tasks made through the CLI or an API token count as an agent's, even when you typed the command.
 
 A session or bot keeps one notice at a time: a newer one replaces the last. Questions a bot asks you with a question card are answered in its chat, not in the Inbox.
 
