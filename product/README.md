@@ -1600,3 +1600,9 @@ earlier note:
   in to the session's claude.ai account (`claude -p … --cloud <id>`, the
   link's `cloud.reply`), which wakes the session; the console shows it as
   sent until the transcript has it.
+- `versions/mvp/25-bots.md` §4.1 had the built-in skills (`oppenheimer`,
+  `recap`) live in product code only, so Settings → Skills listed none of
+  them and a bot saying it "used the `oppenheimer` skill" pointed at
+  nothing the person could find. On 2026-11-12 the owner asked to see them:
+  the page lists them under the bot's own in a read-only "Built in" group,
+  with a view of the instructions and no edit or delete.

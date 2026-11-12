@@ -628,6 +628,7 @@
       "builtIn": {
         "count_one": "Integradas · {{count}}",
         "count_other": "Integradas · {{count}}",
+        "count_many": "Integradas · {{count}}",
         "hint": "Oppenheimer se las da a todos los bots. Puedes leerlas, pero no cambiarlas ni borrarlas.",
         "meta": "Integrada en Oppenheimer",
         "view": "Ver {{name}}",
