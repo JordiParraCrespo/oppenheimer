@@ -227,6 +227,8 @@
     "count_many": "{{count}} seleccionadas",
     "count_other": "{{count}} seleccionadas",
     "label": "Tareas seleccionadas",
+    "move": "Mover las seleccionadas",
+    "moveTo": "Mover a",
     "delete": "Eliminar las seleccionadas",
     "clear": "Quitar la selección"
   },

@@ -1,3 +1,5 @@
+import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+
 /**
  * The cards the reader picked on the board to act on together, the way a file
  * list picks: a click with ⌘ or Ctrl (or any click once something is picked)
@@ -104,4 +106,45 @@ export function marqueePick(
     })
     .map(({ id }) => id);
   return [...new Set([...kept, ...touched])];
+}
+
+/** One card's move, as the API places it: the column and the card it sits under. */
+export type CardMove = { id: string; status: TaskStatus; afterTaskId: string | null };
+
+/**
+ * The moves that put `ids` in `status`, in that order, one under the other,
+ * the first under `afterTaskId` (`null` at the top). They run one at a time:
+ * each places its card under the one moved before it.
+ */
+function chainedMoves(
+  ids: readonly string[],
+  status: TaskStatus,
+  afterTaskId: string | null,
+): CardMove[] {
+  return ids.map((id, index) => ({
+    id,
+    status,
+    afterTaskId: index === 0 ? afterTaskId : (ids[index - 1] ?? null),
+  }));
+}
+
+/**
+ * A drop of one picked card brings the rest of the picked along: the held
+ * card lands where it was dropped, the others follow under it in board order.
+ * A card that is not picked, or picked alone, moves by itself.
+ */
+export function droppedMoves(drop: CardMove, picked: readonly string[]): CardMove[] {
+  if (!picked.includes(drop.id) || picked.length < 2) return [drop];
+  const rest = picked.filter((id) => id !== drop.id);
+  return chainedMoves([drop.id, ...rest], drop.status, drop.afterTaskId);
+}
+
+/** Where the menu's Move to puts the picked cards: at the foot of `status`, in board order. */
+export function movesToColumn(
+  picked: readonly string[],
+  status: TaskStatus,
+  column: readonly string[],
+): CardMove[] {
+  const foot = column.filter((id) => !picked.includes(id)).at(-1) ?? null;
+  return chainedMoves(picked, status, foot);
 }

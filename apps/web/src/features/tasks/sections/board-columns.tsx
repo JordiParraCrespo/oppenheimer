@@ -30,14 +30,16 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ColumnComposer } from '../components/column-composer';
+import { MoveTasksMenu } from '../components/move-tasks-menu';
 import { DeleteTasksDialog } from '../dialogs/delete-tasks';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useBoardMarquee } from '../hooks/use-board-marquee';
+import { useBulkMove } from '../hooks/use-bulk-move';
 import { useCardSelection } from '../hooks/use-card-selection';
 import { useToday } from '../hooks/use-today';
 import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
-import { cardClickPick, OWNS_PRESS } from '../lib/card-selection';
+import { cardClickPick, droppedMoves, movesToColumn, OWNS_PRESS } from '../lib/card-selection';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -59,9 +61,10 @@ const board = getRouteApi('/_authenticated/plan/');
  * toggles one, Shift-click takes the run from the last one toggled, and while
  * any are picked a plain click toggles too, and a drag from the board's empty
  * space draws a rectangle that picks every card it touches
- * (`useBoardMarquee`). The picked cards' bar floats at
- * the foot of the page, with Delete (asked first) and the way out; Escape
- * leaves as well.
+ * (`useBoardMarquee`). Dragging a picked card brings the others along under
+ * it. The picked cards' bar floats at the foot of the page, with Move to (a
+ * column, at its foot), Delete (asked first) and the way out; Escape leaves
+ * as well.
  */
 export function BoardColumns() {
   const { t } = useTranslation();
@@ -81,6 +84,7 @@ export function BoardColumns() {
   const sessions = new Map(read.sessions.map((row) => [row.id, row]));
   const hosts = new Map(read.hosts.map((row) => [row.id, row]));
   const move = useMoveTask();
+  const bulk = useBulkMove(move);
   const create = useCreateTask({ onSuccess: () => notifySuccess('taskAdded') });
   const [composing, setComposing] = useState<TaskStatus | null>(null);
   const rows = read.tasks;
@@ -89,13 +93,14 @@ export function BoardColumns() {
     cutoff: doneCutoffOf(today),
     showOlder: Boolean(showOlder),
   });
+  const order = TASK_STATUSES.flatMap((status) => columns[status].map((row) => row.id));
+  const selection = useCardSelection(order);
   const drag = useBoardDrag(
     Object.fromEntries(
       TASK_STATUSES.map((status) => [status, columns[status].map((row) => row.id)]),
     ),
-    (next) => move.mutate(next),
+    (next) => bulk.run(droppedMoves(next, selection.picked)),
   );
-  const selection = useCardSelection(TASK_STATUSES.flatMap((status) => drag.groups[status] ?? []));
   const [deleting, setDeleting] = useState<TaskEntity[] | null>(null);
   const marquee = useBoardMarquee({
     picked: selection.picked,
@@ -271,6 +276,12 @@ export function BoardColumns() {
           aria-label={t('tasks.selection.label')}
           count={t('tasks.selection.count', { count: selection.picked.length })}
         >
+          <MoveTasksMenu
+            disabled={bulk.moving}
+            onPick={(status) =>
+              bulk.run(movesToColumn(selection.picked, status, drag.groups[status] ?? []))
+            }
+          />
           <IconButton
             size="sm"
             variant="quiet"

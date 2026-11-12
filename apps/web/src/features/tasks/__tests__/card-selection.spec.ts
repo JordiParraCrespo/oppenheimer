@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   cardClickPick,
+  droppedMoves,
   marqueeBox,
   marqueePick,
+  movesToColumn,
   NO_CARD_SELECTION,
   pickCard,
 } from '../lib/card-selection';
@@ -66,6 +68,32 @@ describe('marqueePick', () => {
     const board = { left: 110, top: 0, width: 500, height: 500 };
     expect(marqueePick({ left: 0, top: 0, width: 300, height: 120 }, cards, [], board)).toEqual([
       'c',
+    ]);
+  });
+});
+
+describe('moving picked cards together', () => {
+  it('brings the other picked cards under the one dropped, in board order', () => {
+    expect(droppedMoves({ id: 'b', status: 'done', afterTaskId: 'x' }, ['a', 'b', 'c'])).toEqual([
+      { id: 'b', status: 'done', afterTaskId: 'x' },
+      { id: 'a', status: 'done', afterTaskId: 'b' },
+      { id: 'c', status: 'done', afterTaskId: 'a' },
+    ]);
+  });
+
+  it('moves a card that is not picked, or picked alone, by itself', () => {
+    const drop = { id: 'z', status: 'doing', afterTaskId: null } as const;
+    expect(droppedMoves(drop, ['a', 'b'])).toEqual([drop]);
+    expect(droppedMoves({ ...drop, id: 'a' }, ['a'])).toEqual([{ ...drop, id: 'a' }]);
+  });
+
+  it('puts Move to’s cards at the foot of the column, under its last card that is not moving', () => {
+    expect(movesToColumn(['a', 'c'], 'review', ['r1', 'c', 'r2'])).toEqual([
+      { id: 'a', status: 'review', afterTaskId: 'r2' },
+      { id: 'c', status: 'review', afterTaskId: 'a' },
+    ]);
+    expect(movesToColumn(['a'], 'done', [])).toEqual([
+      { id: 'a', status: 'done', afterTaskId: null },
     ]);
   });
 });
