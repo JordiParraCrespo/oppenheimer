@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Prose,
 } from '@oppenheimer/design-system-web';
 import { Markdown } from '@oppenheimer/frontend-web';
 import type { BotBuiltInSkillText } from '@oppenheimer/shared/schemas/bot-skill';
@@ -38,9 +39,9 @@ export function BotBuiltInSkillDialog({
               {t('bots.settings.skills.builtIn.readOnly')}
             </p>
             <h3 className="eyebrow m-0">{t('bots.settings.skills.dialog.body')}</h3>
-            <div className="rounded-sm border border-border-subtle bg-card px-4 py-3 text-[13.5px] leading-[1.6]">
+            <Prose className="max-w-none rounded-sm border border-border-subtle bg-card px-4 py-3 text-[13.5px]">
               <Markdown source={skill.body} />
-            </div>
+            </Prose>
           </div>
         </DialogBody>
         <DialogFooter>
