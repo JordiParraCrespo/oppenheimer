@@ -1605,6 +1605,17 @@ earlier note:
   Back pill as well. On 2026-11-12 the owner asked for no breadcrumbs
   in the console: each such page keeps only the Back pill
   (`EditorPageBack`), and `PageHeaderCrumbs` left the design system.
+- `versions/mvp/25-bots.md` §1 (2026-11-08) sent a bot to the next route
+  after a failed step, and had it "keep going until the request is done or
+  you are blocked, then stop". On 2026-11-12 the owner saw a bot's
+  half-hourly routine answer "the designated session is still closed" for
+  hours and asked for bots that stop at a blocker and think of a solution
+  that makes sense. A blocker is now the bot's to solve before it reports
+  it (a closed session is replaced by a new one with the same task), within
+  its permissions and instructions and never around a "no", and a routine's or a
+  loop's run is told so in the note that opens it. It is also told never
+  to report the same blocker twice, which a bot with no way round still
+  does (open).
 - `next-steps/cloud-agents.md` ("The console") had send in Cursor's cloud
   open Cursor's agent page in a new tab, opened in the press so no popup
   blocker refused it, and go to the session. On 2026-11-12 (issue #836) the
