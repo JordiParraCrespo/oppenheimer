@@ -19,7 +19,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { userActor } from '../../domain/plan-change.types';
+import { PlanCaller, type PlanCallerOf } from '../../decorators/plan-caller.decorator';
 import type { TaskEntity } from '../../domain/task.entity';
 import { TaskResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -47,7 +47,7 @@ export class LinkTaskSessionHttpController {
   @ApiOperation({
     summary: 'Link a session to a task',
     description:
-      'A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in To do moves to the top of In progress if `seenStatus` is still its status.',
+      'A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Not started (`todo`) moves to the top of In progress if `seenStatus` is still its status, and the person (a browser session) takes up a task an agent made.',
   })
   @ApiResponse({ status: 200, type: TaskResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Task not found', code: 'TASKS_001' })
@@ -55,6 +55,7 @@ export class LinkTaskSessionHttpController {
   async link(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
+    @PlanCaller() caller: PlanCallerOf,
     @Param('id', ParseUUIDPipe) id: string,
     @Param('sessionId', ParseUUIDPipe) sessionId: string,
     @Body() body: LinkTaskSessionRequest,
@@ -62,7 +63,7 @@ export class LinkTaskSessionHttpController {
     await this.commandBus.execute(
       new LinkTaskSessionCommand({
         scope,
-        actor: userActor(userId),
+        ...caller,
         userId,
         taskId: id,
         sessionId,

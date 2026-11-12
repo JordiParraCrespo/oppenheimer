@@ -216,7 +216,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_task',
       scope: 'tasks:write',
-      description: `Adds a task to the plan's board, at the end of its column (To do unless status says otherwise). Without project_id or milestone_id it is filed under Unassigned; a milestone brings its own project. Title up to ${TASK_TITLE_MAX} characters, notes up to ${TASK_NOTES_MAX}. Use list_tasks first when the task may already exist.`,
+      description: `Adds a task to the plan's board, at the end of its column (Not started unless status says otherwise). A task you make waits in your person's Inbox until they take it up. Without project_id or milestone_id it is filed under Unassigned; a milestone brings its own project. Title up to ${TASK_TITLE_MAX} characters, notes up to ${TASK_NOTES_MAX}. Use list_tasks first when the task may already exist.`,
       input: z
         .object({
           title: z.string().trim().min(1).max(TASK_TITLE_MAX).describe('What the work is.'),
@@ -233,6 +233,7 @@ export class BotPlanToolsFactory implements BotToolArea {
           new CreateTaskCommand({
             scope: context.owner,
             actor: botActor(context),
+            origin: 'agent',
             idempotencyKey: null,
             userId: context.owner.userId,
             input: {
@@ -301,6 +302,7 @@ export class BotPlanToolsFactory implements BotToolArea {
           new UpdateTaskCommand({
             scope: context.owner,
             actor: botActor(context),
+            origin: 'agent',
             taskId: input.task_id,
             changes: {
               title: input.title,

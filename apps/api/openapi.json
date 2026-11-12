@@ -15147,7 +15147,7 @@
         ]
       },
       "post": {
-        "description": "At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project.",
+        "description": "At the end of its column (Not started, `todo`, unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project. Made on an API token or an OAuth grant (the MCP server, the CLI) it is an agent’s (`origin: agent`) and waits in its person’s Inbox until they take it up.",
         "operationId": "createTask",
         "parameters": [
           {
@@ -15477,6 +15477,73 @@
         ]
       }
     },
+    "/api/v1/tasks/{id}/triage": {
+      "post": {
+        "description": "Dismisses it from the Inbox: `triagedAt` is set and the task stays on the board as it is. Only a browser session (the person) takes a task up; a call on an API token or an OAuth grant, or a task already taken up, changes nothing. Giving it a TODO day or starting or linking a session takes it up too.",
+        "operationId": "triageTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "TASKS_001 — Task not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Take up a task an agent made",
+        "tags": [
+          "Tasks"
+        ]
+      }
+    },
     "/api/v1/tasks/{id}/move": {
       "post": {
         "description": "Into `status`, directly after `afterTaskId` (a task of that column), or first when it is null. Only this task’s place changes; the column is never renumbered.",
@@ -15566,7 +15633,7 @@
     },
     "/api/v1/tasks/{id}/sessions": {
       "post": {
-        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Not started (`todo`) moves to the top of In progress if `seenStatus` is still its status, and the person (a browser session) takes up a task an agent made.",
         "operationId": "startTaskSession",
         "parameters": [
           {
@@ -15680,7 +15747,7 @@
     },
     "/api/v1/tasks/{id}/sessions/cloud": {
       "post": {
-        "description": "`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Not started (`todo`) moves to the top of In progress if `seenStatus` is still its status, and the person (a browser session) takes up a task an agent made.",
         "operationId": "startTaskCloudSession",
         "parameters": [
           {
@@ -15814,7 +15881,7 @@
     },
     "/api/v1/tasks/{id}/sessions/{sessionId}": {
       "put": {
-        "description": "A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Not started (`todo`) moves to the top of In progress if `seenStatus` is still its status, and the person (a browser session) takes up a task an agent made.",
         "operationId": "linkTaskSession",
         "parameters": [
           {
@@ -34541,6 +34608,21 @@
             "description": "Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.",
             "example": 3
           },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "person",
+              "agent"
+            ],
+            "description": "Who made it: `person` in the console, `agent` from a bot or a call on an API token or an OAuth grant (the MCP server, the CLI).",
+            "example": "person"
+          },
+          "triagedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When its person took it up: made it, gave it a TODO day, started or linked a session on it, or dismissed it from the Inbox. Null while a task an agent made waits in the Inbox."
+          },
           "sessions": {
             "description": "Oldest first.",
             "type": "array",
@@ -34565,6 +34647,7 @@
           "title",
           "notes",
           "version",
+          "origin",
           "sessions",
           "createdAt",
           "updatedAt"

@@ -1,6 +1,6 @@
 ---
 title: Inbox
-description: The Inbox in Plan, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
+description: The Inbox in Plan, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent, tasks an agent made), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
 sidebar_position: 8
 ---
 
@@ -22,8 +22,11 @@ Items are not stored, with one exception: an item is there while its source says
 | A session's notice | an agent in a session | the agent ran `runner sessions notify "…"` | **Done** |
 | A bot's notice | a bot | the bot used its `notify` tool | **Open chat**, **Done** |
 | A report | any agent with a token | it posted a problem, with up to four pictures | Write an answer and **Send answer**; the agent reads it. **Done** hides it without answering |
+| A task an agent made | a bot, or an agent with a token (MCP, CLI) | it added a task to your board, and you have not taken it up | **Put on today**, **Start session**, **Dismiss** (keeps it on the board as it is), **Open task** |
 
 Pull requests are off by default: agents open theirs under your GitHub account, so every one would wait here as yours to merge. Turn on **Show pull requests** in the filter menu to list review requests and ready merges; the choice is kept in this browser. The **Pull requests** page lists them either way.
+
+A task an agent made leaves the Inbox once you take it up: you give it a TODO day (here or in its dialog), start or link a session on it, or dismiss it. **Mark as done** and **Delete** on one dismiss it too. Only you take a task up: a session or a TODO day an agent gives it leaves it waiting. A task you make in the console never lands here. Tasks made through the CLI or an API token count as an agent's, even when you typed the command.
 
 A session or bot keeps one notice at a time: a newer one replaces the last. Questions a bot asks you with a question card are answered in its chat, not in the Inbox.
 
@@ -44,7 +47,7 @@ A mark applies to one occurrence: if the same session blocks again later, or new
 
 **Unread** is kept per item in this browser: an item is read once shown in the reading pane. It does not sync between devices.
 
-**Filters**: Type (All, Pull requests while they are shown, Bots, Sessions, Automations), Project, Show done, Show pull requests, and a search over sender, subject, body and source.
+**Filters**: Type (All, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks), Project, Show done, Show pull requests, and a search over sender, subject, body and source.
 
 When nothing needs you, the pane says so and counts the sessions still running.
 

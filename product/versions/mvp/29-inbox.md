@@ -538,3 +538,47 @@ at a time.
   requests a minute and left the selection half marked.
 - On a phone a hidden checkbox takes no tap: a tap on a row opens it.
 - E and L still act on the item in the pane, not on the selection.
+
+## Tasks an agent made (2026-11-12)
+
+The owner asked that a task an agent creates not start on its own or slip
+quietly onto the board: it waits in the Inbox for him to triage. Until now
+only Plan's log knew who made a task (`plan_event`'s actor), and only a
+bot's writes were logged as an agent's.
+
+- **The task says who made it.** `task.origin` is `person` or `agent`, and
+  `task.triagedAt` is when its person took it up: null while an agent's task
+  waits. A task the person makes is taken up when it is made, which the
+  database holds (`CHK_task_triage`); every task from before is the person's.
+- **Who is an agent.** A bot's plan tools, and any request on an API token or
+  an OAuth grant: the MCP server, the CLI and scripts reach the API that way.
+  Only a browser session is the person. So a task the owner adds with
+  `opp tasks add` lands in the Inbox too: the API cannot tell his hand from
+  an agent's on the same token, and the Inbox is the safe side.
+- **Taking it up**, by the person (a browser session) only: giving it a TODO
+  day, starting or linking a session on it, or dismissing it
+  (`POST /v1/tasks/:id/triage`, `triageTask`, `tasks:write`, `update Task`).
+  An agent doing any of these leaves it waiting. Taken up once, it stays so;
+  nothing is logged for it, as nothing is for a TODO day.
+- **In the Inbox** a waiting task is one more kind, keyed `task:<id>` (it
+  waits once), from the board's own read of the tasks, so nothing new is
+  fetched. Its card: the title, the notes, its column and due date, and
+  **Put on today** (the primary: today as its TODO day), **Start session**
+  (Start session on the board), **Dismiss** and **Open task**. Type offers
+  **Tasks**. **Mark as done** and **Delete** on it also dismiss it, so a
+  task put away on one device does not wait on another; snooze and
+  deprioritize are marks only. A done task no longer waits.
+- **Not changed:** the task is on the board from the start, in the column
+  the agent chose, and an agent's TODO day still puts it on TODO; nothing
+  starts on its own, as before (only a session started or linked by someone
+  moves a task, `18-plan-product.md` §4). The Inbox is where the person
+  learns of it.
+
+Decided by the agent that built it, for the owner to accept or change:
+
+1. Every token or OAuth call counts as an agent's, the CLI included.
+2. Mark as done and Delete dismiss the task as well as hiding the item.
+3. The board and TODO show an agent's task as they always did; it is not
+   held back from them until it is taken up.
+4. The name for the state is "waiting in the Inbox"; "Unassigned" stays the
+   project for tasks with no project.

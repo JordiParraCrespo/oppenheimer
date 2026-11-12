@@ -55,6 +55,8 @@ export interface TaskRepositoryPort {
   insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskInsertOutcome>;
   /** Write the fields a person edits: title, notes, due date and time, project, milestone, blocked. */
   saveFields(task: TaskEntity): Promise<TaskWriteOutcome>;
+  /** Write that its person took it up (`triagedAt`), and nothing else. */
+  saveTriage(task: TaskEntity): Promise<void>;
   /** Move the task to `placement`, setting its status and rank. */
   move(task: TaskEntity, placement: TaskPlacement): Promise<TaskMoveOutcome>;
   delete(task: TaskEntity): Promise<TaskWriteOutcome>;

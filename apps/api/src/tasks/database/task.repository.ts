@@ -114,8 +114,13 @@ export class TaskRepository
         milestoneId: task.milestoneId,
         blockedReason: task.blockedReason,
         blockedAt: task.blockedAt,
+        ...triaged(task),
       }),
     );
+  }
+
+  async saveTriage(task: TaskEntity): Promise<void> {
+    await this.writing(task, (manager) => this.writeRow(manager, task, triaged(task)));
   }
 
   move(task: TaskEntity, placement: TaskPlacement): Promise<TaskMoveOutcome> {
@@ -169,9 +174,9 @@ export class TaskRepository
           if (task.startsWorkOnAttach(seenStatus)) {
             const placement: TaskPlacement = { status: 'doing', after: { kind: 'first' } };
             task.place('doing', await this.rankFor(manager, task, placement), new Date());
-            await this.writePlace(manager, task);
+            await this.writePlace(manager, task, triaged(task));
           } else {
-            await this.writeRow(manager, task, {});
+            await this.writeRow(manager, task, triaged(task));
           }
           task.attach(link);
           await this.logAndStage(manager, task);
@@ -319,8 +324,13 @@ export class TaskRepository
     }
   }
 
-  private async writePlace(manager: EntityManager, task: TaskEntity): Promise<void> {
+  private async writePlace(
+    manager: EntityManager,
+    task: TaskEntity,
+    also: Partial<TaskOrmEntity> = {},
+  ): Promise<void> {
     await this.writeRow(manager, task, {
+      ...also,
       status: task.status,
       rank: task.rank,
       completedAt: task.completedAt,
@@ -346,6 +356,15 @@ export class TaskRepository
     }
     return byTask;
   }
+}
+
+/**
+ * When the task was taken up, for a write that may have done it; nothing when it
+ * waits, so a write from a copy loaded before someone took it up never puts it
+ * back in the Inbox.
+ */
+function triaged(task: TaskEntity): Partial<TaskOrmEntity> {
+  return task.triagedAt ? { triagedAt: task.triagedAt } : {};
 }
 
 function violated(error: unknown, code: string, constraint: string): boolean {

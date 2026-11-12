@@ -22,7 +22,7 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
-import { userActor } from '../../domain/plan-change.types';
+import { PlanCaller, type PlanCallerOf } from '../../decorators/plan-caller.decorator';
 import type { TaskEntity } from '../../domain/task.entity';
 import { StartTaskSessionResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -52,7 +52,7 @@ export class StartTaskSessionHttpController {
   @ApiOperation({
     summary: 'Start a session from a task',
     description:
-      'New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.',
+      'New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Not started (`todo`) moves to the top of In progress if `seenStatus` is still its status, and the person (a browser session) takes up a task an agent made.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
@@ -67,6 +67,7 @@ export class StartTaskSessionHttpController {
   async start(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
+    @PlanCaller() caller: PlanCallerOf,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: StartTaskSessionRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
@@ -77,7 +78,7 @@ export class StartTaskSessionHttpController {
     >(
       new StartTaskSessionCommand({
         scope,
-        actor: userActor(userId),
+        ...caller,
         userId,
         taskId: id,
         input: body,

@@ -129,6 +129,7 @@ describe('tasks: the board (integration)', () => {
       title,
       createdByUserId: userId,
       actor: userActor(userId),
+      origin: 'person',
     });
     expect(await tasks.insert(task, { status, after: { kind: 'last' } })).toBe('placed');
     return task;
@@ -347,6 +348,62 @@ describe('tasks: the board (integration)', () => {
     expect((await eventsOf(a.id)).map((e) => e.kind)).toEqual(['created', 'rescheduled']);
   });
 
+  it('keeps a task an agent made waiting until its person takes it up, by a session or a dismissal', async () => {
+    const agent: PlanActor = { type: 'agent', userId, agentId: randomUUID() };
+    const make = async (title: string) => {
+      const task = TaskEntity.createNew({
+        organizationId,
+        projectId,
+        milestoneId: null,
+        status: 'todo',
+        title,
+        createdByUserId: userId,
+        actor: agent,
+        origin: 'agent',
+      });
+      expect(await tasks.insert(task, { status: 'todo', after: { kind: 'last' } })).toBe('placed');
+      return task;
+    };
+    const fromAgent = await make('from an agent');
+    const read = await reload(fromAgent.id);
+    expect([read.origin, read.triagedAt]).toEqual(['agent', null]);
+
+    // A session the agent itself links leaves it waiting; one the person links takes it up.
+    const sessionId = await insertSession();
+    const link = {
+      sessionId,
+      origin: 'linked' as const,
+      linkedByUserId: userId,
+      linkedAt: new Date(),
+    };
+    const byAgent = await reload(fromAgent.id, agent);
+    byAgent.triage('agent');
+    await tasks.attach(byAgent, link, 'todo');
+    expect((await reload(fromAgent.id)).triagedAt).toBeNull();
+    const byPerson = await reload(fromAgent.id);
+    byPerson.triage('person');
+    await tasks.attach(byPerson, { ...link, sessionId: await insertSession() }, 'doing');
+    expect((await reload(fromAgent.id)).triagedAt).toBeInstanceOf(Date);
+
+    // A dismissal writes only that; a copy read before it does not put it back.
+    const dismissed = await make('dismissed');
+    const stale = await reload(dismissed.id);
+    const dismissing = await reload(dismissed.id);
+    dismissing.triage('person');
+    await tasks.saveTriage(dismissing);
+    stale.edit({ title: 'renamed after' });
+    expect(await tasks.saveFields(stale)).toBe('saved');
+    const after = await reload(dismissed.id);
+    expect([after.title, after.triagedAt]).toEqual(['renamed after', expect.any(Date)]);
+
+    // The database refuses a person's task that waits.
+    await expect(
+      dataSource.query(`UPDATE task SET "triagedAt" = NULL WHERE id = $1`, [
+        (await add('a person’s')).id,
+      ]),
+    ).rejects.toThrow(/CHK_task_triage/);
+  });
+
   it('keeps a completion when the task is reopened, and when it is deleted', async () => {
     const a = await add('a', 'done');
     await tasks.move(await reload(a.id), { status: 'todo', after: { kind: 'first' } });
@@ -393,6 +450,7 @@ describe('tasks: the board (integration)', () => {
         title: 'from an agent',
         createdByUserId: userId,
         actor: userActor(userId),
+        origin: 'person',
         idempotencyKey: 'tool-call-1',
       });
     const first = create();

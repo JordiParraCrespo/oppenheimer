@@ -26,6 +26,15 @@ export type TaskStatus = z.infer<typeof taskStatusSchema>;
  */
 export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['todo'];
 
+/**
+ * Who made a task: its person, or an agent working for them (a bot, or a call
+ * on an API token or an OAuth grant). An agent's task waits in Plan's Inbox
+ * until the person triages it (`product/versions/mvp/29-inbox.md`, "Tasks an
+ * agent made").
+ */
+export const TASK_ORIGINS = ['person', 'agent'] as const;
+export type TaskOrigin = (typeof TASK_ORIGINS)[number];
+
 export const TASK_TITLE_MAX = 500;
 export const TASK_NOTES_MAX = 10_000;
 export const MILESTONE_NAME_MAX = 200;

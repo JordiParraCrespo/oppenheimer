@@ -9,6 +9,7 @@ import {
 import { ProjectEntity } from '../../projects/project.entity';
 import { PullRequestEntity } from '../../pull-requests/pull-request.entity';
 import { SessionEntity, type SessionGroup, type SessionState } from '../../sessions/session.entity';
+import { TaskEntity } from '../../tasks/task.entity';
 import { composeInbox, type InboxSources, inboxSubject, sessionItemKey } from '../inbox-item';
 import { InboxMarkEntity } from '../inbox-mark.entity';
 import { InboxReportEntity } from '../inbox-report.entity';
@@ -210,6 +211,7 @@ function sources(overrides: Partial<InboxSources> = {}): InboxSources {
     failedRuns: [],
     botNotices: [],
     reports: [],
+    tasks: [],
     projects: [project('p-app', ['42']), project('p-web', ['42']), project('p-none', [], true)],
     ...overrides,
   };
@@ -517,5 +519,66 @@ describe('composeInbox: a problem an agent reported', () => {
     );
     expect(view.open).toEqual([]);
     expect(view.done.map((item) => item.key)).toEqual(['report:rep1']);
+  });
+});
+
+describe('composeInbox: a task an agent made', () => {
+  const task = (
+    id: string,
+    {
+      origin = 'agent',
+      triagedAt = null,
+      status = 'todo',
+      projectId = 'p-app',
+      minutesAgo = 5,
+    }: {
+      origin?: TaskEntity['origin'];
+      triagedAt?: Date | null;
+      status?: TaskEntity['status'];
+      projectId?: string;
+      minutesAgo?: number;
+    } = {},
+  ) =>
+    new TaskEntity(
+      id,
+      projectId,
+      null,
+      status,
+      'a0',
+      `Task ${id}`,
+      '',
+      null,
+      null,
+      status === 'done' ? at(1) : null,
+      [],
+      at(minutesAgo),
+      at(minutesAgo),
+      null,
+      1,
+      null,
+      origin,
+      triagedAt,
+    );
+
+  it('lists one waiting for its person, by when it was made, under its project', () => {
+    const view = composeInbox(sources({ tasks: [task('t-1')] }), [], NOW);
+    expect(view.open.map((item) => [item.key, item.since, item.projectIds])).toEqual([
+      ['task:t-1', at(5), ['p-app']],
+    ]);
+  });
+
+  it('leaves out a task its person made, one taken up, and one already done', () => {
+    const view = composeInbox(
+      sources({
+        tasks: [
+          task('mine', { origin: 'person', triagedAt: at(5) }),
+          task('taken', { triagedAt: at(1) }),
+          task('finished', { status: 'done' }),
+        ],
+      }),
+      [],
+      NOW,
+    );
+    expect(view.open).toEqual([]);
   });
 });

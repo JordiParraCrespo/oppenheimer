@@ -3,13 +3,16 @@ import {
   useDeleteInboxMark,
   usePutInboxMark,
   usePutInboxMarks,
+  useTriageTask,
 } from '@oppenheimer/frontend-consumer/react';
 import { INBOX_MARK_ACTIONS, type InboxMarkActionName } from '../lib/inbox-mark-actions';
 
 /**
  * Does an Inbox action (`INBOX_MARK_ACTIONS`) to one item, through its own
  * mark, or to a selection, in one request. `error` is the last write the
- * server refused; the list draws it.
+ * server refused; the list draws it. Marking a task an agent made done, or
+ * deleting it, also takes the task up (its Dismiss), so it does not wait in
+ * the Inbox of another device or another reader.
  */
 export function useInboxMarks() {
   // The stable parts only: the mutation result itself is a new object on
@@ -17,13 +20,15 @@ export function useInboxMarks() {
   const { mutate: put, error: putError, reset: resetPut } = usePutInboxMark();
   const { mutate: clear, error: clearError, reset: resetClear } = useDeleteInboxMark();
   const { mutate: putAll, error: allError, reset: resetAll } = usePutInboxMarks();
+  const { mutate: triage, error: triageError, reset: resetTriage } = useTriageTask();
 
   return {
-    error: putError ?? clearError ?? allError,
+    error: putError ?? clearError ?? allError ?? triageError,
     dismiss: () => {
       resetPut();
       resetClear();
       resetAll();
+      resetTriage();
     },
     apply(action: InboxMarkActionName, target: InboxItem | readonly InboxItem[]) {
       const items = 'key' in target ? [target] : target;
@@ -36,6 +41,9 @@ export function useInboxMarks() {
         clear(items[0].key);
       } else {
         put({ itemKey: items[0].key, mark, until });
+      }
+      if (mark === 'done' || mark === 'deleted') {
+        for (const item of items) if (item.kind === 'task') triage(item.task.id);
       }
       if (visit) for (const item of items) visit(item.key);
     },
