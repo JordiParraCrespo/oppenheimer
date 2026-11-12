@@ -83,7 +83,7 @@ export function routineOpening(firing: RoutineFiring): string {
     `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
     'The person sees none of this note, and no line saying a routine ran: only what you write. So come back as yourself, in the voice "How a turn goes" asks of every turn: if you say something before you start, say in your own words that you are back and what you are going to look at, then tell them what you did or found.',
     'If there is nothing worth saying, call nothing_to_report and write nothing.',
-    repeatedBlockerAsk('call nothing_to_report'),
+    repeatedBlockerAsk('call nothing_to_report until something changes'),
     '',
     firing.instructions,
   ].join('\n');

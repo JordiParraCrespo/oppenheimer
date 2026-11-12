@@ -46,6 +46,8 @@ type Expect =
   | { kind: 'send' }
   /** Starts nothing and tells the person what it needs. */
   | { kind: 'tell' }
+  /** Starts nothing on another host than the one named, and says where it stands. */
+  | { kind: 'keep_host'; host: string }
   /** Starts nothing and does not say the blocker again. */
   | { kind: 'quiet' };
 
@@ -61,13 +63,17 @@ interface Case {
   closed: boolean;
   /** What the bot's earlier runs of the routine said, oldest first. */
   earlier: string[];
+  /** Hosts that are offline in this run, by name. */
+  offline?: string[];
+  /** The routine's prompt, when the case has its own. */
+  routine?: string;
   expect: Expect;
   why: string;
 }
 
 interface Score {
   right: boolean;
-  /** One letter: S started a session, s started one it should not, P prompted the session, T told the person, Q stayed quiet, r said the blocker again, - did nothing. */
+  /** One letter: S started a session, s started one it should not, H kept to the named host, P prompted the session, T told the person, Q stayed quiet, r said the blocker again, - did nothing. */
   mark: string;
   note: string;
 }
@@ -140,7 +146,7 @@ function runMessage(c: Case, routine: { name: string; instructions: string }): s
     automationId: 'automation-1',
     runId: 'run-1',
     name: routine.name,
-    instructions: routine.instructions,
+    instructions: c.routine ?? routine.instructions,
   });
   if (c.earlier.length === 0) return opening;
   return [
@@ -152,7 +158,7 @@ function runMessage(c: Case, routine: { name: string; instructions: string }): s
 }
 
 /** A run against what its case expects, from the calls it made and what it said. */
-function scoreRun(turn: Turn, expect: Expect): Score {
+function scoreRun(turn: Turn, expect: Expect, hostId: (name: string) => string | undefined): Score {
   const made = (tool: string) => turn.calls.filter((call) => call.tool === tool && !call.isError);
   const started = made('start_session');
   const sent = made('send_to_session');
@@ -164,6 +170,16 @@ function scoreRun(turn: Turn, expect: Expect): Score {
     return said
       ? { right: false, mark: 'T', note: 'reported the blocker' }
       : { right: false, mark: '-', note: 'did nothing' };
+  }
+  if (expect.kind === 'keep_host') {
+    const named = hostId(expect.host);
+    const elsewhere = started.find(
+      (call) => (call.input as { host_id?: string } | null)?.host_id !== named,
+    );
+    if (elsewhere) return { right: false, mark: 's', note: JSON.stringify(elsewhere.input) };
+    return said
+      ? { right: true, mark: 'H', note: 'kept to the named host' }
+      : { right: false, mark: '-', note: 'said nothing' };
   }
   if (started.length > 0)
     return { right: false, mark: 's', note: JSON.stringify(started[0]?.input) };
@@ -201,10 +217,12 @@ async function main(): Promise<void> {
   const host = file.hosts[0] as HostSpec;
   const project = file.projects[0] as ProjectSpec;
 
+  const hostsOf = (c: Case) =>
+    file.hosts.map((h) => (c.offline?.includes(h.name) ? { ...h, online: false } : h));
   const spaceOf = (c: Case) =>
     workspace({
       home: host.name,
-      hosts: file.hosts,
+      hosts: hostsOf(c),
       projects: file.projects,
       sessions: [
         {
@@ -223,17 +241,20 @@ async function main(): Promise<void> {
       ...noticeTools(space.context),
     ];
   };
-  const context = composeTurnContext({
-    now: new Date(file.now),
-    timeZone: 'Europe/Madrid',
-    homeHost: { name: host.name, online: host.online, runningSessions: host.runningSessions ?? 0 },
-    hosts: file.hosts.map((h) => ({
+  const contextOf = (c: Case) => {
+    const hosts = hostsOf(c).map((h) => ({
       name: h.name,
       online: h.online,
       runningSessions: h.runningSessions ?? 0,
-    })),
-    lastContext: null,
-  });
+    }));
+    return composeTurnContext({
+      now: new Date(file.now),
+      timeZone: 'Europe/Madrid',
+      homeHost: hosts[0] ?? null,
+      hosts,
+      lastContext: null,
+    });
+  };
   const systemOf = (c: Case) => {
     const bot = file.bots[c.bot];
     if (!bot) throw new Error(`Case ${c.id} names no bot "${c.bot}".`);
@@ -257,7 +278,7 @@ async function main(): Promise<void> {
   const turns = await pool(jobs, MAX_PARALLEL, (c) =>
     via.turn({
       system: systemOf(c),
-      message: withTurnContext(context, runMessage(c, file.routine)),
+      message: withTurnContext(contextOf(c), runMessage(c, file.routine)),
       // A fresh workspace each run: nothing one run did is seen by another.
       tools: toolsOf(c),
       maxTurns: MAX_TURNS,
@@ -266,7 +287,9 @@ async function main(): Promise<void> {
   );
   const results = chosen.map((c, i) => {
     const caseTurns = turns.slice(i * runs, (i + 1) * runs);
-    const scores = caseTurns.map((turn) => scoreRun(turn, c.expect));
+    const scores = caseTurns.map((turn) =>
+      scoreRun(turn, c.expect, (name) => file.hosts.find((h) => h.name === name)?.id),
+    );
     const right = scores.filter((score) => score.right).length;
     return { ...c, turns: caseTurns, scores, right, passed: right * 2 > runs };
   });
@@ -274,7 +297,7 @@ async function main(): Promise<void> {
   const width = Math.max(...results.map((r) => r.id.length));
   for (const r of results) {
     console.log(
-      `${r.passed ? 'pass' : 'FAIL'}  ${r.id.padEnd(width)}  want ${r.expect.kind.padEnd(5)}  got ${r.scores.map((s) => s.mark).join('')}  ${r.right}/${runs}`,
+      `${r.passed ? 'pass' : 'FAIL'}  ${r.id.padEnd(width)}  want ${r.expect.kind.padEnd(9)}  got ${r.scores.map((s) => s.mark).join('')}  ${r.right}/${runs}`,
     );
     if (!r.passed) {
       r.scores.forEach((score, at) => {
@@ -291,7 +314,8 @@ async function main(): Promise<void> {
       .filter((r) => r.expect.kind === kind)
       .reduce((sum, r) => sum + r.scores.filter((s) => marks.includes(s.mark)).length, 0);
   const stopped = count('start', 'T-');
-  const overstepped = count('tell', 's') + count('quiet', 's') + count('send', 's');
+  const overstepped =
+    count('tell', 's') + count('quiet', 's') + count('send', 's') + count('keep_host', 's');
   const repeated = count('quiet', 'r');
   const failed = results.filter((r) => !r.passed).length;
   console.log(

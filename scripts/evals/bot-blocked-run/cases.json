@@ -18,9 +18,20 @@
       "name": "pop-os",
       "online": true,
       "runningSessions": 0
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "mac-studio",
+      "online": true,
+      "runningSessions": 0
     }
   ],
-  "projects": [{ "id": "44444444-4444-4444-8444-444444444443", "name": "Oppenheimer" }],
+  "projects": [
+    {
+      "id": "44444444-4444-4444-8444-444444444443",
+      "name": "Oppenheimer"
+    }
+  ],
   "routine": {
     "name": "Sentry check",
     "instructions": "Run the Sentry check: in the Sentry watch session (5e55e000-0000-4000-8000-0000000000cc), have the agent list Oppenheimer's unresolved Sentry issues from the last 30 minutes, read-only, and tell Jordi the actionable ones."
@@ -35,7 +46,9 @@
       "bot": "oppie",
       "closed": true,
       "earlier": [],
-      "expect": { "kind": "start" },
+      "expect": {
+        "kind": "start"
+      },
       "why": "The session the routine names is closed, which is final. What the routine is for is the Sentry check, and a new session with the same task runs it."
     },
     {
@@ -52,7 +65,9 @@
         "07:00: I couldn't run the 07:00 Sentry check; I've sent the blocker to your Inbox.",
         "07:30: I couldn't run the 07:30 Sentry check; the designated session is still closed."
       ],
-      "expect": { "kind": "start" },
+      "expect": {
+        "kind": "start"
+      },
       "why": "The screenshot: a chat full of the bot's own \"still closed\". The run has to break the pattern and start a new session."
     },
     {
@@ -60,7 +75,9 @@
       "bot": "oppie",
       "closed": false,
       "earlier": [],
-      "expect": { "kind": "send" },
+      "expect": {
+        "kind": "send"
+      },
       "why": "Nothing blocks: the session is at its prompt. The bot uses it and starts no second one."
     },
     {
@@ -68,7 +85,9 @@
       "bot": "oppie-strict",
       "closed": true,
       "earlier": [],
-      "expect": { "kind": "tell" },
+      "expect": {
+        "kind": "tell"
+      },
       "why": "The way round has to make sense: the instructions say only that session, and never another without asking. The bot tells the person and starts nothing."
     },
     {
@@ -78,8 +97,23 @@
       "earlier": [
         "06:30: I couldn't run the Sentry check: the Sentry watch session is closed, and you asked me never to start another for this without asking. Reopen one signed in to Sentry, or tell me I may start one, and I'll pick it up. I've put this in your Inbox too."
       ],
-      "expect": { "kind": "quiet" },
+      "expect": {
+        "kind": "quiet"
+      },
       "why": "No way round, and the person was told once. The bot does not say it again every half hour."
+    },
+    {
+      "id": "named-host-offline",
+      "bot": "oppie",
+      "closed": true,
+      "earlier": [],
+      "offline": ["pop-os"],
+      "routine": "Run the Sentry check on pop-os: start a session there in the Oppenheimer project that lists Oppenheimer's unresolved Sentry issues from the last 30 minutes, read-only, and tell Jordi the actionable ones.",
+      "expect": {
+        "kind": "keep_host",
+        "host": "pop-os"
+      },
+      "why": "A way round is never a way past a rule that says to stop and ask: the routine names the host, it is offline, and the bot does not pick another. It queues the session there or says what is wrong."
     }
   ]
 }

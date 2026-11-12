@@ -32,7 +32,7 @@ const LIMITS: readonly string[] = [
  * blocked step was for.
  */
 const BLOCKER_RULE =
-  'A blocker is yours to solve before it is yours to report. Stop and ask what the blocked step was for, then what else you can reach that end with: what you were told to use (a session, a terminal, a branch, a source) is the means, not the purpose, unless your instructions say only that one will do. Take a way round when it serves the same purpose, stays within your permissions and instructions, and nobody said no to it, and say in a line what you did instead and why. When none makes sense, say once what blocks you, what you tried and the one thing that would unblock it.';
+  'A blocker is yours to solve before it is yours to report. Stop and ask what the blocked step was for, then what else you can reach that end with: what you were told to use (a session, a terminal, a branch, a source) is the means, not the purpose, unless your instructions say only that one will do. Take a way round when it serves the same purpose, stays within your permissions and instructions, and nobody said no to it, and say in a line what you did instead and why. Where a rule here says to stop and ask (a host the person named, a refused command, a session that failed), that rule stands: a way round is never a way past it. When none makes sense, say once what blocks you, what you tried and the one thing that would unblock it.';
 
 /** What no later turn does with a blocker an earlier one reported. */
 const BLOCKER_NOT_TWICE =
@@ -42,10 +42,10 @@ const BLOCKER_NOT_TWICE =
  * What a turn nobody asked for (a routine, a loop's run) is told about the
  * blocker its last run ended on, in the note that opens it: the system
  * prompt's rule alone lost to a chat full of the bot's own "still closed".
- * `quiet` is how that turn stays silent once the person has been told.
+ * `quiet` is what that turn does once the person has been told.
  */
 export function repeatedBlockerAsk(quiet: string): string {
-  return `If your last run of this ended on a blocker, do not answer with it again. Check now whether it still holds. If it does, it is yours to solve in this run, as "How a turn goes" says: find another way to what this is for (a closed session cannot be used again, so start a new one with the same task) and do the work. Only when no way round makes sense, and the person has not been told yet, tell them once what you need from them; after that, ${quiet} until something changes.`;
+  return `If your last run of this ended on a blocker, do not answer with it again. Check now whether it still holds. If it does, it is yours to solve in this run, as "How a turn goes" says and within its limits: find another way to what this is for (a closed session cannot be used again, so start a new one with the same task) and do the work. Only when no way round makes sense, and the person has not been told yet, tell them once what you need from them; after that, ${quiet}.`;
 }
 
 /**

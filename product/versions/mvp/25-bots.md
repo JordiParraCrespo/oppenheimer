@@ -168,8 +168,10 @@ worker runs it and streams what happens back to the chat.
     instructions say only that one will do; a closed session is replaced
     by a new one with the same task), when the way round serves the same
     purpose, stays within its permissions and instructions and nobody
-    said no to it; otherwise it says once what blocks it, and never the
-    same blocker twice (2026-11-12);
+    said no to it, and never past a rule that says to stop and ask (a
+    host the person named, a refused command, a failed session);
+    otherwise it says once what blocks it, and never the same blocker
+    twice (2026-11-12);
   - **check before you report** (2026-11-07), the one statement every
     other section and the session wakes point at: every action that
     changes something is checked before it is reported, from what the
@@ -2183,5 +2185,6 @@ The decisions it produced:
   `send_to_session` says a closed session is replaced, not reported.
   `scripts/evals/bot-blocked-run` holds it: on the old wording the
   screenshot's case reported the blocker again in 3 of 3 runs; on the new
-  one 25 of 25 runs were right, the bot told to use only that session
-  still starting none and saying so once.
+  one 30 of 30 runs were right, the bot told to use only that session
+  still starting none and saying so once, and a routine that names an
+  offline host never moved to another.

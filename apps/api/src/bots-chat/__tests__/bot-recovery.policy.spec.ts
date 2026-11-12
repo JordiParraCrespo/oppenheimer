@@ -38,6 +38,7 @@ describe('recovery policy', () => {
     expect(bullets).toContain(
       'stays within your permissions and instructions, and nobody said no to it',
     );
+    expect(bullets).toContain('a way round is never a way past it');
     expect(bullets).toContain('Never report the same blocker twice');
     expect(bullets).toContain(
       'a new one with the same task when the session, terminal or branch you were to use is closed or gone',
@@ -48,7 +49,7 @@ describe('recovery policy', () => {
   // "still closed" replies and writes one more; or one that, with no way
   // round, tells the person again every half hour.
   it('tells a repeated run to solve the blocker its last run ended on, and to say it once', () => {
-    const ask = repeatedBlockerAsk('call nothing_to_report');
+    const ask = repeatedBlockerAsk('call nothing_to_report until something changes');
     expect(ask).toContain('do not answer with it again');
     expect(ask).toContain('it is yours to solve in this run');
     expect(ask).toContain('start a new one with the same task');
@@ -66,7 +67,7 @@ describe('recovery policy', () => {
       name: 'Sentry check',
       instructions: 'Run the Sentry check.',
     });
-    expect(opening).toContain(repeatedBlockerAsk('call nothing_to_report'));
+    expect(opening).toContain(repeatedBlockerAsk('call nothing_to_report until something changes'));
     expect(loopSetPrompt(30, 'check Sentry')).toContain(
       repeatedBlockerAsk('call end_loop and say why'),
     );
