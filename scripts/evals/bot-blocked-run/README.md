@@ -17,9 +17,9 @@ session is closed create a new one, no?". Since then
 
 The rule is stated once, in
 `apps/api/src/bots-chat/domain/bot-recovery.policy.ts`. It reaches the model
-through "How a turn goes" in the system prompt, the note that opens a
-routine's or a loop's run (`repeatedBlockerAsk`), and `send_to_session`'s
-description. A change to any of them is what this eval is for.
+through "How a turn goes" in the system prompt and the note that opens a
+routine's or a loop's run (`repeatedBlockerAsk`). A change to either is
+what this eval is for.
 
 ## The cases
 

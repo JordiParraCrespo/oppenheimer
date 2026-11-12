@@ -2181,8 +2181,7 @@ The decisions it produced:
   purpose, within its permissions and instructions, never around a "no"),
   and that the same blocker is never reported twice; the note that opens a
   routine's or a loop's run says it again, because the system prompt alone
-  lost to a chat full of the bot's own "still closed"; and
-  `send_to_session` says a closed session is replaced, not reported.
+  lost to a chat full of the bot's own "still closed".
   `scripts/evals/bot-blocked-run` holds it: on the old wording the
   screenshot's case reported the blocker again in 3 of 3 runs; on the new
   one the five cases that have a way round or a rule to respect were right

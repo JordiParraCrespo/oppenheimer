@@ -52,7 +52,9 @@ describe('recovery policy', () => {
     const ask = repeatedBlockerAsk(ROUTINE_QUIET);
     expect(ask).toContain('do not answer with it again');
     expect(ask).toContain('it is yours to solve in this run');
-    expect(ask).toContain('start a new one with the same task');
+    expect(ask).toContain(
+      'a new one with the same task when the session, terminal or branch you were to use is closed or gone',
+    );
     expect(ask).toContain('tell them once what you need from them');
     expect(ask).toContain('do not tell them again while nothing has changed');
     expect(ask).toContain('call nothing_to_report and write nothing');

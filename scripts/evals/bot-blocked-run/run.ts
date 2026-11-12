@@ -39,7 +39,15 @@ import {
   composeTurnContext,
   withTurnContext,
 } from '../../../apps/api/src/bots-chat/domain/bot-turn-context.policy';
-import { arg, type EvalTool, pool, type Turn, transport, writeReport } from '../bot-turn';
+import {
+  arg,
+  type EvalTool,
+  pool,
+  type Turn,
+  type TurnCall,
+  transport,
+  writeReport,
+} from '../bot-turn';
 import { type HostSpec, type LogSpec, type ProjectSpec, workspace } from '../bot-workspace';
 
 /** What a right run does about the routine's work. */
@@ -160,45 +168,67 @@ function runMessage(c: Case, routine: { name: string; instructions: string }): s
   ].join('\n');
 }
 
+/** What a run did, read once from its calls and its words. */
+interface Did {
+  started: TurnCall[];
+  sent: TurnCall[];
+  /** It wrote to the person, in the chat or in their Inbox. */
+  said: boolean;
+  hostId: (name: string) => string | undefined;
+}
+
+const inputOf = (call: TurnCall | undefined) => JSON.stringify(call?.input);
+const overstepped = (did: Did): Score | null =>
+  did.started.length > 0 ? { right: false, mark: 's', note: inputOf(did.started[0]) } : null;
+
+/** One scorer per kind of expectation: adding a kind is a row here. */
+const SCORERS: {
+  [K in Expect['kind']]: (did: Did, expect: Extract<Expect, { kind: K }>) => Score;
+} = {
+  start: (did) =>
+    did.started.length > 0
+      ? { right: true, mark: 'S', note: inputOf(did.started[0]) }
+      : did.said
+        ? { right: false, mark: 'T', note: 'reported the blocker' }
+        : { right: false, mark: '-', note: 'did nothing' },
+  keep_host: (did, expect) => {
+    const named = did.hostId(expect.host);
+    const elsewhere = did.started.find(
+      (call) => (call.input as { host_id?: string } | null)?.host_id !== named,
+    );
+    if (elsewhere) return { right: false, mark: 's', note: inputOf(elsewhere) };
+    return did.said
+      ? { right: true, mark: 'H', note: 'kept to the named host' }
+      : { right: false, mark: '-', note: 'said nothing' };
+  },
+  send: (did) =>
+    overstepped(did) ??
+    (did.sent.length > 0
+      ? { right: true, mark: 'P', note: 'prompted the session' }
+      : { right: false, mark: did.said ? 'T' : '-', note: 'did not prompt the session' }),
+  tell: (did) =>
+    overstepped(did) ??
+    (did.said
+      ? { right: true, mark: 'T', note: 'told the person' }
+      : { right: false, mark: 'Q', note: 'did not tell the person' }),
+  // A quiet run writes nothing: nothing_to_report beside the blocker's words is the blocker said again.
+  quiet: (did) =>
+    overstepped(did) ??
+    (did.said
+      ? { right: false, mark: 'r', note: 'said the blocker again' }
+      : { right: true, mark: 'Q', note: 'stayed quiet' }),
+};
+
 /** A run against what its case expects, from the calls it made and what it said. */
 function scoreRun(turn: Turn, expect: Expect, hostId: (name: string) => string | undefined): Score {
   const made = (tool: string) => turn.calls.filter((call) => call.tool === tool && !call.isError);
-  const started = made('start_session');
-  const sent = made('send_to_session');
-  const said = turn.answer.trim().length > 0 || made('notify').length > 0;
-  if (expect.kind === 'start') {
-    if (started.length > 0)
-      return { right: true, mark: 'S', note: JSON.stringify(started[0]?.input) };
-    return said
-      ? { right: false, mark: 'T', note: 'reported the blocker' }
-      : { right: false, mark: '-', note: 'did nothing' };
-  }
-  if (expect.kind === 'keep_host') {
-    const named = hostId(expect.host);
-    const elsewhere = started.find(
-      (call) => (call.input as { host_id?: string } | null)?.host_id !== named,
-    );
-    if (elsewhere) return { right: false, mark: 's', note: JSON.stringify(elsewhere.input) };
-    return said
-      ? { right: true, mark: 'H', note: 'kept to the named host' }
-      : { right: false, mark: '-', note: 'said nothing' };
-  }
-  if (started.length > 0)
-    return { right: false, mark: 's', note: JSON.stringify(started[0]?.input) };
-  if (expect.kind === 'send') {
-    return sent.length > 0
-      ? { right: true, mark: 'P', note: 'prompted the session' }
-      : { right: false, mark: said ? 'T' : '-', note: 'did not prompt the session' };
-  }
-  if (expect.kind === 'tell') {
-    return said
-      ? { right: true, mark: 'T', note: 'told the person' }
-      : { right: false, mark: 'Q', note: 'did not tell the person' };
-  }
-  // A quiet run writes nothing: nothing_to_report beside the blocker's words is the blocker said again.
-  return !said
-    ? { right: true, mark: 'Q', note: 'stayed quiet' }
-    : { right: false, mark: 'r', note: 'said the blocker again' };
+  const did: Did = {
+    started: made('start_session'),
+    sent: made('send_to_session'),
+    said: turn.answer.trim().length > 0 || made('notify').length > 0,
+    hostId,
+  };
+  return (SCORERS[expect.kind] as (did: Did, expect: Expect) => Score)(did, expect);
 }
 
 async function main(): Promise<void> {
@@ -313,14 +343,13 @@ async function main(): Promise<void> {
   }
   const total = results.length * runs;
   const right = results.reduce((sum, r) => sum + r.right, 0);
-  const count = (kind: Expect['kind'], marks: string) =>
-    results
-      .filter((r) => r.expect.kind === kind)
-      .reduce((sum, r) => sum + r.scores.filter((s) => marks.includes(s.mark)).length, 0);
-  const stopped = count('start', 'T-');
-  const overstepped =
-    count('tell', 's') + count('quiet', 's') + count('send', 's') + count('keep_host', 's');
-  const repeated = count('quiet', 'r');
+  const marked = (marks: string) =>
+    results.reduce((sum, r) => sum + r.scores.filter((s) => marks.includes(s.mark)).length, 0);
+  const stopped = results
+    .filter((r) => r.expect.kind === 'start')
+    .reduce((sum, r) => sum + r.scores.filter((s) => !s.right).length, 0);
+  const overstepped = marked('s');
+  const repeated = marked('r');
   const failed = results.filter((r) => !r.passed && !r.open).length;
   const open = results.filter((r) => !r.passed && r.open).length;
   console.log(
