@@ -16,8 +16,11 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop"
 	desktopapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/app"
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/chrome"
+	hostdesktop "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/desktop"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/policyfile"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -159,9 +162,16 @@ func New(version string) (*App, error) {
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
-		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
-		ExecPolicies:  execpolicy.File{Path: paths.ExecPolicy()},
-		Executor:      system.Executor{},
+		ClaudeAccount:    func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:     execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:         system.Executor{},
+		ComputerPolicies: policyfile.Computer{Path: paths.ComputerPolicy()},
+		BrowserPolicies:  policyfile.Browser{Path: paths.BrowserPolicy()},
+		Browsers:         chrome.New(chrome.Options{Dir: paths.Browsers()}),
+		Desktop: hostdesktop.New(hostdesktop.Options{
+			Display: os.Getenv("DISPLAY"), Home: paths.UserHome,
+			Wayland: hostdesktop.WaylandSession(os.Getenv("XDG_SESSION_TYPE"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")),
+		}),
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,

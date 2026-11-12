@@ -228,6 +228,19 @@ export const RUNNER_CAPABILITIES = [
    * "Driving a terminal").
    */
   'terminal.drive',
+  /**
+   * Answers `computer.act` with `computer.screen`: a bot looks at this host's
+   * screen and uses its mouse and keyboard, when the person on the host turned
+   * that on with `runner computer on` (`product/versions/mvp/25-bots.md` §4.2,
+   * "Using a computer").
+   */
+  'computer.use',
+  /**
+   * Answers `browser.act` with `browser.page`: a bot drives a browser of its
+   * own on this host, when the person on the host turned that on with `runner
+   * browser on` (`product/versions/mvp/25-bots.md` §4.2, "Using a browser").
+   */
+  'browser.use',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1022,6 +1035,229 @@ export type TerminalScreenMessage = z.infer<typeof terminalScreenSchema>;
 /** How much of a captured screen `terminal.screen` carries: the last bytes. */
 export const TERMINAL_SCREEN_MAX_BYTES = 32_768;
 
+/** What one `computer.act` does before the screen is captured. */
+export const COMPUTER_ACTIONS = [
+  'screenshot',
+  'move',
+  'click',
+  'double_click',
+  'right_click',
+  'middle_click',
+  'drag',
+  'scroll',
+  'type',
+  'key',
+  'wait',
+] as const;
+export type ComputerAction = (typeof COMPUTER_ACTIONS)[number];
+
+/**
+ * One key press of `computer.act`: up to four modifiers, then one key, joined
+ * by `+` (`cmd+shift+4`, `ctrl+c`, `enter`). `cmd` is Command on a Mac and
+ * Super elsewhere.
+ */
+export const COMPUTER_KEY_PATTERN =
+  /^(?:(?:ctrl|alt|shift|cmd)\+){0,4}(?:[a-z0-9]|f(?:[1-9]|1[0-2])|enter|tab|escape|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown)$/;
+
+/** The most text one `computer.act` types. */
+export const COMPUTER_TEXT_MAX = 4_096;
+
+/** The most key presses one `computer.act` makes. */
+export const COMPUTER_KEYS_MAX = 16;
+
+/** The longest `computer.act` waits before it captures, in seconds. */
+export const COMPUTER_WAIT_MAX_SECONDS = 30;
+
+/** The most notches one `computer.act` scrolls in a direction. */
+export const COMPUTER_SCROLL_MAX = 50;
+
+/**
+ * The long edge of the image `computer.screen` carries, in pixels. A larger
+ * screen is scaled down to it, and the coordinates of `computer.act` are in
+ * that image's pixels, so what the model points at is what it saw.
+ */
+export const COMPUTER_SCREEN_MAX_EDGE = 1_280;
+
+/** The largest image `computer.screen` carries, before base64: it fits one frame. */
+export const COMPUTER_SCREENSHOT_MAX_BYTES = 256 * 1024;
+
+// Built per field: a schema used twice is emitted once under `$defs`, where
+// the Go emitter has no field path to pick an integer width from.
+const computerCoordinate = () => z.number().int().min(0).max(COMPUTER_SCREEN_MAX_EDGE);
+const computerScroll = () => z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX);
+
+/**
+ * Use this host's screen, mouse and keyboard, for a bot
+ * (`product/versions/mvp/25-bots.md` §4.2, "Using a computer"). The runner
+ * does `action`, lets the screen settle, and answers with what the screen
+ * shows:
+ *
+ * - `screenshot` does nothing first; `wait` waits `seconds`.
+ * - `move`, `click`, `double_click`, `right_click` and `middle_click` act at
+ *   (`x`, `y`); `drag` presses there and releases at (`toX`, `toY`).
+ * - `scroll` turns the wheel at (`x`, `y`): `scrollY` notches down (negative
+ *   is up), `scrollX` right (negative is left).
+ * - `type` types `text` literally; `key` presses each of `keys` in order.
+ *
+ * Coordinates are pixels of the last `computer.screen` image, from its top
+ * left. The host decides: it acts only when the person there ran `runner
+ * computer on`, and only where it has a screen. Sent only to a runner whose
+ * `hello` named `computer.use`; answered by `computer.screen` with the same
+ * `commandId`, or by `command.failed` (`COMPUTER_001` it is off on this
+ * host, `COMPUTER_002` the host has no screen it can use, `COMPUTER_003` the
+ * action does not fit, `COMPUTER_004` the screen could not be read or used,
+ * `COMPUTER_005` the host's setting cannot be read).
+ */
+export const computerActSchema = z.object({
+  type: z.literal('computer.act'),
+  commandId: commandIdSchema,
+  action: z.enum(COMPUTER_ACTIONS),
+  x: computerCoordinate().optional(),
+  y: computerCoordinate().optional(),
+  toX: computerCoordinate().optional(),
+  toY: computerCoordinate().optional(),
+  scrollX: computerScroll().optional(),
+  scrollY: computerScroll().optional(),
+  text: z.string().min(1).max(COMPUTER_TEXT_MAX).optional(),
+  keys: z.array(z.string().regex(COMPUTER_KEY_PATTERN)).min(1).max(COMPUTER_KEYS_MAX).optional(),
+  seconds: z.number().int().min(0).max(COMPUTER_WAIT_MAX_SECONDS).optional(),
+});
+
+export type ComputerActMessage = z.infer<typeof computerActSchema>;
+
+/**
+ * What the screen showed after a `computer.act`: a JPEG, base64-encoded, of
+ * `width` by `height` pixels, its long edge at most `COMPUTER_SCREEN_MAX_EDGE`
+ * and its bytes at most `COMPUTER_SCREENSHOT_MAX_BYTES`. `display` names the
+ * screen where the host has more than one way to say it (an X display).
+ */
+export const computerScreenSchema = z.object({
+  type: z.literal('computer.screen'),
+  commandId: commandIdSchema,
+  image: z
+    .string()
+    .min(1)
+    .max(Math.ceil(COMPUTER_SCREENSHOT_MAX_BYTES / 3) * 4),
+  width: z.number().int().min(1).max(COMPUTER_SCREEN_MAX_EDGE),
+  height: z.number().int().min(1).max(COMPUTER_SCREEN_MAX_EDGE),
+  display: z.string().max(64).optional(),
+});
+
+export type ComputerScreenMessage = z.infer<typeof computerScreenSchema>;
+
+/** What one `browser.act` does before the page is read. */
+export const BROWSER_ACTIONS = [
+  'open',
+  'read',
+  'screenshot',
+  'click',
+  'type',
+  'key',
+  'scroll',
+  'back',
+  'wait',
+  'close',
+] as const;
+export type BrowserAction = (typeof BROWSER_ACTIONS)[number];
+
+/** The longest address `browser.act` opens. */
+export const BROWSER_URL_MAX = 2_048;
+
+/** The width and height of the browser's page, in pixels: the picture `browser.page` carries. */
+export const BROWSER_VIEWPORT_WIDTH = 1_280;
+export const BROWSER_VIEWPORT_HEIGHT = 800;
+
+/** The most elements `browser.page` lists, each with a ref a later `browser.act` may name. */
+export const BROWSER_ELEMENTS_MAX = 150;
+
+/** How much of a page's text `browser.page` carries: its first bytes. */
+export const BROWSER_TEXT_MAX_BYTES = 24_576;
+
+/** An element's ref in `browser.page`, as a later `browser.act` names it. */
+export const BROWSER_REF_PATTERN = /^e[1-9][0-9]{0,3}$/;
+
+/**
+ * Drive a browser of the bot's own on this host
+ * (`product/versions/mvp/25-bots.md` §4.2, "Using a browser"). `browser`
+ * names it: one per bot, started on its first `open` with a profile of its
+ * own under the runner home, never the person's. The runner does `action`
+ * and answers with the page:
+ *
+ * - `open` goes to `url` (http or https); `back` goes back one page; `close`
+ *   ends the browser and answers with no page.
+ * - `read` lists the page's elements and text; `screenshot` pictures it;
+ *   `wait` waits `seconds` first. Neither changes the page.
+ * - `click` clicks the element `ref` names (from the last `browser.page`),
+ *   or the point (`x`, `y`) of the last picture.
+ * - `type` types `text` into the element `ref` names, or where the focus is;
+ *   `key` presses each of `keys`, in `COMPUTER_KEY_PATTERN`'s grammar.
+ * - `scroll` turns the wheel `scrollY` notches down (negative is up).
+ *
+ * `picture` asks for a JPEG of the page with the answer. The host decides:
+ * it acts only when the person there ran `runner browser on`, and only where
+ * Chrome or Chromium is installed. Sent only to a runner whose `hello` named
+ * `browser.use`; answered by `browser.page` with the same `commandId`, or by
+ * `command.failed` (`BROWSER_001` it is off on this host, `BROWSER_002` no
+ * browser is installed, `BROWSER_003` the action does not fit, `BROWSER_004`
+ * the browser or the page failed, `BROWSER_005` the host's setting cannot be
+ * read).
+ */
+export const browserActSchema = z.object({
+  type: z.literal('browser.act'),
+  commandId: commandIdSchema,
+  browser: z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/),
+  action: z.enum(BROWSER_ACTIONS),
+  url: z.string().min(1).max(BROWSER_URL_MAX).optional(),
+  ref: z.string().regex(BROWSER_REF_PATTERN).optional(),
+  x: z.number().int().min(0).max(BROWSER_VIEWPORT_WIDTH).optional(),
+  y: z.number().int().min(0).max(BROWSER_VIEWPORT_HEIGHT).optional(),
+  scrollY: z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX).optional(),
+  text: z.string().min(1).max(COMPUTER_TEXT_MAX).optional(),
+  keys: z.array(z.string().regex(COMPUTER_KEY_PATTERN)).min(1).max(COMPUTER_KEYS_MAX).optional(),
+  seconds: z.number().int().min(0).max(COMPUTER_WAIT_MAX_SECONDS).optional(),
+  picture: z.boolean().optional(),
+});
+
+export type BrowserActMessage = z.infer<typeof browserActSchema>;
+
+/** One thing on the page a bot can act on: a link, a button, a field. */
+export const browserElementSchema = z.object({
+  ref: z.string().regex(BROWSER_REF_PATTERN),
+  /** What it is: `link`, `button`, `textbox`, `checkbox`, `select`, … */
+  role: z.string().max(32),
+  /** What it says, or what it is labelled. */
+  name: z.string().max(200),
+  /** What a field holds now, when it holds something. */
+  value: z.string().max(200).optional(),
+});
+
+/**
+ * The page after a `browser.act`: where it is, what can be acted on, and
+ * what it says. `elements` are the visible links, buttons and fields, at most
+ * `BROWSER_ELEMENTS_MAX`, each with a `ref` good until the page changes;
+ * `text` is the page's visible text, its first `BROWSER_TEXT_MAX_BYTES`, on a
+ * `read`. `image` is a base64 JPEG of `BROWSER_VIEWPORT_WIDTH` by
+ * `BROWSER_VIEWPORT_HEIGHT` pixels when the act asked for a picture. After
+ * `close` only `closed` is set.
+ */
+export const browserPageSchema = z.object({
+  type: z.literal('browser.page'),
+  commandId: commandIdSchema,
+  url: z.string().max(BROWSER_URL_MAX),
+  title: z.string().max(300),
+  elements: z.array(browserElementSchema).max(BROWSER_ELEMENTS_MAX).optional(),
+  moreElements: z.boolean().optional(),
+  text: z.string().optional(),
+  textTruncated: z.boolean().optional(),
+  image: z
+    .string()
+    .max(Math.ceil(COMPUTER_SCREENSHOT_MAX_BYTES / 3) * 4)
+    .optional(),
+  closed: z.boolean().optional(),
+});
+
+export type BrowserPageMessage = z.infer<typeof browserPageSchema>;
+
 /**
  * Find folders under one directory by name, for the folder picker's search
  * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
@@ -1377,6 +1613,10 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   hostExecResultSchema,
   terminalDriveSchema,
   terminalScreenSchema,
+  computerActSchema,
+  computerScreenSchema,
+  browserActSchema,
+  browserPageSchema,
   attachmentDirectOfferSchema,
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,

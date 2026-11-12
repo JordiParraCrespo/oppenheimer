@@ -25,6 +25,8 @@ import { HostEntity } from '../../hosts/domain/host.entity';
 import { keyFingerprint } from '../../hosts/infrastructure/host-assertion.util';
 import { InProcessLinkReplies } from '../../links/infrastructure/in-process-link-replies.adapter';
 import { InProcessLinkRegistry } from '../../links/infrastructure/link-registry.adapter';
+import { RelayHostBrowserAdapter } from '../../links/infrastructure/relay-host-browser.adapter';
+import { RelayHostComputerAdapter } from '../../links/infrastructure/relay-host-computer.adapter';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import type {
   RecordSessionEventsPort,
@@ -72,6 +74,9 @@ interface World {
   runner: ChildProcess;
   log: string[];
   scratch: string;
+  replies: InProcessLinkReplies;
+  /** The runner's own directory (`RUNNER_HOME`), where its settings live. */
+  home: string;
 }
 
 function hostKeypair() {
@@ -199,6 +204,7 @@ async function boot(): Promise<World> {
   const assertions = new HostAssertionResolver(hosts, cache, config, owners, {
     isBurned: async () => false,
   });
+  const replies = new InProcessLinkReplies();
   const runners = new RunnerLinkGateway(
     assertions,
     registry,
@@ -210,7 +216,7 @@ async function boot(): Promise<World> {
       owners,
     ),
     config,
-    new InProcessLinkReplies(),
+    replies,
   );
   const browsers = new BrowserAttachGateway(
     cache,
@@ -251,7 +257,17 @@ async function boot(): Promise<World> {
   });
   runner.stdout?.on('data', (chunk) => log.push(String(chunk)));
   runner.stderr?.on('data', (chunk) => log.push(String(chunk)));
-  return { server, origin, registry, batches, tickets, runner, log, scratch };
+  return { server, origin, registry, batches, tickets, runner, log, scratch, replies, home };
+}
+
+/** Whether a program this suite drives is installed. */
+function onPath(program: string): boolean {
+  try {
+    execFileSync('which', [program], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function until<T>(what: string, probe: () => T | undefined, ms = 60_000): Promise<T> {
@@ -287,7 +303,13 @@ describe('the runner and the relay, end to end', () => {
     const link = await until('the runner link', () => w.registry.find(HOST), 30_000);
     expect(link.hostId).toBe(HOST);
     expect(link.epoch).toBe(1);
-    expect(w.log.join('')).toContain('control-plane link up');
+    // The relay registers the link on the runner's hello; the runner logs
+    // once the welcome reaches it, a moment later.
+    await until(
+      'the runner to log the link up',
+      () => (w.log.join('').includes('control-plane link up') ? true : undefined),
+      10_000,
+    );
   });
 
   it('creates a session from session.create: a clone, a worktree, and window 0 running the launch argv', async () => {
@@ -448,12 +470,112 @@ describe('the runner and the relay, end to end', () => {
     );
   }, 30_000);
 
+  // A bot's computer use, from the API's port to a real screen and back
+  // (`25-bots.md` §4.2): the host refuses until its own switch is on, then a
+  // click moves the real pointer and the answer is a picture of that screen.
+  // The screen is the virtual one the runner starts where there is none, so
+  // it needs xdotool, Xvfb, xauth and ImageMagick's import on this machine.
+  it.skipIf(!['xdotool', 'Xvfb', 'xauth', 'import'].every(onPath))(
+    'uses the host’s screen for a bot only once the host turns it on, and answers with the screen',
+    async () => {
+      await until('the runner link', () => w.registry.find(HOST), 30_000);
+      const computer = new RelayHostComputerAdapter(w.registry, w.replies);
+
+      await expect(computer.act(HOST, { action: 'screenshot' })).resolves.toMatchObject({
+        kind: 'failed',
+        code: 'COMPUTER_001',
+      });
+
+      // What `runner computer on` writes; read on every action, so no restart.
+      writeFileSync(join(w.home, 'computer.json'), '{"enabled":true}\n', { mode: 0o600 });
+      const clicked = await computer.act(HOST, { action: 'click', x: 321, y: 123 });
+      if (clicked.kind !== 'screen') throw new Error(`no screen: ${JSON.stringify(clicked)}`);
+      expect(clicked.screen).toMatchObject({ width: 1280, height: 800 });
+      const display = clicked.screen.display;
+      expect(display).toMatch(/^:\d+$/);
+      // A JPEG, small enough for one frame of the link.
+      const image = Buffer.from(clicked.screen.image, 'base64');
+      expect(image.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+      expect(image.length).toBeLessThanOrEqual(256 * 1024);
+      const pointer = execFileSync('xdotool', ['getmouselocation'], {
+        // The virtual screen is locked with a key in the runner's own home.
+        env: { ...process.env, DISPLAY: display, XAUTHORITY: join(w.scratch, '.Xauthority') },
+        encoding: 'utf8',
+      });
+      expect(pointer).toContain('x:321 y:123');
+
+      await expect(computer.act(HOST, { action: 'click', x: 1279, y: 801 })).resolves.toMatchObject(
+        { kind: 'failed', code: 'COMPUTER_003' },
+      );
+    },
+    60_000,
+  );
+
+  // A bot's browser, from the API's port to a real Chrome on the host and
+  // back (`25-bots.md` §4.2): refused until the host's own switch is on, then
+  // a page read as refs, a click on a ref that changes it, and the browser
+  // closed. It needs Chrome or Chromium on this machine.
+  it.skipIf(!['google-chrome', 'chromium', 'chromium-browser'].some(onPath))(
+    'drives a browser of the bot’s own once the host turns it on, by the refs of the page',
+    async () => {
+      await until('the runner link', () => w.registry.find(HOST), 30_000);
+      const site = createServer((_request, response) => {
+        response.setHeader('content-type', 'text/html');
+        response.end(
+          '<!doctype html><title>Counter</title><p id="n">clicked 0 times</p>' +
+            '<button onclick="n.innerText = \'clicked 1 time\'">Add one</button>',
+        );
+      });
+      await new Promise<void>((r) => site.listen(0, '127.0.0.1', () => r()));
+      const url = `http://127.0.0.1:${(site.address() as AddressInfo).port}/`;
+      const browser = new RelayHostBrowserAdapter(w.registry, w.replies);
+      try {
+        await expect(
+          browser.act(HOST, { browser: 'juno', action: 'open', url }),
+        ).resolves.toMatchObject({ kind: 'failed', code: 'BROWSER_001' });
+
+        // What `runner browser on` writes; read on every action, so no restart.
+        writeFileSync(join(w.home, 'browser.json'), '{"enabled":true}\n', { mode: 0o600 });
+        await expect(
+          browser.act(HOST, { browser: 'juno', action: 'open', url: 'file:///etc/passwd' }),
+        ).resolves.toMatchObject({ kind: 'failed', code: 'BROWSER_003' });
+
+        const opened = await browser.act(HOST, {
+          browser: 'juno',
+          action: 'open',
+          url,
+          picture: true,
+        });
+        if (opened.kind !== 'page') throw new Error(`no page: ${JSON.stringify(opened)}`);
+        expect(opened.page).toMatchObject({ url, title: 'Counter' });
+        const button = opened.page.elements?.find((element) => element.name === 'Add one');
+        expect(button).toMatchObject({ role: 'button' });
+        // A JPEG of the page, small enough for one frame of the link.
+        const image = Buffer.from(opened.page.image ?? '', 'base64');
+        expect(image.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+        expect(image.length).toBeLessThanOrEqual(256 * 1024);
+
+        await browser.act(HOST, { browser: 'juno', action: 'click', ref: button?.ref });
+        const read = await browser.act(HOST, { browser: 'juno', action: 'read' });
+        if (read.kind !== 'page') throw new Error(`no page: ${JSON.stringify(read)}`);
+        expect(read.page.text).toContain('clicked 1 time');
+
+        await expect(
+          browser.act(HOST, { browser: 'juno', action: 'close' }),
+        ).resolves.toMatchObject({ kind: 'page', page: { closed: true } });
+      } finally {
+        await new Promise<void>((r) => site.close(() => r()));
+      }
+    },
+    90_000,
+  );
+
   it('removed with a clean-up, closes the stopped session and deletes its worktree', async () => {
     const worktrees = () =>
       readdirSync(join(w.scratch, 'workspaces'), { recursive: true, encoding: 'utf8' }).filter(
-        // The bare store under repos/ stays, branch refs and all: a fresh clone
-        // later is what the clean-up spares.
-        (path) => path.endsWith('hello-world') && !path.includes('/repos/'),
+        // The bare store under repos.noindex/ stays, branch refs and all: a
+        // fresh clone later is what the clean-up spares.
+        (path) => path.endsWith('hello-world') && !path.includes('/repos.noindex/'),
       );
     // The stop above kept the worktree for a Restart.
     expect(worktrees()).not.toEqual([]);

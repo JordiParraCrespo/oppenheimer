@@ -315,6 +315,41 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     matched: true,
     waitedMs: 1240,
   },
+  'computer.act': {
+    type: 'computer.act',
+    commandId,
+    action: 'click',
+    x: 640,
+    y: 412,
+  },
+  'computer.screen': {
+    type: 'computer.screen',
+    commandId,
+    image:
+      '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+    width: 1280,
+    height: 800,
+    display: ':99',
+  },
+  'browser.act': {
+    type: 'browser.act',
+    commandId,
+    browser: 'juno-3f2a',
+    action: 'click',
+    ref: 'e7',
+    picture: true,
+  },
+  'browser.page': {
+    type: 'browser.page',
+    commandId,
+    url: 'https://example.com/pricing',
+    title: 'Pricing',
+    elements: [
+      { ref: 'e1', role: 'link', name: 'Home' },
+      { ref: 'e2', role: 'textbox', name: 'Email', value: 'jordi@example.com' },
+      { ref: 'e3', role: 'button', name: 'Start free trial' },
+    ],
+  },
   'transcript.page': {
     type: 'transcript.page',
     commandId,

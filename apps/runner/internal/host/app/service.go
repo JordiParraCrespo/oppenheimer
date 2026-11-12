@@ -33,6 +33,14 @@ type Options struct {
 	// refuses Exec.
 	ExecPolicies ExecPolicies
 	Executor     Executor
+	// ComputerPolicies and Desktop let bots use this host's screen
+	// (`computer.act`). Either nil refuses Computer.
+	ComputerPolicies ComputerPolicies
+	Desktop          Desktop
+	// BrowserPolicies and Browsers let bots drive a browser of their own on
+	// this host (`browser.act`). Either nil refuses Browser.
+	BrowserPolicies BrowserPolicies
+	Browsers        Browsers
 }
 
 // Service collects the host inventory.
@@ -49,6 +57,13 @@ type Service struct {
 	// execSlots bounds the bots' commands running at once; one past it is
 	// refused, not queued, so the control plane's wait is the run's.
 	execSlots chan struct{}
+	computers ComputerPolicies
+	desktop   Desktop
+	// desktopTurn is held for one action and the capture after it: there is
+	// one mouse, so two bots' actions never interleave.
+	desktopTurn   chan struct{}
+	browserPolicy BrowserPolicies
+	browsers      Browsers
 }
 
 // New builds the service.
@@ -58,6 +73,9 @@ func New(opts Options) *Service {
 		workspace: opts.WorkspaceRoot, version: opts.Version, account: opts.ClaudeAccount,
 		policies: opts.ExecPolicies, executor: opts.Executor,
 		execSlots: make(chan struct{}, domain.MaxConcurrentExecs),
+		computers: opts.ComputerPolicies, desktop: opts.Desktop,
+		desktopTurn:   make(chan struct{}, 1),
+		browserPolicy: opts.BrowserPolicies, browsers: opts.Browsers,
 	}
 }
 

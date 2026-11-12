@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type {
   BotEngineEvent,
   BotEngineFailure,
@@ -254,26 +255,56 @@ export async function runTool(
   tool: BotEngineTool,
   input: unknown,
   context: { signal: AbortSignal; apiKey: string; callId?: string; guard?: ToolLoopGuard },
-): Promise<{ content: string; isError: boolean; data?: BotToolData }> {
+): Promise<{
+  content: string;
+  isError: boolean;
+  data?: BotToolData;
+  images?: readonly BotTurnImage[];
+}> {
   const refusal = context.guard?.refusal(tool.name, input);
   if (refusal)
     return { content: refusal, isError: true, data: { [LOOP_GUARD_DATA_KEY]: 'refused' } };
   let content: string;
   let isError: boolean;
   let data: BotToolData | undefined;
+  let images: readonly BotTurnImage[] = [];
   try {
     const { signal, callId } = context;
     const result = await tool.run(input, callId ? { signal, callId } : { signal });
     content = typeof result?.content === 'string' ? result.content : String(result?.content ?? '');
     isError = result?.isError === true;
     data = toolData(result?.data);
+    images = toolImages(result?.images);
   } catch (error) {
     content = describeError(error) || 'The tool failed.';
     isError = true;
   }
-  const note = context.guard?.record(tool.name, input, content, isError) ?? null;
+  // What a tool shows is part of what it answered: a click whose words are
+  // the same each time and whose screen changed is not a call going round.
+  const answered = images.length > 0 ? `${content}\u0000${imagesDigest(images)}` : content;
+  const note = context.guard?.record(tool.name, input, answered, isError) ?? null;
   const redacted = wellFormed(redactSecret(note ? `${content}${note}` : content, context.apiKey));
-  return data ? { content: redacted, isError, data } : { content: redacted, isError };
+  return {
+    content: redacted,
+    isError,
+    ...(data ? { data } : {}),
+    ...(images.length > 0 ? { images } : {}),
+  };
+}
+
+function imagesDigest(images: readonly BotTurnImage[]): string {
+  const hash = createHash('sha256');
+  for (const image of images) hash.update(image.data);
+  return hash.digest('hex');
+}
+
+/** A result's images, kept only when each is a type and base64 data. */
+function toolImages(raw: unknown): readonly BotTurnImage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (image): image is BotTurnImage =>
+      typeof image?.mimeType === 'string' && typeof image?.data === 'string',
+  );
 }
 
 /**

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import {
   CLOUD_SESSION_REPLY,
+  HOST_BROWSER,
   HOST_CODEX_ENVIRONMENTS,
+  HOST_COMPUTER,
   HOST_EXEC,
   HOST_FOLDERS,
   SESSION_DISPATCH,
@@ -17,7 +19,9 @@ import { InProcessLinkReplies } from './infrastructure/in-process-link-replies.a
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayCloudSessionReplyAdapter } from './infrastructure/relay-cloud-session-reply.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
+import { RelayHostBrowserAdapter } from './infrastructure/relay-host-browser.adapter';
 import { RelayHostCodexEnvironmentsAdapter } from './infrastructure/relay-host-codex-environments.adapter';
+import { RelayHostComputerAdapter } from './infrastructure/relay-host-computer.adapter';
 import { RelayHostExecAdapter } from './infrastructure/relay-host-exec.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
@@ -47,6 +51,8 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: LINK_REPLIES, useClass: InProcessLinkReplies },
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
     { provide: HOST_EXEC, useClass: RelayHostExecAdapter },
+    { provide: HOST_COMPUTER, useClass: RelayHostComputerAdapter },
+    { provide: HOST_BROWSER, useClass: RelayHostBrowserAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
     { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
@@ -64,6 +70,8 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     LINK_REPLIES,
     HOST_FOLDERS,
     HOST_EXEC,
+    HOST_COMPUTER,
+    HOST_BROWSER,
     SESSION_PORTS,
     SESSION_SHARED_FILES,
     SESSION_TRANSCRIPT,

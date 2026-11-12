@@ -315,6 +315,63 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     TURN_MS,
   );
 
+  // A screenshot a tool answers with must go back to the model as an image
+  // part of that call's output, through the real SDK's own serialising, and
+  // the stored output must be its words, never the image's bytes.
+  it(
+    'sends the images a tool answers with as parts of its output, and reports only its words',
+    async () => {
+      const events: BotEngineEvent[] = [];
+      for await (const event of new OpenAiBotEngine().run({
+        provider: 'openai',
+        apiKey: KEY,
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'What is on the screen?',
+        tools: [
+          {
+            name: 'get_time',
+            description: 'Looks at the screen',
+            inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+            run: async () => ({
+              content: 'The screen.',
+              images: [{ mimeType: 'image/jpeg', data: 'c2NyZWVu' }],
+            }),
+          },
+        ],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+      expect(events).toContainEqual({
+        type: 'tool.finished',
+        callId: 'call_1',
+        name: 'get_time',
+        output: 'The screen.',
+        isError: false,
+      });
+      expect(requests[1]?.body.input).toContainEqual(
+        expect.objectContaining({
+          type: 'function_call_output',
+          call_id: 'call_1',
+          output: [
+            { type: 'input_text', text: 'The screen.' },
+            expect.objectContaining({
+              type: 'input_image',
+              image_url: 'data:image/jpeg;base64,c2NyZWVu',
+            }),
+          ],
+        }),
+      );
+    },
+    TURN_MS,
+  );
+
   it(
     'hands the model what the person sent meanwhile with the next tool result, once',
     async () => {

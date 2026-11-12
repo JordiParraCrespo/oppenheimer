@@ -90,6 +90,19 @@ const INTEGER_TYPES = {
   'terminal.drive.waitSeconds': 'int',
   'terminal.drive.history': 'int',
   'terminal.screen.waitedMs': 'int64',
+  'computer.act.x': 'int',
+  'computer.act.y': 'int',
+  'computer.act.toX': 'int',
+  'computer.act.toY': 'int',
+  'computer.act.scrollX': 'int',
+  'computer.act.scrollY': 'int',
+  'computer.act.seconds': 'int',
+  'computer.screen.width': 'int',
+  'computer.screen.height': 'int',
+  'browser.act.x': 'int',
+  'browser.act.y': 'int',
+  'browser.act.scrollY': 'int',
+  'browser.act.seconds': 'int',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */
@@ -159,6 +172,14 @@ const CONSTANT_DOCS = {
   terminalScreenMaxBytes: [
     'TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`',
     'carries: the last bytes.',
+  ],
+  computerScreenMaxEdge: [
+    'ComputerScreenMaxEdge is the long edge, in pixels, of the image',
+    '`computer.screen` carries; `computer.act` points in that image.',
+  ],
+  computerScreenshotMaxBytes: [
+    'ComputerScreenshotMaxBytes is the largest image `computer.screen`',
+    'carries, before base64.',
   ],
 };
 
@@ -419,6 +440,12 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.terminalScreenMaxBytes),
     `const TerminalScreenMaxBytes = ${constants.terminalScreenMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.computerScreenMaxEdge),
+    `const ComputerScreenMaxEdge = ${constants.computerScreenMaxEdge}`,
+    '',
+    ...comment(CONSTANT_DOCS.computerScreenshotMaxBytes),
+    `const ComputerScreenshotMaxBytes = ${constants.computerScreenshotMaxBytes}`,
     '',
     ...comment(CONSTANT_DOCS.capabilities),
     ...constGroup(

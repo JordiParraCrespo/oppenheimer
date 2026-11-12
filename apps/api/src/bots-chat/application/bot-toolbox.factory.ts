@@ -17,6 +17,8 @@ import {
 import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
+import { BotBrowserToolsFactory } from './bot-browser-tools.factory';
+import { BotComputerToolsFactory } from './bot-computer-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './bot-guide-tools.factory';
@@ -70,6 +72,8 @@ export class BotToolboxFactory {
     sessions: BotSessionToolsFactory,
     hostCommands: BotHostCommandToolsFactory,
     terminals: BotTerminalToolsFactory,
+    computers: BotComputerToolsFactory,
+    browsers: BotBrowserToolsFactory,
     sessionFiles: BotSessionFileToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
@@ -105,6 +109,8 @@ export class BotToolboxFactory {
       sessions,
       hostCommands,
       terminals,
+      computers,
+      browsers,
       sessionFiles,
       watches,
       plan,
@@ -318,7 +324,7 @@ export type HeldScopes = () => Promise<ReadonlySet<Scope>>;
 async function refusalFor(
   definition: BotToolDefinition,
   held: HeldScopes,
-): Promise<BotToolResult | null> {
+): Promise<{ content: string; isError: true } | null> {
   if ((await held()).has(definition.scope)) return null;
   return { content: ownerLacksPermission(definition.name, definition.scope), isError: true };
 }

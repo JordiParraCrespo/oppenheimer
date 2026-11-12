@@ -13,8 +13,10 @@ import { BotApprovalStartedPolicy } from './application/bot-approval-started.pol
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
+import { BotBrowserToolsFactory } from './application/bot-browser-tools.factory';
 import { BotChannelWakeResolver } from './application/bot-channel-wake.resolver';
 import { BotCompletionResolver } from './application/bot-completion.resolver';
+import { BotComputerToolsFactory } from './application/bot-computer-tools.factory';
 import { BotDreamResolver } from './application/bot-dream.resolver';
 import { BotDreamTriggerPolicy } from './application/bot-dream-trigger.policy';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
@@ -425,6 +427,8 @@ const queryHandlers: Provider[] = [
     BotHostCommandToolsFactory,
     BotHostTargetResolver,
     BotTerminalToolsFactory,
+    BotComputerToolsFactory,
+    BotBrowserToolsFactory,
     BotSessionFileToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,
