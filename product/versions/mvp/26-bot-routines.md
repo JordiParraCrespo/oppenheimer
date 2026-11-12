@@ -187,6 +187,13 @@ event line, and the owner read a bot's chat as an automation's log):
   ("Hey, I'm back for my half-hour look at the pull requests") and never
   writes a run report. The same voice is a rule of every turn (the
   prompt's "How a turn goes").
+  The opening also says what to do with a blocker the last run ended on
+  (2026-11-12, `repeatedBlockerAsk`): not answer with it again, but check
+  whether it still holds and solve it in this run by another way to what
+  the routine is for (a closed session is replaced by a new one with the
+  same task); only when no way round makes sense is the person told, once,
+  and later runs call `nothing_to_report` until something changes. A
+  loop's run is told the same, and ends the loop instead.
   While the chat hides its tool calls (the wrench in its bar, off by
   default), a run that completed having only run tools, with no reply,
   session or draft to show, is left out altogether, so an hourly

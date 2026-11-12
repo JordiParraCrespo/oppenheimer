@@ -14,6 +14,7 @@ const ROUTES: readonly string[] = [
   'another online host when one host cannot do it',
   'another query or source when a lookup comes back weak or empty',
   'another approach when the first one cannot work',
+  'a new one with the same task when the session, terminal or branch you were to use is closed or gone',
 ];
 
 /** What no route lifts. */
@@ -22,6 +23,30 @@ const LIMITS: readonly string[] = [
   'Work still under way (a queued or stalled session) has not failed: follow it rather than start a second one elsewhere.',
   'A person\'s "no" is not a failure: a denial, a dismissed question or "stop" ends that route, and you do not try it another way.',
 ];
+
+/**
+ * What a bot does at a blocker (2026-11-12): Oppie's half-hourly Sentry
+ * check answered "the designated session is still closed" for hours, when
+ * a new session would have run it. A blocker is a problem the bot solves
+ * before it is one it reports, and the solution has to serve what the
+ * blocked step was for.
+ */
+const BLOCKER_RULE =
+  'A blocker is yours to solve before it is yours to report. Stop and ask what the blocked step was for, then what else you can reach that end with: what you were told to use (a session, a terminal, a branch, a source) is the means, not the purpose, unless your instructions say only that one will do. Take a way round when it serves the same purpose, stays within your permissions and instructions, and nobody said no to it, and say in a line what you did instead and why. When none makes sense, say once what blocks you, what you tried and the one thing that would unblock it.';
+
+/** What no later turn does with a blocker an earlier one reported. */
+const BLOCKER_NOT_TWICE =
+  'Never report the same blocker twice. One you reported before is not a reason to skip the work now: check whether it still holds, and if it does, solve it this time.';
+
+/**
+ * What a turn nobody asked for (a routine, a loop's run) is told about the
+ * blocker its last run ended on, in the note that opens it: the system
+ * prompt's rule alone lost to a chat full of the bot's own "still closed".
+ * `quiet` is how that turn stays silent once the person has been told.
+ */
+export function repeatedBlockerAsk(quiet: string): string {
+  return `If your last run of this ended on a blocker, do not answer with it again. Check now whether it still holds. If it does, it is yours to solve in this run, as "How a turn goes" says: find another way to what this is for (a closed session cannot be used again, so start a new one with the same task) and do the work. Only when no way round makes sense, and the person has not been told yet, tell them once what you need from them; after that, ${quiet} until something changes.`;
+}
 
 /**
  * What makes a failure the host's rather than the task's. `list_hosts`
@@ -56,6 +81,8 @@ export function recoveryBullets(): string {
   return [
     `- A failed step is not the end of the request. Work out why it failed, then try the next reasonable route within your permissions before you report: ${ROUTES.join(', ')}. Report a blocker only when the routes you have are used up, and say what you tried and what would unblock it.`,
     ...LIMITS.map((limit) => `- ${limit}`),
+    `- ${BLOCKER_RULE}`,
+    `- ${BLOCKER_NOT_TWICE}`,
     '- Saying what you are about to do is not a result. Do it in the same turn, and end with the result, a concrete blocker, or how the person will hear back (a session you follow).',
   ].join('\n');
 }

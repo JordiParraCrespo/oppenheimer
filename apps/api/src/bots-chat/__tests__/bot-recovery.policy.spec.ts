@@ -1,4 +1,11 @@
-import { failedWakeAsk, hostCases, recoveryBullets } from '../domain/bot-recovery.policy';
+import { loopSetPrompt } from '../domain/bot-loop-message.factory';
+import {
+  failedWakeAsk,
+  hostCases,
+  recoveryBullets,
+  repeatedBlockerAsk,
+} from '../domain/bot-recovery.policy';
+import { routineOpening } from '../domain/bot-routine.policy';
 
 /**
  * What a bot is told to do after a step fails: try the next route before
@@ -19,6 +26,50 @@ describe('recovery policy', () => {
     expect(bullets).toContain('Do not try the same thing the same way twice.');
     expect(bullets).toContain('A person\'s "no" is not a failure');
     expect(bullets).toContain('Saying what you are about to do is not a result');
+  });
+
+  // What breaks this: Oppie's half-hourly Sentry check answering "the
+  // designated session is still closed" for hours when a new session would
+  // have run it; or a bot that takes a way round its instructions rule out.
+  it('has a blocker solved before it is reported, by a way round that serves the same purpose', () => {
+    const bullets = recoveryBullets();
+    expect(bullets).toContain('A blocker is yours to solve before it is yours to report');
+    expect(bullets).toContain('is the means, not the purpose');
+    expect(bullets).toContain(
+      'stays within your permissions and instructions, and nobody said no to it',
+    );
+    expect(bullets).toContain('Never report the same blocker twice');
+    expect(bullets).toContain(
+      'a new one with the same task when the session, terminal or branch you were to use is closed or gone',
+    );
+  });
+
+  // What breaks this: a run nobody asked for that reads its own earlier
+  // "still closed" replies and writes one more; or one that, with no way
+  // round, tells the person again every half hour.
+  it('tells a repeated run to solve the blocker its last run ended on, and to say it once', () => {
+    const ask = repeatedBlockerAsk('call nothing_to_report');
+    expect(ask).toContain('do not answer with it again');
+    expect(ask).toContain('it is yours to solve in this run');
+    expect(ask).toContain('start a new one with the same task');
+    expect(ask).toContain('tell them once what you need from them');
+    expect(ask).toContain('after that, call nothing_to_report until something changes');
+  });
+
+  // What breaks this: the rule left only in the system prompt, where it lost
+  // to the chat's history: a routine's or a loop's run has to read it in the
+  // note that opens the turn.
+  it('reaches a routine and a loop in the note that opens each run', () => {
+    const opening = routineOpening({
+      automationId: 'automation-1',
+      runId: 'run-1',
+      name: 'Sentry check',
+      instructions: 'Run the Sentry check.',
+    });
+    expect(opening).toContain(repeatedBlockerAsk('call nothing_to_report'));
+    expect(loopSetPrompt(30, 'check Sentry')).toContain(
+      repeatedBlockerAsk('call end_loop and say why'),
+    );
   });
 
   // What breaks this: a queued or stalled session on one host and a second
