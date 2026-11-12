@@ -144,6 +144,9 @@ function ChatComposer({
   const textBox = cn(
     'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
     inline ? cn('min-h-11 py-2.5 pr-0', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+    // A long draft scrolls, and its scrollbar takes width the backdrop has
+    // none of; both keep its gutter, so their lines wrap at the same place.
+    marked && '[scrollbar-gutter:stable]',
   );
   const textarea = (
     <textarea
