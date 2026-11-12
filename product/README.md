@@ -1600,6 +1600,11 @@ earlier note:
   in to the session's claude.ai account (`claude -p … --cloud <id>`, the
   link's `cloud.reply`), which wakes the session; the console shows it as
   sent until the transcript has it.
+- Pages under a parent (a project, an automation, Add a host, a host's
+  Desktop) opened with a breadcrumb line above the title, some under a
+  Back pill as well. On 2026-11-12 the owner asked for no breadcrumbs
+  in the console: each such page keeps only the Back pill
+  (`EditorPageBack`), and `PageHeaderCrumbs` left the design system.
 - `versions/mvp/25-bots.md` §1 (2026-11-08) sent a bot to the next route
   after a failed step, and had it "keep going until the request is done or
   you are blocked, then stop". On 2026-11-12 the owner saw a bot's
@@ -1607,6 +1612,7 @@ earlier note:
   hours and asked for bots that stop at a blocker and think of a solution
   that makes sense. A blocker is now the bot's to solve before it reports
   it (a closed session is replaced by a new one with the same task), within
-  its permissions and instructions and never around a "no"; the same
-  blocker is never reported twice; and a routine's or a loop's run is told
-  so in the note that opens it.
+  its permissions and instructions and never around a "no", and a routine's or a
+  loop's run is told so in the note that opens it. It is also told never
+  to report the same blocker twice, which a bot with no way round still
+  does (open).

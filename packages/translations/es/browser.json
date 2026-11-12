@@ -19,7 +19,6 @@
     },
     "dismiss": "Descartar",
     "retry": "Reintentar",
-    "breadcrumb": "Ruta de navegación",
     "dateField": {
       "none": "Sin fecha",
       "previousMonth": "Mes anterior",
@@ -2559,7 +2558,6 @@
     },
     "detail": {
       "back": "Atrás",
-      "crumb": "Automatizaciones",
       "runNow": "Ejecutar ahora",
       "edit": "Editar",
       "more": "Más acciones",
@@ -3247,6 +3245,8 @@
       "count_many": "{{count}} seleccionadas",
       "count_other": "{{count}} seleccionadas",
       "label": "Tareas seleccionadas",
+      "move": "Mover las seleccionadas",
+      "moveTo": "Mover a",
       "delete": "Eliminar las seleccionadas",
       "clear": "Quitar la selección"
     },
@@ -3390,7 +3390,6 @@
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
       },
-      "crumbHosts": "Hosts",
       "done": "Listo",
       "description": "Pega esta instrucción en el agente de código de la máquina donde quieras las sesiones. Instala el runner y lo conecta. Nada queda expuesto a internet."
     },
