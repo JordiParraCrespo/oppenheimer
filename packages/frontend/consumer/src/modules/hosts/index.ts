@@ -5,8 +5,6 @@ export type {
   DesktopStatus,
 } from './desktop/desktop-connection';
 export {
-  type HostCodexEnvironment,
-  type HostCodexEnvironments,
   type HostDetails,
   HostEntity,
   type HostFolderEntry,

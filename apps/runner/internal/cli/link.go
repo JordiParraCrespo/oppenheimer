@@ -116,8 +116,8 @@ type linkHandler struct {
 	// telegram is the host's Telegram bot (link_telegram.go); nil is a host
 	// that offers none, and its hello does not name the capability.
 	telegram *tgapp.Service
-	// cloudStarts holds the sessions whose cloud start (`claude --cloud`,
-	// `codex cloud exec`) is running or done (link_cloud.go), so a create sent
+	// cloudStarts holds the sessions whose cloud start (`claude --cloud`, a
+	// Codex cloud thread) is running or done (link_cloud.go), so a create sent
 	// again does not start a second.
 	cloudStarts sync.Map
 	// codexReporting holds, by session, the Codex status whose event waits on

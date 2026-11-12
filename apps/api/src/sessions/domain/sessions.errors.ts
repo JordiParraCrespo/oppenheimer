@@ -343,42 +343,6 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * The composer asked for a host's Codex environments, and its runner predates
-   * `codex.environments`: it would never answer. A Codex cloud session still
-   * starts there, in an environment guessed from the repository's name.
-   */
-  CODEX_ENVIRONMENTS_UNSUPPORTED_BY_RUNNER: {
-    code: 'SESSIONS_044',
-    message: "This host's runner cannot list Codex environments",
-    httpStatus: 409,
-  },
-  /** The composer asked a host that holds no link for its Codex environments. */
-  CODEX_ENVIRONMENTS_HOST_OFFLINE: {
-    code: 'SESSIONS_045',
-    message: 'The host is offline, so its Codex environments cannot be listed',
-    httpStatus: 503,
-  },
-  /**
-   * Codex on the host could not list its environments for a reason with no
-   * code of its own: no `codex` on it, ChatGPT unreachable. The runner's own
-   * words are the detail. A host that is not signed in is `SESSIONS_055`.
-   */
-  CODEX_ENVIRONMENTS_UNAVAILABLE: {
-    code: 'SESSIONS_046',
-    message: 'Codex on the host could not list its environments',
-    httpStatus: 502,
-  },
-  /**
-   * ChatGPT refused the host's read of its Codex environments for rate
-   * (`SESS_011`): the host asks nothing more of that account until the time
-   * it named, which the runner's words carry as the detail.
-   */
-  CODEX_ENVIRONMENTS_RATE_LIMITED: {
-    code: 'SESSIONS_047',
-    message: 'ChatGPT is limiting how often the host may list Codex environments',
-    httpStatus: 429,
-  },
-  /**
    * Continuing a cloud session on a host (`teleport`) whose live runner did
    * not name `session.teleport`: it would drop the cloud session's id and
    * start an empty conversation instead.
@@ -442,15 +406,5 @@ export const SessionErrors = {
     code: 'SESSIONS_054',
     message: 'This session has no cloud chat',
     httpStatus: 409,
-  },
-  /**
-   * The host's `codex` holds no ChatGPT sign-in (`SESS_022`), so it has no
-   * Codex environments to list and could start no cloud task either. Fixed on
-   * the host, with `codex login`.
-   */
-  CODEX_ENVIRONMENTS_SIGNED_OUT: {
-    code: 'SESSIONS_055',
-    message: 'Codex on the host is not signed in to ChatGPT',
-    httpStatus: 502,
   },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -1,7 +1,6 @@
 import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
 import { cloudRepliedSchema, cloudReplySchema } from './cloud-reply.js';
-import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
   desktopCloseSchema,
   desktopControlSchema,
@@ -158,11 +157,10 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.cloud',
   /**
-   * Takes a `session.create` with `cloud` for Codex: the runner starts the task
-   * in Codex cloud (`codex cloud exec`) on the checkout's base branch, reports
-   * the task's id, and from then on reads the task's status off
-   * `codex cloud list --json` and reports it as the session's
-   * (`product/next-steps/cloud-agents.md`).
+   * Takes a `session.create` with `cloud` for Codex: the runner starts a
+   * thread in Codex cloud with the host's ChatGPT sign-in, reports the
+   * thread's id, and from then on follows its newest turn and reports where it
+   * stands as the session's status (`product/next-steps/cloud-agents.md`).
    */
   'session.cloud.codex',
   /**
@@ -177,13 +175,6 @@ export const RUNNER_CAPABILITIES = [
    * new worktree, and a restart reopens that conversation with `--continue`.
    */
   'session.teleport',
-  /**
-   * Answers `codex.environments.list` with `codex.environments`: the Codex
-   * cloud environments the host's ChatGPT account has, for the composer's
-   * picker, and takes `session.create`'s `codexEnvironment`. A runner without
-   * it guesses the environment from the repository's name.
-   */
-  'codex.environments',
   /**
    * Takes `session.watch` and `session.unwatch`: it scans a live session's
    * screen for a pattern on every pass it already makes, and reports a match
@@ -505,8 +496,8 @@ export const sessionCreateSchema = z
      * credential ask names a live checkout, and a cloud session leaves none on
      * the host), checks out its base in a scratch directory, runs
      * `claude --cloud` there with `prompt` and removes the scratch directory.
-     * For Codex it runs `codex cloud exec` on the checkout's base branch and
-     * needs no checkout, so the token goes unused. Either way it reports the
+     * For Codex it starts a thread in Codex cloud on the checkout's base
+     * branch and needs no checkout, so the token goes unused. Either way it reports the
      * cloud session's id on `session.started` (`agentSessionId`).
      *
      * Only with an agent of `HOST_CLOUD_AGENT_IDS`, one checkout and a prompt,
@@ -521,12 +512,10 @@ export const sessionCreateSchema = z
       })
       .optional(),
     /**
-     * A Codex cloud session's environment, as the person picked it: its id
-     * (or label), passed to `codex cloud exec --env`. Absent, the runner picks
-     * the environment linked to the repository (`codex.environments`'
-     * `recommended`) and then tries the repository's names as labels. Only on
-     * a Codex cloud session, and sent only to a runner whose `hello` named
-     * `codex.environments`.
+     * A Codex cloud session's environment: an environment id the person
+     * copied from ChatGPT's Codex Cloud settings. Absent, the runner starts the
+     * task in Codex's default environment with the repository. Only on a Codex
+     * cloud session.
      */
     codexEnvironment: codexEnvironmentRefSchema.optional(),
   })
@@ -1396,8 +1385,6 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   desktopOpenedSchema,
   desktopControlSchema,
   desktopCloseSchema,
-  codexEnvironmentsListSchema,
-  codexEnvironmentsSchema,
   cloudReplySchema,
   cloudRepliedSchema,
   whatsappLinkSchema,

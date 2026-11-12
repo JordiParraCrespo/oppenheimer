@@ -305,10 +305,6 @@
     "SESSIONS_041": "Ese enlace al archivo ha caducado. Vuelve a iniciar la sesión con el archivo adjunto.",
     "SESSIONS_042": "Ese patrón no se puede vigilar. Usa una expresión regular simple, sin lookaround ni referencias hacia atrás.",
     "SESSIONS_043": "Esta sesión ya tiene tantas vigilancias de terminal como admite. Quita una primero.",
-    "SESSIONS_044": "El runner de este equipo es demasiado antiguo para listar los entornos de Codex. Actualízalo, o inicia la sesión y deja que el equipo elija uno.",
-    "SESSIONS_045": "El equipo está desconectado, así que no se pueden listar sus entornos de Codex.",
-    "SESSIONS_046": "Codex no pudo listar sus entornos en el equipo. Comprueba que codex está instalado y con la sesión de ChatGPT iniciada.",
-    "SESSIONS_047": "ChatGPT está limitando cada cuánto se pueden listar sus entornos de Codex. Espera un minuto y vuelve a intentarlo, o inicia la sesión y deja que el equipo elija.",
     "SESSIONS_048": "El runner de este equipo es demasiado antiguo para continuar una sesión en la nube. Actualízalo o elige otro equipo.",
     "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
     "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
@@ -316,7 +312,6 @@
     "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
     "SESSIONS_053": "Ninguna sesión en la nube de este espacio de trabajo tiene ese id. Solo las sesiones iniciadas desde la consola envían su chat aquí.",
     "SESSIONS_054": "El chat de esta sesión no se muestra aquí.",
-    "SESSIONS_055": "Codex no tiene la sesión de ChatGPT iniciada en el equipo. Ejecuta codex login en el equipo y vuelve a abrir esta lista.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
     "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
@@ -352,13 +347,13 @@
   "startFailure": {
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio.",
-      "SESS_010": "La CLI codex del host no puede iniciar una tarea en ningún entorno de Codex para este repositorio.",
+      "SESS_010": "El entorno de Codex elegido no está en esta cuenta de ChatGPT.",
       "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host.",
       "SESS_022": "Sin sesión en ChatGPT. Ejecuta codex login en el host."
     },
     "help": {
       "SESS_010": {
-        "body": "La CLI codex de este host solo inicia tareas en entornos legacy de Codex. Elige uno, o inicia esta tarea en ChatGPT.",
+        "body": "Vuelve a copiar el id del entorno desde Ajustes de ChatGPT → Codex Cloud, o déjalo en Predeterminado.",
         "link": "Abrir la configuración de Codex Cloud"
       }
     },

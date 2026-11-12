@@ -372,7 +372,6 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityPortForward,
 		link.CapabilityDesktopStream,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilitySessionCloudReply, link.CapabilitySessionTeleport,
-		link.CapabilityCodexEnvironments,
 		link.CapabilitySessionWatch,
 		link.CapabilityWhatsapp,
 		link.CapabilityTelegram,

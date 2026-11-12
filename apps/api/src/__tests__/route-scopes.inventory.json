@@ -105,7 +105,6 @@
   "GET /v1/health/version": "session-only",
   "GET /v1/hosts": ["hosts:read"],
   "GET /v1/hosts/:id": ["hosts:read"],
-  "GET /v1/hosts/:id/codex-environments": ["hosts:read"],
   "GET /v1/hosts/:id/folders": ["hosts:read"],
   "GET /v1/hosts/:id/folders/search": ["hosts:read"],
   "GET /v1/hosts/:id/timeline": ["hosts:read"],

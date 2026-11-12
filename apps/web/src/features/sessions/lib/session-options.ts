@@ -562,8 +562,8 @@ export function toCreateInput(
 
 /**
  * The Codex environment a Codex cloud session is sent with: the one picked on
- * its host, or none — the host's pick, the environment linked to the
- * repository. A pick made on another host is another ChatGPT account's.
+ * its host, or none — Codex's default environment, with the repository. A
+ * pick made on another host is another ChatGPT account's.
  */
 function codexEnvironmentFor(
   draft: Pick<NewSessionDraft, 'where' | 'agent' | 'hostId' | 'codexEnvironment'>,
