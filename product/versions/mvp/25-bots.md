@@ -910,6 +910,14 @@ training, which knows nothing of it.
   console's edit form check a name's shape alone, since an edit may resend
   the name the skill already has. The `/` menu hides only a skill whose
   `/<name>` a built-in command takes.
+- **Shown in Settings → Skills, read-only** (2026-11-12). A bot that said
+  it used "the `oppenheimer` skill" pointed at nothing the person could
+  find, since the page listed only the bot's own rows. Under them a
+  "Built in" group lists each built-in the bot has (one whose name none of
+  its own holds), by command and description, with who runs it; a view
+  opens its instructions, and there is no edit or delete. The words live in
+  `@oppenheimer/shared` (`BOT_BUILT_IN_SKILL_TEXTS`), which the API's
+  `BOT_BUILT_IN_SKILLS` spreads, so the page shows what the bot reads.
 - **Links to the published page.** With `DOCS_URL` set to where the
   deployment publishes its docs site, each page read carries its address
   and the bot links it; without, it links nothing rather than guess one.
