@@ -137,7 +137,7 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
         // The host's words, without the escapes of the terminal they were read
         // from: Claude Code writes a cursor move for every space.
         body:
-          (run.turn?.failureDetail ? readableDetail(run.turn.failureDetail) : null) ??
+          readableDetail(run.turn?.failureDetail ?? '') ??
           t(isAnswerableRun(run) ? 'inbox.run.body' : 'inbox.run.plainBody'),
       };
     }
