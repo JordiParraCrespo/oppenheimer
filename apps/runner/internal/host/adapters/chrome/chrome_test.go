@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -330,5 +331,51 @@ func TestACookieSurvivesACloseRightAfterItWasSet(t *testing.T) {
 	browsers.CloseAll()
 	if _, err := browsers.Act(ctx, request(domain.BrowserRead)); !errors.Is(err, domain.ErrBrowserNotOpen) {
 		t.Fatalf("read after CloseAll = %v, want ErrBrowserNotOpen", err)
+	}
+}
+
+// A browser nobody acted in for idleFor is closed when another bot acts,
+// and the one in use is kept.
+func TestABrowserLeftIdleIsClosedWhenAnotherBotActs(t *testing.T) {
+	browsers := New(Options{Dir: t.TempDir()})
+	if _, err := browsers.Available(); err != nil {
+		t.Skipf("no browser: %v", err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<title>Here</title>"))
+	}))
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	t.Cleanup(browsers.CloseAll)
+
+	open := request(domain.BrowserOpen)
+	open.URL = server.URL
+	if _, err := browsers.Act(ctx, open); err != nil {
+		t.Fatal(err)
+	}
+	browsers.mu.Lock()
+	idle := browsers.instances["juno"]
+	browsers.mu.Unlock()
+	idle.mu.Lock()
+	idle.used = time.Now().Add(-idleFor - time.Minute)
+	process := idle.cmd.Process
+	idle.mu.Unlock()
+
+	other := open
+	other.Browser = "milo"
+	if _, err := browsers.Act(ctx, other); err != nil {
+		t.Fatal(err)
+	}
+	if err := process.Signal(syscall.Signal(0)); err == nil {
+		t.Fatal("the idle browser is still running")
+	}
+	if _, err := browsers.Act(ctx, request(domain.BrowserRead)); !errors.Is(err, domain.ErrBrowserNotOpen) {
+		t.Fatalf("read in the idle browser = %v, want ErrBrowserNotOpen", err)
+	}
+	read := request(domain.BrowserRead)
+	read.Browser = "milo"
+	if page, err := browsers.Act(ctx, read); err != nil || page.Title != "Here" {
+		t.Fatalf("the browser in use answered %q, %v", page.Title, err)
 	}
 }
