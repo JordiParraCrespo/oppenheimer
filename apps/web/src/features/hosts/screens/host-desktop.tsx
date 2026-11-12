@@ -1,8 +1,6 @@
 import {
   EditorPageBack,
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderRow,
 } from '@oppenheimer/design-system-web';
@@ -33,11 +31,6 @@ export function HostDesktopScreen({ hostId }: { hostId: string }) {
       <EditorPageBack render={<Link {...back} />}>{t('hosts.desktop.back')}</EditorPageBack>
 
       <PageHeader>
-        <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
-          <Link {...back}>{t('hosts.add.crumbHosts')}</Link>
-          <span>/</span>
-          <PageHeaderHere>{label}</PageHeaderHere>
-        </PageHeaderCrumbs>
         <PageHeaderRow icon={<Monitor />} title={t('hosts.desktop.pageTitle')} />
         <PageHeaderMeta>
           <span>{t('hosts.desktop.pageLead', { name: label })}</span>

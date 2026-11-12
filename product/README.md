@@ -1600,3 +1600,8 @@ earlier note:
   in to the session's claude.ai account (`claude -p … --cloud <id>`, the
   link's `cloud.reply`), which wakes the session; the console shows it as
   sent until the transcript has it.
+- Pages under a parent (a project, an automation, Add a host, a host's
+  Desktop) opened with a breadcrumb line above the title, some under a
+  Back pill as well. On 2026-11-12 the owner asked for no breadcrumbs
+  anywhere in the console: each such page keeps only the Back pill
+  (`EditorPageBack`), and `PageHeaderCrumbs` left the design system.
