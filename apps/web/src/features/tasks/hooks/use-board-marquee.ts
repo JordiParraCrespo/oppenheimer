@@ -31,13 +31,13 @@ export function useBoardMarquee({
 
   const onPointerDown = (event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0 || event.pointerType !== 'mouse') return;
+    const container = event.currentTarget;
+    // A dialog the board opens is portaled away but still bubbles here in React.
+    if (!container.contains(event.target as Node)) return;
     if ((event.target as Element).closest(NOT_EMPTY)) return;
-    // The drag picks cards; it does not select the text it crosses.
-    event.preventDefault();
     drag.current?.abort();
     const controller = new AbortController();
     drag.current = controller;
-    const container = event.currentTarget;
     const from = { x: event.clientX, y: event.clientY };
     const additive = event.shiftKey || event.metaKey || event.ctrlKey;
     const kept = additive ? [...picked] : [];
@@ -61,6 +61,8 @@ export function useBoardMarquee({
       if (!drawing && !additive) onClear();
     };
     const options = { signal: controller.signal };
+    // The drag picks cards; it does not select the text it crosses.
+    window.addEventListener('selectstart', (start) => start.preventDefault(), options);
     window.addEventListener('pointermove', onMove, options);
     window.addEventListener('pointerup', onEnd, options);
     window.addEventListener('pointercancel', onEnd, options);
