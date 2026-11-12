@@ -50,6 +50,12 @@ export interface ChatTranscriptImage {
   src: string | null;
 }
 
+/** One replacement an edit made: the text it took out, empty for a write, and the text it put in. */
+export interface ChatFileEdit {
+  before: string;
+  after: string;
+}
+
 export interface ChatToolCall {
   id: string;
   /** The tool's own name (`Bash`, `Edit`, `mcp__github__get_issue`). */
@@ -68,6 +74,11 @@ export interface ChatToolCall {
   output: string | null;
   /** Lines an edit adds and removes, counted off its old and new text. */
   diff: { additions: number; deletions: number } | null;
+  /**
+   * What an edit or a write put in the file, as far as the host sent it: a
+   * long text arrives as its head, and `truncated` says so.
+   */
+  edits: ChatFileEdit[] | null;
   todos: ChatTodo[] | null;
   /** The plan text `ExitPlanMode` proposes. */
   plan: string | null;
@@ -1221,6 +1232,7 @@ function toolCall(block: Loose): ChatToolCall {
     status: 'running',
     output: null,
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
+    edits: kind === 'edit' || kind === 'write' ? editsOf(name, input) : null,
     todos: kind === 'todo' ? todosOf(input.todos) : null,
     plan: kind === 'plan' ? fieldOf(input, ['plan']) : null,
     questions: kind === 'question' ? questionsOf(input.questions) : null,
@@ -1285,8 +1297,9 @@ function statusOf(value: unknown): ChatStatus {
   };
 }
 
+/** A text's lines; the newline a file ends on closes its last line and starts none. */
 const lines = (value: unknown): number =>
-  typeof value === 'string' && value.length > 0 ? value.split('\n').length : 0;
+  typeof value === 'string' && value.length > 0 ? value.replace(/\n$/, '').split('\n').length : 0;
 
 function diffOf(name: string, input: Loose): { additions: number; deletions: number } {
   if (name === 'Write') return { additions: lines(input.content), deletions: 0 };
@@ -1298,6 +1311,15 @@ function diffOf(name: string, input: Loose): { additions: number; deletions: num
     }),
     { additions: 0, deletions: 0 },
   );
+}
+
+function editsOf(name: string, input: Loose): ChatFileEdit[] {
+  if (name === 'Write') return [{ before: '', after: text(input.content) ?? '' }];
+  const edits = Array.isArray(input.edits) ? input.edits.map(record) : [input];
+  return edits.map((edit) => ({
+    before: text(edit?.old_string) ?? '',
+    after: text(edit?.new_string ?? edit?.new_source) ?? '',
+  }));
 }
 
 function questionsOf(value: unknown): ChatQuestion[] {

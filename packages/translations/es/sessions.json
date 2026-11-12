@@ -589,6 +589,10 @@
     "latest": "Ir a lo último",
     "earlier": "Cargando turnos anteriores",
     "truncated": "recortado en el host",
+    "fileViewer": {
+      "truncated": "Solo se muestra el principio de una edición larga: el host envía al chat las primeras líneas de lo escrito.",
+      "empty": "El chat no trajo lo que escribió este cambio."
+    },
     "failedCall": "falló",
     "failed_one": "{{count}} falló",
     "failed_other": "{{count}} fallaron",

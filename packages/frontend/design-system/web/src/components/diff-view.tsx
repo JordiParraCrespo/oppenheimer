@@ -5,6 +5,7 @@ import { PatchDiff } from '@pierre/diffs/react';
 import { BotIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MessageSquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { DIFF_THEME, useDiffHighlighter } from '../hooks/use-diff-highlighter';
 import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
 import { DictationFrame, type DictationSlot } from './chat-composer-extras';
@@ -92,8 +93,10 @@ function DiffView<T>({
   onCommentLine?: (line: { side: 'additions' | 'deletions'; lineNumber: number; endLineNumber: number }) => void;
   className?: string;
 }) {
+  const ready = useDiffHighlighter();
   return (
     <div data-slot="diff-view" data-layout={layout} className={cn('min-w-0 bg-card', className)}>
+      {ready ? (
       <PatchDiff<T>
         patch={patch}
         style={DIFF_TOKENS}
@@ -102,7 +105,7 @@ function DiffView<T>({
         disableWorkerPool
         options={{
           diffStyle: layout,
-          theme: { light: 'pierre-light', dark: 'pierre-dark' },
+          theme: DIFF_THEME,
           themeType: colorScheme,
           disableFileHeader: true,
           overflow: 'wrap',
@@ -120,6 +123,7 @@ function DiffView<T>({
             : undefined,
         }}
       />
+      ) : null}
     </div>
   );
 }
