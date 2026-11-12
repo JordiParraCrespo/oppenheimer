@@ -1223,6 +1223,7 @@ function toolCall(block: Loose): ChatToolCall {
   const name = text(block.name) ?? 'tool';
   const input = record(block.input) ?? {};
   const { kind, label, target, opensPage } = classifyTool(name, input, 'agent');
+  const edits = kind === 'edit' || kind === 'write' ? editsOf(name, input) : null;
   return {
     id: text(block.id) ?? name,
     name,
@@ -1233,8 +1234,8 @@ function toolCall(block: Loose): ChatToolCall {
     description: fieldOf(input, ['description', 'prompt', 'message']),
     status: 'running',
     output: null,
-    diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
-    edits: kind === 'edit' || kind === 'write' ? editsOf(name, input) : null,
+    diff: edits ? diffOf(edits) : null,
+    edits,
     editsTruncated: block.truncated === true,
     todos: kind === 'todo' ? todosOf(input.todos) : null,
     plan: kind === 'plan' ? fieldOf(input, ['plan']) : null,
@@ -1304,18 +1305,10 @@ function statusOf(value: unknown): ChatStatus {
 const lines = (value: unknown): number =>
   typeof value === 'string' && value.length > 0 ? value.replace(/\n$/, '').split('\n').length : 0;
 
-function diffOf(name: string, input: Loose): { additions: number; deletions: number } {
-  if (name === 'Write') return { additions: lines(input.content), deletions: 0 };
-  const edits = Array.isArray(input.edits) ? input.edits.map(record) : [input];
-  return edits.reduce(
-    (sum: { additions: number; deletions: number }, edit) => ({
-      additions: sum.additions + lines(edit?.new_string ?? edit?.new_source),
-      deletions: sum.deletions + lines(edit?.old_string),
-    }),
-    { additions: 0, deletions: 0 },
-  );
-}
-
+/**
+ * What an edit or a write put in the file, one pair per replacement: the one
+ * reading of a tool's old and new text, which the counts and the viewer share.
+ */
 function editsOf(name: string, input: Loose): ChatFileEdit[] {
   if (name === 'Write') return [{ before: '', after: text(input.content) ?? '' }];
   const edits = Array.isArray(input.edits) ? input.edits.map(record) : [input];
@@ -1323,6 +1316,16 @@ function editsOf(name: string, input: Loose): ChatFileEdit[] {
     before: text(edit?.old_string) ?? '',
     after: text(edit?.new_string ?? edit?.new_source) ?? '',
   }));
+}
+
+function diffOf(edits: readonly ChatFileEdit[]): { additions: number; deletions: number } {
+  return edits.reduce(
+    (sum, edit) => ({
+      additions: sum.additions + lines(edit.after),
+      deletions: sum.deletions + lines(edit.before),
+    }),
+    { additions: 0, deletions: 0 },
+  );
 }
 
 function questionsOf(value: unknown): ChatQuestion[] {
