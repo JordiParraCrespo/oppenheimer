@@ -53,7 +53,7 @@ function useComposerSend({
   /** Enter with nothing to send: the caller's, in place of Stop. */
   onEmptyEnter?: () => void;
   /** Lands what is still on its way into the draft; while present, a send does only that. */
-  settle?: () => Promise<boolean>;
+  settle?: () => Promise<unknown>;
 }) {
   const blocked = !busy && sendBlockedReason !== undefined;
   const emptyAllowed = allowEmpty && attachmentCount === 0;
