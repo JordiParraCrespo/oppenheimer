@@ -46,7 +46,7 @@ type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 
 /**
  * A task's status on the run-state vocabulary, so a task reads with the
- * same dot as everything else: To do idle, In progress amber (`waiting`, as
+ * same dot as everything else: Not started idle, In progress amber (`waiting`, as
  * the 2026-10-13 frame draws it: work under way, not yet settled), In review
  * pending (the work is in, waiting on someone to look), and Done completed
  * (the check, since a done task is finished).
@@ -92,7 +92,7 @@ function TaskColumn({
   /** The card ids in this column, in order. */
   items: readonly string[];
   onAdd?: () => void;
-  /** The + button's name ("Add task to To do"). */
+  /** The + button's name ("Add task to Not started"). */
   addLabel?: string;
   /** Under the cards: `TaskColumnAdd`, or a `TaskComposer` while adding. */
   foot?: React.ReactNode;

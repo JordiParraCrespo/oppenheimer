@@ -1,17 +1,21 @@
-import { TaskEntity } from '@oppenheimer/frontend-consumer';
+import { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
+import { taskSessionsOf } from '../lib/session-line';
 import {
   type AddFilter,
   addableCounts,
   addableTasks,
+  heldByDeadline,
   picksInView,
   todayOpenCount,
   todoCounts,
   todoDay,
   todoEntries,
   todoLabels,
+  todoPlaceOf,
   todoSearchSchema,
+  withAgentsOf,
 } from '../lib/todo';
 
 function task(
@@ -23,6 +27,7 @@ function task(
     dueTime: string | null;
     focusDate: string | null;
     completedAt: string;
+    sessionIds: string[];
   }> = {},
 ) {
   return new TaskEntity(
@@ -36,7 +41,11 @@ function task(
     overrides.dueDate ?? null,
     overrides.dueTime ?? null,
     overrides.status === 'done' ? new Date(overrides.completedAt ?? '2026-11-01T12:00:00') : null,
-    [],
+    (overrides.sessionIds ?? []).map((sessionId) => ({
+      sessionId,
+      origin: 'started' as const,
+      linkedAt: new Date('2026-11-01T00:00:00Z'),
+    })),
     new Date('2026-11-01T00:00:00Z'),
     new Date('2026-11-01T00:00:00Z'),
     null,
@@ -149,12 +158,13 @@ describe("To do's day", () => {
   });
 
   it('counts what is left and done, and the sidebar counts what is left on today', () => {
-    expect(todoCounts(todoEntries(TASKS, DAY, { today: DAY, overdue: true }))).toEqual({
+    const none = new Set<string>();
+    expect(todoCounts(todoEntries(TASKS, DAY, { today: DAY, overdue: true }), none)).toEqual({
       left: 4,
       done: 1,
     });
-    expect(todayOpenCount(TASKS, DAY)).toBe(4);
-    expect(todayOpenCount([...TASKS, task('planned', { focusDate: DAY })], DAY)).toBe(5);
+    expect(todayOpenCount(TASKS, DAY, none)).toBe(4);
+    expect(todayOpenCount([...TASKS, task('planned', { focusDate: DAY })], DAY, none)).toBe(5);
   });
 
   it('drops a day that is not on the calendar from the address', () => {
@@ -237,5 +247,120 @@ describe("To do's day", () => {
 
   it('adds only the picks the filtered list still shows', () => {
     expect(picksInView(['a', 'd', 'x'], [task('d'), task('a')])).toEqual(['a', 'd']);
+  });
+});
+
+function session(
+  id: string,
+  lifecycle: SessionEntity['lifecycle'],
+  state: SessionEntity['state'] = 'working',
+) {
+  return new SessionEntity({
+    id,
+    organizationId: 'org-1',
+    projectId: 'p-1',
+    hostId: 'h-1',
+    name: `Session ${id}`,
+    slug: id,
+    agent: 'claude-code',
+    launch: { model: null, permission: null, effort: null },
+    state,
+    lifecycle,
+    cwdCheckoutId: null,
+    checkouts: [],
+    stoppedAt: null,
+    hints: [],
+    createdAt: new Date('2026-10-01T00:00:00Z'),
+    place: 'worktree',
+    folderPath: null,
+  });
+}
+
+const SESSIONS = new Map(
+  [
+    session('running', 'open', 'working'),
+    session('starting', 'starting'),
+    session('waiting', 'open', 'waiting-on-you'),
+    session('failed', 'failed'),
+    session('idle', 'open', 'idle'),
+    session('ended', 'resolved', 'idle'),
+  ].map((row) => [row.id, row]),
+);
+const HOSTS = new Map();
+
+/**
+ * TODO's "With agents" strip (`20-plan-calendar.md` §6, "Changed on 2026-11-12"): a task an agent is
+ * working on leaves the list; one whose agents need the person stays on it
+ * with a mark, most urgent first.
+ */
+describe("TODO's agents", () => {
+  const placeOf = (row: TaskEntity) => {
+    const place = todoPlaceOf(row, taskSessionsOf(row, SESSIONS, HOSTS));
+    return place.lane === 'agents' ? `agents:${place.session.state}` : place.mark;
+  };
+
+  it('puts a task with a session running or queued in the strip, due today or not', () => {
+    expect(placeOf(task('t', { status: 'doing', dueDate: DAY, sessionIds: ['running'] }))).toBe(
+      'agents:running',
+    );
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['starting', 'idle'] }))).toBe(
+      'agents:running',
+    );
+  });
+
+  it('keeps one waiting on the person on the list, over another session still running', () => {
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['running', 'waiting'] }))).toBe(
+      'waiting',
+    );
+  });
+
+  it('marks a failed session, then In review, then stopped sessions on a task still in progress', () => {
+    expect(placeOf(task('t', { status: 'review', sessionIds: ['failed', 'idle'] }))).toBe('failed');
+    expect(placeOf(task('t', { status: 'review', sessionIds: ['ended'] }))).toBe('review');
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['ended'] }))).toBe('stopped');
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['idle'] }))).toBe('stopped');
+  });
+
+  it('never reads a finished session as ready to review: the column alone says it', () => {
+    expect(placeOf(task('t', { status: 'todo', sessionIds: ['ended'] }))).toBeNull();
+  });
+
+  it('leaves a task with no sessions, or a done one, unmarked', () => {
+    expect(placeOf(task('t', { status: 'doing' }))).toBeNull();
+    expect(placeOf(task('t', { status: 'done', sessionIds: ['waiting'] }))).toBeNull();
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['deleted'] }))).toBeNull();
+  });
+
+  it('leaves what is with agents out of what is left, in the header and the sidebar', () => {
+    const rows = [
+      task('working', { status: 'doing', dueDate: DAY, sessionIds: ['running'] }),
+      task('asking', { status: 'doing', dueDate: DAY, sessionIds: ['waiting'] }),
+      task('plain', { dueDate: DAY }),
+    ];
+    const withAgents = withAgentsOf(rows, SESSIONS);
+    expect([...withAgents]).toEqual(['working']);
+    expect(todoCounts(todoEntries(rows, DAY, { today: DAY, overdue: true }), withAgents)).toEqual({
+      left: 2,
+      done: 0,
+    });
+    expect(todayOpenCount(rows, DAY, withAgents)).toBe(2);
+  });
+});
+
+describe("TODO's Move", () => {
+  const options = { today: DAY, overdue: true };
+
+  it('is held by a deadline on the day shown or overdue, which a new TODO day would not lift', () => {
+    expect(heldByDeadline(task('t', { dueDate: DAY, focusDate: DAY }), DAY, options)).toBe(true);
+    expect(heldByDeadline(task('t', { dueDate: '2026-11-02' }), DAY, options)).toBe(true);
+  });
+
+  it('is free for a task on the day by its TODO day alone, or overdue with overdue left out', () => {
+    expect(heldByDeadline(task('t', { focusDate: DAY, dueDate: '2026-11-20' }), DAY, options)).toBe(
+      false,
+    );
+    expect(
+      heldByDeadline(task('t', { dueDate: '2026-11-02' }), DAY, { today: DAY, overdue: false }),
+    ).toBe(false);
   });
 });

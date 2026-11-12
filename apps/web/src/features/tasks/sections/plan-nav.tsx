@@ -6,7 +6,12 @@ import {
   SortableRoutineItem,
 } from '@oppenheimer/design-system-web';
 import { Bell, CalendarDays, CircleCheck, Folder, Sun } from '@oppenheimer/design-system-web/icons';
-import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
+import {
+  useMilestones,
+  useProjects,
+  useSessions,
+  useTasks,
+} from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
@@ -16,7 +21,7 @@ import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
 import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId, planViewShown } from '../lib/plan-nav-order';
-import { todayOpenCount } from '../lib/todo';
+import { todayOpenCount, withAgentsOf } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
 /**
@@ -59,8 +64,8 @@ const VIEWS = {
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
- * you (while the `inbox` flag is on), Tasks with the open count, To do with
- * the open tasks due today or before, Milestones
+ * you (while the `inbox` flag is on), Tasks with the open count, TODO with
+ * what is left on today's list (what is with agents is not), Milestones
  * with how many there are, Calendar with today's events, and Projects with
  * how many the workspace holds. The calendar puts its layers and accounts
  * under it.
@@ -73,7 +78,14 @@ export function PlanNav() {
   const { t } = useTranslation();
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
   const today = useToday();
-  const { data: dueNow } = useTasks({ select: (rows) => todayOpenCount(rows, today) });
+  const { data: sessions } = useSessions({
+    select: (rows) => new Map(rows.map((row) => [row.id, row])),
+  });
+  // No count until the sessions are in: what is with agents is not left.
+  const { data: dueNow } = useTasks({
+    select: (rows) =>
+      sessions ? todayOpenCount(rows, today, withAgentsOf(rows, sessions)) : undefined,
+  });
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
   const todayEvents = useTodayEventCount();
   const { data: projects } = useProjects({ select: (rows) => rows.length });

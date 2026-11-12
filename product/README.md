@@ -1440,6 +1440,15 @@ earlier note:
   date, To do lists what is put on the day and what is due on it, keeps
   unfinished work from earlier days until it is done, and opens a task's
   dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-09) listed every task on
+  To do's day the same way, whatever its agents were doing, and "To do"
+  named the view, the board's first column and the dialog's day field. On
+  2026-11-12 the owner asked for To do to know about agents: a task an
+  agent is working on moves to a "With agents" section under the list and
+  out of the counts, the others with sessions are marked (waiting on you,
+  failed, ready to review, agent stopped), a row's Move puts it on another
+  TODO day, and the names became TODO, Not started and TODO day, labels
+  only (§6, "Changed on 2026-11-12").
 - `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is

@@ -8,13 +8,13 @@ import {
   PageHeaderStat,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight } from '@oppenheimer/design-system-web/icons';
-import { useTasks } from '@oppenheimer/frontend-consumer/react';
+import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { addDays, dateFormatter, isoWeek, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
-import { todoCounts, todoEntries } from '../lib/todo';
+import { todoCounts, todoEntries, withAgentsOf } from '../lib/todo';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
@@ -24,7 +24,8 @@ const capitalized = (text: string) => text.charAt(0).toLocaleUpperCase() + text.
 /**
  * To do's header (the 2026-11-08 `Tasks` frame): Today · Week 45 (or the
  * week alone on another day), the day as the title, how many of its tasks
- * are left and done, then Today and the day before and after.
+ * are left (what is with agents is not) and done, then Today and the day
+ * before and after.
  */
 export function TodoHeader() {
   const { t } = useTranslation();
@@ -33,9 +34,19 @@ export function TodoHeader() {
   const { overdue } = todo.useSearch();
   const { projectIds } = useScopeProject();
   const navigate = todo.useNavigate();
+  const { data: sessions } = useSessions({
+    select: (rows) => new Map(rows.map((row) => [row.id, row])),
+  });
+  // No count until the sessions are in: what is with agents is not left, so
+  // a count before they land would drop once they do.
   const { data: counts } = useTasks({
     select: (rows) =>
-      todoCounts(todoEntries(rows, day, { today, overdue: overdue !== 'off', projectIds })),
+      sessions
+        ? todoCounts(
+            todoEntries(rows, day, { today, overdue: overdue !== 'off', projectIds }),
+            withAgentsOf(rows, sessions),
+          )
+        : undefined,
   });
   const go = (next: string) =>
     navigate({
