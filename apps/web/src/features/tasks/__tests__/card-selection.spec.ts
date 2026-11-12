@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { cardClickPick, NO_CARD_SELECTION, pickCard } from '../lib/card-selection';
+import {
+  cardClickPick,
+  marqueeBox,
+  marqueePick,
+  NO_CARD_SELECTION,
+  pickCard,
+} from '../lib/card-selection';
 
 const order = ['a', 'b', 'c', 'd', 'e'];
 
@@ -35,5 +41,23 @@ describe('cardClickPick', () => {
     expect(cardClickPick({ ...plain, metaKey: true }, false)).toBe('toggle');
     expect(cardClickPick({ ...plain, ctrlKey: true }, false)).toBe('toggle');
     expect(cardClickPick({ ...plain, shiftKey: true }, false)).toBe('range');
+  });
+});
+
+describe('marqueePick', () => {
+  const cards = [
+    { id: 'a', box: { left: 0, top: 0, width: 100, height: 50 } },
+    { id: 'b', box: { left: 0, top: 60, width: 100, height: 50 } },
+    { id: 'c', box: { left: 120, top: 0, width: 100, height: 50 } },
+  ];
+
+  it('picks every card the rectangle touches, drawn either way round, and none it misses', () => {
+    const box = marqueeBox({ x: 90, y: 100 }, { x: 10, y: 40 });
+    expect(marqueePick(box, cards, [])).toEqual(['a', 'b']);
+  });
+
+  it('keeps what an additive drag started with, once each', () => {
+    const box = marqueeBox({ x: 130, y: 10 }, { x: 140, y: 20 });
+    expect(marqueePick(box, cards, ['b', 'c'])).toEqual(['b', 'c']);
   });
 });

@@ -52,3 +52,41 @@ export function cardClickPick(
   if (event.metaKey || event.ctrlKey || selecting) return 'toggle';
   return null;
 }
+
+/** A rectangle in viewport pixels, as `getBoundingClientRect` reads one. */
+export type Box = { left: number; top: number; width: number; height: number };
+
+/** How far the pointer travels from the press before a drag draws the marquee. */
+export const MARQUEE_THRESHOLD = 4;
+
+/** The rectangle between the press and where the pointer is now, either way round. */
+export function marqueeBox(from: { x: number; y: number }, to: { x: number; y: number }): Box {
+  return {
+    left: Math.min(from.x, to.x),
+    top: Math.min(from.y, to.y),
+    width: Math.abs(to.x - from.x),
+    height: Math.abs(to.y - from.y),
+  };
+}
+
+/**
+ * The ids the marquee picks: `kept` (what was picked before an additive,
+ * ⌘/Ctrl/Shift drag; empty otherwise) and every card the box touches, in
+ * that order, each once. Touching is enough, as in a file manager.
+ */
+export function marqueePick(
+  box: Box,
+  cards: readonly { id: string; box: Box }[],
+  kept: readonly string[],
+): string[] {
+  const touched = cards
+    .filter(
+      ({ box: card }) =>
+        card.left < box.left + box.width &&
+        box.left < card.left + card.width &&
+        card.top < box.top + box.height &&
+        box.top < card.top + card.height,
+    )
+    .map(({ id }) => id);
+  return [...new Set([...kept, ...touched])];
+}

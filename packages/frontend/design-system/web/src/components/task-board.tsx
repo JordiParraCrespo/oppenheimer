@@ -38,6 +38,8 @@ import { variedWidth } from '../internal/varied-width';
  *   and a ring in the focus ink.
  * - `TaskSelectionBar`: what the picked cards can do together, floating at
  *   the foot of the viewport — how many, then `children` (the actions).
+ * - `TaskMarquee`: the rectangle a drag from the board's empty space draws
+ *   to pick every card it touches, in viewport coordinates, on the focus ink.
  * - `TaskCardSkeleton`: a card's place before the tasks answer, on the
  *   card's own frame.
  */
@@ -465,5 +467,28 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSelectionBar, TaskSessionChip };
+/** The drag-to-pick rectangle, placed in viewport pixels; it never takes the pointer. */
+function TaskMarquee({
+  rect,
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  rect: { left: number; top: number; width: number; height: number };
+}) {
+  return (
+    <div
+      data-slot="task-marquee"
+      aria-hidden
+      className={cn(
+        'pointer-events-none fixed z-30 rounded-xs border border-ring bg-[color-mix(in_srgb,var(--ring)_14%,transparent)]',
+        className,
+      )}
+      style={{ ...style, left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+      {...props}
+    />
+  );
+}
+
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskMarquee, TaskSelectionBar, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };

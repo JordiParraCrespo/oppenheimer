@@ -7,6 +7,7 @@ import {
   TaskColumn,
   TaskColumnAdd,
   TaskColumnMore,
+  TaskMarquee,
   TaskSelectionBar,
   TaskSessionChip,
 } from '@oppenheimer/design-system-web';
@@ -32,6 +33,7 @@ import { ColumnComposer } from '../components/column-composer';
 import { DeleteTasksDialog } from '../dialogs/delete-tasks';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
+import { useBoardMarquee } from '../hooks/use-board-marquee';
 import { useCardSelection } from '../hooks/use-card-selection';
 import { useToday } from '../hooks/use-today';
 import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
@@ -55,7 +57,9 @@ const board = getRouteApi('/_authenticated/plan/');
  *
  * Cards can be picked to act on together (`useCardSelection`): ⌘/Ctrl-click
  * toggles one, Shift-click takes the run from the last one toggled, and while
- * any are picked a plain click toggles too. The picked cards' bar floats at
+ * any are picked a plain click toggles too, and a drag from the board's empty
+ * space draws a rectangle that picks every card it touches
+ * (`useBoardMarquee`). The picked cards' bar floats at
  * the foot of the page, with Delete (asked first) and the way out; Escape
  * leaves as well.
  */
@@ -93,6 +97,11 @@ export function BoardColumns() {
   );
   const selection = useCardSelection(TASK_STATUSES.flatMap((status) => drag.groups[status] ?? []));
   const [deleting, setDeleting] = useState<TaskEntity[] | null>(null);
+  const marquee = useBoardMarquee({
+    picked: selection.picked,
+    onPick: selection.keep,
+    onClear: selection.clear,
+  });
   const toggleOlder = () =>
     navigate({ search: (previous) => ({ ...previous, older: showOlder ? undefined : true }) });
 
@@ -128,6 +137,7 @@ export function BoardColumns() {
           move.mutate({ id: task.id, status: task.isDone ? 'todo' : 'done', afterTaskId: null })
         }
         selected={!lifted && selection.isPicked(task.id)}
+        data-task-id={lifted ? undefined : task.id}
         project={view.projectName ?? undefined}
         milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
@@ -171,7 +181,7 @@ export function BoardColumns() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" onPointerDown={marquee.onPointerDown}>
       <ErrorAlert error={read.error} fallback={t('tasks.board.loadFailed')} />
       <ErrorAlert
         error={move.error}
@@ -255,6 +265,7 @@ export function BoardColumns() {
           })}
         </TaskBoard>
       </DragProvider>
+      {marquee.box ? <TaskMarquee rect={marquee.box} /> : null}
       {selection.selecting ? (
         <TaskSelectionBar
           aria-label={t('tasks.selection.label')}
