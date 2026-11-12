@@ -121,31 +121,23 @@ export function NewSessionSend({
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
     lastCloudLaunch.current = input;
-    const tab = window.open('', '_blank');
     startCloud.reset();
     startCloud.mutate(
       { idempotencyKey: attempt.current.key, input },
       {
         onSuccess: (session) => {
           attempt.current = null;
-          if (tab && session.cloud?.url) {
-            tab.opener = null;
-            tab.location.href = session.cloud.url;
-          } else {
-            tab?.close();
-          }
           navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
         },
-        onError: () => tab?.close(),
       },
     );
   }
 
   /**
-   * A cloud session opens at its vendor, in a tab of its own, as
-   * `SessionsConsole.dc.html` draws it. The tab is opened in the press itself,
-   * so no browser blocks it, and pointed at the vendor's page once the session
-   * exists; the console goes to the session, as for any start.
+   * A cloud session's start goes to the session, as any start does, and opens
+   * no tab: a tab opened in the press sat blank while the vendor answered and
+   * closed empty on a refusal (#836). The session's page and its row link to
+   * the vendor.
    */
   function sendToCloud(prompt: string, files: File[]) {
     const draft = getValues();
