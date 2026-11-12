@@ -5,7 +5,7 @@ import {
   recoveryBullets,
   repeatedBlockerAsk,
 } from '../domain/bot-recovery.policy';
-import { routineOpening } from '../domain/bot-routine.policy';
+import { ROUTINE_QUIET, routineOpening } from '../domain/bot-routine.policy';
 
 /**
  * What a bot is told to do after a step fails: try the next route before
@@ -49,12 +49,13 @@ describe('recovery policy', () => {
   // "still closed" replies and writes one more; or one that, with no way
   // round, tells the person again every half hour.
   it('tells a repeated run to solve the blocker its last run ended on, and to say it once', () => {
-    const ask = repeatedBlockerAsk('call nothing_to_report until something changes');
+    const ask = repeatedBlockerAsk(ROUTINE_QUIET);
     expect(ask).toContain('do not answer with it again');
     expect(ask).toContain('it is yours to solve in this run');
     expect(ask).toContain('start a new one with the same task');
     expect(ask).toContain('tell them once what you need from them');
-    expect(ask).toContain('after that, call nothing_to_report until something changes');
+    expect(ask).toContain('do not tell them again while nothing has changed');
+    expect(ask).toContain('call nothing_to_report and write nothing');
   });
 
   // What breaks this: the rule left only in the system prompt, where it lost
@@ -67,9 +68,9 @@ describe('recovery policy', () => {
       name: 'Sentry check',
       instructions: 'Run the Sentry check.',
     });
-    expect(opening).toContain(repeatedBlockerAsk('call nothing_to_report until something changes'));
+    expect(opening).toContain(repeatedBlockerAsk(ROUTINE_QUIET));
     expect(loopSetPrompt(30, 'check Sentry')).toContain(
-      repeatedBlockerAsk('call end_loop and say why'),
+      repeatedBlockerAsk('call end_loop and say why in one line'),
     );
   });
 

@@ -23,14 +23,18 @@
 //        ANTHROPIC_API_KEY: with it, the Messages API; without it, the
 //        machine's Claude Code login, through the Agent SDK
 //
-// It passes when every case is right on a majority of its runs. Every run's
+// It passes when every case is right on a majority of its runs; a case
+// marked `open` is run and reported, and does not fail it. Every run's
 // calls and answer go to `reports/`.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BotNoticeToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-notice-tools.factory';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
-import { routineOpening } from '../../../apps/api/src/bots-chat/domain/bot-routine.policy';
+import {
+  quietTurnAnswer,
+  routineOpening,
+} from '../../../apps/api/src/bots-chat/domain/bot-routine.policy';
 import {
   composeTurnContext,
   withTurnContext,
@@ -69,6 +73,8 @@ interface Case {
   routine?: string;
   expect: Expect;
   why: string;
+  /** Why the case is known to fail today: it is run and reported, and does not fail the eval. */
+  open?: string;
 }
 
 interface Score {
@@ -122,10 +128,7 @@ function noticeTools(
       description: bound.description,
       inputSchema: bound.inputSchema,
       run: async () => ({
-        content:
-          name === 'notify'
-            ? 'The notice is in their Inbox.'
-            : 'Noted: nothing to report. End your turn now and write nothing.',
+        content: name === 'notify' ? 'The notice is in their Inbox.' : quietTurnAnswer(),
       }),
     };
   });
@@ -162,7 +165,6 @@ function scoreRun(turn: Turn, expect: Expect, hostId: (name: string) => string |
   const made = (tool: string) => turn.calls.filter((call) => call.tool === tool && !call.isError);
   const started = made('start_session');
   const sent = made('send_to_session');
-  const quiet = made('nothing_to_report').length > 0 && made('notify').length === 0;
   const said = turn.answer.trim().length > 0 || made('notify').length > 0;
   if (expect.kind === 'start') {
     if (started.length > 0)
@@ -189,11 +191,12 @@ function scoreRun(turn: Turn, expect: Expect, hostId: (name: string) => string |
       : { right: false, mark: said ? 'T' : '-', note: 'did not prompt the session' };
   }
   if (expect.kind === 'tell') {
-    return said && !quiet
+    return said
       ? { right: true, mark: 'T', note: 'told the person' }
-      : { right: false, mark: quiet ? 'Q' : '-', note: 'did not tell the person' };
+      : { right: false, mark: 'Q', note: 'did not tell the person' };
   }
-  return quiet || !said
+  // A quiet run writes nothing: nothing_to_report beside the blocker's words is the blocker said again.
+  return !said
     ? { right: true, mark: 'Q', note: 'stayed quiet' }
     : { right: false, mark: 'r', note: 'said the blocker again' };
 }
@@ -291,13 +294,14 @@ async function main(): Promise<void> {
       scoreRun(turn, c.expect, (name) => file.hosts.find((h) => h.name === name)?.id),
     );
     const right = scores.filter((score) => score.right).length;
-    return { ...c, turns: caseTurns, scores, right, passed: right * 2 > runs };
+    const passed = right * 2 > runs;
+    return { ...c, turns: caseTurns, scores, right, passed };
   });
 
   const width = Math.max(...results.map((r) => r.id.length));
   for (const r of results) {
     console.log(
-      `${r.passed ? 'pass' : 'FAIL'}  ${r.id.padEnd(width)}  want ${r.expect.kind.padEnd(9)}  got ${r.scores.map((s) => s.mark).join('')}  ${r.right}/${runs}`,
+      `${r.passed ? 'pass' : r.open ? 'open' : 'FAIL'}  ${r.id.padEnd(width)}  want ${r.expect.kind.padEnd(9)}  got ${r.scores.map((s) => s.mark).join('')}  ${r.right}/${runs}`,
     );
     if (!r.passed) {
       r.scores.forEach((score, at) => {
@@ -317,9 +321,10 @@ async function main(): Promise<void> {
   const overstepped =
     count('tell', 's') + count('quiet', 's') + count('send', 's') + count('keep_host', 's');
   const repeated = count('quiet', 'r');
-  const failed = results.filter((r) => !r.passed).length;
+  const failed = results.filter((r) => !r.passed && !r.open).length;
+  const open = results.filter((r) => !r.passed && r.open).length;
   console.log(
-    `\n${via.model} (${via.engine}): ${right}/${total} runs right; ${stopped} stopped at a blocker it could have solved, ${overstepped} started a session it should not have, ${repeated} said a blocker again; ${failed} of ${results.length} cases failed.`,
+    `\n${via.model} (${via.engine}): ${right}/${total} runs right; ${stopped} stopped at a blocker it could have solved, ${overstepped} started a session it should not have, ${repeated} said a blocker again; ${failed} of ${results.length} cases failed, ${open} known open.`,
   );
   console.log(
     `Report: ${writeReport(HERE, { model: via.model, engine: via.engine, runs, results })}`,

@@ -45,7 +45,7 @@ const BLOCKER_NOT_TWICE =
  * `quiet` is what that turn does once the person has been told.
  */
 export function repeatedBlockerAsk(quiet: string): string {
-  return `If your last run of this ended on a blocker, do not answer with it again. Check now whether it still holds. If it does, it is yours to solve in this run, as "How a turn goes" says and within its limits: find another way to what this is for (a closed session cannot be used again, so start a new one with the same task) and do the work. Only when no way round makes sense, and the person has not been told yet, tell them once what you need from them; after that, ${quiet}.`;
+  return `If your last run of this ended on a blocker, do not answer with it again. Check now whether it still holds. If it does, it is yours to solve in this run, as "How a turn goes" says and within its limits: find another way to what this is for (a closed session cannot be used again, so start a new one with the same task) and do the work. Only when no way round makes sense, and the person has not been told yet, tell them once what you need from them. Once they have been told, do not tell them again while nothing has changed: ${quiet}.`;
 }
 
 /**

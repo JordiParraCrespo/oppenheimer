@@ -67,6 +67,9 @@ export function scheduleSetPrompt(request: string): string {
   ].join('\n');
 }
 
+/** How a routine's run stays silent about a blocker the person already knows. */
+export const ROUTINE_QUIET = 'call nothing_to_report and write nothing';
+
 /** Every turn of one routine's runs begins with this. */
 export function routinePrefix(automationId: string): string {
   return `automation-run:${automationId}:`;
@@ -83,7 +86,7 @@ export function routineOpening(firing: RoutineFiring): string {
     `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
     'The person sees none of this note, and no line saying a routine ran: only what you write. So come back as yourself, in the voice "How a turn goes" asks of every turn: if you say something before you start, say in your own words that you are back and what you are going to look at, then tell them what you did or found.',
     'If there is nothing worth saying, call nothing_to_report and write nothing.',
-    repeatedBlockerAsk('call nothing_to_report until something changes'),
+    repeatedBlockerAsk(ROUTINE_QUIET),
     '',
     firing.instructions,
   ].join('\n');

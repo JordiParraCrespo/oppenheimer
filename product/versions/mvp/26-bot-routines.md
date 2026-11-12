@@ -192,8 +192,9 @@ event line, and the owner read a bot's chat as an automation's log):
   whether it still holds and solve it in this run by another way to what
   the routine is for (a closed session is replaced by a new one with the
   same task); only when no way round makes sense is the person told, once,
-  and later runs call `nothing_to_report` until something changes. A
-  loop's run is told the same, and ends the loop instead.
+  and later runs are told to call `nothing_to_report` and write nothing. A
+  loop's run is told the same, and ends the loop instead. The eval shows
+  the bot still writes the blocker beside the call (open, 2026-11-12).
   While the chat hides its tool calls (the wrench in its bar, off by
   default), a run that completed having only run tools, with no reply,
   session or draft to show, is left out altogether, so an hourly

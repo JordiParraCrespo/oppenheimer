@@ -2185,6 +2185,10 @@ The decisions it produced:
   `send_to_session` says a closed session is replaced, not reported.
   `scripts/evals/bot-blocked-run` holds it: on the old wording the
   screenshot's case reported the blocker again in 3 of 3 runs; on the new
-  one 30 of 30 runs were right, the bot told to use only that session
-  still starting none and saying so once, and a routine that names an
-  offline host never moved to another.
+  one the five cases that have a way round or a rule to respect were right
+  in 25 of 25 runs: a new session for a closed one, the open one used, the
+  bot told to use only that session starting none and saying so, a
+  routine that names an offline host never moved to another. Open: told
+  once and still blocked, the bot calls `nothing_to_report` and writes the
+  blocker again (0 of 5); wording did not make that turn silent, so it has
+  to be enforced where the turn is stored.

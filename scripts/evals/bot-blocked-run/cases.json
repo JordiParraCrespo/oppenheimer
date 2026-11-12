@@ -100,7 +100,8 @@
       "expect": {
         "kind": "quiet"
       },
-      "why": "No way round, and the person was told once. The bot does not say it again every half hour."
+      "why": "No way round, and the person was told once. The bot does not say it again every half hour.",
+      "open": "The bot calls nothing_to_report and then writes the blocker again: wording alone has not made the turn silent. A quiet turn has to be enforced where the turn is stored."
     },
     {
       "id": "named-host-offline",
