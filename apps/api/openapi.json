@@ -11647,7 +11647,7 @@
     },
     "/api/v1/sessions/{id}/cloud-replies": {
       "post": {
-        "description": "Keeps `text` for the agent of a Claude Code cloud session this workspace launched. The Stop hook in that session collects it when the agent ends its turn, and the agent carries on with it. Shown in the session’s chat as waiting until then.",
+        "description": "Keeps `text` for the agent of a Claude Code cloud session this workspace launched. The Stop hook in that session collects it when the agent ends its turn, and the agent carries on with it. If no hook has taken it 15 seconds later, a host signed in to the claude.ai account the session runs on sends it with `claude -p … --cloud`, which wakes an idle session. Shown in the session’s chat as waiting until either.",
         "operationId": "sendCloudReply",
         "parameters": [
           {
@@ -32136,7 +32136,16 @@
             "format": "date-time",
             "type": "string",
             "nullable": true,
-            "description": "When the session’s Stop hook took it to the agent; null while it waits."
+            "description": "When it reached the agent, by either way; null while it waits."
+          },
+          "deliveredVia": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "hook",
+              "host"
+            ],
+            "description": "How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits."
           }
         },
         "required": [
@@ -39472,7 +39481,7 @@
         "properties": {
           "content": {
             "type": "string",
-            "maxLength": 16000,
+            "maxLength": 80000,
             "default": ""
           },
           "attachmentIds": {

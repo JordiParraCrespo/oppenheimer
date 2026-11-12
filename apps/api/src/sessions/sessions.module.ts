@@ -94,6 +94,7 @@ import { UploadSessionAttachmentCommandHandler } from './commands/upload-session
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { UseHostBrowserCommandHandler } from './commands/use-host-browser/use-host-browser.command-handler';
 import { UseHostComputerCommandHandler } from './commands/use-host-computer/use-host-computer.command-handler';
+import { WakeCloudSessionCommandHandler } from './commands/wake-cloud-session/wake-cloud-session.command-handler';
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionCloudChatRepository } from './database/session-cloud-chat.repository';
@@ -109,6 +110,7 @@ import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import { CloudReplyWakesProcessor } from './infrastructure/cloud-reply-wakes.processor';
 import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
 import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
@@ -234,6 +236,7 @@ const commandHandlers: Provider[] = [
   AnswerSessionDecisionCommandHandler,
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
+  WakeCloudSessionCommandHandler,
   RunHostCommandCommandHandler,
   UseHostComputerCommandHandler,
   UseHostBrowserCommandHandler,
@@ -339,6 +342,7 @@ const adapters: Provider[] = [
     SessionWakeRequestedDomainEventHandler,
     SessionPromptTyperResolver,
     SessionWakesProcessor,
+    CloudReplyWakesProcessor,
     { provide: SESSION_WAKES, useClass: OutboxSessionWakesAdapter },
     HostUnpairedClosesSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },

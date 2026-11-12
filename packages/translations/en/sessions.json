@@ -761,6 +761,8 @@
     "title": "Live from Claude Code cloud",
     "waiting_one": "Your reply is waiting for the agent to finish its turn.",
     "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
+    "sent_one": "Your reply was sent to the session; it shows here once the agent picks it up.",
+    "sent_other": "{{count}} replies were sent to the session; they show here once the agent picks them up.",
     "replyFailed": "The reply didn’t reach the session. Try again.",
     "setup": {
       "title": "Turn on this session’s chat",

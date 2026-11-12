@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import { cloudRepliedSchema, cloudReplySchema } from './cloud-reply.js';
 import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
   desktopCloseSchema,
@@ -164,6 +165,12 @@ export const RUNNER_CAPABILITIES = [
    * (`product/next-steps/cloud-agents.md`).
    */
   'session.cloud.codex',
+  /**
+   * Answers `cloud.reply` with `cloud.replied`: a reply typed in a Claude Code
+   * cloud session's chat, sent with the host's own `claude -p … --cloud <id>`,
+   * which wakes the session when it is idle (`cloud-reply.ts`).
+   */
+  'session.cloud.reply',
   /**
    * Takes a `session.create` whose launch names a cloud session to continue
    * (`launch.teleport`): the agent starts with `claude --teleport <id>` in the
@@ -1631,6 +1638,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   desktopCloseSchema,
   codexEnvironmentsListSchema,
   codexEnvironmentsSchema,
+  cloudReplySchema,
+  cloudRepliedSchema,
   whatsappLinkSchema,
   whatsappUnlinkSchema,
   whatsappStateSchema,

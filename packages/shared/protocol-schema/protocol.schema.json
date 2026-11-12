@@ -2307,6 +2307,49 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "cloud.reply"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "cloudSessionId": {
+          "type": "string",
+          "pattern": "^session_[A-Za-z0-9]{8,64}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 21000
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "cloudSessionId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cloud.replied"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "whatsapp.link"
         },
         "commandId": {
@@ -3343,6 +3386,7 @@
       "desktop.stream",
       "session.cloud",
       "session.cloud.codex",
+      "session.cloud.reply",
       "session.teleport",
       "codex.environments",
       "session.watch",

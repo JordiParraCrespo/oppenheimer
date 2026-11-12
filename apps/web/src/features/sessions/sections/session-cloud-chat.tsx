@@ -14,17 +14,22 @@ import { SessionCloudSummary } from './session-cloud-summary';
  * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): its
  * transcript as its SessionStart hook sends it, drawn by the chat a host
  * session uses, and a composer whose message waits for the session's Stop
- * hook, which hands it to the agent when its turn ends. Until a line has
+ * hook, which hands it to the agent when its turn ends, or is sent from a
+ * host signed in to the session's claude.ai account when no hook takes it,
+ * which wakes an idle session; such a reply reads as sent until the
+ * transcript shows it. Until a line has
  * come (no hooks in the repository, or nothing said yet) it is the cloud
  * session's own pane, which says where to follow it instead, with how to
  * turn the chat on under it.
  */
 export function SessionCloudChat({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
-  const { chat, waiting, failure, dismissFailure } = useCloudSessionChat(session.id);
+  const { chat, pending, failure, dismissFailure } = useCloudSessionChat(session.id);
   const turns = useChatTurnIds(chat);
+  const waiting = pending.filter((reply) => reply.state === 'waiting').length;
+  const sent = pending.length - waiting;
 
-  if (turns.length === 0 && waiting.length === 0) {
+  if (turns.length === 0 && pending.length === 0) {
     return (
       <PageFrame size="status">
         <SessionCloudSummary session={session} />
@@ -45,10 +50,13 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
             {t('sessions.cloud.open')}
           </a>
         ) : null}
-        {waiting.length > 0 ? (
+        {waiting > 0 ? (
           <span className="text-fg-subtle">
-            {t('sessions.cloudChat.waiting', { count: waiting.length })}
+            {t('sessions.cloudChat.waiting', { count: waiting })}
           </span>
+        ) : null}
+        {sent > 0 ? (
+          <span className="text-fg-subtle">{t('sessions.cloudChat.sent', { count: sent })}</span>
         ) : null}
       </div>
       {failure ? (

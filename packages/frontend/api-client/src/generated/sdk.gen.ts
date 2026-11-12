@@ -1700,7 +1700,7 @@ export const collectCloudReply = <ThrowOnError extends boolean = false>(options:
 /**
  * Reply to a Claude Code cloud session’s agent
  *
- * Keeps `text` for the agent of a Claude Code cloud session this workspace launched. The Stop hook in that session collects it when the agent ends its turn, and the agent carries on with it. Shown in the session’s chat as waiting until then.
+ * Keeps `text` for the agent of a Claude Code cloud session this workspace launched. The Stop hook in that session collects it when the agent ends its turn, and the agent carries on with it. If no hook has taken it 15 seconds later, a host signed in to the claude.ai account the session runs on sends it with `claude -p … --cloud`, which wakes an idle session. Shown in the session’s chat as waiting until either.
  */
 export const sendCloudReply = <ThrowOnError extends boolean = false>(options: Options<SendCloudReplyData, ThrowOnError>): RequestResult<SendCloudReplyResponses, SendCloudReplyErrors, ThrowOnError> => (options.client ?? client).post<SendCloudReplyResponses, SendCloudReplyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
