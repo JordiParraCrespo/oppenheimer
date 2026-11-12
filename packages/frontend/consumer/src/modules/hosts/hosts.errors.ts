@@ -29,10 +29,7 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_006',
     message: 'Failed to update the runner on the host',
   },
-  FETCH_CODEX_ENVIRONMENTS_FAILED: {
-    code: 'HOSTS_CLIENT_007',
-    message: 'Failed to list the Codex environments on the host',
-  },
+  // HOSTS_CLIENT_007 was the Codex environments listing; retired, not reused.
   SEARCH_FOLDERS_FAILED: {
     code: 'HOSTS_CLIENT_008',
     message: 'Failed to search the folders on the host',

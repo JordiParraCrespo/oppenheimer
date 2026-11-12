@@ -34,7 +34,7 @@ export const FIELD_BOUNDS = {
   prompt: { min: 1, maxBytes: 2 * 1024 },
   /** An absolute path on a host: a folder session's folder, a folder picker's directory. */
   hostPath: { min: 1, max: 4096 },
-  /** A Codex cloud environment's id or label, as `codex cloud exec --env` takes it. */
+  /** A Codex cloud environment's id, as ChatGPT Settings → Codex Cloud shows it. */
   codexEnvironment: { min: 1, max: 128 },
 } as const;
 
@@ -78,8 +78,8 @@ export const displayNameSchema = z
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
 
 /**
- * A Codex cloud environment, by its id or its label (which the CLI matches
- * without regard to case): what a Codex cloud session is started in.
+ * A Codex cloud environment's id, as ChatGPT Settings → Codex Cloud shows it:
+ * what a Codex cloud session is started in.
  */
 export const codexEnvironmentSchema = z
   .string()

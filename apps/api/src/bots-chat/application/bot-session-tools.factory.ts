@@ -237,8 +237,8 @@ export class BotSessionToolsFactory implements BotToolArea {
   /**
    * A session in a vendor's cloud, started the one way the product starts
    * each: Claude Code's or Codex's through the sessions' own create with
-   * `cloud`, which has the host's runner run `claude --cloud` or `codex cloud
-   * exec` in a scratch checkout and report the session it started; a
+   * `cloud`, which has the host's runner run `claude --cloud` in a scratch
+   * checkout or start a thread in Codex cloud, and report the session it started; a
    * vendor's (Cursor's) through `StartCloudSessionCommand`, on the owner's
    * own key with no host. Same scope, card and owner's scope as
    * `start_session`; it hands back the session's URL at the vendor.
@@ -297,7 +297,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(200)
           .optional()
           .describe(
-            'codex only: the Codex cloud environment, by id or label; the one linked to the repository when omitted.',
+            "codex only: a Codex cloud environment id (from ChatGPT Settings → Codex Cloud); Codex's default environment with the repository when omitted.",
           ),
         model: z
           .string()

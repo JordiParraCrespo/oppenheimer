@@ -27,8 +27,8 @@ const draft: NewSessionDraft = {
 const extras = { prompt: 'Fix it', attachmentIds: [] };
 
 describe('toCreateInput', () => {
-  // Codex's cloud runs the task in one of the account's environments: the one
-  // picked on this host, or the host's pick when none was.
+  // Codex's cloud runs the task in the environment picked on this host, or
+  // in Codex's default environment when none was.
   it('sends a Codex cloud session with the environment picked on its host', () => {
     const codex: NewSessionDraft = {
       ...draft,

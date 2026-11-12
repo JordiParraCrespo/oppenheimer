@@ -473,10 +473,6 @@
       "SESSIONS_041": "Ese enlace al archivo ha caducado. Vuelve a iniciar la sesión con el archivo adjunto.",
       "SESSIONS_042": "Ese patrón no se puede vigilar. Usa una expresión regular simple, sin lookaround ni referencias hacia atrás.",
       "SESSIONS_043": "Esta sesión ya tiene tantas vigilancias de terminal como admite. Quita una primero.",
-      "SESSIONS_044": "El runner de este equipo es demasiado antiguo para listar los entornos de Codex. Actualízalo, o inicia la sesión y deja que el equipo elija uno.",
-      "SESSIONS_045": "El equipo está desconectado, así que no se pueden listar sus entornos de Codex.",
-      "SESSIONS_046": "Codex no pudo listar sus entornos en el equipo. Comprueba que codex está instalado y con la sesión de ChatGPT iniciada.",
-      "SESSIONS_047": "ChatGPT está limitando cada cuánto se pueden listar sus entornos de Codex. Espera un minuto y vuelve a intentarlo, o inicia la sesión y deja que el equipo elija.",
       "SESSIONS_048": "El runner de este equipo es demasiado antiguo para continuar una sesión en la nube. Actualízalo o elige otro equipo.",
       "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
       "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
@@ -519,12 +515,13 @@
     "startFailure": {
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio.",
-        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
-        "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
+        "SESS_010": "El entorno de Codex elegido no está en esta cuenta de ChatGPT.",
+        "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host.",
+        "SESS_022": "Sin sesión en ChatGPT. Ejecuta codex login en el host."
       },
       "help": {
         "SESS_010": {
-          "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos que lista codex cloud. Los entornos creados en Configuración de ChatGPT → Codex Cloud todavía no son accesibles para la CLI, así que uno de ahí con el nombre de este repositorio no se puede usar desde aquí. Ejecuta codex cloud en el host para ver los entornos que puede usar.",
+          "body": "Vuelve a copiar el id del entorno desde Ajustes de ChatGPT → Codex Cloud, o déjalo en Predeterminado.",
           "link": "Abrir la configuración de Codex Cloud"
         }
       },
@@ -877,16 +874,12 @@
       },
       "codexEnvironment": {
         "label": "Entorno de Codex",
-        "search": "Buscar entornos…",
+        "search": "Id del entorno…",
         "empty": "Ningún entorno coincide.",
-        "loading": "Pidiendo al equipo sus entornos de Codex…",
-        "auto": "Automático",
-        "autoLinked": "{{name}}, la elección del equipo",
-        "autoByName": "La elección del equipo",
-        "linked": "Vinculado",
-        "pinned": "Fijado",
-        "failed": "No se han podido listar los entornos de Codex del equipo.",
-        "lives": "Los entornos viven en tu cuenta de Codex"
+        "default": "Predeterminado",
+        "defaultHint": "Con el repositorio",
+        "use": "Usar {{id}}",
+        "hint": "Pega un id de los ajustes de Codex Cloud"
       },
       "branch": {
         "label": "Rama",

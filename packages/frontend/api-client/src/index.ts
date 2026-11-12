@@ -161,8 +161,6 @@ export type {
   GoogleCalendarConnectStartResponseDto,
   GoogleCalendarEventResponseDto,
   GoogleCalendarEventsResponseDto,
-  HostCodexEnvironmentResponseDto,
-  HostCodexEnvironmentsResponseDto,
   HostFolderEntryResponseDto,
   HostFolderSearchResponseDto,
   HostFoldersResponseDto,

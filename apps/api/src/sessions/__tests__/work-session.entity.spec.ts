@@ -316,6 +316,23 @@ describe('a cloud session', () => {
     });
     expect(session.cloudSessionId).toBe('session_014a8EH8DJs95X1iK8ZH9Y82');
   });
+
+  // An older Codex session names a task with a page of its own; a cloud
+  // thread's web address is not known, so it opens Codex rather than a dead
+  // tasks/<thread> link.
+  it.each([
+    ['task_e_6823abc', 'https://chatgpt.com/codex/tasks/task_e_6823abc'],
+    ['019a2b3c-thread', 'https://chatgpt.com/codex'],
+  ])('links a Codex cloud session started as %s to %s', (agentSessionId, url) => {
+    const codex = session({ place: 'cloud', agent: 'codex' });
+    codex.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId, checkouts: [] },
+      occurredAt: new Date(),
+    });
+    expect(codex.vendorUrl).toBe(url);
+  });
 });
 
 describe('input to a cloud session', () => {

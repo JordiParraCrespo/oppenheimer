@@ -49,7 +49,6 @@ const (
 	laneFsList        = "fs:list"
 	laneFsFind        = "fs:find"
 	lanePortList      = "port:list:"
-	laneCodexEnvs     = "codex:environments"
 	laneCloudReply    = "cloud:reply:"
 )
 
@@ -117,8 +116,8 @@ type linkHandler struct {
 	// telegram is the host's Telegram bot (link_telegram.go); nil is a host
 	// that offers none, and its hello does not name the capability.
 	telegram *tgapp.Service
-	// cloudStarts holds the sessions whose cloud start (`claude --cloud`,
-	// `codex cloud exec`) is running or done (link_cloud.go), so a create sent
+	// cloudStarts holds the sessions whose cloud start (`claude --cloud`, a
+	// Codex cloud thread) is running or done (link_cloud.go), so a create sent
 	// again does not start a second.
 	cloudStarts sync.Map
 	// codexReporting holds, by session, the Codex status whose event waits on
@@ -332,8 +331,8 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind,
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
-		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilitySessionCloudReply,
-		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
+		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
+		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
 	}
 	if h.direct != nil {
@@ -604,12 +603,6 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.DeviceDetach
 		if msg.Decode(&m) == nil {
 			h.dropScreen(m.AttachmentID)
-		}
-	case link.TypeCodexEnvironmentsList:
-		var m link.CodexEnvironmentsList
-		if msg.Decode(&m) == nil {
-			// Two round trips to ChatGPT: off the read loop, one at a time.
-			h.lanes.run(laneCodexEnvs, func() { h.listCodexEnvironments(h.life, m) })
 		}
 	case link.TypeCloudReply:
 		var m link.CloudReply

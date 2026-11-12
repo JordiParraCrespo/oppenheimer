@@ -258,8 +258,8 @@ export function cloudStartAnswer(
 
 /**
  * A cloud session's page at its vendor, whichever kind: the id its host
- * reported (claude.ai/code for Claude Code, chatgpt.com/codex for a Codex
- * task, as the console's `cloudUrl`), or the page a launching vendor gave.
+ * reported (claude.ai/code for Claude Code, chatgpt.com/codex for Codex, as
+ * the console's `cloudUrl`), or the page a launching vendor gave.
  * Null for a host session, and for a cloud session that has none yet.
  */
 export function cloudLinkOf(session: WorkSessionEntity): string | null {
