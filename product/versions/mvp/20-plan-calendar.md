@@ -237,6 +237,48 @@ adds a task due that day from the dashed row under the list.
 > later: a way to take a task off today from its row, and the bots' plan
 > tools setting a focus date.
 
+> Changed on 2026-11-12: To do knows about agents, and "To do" names one
+> thing. The owner asked that a task an agent is working on stop sitting
+> on the list as if it waited on them, and that "To do" stop naming three
+> things.
+>
+> - **Names, labels only.** The sidebar view is **TODO** everywhere its
+>   copy names it ("on TODO since Mon"); the board's first column is
+>   **Not started** (Spanish "Sin empezar"); the task dialog's day field
+>   is **TODO day** ("Día en TODO"). The status value `todo` is unchanged
+>   in the API, the database, the CLI and MCP.
+> - **With agents.** A task on the day's list goes to a **With agents**
+>   section under the list when an agent is working on it, with its
+>   session's state, and stays there when it is due or overdue (its due
+>   label stays). Otherwise it stays on the list, with a mark saying why
+>   it needs the person. Most urgent first, for a task not done:
+>
+>   | Situation | Where | Mark |
+>   | --- | --- | --- |
+>   | a session waiting on the person | list | waiting on you |
+>   | otherwise, a session running or queued | With agents | the session's state |
+>   | otherwise, a session failed | list | failed |
+>   | otherwise, the task is In review | list | ready to review |
+>   | otherwise, sessions stopped (idle or finished) on a task In progress | list | agent stopped |
+>   | no sessions | list | none |
+>
+>   A session ending never means the task is finished: "ready to review"
+>   comes from the board's column alone, and nothing moves a task to In
+>   review on its own. A mark that comes from a session is that session's
+>   chip, which opens it; the strip's rows are not dragged. A session the
+>   console no longer lists (deleted elsewhere) is not read.
+> - **Counts.** What is with agents needs nothing from the person, so the
+>   header's "left" and the sidebar's count beside TODO leave it out; they
+>   show once the sessions are read, so they never drop after landing.
+> - **Move.** The "way to take a task off today from its row" left for
+>   later above: a calendar button on each open row opens a month with
+>   **Tomorrow** under it, and puts the task's TODO day on the day picked.
+>   A task due on the day shown, or overdue while Include overdue is on,
+>   gets no button: its deadline keeps it on the list whatever its TODO
+>   day, so moving it would change nothing on screen; its due date is
+>   changed in its dialog. (Decided by the agent that built it, for the
+>   owner to accept: the simplest honest answer.)
+
 A row's grip, six dots at its right end, drags it into the reader's own
 order for that day, kept on this device as Plan's sidebar order is (the
 frame keeps it in the browser too); a task the stored order does not

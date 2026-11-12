@@ -1,7 +1,9 @@
-import { compareRank, type TaskEntity } from '@oppenheimer/frontend-consumer';
+import { compareRank, type SessionEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
 import { searchText, todayIn } from '@oppenheimer/frontend-web';
 import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
+import { type TaskSession, taskSessionsOf } from './session-line';
+import { mostUrgent, type TaskSessionState } from './session-state';
 
 /**
  * To do's address (the 2026-11-08 `Tasks` frame): the projects it is
@@ -30,7 +32,7 @@ export interface TodoEntry {
   reason: TodoReason;
 }
 
-type TodoOptions = { today: string; overdue: boolean; projectIds?: readonly string[] };
+export type TodoOptions = { today: string; overdue: boolean; projectIds?: readonly string[] };
 
 /** The day it was ticked done, in the reader's timezone. */
 function doneOn(task: TaskEntity): string | null {
@@ -232,14 +234,90 @@ export function picksInView(picked: readonly string[], shown: readonly TaskEntit
   return picked.filter((id) => ids.has(id));
 }
 
-/** The header's count: how many on the list are left and how many are done. */
-export function todoCounts(entries: readonly TodoEntry[]): { left: number; done: number } {
-  const done = entries.filter((entry) => entry.task.isDone).length;
-  return { left: entries.length - done, done };
+/**
+ * Whether a task on the day's list is there because of its deadline: due on
+ * the day shown, or overdue while Include overdue is on. Moving its TODO day
+ * does not take it off, so the row offers no Move (§6, "Changed on 2026-11-12").
+ */
+export function heldByDeadline(task: TaskEntity, day: string, options: TodoOptions): boolean {
+  if (task.isDone || !task.dueDate) return false;
+  return task.dueDate === day || (options.overdue && isOverdueOn(task, day, options.today));
 }
 
-/** The sidebar's count beside To do: what is left on today's list. */
-export function todayOpenCount(tasks: readonly TaskEntity[], today: string): number {
-  return todoEntries(tasks, today, { today, overdue: true }).filter((entry) => !entry.task.isDone)
-    .length;
+/** Why a task on the main list carries a mark from its agents, or its column. */
+export type TodoMark = 'waiting' | 'failed' | 'review' | 'stopped';
+
+/**
+ * Where a task on the day's list goes: the main list, with the mark that says
+ * why it needs the person, or the "With agents" strip, with the session at
+ * work. `session` is the one the mark or the strip names.
+ */
+export type TodoPlace =
+  | { lane: 'list'; mark: TodoMark | null; session: TaskSession | null }
+  | { lane: 'agents'; session: TaskSession };
+
+const LIST_UNMARKED: TodoPlace = { lane: 'list', mark: null, session: null };
+
+/**
+ * Where a task goes on To do, from its sessions' states, most urgent first
+ * (`product/versions/mvp/20-plan-calendar.md` §6, "Changed on 2026-11-12"): one waiting
+ * on the person keeps it on the list as "waiting on you"; otherwise one
+ * running or queued puts it in the strip, whatever its due date; otherwise a
+ * failed one marks it "failed"; otherwise the board's In review column marks
+ * it "ready to review"; otherwise sessions that stopped (idle or finished)
+ * on a task still In progress mark it "agent stopped". A session ending
+ * never means the task is finished: ready to review comes from the column
+ * alone. A done task, or one with no sessions, is on the list unmarked.
+ */
+export function todoPlaceOf(task: TaskEntity, sessions: readonly TaskSession[]): TodoPlace {
+  if (task.isDone) return LIST_UNMARKED;
+  const first = (...states: TaskSessionState[]) =>
+    mostUrgent(sessions.filter((row) => states.includes(row.state)));
+  const waiting = first('waiting');
+  if (waiting) return { lane: 'list', mark: 'waiting', session: waiting };
+  const working = first('queued', 'running');
+  if (working) return { lane: 'agents', session: working };
+  const failed = first('failed');
+  if (failed) return { lane: 'list', mark: 'failed', session: failed };
+  if (task.status === 'review') return { lane: 'list', mark: 'review', session: null };
+  const stopped = first('idle', 'completed');
+  if (stopped && task.status === 'doing')
+    return { lane: 'list', mark: 'stopped', session: stopped };
+  return LIST_UNMARKED;
+}
+
+/**
+ * The tasks an agent is working on, which To do draws in its strip and leaves
+ * out of its counts. Whether a host is online only tells queued from running,
+ * which go to the strip alike, so the hosts are not read.
+ */
+function withAgentsOf(
+  tasks: readonly TaskEntity[],
+  sessions: ReadonlyMap<string, SessionEntity>,
+): ReadonlySet<string> {
+  return new Set(
+    tasks
+      .filter((task) => todoPlaceOf(task, taskSessionsOf(task, sessions)).lane === 'agents')
+      .map((task) => task.id),
+  );
+}
+
+/**
+ * The header's count: how many on the day's list are left and how many are
+ * done. What is with agents needs nothing from the person, so it is not left;
+ * until the sessions are read there is no count, so one never lands and then
+ * drops.
+ */
+export function todoCounts(
+  tasks: readonly TaskEntity[],
+  day: string,
+  options: TodoOptions,
+  sessions: ReadonlyMap<string, SessionEntity> | undefined,
+): { left: number; done: number } | undefined {
+  if (!sessions) return undefined;
+  const entries = todoEntries(tasks, day, options);
+  const withAgents = withAgentsOf(tasks, sessions);
+  const done = entries.filter((entry) => entry.task.isDone).length;
+  const working = entries.filter((entry) => withAgents.has(entry.task.id)).length;
+  return { left: entries.length - done - working, done };
 }
