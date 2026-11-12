@@ -23,11 +23,20 @@ package cloud
 // the answer's Retry-After (a minute when it names none), nothing is sent for
 // it until then, and the refusal is SESS_011.
 //
+// The sign-in. The access token in auth.json lasts days, and only the CLI
+// renews it, through its own OAuth client. A runner on a host nobody types
+// `codex` on would outlive it, so when it is within codexRefreshWindow of
+// expiring, or ChatGPT refuses it, the runner asks the host's own `codex` to
+// renew it (`codex app-server`, `account/read` with `refreshToken`: Codex's
+// documented integration surface, in releases since 0.167) and reads the file
+// again. The runner never calls the OAuth endpoint itself.
+//
 // `codex cloud exec` is not used: it reaches only the environments ChatGPT
 // now calls Codex Cloud (Legacy), and the host's `codex` is needed only for
 // its sign-in.
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -39,6 +48,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -48,6 +58,7 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 // The statuses a Codex cloud task is reported in, as the host's ledger keeps
@@ -87,6 +98,8 @@ const codexService = "/oaiproto.codex_app_server_backend.ThreadService/"
 // sign-in. The zero value reads the sign-in where the CLI keeps it and talks
 // to ChatGPT's service.
 type Codex struct {
+	// Command is the CLI that renews the sign-in; empty is "codex".
+	Command string
 	// Home is the CLI's home, where its sign-in is; empty is where the CLI
 	// looks itself ($CODEX_HOME, else ~/.codex).
 	Home string
@@ -95,7 +108,7 @@ type Codex struct {
 	// HTTP makes the calls, over HTTP/2; nil is http.DefaultClient, which
 	// negotiates it.
 	HTTP *http.Client
-	// Timeout bounds one call; zero is thirty seconds.
+	// Timeout bounds one call; zero is Codex's own client's 150 seconds.
 	Timeout time.Duration
 	// Now is the clock a sign-in's expiry is read against; nil is time.Now.
 	Now func() time.Time
@@ -108,7 +121,7 @@ type Codex struct {
 // checks out the repository's default branch, so it is said in the message.
 // It answers once Codex has admitted the message.
 func (c Codex) Start(ctx context.Context, repository, branch, prompt, environment string) (Started, error) {
-	auth, err := c.signIn()
+	auth, err := c.signIn(ctx)
 	if err != nil {
 		return Started{}, err
 	}
@@ -128,7 +141,15 @@ func (c Codex) Start(ctx context.Context, repository, branch, prompt, environmen
 	if threadID == "" {
 		return Started{}, domain.ErrCodexCloudStart.WithDetail("Codex started a thread and named none")
 	}
-	if _, err := c.call(ctx, auth, "AddUserMessage", addMessageRequest(threadID, firstMessage(branch, prompt))); err != nil {
+	message := addMessageRequest(threadID, firstMessage(branch, prompt))
+	_, err = c.call(ctx, auth, "AddUserMessage", message)
+	if outcomeUnknown(err) {
+		// The message may have been admitted: Codex's client never resends
+		// blindly. Sent again with the same id, the service answers it as
+		// the duplicate of the first rather than starting the task twice.
+		_, err = c.call(ctx, auth, "AddUserMessage", message)
+	}
+	if err != nil {
 		return Started{}, err
 	}
 	return Started{ID: threadID, URL: "codex://threads/" + url.PathEscape(threadID)}, nil
@@ -146,7 +167,7 @@ func firstMessage(branch, prompt string) string {
 // or before it has one, ready once it completed, error once it failed or was
 // stopped.
 func (c Codex) Status(ctx context.Context, threadID string) (string, error) {
-	auth, err := c.signIn()
+	auth, err := c.signIn(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -312,22 +333,41 @@ func (e *grpcError) Error() string {
 
 // The gRPC status codes this adapter tells apart.
 const (
-	grpcInvalidArgument    = 3
-	grpcNotFound           = 5
-	grpcPermissionDenied   = 7
-	grpcResourceExhausted  = 8
-	grpcFailedPrecondition = 9
-	grpcUnauthenticated    = 16
+	grpcNotFound          = 5
+	grpcPermissionDenied  = 7
+	grpcResourceExhausted = 8
+	grpcUnauthenticated   = 16
 )
 
-// isEnvironmentRefusal reports whether err is the service refusing the
-// environment a thread was asked for.
+// isEnvironmentRefusal reports whether err is the service saying it has no
+// such environment. Any other refusal of a start in a picked environment is
+// the service's own words, under SESS_009.
 func isEnvironmentRefusal(err error) bool {
 	var ge *grpcError
-	if !errors.As(err, &ge) {
+	return errors.As(err, &ge) && ge.code == grpcNotFound
+}
+
+// outcomeUnknown reports whether err leaves it unknown whether the service
+// acted on the call: it was not reached for sure, or its answer was lost. A
+// refusal the service gave, for whatever reason, is known.
+func outcomeUnknown(err error) bool {
+	if err == nil || isRateLimited(err) || isSignInRefusal(err) {
 		return false
 	}
-	return ge.code == grpcNotFound || ge.code == grpcInvalidArgument || ge.code == grpcFailedPrecondition
+	var ge *grpcError
+	return !errors.As(err, &ge)
+}
+
+// isRateLimited reports whether err is ChatGPT's refusal for rate.
+func isRateLimited(err error) bool {
+	pe := problem.From(err)
+	return pe != nil && pe.Code == domain.ErrCodexRateLimited.Code
+}
+
+// isSignInRefusal reports whether err is the host's sign-in refused.
+func isSignInRefusal(err error) bool {
+	pe := problem.From(err)
+	return pe != nil && pe.Code == domain.ErrCodexCloudSignIn.Code
 }
 
 func grpcMessage(err error) string {
@@ -338,11 +378,28 @@ func grpcMessage(err error) string {
 	return err.Error()
 }
 
-// call makes one unary gRPC call and answers the response message. A refusal
+// call makes one unary gRPC call and answers the response message. A sign-in
+// ChatGPT refuses is renewed once (renew) and the call sent again with it.
+func (c Codex) call(ctx context.Context, auth codexAuth, method string, message []byte) ([]byte, error) {
+	reply, err := c.send(ctx, auth, method, message)
+	if !isSignInRefusal(err) {
+		return reply, err
+	}
+	if c.renew(ctx) != nil {
+		return nil, err
+	}
+	renewed, readErr := c.readSignIn()
+	if readErr != nil || renewed.Tokens.AccessToken == auth.Tokens.AccessToken {
+		return nil, err
+	}
+	return c.send(ctx, renewed, method, message)
+}
+
+// send makes one unary gRPC call and answers the response message. A refusal
 // is a problem: no sign-in is ErrCodexCloudSignIn, a refusal for rate is
 // ErrCodexRateLimited, and any other is ErrCodexCloudStart in the service's
 // words, wrapping the *grpcError when the service gave one.
-func (c Codex) call(ctx context.Context, auth codexAuth, method string, message []byte) ([]byte, error) {
+func (c Codex) send(ctx context.Context, auth codexAuth, method string, message []byte) ([]byte, error) {
 	account := auth.Tokens.AccountID
 	if until := pausedUntil(account, c.now()); !until.IsZero() {
 		return nil, rateLimited(until, c.now())
@@ -372,7 +429,7 @@ func (c Codex) call(ctx context.Context, auth codexAuth, method string, message 
 	}
 	switch res.StatusCode {
 	case http.StatusOK:
-	case http.StatusUnauthorized, http.StatusForbidden:
+	case http.StatusUnauthorized:
 		return nil, codexSignIn("ChatGPT refused the host's Codex sign-in")
 	case http.StatusTooManyRequests:
 		until := c.now().Add(retryAfter(res.Header.Get("Retry-After"), c.now()))
@@ -401,7 +458,7 @@ func (c Codex) call(ctx context.Context, auth codexAuth, method string, message 
 		return nil, domain.ErrCodexCloudStart.WithDetail("Codex cloud answered %s with no message", method)
 	}
 	size := binary.BigEndian.Uint32(body[1:5])
-	if uint64(len(body)-5) < uint64(size) {
+	if int64(len(body)-5) < int64(size) {
 		return nil, domain.ErrCodexCloudStart.WithDetail("Codex cloud's answer to %s was cut off", method)
 	}
 	return body[5 : 5+size], nil
@@ -492,9 +549,40 @@ type codexAuth struct {
 	} `json:"tokens"`
 }
 
-// signIn reads the CLI's ChatGPT sign-in, refusing one that is missing,
-// incomplete or past its expiry.
-func (c Codex) signIn() (codexAuth, error) {
+// codexRefreshWindow is how long before its expiry a sign-in is renewed,
+// as Codex's own client does (CHATGPT_ACCESS_TOKEN_REFRESH_WINDOW_MINUTES).
+const codexRefreshWindow = 5 * time.Minute
+
+// signIn answers the CLI's ChatGPT sign-in, renewed first when it is about to
+// expire, refusing one that is missing, an API key, or still expired.
+func (c Codex) signIn(ctx context.Context) (codexAuth, error) {
+	auth, err := c.readSignIn()
+	if err != nil {
+		return codexAuth{}, err
+	}
+	exp, ok := expiry(auth.Tokens.AccessToken)
+	if !ok || exp.After(c.now().Add(codexRefreshWindow)) {
+		return auth, nil
+	}
+	renewErr := c.renew(ctx)
+	if renewErr == nil {
+		if renewed, err := c.readSignIn(); err == nil {
+			auth = renewed
+			exp, ok = expiry(auth.Tokens.AccessToken)
+		}
+	}
+	if ok && !exp.After(c.now()) {
+		why := "The host's Codex sign-in to ChatGPT has expired"
+		if renewErr != nil {
+			why += " and `codex` could not renew it (" + problemDetail(renewErr) + ")"
+		}
+		return codexAuth{}, codexSignIn(why)
+	}
+	return auth, nil
+}
+
+// readSignIn reads the CLI's ChatGPT sign-in as it is on disk.
+func (c Codex) readSignIn() (codexAuth, error) {
 	home, err := c.home()
 	if err != nil {
 		return codexAuth{}, err
@@ -513,10 +601,74 @@ func (c Codex) signIn() (codexAuth, error) {
 	if auth.Tokens == nil || auth.Tokens.AccessToken == "" || auth.Tokens.AccountID == "" {
 		return codexAuth{}, codexSignIn("Codex on this host is signed in with an API key, or not at all; Codex cloud needs a ChatGPT sign-in")
 	}
-	if exp, ok := expiry(auth.Tokens.AccessToken); ok && !exp.After(c.now()) {
-		return codexAuth{}, codexSignIn("The host's Codex sign-in to ChatGPT has expired; running `codex` once renews it")
-	}
 	return auth, nil
+}
+
+// codexRenewTimeout bounds one renewal through the CLI.
+const codexRenewTimeout = 30 * time.Second
+
+// renew asks the host's `codex` to renew its ChatGPT sign-in: its app-server
+// over stdio, initialized, then `account/read` with `refreshToken`, which
+// runs Codex's own refresh and writes auth.json. It answers once the CLI has
+// answered that request.
+func (c Codex) renew(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, codexRenewTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, c.command(), "app-server") //nolint:gosec // the CLI by name, no shell
+	cmd.Env = os.Environ()
+	if c.Home != "" {
+		cmd.Env = append(cmd.Env, "CODEX_HOME="+c.Home)
+	}
+	cmd.WaitDelay = 2 * time.Second
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return domain.ErrCodexCloudSignIn.WithDetail("`codex` could not be run to renew the sign-in: %v", err).WithCause(err)
+	}
+	defer func() {
+		_ = stdin.Close()
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+	}()
+	for _, line := range []string{
+		`{"method":"initialize","id":0,"params":{"clientInfo":{"name":"oppenheimer-runner","title":null,"version":"1"}}}`,
+		`{"method":"initialized"}`,
+		`{"method":"account/read","id":1,"params":{"refreshToken":true}}`,
+	} {
+		if _, err := io.WriteString(stdin, line+"\n"); err != nil {
+			return domain.ErrCodexCloudSignIn.WithDetail("`codex app-server` stopped before it renewed the sign-in").WithCause(err)
+		}
+	}
+	scanner := bufio.NewScanner(stdout)
+	scanner.Buffer(make([]byte, 64<<10), 1<<20)
+	for scanner.Scan() {
+		var reply struct {
+			ID    *int            `json:"id"`
+			Error json.RawMessage `json:"error"`
+		}
+		if json.Unmarshal(scanner.Bytes(), &reply) != nil || reply.ID == nil || *reply.ID != 1 {
+			continue
+		}
+		if len(reply.Error) > 0 && string(reply.Error) != "null" {
+			return domain.ErrCodexCloudSignIn.WithDetail("`codex` could not renew the sign-in: %s", reply.Error)
+		}
+		return nil
+	}
+	return domain.ErrCodexCloudSignIn.WithDetail("`codex app-server` ended without renewing the sign-in")
+}
+
+// problemDetail is a refusal's own words: a problem's detail, else its text.
+func problemDetail(err error) string {
+	if pe := problem.From(err); pe != nil && pe.Detail != "" {
+		return pe.Detail
+	}
+	return err.Error()
 }
 
 // expiry reads a JWT's exp without verifying it: only to say "expired"
@@ -555,6 +707,13 @@ func (c Codex) home() (string, error) {
 	return filepath.Join(user, ".codex"), nil
 }
 
+func (c Codex) command() string {
+	if c.Command == "" {
+		return "codex"
+	}
+	return c.Command
+}
+
 func (c Codex) origin() string {
 	if c.Origin == "" {
 		return codexOrigin
@@ -571,7 +730,7 @@ func (c Codex) client() *http.Client {
 
 func (c Codex) timeout() time.Duration {
 	if c.Timeout <= 0 {
-		return 30 * time.Second
+		return 150 * time.Second
 	}
 	return c.Timeout
 }

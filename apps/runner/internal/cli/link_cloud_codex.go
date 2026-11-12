@@ -15,11 +15,13 @@ package cli
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/cloud"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 const (
@@ -86,22 +88,36 @@ func (h *linkHandler) watchCodexCloud(ctx context.Context) {
 }
 
 // pollCodexCloud asks Codex where each unsettled thread the host started
-// stands, and reports each one whose status moved. A thread it could not read
-// stays as it was last reported; the first refusal ends the round, since the
-// next ask would meet it too. With nothing to watch, Codex is not asked.
+// stands, and reports each one whose status moved. A thread it cannot read
+// (archived, deleted, refused) is skipped and stays as last reported, so one
+// does not hold the others back; only ChatGPT's own "wait" or a refused
+// sign-in ends the round, since every other ask would meet it too. A legacy
+// task (`task_…`, from a runner that drove `codex cloud`) is not asked about:
+// the current service does not know it. With nothing to watch, Codex is not
+// asked.
 func (h *linkHandler) pollCodexCloud(ctx context.Context) error {
 	ledger := newCloudLedger(h.app.Paths.State())
 	watched := ledger.unsettled(codexCloudAgent, cloud.CodexSettled, time.Now().Add(-codexCloudWatchFor))
+	var unread error
 	for _, w := range watched {
+		if strings.HasPrefix(w.ID, "task_") {
+			continue
+		}
 		status, err := h.codexCloud().Status(ctx, w.ID)
 		if err != nil {
-			return err
+			if pe := problem.From(err); pe != nil &&
+				(pe.Code == sessionsdomain.ErrCodexRateLimited.Code || pe.Code == sessionsdomain.ErrCodexCloudSignIn.Code) {
+				return err
+			}
+			h.logger.Warn("codex cloud thread not read", "thread", w.ID, "error", err)
+			unread = err
+			continue
 		}
 		if status != w.Status {
 			h.reportCodexStatus(ledger, w.SessionID, status)
 		}
 	}
-	return nil
+	return unread
 }
 
 // reportCodexStatus is a Codex task's status as the session's log takes it:

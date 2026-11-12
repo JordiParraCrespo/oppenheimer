@@ -3,14 +3,15 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"log/slog"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/cloud"
+	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // sentEvents is a link that takes every batch and keeps what it said; the
@@ -67,14 +68,14 @@ func (s *sentEvents) take() []sentEvent {
 }
 
 // fakeCodexCloud is Codex cloud as cloud.Codex answers it: the threads it
-// was started with, and their status as the test sets it. refuse, when set,
-// is what every status ask answers.
+// was started with, and their status as the test sets it. refuse holds, by
+// thread, what a status ask about it answers instead.
 type fakeCodexCloud struct {
 	mu      sync.Mutex
 	threads []fakeThread
-	asks    int
+	asks    []string
 	starts  []string
-	refuse  error
+	refuse  map[string]error
 }
 
 // fakeThread is one thread the fake started, and where it stands.
@@ -95,9 +96,9 @@ func (f *fakeCodexCloud) Start(_ context.Context, repository, branch, prompt, en
 func (f *fakeCodexCloud) Status(_ context.Context, threadID string) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.asks++
-	if f.refuse != nil {
-		return "", f.refuse
+	f.asks = append(f.asks, threadID)
+	if err := f.refuse[threadID]; err != nil {
+		return "", err
 	}
 	for _, thread := range f.threads {
 		if thread.ID == threadID {
@@ -218,33 +219,66 @@ func TestTheCodexCloudPollReportsEachTaskOnceWhenItMoves(t *testing.T) {
 	}
 	sent.ackAll(h.reporter)
 
-	asks := codex.asks
+	asks := len(codex.asks)
 	if err := h.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if codex.asks != asks {
+	if len(codex.asks) != asks {
 		t.Fatalf("Codex was asked again with every task settled")
 	}
 }
 
-// A refusal ends the round: the next thread's ask would meet it too, and an
-// unread thread stays as it was last reported.
-func TestTheCodexCloudPollStopsAtTheFirstRefusal(t *testing.T) {
+// One thread Codex will not answer about (archived, deleted) is skipped: the
+// others are still read and reported, and the round says it missed one.
+func TestTheCodexCloudPollSkipsAThreadItCannotRead(t *testing.T) {
 	h, codex, sent := newCodexCloudHarness(t)
 	h.createCloud(context.Background(), codexCreate("s-1"))
 	h.createCloud(context.Background(), codexCreate("s-2"))
 	sent.take()
 	sent.ackAll(h.reporter)
 
-	codex.refuse = errors.New("ChatGPT asked the host to wait")
+	codex.refuse = map[string]error{"thr_a": sessionsdomain.ErrCodexCloudStart.WithDetail("thread not found")}
+	codex.set("thr_b", cloud.CodexReady)
+	if err := h.pollCodexCloud(context.Background()); err == nil {
+		t.Fatal("a round that missed a thread reported no error")
+	}
+	if got := kinds(sent.take()); len(got) != 1 || got[0] != "agent.observed:done" {
+		t.Fatalf("events = %q, want the readable thread reported", got)
+	}
+}
+
+// ChatGPT's "wait", or a refused sign-in, ends the round at once: every other
+// ask would meet it too.
+func TestTheCodexCloudPollStopsWhenChatGPTSaysWait(t *testing.T) {
+	h, codex, sent := newCodexCloudHarness(t)
+	h.createCloud(context.Background(), codexCreate("s-1"))
+	h.createCloud(context.Background(), codexCreate("s-2"))
+	sent.take()
+
+	wait := sessionsdomain.ErrCodexRateLimited.WithDetail("try again in 1m0s")
+	codex.refuse = map[string]error{"thr_a": wait, "thr_b": wait}
 	if err := h.pollCodexCloud(context.Background()); err == nil {
 		t.Fatal("a refused round reported no error")
 	}
-	if codex.asks != 1 {
-		t.Fatalf("asks = %d, want 1", codex.asks)
+	if len(codex.asks) != 1 {
+		t.Fatalf("asks = %q, want one", codex.asks)
 	}
-	if got := sent.take(); len(got) != 0 {
-		t.Fatalf("a refused round reported %+v", got)
+}
+
+// A legacy task, left unsettled by a runner that drove `codex cloud`, is not
+// asked about: the current service does not know it, and asking every minute
+// would only be refused.
+func TestTheCodexCloudPollLeavesALegacyTaskAlone(t *testing.T) {
+	h, codex, _ := newCodexCloudHarness(t)
+	ledger := newCloudLedger(h.app.Paths.State())
+	if err := ledger.record("s-old", codexCloudAgent, cloud.Started{ID: "task_e_68a1"}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.pollCodexCloud(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(codex.asks) != 0 {
+		t.Fatalf("asks = %q, want none", codex.asks)
 	}
 }
 
@@ -254,8 +288,8 @@ func TestTheCodexCloudPollAsksNothingWithNothingToWatch(t *testing.T) {
 	if err := h.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if codex.asks != 0 {
-		t.Fatalf("asks = %d, want 0", codex.asks)
+	if len(codex.asks) != 0 {
+		t.Fatalf("asks = %q, want none", codex.asks)
 	}
 }
 
@@ -293,11 +327,11 @@ func TestACodexStatusIsRememberedOnlyOnceTheControlPlaneTookIt(t *testing.T) {
 
 	// Taken this time: the task is settled, and Codex is not asked again.
 	again.ackAll(restarted.reporter)
-	asks := codex.asks
+	asks := len(codex.asks)
 	if err := restarted.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if codex.asks != asks {
+	if len(codex.asks) != asks {
 		t.Fatal("Codex was asked about a task whose finish the control plane took")
 	}
 }

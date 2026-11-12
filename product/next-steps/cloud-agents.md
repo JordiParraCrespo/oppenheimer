@@ -160,6 +160,16 @@ no legacy: launch Codex sessions on the cloud as it is now. Decided:
   below ruled out and "Which Codex environment" then took for the legacy
   list: the owner chose it again here, knowing the service is not
   published.
+- **The sign-in is renewed by `codex`, not by us.** The access token lasts
+  days and only the CLI renews it. A host nobody types `codex` on would
+  outlive it, so the runner asks the host's own `codex app-server` to renew
+  it (`account/read` with `refreshToken`) when it is about to expire or
+  ChatGPT refuses it, and never calls the OAuth endpoint itself.
+- **Only an updated runner gets a start.** A runner names
+  `session.cloud.codex.threads`; one that still drives `codex cloud` names
+  `session.cloud.codex`, and the control plane sends it no Codex cloud
+  start, so a host not yet updated reads "This runner can't start it"
+  rather than starting a legacy task.
 - **The risk is the service's.** OpenAI has not published it and marks the
   client behind it under development. A change on their side breaks starts
   and status until the runner follows it; nothing here can see it coming.

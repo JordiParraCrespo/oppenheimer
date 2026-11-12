@@ -190,7 +190,7 @@ describe('RelayDispatchAdapter', () => {
 
     // The person's pick rides the create, so the host starts the task there.
     it('names the environment the person picked', async () => {
-      const { adapter, link } = harness(true, ['session.cloud.codex']);
+      const { adapter, link } = harness(true, ['session.cloud.codex.threads']);
       await adapter.create(codexCloud('asenvcfg_6845a1b2c3d4'), spec);
 
       const parsed = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
@@ -199,7 +199,7 @@ describe('RelayDispatchAdapter', () => {
 
     // None picked is Codex's default environment, with the repository.
     it('names none when nobody picked one', async () => {
-      const { adapter, link } = harness(true, ['session.cloud.codex']);
+      const { adapter, link } = harness(true, ['session.cloud.codex.threads']);
       await adapter.create(codexCloud(null), spec);
 
       expect(vi.mocked(link.send).mock.calls[0]?.[0]).not.toHaveProperty('codexEnvironment');

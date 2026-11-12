@@ -3036,7 +3036,7 @@
       "port.forward",
       "desktop.stream",
       "session.cloud",
-      "session.cloud.codex",
+      "session.cloud.codex.threads",
       "session.cloud.reply",
       "session.teleport",
       "session.watch",

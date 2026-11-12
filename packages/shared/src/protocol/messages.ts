@@ -161,8 +161,11 @@ export const RUNNER_CAPABILITIES = [
    * thread in Codex cloud with the host's ChatGPT sign-in, reports the
    * thread's id, and from then on follows its newest turn and reports where it
    * stands as the session's status (`product/next-steps/cloud-agents.md`).
+   * Named apart from `session.cloud.codex`, which a runner that drove
+   * `codex cloud exec` (legacy environments only) named, so the control plane
+   * never sends a Codex cloud start to one of those.
    */
-  'session.cloud.codex',
+  'session.cloud.codex.threads',
   /**
    * Answers `cloud.reply` with `cloud.replied`: a reply typed in a Claude Code
    * cloud session's chat, sent with the host's own `claude -p … --cloud <id>`,
@@ -229,7 +232,7 @@ export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
  */
 export const HOST_CLOUD_CAPABILITIES = {
   'claude-code': 'session.cloud',
-  codex: 'session.cloud.codex',
+  codex: 'session.cloud.codex.threads',
 } as const satisfies Record<HostCloudAgentId, RunnerCapability>;
 
 /**

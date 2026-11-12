@@ -331,7 +331,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind,
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
-		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilitySessionCloudReply,
+		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
 		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
 	}

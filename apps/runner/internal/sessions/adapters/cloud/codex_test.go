@@ -35,6 +35,9 @@ type standInCodex struct {
 	mu     sync.Mutex
 	calls  []codexCall
 	answer func(method string, message []byte) (reply []byte, status int, why string)
+	// lose, when it says so, answers a call with a bad gateway: an answer
+	// lost between the service and the host.
+	lose func(method string) bool
 }
 
 func (s *standInCodex) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +51,10 @@ func (s *standInCodex) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.calls = append(s.calls, codexCall{method: method, message: message, header: r.Header.Clone()})
 	s.mu.Unlock()
 	reply, status, why := s.answer(method, message)
+	if s.lose != nil && s.lose(method) {
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
 	w.Header().Set("Content-Type", "application/grpc")
 	w.Header().Set("Trailer", "Grpc-Status, Grpc-Message")
 	w.WriteHeader(http.StatusOK)
@@ -76,7 +83,11 @@ func codexServer(t *testing.T, answer func(method string, message []byte) ([]byt
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.Close)
-	return service, Codex{Home: signedIn(t, token(time.Now().Add(time.Hour))), Origin: server.URL, HTTP: server.Client()}
+	return service, Codex{
+		Command: filepath.Join(t.TempDir(), "no-codex"),
+		Home:    signedIn(t, token(time.Now().Add(time.Hour))),
+		Origin:  server.URL, HTTP: server.Client(),
+	}
 }
 
 // token is an access token as ChatGPT mints one: a JWT whose payload says
@@ -222,9 +233,22 @@ func TestCodexStartRefusesAnEnvironmentTheAccountDoesNotHave(t *testing.T) {
 	}
 }
 
+// A refusal of a start in a picked environment for any other reason than "not
+// found" is the service's own words, not "not on this account".
+func TestCodexStartSaysOtherRefusalsOfAPickedEnvironmentInCodexsWords(t *testing.T) {
+	_, codex := codexServer(t, func(string, []byte) ([]byte, int, string) {
+		return nil, 3, "repository overrides are required"
+	})
+	_, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "asenvcfg_web")
+	if code := codeOf(t, err); code != domain.ErrCodexCloudStart.Code {
+		t.Fatalf("code = %s, want SESS_009", code)
+	}
+}
+
 // Codex cloud needs a ChatGPT sign-in. A host with none, with an API key, or
-// with one past its expiry is refused before anything is sent, as SESS_022,
-// which says to run `codex login`; and so is one ChatGPT refuses.
+// with one past its expiry that `codex` cannot renew is refused before
+// anything is sent, as SESS_022, which says to run `codex login`; and so is
+// one ChatGPT refuses.
 func TestCodexStartSaysTheHostIsNotSignedIn(t *testing.T) {
 	service, codex := codexServer(t, starts)
 	apiKey := t.TempDir()
@@ -255,6 +279,92 @@ func TestCodexStartSaysTheHostIsNotSignedIn(t *testing.T) {
 	_, err := refused.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
 	if code := codeOf(t, err); code != domain.ErrCodexCloudSignIn.Code {
 		t.Fatalf("revoked: code = %s, want SESS_022", code)
+	}
+}
+
+// renewingCodex writes a stand-in for the CLI that, run as `codex app-server`,
+// answers `account/read` by writing a sign-in with access token next into
+// $CODEX_HOME/auth.json, as Codex's own refresh does, and records that it ran.
+func renewingCodex(t *testing.T, next string) (bin, ran string) {
+	t.Helper()
+	dir := t.TempDir()
+	bin, ran = filepath.Join(dir, "codex"), filepath.Join(dir, "ran")
+	auth := fmt.Sprintf(`{"tokens": {"access_token": %q, "account_id": "acc-%s"}}`, next, t.Name())
+	script := "#!/bin/sh\n" +
+		"[ \"$1\" = app-server ] || exit 2\n" +
+		"while read -r line; do case \"$line\" in *account/read*refreshToken*)\n" +
+		"  printf '%s' '" + auth + "' > \"$CODEX_HOME/auth.json\"; touch '" + ran + "'\n" +
+		"  echo '{\"id\":1,\"result\":{\"account\":null}}' ;;\n" +
+		"  *initialize\\\"*) echo '{\"id\":0,\"result\":{}}' ;; esac; done\n"
+	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil { //nolint:gosec // an executable stand-in
+		t.Fatal(err)
+	}
+	return bin, ran
+}
+
+// A sign-in about to expire is renewed by the host's own `codex` before the
+// call, and the call carries the renewed token: a host nobody types `codex`
+// on keeps starting tasks.
+func TestCodexRenewsASignInAboutToExpireThroughTheCLI(t *testing.T) {
+	service, codex := codexServer(t, starts)
+	fresh := token(time.Now().Add(8 * 24 * time.Hour))
+	codex.Command, _ = renewingCodex(t, fresh)
+	codex.Home = signedIn(t, token(time.Now().Add(time.Minute)))
+
+	if _, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", ""); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if got := service.taken()[0].header.Get("Authorization"); got != "Bearer "+fresh {
+		t.Fatalf("Authorization = %q, want the renewed token", got)
+	}
+}
+
+// A sign-in ChatGPT refuses is renewed once and the call sent again with it.
+func TestCodexRenewsASignInChatGPTRefusedAndAsksAgain(t *testing.T) {
+	fresh := token(time.Now().Add(8 * 24 * time.Hour))
+	service, codex := codexServer(t, func(string, []byte) ([]byte, int, string) { return turns(1), 0, "" })
+	service.answer = func(_ string, _ []byte) ([]byte, int, string) {
+		if len(service.calls) == 1 {
+			return nil, grpcUnauthenticated, "token revoked"
+		}
+		return turns(1), 0, ""
+	}
+	bin, ran := renewingCodex(t, fresh)
+	codex.Command = bin
+
+	got, err := codex.Status(context.Background(), "thr_1")
+	if err != nil || got != CodexReady {
+		t.Fatalf("Status = %q, %v", got, err)
+	}
+	if _, err := os.Stat(ran); err != nil {
+		t.Fatal("codex was not asked to renew the sign-in")
+	}
+	calls := service.taken()
+	if len(calls) != 2 || calls[1].header.Get("Authorization") != "Bearer "+fresh {
+		t.Fatalf("calls = %d, second with %q", len(calls), calls[len(calls)-1].header.Get("Authorization"))
+	}
+}
+
+// An answer lost on the way back leaves it unknown whether the task was
+// admitted. It is sent once more with the same message id, which the service
+// takes as the same message, rather than failing a task that may be running.
+func TestCodexStartSendsTheTaskAgainUnderTheSameIdWhenTheAnswerIsLost(t *testing.T) {
+	adds := 0
+	service, codex := codexServer(t, starts)
+	service.answer = func(method string, message []byte) ([]byte, int, string) {
+		if method == "AddUserMessage" {
+			adds++
+		}
+		return starts(method, message)
+	}
+	service.lose = func(method string) bool { return method == "AddUserMessage" && adds == 1 }
+
+	if _, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", ""); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	calls := service.taken()
+	if len(calls) != 3 || string(firstBytes(calls[1].message, 4)) != string(firstBytes(calls[2].message, 4)) {
+		t.Fatalf("calls = %d; the message was not sent again under its id", len(calls))
 	}
 }
 
