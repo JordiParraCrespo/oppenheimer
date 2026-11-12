@@ -581,6 +581,7 @@ export {
   TaskColumnAdd,
   TaskColumnMore,
   TaskComposer,
+  TaskMarquee,
   TaskSelectionBar,
   TaskSessionChip,
 } from './components/task-board';
