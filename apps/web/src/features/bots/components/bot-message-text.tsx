@@ -1,4 +1,4 @@
-import { Button, ChatCommand } from '@oppenheimer/design-system-web';
+import { Button, ChatCommandText } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { foldOf } from '@/features/bots/lib/long-message';
@@ -8,22 +8,14 @@ import { leadingCommand } from '@/features/bots/lib/slash-menu';
  * The words of a message you sent, folded when long (`foldOf`): a pasted log
  * shows its first lines and Show all, which opens the rest in place and
  * becomes Show less. Copy, beside the card, always takes the whole text.
- * A message that starts with a `/command` shows it marked (`ChatCommand`).
+ * A message that starts with a `/command` shows it marked (`ChatCommandText`).
  */
 export function BotMessageText({ text }: { text: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const fold = foldOf(text);
   const shown = !fold || open ? text : fold.head;
-  const command = leadingCommand(shown);
-  const words = command ? (
-    <>
-      <ChatCommand>{command}</ChatCommand>
-      {shown.slice(command.length)}
-    </>
-  ) : (
-    shown
-  );
+  const words = <ChatCommandText text={shown} command={leadingCommand(shown)} />;
   if (!fold) return words;
   return (
     <>

@@ -102,6 +102,22 @@ function ChatCommand({ className, ...props }: React.ComponentProps<'span'>) {
   );
 }
 
+/**
+ * Text that may open on a `/command`: the command marked (`ChatCommand`) and
+ * the rest as it is, or the text alone when `command` is not its prefix.
+ * What counts as a command is the caller's; the mark is drawn here, for a
+ * sent message and for the composer's field alike.
+ */
+function ChatCommandText({ text, command }: { text: string; command?: string | null }) {
+  if (!command || !text.startsWith(command)) return text;
+  return (
+    <>
+      <ChatCommand>{command}</ChatCommand>
+      {text.slice(command.length)}
+    </>
+  );
+}
+
 function ChatAttachment({
   icon,
   name,
@@ -381,5 +397,5 @@ function StreamingCaret({ className }: { className?: string }) {
   );
 }
 
-export { ChatAttachment, ChatCommand, ChatMention, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
+export { ChatAttachment, ChatCommand, ChatCommandText, ChatMention, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
 export type { TurnHeaderLabels, TurnState };
