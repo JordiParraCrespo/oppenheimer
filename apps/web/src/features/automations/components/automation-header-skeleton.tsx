@@ -2,7 +2,6 @@ import {
   Button,
   IconButton,
   PageHeader,
-  PageHeaderCrumbs,
   PageHeaderMeta,
   PageHeaderRow,
   PageHeaderSep,
@@ -14,8 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * An automation's header before the automation answers, on `AutomationHeader`'s
- * own parts: the crumb to the overview written and the name as a bar, the
- * glyph's slot, the title as a bar at the heading's line, Run now, Edit and
+ * own parts: the glyph's slot, the title as a bar at the heading's line, Run now, Edit and
  * the ellipsis drawn disabled, and the facts as bars on the meta line.
  */
 export function AutomationHeaderSkeleton() {
@@ -23,11 +21,6 @@ export function AutomationHeaderSkeleton() {
   return (
     <PageHeader aria-busy>
       <LoadingStatus />
-      <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
-        <span className="text-fg-muted">{t('automations.detail.crumb')}</span>
-        <span>/</span>
-        <Skeleton shape="sm" className="h-2.5 w-28" />
-      </PageHeaderCrumbs>
       <PageHeaderRow
         icon={<Skeleton shape="pill" className="size-4" />}
         title={

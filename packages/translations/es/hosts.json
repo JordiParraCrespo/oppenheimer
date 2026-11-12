@@ -35,7 +35,6 @@
       "title": "Conectar",
       "subtitle": "El runner se registra con el nombre de máquina que reporta."
     },
-    "crumbHosts": "Hosts",
     "done": "Listo",
     "description": "Pega esta instrucción en el agente de código de la máquina donde quieras las sesiones. Instala el runner y lo conecta. Nada queda expuesto a internet."
   },

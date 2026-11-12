@@ -124,7 +124,8 @@
   no-workspace redirect as the console. Hosts lists the machines as cards
   with Add host on the right, which opens the Add a host page inside
   Settings (`/settings/hosts/new`, the settings sidebar still beside it,
-  the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
+  the Hosts row unlit): Back (no breadcrumb, see the README's decisions
+  that changed), Done rather than
   Use this host, all back to the list. The console pairs in a dialog;
   Settings keeps its page, because its frame keeps Settings around it,
   and shows the Command / Agent prompt panel outright rather than behind
