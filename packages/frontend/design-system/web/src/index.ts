@@ -397,8 +397,6 @@ export { CalendarEntry, MonthCalendar } from './components/month-calendar';
 export { NumberStepper } from './components/number-stepper';
 export {
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
   PageHeaderRow,

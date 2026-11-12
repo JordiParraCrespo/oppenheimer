@@ -1171,8 +1171,8 @@ export default function Page() {
         id="pageheader"
         title="PageHeader"
         meta="page-header.tsx"
-        desc="Every routine page opens with one: a breadcrumb back, the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining. The display size is a page that opens on its own name (Plan's Tasks and Calendar): the ladder's H1, no glyph, and its facts under it as PageHeaderStats in an unindented meta line."
-        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
+        desc="Every routine page opens with one (the Back pill sits above it): the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining. The display size is a page that opens on its own name (Plan's Tasks and Calendar): the ladder's H1, no glyph, and its facts under it as PageHeaderStats in an unindented meta line."
+        code={`<PageHeader><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
       >
         <PageHeaderDemo />
       </Spec>
