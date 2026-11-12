@@ -581,4 +581,12 @@ describe('composeInbox: a task an agent made', () => {
     );
     expect(view.open).toEqual([]);
   });
+
+  it('keeps one marked done under Show done, and brings it back when the mark goes', () => {
+    const sources_ = sources({ tasks: [task('t-1')] });
+    const done = composeInbox(sources_, [mark('task:t-1', 'done')], NOW);
+    expect(done.open).toEqual([]);
+    expect(done.done.map((item) => item.key)).toEqual(['task:t-1']);
+    expect(composeInbox(sources_, [], NOW).open.map((item) => item.key)).toEqual(['task:t-1']);
+  });
 });

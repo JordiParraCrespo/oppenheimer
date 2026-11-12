@@ -10,9 +10,8 @@ import { INBOX_MARK_ACTIONS, type InboxMarkActionName } from '../lib/inbox-mark-
 /**
  * Does an Inbox action (`INBOX_MARK_ACTIONS`) to one item, through its own
  * mark, or to a selection, in one request. `error` is the last write the
- * server refused; the list draws it. Marking a task an agent made done, or
- * deleting it, also takes the task up (its Dismiss), so it does not wait in
- * the Inbox of another device or another reader.
+ * server refused; the list draws it. An action that also puts a source away
+ * (`takesUp`: Delete on a task an agent made) does that too.
  */
 export function useInboxMarks() {
   // The stable parts only: the mutation result itself is a new object on
@@ -33,7 +32,7 @@ export function useInboxMarks() {
     apply(action: InboxMarkActionName, target: InboxItem | readonly InboxItem[]) {
       const items = 'key' in target ? [target] : target;
       if (items.length === 0) return;
-      const { write, visit } = INBOX_MARK_ACTIONS[action];
+      const { write, visit, takesUp } = INBOX_MARK_ACTIONS[action];
       const { mark, until } = write(items, new Date());
       if (items.length > 1) {
         putAll({ itemKeys: items.map((item) => item.key), mark, until });
@@ -42,8 +41,9 @@ export function useInboxMarks() {
       } else {
         put({ itemKey: items[0].key, mark, until });
       }
-      if (mark === 'done' || mark === 'deleted') {
-        for (const item of items) if (item.kind === 'task') triage(item.task.id);
+      for (const item of items) {
+        const taskId = takesUp?.(item);
+        if (taskId) triage(taskId);
       }
       if (visit) for (const item of items) visit(item.key);
     },

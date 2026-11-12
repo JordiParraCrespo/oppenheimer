@@ -565,9 +565,11 @@ bot's writes were logged as an agent's.
   fetched. Its card: the title, the notes, its column and due date, and
   **Put on today** (the primary: today as its TODO day), **Start session**
   (Start session on the board), **Dismiss** and **Open task**. Type offers
-  **Tasks**. **Mark as done** and **Delete** on it also dismiss it, so a
-  task put away on one device does not wait on another; snooze and
-  deprioritize are marks only. A done task no longer waits.
+  **Tasks**. **Delete** on it also dismisses it, since no mark brings a
+  deleted item back; **Mark as done**, snooze and deprioritize are marks
+  only, as for every item (a mark is the person's, on every device), so a
+  task marked done stays under Show done and Bring back returns it. A done
+  task no longer waits.
 - **Not changed:** the task is on the board from the start, in the column
   the agent chose, and an agent's TODO day still puts it on TODO; nothing
   starts on its own, as before (only a session started or linked by someone
@@ -577,7 +579,8 @@ bot's writes were logged as an agent's.
 Decided by the agent that built it, for the owner to accept or change:
 
 1. Every token or OAuth call counts as an agent's, the CLI included.
-2. Mark as done and Delete dismiss the task as well as hiding the item.
+2. Delete dismisses the task as well as hiding the item; Mark as done is a
+   mark only, so it can be brought back like any item.
 3. The board and TODO show an agent's task as they always did; it is not
    held back from them until it is taken up.
 4. The name for the state is "waiting in the Inbox"; "Unassigned" stays the

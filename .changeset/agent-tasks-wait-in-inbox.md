@@ -22,7 +22,7 @@ A task an agent made waits in Plan's Inbox until its person takes it up
   and `awaitsTriage`; the Inbox reads the board's tasks and lists a waiting
   one as a `task` item; `useTriageTask`.
 - `@oppenheimer/web`: the Inbox's task card (Put on today, Start session,
-  Dismiss, Open task) and a Tasks type; Mark as done and Delete on a task
-  also dismiss it.
+  Dismiss, Open task) and a Tasks type; Delete on a task also dismisses it
+  (`takesUp` on the mark actions' table), while Mark as done stays a mark.
 - `@oppenheimer/translations`: `inbox.type.task`, `inbox.from.task` and
   `inbox.task.*`.
