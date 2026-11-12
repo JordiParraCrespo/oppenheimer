@@ -1,5 +1,6 @@
 import {
   DragProvider,
+  dragIgnore,
   EmptyState,
   IconButton,
   SortableGroup,
@@ -146,6 +147,7 @@ export function TodoList() {
           />
         )}
         <IconButton
+          {...dragIgnore}
           type="button"
           size="sm"
           aria-label={t('tasks.todo.startSession', { title: task.title })}
