@@ -102,10 +102,12 @@ export function NewSessionSend({
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
-  // Forgotten here, not in the launch's own callback, which does not run once
-  // the screen is left while the launch is in flight.
   const startCloud = useStartCloudSession({
-    onSuccess: (_session, { input }) => forgetSentTask(input.prompt),
+    onSuccess: (session, { input }) => {
+      attempt.current = null;
+      forgetSentTask(input.prompt);
+      navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
+    },
   });
   const lastCloudLaunch = useRef<StartCloudSessionInput | null>(null);
   // Files ride a host session's first task; a vendor's agent takes none, and
@@ -122,15 +124,7 @@ export function NewSessionSend({
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
     lastCloudLaunch.current = input;
     startCloud.reset();
-    startCloud.mutate(
-      { idempotencyKey: attempt.current.key, input },
-      {
-        onSuccess: (session) => {
-          attempt.current = null;
-          navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
-        },
-      },
-    );
+    startCloud.mutate({ idempotencyKey: attempt.current.key, input });
   }
 
   /**

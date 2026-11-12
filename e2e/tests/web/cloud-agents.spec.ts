@@ -47,9 +47,7 @@ test('starts a session in Cursor’s cloud from New session and follows it', asy
   await page.getByRole('textbox', { name: /Describe a task/ }).fill(task);
   await page.getByRole('button', { name: /send/i }).click();
 
-  // The console goes to the session, which has no terminal: it links to
-  // Cursor. Send opens no tab: one opened in the press sat blank while Cursor
-  // answered, and closed empty on a refusal (#836).
+  // The console goes to the session, opening no tab; the session links to Cursor.
   await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]{36}$/, { timeout: 30_000 });
   expect(context.pages()).toHaveLength(1);
   const sessionId = page.url().split('/').pop() as string;
