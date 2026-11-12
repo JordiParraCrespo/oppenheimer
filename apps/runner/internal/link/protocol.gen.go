@@ -91,6 +91,7 @@ const (
 	CapabilityDesktopStream         = "desktop.stream"
 	CapabilitySessionCloud          = "session.cloud"
 	CapabilitySessionCloudCodex     = "session.cloud.codex"
+	CapabilitySessionCloudReply     = "session.cloud.reply"
 	CapabilitySessionTeleport       = "session.teleport"
 	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
@@ -161,6 +162,8 @@ const (
 	TypeDesktopClose            = "desktop.close"
 	TypeCodexEnvironmentsList   = "codex.environments.list"
 	TypeCodexEnvironments       = "codex.environments"
+	TypeCloudReply              = "cloud.reply"
+	TypeCloudReplied            = "cloud.replied"
 	TypeWhatsappLink            = "whatsapp.link"
 	TypeWhatsappUnlink          = "whatsapp.unlink"
 	TypeWhatsappState           = "whatsapp.state"
@@ -240,6 +243,8 @@ var MessageTypes = []string{
 	TypeDesktopClose,
 	TypeCodexEnvironmentsList,
 	TypeCodexEnvironments,
+	TypeCloudReply,
+	TypeCloudReplied,
 	TypeWhatsappLink,
 	TypeWhatsappUnlink,
 	TypeWhatsappState,
@@ -378,6 +383,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(CodexEnvironmentsList), true
 	case TypeCodexEnvironments:
 		return new(CodexEnvironments), true
+	case TypeCloudReply:
+		return new(CloudReply), true
+	case TypeCloudReplied:
+		return new(CloudReplied), true
 	case TypeWhatsappLink:
 		return new(WhatsappLink), true
 	case TypeWhatsappUnlink:
@@ -1000,6 +1009,20 @@ type CodexEnvironmentsEnvironments struct {
 	Label      string `json:"label,omitempty"`
 	Pinned     bool   `json:"pinned"`
 	Repository bool   `json:"repository"`
+}
+
+// CloudReply is the `cloud.reply` message.
+type CloudReply struct {
+	Type           string `json:"type"`
+	CommandID      string `json:"commandId"`
+	CloudSessionID string `json:"cloudSessionId"`
+	Text           string `json:"text"`
+}
+
+// CloudReplied is the `cloud.replied` message.
+type CloudReplied struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
 }
 
 // WhatsappLink is the `whatsapp.link` message.

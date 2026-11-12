@@ -173,6 +173,13 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     recommended: 'e_6845a1b2c3d4',
     source: 'chatgpt',
   },
+  'cloud.reply': {
+    type: 'cloud.reply',
+    commandId,
+    cloudSessionId: 'session_01KpKLr6MbnpttWWRZjSBU6A',
+    text: 'Now tag the release',
+  },
+  'cloud.replied': { type: 'cloud.replied', commandId },
   'whatsapp.link': { type: 'whatsapp.link', commandId },
   'whatsapp.unlink': { type: 'whatsapp.unlink', commandId },
   'whatsapp.state': {

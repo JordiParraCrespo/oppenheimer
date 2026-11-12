@@ -2113,9 +2113,13 @@ export type CloudChatReplyResponseDto = {
     authorId?: string | null;
     createdAt: string;
     /**
-     * When the session’s Stop hook took it to the agent; null while it waits.
+     * When it reached the agent, by either way; null while it waits.
      */
     collectedAt?: string | null;
+    /**
+     * How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits.
+     */
+    deliveredVia?: 'hook' | 'host';
 };
 
 export type CloudChatResponseDto = {

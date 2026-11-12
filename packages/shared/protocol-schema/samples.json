@@ -351,6 +351,16 @@
     "recommended": "e_6845a1b2c3d4",
     "source": "chatgpt"
   },
+  "cloud.reply": {
+    "type": "cloud.reply",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "cloudSessionId": "session_01KpKLr6MbnpttWWRZjSBU6A",
+    "text": "Now tag the release"
+  },
+  "cloud.replied": {
+    "type": "cloud.replied",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+  },
   "whatsapp.link": {
     "type": "whatsapp.link",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"

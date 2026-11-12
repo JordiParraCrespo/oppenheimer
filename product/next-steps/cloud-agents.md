@@ -381,17 +381,59 @@ answer it there, the way claude.ai shows it. The research is
   from a host (`claude -p … --cloud <id>`) is the next step. Stop does
   nothing: no hook can interrupt a turn. A session started on claude.ai,
   not from the console, is refused until there is a way to adopt one.
+  *Changed 2026-11-11:* an idle session is woken from a host ("Waking an
+  idle session", below).
 - **Decided with the owner (2026-11-07).**
   1. A session started on claude.ai, not from the console, keeps no chat
      here: only sessions the console launched (`SESSIONS_053`). Not adopted.
   2. A reply to an idle session is sent from one of the person's hosts,
      signed in to the same claude.ai account (`claude -p … --cloud <id>`),
-     so it wakes the session. The next pull request.
+     so it wakes the session. Built 2026-11-11 ("Waking an idle session").
   3. The console gets a "turn on chat" panel on a cloud session: the key,
      the hooks to add to the repository, and the host to allow in the cloud
      environment. The next pull request.
   4. Stop and the Terminal/Chat switch are hidden on a cloud session's chat,
      where neither can do anything. The next pull request.
+
+### Waking an idle session (2026-11-11)
+
+Decision 2 above, built. Checked by hand first: from the pop-os host,
+`claude -p "…" --cloud session_01KpKLr6MbnpttWWRZjSBU6A --output-format json`
+answered `{"ok":true,…}` and the idle session ran the message.
+
+- **When.** Every reply is kept with a wake staged on the outbox for 15
+  seconds later (`CLOUD_REPLY_WAKE_AFTER_SECONDS`, the `cloud-reply-wakes`
+  queue). A Stop hook that is waiting looks every second, so one that is
+  there takes the reply well inside that; past it the session is idle, or
+  in a turn Claude Code queues the message behind, and the wake sends it.
+- **From where.** Only a host signed in to the claude.ai account the
+  session runs on, which is the account of the host that started it (its
+  `claudeAccount`, as its runner last reported it): that host first, then
+  the launcher's other hosts on the same account. The first online one
+  whose runner named `session.cloud.reply` in its hello gets `cloud.reply`
+  and runs `claude -p <reply> --cloud <id> --output-format json`, answering
+  `cloud.replied` on `"ok": true`. A reply has 45 seconds from when it
+  reaches the host, its wait behind an earlier one to the session included,
+  so the control plane (which waits 60) always hears how it went.
+- **Never twice.** The hook's take and the wake claim the same row by the
+  same `collectedAt IS NULL` update, which also records which way it went
+  (`session_cloud_reply."deliveredVia"`, `hook` or `host`). Whichever comes
+  first delivers it; the other finds nothing.
+- **When it does not go.** No such host online, or Claude Code refusing it
+  (`SESS_020`; `SESS_019` signed out), hands the reply back to the hook: the
+  console shows it waiting again, and the next turn takes it. A send Claude
+  Code did not confirm in time (`SESS_021`, or no answer from the runner)
+  may have reached the session, so it is kept as sent: a reply the agent
+  might get twice is worse than one the person types again. There is one
+  wake per reply; nothing retries a refused one.
+- **The text** is the hook's own, `CLOUD_REPLY_PREAMBLE` and the reply, so the
+  agent reads it the same either way and the console finds it in the
+  transcript as the person's message. Until then the chat says it was sent.
+- **Open.** The account is read off the starting host now, not recorded at
+  launch: a host signed in to another account since then would send to a
+  session its account does not have, which Claude Code refuses (`SESS_020`,
+  handed back). Recording the account on the session is the fix if that
+  turns out to happen.
 
 ## Follow-ups to a cloud agent (2026-11-05)
 
