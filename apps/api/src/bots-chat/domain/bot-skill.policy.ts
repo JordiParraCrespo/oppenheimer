@@ -6,6 +6,7 @@ import {
   botGoalCommandOf,
   botLoopCommandOf,
   botScheduleCommandOf,
+  builtInSkillsBeside,
 } from '@oppenheimer/shared';
 import { goalSetPrompt } from './bot-goal.policy';
 import { loopSetPrompt } from './bot-loop-message.factory';
@@ -53,10 +54,7 @@ export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [OPPENHEIMER_SKIL
 export function withBuiltInSkills<Skill extends BotSkillView>(
   skills: readonly Skill[],
 ): (Skill | BotBuiltInSkill)[] {
-  const built = BOT_BUILT_IN_SKILLS.filter(
-    (skill) => !skills.some((own) => own.name === skill.name),
-  );
-  return [...skills, ...built];
+  return [...skills, ...builtInSkillsBeside(BOT_BUILT_IN_SKILLS, skills)];
 }
 
 /** Whether the skill is one Oppenheimer ships (`BOT_BUILT_IN_SKILLS`), not a row of the bot's. */

@@ -2,13 +2,16 @@ import { Button, SettingsGroup, SettingsListRow } from '@oppenheimer/design-syst
 import type { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseBotSkills } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import type { BotBuiltInSkillText } from '@oppenheimer/shared/schemas/bot-skill';
+import {
+  BOT_BUILT_IN_SKILL_TEXTS,
+  type BotBuiltInSkillText,
+  builtInSkillsBeside,
+} from '@oppenheimer/shared/schemas/bot-skill';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotBuiltInSkillDialog } from '@/features/bots/dialogs/bot-built-in-skill';
 import { BotSkillDialog } from '@/features/bots/dialogs/bot-skill';
 import { DeleteBotSkillDialog } from '@/features/bots/dialogs/delete-bot-skill';
-import { builtInSkillsBeside } from '@/features/bots/lib/built-in-skills';
 import { BotBuiltInSkillRow } from '@/features/bots/sections/bot-built-in-skill-row';
 import { BotSkillRow } from '@/features/bots/sections/bot-skill-row';
 
@@ -24,7 +27,7 @@ export function BotSkills({ botId }: { botId: string }) {
   const [editing, setEditing] = useState<BotSkillEntity | 'new' | null>(null);
   const [deleting, setDeleting] = useState<BotSkillEntity | null>(null);
   const [viewing, setViewing] = useState<BotBuiltInSkillText | null>(null);
-  const builtIns = builtInSkillsBeside(skills);
+  const builtIns = builtInSkillsBeside(BOT_BUILT_IN_SKILL_TEXTS, skills);
 
   return (
     <div className="flex flex-col gap-8">

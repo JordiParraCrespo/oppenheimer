@@ -184,6 +184,19 @@ export const BOT_BUILT_IN_SKILL_TEXTS: readonly BotBuiltInSkillText[] = [
   BOT_RECAP_SKILL,
 ];
 
+/**
+ * The built-ins a bot has beside its own skills: each one whose name none of
+ * its own holds, since a skill saved under a built-in's name before it was
+ * reserved is the one the bot uses. The one rule for it: the API's prompt
+ * and `use_skill` and the console's Settings → Skills all read it.
+ */
+export function builtInSkillsBeside<BuiltIn extends { name: string }>(
+  builtIns: readonly BuiltIn[],
+  own: readonly { name: string }[],
+): BuiltIn[] {
+  return builtIns.filter((skill) => !own.some((mine) => mine.name === skill.name));
+}
+
 export const BOT_SKILL_RESERVED_NAMES = [
   'skill',
   ...BOT_BUILT_IN_COMMANDS,
