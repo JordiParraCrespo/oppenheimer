@@ -1,18 +1,16 @@
 package cli
 
 // Codex cloud (`session.create` with `cloud` and the agent `codex`): the
-// host starts the task with its own `codex` and ChatGPT sign-in, then reads
-// where it stands off `codex cloud list --json` and reports it as the
-// session's state. Unlike Claude Code's cloud, whose status only the browser
-// extension sees, Codex's CLI answers it, so the host is the one to ask.
+// host starts a thread in Codex cloud with its own ChatGPT sign-in
+// (cloud.Codex), then reads where the thread's newest turn stands and reports
+// it as the session's state.
 //
-// The budget. OpenAI publishes no limit for the CLI's cloud task reads
-// (`chatgpt.com/backend-api/wham/tasks`, counted against the ChatGPT account
-// the host is signed in as). The host asks at most once a minute, and only
-// while a task it started in the last week has not settled; one ask is one
-// page of twenty tasks, and at most codexCloudPages pages when the tasks it
-// watches have fallen further back. A failed ask doubles the wait, up to a
-// quarter of an hour, and the first answer brings it back to a minute.
+// The budget. OpenAI publishes no limit for Codex cloud; it counts against
+// the ChatGPT account the host is signed in as. The host asks at most once a
+// minute, one call per thread it started in the last week that has not
+// settled. A failed round doubles the wait, up to a quarter of an hour, and
+// the first answer brings it back to a minute; ChatGPT's own "wait" pauses
+// the account in the adapter.
 
 import (
 	"context"
@@ -33,16 +31,14 @@ const (
 	// task's machine recoverable for a week, and a task still running after
 	// that is not one the host will see settle.
 	codexCloudWatchFor = 7 * 24 * time.Hour
-	// codexCloudPages bounds one ask: a hundred of the account's newest tasks.
-	codexCloudPages = 5
 )
 
-// createCodexCloud runs `codex cloud exec` on the checkout's base branch, in
-// the Codex cloud environment the create names, or else the one linked to its
-// repository (cloud.Codex.Start), reports the task as
-// the session's `agentSessionId` and the session as working. Codex takes the
-// branch from GitHub, so nothing is fetched or checked out here: the progress
-// is the agent's step alone.
+// createCodexCloud starts a Codex cloud thread for the checkout's repository,
+// from its base branch, in the environment the create names or else Codex's
+// default with the repository (cloud.Codex.Start), and reports the thread as
+// the session's `agentSessionId` and the session as working. Codex checks the
+// repository out itself, so nothing is fetched here: the progress is the
+// agent's step alone.
 func (h *linkHandler) createCodexCloud(
 	ctx context.Context,
 	m link.SessionCreate,
@@ -89,40 +85,21 @@ func (h *linkHandler) watchCodexCloud(ctx context.Context) {
 	}
 }
 
-// pollCodexCloud reads the account's newest tasks, a page at a time, until
-// every unsettled task the host started is found or codexCloudPages is spent,
-// and reports each one whose status moved. A task not found stays as it was
-// last reported. With nothing to watch, Codex is not asked.
+// pollCodexCloud asks Codex where each unsettled thread the host started
+// stands, and reports each one whose status moved. A thread it could not read
+// stays as it was last reported; the first refusal ends the round, since the
+// next ask would meet it too. With nothing to watch, Codex is not asked.
 func (h *linkHandler) pollCodexCloud(ctx context.Context) error {
 	ledger := newCloudLedger(h.app.Paths.State())
 	watched := ledger.unsettled(codexCloudAgent, cloud.CodexSettled, time.Now().Add(-codexCloudWatchFor))
-	if len(watched) == 0 {
-		return nil
-	}
-	want := make(map[string]cloudWatch, len(watched))
 	for _, w := range watched {
-		want[w.ID] = w
-	}
-	cursor := ""
-	for range codexCloudPages {
-		page, err := h.codexCloud().List(ctx, cursor)
+		status, err := h.codexCloud().Status(ctx, w.ID)
 		if err != nil {
 			return err
 		}
-		for _, task := range page.Tasks {
-			w, ok := want[task.ID]
-			if !ok {
-				continue
-			}
-			delete(want, task.ID)
-			if task.Status != w.Status {
-				h.reportCodexStatus(ledger, w.SessionID, task.Status)
-			}
+		if status != w.Status {
+			h.reportCodexStatus(ledger, w.SessionID, status)
 		}
-		if len(want) == 0 || page.Cursor == "" {
-			return nil
-		}
-		cursor = page.Cursor
 	}
 	return nil
 }
@@ -163,7 +140,7 @@ func codexStatusEvent(status string) (string, map[string]any, bool) {
 		return "agent.observed", map[string]any{"state": "done"}, true
 	case cloud.CodexError:
 		return "session.failed", map[string]any{
-			"detail": "Codex cloud reported the task failed; its page on chatgpt.com/codex says why",
+			"detail": "Codex cloud reported the task failed or stopped; its thread in Codex says why",
 		}, true
 	}
 	return "", nil, false
@@ -174,25 +151,4 @@ func (h *linkHandler) codexCloud() CodexCloud {
 		return h.app.CodexCloud
 	}
 	return cloud.Codex{}
-}
-
-// listCodexEnvironments answers `codex.environments.list`: the composer's
-// picker of Codex cloud environments, read with the host's own sign-in.
-func (h *linkHandler) listCodexEnvironments(ctx context.Context, m link.CodexEnvironmentsList) {
-	envs, err := h.codexCloud().Environments(ctx, m.Repository)
-	if err != nil {
-		h.fail(m.CommandID, err)
-		return
-	}
-	out := link.CodexEnvironments{
-		Type: link.TypeCodexEnvironments, CommandID: m.CommandID,
-		Environments: make([]link.CodexEnvironmentsEnvironments, 0, len(envs.Environments)),
-		Recommended:  envs.Recommended, Source: envs.Source,
-	}
-	for _, env := range envs.Environments {
-		out.Environments = append(out.Environments, link.CodexEnvironmentsEnvironments{
-			ID: env.ID, Label: env.Label, Pinned: env.Pinned, Repository: env.Repository,
-		})
-	}
-	_ = h.client.Send(out)
 }

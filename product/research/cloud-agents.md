@@ -468,12 +468,17 @@ key and its own bill, the Cursor model (`next-steps/cloud-agents.md`, "What
 landed"), and would not make the `oppenheimer` environment usable. That is
 a product decision and none is taken here.
 
-### What follows
+### What followed (2026-11-12)
 
-- Keep the host's CLI and its sign-in as the one driver of Codex cloud.
-- Say the limit where a person meets it: in the picker, before a start,
-  and in the refusal, with the two ways out that exist (a legacy
-  environment, or starting the task in ChatGPT).
-- Come back when `codex cloud` gains a way to start a task in a current
-  environment, or `tui_multi_backend` leaves under-development with a
-  headless route. Either is one adapter, `sessions/adapters/cloud`.
+Read again at `c0cc9fc`: the stable npm release is 0.167.2 and the newest
+alpha 0.170.0-alpha.2, the first with this client; still no command but
+the gated terminal preview uses it. The owner asked to launch Codex cloud
+sessions on the current cloud and to drop legacy, so the runner speaks the
+service itself: `Prewarm` with a managed environment (the picked id, or
+`asenvcfg_base` with the repository as an override, as the terminal does),
+`AddUserMessage` (start if idle), and `ListTurns` for status, over gRPC with
+the ChatGPT bearer and account id (`next-steps/cloud-agents.md`, "On Codex's
+current cloud"). Unknowns it carries: whether an environment id copied from
+ChatGPT Settings is the one `Prewarm` takes, a thread's web address, and
+whether public ingress to the service is open to a client that is not
+Codex's own. None of them could be tried from where this was written.

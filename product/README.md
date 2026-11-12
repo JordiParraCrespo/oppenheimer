@@ -1065,15 +1065,16 @@ earlier note:
   "Which Codex environment"). To list them the host reads the Codex CLI's
   sign-in, which "Environments the CLI cannot reach", decided the same day,
   had ruled out; which holds is open, for the owner.
-- `next-steps/cloud-agents.md`, "Environments the CLI cannot reach", said
-  the Settings → Codex Cloud environments were not reachable by the CLI
-  "yet". On 2026-11-11, for issue 835, the CLI's source was read again
-  (`research/cloud-agents.md` §7): still not, with no headless route in
-  sight, and the Agents API is a separate product on an API key. The host's
-  CLI stays the driver; the picker and the refusal now say the limit and
-  the ways out (a legacy environment, or starting the task in ChatGPT),
-  and a host that is not signed in to ChatGPT has its own code
-  (`next-steps/cloud-agents.md`, "Still out of reach, and said earlier").
+- `next-steps/cloud-agents.md` started Codex cloud sessions with
+  `codex cloud exec`, which reaches only the environments ChatGPT now calls
+  Codex Cloud (Legacy). On 2026-11-12, for issue 835, the owner asked for no
+  legacy: the runner now starts and follows a thread on Codex's current
+  cloud service itself, with the host's ChatGPT sign-in, in Codex's default
+  environment with the repository or an environment id pasted from ChatGPT
+  Settings; the host no longer lists legacy environments
+  (`next-steps/cloud-agents.md`, "On Codex's current cloud"). It reads the
+  CLI's token to do so, which "Environments the CLI cannot reach" had ruled
+  out.
 - `next-steps/mail.md` §3.5 kept `trash_mail` asking every time, Full
   access included, with no Allow and no "always" on its card. On
   2026-11-02 the owner, cleaning a mailbox a batch of 25 at a time, asked

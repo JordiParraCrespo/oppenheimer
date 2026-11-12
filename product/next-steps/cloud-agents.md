@@ -132,37 +132,57 @@ and `xrp-mobile`, published and unusable. Decided:
   back when the CLI lists environments non-interactively, or reads the
   Settings ones.
 
-### Still out of reach, and said earlier (2026-11-11)
+### On Codex's current cloud (2026-11-12)
 
-Issue 835 asked whether a newer integration reaches the Settings → Codex
-Cloud environments. It does not (`research/cloud-agents.md` §7, read in
-`openai/codex` at `d27e7c1`): `codex cloud` still resolves `--env` against
-the older list, which ChatGPT now calls Codex Cloud (Legacy); the current
-environments sit behind a service the CLI reaches only from its
-interactive TUI, under a feature that is off and under development, with
-no way to name an environment; and the Agents API is a platform product
-on an API key and API billing with sandboxes of its own. Decided:
+Issue 835: the `oppenheimer` environment exists in ChatGPT Settings → Codex
+Cloud, and a start from a host failed with `SESS_010`. `codex cloud exec`
+resolves `--env` only against the older environments, which ChatGPT now
+calls Codex Cloud (Legacy), and no released `codex` (0.167.2; the alpha
+0.170.0-alpha.2 neither) starts a task in the current ones
+(`research/cloud-agents.md` §7). The current environments run on another
+service, `ThreadService` at `codex-cloud-backend.chatgpt.com`, which
+Codex's own terminal speaks behind its Cloud preview. The owner asked for
+no legacy: launch Codex sessions on the cloud as it is now. Decided:
 
-- **The host's CLI and its sign-in stay the driver.** Nothing about who
-  signs in or who is billed changes. The Agents API as a second Codex place
-  is a product decision for the owner, not taken.
-- **The picker says what it leaves out.** Under the list: only Codex Cloud
-  (Legacy) environments are listed, and the host cannot start a task in one
-  made in Settings → Codex Cloud. When the host could only read its recent
-  tasks (`source: tasks`), it says the list may be missing some. This is
-  the cheap half of "The place picker does not predict it" above: no mark
-  per repository, one sentence for every reader.
-- **The refusal gives the ways out.** `SESS_010` and its pane now say that
-  such an environment starts only from ChatGPT, and to pick a legacy
-  environment or start the task there; "not reachable yet" promised a fix
-  nobody has announced. Two more refusals read as `SESS_010` instead of the
-  CLI's bare words: an account with no legacy environment at all ("no cloud
-  environments are available"), and a picked environment the CLI no longer
-  has.
-- **Not signed in is its own code.** A host whose `codex` has no ChatGPT
-  sign-in refuses a start with `SESS_022` ("run codex login on the host"),
-  as Claude's does with `SESS_019`, and its picker with `SESSIONS_055`,
-  instead of "Codex could not list its environments".
+- **The runner speaks that service.** A start is two calls: `Prewarm`, a
+  thread in the environment, and `AddUserMessage`, the task as its first
+  message. Status is `ListTurns`, the newest turn: running or none yet is
+  working, completed is done, failed or stopped is failed, once a minute
+  per unsettled thread. gRPC over HTTP/2 with the host's ChatGPT sign-in
+  (`$CODEX_HOME/auth.json`, the bearer and the account id), the fields
+  Codex's client sends and reads, by number
+  (`apps/runner/internal/sessions/adapters/cloud/codex.go`). `codex cloud`
+  is no longer run; the host's `codex` is needed only for `codex login`.
+- **Who signs in and who pays do not change.** It is the host's own
+  ChatGPT sign-in and the plan's Codex limits, as before; the control plane
+  never sees the token (F23). What changes is that the runner reads the
+  CLI's token to call the service, which "Environments the CLI cannot reach"
+  below ruled out and "Which Codex environment" then took for the legacy
+  list: the owner chose it again here, knowing the service is not
+  published.
+- **The risk is the service's.** OpenAI has not published it and marks the
+  client behind it under development. A change on their side breaks starts
+  and status until the runner follows it; nothing here can see it coming.
+  It was built from source, not tried against a real account.
+- **Which environment.** None picked: Codex's default
+  (`asenvcfg_base`) with the repository checked out, which is what Codex's
+  own terminal does for the project it is opened in. Picked: an
+  environment id the person copies from ChatGPT Settings → Codex Cloud,
+  typed into the Environment pane. The service has no call that lists an
+  account's environments, so the pane lists none; the legacy list it used
+  to read (`codex.environments`, `GET /v1/hosts/:id/codex-environments`)
+  is gone with its codes (`SESSIONS_044`–`047`, `055`).
+- **The branch is said, not checked out.** The service checks the
+  repository's default branch out; the first message starts with "Start
+  from the `<branch>` branch."
+- **The link.** A thread opens in Codex's app at `codex://threads/<id>`;
+  its web address is not in Codex's source, so the console links a new
+  Codex cloud session to chatgpt.com/codex, and an older one (`task_…`) to
+  its task page as before.
+- **Refusals.** `SESS_022` a host not signed in to ChatGPT (none, an API
+  key, expired, or refused); `SESS_010` an environment id the account does
+  not have; `SESS_011` ChatGPT asking the host to wait, which pauses the
+  account; `SESS_009` anything else, in the service's words.
 
 ### Which Codex environment (2026-10-31)
 

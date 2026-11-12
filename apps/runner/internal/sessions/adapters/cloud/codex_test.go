@@ -2,315 +2,339 @@ package cloud
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
+
+	"google.golang.org/protobuf/encoding/protowire"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// fakeCodex writes a stand-in for the CLI that runs script with the CLI's
-// arguments, and records them, one per line, in the returned file. With a
-// tasks.json beside it (withTasks), `cloud list` answers that file and is not
-// recorded: the list a start reads environments from.
-func fakeCodex(t *testing.T, script string) (bin, args string) {
+// codexCall is one call the stand-in service took: its method, its message
+// and its headers.
+type codexCall struct {
+	method  string
+	message []byte
+	header  http.Header
+}
+
+// standInCodex is a stand-in for Codex cloud's ThreadService over HTTP/2:
+// answer says what each method answers, a message or a gRPC status.
+type standInCodex struct {
+	mu     sync.Mutex
+	calls  []codexCall
+	answer func(method string, message []byte) (reply []byte, status int, why string)
+}
+
+func (s *standInCodex) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	body, _ := io.ReadAll(r.Body)
+	method := strings.TrimPrefix(r.URL.Path, codexService)
+	var message []byte
+	if len(body) >= 5 {
+		message = body[5:]
+	}
+	s.mu.Lock()
+	s.calls = append(s.calls, codexCall{method: method, message: message, header: r.Header.Clone()})
+	s.mu.Unlock()
+	reply, status, why := s.answer(method, message)
+	w.Header().Set("Content-Type", "application/grpc")
+	w.Header().Set("Trailer", "Grpc-Status, Grpc-Message")
+	w.WriteHeader(http.StatusOK)
+	if status == 0 {
+		frame := make([]byte, 5)
+		binary.BigEndian.PutUint32(frame[1:], uint32(len(reply))) //nolint:gosec // a test reply
+		_, _ = w.Write(append(frame, reply...))
+	}
+	w.Header().Set("Grpc-Status", fmt.Sprint(status))
+	w.Header().Set("Grpc-Message", why)
+}
+
+func (s *standInCodex) taken() []codexCall {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]codexCall(nil), s.calls...)
+}
+
+// codexServer starts the stand-in over TLS and HTTP/2, and answers a Codex
+// that talks to it, signed in as account (each test its own, so a pause one
+// test causes is not another's).
+func codexServer(t *testing.T, answer func(method string, message []byte) ([]byte, int, string)) (*standInCodex, Codex) {
 	t.Helper()
-	dir := t.TempDir()
-	bin, args = filepath.Join(dir, "codex"), filepath.Join(dir, "args")
-	tasks := filepath.Join(dir, "tasks.json")
-	body := "#!/bin/sh\n" +
-		"if [ \"$2\" = list ] && [ -f '" + tasks + "' ]; then cat '" + tasks + "'; exit 0; fi\n" +
-		"for a in \"$@\"; do printf '%s\\n' \"$a\" >> '" + args + "'; done\n" +
-		"[ \"$1\" = cloud ] || { echo \"unexpected args: $*\" >&2; exit 2; }\n" +
-		script
-	if err := os.WriteFile(bin, []byte(body), 0o755); err != nil {
+	service := &standInCodex{answer: answer}
+	server := httptest.NewUnstartedServer(service)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.Close)
+	return service, Codex{Home: signedIn(t, token(time.Now().Add(time.Hour))), Origin: server.URL, HTTP: server.Client()}
+}
+
+// token is an access token as ChatGPT mints one: a JWT whose payload says
+// when it expires.
+func token(exp time.Time) string {
+	payload := base64.RawURLEncoding.EncodeToString([]byte(fmt.Sprintf(`{"exp": %d}`, exp.Unix())))
+	return "e30." + payload + ".sig"
+}
+
+// signedIn writes a ChatGPT sign-in as `codex login` keeps it, for an account
+// of the test's own, and answers the Codex home that holds it.
+func signedIn(t *testing.T, access string) string {
+	t.Helper()
+	home := t.TempDir()
+	auth := fmt.Sprintf(`{"OPENAI_API_KEY": null, "tokens": {"id_token": "x", "access_token": %q, "refresh_token": "r", "account_id": %q}}`,
+		access, "acc-"+t.Name())
+	if err := os.WriteFile(filepath.Join(home, "auth.json"), []byte(auth), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return bin, args
+	return home
 }
 
-// withTasks makes the fake's `cloud list` answer json.
-func withTasks(t *testing.T, bin, json string) {
-	t.Helper()
-	if err := os.WriteFile(filepath.Join(filepath.Dir(bin), "tasks.json"), []byte(json), 0o600); err != nil {
-		t.Fatal(err)
+// prewarmed is Prewarm's answer for a thread named id.
+func prewarmed(id string) []byte {
+	var thread, reply []byte
+	thread = appendString(thread, 14, id)
+	reply = appendMessage(reply, 14, thread)
+	return reply
+}
+
+// turns is ListTurns' answer with one turn per status, newest first.
+func turns(statuses ...uint64) []byte {
+	var rows, reply []byte
+	for _, status := range statuses {
+		var turn []byte
+		turn = appendString(turn, 4, "turn-1")
+		turn = protowire.AppendTag(turn, 8, protowire.VarintType)
+		turn = protowire.AppendVarint(turn, status)
+		rows = appendMessage(rows, 1, turn)
 	}
+	reply = appendMessage(reply, 1, rows)
+	return reply
 }
 
-// noSignIn is a Codex whose home holds no ChatGPT sign-in, so environments
-// come from its tasks.
-func noSignIn(t *testing.T, bin string) Codex {
-	t.Helper()
-	withTasks(t, bin, `{"tasks": []}`)
-	return Codex{Command: bin, Home: t.TempDir()}
-}
-
-func readArgs(t *testing.T, path string) []string {
-	t.Helper()
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
+// starts answers a start: a thread named thr_1, and the message admitted.
+func starts(method string, _ []byte) ([]byte, int, string) {
+	if method == "Prewarm" {
+		return prewarmed("thr_1"), 0, ""
 	}
-	return strings.Split(strings.TrimSpace(string(raw)), "\n")
+	return nil, 0, ""
 }
 
-func TestCodexStartReadsTheTaskTheCLINamed(t *testing.T) {
-	bin, args := fakeCodex(t, `echo 'https://chatgpt.com/codex/tasks/task_e_68a1b2c3d4'`)
-	started, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "develop", "Fix the wallet list", "")
+func codeOf(t *testing.T, err error) string {
+	t.Helper()
+	pe := problem.From(err)
+	if pe == nil {
+		t.Fatalf("err = %v, want a problem", err)
+	}
+	return pe.Code
+}
+
+// A task with no environment picked starts as Codex's own terminal starts a
+// cloud thread for a project: Codex's default environment with the
+// repository checked out, and the task as the person's first message, which
+// says the branch to start from. Both calls carry the host's ChatGPT sign-in.
+func TestCodexStartRunsTheTaskInTheDefaultEnvironmentWithTheRepository(t *testing.T) {
+	service, codex := codexServer(t, starts)
+
+	started, err := codex.Start(context.Background(), "Acme-Labs/XRP-Mobile", "develop", "Fix the wallet list", "")
 	if err != nil {
 		t.Fatalf("Start: %v", err)
 	}
-	want := Started{ID: "task_e_68a1b2c3d4", URL: "https://chatgpt.com/codex/tasks/task_e_68a1b2c3d4"}
-	if started != want {
-		t.Fatalf("started = %+v, want %+v", started, want)
-	}
-	got := strings.Join(readArgs(t, args), " ")
-	if got != "cloud exec --env=acme-labs/xrp-mobile --branch develop Fix the wallet list" {
-		t.Fatalf("args = %q", got)
-	}
-}
-
-// People name a Codex environment after the repository either way; the CLI
-// says which label it has not got, and the bare name is tried next.
-func TestCodexStartTriesTheRepositorysBareNameNext(t *testing.T) {
-	bin, args := fakeCodex(t, `[ "$3" = --env=xrp-mobile ] || { echo "Error: environment '${3#--env=}' not found; run codex cloud to list available environments" >&2; exit 1; }
-echo 'https://chatgpt.com/codex/tasks/task_e_1'`)
-	started, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
-	if err != nil {
-		t.Fatalf("Start: %v", err)
-	}
-	if started.ID != "task_e_1" {
+	if started.ID != "thr_1" || started.URL != "codex://threads/thr_1" {
 		t.Fatalf("started = %+v", started)
 	}
-	if got := readArgs(t, args); len(got) != 12 || got[2] != "--env=acme-labs/xrp-mobile" || got[8] != "--env=xrp-mobile" {
-		t.Fatalf("args = %q, want the full name tried before the bare name", got)
+	calls := service.taken()
+	if len(calls) != 2 || calls[0].method != "Prewarm" || calls[1].method != "AddUserMessage" {
+		t.Fatalf("calls = %v", calls)
 	}
-}
-
-// An environment made in ChatGPT's Settings → Codex Cloud is invisible to
-// `codex cloud exec`, so a repository whose only environment is there fails
-// under every label. That is its own code, naming the labels tried, the ones
-// the CLI shows in recent tasks and where the newer environments live.
-func TestCodexStartSaysWhichEnvironmentsTheCLICanSee(t *testing.T) {
-	bin, args := fakeCodex(t, `if [ "$2" = list ]; then cat <<'JSON'
-{"tasks": [
-  {"id": "task_e_3", "url": "u", "title": "a", "status": "ready", "environment_label": "kallista"},
-  {"id": "task_e_2", "url": "u", "title": "b", "status": "ready", "environment_label": "woocommerce-elementor-ai-template"},
-  {"id": "task_e_1", "url": "u", "title": "c", "status": "ready", "environment_label": "Kallista"},
-  {"id": "task_e_0", "url": "u", "title": "d", "status": "error", "environment_label": "Oppenheimer"}
-], "cursor": ""}
-JSON
-exit 0; fi
-echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
-	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
-	}
-	for _, want := range []string{
-		"acme-labs/oppenheimer or oppenheimer",
-		"recent tasks: kallista, woocommerce-elementor-ai-template (a partial list)",
-		"only in Codex Cloud (Legacy) environments",
-		"starts only from ChatGPT",
-	} {
-		if !strings.Contains(pe.Detail, want) {
-			t.Errorf("detail = %q, want it to say %q", pe.Detail, want)
+	for _, call := range calls {
+		if !strings.HasPrefix(call.header.Get("Authorization"), "Bearer e30.") ||
+			call.header.Get("ChatGPT-Account-Id") != "acc-"+t.Name() ||
+			call.header.Get("Content-Type") != "application/grpc" {
+			t.Fatalf("%s headers = %v", call.method, call.header)
 		}
 	}
-	// One page read for the environments, the two tries, and one page read
-	// for the refusal.
-	if got := strings.Join(readArgs(t, args)[17:], " "); got != "cloud list --json --limit 20" {
-		t.Fatalf("args after the two tries = %q, want one page of tasks read", got)
+
+	managed := firstBytes(firstBytes(firstBytes(calls[0].message, 10), 1), 1)
+	overrides := firstBytes(managed, 3)
+	origin := firstBytes(firstBytes(firstBytes(overrides, 1), 1), 5)
+	if string(firstBytes(managed, 1)) != CodexDefaultEnvironment ||
+		string(firstBytes(managed, 2)) != "/workspace/acme-labs/xrp-mobile" ||
+		string(origin) != "https://github.com/acme-labs/xrp-mobile" ||
+		string(firstBytes(overrides, 2)) != "xrp-mobile" {
+		t.Fatalf("environment = id %q, cwd %q, origin %q, name %q",
+			firstBytes(managed, 1), firstBytes(managed, 2), origin, firstBytes(overrides, 2))
+	}
+	if deferred, _ := firstVarint(calls[0].message, 29); deferred != 1 {
+		t.Fatalf("deferred environment = %d, want 1", deferred)
+	}
+
+	text := firstBytes(firstBytes(firstBytes(firstBytes(calls[1].message, 11), 1), 1), 1)
+	if string(firstBytes(calls[1].message, 23)) != "thr_1" ||
+		string(firstBytes(calls[1].message, 4)) != "oppenheimer-thr_1" ||
+		string(text) != "Start from the `develop` branch.\n\nFix the wallet list" {
+		t.Fatalf("message = thread %q, id %q, text %q", firstBytes(calls[1].message, 23), firstBytes(calls[1].message, 4), text)
+	}
+	if mode, _ := firstVarint(calls[1].message, 30); mode != 3 {
+		t.Fatalf("mode = %d, want start-if-idle (3)", mode)
 	}
 }
 
-// The labels are a courtesy: a list the CLI cannot answer still ends in the
-// same code, saying it could not read them.
-func TestCodexStartNamesNoEnvironmentsWhenTheyCannotBeRead(t *testing.T) {
-	bin, _ := fakeCodex(t, `[ "$2" = list ] && { echo "Error: backend unavailable" >&2; exit 1; }
-echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
-	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+// A picked environment is the one the thread starts in, by its id alone: it
+// already names its repositories.
+func TestCodexStartRunsTheTaskInThePickedEnvironment(t *testing.T) {
+	service, codex := codexServer(t, starts)
+
+	if _, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "asenvcfg_oppenheimer"); err != nil {
+		t.Fatalf("Start: %v", err)
 	}
-	if !strings.Contains(pe.Detail, "recent tasks: could not be read") {
-		t.Fatalf("detail = %q", pe.Detail)
+	managed := firstBytes(firstBytes(firstBytes(service.taken()[0].message, 10), 1), 1)
+	if string(firstBytes(managed, 1)) != "asenvcfg_oppenheimer" || firstBytes(managed, 3) != nil {
+		t.Fatalf("environment = %q, overrides %q", firstBytes(managed, 1), firstBytes(managed, 3))
+	}
+	if _, ok := firstVarint(service.taken()[0].message, 29); ok {
+		t.Fatal("a picked environment is not deferred")
 	}
 }
 
-// An account with only ChatGPT's newer environments has none the CLI lists,
-// and the CLI says so in other words than "not found". It is the same
-// refusal, with the way out, and not the CLI's bare sentence under SESS_009.
-func TestCodexStartReadsAnAccountWithNoLegacyEnvironmentAsTheSameRefusal(t *testing.T) {
-	bin, _ := fakeCodex(t, `echo "Error: no cloud environments are available for this workspace" >&2; exit 1`)
-	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+// An environment id the account has no environment under is its own refusal,
+// SESS_010, naming the id: not the service's bare words under SESS_009.
+func TestCodexStartRefusesAnEnvironmentTheAccountDoesNotHave(t *testing.T) {
+	_, codex := codexServer(t, func(string, []byte) ([]byte, int, string) {
+		return nil, grpcNotFound, "environment config not found"
+	})
+
+	_, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "asenvcfg_gone")
+	if code := codeOf(t, err); code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("code = %s, want SESS_010", code)
 	}
-	if !strings.Contains(pe.Detail, "recent tasks: none") || !strings.Contains(pe.Detail, "start this task in ChatGPT") {
-		t.Fatalf("detail = %q", pe.Detail)
+	if detail := problem.From(err).Detail; !strings.Contains(detail, "asenvcfg_gone") || !strings.Contains(detail, "environment config not found") {
+		t.Fatalf("detail = %q", detail)
 	}
 }
 
-// A session's log keeps a failure's first 500 characters, and the refusal
-// closes with the way out. Long environment names, and a long repository
-// name said twice before them, must not push it past that cut: the refusal
-// names as many environments as still fit and counts the rest.
-func TestCodexStartKeepsTheWayOutInsideTheLogsCut(t *testing.T) {
-	var tasks []string
-	for i := range 8 {
-		tasks = append(tasks, fmt.Sprintf(
-			`{"id": "task_e_%d", "status": "ready", "environment_label": "a-rather-long-environment-name-for-client-number-%d"}`, i, i))
-	}
-	for repository, names := range map[string]string{
-		"acme-labs/oppenheimer": "client-number-0, and 7 more (",
-		"a-long-organization-name/a-repository-with-quite-a-long-name": ": 8, not named here (",
-	} {
-		bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
-		withTasks(t, bin, `{"tasks": [`+strings.Join(tasks, ",")+`]}`)
-		_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), repository, "main", "task", "")
-		pe := problem.From(err)
-		if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-			t.Fatalf("%s: err = %v, want ErrCodexCloudEnvironment", repository, err)
-		}
-		if len(err.Error()) > 500 {
-			t.Errorf("%s: the refusal is %d characters, past the log's 500: %s", repository, len(err.Error()), err)
-		}
-		for _, want := range []string{names, "start this task in ChatGPT."} {
-			if !strings.Contains(pe.Detail, want) {
-				t.Errorf("%s: detail = %q, want it to say %q", repository, pe.Detail, want)
-			}
-		}
-	}
-}
-
-// The bound is on what fits, not on how little room is left: beside a long
-// repository name, two short names that fit are both said, and the refusal
-// stays inside the cut. Counting them instead ("2, not named here") was
-// longer than naming them, and put the way out past it.
-func TestCodexStartNamesShortEnvironmentsBesideALongRepositoryName(t *testing.T) {
-	bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
-	withTasks(t, bin, `{"tasks": [
-  {"id": "task_e_1", "status": "ready", "environment_label": "a"},
-  {"id": "task_e_0", "status": "ready", "environment_label": "b"}
-]}`)
-	repository := "acme-labs/" + strings.Repeat("r", 46)
-	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), repository, "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
-	}
-	if len(err.Error()) > 500 || !strings.Contains(pe.Detail, "recent tasks: a, b (") {
-		t.Fatalf("the refusal is %d characters: %s", len(err.Error()), err)
-	}
-}
-
-// A pick outlives its environment: one deleted, or moved to ChatGPT's newer
-// Codex Cloud, after the composer remembered it. The CLI's "not found" for it
-// is the environment refusal naming the pick, not SESS_009.
-func TestCodexStartRefusesAPickedEnvironmentTheCLINoLongerHas(t *testing.T) {
-	bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found; run `+"`codex cloud`"+` to list available environments" >&2; exit 1`)
-	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "e_gone")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
-	}
-	if !strings.Contains(pe.Detail, "no environment named e_gone") {
-		t.Fatalf("detail = %q", pe.Detail)
-	}
-}
-
-// A host whose codex holds no ChatGPT sign-in cannot start anything in the
-// cloud. That is its own code, so the console can say "run codex login on the
-// host", and no label is tried: the CLI would refuse each the same way.
+// Codex cloud needs a ChatGPT sign-in. A host with none, with an API key, or
+// with one past its expiry is refused before anything is sent, as SESS_022,
+// which says to run `codex login`; and so is one ChatGPT refuses.
 func TestCodexStartSaysTheHostIsNotSignedIn(t *testing.T) {
-	bin, args := fakeCodex(t, `echo "Not signed in. Please run 'codex login' to sign in with ChatGPT, then re-run 'codex cloud'." >&2; exit 1`)
-	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), "acme-labs/oppenheimer", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudSignIn.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudSignIn", err)
+	service, codex := codexServer(t, starts)
+	apiKey := t.TempDir()
+	if err := os.WriteFile(filepath.Join(apiKey, "auth.json"), []byte(`{"OPENAI_API_KEY": "sk-x", "tokens": null}`), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(pe.Detail, "codex login") {
-		t.Fatalf("detail = %q, want the CLI's own words", pe.Detail)
+	for name, home := range map[string]string{
+		"none":    t.TempDir(),
+		"api key": apiKey,
+		"expired": signedIn(t, token(time.Now().Add(-time.Minute))),
+	} {
+		codex.Home = home
+		_, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
+		if code := codeOf(t, err); code != domain.ErrCodexCloudSignIn.Code {
+			t.Errorf("%s: code = %s, want SESS_022", name, code)
+		}
+		if !strings.Contains(problem.From(err).Detail, "codex login") {
+			t.Errorf("%s: detail = %q", name, problem.From(err).Detail)
+		}
 	}
-	if got := strings.Join(readArgs(t, args), " "); strings.Contains(got, "exec") {
-		t.Fatalf("args = %q, want no start tried", got)
+	if calls := service.taken(); len(calls) != 0 {
+		t.Fatalf("calls = %v, want none sent", calls)
+	}
+
+	_, refused := codexServer(t, func(string, []byte) ([]byte, int, string) {
+		return nil, grpcUnauthenticated, "token revoked"
+	})
+	_, err := refused.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
+	if code := codeOf(t, err); code != domain.ErrCodexCloudSignIn.Code {
+		t.Fatalf("revoked: code = %s, want SESS_022", code)
 	}
 }
 
-// Only the CLI's own "environment '<label>' not found" for the label just
-// tried is a missing environment. Another refusal that also says "not found"
-// is the CLI's answer, in its words, and no other label is tried.
-func TestCodexStartReadsOnlyTheMissingEnvironmentRefusalAsOne(t *testing.T) {
-	bin, args := fakeCodex(t, `echo "Error: branch 'main' not found on the remote" >&2; exit 1`)
-	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+// ChatGPT's "stop" pauses the account: the refusal is SESS_011, and nothing is
+// sent for that account until the time it named has passed.
+func TestCodexCloudStopsAskingWhenChatGPTSaysWait(t *testing.T) {
+	service, codex := codexServer(t, func(string, []byte) ([]byte, int, string) {
+		return nil, grpcResourceExhausted, "slow down"
+	})
+	now := time.Now()
+	codex.Now = func() time.Time { return now }
+
+	_, err := codex.Status(context.Background(), "thr_1")
+	if code := codeOf(t, err); code != domain.ErrCodexRateLimited.Code {
+		t.Fatalf("code = %s, want SESS_011", code)
 	}
-	if got := readArgs(t, args); len(got) != 6 {
-		t.Fatalf("args = %q, want one try", got)
+	_, err = codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
+	if code := codeOf(t, err); code != domain.ErrCodexRateLimited.Code {
+		t.Fatalf("paused start: code = %s, want SESS_011", code)
+	}
+	if calls := service.taken(); len(calls) != 1 {
+		t.Fatalf("calls = %d, want only the one refused", len(calls))
+	}
+
+	now = now.Add(2 * time.Minute)
+	if _, err := codex.Status(context.Background(), "thr_1"); codeOf(t, err) != domain.ErrCodexRateLimited.Code {
+		t.Fatalf("after the pause: %v", err)
+	}
+	if calls := service.taken(); len(calls) != 2 {
+		t.Fatalf("calls = %d, want the account asked again once the pause passed", len(calls))
 	}
 }
 
-// A refusal other than a missing environment is not tried again under
-// another label: it is the CLI's answer, in its own words.
-func TestCodexStartSaysWhyTheCLIRefused(t *testing.T) {
-	bin, args := fakeCodex(t, `echo "Error: GitHub is not connected for this workspace" >&2
-exit 1`)
-	_, err := noSignIn(t, bin).Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
-	pe := problem.From(err)
-	if pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
+// Any other refusal is the service's own words, under SESS_009.
+func TestCodexStartSaysWhyCodexCloudRefused(t *testing.T) {
+	_, codex := codexServer(t, func(string, []byte) ([]byte, int, string) {
+		return nil, 13, "GitHub is not connected for this workspace"
+	})
+	_, err := codex.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "")
+	if code := codeOf(t, err); code != domain.ErrCodexCloudStart.Code {
+		t.Fatalf("code = %s, want SESS_009", code)
 	}
-	if !strings.Contains(pe.Detail, "GitHub is not connected") {
-		t.Fatalf("detail = %v, want the CLI's words", err)
-	}
-	if got := readArgs(t, args); len(got) != 6 {
-		t.Fatalf("args = %q, want one try", got)
+	if !strings.Contains(problem.From(err).Detail, "GitHub is not connected") {
+		t.Fatalf("detail = %q", problem.From(err).Detail)
 	}
 }
 
-func TestCodexStartRefusesAnAnswerWithNoTask(t *testing.T) {
-	bin, _ := fakeCodex(t, `echo 'Submitted.'`)
-	_, err := Codex{Command: bin}.Start(context.Background(), "acme-labs/xrp-mobile", "main", "task", "e_1")
-	if pe := problem.From(err); pe == nil || pe.Code != domain.ErrCodexCloudStart.Code {
-		t.Fatalf("err = %v, want ErrCodexCloudStart", err)
-	}
-}
-
-func TestCodexListReadsTheTasksAndTheNextCursor(t *testing.T) {
-	bin, args := fakeCodex(t, `cat <<'JSON'
-{
-  "tasks": [
-    {"id": "task_e_2", "url": "https://chatgpt.com/codex/tasks/task_e_2", "title": "Fix the wallet list",
-     "status": "ready", "updated_at": "2026-10-29T10:00:00Z", "environment_id": "env_1",
-     "summary": {"files_changed": 2, "lines_added": 10, "lines_removed": 3}, "is_review": false, "attempt_total": 1},
-    {"id": "task_e_1", "url": "https://chatgpt.com/codex/tasks/task_e_1", "title": "Bump deps", "status": "pending"}
-  ],
-  "cursor": "c2"
-}
-JSON`)
-	page, err := Codex{Command: bin}.List(context.Background(), "c1")
-	if err != nil {
-		t.Fatalf("List: %v", err)
-	}
-	if len(page.Tasks) != 2 || page.Tasks[0].Status != CodexReady || page.Tasks[1].ID != "task_e_1" || page.Cursor != "c2" {
-		t.Fatalf("page = %+v", page)
-	}
-	if got := strings.Join(readArgs(t, args), " "); got != "cloud list --json --limit 20 --cursor c1" {
-		t.Fatalf("args = %q", got)
+// A thread's status is its newest turn's: running or not begun is pending,
+// completed is ready, failed or stopped is an error. The ask names the thread
+// and wants one turn, newest first.
+func TestCodexStatusIsTheNewestTurns(t *testing.T) {
+	for name, tc := range map[string]struct {
+		reply []byte
+		want  string
+	}{
+		"no turn yet": {turns(), CodexPending},
+		"running":     {turns(4), CodexPending},
+		"completed":   {turns(1, 3), CodexReady},
+		"failed":      {turns(3), CodexError},
+		"interrupted": {turns(2), CodexError},
+	} {
+		t.Run(name, func(t *testing.T) {
+			service, codex := codexServer(t, func(string, []byte) ([]byte, int, string) { return tc.reply, 0, "" })
+			got, err := codex.Status(context.Background(), "thr_1")
+			if err != nil || got != tc.want {
+				t.Fatalf("Status = %q, %v; want %q", got, err, tc.want)
+			}
+			ask := service.taken()[0]
+			limit, _ := firstVarint(ask.message, 3)
+			order, _ := firstVarint(ask.message, 4)
+			if ask.method != "ListTurns" || string(firstBytes(ask.message, 1)) != "thr_1" || limit != 1 || order != 2 {
+				t.Fatalf("ask = %s %q limit %d order %d", ask.method, firstBytes(ask.message, 1), limit, order)
+			}
+		})
 	}
 }
 
 func TestCodexSettledIsFinishedOrFailed(t *testing.T) {
 	for status, want := range map[string]bool{
-		CodexPending: false, CodexReady: true, CodexApplied: true, CodexError: true, "": false, "queued": false,
+		CodexPending: false, CodexReady: true, CodexApplied: true, CodexError: true, "": false,
 	} {
 		if got := CodexSettled(status); got != want {
 			t.Errorf("CodexSettled(%q) = %v, want %v", status, got, want)

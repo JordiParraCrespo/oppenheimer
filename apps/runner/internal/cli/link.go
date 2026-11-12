@@ -49,7 +49,6 @@ const (
 	laneFsList        = "fs:list"
 	laneFsFind        = "fs:find"
 	lanePortList      = "port:list:"
-	laneCodexEnvs     = "codex:environments"
 	laneCloudReply    = "cloud:reply:"
 )
 
@@ -333,7 +332,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind,
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilitySessionCloudReply,
-		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
+		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
 	}
 	if h.direct != nil {
@@ -604,12 +603,6 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.DeviceDetach
 		if msg.Decode(&m) == nil {
 			h.dropScreen(m.AttachmentID)
-		}
-	case link.TypeCodexEnvironmentsList:
-		var m link.CodexEnvironmentsList
-		if msg.Decode(&m) == nil {
-			// Two round trips to ChatGPT: off the read loop, one at a time.
-			h.lanes.run(laneCodexEnvs, func() { h.listCodexEnvironments(h.life, m) })
 		}
 	case link.TypeCloudReply:
 		var m link.CloudReply

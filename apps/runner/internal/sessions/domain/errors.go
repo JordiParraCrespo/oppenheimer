@@ -50,24 +50,20 @@ var (
 	// in time: the message may have reached the session, so the control plane
 	// never hands it to anyone again.
 	ErrCloudReplyUnconfirmed = problem.New("SESS_021", http.StatusGatewayTimeout, "Claude Code did not confirm the message to the cloud session in time")
-	// ErrCodexCloudStart is `codex cloud` refusing or failing for a reason
-	// that has no code of its own (a CLI too old to know the command, ChatGPT
-	// unreachable). Its detail is the CLI's own last words.
+	// ErrCodexCloudStart is Codex cloud refusing or failing a call for a
+	// reason that has no code of its own (unreachable, an account that cannot
+	// use it, a refusal in its own words). Its detail says which.
 	ErrCodexCloudStart = problem.New("SESS_009", http.StatusBadGateway, "Codex could not start the task in the cloud")
-	// ErrCodexCloudEnvironment is `codex cloud exec` finding no environment
-	// under the one picked or any label tried for the repository. The CLI
-	// resolves only the environments its TUI lists, ChatGPT's Codex Cloud
-	// (Legacy); one made in ChatGPT's Settings → Codex Cloud is not among
-	// them. Its detail names what was tried and the environments the CLI
-	// showed instead.
-	ErrCodexCloudEnvironment = problem.New("SESS_010", http.StatusNotFound, "No Codex cloud environment the CLI can reach is named for the repository")
-	// ErrCodexRateLimited is ChatGPT refusing a read of the account's Codex
-	// environments for rate: nothing more is asked of it for that account
-	// until the time it named has passed.
-	ErrCodexRateLimited = problem.New("SESS_011", http.StatusTooManyRequests, "ChatGPT asked the host to wait before listing Codex environments")
-	// ErrCodexCloudSignIn is the host's `codex` holding no ChatGPT sign-in,
-	// which every cloud command needs (an API key does not reach Codex cloud).
-	// Its detail is the CLI's own last words.
+	// ErrCodexCloudEnvironment is Codex cloud having no environment under the
+	// id picked for a task on the host's ChatGPT account. Its detail names it.
+	ErrCodexCloudEnvironment = problem.New("SESS_010", http.StatusNotFound, "The Codex environment picked is not on this ChatGPT account")
+	// ErrCodexRateLimited is ChatGPT refusing a call to Codex cloud for rate:
+	// nothing more is asked of it for that account until the time it named
+	// has passed.
+	ErrCodexRateLimited = problem.New("SESS_011", http.StatusTooManyRequests, "ChatGPT asked the host to wait before asking Codex cloud again")
+	// ErrCodexCloudSignIn is the host's `codex` holding no ChatGPT sign-in
+	// Codex cloud takes: none, an API key, one past its expiry, or one ChatGPT
+	// refused. Fixed on the host, with `codex login`.
 	ErrCodexCloudSignIn = problem.New("SESS_022", http.StatusBadGateway, "Codex on this host is not signed in to ChatGPT")
 	// ErrNotReady refuses a message for an agent that is not up yet: no
 	// status report and no screen the classifier can read, which is what a
