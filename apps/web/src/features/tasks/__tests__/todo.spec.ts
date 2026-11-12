@@ -8,15 +8,14 @@ import {
   addableTasks,
   heldByDeadline,
   picksInView,
-  todayOpenCount,
   todoCounts,
   todoDay,
   todoEntries,
   todoLabels,
   todoPlaceOf,
   todoSearchSchema,
-  withAgentsOf,
 } from '../lib/todo';
+import { todoStatusOf } from '../lib/todo-status';
 
 function task(
   id: string,
@@ -157,14 +156,15 @@ describe("To do's day", () => {
     expect(todoEntries(rows, '2026-11-09', { today: '2026-11-09', overdue: true })).toEqual([]);
   });
 
-  it('counts what is left and done, and the sidebar counts what is left on today', () => {
-    const none = new Set<string>();
-    expect(todoCounts(todoEntries(TASKS, DAY, { today: DAY, overdue: true }), none)).toEqual({
-      left: 4,
-      done: 1,
-    });
-    expect(todayOpenCount(TASKS, DAY, none)).toBe(4);
-    expect(todayOpenCount([...TASKS, task('planned', { focusDate: DAY })], DAY, none)).toBe(5);
+  it('counts what is left and done, once the sessions are read', () => {
+    const today = { today: DAY, overdue: true };
+    const noSessions = new Map();
+    expect(todoCounts(TASKS, DAY, today, noSessions)).toEqual({ left: 4, done: 1 });
+    expect(
+      todoCounts([...TASKS, task('planned', { focusDate: DAY })], DAY, today, noSessions)?.left,
+    ).toBe(5);
+    // Before the sessions are in there is no count, so it never lands and then drops.
+    expect(todoCounts(TASKS, DAY, today, undefined)).toBeUndefined();
   });
 
   it('drops a day that is not on the calendar from the address', () => {
@@ -337,13 +337,41 @@ describe("TODO's agents", () => {
       task('asking', { status: 'doing', dueDate: DAY, sessionIds: ['waiting'] }),
       task('plain', { dueDate: DAY }),
     ];
-    const withAgents = withAgentsOf(rows, SESSIONS);
-    expect([...withAgents]).toEqual(['working']);
-    expect(todoCounts(todoEntries(rows, DAY, { today: DAY, overdue: true }), withAgents)).toEqual({
+    expect(todoCounts(rows, DAY, { today: DAY, overdue: true }, SESSIONS)).toEqual({
       left: 2,
       done: 0,
     });
-    expect(todayOpenCount(rows, DAY, withAgents)).toBe(2);
+  });
+});
+
+describe("a TODO row's status", () => {
+  const statusOf = (row: TaskEntity) => {
+    const status = todoStatusOf(row, todoPlaceOf(row, taskSessionsOf(row, SESSIONS, HOSTS)));
+    return status.kind === 'session'
+      ? [status.kind, status.session.session.id, status.label]
+      : [status.kind, status.state, status.label];
+  };
+
+  it('names the session the strip or a mark stands for, which the chip opens', () => {
+    expect(statusOf(task('t', { status: 'doing', sessionIds: ['running'] }))).toEqual([
+      'session',
+      'running',
+      'tasks.sessionState.running',
+    ]);
+    expect(statusOf(task('t', { status: 'doing', sessionIds: ['waiting'] }))).toEqual([
+      'session',
+      'waiting',
+      'tasks.todo.mark.waiting',
+    ]);
+  });
+
+  it('draws a dot for In review, which no session stands for, and the column otherwise', () => {
+    expect(statusOf(task('t', { status: 'review' }))).toEqual([
+      'dot',
+      'pending',
+      'tasks.todo.mark.review',
+    ]);
+    expect(statusOf(task('t'))).toEqual(['dot', 'idle', 'tasks.columns.todo']);
   });
 });
 

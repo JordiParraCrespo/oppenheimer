@@ -8,13 +8,12 @@ import {
   PageHeaderStat,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight } from '@oppenheimer/design-system-web/icons';
-import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { addDays, dateFormatter, isoWeek, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
+import { useTodoCounts } from '../hooks/use-todo-counts';
 import { useTodoDay } from '../hooks/use-todo-day';
-import { todoCounts, todoEntries, withAgentsOf } from '../lib/todo';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
@@ -34,20 +33,7 @@ export function TodoHeader() {
   const { overdue } = todo.useSearch();
   const { projectIds } = useScopeProject();
   const navigate = todo.useNavigate();
-  const { data: sessions } = useSessions({
-    select: (rows) => new Map(rows.map((row) => [row.id, row])),
-  });
-  // No count until the sessions are in: what is with agents is not left, so
-  // a count before they land would drop once they do.
-  const { data: counts } = useTasks({
-    select: (rows) =>
-      sessions
-        ? todoCounts(
-            todoEntries(rows, day, { today, overdue: overdue !== 'off', projectIds }),
-            withAgentsOf(rows, sessions),
-          )
-        : undefined,
-  });
+  const counts = useTodoCounts(day, { today, overdue: overdue !== 'off', projectIds });
   const go = (next: string) =>
     navigate({
       search: (previous) => ({ ...previous, date: next === today ? undefined : next }),

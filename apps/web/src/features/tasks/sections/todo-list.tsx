@@ -6,7 +6,6 @@ import {
   SortableGroup,
   SortableTodoRow,
   StatusDot,
-  TASK_STATUS_STATE,
   TaskSessionChip,
   TodoRow,
 } from '@oppenheimer/design-system-web';
@@ -23,26 +22,12 @@ import { TodoMove } from '../components/todo-move';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
 import { TODO_GROUP, useTodoOrder } from '../hooks/use-todo-order';
-import { type TaskSession, taskSessionsOf } from '../lib/session-line';
+import { taskSessionsOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
-import {
-  heldByDeadline,
-  type TodoEntry,
-  type TodoMark,
-  todoDay,
-  todoLabels,
-  todoPlaceOf,
-} from '../lib/todo';
+import { heldByDeadline, type TodoEntry, todoDay, todoLabels, todoPlaceOf } from '../lib/todo';
+import { todoStatusOf } from '../lib/todo-status';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
-
-/** The dot a mark wears: its session's state, or the In review column's. */
-const MARK_DOT = {
-  waiting: SESSION_STATUS.waiting,
-  failed: SESSION_STATUS.failed,
-  review: TASK_STATUS_STATE.review,
-  stopped: SESSION_STATUS.idle,
-} as const satisfies Record<TodoMark, string>;
 
 /**
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
@@ -97,33 +82,27 @@ export function TodoList() {
     listed.map((entry) => entry.task.id),
   );
 
-  const sessionChip = ({ session, state }: TaskSession, word: string) => (
-    <TaskSessionChip
-      state={SESSION_STATUS[state]}
-      word={word}
-      name={session.name}
-      aria-label={t('tasks.card.openSession', { name: session.name })}
-      className="w-auto max-w-56 shrink"
-      onClick={() => go({ to: '/sessions/$sessionId', params: { sessionId: session.id } })}
-    />
-  );
-
-  // Where the task stands: the session the strip or a mark names, the mark
-  // alone (In review), or its column.
+  // Where the task stands (`todoStatusOf`): the session its place names, as a
+  // chip that opens it, or a dot.
   const statusOf = (entry: TodoEntry) => {
-    const { task } = entry;
-    const place = places.get(task.id);
-    if (place?.lane === 'agents')
-      return sessionChip(place.session, t(`tasks.sessionState.${place.session.state}`));
-    if (place?.mark && place.session)
-      return sessionChip(place.session, t(`tasks.todo.mark.${place.mark}`));
+    const place = places.get(entry.task.id) ?? todoPlaceOf(entry.task, []);
+    const status = todoStatusOf(entry.task, place);
+    if (status.kind === 'session') {
+      const { session } = status.session;
+      return (
+        <TaskSessionChip
+          state={SESSION_STATUS[status.session.state]}
+          word={t(status.label)}
+          name={session.name}
+          aria-label={t('tasks.card.openSession', { name: session.name })}
+          className="w-auto max-w-56 shrink"
+          onClick={() => go({ to: '/sessions/$sessionId', params: { sessionId: session.id } })}
+        />
+      );
+    }
     return (
-      <StatusDot
-        state={place?.mark ? MARK_DOT[place.mark] : TASK_STATUS_STATE[task.status]}
-        density="compact"
-        className="shrink-0 text-sm text-fg-muted"
-      >
-        {place?.mark ? t(`tasks.todo.mark.${place.mark}`) : t(`tasks.columns.${task.status}`)}
+      <StatusDot state={status.state} density="compact" className="shrink-0 text-sm text-fg-muted">
+        {t(status.label)}
       </StatusDot>
     );
   };
@@ -159,6 +138,13 @@ export function TodoList() {
       </>
     );
   };
+
+  // What a row does, the same in the list and in the strip.
+  const handlersOf = (entry: TodoEntry) => ({
+    onToggle: () => toggle(entry),
+    onOpen: () => navigate({ search: (previous) => ({ ...previous, task: entry.task.id }) }),
+    action: actionOf(entry),
+  });
 
   const rowOf = (entry: TodoEntry) => {
     const { task } = entry;
@@ -222,11 +208,7 @@ export function TodoList() {
                   id={id}
                   {...rowOf(entry)}
                   gripLabel={t('tasks.todo.reorder', { title: task.title })}
-                  onToggle={() => toggle(entry)}
-                  onOpen={() =>
-                    navigate({ search: (previous) => ({ ...previous, task: task.id }) })
-                  }
-                  action={actionOf(entry)}
+                  {...handlersOf(entry)}
                 />
               );
             })}
@@ -239,15 +221,7 @@ export function TodoList() {
             {t('tasks.todo.withAgents')}
           </h2>
           {withAgents.map((entry) => (
-            <TodoRow
-              key={entry.task.id}
-              {...rowOf(entry)}
-              onToggle={() => toggle(entry)}
-              onOpen={() =>
-                navigate({ search: (previous) => ({ ...previous, task: entry.task.id }) })
-              }
-              action={actionOf(entry)}
-            />
+            <TodoRow key={entry.task.id} {...rowOf(entry)} {...handlersOf(entry)} />
           ))}
         </section>
       ) : null}

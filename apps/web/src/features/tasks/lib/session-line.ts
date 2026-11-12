@@ -16,12 +16,13 @@ export interface TaskSession {
 
 /**
  * The task's sessions the console can see, each with its state. A link to a
- * session the list no longer has (deleted elsewhere) is left out.
+ * session the list no longer has (deleted elsewhere) is left out. Without
+ * the hosts, a session still starting reads as running rather than queued.
  */
 export function taskSessionsOf(
   task: TaskEntity,
   sessions: ReadonlyMap<string, SessionEntity>,
-  hosts: ReadonlyMap<string, HostEntity>,
+  hosts: ReadonlyMap<string, HostEntity> = new Map(),
 ): TaskSession[] {
   return task.sessions.flatMap((link) => {
     const session = sessions.get(link.sessionId);

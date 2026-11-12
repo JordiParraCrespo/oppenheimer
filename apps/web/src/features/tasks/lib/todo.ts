@@ -1,9 +1,4 @@
-import {
-  compareRank,
-  type HostEntity,
-  type SessionEntity,
-  type TaskEntity,
-} from '@oppenheimer/frontend-consumer';
+import { compareRank, type SessionEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
 import { searchText, todayIn } from '@oppenheimer/frontend-web';
 import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
@@ -37,7 +32,7 @@ export interface TodoEntry {
   reason: TodoReason;
 }
 
-type TodoOptions = { today: string; overdue: boolean; projectIds?: readonly string[] };
+export type TodoOptions = { today: string; overdue: boolean; projectIds?: readonly string[] };
 
 /** The day it was ticked done, in the reader's timezone. */
 function doneOn(task: TaskEntity): string | null {
@@ -296,36 +291,33 @@ export function todoPlaceOf(task: TaskEntity, sessions: readonly TaskSession[]):
  * out of its counts. Whether a host is online only tells queued from running,
  * which go to the strip alike, so the hosts are not read.
  */
-export function withAgentsOf(
+function withAgentsOf(
   tasks: readonly TaskEntity[],
   sessions: ReadonlyMap<string, SessionEntity>,
 ): ReadonlySet<string> {
-  const none = new Map<string, HostEntity>();
   return new Set(
     tasks
-      .filter((task) => todoPlaceOf(task, taskSessionsOf(task, sessions, none)).lane === 'agents')
+      .filter((task) => todoPlaceOf(task, taskSessionsOf(task, sessions)).lane === 'agents')
       .map((task) => task.id),
   );
 }
 
 /**
- * The header's count: how many on the list are left and how many are done.
- * What is with agents needs nothing from the person, so it is not left.
+ * The header's count: how many on the day's list are left and how many are
+ * done. What is with agents needs nothing from the person, so it is not left;
+ * until the sessions are read there is no count, so one never lands and then
+ * drops.
  */
 export function todoCounts(
-  entries: readonly TodoEntry[],
-  withAgents: ReadonlySet<string>,
-): { left: number; done: number } {
+  tasks: readonly TaskEntity[],
+  day: string,
+  options: TodoOptions,
+  sessions: ReadonlyMap<string, SessionEntity> | undefined,
+): { left: number; done: number } | undefined {
+  if (!sessions) return undefined;
+  const entries = todoEntries(tasks, day, options);
+  const withAgents = withAgentsOf(tasks, sessions);
   const done = entries.filter((entry) => entry.task.isDone).length;
   const working = entries.filter((entry) => withAgents.has(entry.task.id)).length;
   return { left: entries.length - done - working, done };
-}
-
-/** The sidebar's count beside TODO: what is left on today's list, as the header counts it. */
-export function todayOpenCount(
-  tasks: readonly TaskEntity[],
-  today: string,
-  withAgents: ReadonlySet<string>,
-): number {
-  return todoCounts(todoEntries(tasks, today, { today, overdue: true }), withAgents).left;
 }

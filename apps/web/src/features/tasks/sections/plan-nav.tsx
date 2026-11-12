@@ -6,12 +6,7 @@ import {
   SortableRoutineItem,
 } from '@oppenheimer/design-system-web';
 import { Bell, CalendarDays, CircleCheck, Folder, Sun } from '@oppenheimer/design-system-web/icons';
-import {
-  useMilestones,
-  useProjects,
-  useSessions,
-  useTasks,
-} from '@oppenheimer/frontend-consumer/react';
+import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
@@ -20,8 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
+import { useTodoCounts } from '../hooks/use-todo-counts';
 import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId, planViewShown } from '../lib/plan-nav-order';
-import { todayOpenCount, withAgentsOf } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
 /**
@@ -78,14 +73,7 @@ export function PlanNav() {
   const { t } = useTranslation();
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
   const today = useToday();
-  const { data: sessions } = useSessions({
-    select: (rows) => new Map(rows.map((row) => [row.id, row])),
-  });
-  // No count until the sessions are in: what is with agents is not left.
-  const { data: dueNow } = useTasks({
-    select: (rows) =>
-      sessions ? todayOpenCount(rows, today, withAgentsOf(rows, sessions)) : undefined,
-  });
+  const dueNow = useTodoCounts(today, { today, overdue: true })?.left;
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
   const todayEvents = useTodayEventCount();
   const { data: projects } = useProjects({ select: (rows) => rows.length });
