@@ -197,7 +197,8 @@ export function SessionChatComposer({
         onValueChange={setDraft}
         onSubmit={(text) => void submit(text)}
         onStop={onStop}
-        onEmptyEnter={first ? () => onSendQueued(first.id) : undefined}
+        // Not while files upload: the queued words would land among their paths.
+        onEmptyEnter={first && !sending ? () => onSendQueued(first.id) : undefined}
         busy={busy && draft.trim() === '' && files.length === 0}
         sendBlockedReason={sending ? t('sessions.chat.composer.attaching') : undefined}
         allowEmpty={files.length > 0}
