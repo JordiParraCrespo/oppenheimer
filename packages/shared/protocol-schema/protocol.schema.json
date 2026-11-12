@@ -3037,6 +3037,7 @@
       "desktop.stream",
       "session.cloud",
       "session.cloud.codex.threads",
+      "session.cloud.codex",
       "session.cloud.reply",
       "session.teleport",
       "session.watch",

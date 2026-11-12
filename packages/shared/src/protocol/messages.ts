@@ -167,6 +167,12 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.cloud.codex.threads',
   /**
+   * What a runner that drove `codex cloud exec` named for Codex cloud. Kept so
+   * its hello still reads as it was meant; the control plane sends it no Codex
+   * cloud start (`session.cloud.codex.threads`).
+   */
+  'session.cloud.codex',
+  /**
    * Answers `cloud.reply` with `cloud.replied`: a reply typed in a Claude Code
    * cloud session's chat, sent with the host's own `claude -p … --cloud <id>`,
    * which wakes the session when it is idle (`cloud-reply.ts`).

@@ -91,6 +91,7 @@ const (
 	CapabilityDesktopStream            = "desktop.stream"
 	CapabilitySessionCloud             = "session.cloud"
 	CapabilitySessionCloudCodexThreads = "session.cloud.codex.threads"
+	CapabilitySessionCloudCodex        = "session.cloud.codex"
 	CapabilitySessionCloudReply        = "session.cloud.reply"
 	CapabilitySessionTeleport          = "session.teleport"
 	CapabilitySessionWatch             = "session.watch"
