@@ -877,9 +877,9 @@
         "search": "Id del entorno…",
         "empty": "Ningún entorno coincide.",
         "default": "Predeterminado",
-        "defaultHint": "El de Codex, con el repositorio",
+        "defaultHint": "Con el repositorio",
         "use": "Usar {{id}}",
-        "hint": "Pega el id de un entorno de Ajustes de ChatGPT → Codex Cloud"
+        "hint": "Pega un id de los ajustes de Codex Cloud"
       },
       "branch": {
         "label": "Rama",

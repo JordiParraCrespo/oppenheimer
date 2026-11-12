@@ -130,9 +130,9 @@
       "search": "Environment id…",
       "empty": "No environment matches.",
       "default": "Default",
-      "defaultHint": "Codex’s default, with the repository",
+      "defaultHint": "With the repository",
       "use": "Use {{id}}",
-      "hint": "Paste an environment id from ChatGPT Settings → Codex Cloud"
+      "hint": "Paste an id from Codex Cloud settings"
     },
     "branch": {
       "label": "Branch",
