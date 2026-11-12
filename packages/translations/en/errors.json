@@ -358,7 +358,7 @@
     },
     "help": {
       "SESS_010": {
-        "body": "The host starts Codex cloud tasks with its codex CLI, which only reaches Codex Cloud (Legacy) environments: the ones codex cloud lists on the host. An environment made in ChatGPT Settings → Codex Cloud can only be started from ChatGPT itself, on the web, desktop or mobile. Pick a legacy environment in the Codex environment chip and try again, or start this task in ChatGPT.",
+        "body": "This host’s codex CLI can only start tasks in legacy Codex environments. Pick one, or start this task in ChatGPT.",
         "link": "Open Codex Cloud settings"
       }
     },

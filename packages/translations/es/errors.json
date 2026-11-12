@@ -358,7 +358,7 @@
     },
     "help": {
       "SESS_010": {
-        "body": "El host inicia las tareas en la nube de Codex con su CLI codex, que solo llega a los entornos de Codex Cloud (Legacy): los que lista codex cloud en el host. Un entorno creado en Configuración de ChatGPT → Codex Cloud solo se puede iniciar desde el propio ChatGPT, en la web, el escritorio o el móvil. Elige un entorno legacy en el selector de entorno de Codex y vuelve a intentarlo, o inicia esta tarea en ChatGPT.",
+        "body": "La CLI codex de este host solo inicia tareas en entornos legacy de Codex. Elige uno, o inicia esta tarea en ChatGPT.",
         "link": "Abrir la configuración de Codex Cloud"
       }
     },

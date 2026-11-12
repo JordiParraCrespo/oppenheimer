@@ -3,13 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NewSessionCodexEnvironments } from '../sections/new-session-codex-environments';
 
 /**
- * The Codex environment picker says what its list leaves out. The host's CLI
- * starts tasks only in Codex Cloud (Legacy) environments, so one made in
- * ChatGPT Settings → Codex Cloud is never listed, and a list read off the
- * account's recent tasks (`source: tasks`) is partial. A regression that
- * dropped either line brings back the report this guards: an environment that
- * exists in ChatGPT, missing here with no word why, found out only when the
- * start fails.
+ * The Codex environment picker's foot is one line: whose environments these
+ * are, or, when the host could only read its recent tasks, that these are
+ * those. A failed list says why in full, in the kit's alert, instead.
  */
 vi.mock('react-i18next', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-i18next')>()),
@@ -45,8 +41,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 }));
 
 const ENVIRONMENT = { id: 'e_1', label: 'kallista', pinned: false, repository: false };
-const LEGACY_ONLY = 'sessions.new.codexEnvironment.legacyOnly';
-const PARTIAL = 'sessions.new.codexEnvironment.partial';
+const LIVES = 'sessions.new.codexEnvironment.lives';
+const RECENT = 'sessions.new.codexEnvironment.recent';
 
 function open() {
   render(<NewSessionCodexEnvironments hostId="h-1" query="" onDone={() => {}} />);
@@ -55,7 +51,7 @@ function open() {
 afterEach(cleanup);
 
 describe('NewSessionCodexEnvironments', () => {
-  it('says only legacy environments are listed when the account’s whole list was read', () => {
+  it('says the environments are the account’s when its whole list was read', () => {
     listing = {
       data: { environments: [ENVIRONMENT], recommended: null, source: 'chatgpt' },
       isPending: false,
@@ -64,11 +60,11 @@ describe('NewSessionCodexEnvironments', () => {
     };
     open();
 
-    expect(screen.getByText(LEGACY_ONLY)).toBeTruthy();
-    expect(screen.queryByText(PARTIAL)).toBeNull();
+    expect(screen.getByText(LIVES)).toBeTruthy();
+    expect(screen.queryByText(RECENT)).toBeNull();
   });
 
-  it('also says the list may be missing some when it came from recent tasks', () => {
+  it('says they come from recent tasks, in the same one line, when that is all the host read', () => {
     listing = {
       data: { environments: [ENVIRONMENT], recommended: null, source: 'tasks' },
       isPending: false,
@@ -77,8 +73,8 @@ describe('NewSessionCodexEnvironments', () => {
     };
     open();
 
-    expect(screen.getByText(PARTIAL)).toBeTruthy();
-    expect(screen.getByText(LEGACY_ONLY)).toBeTruthy();
+    expect(screen.getByText(RECENT)).toBeTruthy();
+    expect(screen.queryByText(LIVES)).toBeNull();
   });
 
   it('says why the host could not list on lines of its own, not in a row’s one cut line', () => {
@@ -89,6 +85,6 @@ describe('NewSessionCodexEnvironments', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe(refusal);
     expect(screen.getByRole('option').textContent).not.toContain(refusal);
-    expect(screen.queryByText(LEGACY_ONLY)).toBeNull();
+    expect(screen.queryByText(LIVES)).toBeNull();
   });
 });

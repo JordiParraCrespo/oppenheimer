@@ -136,9 +136,8 @@
       "linked": "Linked",
       "pinned": "Pinned",
       "failed": "Could not list the host’s Codex environments.",
-      "lives": "Environments live in your Codex account",
-      "legacyOnly": "Only Codex Cloud (Legacy) environments are listed. The host can’t start a task in one made in ChatGPT Settings → Codex Cloud.",
-      "partial": "The host couldn’t read the full list from ChatGPT, so only the environments of its recent tasks are listed. Others may be missing."
+      "lives": "Legacy environments in your Codex account",
+      "recent": "Legacy environments from recent tasks"
     },
     "branch": {
       "label": "Branch",
