@@ -70,7 +70,12 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
           onDismiss={dismissFailure}
         />
       ) : null}
-      <SessionChat chat={chat} agent="claude-code" readOnly={false} />
+      {/* The chat fills its box (`size-full`); this one is the height the
+          lines above leave it, or it runs past the pane's foot and clips
+          the composer's footer. */}
+      <div className="min-h-0 flex-1">
+        <SessionChat chat={chat} agent="claude-code" readOnly={false} />
+      </div>
     </div>
   );
 }
