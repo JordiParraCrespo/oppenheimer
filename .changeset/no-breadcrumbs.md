@@ -5,7 +5,8 @@
 "@oppenheimer/web-showcase": patch
 ---
 
-No breadcrumbs anywhere in the console.
+No page breadcrumbs in the console: a page under a parent opens on a Back
+pill alone.
 
 - `@oppenheimer/web`: a project's page opens with the Back pill to Projects
   instead of a breadcrumb; an automation, Add a host and a host's Desktop

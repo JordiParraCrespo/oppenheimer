@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
  * "A host's desktop"): the machine's own screen, live, inside the Settings
  * frame. The same viewer as the session pane's Desktop tab; here it has the
  * page's measure, and Full screen the whole window. The name is read off the
- * host list the page above already holds; until it lands the crumb says Desktop.
+ * host list the page above already holds.
  */
 export function HostDesktopScreen({ hostId }: { hostId: string }) {
   const { t } = useTranslation();

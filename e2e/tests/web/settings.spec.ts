@@ -30,7 +30,7 @@ test('settings opens from the account menu, walks its sections and comes back', 
   await expect(page.getByRole('heading', { name: 'Hosts' })).toBeVisible();
 
   // Add host opens a page inside Settings, the settings sidebar still
-  // beside it: Hosts as its parent crumb, Done as its primary, Cancel back
+  // beside it: Back to Hosts, Done as its primary, Cancel back
   // to the list.
   await page.getByRole('link', { name: 'Add host' }).click();
   await expect(page).toHaveURL(/\/settings\/hosts\/new$/);
