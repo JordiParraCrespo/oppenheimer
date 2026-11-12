@@ -207,7 +207,7 @@ describe('PlaceSelect', () => {
 
   /**
    * Codex's cloud is its own row beside Claude Code's: its pick names Codex,
-   * so the session starts with `codex cloud exec` and not `claude --cloud`.
+   * so the session starts in Codex cloud and not with `claude --cloud`.
    * With no host whose runner takes it, it is greyed out on its own while
    * Claude Code's stays open.
    */

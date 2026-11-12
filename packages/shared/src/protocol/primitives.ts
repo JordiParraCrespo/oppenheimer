@@ -150,9 +150,8 @@ const AGENT_LOGIN_URL = new Map(
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
 
 /**
- * A Codex environment as `codex cloud exec --env` takes it: its id, or its
- * label, which the CLI matches without regard to case. Printable text only; the
- * runner passes it as `--env=<value>`, so a leading dash is no flag.
+ * A Codex cloud environment's id, as ChatGPT's Codex Cloud settings show it
+ * (`asenvcfg_…`). Printable text only.
  */
 export const codexEnvironmentRefSchema = z
   .string()

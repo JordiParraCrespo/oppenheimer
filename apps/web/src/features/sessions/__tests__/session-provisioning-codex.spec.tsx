@@ -58,15 +58,19 @@ const SESSION = {
 afterEach(cleanup);
 
 describe('SessionProvisioning after a failed Codex cloud start', () => {
-  it('explains an environment the CLI cannot reach and links to Codex Cloud settings', () => {
-    failure = { code: 'SESS_010', detail: 'codex cloud exec found no environment labelled …' };
+  it('explains an environment not on the account and links to Codex Cloud settings', () => {
+    failure = {
+      code: 'SESS_010',
+      detail:
+        'Codex has no environment asenvcfg_gone that this ChatGPT account can start a task in: environment config not found',
+    };
     render(<SessionProvisioning session={SESSION} />);
 
     expect(screen.getByText(/errors\.startFailure\.help\.SESS_010\.body/)).toBeTruthy();
     const link = screen.getByRole('link', { name: 'errors.startFailure.help.SESS_010.link' });
     expect(link.getAttribute('href')).toBe('https://chatgpt.com/settings/codex-cloud');
     // The host's own words stay, as the secondary line.
-    expect(screen.getByText(/found no environment labelled/)).toBeTruthy();
+    expect(screen.getByText(/environment config not found/)).toBeTruthy();
   });
 
   it('offers Try again, which sends the same start for this session', () => {
