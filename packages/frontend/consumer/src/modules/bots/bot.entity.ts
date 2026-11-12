@@ -14,6 +14,15 @@ import type {
 } from '@oppenheimer/shared/schemas/bot';
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
+type BotAvatarFace = { color: BotAvatarColor; seed: string; parts: BotFace | null };
+
+/**
+ * Each entity's `face`, built once. Keyed outside the instance: an own field
+ * would change the keys `shareEntities` compares, and a `#field` is missing
+ * from the copies `Object.create` makes of an entity.
+ */
+const faces = new WeakMap<BotEntity, BotAvatarFace>();
+
 /**
  * A bot as the console needs it (`product/versions/mvp/25-bots.md`): who it
  * is, where it sits in the Employees sidebar, the host it runs on and how its
@@ -51,9 +60,18 @@ export class BotEntity {
     public readonly avatarFace: BotFace | null = null,
   ) {}
 
-  /** What its avatar draws: its colour, its id (which picks a face) and the face it was given. */
-  get face(): { color: BotAvatarColor; seed: string; parts: BotFace | null } {
-    return { color: this.avatarColor, seed: this.id, parts: this.avatarFace };
+  /**
+   * What its avatar draws: its colour, its id (which picks a face) and the
+   * face it was given. One object per instance, so a row that reads it on
+   * every render hands its avatar the same prop.
+   */
+  get face(): BotAvatarFace {
+    let face = faces.get(this);
+    if (!face) {
+      face = { color: this.avatarColor, seed: this.id, parts: this.avatarFace };
+      faces.set(this, face);
+    }
+    return face;
   }
 
   /**
