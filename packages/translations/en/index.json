@@ -19,7 +19,6 @@
     },
     "dismiss": "Dismiss",
     "retry": "Try again",
-    "breadcrumb": "Breadcrumb",
     "dateField": {
       "none": "No date",
       "previousMonth": "Previous month",
@@ -2530,7 +2529,6 @@
     },
     "detail": {
       "back": "Back",
-      "crumb": "Automations",
       "runNow": "Run now",
       "edit": "Edit",
       "more": "More actions",
@@ -3225,6 +3223,8 @@
       "count_one": "{{count}} selected",
       "count_other": "{{count}} selected",
       "label": "Selected tasks",
+      "move": "Move selected",
+      "moveTo": "Move to",
       "delete": "Delete selected",
       "clear": "Clear selection"
     },
@@ -3364,7 +3364,6 @@
         "title": "Connect",
         "subtitle": "The runner registers itself with the hostname it reports."
       },
-      "crumbHosts": "Hosts",
       "done": "Done",
       "description": "Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet."
     },

@@ -235,6 +235,8 @@
     "count_one": "{{count}} selected",
     "count_other": "{{count}} selected",
     "label": "Selected tasks",
+    "move": "Move selected",
+    "moveTo": "Move to",
     "delete": "Delete selected",
     "clear": "Clear selection"
   },
