@@ -57,29 +57,24 @@ func (r CodexEnvironmentRefusal) Problem() *problem.Error {
 	return detail(withinBudget(r.Visible, codexLogCut-len(detail("").Error())))
 }
 
-// withinBudget joins names for as long as they, and the count of the rest,
-// fit in budget characters; with room for none, it is the count alone, which
-// is all that can be done for a repository whose own name fills the log.
+// withinBudget says names in the longest form that fits budget characters:
+// all of them, else the first few and the count of the rest, else the count
+// alone. When not even that fits (a repository whose own name fills the log),
+// it is the shortest of them, which is all that can be done.
 func withinBudget(names []string, budget int) string {
-	rest := func(n int) string { return "and " + strconv.Itoa(n) + " more" }
-	out := ""
-	for i, name := range names {
-		next := name
-		if out != "" {
-			next = out + ", " + name
+	count := strconv.Itoa(len(names)) + ", not named here"
+	shortest := count
+	for shown := len(names); shown >= 1; shown-- {
+		form := strings.Join(names[:shown], ", ")
+		if shown < len(names) {
+			form += ", and " + strconv.Itoa(len(names)-shown) + " more"
 		}
-		left := len(names) - 1 - i
-		need := len(next)
-		if left > 0 {
-			need += len(", " + rest(left))
+		if len(form) <= budget {
+			return form
 		}
-		if need > budget {
-			if out == "" {
-				return strconv.Itoa(len(names)) + ", not named here"
-			}
-			return out + ", " + rest(len(names)-i)
+		if len(form) < len(shortest) {
+			shortest = form
 		}
-		out = next
 	}
-	return out
+	return shortest
 }

@@ -189,6 +189,27 @@ func TestCodexStartKeepsTheWayOutInsideTheLogsCut(t *testing.T) {
 	}
 }
 
+// The bound is on what fits, not on how little room is left: beside a long
+// repository name, two short names that fit are both said, and the refusal
+// stays inside the cut. Counting them instead ("2, not named here") was
+// longer than naming them, and put the way out past it.
+func TestCodexStartNamesShortEnvironmentsBesideALongRepositoryName(t *testing.T) {
+	bin, _ := fakeCodex(t, `echo "Error: environment '${3#--env=}' not found" >&2; exit 1`)
+	withTasks(t, bin, `{"tasks": [
+  {"id": "task_e_1", "status": "ready", "environment_label": "a"},
+  {"id": "task_e_0", "status": "ready", "environment_label": "b"}
+]}`)
+	repository := "acme-labs/" + strings.Repeat("r", 46)
+	_, err := Codex{Command: bin, Home: t.TempDir()}.Start(context.Background(), repository, "main", "task", "")
+	pe := problem.From(err)
+	if pe == nil || pe.Code != domain.ErrCodexCloudEnvironment.Code {
+		t.Fatalf("err = %v, want ErrCodexCloudEnvironment", err)
+	}
+	if len(err.Error()) > 500 || !strings.Contains(pe.Detail, "recent tasks: a, b (") {
+		t.Fatalf("the refusal is %d characters: %s", len(err.Error()), err)
+	}
+}
+
 // A pick outlives its environment: one deleted, or moved to ChatGPT's newer
 // Codex Cloud, after the composer remembered it. The CLI's "not found" for it
 // is the environment refusal naming the pick, not SESS_009.
