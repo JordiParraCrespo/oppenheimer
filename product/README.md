@@ -1616,3 +1616,9 @@ earlier note:
   loop's run is told so in the note that opens it. It is also told never
   to report the same blocker twice, which a bot with no way round still
   does (open).
+- `next-steps/cloud-agents.md` ("The console") had send in Cursor's cloud
+  open Cursor's agent page in a new tab, opened in the press so no popup
+  blocker refused it, and go to the session. On 2026-11-12 (issue #836) the
+  tab sat blank while Cursor answered and closed empty when Cursor refused
+  the launch. Send now opens no tab and goes to the session, as every start
+  does; the session's page ("Open in Cursor") and its row link to Cursor.
