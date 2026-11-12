@@ -1447,6 +1447,15 @@ earlier note:
   date, To do lists what is put on the day and what is due on it, keeps
   unfinished work from earlier days until it is done, and opens a task's
   dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-09) listed every task on
+  To do's day the same way, whatever its agents were doing, and "To do"
+  named the view, the board's first column and the dialog's day field. On
+  2026-11-12 the owner asked for To do to know about agents: a task an
+  agent is working on moves to a "With agents" section under the list and
+  out of the counts, the others with sessions are marked (waiting on you,
+  failed, ready to review, agent stopped), a row's Move puts it on another
+  TODO day, and the names became TODO, Not started and TODO day, labels
+  only (§6, "Changed on 2026-11-12").
 - `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
@@ -1612,3 +1621,20 @@ earlier note:
   Back pill as well. On 2026-11-12 the owner asked for no breadcrumbs
   in the console: each such page keeps only the Back pill
   (`EditorPageBack`), and `PageHeaderCrumbs` left the design system.
+- `versions/mvp/25-bots.md` §1 (2026-11-08) sent a bot to the next route
+  after a failed step, and had it "keep going until the request is done or
+  you are blocked, then stop". On 2026-11-12 the owner saw a bot's
+  half-hourly routine answer "the designated session is still closed" for
+  hours and asked for bots that stop at a blocker and think of a solution
+  that makes sense. A blocker is now the bot's to solve before it reports
+  it (a closed session is replaced by a new one with the same task), within
+  its permissions and instructions and never around a "no", and a routine's or a
+  loop's run is told so in the note that opens it. It is also told never
+  to report the same blocker twice, which a bot with no way round still
+  does (open).
+- `next-steps/cloud-agents.md` ("The console") had send in Cursor's cloud
+  open Cursor's agent page in a new tab, opened in the press so no popup
+  blocker refused it, and go to the session. On 2026-11-12 (issue #836) the
+  tab sat blank while Cursor answered and closed empty when Cursor refused
+  the launch. Send now opens no tab and goes to the session, as every start
+  does; the session's page ("Open in Cursor") and its row link to Cursor.

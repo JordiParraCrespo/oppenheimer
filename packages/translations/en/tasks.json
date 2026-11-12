@@ -36,7 +36,7 @@
     "keyCancel": "cancel"
   },
   "columns": {
-    "todo": "To do",
+    "todo": "Not started",
     "doing": "In progress",
     "review": "In review",
     "done": "Done"
@@ -121,7 +121,7 @@
     "loadFailed": "Couldn’t load the board.",
     "gone": "This task no longer exists.",
     "deleting": "Deleting…",
-    "focus": "To do"
+    "focus": "TODO day"
   },
   "link": {
     "search": "Search sessions",
@@ -203,7 +203,7 @@
       "todo": "due today",
       "due": "due",
       "overdue": "overdue since {{date}}",
-      "since": "on To do since {{date}}",
+      "since": "on TODO since {{date}}",
       "dueOn": "due {{date}}"
     },
     "schedule": {
@@ -219,7 +219,17 @@
       "allStatuses": "All statuses",
       "searchStatuses": "Search statuses"
     },
-    "reorder": "Reorder {{title}}"
+    "reorder": "Reorder {{title}}",
+    "withAgents": "With agents",
+    "mark": {
+      "waiting": "waiting on you",
+      "failed": "failed",
+      "review": "ready to review",
+      "stopped": "agent stopped"
+    },
+    "move": "Move {{title}} to another day",
+    "moveTitle": "Move to another day",
+    "moveFailed": "Couldn’t move that task to another day."
   },
   "selection": {
     "count_one": "{{count}} selected",

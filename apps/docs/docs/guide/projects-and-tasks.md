@@ -20,24 +20,35 @@ A project is a saved scope with a name, zero or more repositories (each with a b
 
 ## The Tasks board
 
-**Plan → Tasks** is one board for the workspace, filtered by **Project** and **Milestone** at the top (each view remembers its filter on this device). Columns, in order: **To do**, **In progress**, **In review**, **Done**. The header counts open, in progress, done and overdue tasks.
+**Plan → Tasks** is one board for the workspace, filtered by **Project** and **Milestone** at the top (each view remembers its filter on this device). Columns, in order: **Not started**, **In progress**, **In review**, **Done**. The header counts open, in progress, done and overdue tasks.
 
-- **New task** (or `n`) opens the task dialog: title, notes, Status, Project, Milestone, Sessions, To do (the day it goes on your To do list, apart from when it is due) and Due (a date with Today, Tomorrow, Next Monday, and an optional time).
+- **New task** (or `n`) opens the task dialog: title, notes, Status, Project, Milestone, Sessions, TODO day (the day it goes on your TODO list, apart from when it is due) and Due (a date with Today, Tomorrow, Next Monday, and an optional time).
 - **Add task** at a column's foot adds a one-line task to that column under the current filter.
 - Drag cards within and across columns. Ticking a card's checkbox moves it to Done.
 - A card shows its title, notes, project, milestone, due date (red when overdue) and its session line.
 
 Tasks have no assignee, since a workspace has one person. Tasks are Oppenheimer's own; there is no import from GitHub Issues or Linear.
 
-## To do
+## TODO
 
-**Plan → To do** is what you mean to work on, one day at a time (today unless you step to another day). A task's **To do** day is separate from its **Due** date: a deadline does not have to be the day you work on it. For a day, the list shows:
+**Plan → TODO** is what you mean to work on, one day at a time (today unless you step to another day). A task's **TODO day** is separate from its **Due** date: a deadline does not have to be the day you work on it. For a day, the list shows:
 
 - the tasks put on that day and those due on it, timed ones first;
-- on today or a later day, open tasks put on an earlier day: they stay until they are done, so work that takes several days stays on the list ("on To do since …");
+- on today or a later day, open tasks put on an earlier day: they stay until they are done, so work that takes several days stays on the list ("on TODO since …");
 - with **Include overdue** on, open tasks due before today.
 
-A task ticked done stays on the day it was done. The dashed row at the foot adds a task put on that day with no due date, and **Add tasks** puts any open task on the day without changing its due date. Clicking a task opens its dialog over To do; clear its To do day there to take it off the list. The count beside To do in the sidebar is what is left on today's list.
+A task ticked done stays on the day it was done. The dashed row at the foot adds a task put on that day with no due date, and **Add tasks** puts any open task on the day without changing its due date. Clicking a task opens its dialog over TODO; clear its TODO day there to take it off the list.
+
+A row's calendar button moves its TODO day: **Tomorrow**, or any day picked on the month it opens. A task due on the day shown, or overdue while Include overdue is on, has no such button: its deadline keeps it on the list whatever its TODO day, so change its due date in its dialog instead.
+
+**With agents**: a task on the list that an agent is working on (one of its sessions running or queued) moves to the **With agents** section under the list, with its session's state; it stays there even when it is due or overdue. Other tasks with sessions stay on the list with a mark saying why they need you, the most urgent first:
+
+- **waiting on you**: one of its sessions is waiting on your answer;
+- **failed**: one of its sessions failed;
+- **ready to review**: the task is in the board's In review column;
+- **agent stopped**: its sessions have stopped (idle or finished) and the task is still In progress.
+
+A session finishing does not finish the task or move it to In review; only you do that. The count in the header and beside TODO in the sidebar is what is left on today's list, not counting the tasks with agents.
 
 ## Tasks and sessions
 
@@ -45,7 +56,7 @@ A task is where work is asked for; a session is where it is done.
 
 - **Start session** (on a card with no session, or in the dialog's Sessions row) opens a dialog with a prompt prefilled from the title and notes, the **Repository** (the project's), **Where it runs** (on a host, Claude Code cloud from a host, or Cursor's cloud), the **Host**, and the **Agent and model**. The session starts at the Approve for me permission level. If the host is offline the button reads **Queue session** and the session starts when the host is back.
 - **Link existing** links sessions you already have; a session can be linked to several tasks.
-- Starting or linking a session moves a task that is in To do to **In progress**. No other move is automatic.
+- Starting or linking a session moves a task that is in Not started to **In progress**. No other move is automatic.
 - The card's session line shows the linked session that most needs attention (Needs input first). Inside that session, a **Back to task** chip returns to the task.
 
 Deleting a task leaves its sessions as they are.

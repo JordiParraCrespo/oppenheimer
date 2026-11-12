@@ -38,8 +38,12 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
     );
   }
 
+  // On the chat's ground, as a host session's chat is (`session-pane.tsx`):
+  // the fade over the transcript while the reader is away from its end is
+  // painted in that colour, and on the pane's grey it drew a lighter band
+  // with a hard edge over the composer.
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col bg-chat-ground">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-3 text-sm text-fg-muted">
         <StatusDot state={dotFor(session)}>
           {t(`sessions.session.state.${stateWordFor(session)}`)}
@@ -66,7 +70,12 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
           onDismiss={dismissFailure}
         />
       ) : null}
-      <SessionChat chat={chat} agent="claude-code" readOnly={false} />
-    </>
+      {/* The chat fills its box (`size-full`); this one is the height the
+          lines above leave it, or it runs past the pane's foot and clips
+          the composer's footer. */}
+      <div className="min-h-0 flex-1">
+        <SessionChat chat={chat} agent="claude-code" readOnly={false} />
+      </div>
+    </div>
   );
 }
