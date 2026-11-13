@@ -1,7 +1,14 @@
 import { SessionChat } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { blocksOf, elapsedOf, latestTodos, modelName, summaryOf } from '../lib/chat-blocks';
+import {
+  answerTextOf,
+  blocksOf,
+  elapsedOf,
+  latestTodos,
+  modelName,
+  summaryOf,
+} from '../lib/chat-blocks';
 
 /**
  * How the chat view lays out a turn: a run of calls folds into one group
@@ -136,5 +143,26 @@ describe('the turn header', () => {
     // without the provider it puts in front.
     expect(modelName('gpt-6.1-sol')).toBe('GPT-6.1 Sol');
     expect(modelName('glm-5.3')).toBe('GLM-5.3');
+  });
+});
+
+describe('answerTextOf', () => {
+  // What a settled turn's copy button takes: the words after its last piece
+  // of work, every reply of them a blank line apart, never what it narrated
+  // before that work. Breaks if the scan stops at the first reply or reads
+  // the whole turn.
+  it('takes every reply after the last call, a blank line apart, and none before it', () => {
+    const turn = turnOf([
+      { type: 'text', text: 'Reading the config first.' },
+      tool('t1', 'Read', { file_path: 'a.ts' }),
+      { type: 'text', text: 'Fixed the import.' },
+      { type: 'text', text: 'The build passes.' },
+    ]);
+    expect(answerTextOf(blocksOf(turn))).toBe('Fixed the import.\n\nThe build passes.');
+  });
+
+  it('is empty for a turn that closes on work, with nothing said after it', () => {
+    const turn = turnOf([{ type: 'text', text: 'Reading the config first.' }, tool('t1', 'Read')]);
+    expect(answerTextOf(blocksOf(turn))).toBe('');
   });
 });

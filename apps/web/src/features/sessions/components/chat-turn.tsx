@@ -10,9 +10,10 @@ import { CopyTextButton, dateFormatter, useLocale } from '@oppenheimer/frontend-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  answerTextOf,
   blocksOf,
-  type ChatBlock,
   elapsedOf,
+  foldedBlocks,
   formatChatElapsed,
   modelName,
   shownImages,
@@ -20,44 +21,6 @@ import {
 import { ChatImages } from './chat-images';
 import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
-
-/**
- * What a folded turn keeps besides its answer: its cards and its pictures,
- * what was asked and answered among them, and what a slash command printed,
- * which is that command's whole answer. The words it said on the way there
- * fold with the work they narrated.
- */
-const SETTLED_KINDS = new Set<ChatBlock['kind']>([
-  'output',
-  'plan',
-  'question',
-  'changes',
-  'images',
-  'file',
-  'subagents',
-]);
-
-/**
- * What a folded turn shows: its cards, and its answer, the words it said
- * after its last piece of work, every one of them, since one message's text
- * blocks arrive as replies of their own. The cards it closes on do not end
- * the answer.
- */
-function foldedBlocks(blocks: ChatBlock[]): ChatBlock[] {
-  const answer = new Set<ChatBlock>(answerOf(blocks));
-  return blocks.filter((block) => answer.has(block) || SETTLED_KINDS.has(block.kind));
-}
-
-/** A turn's answer: its reply blocks after its last piece of work, in order. */
-function answerOf(blocks: ChatBlock[]): Extract<ChatBlock, { kind: 'reply' }>[] {
-  const answer: Extract<ChatBlock, { kind: 'reply' }>[] = [];
-  for (let index = blocks.length - 1; index >= 0; index--) {
-    const block = blocks[index];
-    if (block.kind === 'reply') answer.unshift(block);
-    else if (!SETTLED_KINDS.has(block.kind)) break;
-  }
-  return answer;
-}
 
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
 const ENTER = 'motion-safe:animate-appear';
@@ -86,11 +49,7 @@ export function ChatTurn({ turn }: { turn: Turn }) {
   // A file the host only named, an image without a preview or a document,
   // is a count beside the pictures.
   const named = (turn.prompt?.files ?? 0) - pictures.length;
-  const answer = live
-    ? ''
-    : answerOf(blocks)
-        .map((block) => block.text)
-        .join('\n\n');
+  const answer = live ? '' : answerTextOf(blocks);
 
   return (
     <div className="flex flex-col gap-4">
