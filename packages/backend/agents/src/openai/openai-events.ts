@@ -189,9 +189,17 @@ export class OpenAiEventTranslator {
  */
 function openAiFailureOf(error: unknown): BotEngineFailure {
   const { code, type } = (error ?? {}) as { code?: unknown; type?: unknown };
-  if (code === 'server_error' || type === 'server_error') return 'unavailable';
+  if (PROVIDER_SIDE.has(code) || PROVIDER_SIDE.has(type)) return 'unavailable';
   return failureOf(error);
 }
+
+/**
+ * The codes that say the failure was on the provider's side: the public
+ * API's `server_error`, and `server_is_overloaded`, which ChatGPT's Codex
+ * backend fails a response with when it is overloaded (the Codex CLI reads
+ * it as overloaded too).
+ */
+const PROVIDER_SIDE: ReadonlySet<unknown> = new Set(['server_error', 'server_is_overloaded']);
 
 /** A `response.failed`'s error as the error the run ended with: OpenAI's words, and its code. */
 function responseError(raw: unknown): Error {

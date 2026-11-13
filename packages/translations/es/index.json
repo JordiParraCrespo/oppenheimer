@@ -1327,11 +1327,17 @@
         "stopped": "Detenido",
         "interrupted": "Interrumpido"
       },
+      "copyMessage": "Copiar mensaje",
+      "copyReply": "Copiar respuesta",
       "thinking": "Pensando",
       "plan": "Plan",
       "latest": "Ir a lo último",
       "earlier": "Cargando turnos anteriores",
       "truncated": "recortado en el host",
+      "fileViewer": {
+        "truncated": "Solo se muestra el principio de una edición larga: el host envía al chat las primeras líneas de lo escrito.",
+        "empty": "El chat no trajo lo que escribió este cambio."
+      },
       "failedCall": "falló",
       "failed_one": "{{count}} falló",
       "failed_other": "{{count}} fallaron",
@@ -2169,6 +2175,15 @@
         "onlyBot": "Solo la usa el bot",
         "loadFailed": "No se pudieron cargar las habilidades.",
         "deleteFailed": "No se pudo borrar la habilidad.",
+        "builtIn": {
+          "count_one": "Integradas · {{count}}",
+          "count_other": "Integradas · {{count}}",
+          "count_many": "Integradas · {{count}}",
+          "hint": "Oppenheimer se las da a todos los bots. Puedes leerlas, pero no cambiarlas ni borrarlas.",
+          "meta": "Integrada en Oppenheimer",
+          "view": "Ver {{name}}",
+          "readOnly": "Integrada en Oppenheimer, solo lectura"
+        },
         "dialog": {
           "newTitle": "Nueva habilidad",
           "editTitle": "Editar /{{name}}",

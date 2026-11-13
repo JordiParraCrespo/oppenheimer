@@ -5,7 +5,7 @@ import { BOT_NOTICE_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotNoticeRepositoryPort } from '../database/bot-notice.repository.port';
 import { BotNoticeEntity } from '../domain/bot-notice.entity';
 import { BOT_NOTICES_PER_TURN, noticeSent, noticesSpent } from '../domain/bot-notice.policy';
-import { quietTurnAnswer } from '../domain/bot-routine.policy';
+import { QUIET_TOOL, quietTurnAnswer } from '../domain/bot-routine.policy';
 import {
   type BotToolArea,
   type BotToolDefinition,
@@ -70,11 +70,11 @@ export class BotNoticeToolsFactory implements BotToolArea {
         },
       }),
       defineBotTool({
-        name: 'nothing_to_report',
+        name: QUIET_TOOL,
         scope: 'bots:read',
         notOn: BOT_ATTENDED_ORIGINS,
         description:
-          'Ends a turn nobody is waiting on (a routine such as your heartbeat, a wake, a goal) quietly: nothing in the chat but this line, nothing in the Inbox. Use it when you checked and nothing needs you or the person; then write nothing. Not when you did something or found something they should know: say that instead, briefly.',
+          'Ends a turn nobody is waiting on (a routine such as your heartbeat, a wake, a goal) quietly: nothing in the chat but this line, nothing in the Inbox. Use it when you checked and nothing needs you or the person; then write nothing, since what you write after it is not kept. Not when you did something or found something they should know: say that instead, briefly.',
         input: nothingToReportInput,
         run: async () => quietTurnAnswer(),
       }),

@@ -1,4 +1,5 @@
 import type {
+  ChatFileEdit,
   ChatSharedFile,
   ChatStatus,
   ChatStep,
@@ -53,11 +54,17 @@ export interface ChatAttach {
   files: FileHandOff;
 }
 
-/** A file a turn changed, its line counts summed over every edit to it. */
+/**
+ * A file a turn changed: its line counts summed over every edit to it, and
+ * the edits themselves in order, for the viewer its row opens. `truncated`
+ * when the host cut one of them, so what is shown is not the whole change.
+ */
 export interface ChangedFile {
   path: string;
   additions: number;
   deletions: number;
+  edits: ChatFileEdit[];
+  truncated: boolean;
 }
 
 /**
@@ -171,6 +178,51 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
   }
 }
 
+/**
+ * What a folded turn keeps besides its answer: its cards and its pictures,
+ * what was asked and answered among them, and what a slash command printed,
+ * which is that command's whole answer. The words it said on the way there
+ * fold with the work they narrated.
+ */
+const SETTLED_KINDS = new Set<ChatBlock['kind']>([
+  'output',
+  'plan',
+  'question',
+  'changes',
+  'images',
+  'file',
+  'subagents',
+]);
+
+/**
+ * What a folded turn shows: its cards, and its answer, the words it said
+ * after its last piece of work, every one of them, since one message's text
+ * blocks arrive as replies of their own. The cards it closes on do not end
+ * the answer.
+ */
+export function foldedBlocks(blocks: ChatBlock[]): ChatBlock[] {
+  const answer = new Set<ChatBlock>(answerOf(blocks));
+  return blocks.filter((block) => answer.has(block) || SETTLED_KINDS.has(block.kind));
+}
+
+/** A turn's answer: its reply blocks after its last piece of work, in order. */
+function answerOf(blocks: ChatBlock[]): Extract<ChatBlock, { kind: 'reply' }>[] {
+  const answer: Extract<ChatBlock, { kind: 'reply' }>[] = [];
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index];
+    if (block.kind === 'reply') answer.unshift(block);
+    else if (!SETTLED_KINDS.has(block.kind)) break;
+  }
+  return answer;
+}
+
+/** What copying a settled turn's answer puts on the clipboard: its replies, a blank line apart. */
+export function answerTextOf(blocks: ChatBlock[]): string {
+  return answerOf(blocks)
+    .map((block) => block.text)
+    .join('\n\n');
+}
+
 /** The images that came with a preview: one the host only named has nothing to show. */
 export function shownImages(images: readonly ChatTranscriptImage[] | null): ChatTranscriptImage[] {
   return images?.filter((image) => image.src !== null) ?? [];
@@ -196,9 +248,13 @@ function changedFiles(steps: readonly ChatStep[]): ChangedFile[] {
       path: step.call.target,
       additions: 0,
       deletions: 0,
+      edits: [],
+      truncated: false,
     };
     file.additions += step.call.diff.additions;
     file.deletions += step.call.diff.deletions;
+    file.edits.push(...(step.call.edits ?? []));
+    file.truncated ||= step.call.editsTruncated;
     files.set(file.path, file);
   }
   return [...files.values()];

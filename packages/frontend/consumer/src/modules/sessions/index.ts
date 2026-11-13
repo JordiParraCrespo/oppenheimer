@@ -7,6 +7,7 @@ export type {
 } from './chat/cloud-chat-feed';
 export {
   type ChatBatch,
+  type ChatFileEdit,
   type ChatLimit,
   type ChatPrompt,
   type ChatQuestion,

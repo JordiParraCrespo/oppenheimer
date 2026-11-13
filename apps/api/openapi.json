@@ -31215,6 +31215,7 @@
             "type": "boolean"
           },
           "codexEnvironment": {
+            "description": "Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.",
             "type": "string",
             "minLength": 1,
             "maxLength": 128,
@@ -34666,6 +34667,7 @@
                 "type": "boolean"
               },
               "codexEnvironment": {
+                "description": "Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.",
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 128,

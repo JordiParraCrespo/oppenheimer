@@ -170,31 +170,36 @@ describe('NewSessionComposer', () => {
     return { finish, settle };
   }
 
-  it('sends on Enter mid-recording only once what was said is in the draft', async () => {
-    // A send on the typed half alone would start the session and unmount the
-    // recorder, losing the spoken rest.
+  it('ends the recording on Enter without sending, and sends on the Enter after it', async () => {
+    // What breaks this: Enter mid-recording sending what was said before it
+    // was read (it once did, as soon as the transcription landed).
     dictation.phase = 'recording';
     const { finish, settle } = holdFinish();
     const onSubmit = vi.fn();
     render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
 
-    const textarea = screen.getByRole('textbox');
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
     fireEvent.keyDown(textarea, { key: 'Enter' });
 
     expect(finish).toHaveBeenCalledTimes(1);
-    expect(onSubmit).not.toHaveBeenCalled();
 
     // The transcription lands, then the finish settles.
     dictation.phase = null;
     act(() => dictation.onText?.('list.'));
     await act(async () => settle.landed(true));
 
+    expect(onSubmit).not.toHaveBeenCalled();
+    // The caret is after what was said, so the next Enter is the send.
+    expect(document.activeElement).toBe(textarea);
+    expect(textarea.selectionStart).toBe('Fix the wallet list.'.length);
+
+    fireEvent.keyDown(textarea, { key: 'Enter' });
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith('Fix the wallet list.', []);
   });
 
-  it('sends on Enter on the recorder, which takes the focus the mic it replaced dropped', async () => {
+  it('ends the recording on Enter on the recorder, which takes the focus the mic it replaced dropped', async () => {
     dictation.phase = 'recording';
     const { finish } = holdFinish();
     const { container } = render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
@@ -206,7 +211,7 @@ describe('NewSessionComposer', () => {
     expect(finish).toHaveBeenCalledTimes(1);
   });
 
-  it("leaves Enter on the recorder's Cancel to cancel, never to send", () => {
+  it("leaves Enter on the recorder's Cancel to cancel, never to end the recording", () => {
     dictation.phase = 'recording';
     const { finish } = holdFinish();
     render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
@@ -216,20 +221,6 @@ describe('NewSessionComposer', () => {
     });
 
     expect(finish).not.toHaveBeenCalled();
-  });
-
-  it('sends nothing when the transcription fails, so the draft is fixed first', async () => {
-    dictation.phase = 'recording';
-    const { settle } = holdFinish();
-    const onSubmit = vi.fn();
-    render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
-    const textarea = screen.getByRole('textbox');
-    fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
-    fireEvent.keyDown(textarea, { key: 'Enter' });
-
-    await act(async () => settle.landed(false));
-
-    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   describe('attached files', () => {

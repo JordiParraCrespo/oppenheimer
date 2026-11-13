@@ -1317,11 +1317,17 @@
         "stopped": "Stopped",
         "interrupted": "Interrupted"
       },
+      "copyMessage": "Copy message",
+      "copyReply": "Copy reply",
       "thinking": "Thinking",
       "plan": "Plan",
       "latest": "Jump to latest",
       "earlier": "Loading earlier turns",
       "truncated": "cut on the host",
+      "fileViewer": {
+        "truncated": "Only the start of a long edit is shown: the host sends the chat the first lines of what was written.",
+        "empty": "The chat did not carry what this change wrote."
+      },
       "failedCall": "failed",
       "failed_one": "{{count}} failed",
       "failed_other": "{{count}} failed",
@@ -2145,6 +2151,14 @@
         "onlyBot": "Only the bot uses it",
         "loadFailed": "Could not load the skills.",
         "deleteFailed": "Could not delete the skill.",
+        "builtIn": {
+          "count_one": "Built in · {{count}}",
+          "count_other": "Built in · {{count}}",
+          "hint": "Oppenheimer gives these to every bot. You can read them, but not change or delete them.",
+          "meta": "Built into Oppenheimer",
+          "view": "View {{name}}",
+          "readOnly": "Built into Oppenheimer, read-only"
+        },
         "dialog": {
           "newTitle": "New skill",
           "editTitle": "Edit /{{name}}",

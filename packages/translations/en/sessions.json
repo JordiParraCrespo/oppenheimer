@@ -576,11 +576,17 @@
       "stopped": "Stopped",
       "interrupted": "Interrupted"
     },
+    "copyMessage": "Copy message",
+    "copyReply": "Copy reply",
     "thinking": "Thinking",
     "plan": "Plan",
     "latest": "Jump to latest",
     "earlier": "Loading earlier turns",
     "truncated": "cut on the host",
+    "fileViewer": {
+      "truncated": "Only the start of a long edit is shown: the host sends the chat the first lines of what was written.",
+      "empty": "The chat did not carry what this change wrote."
+    },
     "failedCall": "failed",
     "failed_one": "{{count}} failed",
     "failed_other": "{{count}} failed",

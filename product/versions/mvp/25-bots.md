@@ -920,6 +920,14 @@ training, which knows nothing of it.
   console's edit form check a name's shape alone, since an edit may resend
   the name the skill already has. The `/` menu hides only a skill whose
   `/<name>` a built-in command takes.
+- **Shown in Settings → Skills, read-only** (2026-11-12). A bot that said
+  it used "the `oppenheimer` skill" pointed at nothing the person could
+  find, since the page listed only the bot's own rows. Under them a
+  "Built in" group lists each built-in the bot has (one whose name none of
+  its own holds), by command and description, with who runs it; a view
+  opens its instructions, and there is no edit or delete. The words live in
+  `@oppenheimer/shared` (`BOT_BUILT_IN_SKILL_TEXTS`), which the API's
+  `BOT_BUILT_IN_SKILLS` spreads, so the page shows what the bot reads.
 - **Links to the published page.** With `DOCS_URL` set to where the
   deployment publishes its docs site, each page read carries its address
   and the bot links it; without, it links nothing rather than guess one.
@@ -2191,3 +2199,10 @@ The decisions it produced:
   once and still blocked, the bot calls `nothing_to_report` and writes the
   blocker again (0 of 5); wording did not make that turn silent, so it has
   to be enforced where the turn is stored.
+- 2026-11-13: **a quiet turn keeps no message, in code**
+  (`26-bot-routines.md` §6, "Quiet turns"). The case left open the day
+  before: a turn that ends on `nothing_to_report` keeps none of the bot's
+  words, written before the call or after it, so a bot with no way round
+  and its person already told no longer says the blocker on every run.
+  Measured with `pnpm eval:bot-blocked-run`, scored on what the chat
+  keeps: 30 of 30 runs right, that case 5 of 5.

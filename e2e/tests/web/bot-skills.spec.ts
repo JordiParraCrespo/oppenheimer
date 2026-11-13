@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -19,6 +19,24 @@ test("a bot's skill from its Skills tab to the chat's / menu", async ({ page }) 
 
   await page.goto(`/bots/${bot.id}/settings/skills`);
   await expect(page.getByText(/No skills yet/)).toBeVisible();
+
+  // The skills Oppenheimer gives every bot are listed under the bot's own,
+  // to read and never to change: a view, no edit or delete.
+  await expect(page.getByText('Built in · 2')).toBeVisible();
+  const guide = skillRow(page, '/oppenheimer');
+  await expect(guide.getByText('Only the bot uses it')).toBeVisible();
+  await expect(skillRow(page, '/recap')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit /oppenheimer' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete /oppenheimer' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'View /oppenheimer' }).click();
+  const builtIn = page.getByRole('dialog', { name: '/oppenheimer' });
+  await expect(
+    builtIn.getByText('Built into Oppenheimer, read-only', { exact: false }),
+  ).toBeVisible();
+  await expect(builtIn.getByText('read_oppenheimer_docs').first()).toBeVisible();
+  await expect(builtIn.getByRole('textbox')).toHaveCount(0);
+  await builtIn.getByRole('button', { name: 'Close' }).last().click();
+  await expect(builtIn).toBeHidden();
 
   // Added through the dialog, the name typed into the shape of a command.
   await page.getByRole('button', { name: 'Add skill' }).click();
@@ -63,7 +81,7 @@ test("a bot's skill from its Skills tab to the chat's / menu", async ({ page }) 
   await edit.getByRole('checkbox', { name: 'I can run it from the chat with its command' }).click();
   await edit.getByRole('button', { name: 'Save skill' }).click();
   await expect(edit).toBeHidden();
-  await expect(page.getByText('Only the bot uses it')).toBeVisible();
+  await expect(skillRow(page, '/release-notes').getByText('Only the bot uses it')).toBeVisible();
 
   // ...so the chat's menu does not offer it, only the built-in /goal;
   // turned back on, it does.
@@ -92,6 +110,11 @@ test("a bot's skill from its Skills tab to the chat's / menu", async ({ page }) 
   await expect(confirm).toBeHidden();
   await expect(page.getByText(/No skills yet/)).toBeVisible();
 });
+
+/** A skill's row on the Skills tab, found by its command. */
+function skillRow(page: Page, command: string) {
+  return page.locator('[data-slot="settings-list-row"]', { hasText: command });
+}
 
 async function skillId(
   owner: Awaited<ReturnType<typeof provisionedUser>>,

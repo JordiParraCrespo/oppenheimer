@@ -1815,6 +1815,9 @@ export type CreateSessionRequest = {
     }>;
     folder?: string;
     cloud?: boolean;
+    /**
+     * Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.
+     */
     codexEnvironment?: string;
     teleport?: string;
     cwdGithubRepoId?: number;
@@ -2885,6 +2888,9 @@ export type StartTaskSessionRequest = {
         }>;
         folder?: string;
         cloud?: boolean;
+        /**
+         * Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.
+         */
         codexEnvironment?: string;
         teleport?: string;
         cwdGithubRepoId?: number;

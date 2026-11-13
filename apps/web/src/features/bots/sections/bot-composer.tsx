@@ -40,6 +40,7 @@ import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
+import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
 /**
@@ -62,7 +63,8 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * into the draft (`useDictation`), added to its end, to be read before it is
  * sent. A draft that is a `/` command being typed opens the menu of the
  * skills it can run over the box (`useSlashMenu`); picking one writes
- * `/<name> ` for its input to follow. With the menu shut, Up at the start of
+ * `/<name> ` for its input to follow, and a draft that starts with a command
+ * shows it marked, as the sent message will. With the menu shut, Up at the start of
  * the field brings back what you sent before and Down walks back to your
  * draft (`useSentHistory`); while it does, the box's caption says which
  * one ("History 1/2").
@@ -242,6 +244,7 @@ export function BotComposer({
         <ChatComposer
           onKeyDownCapture={onKeyDownCapture}
           value={draft}
+          command={leadingCommand(draft) ?? undefined}
           onValueChange={setDraft}
           inputRef={field}
           onSubmit={() => submit(running)}
