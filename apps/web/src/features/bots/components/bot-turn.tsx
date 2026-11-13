@@ -1,6 +1,11 @@
 import { ChatUserMessage, IconButton, MessageTrail } from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
-import { dateFormatter, formatTimeAway, useLocale } from '@oppenheimer/frontend-web';
+import {
+  CopyTextButton,
+  dateFormatter,
+  formatTimeAway,
+  useLocale,
+} from '@oppenheimer/frontend-web';
 import {
   BOT_PROVIDER_CATALOG,
   type BotAttachment,
@@ -16,7 +21,6 @@ import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotSteerMessage } from '@/features/bots/components/bot-steer-message';
 import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
-import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
 import {
   type ChatTurnBlock,

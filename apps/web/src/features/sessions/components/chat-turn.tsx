@@ -1,7 +1,12 @@
-import { ChatMarker, ChatUserMessage, TurnHeader } from '@oppenheimer/design-system-web';
+import {
+  ChatMarker,
+  ChatUserMessage,
+  MessageTrail,
+  TurnHeader,
+} from '@oppenheimer/design-system-web';
 import { Paperclip } from '@oppenheimer/design-system-web/icons';
 import type { ChatTurn as Turn } from '@oppenheimer/frontend-consumer';
-import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
+import { CopyTextButton, dateFormatter, useLocale } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,13 +44,19 @@ const SETTLED_KINDS = new Set<ChatBlock['kind']>([
  * the answer.
  */
 function foldedBlocks(blocks: ChatBlock[]): ChatBlock[] {
-  const answer = new Set<ChatBlock>();
+  const answer = new Set<ChatBlock>(answerOf(blocks));
+  return blocks.filter((block) => answer.has(block) || SETTLED_KINDS.has(block.kind));
+}
+
+/** A turn's answer: its reply blocks after its last piece of work, in order. */
+function answerOf(blocks: ChatBlock[]): Extract<ChatBlock, { kind: 'reply' }>[] {
+  const answer: Extract<ChatBlock, { kind: 'reply' }>[] = [];
   for (let index = blocks.length - 1; index >= 0; index--) {
     const block = blocks[index];
-    if (block.kind === 'reply') answer.add(block);
+    if (block.kind === 'reply') answer.unshift(block);
     else if (!SETTLED_KINDS.has(block.kind)) break;
   }
-  return blocks.filter((block) => answer.has(block) || SETTLED_KINDS.has(block.kind));
+  return answer;
 }
 
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
@@ -59,7 +70,8 @@ const ENTER = 'motion-safe:animate-appear';
  * muted ink, what it said is markdown, a plan and the files it changed are
  * cards. Codex's way with settled work: a turn is open while it works, and
  * once it settles it folds to its answer (its last words) and its cards, the
- * newest one too; the header opens it again.
+ * newest one too; the header opens it again. The prompt copies from under its
+ * card, on hover, and a settled answer from the trail beneath it.
  */
 export function ChatTurn({ turn }: { turn: Turn }) {
   const { t } = useTranslation();
@@ -74,6 +86,11 @@ export function ChatTurn({ turn }: { turn: Turn }) {
   // A file the host only named, an image without a preview or a document,
   // is a count beside the pictures.
   const named = (turn.prompt?.files ?? 0) - pictures.length;
+  const answer = live
+    ? ''
+    : answerOf(blocks)
+        .map((block) => block.text)
+        .join('\n\n');
 
   return (
     <div className="flex flex-col gap-4">
@@ -85,6 +102,11 @@ export function ChatTurn({ turn }: { turn: Turn }) {
           tone="accent"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
+          actions={
+            turn.prompt.text ? (
+              <CopyTextButton text={turn.prompt.text} label={t('sessions.chat.copyMessage')} />
+            ) : undefined
+          }
           attachments={
             pictures.length > 0 || named > 0 ? (
               <>
@@ -131,6 +153,11 @@ export function ChatTurn({ turn }: { turn: Turn }) {
           </div>
         );
       })}
+      {answer ? (
+        <MessageTrail
+          actions={<CopyTextButton text={answer} label={t('sessions.chat.copyReply')} />}
+        />
+      ) : null}
     </div>
   );
 }
