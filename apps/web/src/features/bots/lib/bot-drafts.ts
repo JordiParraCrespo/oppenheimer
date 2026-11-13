@@ -21,7 +21,6 @@ export function setBotDraft(botId: string, text: string): void {
   drafts.write(botId, text);
 }
 
-/** Fills a bot's draft (a suggestion picked) and asks its composer to take focus. */
 /**
  * Words that left the field come back to it, in front of anything written
  * since: a waiting message taken back (Edit), a send the API refused.
@@ -31,6 +30,7 @@ export function returnToBotDraft(botId: string, words: string): void {
   setBotDraft(botId, current ? `${words}\n${current}` : words);
 }
 
+/** Fills a bot's draft (a suggestion picked) and asks its composer to take focus. */
 export function fillBotDraft(botId: string, text: string): void {
   setBotDraft(botId, text);
   for (const listener of focusListeners) listener(botId);
