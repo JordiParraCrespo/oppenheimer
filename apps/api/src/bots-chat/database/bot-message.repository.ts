@@ -91,6 +91,34 @@ export class BotMessageRepository
       .execute();
   }
 
+  async removeTurnWords(
+    turn: { organizationId: string; id: string; botId: string },
+    messageIds: readonly string[],
+  ): Promise<void> {
+    if (messageIds.length === 0) return;
+    await this.dataSource.transaction(async (manager) => {
+      // PK_bot_message; only the turn's own words.
+      await manager.query(
+        `DELETE FROM bot_message
+          WHERE "organizationId" = $1 AND "turnId" = $2 AND role = 'assistant' AND id = ANY($3::uuid[])`,
+        [turn.organizationId, turn.id, messageIds],
+      );
+      // The sidebar's line, as insertMessageWithin keeps it: the newest words left.
+      await manager.query(
+        `UPDATE bot SET ("lastMessageAt", "lastMessagePreview") = (
+           SELECT message."createdAt",
+                  left(btrim(regexp_replace(message.content, '\\s+', ' ', 'g')), ${PREVIEW_MAX})
+             FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role IN ('user', 'assistant') AND message.content <> ''
+            ORDER BY message."createdAt" DESC, message.position DESC
+            LIMIT 1)
+          WHERE "organizationId" = $1 AND id = $2`,
+        [turn.organizationId, turn.botId],
+      );
+    });
+  }
+
   async findConversation(
     scope: AccessScope,
     conversationId: string,

@@ -21,6 +21,7 @@ import {
   RATE_LIMIT_DATA_KEY,
   rateLimitOfData,
 } from '../domain/bot-rate-limit.policy';
+import { QuietTurn } from '../domain/bot-routine.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { withoutSkillNudge } from '../domain/bot-skill-learning.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
@@ -45,6 +46,8 @@ export type TranscriptWrite =
   | { kind: 'settled' }
   /** A message the person steered in, put after the call whose result carried it to the model. */
   | { kind: 'steer'; messageId: string; position: number }
+  /** The turn ended quiet: the words it stored before it said so go (`QuietTurn`). */
+  | { kind: 'unsay'; messageIds: string[] }
   /** The engine waits to try a refused call again; passed on, never stored. */
   | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' };
 
@@ -101,7 +104,9 @@ export function providerResetOf(
  * whole. Your message is position 0, so the bot's start at 1. A message
  * you steered in while it worked takes the next position once the call
  * that delivered it has ended, and the next call opens a line of its own
- * after it.
+ * after it. Once the turn has gone quiet (`QuietTurn`), its text is neither
+ * passed on nor stored, and a turn that ends quiet takes back the words it
+ * stored before: a quiet turn is its activity lines and no message.
  */
 export class TurnTranscript {
   private position = 1;
@@ -115,6 +120,9 @@ export class TurnTranscript {
    * whose ends still land there.
    */
   private readonly running = new Map<string, BotMessageEntity>();
+  private readonly quiet = new QuietTurn();
+  /** The messages of words stored so far, which a quiet end takes back. */
+  private words: BotMessageEntity[] = [];
   private outcome: TranscriptOutcome = {
     reason: 'failed',
     error: 'The turn ended without saying how',
@@ -133,6 +141,7 @@ export class TurnTranscript {
   apply(event: BotEngineEvent): TranscriptWrite[] {
     switch (event.type) {
       case 'text.delta':
+        if (this.quiet.silent) return [];
         this.activity = null;
         this.pending += event.text;
         return [{ kind: 'text', block: this.blocks, text: event.text }];
@@ -149,6 +158,7 @@ export class TurnTranscript {
       case 'compacted':
         return [{ kind: 'insert', message: this.compaction(event) }];
       case 'steered':
+        this.quiet.steered();
         this.activity = null;
         return event.steers.map((steer) => ({
           kind: 'steer' as const,
@@ -174,7 +184,7 @@ export class TurnTranscript {
         this.outcome.failure = event.reason === 'failed' ? (event.failure ?? 'other') : null;
         const unsaid = this.pending;
         this.pending = '';
-        return this.say(unsaid);
+        return [...this.say(unsaid), ...this.unsay()];
       }
     }
   }
@@ -193,10 +203,20 @@ export class TurnTranscript {
   }
 
   private say(text: string): TranscriptWrite[] {
-    if (!text.trim()) return [];
+    if (!text.trim() || this.quiet.silent) return [];
     this.activity = null;
     this.blocks += 1;
-    return [{ kind: 'insert', message: this.message('assistant', text, []) }];
+    const message = this.message('assistant', text, []);
+    this.words.push(message);
+    return [{ kind: 'insert', message }];
+  }
+
+  private unsay(): TranscriptWrite[] {
+    if (!this.quiet.silent || this.words.length === 0) return [];
+    const messageIds = this.words.map((message) => message.id);
+    this.words = [];
+    this.blocks = 0;
+    return [{ kind: 'unsay', messageIds }];
   }
 
   private started(callId: string, name: string, input: unknown): TranscriptWrite[] {
@@ -232,6 +252,7 @@ export class TurnTranscript {
     const { callId, isError, data } = event;
     // The skill reminder is for the model; the person's chat keeps the tool's own words.
     const output = withoutSkillNudge(event.output);
+    this.quiet.finished(event.name, isError);
     const line = this.running.get(callId);
     const step = line?.steps.find((candidate) => candidate.callId === callId);
     if (!line || !step) return [];

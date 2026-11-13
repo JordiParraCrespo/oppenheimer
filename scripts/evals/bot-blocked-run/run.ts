@@ -13,8 +13,8 @@
 // the real routine opening (`routineOpening`), and serves the production
 // session tools over an in-memory workspace (`../bot-workspace.ts`), bound
 // under Approve for me, so `start_session` raises a card and runs nothing.
-// A run is scored on its `start_session`, `send_to_session` and
-// `nothing_to_report` calls (`scoreRun`).
+// A run is scored on its `start_session`, `send_to_session` and `notify`
+// calls and on the words the chat keeps of it (`scoreRun`, `keptWords`).
 //
 //   pnpm eval:bot-blocked-run                          every case, 3 runs each
 //   pnpm eval:bot-blocked-run --case closed-first-time one case
@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { BotNoticeToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-notice-tools.factory';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
+  QuietTurn,
   quietTurnAnswer,
   routineOpening,
 } from '../../../apps/api/src/bots-chat/domain/bot-routine.policy';
@@ -219,13 +220,37 @@ const SCORERS: {
       : { right: true, mark: 'Q', note: 'stayed quiet' }),
 };
 
-/** A run against what its case expects, from the calls it made and what it said. */
+/**
+ * What the chat keeps of a run's words: production's rule (`QuietTurn`)
+ * over the run's calls and blocks in order, so a run that goes quiet and
+ * then writes is scored as the person would see it.
+ */
+function keptWords(turn: Turn): string {
+  const quiet = new QuietTurn();
+  let ended = 0;
+  const end = (until: number) => {
+    for (; ended < until; ended++) {
+      const call = turn.calls[ended] as TurnCall;
+      quiet.finished(call.tool, call.isError);
+    }
+  };
+  const kept: string[] = [];
+  for (const block of turn.blocks) {
+    end(block.after);
+    if (!quiet.silent) kept.push(block.text);
+  }
+  end(turn.calls.length);
+  // A turn that ends quiet takes back what it stored before.
+  return quiet.silent ? '' : kept.join('\n');
+}
+
+/** A run against what its case expects, from the calls it made and what the chat keeps of its words. */
 function scoreRun(turn: Turn, expect: Expect, hostId: (name: string) => string | undefined): Score {
   const made = (tool: string) => turn.calls.filter((call) => call.tool === tool && !call.isError);
   const did: Did = {
     started: made('start_session'),
     sent: made('send_to_session'),
-    said: turn.answer.trim().length > 0 || made('notify').length > 0,
+    said: keptWords(turn).trim().length > 0 || made('notify').length > 0,
     hostId,
   };
   return (SCORERS[expect.kind] as (did: Did, expect: Expect) => Score)(did, expect);
@@ -337,6 +362,7 @@ async function main(): Promise<void> {
       r.scores.forEach((score, at) => {
         const turn = r.turns[at] as Turn;
         console.log(`        ${score.note}${turn.stopped ? ` [${turn.stopped}]` : ''}`);
+        console.log(`        kept: ${keptWords(turn).replace(/\s+/g, ' ').slice(0, 240)}`);
         console.log(`        said: ${turn.answer.replace(/\s+/g, ' ').slice(0, 240)}`);
       });
     }

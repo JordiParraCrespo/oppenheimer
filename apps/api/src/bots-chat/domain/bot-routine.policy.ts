@@ -263,11 +263,41 @@ export function routineActivityLine(activity: RoutineActivity): BotMessageEntity
   return line;
 }
 
+/** The tool that ends a turn nobody is waiting on with nothing to say. */
+export const QUIET_TOOL = 'nothing_to_report';
+
 /**
  * What `nothing_to_report` answers (`26-bot-routines.md` §6, "Quiet turns"):
  * the turn ends here, with the call as its one activity line and no message,
  * so a heartbeat that found nothing is one collapsed line in the chat.
  */
 export function quietTurnAnswer(): string {
-  return 'Noted: nothing to report. End your turn now without writing anything.';
+  return 'Noted: nothing to report. End your turn now without writing anything: what you write after this is not kept.';
+}
+
+/**
+ * Whether a turn has gone quiet (`26-bot-routines.md` §6, "Quiet turns"):
+ * from a `nothing_to_report` call that went through, what the bot writes is
+ * not kept, because a model told to write nothing still writes (2026-11-12:
+ * a routine's blocker, said again after the call on every run). Another call
+ * ending after it lifts the silence: the bot went on to do something, and
+ * what it says about that is kept. So does a message the person steers in,
+ * which is theirs to have answered.
+ */
+export class QuietTurn {
+  private quiet = false;
+
+  /** A call ended. */
+  finished(tool: string, isError: boolean): void {
+    this.quiet = tool === QUIET_TOOL && !isError;
+  }
+
+  /** The person wrote to the bot mid-turn. */
+  steered(): void {
+    this.quiet = false;
+  }
+
+  get silent(): boolean {
+    return this.quiet;
+  }
 }
