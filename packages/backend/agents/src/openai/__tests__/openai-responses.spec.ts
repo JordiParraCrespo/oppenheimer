@@ -484,6 +484,54 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     TURN_MS,
   );
 
+  // What breaks this: knowing only the public API's `server_error`. ChatGPT's
+  // Codex backend says it is overloaded with a `response.failed` whose code is
+  // `server_is_overloaded` (the Codex CLI reads it the same way), so a
+  // subscription turn that met it read as `other` and was reported as ours to
+  // fix (OPPENHEIMER-API-4, after #818).
+  it(
+    'reads a chatgpt stream the backend failed as overloaded as the provider unavailable',
+    async () => {
+      const overloaded = 'The servers are overloaded right now (a placeholder of their words).';
+      replies = [
+        sse([
+          started,
+          {
+            type: 'response.failed',
+            response: {
+              ...failedResponse,
+              error: { code: 'server_is_overloaded', message: overloaded },
+            },
+          },
+        ]),
+      ];
+      const events: BotEngineEvent[] = [];
+      for await (const event of new ChatgptBotEngine().run({
+        provider: 'chatgpt',
+        apiKey: KEY,
+        accountId: 'account-placeholder',
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'Hi',
+        tools: [],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events.at(-1)).toEqual({
+        type: 'done',
+        reason: 'failed',
+        error: overloaded,
+        failure: 'unavailable',
+      });
+    },
+    TURN_MS,
+  );
+
   it('fails a chatgpt turn that names no account, without calling the backend', async () => {
     const events: BotEngineEvent[] = [];
     for await (const event of new ChatgptBotEngine().run({
