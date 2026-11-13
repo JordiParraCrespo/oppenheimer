@@ -16,7 +16,10 @@ import { BotTurnFailureReportPolicy } from '../../../application/bot-turn-failur
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from '../../../application/turn-write.factory';
 import { BotMessageMapper } from '../../../bot-message.mapper';
-import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
+import {
+  type BotMessageRepositoryPort,
+  TurnGoneError,
+} from '../../../database/bot-message.repository.port';
 import type {
   BotSteerTaken,
   BotTurnRepositoryPort,
@@ -35,6 +38,8 @@ import { RunBotTurnCommandHandler } from '../run-bot-turn.command-handler';
  * steers in is taken at each tool call, by the steer policy, and put after
  * the line of the call that carried it, unless what was read says the turn
  * takes none. A turn with nothing left to say ends without running the engine.
+ * A turn deleted under its worker (its bot deleted mid-turn) stops without
+ * being reported; any other write Postgres refuses is reported as `storage`.
  */
 class RecordingReporter extends ErrorReporter {
   readonly enabled = true;
@@ -365,6 +370,41 @@ describe('RunBotTurnCommandHandler', () => {
     expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
     expect(reporter.reports).toEqual([
       { error: reset, context: expect.objectContaining({ level: 'error' }) },
+    ]);
+  });
+
+  // Sentry OPPENHEIMER-API-6. What breaks this: the turn's row gone with its
+  // bot read as a write of ours Postgres refused, reported as `storage`.
+  it('stops a turn deleted under it, with its bot, without reporting it', async () => {
+    const turn = queued();
+    const { handler, messages, turns, reporter } = setup(turn, () => [
+      { type: 'text.done', text: 'First' },
+      { type: 'text.done', text: 'Second' },
+      { type: 'done', reason: 'completed' },
+    ]);
+    messages.insert.mockRejectedValueOnce(new TurnGoneError(new Error('FK_bot_message_turn')));
+    await run(handler, turn.id);
+    expect(messages.insert).toHaveBeenCalledTimes(1);
+    expect(turn.status).toBe('failed');
+    expect(turn.failure).not.toBe('storage');
+    expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
+    expect(reporter.reports).toEqual([]);
+  });
+
+  it('still reports any other write Postgres refuses as a storage failure', async () => {
+    const turn = queued();
+    const { handler, messages, reporter } = setup(turn, () => [
+      { type: 'text.done', text: 'First' },
+      { type: 'done', reason: 'completed' },
+    ]);
+    messages.insert.mockRejectedValueOnce(new Error('connection reset'));
+    await run(handler, turn.id);
+    expect(turn).toMatchObject({ status: 'failed', failure: 'storage' });
+    expect(reporter.reports).toEqual([
+      {
+        error: expect.objectContaining({ name: 'TurnStorageError' }),
+        context: expect.objectContaining({ level: 'error' }),
+      },
     ]);
   });
 

@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
-import { AppError } from '@oppenheimer/backend-core';
 import { BotDreamTriggerPolicy } from '../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
@@ -96,8 +95,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       this.failures.ended(turn);
     } catch (error) {
       turn.end('failed', new Date(), thrownFailure(error));
-      this.failures.thrown(turn, error);
-      if (!(error instanceof AppError)) {
+      if (this.failures.thrown(turn, error)) {
         const stack = error instanceof Error ? error.stack : String(error);
         this.logger.error({ message: 'A bot turn failed', turnId: turn.id }, stack);
       }

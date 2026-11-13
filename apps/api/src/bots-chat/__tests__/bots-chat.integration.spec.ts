@@ -44,7 +44,7 @@ import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnChannelPolicy } from '../application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
-import { TurnTranscript } from '../application/turn-transcript.policy';
+import { failureKindOf, TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
@@ -72,6 +72,7 @@ import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
 import { BotLoopRepository } from '../database/bot-loop.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository, isDataException } from '../database/bot-message.repository';
+import { TurnGoneError } from '../database/bot-message.repository.port';
 import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
 import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
 import { BotQuestionRepository } from '../database/bot-question.repository';
@@ -1183,6 +1184,32 @@ describe('bots chat (integration)', () => {
       isError: false,
     });
     expect(chat.at(-1)?.content).toBe('Total 120 �');
+  });
+
+  // Sentry OPPENHEIMER-API-6. What breaks this: the turn's row deleted under
+  // its worker (its bot deleted mid-turn, which cascades to bot_turn) read as
+  // a write Postgres refused, so the turn is reported as a `storage` failure
+  // of ours instead of ending quietly with the bot it belonged to.
+  it('tells a turn deleted with its bot from a write Postgres refused', async () => {
+    const bot = await create('Gone');
+    const turn = await runningTurn(bot);
+    const transcript = new TurnTranscript(turn);
+    const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
+    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
+    expect(await bots.delete(bot)).toBe('deleted');
+
+    let refused: unknown = null;
+    try {
+      for (const written of transcript.apply({ type: 'text.done', text: 'Done.' })) {
+        await write(written);
+      }
+    } catch (error) {
+      refused = error;
+    }
+
+    expect(refused).toBeInstanceOf(TurnGoneError);
+    expect(failureKindOf(refused)).not.toBe('storage');
+    expect(stream.publish).not.toHaveBeenCalled();
   });
 
   // What breaks this: a refusal of the statement (a broken constraint, a

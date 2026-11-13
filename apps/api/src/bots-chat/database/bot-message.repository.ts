@@ -8,7 +8,11 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
-import { type BotMessageRepositoryPort, UnstorableStepsError } from './bot-message.repository.port';
+import {
+  type BotMessageRepositoryPort,
+  TurnGoneError,
+  UnstorableStepsError,
+} from './bot-message.repository.port';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 
 /** How much of a message the sidebar's line keeps. */
@@ -36,11 +40,15 @@ export class BotMessageRepository
   }
 
   async insert(message: BotMessageEntity): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
-      await insertMessageWithin(manager, this.mapper, message);
-      // The images a bot showed; yours are claimed by the send, by its own rule.
-      if (message.role === 'assistant') await claimShownWithin(manager, message);
-    });
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        await insertMessageWithin(manager, this.mapper, message);
+        // The images a bot showed; yours are claimed by the send, by its own rule.
+        if (message.role === 'assistant') await claimShownWithin(manager, message);
+      });
+    } catch (error) {
+      throw isTurnGone(error) ? new TurnGoneError(error) : error;
+    }
   }
 
   async insertOnce(message: BotMessageEntity): Promise<boolean> {
@@ -354,6 +362,13 @@ export function isDataException(error: unknown): boolean {
   const own = error as { code?: unknown };
   const driver = (error as { driverError?: typeof own }).driverError ?? own;
   return typeof driver.code === 'string' && driver.code.startsWith('22');
+}
+
+/** A message whose turn is gone (`23503` on `FK_bot_message_turn`). */
+function isTurnGone(error: unknown): boolean {
+  const own = error as { code?: unknown; constraint?: unknown };
+  const driver = (error as { driverError?: typeof own }).driverError ?? own;
+  return driver.code === '23503' && driver.constraint === 'FK_bot_message_turn';
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */
