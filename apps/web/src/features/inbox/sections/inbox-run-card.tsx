@@ -48,7 +48,7 @@ export function InboxRunCard({
       title={copy.title}
       age={age}
     >
-      <InboxMessageBody>{copy.body}</InboxMessageBody>
+      <InboxMessageBody className="whitespace-pre-line">{copy.body}</InboxMessageBody>
       <InboxMessageFacts>
         <span>{run.title}</span>
         <span>{run.causeSummary.text}</span>

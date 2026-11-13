@@ -1,4 +1,5 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
+import { readableDetail } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 
 /** What a row and the message say about an item, in the reader's language. */
@@ -133,8 +134,10 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
         short: t('inbox.run.short', values),
         source: t('inbox.from.run'),
         title: t('inbox.run.title', values),
+        // The host's words, without the escapes of the terminal they were read
+        // from: Claude Code writes a cursor move for every space.
         body:
-          run.turn?.failureDetail?.trim() ||
+          readableDetail(run.turn?.failureDetail ?? '') ??
           t(isAnswerableRun(run) ? 'inbox.run.body' : 'inbox.run.plainBody'),
       };
     }

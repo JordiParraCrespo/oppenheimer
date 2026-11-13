@@ -81,7 +81,7 @@ const LINE_JOIN = ' · ';
  * dropped. Then one line per line, `lastWords`' joins split back apart. Null
  * when no line has anything left on it.
  */
-function readableDetail(detail: string): string | null {
+export function readableDetail(detail: string): string | null {
   const text = detail
     .replace(TERMINAL, (sequence, csi: string | undefined) => {
       if (sequence === '\r') return '\n';
