@@ -10,27 +10,30 @@ import {
   BotTurnEntity,
   isSendingBotTurn,
 } from '../../modules/bots';
-import { useBotActiveTurn, useSendBotMessage } from '../bot-chat.queries';
+import { useSendBotMessage, useSuspenseBotConversation } from '../bot-chat.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
  * Sending to a bot is optimistic: what you wrote is in the chat the moment
  * you send, not once the API answered and the chat was read again. What
  * breaks this: a send drawn only after its round trip (the chat sits empty
- * under "working"), or a refused send left in the chat as if it were sent.
+ * under "working"), a read landing while you wait taking it away, a send
+ * drawn twice once stored, or a refused send left in the chat, or one that
+ * takes what moved meanwhile with it.
  */
 
 const CONVERSATION = ['bots', 'detail', 'bot-1', 'conversation'];
 const at = new Date('2026-10-01T10:00:00Z');
 
-function ended(): BotConversationEntity {
+function ended(...more: BotMessageEntity[]): BotConversationEntity {
   return new BotConversationEntity(
     [
       new BotMessageEntity('m1', 't1', 'user', 'Hi', [], at),
       new BotMessageEntity('m2', 't1', 'assistant', 'Hello', [], at),
+      ...more,
     ],
     [new BotTurnEntity('t1', 'completed', 'anthropic', 'opus', null, 0, 0, false, at, at, at)],
-    2,
+    2 + more.length,
   );
 }
 
@@ -54,32 +57,41 @@ function setup() {
       </QueryClientProvider>
     );
   }
-  const conversation = () => queryClient.getQueryData<BotConversationEntity>(CONVERSATION);
-  /** What the API holds from now on, for the next read. */
-  const store = (next: BotConversationEntity) => {
-    stored = next;
+  const onError = vi.fn();
+  // The send beside the chat as the transcript reads it.
+  const { result } = renderHook(
+    () => ({
+      send: useSendBotMessage({ onError }),
+      chat: useSuspenseBotConversation('bot-1').data,
+    }),
+    { wrapper },
+  );
+  return {
+    queryClient,
+    sendMessage,
+    onError,
+    answer: () => answer,
+    send: (content: string) => act(() => result.current.send.mutate({ id: 'bot-1', content })),
+    chat: () => result.current.chat,
+    /** What the API holds from now on, and a read of it landing. */
+    land: async (next: BotConversationEntity) => {
+      stored = next;
+      await act(() => queryClient.refetchQueries({ queryKey: CONVERSATION }));
+    },
   };
-  return { queryClient, sendMessage, answer: () => answer, conversation, store, wrapper };
 }
 
-/** The send, beside a reader of the chat, as on screen: the chat is read through the reader's query. */
-function useSendBesideTheChat(options?: Parameters<typeof useSendBotMessage>[0]) {
-  useBotActiveTurn('bot-1');
-  return useSendBotMessage(options);
-}
+const contents = (conversation: BotConversationEntity) =>
+  conversation.messages.map((message) => message.content);
 
 describe('useSendBotMessage', () => {
   it('draws your message and its queued turn before the API answers', async () => {
-    const { conversation, sendMessage, wrapper } = setup();
-    const { result } = renderHook(() => useSendBesideTheChat(), { wrapper });
+    const { chat, send, sendMessage } = setup();
 
-    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it' }));
+    send('Ship it');
 
-    await waitFor(() => expect(conversation()?.messages).toHaveLength(3));
-    const sent = conversation()?.messages.at(-1);
-    expect(sent?.role).toBe('user');
-    expect(sent?.content).toBe('Ship it');
-    const turn = conversation()?.activeTurn;
+    await waitFor(() => expect(contents(chat())).toEqual(['Hi', 'Hello', 'Ship it']));
+    const turn = chat().activeTurn;
     expect(turn?.status).toBe('queued');
     expect(turn && isSendingBotTurn(turn.id)).toBe(true);
     // Drawn on the model the chat was on, so no "switched model" marker shows.
@@ -88,80 +100,62 @@ describe('useSendBotMessage', () => {
   });
 
   it('keeps your message through a read that lands while the API answers', async () => {
-    const { conversation, queryClient, wrapper } = setup();
-    const { result } = renderHook(() => useSendBesideTheChat(), { wrapper });
+    const { chat, land, send } = setup();
 
-    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it' }));
-    await waitFor(() => expect(conversation()?.messages).toHaveLength(3));
-    await act(() => queryClient.refetchQueries({ queryKey: CONVERSATION }));
+    send('Ship it');
+    await waitFor(() => expect(chat().messages).toHaveLength(3));
+    await land(ended(new BotMessageEntity('m3', 't1', 'assistant', 'And done', [], at)));
 
-    expect(conversation()?.messages.at(-1)?.content).toBe('Ship it');
+    await waitFor(() => expect(contents(chat())).toEqual(['Hi', 'Hello', 'And done', 'Ship it']));
   });
 
   it('draws it once when that read already holds the stored message', async () => {
-    const { conversation, queryClient, store, wrapper } = setup();
-    const { result } = renderHook(() => useSendBesideTheChat(), { wrapper });
+    const { chat, land, send } = setup();
 
     // Sent with the newline a paste ends in; the API stores it trimmed.
-    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it\n' }));
-    await waitFor(() => expect(conversation()?.messages).toHaveLength(3));
-    const held = ended();
-    store(
-      new BotConversationEntity(
-        [...held.messages, new BotMessageEntity('m3', 't2', 'user', 'Ship it', [], at)],
-        [
-          ...held.turns,
-          new BotTurnEntity('t2', 'queued', 'anthropic', 'opus', null, 0, 0, false, at, null, null),
-        ],
-        3,
-      ),
-    );
-    await act(() => queryClient.refetchQueries({ queryKey: CONVERSATION }));
+    send('Ship it\n');
+    await waitFor(() => expect(chat().messages).toHaveLength(3));
+    await land(ended(new BotMessageEntity('m3', 't2', 'user', 'Ship it', [], at)));
 
-    expect(conversation()?.messages.map((message) => message.id)).toEqual(['m1', 'm2', 'm3']);
+    await waitFor(() =>
+      expect(chat().messages.map((message) => message.id)).toEqual(['m1', 'm2', 'm3']),
+    );
   });
 
   it('takes only its own message out when the API refuses it, keeping what moved meanwhile', async () => {
-    const { answer, conversation, queryClient, store, wrapper } = setup();
-    const onError = vi.fn();
-    const { result } = renderHook(() => useSendBesideTheChat({ onError }), { wrapper });
+    const { answer, chat, land, onError, send } = setup();
 
-    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it' }));
-    await waitFor(() => expect(conversation()?.messages).toHaveLength(3));
-    const held = ended();
-    const moved = new BotConversationEntity(
-      [...held.messages, new BotMessageEntity('m3', 't1', 'assistant', 'And done', [], at)],
-      held.turns,
-      3,
-    );
-    store(moved);
-    await act(() => queryClient.refetchQueries({ queryKey: CONVERSATION }));
+    send('Ship it');
+    await waitFor(() => expect(chat().messages).toHaveLength(3));
+    await land(ended(new BotMessageEntity('m3', 't1', 'assistant', 'And done', [], at)));
     act(() => answer().reject(new Error('BOTS_001')));
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(conversation()?.messages.map((message) => message.content)).toEqual([
-        'Hi',
-        'Hello',
-        'And done',
-      ]),
-    );
-    expect(conversation()?.activeTurn).toBeNull();
+    expect(contents(chat())).toEqual(['Hi', 'Hello', 'And done']);
+    expect(chat().activeTurn).toBeNull();
   });
 
-  it('reads the chat again once the API has stored it', async () => {
-    const { answer, queryClient, wrapper } = setup();
-    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
-    const { result } = renderHook(() => useSendBesideTheChat(), { wrapper });
+  it('gives way to the stored message once the API has it, never off screen between', async () => {
+    const { answer, chat, queryClient, send } = setup();
+    const refetch = vi.spyOn(queryClient, 'invalidateQueries');
 
-    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it' }));
+    send('Ship it');
     await waitFor(() => expect(answer()).toBeDefined());
+    const stored = ended(new BotMessageEntity('m3', 't2', 'user', 'Ship it', [], at));
+    refetch.mockImplementationOnce(async () => {
+      // The send's entry is still laid over when the read lands.
+      expect(contents(chat())).toContain('Ship it');
+      queryClient.setQueryData(CONVERSATION, stored);
+    });
     act(() =>
       answer().resolve(
         new BotTurnEntity('t2', 'queued', 'anthropic', 'opus', null, 0, 0, false, at, null, null),
       ),
     );
 
-    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: CONVERSATION }));
+    await waitFor(() =>
+      expect(chat().messages.map((message) => message.id)).toEqual(['m1', 'm2', 'm3']),
+    );
+    expect(refetch).toHaveBeenCalledWith({ queryKey: CONVERSATION });
   });
 });

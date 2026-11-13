@@ -38,7 +38,12 @@ import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
-import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
+import {
+  botDraft,
+  fillBotDraft,
+  returnToBotDraft,
+  setBotDraft,
+} from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
 import { leadingCommand } from '@/features/bots/lib/slash-menu';
@@ -126,8 +131,7 @@ export function BotComposer({
   const heldFor = useRef(new WeakMap<SendBotMessageVariables, readonly HeldImage[]>());
   const send = useSendBotMessage({
     onError: (_error, sent) => {
-      const current = botDraft(sent.id);
-      setBotDraft(sent.id, current ? `${sent.content}\n${current}` : sent.content);
+      returnToBotDraft(sent.id, sent.content);
       images.restore(heldFor.current.get(sent) ?? []);
     },
   });
@@ -170,10 +174,7 @@ export function BotComposer({
     cancel.mutate(
       { id: botId, turnId: message.turnId },
       {
-        onSuccess: () => {
-          const current = botDraft(botId);
-          setBotDraft(botId, current ? `${message.text}\n${current}` : message.text);
-        },
+        onSuccess: () => returnToBotDraft(botId, message.text),
       },
     );
   }

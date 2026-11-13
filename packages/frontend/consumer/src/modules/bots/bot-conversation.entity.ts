@@ -13,7 +13,6 @@ import type {
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 import type { BotMailDraft, MailPlan } from '@oppenheimer/shared/schemas/mail';
-import { type BotSending, isSendingBotTurn, sendingTurnId } from './sending';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -253,77 +252,13 @@ export class BotConversationEntity {
     return turn !== undefined && !turn.isActive;
   }
 
-  /**
-   * This conversation with your send in it, as the API will store it: your
-   * message, and its turn queued on the model the newest turn ran on, so it
-   * is drawn the moment you send (behind a running turn, among the waiting
-   * messages; else in the transcript, working). Once a read holds the stored
-   * message, or already holds this one, it is the conversation as it is.
-   */
-  withSending(sending: BotSending): BotConversationEntity {
-    const turnId = sendingTurnId(sending.key);
-    if (this.turn(turnId) || this.holdsSent(sending)) return this;
-    const newest = this.turns.at(-1);
-    const turn = new BotTurnEntity(
-      turnId,
-      'queued',
-      newest?.provider ?? 'anthropic',
-      newest?.model ?? '',
-      null,
-      0,
-      0,
-      false,
-      sending.at,
-      null,
-      null,
-      null,
-      null,
-      null,
-      sending.steer,
-    );
-    const message = new BotMessageEntity(
-      turnId,
-      turnId,
-      'user',
-      sending.content,
-      [],
-      sending.at,
-      null,
-      sending.attachments,
-    );
-    return new BotConversationEntity(
-      [...this.messages, message],
-      [...this.turns, turn],
-      this.messageCount + 1,
-      this.textBlocksStored,
-    );
-  }
-
-  /** This conversation without what a send drew in it (`withSending`): the API refused it. */
-  withoutSending(key: string): BotConversationEntity {
-    const turnId = sendingTurnId(key);
-    if (!this.turn(turnId)) return this;
-    return new BotConversationEntity(
-      this.messages.filter((message) => message.turnId !== turnId),
-      this.turns.filter((turn) => turn.id !== turnId),
-      this.messageCount - 1,
-      this.textBlocksStored,
-    );
-  }
-
-  /**
-   * The API has stored the send: a message of yours with its words that
-   * the chat did not hold when you sent. A read that lands while the send is
-   * still answering may hold it already.
-   */
-  private holdsSent(sending: BotSending): boolean {
-    return this.messages.some(
-      (message) =>
-        message.role === 'user' &&
-        message.content === sending.content &&
-        !isSendingBotTurn(message.id) &&
-        !sending.seen.has(message.id),
-    );
+  /** This conversation holding other lines, as of the same read. */
+  withLines(
+    messages: readonly BotMessageEntity[],
+    turns: readonly BotTurnEntity[],
+    messageCount: number,
+  ): BotConversationEntity {
+    return new BotConversationEntity(messages, turns, messageCount, this.textBlocksStored);
   }
 }
 
