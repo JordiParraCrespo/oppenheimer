@@ -2151,6 +2151,14 @@
         "onlyBot": "Only the bot uses it",
         "loadFailed": "Could not load the skills.",
         "deleteFailed": "Could not delete the skill.",
+        "builtIn": {
+          "count_one": "Built in · {{count}}",
+          "count_other": "Built in · {{count}}",
+          "hint": "Oppenheimer gives these to every bot. You can read them, but not change or delete them.",
+          "meta": "Built into Oppenheimer",
+          "view": "View {{name}}",
+          "readOnly": "Built into Oppenheimer, read-only"
+        },
         "dialog": {
           "newTitle": "New skill",
           "editTitle": "Edit /{{name}}",

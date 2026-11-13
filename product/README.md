@@ -1648,3 +1648,9 @@ earlier note:
   blocker again on every run. On 2026-11-13 the silence is kept in code: a
   turn that ends on `nothing_to_report` keeps no message, whatever the
   model wrote before or after the call.
+- `versions/mvp/25-bots.md` §4.1 had the built-in skills (`oppenheimer`,
+  `recap`) live in product code only, so Settings → Skills listed none of
+  them and a bot saying it "used the `oppenheimer` skill" pointed at
+  nothing the person could find. On 2026-11-12 the owner asked to see them:
+  the page lists them under the bot's own in a read-only "Built in" group,
+  with a view of the instructions and no edit or delete.
