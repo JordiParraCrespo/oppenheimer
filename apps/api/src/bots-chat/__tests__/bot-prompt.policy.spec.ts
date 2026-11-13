@@ -72,24 +72,29 @@ describe('composeBotSystemPrompt', () => {
       ],
     });
     expect(equipped).toMatch(
-      /\n3\. In the same message, show them in a short list what you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond that list\. Say that anything not connected yet/,
+      /\n3\. In the same message, say in one sentence[^\n]*two or three of the things you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond these\./,
     );
     expect(equipped).not.toContain('Gmail');
-    expect(equipped).toContain('(a computer, WhatsApp) you can help them connect');
-    expect(composeBotSystemPrompt(base)).not.toContain('what you can do for them here');
+    // 2026-11-13: the offer to connect waits for the job, out of the welcome.
+    expect(equipped).toMatch(
+      /\n5\. [^\n]*If the job they pick needs something not connected yet \(a computer, WhatsApp\), offer to help them connect it\./,
+    );
+    expect(composeBotSystemPrompt(base)).not.toContain('can do for them here');
     // An area it can only read is not promised: a bot with `list_hosts` alone
     // offered to start coding agents in the first eval (2026-11-10).
     const readOnly = composeBotSystemPrompt({
       ...base,
       tools: [{ name: 'list_hosts', description: 'Lists hosts.', group: 'sessions' }],
     });
-    expect(readOnly).not.toContain('what you can do for them here');
+    expect(readOnly).not.toContain('can do for them here');
     // 2026-11-11: its job examples come from what it can act on too.
     expect(readOnly).toContain(
-      'with these examples: answering questions about their work. Suggest no job',
+      'with one or two examples in a sentence, not a list: answering questions about their work. Suggest no job',
     );
     expect(readOnly).not.toContain('running coding agents');
-    expect(equipped).toContain('with these examples: running coding agents on a host to fix bugs.');
+    expect(equipped).toContain(
+      'with one or two examples in a sentence, not a list: running coding agents on a host to fix bugs. Suggest no job',
+    );
   });
 
   // What breaks this (2026-11-09, Hermes Agent's learning loop): a bot that
@@ -127,16 +132,28 @@ describe('composeBotSystemPrompt', () => {
 
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
     expect(composeBotSystemPrompt(base)).toContain('# Getting started');
-    // 2026-11-10: a new bot's given name is a placeholder; it asks what to be
-    // called, without choosing one itself, after any work the message asks for.
+    // 2026-11-10: a new bot's given name is a placeholder; a greeting asks
+    // what to call it, without choosing one itself, in a few warm sentences
+    // rather than a list (2026-11-13).
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n1\. If their first message asks for real work, do that first.*\n2\. .*ask what they would like to call you\. Do not pick or suggest a name yourself/,
+      /\n2\. Otherwise, welcome them in a short, warm message: three to five sentences in all, no headings and no list\.[^\n]*ask what they would like to call you\. Do not pick or suggest a name yourself/,
     );
-    // 2026-11-11: work the first message asks for comes first, and the same
-    // reply still asks for its name and its job; in an eval it often did not.
+    // 2026-11-13: work the first message asks for is just done; the owner saw
+    // a bot do the task and then ask its name (2026-11-11 had it always ask).
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n1\. If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below/,
+      /\n1\. If their first message asks for real work, just do it[^\n]*Do not ask what to call you in that reply or after it, and do not list what you can do/,
     );
+    expect(composeBotSystemPrompt(base)).not.toContain('always end that same reply');
+    // 2026-11-13: a bot named after one of the person's projects offered
+    // jobs only on another project its memory mentioned.
+    const planner = composeBotSystemPrompt({
+      ...base,
+      tools: [{ name: 'list_projects', description: 'Lists projects.', group: 'plan' }],
+    });
+    expect(planner).toContain(
+      'When they give you a name or say what you are for, call `list_projects` before you reply. If it matches one of their projects, take it that you are for that project',
+    );
+    expect(composeBotSystemPrompt(base)).not.toContain('matches one of their projects');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
     expect(written).not.toContain('# Getting started');

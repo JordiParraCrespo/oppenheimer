@@ -1648,3 +1648,9 @@ earlier note:
   blocker again on every run. On 2026-11-13 the silence is kept in code: a
   turn that ends on `nothing_to_report` keeps no message, whatever the
   model wrote before or after the call.
+- `versions/mvp/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
+  did the work its first message asked for with its name and job
+  questions. On 2026-11-13 the owner found asking its name after the task
+  odd and the welcome too long: work is now just done, and the welcome is
+  a few warm sentences with no list. A name or job that matches one of the
+  owner's projects now says which project the bot is for.
