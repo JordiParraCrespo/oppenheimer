@@ -33,7 +33,7 @@ the routine:
 | `closed-said-so-for-hours` | the screenshot: closed, and eight earlier "still closed" replies | starts a new session |
 | `open-session` | the session is at its prompt | prompts it, starts none |
 | `told-only-that-session` | closed, and the instructions say never to start another without asking | starts none, tells the person |
-| `told-only-that-session-already-said` | the same, and the person was already told | starts none, writes nothing (open, see Results) |
+| `told-only-that-session-already-said` | the same, and the person was already told | starts none, and the chat keeps no words of the run |
 | `named-host-offline` | the routine names a host, which is offline, and another is online | starts nothing on the other host |
 
 Add a case whenever a bot stops at a blocker it could have solved, or
@@ -55,10 +55,12 @@ under Approve for me, so `start_session` raises a card and runs nothing;
 `send_to_session` answers a closed session as the API does (`SESSIONS_005`);
 `notify` and `nothing_to_report` are the production definitions over
 stand-ins. The earlier runs' replies open the message as a list, since the
-eval's transport sends one message. A run is scored on its calls and, for
-a quiet run, on writing nothing at all (`scoreRun`). A case marked `open`
+eval's transport sends one message. A run is scored on its calls and on
+the words the chat keeps of it (`scoreRun`, `keptWords`): production's
+`QuietTurn` over the run's calls and text in order, so what a quiet turn
+writes is not counted, as the chat does not keep it. A case marked `open`
 in `cases.json` is known to fail: it is run and reported, and does not
-fail the eval.
+fail the eval. None is today.
 
 The model is `BOT_BLOCKED_RUN_EVAL_MODEL` (default `claude-sonnet-5-5`).
 With `ANTHROPIC_API_KEY` set it calls the Messages API; without it, it runs
@@ -86,17 +88,17 @@ Then it prints the totals and writes every run to `reports/` (ignored by git).
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-12 | `main` before (routes for a failed step only) | claude-sonnet-5-5 | 12/15 on the first five cases (`closed-said-so-for-hours` fails 0/3) | 3 | 0 | 0 |
 | 2026-11-12 | the blocker rule, in the prompt and in the run's opening | claude-sonnet-5-5 | 25/30 at 5 runs (the open case 0/5) | 0 | 0 | 5 |
+| 2026-11-13 | the same wording; a quiet turn keeps no words | claude-sonnet-5-5 | 30/30 at 5 runs | 0 | 0 | 0 |
 
 On the old wording a first run already started a new session; it was the
 chat full of the bot's own "still closed" that made every later run write
 one more.
 
-The open case: told once and still blocked, the bot calls
-`nothing_to_report` and then writes the blocker again, in every run and on
+Told once and still blocked, the bot calls `nothing_to_report` and writes
+the blocker anyway, before the call and after it, in every run and on
 every wording tried (the opening's, and a sterner answer from the tool).
-The first row scored that as quiet, because it looked only at the call.
-Silence has to be enforced where the turn is stored (a turn that called
-`nothing_to_report` keeps no message), which is its own change.
-
-Both runs went through the Claude Code login. The bot in the
-screenshot ran on another provider's model, which this eval cannot call.
+The first row scored that as quiet, because it looked only at the call;
+the second scored it as said again. Since 2026-11-13 the silence is kept
+where the turn is stored (`TurnTranscript`): a turn that ends on
+`nothing_to_report` keeps no message. The model still writes the words;
+the chat does not keep them, and the third row scores what the chat keeps.

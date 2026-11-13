@@ -2191,3 +2191,10 @@ The decisions it produced:
   once and still blocked, the bot calls `nothing_to_report` and writes the
   blocker again (0 of 5); wording did not make that turn silent, so it has
   to be enforced where the turn is stored.
+- 2026-11-13: **a quiet turn keeps no message, in code**
+  (`26-bot-routines.md` §6, "Quiet turns"). The case left open the day
+  before: a turn that ends on `nothing_to_report` keeps none of the bot's
+  words, written before the call or after it, so a bot with no way round
+  and its person already told no longer says the blocker on every run.
+  Measured with `pnpm eval:bot-blocked-run`, scored on what the chat
+  keeps: 30 of 30 runs right, that case 5 of 5.

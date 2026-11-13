@@ -282,7 +282,14 @@ before this get no heartbeat until asked.
   every turn nobody is waiting on (a routine, a wake, a goal, a loop) and
   never on a message, an approval or a question, and a routine's opening
   tells the bot to use it. A quiet turn writes no assistant message, which
-  is how the spend guard below tells it from a report. OpenClaw does this with a `HEARTBEAT_OK`
+  is how the spend guard below tells it from a report. **Kept in code since
+  2026-11-13**: a model told to write nothing still wrote (a routine's
+  blocker, said again around the call on every run), so a turn that ends on
+  `nothing_to_report` keeps no message. What it writes after the call is
+  neither streamed nor stored, and what it stored before is taken back when
+  the turn ends; the sidebar's line goes back to the last words that
+  remain. Another call after it, or a message the person steers in, lifts
+  the silence. OpenClaw does this with a `HEARTBEAT_OK`
   reply; a tool is explicit and cannot be confused with prose. Bots only:
   a person's session automation has a run page, not a chat.
 - **Spread, not on the minute.** A schedule trigger's config gains an

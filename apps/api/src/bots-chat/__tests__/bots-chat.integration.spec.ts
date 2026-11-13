@@ -1107,6 +1107,43 @@ describe('bots chat (integration)', () => {
     expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
   });
 
+  // What breaks this: a quiet turn's narration staying in the chat, or
+  // staying as the sidebar's line once the message is gone.
+  it('takes back the words of a turn that ended quiet, only that turn’s, and puts the sidebar line back', async () => {
+    const bot = await create('Glm Bot');
+    const first = sent(bot, 'Watch Sentry.');
+    await turns.enqueue(first.turn, first.message, null);
+    const word = (turnId: string, content: string, position: number) =>
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId,
+        role: 'assistant',
+        content,
+        steps: [],
+        position,
+      });
+    const kept = word(first.turn.id, 'On it.', 1);
+    await messages.insert(kept);
+    const second = sent(bot, 'Run the check.');
+    await turns.enqueue(second.turn, second.message, null);
+    const narration = word(second.turn.id, 'Still closed, and you know.', 1);
+    await messages.insert(narration);
+
+    // Another turn's id for the same message removes nothing.
+    await messages.removeTurnWords(first.turn, [narration.id]);
+    expect(await messages.findTurnTexts(organizationId, second.turn.id)).toHaveLength(1);
+
+    await messages.removeTurnWords(second.turn, [narration.id]);
+    expect(await messages.findTurnTexts(organizationId, second.turn.id)).toEqual([]);
+    expect(await messages.findTurnTexts(organizationId, first.turn.id)).toEqual(['On it.']);
+    const [{ lastMessagePreview }] = await dataSource.query(
+      `SELECT "lastMessagePreview" FROM bot WHERE id = $1`,
+      [bot.id],
+    );
+    expect(lastMessagePreview).toBe('Run the check.');
+  });
+
   // Issue #728. What breaks this: a tool's words written as they came, so a
   // PDF's NUL byte (`unsupported Unicode escape sequence`) or a lone
   // surrogate half (`invalid input syntax for type json`) makes Postgres

@@ -14,6 +14,10 @@ import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 /** How much of a message the sidebar's line keeps. */
 const PREVIEW_MAX = 200;
 
+/** The sidebar's line of a message's words (`content`, an SQL expression): one line, cut. */
+const previewOf = (content: string) =>
+  `left(btrim(regexp_replace(${content}, '\\s+', ' ', 'g')), ${PREVIEW_MAX})`;
+
 @Injectable()
 export class BotMessageRepository
   extends ScopedRepositoryBase<BotMessageOrmEntity>
@@ -89,6 +93,33 @@ export class BotMessageRepository
         turnId: turn.id,
       })
       .execute();
+  }
+
+  async removeTurnWords(
+    turn: { organizationId: string; id: string; botId: string },
+    messageIds: readonly string[],
+  ): Promise<void> {
+    if (messageIds.length === 0) return;
+    await this.dataSource.transaction(async (manager) => {
+      // PK_bot_message; only the turn's own words.
+      await manager.query(
+        `DELETE FROM bot_message
+          WHERE "organizationId" = $1 AND "turnId" = $2 AND role = 'assistant' AND id = ANY($3::uuid[])`,
+        [turn.organizationId, turn.id, messageIds],
+      );
+      // The sidebar's line, as insertMessageWithin keeps it: the newest words left.
+      await manager.query(
+        `UPDATE bot SET ("lastMessageAt", "lastMessagePreview") = (
+           SELECT message."createdAt", ${previewOf('message.content')}
+             FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role IN ('user', 'assistant') AND message.content <> ''
+            ORDER BY message."createdAt" DESC, message.position DESC
+            LIMIT 1)
+          WHERE "organizationId" = $1 AND id = $2`,
+        [turn.organizationId, turn.botId],
+      );
+    });
   }
 
   async findConversation(
@@ -365,9 +396,9 @@ export async function insertMessageWithin(
   if (message.role === 'activity' || message.role === 'event') return;
   if (message.role === 'assistant' && !message.content) return;
   await manager.query(
-    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = left($3, ${PREVIEW_MAX})
+    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')}
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, record.content.replace(/\s+/g, ' ').trim()],
+    [message.organizationId, message.botId, record.content],
   );
 }
 

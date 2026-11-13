@@ -1641,3 +1641,10 @@ earlier note:
   tab sat blank while Cursor answered and closed empty when Cursor refused
   the launch. Send now opens no tab and goes to the session, as every start
   does; the session's page ("Open in Cursor") and its row link to Cursor.
+- `versions/mvp/26-bot-routines.md` §6 ("Quiet turns", 2026-11-06) had a
+  quiet turn write no message because the bot was told to write nothing
+  after `nothing_to_report`. On 2026-11-12 a bot with a blocker it could
+  not get round, and its person already told, called it and wrote the
+  blocker again on every run. On 2026-11-13 the silence is kept in code: a
+  turn that ends on `nothing_to_report` keeps no message, whatever the
+  model wrote before or after the call.

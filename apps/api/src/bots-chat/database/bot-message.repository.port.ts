@@ -42,6 +42,15 @@ export interface BotMessageRepositoryPort {
     at: Date,
   ): Promise<void>;
   /**
+   * Takes back words a turn stored (`messageIds`, its own assistant
+   * messages): a turn that ended quiet keeps none. The sidebar's line goes
+   * back to the bot's last words that remain, or to none.
+   */
+  removeTurnWords(
+    turn: { organizationId: string; id: string; botId: string },
+    messageIds: readonly string[],
+  ): Promise<void>;
+  /**
    * A conversation's newest `limit` messages, oldest first: the console
    * chat's when `conversationId` is the bot's id.
    */
