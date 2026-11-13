@@ -1444,6 +1444,13 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/29-inbox.md` gathered what needs the person from the
+  sessions, bots, pull requests, runs and reports, and a task an agent made
+  went straight onto the board with nothing to say so. On 2026-11-12 the
+  owner asked that such a task wait in the Inbox for him to triage: a task
+  now says who made it (`origin`) and when its person took it up
+  (`triagedAt`), and waits in the Inbox until he gives it a TODO day, starts
+  or links a session on it, or dismisses it (29, "Tasks an agent made").
 - `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
   day's tasks by their due date. On 2026-11-09 the owner asked for it to be
   what they mean to work on: a task has a focus date apart from its due
@@ -1648,6 +1655,12 @@ earlier note:
   blocker again on every run. On 2026-11-13 the silence is kept in code: a
   turn that ends on `nothing_to_report` keeps no message, whatever the
   model wrote before or after the call.
+- `versions/mvp/25-bots.md` §4.1 had the built-in skills (`oppenheimer`,
+  `recap`) live in product code only, so Settings → Skills listed none of
+  them and a bot saying it "used the `oppenheimer` skill" pointed at
+  nothing the person could find. On 2026-11-12 the owner asked to see them:
+  the page lists them under the bot's own in a read-only "Built in" group,
+  with a view of the instructions and no edit or delete.
 - `versions/mvp/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
   did the work its first message asked for with its name and job
   questions. On 2026-11-13 the owner found asking its name after the task

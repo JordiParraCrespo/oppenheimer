@@ -20,6 +20,8 @@ import { MoveTaskHttpController } from './commands/move-task/move-task.http.cont
 import { StartTaskCloudSessionHttpController } from './commands/start-task-cloud-session/start-task-cloud-session.http.controller';
 import { StartTaskSessionCommandHandler } from './commands/start-task-session/start-task-session.command-handler';
 import { StartTaskSessionHttpController } from './commands/start-task-session/start-task-session.http.controller';
+import { TriageTaskCommandHandler } from './commands/triage-task/triage-task.command-handler';
+import { TriageTaskHttpController } from './commands/triage-task/triage-task.http.controller';
 import { UnlinkTaskSessionCommandHandler } from './commands/unlink-task-session/unlink-task-session.command-handler';
 import { UnlinkTaskSessionHttpController } from './commands/unlink-task-session/unlink-task-session.http.controller';
 import { UpdateMilestoneCommandHandler } from './commands/update-milestone/update-milestone.command-handler';
@@ -55,6 +57,7 @@ const httpControllers = [
   FindTaskHttpController,
   CreateTaskHttpController,
   UpdateTaskHttpController,
+  TriageTaskHttpController,
   MoveTaskHttpController,
   DeleteTaskHttpController,
   StartTaskSessionHttpController,
@@ -71,6 +74,7 @@ const httpControllers = [
 const commandHandlers: Provider[] = [
   CreateTaskCommandHandler,
   UpdateTaskCommandHandler,
+  TriageTaskCommandHandler,
   MoveTaskCommandHandler,
   DeleteTaskCommandHandler,
   StartTaskSessionCommandHandler,

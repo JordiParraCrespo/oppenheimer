@@ -625,6 +625,15 @@
       "onlyBot": "Solo la usa el bot",
       "loadFailed": "No se pudieron cargar las habilidades.",
       "deleteFailed": "No se pudo borrar la habilidad.",
+      "builtIn": {
+        "count_one": "Integradas · {{count}}",
+        "count_other": "Integradas · {{count}}",
+        "count_many": "Integradas · {{count}}",
+        "hint": "Oppenheimer se las da a todos los bots. Puedes leerlas, pero no cambiarlas ni borrarlas.",
+        "meta": "Integrada en Oppenheimer",
+        "view": "Ver {{name}}",
+        "readOnly": "Integrada en Oppenheimer, solo lectura"
+      },
       "dialog": {
         "newTitle": "Nueva habilidad",
         "editTitle": "Editar /{{name}}",

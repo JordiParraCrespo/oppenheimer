@@ -27,6 +27,8 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     record.version = entity.version;
     record.idempotencyKey = entity.idempotencyKey;
     record.createdByUserId = entity.createdByUserId;
+    record.origin = entity.origin;
+    record.triagedAt = entity.triagedAt;
     return record;
   }
 
@@ -63,6 +65,8 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
         version: record.version,
         idempotencyKey: record.idempotencyKey ?? null,
         createdByUserId: record.createdByUserId ?? null,
+        origin: record.origin,
+        triagedAt: record.triagedAt ?? null,
         sessions: [...links]
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
           .map((link) => ({
@@ -91,6 +95,8 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     dto.blockedReason = entity.blockedReason;
     dto.blockedAt = entity.blockedAt?.toISOString() ?? null;
     dto.version = entity.version;
+    dto.origin = entity.origin;
+    dto.triagedAt = entity.triagedAt?.toISOString() ?? null;
     dto.sessions = entity.sessions.map((link) => {
       const item = new TaskSessionLinkResponseDto();
       item.sessionId = link.sessionId;

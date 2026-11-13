@@ -2151,6 +2151,14 @@
         "onlyBot": "Only the bot uses it",
         "loadFailed": "Could not load the skills.",
         "deleteFailed": "Could not delete the skill.",
+        "builtIn": {
+          "count_one": "Built in · {{count}}",
+          "count_other": "Built in · {{count}}",
+          "hint": "Oppenheimer gives these to every bot. You can read them, but not change or delete them.",
+          "meta": "Built into Oppenheimer",
+          "view": "View {{name}}",
+          "readOnly": "Built into Oppenheimer, read-only"
+        },
         "dialog": {
           "newTitle": "New skill",
           "editTitle": "Edit /{{name}}",
@@ -3500,7 +3508,8 @@
       "bots": "Bots",
       "session": "Sessions",
       "run": "Automations",
-      "report": "Reports"
+      "report": "Reports",
+      "task": "Tasks"
     },
     "project": {
       "all": "All projects",
@@ -3521,7 +3530,8 @@
       "approval": "Bot approval",
       "run": "Automation",
       "botNotice": "Bot",
-      "report": "Report"
+      "report": "Report",
+      "task": "Task"
     },
     "session": {
       "blockedShort": "{{name}} is waiting on you",
@@ -3618,6 +3628,18 @@
       "sending": "Sending…",
       "done": "Done",
       "answerFailed": "Could not send the answer. Try again."
+    },
+    "task": {
+      "sender": "An agent",
+      "short": "New task: {{title}}",
+      "body": "An agent added this task to your board. Put it on today, start a session on it, or dismiss it to keep it on the board as it is.",
+      "due": "Due {{date}}",
+      "open": "Open task",
+      "start": "Start session",
+      "today": "Put on today",
+      "planning": "Putting on today…",
+      "dismiss": "Dismiss",
+      "dismissing": "Dismissing…"
     }
   },
   "settings": {

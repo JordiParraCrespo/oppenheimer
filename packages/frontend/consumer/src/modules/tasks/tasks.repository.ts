@@ -70,6 +70,8 @@ function toTask(data: TaskResponseDto): Task {
     data.blockedReason ?? null,
     data.version,
     data.focusDate ?? null,
+    data.origin,
+    data.triagedAt ? new Date(data.triagedAt) : null,
   );
 }
 
@@ -174,6 +176,14 @@ export class TasksRepository {
       const data = await api.body(
         heyApiSdk.linkTaskSession({ path: { id, sessionId }, body: { seenStatus } }),
       );
+      return toTask(data);
+    });
+  }
+
+  /** Take up a task an agent made without planning it: it leaves the Inbox. */
+  triage(id: string): Promise<Task> {
+    return callApi(TasksErrors.SAVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.triageTask({ path: { id } }));
       return toTask(data);
     });
   }

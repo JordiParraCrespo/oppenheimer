@@ -98,7 +98,7 @@ The server runs over stdio with an API token, or as one hosted server over Strea
 | Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session`, `start_session`, `send_to_session`, `set_session_visibility`, `stop_session`, `close_session` |
 | Automations | `list_automations`, `create_automation`, `run_automation`, `pause_automation`, `resume_automation` |
 | Bots | `list_bots`, `ask_bot` |
-| Plan | `list_tasks`, `create_task`, `move_task` |
+| Plan | `list_tasks`, `create_task`, `move_task` (a task made here waits in the person's [Inbox](./inbox.md) until they take it up) |
 
 The usual flow is `list_hosts`, `start_session` with a focused task, `wait_for_session`, then `get_session` and `send_to_session`. `wait_for_session` and `ask_bot` hold a call for at most 300 seconds; call again while the work goes on. A session waiting on a permission or question needs the person to answer it in the console. Cloud sessions: a Cursor session takes `send_to_session` as a new run once its last run ended; Claude Code and Codex cloud sessions take none, and their transcripts are at the vendor.
 

@@ -13,6 +13,7 @@ const newTask = (status: TaskEntity['status'] = 'todo') =>
     title: 'Biometric unlock',
     createdByUserId: randomUUID(),
     actor: userActor(randomUUID()),
+    origin: 'person',
   });
 
 describe('TaskEntity: what a write logs', () => {
@@ -45,5 +46,34 @@ describe('TaskEntity: what a write logs', () => {
     task.place('done', rankBetween('', null), new Date());
     expect(task.blockedReason).toBeNull();
     expect(task.blockedAt).toBeNull();
+  });
+});
+
+describe('TaskEntity: a task an agent made', () => {
+  const fromAgent = () =>
+    TaskEntity.createNew({
+      organizationId: randomUUID(),
+      projectId: randomUUID(),
+      milestoneId: null,
+      status: 'todo',
+      title: 'Rotate the staging keys',
+      createdByUserId: randomUUID(),
+      actor: { type: 'agent', userId: randomUUID(), agentId: randomUUID() },
+      origin: 'agent',
+    });
+
+  it('waits for its person, while a task the person made is taken up when it is made', () => {
+    expect(fromAgent().triagedAt).toBeNull();
+    expect(newTask().triagedAt).toBeInstanceOf(Date);
+  });
+
+  it('is taken up only by its person, once', () => {
+    const task = fromAgent();
+    task.triage('agent');
+    expect(task.triagedAt).toBeNull();
+    const at = new Date('2026-11-12T09:00:00Z');
+    task.triage('person', at);
+    task.triage('person', new Date('2026-11-13T09:00:00Z'));
+    expect(task.triagedAt).toEqual(at);
   });
 });

@@ -63,7 +63,7 @@ export function useSuspenseStartSession() {
 }
 
 /** The tasks read, for both hooks over it: the key and the fetch, once. */
-function useTaskListQuery() {
+export function useTaskListQuery() {
   const app = useConsumerApp();
   return { queryKey: tasksKeys.list(), queryFn: () => app.tasks.findAll() };
 }
@@ -330,6 +330,12 @@ export interface LinkTaskSessionVariables {
 
 export const useLinkTaskSession = mutation<TaskEntity, LinkTaskSessionVariables>({
   run: (app, { id, sessionId, seenStatus }) => app.tasks.linkSession(id, sessionId, seenStatus),
+  update: (queryClient, task) => settleTask(queryClient, task.id, task),
+});
+
+/** Dismiss a task an agent made from the Inbox: its person takes it up as it is. */
+export const useTriageTask = mutation<TaskEntity, string>({
+  run: (app, id) => app.tasks.triage(id),
   update: (queryClient, task) => settleTask(queryClient, task.id, task),
 });
 

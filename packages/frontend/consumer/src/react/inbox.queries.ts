@@ -21,6 +21,7 @@ import { pollWhile } from './live-poll';
 import { useProjectListQuery } from './projects.queries';
 import { usePullRequestQueueQuery } from './pull-requests.queries';
 import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
+import { useTaskListQuery } from './tasks.queries';
 
 /**
  * The failed runs the Inbox shows: the last day's (Decided 2), as many as the
@@ -146,6 +147,7 @@ function useInboxQueries() {
     useInboxReportsQuery(),
     useProjectListQuery(),
     useInboxMarksQuery(),
+    useTaskListQuery(),
   ] as const;
 }
 
@@ -197,6 +199,7 @@ function sourcesOf(
   botNotices: Answer<3>,
   reports: Answer<4>,
   projects: Answer<5>,
+  tasks: Answer<7>,
   pulls: PullSources,
 ): InboxSources {
   return {
@@ -206,6 +209,7 @@ function sourcesOf(
     failedRuns: runs.items,
     botNotices,
     reports,
+    tasks,
     projects,
   };
 }
@@ -227,9 +231,10 @@ export function useSuspenseInbox(
   const [pullsShown] = useInboxPullsShown();
   useInboxPoll(pullsShown);
   const pullQueries = usePullQueries(pullsShown);
-  const [sessions, approvals, runs, botNotices, reports, projects, marks] = useSuspenseQueries({
-    queries: useInboxQueries(),
-  });
+  const [sessions, approvals, runs, botNotices, reports, projects, marks, tasks] =
+    useSuspenseQueries({
+      queries: useInboxQueries(),
+    });
   const pullResults = useSuspenseQueries({ queries: pullQueries });
   const [requested, mine] = pullResults.map((result) => result.data);
   const answered = useAnsweredKeys();
@@ -243,6 +248,7 @@ export function useSuspenseInbox(
           botNotices.data,
           reports.data,
           projects.data,
+          tasks.data,
           pullSources([requested, mine]),
         ),
         marks.data,
@@ -256,6 +262,7 @@ export function useSuspenseInbox(
       botNotices.data,
       reports.data,
       projects.data,
+      tasks.data,
       requested,
       mine,
       marks.data,
@@ -271,6 +278,7 @@ export function useSuspenseInbox(
     botNotices.error ??
     reports.error ??
     projects.error ??
+    tasks.error ??
     marks.error;
   return { ...view, projects: projects.data, answered, error };
 }
@@ -284,7 +292,7 @@ export function useInboxCount(now: number): number | undefined {
   const results = useQueries({ queries: useInboxQueries() });
   const pullResults = useQueries({ queries: usePullQueries(pullsShown) });
   const answered = useAnsweredKeys();
-  const [sessions, approvals, runs, botNotices, reports, projects, marks] = results;
+  const [sessions, approvals, runs, botNotices, reports, projects, marks, tasks] = results;
   if (
     !sessions?.data ||
     !approvals?.data ||
@@ -293,6 +301,7 @@ export function useInboxCount(now: number): number | undefined {
     !reports?.data ||
     !projects?.data ||
     !marks?.data ||
+    !tasks?.data ||
     pullResults.some((result) => !result.data)
   ) {
     return undefined;
@@ -305,6 +314,7 @@ export function useInboxCount(now: number): number | undefined {
       botNotices.data as Answer<3>,
       reports.data as Answer<4>,
       projects.data as Answer<5>,
+      tasks.data as Answer<7>,
       pullSources(pullResults.map((result) => result.data as PullAnswer)),
     ),
     marks.data as InboxMarkEntity[],

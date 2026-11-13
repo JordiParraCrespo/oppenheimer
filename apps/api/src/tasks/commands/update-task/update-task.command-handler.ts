@@ -11,7 +11,7 @@ import { UpdateTaskCommand } from './update-task.command';
 /**
  * Changes what a person edits in the task dialog. Its column is a move, not an
  * edit; filing it under another project or milestone goes through the same rules as
- * creating it.
+ * creating it. The person giving a TODO day to a task an agent made takes it up.
  */
 @CommandHandler(UpdateTaskCommand)
 export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskCommand, AggregateID> {
@@ -21,7 +21,13 @@ export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskComma
     private readonly filing: TaskFilingResolver,
   ) {}
 
-  async execute({ scope, actor, taskId, changes }: UpdateTaskCommand): Promise<AggregateID> {
+  async execute({
+    scope,
+    actor,
+    origin,
+    taskId,
+    changes,
+  }: UpdateTaskCommand): Promise<AggregateID> {
     const task = requireFound(await this.tasks.findOneById(scope, taskId), TaskErrors.NOT_FOUND, {
       detail: `No task with id ${taskId}`,
     });
@@ -33,6 +39,8 @@ export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskComma
       dueTime: changes.dueTime,
       focusDate: changes.focusDate,
     });
+    // Giving it a TODO day takes up a task an agent made.
+    if (changes.focusDate) task.triage(origin);
     if (changes.projectId !== undefined || changes.milestoneId !== undefined) {
       const filed = await this.filing.resolve(
         scope,

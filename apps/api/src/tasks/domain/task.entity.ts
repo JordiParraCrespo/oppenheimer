@@ -11,6 +11,7 @@ import {
   TASK_NOTES_MAX,
   TASK_STATUSES_BEFORE_WORK,
   TASK_TITLE_MAX,
+  type TaskOrigin,
   type TaskStatus,
 } from '@oppenheimer/shared';
 import { TaskChangedDomainEvent } from './events/task-changed.domain-event';
@@ -56,6 +57,13 @@ export interface TaskProps {
   /** The `Idempotency-Key` of the create that made it. */
   idempotencyKey: string | null;
   createdByUserId: string | null;
+  /** Who made it: its person, or an agent working for them. */
+  origin: TaskOrigin;
+  /**
+   * When its person took it up; null while a task an agent made waits in the
+   * Inbox. A task the person made is taken up when it is made.
+   */
+  triagedAt: Date | null;
   /** The sessions on the task, oldest first. */
   sessions: TaskSessionLink[];
 }
@@ -72,6 +80,8 @@ export interface CreateTaskProps {
   focusDate?: string | null;
   createdByUserId: string;
   actor: PlanActor;
+  /** Who made it, as the request came in: an agent's waits for its person. */
+  origin: TaskOrigin;
   idempotencyKey?: string | null;
 }
 
@@ -103,6 +113,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   }
 
   static createNew(props: CreateTaskProps): TaskEntity {
+    const now = new Date();
     const task = new TaskEntity({
       id: randomUUID(),
       props: {
@@ -122,6 +133,8 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         version: 1,
         idempotencyKey: props.idempotencyKey ?? null,
         createdByUserId: props.createdByUserId,
+        origin: props.origin,
+        triagedAt: props.origin === 'person' ? now : null,
         sessions: [],
       },
     });
@@ -212,6 +225,25 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   }
   get createdByUserId(): string | null {
     return this.props.createdByUserId;
+  }
+  get origin(): TaskOrigin {
+    return this.props.origin;
+  }
+  get triagedAt(): Date | null {
+    return this.props.triagedAt;
+  }
+
+  /**
+   * Its person took up a task an agent made (`29-inbox.md`, "Tasks an agent
+   * made"): gave it a TODO day, started or linked a session on it, or
+   * dismissed it from the Inbox. Only the person's own request counts; an
+   * agent's write leaves it waiting. Taken up once, it stays so.
+   */
+  triage(by: TaskOrigin, now = new Date()): void {
+    if (by !== 'person' || this.props.triagedAt !== null) return;
+    this.props.triagedAt = now;
+    this.setUpdatedAt(now);
+    this.touched('updated');
   }
   /** A copy: links change through {@link attach} and the repository's unlink. */
   get sessions(): TaskSessionLink[] {
@@ -402,6 +434,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
       throw new ArgumentInvalidException(
         `A blocked reason is at most ${TASK_BLOCKED_REASON_MAX} characters`,
       );
+    }
+    if (this.props.origin === 'person' && this.props.triagedAt === null) {
+      throw new ArgumentInvalidException('A task its person made is taken up when it is made');
     }
     if (this.props.rank && !isRank(this.props.rank)) {
       throw new ArgumentInvalidException('A task rank is a fractional key');

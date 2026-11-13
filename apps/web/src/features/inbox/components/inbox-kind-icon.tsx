@@ -1,6 +1,7 @@
 import {
   Bell,
   Bot,
+  CircleCheck,
   Flag,
   GitPullRequest,
   Terminal,
@@ -8,7 +9,7 @@ import {
 } from '@oppenheimer/design-system-web/icons';
 import type { InboxItemKind } from '@oppenheimer/frontend-consumer';
 
-/** The glyph for an item's kind, the rail's own: a terminal, a bell, a bot, a pull request, a bolt, a flag on a problem reported. A bot's notice is the bot's. */
+/** The glyph for an item's kind, the rail's own: a terminal, a bell, a bot, a pull request, a bolt, a flag on a problem reported, Plan's tick on a task an agent made. A bot's notice is the bot's. */
 export function InboxKindIcon({ kind }: { kind: InboxItemKind }) {
   switch (kind) {
     case 'session':
@@ -24,5 +25,7 @@ export function InboxKindIcon({ kind }: { kind: InboxItemKind }) {
       return <Zap />;
     case 'report':
       return <Flag />;
+    case 'task':
+      return <CircleCheck />;
   }
 }

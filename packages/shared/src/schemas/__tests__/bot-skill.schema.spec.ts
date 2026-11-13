@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOT_BUILT_IN_SKILL_TEXTS,
   BOT_LOOP_CHECK_IN_PROMPT,
   BOT_SKILL_NAME_MAX,
   botGoalCommandOf,
@@ -8,6 +9,7 @@ import {
   botSkillNameDraft,
   botSkillNameOf,
   botSkillSchema,
+  builtInSkillsBeside,
   editBotSkillSchema,
   isBotConsoleCommand,
   parseBotSlashCommand,
@@ -226,5 +228,24 @@ describe('botSkillSchema', () => {
   it('takes a change of any one part, and refuses an empty change', () => {
     expect(updateBotSkillSchema.safeParse({ userInvocable: false }).success).toBe(true);
     expect(updateBotSkillSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+/**
+ * Which built-ins a bot has beside its own skills, the one rule the API's
+ * prompt and the console's Settings → Skills share. What breaks this: a bot
+ * saying it used the `oppenheimer` skill while the page lists no such skill,
+ * or a built-in listed over a skill of the bot's own saved under its name.
+ */
+describe('builtInSkillsBeside', () => {
+  it('keeps every built-in, with its words, when the bot has none of their names', () => {
+    const shown = builtInSkillsBeside(BOT_BUILT_IN_SKILL_TEXTS, [{ name: 'triage' }]);
+    expect(shown.map((skill) => skill.name)).toEqual(['oppenheimer', 'recap']);
+    expect(shown[0]?.body).toContain('read_oppenheimer_docs');
+  });
+
+  it('leaves out a built-in whose name a skill of the bot’s own holds', () => {
+    const shown = builtInSkillsBeside(BOT_BUILT_IN_SKILL_TEXTS, [{ name: 'recap' }]);
+    expect(shown.map((skill) => skill.name)).toEqual(['oppenheimer']);
   });
 });
