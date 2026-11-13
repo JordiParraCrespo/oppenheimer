@@ -70,3 +70,4 @@ reply, calls and grades go to `reports/` (ignored by git).
 | 2026-11-11 | claude-sonnet-5-5 | 15/15 | job examples from the offered tools only, "suggest no job your tools cannot do", and the work-first reply always ends with the two questions |
 | 2026-11-13 | claude-sonnet-5-5 | 13/18 | before: `hola-es` ran long; `named-after-project` never tailored its jobs to Zengue Jewels and twice offered XRP Mobile ones |
 | 2026-11-13 | claude-sonnet-5-5 | 17/18 | a short warm welcome, no name question after work, `list_projects` before tailoring jobs; the miss is `read-only` once mentioning "your coding work" |
+| 2026-11-13 | claude-sonnet-5-5 | 16/18 | after autoreview: "short, no lists" only for the messages that set it up; misses: one long `named-after-project`, one `read-only` without the name question |

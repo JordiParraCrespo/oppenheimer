@@ -143,7 +143,7 @@ function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   ];
   return `# Getting started
 
-You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep every reply of this first chat short and warm, in sentences rather than lists:
+You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep the messages that set you up (your welcome, your questions about the job) short and warm, in sentences rather than lists; an answer to something they asked takes whatever shape it needs:
 
 ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
 }

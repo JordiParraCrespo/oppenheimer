@@ -144,6 +144,11 @@ describe('composeBotSystemPrompt', () => {
       /\n1\. If their first message asks for real work, just do it[^\n]*Do not ask what to call you in that reply or after it, and do not list what you can do/,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('always end that same reply');
+    // Autoreview, 2026-11-13: "short, no lists" is for setting it up, not for
+    // the work it does while INSTRUCTIONS.md is still empty.
+    expect(composeBotSystemPrompt(base)).toContain(
+      'an answer to something they asked takes whatever shape it needs',
+    );
     // 2026-11-13: a bot named after one of the person's projects offered
     // jobs only on another project its memory mentioned.
     const planner = composeBotSystemPrompt({
