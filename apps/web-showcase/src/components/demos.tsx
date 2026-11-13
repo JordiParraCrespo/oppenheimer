@@ -117,8 +117,6 @@ import {
 } from '@oppenheimer/design-system-web/inline-token';
 import {
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
   PageHeaderRow,
@@ -1511,11 +1509,6 @@ export function EditorPageDemo() {
         <EditorPageBody>
         <EditorPageBack href="#editorpage">Back</EditorPageBack>
         <PageHeader className="mb-7">
-          <PageHeaderCrumbs aria-label="Breadcrumb">
-            <button type="button">New session</button>
-            <span>/</span>
-            <PageHeaderHere>Add a host</PageHeaderHere>
-          </PageHeaderCrumbs>
           <PageHeaderRow
             icon={<ServerIcon />}
             title="Add a host"
@@ -1576,11 +1569,6 @@ export function PageHeaderDemo() {
   return (
     <div className="flex w-full flex-col gap-8">
       <PageHeader>
-        <PageHeaderCrumbs aria-label="Breadcrumb">
-          <button type="button">Routines</button>
-          <span>/</span>
-          <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
-        </PageHeaderCrumbs>
         <PageHeaderRow
           icon={<ClockIcon />}
           title="Nightly dependency audit"
@@ -1620,11 +1608,6 @@ export function PageHeaderDemo() {
         ) : null}
       </PageHeader>
       <PageHeader>
-        <PageHeaderCrumbs aria-label="Breadcrumb">
-          <button type="button">Routines</button>
-          <span>/</span>
-          <PageHeaderHere>New routine</PageHeaderHere>
-        </PageHeaderCrumbs>
         <PageHeaderRow
           icon={<ZapIcon />}
           title={<PageHeaderTitleInput placeholder="Name this routine" aria-label="Routine name" />}

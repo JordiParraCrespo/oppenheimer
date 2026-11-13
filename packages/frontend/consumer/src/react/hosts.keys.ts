@@ -16,7 +16,6 @@
  * ['hosts', 'detail', id, 'folders']          folderLists(id)
  * ['hosts', 'detail', id, 'folders', path]    folders(id, path)                one directory; null is home
  * ['hosts', 'detail', id, 'folder-search', text]   folderSearch(id, text)    the picker's search; null asks nothing
- * ['hosts', 'detail', id, 'codex-environments', repository]   codexEnvironments(id, repository)   null: none picked yet
  * ```
  *
  * A pairing detail's `queryFn` mints: refetching it issues a new token under
@@ -38,6 +37,4 @@ export const hostsKeys = {
   folders: (id: string, path: string | null) => [...hostsKeys.folderLists(id), path] as const,
   folderSearch: (id: string, text: string | null) =>
     [...hostsKeys.detail(id), 'folder-search', text] as const,
-  codexEnvironments: (id: string, repository: string | null) =>
-    [...hostsKeys.detail(id), 'codex-environments', repository] as const,
 };

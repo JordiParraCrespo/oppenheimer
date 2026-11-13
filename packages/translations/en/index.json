@@ -19,7 +19,6 @@
     },
     "dismiss": "Dismiss",
     "retry": "Try again",
-    "breadcrumb": "Breadcrumb",
     "dateField": {
       "none": "No date",
       "previousMonth": "Previous month",
@@ -472,10 +471,6 @@
       "SESSIONS_041": "That file link expired. Start the session again with the file attached.",
       "SESSIONS_042": "That pattern cannot be watched. Use a plain regular expression without lookaround or backreferences.",
       "SESSIONS_043": "This session already has as many terminal watches as it can hold. Remove one first.",
-      "SESSIONS_044": "This host’s runner is too old to list Codex environments. Update it, or start the session and let the host pick one.",
-      "SESSIONS_045": "The host is offline, so its Codex environments can’t be listed.",
-      "SESSIONS_046": "Codex on the host couldn’t list its environments. Check that codex is installed and signed in with ChatGPT.",
-      "SESSIONS_047": "ChatGPT is limiting how often its Codex environments can be listed. Wait a minute and try again, or start the session and let the host pick.",
       "SESSIONS_048": "This host’s runner is too old to continue a cloud session. Update the runner, or pick another host.",
       "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
       "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
@@ -518,12 +513,13 @@
     "startFailure": {
       "codes": {
         "SESS_002": "This host makes sessions with one repository.",
-        "SESS_010": "Codex's CLI has no cloud environment for this repository.",
-        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
+        "SESS_010": "The Codex environment picked isn’t on this ChatGPT account.",
+        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host.",
+        "SESS_022": "Not signed in to ChatGPT. Run codex login on the host."
       },
       "help": {
         "SESS_010": {
-          "body": "The host starts Codex cloud tasks with its codex CLI, which reaches only the environments codex cloud lists. Environments made in ChatGPT Settings → Codex Cloud are not reachable by the CLI yet, so one there named for this repository cannot be used from here. Run codex cloud on the host to see the environments it can use.",
+          "body": "Copy the environment id again from ChatGPT Settings → Codex Cloud, or leave it on Default.",
           "link": "Open Codex Cloud settings"
         }
       },
@@ -872,16 +868,12 @@
       },
       "codexEnvironment": {
         "label": "Codex environment",
-        "search": "Search environments…",
+        "search": "Environment id…",
         "empty": "No environment matches.",
-        "loading": "Asking the host for its Codex environments…",
-        "auto": "Auto",
-        "autoLinked": "{{name}}, the host’s pick",
-        "autoByName": "The host’s pick",
-        "linked": "Linked",
-        "pinned": "Pinned",
-        "failed": "Could not list the host’s Codex environments.",
-        "lives": "Environments live in your Codex account"
+        "default": "Default",
+        "defaultHint": "With the repository",
+        "use": "Use {{id}}",
+        "hint": "Paste an id from Codex Cloud settings"
       },
       "branch": {
         "label": "Branch",
@@ -2530,7 +2522,6 @@
     },
     "detail": {
       "back": "Back",
-      "crumb": "Automations",
       "runNow": "Run now",
       "edit": "Edit",
       "more": "More actions",
@@ -3026,7 +3017,7 @@
       "keyCancel": "cancel"
     },
     "columns": {
-      "todo": "To do",
+      "todo": "Not started",
       "doing": "In progress",
       "review": "In review",
       "done": "Done"
@@ -3111,7 +3102,7 @@
       "loadFailed": "Couldn’t load the board.",
       "gone": "This task no longer exists.",
       "deleting": "Deleting…",
-      "focus": "To do"
+      "focus": "TODO day"
     },
     "link": {
       "search": "Search sessions",
@@ -3193,7 +3184,7 @@
         "todo": "due today",
         "due": "due",
         "overdue": "overdue since {{date}}",
-        "since": "on To do since {{date}}",
+        "since": "on TODO since {{date}}",
         "dueOn": "due {{date}}"
       },
       "schedule": {
@@ -3209,12 +3200,24 @@
         "allStatuses": "All statuses",
         "searchStatuses": "Search statuses"
       },
-      "reorder": "Reorder {{title}}"
+      "reorder": "Reorder {{title}}",
+      "withAgents": "With agents",
+      "mark": {
+        "waiting": "waiting on you",
+        "failed": "failed",
+        "review": "ready to review",
+        "stopped": "agent stopped"
+      },
+      "move": "Move {{title}} to another day",
+      "moveTitle": "Move to another day",
+      "moveFailed": "Couldn’t move that task to another day."
     },
     "selection": {
       "count_one": "{{count}} selected",
       "count_other": "{{count}} selected",
       "label": "Selected tasks",
+      "move": "Move selected",
+      "moveTo": "Move to",
       "delete": "Delete selected",
       "clear": "Clear selection"
     },
@@ -3354,7 +3357,6 @@
         "title": "Connect",
         "subtitle": "The runner registers itself with the hostname it reports."
       },
-      "crumbHosts": "Hosts",
       "done": "Done",
       "description": "Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet."
     },

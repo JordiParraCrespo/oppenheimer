@@ -127,16 +127,12 @@
     },
     "codexEnvironment": {
       "label": "Entorno de Codex",
-      "search": "Buscar entornos…",
+      "search": "Id del entorno…",
       "empty": "Ningún entorno coincide.",
-      "loading": "Pidiendo al equipo sus entornos de Codex…",
-      "auto": "Automático",
-      "autoLinked": "{{name}}, la elección del equipo",
-      "autoByName": "La elección del equipo",
-      "linked": "Vinculado",
-      "pinned": "Fijado",
-      "failed": "No se han podido listar los entornos de Codex del equipo.",
-      "lives": "Los entornos viven en tu cuenta de Codex"
+      "default": "Predeterminado",
+      "defaultHint": "Con el repositorio",
+      "use": "Usar {{id}}",
+      "hint": "Pega un id de los ajustes de Codex Cloud"
     },
     "branch": {
       "label": "Rama",

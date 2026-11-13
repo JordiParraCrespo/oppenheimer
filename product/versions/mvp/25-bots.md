@@ -162,6 +162,16 @@ worker runs it and streams what happens back to the chat.
     stalled), and never around a person's "no"; saying what it is about to
     do is not a result (2026-11-08, from OpenClaw's "Execution Bias" and
     "Promised Work" prompt sections, `openclaw/openclaw` at `3a25991e3`);
+    a blocker is the bot's to solve before it is the bot's to report: it
+    asks what the blocked step was for and reaches that end another way
+    (what it was told to use is the means, not the purpose, unless its
+    instructions say only that one will do; a closed session is replaced
+    by a new one with the same task), when the way round serves the same
+    purpose, stays within its permissions and instructions and nobody
+    said no to it, and never past a rule that says to stop and ask (a
+    host the person named, a refused command, a failed session);
+    otherwise it says once what blocks it, and never the same blocker
+    twice (2026-11-12);
   - **check before you report** (2026-11-07), the one statement every
     other section and the session wakes point at: every action that
     changes something is checked before it is reported, from what the
@@ -2161,3 +2171,30 @@ The decisions it produced:
   approval, or an answer to a decision that cannot be read, is still a card
   offering only that call, past every grant. Every answer now says what the
   session asked and why the bot answered as it did.
+- 2026-11-12: **a blocker is solved before it is reported** (§1, "how a
+  turn goes"; `26-bot-routines.md` §4). Oppie's half-hourly Sentry check
+  answered "the designated session is still closed" for hours, until the
+  owner asked "if the session is closed create a new one, no?". The
+  2026-11-08 routes covered a failed step; a blocker the bot met again on
+  every run was read as a reason to skip the run. Now the prompt says a
+  blocker is the bot's to solve by a way round that makes sense (same
+  purpose, within its permissions and instructions, never around a "no"),
+  and that the same blocker is never reported twice; the note that opens a
+  routine's or a loop's run says it again, because the system prompt alone
+  lost to a chat full of the bot's own "still closed".
+  `scripts/evals/bot-blocked-run` holds it: on the old wording the
+  screenshot's case reported the blocker again in 3 of 3 runs; on the new
+  one the five cases that have a way round or a rule to respect were right
+  in 25 of 25 runs: a new session for a closed one, the open one used, the
+  bot told to use only that session starting none and saying so, a
+  routine that names an offline host never moved to another. Open: told
+  once and still blocked, the bot calls `nothing_to_report` and writes the
+  blocker again (0 of 5); wording did not make that turn silent, so it has
+  to be enforced where the turn is stored.
+- 2026-11-13: **a quiet turn keeps no message, in code**
+  (`26-bot-routines.md` §6, "Quiet turns"). The case left open the day
+  before: a turn that ends on `nothing_to_report` keeps none of the bot's
+  words, written before the call or after it, so a bot with no way round
+  and its person already told no longer says the blocker on every run.
+  Measured with `pnpm eval:bot-blocked-run`, scored on what the chat
+  keeps: 30 of 30 runs right, that case 5 of 5.

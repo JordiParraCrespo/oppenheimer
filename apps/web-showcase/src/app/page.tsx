@@ -956,7 +956,7 @@ export default function Page() {
         id="datepicker"
         title="DatePicker"
         meta="date-picker.tsx"
-        desc="A due date, or a day for an event. The trigger is a 34px field with the calendar glyph, the day as words and a chevron; it opens a small month with today ringed and the picked day filled in ink. Under the grid, quick picks as chips (the caller's words: Today, Tomorrow, Next Monday) and Clear while a day is set. Picking closes it. Days are plain ISO dates in the reader's calendar, and today is the caller's clock, never read in render."
+        desc="A due date, or a day for an event. The trigger is a 34px field with the calendar glyph, the day as words and a chevron; it opens a small month with today ringed and the picked day filled in ink. Under the grid, quick picks as chips (the caller's words: Today, Tomorrow, Next Monday) and Clear while a day is set. Picking closes it. A caller that draws its own trigger passes it as children (TODO's Move, an IconButton on the row) and gets the same month. Days are plain ISO dates in the reader's calendar, and today is the caller's clock, never read in render."
         code={`<DatePicker
   value={due}
   onValueChange={setDue}
@@ -1171,8 +1171,8 @@ export default function Page() {
         id="pageheader"
         title="PageHeader"
         meta="page-header.tsx"
-        desc="Every routine page opens with one: a breadcrumb back, the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining. The display size is a page that opens on its own name (Plan's Tasks and Calendar): the ladder's H1, no glyph, and its facts under it as PageHeaderStats in an unindented meta line."
-        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
+        desc="Every routine page opens with one (the Back pill sits above it): the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining. The display size is a page that opens on its own name (Plan's Tasks and Calendar): the ladder's H1, no glyph, and its facts under it as PageHeaderStats in an unindented meta line."
+        code={`<PageHeader><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
       >
         <PageHeaderDemo />
       </Spec>
@@ -1318,10 +1318,10 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="taskboard"
         title="TaskBoard · MilestoneCard"
         meta="task-board.tsx · milestone-card.tsx · page-header.tsx"
-        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. A selected card (⌘/Ctrl- or Shift-clicked, to act on with others) takes the selected wash and a ring, and TaskSelectionBar floats at the viewport's foot with how many and what they can do together. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: To do idle, In progress running, In review pending, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
+        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. A selected card (⌘/Ctrl- or Shift-clicked, to act on with others) takes the selected wash and a ring, and TaskSelectionBar floats at the viewport's foot with how many and what they can do together. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Not started idle, In progress running, In review pending, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
         code={`<DragProvider {...useSortableGroups(groups, setGroups, save)} overlay={(a) => <TaskCard title={titleOf(a.id)} />}>
   <TaskBoard>
-    <TaskColumn id="todo" status="todo" label="To do" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>
+    <TaskColumn id="todo" status="todo" label="Not started" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>
       {groups.todo.map((id) => (
         <SortableItem key={id} id={id} data={{ type: 'task' }}>
           <TaskCard title="Draft the beta waitlist email" project="Atlas" due="Oct 10" session={<TaskSessionChip state="running" word="Running" name="atlas-waitlist" />} onStart={start} />
@@ -1371,7 +1371,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="todo"
         title="TodoRow · SortableTodoRow · TodoRowAdd"
         meta="todo-row.tsx"
-        desc="Plan's To do, the day's list: each task a card of its own with a round done toggle (the success fill and a check once done), the title at 16px semibold over a muted line with its milestone and where it stands, then the time it is due at in mono and its project as a quiet pill. Done strikes the title and mutes the row. The toggle and the title are separate buttons, so ticking a task never opens it. SortableTodoRow is the row in a SortableGroup, picked up by the pointer anywhere on the card; the six-dot grip at its right end is the keyboard's handle and the touch one. TodoRowAdd is the dashed row under the list that adds a task to the day on Enter; TodoRowSkeleton stands in for a row while the day loads."
+        desc="Plan's TODO, the day's list: each task a card of its own with a round done toggle (the success fill and a check once done), the title at 16px semibold over a muted line with its milestone and where it stands, then the time it is due at in mono and its project as a quiet pill. Done strikes the title and mutes the row. The toggle and the title are separate buttons, so ticking a task never opens it. SortableTodoRow is the row in a SortableGroup, picked up by the pointer anywhere on the card; the six-dot grip at its right end is the keyboard's handle and the touch one. TodoRowAdd is the dashed row under the list that adds a task to the day on Enter; TodoRowSkeleton stands in for a row while the day loads."
         code={`<TodoRow title="Rotate API keys" detail="overdue since Oct 3" time="10:00" tag="Client sites" toggleLabel="Mark done" onToggle={tick} onOpen={open} />
 <TodoRowAdd aria-label="Add a task for this day" placeholder="Add a task" value={draft} onChange={…} onKeyDown={…} />`}
         bare

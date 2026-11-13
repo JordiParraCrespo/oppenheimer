@@ -178,7 +178,7 @@ function Composer({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown, fieldRef } = useComposerSend({
     value,
     busy,
     disabled,
@@ -187,8 +187,8 @@ function Composer({
     attachmentCount: attachments?.length,
     onSubmit,
     onStop,
-    // While a recording is open, a send waits for what is still being heard.
-    beforeSend: dictation?.recorder ? dictation.finish : undefined,
+    // While a recording is open, Enter ends it and sends nothing.
+    settle: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const box = (
@@ -217,6 +217,7 @@ function Composer({
         {...props}
       >
         <textarea
+          ref={fieldRef}
           data-slot="composer-input"
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
@@ -348,7 +349,7 @@ function ComposerPill({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown, fieldRef } = useComposerSend({
     value,
     busy,
     disabled,
@@ -357,8 +358,8 @@ function ComposerPill({
     attachmentCount: attachments?.length,
     onSubmit,
     onStop,
-    // While a recording is open, a send waits for what is still being heard.
-    beforeSend: dictation?.recorder ? dictation.finish : undefined,
+    // While a recording is open, Enter ends it and sends nothing.
+    settle: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const box = (
@@ -392,6 +393,7 @@ function ComposerPill({
           </span>
         ) : null}
         <textarea
+          ref={fieldRef}
           data-slot="composer-input"
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
@@ -406,7 +408,7 @@ function ComposerPill({
         />
         {/* While a recording is open its bar holds the controls, as it takes
             `Composer`'s foot row. Enter, in the field or on the bar, ends the
-            recording and sends once what was said is in the draft. */}
+            recording; the next one sends what was said. */}
         {dictation?.recorder ? null : (
           <span className="flex shrink-0 items-center gap-1 p-1.5">
             {dictation?.mic}

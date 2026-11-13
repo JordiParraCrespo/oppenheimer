@@ -19,7 +19,9 @@ import {
  * one case per kind of write. Text as it streams is written to the stream,
  * which keeps it until its block settles; a retry wait is passed on;
  * what is stored (a new message, a line's steps, a steer placed where the
- * turn took it) is written, then announced as that message. A call's end
+ * turn took it) is written, then announced as that message; the words a
+ * quiet turn takes back are removed, and the turn's end is what tells the
+ * chat to read again. A call's end
  * whose content Postgres refuses (`UnstorableStepsError`) fails that call
  * alone (`failUnstoredCall`); any other failed write fails the turn as
  * `storage` (`TurnStorageError`).
@@ -68,15 +70,18 @@ export class TurnWriteFactory {
     } catch (error) {
       throw new TurnStorageError(error);
     }
+    if (write.kind === 'unsay') return;
     const messageId = storedMessageId(write);
     await this.stream.publish(turn.botId, { type: 'message', turnId: turn.id, messageId });
   }
 
   private async store(
     turn: BotTurnEntity,
-    write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' }>,
+    write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' | 'unsay' }>,
   ): Promise<void> {
     switch (write.kind) {
+      case 'unsay':
+        return this.messages.removeTurnWords(turn, write.messageIds);
       case 'insert':
         return this.messages.insert(write.message);
       case 'steer':

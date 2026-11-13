@@ -327,26 +327,30 @@ export class SessionEntity {
 
   /**
    * The cloud session's page at its vendor, once it has one: claude.ai/code
-   * for Claude Code's, chatgpt.com/codex for a Codex task.
+   * for Claude Code's; for Codex, an older session's task page, or Codex on
+   * chatgpt.com for a cloud thread, whose web address is not known.
    */
   get cloudUrl(): string | null {
     if (!this.cloudSessionId) return null;
     const id = encodeURIComponent(this.cloudSessionId);
-    return this.agent === 'codex'
+    if (this.agent !== 'codex') return `https://claude.ai/code/${id}`;
+    return this.cloudSessionId.startsWith('task_')
       ? `https://chatgpt.com/codex/tasks/${id}`
-      : `https://claude.ai/code/${id}`;
+      : 'https://chatgpt.com/codex';
   }
 
   /**
    * The command that brings the cloud session's work into a terminal: Claude
-   * Code's branch and conversation (`claude --teleport`), or a Codex task's
-   * diff, applied to the checkout it runs in (`codex apply`).
+   * Code's branch and conversation (`claude --teleport`), or a legacy Codex
+   * task's diff, applied to the checkout it runs in (`codex apply`). Null for
+   * a thread on Codex's current cloud, which no command brings here.
    */
   get teleportCommand(): string | null {
     if (!this.cloudSessionId) return null;
-    return this.agent === 'codex'
-      ? `codex apply ${this.cloudSessionId}`
-      : `claude --teleport ${this.cloudSessionId}`;
+    if (this.agent !== 'codex') return `claude --teleport ${this.cloudSessionId}`;
+    // `codex apply` takes a legacy task (`task_…`); a thread on Codex's
+    // current cloud has no command that brings it to a checkout.
+    return this.cloudSessionId.startsWith('task_') ? `codex apply ${this.cloudSessionId}` : null;
   }
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
@@ -451,8 +455,9 @@ export interface CreateWorktreeSession {
   cwdGithubRepoId?: number;
   cloud?: boolean;
   /**
-   * A Codex cloud session's environment, by id: absent, the host starts the
-   * task in the environment linked to the repository.
+   * A Codex cloud session's environment id, from ChatGPT Settings → Codex
+   * Cloud: absent, the host starts the task in Codex's default environment
+   * with the repository.
    */
   codexEnvironment?: string;
   /**
