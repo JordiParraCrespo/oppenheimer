@@ -291,9 +291,8 @@ function createMessage(
     ...(spec.cloud
       ? { cloud: { sealed: spec.cloud.sealed, expiresAt: spec.cloud.expiresAt.toISOString() } }
       : {}),
-    // The environment the person picked for a Codex cloud session; absent, the
-    // host starts the task in the one linked to the repository. A runner older
-    // than `codex.environments` ignores the field and guesses from the name.
+    // The environment id the person picked for a Codex cloud session; absent,
+    // the host starts the task in Codex's default environment with the repository.
     ...(spec.cloud && agent === 'codex' && session.launch.environment
       ? { codexEnvironment: session.launch.environment }
       : {}),

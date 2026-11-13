@@ -159,18 +159,21 @@ const createSessionFields = z.object({
    * A cloud session: the host starts the task in its agent's cloud from the
    * one checkout's repository and keeps nothing running — Claude Code's
    * (`claude --cloud`; the session lives on claude.ai/code) or Codex's
-   * (`codex cloud exec`; the task lives on chatgpt.com/codex, and the host
-   * reports where it stands). An agent of `HOST_CLOUD_AGENT_IDS` only, with a
+   * (a thread in Codex cloud, started with the host's ChatGPT sign-in, and the
+   * host reports where it stands). An agent of `HOST_CLOUD_AGENT_IDS` only, with a
    * `prompt` (`product/research/cloud-agents.md` §5B).
    */
   cloud: z.boolean().optional(),
   /**
-   * A Codex cloud session's environment, by id or label, as the composer's
-   * picker chose it (`GET /hosts/:id/codex-environments`). Absent, the host
-   * starts the task in the environment linked to the repository. Only with
-   * `cloud` and the agent `codex`.
+   * A Codex cloud session's environment: an environment id from ChatGPT's
+   * Codex Cloud settings. Absent, the host starts the task in Codex's default
+   * environment with the repository. Only with `cloud` and the agent `codex`.
    */
-  codexEnvironment: codexEnvironmentSchema.optional(),
+  codexEnvironment: codexEnvironmentSchema
+    .optional()
+    .describe(
+      "Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.",
+    ),
   /**
    * Continue a cloud session on the host instead of starting a conversation:
    * the worktree session's agent is started with the cloud session's branch

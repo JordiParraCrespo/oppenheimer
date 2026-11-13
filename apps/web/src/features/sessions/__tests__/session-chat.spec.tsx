@@ -980,6 +980,34 @@ describe('the queue and the context', () => {
     vi.useRealTimers();
   });
 
+  it('sends the first queued message now on Enter in the empty field', async () => {
+    // What breaks this: Enter on the empty field stopping the turn (Stop's
+    // job) while a message waits, so "Enter twice" interrupts the agent.
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt] });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
+
+    for (const words of ['Then run the tests', 'And open a PR']) {
+      fireEvent.change(field, { target: { value: words } });
+      fireEvent.keyDown(field, { key: 'Enter' });
+      await act(() => Promise.resolve());
+    }
+    expect(typed).toEqual([]);
+
+    fireEvent.keyDown(field, { key: 'Enter' });
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['Then run the tests', '\r']);
+    expect(screen.getByText('And open a PR')).toBeTruthy();
+    expect(screen.queryByText('Then run the tests')).toBeNull();
+    vi.useRealTimers();
+  });
+
   it('shows how full the context is, and opens to it and the plan’s limits, compacting on asking', () => {
     vi.useFakeTimers();
     const chat = new Chat();

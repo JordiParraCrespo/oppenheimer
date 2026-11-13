@@ -135,7 +135,7 @@ export function PlaceSelect({
    * filtered by the pane's search; `close` shuts the chip once one is picked.
    */
   environments?: (pane: { hostId: string; query: string; close: () => void }) => ReactNode;
-  /** The Codex environment picked on the chosen host, by name; null is the host's pick. */
+  /** The Codex environment id picked on the chosen host; null is Default. */
   environment?: string | null;
   loading?: boolean;
   failure?: string;

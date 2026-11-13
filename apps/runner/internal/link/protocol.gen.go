@@ -75,32 +75,32 @@ const TerminalScreenMaxBytes = 32768
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
-	CapabilitySessionImage          = "session.image"
-	CapabilitySessionCreateImages   = "session.create.images"
-	CapabilitySessionFiles          = "session.files"
-	CapabilityRepositoryPrepare     = "repository.prepare"
-	CapabilityAttachmentDirect      = "attachment.direct"
-	CapabilityAttachmentDirectProof = "attachment.direct.proof"
-	CapabilitySessionFolder         = "session.folder"
-	CapabilityFsList                = "fs.list"
-	CapabilityFsFind                = "fs.find"
-	CapabilityAttachmentChat        = "attachment.chat"
-	CapabilityAttachmentChatOlder   = "attachment.chat.older"
-	CapabilityDeviceScreen          = "device.screen"
-	CapabilityPortForward           = "port.forward"
-	CapabilityDesktopStream         = "desktop.stream"
-	CapabilitySessionCloud          = "session.cloud"
-	CapabilitySessionCloudCodex     = "session.cloud.codex"
-	CapabilitySessionCloudReply     = "session.cloud.reply"
-	CapabilitySessionTeleport       = "session.teleport"
-	CapabilityCodexEnvironments     = "codex.environments"
-	CapabilitySessionWatch          = "session.watch"
-	CapabilityWhatsapp              = "whatsapp"
-	CapabilityTelegram              = "telegram"
-	CapabilitySharedPreview         = "shared.preview"
-	CapabilityTranscriptRead        = "transcript.read"
-	CapabilityHostExec              = "host.exec"
-	CapabilityTerminalDrive         = "terminal.drive"
+	CapabilitySessionImage             = "session.image"
+	CapabilitySessionCreateImages      = "session.create.images"
+	CapabilitySessionFiles             = "session.files"
+	CapabilityRepositoryPrepare        = "repository.prepare"
+	CapabilityAttachmentDirect         = "attachment.direct"
+	CapabilityAttachmentDirectProof    = "attachment.direct.proof"
+	CapabilitySessionFolder            = "session.folder"
+	CapabilityFsList                   = "fs.list"
+	CapabilityFsFind                   = "fs.find"
+	CapabilityAttachmentChat           = "attachment.chat"
+	CapabilityAttachmentChatOlder      = "attachment.chat.older"
+	CapabilityDeviceScreen             = "device.screen"
+	CapabilityPortForward              = "port.forward"
+	CapabilityDesktopStream            = "desktop.stream"
+	CapabilitySessionCloud             = "session.cloud"
+	CapabilitySessionCloudCodexThreads = "session.cloud.codex.threads"
+	CapabilitySessionCloudCodex        = "session.cloud.codex"
+	CapabilitySessionCloudReply        = "session.cloud.reply"
+	CapabilitySessionTeleport          = "session.teleport"
+	CapabilitySessionWatch             = "session.watch"
+	CapabilityWhatsapp                 = "whatsapp"
+	CapabilityTelegram                 = "telegram"
+	CapabilitySharedPreview            = "shared.preview"
+	CapabilityTranscriptRead           = "transcript.read"
+	CapabilityHostExec                 = "host.exec"
+	CapabilityTerminalDrive            = "terminal.drive"
 )
 
 // The `type` of every message on the link.
@@ -160,8 +160,6 @@ const (
 	TypeDesktopOpened           = "desktop.opened"
 	TypeDesktopControl          = "desktop.control"
 	TypeDesktopClose            = "desktop.close"
-	TypeCodexEnvironmentsList   = "codex.environments.list"
-	TypeCodexEnvironments       = "codex.environments"
 	TypeCloudReply              = "cloud.reply"
 	TypeCloudReplied            = "cloud.replied"
 	TypeWhatsappLink            = "whatsapp.link"
@@ -241,8 +239,6 @@ var MessageTypes = []string{
 	TypeDesktopOpened,
 	TypeDesktopControl,
 	TypeDesktopClose,
-	TypeCodexEnvironmentsList,
-	TypeCodexEnvironments,
 	TypeCloudReply,
 	TypeCloudReplied,
 	TypeWhatsappLink,
@@ -379,10 +375,6 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DesktopControl), true
 	case TypeDesktopClose:
 		return new(DesktopClose), true
-	case TypeCodexEnvironmentsList:
-		return new(CodexEnvironmentsList), true
-	case TypeCodexEnvironments:
-		return new(CodexEnvironments), true
 	case TypeCloudReply:
 		return new(CloudReply), true
 	case TypeCloudReplied:
@@ -985,30 +977,6 @@ type DesktopControl struct {
 type DesktopClose struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
-}
-
-// CodexEnvironmentsList is the `codex.environments.list` message.
-type CodexEnvironmentsList struct {
-	Type       string `json:"type"`
-	CommandID  string `json:"commandId"`
-	Repository string `json:"repository,omitempty"`
-}
-
-// CodexEnvironments is the `codex.environments` message.
-type CodexEnvironments struct {
-	Type         string                          `json:"type"`
-	CommandID    string                          `json:"commandId"`
-	Environments []CodexEnvironmentsEnvironments `json:"environments"`
-	Recommended  string                          `json:"recommended,omitempty"`
-	Source       string                          `json:"source"`
-}
-
-// CodexEnvironmentsEnvironments is CodexEnvironments.Environments.
-type CodexEnvironmentsEnvironments struct {
-	ID         string `json:"id"`
-	Label      string `json:"label,omitempty"`
-	Pinned     bool   `json:"pinned"`
-	Repository bool   `json:"repository"`
 }
 
 // CloudReply is the `cloud.reply` message.

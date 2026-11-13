@@ -188,6 +188,11 @@ started from a host, run on the vendor's machines, followed here
 (`../../next-steps/cloud-agents.md`, "Codex is built"). It is the same
 place with the agent `codex`; what differs is the vendor's CLI:
 
+- **Changed 2026-11-12.** The runner no longer runs `codex cloud`: it
+  starts and follows a thread on Codex's current cloud service itself, with
+  the host's ChatGPT sign-in (`next-steps/cloud-agents.md`, "On Codex's
+  current cloud"). The two bullets on what the runner does are kept as they
+  were decided.
 - **What the runner does.** `codex cloud exec --env=<environment> --branch
   <base> <task>` on the checkout's base branch, in the environment the
   person picked, else the one linked to the repository, else one labelled

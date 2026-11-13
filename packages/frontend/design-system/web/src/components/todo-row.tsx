@@ -9,7 +9,7 @@ import { dragIgnore, useSortableItem } from './drag';
 import { Skeleton } from './skeleton';
 
 /**
- * TodoRow — one task on Plan's To do, the day's list (the 2026-11-08 `Tasks`
+ * TodoRow — one task on Plan's TODO, the day's list (the 2026-11-08 `Tasks`
  * frame): a card of its own, 72px tall, with a round `Checkbox` as the done
  * toggle (the success fill once done), the title at 16px semibold over a
  * muted line (its milestone and where it stands), then the time it is due
@@ -17,7 +17,7 @@ import { Skeleton } from './skeleton';
  * mutes the row. The toggle and the title are separate buttons, so ticking a
  * task never opens it. `status` sits before the time (Plan's task status,
  * a `StatusDot` on `TASK_STATUS_STATE`). `action` sits after the project, for what the screen
- * does from a row (To do's Start session). `children` go last on the row:
+ * does from a row (TODO's Start session and Move). `children` go last on the row:
  * `SortableTodoRow` puts its grip there.
  *
  * `SortableTodoRow` is the row in a `SortableGroup`. The pointer picks it up

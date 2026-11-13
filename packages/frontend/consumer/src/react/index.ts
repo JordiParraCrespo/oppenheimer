@@ -156,7 +156,6 @@ export {
 export { useHostDesktop } from './hosts.desktop';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
-  useHostCodexEnvironments,
   useHostFolderSearch,
   useHostFolders,
   useHostPresence,

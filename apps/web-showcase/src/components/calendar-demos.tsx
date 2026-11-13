@@ -5,7 +5,15 @@ import { Button } from '@oppenheimer/design-system-web/button';
 import { CalendarLayerItem } from '@oppenheimer/design-system-web/calendar-source';
 import { DatePicker } from '@oppenheimer/design-system-web/date-picker';
 import { DragProvider } from '@oppenheimer/design-system-web/drag';
-import { CalendarIcon, CircleCheckIcon, PlusIcon, UserIcon, ZapIcon } from '@oppenheimer/design-system-web/icons';
+import {
+  CalendarClockIcon,
+  CalendarIcon,
+  CircleCheckIcon,
+  PlusIcon,
+  UserIcon,
+  ZapIcon,
+} from '@oppenheimer/design-system-web/icons';
+import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import {
   CalendarEntry,
   type CalendarEntryData,
@@ -195,7 +203,7 @@ const TODOS = [
   { id: 'd3', title: 'Draft the beta waitlist email', detail: 'Atlas public beta · due today', tag: 'Atlas', done: true },
 ];
 
-/** Plan's To do: tick a task (the title opens it), drag one by its grip, add one under the list on Enter. */
+/** Plan's TODO: tick a task (the title opens it), drag one by its grip, add one under the list on Enter. */
 export function TodoListDemo() {
   const [rows, setRows] = React.useState(TODOS);
   const [draft, setDraft] = React.useState('');
@@ -259,6 +267,11 @@ export function DatePickerDemo() {
     <div className="flex flex-wrap items-center gap-4">
       <DatePicker value={due} onValueChange={setDue} today={TODAY} quick={quick} />
       <DatePicker value={empty} onValueChange={setEmpty} today={TODAY} quick={quick} placeholder="Add a date" />
+      <DatePicker value={null} onValueChange={setEmpty} today={TODAY} quick={quick.slice(1, 2)}>
+        <IconButton size="sm" aria-label="Move to another day">
+          <CalendarClockIcon />
+        </IconButton>
+      </DatePicker>
     </div>
   );
 }

@@ -9,7 +9,6 @@
  */
 export * from './attach.js';
 export * from './cloud-reply.js';
-export * from './codex-environments.js';
 export * from './desktop.js';
 export * from './devices.js';
 export * from './hint.js';

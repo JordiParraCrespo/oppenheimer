@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import {
   CLOUD_SESSION_REPLY,
-  HOST_CODEX_ENVIRONMENTS,
   HOST_EXEC,
   HOST_FOLDERS,
   SESSION_DISPATCH,
@@ -17,7 +16,6 @@ import { InProcessLinkReplies } from './infrastructure/in-process-link-replies.a
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayCloudSessionReplyAdapter } from './infrastructure/relay-cloud-session-reply.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
-import { RelayHostCodexEnvironmentsAdapter } from './infrastructure/relay-host-codex-environments.adapter';
 import { RelayHostExecAdapter } from './infrastructure/relay-host-exec.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
@@ -51,7 +49,6 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
     { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
     { provide: SESSION_TERMINAL, useClass: RelaySessionTerminalAdapter },
-    { provide: HOST_CODEX_ENVIRONMENTS, useClass: RelayHostCodexEnvironmentsAdapter },
     { provide: CLOUD_SESSION_REPLY, useClass: RelayCloudSessionReplyAdapter },
     { provide: WHATSAPP_DEVICE, useClass: RelayWhatsappDeviceAdapter },
     { provide: TELEGRAM_DEVICE, useClass: RelayTelegramDeviceAdapter },
@@ -68,7 +65,6 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     SESSION_SHARED_FILES,
     SESSION_TRANSCRIPT,
     SESSION_TERMINAL,
-    HOST_CODEX_ENVIRONMENTS,
     CLOUD_SESSION_REPLY,
     WHATSAPP_DEVICE,
     TELEGRAM_DEVICE,

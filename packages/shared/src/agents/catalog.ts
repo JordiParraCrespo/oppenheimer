@@ -860,7 +860,7 @@ export function isCodingAgentId(value: unknown): value is CodingAgentId {
  * The agents a host can start in their vendor's cloud with the host's own CLI
  * and sign-in, a session in the place `cloud` with a host
  * (`product/next-steps/cloud-agents.md`): Claude Code with `claude --cloud`,
- * Codex with `codex cloud exec`. The task runs on the vendor's machines; the
+ * Codex as a thread in Codex cloud. The task runs on the vendor's machines; the
  * host only starts it, and for Codex reads where it stands.
  */
 export const HOST_CLOUD_AGENT_IDS = [

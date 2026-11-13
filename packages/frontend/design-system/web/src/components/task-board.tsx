@@ -38,6 +38,8 @@ import { variedWidth } from '../internal/varied-width';
  *   and a ring in the focus ink.
  * - `TaskSelectionBar`: what the picked cards can do together, floating at
  *   the foot of the viewport — how many, then `children` (the actions).
+ * - `TaskMarquee`: the rectangle a drag from the board's empty space draws
+ *   to pick every card it touches, in viewport coordinates, on the focus ink.
  * - `TaskCardSkeleton`: a card's place before the tasks answer, on the
  *   card's own frame.
  */
@@ -46,7 +48,7 @@ type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 
 /**
  * A task's status on the run-state vocabulary, so a task reads with the
- * same dot as everything else: To do idle, In progress amber (`waiting`, as
+ * same dot as everything else: Not started idle, In progress amber (`waiting`, as
  * the 2026-10-13 frame draws it: work under way, not yet settled), In review
  * pending (the work is in, waiting on someone to look), and Done completed
  * (the check, since a done task is finished).
@@ -92,7 +94,7 @@ function TaskColumn({
   /** The card ids in this column, in order. */
   items: readonly string[];
   onAdd?: () => void;
-  /** The + button's name ("Add task to To do"). */
+  /** The + button's name ("Add task to Not started"). */
   addLabel?: string;
   /** Under the cards: `TaskColumnAdd`, or a `TaskComposer` while adding. */
   foot?: React.ReactNode;
@@ -465,5 +467,28 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSelectionBar, TaskSessionChip };
+/** The drag-to-pick rectangle, placed in viewport pixels; it never takes the pointer. */
+function TaskMarquee({
+  rect,
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  rect: { left: number; top: number; width: number; height: number };
+}) {
+  return (
+    <div
+      data-slot="task-marquee"
+      aria-hidden
+      className={cn(
+        'pointer-events-none fixed z-30 rounded-xs border border-ring bg-[color-mix(in_srgb,var(--ring)_14%,transparent)]',
+        className,
+      )}
+      style={{ ...style, left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+      {...props}
+    />
+  );
+}
+
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskMarquee, TaskSelectionBar, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };

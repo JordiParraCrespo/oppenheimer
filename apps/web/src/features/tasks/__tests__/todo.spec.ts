@@ -1,18 +1,21 @@
-import { TaskEntity } from '@oppenheimer/frontend-consumer';
+import { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
+import { taskSessionsOf } from '../lib/session-line';
 import {
   type AddFilter,
   addableCounts,
   addableTasks,
+  heldByDeadline,
   picksInView,
-  todayOpenCount,
   todoCounts,
   todoDay,
   todoEntries,
   todoLabels,
+  todoPlaceOf,
   todoSearchSchema,
 } from '../lib/todo';
+import { todoStatusOf } from '../lib/todo-status';
 
 function task(
   id: string,
@@ -23,6 +26,7 @@ function task(
     dueTime: string | null;
     focusDate: string | null;
     completedAt: string;
+    sessionIds: string[];
   }> = {},
 ) {
   return new TaskEntity(
@@ -36,7 +40,11 @@ function task(
     overrides.dueDate ?? null,
     overrides.dueTime ?? null,
     overrides.status === 'done' ? new Date(overrides.completedAt ?? '2026-11-01T12:00:00') : null,
-    [],
+    (overrides.sessionIds ?? []).map((sessionId) => ({
+      sessionId,
+      origin: 'started' as const,
+      linkedAt: new Date('2026-11-01T00:00:00Z'),
+    })),
     new Date('2026-11-01T00:00:00Z'),
     new Date('2026-11-01T00:00:00Z'),
     null,
@@ -148,13 +156,15 @@ describe("To do's day", () => {
     expect(todoEntries(rows, '2026-11-09', { today: '2026-11-09', overdue: true })).toEqual([]);
   });
 
-  it('counts what is left and done, and the sidebar counts what is left on today', () => {
-    expect(todoCounts(todoEntries(TASKS, DAY, { today: DAY, overdue: true }))).toEqual({
-      left: 4,
-      done: 1,
-    });
-    expect(todayOpenCount(TASKS, DAY)).toBe(4);
-    expect(todayOpenCount([...TASKS, task('planned', { focusDate: DAY })], DAY)).toBe(5);
+  it('counts what is left and done, once the sessions are read', () => {
+    const today = { today: DAY, overdue: true };
+    const noSessions = new Map();
+    expect(todoCounts(TASKS, DAY, today, noSessions)).toEqual({ left: 4, done: 1 });
+    expect(
+      todoCounts([...TASKS, task('planned', { focusDate: DAY })], DAY, today, noSessions)?.left,
+    ).toBe(5);
+    // Before the sessions are in there is no count, so it never lands and then drops.
+    expect(todoCounts(TASKS, DAY, today, undefined)).toBeUndefined();
   });
 
   it('drops a day that is not on the calendar from the address', () => {
@@ -237,5 +247,148 @@ describe("To do's day", () => {
 
   it('adds only the picks the filtered list still shows', () => {
     expect(picksInView(['a', 'd', 'x'], [task('d'), task('a')])).toEqual(['a', 'd']);
+  });
+});
+
+function session(
+  id: string,
+  lifecycle: SessionEntity['lifecycle'],
+  state: SessionEntity['state'] = 'working',
+) {
+  return new SessionEntity({
+    id,
+    organizationId: 'org-1',
+    projectId: 'p-1',
+    hostId: 'h-1',
+    name: `Session ${id}`,
+    slug: id,
+    agent: 'claude-code',
+    launch: { model: null, permission: null, effort: null },
+    state,
+    lifecycle,
+    cwdCheckoutId: null,
+    checkouts: [],
+    stoppedAt: null,
+    hints: [],
+    createdAt: new Date('2026-10-01T00:00:00Z'),
+    place: 'worktree',
+    folderPath: null,
+  });
+}
+
+const SESSIONS = new Map(
+  [
+    session('running', 'open', 'working'),
+    session('starting', 'starting'),
+    session('waiting', 'open', 'waiting-on-you'),
+    session('failed', 'failed'),
+    session('idle', 'open', 'idle'),
+    session('ended', 'resolved', 'idle'),
+  ].map((row) => [row.id, row]),
+);
+const HOSTS = new Map();
+
+/**
+ * TODO's "With agents" strip (`20-plan-calendar.md` §6, "Changed on 2026-11-12"): a task an agent is
+ * working on leaves the list; one whose agents need the person stays on it
+ * with a mark, most urgent first.
+ */
+describe("TODO's agents", () => {
+  const placeOf = (row: TaskEntity) => {
+    const place = todoPlaceOf(row, taskSessionsOf(row, SESSIONS, HOSTS));
+    return place.lane === 'agents' ? `agents:${place.session.state}` : place.mark;
+  };
+
+  it('puts a task with a session running or queued in the strip, due today or not', () => {
+    expect(placeOf(task('t', { status: 'doing', dueDate: DAY, sessionIds: ['running'] }))).toBe(
+      'agents:running',
+    );
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['starting', 'idle'] }))).toBe(
+      'agents:running',
+    );
+  });
+
+  it('keeps one waiting on the person on the list, over another session still running', () => {
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['running', 'waiting'] }))).toBe(
+      'waiting',
+    );
+  });
+
+  it('marks a failed session, then In review, then stopped sessions on a task still in progress', () => {
+    expect(placeOf(task('t', { status: 'review', sessionIds: ['failed', 'idle'] }))).toBe('failed');
+    expect(placeOf(task('t', { status: 'review', sessionIds: ['ended'] }))).toBe('review');
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['ended'] }))).toBe('stopped');
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['idle'] }))).toBe('stopped');
+  });
+
+  it('never reads a finished session as ready to review: the column alone says it', () => {
+    expect(placeOf(task('t', { status: 'todo', sessionIds: ['ended'] }))).toBeNull();
+  });
+
+  it('leaves a task with no sessions, or a done one, unmarked', () => {
+    expect(placeOf(task('t', { status: 'doing' }))).toBeNull();
+    expect(placeOf(task('t', { status: 'done', sessionIds: ['waiting'] }))).toBeNull();
+    expect(placeOf(task('t', { status: 'doing', sessionIds: ['deleted'] }))).toBeNull();
+  });
+
+  it('leaves what is with agents out of what is left, in the header and the sidebar', () => {
+    const rows = [
+      task('working', { status: 'doing', dueDate: DAY, sessionIds: ['running'] }),
+      task('asking', { status: 'doing', dueDate: DAY, sessionIds: ['waiting'] }),
+      task('plain', { dueDate: DAY }),
+    ];
+    expect(todoCounts(rows, DAY, { today: DAY, overdue: true }, SESSIONS)).toEqual({
+      left: 2,
+      done: 0,
+    });
+  });
+});
+
+describe("a TODO row's status", () => {
+  const statusOf = (row: TaskEntity) => {
+    const status = todoStatusOf(row, todoPlaceOf(row, taskSessionsOf(row, SESSIONS, HOSTS)));
+    return status.kind === 'session'
+      ? [status.kind, status.session.session.id, status.label]
+      : [status.kind, status.state, status.label];
+  };
+
+  it('names the session the strip or a mark stands for, which the chip opens', () => {
+    expect(statusOf(task('t', { status: 'doing', sessionIds: ['running'] }))).toEqual([
+      'session',
+      'running',
+      'tasks.sessionState.running',
+    ]);
+    expect(statusOf(task('t', { status: 'doing', sessionIds: ['waiting'] }))).toEqual([
+      'session',
+      'waiting',
+      'tasks.todo.mark.waiting',
+    ]);
+  });
+
+  it('draws a dot for In review, which no session stands for, and the column otherwise', () => {
+    expect(statusOf(task('t', { status: 'review' }))).toEqual([
+      'dot',
+      'pending',
+      'tasks.todo.mark.review',
+    ]);
+    expect(statusOf(task('t'))).toEqual(['dot', 'idle', 'tasks.columns.todo']);
+  });
+});
+
+describe("TODO's Move", () => {
+  const options = { today: DAY, overdue: true };
+
+  it('is held by a deadline on the day shown or overdue, which a new TODO day would not lift', () => {
+    expect(heldByDeadline(task('t', { dueDate: DAY, focusDate: DAY }), DAY, options)).toBe(true);
+    expect(heldByDeadline(task('t', { dueDate: '2026-11-02' }), DAY, options)).toBe(true);
+  });
+
+  it('is free for a task on the day by its TODO day alone, or overdue with overdue left out', () => {
+    expect(heldByDeadline(task('t', { focusDate: DAY, dueDate: '2026-11-20' }), DAY, options)).toBe(
+      false,
+    );
+    expect(
+      heldByDeadline(task('t', { dueDate: '2026-11-02' }), DAY, { today: DAY, overdue: false }),
+    ).toBe(false);
   });
 });
