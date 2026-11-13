@@ -113,6 +113,79 @@ describe('blocksOf', () => {
 });
 
 describe('summaryOf', () => {
+  it('ends a settled turn on the files it changed, each with its edits in order, cut only when the host cut what was written', () => {
+    // What breaks this: the viewer a row opens shows another file's edits,
+    // or says an edit is cut because the call's result was.
+    const chat = new SessionChat();
+    const result = (id: string, truncated = false) => ({
+      type: 'tool_result',
+      tool_use_id: id,
+      content: 'ok',
+      truncated,
+    });
+    chat.apply({
+      reset: true,
+      entries: [
+        { type: 'user', uuid: 'u', message: { role: 'user', content: 'Go' } },
+        {
+          type: 'assistant',
+          uuid: 'a',
+          message: {
+            role: 'assistant',
+            content: [
+              tool('w', 'Write', { file_path: 'a.md', content: 'one\n' }),
+              tool('e', 'Edit', { file_path: 'b.ts', old_string: 'x', new_string: 'y' }),
+              { ...tool('c', 'Write', { file_path: 'c.md', content: 'head' }), truncated: true },
+              tool('w2', 'Edit', { file_path: 'a.md', old_string: 'one', new_string: 'two' }),
+            ],
+          },
+        },
+        {
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [result('w'), result('e', true), result('c'), result('w2')],
+          },
+        },
+        {
+          type: 'assistant',
+          uuid: 'a2',
+          message: { role: 'assistant', content: [{ type: 'text', text: 'Done.' }] },
+        },
+      ].map((entry) => JSON.stringify(entry)),
+    });
+    const turn = chat.snapshot().turns[0];
+    if (!turn) throw new Error('no turn');
+    const changes = blocksOf(turn).find((block) => block.kind === 'changes');
+    expect(changes?.kind === 'changes' && changes.files).toEqual([
+      {
+        path: 'a.md',
+        additions: 2,
+        deletions: 1,
+        edits: [
+          { before: '', after: 'one\n' },
+          { before: 'one', after: 'two' },
+        ],
+        truncated: false,
+      },
+      {
+        path: 'b.ts',
+        additions: 1,
+        deletions: 1,
+        edits: [{ before: 'x', after: 'y' }],
+        truncated: false,
+      },
+      {
+        path: 'c.md',
+        additions: 1,
+        deletions: 0,
+        edits: [{ before: '', after: 'head' }],
+        truncated: true,
+      },
+    ]);
+  });
+
   it('counts the calls by verb, looked-at before changed', () => {
     const turn = turnOf([
       tool('1', 'Bash', { command: 'ls' }),

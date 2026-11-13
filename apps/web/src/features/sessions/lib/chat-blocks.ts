@@ -1,4 +1,5 @@
 import type {
+  ChatFileEdit,
   ChatSharedFile,
   ChatStatus,
   ChatStep,
@@ -53,11 +54,17 @@ export interface ChatAttach {
   files: FileHandOff;
 }
 
-/** A file a turn changed, its line counts summed over every edit to it. */
+/**
+ * A file a turn changed: its line counts summed over every edit to it, and
+ * the edits themselves in order, for the viewer its row opens. `truncated`
+ * when the host cut one of them, so what is shown is not the whole change.
+ */
 export interface ChangedFile {
   path: string;
   additions: number;
   deletions: number;
+  edits: ChatFileEdit[];
+  truncated: boolean;
 }
 
 /**
@@ -196,9 +203,13 @@ function changedFiles(steps: readonly ChatStep[]): ChangedFile[] {
       path: step.call.target,
       additions: 0,
       deletions: 0,
+      edits: [],
+      truncated: false,
     };
     file.additions += step.call.diff.additions;
     file.deletions += step.call.diff.deletions;
+    file.edits.push(...(step.call.edits ?? []));
+    file.truncated ||= step.call.editsTruncated;
     files.set(file.path, file);
   }
   return [...files.values()];
