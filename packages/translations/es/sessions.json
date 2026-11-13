@@ -580,6 +580,8 @@
       "stopped": "Detenido",
       "interrupted": "Interrumpido"
     },
+    "copyMessage": "Copiar mensaje",
+    "copyReply": "Copiar respuesta",
     "thinking": "Pensando",
     "plan": "Plan",
     "latest": "Ir a lo último",

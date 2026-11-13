@@ -1,9 +1,9 @@
 import { ChatMarker, ChatUserMessage } from '@oppenheimer/design-system-web';
 import { CornerDownRight } from '@oppenheimer/design-system-web/icons';
 import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
+import { CopyTextButton } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotMessageText } from '@/features/bots/components/bot-message-text';
-import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 
 /**
  * A message you steered into a turn while the bot worked, where the bot

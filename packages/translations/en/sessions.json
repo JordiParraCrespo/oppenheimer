@@ -576,6 +576,8 @@
       "stopped": "Stopped",
       "interrupted": "Interrupted"
     },
+    "copyMessage": "Copy message",
+    "copyReply": "Copy reply",
     "thinking": "Thinking",
     "plan": "Plan",
     "latest": "Jump to latest",

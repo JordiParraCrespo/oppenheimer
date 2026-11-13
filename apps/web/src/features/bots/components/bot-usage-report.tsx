@@ -2,6 +2,7 @@ import { IconButton, StatBar } from '@oppenheimer/design-system-web';
 import { X } from '@oppenheimer/design-system-web/icons';
 import {
   type ChatUsageLimit,
+  CopyTextButton,
   dateFormatter,
   formatTimeAway,
   formatTokens,
@@ -9,7 +10,6 @@ import {
 } from '@oppenheimer/frontend-web';
 import { type BotUsage, botModelOf } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
-import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import { botUsageTotals, modelShares, uncachedInput } from '@/features/bots/lib/bot-usage';
 
 /** A share at which a plan bar takes the warning tone, as the composer's meter does. */
