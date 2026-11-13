@@ -48,6 +48,7 @@ import {
   noteBotRetry,
   putBotSnapshot,
 } from '../modules/bots/live-text';
+import type { BotSending } from '../modules/bots/sending';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
@@ -57,12 +58,51 @@ import { mutation } from './mutation';
  * conversation, sending, Stop, and the text a running turn is writing.
  */
 
+/** What a send drew in the chat, kept while the API answers it. */
+interface SendBotMessageContext {
+  sending: BotSending | null;
+}
+
+/** The mutation key every send to a bot carries, so a read finds the ones still answering. */
+const SENDING_KEY = [...botsKeys.all, 'send'] as const;
+
+/**
+ * Sends the API refused: a mutation is still pending while its `onError`
+ * runs, so the read that refusal starts must be told to leave it out.
+ */
+const refused = new WeakSet<BotSending>();
+
+/**
+ * The chat as the API holds it, with each send still answering drawn in
+ * ({@link BotConversationEntity.withSending}): a read that lands while you
+ * wait (the stream's, a refocus) never takes your message away.
+ */
+async function readConversation(
+  app: ReturnType<typeof useConsumerApp>,
+  queryClient: QueryClient,
+  id: string,
+): Promise<BotConversationEntity> {
+  const read = await app.bots.findConversation(id);
+  return queryClient
+    .getMutationCache()
+    .findAll({
+      mutationKey: SENDING_KEY,
+      status: 'pending',
+      predicate: (mutation) => (mutation.state.variables as SendBotMessageVariables)?.id === id,
+    })
+    .reduce((conversation, mutation) => {
+      const sending = (mutation.state.context as SendBotMessageContext | undefined)?.sending;
+      return sending && !refused.has(sending) ? conversation.withSending(sending) : conversation;
+    }, read);
+}
+
 /** The newest messages, oldest first, and their turns, under a Suspense `QueryState`. */
 export function useSuspenseBotConversation(id: string) {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   return useSuspenseQuery<BotConversationEntity, Error>({
     queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    queryFn: () => readConversation(app, queryClient, id),
   });
 }
 
@@ -77,9 +117,10 @@ export interface BotHistory {
 /** The chat read as Settings → Profile's history row draws it, under a Suspense `QueryState`. */
 export function useSuspenseBotHistory(id: string) {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   return useSuspenseQuery<BotConversationEntity, Error, BotHistory>({
     queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    queryFn: () => readConversation(app, queryClient, id),
     select: (conversation) => ({
       messageCount: conversation.messageCount,
       lastMessageAt: conversation.lastMessageAt,
@@ -142,9 +183,10 @@ export const useClearBotConversation = mutation<void, string>({
  */
 export function useBotActiveTurn(id: string): BotTurnEntity | null {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const { data } = useQuery<BotConversationEntity, Error, BotTurnEntity | null>({
     queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    queryFn: () => readConversation(app, queryClient, id),
     select: (conversation) => conversation.activeTurn,
   });
   return data ?? null;
@@ -158,9 +200,10 @@ const NO_WAITING: readonly BotWaitingMessage[] = [];
  */
 export function useBotWaitingMessages(id: string): readonly BotWaitingMessage[] {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const { data } = useQuery<BotConversationEntity, Error, readonly BotWaitingMessage[]>({
     queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    queryFn: () => readConversation(app, queryClient, id),
     select: (conversation) => conversation.waitingMessages,
   });
   return data ?? NO_WAITING;
@@ -171,9 +214,10 @@ const NO_SENT: readonly string[] = [];
 /** What you wrote to the bot, newest first, for the composer to recall: nothing while the chat loads. */
 export function useBotSentTexts(id: string): readonly string[] {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const { data } = useQuery<BotConversationEntity, Error, readonly string[]>({
     queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    queryFn: () => readConversation(app, queryClient, id),
     select: (conversation) => conversation.sentTexts,
   });
   return data ?? NO_SENT;
@@ -184,9 +228,10 @@ const NO_ROOM: BotRoomLeft = { context: null, planLimits: null };
 /** How much room the bot has left, as of its newest turn that said; none while the chat loads. */
 export function useBotRoomLeft(id: string): BotRoomLeft {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const { data } = useQuery<BotConversationEntity, Error, BotRoomLeft>({
     queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    queryFn: () => readConversation(app, queryClient, id),
     select: (conversation) => conversation.roomLeft,
   });
   return data ?? NO_ROOM;
@@ -221,17 +266,13 @@ export interface SendBotMessageVariables {
   steer?: boolean;
 }
 
-/** The chat as it stood before a send drew itself in, to put back if the API refuses it. */
-interface SendBotMessageContext {
-  before: BotConversationEntity | undefined;
-}
-
 /**
  * Says something to the bot, optimistically: the message and its queued
- * turn are drawn at once ({@link BotConversationEntity.withSending}), the
- * reads in flight called off so none lands without it. On success the chat
- * is read again for the stored message and its turn; on a refusal the chat
- * goes back to what it held before the send.
+ * turn are drawn at once ({@link BotConversationEntity.withSending}), and
+ * every read that lands while the API answers draws them again
+ * (`readConversation`). On success the chat is read again for the stored
+ * message and its turn; on a refusal what the send drew comes out, and the
+ * chat is read again for anything that moved meanwhile.
  */
 export function useSendBotMessage(
   options?: HookMutationOptions<
@@ -244,6 +285,7 @@ export function useSendBotMessage(
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   return useMutation<BotTurnEntity, Error, SendBotMessageVariables, SendBotMessageContext>({
+    mutationKey: SENDING_KEY,
     ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
     mutationFn: ({ id, content, attachments, steer }) =>
       app.bots.sendMessage(
@@ -256,23 +298,30 @@ export function useSendBotMessage(
       const key = botsKeys.conversation(variables.id);
       await queryClient.cancelQueries({ queryKey: key, exact: true });
       const before = queryClient.getQueryData<BotConversationEntity>(key);
-      if (before) {
-        queryClient.setQueryData(
-          key,
-          before.withSending({
+      const sending: BotSending | null = before
+        ? {
             key: crypto.randomUUID(),
             content: variables.content,
             attachments: variables.attachments ?? [],
             steer: variables.steer ?? false,
             at: new Date(),
-          }),
-        );
-      }
+            seen: new Set(before.messages.map((message) => message.id)),
+          }
+        : null;
+      if (before && sending) queryClient.setQueryData(key, before.withSending(sending));
       await options?.onMutate?.(variables, context);
-      return { before };
+      return { sending };
     },
     onError: (error, variables, sent, context) => {
-      if (sent?.before) queryClient.setQueryData(botsKeys.conversation(variables.id), sent.before);
+      const key = botsKeys.conversation(variables.id);
+      const sending = sent?.sending;
+      if (sending) {
+        refused.add(sending);
+        queryClient.setQueryData<BotConversationEntity>(key, (conversation) =>
+          conversation?.withoutSending(sending.key),
+        );
+      }
+      void refetchChat(queryClient, variables.id, false);
       return options?.onError?.(error, variables, sent, context);
     },
   });

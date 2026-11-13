@@ -11,6 +11,8 @@ export interface BotSending {
   attachments: readonly BotAttachment[];
   steer: boolean;
   at: Date;
+  /** The messages the chat held when you sent, so a read that holds the stored one is told apart. */
+  seen: ReadonlySet<string>;
 }
 
 const SENDING = 'sending:';

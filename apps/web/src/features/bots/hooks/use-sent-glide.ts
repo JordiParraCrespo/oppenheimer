@@ -82,7 +82,8 @@ export function useSentGlide(sentId: string | undefined): void {
     const room = pane?.room.current;
     if (!pane || !box || !room || sentId === undefined || sentId === opened.current) return;
     // The stored message taking the place of the one drawn on send is where it already glided.
-    const stored = opened.current !== undefined && isSendingBotTurn(opened.current);
+    const stored =
+      opened.current !== undefined && isSendingBotTurn(opened.current) && !isSendingBotTurn(sentId);
     opened.current = sentId;
     const element = box.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(sentId)}"]`);
     anchor.current = element;

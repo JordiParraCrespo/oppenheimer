@@ -7,7 +7,9 @@ import { ChatScroll, useSentGlide } from '../hooks/use-sent-glide';
  * A message you send glides to the top of the chat and the chat lands on it.
  * The regressions this guards: opening a chat gliding the newest message you
  * had already sent (it opens where it is), and the glide pulling back down a
- * reader who took hold of the scroll mid-way.
+ * reader who took hold of the scroll mid-way, the stored message that takes
+ * the place of one drawn on send gliding it again, and a second send made
+ * while the first is answering not gliding at all.
  */
 
 let held = false;
@@ -96,5 +98,32 @@ describe('useSentGlide', () => {
     act(() => vi.advanceTimersByTime(400));
     expect(box.scrollTop).toBe(100);
     expect(held).toBe(false);
+  });
+
+  it('glides a send once, not again when its stored message takes its place', () => {
+    const view = render(<Harness sent={['m1']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+
+    view.rerender(<Harness sent={['m1', 'sending:a']} />);
+    expect(held).toBe(true);
+    act(() => vi.advanceTimersByTime(400));
+    box.scrollTop = 100;
+
+    view.rerender(<Harness sent={['m1', 'm2']} />);
+    expect(held).toBe(false);
+    act(() => vi.advanceTimersByTime(400));
+    expect(box.scrollTop).toBe(100);
+  });
+
+  it('glides a second send made while the first is still answering', () => {
+    const view = render(<Harness sent={['m1']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+
+    view.rerender(<Harness sent={['m1', 'sending:a']} />);
+    act(() => vi.advanceTimersByTime(400));
+    view.rerender(<Harness sent={['m1', 'sending:a', 'sending:b']} />);
+    expect(held).toBe(true);
   });
 });
