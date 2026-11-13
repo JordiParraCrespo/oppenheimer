@@ -102,7 +102,8 @@ describe('useSendBotMessage', () => {
     const { conversation, queryClient, store, wrapper } = setup();
     const { result } = renderHook(() => useSendBesideTheChat(), { wrapper });
 
-    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it' }));
+    // Sent with the newline a paste ends in; the API stores it trimmed.
+    act(() => result.current.mutate({ id: 'bot-1', content: 'Ship it\n' }));
     await waitFor(() => expect(conversation()?.messages).toHaveLength(3));
     const held = ended();
     store(

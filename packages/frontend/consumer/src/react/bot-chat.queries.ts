@@ -301,7 +301,8 @@ export function useSendBotMessage(
       const sending: BotSending | null = before
         ? {
             key: crypto.randomUUID(),
-            content: variables.content,
+            // Trimmed as the API stores it, so a read holding the stored message is told apart.
+            content: variables.content.trim(),
             attachments: variables.attachments ?? [],
             steer: variables.steer ?? false,
             at: new Date(),
