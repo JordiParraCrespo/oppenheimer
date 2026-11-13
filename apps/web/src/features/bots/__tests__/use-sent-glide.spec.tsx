@@ -116,6 +116,20 @@ describe('useSentGlide', () => {
     expect(box.scrollTop).toBe(100);
   });
 
+  it('finishes the glide when the stored message takes the place of the drawn one mid-way', () => {
+    const view = render(<Harness sent={['m1']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+
+    view.rerender(<Harness sent={['m1', 'sending:a']} />);
+    act(() => vi.advanceTimersByTime(100));
+    view.rerender(<Harness sent={['m1', 'm2']} />);
+    expect(held).toBe(true);
+    act(() => vi.advanceTimersByTime(400));
+    expect(box.scrollTop).toBe(1000);
+    expect(held).toBe(false);
+  });
+
   it('glides a second send made while the first is still answering', () => {
     const view = render(<Harness sent={['m1']} />);
     const box = view.getByTestId('scroller');

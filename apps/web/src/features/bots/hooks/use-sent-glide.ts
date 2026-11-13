@@ -6,6 +6,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
 } from 'react';
 
 /**
@@ -60,7 +61,17 @@ function padding(box: HTMLElement): { top: number; bottom: number } {
  */
 export function useSentGlide(sentId: string | undefined): void {
   const pane = useContext(ChatScroll);
-  const opened = useRef(sentId);
+  // One glide per send: the stored message taking the place of the one drawn
+  // on send keeps its glide, running or done, and only moves the anchor.
+  const [named, setNamed] = useState({ id: sentId, glide: sentId });
+  const glide =
+    sentId === named.id
+      ? named.glide
+      : named.id !== undefined && isSendingBotTurn(named.id) && sentId && !isSendingBotTurn(sentId)
+        ? named.glide
+        : sentId;
+  if (sentId !== named.id) setNamed({ id: sentId, glide });
+  const opened = useRef(glide);
   const anchor = useRef<HTMLElement | null>(null);
 
   // Sizes the room to the pane and the transcript as they change, DOM state outside React.
@@ -75,20 +86,23 @@ export function useSentGlide(sentId: string | undefined): void {
     return () => observer.disconnect();
   }, [pane]);
 
+  // The anchor follows the message you sent onto the element that now draws it.
+  useLayoutEffect(() => {
+    const box = pane?.scroller.current;
+    if (!box || sentId === undefined || anchor.current?.dataset.messageId === sentId) return;
+    if (anchor.current) anchor.current = sentElement(box, sentId);
+  }, [pane, sentId]);
+
   // Glides each new send to the top, a frame loop over the pane's scroll; a
   // layout effect, so it holds the scroll before the pane follows the growth.
   useLayoutEffect(() => {
     const box = pane?.scroller.current;
     const room = pane?.room.current;
-    if (!pane || !box || !room || sentId === undefined || sentId === opened.current) return;
-    // The stored message taking the place of the one drawn on send is where it already glided.
-    const stored =
-      opened.current !== undefined && isSendingBotTurn(opened.current) && !isSendingBotTurn(sentId);
-    opened.current = sentId;
-    const element = box.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(sentId)}"]`);
+    if (!pane || !box || !room || glide === undefined || glide === opened.current) return;
+    opened.current = glide;
+    const element = sentElement(box, glide);
     anchor.current = element;
     reserve(box, room, element);
-    if (stored) return;
     const instant = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (!element || instant || typeof requestAnimationFrame === 'undefined') {
       scrollTo(box, box.scrollHeight);
@@ -96,7 +110,9 @@ export function useSentGlide(sentId: string | undefined): void {
     }
 
     const rest = padding(box).top;
-    const offset = () => element.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    // Read through the anchor: the message's element changes when the stored one takes its place.
+    const offset = () =>
+      (anchor.current ?? element).getBoundingClientRect().top - box.getBoundingClientRect().top;
     const from = Math.min(Math.max(offset(), rest), box.clientHeight);
     const start = performance.now();
     let left = box.scrollTop;
@@ -125,7 +141,12 @@ export function useSentGlide(sentId: string | undefined): void {
       if (frame !== undefined) cancelAnimationFrame(frame);
       pane.hold(false);
     };
-  }, [pane, sentId]);
+  }, [pane, glide]);
+}
+
+/** The element that draws the message, by its id. */
+function sentElement(box: HTMLElement, id: string): HTMLElement | null {
+  return box.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(id)}"]`);
 }
 
 /** Moves the pane; a plain function, as the pane is the context's and not this hook's. */
