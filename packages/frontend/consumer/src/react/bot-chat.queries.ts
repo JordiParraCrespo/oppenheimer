@@ -1,8 +1,14 @@
 'use client';
 
-import { useQueries, useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
+import {
+  type HookMutationOptions,
+  useQueries,
+  useQuery,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
-import { type QueryClient, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type {
   BotApprovalEntity,
@@ -210,17 +216,67 @@ export interface SendBotMessageVariables {
   id: string;
   content: string;
   /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
-  attachmentIds?: readonly string[];
+  attachments?: readonly BotAttachment[];
   /** Into the turn under way, at its next tool call, rather than after it. */
   steer?: boolean;
 }
 
-/** Says something to the bot. The chat is read again for the message and its turn. */
-export const useSendBotMessage = mutation<BotTurnEntity, SendBotMessageVariables>({
-  run: (app, { id, content, attachmentIds, steer }) =>
-    app.bots.sendMessage(id, content, attachmentIds, steer),
-  update: (queryClient, _turn, { id }) => refetchChat(queryClient, id, true),
-});
+/** The chat as it stood before a send drew itself in, to put back if the API refuses it. */
+interface SendBotMessageContext {
+  before: BotConversationEntity | undefined;
+}
+
+/**
+ * Says something to the bot, optimistically: the message and its queued
+ * turn are drawn at once ({@link BotConversationEntity.withSending}), the
+ * reads in flight called off so none lands without it. On success the chat
+ * is read again for the stored message and its turn; on a refusal the chat
+ * goes back to what it held before the send.
+ */
+export function useSendBotMessage(
+  options?: HookMutationOptions<
+    BotTurnEntity,
+    Error,
+    SendBotMessageVariables,
+    SendBotMessageContext
+  >,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation<BotTurnEntity, Error, SendBotMessageVariables, SendBotMessageContext>({
+    ...withCacheOnSuccess(options, (_turn, { id }) => refetchChat(queryClient, id, true)),
+    mutationFn: ({ id, content, attachments, steer }) =>
+      app.bots.sendMessage(
+        id,
+        content,
+        attachments?.map((attachment) => attachment.id),
+        steer,
+      ),
+    onMutate: async (variables, context) => {
+      const key = botsKeys.conversation(variables.id);
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const before = queryClient.getQueryData<BotConversationEntity>(key);
+      if (before) {
+        queryClient.setQueryData(
+          key,
+          before.withSending({
+            key: crypto.randomUUID(),
+            content: variables.content,
+            attachments: variables.attachments ?? [],
+            steer: variables.steer ?? false,
+            at: new Date(),
+          }),
+        );
+      }
+      await options?.onMutate?.(variables, context);
+      return { before };
+    },
+    onError: (error, variables, sent, context) => {
+      if (sent?.before) queryClient.setQueryData(botsKeys.conversation(variables.id), sent.before);
+      return options?.onError?.(error, variables, sent, context);
+    },
+  });
+}
 
 export interface UploadBotImageVariables {
   id: string;

@@ -1,3 +1,4 @@
+import { isSendingBotTurn } from '@oppenheimer/frontend-consumer';
 import {
   createContext,
   type RefObject,
@@ -80,10 +81,13 @@ export function useSentGlide(sentId: string | undefined): void {
     const box = pane?.scroller.current;
     const room = pane?.room.current;
     if (!pane || !box || !room || sentId === undefined || sentId === opened.current) return;
+    // The stored message taking the place of the one drawn on send is where it already glided.
+    const stored = opened.current !== undefined && isSendingBotTurn(opened.current);
     opened.current = sentId;
     const element = box.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(sentId)}"]`);
     anchor.current = element;
     reserve(box, room, element);
+    if (stored) return;
     const instant = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (!element || instant || typeof requestAnimationFrame === 'undefined') {
       scrollTo(box, box.scrollHeight);
