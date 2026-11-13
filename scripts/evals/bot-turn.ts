@@ -45,6 +45,8 @@ export interface Turn {
   calls: TurnCall[];
   /** Everything the model wrote to the person in the turn, joined. */
   answer: string;
+  /** Each block it wrote, with how many of `calls` had ended before it. */
+  blocks: { text: string; after: number }[];
   /** Why the turn ended other than by answering: the cap, or a failure. */
   stopped?: string;
 }
@@ -97,6 +99,8 @@ async function runCall(
   }
 }
 
+const answerOf = (blocks: Turn['blocks']) => blocks.map((block) => block.text).join('\n');
+
 function messagesApi(apiKey: string, model: string): Transport['turn'] {
   const AnthropicClient = (fromAgents('@anthropic-ai/sdk') as typeof import('@anthropic-ai/sdk'))
     .default;
@@ -104,7 +108,7 @@ function messagesApi(apiKey: string, model: string): Transport['turn'] {
   return async (request) => {
     const messages: Anthropic.MessageParam[] = [{ role: 'user', content: request.message }];
     const calls: TurnCall[] = [];
-    const said: string[] = [];
+    const said: Turn['blocks'] = [];
     for (let turn = 1; turn <= request.maxTurns; turn++) {
       const response = await client.messages.create({
         model,
@@ -120,11 +124,12 @@ function messagesApi(apiKey: string, model: string): Transport['turn'] {
         ),
         messages,
       });
-      for (const block of response.content) if (block.type === 'text') said.push(block.text);
+      for (const block of response.content)
+        if (block.type === 'text') said.push({ text: block.text, after: calls.length });
       const uses = response.content.filter(
         (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
       );
-      if (uses.length === 0) return { calls, answer: said.join('\n') };
+      if (uses.length === 0) return { calls, answer: answerOf(said), blocks: said };
       const results: Anthropic.ToolResultBlockParam[] = [];
       for (const use of uses) {
         const made = await runCall(request.tools, use.name, use.input);
@@ -139,7 +144,7 @@ function messagesApi(apiKey: string, model: string): Transport['turn'] {
       messages.push({ role: 'assistant', content: response.content });
       messages.push({ role: 'user', content: results });
     }
-    return { calls, answer: said.join('\n'), stopped: 'max_turns' };
+    return { calls, answer: answerOf(said), blocks: said, stopped: 'max_turns' };
   };
 }
 
@@ -156,7 +161,7 @@ function claudeCode(model: string): Transport['turn'] {
 
   return async (request) => {
     const calls: TurnCall[] = [];
-    const said: string[] = [];
+    const said: Turn['blocks'] = [];
     // The tool server the Claude engine builds (`claude-tool-server.ts`):
     // our tools as `mcp__oppenheimer__<name>`, schemas served as they are.
     const mcp = new McpServer(
@@ -201,7 +206,7 @@ function claudeCode(model: string): Transport['turn'] {
       })) {
         if (message.type === 'assistant') {
           for (const block of message.message.content) {
-            if (block.type === 'text') said.push(block.text);
+            if (block.type === 'text') said.push({ text: block.text, after: calls.length });
           }
         } else if (message.type === 'result' && message.subtype !== 'success') {
           stopped = message.subtype;
@@ -212,7 +217,7 @@ function claudeCode(model: string): Transport['turn'] {
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
-    return { calls, answer: said.join('\n'), ...(stopped ? { stopped } : {}) };
+    return { calls, answer: answerOf(said), blocks: said, ...(stopped ? { stopped } : {}) };
   };
 }
 

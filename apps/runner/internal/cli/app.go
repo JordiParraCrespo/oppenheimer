@@ -90,8 +90,9 @@ type App struct {
 	// host's own `claude -p … --cloud <id>` (link_cloud_reply.go); nil is the
 	// real CLI.
 	CloudReplies CloudReplier
-	// CodexCloud starts tasks in Codex cloud with the host's own `codex` and
-	// reads their status (link_cloud_codex.go); nil is the real CLI.
+	// CodexCloud starts threads in Codex cloud with the host's own ChatGPT
+	// sign-in and reads their status (link_cloud_codex.go); nil is Codex
+	// cloud itself.
 	CodexCloud CodexCloud
 	// WorkFolder is the work folder's own bookkeeping: its layout file and
 	// the markers of the folders the runner makes there.

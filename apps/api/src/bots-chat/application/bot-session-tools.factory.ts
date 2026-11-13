@@ -237,8 +237,8 @@ export class BotSessionToolsFactory implements BotToolArea {
   /**
    * A session in a vendor's cloud, started the one way the product starts
    * each: Claude Code's or Codex's through the sessions' own create with
-   * `cloud`, which has the host's runner run `claude --cloud` or `codex cloud
-   * exec` in a scratch checkout and report the session it started; a
+   * `cloud`, which has the host's runner run `claude --cloud` in a scratch
+   * checkout or start a thread in Codex cloud, and report the session it started; a
    * vendor's (Cursor's) through `StartCloudSessionCommand`, on the owner's
    * own key with no host. Same scope, card and owner's scope as
    * `start_session`; it hands back the session's URL at the vendor.
@@ -297,7 +297,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(200)
           .optional()
           .describe(
-            'codex only: the Codex cloud environment, by id or label; the one linked to the repository when omitted.',
+            "codex only: a Codex cloud environment id (from ChatGPT Settings → Codex Cloud); Codex's default environment with the repository when omitted.",
           ),
         model: z
           .string()
@@ -357,7 +357,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
-        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works the prompt is refused, so end your turn and let your watch wake you when it is back at its prompt; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours, and the answer gives the entry it was sent at: read_session with that after_seq shows what followed, and read_session_transcript shows the agent's own words. You are subscribed to the task it starts unless watch is false.",
+        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works the prompt is refused, so end your turn and let your watch wake you when it is back at its prompt; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A closed session takes no prompt, ever. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours, and the answer gives the entry it was sent at: read_session with that after_seq shows what followed, and read_session_transcript shows the agent's own words. You are subscribed to the task it starts unless watch is false.",
       input: z.object({
         session_id: z.uuid().describe('The session to prompt (from list_sessions).'),
         text: z

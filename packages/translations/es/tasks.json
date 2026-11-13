@@ -37,7 +37,7 @@
     "keyCancel": "cancelar"
   },
   "columns": {
-    "todo": "Por hacer",
+    "todo": "Sin empezar",
     "doing": "En curso",
     "review": "En revisión",
     "done": "Hecho"
@@ -122,7 +122,7 @@
     "loadFailed": "No se ha podido cargar el tablero.",
     "gone": "Esta tarea ya no existe.",
     "deleting": "Eliminando…",
-    "focus": "Por hacer"
+    "focus": "Día en TODO"
   },
   "link": {
     "search": "Buscar sesiones",
@@ -204,7 +204,7 @@
       "todo": "vence hoy",
       "due": "pendiente",
       "overdue": "vencida desde el {{date}}",
-      "since": "en Por hacer desde el {{date}}",
+      "since": "en TODO desde el {{date}}",
       "dueOn": "vence el {{date}}"
     },
     "schedule": {
@@ -220,7 +220,17 @@
       "allStatuses": "Todos los estados",
       "searchStatuses": "Buscar estados"
     },
-    "reorder": "Reordenar {{title}}"
+    "reorder": "Reordenar {{title}}",
+    "withAgents": "Con agentes",
+    "mark": {
+      "waiting": "te espera",
+      "failed": "falló",
+      "review": "lista para revisar",
+      "stopped": "agente detenido"
+    },
+    "move": "Mover {{title}} a otro día",
+    "moveTitle": "Mover a otro día",
+    "moveFailed": "No se pudo mover la tarea a otro día."
   },
   "selection": {
     "count_one": "{{count}} seleccionada",

@@ -27,6 +27,9 @@ const GLYPH_SIZE = {
  * Tomorrow, Next Monday: the caller's words and days) and Clear when a day
  * is set. Picking a day closes it.
  *
+ * A caller that draws its own trigger (an `IconButton` on a row, TODO's
+ * Move) passes it as `children`; the month and the quick picks are the same.
+ *
  * Days are ISO strings in the reader's calendar (`YYYY-MM-DD`); `today` is
  * the caller's clock, so nothing reads one in render.
  */
@@ -40,6 +43,7 @@ function DatePicker({
   labels = {},
   size = 'md',
   className,
+  children,
 }: {
   value: IsoDate | null;
   onValueChange: (value: IsoDate | null) => void;
@@ -52,6 +56,8 @@ function DatePicker({
   /** The rung of the control ramp, as an `Input`'s `size`. */
   size?: FieldSize;
   className?: string;
+  /** The trigger, when the caller draws its own; the field otherwise. */
+  children?: React.ReactElement;
 }) {
   const [open, setOpen] = React.useState(false);
   const start = dateOf(value ?? today);
@@ -79,22 +85,26 @@ function DatePicker({
         setOpen(next);
       }}
     >
-      <PopoverTrigger
-        aria-haspopup="dialog"
-        data-slot="date-picker"
-        className={cn(
-          'flex min-w-[184px] items-center gap-2 rounded-sm border border-field-border bg-field text-left text-fg outline-none transition-[border-color,box-shadow] duration-fast ease-standard hover:border-border-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring [&_svg]:shrink-0',
-          FIELD_SIZE[size],
-          GLYPH_SIZE[size],
-          className,
-        )}
-      >
-        <CalendarIcon className="text-fg-muted" aria-hidden />
-        <span className={cn('min-w-0 flex-1 truncate', !value && 'text-field-placeholder')}>
-          {label}
-        </span>
-        <ChevronDownIcon className="text-fg-subtle" aria-hidden />
-      </PopoverTrigger>
+      {children ? (
+        <PopoverTrigger aria-haspopup="dialog" render={children} />
+      ) : (
+        <PopoverTrigger
+          aria-haspopup="dialog"
+          data-slot="date-picker"
+          className={cn(
+            'flex min-w-[184px] items-center gap-2 rounded-sm border border-field-border bg-field text-left text-fg outline-none transition-[border-color,box-shadow] duration-fast ease-standard hover:border-border-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring [&_svg]:shrink-0',
+            FIELD_SIZE[size],
+            GLYPH_SIZE[size],
+            className,
+          )}
+        >
+          <CalendarIcon className="text-fg-muted" aria-hidden />
+          <span className={cn('min-w-0 flex-1 truncate', !value && 'text-field-placeholder')}>
+            {label}
+          </span>
+          <ChevronDownIcon className="text-fg-subtle" aria-hidden />
+        </PopoverTrigger>
+      )}
       <PopoverContent
         align="start"
         aria-label={labels.choose ?? 'Choose a date'}

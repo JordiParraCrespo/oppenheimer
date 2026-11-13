@@ -115,19 +115,3 @@ export const hostFolderSearchQuerySchema = z.object({
 });
 
 export type HostFolderSearchQuery = z.infer<typeof hostFolderSearchQuerySchema>;
-
-/**
- * `GET /hosts/{id}/codex-environments`: the Codex cloud environments the
- * host's ChatGPT account has, those linked to `repository` (`owner/name`)
- * marked, for the composer's picker (`product/next-steps/cloud-agents.md`).
- */
-export const hostCodexEnvironmentsQuerySchema = z.object({
-  /** Absent before a repository is picked: the list then marks none as linked. */
-  repository: z
-    .string()
-    .max(200)
-    .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/)
-    .optional(),
-});
-
-export type HostCodexEnvironmentsQuery = z.infer<typeof hostCodexEnvironmentsQuerySchema>;
