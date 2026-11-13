@@ -1,6 +1,7 @@
 import {
   BOT_BUILT_IN_COMMANDS,
   BOT_RUNNABLE_BUILT_IN_SKILL_NAMES,
+  BOT_SKILL_NAME_PATTERN,
 } from '@oppenheimer/shared/schemas/bot-skill';
 
 /** The most commands the `/` menu lists at once. */
@@ -114,4 +115,18 @@ export function slashMenuRows(
 /** The draft once a command is picked: the command and a space for its input. */
 export function pickedDraft(command: Pick<SlashCommand, 'name'>): string {
   return `/${command.name} `;
+}
+
+/** A skill's name, as the schema owns it, after a slash and before a space or the end. */
+const LEADING_COMMAND = new RegExp(
+  `^/${BOT_SKILL_NAME_PATTERN.source.replace(/^\^|\$$/g, '')}(?=\\s|$)`,
+);
+
+/**
+ * The `/command` a message starts with (`/ship` in `/ship fix the build`),
+ * marked in the composer and in the sent bubble; null when it does not start
+ * with one. Any name a skill could take counts, whether or not the bot has it.
+ */
+export function leadingCommand(text: string): string | null {
+  return LEADING_COMMAND.exec(text)?.[0] ?? null;
 }

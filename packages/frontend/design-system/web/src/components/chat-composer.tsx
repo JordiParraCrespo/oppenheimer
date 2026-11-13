@@ -11,6 +11,7 @@ import {
   assignRef,
   useComposerSend,
 } from '../internal/composer-send';
+import { CommandField } from '../internal/command-field';
 import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -79,6 +80,7 @@ function ChatComposer({
   dictation,
   labels,
   layout = 'stacked',
+  command,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
@@ -121,6 +123,12 @@ function ChatComposer({
    * conversation above it.
    */
   layout?: 'stacked' | 'inline';
+  /**
+   * The `/command` the text starts with, marked the way a sent message marks
+   * it (`ChatCommand`) while it is written. A prefix of `value`; anything
+   * else is ignored.
+   */
+  command?: string;
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
   const { blocked, canSend, submit, onKeyDown, fieldRef } = useComposerSend({
@@ -139,23 +147,26 @@ function ChatComposer({
 
   const inline = layout === 'inline';
   const field = (
-    <textarea
-      ref={(node) => {
+    <CommandField
+      inputRef={(node) => {
         fieldRef.current = node;
         assignRef(inputRef, node);
       }}
       data-slot="chat-composer-input"
       value={value}
+      command={command}
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={onKeyDown}
       placeholder={placeholder}
       disabled={disabled}
       rows={inline ? 1 : 2}
+      wrapperClassName={inline ? 'flex-1' : undefined}
       // Grows with what is written, from its opening lines (`min-h`, since
       // `field-sizing-content` overrides `rows`) to eight, then scrolls.
-      className={cn(
-        'field-sizing-content max-h-52 w-full resize-none bg-transparent text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-        inline ? cn('min-h-11 flex-1 py-2.5', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+      className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder"
+      box={cn(
+        'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
+        inline ? cn('min-h-11 py-2.5 pr-0', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
       )}
     />
   );
