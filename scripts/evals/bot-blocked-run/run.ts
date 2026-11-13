@@ -221,12 +221,12 @@ const SCORERS: {
 };
 
 /**
- * What the chat keeps of a run's words: production's rule (`QuietTurn`)
- * over the run's calls and blocks in order, so a run that goes quiet and
- * then writes is scored as the person would see it.
+ * What the chat keeps of a run's words: the run's calls and blocks of text
+ * told in order to production's `QuietTurn`, which owns the rule, so a run
+ * that goes quiet and then writes is scored as the person would see it.
  */
 function keptWords(turn: Turn): string {
-  const quiet = new QuietTurn();
+  const quiet = new QuietTurn<string>();
   let ended = 0;
   const end = (until: number) => {
     for (; ended < until; ended++) {
@@ -234,14 +234,13 @@ function keptWords(turn: Turn): string {
       quiet.finished(call.tool, call.isError);
     }
   };
-  const kept: string[] = [];
   for (const block of turn.blocks) {
     end(block.after);
-    if (!quiet.silent) kept.push(block.text);
+    quiet.said(() => block.text);
   }
   end(turn.calls.length);
-  // A turn that ends quiet takes back what it stored before.
-  return quiet.silent ? '' : kept.join('\n');
+  quiet.ended();
+  return quiet.words.join('\n');
 }
 
 /** A run against what its case expects, from the calls it made and what the chat keeps of its words. */

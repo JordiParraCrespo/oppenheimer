@@ -120,9 +120,8 @@ export class TurnTranscript {
    * whose ends still land there.
    */
   private readonly running = new Map<string, BotMessageEntity>();
-  private readonly quiet = new QuietTurn();
   /** The messages of words stored so far, which a quiet end takes back. */
-  private words: BotMessageEntity[] = [];
+  private readonly quiet = new QuietTurn<BotMessageEntity>();
   private outcome: TranscriptOutcome = {
     reason: 'failed',
     error: 'The turn ended without saying how',
@@ -203,20 +202,20 @@ export class TurnTranscript {
   }
 
   private say(text: string): TranscriptWrite[] {
-    if (!text.trim() || this.quiet.silent) return [];
-    this.activity = null;
-    this.blocks += 1;
-    const message = this.message('assistant', text, []);
-    this.words.push(message);
-    return [{ kind: 'insert', message }];
+    if (!text.trim()) return [];
+    const message = this.quiet.said(() => {
+      this.activity = null;
+      this.blocks += 1;
+      return this.message('assistant', text, []);
+    });
+    return message ? [{ kind: 'insert', message }] : [];
   }
 
   private unsay(): TranscriptWrite[] {
-    if (!this.quiet.silent || this.words.length === 0) return [];
-    const messageIds = this.words.map((message) => message.id);
-    this.words = [];
+    const back = this.quiet.ended();
+    if (back.length === 0) return [];
     this.blocks = 0;
-    return [{ kind: 'unsay', messageIds }];
+    return [{ kind: 'unsay', messageIds: back.map((message) => message.id) }];
   }
 
   private started(callId: string, name: string, input: unknown): TranscriptWrite[] {
