@@ -1,5 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import type { TaskStatus } from '@oppenheimer/shared';
+import type { TaskOrigin, TaskStatus } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -38,6 +38,8 @@ import {
 @Check('CHK_task_due_time_has_date', `"dueTime" IS NULL OR "dueDate" IS NOT NULL`)
 @Check('CHK_task_version', `"version" >= 1`)
 @Check('CHK_task_blocked', `("blockedReason" IS NULL) = ("blockedAt" IS NULL)`)
+@Check('CHK_task_origin', `"origin" IN ('person', 'agent')`)
+@Check('CHK_task_triage', `"origin" = 'agent' OR "triagedAt" IS NOT NULL`)
 @Index('UQ_task_idempotency_key', ['organizationId', 'idempotencyKey'], {
   unique: true,
   where: '"idempotencyKey" IS NOT NULL',
@@ -99,6 +101,14 @@ export class TaskOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
+
+  /** Who made it: the person, or an agent working for them. */
+  @Column({ type: 'varchar', length: 16, default: 'person' })
+  origin!: TaskOrigin;
+
+  /** When its person took it up; null while an agent's task waits in the Inbox. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  triagedAt!: Date | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

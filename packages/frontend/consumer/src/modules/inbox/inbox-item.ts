@@ -7,6 +7,7 @@ import type {
 import type { ProjectEntity } from '../projects/project.entity';
 import type { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import type { SessionEntity, SessionNotice } from '../sessions/session.entity';
+import type { TaskEntity } from '../tasks/task.entity';
 import type { InboxMarkEntity } from './inbox-mark.entity';
 import type { InboxReportEntity } from './inbox-report.entity';
 
@@ -18,7 +19,8 @@ import type { InboxReportEntity } from './inbox-report.entity';
  * notify`), read off the same sessions as a waiting session is; a
  * `botNotice` is a bot's own line (its `notify` tool), each bot's latest; a
  * `report` is a problem an unattended agent sent with its pictures, there
- * until it is answered.
+ * until it is answered; a `task` is one an agent made, there until its person
+ * takes it up (a TODO day, a session, or Dismiss).
  */
 export type InboxItemKind =
   | 'session'
@@ -27,7 +29,8 @@ export type InboxItemKind =
   | 'approval'
   | 'pull'
   | 'run'
-  | 'report';
+  | 'report'
+  | 'task';
 
 /** Why a pull request is in the Inbox: a review asked of you, or yours, ready to merge. */
 export type InboxPullReason = 'requested' | 'ready';
@@ -50,9 +53,10 @@ export type InboxItem =
   | (InboxItemBase & { kind: 'approval'; approval: WorkspaceBotApprovalEntity })
   | (InboxItemBase & { kind: 'pull'; pull: PullRequestEntity; reason: InboxPullReason })
   | (InboxItemBase & { kind: 'run'; run: AutomationRunEntity })
-  | (InboxItemBase & { kind: 'report'; report: InboxReportEntity });
+  | (InboxItemBase & { kind: 'report'; report: InboxReportEntity })
+  | (InboxItemBase & { kind: 'task'; task: TaskEntity });
 
-/** The six reads, as their hooks answer them. */
+/** The seven reads, as their hooks answer them. */
 export interface InboxSources {
   /** Every unresolved session; those `waiting-on-you` become items, and so does each one's notice. */
   sessions: readonly SessionEntity[];
@@ -68,6 +72,8 @@ export interface InboxSources {
   botNotices: readonly WorkspaceBotNoticeEntity[];
   /** The workspace's reports; those still open become items. */
   reports: readonly InboxReportEntity[];
+  /** The board's tasks; those an agent made that wait for their person become items. */
+  tasks: readonly TaskEntity[];
   projects: readonly ProjectEntity[];
 }
 
@@ -140,6 +146,11 @@ function pullItemKey(pull: Pick<PullRequestEntity, 'githubRepoId' | 'number' | '
 
 function runItemKey(run: { id: string }): string {
   return `run:${run.id}`;
+}
+
+/** A task by its id: it waits once, until its person takes it up. */
+function taskItemKey(task: { id: string }): string {
+  return `task:${task.id}`;
 }
 
 /** When a session's wait began, as near as its row says. */
@@ -263,6 +274,17 @@ function inboxItems(sources: InboxSources): InboxItem[] {
       key: inboxReportItemKey(report.id),
       since: report.createdAt,
       projectIds: [],
+      low: false,
+    });
+  }
+  for (const task of sources.tasks) {
+    if (!task.awaitsTriage) continue;
+    items.push({
+      kind: 'task',
+      task,
+      key: taskItemKey(task),
+      since: task.createdAt,
+      projectIds: projectOf(task.projectId),
       low: false,
     });
   }

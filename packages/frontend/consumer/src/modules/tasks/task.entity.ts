@@ -1,4 +1,4 @@
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import type { TaskOrigin, TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 /** A session on a task: started from it, or linked afterwards. */
 export interface TaskSessionLink {
@@ -35,7 +35,20 @@ export class TaskEntity {
     public readonly version = 1,
     /** The day it is on To do from, until it is done; apart from when it is due. */
     public readonly focusDate: string | null = null,
+    /** Who made it: its person, or an agent working for them. */
+    public readonly origin: TaskOrigin = 'person',
+    /** When its person took it up; null while a task an agent made waits in the Inbox. */
+    public readonly triagedAt: Date | null = null,
   ) {}
+
+  /**
+   * A task an agent made that its person has not taken up yet: it waits in
+   * Plan's Inbox (`product/versions/mvp/29-inbox.md`, "Tasks an agent made").
+   * A done one is no longer waiting on anyone.
+   */
+  get awaitsTriage(): boolean {
+    return this.origin === 'agent' && this.triagedAt === null && !this.isDone;
+  }
 
   get isDone(): boolean {
     return this.status === 'done';

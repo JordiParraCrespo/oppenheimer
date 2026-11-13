@@ -166,7 +166,7 @@ describe('BotPlanToolsFactory', () => {
     expect(readBack).toBeInstanceOf(FindTaskQuery);
     expect(readBack).toMatchObject({ scope: owner, taskId: TASK_ID });
     expect(result.content).toMatch(
-      new RegExp(`^Created task ${TASK_ID} "Write the release notes" in To do\\.`),
+      new RegExp(`^Created task ${TASK_ID} "Write the release notes" in Not started\\.`),
     );
     expect(result.content).toContain(`- milestone: ${MILESTONE_ID}`);
   });

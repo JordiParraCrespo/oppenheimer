@@ -24,4 +24,20 @@ describe('what an Inbox action stores', () => {
       until: new Date('2026-11-12T09:00:00'),
     });
   });
+
+  it('takes up a task an agent made on Delete only, so one marked done can come back', () => {
+    const task = { key: 'task:t-1', kind: 'task', task: { id: 't-1' } } as InboxItem;
+    const run = { key: 'run:r-1', kind: 'run' } as InboxItem;
+    expect(INBOX_MARK_ACTIONS.remove.takesUp?.(task)).toBe('t-1');
+    expect(INBOX_MARK_ACTIONS.remove.takesUp?.(run)).toBeNull();
+    for (const name of [
+      'done',
+      'toggleLow',
+      'snoozeHour',
+      'snoozeTomorrow',
+      'bringBack',
+    ] as const) {
+      expect(INBOX_MARK_ACTIONS[name].takesUp).toBeUndefined();
+    }
+  });
 });

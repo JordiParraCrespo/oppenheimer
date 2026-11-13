@@ -21,6 +21,7 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
     scope,
     userId,
     actor,
+    origin,
     idempotencyKey,
     input,
   }: CreateTaskCommand): Promise<AggregateID> {
@@ -40,6 +41,7 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
       focusDate: input.focusDate,
       createdByUserId: userId,
       actor,
+      origin,
       idempotencyKey,
     });
     // `last` names no other task, so the placement cannot be stale.

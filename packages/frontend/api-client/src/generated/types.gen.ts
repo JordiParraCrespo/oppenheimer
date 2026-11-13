@@ -2831,6 +2831,14 @@ export type TaskResponseDto = {
      */
     version: number;
     /**
+     * Who made it: `person` in the console, `agent` from a bot or a call on an API token or an OAuth grant (the MCP server, the CLI).
+     */
+    origin: 'person' | 'agent';
+    /**
+     * When its person took it up: made it, gave it a TODO day, started or linked a session on it, or dismissed it from the Inbox. Null while a task an agent made waits in the Inbox.
+     */
+    triagedAt?: string | null;
+    /**
      * Oldest first.
      */
     sessions: Array<TaskSessionLinkResponseDto>;
@@ -12598,6 +12606,38 @@ export type UpdateTaskResponses = {
 };
 
 export type UpdateTaskResponse = UpdateTaskResponses[keyof UpdateTaskResponses];
+
+export type TriageTaskData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/triage';
+};
+
+export type TriageTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type TriageTaskError = TriageTaskErrors[keyof TriageTaskErrors];
+
+export type TriageTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type TriageTaskResponse = TriageTaskResponses[keyof TriageTaskResponses];
 
 export type MoveTaskData = {
     body: MoveTaskRequest;

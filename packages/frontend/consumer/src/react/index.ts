@@ -333,6 +333,7 @@ export {
   useSuspenseStartSession,
   useSuspenseTaskBoard,
   useTasks,
+  useTriageTask,
   useUnlinkTaskSession,
   useUpdateMilestone,
   useUpdateTask,

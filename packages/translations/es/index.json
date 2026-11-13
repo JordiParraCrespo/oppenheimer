@@ -3548,7 +3548,8 @@
       "bots": "Bots",
       "session": "Sesiones",
       "run": "Automatizaciones",
-      "report": "Informes"
+      "report": "Informes",
+      "task": "Tareas"
     },
     "project": {
       "all": "Todos los proyectos",
@@ -3569,7 +3570,8 @@
       "approval": "Aprobación de bot",
       "run": "Automatización",
       "botNotice": "Bot",
-      "report": "Informe"
+      "report": "Informe",
+      "task": "Tarea"
     },
     "session": {
       "blockedShort": "{{name}} te está esperando",
@@ -3666,6 +3668,18 @@
       "sending": "Enviando…",
       "done": "Hecho",
       "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
+    },
+    "task": {
+      "sender": "Un agente",
+      "short": "Nueva tarea: {{title}}",
+      "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy, empieza una sesión con ella o descártala para dejarla en el tablero tal como está.",
+      "due": "Vence el {{date}}",
+      "open": "Abrir tarea",
+      "start": "Empezar sesión",
+      "today": "Poner para hoy",
+      "planning": "Poniéndola para hoy…",
+      "dismiss": "Descartar",
+      "dismissing": "Descartando…"
     }
   },
   "settings": {

@@ -7,6 +7,7 @@ import { InboxPullCard } from '@/features/inbox/sections/inbox-pull-card';
 import { InboxReportCard } from '@/features/inbox/sections/inbox-report-card';
 import { InboxRunCard } from '@/features/inbox/sections/inbox-run-card';
 import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
+import { InboxTaskCard } from '@/features/inbox/sections/inbox-task-card';
 
 /**
  * The item in the reading pane as its kind's message. Keyed by the item, so
@@ -38,6 +39,8 @@ export function InboxItemMessage({
       return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'report':
       return <InboxReportCard key={item.key} item={item} copy={copy} from={from} age={age} />;
+    case 'task':
+      return <InboxTaskCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'session':
       return (
         <InboxSessionCard
