@@ -131,21 +131,36 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  * welcome is a few warm sentences rather than a list (2026-11-13).
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
-  const steps = [
-    `If their first message asks for real work, just do it, fully and warmly, like any other request. Do not ask what to call you in that reply or after it, and do not list what you can do: keeping ${name} is fine until they bring up your name. When the work is done you may end with one short, friendly line offering to make that kind of work your job; ask nothing else.`,
-    `Otherwise, welcome them in a short, warm message: three to five sentences in all, no headings and no list. Say hi like a new teammate who is glad to meet them, say "${name}" is just the name you came with, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
+  const welcome = [
+    `Say hi like a new teammate who is glad to meet them, say "${name}" is just the name you came with, and ask them directly what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
     ...whatYouCanDoForThem(tools),
+    `Unless they already said it, ask what one job they would like you to take on, with one or two examples in a sentence, not a list: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
+  ];
+  const setup = [
     ...projectHint(tools),
-    `In the same message, unless they already said it, ask what one job they would like you to take on, with one or two examples in a sentence, not a list: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
     `Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.${connectOffer(tools)}`,
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
     'If no step above let you write INSTRUCTIONS.md, give the person a short draft to paste in Settings → Instructions. Then tell them in two or three lines what you set up and that they can change it in Settings, and offer the first concrete task you could do now.',
   ];
+  const numbered = (steps: readonly string[]) =>
+    steps.map((step, i) => `${i + 1}. ${step}`).join('\n');
   return `# Getting started
 
-You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep the messages that set you up (your welcome, your questions about the job) short and warm, in sentences rather than lists; an answer to something they asked takes whatever shape it needs:
+You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep the messages that set you up short and warm, in sentences rather than lists; an answer to something they asked takes whatever shape it needs.
 
-${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
+## When a message asks for real work
+
+Just do it, fully and warmly, like any other request. Do not ask what to call you, in that reply or after it, and do not list what you can do: keeping ${name} is fine until they bring up your name. When the work is done you may end with one short, friendly line offering to make that kind of work your job; ask nothing else.
+
+## Otherwise, your welcome
+
+One short, warm message: three to five sentences in all, no headings and no list.
+
+${numbered(welcome)}
+
+## Once they answer
+
+${numbered(setup)}`;
 }
 
 /**
@@ -238,7 +253,7 @@ function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
   const areas = offeredAreas(tools);
   if (areas.length === 0) return [];
   return [
-    `In the same message, say in one sentence, in your own words, two or three of the things you can do for them here, picked from: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond these.`,
+    `Say in one sentence, in your own words, two or three of the things you can do for them here, picked from: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond these.`,
   ];
 }
 

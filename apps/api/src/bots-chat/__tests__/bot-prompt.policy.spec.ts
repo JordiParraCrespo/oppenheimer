@@ -72,12 +72,12 @@ describe('composeBotSystemPrompt', () => {
       ],
     });
     expect(equipped).toMatch(
-      /\n3\. In the same message, say in one sentence[^\n]*two or three of the things you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond these\./,
+      /## Otherwise, your welcome[\s\S]*\n2\. Say in one sentence[^\n]*two or three of the things you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond these\./,
     );
     expect(equipped).not.toContain('Gmail');
     // 2026-11-13: the offer to connect waits for the job, out of the welcome.
     expect(equipped).toMatch(
-      /\n5\. [^\n]*If the job they pick needs something not connected yet \(a computer, WhatsApp\), offer to help them connect it\./,
+      /## Once they answer[\s\S]*\n\d\. [^\n]*If the job they pick needs something not connected yet \(a computer, WhatsApp\), offer to help them connect it\./,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('can do for them here');
     // An area it can only read is not promised: a bot with `list_hosts` alone
@@ -136,12 +136,12 @@ describe('composeBotSystemPrompt', () => {
     // what to call it, without choosing one itself, in a few warm sentences
     // rather than a list (2026-11-13).
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n2\. Otherwise, welcome them in a short, warm message: three to five sentences in all, no headings and no list\.[^\n]*ask what they would like to call you\. Do not pick or suggest a name yourself/,
+      /## Otherwise, your welcome\n\nOne short, warm message: three to five sentences in all, no headings and no list\.\n\n1\. [^\n]*ask them directly what they would like to call you\. Do not pick or suggest a name yourself/,
     );
     // 2026-11-13: work the first message asks for is just done; the owner saw
     // a bot do the task and then ask its name (2026-11-11 had it always ask).
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n1\. If their first message asks for real work, just do it[^\n]*Do not ask what to call you in that reply or after it, and do not list what you can do/,
+      /## When a message asks for real work\n\nJust do it[^\n]*Do not ask what to call you, in that reply or after it, and do not list what you can do/,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('always end that same reply');
     // Autoreview, 2026-11-13: "short, no lists" is for setting it up, not for
@@ -173,10 +173,10 @@ describe('composeBotSystemPrompt', () => {
         { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
       ],
     });
-    expect(equipped).toMatch(/5\. Write it down\.\n6\. Remember them\.\n7\. If no step above/);
+    expect(equipped).toMatch(/2\. Write it down\.\n3\. Remember them\.\n4\. If no step above/);
 
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n5\. If no step above .*Settings → Instructions/,
+      /\n2\. If no step above .*Settings → Instructions/,
     );
   });
 
