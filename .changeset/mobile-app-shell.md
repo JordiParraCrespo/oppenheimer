@@ -25,6 +25,6 @@ Bring back the Expo app for 0.5 as a shell drawn from the version-1 export's
 - `@oppenheimer/translations`: `auth.login` gains `continueWithEmail`,
   `emailTitle`, `emailDescription`, `back` and `noAccountMobile`;
   `auth.forgotPassword.notReceived`, `common.error`, and `nav.account`,
-  `nav.pullRequestsShort`, `nav.sections` and `nav.mobile`.
+  `nav.pullRequestsShort` and `nav.sections`; `common.comingToMobile`.
 - `@oppenheimer/api`: Better Auth trusts `${MOBILE_SCHEME}://` and loads the
   Expo plugin, so the app's sign-in and reset links come back to it.

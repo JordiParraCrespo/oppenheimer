@@ -8,7 +8,7 @@ export function AutomationsScreen() {
 
   return (
     <TabScreen title={t('nav.automations')}>
-      <TabPlaceholder icon={Zap} description={t('nav.mobile.automations')} />
+      <TabPlaceholder icon={Zap} description={t('common.comingToMobile.automations')} />
     </TabScreen>
   );
 }

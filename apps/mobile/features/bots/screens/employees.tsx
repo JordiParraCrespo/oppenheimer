@@ -8,7 +8,7 @@ export function EmployeesScreen() {
 
   return (
     <TabScreen title={t('nav.employees')}>
-      <TabPlaceholder icon={Bot} description={t('nav.mobile.employees')} />
+      <TabPlaceholder icon={Bot} description={t('common.comingToMobile.employees')} />
     </TabScreen>
   );
 }

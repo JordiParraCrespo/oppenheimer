@@ -15,7 +15,7 @@ export function TabPlaceholder({ icon, description }: { icon: LucideIcon; descri
           <EmptyState.Media variant="icon">
             <Icon as={icon} size={24} />
           </EmptyState.Media>
-          <EmptyState.Title>{t('nav.mobile.soonTitle')}</EmptyState.Title>
+          <EmptyState.Title>{t('common.comingToMobile.title')}</EmptyState.Title>
           <EmptyState.Description>{description}</EmptyState.Description>
         </EmptyState.Header>
       </EmptyState>

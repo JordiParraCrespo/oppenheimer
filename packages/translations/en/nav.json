@@ -27,12 +27,5 @@
   "employees": "Employees",
   "account": "Account",
   "pullRequestsShort": "PRs",
-  "sections": "Sections",
-  "mobile": {
-    "soonTitle": "Coming to mobile",
-    "sessions": "Follow your sessions and answer an agent that is waiting, from here.",
-    "employees": "Chat with your employees from your phone.",
-    "pullRequests": "Review the pull requests that need you.",
-    "automations": "See your automations and how their runs went."
-  }
+  "sections": "Sections"
 }

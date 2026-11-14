@@ -8,7 +8,7 @@ export function PullRequestsScreen() {
 
   return (
     <TabScreen title={t('nav.pullRequests')}>
-      <TabPlaceholder icon={GitPullRequest} description={t('nav.mobile.pullRequests')} />
+      <TabPlaceholder icon={GitPullRequest} description={t('common.comingToMobile.pullRequests')} />
     </TabScreen>
   );
 }

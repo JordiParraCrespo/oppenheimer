@@ -148,7 +148,14 @@
       "groups": "Buscar grupos",
       "noMatch": "Nada coincide con «{{query}}»."
     },
-    "error": "Algo ha ido mal"
+    "error": "Algo ha ido mal",
+    "comingToMobile": {
+      "title": "Próximamente en el móvil",
+      "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
+      "employees": "Habla con tus empleados desde el móvil.",
+      "pullRequests": "Revisa las pull requests que te necesitan.",
+      "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones."
+    }
   },
   "validation": {
     "required": "Este campo es obligatorio",
@@ -4138,14 +4145,7 @@
     "employees": "Empleados",
     "account": "Cuenta",
     "pullRequestsShort": "PRs",
-    "sections": "Secciones",
-    "mobile": {
-      "soonTitle": "Próximamente en el móvil",
-      "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
-      "employees": "Habla con tus empleados desde el móvil.",
-      "pullRequests": "Revisa las pull requests que te necesitan.",
-      "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones."
-    }
+    "sections": "Secciones"
   },
   "language": {
     "label": "Idioma",

@@ -8,7 +8,7 @@ export function SessionsScreen() {
 
   return (
     <TabScreen title={t('nav.sessions')}>
-      <TabPlaceholder icon={Terminal} description={t('nav.mobile.sessions')} />
+      <TabPlaceholder icon={Terminal} description={t('common.comingToMobile.sessions')} />
     </TabScreen>
   );
 }
