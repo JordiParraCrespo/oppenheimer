@@ -87,11 +87,17 @@ function VoiceRecorderBar({
         aria-label={labels?.cancel ?? 'Cancel voice recording'}
         size="sm"
         onClick={onCancel}
-        className="bg-hover-surface text-fg hover:bg-control-hover hover:text-fg"
+        className="bg-hover-surface text-fg hover:bg-control-hover hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
       >
         <XIcon />
       </IconButton>
-      <IconButton aria-label={labels?.stop ?? 'Stop voice recording'} variant="primary" size="sm" onClick={onStop}>
+      <IconButton
+        aria-label={labels?.stop ?? 'Stop voice recording'}
+        variant="primary"
+        size="sm"
+        onClick={onStop}
+        className="focus-visible:ring-3 focus-visible:ring-ring"
+      >
         <ArrowUpIcon aria-hidden strokeWidth={2.2} />
       </IconButton>
     </div>
