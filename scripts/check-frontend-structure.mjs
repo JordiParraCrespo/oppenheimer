@@ -68,12 +68,25 @@ const APPS = [
     kit: 'web',
   },
   // oppenheimer:end web
+  // oppenheimer:begin mobile
+  {
+    app: 'apps/mobile',
+    routes: 'app',
+    features: 'features',
+    product: 'consumer',
+    allow: [],
+    kit: 'mobile',
+  },
+  // oppenheimer:end mobile
 ];
 /** The platform kits, documented like the apps they serve. */
 const KITS = [
   // oppenheimer:begin web
   'packages/frontend/web',
   // oppenheimer:end web
+  // oppenheimer:begin mobile
+  'packages/frontend/mobile',
+  // oppenheimer:end mobile
 ];
 
 function* walk(dir) {
@@ -595,11 +608,11 @@ for (const file of queryStateFiles) {
 // fails a `Skeleton` that is a slab. `skeleton-slab-debt.mjs`
 // holds the files that held slabs when the check landed, each to its count.
 // The design system's records own their placeholders, so its components are read too.
+const skeletonFiles = [...queryStateFiles];
+// oppenheimer:begin web|web-showcase|extension
 const designSystem = join(root, 'packages/frontend/design-system/web/src');
-const skeletonFiles = [
-  ...queryStateFiles,
-  ...(existsSync(designSystem) ? sources(designSystem) : []),
-];
+if (existsSync(designSystem)) skeletonFiles.push(...sources(designSystem));
+// oppenheimer:end web|web-showcase|extension
 for (const file of skeletonFiles) {
   const name = relative(root, file);
   const slabs = skeletonSlabProblems(readFileSync(file, 'utf8'));

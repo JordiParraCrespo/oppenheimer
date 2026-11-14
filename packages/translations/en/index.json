@@ -145,7 +145,8 @@
       "hosts": "Search hosts",
       "groups": "Search groups",
       "noMatch": "Nothing matches “{{query}}”."
-    }
+    },
+    "error": "Something went wrong"
   },
   "validation": {
     "required": "This field is required",
@@ -545,7 +546,12 @@
       "noSocialProviders": "Social sign-in is not configured on this deployment. Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET or GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET on the API to enable it.",
       "continueWithGithub": "Continue with GitHub",
       "continueWithGoogle": "Continue with Google",
-      "socialFailed": "Could not start social sign-in. Try again, or sign in with your email and password."
+      "socialFailed": "Could not start social sign-in. Try again, or sign in with your email and password.",
+      "continueWithEmail": "Continue with email",
+      "emailTitle": "Sign in",
+      "emailDescription": "Use your work address.",
+      "back": "Back",
+      "noAccountMobile": "No account? Create one in the console on the web."
     },
     "register": {
       "title": "Create your account",
@@ -571,7 +577,8 @@
       "emailLabel": "Work email",
       "resend": "Resend link",
       "differentAddress": "Use a different address",
-      "resendFailed": "Could not send the email again. Try again in a moment."
+      "resendFailed": "Could not send the email again. Try again in a moment.",
+      "notReceived": "Nothing in your inbox? Check spam, or <retry>try again</retry>."
     },
     "resetPassword": {
       "title": "Set a new password",
@@ -4085,7 +4092,17 @@
     "logOutFailed": "Could not log you out. Try again.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Employees"
+    "employees": "Employees",
+    "account": "Account",
+    "pullRequestsShort": "PRs",
+    "sections": "Sections",
+    "mobile": {
+      "soonTitle": "Coming to mobile",
+      "sessions": "Follow your sessions and answer an agent that is waiting, from here.",
+      "employees": "Chat with your employees from your phone.",
+      "pullRequests": "Review the pull requests that need you.",
+      "automations": "See your automations and how their runs went."
+    }
   },
   "language": {
     "label": "Language",

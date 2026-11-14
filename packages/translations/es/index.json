@@ -147,7 +147,8 @@
       "hosts": "Buscar hosts",
       "groups": "Buscar grupos",
       "noMatch": "Nada coincide con «{{query}}»."
-    }
+    },
+    "error": "Algo ha ido mal"
   },
   "validation": {
     "required": "Este campo es obligatorio",
@@ -547,7 +548,12 @@
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
       "continueWithGithub": "Continuar con GitHub",
       "continueWithGoogle": "Continuar con Google",
-      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
+      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña.",
+      "continueWithEmail": "Continuar con email",
+      "emailTitle": "Iniciar sesión",
+      "emailDescription": "Usa tu dirección del trabajo.",
+      "back": "Atrás",
+      "noAccountMobile": "¿No tienes cuenta? Créala en la consola web."
     },
     "register": {
       "title": "Crea tu cuenta",
@@ -573,7 +579,8 @@
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
       "differentAddress": "Usar otra dirección",
-      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento."
+      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento.",
+      "notReceived": "¿No ha llegado nada? Revisa el correo no deseado o <retry>vuelve a intentarlo</retry>."
     },
     "resetPassword": {
       "title": "Crea una nueva contraseña",
@@ -4128,7 +4135,17 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "account": "Cuenta",
+    "pullRequestsShort": "PRs",
+    "sections": "Secciones",
+    "mobile": {
+      "soonTitle": "Próximamente en el móvil",
+      "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
+      "employees": "Habla con tus empleados desde el móvil.",
+      "pullRequests": "Revisa las pull requests que te necesitan.",
+      "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones."
+    }
   },
   "language": {
     "label": "Idioma",

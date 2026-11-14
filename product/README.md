@@ -1661,3 +1661,9 @@ earlier note:
   nothing the person could find. On 2026-11-12 the owner asked to see them:
   the page lists them under the bot's own in a read-only "Built in" group,
   with a view of the instructions and no edit or delete.
+- The codebase was to keep every app the starter ships, but on 2026-09-23
+  the apps the MVP did not use were pruned, the mobile app among them. On
+  2026-11-14 the owner started 0.5 as a native Expo app: `apps/mobile` came
+  back with its kit and design system, as a shell first (sign-in and the
+  five tabs, Account working), push as its own slice, and no sign-up on the
+  phone (`next-steps/0.5-mobile.md`).

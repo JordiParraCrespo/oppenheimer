@@ -1,5 +1,8 @@
 import '@oppenheimer/env/load';
 import { randomUUID } from 'node:crypto';
+// oppenheimer:begin mobile
+import { expo } from '@better-auth/expo';
+// oppenheimer:end mobile
 import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
@@ -45,6 +48,11 @@ const superadminAc = defaultAc.newRole({
 const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', ...SCOPES];
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+// oppenheimer:begin mobile
+// The mobile app's deep-link scheme, the same variable its app.config.ts reads,
+// so sign-in and password-reset links land back in the app.
+const mobileScheme = process.env.MOBILE_SCHEME ?? 'oppenheimer';
+// oppenheimer:end mobile
 
 // Parsed by the same schema as TypeORM's `database` config. Better Auth owns
 // its own pool rather than TypeORM's, and two pools that disagreed about the
@@ -123,7 +131,12 @@ export const auth = betterAuth({
   // be revoked, so a ban, a deletion or "sign out other devices" would wait out
   // its `maxAge`. See `product/versions/mvp/08-auth.md`.
   secondaryStorage: betterAuthSecondaryStorage,
-  trustedOrigins: [frontendUrl],
+  trustedOrigins: [
+    frontendUrl,
+    // oppenheimer:begin mobile
+    `${mobileScheme}://`,
+    // oppenheimer:end mobile
+  ],
   // Brute-force protection on the auth surface, on everywhere but under test.
   rateLimit: authRateLimit({
     AUTH_RATE_LIMIT_ENABLED: process.env.AUTH_RATE_LIMIT_ENABLED,
@@ -398,6 +411,9 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // oppenheimer:begin mobile
+    expo(),
+    // oppenheimer:end mobile
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
       // (list/ban/impersonate/set-role/...). CASL still governs the app's own

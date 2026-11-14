@@ -24,5 +24,15 @@
   "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
   "plan": "Plan",
   "pullRequests": "Pull requests",
-  "employees": "Empleados"
+  "employees": "Empleados",
+  "account": "Cuenta",
+  "pullRequestsShort": "PRs",
+  "sections": "Secciones",
+  "mobile": {
+    "soonTitle": "Próximamente en el móvil",
+    "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
+    "employees": "Habla con tus empleados desde el móvil.",
+    "pullRequests": "Revisa las pull requests que te necesitan.",
+    "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones."
+  }
 }

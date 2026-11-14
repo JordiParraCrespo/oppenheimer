@@ -144,5 +144,6 @@
     "hosts": "Search hosts",
     "groups": "Search groups",
     "noMatch": "Nothing matches “{{query}}”."
-  }
+  },
+  "error": "Something went wrong"
 }
