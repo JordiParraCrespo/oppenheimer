@@ -14,9 +14,11 @@ import {
   type TaskOrigin,
   type TaskStatus,
 } from '@oppenheimer/shared';
+import { TaskActivityLoggedDomainEvent } from './events/task-activity-logged.domain-event';
 import { TaskChangedDomainEvent } from './events/task-changed.domain-event';
 import { TaskSessionLinkedDomainEvent } from './events/task-session-linked.domain-event';
 import type { PlanActor, PlanChange, PlanWriteKind } from './plan-change.types';
+import { taskActivityOf } from './task-activity.policy';
 import { isRank } from './task-rank.policy';
 
 /** How a session came to be on a task: started from it, or linked afterwards. */
@@ -176,6 +178,28 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
 
   clearChanges(): void {
     this.changes = [];
+  }
+
+  /**
+   * One event per change it logs, for whoever follows its project or
+   * milestone (`27-bot-subscriptions.md` §7.2). Built from the log when the
+   * write stages it, so a placement retried after a rank race raises what
+   * it logs and nothing it replaced.
+   */
+  activityEvents(): TaskActivityLoggedDomainEvent[] {
+    return this.changes.map((change) => {
+      const activity = taskActivityOf(change, this.props.status);
+      return new TaskActivityLoggedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        projectId: change.projectId,
+        milestoneId: change.milestoneId,
+        title: this.props.title,
+        actor: change.actor,
+        ...activity,
+        reason: `A task was ${activity.kind.replace('_', ' ')}; owed to those following its project`,
+      });
+    });
   }
 
   get organizationId(): string {

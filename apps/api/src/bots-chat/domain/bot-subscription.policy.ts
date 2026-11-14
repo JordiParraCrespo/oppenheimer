@@ -33,15 +33,16 @@ export type BotSubscriptionUntil = (typeof BOT_SUBSCRIPTION_UNTIL)[number];
 export type BotWatchFrom = 'first_task' | 'now' | { turn: number } | { answered: number };
 
 /**
- * The resources a bot can follow: a session, or a pull request on GitHub
- * (27 §7). A new kind widens the table's CHECK too.
+ * The resources a bot can follow: a session, a pull request on GitHub
+ * (27 §7), or the tasks of a project or of one milestone (§7.2). A new kind
+ * widens the table's CHECK too.
  */
-export const BOT_SUBSCRIPTION_KINDS = ['session', 'pull_request'] as const;
+export const BOT_SUBSCRIPTION_KINDS = ['session', 'pull_request', 'project', 'milestone'] as const;
 export type BotSubscriptionKind = (typeof BOT_SUBSCRIPTION_KINDS)[number];
 
 /** How many times one subscription may wake its bot; the next wake ends it instead (27 §3). */
 export const BOT_SUBSCRIPTION_WAKE_LIMIT = 20;
-/** How many sessions and pull requests, together, one bot may follow at once. */
+/** How many sessions, pull requests, projects and milestones, together, one bot may follow at once. */
 export const BOT_SUBSCRIPTIONS_PER_BOT = 50;
 /** The longest reason a bot gives for following a session or a pull request. */
 export const BOT_SUBSCRIPTION_PURPOSE_MAX = 500;

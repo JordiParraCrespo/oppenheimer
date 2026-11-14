@@ -9,6 +9,7 @@ import {
 import { GROK_4_5_LEVELS, GROK_LEVELS, levels } from '../agents/effort-levels.js';
 import type { GithubEventType } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
+import { PLAN_TASK_EVENT_KINDS, type PlanTaskEventKind, type TaskStatus } from './task.schema.js';
 
 /**
  * Bot shapes (`product/versions/mvp/25-bots.md`, slice 1): a bot, the sidebar
@@ -772,6 +773,49 @@ export interface BotPullRequestEvent {
 }
 
 /**
+ * What a bot following a project, or one milestone of it, can be woken by
+ * (`27-bot-subscriptions.md` §7.2): the changes Plan logs for a task. The bot
+ * names the ones it wants; `BOT_TASK_WAKE_DEFAULT` is what it follows when it
+ * names none, where the task stands rather than its words or its dates.
+ */
+export const BOT_TASK_WAKE_EVENTS = PLAN_TASK_EVENT_KINDS;
+export const BOT_TASK_WAKE_DEFAULT = [
+  'created',
+  'status_changed',
+  'completed',
+  'reopened',
+  'blocked',
+  'unblocked',
+  'deleted',
+] as const satisfies readonly PlanTaskEventKind[];
+
+/** What a bot follows on the plan: every task of a project, or those under one milestone. */
+export const BOT_PLAN_WATCH_SCOPES = ['project', 'milestone'] as const;
+export type BotPlanWatchScope = (typeof BOT_PLAN_WATCH_SCOPES)[number];
+
+/**
+ * A task on a project or milestone the bot follows changed
+ * (`27-bot-subscriptions.md` §7.2): which task, what Plan logged, and for a
+ * move the column it left and the one it is in. Never its notes.
+ */
+export interface BotTaskEvent {
+  kind: 'task';
+  /** The subscription that woke the bot. */
+  subscriptionId: string;
+  scope: BotPlanWatchScope;
+  projectId: string;
+  milestoneId: string | null;
+  taskId: string;
+  /** The task's title at the change. */
+  title: string;
+  event: PlanTaskEventKind;
+  /** The column it left, for a move, a completion or a reopening; otherwise null. */
+  from: TaskStatus | null;
+  /** The column it is in after the change; null once it is deleted. */
+  to: TaskStatus | null;
+}
+
+/**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Codex's and Grok Bot's
  * goals, `research/lessons-from-long-running-agents.md`): the person sets one
  * with `/goal <condition>`, or the bot with `set_goal`. It has no limit of
@@ -1115,6 +1159,7 @@ export type BotMessageEvent =
   | BotPeerReplyEvent
   | BotSessionEvent
   | BotPullRequestEvent
+  | BotTaskEvent
   | BotGoalEvent
   | BotLoopEvent
   | BotDreamEvent
@@ -1129,6 +1174,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_reply',
   'session',
   'pull_request',
+  'task',
   'goal',
   'loop',
   'dream',

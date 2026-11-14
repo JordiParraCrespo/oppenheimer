@@ -11,6 +11,7 @@ import {
   withBuiltInSkills,
 } from './bot-skill.policy';
 import { sessionWakePrompt } from './bot-subscription.policy';
+import { taskWakePrompt } from './bot-task-wake.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';
 
 /** One of our tools the turn offers, as the model will see it. */
@@ -586,6 +587,7 @@ const EVENT_PROMPTS: EventPrompts = {
   bot_reply: peerReplyPrompt,
   session: sessionWakePrompt,
   pull_request: pullRequestWakePrompt,
+  task: taskWakePrompt,
   goal: (_event, content) => eventNote(content),
   loop: (_event, content) => eventNote(content),
   dream: (_event, content) => eventNote(content),

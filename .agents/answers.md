@@ -19,3 +19,4 @@ Product decisions (what the product does) live in `product/README.md`,
 | 2026-11-10 | Keep `automate-me`? | Not for now; removed. | this file's pull request |
 | 2026-11-09 | Ask the same question twice? | Never. Answers are recorded here. | this file's pull request |
 | 2026-11-11 | With no default repositories, how does a GitHub trigger added before any is picked work? | No default project or repository; the card listens on all picked repositories once Where it runs picks them. | this file's pull request |
+| 2026-11-14 | What are the "tracks" a bot subscribes to on the plan? | Not a separate concept: the user wants bots to subscribe to events on a project's tasks (a status move and the rest, each a kind of event). Built as project and milestone watches with a chosen list of task events; the default is status changes plus blocked and unblocked. | this file's pull request |
