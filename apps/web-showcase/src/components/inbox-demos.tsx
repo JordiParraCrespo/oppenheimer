@@ -216,7 +216,7 @@ function InboxPaneDemo() {
         </InboxMessageActions>
       </InboxMessage>
       <div className="flex min-h-40 border-t border-border-subtle">
-        <InboxClear title="Nothing needs you">
+        <InboxClear title="You're all caught up">
           3 sessions are still running. New items land here when one needs a decision.
         </InboxClear>
       </div>

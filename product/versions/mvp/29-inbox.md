@@ -440,6 +440,9 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
   visit stays under Show done, struck through.
 - **Nothing needs you** replaces "You're clear", with the sessions still
   running.
+- **You're all caught up** (2026-11-14) replaces "Nothing needs you" as the
+  clear pane's heading, centred under a small line drawing of an empty
+  tray; the line under it and the list's own "Nothing needs you." stay.
 
 ## Reports: a problem with its pictures, answered here (2026-11-09)
 

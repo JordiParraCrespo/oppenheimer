@@ -3603,7 +3603,7 @@
       "back": "Back to the list",
       "position": "{{n}} of {{total}}",
       "ago": "{{age}} ago",
-      "clearTitle": "Nothing needs you",
+      "clearTitle": "You're all caught up",
       "clear": "New items land here when one needs a decision.",
       "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
       "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."

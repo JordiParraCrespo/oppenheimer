@@ -7,6 +7,7 @@ import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group
 import { ClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { InboxClearArt } from '../internal/inbox-clear-art';
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import { Skeleton } from './skeleton';
@@ -563,7 +564,10 @@ function InboxQuestionOption({
   );
 }
 
-/** InboxClear — nothing needs you: a heading, and what is still going on, in the reading pane. */
+/**
+ * InboxClear — nothing needs you, centred in the reading pane: the empty
+ * tray, a heading, and what is still going on under it.
+ */
 function InboxClear({
   title,
   children,
@@ -577,12 +581,15 @@ function InboxClear({
     <div
       data-slot="inbox-clear"
       className={cn(
-        'flex max-w-[420px] flex-1 flex-col justify-center gap-1.5 px-10 motion-safe:animate-appear max-sm:px-4',
+        'flex flex-1 flex-col items-center justify-center px-10 pb-12 text-center motion-safe:animate-appear max-sm:px-4',
         className,
       )}
     >
-      <span className="text-[21px] font-semibold tracking-[-0.016em]">{title}</span>
-      {children ? <span className="text-[14px] leading-normal text-fg-muted">{children}</span> : null}
+      <InboxClearArt className="mb-4" />
+      <span className="text-[21px] font-semibold tracking-[-0.016em] text-balance">{title}</span>
+      {children ? (
+        <span className="mt-1.5 max-w-90 text-[14px] leading-normal text-balance text-fg-muted">{children}</span>
+      ) : null}
     </div>
   );
 }
