@@ -48,14 +48,19 @@ const usage = {
 };
 
 /** The SSE body of one streamed response whose output is `item`. */
-function streamOf(id: string, item: Record<string, unknown>, deltas: string[] = []): string {
+function streamOf(
+  id: string,
+  item: Record<string, unknown>,
+  deltas: string[] = [],
+  reported: Record<string, unknown> = usage,
+): string {
   const response = {
     id,
     object: 'response',
     status: 'completed',
     model: 'model-placeholder',
     output: [item],
-    usage,
+    usage: reported,
   };
   const events = [
     { type: 'response.created', response: { ...response, status: 'in_progress', output: [] } },
@@ -430,6 +435,63 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         expect(sent.body).not.toHaveProperty('extraHeaders');
         expect(sent.body).not.toHaveProperty('extra_headers');
       }
+    },
+    TURN_MS,
+  );
+
+  // What breaks this: an Agents SDK whose usage schema takes only numbers in
+  // `input_tokens_details`. ChatGPT's Codex backend now nests an object there
+  // (`cache_write_tokens_details`), and the SDK's own validation of the
+  // response threw, so every subscription turn failed after its answer had
+  // streamed (OPPENHEIMER-API-4, after #855).
+  it(
+    'completes a chatgpt turn whose usage nests an object in its input token details',
+    async () => {
+      const nested = {
+        ...usage,
+        input_tokens_details: {
+          cached_tokens: 4,
+          cache_write_tokens_details: { ephemeral_5m_input_tokens: 7 },
+        },
+      };
+      replies = [
+        streamOf(
+          'resp_n',
+          {
+            type: 'message',
+            id: 'msg_n',
+            role: 'assistant',
+            status: 'completed',
+            content: [{ type: 'output_text', text: 'Hello.', annotations: [] }],
+          },
+          ['Hello.'],
+          nested,
+        ),
+      ];
+      const events: BotEngineEvent[] = [];
+      for await (const event of new ChatgptBotEngine().run({
+        provider: 'chatgpt',
+        apiKey: KEY,
+        accountId: 'account-placeholder',
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'Hi',
+        tools: [],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: 'text.done', text: 'Hello.' });
+      expect(events.find((event) => event.type === 'usage')).toMatchObject({
+        inputTokens: 11,
+        outputTokens: 3,
+        cacheReadTokens: 4,
+      });
+      expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
     },
     TURN_MS,
   );
