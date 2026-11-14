@@ -1,16 +1,14 @@
-import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { CircleCheck, ListChecks, RotateCcw } from '@oppenheimer/design-system-web/icons';
 import { useSuspensePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useReviewDeckKeys } from '../hooks/use-review-deck-keys';
 import { useReviewSearch } from '../hooks/use-review-search';
 import { pullRequestLink } from '../lib/pull-request-search';
 import { filterQueue } from '../lib/queue-filter';
 import { DECK_END, deckKey, deckPosition } from '../lib/review-deck';
 import { BriefAhead } from './brief-ahead';
+import { DeckEnd } from './deck-end';
 import { QueueEmpty } from './queue-empty';
 import { ReviewActions } from './review-actions';
 import { ReviewCard } from './review-card';
@@ -42,8 +40,6 @@ export function ReviewDeck() {
   const [first] = useState(() => (rows[0] ? deckKey(rows[0]) : undefined));
   const { current, previous, next, index, gone } = deckPosition(rows, at ?? first);
   const goPrevious = previous ? () => setAt(deckKey(previous)) : undefined;
-  // On a card, the action bar holds the keys; past the last one, ← goes back to it.
-  useReviewDeckKeys({ onPrevious: current ? undefined : goPrevious });
 
   const queueSearch = { ...filters, scope: scope === 'all' ? undefined : scope };
   if (!rows.length) {
@@ -56,40 +52,12 @@ export function ReviewDeck() {
   }
   if (!current) {
     return (
-      <div className="w-full rounded-xl bg-card py-10">
-        <EmptyState>
-          <EmptyState.Header>
-            <EmptyState.Media variant="icon">
-              <CircleCheck />
-            </EmptyState.Media>
-            <EmptyState.Title>
-              {t(gone ? 'pullRequests.deck.goneTitle' : 'pullRequests.deck.doneTitle')}
-            </EmptyState.Title>
-            <EmptyState.Description>
-              {gone ? null : t('pullRequests.deck.doneHint')}
-            </EmptyState.Description>
-          </EmptyState.Header>
-          <EmptyState.Content>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setAt(rows[0] ? deckKey(rows[0]) : undefined)}
-              >
-                <RotateCcw />
-                {t(gone ? 'pullRequests.deck.fromTop' : 'pullRequests.deck.again')}
-              </Button>
-              <Button
-                variant="secondary"
-                nativeButton={false}
-                render={<Link to="/pulls" search={queueSearch} />}
-              >
-                <ListChecks />
-                {t('pullRequests.detail.back')}
-              </Button>
-            </div>
-          </EmptyState.Content>
-        </EmptyState>
-      </div>
+      <DeckEnd
+        gone={gone}
+        queueSearch={queueSearch}
+        onRestart={() => setAt(rows[0] ? deckKey(rows[0]) : undefined)}
+        onPrevious={goPrevious}
+      />
     );
   }
 
