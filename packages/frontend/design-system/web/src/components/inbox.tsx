@@ -578,7 +578,7 @@ function InboxClearArt({ className }: { className?: string }) {
       fill="none"
       aria-hidden="true"
       focusable="false"
-      className={cn('h-24 w-30 text-fg-subtle', className)}
+      className={cn('h-28 w-35 text-fg-subtle', className)}
     >
       <defs>
         <radialGradient id={glow} className="text-card">
@@ -594,7 +594,7 @@ function InboxClearArt({ className }: { className?: string }) {
         d="M33 42.5 Q33.6 40 36 40 H84 Q86.4 40 87 42.5 L94 54 H26 Z"
         className="fill-canvas-recessed"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.35"
         strokeLinejoin="round"
       />
       <path d="M36 44.5 H84 L89 52 H31 Z" fill="currentColor" opacity="0.07" />
@@ -603,7 +603,7 @@ function InboxClearArt({ className }: { className?: string }) {
         d="M24 55 Q24 54 25 54 H44 Q46 54 47 56 L48.5 59 Q49.5 61 51.5 61 H68.5 Q70.5 61 71.5 59 L73 56 Q74 54 76 54 H95 Q96 54 96 55 L94.5 73 Q94 77 90 77 H30 Q26 77 25.5 73 Z"
         className="fill-card"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.35"
         strokeLinejoin="round"
       />
       <g fill="currentColor">
