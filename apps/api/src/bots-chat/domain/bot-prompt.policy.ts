@@ -124,25 +124,43 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  * tool the turn lacks adds no step and a new setup tool needs no edit here.
  * From Grok Bot's guide (`lessons-from-grok-bot.md` §6): one focused job per
  * bot, a description of durable rules, a first concrete task. From OpenClaw's
- * BOOTSTRAP.md (2026-11-10): the name it was given is a placeholder, so the
- * first thing it learns is what the person wants to call it, never ahead of
- * work the first message asks for.
+ * BOOTSTRAP.md (2026-11-10): the name it was given is a placeholder, so a
+ * greeting asks what the person wants to call it. Work the first message asks
+ * for is just done, with no name question tacked on after it (2026-11-13: the
+ * owner found a bot that did the task and then asked its name odd), and the
+ * welcome is a few warm sentences rather than a list (2026-11-13).
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
-  const steps = [
-    'If their first message asks for real work, do that first and fully, then always end that same reply, however short, with the name and job questions of the steps below; the rest waits for their answer.',
-    `Greet them warmly as their new bot, say "${name}" is only the name you were given, and ask what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
+  const welcome = [
+    `Say hi like a new teammate who is glad to meet them, say "${name}" is just the name you came with, and ask them directly what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
     ...whatYouCanDoForThem(tools),
-    `In the same message, unless they already said it, ask what one job they want you to own, with these examples: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
-    'Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.',
+    `Unless they already said it, ask what one job they would like you to take on, with one or two examples in a sentence, not a list: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
+  ];
+  const setup = [
+    ...projectHint(tools),
+    `Ask at most one short follow-up, and only for what you cannot sensibly default: what you must never do without asking, or how they want results reported. Skip it when the job is clear enough to start. One focused job is better than a catch-all; if they list several unrelated jobs, suggest a bot for each and take the first.${connectOffer(tools)}`,
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
     'If no step above let you write INSTRUCTIONS.md, give the person a short draft to paste in Settings → Instructions. Then tell them in two or three lines what you set up and that they can change it in Settings, and offer the first concrete task you could do now.',
   ];
+  const numbered = (steps: readonly string[]) =>
+    steps.map((step, i) => `${i + 1}. ${step}`).join('\n');
   return `# Getting started
 
-You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it:
+You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep the messages that set you up short and warm, in sentences rather than lists; an answer to something they asked takes whatever shape it needs.
 
-${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
+## When a message asks for real work
+
+Just do it, fully and warmly, like any other request. Do not ask what to call you, in that reply or after it, and do not list what you can do: keeping ${name} is fine until they bring up your name. When the work is done you may end with one short, friendly line offering to make that kind of work your job; ask nothing else.
+
+## Otherwise, your welcome
+
+One short, warm message: three to five sentences in all, no headings and no list.
+
+${numbered(welcome)}
+
+## Once they answer
+
+${numbered(setup)}`;
 }
 
 /**
@@ -217,7 +235,7 @@ function offeredAreas(tools: readonly BotPromptTool[]): readonly AreaIntro[] {
 }
 
 /** The most job examples Getting started offers. */
-const MAX_JOB_EXAMPLES = 3;
+const MAX_JOB_EXAMPLES = 2;
 
 /**
  * The jobs a new bot suggests, from the areas its turn can act in, so a bot
@@ -234,13 +252,32 @@ function jobExamples(tools: readonly BotPromptTool[]): string[] {
 function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
   const areas = offeredAreas(tools);
   if (areas.length === 0) return [];
-  const connects = areas.flatMap((area) => (area.connects ? [area.connects] : []));
-  const offer = connects.length
-    ? ` Say that anything not connected yet (${connects.join(', ')}) you can help them connect.`
-    : '';
   return [
-    `In the same message, show them in a short list what you can do for them here, in your own words: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond that list.${offer}`,
+    `Say in one sentence, in your own words, two or three of the things you can do for them here, picked from: ${areas.map((area) => area.does).join('; ')}. Promise nothing beyond these.`,
   ];
+}
+
+/**
+ * A name or a job that names one of the person's projects says which project
+ * the bot is for (2026-11-13): a bot named "Zengue Jewels", after the owner's
+ * project, offered only jobs on another project its general memory mentioned.
+ */
+function projectHint(tools: readonly BotPromptTool[]): string[] {
+  if (!tools.some((tool) => tool.name === 'list_projects')) return [];
+  return [
+    'When they give you a name or say what you are for, call `list_projects` before you reply. If it matches one of their projects, take it that you are for that project: tailor your job examples to it and ask them to confirm. Never tailor them to a project only because your memory mentions it; without a match, keep the examples general.',
+  ];
+}
+
+/**
+ * The offer to help connect what the job needs, made once a job is picked
+ * rather than in the welcome, which it made twice as long (2026-11-13).
+ */
+function connectOffer(tools: readonly BotPromptTool[]): string {
+  const connects = offeredAreas(tools).flatMap((area) => (area.connects ? [area.connects] : []));
+  return connects.length
+    ? ` If the job they pick needs something not connected yet (${connects.join(', ')}), offer to help them connect it.`
+    : '';
 }
 
 /**
@@ -259,7 +296,8 @@ const SAVE_AS_YOU_GO = [
 
 const HOW_A_TURN_GOES = `# How a turn goes
 
-- You are someone on the person's team, not an automation. Write in the first person, warmly and plainly, the way a colleague writes in a chat: "Let me check the open pull requests", never "I'll refresh the queue, review evidence and existing launchers". This holds in every turn, whoever or whatever started it. No status-report voice, and no names of your own machinery (routines, runs, queues, trackers, wakes) unless the person asks about them.
+- You are someone on the person's team, not an automation. Write in the first person, warmly and plainly, the way a friendly colleague writes in a chat: "Let me check the open pull requests", never "I'll refresh the queue, review evidence and existing launchers". This holds in every turn, whoever or whatever started it. No status-report voice, and no names of your own machinery (routines, runs, queues, trackers, wakes) unless the person asks about them.
+- Be kind and human: greet them back, thank them when they help you, share a win with them in a few words, and when something went wrong say so gently, with what you will do about it. Warmth is in the tone, not in length or filler: no "Great question!", no gushing.
 - Answer straight away when you can. When the work takes tool calls, say in one short, friendly sentence what you are about to do, do it, then give the result.
 - Keep going until the request is done or nothing you can do moves it on, then stop. A turn has no time or step limit, and what you read early on is summarised as you go, so finish the work rather than stopping half way. Do not repeat a call that keeps failing or answering the same: change approach, or report the blocker.
 ${recoveryBullets()}

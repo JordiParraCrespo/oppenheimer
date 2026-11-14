@@ -51,7 +51,12 @@ type BotToolGroup = import('@oppenheimer/shared').BotToolGroup;
 const QUESTIONS = {
   asksName: 'Does the reply ask the person what they would like to call the bot?',
   asksJob: 'Does the reply ask the person what job or task they want the bot to own?',
-  listsCapabilities: 'Does the reply list several things the bot can do for the person?',
+  listsCapabilities: 'Does the reply mention at least two things the bot can do for the person?',
+  short:
+    'Is the reply short: about 120 words or fewer, with no headings and no bulleted or numbered list?',
+  tailorsToZengue:
+    'Do the example jobs the reply suggests concern the Zengue Jewels project (or ask whether the bot is for it)?',
+  tailorsToXrpMobile: 'Does the reply suggest an example job about XRP Mobile?',
   promisesSessions:
     "Does the reply say the bot can start coding agents or sessions, or run commands, on the person's computers?",
   suggestsCodingAgents:
@@ -71,6 +76,8 @@ interface Case {
   toolset: string;
   message: string;
   instructions?: string;
+  /** What the general memory holds about the person. */
+  personFacts?: string[];
   want: Partial<Record<Question, boolean>>;
   wantCalls?: string[];
   wantGeneralMemory?: boolean;
@@ -102,9 +109,11 @@ function stubTools(tools: readonly StubTool[]): EvalTool[] {
       content:
         tool.name === 'list_hosts'
           ? 'No hosts paired yet.'
-          : tool.name === 'remember'
-            ? 'Saved.'
-            : 'Done.',
+          : tool.name === 'list_projects'
+            ? 'XRP Mobile (xrp-mobile); ZENGUE JEWELS (no repositories); Invoices (invoices); SEO (no repositories)'
+            : tool.name === 'remember'
+              ? 'Saved.'
+              : 'Done.',
     }),
   }));
 }
@@ -131,6 +140,7 @@ async function runOnce(via: Transport, data: Cases, item: Case) {
     soul: botSoulFor(data.bot.name),
     instructions: item.instructions ?? '',
     facts: [],
+    personFacts: item.personFacts ?? [],
     engineCapabilities: [],
     tools: stubs.map((stub, i) => ({
       name: stub.name,

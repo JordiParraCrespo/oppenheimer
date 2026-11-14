@@ -38,9 +38,12 @@ colour, with a friendly, proactive `SOUL.md` that says its name
 first name is a placeholder: a name says who it is, the description says
 its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
 its prompt carries a **Getting started** section instead (2026-10-16):
-work the first message asks for comes first, then it asks what to call it
-(2026-11-10, from OpenClaw's `BOOTSTRAP.md`), lists what it can do for
-them from the areas of tools its turn offers (2026-11-10) and learns one job, sets
+work the first message asks for is just done, with no name question after
+it (2026-11-13); otherwise a short, warm welcome of a few sentences asks
+what to call it (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), names two or
+three things it can do for them from the areas of tools its turn offers
+(2026-11-10) and asks for one job; a name or a job that matches one of
+their projects says which project it is for (2026-11-13). Then it sets
 itself up and offers a first task. The steps are `gettingStarted` in
 `bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
 they are the specification, not this paragraph. Names are given first-free, so a deleted
@@ -2206,3 +2209,20 @@ The decisions it produced:
   and its person already told no longer says the blocker on every run.
   Measured with `pnpm eval:bot-blocked-run`, scored on what the chat
   keeps: 30 of 30 runs right, that case 5 of 5.
+- 2026-11-13: **a new bot's welcome is short and warm, a first task is
+  just done, and a name that is a project says what it is for** (§1).
+  The owner found the welcome too long (a list of ten things it could do,
+  an offer to connect five services, three job examples) and a bot that
+  did the task asked of it and then asked its name. 2026-11-11's "always
+  end that same reply with the name and job questions" is gone: work the
+  first message asks for is done like any other request, ending at most
+  with one line offering to make it the bot's job. The welcome is three to
+  five sentences, no list: its name question, two or three things it can
+  do, one or two job examples; the offer to connect waits for the job it
+  needs. A bot named "Zengue Jewels" after the owner's project offered
+  only jobs on another project its general memory named: it now checks
+  `list_projects` when given a name or a job and tailors the examples to
+  the project that matches, never to one only its memory mentions. Every
+  turn's "How a turn goes" also asks for kindness without filler (greet
+  back, thank, share a win, say what went wrong gently).
+  `pnpm eval:bot-first-chat`: 17 of 18 runs right, every case passing.

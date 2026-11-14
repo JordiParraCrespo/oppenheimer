@@ -1665,3 +1665,9 @@ earlier note:
   "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
   to be warmer: it reads "You're all caught up", centred under a small
   drawing of an empty tray; the line under it is unchanged.
+- `versions/mvp/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
+  did the work its first message asked for with its name and job
+  questions. On 2026-11-13 the owner found asking its name after the task
+  odd and the welcome too long: work is now just done, and the welcome is
+  a few warm sentences with no list. A name or job that matches one of the
+  owner's projects now says which project the bot is for.
