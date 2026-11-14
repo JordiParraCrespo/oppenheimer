@@ -1,5 +1,211 @@
 # @oppenheimer/backend-core
 
+## 0.4.0
+
+### Minor Changes
+
+- 18e4a35: A bot turn no longer dies with "unsupported Unicode escape sequence" when a
+  tool brings in text Postgres cannot store, such as an invoice PDF whose text
+  layer holds NUL bytes (#728). The chat's messages drop NULs and replace lone
+  surrogate halves before they are written (`storableText` and `storableJson` in
+  `@oppenheimer/backend-core`), and `read_mail_attachment` cleans what it
+  extracts. A call whose result is still refused fails that call alone, and the
+  turn goes on; any other refused write ends the turn with the new failure kind
+  `storage`, whose card says the fault is ours, not the model provider's.
+- 581c202: Bot settings polish (`product/versions/mvp/25-bots.md`, 2026-10-16).
+
+  - `@oppenheimer/api`: `GET /bots/:id/conversation/export` streams the whole
+    chat as NDJSON, one message per line, a page at a time; `DELETE /bots/:id/conversation` clears it (turns,
+    messages, cards, summary, sidebar line) in one transaction, refused with
+    `BOTS_022` while a turn is queued or running; the conversation read
+    carries `messageCount`.
+  - `@oppenheimer/api-client`: `exportBotConversation`, `clearBotConversation`,
+    `messageCount`.
+  - `@oppenheimer/frontend-consumer`: `useSuspenseBotHistory`,
+    `useExportBotConversation` (reads the NDJSON stream a line at a time),
+    `useClearBotConversation`.
+  - `@oppenheimer/backend-core`: `ndjsonLines` and `NDJSON_CONTENT_TYPE`.
+  - `@oppenheimer/frontend-web`: `SettingsFormSaveRow`, the dirty / pending /
+    saved foot of a settings form.
+  - `@oppenheimer/design-system-web`: `SettingsListRow`'s `kind` tag never wraps;
+    the meta beside it does.
+  - `@oppenheimer/translations`: Home host, chat history, `BOTS_022`, and the
+    shorter ChatGPT sign-in chip.
+
+- 3b73d6f: The API reports errors to Sentry when `SENTRY_DSN` is set.
+
+  - `@oppenheimer/backend-error-reporting` (new): the `ErrorReporter` port,
+    its Sentry driver and a no-op, `initErrorReporting` (run before Nest so
+    HTTP, Express, Postgres, ioredis and BullMQ are traced) and
+    `ErrorReportingModule`. Every event is scrubbed: no body, cookie, token or
+    secret-named parameter, and the user reduced to an id.
+  - `@oppenheimer/backend-core`: `AllExceptionsFilter` reports every 5xx, an
+    unforeseen one as an error and a curated one as a warning grouped by its
+    code, with the route, the user and the workspace.
+  - `@oppenheimer/api`: a BullMQ job out of retries is reported, whichever
+    processor ran it; a bot turn that threw outside the catalog, or that the
+    engine failed without a kind, is reported with its bot, provider and model.
+    `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE` and
+    `SENTRY_TRACES_SAMPLE_RATE` are new; the dev deployment sets the release to
+    its commit. The unused `@sentry/nestjs` dependency moves into the package.
+
+- 2e5879e: Observability for the bots, the cache and the logs. The API exports `bot_engine_*` metrics for every bot turn and completion (runs by how they ended, failures by kind, tokens with the prompt cache's share, duration, tool calls, retries) and `cache_reads_total` for the Redis cache (hits, misses, errors by namespace), with a Grafana dashboard and alerts for both. `LOG_FILE` also writes the API's log lines as JSON to a file, which `pnpm monitoring:up` now ships to Loki through Grafana Alloy, and `pnpm logs` queries with LogQL. `@oppenheimer/backend-cache` takes an `onRead` observer; `@oppenheimer/backend-core`'s logging takes a `file`.
+- 1ee269e: Rate limits are kept before the provider says them, and a bot treats one as
+  a wait.
+
+  - `@oppenheimer/backend-core`: `UpstreamLimiter` takes a `budget` (units a
+    window per bucket) and `exchange` a call's `cost`; a call the window cannot
+    hold pauses the bucket until the window ends and is refused without being
+    sent, shared across replicas through the store's `incrementBy`.
+    `GoogleOAuthClient.fetch` takes the call's units. `upstreamRateLimitOf`
+    reads `{ system, resetAt }` back off any integration's rate-limit problem.
+  - `@oppenheimer/backend-cache`: `CacheService.incrementBy`, one atomic add
+    that sets the TTL of a new key.
+  - `@oppenheimer/api`: Gmail spends each call's quota units from 12,000 a
+    minute per account. A bot's tool answers a rate limit as who is limiting,
+    until when, and not to retry in the turn, without the provider's text; a
+    bulk Gmail write the limit stopped partway answers what it changed and what
+    it did not reach; and a goal's next turn waits for the limit's end instead
+    of running into it again.
+
+- 4c9f67c: `@oppenheimer/backend-core` gains `configKeySealer`, the one sealer every module
+  that stores a secret binds to its own token, and `GoogleOAuthClient`, the Google
+  grant (consent URL, code exchange, access tokens, revocation, every call through
+  the integration's limiter) Gmail and the calendar now share. No behaviour
+  changes: the sealed layout and every error code are as before.
+
+### Patch Changes
+
+- 1df2b19: Long pastes in a bot's chat, the way Claude Code and Codex hold them.
+
+  - `@oppenheimer/web`: the bot composer holds a paste over 1,000 characters or
+    10 lines as one label, `[Pasted text #1 +1000 lines]`, and sends the pasted
+    text in its place; Backspace or Delete takes a label out whole. A message
+    longer than a bot takes keeps send off and says so. A long message you sent
+    is folded in the chat to its first twelve lines, with Show all.
+  - `@oppenheimer/shared`: `BOT_MESSAGE_MAX` is 80,000 characters (was 16,000),
+    room for a pasted log of a thousand lines or more, and never larger than the
+    history a turn re-sends.
+  - `@oppenheimer/api`: the JSON body limit is 512 KB (was Express's 100 KB), so a
+    message at that length reaches the API.
+  - `@oppenheimer/backend-core`: `SanitizePipe` strips tags with a linear scan;
+    its regex took quadratic time on a body of unclosed `<`.
+  - `@oppenheimer/mcp`: `ask_bot` takes the same longer message.
+  - `@oppenheimer/translations`: `bots.chat.pasted`, `bots.chat.fold`,
+    `bots.chat.tooLong`.
+
+- 9e38d81: GitHub webhook deliveries over 100 kB are accepted again: the webhook reads its body raw, up to GitHub's own 25 MB cap, and anything larger gets a 413. A client error that body-parser raises (413, 415, an aborted body) now keeps its status instead of turning into a 500 and an error report.
+- Updated dependencies [a602949]
+- Updated dependencies [7b0e91d]
+- Updated dependencies [1d57cbf]
+- Updated dependencies [43193e4]
+- Updated dependencies [dfd07de]
+- Updated dependencies [1df2b19]
+- Updated dependencies [db21b92]
+- Updated dependencies [344ce8c]
+- Updated dependencies [d314623]
+- Updated dependencies [d5d4fd4]
+- Updated dependencies [c5c09d0]
+- Updated dependencies [be15bdc]
+- Updated dependencies [38ffaaf]
+- Updated dependencies [e315b92]
+- Updated dependencies [a51a958]
+- Updated dependencies [b283349]
+- Updated dependencies [cfa236a]
+- Updated dependencies [434deea]
+- Updated dependencies [0d83e40]
+- Updated dependencies [9ccced3]
+- Updated dependencies [6568fab]
+- Updated dependencies [a7c8731]
+- Updated dependencies [c4b0995]
+- Updated dependencies [be941d8]
+- Updated dependencies [b639f26]
+- Updated dependencies [4faf606]
+- Updated dependencies [3d54930]
+- Updated dependencies [18e4a35]
+- Updated dependencies [7f18bbe]
+- Updated dependencies [8fc6c25]
+- Updated dependencies [39dbe36]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [5dfebed]
+- Updated dependencies [e338973]
+- Updated dependencies [87d0f96]
+- Updated dependencies [39d9703]
+- Updated dependencies [59809f9]
+- Updated dependencies [060dabb]
+- Updated dependencies [a23f236]
+- Updated dependencies [e0047a2]
+- Updated dependencies [f09b6b3]
+- Updated dependencies [3dbe5f1]
+- Updated dependencies [629ea1d]
+- Updated dependencies [bc448db]
+- Updated dependencies [6af341b]
+- Updated dependencies [0f9c3ca]
+- Updated dependencies [2128771]
+- Updated dependencies [f93ffbe]
+- Updated dependencies [8b529a9]
+- Updated dependencies [c11f8a3]
+- Updated dependencies [8baff58]
+- Updated dependencies [9f858e0]
+- Updated dependencies [b39d40f]
+- Updated dependencies [33cb1d8]
+- Updated dependencies [55acf65]
+- Updated dependencies [3230edb]
+- Updated dependencies [f6a81a2]
+- Updated dependencies [61f1092]
+- Updated dependencies [dc67559]
+- Updated dependencies [6eb8d65]
+- Updated dependencies [3b73d6f]
+- Updated dependencies [17e4cd5]
+- Updated dependencies [d68e9c4]
+- Updated dependencies [500ddd1]
+- Updated dependencies [33cb1d8]
+- Updated dependencies [ab9a6f4]
+- Updated dependencies [aeeb48b]
+- Updated dependencies [291469b]
+- Updated dependencies [fda123f]
+- Updated dependencies [85c11ad]
+- Updated dependencies [48da240]
+- Updated dependencies [1484bc6]
+- Updated dependencies [7c0a70c]
+- Updated dependencies [c63402e]
+- Updated dependencies [0ed584c]
+- Updated dependencies [814aa6c]
+- Updated dependencies [5b48b5e]
+- Updated dependencies [9b0c57f]
+- Updated dependencies [6bb3a80]
+- Updated dependencies [a3cf769]
+- Updated dependencies [a3a780b]
+- Updated dependencies [da6226c]
+- Updated dependencies [3b5d381]
+- Updated dependencies [9871b11]
+- Updated dependencies [250c8d6]
+- Updated dependencies [a80436f]
+- Updated dependencies [d4606c6]
+- Updated dependencies [1dbae54]
+- Updated dependencies [6917f62]
+- Updated dependencies [8b772b8]
+- Updated dependencies [fe891c1]
+- Updated dependencies [d69ddc4]
+- Updated dependencies [ea93480]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [1f7f57b]
+- Updated dependencies [b5a9490]
+- Updated dependencies [f8eda6e]
+- Updated dependencies [db4ae58]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+- Updated dependencies [a69aa94]
+- Updated dependencies [2d187ed]
+- Updated dependencies [5b1c52a]
+- Updated dependencies [1af8fa3]
+- Updated dependencies [4ee069d]
+  - @oppenheimer/shared@0.4.0
+  - @oppenheimer/backend-error-reporting@0.2.0
+  - @oppenheimer/backend-ddd@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

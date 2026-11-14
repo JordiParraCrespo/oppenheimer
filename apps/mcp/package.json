@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Model Context Protocol server exposing Oppenheimer (hosts, sessions, automations, bots, tasks) with per-tool permissions",
   "main": "./dist/index.js",
