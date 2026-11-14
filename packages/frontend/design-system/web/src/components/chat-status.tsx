@@ -3,6 +3,7 @@
 import { AlertCircleIcon, AlertTriangleIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { useClampedOverflow } from '../internal/use-clamped-overflow';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
@@ -90,19 +91,7 @@ function ChatErrorBanner({
 }) {
   const label = { details: 'Show details', less: 'Show less', dismiss: 'Dismiss error', ...labels };
   const [open, setOpen] = React.useState(false);
-  const [overflows, setOverflows] = React.useState(false);
-  const ref = React.useRef<HTMLParagraphElement>(null);
-
-  React.useEffect(() => {
-    const box = ref.current;
-    if (!box || open) return;
-    const measure = () => setOverflows(box.scrollHeight > box.clientHeight + 1);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(box);
-    return () => observer.disconnect();
-  }, [open]);
+  const { ref, overflows } = useClampedOverflow<HTMLParagraphElement>(open, children);
 
   return (
     <div
