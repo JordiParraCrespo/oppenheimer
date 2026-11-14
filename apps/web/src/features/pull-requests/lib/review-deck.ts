@@ -22,7 +22,9 @@ export function deckKey(pull: Pick<PullRequestEntity, 'githubRepoId' | 'number'>
 export interface DeckPosition<T> {
   /** The card on screen; null once the deck is done, when it is empty, or when {@link gone}. */
   current: T | null;
-  /** The card after it, which a pass or an action moves to. */
+  /** The card before it, which Previous steps back to; the last card once the deck is done. */
+  previous: T | null;
+  /** The card after it, which a pass, an action or Next moves to. */
   next: T | null;
   /** How many cards came before the one on screen. */
   index: number;
@@ -40,11 +42,19 @@ export function deckPosition<T extends Pick<PullRequestEntity, 'githubRepoId' | 
   rows: readonly T[],
   at: string | undefined,
 ): DeckPosition<T> {
-  if (at === DECK_END) return { current: null, next: null, index: rows.length, gone: false };
+  if (at === DECK_END)
+    return {
+      current: null,
+      previous: rows[rows.length - 1] ?? null,
+      next: null,
+      index: rows.length,
+      gone: false,
+    };
   const found = at === undefined ? 0 : rows.findIndex((row) => deckKey(row) === at);
-  if (found < 0) return { current: null, next: null, index: 0, gone: true };
+  if (found < 0) return { current: null, previous: null, next: null, index: 0, gone: true };
   return {
     current: rows[found] ?? null,
+    previous: rows[found - 1] ?? null,
     next: rows[found + 1] ?? null,
     index: found,
     gone: false,

@@ -5,6 +5,7 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useReviewDeckKeys } from '../hooks/use-review-deck-keys';
 import { useReviewSearch } from '../hooks/use-review-search';
 import { pullRequestLink } from '../lib/pull-request-search';
 import { filterQueue } from '../lib/queue-filter';
@@ -17,7 +18,8 @@ import { ReviewCard } from './review-card';
 /**
  * The review deck: the queue one pull request at a time, in the queue's own
  * order (the deepest lane first, then the longest wait). Each card is acted
- * on or passed and the next one takes its place, until there is none left.
+ * on or stepped past and the next one takes its place, until there is none
+ * left; Previous steps back, from the end too.
  *
  * A card is the high level only, at the pane's width: what the pull request
  * is and what holds it. The diff is one link away (Review in depth), never
@@ -38,7 +40,10 @@ export function ReviewDeck() {
   // first card it drew, by name: a refetch that puts another pull request
   // first must not slide it under the same actions.
   const [first] = useState(() => (rows[0] ? deckKey(rows[0]) : undefined));
-  const { current, next, index, gone } = deckPosition(rows, at ?? first);
+  const { current, previous, next, index, gone } = deckPosition(rows, at ?? first);
+  const goPrevious = previous ? () => setAt(deckKey(previous)) : undefined;
+  // On a card, the action bar holds the keys; past the last one, ← goes back to it.
+  useReviewDeckKeys({ onPrevious: current ? undefined : goPrevious });
 
   const queueSearch = { ...filters, scope: scope === 'all' ? undefined : scope };
   if (!rows.length) {
@@ -122,7 +127,13 @@ export function ReviewDeck() {
       {next ? <BriefAhead key={deckKey(next)} address={next.address} /> : null}
       <div key={deckKey(current)} className="flex animate-appear flex-col gap-4">
         <ReviewCard pull={current} depth={depth} />
-        <ReviewActions pull={current} onActed={moveOn} onPass={moveOn} onOpen={openDepth} />
+        <ReviewActions
+          pull={current}
+          onActed={moveOn}
+          onPrevious={goPrevious}
+          onNext={moveOn}
+          onOpen={openDepth}
+        />
       </div>
     </div>
   );

@@ -235,15 +235,20 @@ test.describe('Pull requests', () => {
       card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
     ).toBeVisible();
 
-    // ── Pass moves on; a merge takes two presses ─────────────────────────────
-    await page.keyboard.press('ArrowLeft');
+    // ── The arrows step through without acting; a merge takes two presses ────
+    await page.keyboard.press('ArrowRight');
     await expect(card.getByRole('heading', { name: 'Dark mode for the dashboard' })).toBeVisible();
-    await page.getByRole('button', { name: /^Pass/ }).click();
+    await page.keyboard.press('ArrowLeft');
+    await expect(
+      card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Next pull request' }).click();
+    await page.getByRole('button', { name: 'Next pull request' }).click();
     await expect(
       card.getByRole('heading', { name: 'Write down the release checklist' }),
     ).toBeVisible();
     await expect(page.getByText('3 of 3')).toBeVisible();
-    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('m');
     await expect(page.getByText(/Merged .*#16/)).toHaveCount(0);
     await page.getByRole('button', { name: /Press again to merge/ }).click();
     await expect(page.getByText(/Merged .*#16/)).toBeVisible({ timeout: 30_000 });

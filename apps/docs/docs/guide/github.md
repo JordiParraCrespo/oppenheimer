@@ -45,7 +45,8 @@ The queue reads the open pull requests of the repositories you watch.
 - Each card shows the pull request's title, author and lane, a **brief** (one sentence of what it changes, the pictures from its description, a few points and where to look first), and its checks, conflicts, size and wait.
 - The brief is written by the deployment's language model from the description and the diff, once per head commit. Where no model is configured it is taken from the author's description instead. The card says which.
 - Pictures the description links to are shown when your browser can load them; pictures attached to a private repository's pull request usually cannot be, and are left out.
-- Actions, each of which moves to the next card: **Pass** (`←`); on your own pull requests **Merge** (`→`, press twice) and **Comment** (`C`); on others' **Approve** (`→`), **Approve and merge** (`M`, press twice) and **Request changes** (`C`). A held key does nothing after its first press.
+- **Previous** (`←`) and **Next** (`→`) step through the cards without acting on them.
+- Actions, each of which moves to the next card: on your own pull requests **Merge** (`M`, press twice) and **Comment** (`C`); on others' **Approve** (`A`), **Approve and merge** (`M`, press twice) and **Request changes** (`C`). A held key does nothing after its first press.
 - A card stays at the high level and never shows the diff: **Review in depth** on the card (Enter) opens the pull request's changes, and Back returns to the same card.
 - After the last card you can walk them again or go back to the queue.
 

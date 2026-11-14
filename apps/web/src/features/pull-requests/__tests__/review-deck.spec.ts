@@ -12,6 +12,7 @@ describe('the review deck’s position', () => {
   it('starts at the first card, with the second one next', () => {
     expect(deckPosition(rows, undefined)).toEqual({
       current: rows[0],
+      previous: null,
       next: rows[1],
       index: 0,
       gone: false,
@@ -21,6 +22,7 @@ describe('the review deck’s position', () => {
   it('stands on the card its address names', () => {
     expect(deckPosition(rows, deckKey(rows[2]))).toEqual({
       current: rows[2],
+      previous: rows[1],
       next: null,
       index: 2,
       gone: false,
@@ -28,11 +30,22 @@ describe('the review deck’s position', () => {
   });
 
   it('shows no card when the one it named has left the queue, never another under the same actions', () => {
-    expect(deckPosition(rows, '9-99')).toEqual({ current: null, next: null, index: 0, gone: true });
+    expect(deckPosition(rows, '9-99')).toEqual({
+      current: null,
+      previous: null,
+      next: null,
+      index: 0,
+      gone: true,
+    });
   });
 
-  it('is done past the last card, and has no card when the queue is empty', () => {
-    expect(deckPosition(rows, DECK_END)).toMatchObject({ current: null, index: 3, gone: false });
+  it('is done past the last card, with the last one a step back, and has no card when the queue is empty', () => {
+    expect(deckPosition(rows, DECK_END)).toMatchObject({
+      current: null,
+      previous: rows[2],
+      index: 3,
+      gone: false,
+    });
     expect(deckPosition([], undefined)).toMatchObject({ current: null, index: 0, gone: false });
   });
 });
