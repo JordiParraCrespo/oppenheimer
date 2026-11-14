@@ -1594,7 +1594,8 @@
         "chars": "[Pasted text #{{n}} {{chars}} chars]"
       },
       "fold": {
-        "showAll": "Show all {{lines}} lines",
+        "showAll_one": "Show the whole line",
+        "showAll_other": "Show all {{count}} lines",
         "showLess": "Show less"
       },
       "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
