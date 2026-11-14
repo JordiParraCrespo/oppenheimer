@@ -64,6 +64,8 @@ A watch can also wake on a line the terminal prints that matches a pattern; the 
 
 **Pull requests.** `watch_pull_request` follows an open pull request on a repository you can read. A check failing or passing, a review, a comment or the merge wakes the bot with the event's facts (kind, number, check name, reviewer's login), never anyone's words; the bot reads the pull request itself. The merge ends the watch. A pull request closed without merging does not end it yet.
 
+**Projects and milestones.** `watch_project` follows every task of a project, and `watch_milestone` the tasks under one milestone. By default a task being added, moving column, being done or reopened, blocked or unblocked, or deleted wakes the bot; ask it to follow other changes too (a new due date, a task moved to another project, a session attached). The bot is told which task, what changed and whether you did it, never the task's notes, and its own changes never wake it. It follows until it unwatches, with no limit on wakes. "Tell me when anything on Web is blocked" is enough.
+
 Ask a bot "what are you watching?" and it lists its watches. There is no list of them in the bot's settings yet; every wake is a line in the chat.
 
 ## Everything that wakes a bot

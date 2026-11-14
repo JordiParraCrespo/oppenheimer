@@ -47,6 +47,7 @@ function subscription(): BotSubscriptionEntity {
       wakes: 0,
       terminalWatch: null,
       matches: 0,
+      taskEvents: null,
       version: 1,
     },
   });

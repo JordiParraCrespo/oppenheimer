@@ -1842,6 +1842,24 @@
           "comment": "Pull request #{{number}} of {{repository}}: new comment",
           "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
         },
+        "task": {
+          "created": "“{{title}}” was added to {{to}}",
+          "status_changed": "“{{title}}” moved from {{from}} to {{to}}",
+          "completed": "“{{title}}” is done",
+          "reopened": "“{{title}}” was reopened to {{to}}",
+          "blocked": "“{{title}}” is blocked",
+          "unblocked": "“{{title}}” is no longer blocked",
+          "deleted": "“{{title}}” was deleted",
+          "rescheduled": "“{{title}}” has a new due date",
+          "reassigned": "“{{title}}” moved to another project or milestone",
+          "session_linked": "A session was attached to “{{title}}”",
+          "column": {
+            "todo": "Not started",
+            "doing": "In progress",
+            "review": "In review",
+            "done": "Done"
+          }
+        },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
           "continuedOpen": "Goal · continuation {{step}}",

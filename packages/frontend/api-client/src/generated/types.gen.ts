@@ -4399,6 +4399,40 @@ export type BotPullRequestEventResponseDto = {
     event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
 };
 
+export type BotTaskEventResponseDto = {
+    kind: 'task';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    /**
+     * What the bot follows: the whole project, or one milestone of it.
+     */
+    scope: 'project' | 'milestone';
+    /**
+     * The project the task is filed under.
+     */
+    projectId: string;
+    milestoneId: string | null;
+    taskId: string;
+    /**
+     * The task's title at the change, cut to 200 characters.
+     */
+    title: string;
+    /**
+     * What Plan logged.
+     */
+    event: 'created' | 'deleted' | 'completed' | 'reopened' | 'status_changed' | 'rescheduled' | 'reassigned' | 'blocked' | 'unblocked' | 'session_linked';
+    /**
+     * The column it left, for a move, a completion or a reopening.
+     */
+    from: 'todo' | 'doing' | 'review' | 'done';
+    /**
+     * The column it is in after the change; null once deleted.
+     */
+    to: 'todo' | 'doing' | 'review' | 'done';
+};
+
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
@@ -4588,7 +4622,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */

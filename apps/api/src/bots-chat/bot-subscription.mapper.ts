@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { BOT_SESSION_WAKE_STATES, botDefaultModel, SCOPES, type Scope } from '@oppenheimer/shared';
 import type { BotEntity } from '../bots/domain/bot.entity';
 import type { WorkSessionEntity } from '../sessions/domain/work-session.entity';
+import { describePlanWatch } from './bot-plan-tool.mapper';
 import { BotSubscriptionOrmEntity } from './database/bot-subscription.orm-entity';
 import type { pullRequestWakeTurn } from './domain/bot-pull-request-wake.policy';
 import { BotSubscriptionEntity, type PullRequestRef } from './domain/bot-subscription.entity';
 import {
+  BOT_SUBSCRIPTION_KINDS,
   BOT_SUBSCRIPTION_UNTIL,
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   type BotSubscriptionUntil,
@@ -17,6 +19,7 @@ import {
   type WatchedTask,
   watchStartOf,
 } from './domain/bot-subscription.policy';
+import { knownTaskEvents } from './domain/bot-task-wake.policy';
 import { formatToolTime, RUNNER_TOO_OLD_ADVICE } from './domain/bot-tool-text.policy';
 
 /**
@@ -47,6 +50,7 @@ export class BotSubscriptionMapper {
     record.terminalWatchId = entity.terminalWatch?.id ?? null;
     record.pattern = entity.terminalWatch?.pattern ?? null;
     record.matches = entity.matches;
+    record.taskEvents = entity.taskEvents ? [...entity.taskEvents] : null;
     record.version = entity.versionAtLoad;
     return record;
   }
@@ -61,7 +65,8 @@ export class BotSubscriptionMapper {
         organizationId: record.organizationId,
         botId: record.botId,
         // CHK_bot_subscription_subject holds the columns to the kind.
-        resourceKind: record.resourceKind === 'pull_request' ? 'pull_request' : 'session',
+        resourceKind:
+          BOT_SUBSCRIPTION_KINDS.find((kind) => kind === record.resourceKind) ?? 'session',
         resourceId: record.resourceId,
         pullRequest:
           record.resourceKind === 'pull_request' &&
@@ -87,6 +92,7 @@ export class BotSubscriptionMapper {
             ? { id: record.terminalWatchId, pattern: record.pattern }
             : null,
         matches: record.matches ?? 0,
+        taskEvents: knownTaskEvents(record.taskEvents),
         version: record.version,
       },
     });
@@ -255,8 +261,10 @@ export class BotSubscriptionMapper {
     return watching;
   }
 
-  /** One line of `list_watches`, a session's or a pull request's. */
+  /** One line of `list_watches`: a session's, a pull request's, a project's or a milestone's. */
   toListLine(subscription: BotSubscriptionEntity, timeZone: string): string {
+    const plan = subscription.plan;
+    if (plan) return describePlanWatch(subscription, plan, timeZone);
     const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
     const pull = subscription.pullRequest;
     if (pull) {

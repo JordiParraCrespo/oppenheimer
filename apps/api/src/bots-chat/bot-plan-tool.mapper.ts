@@ -1,10 +1,18 @@
-import { TASK_STATUSES, type TaskStatus } from '@oppenheimer/shared';
+import {
+  type BotPlanWatchScope,
+  type PlanTaskEventKind,
+  TASK_STATUSES,
+  type TaskStatus,
+} from '@oppenheimer/shared';
 import { type ProjectPlanSummary } from '@oppenheimer/shared/plan';
 import { z } from 'zod/v4';
 import type { ProjectEntity } from './../projects/domain/project.entity';
 import type { PlanActor } from './../tasks/domain/plan-change.types';
 import type { TaskEntity } from './../tasks/domain/task.entity';
 import { type BotToolCallContext } from './application/bot-tool.factory';
+import type { BotSubscriptionEntity } from './domain/bot-subscription.entity';
+import { BOT_SUBSCRIPTION_PURPOSE_MAX } from './domain/bot-subscription.policy';
+import type { TaskActivityFields, TaskWake } from './domain/bot-task-wake.policy';
 import { cut, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
@@ -167,4 +175,65 @@ export function describeSummary(summary: ProjectPlanSummary, name: string | unde
       : '- milestones: none',
   );
   return lines.join('\n');
+}
+
+/** A project or a milestone a bot follows, as its subscription names it. */
+export interface PlanWatch {
+  scope: BotPlanWatchScope;
+  id: string;
+  taskEvents: readonly PlanTaskEventKind[];
+}
+
+/** A new project or milestone subscription from the turn that asked for it (27 §7.2). */
+export function toPlanWatchProps(
+  asker: Pick<
+    BotToolCallContext,
+    'organizationId' | 'botId' | 'turnId' | 'credentialScopes' | 'timeZone'
+  >,
+  watch: PlanWatch,
+  purpose: string | null,
+): Parameters<typeof BotSubscriptionEntity.subscribeToPlan>[0] {
+  return {
+    organizationId: asker.organizationId,
+    botId: asker.botId,
+    scope: watch.scope,
+    resourceId: watch.id,
+    taskEvents: watch.taskEvents,
+    originTurnId: asker.turnId,
+    purpose: purpose?.slice(0, BOT_SUBSCRIPTION_PURPOSE_MAX) ?? null,
+    credentialScopes: asker.credentialScopes,
+    timeZone: asker.timeZone,
+  };
+}
+
+/** One line of `list_watches` for a project or a milestone. */
+export function describePlanWatch(
+  subscription: BotSubscriptionEntity,
+  watch: PlanWatch,
+  timeZone: string,
+): string {
+  const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
+  const parts = [
+    `on ${watch.taskEvents.join(', ')}`,
+    `woke you ${subscription.wakes} time${subscription.wakes === 1 ? '' : 's'}`,
+    `since ${formatToolTime(subscription.createdAt, timeZone)}`,
+  ];
+  return `${watch.scope} ${watch.id} [${parts.join('; ')}]${purpose}`;
+}
+
+/** What a change wakes the bot with: the subscription, the change, and the name read now. */
+export function toTaskWake(
+  subscription: BotSubscriptionEntity,
+  watch: PlanWatch,
+  change: TaskActivityFields,
+  read: { followedName: string | null; ownerUserId: string },
+): TaskWake {
+  return {
+    ...change,
+    subscriptionId: subscription.id,
+    scope: watch.scope,
+    followedName: read.followedName,
+    purpose: subscription.purpose,
+    byOwner: change.actor.userId === read.ownerUserId,
+  };
 }

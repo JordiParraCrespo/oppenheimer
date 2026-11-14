@@ -1,10 +1,12 @@
+import type { BotPlanWatchScope } from '@oppenheimer/shared';
 import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 
 export interface BotSubscriptionRepositoryPort {
   /**
    * Stores a new subscription, or, when the bot already follows that
-   * session or pull request, replaces what it follows and why while keeping its id, its
-   * newest wake and its wake count. Answers the subscription as stored.
+   * session, pull request, project or milestone, replaces what it follows
+   * and why while keeping its id, its newest wake and its wake count.
+   * Answers the subscription as stored.
    */
   subscribe(subscription: BotSubscriptionEntity): Promise<BotSubscriptionEntity>;
 
@@ -17,6 +19,14 @@ export interface BotSubscriptionRepositoryPort {
     organizationId: string,
     githubRepoId: string,
     pullNumber: number,
+  ): Promise<string[]>;
+  /**
+   * The ids of every bot subscription to these projects or these milestones,
+   * in the change's workspace: those a logged change to a task wakes.
+   */
+  findIdsForPlan(
+    organizationId: string,
+    places: { projectIds: readonly string[]; milestoneIds: readonly string[] },
   ): Promise<string[]>;
   /** The subscriptions of one bot, oldest first, at most `limit`. */
   findForBot(
@@ -39,6 +49,8 @@ export interface BotSubscriptionRepositoryPort {
    * one wake each, and never more than `limit` between them.
    */
   claimWake(subscriptionId: string, limit: number): Promise<number | null>;
+  /** Counts a wake of a subscription with no wake limit (a project's or a milestone's). */
+  countWake(subscriptionId: string): Promise<void>;
   /** Gives back a wake claimed for an event that queued no turn. */
   releaseWake(subscriptionId: string): Promise<void>;
   /**
@@ -55,6 +67,15 @@ export interface BotSubscriptionRepositoryPort {
     botId: string,
     pull: { githubRepoId: string; number: number },
   ): Promise<boolean>;
+  /** The bot stops following the project or the milestone. Whether it was following it. */
+  unsubscribePlan(
+    organizationId: string,
+    botId: string,
+    scope: BotPlanWatchScope,
+    resourceId: string,
+  ): Promise<boolean>;
+  /** Every bot stops following a milestone that is gone. How many did. */
+  endForMilestone(organizationId: string, milestoneId: string): Promise<number>;
   /** The subscription that asked for this terminal watch, if one still does. */
   findForTerminalWatch(watchId: string): Promise<BotSubscriptionEntity | null>;
   /**

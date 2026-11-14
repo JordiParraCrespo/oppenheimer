@@ -395,11 +395,62 @@ share their words (`github/domain/github-pull-event.policy.ts`).
   end it. A repository renamed on GitHub is still found (by id), under its
   old name in the list.
 
+### 7.2 As built: `project` and `milestone` (2026-11-14)
+
+The person asked for bots to subscribe to a project's tasks "and more, like
+all of them are events": a bot hears when a task moves column, is done,
+blocked, and so on. The table above had no row for Plan; this is it.
+
+- **The subject.** `"resourceKind"` gains `project` and `milestone`, each
+  named by `"resourceId"` as a session is, and a `"taskEvents"` `jsonb` list
+  of the changes that wake the bot. Two kinds rather than one with a
+  milestone column, so `UQ_bot_subscription_bot_resource` keeps one per bot
+  and place and `IDX_bot_subscription_resource` serves the wake's read.
+  `CHK_bot_subscription_subject` gains the branch: the id, at least one
+  change, `until` `closed`, no pull request and no terminal watch
+  (`1794641550969-AddBotPlanSubscriptions`). A milestone deleted deletes
+  its subscriptions; a project is never deleted, only archived.
+- **What it can follow.** The kinds Plan already logs for a task
+  (`plan_event."kind"`, `BOT_TASK_WAKE_EVENTS`): `created`,
+  `status_changed`, `completed`, `reopened`, `blocked`, `unblocked`,
+  `deleted`, `rescheduled`, `reassigned`, `session_linked`. The default,
+  `BOT_TASK_WAKE_DEFAULT`, is where a task stands, everything but the last
+  three.
+- **The event.** Plan's log was the only record of a change; nothing was
+  raised per change. The task now raises `TaskActivityLoggedDomainEvent`
+  for each `plan_event` row its write logs, staged in the same transaction:
+  the kind, the project and milestone, where it was filed before (for a
+  `reassigned`, so followers of the place it left hear of it), the title,
+  the columns it moved between, and who made it. Never its notes.
+  `BotTaskWakeDomainEventHandler` finds the subscriptions to its project or
+  milestone and dispatches `WakeOnTaskActivityCommand` per subscription.
+- **The tools.** `watch_project { project_id, events?, purpose? }`,
+  `watch_milestone { milestone_id, events?, purpose? }`, and their
+  `unwatch_` pairs, listed under Plan in Settings, Permissions
+  (`tasks:read`). A watch reads the project or milestone as the owner and
+  refuses one the owner cannot read. Neither asks. `list_watches` lists
+  them with the rest; the 50-a-bot limit counts them too.
+- **The wake.** As for a pull request, it is the change, not a fresh read
+  of the task: the bot reads it with `get_task`. It re-resolves the bot,
+  its owner and the project or milestone as the owner reads it now, and
+  ends the subscription (`access_lost`) when any is gone. The turn is
+  keyed `subscription:<id>:task:<event id>`, so a redelivery is one turn,
+  and opens with a `task` event line in the chat. The title is fenced as
+  outside text.
+- **No wake limit; no waking itself.** A project is followed for as long as
+  it is worked on, so 20 wakes would end it in a day. What bounds it
+  instead: a change the bot itself made (an agent actor with its id) never
+  wakes it, so a bot that moves a task in reply is not woken by its move.
+  Two bots that follow one project and move each other's tasks could
+  still wake each other; a rate limit per subscription is the answer on
+  file if that is seen.
+
 ## 8. Visibility
 
 - `list_watches` shows the bot its active subscriptions: session, purpose,
   until, wakes so far, since when; and, since §7.1, the pull requests it
-  follows.
+  follows, and since §7.2 the projects and milestones, with the changes
+  each one wakes it on.
 - A wake is a line in the chat, so the person sees every one.
 - `GET /v1/bots/:id/subscriptions` and a list in bot settings wait for
   slice B.
@@ -413,7 +464,8 @@ share their words (`github/domain/github-pull-event.policy.ts`).
 - **B. Visibility in the console**: the subscriptions list on the bot's
   settings, with Unwatch.
 - **C. More kinds**: automation runs, then pull requests (§7). Pull
-  requests were built first, 2026-11-03 (§7.1).
+  requests were built first, 2026-11-03 (§7.1), then projects and
+  milestones, 2026-11-14 (§7.2).
 
 ## Decided
 

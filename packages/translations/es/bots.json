@@ -314,6 +314,24 @@
         "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
         "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
       },
+      "task": {
+        "created": "«{{title}}» se añadió a {{to}}",
+        "status_changed": "«{{title}}» pasó de {{from}} a {{to}}",
+        "completed": "«{{title}}» está hecha",
+        "reopened": "«{{title}}» se reabrió en {{to}}",
+        "blocked": "«{{title}}» está bloqueada",
+        "unblocked": "«{{title}}» ya no está bloqueada",
+        "deleted": "«{{title}}» se eliminó",
+        "rescheduled": "«{{title}}» tiene una nueva fecha de entrega",
+        "reassigned": "«{{title}}» pasó a otro proyecto o hito",
+        "session_linked": "Se adjuntó una sesión a «{{title}}»",
+        "column": {
+          "todo": "Sin empezar",
+          "doing": "En curso",
+          "review": "En revisión",
+          "done": "Hecha"
+        }
+      },
       "goal": {
         "continued": "Objetivo · continuación {{step}} de {{limit}}",
         "continuedOpen": "Objetivo · continuación {{step}}",

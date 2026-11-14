@@ -11,7 +11,8 @@ import {
 
 /**
  * A bot following work it delegated (`1791003300000-AddBotSubscriptions`), a
- * session or a pull request (`1793707588046-AddBotPullRequestSubscriptions`).
+ * session or a pull request (`1793707588046-AddBotPullRequestSubscriptions`),
+ * or the tasks of a project or a milestone (`1794641550969-AddBotPlanSubscriptions`).
  */
 @Entity('bot_subscription')
 @Index(
@@ -33,10 +34,13 @@ import {
 @Index('IDX_bot_subscription_pull_request', ['organizationId', 'githubRepoId', 'pullNumber'], {
   where: `"resourceKind" = 'pull_request'`,
 })
-@Check('CHK_bot_subscription_resource_kind', `"resourceKind" IN ('session', 'pull_request')`)
+@Check(
+  'CHK_bot_subscription_resource_kind',
+  `"resourceKind" IN ('session', 'pull_request', 'project', 'milestone')`,
+)
 @Check(
   'CHK_bot_subscription_subject',
-  `("resourceKind" = 'session' AND "resourceId" IS NOT NULL AND num_nonnulls("githubRepoId", "pullNumber", "repositoryFullName") = 0) OR ("resourceKind" = 'pull_request' AND "resourceId" IS NULL AND "githubRepoId" IS NOT NULL AND "githubRepoId" > 0 AND "pullNumber" IS NOT NULL AND "pullNumber" >= 1 AND "repositoryFullName" IS NOT NULL AND char_length("repositoryFullName") > 0 AND "until" = 'closed' AND "terminalWatchId" IS NULL)`,
+  `("resourceKind" = 'session' AND "resourceId" IS NOT NULL AND num_nonnulls("githubRepoId", "pullNumber", "repositoryFullName", "taskEvents") = 0) OR ("resourceKind" = 'pull_request' AND "resourceId" IS NULL AND "githubRepoId" IS NOT NULL AND "githubRepoId" > 0 AND "pullNumber" IS NOT NULL AND "pullNumber" >= 1 AND "repositoryFullName" IS NOT NULL AND char_length("repositoryFullName") > 0 AND "taskEvents" IS NULL AND "until" = 'closed' AND "terminalWatchId" IS NULL) OR ("resourceKind" IN ('project', 'milestone') AND "resourceId" IS NOT NULL AND num_nonnulls("githubRepoId", "pullNumber", "repositoryFullName") = 0 AND "taskEvents" IS NOT NULL AND jsonb_typeof("taskEvents") = 'array' AND jsonb_array_length("taskEvents") > 0 AND "until" = 'closed' AND "terminalWatchId" IS NULL)`,
 )
 @Check('CHK_bot_subscription_until', `"until" IN ('task', 'closed')`)
 @Check(
@@ -72,7 +76,10 @@ export class BotSubscriptionOrmEntity {
   @Column({ type: 'varchar', length: 32 })
   resourceKind!: string;
 
-  /** The followed session; no foreign key, it is polymorphic over `resourceKind`. Null for a pull request. */
+  /**
+   * The followed session, project or milestone; no foreign key, it is
+   * polymorphic over `resourceKind`. Null for a pull request.
+   */
   @Column({ type: 'uuid', nullable: true })
   resourceId!: string | null;
 
@@ -128,6 +135,10 @@ export class BotSubscriptionOrmEntity {
 
   @Column({ type: 'int', default: 0 })
   matches!: number;
+
+  /** The task changes (`plan_event` kinds) that wake the bot, for a project or a milestone; null otherwise. */
+  @Column({ type: 'jsonb', nullable: true })
+  taskEvents!: string[] | null;
 
   @Column({ type: 'integer', default: 1 })
   version!: number;

@@ -273,12 +273,12 @@ export class TaskRepository
     if (result.affected !== 1) throw new VersionConflict();
   }
 
-  /** The task's changes to `plan_event`, and its events to the outbox, on the write's manager. */
+  /** The task's changes to `plan_event`, and its events and one per change to the outbox, on the write's manager. */
   private async logAndStage(manager: EntityManager, task: TaskEntity): Promise<void> {
     const subject = { organizationId: task.organizationId, type: 'task' as const, id: task.id };
     const records = task.changesToLog.map((change) => this.events.toRecord(subject, change));
     if (records.length > 0) await manager.getRepository(PlanEventOrmEntity).save(records);
-    await this.outbox.stageEvents(manager, task.domainEvents);
+    await this.outbox.stageEvents(manager, [...task.domainEvents, ...task.activityEvents()]);
   }
 
   private async withRankRetry(attempt: () => Promise<void>): Promise<void> {

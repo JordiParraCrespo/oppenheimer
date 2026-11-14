@@ -6,24 +6,30 @@ import {
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_MESSAGE_ROLES,
+  BOT_PLAN_WATCH_SCOPES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
+  BOT_TASK_WAKE_EVENTS,
   type BotApprovalEventStage,
   type BotDreamActivity,
   type BotEventOutcome,
   type BotGoalActivity,
   type BotLoopActivity,
   type BotMessageRole,
+  type BotPlanWatchScope,
   type BotQuestionOutcome,
   type BotReplyOutcome,
   type BotRoutineActivity,
   type BotSessionEventState,
   type BotSubagentStatus,
+  type PlanTaskEventKind,
   PULL_REQUEST_WAKE_EVENTS,
   type PullRequestWakeEvent,
+  TASK_STATUSES,
+  type TaskStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
@@ -341,6 +347,50 @@ export class BotPullRequestEventResponseDto {
   event!: PullRequestWakeEvent;
 }
 
+/** A task on a project or milestone the bot follows changed (`27-bot-subscriptions.md` §7.2). */
+export class BotTaskEventResponseDto {
+  @ApiProperty({ enum: ['task'] })
+  kind!: 'task';
+
+  @ApiProperty({ format: 'uuid', description: 'The subscription that woke the bot.' })
+  subscriptionId!: string;
+
+  @ApiProperty({
+    enum: BOT_PLAN_WATCH_SCOPES,
+    description: 'What the bot follows: the whole project, or one milestone of it.',
+  })
+  scope!: BotPlanWatchScope;
+
+  @ApiProperty({ format: 'uuid', description: 'The project the task is filed under.' })
+  projectId!: string;
+
+  @ApiProperty({ type: String, format: 'uuid', nullable: true })
+  milestoneId!: string | null;
+
+  @ApiProperty({ format: 'uuid' })
+  taskId!: string;
+
+  @ApiProperty({ description: "The task's title at the change, cut to 200 characters." })
+  title!: string;
+
+  @ApiProperty({ enum: BOT_TASK_WAKE_EVENTS, description: 'What Plan logged.' })
+  event!: PlanTaskEventKind;
+
+  @ApiProperty({
+    enum: TASK_STATUSES,
+    nullable: true,
+    description: 'The column it left, for a move, a completion or a reopening.',
+  })
+  from!: TaskStatus | null;
+
+  @ApiProperty({
+    enum: TASK_STATUSES,
+    nullable: true,
+    description: 'The column it is in after the change; null once deleted.',
+  })
+  to!: TaskStatus | null;
+}
+
 export class BotGoalEventResponseDto {
   @ApiProperty({ enum: ['goal'] })
   kind!: 'goal';
@@ -462,6 +512,7 @@ export type BotMessageEventResponseDto =
   | BotPeerReplyEventResponseDto
   | BotSessionEventResponseDto
   | BotPullRequestEventResponseDto
+  | BotTaskEventResponseDto
   | BotGoalEventResponseDto
   | BotLoopEventResponseDto
   | BotDreamEventResponseDto
@@ -476,6 +527,7 @@ export type BotMessageEventResponseDto =
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
   BotPullRequestEventResponseDto,
+  BotTaskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
   BotDreamEventResponseDto,
@@ -512,6 +564,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
       { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
+      { $ref: getSchemaPath(BotTaskEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
       { $ref: getSchemaPath(BotDreamEventResponseDto) },

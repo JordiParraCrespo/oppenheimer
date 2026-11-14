@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
+import type { PlanTaskEventKind } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
@@ -2890,6 +2891,67 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(
         BOT_SUBSCRIPTION_WAKE_LIMIT,
       );
+    });
+
+    // §7.2. What breaks this: a project's subscription refused by the table's
+    // checks, a change to a task not finding the bots that follow its
+    // project or milestone, watching again resetting the count, or a
+    // deleted milestone's subscriptions left behind.
+    it('stores a project or milestone watch, finds it by either place, and ends a milestone one', async () => {
+      const bot = await create('Plan watcher');
+      const project = randomUUID();
+      const milestone = randomUUID();
+      const plan = (
+        scope: 'project' | 'milestone',
+        resourceId: string,
+        taskEvents: PlanTaskEventKind[],
+      ) =>
+        BotSubscriptionEntity.subscribeToPlan({
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          scope,
+          resourceId,
+          taskEvents,
+          originTurnId: null,
+          purpose: null,
+          credentialScopes: null,
+          timeZone: null,
+        });
+      const onProject = await subscriptions.subscribe(plan('project', project, ['completed']));
+      const onMilestone = await subscriptions.subscribe(plan('milestone', milestone, ['blocked']));
+      expect(onProject.plan).toEqual({ scope: 'project', id: project, taskEvents: ['completed'] });
+      await subscriptions.countWake(onProject.id);
+
+      const again = await subscriptions.subscribe(plan('project', project, ['created', 'deleted']));
+      expect(again).toMatchObject({ id: onProject.id, wakes: 1 });
+      expect(again.taskEvents).toEqual(['created', 'deleted']);
+
+      expect(
+        (
+          await subscriptions.findIdsForPlan(bot.organizationId, {
+            projectIds: [project],
+            milestoneIds: [milestone],
+          })
+        ).sort(),
+      ).toEqual([onProject.id, onMilestone.id].sort());
+      expect(
+        await subscriptions.findIdsForPlan(bot.organizationId, {
+          projectIds: [randomUUID()],
+          milestoneIds: [],
+        }),
+      ).toEqual([]);
+
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET "taskEvents" = '[]'::jsonb WHERE id = $1`, [
+          onProject.id,
+        ]),
+      ).rejects.toThrow(/CHK_bot_subscription_subject/);
+
+      expect(await subscriptions.endForMilestone(bot.organizationId, milestone)).toBe(1);
+      expect(
+        await subscriptions.unsubscribePlan(bot.organizationId, bot.id, 'project', project),
+      ).toBe(true);
+      expect(await subscriptions.countForBot(bot.organizationId, bot.id)).toBe(0);
     });
 
     it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {
