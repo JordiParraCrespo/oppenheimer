@@ -14,6 +14,7 @@ import {
   retryContent,
   turnDurationMs,
   turnPhase,
+  visibleTurns,
 } from '../lib/chat-turns';
 
 /** How the chat reads the stored conversation: as turns, each your message and the bot's work. */
@@ -378,5 +379,39 @@ describe('isQuietRoutineRun', () => {
   it('keeps a turn you opened, however little it said', () => {
     const asked = { id: 'm1', turnId: 't1', role: 'user' } as BotMessageEntity;
     expect(isQuietRoutineRun(block('completed', [tools()], [asked]), false)).toBe(false);
+  });
+});
+
+describe('a task wake while the tool calls are hidden', () => {
+  // What breaks this: a bot following a project filling the chat with a line
+  // for every task that moved, when the reader asked to see only what the
+  // bot says; or the hiding swallowing the bot's reply to a wake.
+  const wake = (turnId: string) =>
+    ({
+      id: `e-${turnId}`,
+      turnId,
+      role: 'event',
+      event: { kind: 'task', event: 'status_changed' },
+    }) as unknown as BotMessageEntity;
+  const ran = (turnId: string) =>
+    ({ id: `a-${turnId}`, turnId, role: 'activity', steps: [] }) as unknown as BotMessageEntity;
+  const done = (id: string) => ({ id, status: 'completed' }) as BotTurnEntity;
+  const blocks = chatTurns(
+    conversation(
+      [wake('t1'), ran('t1'), wake('t2'), message('r2', 't2', 'assistant')],
+      [done('t1'), done('t2')],
+    ),
+  );
+
+  it('draws no task line, leaves out a wake the bot said nothing to, and keeps its reply', () => {
+    const hidden = visibleTurns(blocks, false);
+    expect(hidden.map((block) => block.key)).toEqual(['t2']);
+    expect(hidden[0].asked).toEqual([]);
+    expect(hidden[0].answer.map((row) => row.id)).toEqual(['r2']);
+  });
+
+  it('draws every task line once the tool calls show', () => {
+    const shown = visibleTurns(blocks, true);
+    expect(shown.map((block) => block.asked.map((row) => row.id))).toEqual([['e-t1'], ['e-t2']]);
   });
 });

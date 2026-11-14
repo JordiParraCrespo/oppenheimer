@@ -435,8 +435,11 @@ blocked, and so on. The table above had no row for Plan; this is it.
   its owner and the project or milestone as the owner reads it now, and
   ends the subscription (`access_lost`) when any is gone. The turn is
   keyed `subscription:<id>:task:<event id>`, so a redelivery is one turn,
-  and opens with a `task` event line in the chat. The title is fenced as
-  outside text.
+  and opens with a `task` event line. The chat draws that line only while
+  its tool calls are shown (the wrench, 2026-11-14 at the person's ask);
+  hidden, the wake reads as the bot writing, and one it said nothing to is
+  left out, as a quiet routine run is. The title is fenced as outside
+  text.
 - **No wake limit; no waking itself.** A project is followed for as long as
   it is worked on, so 20 wakes would end it in a day. What bounds it
   instead: a change the bot itself made (an agent actor with its id) never
@@ -451,7 +454,10 @@ blocked, and so on. The table above had no row for Plan; this is it.
   until, wakes so far, since when; and, since §7.1, the pull requests it
   follows, and since §7.2 the projects and milestones, with the changes
   each one wakes it on.
-- A wake is a line in the chat, so the person sees every one.
+- A wake is a line in the chat, so the person sees every one. Since §7.2,
+  a task's wake is drawn only while the chat shows its tool calls (the
+  wrench): the person asked to see the plan's events only in that mode, and
+  otherwise reads only what the bot says about them.
 - `GET /v1/bots/:id/subscriptions` and a list in bot settings wait for
   slice B.
 

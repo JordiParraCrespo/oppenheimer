@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The wrench in a bot chat's bar that shows or hides the tool calls in the
- * transcript, and the routine runs that did nothing else; lit while they are
- * shown. Props in, choice out.
+ * transcript, the routine runs that did nothing else, and the lines for the
+ * tasks a followed project changed; lit while they are shown. Props in,
+ * choice out.
  */
 export function ToolCallsToggle({
   shown,

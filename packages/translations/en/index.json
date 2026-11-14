@@ -1896,8 +1896,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls and routine runs",
-      "showToolCalls": "Show tool calls and routine runs",
+      "hideToolCalls": "Hide tool calls, routine runs and task updates",
+      "showToolCalls": "Show tool calls, routine runs and task updates",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
