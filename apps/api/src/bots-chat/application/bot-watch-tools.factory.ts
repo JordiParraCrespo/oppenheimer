@@ -150,7 +150,7 @@ export class BotWatchToolsFactory implements BotToolArea {
       scope: 'sessions:read',
       readOnly: true,
       description:
-        'Lists the sessions and pull requests you follow: each one, why, until when, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request.',
+        'Lists the sessions, pull requests, projects and milestones you follow: each one, why, until when or on which changes, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request, a task with get_task.',
       input: z.object({}),
       run: async (_input, context) => {
         const watched = await this.subscriptions.findForBot(
@@ -158,7 +158,8 @@ export class BotWatchToolsFactory implements BotToolArea {
           context.botId,
           BOT_SUBSCRIPTIONS_PER_BOT,
         );
-        if (!watched.length) return 'You follow no sessions and no pull requests.';
+        if (!watched.length)
+          return 'You follow no sessions, pull requests, projects or milestones.';
         return watched
           .map((subscription) => this.mapper.toListLine(subscription, context.timeZone))
           .join('\n');
