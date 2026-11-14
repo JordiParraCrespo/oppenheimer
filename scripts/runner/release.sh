@@ -103,7 +103,9 @@ bundle() {
 	fi
 	"$RCODESIGN" sign --p12-file "$MACOS_SIGN_P12" --p12-password-file "$P12_PASSWORD_FILE" \
 		--code-signature-flags runtime "$app"
-	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --staple "$app"
+	# rcodesign gives up after 600 s, and Apple can hold a team's first
+	# submissions "In Progress" far longer (runner-v0.1.13 timed out twice).
+	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --max-wait-seconds 3600 --staple "$app"
 }
 OUT="$ROOT/dist/runner"
 KEYS_VAR="github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release.PublicKeys"
