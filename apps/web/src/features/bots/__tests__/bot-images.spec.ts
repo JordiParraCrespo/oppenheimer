@@ -12,7 +12,8 @@ const held = (status: HeldImage['status']): HeldImage => ({
   key: status,
   file: new File(['x'], 'x.png', { type: 'image/png' }),
   status,
-  attachmentId: status === 'ready' ? 'a1' : null,
+  attachment:
+    status === 'ready' ? { id: 'a1', mimeType: 'image/png', sizeBytes: 1, name: 'x.png' } : null,
   error: null,
 });
 

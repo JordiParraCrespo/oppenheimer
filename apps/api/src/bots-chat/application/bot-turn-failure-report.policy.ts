@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import { BotTurnMapper } from '../bot-turn.mapper';
+import { TurnGoneError } from '../database/bot-message.repository.port';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /**
@@ -9,7 +10,8 @@ import type { BotTurnEntity } from '../domain/bot-turn.entity';
  * fix. An error thrown around the engine that the catalog does not know is an
  * error; a failure the engine could not put a kind to (`other`) is a warning.
  * A failure with a kind (a rate limit, a refused key, the time limit) is the
- * provider's or the person's, and the chat already says so.
+ * provider's or the person's, and the chat already says so; a turn deleted
+ * under its worker (`TurnGoneError`, its bot deleted mid-turn) is no one's.
  */
 @Injectable()
 export class BotTurnFailureReportPolicy {
@@ -24,10 +26,11 @@ export class BotTurnFailureReportPolicy {
     );
   }
 
-  /** After the turn threw. */
-  thrown(turn: BotTurnEntity, error: unknown): void {
-    if (error instanceof AppError) return;
+  /** After the turn threw; whether it was reported. */
+  thrown(turn: BotTurnEntity, error: unknown): boolean {
+    if (error instanceof AppError || error instanceof TurnGoneError) return false;
     this.reporter.capture(error, BotTurnMapper.toErrorReport(turn, 'error'));
+    return true;
   }
 }
 

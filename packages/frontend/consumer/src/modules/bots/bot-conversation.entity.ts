@@ -251,6 +251,15 @@ export class BotConversationEntity {
     const turn = this.turn(turnId);
     return turn !== undefined && !turn.isActive;
   }
+
+  /** This conversation holding other lines, as of the same read. */
+  withLines(
+    messages: readonly BotMessageEntity[],
+    turns: readonly BotTurnEntity[],
+    messageCount: number,
+  ): BotConversationEntity {
+    return new BotConversationEntity(messages, turns, messageCount, this.textBlocksStored);
+  }
 }
 
 /**

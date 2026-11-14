@@ -1,8 +1,14 @@
 'use client';
 
-import { useQueries, useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
+import {
+  type HookMutationOptions,
+  useQueries,
+  useQuery,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
-import { type QueryClient, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, skipToken, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type {
   BotApprovalEntity,
@@ -42,6 +48,7 @@ import {
   noteBotRetry,
   putBotSnapshot,
 } from '../modules/bots/live-text';
+import { type BotSending, withBotSendings } from '../modules/bots/sending';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
@@ -51,12 +58,39 @@ import { mutation } from './mutation';
  * conversation, sending, Stop, and the text a running turn is writing.
  */
 
+/** What a send drew in the chat, kept while the API answers it. */
+interface SendBotMessageContext {
+  sending: BotSending | null;
+}
+
+const NO_SENDINGS: readonly BotSending[] = [];
+
+/**
+ * Your sends to the bot the API has not answered yet, oldest first: their
+ * own entry in the cache, never read from the API, which the send writes
+ * and every reader of the chat lays over it ({@link withBotSendings}). The
+ * stored conversation is never changed for them, so a read landing while
+ * you wait cannot take one away, and a refusal only drops its entry.
+ */
+function useBotSendings(id: string): readonly BotSending[] {
+  const { data } = useQuery<readonly BotSending[]>({
+    queryKey: botsKeys.sendings(id),
+    // Never read from the API: only the send writes it.
+    queryFn: skipToken,
+    initialData: NO_SENDINGS,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  return data ?? NO_SENDINGS;
+}
+
 /** The newest messages, oldest first, and their turns, under a Suspense `QueryState`. */
 export function useSuspenseBotConversation(id: string) {
   const app = useConsumerApp();
+  const sendings = useBotSendings(id);
   return useSuspenseQuery<BotConversationEntity, Error>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
+    select: (conversation) => withBotSendings(conversation, sendings),
   });
 }
 
@@ -71,14 +105,18 @@ export interface BotHistory {
 /** The chat read as Settings → Profile's history row draws it, under a Suspense `QueryState`. */
 export function useSuspenseBotHistory(id: string) {
   const app = useConsumerApp();
+  const sendings = useBotSendings(id);
   return useSuspenseQuery<BotConversationEntity, Error, BotHistory>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
-    select: (conversation) => ({
-      messageCount: conversation.messageCount,
-      lastMessageAt: conversation.lastMessageAt,
-      busy: conversation.activeTurn !== null,
-    }),
+    select: (stored) => {
+      const conversation = withBotSendings(stored, sendings);
+      return {
+        messageCount: conversation.messageCount,
+        lastMessageAt: conversation.lastMessageAt,
+        busy: conversation.activeTurn !== null,
+      };
+    },
   });
 }
 
@@ -136,10 +174,11 @@ export const useClearBotConversation = mutation<void, string>({
  */
 export function useBotActiveTurn(id: string): BotTurnEntity | null {
   const app = useConsumerApp();
+  const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, BotTurnEntity | null>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
-    select: (conversation) => conversation.activeTurn,
+    select: (conversation) => withBotSendings(conversation, sendings).activeTurn,
   });
   return data ?? null;
 }
@@ -152,10 +191,11 @@ const NO_WAITING: readonly BotWaitingMessage[] = [];
  */
 export function useBotWaitingMessages(id: string): readonly BotWaitingMessage[] {
   const app = useConsumerApp();
+  const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, readonly BotWaitingMessage[]>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
-    select: (conversation) => conversation.waitingMessages,
+    select: (conversation) => withBotSendings(conversation, sendings).waitingMessages,
   });
   return data ?? NO_WAITING;
 }
@@ -165,10 +205,11 @@ const NO_SENT: readonly string[] = [];
 /** What you wrote to the bot, newest first, for the composer to recall: nothing while the chat loads. */
 export function useBotSentTexts(id: string): readonly string[] {
   const app = useConsumerApp();
+  const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, readonly string[]>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
-    select: (conversation) => conversation.sentTexts,
+    select: (conversation) => withBotSendings(conversation, sendings).sentTexts,
   });
   return data ?? NO_SENT;
 }
@@ -178,10 +219,11 @@ const NO_ROOM: BotRoomLeft = { context: null, planLimits: null };
 /** How much room the bot has left, as of its newest turn that said; none while the chat loads. */
 export function useBotRoomLeft(id: string): BotRoomLeft {
   const app = useConsumerApp();
+  const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, BotRoomLeft>({
     queryKey: botsKeys.conversation(id),
     queryFn: () => app.bots.findConversation(id),
-    select: (conversation) => conversation.roomLeft,
+    select: (conversation) => withBotSendings(conversation, sendings).roomLeft,
   });
   return data ?? NO_ROOM;
 }
@@ -210,17 +252,70 @@ export interface SendBotMessageVariables {
   id: string;
   content: string;
   /** Images uploaded for the message (`useUploadBotImage`), in the order attached. */
-  attachmentIds?: readonly string[];
+  attachments?: readonly BotAttachment[];
   /** Into the turn under way, at its next tool call, rather than after it. */
   steer?: boolean;
 }
 
-/** Says something to the bot. The chat is read again for the message and its turn. */
-export const useSendBotMessage = mutation<BotTurnEntity, SendBotMessageVariables>({
-  run: (app, { id, content, attachmentIds, steer }) =>
-    app.bots.sendMessage(id, content, attachmentIds, steer),
-  update: (queryClient, _turn, { id }) => refetchChat(queryClient, id, true),
-});
+/**
+ * Says something to the bot, optimistically: the send is drawn at once,
+ * laid over the chat until the API answers ({@link useBotSendings}). On
+ * success the chat is read again for the stored message and its turn, and
+ * only then is the send's own entry dropped, so it is never off screen; on a
+ * refusal its entry is dropped, and the chat is as it was read.
+ */
+export function useSendBotMessage(
+  options?: HookMutationOptions<
+    BotTurnEntity,
+    Error,
+    SendBotMessageVariables,
+    SendBotMessageContext
+  >,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  const drop = (id: string, sending: BotSending | null | undefined) =>
+    queryClient.setQueryData<readonly BotSending[]>(botsKeys.sendings(id), (sendings) =>
+      sendings?.filter((pending) => pending !== sending),
+    );
+  return useMutation<BotTurnEntity, Error, SendBotMessageVariables, SendBotMessageContext>({
+    ...withCacheOnSuccess(options, async (_turn, { id }, sent) => {
+      await refetchChat(queryClient, id, true);
+      drop(id, sent?.sending);
+    }),
+    mutationFn: ({ id, content, attachments, steer }) =>
+      app.bots.sendMessage(
+        id,
+        content,
+        attachments?.map((attachment) => attachment.id),
+        steer,
+      ),
+    onMutate: async (variables, context) => {
+      const stored = queryClient.getQueryData<BotConversationEntity>(
+        botsKeys.conversation(variables.id),
+      );
+      const sending: BotSending = {
+        key: crypto.randomUUID(),
+        // Trimmed as the API stores it, so a read holding the stored message is told apart.
+        content: variables.content.trim(),
+        attachments: variables.attachments ?? [],
+        steer: variables.steer ?? false,
+        at: new Date(),
+        seen: new Set(stored?.messages.map((message) => message.id)),
+      };
+      queryClient.setQueryData<readonly BotSending[]>(
+        botsKeys.sendings(variables.id),
+        (sendings = NO_SENDINGS) => [...sendings, sending],
+      );
+      await options?.onMutate?.(variables, context);
+      return { sending };
+    },
+    onError: (error, variables, sent, context) => {
+      drop(variables.id, sent?.sending);
+      return options?.onError?.(error, variables, sent, context);
+    },
+  });
+}
 
 export interface UploadBotImageVariables {
   id: string;
