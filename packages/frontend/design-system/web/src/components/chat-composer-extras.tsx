@@ -1,6 +1,6 @@
 'use client';
 
-import { LoaderIcon, MicIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, LoaderIcon, MicIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -11,8 +11,8 @@ import { IconButton } from './icon-button';
  *
  * - `VoiceRecorderBar`: while dictating, the composer's foot gives way to
  *   the recorder: a waveform growing in from the right over a dashed
- *   midline, the elapsed time in mono, cancel and the blue stop. Before the
- *   microphone answers it says so; after, "Transcribing…".
+ *   midline, the elapsed time in mono, cancel and the blue stop, an arrow
+ *   up. Before the microphone answers it says so; after, "Transcribing…".
  * - `DictationButton`: the mic, a 30px square, on the danger surface while
  *   it records. Every field that takes dictation shows this one.
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
@@ -96,7 +96,7 @@ function VoiceRecorderBar({
         onClick={onStop}
         className="flex size-7 items-center justify-center rounded-pill bg-primary text-primary-foreground outline-none transition-colors duration-fast hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring"
       >
-        <span aria-hidden className="size-2 rounded-[2px] bg-current" />
+        <ArrowUpIcon aria-hidden className="size-3.5" strokeWidth={2.2} />
       </button>
     </div>
   );
