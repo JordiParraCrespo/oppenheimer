@@ -1,8 +1,8 @@
 {
   "name": "@oppenheimer/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "opp \u2014 drive Oppenheimer from the command line: hosts, sessions, automations, bots",
+  "description": "opp — drive Oppenheimer from the command line: hosts, sessions, automations, bots",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

@@ -1,5 +1,158 @@
 # @oppenheimer/frontend-core
 
+## 0.4.0
+
+### Minor Changes
+
+- 3ffa099: Less boilerplate in the product package, the same behaviour.
+
+  - Repository methods are `callApi(X, async (api) => …)`, naming their failure once; `@MapApiError` is gone and `unwrap` is no longer exported (`unwrapBody` stays).
+  - Mutation hooks come from `defineMutation(useApp)({ run, invalidates | update })`; the consumer binds it as `mutation`.
+  - `SessionEntity`, `PullRequestEntity` and `AutomationRunEntity` take one props object (`XProps`), set with core's `assignProps`, which keeps a field's default where a prop is undefined. `@oppenheimer/frontend-consumer/testing` builds the three for tests.
+  - `ServerEventStream<TEvent>` in core is the Server-Sent Events stream `BotStream` and `WorkspaceEventStream` extend; the attach streams share their socket setup, and the device stream redials on the configured reconnect ladder.
+
+- c90bcf1: The console reports its own bugs to Sentry when `VITE_SENTRY_DSN` is set.
+
+  - `@oppenheimer/frontend-core`: `ErrorReportingService` (`app.errors`) over
+    an `IErrorReportingClient` port, a no-op by default. It reports a bug of
+    ours and drops a request the server answered or the network lost. The
+    query client hands it every failure but a 401; `useReportError` and
+    `useCaptureError` serve a boundary; sign-in and sign-out set the user, by
+    id only.
+  - `@oppenheimer/frontend-web`: `createWebErrorReportingClient`, Sentry loaded
+    in its own chunk only with a DSN, with no Session Replay and every URL,
+    cookie and console breadcrumb scrubbed. `RouteError` and `QueryState`
+    report what they catch.
+  - `@oppenheimer/web`: wires it, and uploads hidden source maps at build time
+    when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_WEB_PROJECT` are set.
+
+- 70eb8ea: The persisted query cache stores only what is listed. `createQueryPersistOptions` takes `persistedFeatures` (an allow-list) instead of `nonPersistedFeatures`; the kernel keeps `featureFlags`, `capabilities` and the cache owner, a read can still opt in with `PERSIST_META`, and `CONSUMER_NON_PERSISTED_FEATURES` is now `CONSUMER_PERSISTED_FEATURES` (the permission catalog). A feature nobody listed used to be stored and came back as plain JSON: the workspace list's `createdAt` restored as a string. The cache revision moves to 5, so caches written under the old policy are dropped.
+
+  The workspace event stream's refreshes and the polls it stands down are one table per event, and standing down is opt-in: a poll kind says `streamCanCover: true`, and only a read the stream announces in full stands down. A new poll kind, or a new read inside a feature the stream refreshes in part (a tasks read other than the list and the milestones), keeps polling.
+
+- b5a9490: Settings → About shows the version of the console and of the API it talks to. The API answers its version at `GET /health/version`.
+
+### Patch Changes
+
+- 9706ce9: Stop reporting a dropped connection to Sentry when it reached the reporter through a generated SDK call: the request's `AppError` now keeps the fetch `TypeError` itself as its cause.
+- Updated dependencies [a602949]
+- Updated dependencies [7b0e91d]
+- Updated dependencies [1d57cbf]
+- Updated dependencies [43193e4]
+- Updated dependencies [dfd07de]
+- Updated dependencies [1df2b19]
+- Updated dependencies [db21b92]
+- Updated dependencies [344ce8c]
+- Updated dependencies [d314623]
+- Updated dependencies [d5d4fd4]
+- Updated dependencies [c5c09d0]
+- Updated dependencies [be15bdc]
+- Updated dependencies [38ffaaf]
+- Updated dependencies [e315b92]
+- Updated dependencies [a51a958]
+- Updated dependencies [b283349]
+- Updated dependencies [cfa236a]
+- Updated dependencies [434deea]
+- Updated dependencies [0d83e40]
+- Updated dependencies [9ccced3]
+- Updated dependencies [6568fab]
+- Updated dependencies [a7c8731]
+- Updated dependencies [c4b0995]
+- Updated dependencies [be941d8]
+- Updated dependencies [b639f26]
+- Updated dependencies [929db14]
+- Updated dependencies [4faf606]
+- Updated dependencies [3d54930]
+- Updated dependencies [18e4a35]
+- Updated dependencies [7f18bbe]
+- Updated dependencies [8fc6c25]
+- Updated dependencies [39dbe36]
+- Updated dependencies [201ee3a]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [8deebf8]
+- Updated dependencies [5dfebed]
+- Updated dependencies [e338973]
+- Updated dependencies [87d0f96]
+- Updated dependencies [39d9703]
+- Updated dependencies [59809f9]
+- Updated dependencies [060dabb]
+- Updated dependencies [a23f236]
+- Updated dependencies [e0047a2]
+- Updated dependencies [f09b6b3]
+- Updated dependencies [3dbe5f1]
+- Updated dependencies [629ea1d]
+- Updated dependencies [bc448db]
+- Updated dependencies [581c202]
+- Updated dependencies [6af341b]
+- Updated dependencies [0044013]
+- Updated dependencies [0f9c3ca]
+- Updated dependencies [2128771]
+- Updated dependencies [f93ffbe]
+- Updated dependencies [8b529a9]
+- Updated dependencies [c11f8a3]
+- Updated dependencies [8baff58]
+- Updated dependencies [9f858e0]
+- Updated dependencies [b39d40f]
+- Updated dependencies [33cb1d8]
+- Updated dependencies [55acf65]
+- Updated dependencies [3230edb]
+- Updated dependencies [f6a81a2]
+- Updated dependencies [61f1092]
+- Updated dependencies [dc67559]
+- Updated dependencies [6eb8d65]
+- Updated dependencies [17e4cd5]
+- Updated dependencies [d68e9c4]
+- Updated dependencies [500ddd1]
+- Updated dependencies [33cb1d8]
+- Updated dependencies [ab9a6f4]
+- Updated dependencies [aeeb48b]
+- Updated dependencies [291469b]
+- Updated dependencies [fda123f]
+- Updated dependencies [85c11ad]
+- Updated dependencies [48da240]
+- Updated dependencies [1484bc6]
+- Updated dependencies [7c0a70c]
+- Updated dependencies [c63402e]
+- Updated dependencies [ac40af9]
+- Updated dependencies [0ed584c]
+- Updated dependencies [814aa6c]
+- Updated dependencies [5b48b5e]
+- Updated dependencies [9b0c57f]
+- Updated dependencies [6bb3a80]
+- Updated dependencies [a3cf769]
+- Updated dependencies [a3a780b]
+- Updated dependencies [1496a5f]
+- Updated dependencies [da6226c]
+- Updated dependencies [3b5d381]
+- Updated dependencies [9871b11]
+- Updated dependencies [250c8d6]
+- Updated dependencies [04188eb]
+- Updated dependencies [a80436f]
+- Updated dependencies [146d7d1]
+- Updated dependencies [d4606c6]
+- Updated dependencies [1dbae54]
+- Updated dependencies [6917f62]
+- Updated dependencies [8b772b8]
+- Updated dependencies [d69ddc4]
+- Updated dependencies [ea93480]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [1f7f57b]
+- Updated dependencies [b5a9490]
+- Updated dependencies [f8eda6e]
+- Updated dependencies [db4ae58]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+- Updated dependencies [a69aa94]
+- Updated dependencies [2d187ed]
+- Updated dependencies [5b1c52a]
+- Updated dependencies [4ee069d]
+- Updated dependencies [1af8fa3]
+- Updated dependencies [4ee069d]
+  - @oppenheimer/shared@0.4.0
+  - @oppenheimer/api-client@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
