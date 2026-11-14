@@ -1,6 +1,7 @@
 import { ChatComposer, FieldError } from '@oppenheimer/design-system-web';
-import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
+import { type BotWaitingMessage, isSendingBotTurn } from '@oppenheimer/frontend-consumer';
 import {
+  type SendBotMessageVariables,
   useBotActiveTurn,
   useBotGoal,
   useBotLoop,
@@ -37,8 +38,13 @@ import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
-import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
-import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
+import {
+  botDraft,
+  fillBotDraft,
+  returnToBotDraft,
+  setBotDraft,
+} from '@/features/bots/lib/bot-drafts';
+import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
 import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
@@ -121,11 +127,12 @@ export function BotComposer({
   const images = useBotImages(botId, takesImages, modelLabel);
   const picker = useRef<HTMLInputElement>(null);
   usePaneDrop(images.hold);
+  // The images each send took off the composer, to hold again if the API refuses it.
+  const heldFor = useRef(new WeakMap<SendBotMessageVariables, readonly HeldImage[]>());
   const send = useSendBotMessage({
-    onSuccess: (_turn, sent) => {
-      setBotDraft(sent.id, '');
-      pastes.clear();
-      images.clear();
+    onError: (_error, sent) => {
+      returnToBotDraft(sent.id, sent.content);
+      images.restore(heldFor.current.get(sent) ?? []);
     },
   });
   const cancel = useCancelBotTurn();
@@ -148,9 +155,7 @@ export function BotComposer({
   const message = (steer: boolean) => ({
     id: botId,
     content: pastes.content,
-    attachmentIds: images.images.flatMap((image) =>
-      image.attachmentId ? [image.attachmentId] : [],
-    ),
+    attachments: images.images.flatMap((image) => (image.attachment ? [image.attachment] : [])),
     steer: steer && images.images.length === 0,
   });
   const dictation = useDictation({
@@ -158,24 +163,34 @@ export function BotComposer({
     onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
   });
 
+  // A turn drawn for a send the API has not answered has no id there yet: Stop and Edit wait for it.
+  function stopTurn(turnId: string) {
+    if (!isSendingBotTurn(turnId)) cancel.mutate({ id: botId, turnId });
+  }
+
   // Edit: the waiting turn is called off, and its words come back into the field.
   function takeBack(message: BotWaitingMessage) {
+    if (isSendingBotTurn(message.turnId)) return;
     cancel.mutate(
       { id: botId, turnId: message.turnId },
       {
-        onSuccess: () => {
-          const current = botDraft(botId);
-          setBotDraft(botId, current ? `${message.text}\n${current}` : message.text);
-        },
+        onSuccess: () => returnToBotDraft(botId, message.text),
       },
     );
   }
 
   // A built-in the console runs itself (`/goal clear`) sends the bot nothing.
+  // A send leaves the field at once, drawn in the chat before the API answers;
+  // a refusal puts its words and images back, in front of anything written since.
   function submit(steer: boolean) {
     recall.reset();
     if (builtIn.runLocally(() => setBotDraft(botId, ''))) return;
-    send.mutate(message(steer));
+    const sent = message(steer);
+    heldFor.current.set(sent, images.images);
+    setBotDraft(botId, '');
+    pastes.clear();
+    images.clear();
+    send.mutate(sent);
   }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
@@ -249,7 +264,7 @@ export function BotComposer({
           inputRef={field}
           onSubmit={() => submit(running)}
           onAltSubmit={running ? () => submit(false) : undefined}
-          onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
+          onStop={() => active && stopTurn(active.id)}
           busy={
             (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
           }
@@ -285,7 +300,7 @@ export function BotComposer({
                 noKey={noKey}
                 notice={builtIn.notice}
                 onAddKey={() => navigate({ to: '/settings/model-providers' })}
-                onCancel={(turnId) => cancel.mutate({ id: botId, turnId })}
+                onCancel={stopTurn}
                 onTakeBack={takeBack}
               />
             ) : undefined
