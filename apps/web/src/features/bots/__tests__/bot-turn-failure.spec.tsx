@@ -8,8 +8,9 @@ import { BotTurnFailure } from '../components/bot-turn-failure';
  * A failed turn says whether sending it again can help, from the kind the
  * API recorded (`25-bots.md` §2). What breaks this: Retry offered where it
  * cannot succeed (a refused key, a spent quota), so the person retries into
- * the same wall; no way to Model providers from a refused key; or a turn
- * from before kinds were recorded drawing nothing.
+ * the same wall; no way to Model providers from a refused key; a turn
+ * from before kinds were recorded drawing nothing; or Show details on an
+ * error that already fits, a button that does nothing when pressed.
  */
 
 vi.mock('react-i18next', () => ({
@@ -80,5 +81,22 @@ describe('BotTurnFailure', () => {
     expect(screen.getByText('bots.chat.failed')).toBeTruthy();
     expect(screen.getByText('upstream said no')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'bots.chat.retry' })).toBeTruthy();
+  });
+
+  it('offers Show details only when the error runs past its three lines', () => {
+    draw('interrupted');
+    expect(screen.queryByRole('button', { name: 'bots.chat.errorDetails' })).toBeNull();
+    cleanup();
+
+    const height = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(200);
+    try {
+      draw('interrupted');
+      const details = screen.getByRole('button', { name: 'bots.chat.errorDetails' });
+      fireEvent.click(details);
+      expect(details.getAttribute('aria-expanded')).toBe('true');
+      expect(details.textContent).toBe('bots.chat.errorLess');
+    } finally {
+      height.mockRestore();
+    }
   });
 });

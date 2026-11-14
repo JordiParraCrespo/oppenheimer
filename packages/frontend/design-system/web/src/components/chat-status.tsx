@@ -18,7 +18,8 @@ import { IconButton } from './icon-button';
  *   reachable.
  * - `ChatErrorBanner`: a turn that failed, on the card with a hairline: the
  *   red alert, the title, the error clamped to three lines with Show
- *   details, then actions that name what they do (Copy error, Continue
+ *   details when it runs past them (measured, so a one-line error has no
+ *   toggle that does nothing), then actions that name what they do (Copy error, Continue
  *   task, Change model) and the dismiss.
  * - `ChatNotice`: one line about the run (a rate limit near or reached, a
  *   provider reconnecting), on the card at the 14px radius: a glyph or a
@@ -89,6 +90,20 @@ function ChatErrorBanner({
 }) {
   const label = { details: 'Show details', less: 'Show less', dismiss: 'Dismiss error', ...labels };
   const [open, setOpen] = React.useState(false);
+  const [overflows, setOverflows] = React.useState(false);
+  const ref = React.useRef<HTMLParagraphElement>(null);
+
+  React.useEffect(() => {
+    const box = ref.current;
+    if (!box || open) return;
+    const measure = () => setOverflows(box.scrollHeight > box.clientHeight + 1);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [open]);
+
   return (
     <div
       data-slot="chat-error-banner"
@@ -99,6 +114,7 @@ function ChatErrorBanner({
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <span className="text-[14px] font-medium text-fg">{title}</span>
         <p
+          ref={ref}
           className={cn(
             'm-0 text-[13px] leading-normal whitespace-pre-wrap wrap-anywhere text-fg-muted',
             !open && 'line-clamp-3',
@@ -106,12 +122,16 @@ function ChatErrorBanner({
         >
           {children}
         </p>
-        <div className="-ml-1.5 flex flex-wrap gap-1">
-          <ChatErrorAction variant="quiet" onClick={() => setOpen(!open)} aria-expanded={open}>
-            {open ? label.less : label.details}
-          </ChatErrorAction>
-          {actions}
-        </div>
+        {overflows || actions ? (
+          <div className="-ml-1.5 flex flex-wrap gap-1">
+            {overflows ? (
+              <ChatErrorAction variant="quiet" onClick={() => setOpen(!open)} aria-expanded={open}>
+                {open ? label.less : label.details}
+              </ChatErrorAction>
+            ) : null}
+            {actions}
+          </div>
+        ) : null}
       </div>
       {onDismiss ? (
         <IconButton size="sm" aria-label={label.dismiss} onClick={onDismiss}>
