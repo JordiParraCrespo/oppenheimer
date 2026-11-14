@@ -1,5 +1,5 @@
 import { Button, Kbd, Textarea } from '@oppenheimer/design-system-web';
-import { ArrowLeft, GitMerge, MessageSquare } from '@oppenheimer/design-system-web/icons';
+import { GitMerge, MessageSquare } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMergePullRequest,
@@ -26,12 +26,14 @@ import { DECK_VERB_LABEL, type DeckVerb, deckVerbs } from '../lib/deck-verbs';
 export function ReviewActions({
   pull,
   onActed,
-  onPass,
+  onPrevious,
+  onNext,
   onOpen,
 }: {
   pull: PullRequestEntity;
   onActed: () => void;
-  onPass: () => void;
+  onPrevious?: () => void;
+  onNext: () => void;
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
@@ -93,9 +95,11 @@ export function ReviewActions({
     if (!busy && comment.trim()) run(verbs.says, comment.trim());
   };
 
+  const yesMerges = verbs.yes === verbs.merges;
   useReviewDeckKeys({
-    onYes: yes,
-    onPass: busy ? undefined : onPass,
+    onPrevious: busy ? undefined : onPrevious,
+    onNext: busy ? undefined : onNext,
+    onYes: yesMerges ? undefined : yes,
     onOpen: busy ? undefined : onOpen,
     onComment: () => setComposing(true),
     onMerge: mergeNow,
@@ -140,10 +144,13 @@ export function ReviewActions({
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="secondary" onClick={onPass} disabled={busy}>
-          <ArrowLeft />
-          {t('pullRequests.deck.pass')}
+        <Button variant="secondary" onClick={onPrevious} disabled={busy || !onPrevious}>
+          {t('pullRequests.deck.previous')}
           <Kbd className="ml-1">←</Kbd>
+        </Button>
+        <Button variant="secondary" onClick={onNext} disabled={busy}>
+          {t('pullRequests.deck.next')}
+          <Kbd className="ml-1">→</Kbd>
         </Button>
         <span className="flex-1" />
         <Button variant="ghost" onClick={() => setComposing(true)} disabled={busy}>
@@ -151,7 +158,7 @@ export function ReviewActions({
           {saysLabel}
           <Kbd className="ml-1">C</Kbd>
         </Button>
-        {verbs.yes === verbs.merges ? null : (
+        {yesMerges ? null : (
           <Button
             variant="secondary"
             onClick={mergeNow}
@@ -165,12 +172,12 @@ export function ReviewActions({
         )}
         <Button
           onClick={yes}
-          disabled={busy || (verbs.yes === verbs.merges && !canMerge)}
+          disabled={busy || (yesMerges && !canMerge)}
           pending={running === verbs.yes}
         >
-          {verbs.yes === verbs.merges ? <GitMerge /> : null}
-          {verbs.yes === verbs.merges ? mergeLabel : t(DECK_VERB_LABEL[verbs.yes])}
-          <Kbd className="ml-1">→</Kbd>
+          {yesMerges ? <GitMerge /> : null}
+          {yesMerges ? mergeLabel : t(DECK_VERB_LABEL[verbs.yes])}
+          <Kbd className="ml-1">{yesMerges ? 'M' : 'A'}</Kbd>
         </Button>
       </div>
       <ErrorAlert
