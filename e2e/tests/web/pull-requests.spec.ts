@@ -193,7 +193,7 @@ test.describe('Pull requests', () => {
    * its brief, written by the model from the pull request it was actually
    * sent, and each action moves on to the next card without a list between.
    */
-  test('the review deck walks the queue a card at a time: brief, pass, request changes, merge', async ({
+  test('the review deck walks the queue a card at a time: brief, previous and next, request changes, merge', async ({
     page,
   }) => {
     test.slow();
@@ -243,6 +243,7 @@ test.describe('Pull requests', () => {
       card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Next pull request' }).click();
+    await expect(page.getByText('2 of 3')).toBeVisible();
     await page.getByRole('button', { name: 'Next pull request' }).click();
     await expect(
       card.getByRole('heading', { name: 'Write down the release checklist' }),
