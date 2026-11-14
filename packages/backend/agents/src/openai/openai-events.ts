@@ -17,8 +17,12 @@ export type OpenAiStreamEvent =
           usage?: {
             inputTokens?: number;
             outputTokens?: number;
-            /** The Responses API's `input_tokens_details` as the SDK copies it, one per request or a list. */
-            inputTokensDetails?: Record<string, number> | Array<Record<string, number>>;
+            /**
+             * The Responses API's `input_tokens_details` as the SDK copies it,
+             * one per request or a list. A provider may nest objects in it
+             * (ChatGPT's `cache_write_tokens_details`), so only a number is a count.
+             */
+            inputTokensDetails?: TokenDetails | TokenDetails[];
           };
         };
       };
@@ -30,6 +34,8 @@ export type OpenAiStreamEvent =
     }
   | { type: 'agent_updated_stream_event' };
 
+type TokenDetails = Record<string, unknown>;
+
 type RawItem = {
   type?: string;
   callId?: string;
@@ -39,11 +45,12 @@ type RawItem = {
 };
 
 /** The cached share of a response's input, from its details: one record, or one per request. */
-function cachedTokensOf(
-  details: Record<string, number> | Array<Record<string, number>> | undefined,
-): number {
+function cachedTokensOf(details: TokenDetails | TokenDetails[] | undefined): number {
   const records = Array.isArray(details) ? details : details ? [details] : [];
-  return records.reduce((sum, record) => sum + (record.cached_tokens ?? 0), 0);
+  return records.reduce(
+    (sum, record) => sum + (typeof record.cached_tokens === 'number' ? record.cached_tokens : 0),
+    0,
+  );
 }
 
 function parseArguments(text: string | undefined): unknown {
