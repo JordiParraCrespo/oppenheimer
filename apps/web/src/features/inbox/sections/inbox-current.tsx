@@ -22,8 +22,8 @@ import { InboxItemMessage } from '@/features/inbox/sections/inbox-item-message';
  * The reading pane (`29-inbox.md` §5, the 2026-10-29 frame): a toolbar that
  * marks the item done, snoozes it until tomorrow, deprioritizes or deletes
  * it, with its place in the list; under it the item as a message with its
- * answers — or "Nothing needs you". It takes its item from the same list the
- * column draws, under the same filter and search; E and L act on it, and
+ * answers — or "You're all caught up". It takes its item from the same list
+ * the column draws, under the same filter and search; E and L act on it, and
  * showing it marks it read.
  */
 export function InboxCurrent() {

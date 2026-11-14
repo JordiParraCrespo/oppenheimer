@@ -1,6 +1,6 @@
 'use client';
 
-import { LoaderIcon, MicIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, LoaderIcon, MicIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -11,8 +11,9 @@ import { IconButton } from './icon-button';
  *
  * - `VoiceRecorderBar`: while dictating, the composer's foot gives way to
  *   the recorder: a waveform growing in from the right over a dashed
- *   midline, the elapsed time in mono, cancel and the blue stop. Before the
- *   microphone answers it says so; after, "Transcribing…".
+ *   midline, the elapsed time in mono, cancel and the blue arrow up that
+ *   stops it. Before the microphone answers it says so; after,
+ *   "Transcribing…".
  * - `DictationButton`: the mic, a 30px square, on the danger surface while
  *   it records. Every field that takes dictation shows this one.
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
@@ -82,22 +83,23 @@ function VoiceRecorderBar({
         </div>
       </div>
       {elapsed ? <span className="figures font-mono text-[12.5px] text-fg-muted">{elapsed}</span> : null}
-      <button
-        type="button"
+      <IconButton
         aria-label={labels?.cancel ?? 'Cancel voice recording'}
+        size="sm"
         onClick={onCancel}
-        className="flex size-7 items-center justify-center rounded-pill bg-hover-surface text-fg outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring"
+        className="bg-hover-surface text-fg hover:bg-control-hover hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <XIcon className="size-3.5" />
-      </button>
-      <button
-        type="button"
+        <XIcon />
+      </IconButton>
+      <IconButton
         aria-label={labels?.stop ?? 'Stop voice recording'}
+        variant="primary"
+        size="sm"
         onClick={onStop}
-        className="flex size-7 items-center justify-center rounded-pill bg-primary text-primary-foreground outline-none transition-colors duration-fast hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring"
+        className="focus-visible:ring-3 focus-visible:ring-ring"
       >
-        <span aria-hidden className="size-2 rounded-[2px] bg-current" />
-      </button>
+        <ArrowUpIcon aria-hidden strokeWidth={2.2} />
+      </IconButton>
     </div>
   );
 }

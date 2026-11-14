@@ -36,6 +36,8 @@ export const botsKeys = {
   // one routine refreshes both by name.
   allRoutines: () => [...botsKeys.all, 'routine', 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
+  // Sends the API has not answered, laid over the conversation: never read from the API.
+  sendings: (id: string) => [...botsKeys.detail(id), 'sendings'] as const,
   image: (id: string, attachmentId: string) =>
     [...botsKeys.detail(id), 'image', attachmentId] as const,
   approvals: (id: string) => [...botsKeys.detail(id), 'approvals'] as const,

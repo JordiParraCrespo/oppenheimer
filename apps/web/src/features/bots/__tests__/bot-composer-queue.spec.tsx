@@ -91,6 +91,7 @@ describe('BotComposer while the bot works', () => {
     fireEvent.change(field, { target: { value: 'Use Tokyo time' } });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.send).toHaveBeenLastCalledWith(expect.objectContaining({ steer: true }));
+    fireEvent.change(field, { target: { value: 'Use Tokyo time' } });
     fireEvent.keyDown(field, { key: 'Enter', altKey: true });
     expect(state.send).toHaveBeenLastCalledWith(
       expect.objectContaining({ content: 'Use Tokyo time', steer: false }),

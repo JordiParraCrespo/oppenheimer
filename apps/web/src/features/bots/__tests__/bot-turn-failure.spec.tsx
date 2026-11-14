@@ -8,8 +8,10 @@ import { BotTurnFailure } from '../components/bot-turn-failure';
  * A failed turn says whether sending it again can help, from the kind the
  * API recorded (`25-bots.md` §2). What breaks this: Retry offered where it
  * cannot succeed (a refused key, a spent quota), so the person retries into
- * the same wall; no way to Model providers from a refused key; or a turn
- * from before kinds were recorded drawing nothing.
+ * the same wall; no way to Model providers from a refused key; a turn
+ * from before kinds were recorded drawing nothing; or Show details on an
+ * error that already fits, a button that does nothing when pressed; or an
+ * error that changes in place without being measured again.
  */
 
 vi.mock('react-i18next', () => ({
@@ -80,5 +82,39 @@ describe('BotTurnFailure', () => {
     expect(screen.getByText('bots.chat.failed')).toBeTruthy();
     expect(screen.getByText('upstream said no')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'bots.chat.retry' })).toBeTruthy();
+  });
+
+  it('offers Show details only once the error runs past its three lines', () => {
+    const turn = (error: string) =>
+      new BotTurnEntity(
+        't1',
+        'failed',
+        'anthropic',
+        'm',
+        error,
+        0,
+        0,
+        false,
+        new Date(),
+        new Date(),
+        new Date(),
+        null,
+        null,
+        'interrupted',
+      );
+    const { container, rerender } = render(
+      <BotTurnFailure turn={turn('The turn was interrupted.')} retrying={false} />,
+    );
+    expect(screen.queryByRole('button', { name: 'bots.chat.errorDetails' })).toBeNull();
+
+    const box = container.querySelector('[data-slot="chat-error-banner"] p') as HTMLElement;
+    Object.defineProperty(box, 'scrollHeight', { configurable: true, value: 200 });
+    Object.defineProperty(box, 'clientHeight', { configurable: true, value: 60 });
+    rerender(<BotTurnFailure turn={turn('A longer error\nover\nmany\nlines')} retrying={false} />);
+
+    const details = screen.getByRole('button', { name: 'bots.chat.errorDetails' });
+    fireEvent.click(details);
+    expect(details.getAttribute('aria-expanded')).toBe('true');
+    expect(details.textContent).toBe('bots.chat.errorLess');
   });
 });

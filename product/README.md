@@ -1661,6 +1661,10 @@ earlier note:
   nothing the person could find. On 2026-11-12 the owner asked to see them:
   the page lists them under the bot's own in a read-only "Built in" group,
   with a view of the instructions and no edit or delete.
+- `versions/mvp/29-inbox.md` ("As built") headed the clear reading pane
+  "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
+  to be warmer: it reads "You're all caught up", centred under a small
+  drawing of an empty tray; the line under it is unchanged.
 - The codebase was to keep every app the starter ships, but on 2026-09-23
   the apps the MVP did not use were pruned, the mobile app among them. On
   2026-11-14 the owner started 0.5 as a native Expo app: `apps/mobile` came

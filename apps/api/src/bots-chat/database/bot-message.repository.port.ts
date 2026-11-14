@@ -14,10 +14,24 @@ export class UnstorableStepsError extends Error {
   }
 }
 
+/**
+ * The turn a message belongs to is no longer stored: deleted under its
+ * worker, with its bot or its workspace (`FK_bot_message_turn`). What
+ * `insert` throws then, so the turn ends with them rather than failing as a
+ * write of ours Postgres refused.
+ */
+export class TurnGoneError extends Error {
+  constructor(cause: unknown) {
+    super('The turn is no longer stored', { cause });
+    this.name = 'TurnGoneError';
+  }
+}
+
 export interface BotMessageRepositoryPort {
   /**
    * Stores a message of a running turn; a user or assistant message also
-   * becomes the bot's last message, for the sidebar.
+   * becomes the bot's last message, for the sidebar. Throws `TurnGoneError`
+   * when the turn has been deleted.
    */
   insert(message: BotMessageEntity): Promise<void>;
   /**

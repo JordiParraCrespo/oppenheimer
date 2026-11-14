@@ -124,7 +124,7 @@ describe('a settled week, replayed', () => {
       '── Calendar: the release review moved to 16:00 ──',
       'you: Publish them to the blog',
       'bot (failed)',
-      '  ! bots.chat.failure.credential{"provider":"Anthropic"} 401 invalid x-api-key bots.chat.errorDetails bots.chat.openProviders',
+      '  ! bots.chat.failure.credential{"provider":"Anthropic"} 401 invalid x-api-key bots.chat.openProviders',
     ]);
     expect(chat.streamUrl).toBe('http://api.test/api/v1/bots/bot-release/stream');
     expect(chat.strays).toEqual([]);

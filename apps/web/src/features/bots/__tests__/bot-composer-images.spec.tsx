@@ -94,7 +94,7 @@ describe('BotComposer images', () => {
     expect(state.send).toHaveBeenCalledWith({
       id: 'b1',
       content: '',
-      attachmentIds: ['a1'],
+      attachments: [{ id: 'a1', mimeType: 'image/png', sizeBytes: 3, name: 'shot.png' }],
       steer: false,
     });
   });

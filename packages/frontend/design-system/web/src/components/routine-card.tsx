@@ -3,6 +3,7 @@
 import { PencilIcon, PlayIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { useClampedOverflow } from '../internal/use-clamped-overflow';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 import { Switch } from './switch';
@@ -169,24 +170,12 @@ function RoutineCard({
 
 /**
  * The prompt, three lines until opened. Show more appears only when the text
- * runs past them, measured on the clamped box so a short prompt has no toggle.
- * The card keys it on the text, so a prompt that changes in place is measured
- * again even when the clamped box keeps its size.
+ * runs past them (`useClampedOverflow`), so a short prompt has no toggle. The
+ * card keys it on the text, so a prompt that changes in place starts closed.
  */
 function RoutinePrompt({ more, less, children }: { more: string; less: string; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
-  const [overflows, setOverflows] = React.useState(false);
-  const ref = React.useRef<HTMLSpanElement>(null);
-
-  React.useEffect(() => {
-    const box = ref.current;
-    if (!box || open || typeof ResizeObserver === 'undefined') return;
-    const measure = () => setOverflows(box.scrollHeight > box.clientHeight + 1);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(box);
-    return () => observer.disconnect();
-  }, [open]);
+  const { ref, overflows } = useClampedOverflow<HTMLSpanElement>(open, children);
 
   return (
     <div className="flex flex-col items-start gap-1">

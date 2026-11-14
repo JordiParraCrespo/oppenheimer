@@ -141,7 +141,7 @@
     "back": "Volver a la lista",
     "position": "{{n}} de {{total}}",
     "ago": "hace {{age}}",
-    "clearTitle": "Nada te necesita",
+    "clearTitle": "Estás al día",
     "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
     "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
     "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
