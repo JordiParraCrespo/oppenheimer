@@ -146,5 +146,13 @@
     "hosts": "Buscar hosts",
     "groups": "Buscar grupos",
     "noMatch": "Nada coincide con «{{query}}»."
+  },
+  "error": "Algo ha ido mal",
+  "comingToMobile": {
+    "title": "Próximamente en el móvil",
+    "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
+    "employees": "Habla con tus empleados desde el móvil.",
+    "pullRequests": "Revisa las pull requests que te necesitan.",
+    "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones."
   }
 }

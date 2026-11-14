@@ -10,7 +10,8 @@ Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
 what `pnpm dev:mvp` starts. Beyond the MVP are `apps/web-showcase`, the
 gallery of the web design system, `apps/extension`, a Chrome extension
-that tracks your Claude Code cloud sessions and tells you which need you, and
+that tracks your Claude Code cloud sessions and tells you which need you,
+`apps/mobile`, the Expo app for 0.5 (a shell so far: sign-in and the tabs), and
 `apps/cli` and `apps/mcp`: `opp` and the MCP server, through which people,
 scripts and agents on other hosts drive the same API (0.6).
 
@@ -45,15 +46,16 @@ All research and decisions live in `product/`; start with `product/README.md`.
 ```
 apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
              runner (Go host agent) · docs (Docusaurus) · extension (Chrome)
-             web-showcase (Next.js gallery of the design system)
+             web-showcase (Next.js gallery of the design system) · mobile (Expo)
              cli (`opp`, commander) · mcp (MCP server, stdio + Streamable HTTP)
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
              http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
              backend/  agents authz cache core ddd email error-reporting i18n llm queue storage
-             frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
+             frontend/ core (kernel) · consumer (the console's domain) · web (platform kit) · mobile (Expo kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
+                       design-system/mobile (NativeWind + rn-primitives)
              go/       core config httpx auth health ws postgres selfupdate execx
 deploy/dev/  the dev deployment (README is the runbook) · docker/ Compose · .github/
 ```
@@ -66,7 +68,7 @@ backend/* → api (ddd depends on nothing; agents is the only code that imports 
 translations → web, frontend/web, api (email copy via backend/i18n)
 design-system/web → web, web-showcase, frontend/web
 api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
-frontend/consumer, frontend/web → web · go/core → every go module · go/* → runner
+frontend/consumer, frontend/web → web · frontend/mobile, design-system/mobile → mobile · go/core → every go module · go/* → runner
 http-client → cli, mcp
 ```
 

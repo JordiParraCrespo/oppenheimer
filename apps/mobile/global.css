@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+   Oppenheimer design tokens (mobile)
+   =============================================================================
+   The same brand as `@oppenheimer/design-system-web`, expressed in the bare-HSL form
+   NativeWind needs (`hsl(var(--token))`). Two deliberate differences from web:
+
+     · hairlines are flattened to solid values — React Native cannot composite
+       an rgba border token the way CSS does;
+     · every token is a literal triple rather than a `var()` alias, because
+       NativeWind resolves these at build time and nested vars do not survive.
+
+   Keep in sync with the source of truth,
+   `packages/frontend/design-system/web/src/styles/globals.css`.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* ---- Inks — the whole text hierarchy ------------------------------- */
+    --ink-900: 240 3.3% 11.8%; /* #1D1D1F */
+    --ink-600: 240 2.2% 44.1%; /* #6E6E73 */
+    --ink-400: 240 2.1% 53.5%; /* #86868B */
+
+    /* ---- Surfaces ------------------------------------------------------ */
+    --surface-canvas: 0 0% 100%; /* #FFFFFF */
+    --surface-card: 0 0% 100%; /* #FFFFFF */
+    --surface-sunken: 240 5.3% 92.5%; /* #EBEBED */
+    --surface-hover: 0 0% 96.1%; /* #F5F5F5 */
+    --surface-inverse: 240 3.3% 11.8%; /* #1D1D1F */
+
+    /* ---- Hairlines (flattened over the app surface) -------------------- */
+    --border-subtle: 240 5.5% 89.2%; /* #E2E2E5 */
+    --border-default: 240 5.9% 83.3%; /* #D2D2D7 */
+    --border-strong: 240 2.7% 64.1%; /* #A1A1A6 */
+
+    /* ---- Accents — status only, never decoration ----------------------- */
+    --accent-blue: 210 100% 44.5%; /* #0071E3 */
+    --accent-cyan: 188 84% 44%; /* #12B5CE live indicator */
+    --accent-pink: 344 85% 58%; /* #EF3A6B "New" marker */
+    --accent-purple: 251 100% 68%; /* #7A5CFF avatar anchor */
+
+    /* ---- Data & status -------------------------------------------------- */
+    --data-up: 145 96.5% 33.9%; /* #03AA49 */
+    --data-down: 358 80.8% 53.1%; /* #E8272C */
+    --data-line: 210 100% 44.5%; /* #0071E3 */
+    --data-line-compare: 217 100% 80.4%; /* #9BC2FF */
+    --data-track: 45 10% 92%; /* #ECEBE8 */
+    --track-off: 45 7% 88%; /* #E3E2DF switch off */
+
+    /* Theme pill. The knob and its active icon are the one bit of chrome that
+       deliberately does NOT invert, so the dark block restates only the idle
+       icon — see the web `globals.css`. `ThemeToggle` in
+       `@oppenheimer/frontend-mobile/theme` draws it on the auth screens. */
+    --theme-toggle-knob: 240 5% 90%; /* #E5E5E8 */
+    --theme-toggle-icon: 220 8% 36%; /* #555A63 */
+    --theme-toggle-icon-idle: 220 8% 36%;
+
+    /* Email body frame. Deliberately light in both themes — email HTML is
+       authored against an assumed white background, so a body inheriting the
+       dark canvas renders much of it near-black on near-black; the dark block
+       therefore restates none of these. Mirrored here to keep the three token
+       files in step; mobile has no mail reader of its own yet. See the web
+       `globals.css`. */
+    --surface-email: 0 0% 100%; /* #FFFFFF */
+    --email-ink: 0 0% 16%; /* #292929 */
+    --email-ink-muted: 0 0% 36%; /* #5D5D5D */
+    --email-rule: 0 0% 88%; /* flattened from rgba(0,0,0,.12) on white */
+    --email-link: 217 92% 57%; /* #2F80F6 */
+
+    --status-active: 145 96.5% 33.9%; /* #03AA49 */
+    --status-paused: 25 100% 46.5%; /* #ED6300 */
+    --status-ended: 358 80.8% 53.1%; /* #E8272C */
+    --status-draft: 210 100% 44.5%; /* #0071E3 */
+
+    --on-inverse: 0 0% 100%; /* #FFFFFF */
+
+    /* Status tints, flattened over the card white — web keeps them as rgba
+       over whatever they sit on; React Native cannot composite a token that
+       way, so each is the resolved colour instead. Restated in the dark block. */
+    --status-active-bg: 148 39% 92%;
+    --status-paused-bg: 34 62% 93%;
+    --status-ended-bg: 357 76% 95%;
+    --status-draft-bg: 215 92% 95%;
+
+    /* Secondary text on an inverse surface (web: rgba(255,255,255,.62)). */
+    --on-inverse-muted: 40 2% 68%;
+
+    /* The focus halo and the "selected" wash — web's rgba(47,128,246,.35),
+       flattened over the card white. */
+    --focus-ring: 217 92% 85%;
+
+    /* =====================================================================
+       shadcn semantic aliases
+       ================================================================== */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 240 3.3% 11.8%; /* #1D1D1F */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 240 3.3% 11.8%; /* #1D1D1F */
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 240 3.3% 11.8%; /* #1D1D1F */
+    --primary: 210 100% 44.5%; /* #0071E3 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --secondary: 240 5.5% 89.2%; /* #E2E2E5 */
+    --secondary-foreground: 240 2.9% 20.6%; /* #333336 */
+    --muted: 240 5.3% 92.5%; /* #EBEBED */
+    --muted-foreground: 240 2.2% 44.1%; /* #6E6E73 */
+    --accent: 0 0% 96.1%; /* #F5F5F5 */
+    --accent-foreground: 240 3.3% 11.8%; /* #1D1D1F */
+    --destructive: 358 80.8% 53.1%; /* #E8272C */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --border: 240 5.9% 83.3%; /* #D2D2D7 */
+    --input: 240 5.9% 83.3%; /* #D2D2D7 */
+    --ring: 210 100% 44.5%; /* #0071E3 */
+
+    /* Controls sit on the brand's 8px nav radius; cards on 16px. */
+    --radius: 8px;
+  }
+
+  .dark:root {
+    --ink-900: 240 11.1% 96.5%; /* #F5F5F7 */
+    --ink-600: 240 2.9% 66.1%; /* #A6A6AB */
+    --ink-400: 240 2.1% 53.5%; /* #86868B */
+
+    --surface-canvas: 240 2.7% 7.3%; /* #121213 */
+    --surface-card: 240 3.7% 10.6%; /* #1A1A1C */
+    --surface-sunken: 240 4.1% 14.3%; /* #232326 */
+    --surface-hover: 240 1.6% 12.4%; /* #1F1F20 */
+    --surface-inverse: 240 11.1% 96.5%; /* #F5F5F7 */
+
+    --border-subtle: 240 4.5% 17.3%; /* #2A2A2E */
+    --border-default: 240 4.7% 21%; /* #333338 */
+    --border-strong: 240 4% 29.4%; /* #48484E */
+
+    --data-track: 36 6% 16.3%; /* #2C2A27 */
+    --track-off: 36 5% 22%;
+    --theme-toggle-icon-idle: 240 3% 80%;
+
+    --on-inverse: 240 2.7% 7.3%; /* #121213 */
+
+    --status-active-bg: 140 30% 14%;
+    --status-paused-bg: 34 48% 15%;
+    --status-ended-bg: 2 34% 17%;
+    --status-draft-bg: 216 38% 17%;
+    --on-inverse-muted: 40 1% 42%;
+    --focus-ring: 215 57% 30%;
+
+    --background: 240 2.7% 7.3%; /* #121213 */
+    --foreground: 240 11.1% 96.5%; /* #F5F5F7 */
+    --card: 240 3.7% 10.6%; /* #1A1A1C */
+    --card-foreground: 240 11.1% 96.5%; /* #F5F5F7 */
+    --popover: 240 4.5% 13.1%; /* #202023 */
+    --popover-foreground: 240 11.1% 96.5%; /* #F5F5F7 */
+    --primary: 210 100% 44.5%; /* #0071E3 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --secondary: 240 4.5% 17.3%; /* #2A2A2E */
+    --secondary-foreground: 240 11.1% 96.5%; /* #F5F5F7 */
+    --muted: 240 4.1% 14.3%; /* #232326 */
+    --muted-foreground: 240 2.9% 66.1%; /* #A6A6AB */
+    --accent: 240 1.6% 12.4%; /* #1F1F20 */
+    --accent-foreground: 240 11.1% 96.5%; /* #F5F5F7 */
+    --destructive: 3 100% 61.4%; /* #FF453A */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --border: 240 4.7% 21%; /* #333338 */
+    --input: 240 4.5% 21.8%; /* #35353A */
+    --ring: 209 100% 58%; /* #2997FF */
+  }
+}

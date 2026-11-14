@@ -58,6 +58,9 @@ module.exports = function frontendDomain({ role }) {
           path: [
             'packages/frontend/(web|mobile)/',
             'node_modules/(react-dom|@tanstack/react-router)/',
+            // oppenheimer:begin mobile
+            'node_modules/(react-native|expo-[a-z-]+)/',
+            // oppenheimer:end mobile
           ],
         },
       },
