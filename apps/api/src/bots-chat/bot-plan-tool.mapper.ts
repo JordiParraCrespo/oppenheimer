@@ -232,8 +232,32 @@ export function toTaskWake(
     ...change,
     subscriptionId: subscription.id,
     scope: watch.scope,
+    followedId: watch.id,
     followedName: read.followedName,
     purpose: subscription.purpose,
     byOwner: change.actor.userId === read.ownerUserId,
+  };
+}
+
+/** A logged change as the tasks module's event carries it, delivered as a plain object. */
+export interface TaskActivityPayload extends Omit<TaskActivityFields, 'eventId' | 'taskId'> {
+  /** The event's own id. */
+  id: string;
+  /** The task's id. */
+  aggregateId: string;
+}
+
+/** The change a wake reads, from the event that logged it. */
+export function toTaskActivityFields(event: TaskActivityPayload): TaskActivityFields {
+  return {
+    eventId: event.id,
+    taskId: event.aggregateId,
+    kind: event.kind,
+    projectId: event.projectId,
+    milestoneId: event.milestoneId,
+    title: event.title,
+    from: event.from,
+    to: event.to,
+    actor: event.actor,
   };
 }

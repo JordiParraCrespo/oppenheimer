@@ -81,6 +81,11 @@ export function taskWakeFor(
 export interface TaskWake extends TaskActivityFields {
   subscriptionId: string;
   scope: BotPlanWatchScope;
+  /**
+   * The project's or the milestone's id the subscription follows: the task's
+   * old place, for a wake about a task that moved out of it.
+   */
+  followedId: string;
   /** The project's or the milestone's name as read at the wake; null when it could not be. */
   followedName: string | null;
   purpose: string | null;
@@ -127,8 +132,8 @@ export function taskChangePhrase(wake: Pick<TaskWake, 'kind' | 'from' | 'to'>): 
  */
 export function taskWakeText(wake: TaskWake): string {
   const followed = wake.followedName
-    ? `${wake.scope} "${wake.followedName}" (${wake.scope}_id ${wake.scope === 'project' ? wake.projectId : wake.milestoneId})`
-    : `${wake.scope} ${wake.scope === 'project' ? wake.projectId : wake.milestoneId}`;
+    ? `${wake.scope} "${wake.followedName}" (${wake.scope}_id ${wake.followedId})`
+    : `${wake.scope} ${wake.followedId}`;
   const who = wake.byOwner
     ? wake.actor.type === 'agent'
       ? 'by an agent acting for your person'

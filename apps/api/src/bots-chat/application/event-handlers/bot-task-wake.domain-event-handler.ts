@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { TaskActivityLoggedDomainEvent } from '../../../tasks/domain/events/task-activity-logged.domain-event';
+import { toTaskActivityFields } from '../../bot-plan-tool.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../../bots-chat.di-tokens';
 import { WakeOnTaskActivityCommand } from '../../commands/wake-on-task-activity/wake-on-task-activity.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
@@ -52,17 +53,7 @@ export class BotTaskWakeDomainEventHandler {
         this.commands.execute(
           new WakeOnTaskActivityCommand({
             subscriptionId,
-            change: {
-              eventId: event.id,
-              taskId: event.aggregateId,
-              kind: event.kind,
-              projectId: event.projectId,
-              milestoneId: event.milestoneId,
-              title: event.title,
-              from: event.from,
-              to: event.to,
-              actor: event.actor,
-            },
+            change: toTaskActivityFields(event),
             metadata: { correlationId: event.metadata?.correlationId ?? undefined },
           }),
         ),
