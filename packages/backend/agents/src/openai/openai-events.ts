@@ -34,7 +34,8 @@ export type OpenAiStreamEvent =
     }
   | { type: 'agent_updated_stream_event' };
 
-type TokenDetails = Record<string, unknown>;
+/** Token counts by kind, which a provider may nest by sub-kind (the SDK's shape since 0.21). */
+type TokenDetails = { [kind: string]: number | TokenDetails };
 
 type RawItem = {
   type?: string;
