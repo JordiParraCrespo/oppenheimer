@@ -242,9 +242,9 @@ test.describe('Pull requests', () => {
     await expect(
       card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Next pull request' }).click();
+    await page.getByRole('button', { name: /^Next/ }).click();
     await expect(page.getByText('2 of 3')).toBeVisible();
-    await page.getByRole('button', { name: 'Next pull request' }).click();
+    await page.getByRole('button', { name: /^Next/ }).click();
     await expect(
       card.getByRole('heading', { name: 'Write down the release checklist' }),
     ).toBeVisible();

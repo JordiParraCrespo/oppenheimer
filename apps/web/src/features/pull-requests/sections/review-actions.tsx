@@ -1,10 +1,5 @@
 import { Button, Kbd, Textarea } from '@oppenheimer/design-system-web';
-import {
-  ArrowLeft,
-  ArrowRight,
-  GitMerge,
-  MessageSquare,
-} from '@oppenheimer/design-system-web/icons';
+import { GitMerge, MessageSquare } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMergePullRequest,
@@ -149,25 +144,13 @@ export function ReviewActions({
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={onPrevious}
-          disabled={busy || !onPrevious}
-          aria-label={t('pullRequests.deck.previous')}
-          title={`${t('pullRequests.deck.previous')} (←)`}
-        >
-          <ArrowLeft />
+        <Button variant="secondary" onClick={onPrevious} disabled={busy || !onPrevious}>
+          {t('pullRequests.deck.previous')}
+          <Kbd className="ml-1">←</Kbd>
         </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={onNext}
-          disabled={busy}
-          aria-label={t('pullRequests.deck.next')}
-          title={`${t('pullRequests.deck.next')} (→)`}
-        >
-          <ArrowRight />
+        <Button variant="secondary" onClick={onNext} disabled={busy}>
+          {t('pullRequests.deck.next')}
+          <Kbd className="ml-1">→</Kbd>
         </Button>
         <span className="flex-1" />
         <Button variant="ghost" onClick={() => setComposing(true)} disabled={busy}>
