@@ -61,7 +61,18 @@
         "packages/frontend/design-system/mobile",
         "@oppenheimer/design-system-mobile"
       ],
-      "paths": ["apps/mobile", "packages/frontend/mobile", "packages/frontend/design-system/mobile"]
+      "paths": [
+        "apps/mobile",
+        "packages/frontend/mobile",
+        "packages/frontend/design-system/mobile"
+      ],
+      "json": [
+        {
+          "file": "knip.json",
+          "path": "workspaces",
+          "deleteKeys": ["apps/mobile"]
+        }
+      ]
     },
     "extension": {
       "title": "Chrome extension",
