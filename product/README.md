@@ -1661,3 +1661,7 @@ earlier note:
   nothing the person could find. On 2026-11-12 the owner asked to see them:
   the page lists them under the bot's own in a read-only "Built in" group,
   with a view of the instructions and no edit or delete.
+- `versions/mvp/29-inbox.md` ("As built") headed the clear reading pane
+  "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
+  to be warmer: it reads "You're all caught up", centred under a small
+  drawing of an empty tray; the line under it is unchanged.

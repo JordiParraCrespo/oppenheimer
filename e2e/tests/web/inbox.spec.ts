@@ -6,9 +6,10 @@ import { provisionedUser, signInAs } from '../../support/web';
  * The Inbox in a browser, against the real control plane
  * (`product/versions/mvp/29-inbox.md`, `design/version1/Inbox.dc.html`): the
  * console lands on Plan's Inbox, a workspace with nothing waiting reads
- * "Nothing needs you", a bot's pending approval comes in as a mail row and as
- * the message in the reading pane, and Mark as done keeps the row under Show
- * done for the visit, stores the mark, and leaves the reader clear again.
+ * "You're all caught up", a bot's pending approval comes in as a mail row
+ * and as the message in the reading pane, and Mark as done keeps the row
+ * under Show done for the visit, stores the mark, and leaves the reader
+ * clear again.
  */
 test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }) => {
   const owner = await provisionedUser('inbox');
@@ -20,7 +21,7 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
     'data-active',
     'true',
   );
-  await expect(page.getByText('Nothing needs you', { exact: true })).toBeVisible();
+  await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   await expect(page.getByText('Nothing needs you.', { exact: true })).toBeVisible();
 
   const bot = (await (
@@ -50,7 +51,7 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
     .getByRole('button', { name: 'Mark as done' })
     .click();
 
-  await expect(page.getByText('Nothing needs you', { exact: true })).toBeVisible();
+  await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   // Show done keeps it for this visit, struck through.
   await expect(page.locator('[data-slot="inbox-item"][data-done]')).toHaveCount(1);
 
@@ -65,7 +66,7 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
     )
     .toEqual([expect.objectContaining({ itemKey: `approval:${approvalId}`, mark: 'done' })]);
   await page.reload();
-  await expect(page.getByText('Nothing needs you', { exact: true })).toBeVisible();
+  await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   await expect(page.locator('[data-slot="inbox-item"]')).toHaveCount(0);
 
   // The address it had before it moved into Plan still opens it.
