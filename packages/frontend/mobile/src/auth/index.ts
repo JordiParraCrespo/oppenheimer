@@ -7,6 +7,7 @@ export { SocialLoginButtons } from './components/social-login-buttons';
 export { ForgotPasswordForm, type ForgotPasswordFormProps } from './forms/forgot-password-form';
 export { LoginForm, type LoginFormProps } from './forms/login-form';
 export { ResetPasswordForm, type ResetPasswordFormProps } from './forms/reset-password-form';
+export { useSocialSignIn } from './hooks/use-social-sign-in';
 export { type NewPasswordValues, newPasswordSchema } from './lib/new-password-schema';
 export {
   ForgotPasswordScreen,

@@ -5,9 +5,13 @@ const preferences = createMMKV({ id: 'oppenheimer.preferences' });
 const queryCache = createMMKV({ id: 'oppenheimer.query-cache' });
 const zustand = createMMKV({ id: 'oppenheimer.zustand' });
 
+/**
+ * JSON in, JSON out. A read is `unknown`: what is on the device was written by
+ * an earlier build, so the caller checks its shape before trusting it.
+ */
 export type JsonStorage = {
-  setItem<T>(key: string, value: T): void;
-  getItem<T>(key: string): T | null;
+  setItem(key: string, value: unknown): void;
+  getItem(key: string): unknown;
   removeItem(key: string): void;
 };
 
@@ -18,7 +22,12 @@ function jsonStorage(store: ReturnType<typeof createMMKV>): JsonStorage {
     },
     getItem(key) {
       const value = store.getString(key);
-      return value === undefined ? null : (JSON.parse(value) as never);
+      if (value === undefined) return null;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
     },
     removeItem(key) {
       store.remove(key);

@@ -10,8 +10,8 @@ import { storage } from '../../platform';
 /** Preference key — MMKV, not the keychain. */
 export const LOCALE_STORAGE_KEY = 'oppenheimer.locale';
 
-function isSupported(value: string | null | undefined): value is Locale {
-  return !!value && (locales as readonly string[]).includes(value);
+function isSupported(value: unknown): value is Locale {
+  return typeof value === 'string' && (locales as readonly string[]).includes(value);
 }
 
 /** Best-effort device language, falling back to the default locale. */
@@ -20,7 +20,7 @@ function getDeviceLocale(): Locale {
   return isSupported(code) ? code : defaultLocale;
 }
 
-const storedLocale = storage.getItem<string>(LOCALE_STORAGE_KEY);
+const storedLocale = storage.getItem(LOCALE_STORAGE_KEY);
 
 // A native app ships every catalog in its bundle: there is no first visit to
 // keep light, and no network to wait on before the first frame.

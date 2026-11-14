@@ -4,7 +4,7 @@ import { ShieldAlert, ShieldCheck } from '@oppenheimer/design-system-mobile/icon
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useErrorMessage, useResetPassword } from '@oppenheimer/frontend-core/react';
 import { type Href, Link, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AuthLayout } from '../components/auth-layout';
 import {
@@ -33,9 +33,11 @@ export function ResetPasswordScreen({
   const { mutate, isPending, error } = useResetPassword();
   const [done, setDone] = useState(false);
 
-  return (
-    <AuthLayout brandLabel={brandLabel} legalNote={t('auth.resetPassword.legal')}>
-      {!token ? (
+  const stage = resetStage(token, done);
+  let content: ReactNode;
+  switch (stage.kind) {
+    case 'invalid-link':
+      content = (
         <>
           <AuthIconCircle>
             <Icon as={ShieldAlert} size={24} className="text-ink-900" />
@@ -49,7 +51,10 @@ export function ResetPasswordScreen({
           </Link>
           <AuthBackLink href={loginHref} />
         </>
-      ) : done ? (
+      );
+      break;
+    case 'done':
+      content = (
         <>
           <AuthIconCircle>
             <Icon as={ShieldCheck} size={24} className="text-ink-900" />
@@ -62,7 +67,10 @@ export function ResetPasswordScreen({
             </Button>
           </Link>
         </>
-      ) : (
+      );
+      break;
+    case 'form':
+      content = (
         <>
           <AuthTitle>{t('auth.resetPassword.title')}</AuthTitle>
           <AuthSubtitle>{t('auth.resetPassword.description')}</AuthSubtitle>
@@ -70,11 +78,26 @@ export function ResetPasswordScreen({
             isPending={isPending}
             error={error ? resolveError(error, t('auth.resetPassword.error')).message : undefined}
             onSubmit={({ password }) =>
-              mutate({ token, password }, { onSuccess: () => setDone(true) })
+              mutate({ token: stage.token, password }, { onSuccess: () => setDone(true) })
             }
           />
         </>
-      )}
+      );
+      break;
+  }
+
+  return (
+    <AuthLayout brandLabel={brandLabel} legalNote={t('auth.resetPassword.legal')}>
+      {content}
     </AuthLayout>
   );
+}
+
+type ResetStage = { kind: 'invalid-link' } | { kind: 'done' } | { kind: 'form'; token: string };
+
+/** Which of the screen's three states it is in: no token in the link, reset, or asking. */
+function resetStage(token: string | undefined, done: boolean): ResetStage {
+  if (!token) return { kind: 'invalid-link' };
+  if (done) return { kind: 'done' };
+  return { kind: 'form', token };
 }

@@ -31,7 +31,7 @@ export default function RootLayout() {
   return (
     <ErrorBoundary fallback={() => <AppErrorFallback />}>
       <MobileRoot>
-        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions as never}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
           <OppenheimerProvider app={app}>
             <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
               <View className={isDark ? 'dark flex-1 bg-background' : 'flex-1 bg-background'}>

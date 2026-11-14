@@ -1,6 +1,7 @@
 import { expoClient } from '@better-auth/expo/client';
 import { sharedClientPlugins, toAuthSession, unwrap } from '@oppenheimer/auth/client';
 import type { IAuthClient } from '@oppenheimer/frontend-core';
+import type { BetterAuthClientPlugin } from 'better-auth/client';
 import { createAuthClient } from 'better-auth/react';
 import * as SecureStore from 'expo-secure-store';
 
@@ -12,26 +13,33 @@ export const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3
 // OAuth and password-reset deep links resolve back into the app.
 const scheme = process.env.EXPO_PUBLIC_MOBILE_SCHEME ?? 'oppenheimer';
 
-type CookieAuthClient = { getCookie(): string };
+const expo = expoClient({
+  scheme,
+  storagePrefix: 'oppenheimer',
+  storage: SecureStore,
+});
 
-export const authClient = createAuthClient({
+/** What the Expo plugin adds to the client, read off its own declaration. */
+type ExpoActions = ReturnType<typeof expo.getActions>;
+
+const client = createAuthClient({
   baseURL: `${apiBaseUrl}/api/auth`,
   plugins: [
-    // @better-auth/expo and better-auth currently publish structurally
-    // incompatible BetterFetch generics even at the same package version.
-    // The runtime plugin contract is compatible; erase only that duplicate
-    // dependency type so the remaining plugins keep their inference.
-    expoClient({
-      scheme,
-      storagePrefix: 'oppenheimer',
-      storage: SecureStore,
-    }) as never,
+    // @better-auth/expo declares `getActions` against @better-fetch's
+    // `BetterFetch` while better-auth's plugin type expects its own
+    // `CreateFetchOption` generics, so the plugin is not assignable even at the
+    // same versions (1.6.25, @better-fetch/fetch 1.3.1). It is widened to
+    // better-auth's plugin type, not erased, so the plugins after it keep
+    // their inference; what that widening drops, `ExpoActions` puts back below.
+    expo as BetterAuthClientPlugin,
     // The shared plugin set (additional user fields, admin, organizations)
     // comes from @oppenheimer/auth so the client types stay in lockstep with the
     // server.
     ...sharedClientPlugins(),
   ],
 });
+
+export const authClient = client as typeof client & ExpoActions;
 
 export const mobileAuthClient: IAuthClient = {
   async signIn(email, password) {
@@ -93,7 +101,7 @@ export const mobileAuthClient: IAuthClient = {
   // Attach the Better Auth session cookie (stored in SecureStore) to the
   // generated REST client's requests.
   async getAuthHeaders(): Promise<Record<string, string>> {
-    const cookie = (authClient as typeof authClient & CookieAuthClient).getCookie();
+    const cookie = authClient.getCookie();
     return cookie ? { Cookie: cookie } : {};
   },
 };
