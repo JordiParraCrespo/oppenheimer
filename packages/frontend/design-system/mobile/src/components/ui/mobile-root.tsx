@@ -6,19 +6,20 @@ import { RootSiblingParent } from 'react-native-root-siblings';
 import { OverlayProvider } from './overlay';
 
 /**
- * Overlay stacking order, outermost first: gesture → portal → overlay host →
- * toasts → sheets → screens. `BottomSheetModalProvider` brings a portal
- * registry of its own for the sheets; dialogs and menus use the outer one.
+ * Overlay stacking order, outermost first: gesture → portal → toasts →
+ * sheets → overlay host → screens. `BottomSheetModalProvider` brings a portal
+ * registry of its own, and a `<Portal>` inside it reaches only hosts inside
+ * it, so the overlay host sits within it too.
  */
 export function MobileRoot({ children }: PropsWithChildren) {
   return (
     <GestureHandlerRootView className="flex-1">
       <PortalProvider shouldAddRootHost={false}>
-        <OverlayProvider>
-          <RootSiblingParent>
-            <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
-          </RootSiblingParent>
-        </OverlayProvider>
+        <RootSiblingParent>
+          <BottomSheetModalProvider>
+            <OverlayProvider>{children}</OverlayProvider>
+          </BottomSheetModalProvider>
+        </RootSiblingParent>
       </PortalProvider>
     </GestureHandlerRootView>
   );

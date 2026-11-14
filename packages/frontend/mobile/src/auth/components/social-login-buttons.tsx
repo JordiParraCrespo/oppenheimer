@@ -7,6 +7,7 @@ import type { SocialAuthIntent } from '@oppenheimer/frontend-core';
 import {
   useDeploymentCapabilities,
   useErrorMessage,
+  useSessionRestore,
   useSocialLogin,
 } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +47,17 @@ export function SocialLoginButtons({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const social = useSocialLogin({ onSuccess });
+  // On a phone the provider round-trip ends back in the app, not on a fresh
+  // page load, so nothing re-reads the session the Expo client just stored.
+  // Read it here: a finished sign-in flips the auth state (and with it the
+  // route guards), and a cancelled browser resolves too but finds no session.
+  const session = useSessionRestore({ enabled: false });
+  const social = useSocialLogin({
+    onSuccess: async () => {
+      const { data: userId } = await session.refetch();
+      if (userId) onSuccess?.();
+    },
+  });
   const { data, error } = useDeploymentCapabilities();
 
   // TanStack Query retains the last successful data after a failed refetch,
