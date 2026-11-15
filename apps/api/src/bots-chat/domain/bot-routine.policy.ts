@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { BotRoutineActivity } from '@oppenheimer/shared';
 import type { AutomationRunOutcome, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { BotMessageEntity } from './bot-message.entity';
+import { WORTH_SAYING } from './bot-notice.policy';
 import { repeatedBlockerAsk } from './bot-recovery.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -85,7 +86,7 @@ export function routineOpening(firing: RoutineFiring): string {
   return [
     `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
     'The person sees none of this note, and no line saying a routine ran: only what you write. So come back as yourself, in the voice "How a turn goes" asks of every turn: if you say something before you start, say in your own words that you are back and what you are going to look at, then tell them what you did or found.',
-    'Say something only if they asked to hear about it, it needs them, or it is new and worth interrupting them for; routine progress and a retry that worked are not. Otherwise call nothing_to_report and write nothing.',
+    `${WORTH_SAYING} Otherwise call nothing_to_report and write nothing.`,
     repeatedBlockerAsk(ROUTINE_QUIET),
     '',
     firing.instructions,

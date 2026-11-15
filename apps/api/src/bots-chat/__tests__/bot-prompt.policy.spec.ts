@@ -140,7 +140,7 @@ describe('composeBotSystemPrompt', () => {
     // 2026-11-15: a task is done, then one light line about the name, once
     // (2026-11-13 had none; 2026-11-11 asked name and job after every task).
     expect(prompt).toMatch(
-      /## When a message asks for real work\n\nJust do it, fully, like any other request\. Then always end that reply with one light line saying you have no name of your own yet and they can give you one[^\n]*unless you already said so earlier in this chat\./,
+      /## When a message asks for real work\n\nJust do it, fully, like any other request\. The last line of that reply, after any next step, is one light line saying you have no name of your own yet and they can give you one[^\n]*leave it out only if you already said it earlier in this chat\./,
     );
     // Verification, 2026-11-15: welcomes ran 6 to 8 sentences under "three to
     // five"; every setup message keeps to five, counted, with no asides.

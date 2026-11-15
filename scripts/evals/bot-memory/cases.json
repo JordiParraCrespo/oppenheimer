@@ -105,7 +105,8 @@
       "bot": "reviewer",
       "message": "Turn off Oppenheimer's built-in 'ready to merge' notifications for me, don't filter them, just off. Leave the automerge routine as it is.",
       "expect": "yours",
-      "why": "A setting only the PR work touches; screenshot case 2."
+      "why": "A setting only the PR work touches; screenshot case 2.",
+      "tier": "profile"
     },
     {
       "id": "squash",
