@@ -37,6 +37,11 @@ import {
   routineOpening,
 } from '../../../apps/api/src/bots-chat/domain/bot-routine.policy';
 import {
+  type SessionWake,
+  sessionWakePrompt,
+  sessionWakeText,
+} from '../../../apps/api/src/bots-chat/domain/bot-subscription.policy';
+import {
   composeTurnContext,
   withTurnContext,
 } from '../../../apps/api/src/bots-chat/domain/bot-turn-context.policy';
@@ -61,6 +66,8 @@ type Expect =
   | { kind: 'tell' }
   /** Starts nothing on another host than the one named, and says where it stands. */
   | { kind: 'keep_host'; host: string }
+  /** Starts the work again on another host than the one it failed on. */
+  | { kind: 'move'; from: string }
   /** Starts nothing and does not say the blocker again. */
   | { kind: 'quiet' };
 
@@ -80,6 +87,12 @@ interface Case {
   offline?: string[];
   /** The routine's prompt, when the case has its own. */
   routine?: string;
+  /**
+   * The run is not a routine's but the wake of a session the bot started
+   * that failed: on which host, with what failure, and what the chat held
+   * before it (the person's ask and the bot's reply).
+   */
+  failed?: { host: string; detail: string; chat: string[] };
   expect: Expect;
   why: string;
   /** Why the case is known to fail today: it is run and reported, and does not fail the eval. */
@@ -88,7 +101,7 @@ interface Case {
 
 interface Score {
   right: boolean;
-  /** One letter: S started a session, s started one it should not, H kept to the named host, P prompted the session, T told the person, Q stayed quiet, r said the blocker again, - did nothing. */
+  /** One letter: S started a session, M started it on another host, s started one it should not, H kept to the named host, P prompted the session, T told the person, Q stayed quiet, r said the blocker again, - did nothing. */
   mark: string;
   note: string;
 }
@@ -152,6 +165,42 @@ function refusingClosed(tool: EvalTool, closed: boolean): EvalTool {
   };
 }
 
+/** The wake of the session the bot started, failed as the case says: the real wake text and ask. */
+function failedWake(c: Case, session: { name: string; task: string }): string {
+  const failed = c.failed as NonNullable<Case['failed']>;
+  const wake: SessionWake = {
+    subscriptionId: 'subscription-1',
+    sessionId: SESSION_ID,
+    sessionName: session.name,
+    purpose: null,
+    ends: true,
+    cause: {
+      kind: 'state',
+      state: 'failed',
+      silentPattern: null,
+      task: {
+        seq: 1,
+        state: 'failed',
+        prompt: session.task,
+        result: null,
+        failureDetail: failed.detail,
+      },
+    },
+  };
+  const event = {
+    kind: 'session',
+    subscriptionId: 'subscription-1',
+    sessionId: SESSION_ID,
+    state: 'failed',
+  };
+  return [
+    'Earlier in this chat, oldest first:',
+    ...failed.chat.map((line) => `- ${line}`),
+    '',
+    sessionWakePrompt(event as never, sessionWakeText(wake)),
+  ].join('\n');
+}
+
 /** The message that opens the run: what earlier runs said, then the routine's note. */
 function runMessage(c: Case, routine: { name: string; instructions: string }): string {
   const opening = routineOpening({
@@ -192,6 +241,17 @@ const SCORERS: {
       : did.said
         ? { right: false, mark: 'T', note: 'reported the blocker' }
         : { right: false, mark: '-', note: 'did nothing' },
+  move: (did, expect) => {
+    const from = did.hostId(expect.from);
+    const moved = did.started.find(
+      (call) => (call.input as { host_id?: string } | null)?.host_id !== from,
+    );
+    if (moved) return { right: true, mark: 'M', note: inputOf(moved) };
+    if (did.started.length > 0) return { right: false, mark: 's', note: inputOf(did.started[0]) };
+    return did.said
+      ? { right: false, mark: 'T', note: 'reported the failure' }
+      : { right: false, mark: '-', note: 'did nothing' };
+  },
   keep_host: (did, expect) => {
     const named = did.hostId(expect.host);
     const elsewhere = did.started.find(
@@ -285,9 +345,14 @@ async function main(): Promise<void> {
         {
           id: SESSION_ID,
           name: file.session.name,
-          host: host.name,
+          host: c.failed?.host ?? host.name,
           project: project.name,
-          log: logOf(file.session.task, c.closed),
+          log: c.failed
+            ? [
+                { at: '2026-11-12T06:50:00Z', prompt: file.session.task },
+                { at: '2026-11-12T06:50:20Z', failed: c.failed.detail },
+              ]
+            : logOf(file.session.task, c.closed),
         },
       ],
     });
@@ -335,7 +400,10 @@ async function main(): Promise<void> {
   const turns = await pool(jobs, MAX_PARALLEL, (c) =>
     via.turn({
       system: systemOf(c),
-      message: withTurnContext(contextOf(c), runMessage(c, file.routine)),
+      message: withTurnContext(
+        contextOf(c),
+        c.failed ? failedWake(c, file.session) : runMessage(c, file.routine),
+      ),
       // A fresh workspace each run: nothing one run did is seen by another.
       tools: toolsOf(c),
       maxTurns: MAX_TURNS,

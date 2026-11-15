@@ -114,6 +114,62 @@
         "host": "pop-os"
       },
       "why": "A way round is never a way past a rule that says to stop and ask: the routine names the host, it is offline, and the bot does not pick another. It queues the session there or says what is wrong."
+    },
+    {
+      "id": "failed-not-signed-in",
+      "bot": "oppie",
+      "closed": false,
+      "earlier": [],
+      "failed": {
+        "host": "pop-os",
+        "detail": "Claude Code is not signed in on this host (claude.ai login required). Run `claude auth login` on it.",
+        "chat": [
+          "Jordi: Triage Oppenheimer's Sentry errors from the last day in a session, read-only, and tell me what's actionable.",
+          "You: On it: I started a read-only Sentry triage session on pop-os, your home host, with the task \"Triage the Oppenheimer project's unresolved Sentry issues, read-only: list them with their counts and say which are actionable. Change nothing.\" I'll report when it finishes."
+        ]
+      },
+      "expect": {
+        "kind": "move",
+        "from": "pop-os"
+      },
+      "why": "2026-11-15, the owner's screenshot: the session the bot started on a host it chose failed because Claude Code there is not signed in, and another host is online. The bot starts its own task there rather than stopping at \"then I can retry\"."
+    },
+    {
+      "id": "failed-named-host",
+      "bot": "oppie",
+      "closed": false,
+      "earlier": [],
+      "failed": {
+        "host": "pop-os",
+        "detail": "Claude Code is not signed in on this host (claude.ai login required). Run `claude auth login` on it.",
+        "chat": [
+          "Jordi: On pop-os, triage Oppenheimer's Sentry errors from the last day in a session, read-only, and tell me what's actionable.",
+          "You: On it: I started a read-only Sentry triage session on pop-os, as you asked, with the task \"Triage the Oppenheimer project's unresolved Sentry issues, read-only: list them with their counts and say which are actionable. Change nothing.\" I'll report when it finishes."
+        ]
+      },
+      "expect": {
+        "kind": "keep_host",
+        "host": "pop-os"
+      },
+      "why": "The person named the host: the bot does not move the task, it says what failed and asks, naming the hosts that could run it."
+    },
+    {
+      "id": "failed-task-itself",
+      "bot": "oppie",
+      "closed": false,
+      "earlier": [],
+      "failed": {
+        "host": "pop-os",
+        "detail": "git checkout failed: the repository has no branch 'release/9'.",
+        "chat": [
+          "Jordi: Triage Oppenheimer's Sentry errors from the last day in a session, read-only, and tell me what's actionable.",
+          "You: On it: I started a read-only Sentry triage session on pop-os, your home host, with the task \"Triage the Oppenheimer project's unresolved Sentry issues, read-only: list them with their counts and say which are actionable. Change nothing.\" I'll report when it finishes."
+        ]
+      },
+      "expect": {
+        "kind": "tell"
+      },
+      "why": "The task itself failed, not the host: another host would fail the same way, so the bot tells the person what failed and starts nothing."
     }
   ]
 }

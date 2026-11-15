@@ -174,7 +174,14 @@ worker runs it and streams what happens back to the chat.
     said no to it, and never past a rule that says to stop and ask (a
     host the person named, a refused command, a failed session);
     otherwise it says once what blocks it, and never the same blocker
-    twice (2026-11-12);
+    twice (2026-11-12); at a failed step it steps back to what the step
+    was for, lists the other ways it has (another host, another of its
+    tools, another source, another approach), checks which can work now
+    and takes the most promising, never ending on "I can retry" while one
+    is untried, and takes a route only if it changes what made the step
+    fail: a cause that travels with the task (a missing branch, a wrong
+    repository, a bad command) is fixed or reported, not carried to
+    another host (2026-11-15);
   - **check before you report** (2026-11-07), the one statement every
     other section and the session wakes point at: every action that
     changes something is checked before it is reported, from what the
@@ -201,11 +208,14 @@ worker runs it and streams what happens back to the chat.
     agent) and another online host can, it starts there and says why
     (2026-11-08); when a session it started on a host it chose fails and
     the failure looks like the host's (the agent not signed in or not
-    installed, the checkout missing), it offers to run the task it wrote on
-    another online host that has the agent and starts it only on the
-    person's yes: nothing but the session's own words says why it failed,
-    and `list_hosts` cannot see whether an agent is signed in. It never
-    offers a host the task failed on; a session it only watches, or a task
+    installed, the repository not cloned there), it starts the task it
+    wrote, from its own words and never the wake's, on another online
+    host that has the agent, asking first as its permissions say (a card
+    under Approve for me), and says where and why (2026-11-15; until then
+    it only offered, and started on the person's yes, because nothing but
+    the session's own words says why it failed). It never starts it on a
+    host the task failed on, and never moves a task off a host the person
+    named: there it names the hosts that could run it and asks; a session it only watches, or a task
     that fails on its own merits, is reported, not retried, as before (the
     `failed` wake); it
     works only in a known project's repository or a folder it was given;
@@ -2226,3 +2236,19 @@ The decisions it produced:
   turn's "How a turn goes" also asks for kindness without filler (greet
   back, thank, share a win, say what went wrong gently).
   `pnpm eval:bot-first-chat`: 17 of 18 runs right, every case passing.
+- 2026-11-15: **a failed step is looked at from what it was for, and a
+  session that failed on a host the bot chose is started on another** (§1,
+  the `failed` wake). The owner saw Telegram stop at "Claude Code on New
+  host isn't signed in… then I can retry" with other hosts online, and asked
+  for bots that zoom out when the straight path fails rather than a rule
+  for sessions. "How a turn goes" now has the bot list the other ways it
+  has to the same end, check which can work now, take the best, and never
+  end on "I can retry" while one is untried; a route is taken only if it
+  changes the cause, so a missing branch is not carried to another host.
+  The `failed` wake starts the bot's own task on another capable host
+  instead of offering to (its approval level still decides whether that
+  asks first), never off a host the person named, where it names the hosts
+  that could run it and asks. `start_cloud_session`'s failure answer points
+  at another signed-in host. `pnpm eval:bot-blocked-run` gained three
+  cases: before, `failed-not-signed-in` was 0 of 3; after, every case
+  passes, 27 of 27 runs.

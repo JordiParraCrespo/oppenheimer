@@ -1671,3 +1671,11 @@ earlier note:
   odd and the welcome too long: work is now just done, and the welcome is
   a few warm sentences with no list. A name or job that matches one of the
   owner's projects now says which project the bot is for.
+- `versions/mvp/25-bots.md` §1 (2026-11-08) had a bot whose own session
+  failed on a host it chose, for a reason that looked like the host's,
+  offer the task on another host and start it only on a yes, since only
+  the session's untrusted words said the host was at fault. On 2026-11-15
+  the owner saw a bot stop at "then I can retry" with other hosts online
+  and asked for bots that look for another way: the bot now starts its own
+  task on another capable host, its approval level deciding whether that
+  asks first, and never moves off a host the person named.

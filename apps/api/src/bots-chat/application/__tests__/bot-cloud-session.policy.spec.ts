@@ -1,7 +1,12 @@
 import { SessionCloudRunEntity } from '../../../sessions/domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
 import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
-import { cloudLinkOf, describeCloudSession } from '../bot-cloud-session.policy';
+import {
+  type CloudSessionPlan,
+  cloudLinkOf,
+  cloudStartAnswer,
+  describeCloudSession,
+} from '../bot-cloud-session.policy';
 
 /**
  * One describer for a session's cloud half, whichever kind it is: what
@@ -78,6 +83,25 @@ describe('the cloud half of a session', () => {
     );
     expect(describeCloudSession(launched(null))).toBe(
       '- cloud session: https://cursor.com/agents?id=bc-session-1 (finished)',
+    );
+  });
+
+  // What breaks this: 2026-11-15, a bot told only "read_session says why"
+  // when its Claude Code cloud session failed on a host not signed in to
+  // claude.ai, which stopped there with other hosts online.
+  it('points a failed host-started cloud at another signed-in host', () => {
+    const session = hostStarted('claude-code', null);
+    session.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.FAILED,
+      payload: { reason: 'agent_failed' },
+      occurredAt: new Date(),
+    });
+    const plan = { kind: 'host', agent: 'claude-code', hostId: 'host-1' } as CloudSessionPlan;
+    const answer = cloudStartAnswer(plan, 'session-1', session);
+    expect(answer).toContain('could not start its Claude Code cloud session');
+    expect(answer).toContain(
+      'another online host whose claude is signed in can start it instead (list_hosts)',
     );
   });
 });
