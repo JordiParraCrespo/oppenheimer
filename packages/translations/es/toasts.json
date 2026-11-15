@@ -16,6 +16,7 @@
   "projectCreated": "Se ha creado «{{name}}».",
   "projectSaved": "Se ha guardado «{{name}}».",
   "projectDeleted": "Se ha eliminado «{{name}}».",
+  "projectsDeleted": "{{n}} proyectos eliminados.",
   "hostRenamed": "Renombrado a «{{name}}».",
   "hostRemoved": "Se ha quitado «{{name}}».",
   "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",

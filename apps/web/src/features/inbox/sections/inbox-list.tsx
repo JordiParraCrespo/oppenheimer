@@ -18,6 +18,7 @@ import {
   SidebarSearchField,
   SidebarToggle,
   useLocale,
+  useMultiSelection,
 } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { InboxFilterChips } from '@/features/inbox/components/inbox-filter-chips';
@@ -26,7 +27,6 @@ import { InboxSelectionBar } from '@/features/inbox/components/inbox-selection-b
 import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useInboxRead } from '@/features/inbox/hooks/use-inbox-read';
-import { useInboxSelection } from '@/features/inbox/hooks/use-inbox-selection';
 import { inboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { facetCounts } from '@/features/inbox/lib/inbox-filter';
 import type { InboxMarkActionName } from '@/features/inbox/lib/inbox-mark-actions';
@@ -51,7 +51,7 @@ export function InboxList() {
   const marks = useInboxMarks();
   const reload = useRefreshInbox();
   const [pullsShown, setPullsShown] = useInboxPullsShown();
-  const selection = useInboxSelection(open.map((item) => item.key));
+  const selection = useMultiSelection(open.map((item) => item.key));
   const picked = open.filter((item) => selection.has(item.key));
   const onPicked = (action: InboxMarkActionName) => {
     marks.apply(action, picked);
