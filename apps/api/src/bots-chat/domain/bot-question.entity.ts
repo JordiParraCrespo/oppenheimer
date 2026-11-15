@@ -35,8 +35,8 @@ export interface BotQuestionProps {
 }
 
 /**
- * A card of questions a bot put to its owner (`ask_user`, `25-bots.md`
- * §3.2). It is decided once: `pending` moves to `answered`, `dismissed` or
+ * A card of questions a bot put to its owner (`ask_user`). It is decided once:
+ * `pending` moves to `answered`, `dismissed` or
  * `expired`, never back, and nothing runs on it. The status it was loaded
  * in is what its next write is conditioned on, so two answers, or an answer
  * and a new message, never both land.

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { ScheduleTriggerInputDto } from '@oppenheimer/shared';
 
 /**
- * A bot's heartbeat (`26-bot-routines.md` §6): the routine a bot is given
+ * A bot's heartbeat: the routine a bot is given
  * once it has a job (its `INSTRUCTIONS.md` first written), which wakes it on
  * its own once an hour to check in, read what it looks after, act on what
  * needs it and otherwise stay quiet (`nothing_to_report`). Event wakes (a pull request it watches, new mail, a
@@ -27,7 +27,7 @@ export const HEARTBEAT_PROMPT = [
 /**
  * The minute past the hour a bot beats on: spread by its id, so a
  * workspace's bots do not all wake at :00, and the same for every replica and
- * every retry (`26-bot-routines.md` §6, "Spread, not on the minute").
+ * every retry.
  */
 export function heartbeatMinute(botId: string): number {
   return createHash('sha256').update(botId).digest().readUInt32BE(0) % 60;

@@ -7,7 +7,7 @@ import {
 import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
- * How a bot learns from its own work (`25-bots.md` §4.1, 2026-11-09, from
+ * How a bot learns from its own work (from
  * Hermes Agent's learning loop): it saves the way it did a hard task as a
  * skill without being asked, and fixes a skill it followed that turned out
  * wrong or stale.

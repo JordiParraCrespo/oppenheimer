@@ -226,7 +226,7 @@ export class BotSubscriptionMapper {
     };
   }
 
-  /** What a check of a handed-off task tells the bot (§4.1, §4.2): the task as read now, still followed. */
+  /** What a check of a handed-off task tells the bot: the task as read now, still followed. */
   toCheckWake(
     subscription: BotSubscriptionEntity,
     session: WorkSessionEntity,

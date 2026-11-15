@@ -60,8 +60,8 @@ export const BOT_APPROVAL_RESULT_MAX = 2_000;
 export const BOT_APPROVAL_REVIEW_NOTE_MAX = 400;
 
 /**
- * One call of an asking tool waiting for the bot's owner (`25-bots.md` §5,
- * the Needs input card). It is decided once: `pending` moves to `approved`,
+ * One call of an asking tool waiting for the bot's owner (the Needs input
+ * card). It is decided once: `pending` moves to `approved`,
  * `denied` or `expired`, and an approved call that failed when it ran ends
  * `failed`. Approved with no result yet is a call running. The status it was loaded in is what its next write is
  * conditioned on, so two clicks, or a click and a new message, never both
@@ -210,7 +210,7 @@ export class BotApprovalEntity extends AggregateRoot<BotApprovalProps> {
   }
 
   /**
-   * What a yes past this call leaves standing (`25-bots.md` §5): "Always
+   * What a yes past this call leaves standing: "Always
    * allow" sets the tool to Allow for the bot; "Always allow for …" grants it
    * on the call's subject. Null for a yes to this call only, and for a no.
    */

@@ -63,7 +63,7 @@ export function estimateTokens(text: string): number {
 export const BOT_HISTORY_BLOCK_TOKENS = BOT_HISTORY_TOKEN_BUDGET / 4;
 
 /**
- * The conversation a turn continues (`25-bots.md` §2): the summary of what
+ * The conversation a turn continues: the summary of what
  * came before, when there is one, first; then the messages after the
  * summary's cutoff that fit `BOT_HISTORY_TOKEN_BUDGET` with it, oldest first.
  * Your messages, the bot's text and the events Oppenheimer told it (an
@@ -135,7 +135,7 @@ function blockEnd(costs: readonly number[], start: number): number {
 /**
  * Whether a stored message is read back: one with words, or an activity line
  * with calls. An activity line used to be dropped, so a later turn knew
- * what its tools did only from what it had said (2026-11-08).
+ * what its tools did only from what it had said.
  */
 export function isReadBack(message: HistoryMessage): boolean {
   return message.role === 'activity'

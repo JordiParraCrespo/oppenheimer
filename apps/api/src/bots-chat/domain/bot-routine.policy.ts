@@ -5,7 +5,7 @@ import { BotMessageEntity } from './bot-message.entity';
 import { repeatedBlockerAsk } from './bot-recovery.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
-/** What fired, as a routine's turn opens with it (`26-bot-routines.md` §4). */
+/** What fired, as a routine's turn opens with it. */
 export interface RoutineFiring {
   automationId: string;
   runId: string;
@@ -39,11 +39,11 @@ export const ROUTINE_ACTIONS = [
 export type RoutineAction = (typeof ROUTINE_ACTIONS)[number];
 
 /**
- * Whether the owner has to consent to the bot doing this to a routine
- * (`26-bot-routines.md` §4): only what spends nothing and can be undone runs
+ * Whether the owner has to consent to the bot doing this to a routine: only
+ * what spends nothing and can be undone runs
  * without a card, which is reading the list and pausing. A run the bot starts
  * is spend nobody clicked for, so `run_now` asks like a save does. The one
- * exception is the turn of the person's own `/schedule` (`25-bots.md` §4.1):
+ * exception is the turn of the person's own `/schedule`:
  * their command is the consent to the routine it asks for, so a `create` in
  * that turn runs; changing or deleting one still asks.
  */
@@ -77,8 +77,8 @@ export function routinePrefix(automationId: string): string {
 
 /**
  * The words the bot reads when a routine fires: which one, how to come back
- * to the chat, then what it says to do. The chat shows no line for the run
- * (2026-11-10), so what the bot writes is all the person sees of it: it has
+ * to the chat, then what it says to do. The chat shows no line for the run, so
+ * what the bot writes is all the person sees of it: it has
  * to read as the bot dropping by, never as a job's output.
  */
 export function routineOpening(firing: RoutineFiring): string {
@@ -232,8 +232,8 @@ export function routineActivityText(activity: RoutineActivity): string {
 }
 
 /**
- * A routine's activity as a line of its bot's chat (`26-bot-routines.md` §4,
- * "In the chat"): an event outside any turn, at the moment it happened,
+ * A routine's activity as a line of its bot's chat: an event outside any turn,
+ * at the moment it happened,
  * however late the outbox delivers it.
  */
 export function routineActivityLine(activity: RoutineActivity): BotMessageEntity {
@@ -267,7 +267,7 @@ export function routineActivityLine(activity: RoutineActivity): BotMessageEntity
 export const QUIET_TOOL = 'nothing_to_report';
 
 /**
- * What `nothing_to_report` answers (`26-bot-routines.md` §6, "Quiet turns"):
+ * What `nothing_to_report` answers:
  * the turn ends here, with the call as its one activity line and no message,
  * so a heartbeat that found nothing is one collapsed line in the chat.
  */
@@ -276,8 +276,8 @@ export function quietTurnAnswer(): string {
 }
 
 /**
- * What a turn keeps of the bot's words (`26-bot-routines.md` §6, "Quiet
- * turns"), told what happens in order. From a `nothing_to_report` call that
+ * What a turn keeps of the bot's words, told what happens in order. From a
+ * `nothing_to_report` call that
  * went through, what the bot writes is not kept, because a model told to
  * write nothing still writes (2026-11-12: a routine's blocker, said again
  * around the call on every run); a turn that ends quiet also takes back

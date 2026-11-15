@@ -1,6 +1,6 @@
 /**
- * The words around a bot's notice (`notify`, `product/next-steps/agent-tools.md`
- * §5): what the tool answers the model, and how many one turn may send. A
+ * The words around a bot's notice (`notify`): what the tool answers the model,
+ * and how many one turn may send. A
  * notice replaces the last, so a second in one turn is a correction at most;
  * more would only churn the person's Inbox.
  */

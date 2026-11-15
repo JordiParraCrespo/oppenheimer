@@ -1,5 +1,5 @@
 /**
- * What a bot does after a step fails (`25-bots.md` §1, 2026-11-08), said
+ * What a bot does after a step fails, said
  * once. From OpenClaw's "Execution Bias" and "Promised Work" prompt
  * sections: a failed step sends the bot to the next reasonable route
  * before it reports, within limits no route lifts. The system prompt's
@@ -32,7 +32,7 @@ const LIMITS: readonly string[] = [
 ];
 
 /**
- * What a bot does at a blocker (2026-11-12): Oppie's half-hourly Sentry
+ * What a bot does at a blocker: Oppie's half-hourly Sentry
  * check answered "the designated session is still closed" for hours, when
  * a new session would have run it. A blocker is a problem the bot solves
  * before it is one it reports, and the solution has to serve what the
