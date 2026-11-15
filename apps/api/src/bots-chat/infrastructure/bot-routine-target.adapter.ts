@@ -13,6 +13,7 @@ import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import { HEARTBEAT_NAME, heartbeatSkip } from '../domain/bot-heartbeat.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { routinePrefix, routineTurn } from '../domain/bot-routine.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
@@ -75,6 +76,17 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
 
     const instructions = composeRunPrompt(automation.revision.prompt, event);
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
+
+    if (automation.name === HEARTBEAT_NAME) {
+      const view = await this.turns.findHeartbeatView(
+        automation.organizationId,
+        botId,
+        routinePrefix(automation.id),
+        automation.ownerUserId,
+      );
+      const skip = heartbeatSkip(run.cause, view, now);
+      if (skip) return { kind: 'skip', reason: skip, pause: null };
+    }
 
     const bot = await this.access.bot(automation.organizationId, botId);
     const trigger = automation.triggers.find((candidate) => candidate.id === run.triggerId);

@@ -1,50 +1,70 @@
-import { createHash } from 'node:crypto';
-import type { ScheduleTriggerInputDto } from '@oppenheimer/shared';
+import type { AutomationRunCause } from '@oppenheimer/shared/automations';
 
 /**
- * A bot's heartbeat (`26-bot-routines.md` §6): the routine a bot is given
- * once it has a job (its `INSTRUCTIONS.md` first written), which wakes it on
- * its own once an hour to check in, read what it looks after, act on what
- * needs it and otherwise stay quiet (`nothing_to_report`). Event wakes (a pull request it watches, new mail, a
- * session it follows) still wake it at once; this is what makes it proactive
- * between them. It is an ordinary routine: the owner pauses, edits or deletes
- * it from the Routines tab or in chat.
+ * A bot's heartbeat (`26-bot-routines.md` §6): a routine named Heartbeat that
+ * wakes the bot on its own to check in on what it looks after. Since
+ * 2026-11-15 no bot is given one by default; a bot that has one (an owner
+ * resumed it, or asked the bot for one) beats only when a beat can be worth a
+ * model turn: inside the owner's waking hours, and when something happened in
+ * the bot's chat since its last beat. Event wakes (a pull request it watches,
+ * new mail, a session it follows) still wake it at once, at any hour.
  */
 
-/** The routine's name, which is also how a bot that already has one is recognised. */
+/** The routine's name, which is how a bot's heartbeat is recognised. */
 export const HEARTBEAT_NAME = 'Heartbeat';
 
-/** What the bot reads on every beat, written to itself. */
-export const HEARTBEAT_PROMPT = [
-  'Check in. Nobody asked you anything: this is your own regular look around.',
-  '1. Reread your instructions and your plan, and anything you told the person you would come back to.',
-  '2. Look at what you look after, with the tools you have: the sessions you started or follow, the pull requests you watch, the person’s mail if you read it, your open questions and approvals.',
-  '3. Act on what needs you now, within what you are allowed to do. Do not redo work, and do not start new work nobody asked for.',
-  '4. If the person needs to know or decide something, say it in one or two lines and use notify so they see it outside this chat. Never repeat what you already told them.',
-  '5. If nothing needs you or them, call nothing_to_report and write nothing.',
-].join('\n');
+/** The owner's waking hours, in their zone: a beat at or after `start` and before `end`. */
+export const HEARTBEAT_ACTIVE_HOURS = { start: 8, end: 22 } as const;
+
+/** What a scheduled beat is decided on, read once from the bot's turns. */
+export interface HeartbeatView {
+  /** When the heartbeat's own last turn was queued; null before its first beat. */
+  lastBeatAt: Date | null;
+  /**
+   * When the bot's newest turn that the heartbeat could have something to
+   * say about was queued: a message, an approval, an answer, a wake, a goal.
+   * Another routine's or a loop's turn is not one: two schedules would keep
+   * each other awake. Null when it has none.
+   */
+  lastActivityAt: Date | null;
+  /** The zone the owner last wrote to the bot from; null when unknown. */
+  ownerTimeZone: string | null;
+}
+
+export type HeartbeatSkip = 'outside_active_hours' | 'idle';
 
 /**
- * The minute past the hour a bot beats on: spread by its id, so a
- * workspace's bots do not all wake at :00, and the same for every replica and
- * every retry (`26-bot-routines.md` §6, "Spread, not on the minute").
+ * Whether this beat is skipped without a model turn, and why. Only a
+ * scheduled beat is: the owner's Run now always runs. Outside the owner's
+ * waking hours it waits for morning; inside them it runs on its first beat
+ * and whenever something happened since the last one, and otherwise has
+ * nothing new to look at.
  */
-export function heartbeatMinute(botId: string): number {
-  return createHash('sha256').update(botId).digest().readUInt32BE(0) % 60;
+export function heartbeatSkip(
+  cause: AutomationRunCause,
+  view: HeartbeatView,
+  now: Date,
+): HeartbeatSkip | null {
+  if (cause === 'manual') return null;
+  const hour = localHour(now, view.ownerTimeZone);
+  if (hour < HEARTBEAT_ACTIVE_HOURS.start || hour >= HEARTBEAT_ACTIVE_HOURS.end) {
+    return 'outside_active_hours';
+  }
+  if (view.lastBeatAt === null) return null;
+  if (view.lastActivityAt !== null && view.lastActivityAt > view.lastBeatAt) return null;
+  return 'idle';
 }
 
-/** The heartbeat's trigger: hourly, at the bot's own minute. An hourly rule reads no zone. */
-export function heartbeatTrigger(botId: string): ScheduleTriggerInputDto {
-  return {
-    source: 'schedule',
-    frequency: 'hourly',
-    hour: 0,
-    minute: heartbeatMinute(botId),
-    timezone: 'UTC',
-  };
-}
-
-/** Whether a bot still lacks its heartbeat, from the names of its routines: a redelivery adds none. */
-export function needsHeartbeat(routineNames: readonly string[]): boolean {
-  return !routineNames.includes(HEARTBEAT_NAME);
+/** The hour of `now` on the clock of `timeZone`, or UTC's when it is unknown or not a zone. */
+function localHour(now: Date, timeZone: string | null): number {
+  try {
+    const hour = new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hourCycle: 'h23',
+      timeZone: timeZone ?? 'UTC',
+    }).format(now);
+    return Number(hour);
+  } catch {
+    return now.getUTCHours();
+  }
 }

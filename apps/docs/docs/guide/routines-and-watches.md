@@ -1,6 +1,6 @@
 ---
 title: Routines and watches
-description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its hourly heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
+description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
 sidebar_position: 6
 ---
 
@@ -24,7 +24,7 @@ Triggers a routine can have:
 
 A routine is skipped and paused when it cannot run, with the reason in the chat: the bot's provider has no key, its owner lost access, or an hourly run limit was hit (10 runs an hour per routine, 100 per workspace by default). A run due while the last one is still running is skipped.
 
-**The heartbeat.** Once a bot has a job (its `INSTRUCTIONS.md` is written), it is given one routine of its own, **Heartbeat**: hourly, at a minute past the hour that differs from bot to bot, so your bots do not all wake at once. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. It is an ordinary routine: pause, edit or delete it on the Routines tab or in chat. A bot that already had a job before heartbeats existed has none until you ask for one.
+**The heartbeat.** A bot can have one routine of its own named **Heartbeat**: hourly, at a minute past the hour that differs from bot to bot. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. No bot is given one by default: turn a paused one back on from the Routines tab, or ask the bot for one in chat. To spend nothing for nothing, a heartbeat runs only from 08:00 to 22:00 in the time zone you last wrote to the bot from, and skips a beat, without calling the model, when nothing happened in the bot's chat since its last one (another routine or a loop does not count). Run now always runs it. Events (a pull request it watches, new mail, a session it follows) still wake the bot at any hour.
 
 **Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message. A routine's quiet run shows nothing at all, unless the chat is set to show tool calls.
 

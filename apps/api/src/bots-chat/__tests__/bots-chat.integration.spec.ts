@@ -531,6 +531,64 @@ describe('bots chat (integration)', () => {
     expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
   });
 
+  // What breaks this: a heartbeat that reads its own turns, another routine's
+  // or a loop's as activity (so it never idles), another bot's turns, or the
+  // zone of a turn the owner did not write.
+  it('reads a heartbeat’s last beat, the bot’s last real activity and the owner’s zone', async () => {
+    const bot = await create('Heartbeat Bot');
+    const automationId = '6a1c4f9e-0000-4000-8000-0000000000b1';
+    const props = {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    };
+    const at = async (turnId: string, iso: string) =>
+      dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [turnId, iso]);
+    const prefix = routinePrefix(automationId);
+    const view = () => turns.findHeartbeatView(bot.organizationId, bot.id, prefix, userId);
+
+    expect(await view()).toEqual({ lastBeatAt: null, lastActivityAt: null, ownerTimeZone: null });
+
+    const message = sent(bot, 'Watch the release.');
+    await turns.enqueue(message.turn, message.message, null);
+    await at(message.turn.id, '2026-11-15T09:00:00Z');
+    await dataSource.query(`UPDATE bot_turn SET "timeZone" = 'Europe/Madrid' WHERE id = $1`, [
+      message.turn.id,
+    ]);
+    const beat = routineTurn(
+      { ...props, timeZone: 'UTC' },
+      {
+        automationId,
+        runId: '6a1c4f9e-0000-4000-8000-0000000000b2',
+        name: 'Heartbeat',
+        instructions: 'Check in.',
+      },
+    );
+    await turns.enqueueOnce(beat.turn, beat.opening, null, null);
+    await at(beat.turn.id, '2026-11-15T10:00:00Z');
+    const other = routineTurn(props, {
+      automationId: '6a1c4f9e-0000-4000-8000-0000000000b3',
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b4',
+      name: 'Sentry triage',
+      instructions: 'Look at Sentry.',
+    });
+    await turns.enqueueOnce(other.turn, other.opening, null, null);
+    await at(other.turn.id, '2026-11-15T10:30:00Z');
+
+    expect(await view()).toEqual({
+      lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+      lastActivityAt: new Date('2026-11-15T09:00:00Z'),
+      ownerTimeZone: 'Europe/Madrid',
+    });
+    const elsewhere = await create('Quiet Bot');
+    expect(
+      await turns.findHeartbeatView(elsewhere.organizationId, elsewhere.id, prefix, userId),
+    ).toEqual({ lastBeatAt: null, lastActivityAt: null, ownerTimeZone: null });
+  });
+
   it('makes the end of a turn wait for the bot row a send holds', async () => {
     const bot = await create('Locked');
     const first = sent(bot, 'One');

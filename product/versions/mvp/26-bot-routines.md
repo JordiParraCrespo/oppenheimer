@@ -276,6 +276,28 @@ followed session) are unchanged and still wake the bot at once; the
 heartbeat is what makes it act between them. Bots that already had a job
 before this get no heartbeat until asked.
 
+**Changed 2026-11-15** (asked by the owner: "the heartbeat is eating my
+tokens"). An hourly model turn on every bot with a job, around the clock,
+spent tokens to say `nothing_to_report`. So:
+
+- **No heartbeat by default.** The listener on `BotJobSetDomainEvent` is
+  gone, and migration `PauseDefaultBotHeartbeats` paused every running
+  routine named Heartbeat with `pausedReason = 'user'`, so its owner turns
+  it back on from the Routines tab, or asks the bot for one in chat.
+- **Waking hours.** A scheduled beat runs only from 08:00 to 22:00
+  (`HEARTBEAT_ACTIVE_HOURS`) in the zone the owner last wrote to the bot
+  from, UTC when unknown; outside them the run is skipped as
+  `outside_active_hours`. Event wakes still come at any hour.
+- **Idle beats are skipped.** Inside those hours a beat runs on its first
+  beat and when the bot had a turn since the last one that was neither a
+  routine's nor a loop's (a message, an approval, an answer, a wake, a
+  goal); otherwise the run is skipped as `idle`, before any model turn.
+  Another schedule does not count, or two would keep each other awake.
+- The owner's Run now always runs. Both skips are silent in the chat (not
+  failures), and show on the routine's runs. The rule is
+  `heartbeatSkip` (`bot-heartbeat.policy.ts`), asked by `BotRoutineTarget`
+  for the routine named Heartbeat only.
+
 - **Quiet turns.** A routine turn with nothing to say calls
   `nothing_to_report` instead of writing a message; the chat draws one
   collapsed activity line. **Built 2026-11-06**: the tool is offered on
@@ -506,3 +528,7 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   the opposite of what a routine is for; OpenClaw has none. Routines run
   until paused; the run budget, the overlap guard and quiet turns bound the
   cost (§6, "Removed 2026-11-10").
+- 2026-11-15, asked by the owner: **no heartbeat by default, and a
+  heartbeat that sleeps.** Existing ones paused; one turned back on beats
+  only in the owner's waking hours and only when the chat moved since its
+  last beat (§6, "Changed 2026-11-15").

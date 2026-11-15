@@ -3,9 +3,9 @@ import type { Scope } from '@oppenheimer/shared';
 
 /**
  * Raised when a bot's `INSTRUCTIONS.md` goes from empty to written: the bot
- * now has a job, at its creation or when it is first given one. The chat
- * listens to give it a heartbeat (`26-bot-routines.md` §6), the routine that
- * wakes it on its own to check in; a bot with no job has nothing to check.
+ * now has a job, at its creation or when it is first given one. Until
+ * 2026-11-15 the chat listened to give it a heartbeat (`26-bot-routines.md`
+ * §6); no bot is given one by default now, so nothing listens to it yet.
  */
 export class BotJobSetDomainEvent extends DomainEvent {
   readonly organizationId: string;

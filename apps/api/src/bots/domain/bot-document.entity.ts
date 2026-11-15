@@ -191,7 +191,7 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
 
   /**
    * The bot has a job now: its instructions went from empty to written. Only
-   * a write or a creation says so; a revert restores, and gives no heartbeat.
+   * a write or a creation says so; a revert restores, and announces nothing.
    */
   private announceJob(before: string, credentialScopes: readonly Scope[] | null): void {
     if (this.props.name !== 'instructions') return;
@@ -199,7 +199,7 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
     this.addEvent(
       new BotJobSetDomainEvent({
         aggregateId: this.props.botId,
-        reason: "a bot's instructions were first written, and it is owed its heartbeat",
+        reason: "a bot's instructions were first written: it has a job",
         organizationId: this.props.organizationId,
         botId: this.props.botId,
         credentialScopes,

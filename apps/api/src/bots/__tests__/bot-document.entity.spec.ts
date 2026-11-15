@@ -135,9 +135,9 @@ describe('BotDocumentEntity', () => {
     expect(document.pendingRevision).toBeNull();
   });
 
-  // What breaks this: a bot given a job but no heartbeat, a heartbeat for a bot
-  // with no job (it would wake hourly to greet nobody), a second one on every
-  // edit, or one saved wider than the token that wrote the job.
+  // What breaks this: a job set with no announcement, one announced for a bot
+  // with no job, a second one on every edit, or one that loses the scopes of
+  // the token that wrote the job.
   describe('a first job', () => {
     const jobEvents = (document: BotDocumentEntity) =>
       document.domainEvents.filter((event) => event instanceof BotJobSetDomainEvent);

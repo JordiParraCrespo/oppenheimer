@@ -218,7 +218,7 @@ describe('bots (integration)', () => {
   });
 
   // What breaks this: a bot given a job at its creation, or later, without the
-  // event its heartbeat is saved from; or an event left by a write that lost.
+  // event that announces it; or an event left by a write that lost.
   it('stages a first job on the outbox with the write that sets it, and nothing for a blank bot', async () => {
     const staged = async (botId: string) =>
       dataSource.query(`SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`, [

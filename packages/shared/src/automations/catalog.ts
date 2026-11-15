@@ -411,6 +411,13 @@ export const AUTOMATION_SKIP_REASONS = [
    * it stays for the runs that did.
    */
   'unattended',
+  /**
+   * A bot's heartbeat outside its owner's waking hours (`26-bot-routines.md`
+   * §6): it waits for morning instead of spending a model turn nobody reads.
+   */
+  'outside_active_hours',
+  /** A bot's heartbeat with nothing new in its chat since its last beat. */
+  'idle',
 ] as const;
 export type AutomationSkipReason = (typeof AUTOMATION_SKIP_REASONS)[number];
 

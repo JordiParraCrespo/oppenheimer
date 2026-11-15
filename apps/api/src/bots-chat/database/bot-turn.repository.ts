@@ -18,6 +18,7 @@ import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
+import type { HeartbeatView } from '../domain/bot-heartbeat.policy';
 import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import { loopKeyPrefix } from '../domain/bot-loop.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
@@ -414,6 +415,38 @@ export class BotTurnRepository
       .addOrderBy('turn.id', 'DESC')
       .getOne();
     return record ? this.mapper.toDomain(record).context : null;
+  }
+
+  async findHeartbeatView(
+    organizationId: string,
+    botId: string,
+    routinePrefix: string,
+    ownerUserId: string,
+  ): Promise<HeartbeatView> {
+    // Each is IDX_bot_turn_bot read backwards from the newest turn, to the first that matches.
+    const [row]: {
+      lastBeatAt: Date | null;
+      lastActivityAt: Date | null;
+      ownerTimeZone: string | null;
+    }[] = await this.repository.query(
+      `SELECT
+         (SELECT "createdAt" FROM bot_turn
+           WHERE "organizationId" = $1 AND "botId" = $2 AND starts_with("sourceKey", $3)
+           ORDER BY "createdAt" DESC LIMIT 1) AS "lastBeatAt",
+         (SELECT "createdAt" FROM bot_turn
+           WHERE "organizationId" = $1 AND "botId" = $2 AND origin NOT IN ('routine', 'loop')
+           ORDER BY "createdAt" DESC LIMIT 1) AS "lastActivityAt",
+         (SELECT "timeZone" FROM bot_turn
+           WHERE "organizationId" = $1 AND "botId" = $2 AND "requestedByUserId" = $4
+             AND origin = 'message' AND "timeZone" IS NOT NULL
+           ORDER BY "createdAt" DESC LIMIT 1) AS "ownerTimeZone"`,
+      [organizationId, botId, routinePrefix, ownerUserId],
+    );
+    return {
+      lastBeatAt: row?.lastBeatAt ?? null,
+      lastActivityAt: row?.lastActivityAt ?? null,
+      ownerTimeZone: row?.ownerTimeZone ?? null,
+    };
   }
 
   async findForConversation(

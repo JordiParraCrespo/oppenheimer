@@ -2,6 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
+import type { HeartbeatView } from '../domain/bot-heartbeat.policy';
 import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
@@ -162,6 +163,18 @@ export interface BotTurnRepositoryPort {
    * turn reported one.
    */
   findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
+  /**
+   * What a heartbeat's scheduled beat is decided on (`heartbeatSkip`): when
+   * the routine whose turns begin with `routinePrefix` last queued one, when
+   * the bot last had a turn that was neither a routine's nor a loop's, and
+   * the zone `ownerUserId` last wrote to the bot from.
+   */
+  findHeartbeatView(
+    organizationId: string,
+    botId: string,
+    routinePrefix: string,
+    ownerUserId: string,
+  ): Promise<HeartbeatView>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
     scope: AccessScope,
