@@ -41,3 +41,13 @@ export function projectTaskGroups(projectId: string, tasks: readonly TaskEntity[
     doing: own.filter((task) => task.status === 'doing' && !task.isBlocked),
   };
 }
+
+/**
+ * The projects an open session sits in: the API refuses to delete them
+ * (`PROJECTS_005`), so Projects does not offer them for a bulk delete.
+ */
+export function projectsWithOpenSessions(
+  sessions: readonly Pick<SessionEntity, 'projectId'>[],
+): ReadonlySet<string> {
+  return new Set(sessions.flatMap((session) => (session.projectId ? [session.projectId] : [])));
+}
