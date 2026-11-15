@@ -361,21 +361,31 @@ export class BotPeerToolsFactory implements BotToolArea {
     return plan;
   }
 
+  /** The owner's bot groups, which name the group each bot is in. */
+  private groups(context: BotToolCallContext): Promise<BotGroupEntity[]> {
+    return this.queryBus.execute<FindBotGroupsQuery, BotGroupEntity[]>(
+      new FindBotGroupsQuery({ scope: context.owner }),
+    );
+  }
+
   private listBots(): BotToolDefinition {
     return defineBotTool({
       name: 'list_bots',
       readOnly: true,
       scope: 'bots:read',
       description:
-        "Lists the workspace's bots (you included, marked) with what each is for, its provider and model, and its home host. Use get_bot for one bot's details.",
+        "Lists the workspace's bots (you included, marked) with what each is for, its sidebar group, its provider and model, and its home host. Use get_bot for one bot's details.",
       input: z.strictObject({}),
       run: async (_input, context) => {
-        const bots = await this.queryBus.execute<FindBotsQuery, BotEntity[]>(
-          new FindBotsQuery({ scope: context.owner }),
-        );
+        const [bots, groups] = await Promise.all([
+          this.queryBus.execute<FindBotsQuery, BotEntity[]>(
+            new FindBotsQuery({ scope: context.owner }),
+          ),
+          this.groups(context),
+        ]);
         return formatToolList(
           'Bots',
-          bots.map((bot) => summarizeBot(bot, context)),
+          bots.map((bot) => summarizeBot(bot, context, groups)),
           'The workspace has no bots.',
         );
       },
@@ -391,15 +401,18 @@ export class BotPeerToolsFactory implements BotToolArea {
         "Reads one bot of the workspace: its name, what it is for, its provider and model, its home host and when its chat was last used. It does not read the bot's soul, instructions, memory or chat.",
       input: z.strictObject({ bot_id: z.uuid().describe('A bot id from list_bots.') }),
       run: async (input, context) => {
-        const bot = await this.queryBus.execute<FindBotQuery, BotEntity>(
-          new FindBotQuery({ scope: context.owner, botId: input.bot_id }),
-        );
+        const [bot, groups] = await Promise.all([
+          this.queryBus.execute<FindBotQuery, BotEntity>(
+            new FindBotQuery({ scope: context.owner, botId: input.bot_id }),
+          ),
+          this.groups(context),
+        ]);
         return [
           `Bot ${bot.id} "${bot.name}"${bot.id === context.botId ? ' (you)' : ''}`,
           `- for: ${bot.description || '(no description)'}`,
           `- runs on: ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'}, effort ${bot.effort ?? 'default'})`,
           `- permission: ${BOT_PERMISSION_LABELS[bot.permission]} (${bot.permission})`,
-          `- group: ${bot.groupId ?? 'ungrouped'}`,
+          `- group: ${groupLabelOf(bot, groups)}`,
           `- home host: ${bot.homeHostId ?? 'none chosen'}`,
           `- last message: ${formatToolTime(bot.lastMessageAt, context.timeZone)}`,
         ].join('\n');
@@ -421,12 +434,24 @@ const peerMessageInput = z.strictObject({
     .describe('What you are telling or asking it, complete on its own: it does not see this chat.'),
 });
 
-function summarizeBot(bot: BotEntity, context: BotToolCallContext): string {
+function summarizeBot(
+  bot: BotEntity,
+  context: BotToolCallContext,
+  groups: readonly BotGroupEntity[],
+): string {
   const you = bot.id === context.botId ? ' (you)' : '';
   const parts = [
     bot.description || 'no description',
+    `group ${groupLabelOf(bot, groups)}`,
     engineLabelOf(bot.provider, bot.model),
     `home host ${bot.homeHostId ?? 'none'}`,
   ];
   return `${bot.id} "${bot.name}"${you} [${parts.join('; ')}]`;
+}
+
+/** `"Web" (id)`, or `ungrouped`. */
+function groupLabelOf(bot: BotEntity, groups: readonly BotGroupEntity[]): string {
+  if (!bot.groupId) return 'ungrouped';
+  const group = groups.find((candidate) => candidate.id === bot.groupId);
+  return group ? `"${group.name}" (${group.id})` : bot.groupId;
 }

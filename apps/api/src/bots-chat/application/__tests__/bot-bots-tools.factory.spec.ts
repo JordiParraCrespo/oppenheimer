@@ -85,20 +85,29 @@ function setup(answer: (query: unknown) => unknown) {
 
 describe('BotPeerToolsFactory', () => {
   it('lists the workspace’s bots in the owner’s scope, with what each is for and itself marked', async () => {
-    const { queryBus, call } = setup(() => [
-      bot(SELF_ID, 'Ada', 'Release notes'),
-      bot(PEER_ID, 'Grace', 'Reviews pull requests'),
-    ]);
+    const web = BotGroupEntity.createNew({ organizationId: 'org-1', name: 'Web' });
+    const grace = bot(PEER_ID, 'Grace', 'Reviews pull requests');
+    grace.moveTo(web.id, undefined);
+    const { queryBus, call } = setup((query) =>
+      query instanceof FindBotGroupsQuery ? [web] : [bot(SELF_ID, 'Ada', 'Release notes'), grace],
+    );
     const result = await call('list_bots', {});
     const query = queryBus.execute.mock.calls[0][0] as FindBotsQuery;
     expect(query).toBeInstanceOf(FindBotsQuery);
     expect(query.scope).toBe(owner);
-    expect(result.content).toContain(`${SELF_ID} "Ada" (you) [Release notes; GLM GLM-5.3`);
-    expect(result.content).toContain(`${PEER_ID} "Grace" [Reviews pull requests;`);
+    expect(result.content).toContain(
+      `${SELF_ID} "Ada" (you) [Release notes; group ungrouped; GLM GLM-5.3`,
+    );
+    // A bot asked to change "the web team" picks the bots by this group.
+    expect(result.content).toContain(
+      `${PEER_ID} "Grace" [Reviews pull requests; group "Web" (${web.id});`,
+    );
   });
 
   it('reads one bot by id', async () => {
-    const { queryBus, call } = setup(() => bot(PEER_ID, 'Grace', 'Reviews pull requests'));
+    const { queryBus, call } = setup((query) =>
+      query instanceof FindBotGroupsQuery ? [] : bot(PEER_ID, 'Grace', 'Reviews pull requests'),
+    );
     const result = await call('get_bot', { bot_id: PEER_ID });
     const query = queryBus.execute.mock.calls[0][0] as FindBotQuery;
     expect(query).toBeInstanceOf(FindBotQuery);
