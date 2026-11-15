@@ -44,6 +44,7 @@ import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runne
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnChannelPolicy } from '../application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
+import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
 import { failureKindOf, TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
@@ -1474,6 +1475,7 @@ describe('bots chat (integration)', () => {
         create: () => ({ review: async () => ({ effect: 'none' }) }),
       } as unknown as BotRuleReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
+      new BotTurnHoldPolicy(turns),
     );
   }
 
