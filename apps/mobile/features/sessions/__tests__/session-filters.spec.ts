@@ -1,6 +1,13 @@
 import { sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import { describe, expect, it } from 'vitest';
-import { askOf, filterCounts, matchesFilter, needsInput } from '../lib/session-filters';
+import {
+  askOf,
+  dotOf,
+  filterCounts,
+  leadKeyOf,
+  matchesFilter,
+  needsInput,
+} from '../lib/session-filters';
 
 /**
  * The Sessions tab's chips and the line a waiting row shows. What breaks if
@@ -38,6 +45,21 @@ describe('the Sessions tab', () => {
       running: 1,
       failed: 2,
     });
+  });
+
+  it('colours each dot as its chip counts it, so the list and the chips agree', () => {
+    expect([waiting, running, failed, refused].map(dotOf)).toEqual([
+      'waiting',
+      'running',
+      'failed',
+      'failed',
+    ]);
+    expect(dotOf(stopped)).toBe('idle');
+  });
+
+  it('leads a refused delete with why it is red, and any other row with its state', () => {
+    expect(leadKeyOf(refused)).toBe('sessions.sidebar.notDeleted');
+    expect(leadKeyOf(running)).toBe('sessions.session.state.working');
   });
 
   it('says what a waiting session asks: the question, or what a permission is for', () => {

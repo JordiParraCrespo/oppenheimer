@@ -11,7 +11,6 @@ import {
   matchesQuery,
   type SessionEntity,
   sessionAgentLabel,
-  stateWordFor,
 } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { formatAge } from '@oppenheimer/frontend-mobile';
@@ -20,11 +19,14 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { FilterChips } from '../components/filter-chips';
 import { SessionGroup } from '../components/session-group';
-import { type SessionDotTone, SessionRow } from '../components/session-row';
+import { SessionRow } from '../components/session-row';
 import { SessionRowSkeleton } from '../components/session-row-skeleton';
 import {
   askOf,
+  dotOf,
+  FILTER_LABEL,
   filterCounts,
+  leadKeyOf,
   matchesFilter,
   needsInput,
   SESSION_FILTERS,
@@ -33,13 +35,6 @@ import {
 
 const SEARCH_SETTLE_MS = 150;
 const AGE_TICK_MS = 60_000;
-
-function dotOf(session: SessionEntity): SessionDotTone {
-  if (needsInput(session)) return 'waiting';
-  if (session.lifecycle === 'failed' || session.closeRefusal) return 'failed';
-  if (session.state === 'working' && session.isLive) return 'running';
-  return 'idle';
-}
 
 /**
  * Your sessions as the export lists them: search, the four chips, then the
@@ -155,14 +150,7 @@ export function SessionsList() {
           options={SESSION_FILTERS.map((value) => ({
             value,
             count: counts[value],
-            label:
-              value === 'all'
-                ? t('sessions.filters.shownAll')
-                : value === 'needs-input'
-                  ? t('sessions.session.state.waiting-on-you')
-                  : value === 'running'
-                    ? t('sessions.session.state.working')
-                    : t('sessions.session.state.failed'),
+            label: t(FILTER_LABEL[value]),
           }))}
         />
       </View>
@@ -183,16 +171,7 @@ export function SessionsList() {
           title={group.project?.name ?? t('sessions.sidebar.unfiled')}
           count={group.sessions.length}
         >
-          {group.sessions.map((session, index) =>
-            row(
-              session,
-              index,
-              // A delete its host refused is red; its line says why, not its state.
-              session.closeRefusal
-                ? t('sessions.sidebar.notDeleted')
-                : t(`sessions.session.state.${stateWordFor(session)}`),
-            ),
-          )}
+          {group.sessions.map((session, index) => row(session, index, t(leadKeyOf(session))))}
         </SessionGroup>
       ))}
 

@@ -1,8 +1,7 @@
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cn } from '@oppenheimer/design-system-mobile/utils';
 import { View } from 'react-native';
-
-export type SessionDotTone = 'waiting' | 'running' | 'failed' | 'idle';
+import type { SessionDotTone } from '../lib/session-filters';
 
 const DOT: Record<SessionDotTone, string> = {
   waiting: 'bg-status-paused',
