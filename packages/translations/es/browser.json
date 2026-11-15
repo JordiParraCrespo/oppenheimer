@@ -559,7 +559,6 @@
       "continueWithEmail": "Continuar con email",
       "emailTitle": "Iniciar sesión",
       "emailDescription": "Usa tu dirección del trabajo.",
-      "back": "Atrás",
       "noAccountMobile": "¿No tienes cuenta? Créala en la consola web."
     },
     "register": {
@@ -4144,8 +4143,7 @@
     "pullRequests": "Pull requests",
     "employees": "Empleados",
     "account": "Cuenta",
-    "pullRequestsShort": "PRs",
-    "sections": "Secciones"
+    "pullRequestsShort": "PRs"
   },
   "language": {
     "label": "Idioma",

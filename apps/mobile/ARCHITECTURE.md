@@ -21,7 +21,7 @@ they disagree, fix the code or update both together. The tier-wide model is
       │                           components hooks lib __tests__
       ├──────────────► @oppenheimer/frontend-mobile     the mobile platform kit
       │                  ErrorBoundary, ScreenViewTracker, NAV_THEME,
-      │                  TabBar, TabScreen, createQueryPersistence,
+      │                  TabScreen, TabPlaceholder, createQueryPersistence,
       │                  ExpoSecureStoreService, FormField, useZodResolver
       │                       │
       │                       ▼

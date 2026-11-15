@@ -1,5 +1,6 @@
 import { Button } from '@oppenheimer/design-system-mobile/button';
 import { ExpoImage } from '@oppenheimer/design-system-mobile/expo-image';
+import { Glass } from '@oppenheimer/design-system-mobile/glass';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Mail } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
@@ -34,14 +35,14 @@ export function WelcomeScreen() {
           <Text variant="h3" tone="inverse">
             {t('common.appName')}
           </Text>
-          <View className="rounded-full border border-border-subtle bg-popover px-3 py-1.5">
+          <Glass className="rounded-full px-3 py-1.5">
             <Text variant="caption" tone="default">
               {t('auth.art.slides.portrait.caption')}
             </Text>
-          </View>
+          </Glass>
         </View>
 
-        <View className="gap-4 rounded-3xl border border-border-subtle bg-popover px-4 pb-4 pt-5 shadow-lg">
+        <Glass className="gap-4 rounded-3xl px-4 pb-4 pt-5">
           <View className="gap-1.5">
             <Text variant="largeTitle">{t('auth.login.title')}</Text>
             <Text variant="subhead">{t('auth.login.description')}</Text>
@@ -55,7 +56,7 @@ export function WelcomeScreen() {
               </Button>
             </Link>
           </View>
-        </View>
+        </Glass>
       </SafeAreaView>
     </View>
   );

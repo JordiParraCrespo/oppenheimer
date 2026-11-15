@@ -16,6 +16,19 @@ export default function AuthLayout() {
           backgroundColor: THEME[colorScheme === 'dark' ? 'dark' : 'light'].background,
         },
       }}
-    />
+    >
+      {/* The email screen keeps the system's navigation bar, transparent, for
+          its back button: on iOS 26 that is Liquid Glass, with the swipe back
+          and the long-press history the platform gives it. */}
+      <Stack.Screen
+        name="login"
+        options={{
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: '',
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+    </Stack>
   );
 }

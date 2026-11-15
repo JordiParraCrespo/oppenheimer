@@ -557,7 +557,6 @@
       "continueWithEmail": "Continue with email",
       "emailTitle": "Sign in",
       "emailDescription": "Use your work address.",
-      "back": "Back",
       "noAccountMobile": "No account? Create one in the console on the web."
     },
     "register": {
@@ -4101,8 +4100,7 @@
     "pullRequests": "Pull requests",
     "employees": "Employees",
     "account": "Account",
-    "pullRequestsShort": "PRs",
-    "sections": "Sections"
+    "pullRequestsShort": "PRs"
   },
   "language": {
     "label": "Language",

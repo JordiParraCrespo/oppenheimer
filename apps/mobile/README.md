@@ -54,7 +54,7 @@ metro.config.js, tailwind.config.js, global.css
 ## Where the shared code lives
 
 - UI and native glue — `FormField`, `useZodResolver`,
-  `ErrorBoundary`, `ScreenViewTracker`, `NAV_THEME`, `TabBar`, `TabScreen`,
+  `ErrorBoundary`, `ScreenViewTracker`, `NAV_THEME`, `TabScreen`, `TabPlaceholder`,
   `createQueryPersistence`, `ExpoSecureStoreService` — are in
   `@oppenheimer/frontend-mobile` (`packages/frontend/mobile`).
 - Primitives are in `@oppenheimer/design-system-mobile`.

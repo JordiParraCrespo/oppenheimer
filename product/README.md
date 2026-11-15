@@ -1671,3 +1671,9 @@ earlier note:
   back with its kit and design system, as a shell first (sign-in and the
   five tabs, Account working), push as its own slice, and no sign-up on the
   phone (`next-steps/0.5-mobile.md`).
+- The 0.5 shell first drew the export's frosted tab bar and cards solid,
+  since React Native has no blur of its own. On 2026-11-15 the owner asked
+  for native Liquid Glass everywhere it exists: the tab bar, selects and
+  back buttons are the platform's own controls, and floating surfaces are
+  `UIGlassEffect`, so iOS 26 draws Apple's Liquid Glass
+  (`next-steps/0.5-mobile.md`).

@@ -31,6 +31,7 @@
     "./empty": "./src/components/ui/empty.tsx",
     "./empty-state": "./src/components/ui/empty-state.tsx",
     "./filter-menu": "./src/components/ui/filter-menu.tsx",
+    "./glass": "./src/components/ui/glass.tsx",
     "./hover-card": "./src/components/ui/hover-card.tsx",
     "./icon": "./src/components/ui/icon.tsx",
     "./icons": "./src/components/ui/icons.tsx",
@@ -74,6 +75,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "peerDependencies": {
+    "@expo/ui": "*",
     "@gorhom/bottom-sheet": "*",
     "@gorhom/portal": "*",
     "@legendapp/list": ">=2.0.0",
@@ -93,7 +95,6 @@
     "@rn-primitives/portal": "1.4.0",
     "@rn-primitives/progress": "1.4.0",
     "@rn-primitives/radio-group": "1.4.0",
-    "@rn-primitives/select": "1.4.0",
     "@rn-primitives/separator": "1.4.0",
     "@rn-primitives/slot": "1.4.0",
     "@rn-primitives/switch": "1.4.0",
@@ -102,6 +103,8 @@
     "@rn-primitives/toggle-group": "1.4.0",
     "@rn-primitives/tooltip": "1.4.0",
     "@rn-primitives/types": "1.4.0",
+    "expo-blur": "*",
+    "expo-glass-effect": "*",
     "expo-image": "*",
     "nativewind": "^4.2.2",
     "react": ">=19.0.0",
@@ -116,6 +119,7 @@
     "react-native-worklets": ">=0.5.0"
   },
   "devDependencies": {
+    "@expo/ui": "~57.0.26",
     "@rn-primitives/accordion": "1.4.0",
     "@rn-primitives/alert-dialog": "1.4.0",
     "@rn-primitives/aspect-ratio": "1.4.0",
@@ -132,7 +136,6 @@
     "@rn-primitives/portal": "1.4.0",
     "@rn-primitives/progress": "1.4.0",
     "@rn-primitives/radio-group": "1.4.0",
-    "@rn-primitives/select": "1.4.0",
     "@rn-primitives/separator": "1.4.0",
     "@rn-primitives/slot": "1.4.0",
     "@rn-primitives/switch": "1.4.0",
@@ -142,6 +145,8 @@
     "@rn-primitives/tooltip": "1.4.0",
     "@rn-primitives/types": "1.4.0",
     "@types/react": "19.2.14",
+    "expo-blur": "~57.0.3",
+    "expo-glass-effect": "~57.0.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native-safe-area-context": "5.7.0",

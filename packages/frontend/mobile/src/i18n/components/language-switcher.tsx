@@ -1,26 +1,21 @@
-import { Button } from '@oppenheimer/design-system-mobile/button';
-import { Text } from '@oppenheimer/design-system-mobile/text';
-import { locales } from '@oppenheimer/translations/locales';
+import { Select } from '@oppenheimer/design-system-mobile/select';
+import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { setLocale } from '../lib/i18n';
 
+/** The app's language, chosen from the system's own menu. */
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { t, i18n } = useTranslation();
-  const current = i18n.resolvedLanguage ?? i18n.language;
+  const current = (i18n.resolvedLanguage ?? i18n.language) as Locale;
 
   return (
-    <View className={`flex-row items-center justify-center gap-2 ${className ?? ''}`}>
-      {locales.map((locale) => (
-        <Button
-          key={locale}
-          variant={current === locale ? 'default' : 'outline'}
-          size="sm"
-          onPress={() => setLocale(locale)}
-        >
-          <Text>{t(`language.${locale}`)}</Text>
-        </Button>
-      ))}
+    <View className={`items-center ${className ?? ''}`}>
+      <Select
+        value={current}
+        options={locales.map((locale) => ({ value: locale, label: t(`language.${locale}`) }))}
+        onValueChange={(locale) => void setLocale(locale)}
+      />
     </View>
   );
 }

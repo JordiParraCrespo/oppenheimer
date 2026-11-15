@@ -35,8 +35,9 @@ depend on the monorepo layout.
 ## What's inside
 
 - `src/components/ui/*` — Accordion, AlertDialog, Avatar, BrandMark, Button,
-  Card, Dialog, DropdownMenu, Select, Tabs, Tooltip, Text, and more — each with
-  its own export.
+  Card, Dialog, DropdownMenu, Glass, Select, Tabs, Tooltip, Text, and more — each
+  with its own export. `Glass` is Apple's Liquid Glass on iOS 26 (the system
+  blur elsewhere); `Select` is the platform's own menu picker (`@expo/ui`).
 - `src/lib/utils` — `cn()` (clsx + tailwind-merge).
 - `tailwind.config.js` — the NativeWind preset and design-system source glob.
 

@@ -125,6 +125,7 @@ export type { ExpoImageProps } from './components/ui/expo-image';
 export { ExpoImage } from './components/ui/expo-image';
 export type { FilterMenuOption } from './components/ui/filter-menu';
 export { FilterMenu } from './components/ui/filter-menu';
+export { Glass, type GlassProps, liquidGlass } from './components/ui/glass';
 export {
   HoverCard,
   HoverCardContent,
@@ -181,19 +182,7 @@ export {
 export { Progress } from './components/ui/progress';
 export { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
 export { ReplyBox } from './components/ui/reply-box';
-export type { Option } from './components/ui/select';
-export {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from './components/ui/select';
+export { type Option, Select, type SelectProps } from './components/ui/select';
 export { Separator } from './components/ui/separator';
 export { Skeleton } from './components/ui/skeleton';
 export type {
