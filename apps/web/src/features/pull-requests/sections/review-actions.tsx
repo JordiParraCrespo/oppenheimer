@@ -145,8 +145,8 @@ export function ReviewActions({
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" onClick={onPrevious} disabled={busy || !onPrevious}>
+          <Kbd className="mr-1">←</Kbd>
           {t('pullRequests.deck.previous')}
-          <Kbd className="ml-1">←</Kbd>
         </Button>
         <Button variant="secondary" onClick={onNext} disabled={busy}>
           {t('pullRequests.deck.next')}
