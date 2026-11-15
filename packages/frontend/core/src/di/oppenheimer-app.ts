@@ -9,6 +9,7 @@ import type { IAuthClient } from '../modules/auth/auth.client';
 import type { CapabilitiesService } from '../modules/capabilities';
 import { CapabilitiesModule } from '../modules/capabilities';
 import { createCoreModule } from '../modules/core/core.module';
+import type { EventSourceFactory } from '../modules/core/server-event-stream';
 import type { IStorageService } from '../modules/core/storage.service';
 import type { ErrorReportingService } from '../modules/error-reporting';
 import { ErrorReportingModule } from '../modules/error-reporting';
@@ -43,6 +44,11 @@ export interface OppenheimerAppConfig {
    * `{ platform: 'web', appVersion: '2.1.0' }`.
    */
   featureFlags?: FeatureFlagsClientContext;
+  /**
+   * How this platform dials a Server-Sent Events stream, for one without the
+   * browser's `EventSource` (React Native). Omit it on the web.
+   */
+  eventSource?: EventSourceFactory;
   /**
    * The product's modules, such as `consumerModules` from
    * `@oppenheimer/frontend-consumer`. The kernel binds what every product
