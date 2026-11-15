@@ -2,7 +2,7 @@
 
 import { Button } from '@oppenheimer/design-system-web/button';
 import { DragProvider, type SortableGroups, SortableItem, useSortableGroups } from '@oppenheimer/design-system-web/drag';
-import { MilestoneCard, MilestoneEmpty, MilestoneGrid } from '@oppenheimer/design-system-web/milestone-card';
+import { MilestoneCard, MilestoneGrid } from '@oppenheimer/design-system-web/milestone-card';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { EllipsisIcon, PlusIcon, Trash2Icon, XIcon } from '@oppenheimer/design-system-web/icons';
 import {
@@ -167,7 +167,6 @@ export function TaskBoardDemo() {
               />
             );
           })}
-          <MilestoneEmpty title="No milestones for this project">Milestones group tasks and track how many are done.</MilestoneEmpty>
         </MilestoneGrid>
       </section>
       <DragProvider

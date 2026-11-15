@@ -9,7 +9,7 @@ import {
   TaskSessionChip,
   TodoRow,
 } from '@oppenheimer/design-system-web';
-import { Play } from '@oppenheimer/design-system-web/icons';
+import { ListFilter, Play } from '@oppenheimer/design-system-web/icons';
 import {
   useMoveTask,
   useSuspenseTaskBoard,
@@ -177,11 +177,20 @@ export function TodoList() {
       />
       {listed.length === 0 && withAgents.length === 0 ? (
         <EmptyState className="rounded-lg bg-card">
-          <EmptyState.Header>
-            <EmptyState.Description>
-              {dayHasAny ? t('tasks.todo.noMatch') : t('tasks.todo.empty')}
-            </EmptyState.Description>
-          </EmptyState.Header>
+          {dayHasAny ? (
+            <EmptyState.Header>
+              <EmptyState.Media variant="icon">
+                <ListFilter />
+              </EmptyState.Media>
+              <EmptyState.Description>{t('tasks.todo.noMatch')}</EmptyState.Description>
+            </EmptyState.Header>
+          ) : (
+            <EmptyState.Header>
+              <EmptyState.Art name="tasks" />
+              <EmptyState.Title>{t('tasks.todo.emptyTitle')}</EmptyState.Title>
+              <EmptyState.Description>{t('tasks.todo.empty')}</EmptyState.Description>
+            </EmptyState.Header>
+          )}
         </EmptyState>
       ) : (
         <DragProvider

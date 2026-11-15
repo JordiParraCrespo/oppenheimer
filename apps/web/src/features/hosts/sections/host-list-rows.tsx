@@ -1,7 +1,8 @@
+import { EmptyState } from '@oppenheimer/design-system-web';
+import { Server } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseHostPresence } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { HostsEmpty } from '../components/hosts-empty';
 import { HostRow } from './host-row';
 
 /**
@@ -23,7 +24,15 @@ export function HostListRows() {
     <div className="flex flex-col gap-2.5">
       <ErrorAlert error={error} fallback={t('settings.hosts.failed')} />
       {hosts.length === 0 ? (
-        <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />
+        <EmptyState className="rounded-lg border border-border-subtle bg-card py-10">
+          <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <Server />
+            </EmptyState.Media>
+            <EmptyState.Title>{t('settings.hosts.empty')}</EmptyState.Title>
+            <EmptyState.Description>{t('settings.hosts.emptyHint')}</EmptyState.Description>
+          </EmptyState.Header>
+        </EmptyState>
       ) : (
         hosts.map((host) => <HostRow key={host.id} host={host} />)
       )}

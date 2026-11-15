@@ -35,6 +35,8 @@ export function ProjectsList({ onNew }: { onNew: () => void }) {
         {alert}
         <EmptyState>
           <EmptyState.Header>
+            <EmptyState.Art name="projects" />
+            <EmptyState.Title>{t('projects.list.emptyTitle')}</EmptyState.Title>
             <EmptyState.Description>{t('projects.list.empty')}</EmptyState.Description>
           </EmptyState.Header>
           <EmptyState.Content>

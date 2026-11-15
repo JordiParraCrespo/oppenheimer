@@ -14,7 +14,7 @@ import {
 } from '@oppenheimer/design-system-web/card';
 import { Chip, FilterChip } from '@oppenheimer/design-system-web/chip';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
-import { EmptyState } from '@oppenheimer/design-system-web/empty-state';
+import { type EmptyArtName, EmptyState } from '@oppenheimer/design-system-web/empty-state';
 import {
   Field,
   FieldAction,
@@ -139,6 +139,17 @@ const PROVIDER_MARKS = [
   { id: 'glm', label: 'GLM' },
   { id: 'chatgpt', label: 'ChatGPT' },
 ] as const;
+
+const EMPTY_ARTS: EmptyArtName[] = [
+  'inbox',
+  'projects',
+  'pullRequests',
+  'done',
+  'automations',
+  'milestones',
+  'tasks',
+  'notFound',
+];
 
 export default function Page() {
   return (
@@ -709,9 +720,31 @@ export default function Page() {
         id="emptystate"
         title="EmptyState"
         meta="empty-state.tsx"
-        desc="An empty state names the next action. The full form has a title, a description and one button; compact is the left-aligned sidebar line."
-        code={`<EmptyState compact><EmptyState.Header><EmptyState.Description>No sessions yet…</EmptyState.Description></EmptyState.Header></EmptyState>`}
+        desc="An empty state names the next action, in one of three tiers by where it stands. Illustrated (EmptyState.Art): a screen's or a pane's main region, empty the first time or through; a title, a line on what will appear and how, one action. Icon: a state that is not a first run (closed, no match, not connected) or a Settings section. Inline: compact, the left-aligned line in a sidebar, a row or a picker."
+        code={`<EmptyState><EmptyState.Header><EmptyState.Art name="projects" /><EmptyState.Title>No projects yet</EmptyState.Title>…</EmptyState.Header></EmptyState>`}
       >
+        <Card className="w-full max-w-105">
+          <EmptyState>
+            <EmptyState.Header>
+              <EmptyState.Art name="projects" />
+              <EmptyState.Title>No projects yet</EmptyState.Title>
+              <EmptyState.Description>
+                A project groups your sessions and starts new ones with its repositories, host and agent.
+              </EmptyState.Description>
+            </EmptyState.Header>
+            <EmptyState.Content>
+              <Button>New project</Button>
+            </EmptyState.Content>
+          </EmptyState>
+        </Card>
+        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
+          {EMPTY_ARTS.map((name) => (
+            <Card key={name} className="flex flex-col items-center gap-1 py-4">
+              <EmptyState.Art name={name} />
+              <span className="font-mono text-xs text-fg-subtle">{name}</span>
+            </Card>
+          ))}
+        </div>
         <Card className="w-full max-w-105">
           <EmptyState>
             <EmptyState.Header>
