@@ -249,7 +249,7 @@ export function cloudStartAnswer(
   if (session.state === 'failed' || session.isResolved) {
     const hint =
       rule.start === 'host'
-        ? `; most often the host's ${rule.cli} is not installed or not signed in`
+        ? `; most often the host's ${rule.cli} is not installed or not signed in, so try another online host that has ${rule.cli} (list_hosts shows it installed; whether it is signed in shows only when it starts)`
         : '';
     return `Session ${sessionId}${from} could not start its ${rule.label} cloud session (it is ${session.state}). read_session says why${hint}.`;
   }
