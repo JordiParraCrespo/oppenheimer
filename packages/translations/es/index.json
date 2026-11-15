@@ -1497,7 +1497,16 @@
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
       "opening": "Abriendo localhost:{{port}}…",
-      "desktop": "Escritorio"
+      "desktop": "Escritorio",
+      "device": "Dispositivo",
+      "deviceSearch": "Buscar un dispositivo",
+      "deviceEmpty": "Ningún dispositivo",
+      "deviceTaken": "En uso por otra sesión",
+      "refreshDevice": "Actualizar dispositivos",
+      "platform": {
+        "ios": "Simulador de iOS",
+        "android": "Emulador de Android"
+      }
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
