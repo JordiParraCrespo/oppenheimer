@@ -302,7 +302,17 @@ export class BotPeerToolsFactory implements BotToolArea {
           .optional()
           .describe('Whether what they decide to remember is saved without asking.'),
       }),
-      normalize: (input) => ({ ...input, bot_ids: [...new Set(input.bot_ids)] }),
+      // The card stores the group by id, so a rename while it waits cannot
+      // send the bots to another group of the old name.
+      normalize: async (input, context) => {
+        const plan = await this.updatePlan(input, context);
+        const groupId = plan.steps[0]?.body.groupId;
+        return {
+          ...input,
+          bot_ids: plan.steps.map((step) => step.bot.id),
+          ...(typeof groupId === 'string' ? { group: groupId } : {}),
+        };
+      },
       summarize: async (input, context) =>
         botUpdateSummary(input, await this.updatePlan(input, context)),
       run: async (input, context) => {

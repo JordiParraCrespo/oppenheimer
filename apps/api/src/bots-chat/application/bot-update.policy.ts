@@ -1,12 +1,10 @@
 import {
-  type BotAvatarColor,
   type BotPermission,
   type BotProvider,
   botEffortLevelFor,
   botModelOf,
   type UpdateBotDto,
 } from '@oppenheimer/shared';
-import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import { permissionForBotMadeBy } from '../../bots/domain/bot-creation.policy';
 import type { BotGroupEntity } from '../../bots/domain/bot-group.entity';
@@ -17,27 +15,11 @@ import {
   resolveGroup,
   resolveModel,
   resolveProvider,
+  toUpdateBotBody,
+  type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
 
-/**
- * `update_bot`'s input (`25-bots.md` §4.6): the bots to change, by id, and
- * what to change on each. A field left out stays as it is.
- */
-export interface UpdateBotsInput {
-  bot_ids: string[];
-  name?: string;
-  description?: string;
-  avatar_color?: BotAvatarColor;
-  provider?: BotProvider;
-  /** `null`: the provider's default. */
-  model?: string | null;
-  /** `null`: the model's own default. */
-  effort?: SessionEffort | null;
-  permission?: BotPermission;
-  /** A group by id or name; `null` takes them out of their group. */
-  group?: string | null;
-  learn_automatically?: boolean;
-}
+export type { UpdateBotsInput };
 
 /** One bot's change: what the console's settings would send for it. */
 export interface BotUpdateStep {
@@ -111,17 +93,7 @@ export function planBotUpdate(
     if ('refusal' in engine) return engine;
     steps.push({
       bot,
-      body: {
-        ...(input.name !== undefined ? { name: input.name } : {}),
-        ...(input.description !== undefined ? { description: input.description } : {}),
-        ...(input.avatar_color !== undefined ? { avatarColor: input.avatar_color } : {}),
-        ...engine.value,
-        ...(permission !== undefined ? { permission } : {}),
-        ...(groupId !== undefined ? { groupId } : {}),
-        ...(input.learn_automatically !== undefined
-          ? { learnAutomatically: input.learn_automatically }
-          : {}),
-      },
+      body: toUpdateBotBody(input, engine.value, permission, groupId),
     });
   }
   return { steps, ...(groupName !== undefined ? { groupName } : {}) };

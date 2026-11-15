@@ -522,6 +522,15 @@ describe('update_bot', () => {
     expect(result.content).toContain(`${COVERD} "Coverd Web": runs on ChatGPT GPT-6.1 Sol`);
   });
 
+  it('stores the group the card named by id, so a rename while it waits moves no bot elsewhere', async () => {
+    const { approvals, call } = updating('auto');
+    await call({ bot_ids: [ZENGUE, ZENGUE], group: 'Web' });
+    expect(approvals.request.mock.calls[0][0].input).toEqual({
+      bot_ids: [ZENGUE],
+      group: web.id,
+    });
+  });
+
   it('changes the look, group and learning of a bot, the group by name', async () => {
     const { commands, call } = updating('full');
     await call({

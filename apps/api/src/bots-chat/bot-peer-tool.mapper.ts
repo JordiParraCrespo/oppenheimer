@@ -1,10 +1,12 @@
 import {
   BOT_PROVIDER_CATALOG,
+  type BotAvatarColor,
   type BotPermission,
   type BotProvider,
   botEffortLevelFor,
   botModelOf,
   type CreateBotDto,
+  type UpdateBotDto,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotEntity } from '../bots/domain/bot.entity';
@@ -230,4 +232,48 @@ export function botCreatedAnswer(bot: BotEntity, groupName: string | null): stri
 export function engineLabelOf(provider: BotProvider, model: string | null): string {
   const row = botModelOf(provider, model);
   return `${BOT_PROVIDER_CATALOG[provider].label} ${row?.label ?? model ?? 'default model'}`;
+}
+
+/**
+ * `update_bot`'s input (`25-bots.md` §4.6): the bots to change, by id, and
+ * what to change on each. A field left out stays as it is.
+ */
+export interface UpdateBotsInput {
+  bot_ids: string[];
+  name?: string;
+  description?: string;
+  avatar_color?: BotAvatarColor;
+  provider?: BotProvider;
+  /** `null`: the provider's default. */
+  model?: string | null;
+  /** `null`: the model's own default. */
+  effort?: SessionEffort | null;
+  permission?: BotPermission;
+  /** A group by id or name; `null` takes them out of their group. */
+  group?: string | null;
+  learn_automatically?: boolean;
+}
+
+/**
+ * What the console's settings would send for one bot of an `update_bot`
+ * call: the fields the call names, with the engine, level and group the
+ * plan resolved for that bot.
+ */
+export function toUpdateBotBody(
+  input: UpdateBotsInput,
+  engine: Pick<UpdateBotDto, 'provider' | 'model' | 'effort'>,
+  permission: BotPermission | undefined,
+  groupId: string | null | undefined,
+): UpdateBotDto {
+  return {
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.description !== undefined ? { description: input.description } : {}),
+    ...(input.avatar_color !== undefined ? { avatarColor: input.avatar_color } : {}),
+    ...engine,
+    ...(permission !== undefined ? { permission } : {}),
+    ...(groupId !== undefined ? { groupId } : {}),
+    ...(input.learn_automatically !== undefined
+      ? { learnAutomatically: input.learn_automatically }
+      : {}),
+  };
 }
