@@ -183,12 +183,31 @@ function describeChanges(input: UpdateBotsInput, plan: BotUpdatePlan): string[] 
 }
 
 /** What the tool answers once every bot is changed: each bot as it now stands. */
-export function botsUpdatedAnswer(bots: readonly BotEntity[]): string {
-  return [
-    `Updated ${bots.length === 1 ? '1 bot' : `${bots.length} bots`}:`,
-    ...bots.map(
-      (bot) =>
-        `- ${bot.id} "${bot.name}": runs on ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'}, effort ${bot.effort ?? 'default'}); permission ${BOT_PERMISSION_LABELS[bot.permission]}`,
-    ),
-  ].join('\n');
+/** A bot whose write failed after the plan passed, and why. */
+export interface BotUpdateFailure {
+  bot: BotEntity;
+  reason: string;
+}
+
+/** What the tool answers: each bot changed, as it now stands, then each that was not. */
+export function botsUpdatedAnswer(
+  bots: readonly BotEntity[],
+  failed: readonly BotUpdateFailure[] = [],
+): string {
+  const lines = bots.length
+    ? [
+        `Updated ${bots.length === 1 ? '1 bot' : `${bots.length} bots`}:`,
+        ...bots.map(
+          (bot) =>
+            `- ${bot.id} "${bot.name}": runs on ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'}, effort ${bot.effort ?? 'default'}); permission ${BOT_PERMISSION_LABELS[bot.permission]}`,
+        ),
+      ]
+    : [];
+  if (failed.length) {
+    lines.push(
+      `Not updated (${failed.length}):`,
+      ...failed.map(({ bot, reason }) => `- ${bot.id} "${bot.name}": ${reason}`),
+    );
+  }
+  return lines.join('\n');
 }

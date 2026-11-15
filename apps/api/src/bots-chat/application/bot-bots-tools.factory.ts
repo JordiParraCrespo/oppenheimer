@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_AVATAR_COLORS,
   BOT_DESCRIPTION_MAX,
@@ -46,6 +47,7 @@ import {
   defineBotTool,
 } from './bot-tool.factory';
 import {
+  type BotUpdateFailure,
   type BotUpdatePlan,
   botsUpdatedAnswer,
   botUpdateSummary,
@@ -317,19 +319,30 @@ export class BotPeerToolsFactory implements BotToolArea {
         botUpdateSummary(input, await this.updatePlan(input, context)),
       run: async (input, context) => {
         const plan = await this.updatePlan(input, context);
+        // One write per bot, through the console's own command: a bot that
+        // fails (deleted since the plan) is named beside the ones changed,
+        // never hidden behind a bare error.
+        const failed: BotUpdateFailure[] = [];
+        const changed: string[] = [];
         for (const step of plan.steps) {
-          await this.commandBus.execute(
-            new UpdateBotCommand({ scope: context.owner, botId: step.bot.id, input: step.body }),
-          );
+          try {
+            await this.commandBus.execute(
+              new UpdateBotCommand({ scope: context.owner, botId: step.bot.id, input: step.body }),
+            );
+            changed.push(step.bot.id);
+          } catch (error) {
+            failed.push({ bot: step.bot, reason: reasonOf(error) });
+          }
         }
+        if (changed.length === 0) throw new BotToolRefusal(botsUpdatedAnswer([], failed));
         const updated = await Promise.all(
-          plan.steps.map((step) =>
+          changed.map((botId) =>
             this.queryBus.execute<FindBotQuery, BotEntity>(
-              new FindBotQuery({ scope: context.owner, botId: step.bot.id }),
+              new FindBotQuery({ scope: context.owner, botId }),
             ),
           ),
         );
-        return botsUpdatedAnswer(updated);
+        return botsUpdatedAnswer(updated, failed);
       },
     });
   }
@@ -464,4 +477,10 @@ function groupLabelOf(bot: BotEntity, groups: readonly BotGroupEntity[]): string
   if (!bot.groupId) return 'ungrouped';
   const group = groups.find((candidate) => candidate.id === bot.groupId);
   return group ? `"${group.name}" (${group.id})` : bot.groupId;
+}
+
+/** Why a write failed, in the words its error carries. */
+function reasonOf(error: unknown): string {
+  if (error instanceof AppError) return error.detail ?? error.title;
+  return error instanceof Error ? error.message : 'it could not be saved';
 }

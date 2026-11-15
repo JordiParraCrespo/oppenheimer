@@ -522,6 +522,21 @@ describe('update_bot', () => {
     expect(result.content).toContain(`${COVERD} "Coverd Web": runs on ChatGPT GPT-6.1 Sol`);
   });
 
+  it('names the bots it changed and the one whose write failed, when a bot goes between the plan and the write', async () => {
+    const { commandBus, call } = updating('full');
+    const write = commandBus.execute.getMockImplementation();
+    commandBus.execute.mockImplementation(async (command: unknown) => {
+      if ((command as UpdateBotCommand).botId === COVERD) throw new Error('No bot with that id');
+      return write?.(command);
+    });
+    const result = await call({ bot_ids: [ZENGUE, COVERD], model: 'glm-5.3' });
+    expect(result.isError).toBe(false);
+    expect(result.content).toContain(`Updated 1 bot:\n- ${ZENGUE} "Zengue Jewels"`);
+    expect(result.content).toContain(
+      `Not updated (1):\n- ${COVERD} "Coverd Web": No bot with that id`,
+    );
+  });
+
   it('stores the group the card named by id, so a rename while it waits moves no bot elsewhere', async () => {
     const { approvals, call } = updating('auto');
     await call({ bot_ids: [ZENGUE, ZENGUE], group: 'Web' });
