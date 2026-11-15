@@ -19,3 +19,4 @@ Product decisions (what the product does) live in `product/README.md`,
 | 2026-11-10 | Keep `automate-me`? | Not for now; removed. | this file's pull request |
 | 2026-11-09 | Ask the same question twice? | Never. Answers are recorded here. | this file's pull request |
 | 2026-11-11 | With no default repositories, how does a GitHub trigger added before any is picked work? | No default project or repository; the card listens on all picked repositories once Where it runs picks them. | this file's pull request |
+| 2026-11-15 | One pull request, or several for work too large to review at once? | Stacked pull requests from now on: each layer based on the one below, one thing each. The steward skill, "Stacked pull requests", says how. | JordiParraCrespo/oppenheimer#869, the user's message after it |
