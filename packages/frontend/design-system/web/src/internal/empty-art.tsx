@@ -176,31 +176,33 @@ function MilestonesArt() {
   );
 }
 
+const TASK_ROWS = [
+  { y: 32, done: true, end: 77 },
+  { y: 46, done: true, end: 70 },
+  { y: 60, done: false, end: 77 },
+] as const;
+
 /** A short list, two items ticked and one still open. */
 function TasksArt() {
   return (
     <>
       <rect x="34" y="18" width="52" height="59" rx="6" className="fill-card" {...ink} />
-      {[32, 46, 60].map((y, index) => (
+      {TASK_ROWS.map(({ y, done, end }) => (
         <g key={y}>
-          <rect
-            x="42"
-            y={y - 4.5}
-            width="9"
-            height="9"
-            rx="2.5"
-            className={index < 2 ? undefined : 'fill-canvas-recessed'}
-            fill={index < 2 ? 'currentColor' : undefined}
-            fillOpacity={index < 2 ? 0.14 : undefined}
-            {...ink}
-          />
-          {index < 2 ? <path d={`M44.3 ${y} L46.2 ${y + 2} L49 ${y - 1.8}`} {...ink} /> : null}
+          {done ? (
+            <>
+              <rect x="42" y={y - 4.5} width="9" height="9" rx="2.5" fill="currentColor" fillOpacity={0.14} {...ink} />
+              <path d={`M44.3 ${y} L46.2 ${y + 2} L49 ${y - 1.8}`} {...ink} />
+            </>
+          ) : (
+            <rect x="42" y={y - 4.5} width="9" height="9" rx="2.5" className="fill-canvas-recessed" {...ink} />
+          )}
           <path
-            d={`M57 ${y} H${index === 1 ? 70 : 77}`}
+            d={`M57 ${y} H${end}`}
             stroke="currentColor"
             strokeWidth="1.35"
             strokeLinecap="round"
-            opacity={index < 2 ? 0.35 : 0.6}
+            opacity={done ? 0.35 : 0.6}
           />
         </g>
       ))}
