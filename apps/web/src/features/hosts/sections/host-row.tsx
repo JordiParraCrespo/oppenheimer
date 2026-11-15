@@ -48,8 +48,6 @@ export function HostRow({ host }: { host: HostEntity }) {
     switch (part.kind) {
       case 'cpus':
         return t('hosts.settings.meta.cpus', { count: part.count });
-      case 'runner':
-        return t('hosts.settings.meta.runner', { version: part.version });
       case 'claude':
         return t('hosts.settings.meta.claude', { account: part.account });
       default:
@@ -83,6 +81,11 @@ export function HostRow({ host }: { host: HostEntity }) {
           ) : undefined
         }
         meta={metaPartsOf(host).map(wordOf).join(' · ') || undefined}
+        runner={
+          host.runnerVersion
+            ? t('hosts.settings.meta.runner', { version: host.runnerVersion })
+            : undefined
+        }
         state={
           status === 'running'
             ? t('hosts.settings.state.running', { count: host.details.runningSessionCount })
