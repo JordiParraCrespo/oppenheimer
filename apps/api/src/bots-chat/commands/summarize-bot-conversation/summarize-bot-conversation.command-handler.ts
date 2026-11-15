@@ -25,14 +25,14 @@ import { BOT_COMPLETION_TIME_LIMIT_MS } from '../../domain/bot-turn.entity';
 import { SummarizeBotConversationCommand } from './summarize-bot-conversation.command';
 
 /**
- * Folds a bot's oldest uncovered messages into its conversation summary
- * (`25-bots.md` §2): reads the summary and what it does not cover, decides
- * again what to fold (a job staged twice folds once), asks the bot's own
- * model, with no tools, for the new summary, and stores it conditioned on
- * the version it read. A job that loses that race writes nothing: the other
- * one's summary stands. A conversation still past the threshold after a
- * fold stages the next one. A bot that is gone, or whose key cannot be
- * opened, is left as it is; a model that fails throws, and the queue retries.
+ * Folds a bot's oldest uncovered messages into its conversation summary: reads
+ * the summary and what it does not cover, decides again what to fold (a job
+ * staged twice folds once), asks the bot's own model, with no tools, for the
+ * new summary, and stores it conditioned on the version it read. A job that
+ * loses that race writes nothing: the other one's summary stands. A
+ * conversation still past the threshold after a fold stages the next one. A bot
+ * that is gone, or whose key cannot be opened, is left as it is; a model that
+ * fails throws, and the queue retries.
  */
 @CommandHandler(SummarizeBotConversationCommand)
 export class SummarizeBotConversationCommandHandler

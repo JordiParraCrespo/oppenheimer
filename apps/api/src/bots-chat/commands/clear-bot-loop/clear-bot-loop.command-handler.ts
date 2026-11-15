@@ -8,7 +8,7 @@ import type { BotLoopRepositoryPort } from '../../database/bot-loop.repository.p
 import { ClearBotLoopCommand } from './clear-bot-loop.command';
 
 /**
- * Stop a bot's loop from its chat (`25-bots.md` §4.1, `/loop`): the loop
+ * Stop a bot's loop from its chat: the loop
  * ends with a line saying the owner stopped it, and a run still waiting is
  * cancelled with it (`BotLoopResolver`). A running one finishes its turn;
  * with the loop gone, its next run's job finds nothing. No loop is no error.

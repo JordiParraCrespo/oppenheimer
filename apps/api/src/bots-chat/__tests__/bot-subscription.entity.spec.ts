@@ -1,5 +1,5 @@
 /**
- * A bot's subscription as an aggregate (`27-bot-subscriptions.md` §3): what
+ * A bot's subscription as an aggregate: what
  * a new one may hold, and what recording a wake changes. When it wakes is
  * `bot-subscription.policy.spec.ts`; the stored row's checks are the
  * integration suite's.

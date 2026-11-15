@@ -17,8 +17,7 @@ import {
 } from './send-bot-peer-message.command';
 
 /**
- * One bot messages another (`25-bots.md` §4.6), with what the experiments in
- * `research/agent-coordination-experiments.md` showed agents must not be
+ * One bot messages another, with what experiments showed agents must not be
  * left to agree among themselves:
  *
  * - **The sender is recorded, not claimed.** The message carries the bot of

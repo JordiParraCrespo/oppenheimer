@@ -1,5 +1,5 @@
 /**
- * A bot's heartbeat (`26-bot-routines.md` §6): what breaks this is a trigger
+ * A bot's heartbeat: what breaks this is a trigger
  * the routine save refuses (so no bot gets one), every bot of a workspace
  * waking on the same minute, a minute that moves between replicas or
  * retries, a redelivered creation saving a second heartbeat, and a prompt

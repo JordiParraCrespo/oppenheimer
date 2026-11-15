@@ -1,5 +1,5 @@
 /**
- * The owner resumes a bot's paused goal (`25-bots.md` §4.1). What breaks
+ * The owner resumes a bot's paused goal. What breaks
  * this: a resume that queues nothing, or queues a turn for a goal that is
  * running; a bot in another workspace reached; an old goal paused on its
  * last continuation that can never be resumed nor cleared by Resume. Queuing

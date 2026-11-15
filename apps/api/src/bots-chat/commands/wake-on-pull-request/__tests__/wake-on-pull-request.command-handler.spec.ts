@@ -1,9 +1,8 @@
 /**
- * An event on a pull request a bot follows wakes it (`27-bot-subscriptions.md`
- * §7). What breaks this: an event delivered twice queuing two turns or
- * counting twice against the wake limit; a wake queued without taking one
- * from the limit; a merged pull request keeping its
- * subscription; a bot whose owner left being woken; a wake past the limit;
+ * An event on a pull request a bot follows wakes it. What breaks this: an event
+ * delivered twice queuing two turns or counting twice against the wake limit; a
+ * wake queued without taking one from the limit; a merged pull request keeping
+ * its subscription; a bot whose owner left being woken; a wake past the limit;
  * a session subscription woken by a pull request's event. The text the bot
  * reads is `bot-pull-request-wake.policy.spec.ts`.
  */

@@ -14,7 +14,7 @@ import { BOT_SUBSCRIPTION_WAKE_LIMIT } from '../../domain/bot-subscription.polic
 import { WakeOnPullRequestCommand } from './wake-on-pull-request.command';
 
 /**
- * An event on a pull request a bot follows (`27-bot-subscriptions.md` §7).
+ * An event on a pull request a bot follows.
  * The bot and its owner are resolved again, as for any wake; the pull
  * request is not re-read, since GitHub is not ours to read as the owner on
  * every event: the wake is the event's metadata. It is the one wake path
