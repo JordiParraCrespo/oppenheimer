@@ -12,16 +12,22 @@ export function FormField({
   label,
   nativeID,
   error,
+  accessory,
   children,
 }: {
   label: string;
   nativeID: string;
   error?: string;
+  /** What sits at the end of the label's line, such as "Forgot password?". */
+  accessory?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <View className="gap-2">
-      <Label nativeID={nativeID}>{label}</Label>
+      <View className="flex-row items-baseline justify-between gap-3">
+        <Label nativeID={nativeID}>{label}</Label>
+        {accessory}
+      </View>
       {children}
       {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
     </View>

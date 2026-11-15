@@ -57,6 +57,7 @@ export function LoginForm({ onSubmit, isPending, error, forgotPasswordLink }: Lo
           <FormField
             label={t('auth.password')}
             nativeID="password"
+            accessory={forgotPasswordLink}
             error={fieldState.error?.message}
           >
             <PasswordInput
@@ -72,7 +73,6 @@ export function LoginForm({ onSubmit, isPending, error, forgotPasswordLink }: Lo
           </FormField>
         )}
       />
-      <View className="mb-2 items-end">{forgotPasswordLink}</View>
       <Button onPress={submit} disabled={isPending} className={authControlClass}>
         <Text>{isPending ? t('auth.login.submitting') : t('auth.login.submit')}</Text>
       </Button>
