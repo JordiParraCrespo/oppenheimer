@@ -33,7 +33,7 @@ export interface HostProps {
   /**
    * Last heartbeat, read from `host_presence`. `online` is derived from it,
    * never stored, and nothing on this aggregate writes it: a heartbeat is
-   * presence, not a change to the host (`product/versions/mvp/15-host-metadata.md`).
+   * presence, not a change to the host.
    */
   lastSeenAt: Date | null;
   /** Set when the host is unpaired, from either end. The row is kept. */
@@ -80,8 +80,7 @@ const FINGERPRINT = /^[0-9a-f]{64}$/;
  *
  * Its key is **a column on this row, not a child table**: every runner boot
  * verifies an assertion against this row, so a join would sit on the hottest
- * path in the system, and when rotation arrives on the link
- * (`product/versions/mvp/09-runner-install-and-update.md` §3) the retired key
+ * path in the system, and when rotation arrives on the link the retired key
  * is one more column beside it — two keys, never N.
  *
  * Versioned, because a person (rename, unpair) and the machine itself

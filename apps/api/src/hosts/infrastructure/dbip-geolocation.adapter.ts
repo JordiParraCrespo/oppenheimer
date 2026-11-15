@@ -13,7 +13,7 @@ const UNKNOWN: IpGeolocation = {
 };
 
 /**
- * DB-IP Lite, read from `.mmdb` files on disk (`product/versions/mvp/15-host-metadata.md`):
+ * DB-IP Lite, read from `.mmdb` files on disk:
  * free, CC BY 4.0, no account. MaxMind GeoLite2 is the same format, so a deployment
  * holding that licence points the same two variables at its files.
  *

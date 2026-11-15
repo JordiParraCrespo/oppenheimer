@@ -11,7 +11,7 @@ import { HOST_METADATA_REPOSITORY } from '../hosts.di-tokens';
 const SCHEDULER_ID = 'host-retention-daily';
 
 /**
- * Deletes what `product/versions/mvp/15-host-metadata.md` says is not kept: networks
+ * Deletes what a host's metadata does not keep: networks
  * unseen for `retention.hostNetworkDays` (never a host's current one) and timeline
  * entries past `retention.hostTimelineDays`, in batches through their own index, as
  * the note's Q7 and Q8.

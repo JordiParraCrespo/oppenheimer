@@ -28,8 +28,7 @@ type PresenceRow = HostPresenceOrmEntity & { online: boolean };
 
 /**
  * The four side tables, in SQL written out: every statement here is one of
- * their access patterns (Q1–Q8 in `product/versions/mvp/15-host-metadata.md`),
- * and a conditional upsert or a keyset page reads better as the statement it
+ * their access patterns, and a conditional upsert or a keyset page reads better as the statement it
  * is than as a builder.
  */
 @Injectable()

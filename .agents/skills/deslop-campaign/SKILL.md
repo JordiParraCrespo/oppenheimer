@@ -71,15 +71,33 @@ request for someone else, because the next reader meets the comment first.
     it.
   - Comments that explain the language or framework (what `readonly`,
     `useEffect`, `@Injectable()`, `defer` do).
-- **Pass 3 and later: consolidation.** Notes repeated across files move to
+- **Passes 3 to 7: consolidation.** Notes repeated across files move to
   the one module that owns the rule and the others drop them. Blocks that
   grew into essays are rewritten to their constraint.
+- **Pass 8 and later: references.** Every comment that sends the reader to
+  prose elsewhere (`product/…`, `.agents/…`, an `AGENTS.md`, `README.md` or
+  `ARCHITECTURE.md`, a note's `§4.7`, an issue or pull request number) is
+  rewritten to stand on its own: what this code does and why, in the
+  comment's own words, or cut when the code already says it.
+  `* WhatsApp number (\`product/next-steps/answering-on-telegram-and-whatsapp.md\`).`
+  becomes `* WhatsApp number.`; `How one of a bot's subagents ended
+  (\`25-bots.md\` §4.7, \`delegate\`): it answered, …` becomes `How one of a
+  bot's subagents ended: it answered, …`. A pointer to code (`see
+  \`HostPresence\``) is not prose and may stay when the code here needs it:
+  the editor follows it and a rename breaks it loudly. A pointer to prose
+  survives only for an external spec the code implements (an RFC, a vendor's
+  documented quirk). TODOs keep their issue number. Find the candidates with:
+
+  ```bash
+  git grep -nE '^\s*(//|#|\*|/\*\*?).*(product/|\.agents/|[A-Za-z0-9_-]+\.md\b|§)' -- <paths>
+  ```
 
 ## Never cut
 
 A comment that is the only place a reader learns a unit, a magic number's
-meaning, an ordering or locking rule, a security reason, a platform quirk, a
-regression a test guards, or a pointer to a product note. Directives
+meaning, an ordering or locking rule, a security reason, a platform quirk, or a
+regression a test guards; when that fact sits behind a pointer, a pass moves
+the fact into the comment and drops the pointer. Directives
 (`biome-ignore`, `@ts-expect-error`, `//go:`, `//nolint`,
 `oppenheimer:begin/end`), Go doc comments on exported identifiers, TODOs,
 license headers, generated files, and the eval fixtures under
