@@ -63,6 +63,9 @@ const QUESTIONS = {
   tailorsToXrpMobile: 'Does the reply suggest an example job about XRP Mobile?',
   mentionsName:
     'Does the reply say, in a line or two, that the bot has no name of its own yet and that the person can give it one?',
+  oneQuestion: 'Does the reply ask the person at most one question?',
+  saysNoName:
+    'Does the reply say the bot has no name (of its own) yet, or invite the person to give it one?',
   greetsByTime:
     'Does the reply greet with the time of day (good morning, good afternoon, good evening, buenos días, buenas tardes, buenas noches or similar)?',
   suggestsName:

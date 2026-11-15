@@ -103,7 +103,9 @@
       "want": {
         "tailorsToZengue": true,
         "tailorsToXrpMobile": false,
-        "short": true
+        "short": true,
+        "oneQuestion": true,
+        "saysNoName": false
       }
     },
     {
