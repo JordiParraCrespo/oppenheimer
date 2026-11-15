@@ -11,10 +11,10 @@ import { composeRunPrompt } from '../../automations/domain/run-launch.policy';
 import type { RunRefusal } from '../../automations/domain/run-refusal.policy';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
+import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import { heldByProvider } from '../domain/bot-provider-hold.policy';
 import { routinePrefix, routineTurn } from '../domain/bot-routine.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from './bot-stream.port';
@@ -59,6 +59,7 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     private readonly access: BotModelAccessResolver,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
+    private readonly hold: BotTurnHoldPolicy,
   ) {}
 
   async decide(context: RunTargetContext): Promise<RunTargetDecision<RoutineLaunch>> {
@@ -81,12 +82,16 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     // The provider just refused the account (out of quota, a refused key):
     // the run is skipped, not queued to fail the same way, and the next one
     // tries again once the hold passes (`bot-provider-hold.policy.ts`).
-    const last = await this.turns.findLastOnProvider(
-      automation.organizationId,
-      botId,
-      bot.provider,
+    const held = await this.hold.held(
+      {
+        organizationId: automation.organizationId,
+        botId,
+        provider: bot.provider,
+        origin: 'routine',
+      },
+      now,
     );
-    if (heldByProvider({ origin: 'routine' }, last, now)) {
+    if (held) {
       return { kind: 'skip', reason: 'not_launchable', pause: null };
     }
     const trigger = automation.triggers.find((candidate) => candidate.id === run.triggerId);

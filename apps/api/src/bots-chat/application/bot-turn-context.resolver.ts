@@ -34,7 +34,6 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
-import { heldByProvider, holdableOrigin } from '../domain/bot-provider-hold.policy';
 import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
@@ -51,6 +50,7 @@ import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
 import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 import { BotTurnChannelPolicy } from './bot-turn-channel.policy';
+import { BotTurnHoldPolicy } from './bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -97,13 +97,14 @@ export class BotTurnContextResolver {
     private readonly settings: BotPermissionsResolver,
     private readonly reviewers: BotRuleReviewerFactory,
     private readonly approvalStarted: BotApprovalStartedPolicy,
+    private readonly hold: BotTurnHoldPolicy,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
     if (!(await this.channels.answerable(turn))) return null;
-    if (await this.heldByProvider(turn, now)) return null;
+    if (await this.hold.held(turn, now)) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
@@ -221,20 +222,6 @@ export class BotTurnContextResolver {
       contextWindow: lastContext?.window ?? null,
     };
     return this.approvalStarted.shape(message, request);
-  }
-
-  /**
-   * Whether a routine's run or a wake ends here without asking the provider,
-   * which just refused the account (`bot-provider-hold.policy.ts`).
-   */
-  private async heldByProvider(turn: BotTurnEntity, now: Date): Promise<boolean> {
-    if (!holdableOrigin(turn.origin)) return false;
-    const last = await this.turns.findLastOnProvider(
-      turn.organizationId,
-      turn.botId,
-      turn.provider,
-    );
-    return heldByProvider(turn, last, now);
   }
 
   /**

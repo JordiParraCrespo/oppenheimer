@@ -10,6 +10,7 @@ import { AutomationRunEntity } from '../../../automations/domain/automation-run.
 import { triggerFromInput } from '../../../automations/domain/trigger-config.policy';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
+import { BotTurnHoldPolicy } from '../../application/bot-turn-hold.policy';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { BotRoutineTarget } from '../bot-routine-target.adapter';
 import type { BotStreamPort } from '../bot-stream.port';
@@ -88,7 +89,12 @@ function setup(
   const findLastOnProvider = vi.fn(async () => last);
   const turns = { enqueueOnce, findLastOnProvider } as unknown as BotTurnRepositoryPort;
   const publish = vi.fn(async () => undefined);
-  const target = new BotRoutineTarget(access, turns, { publish } as unknown as BotStreamPort);
+  const target = new BotRoutineTarget(
+    access,
+    turns,
+    { publish } as unknown as BotStreamPort,
+    new BotTurnHoldPolicy(turns),
+  );
   const context: RunTargetContext = {
     run,
     automation,

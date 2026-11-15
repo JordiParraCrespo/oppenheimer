@@ -101,6 +101,16 @@ function claimAttachmentsTo(
   return claimAttachmentsWithin(manager, message, turn.requestedByUserId, new Date());
 }
 
+/**
+ * The turns that say something of the account to `findLastOnProvider`
+ * (`bot-provider-hold.policy.ts`): one that failed, or one that reached the
+ * provider and spent a token. A turn that ended without asking it (a held
+ * wake, one with nowhere to answer) says nothing, and must not hide the
+ * refusal before it.
+ */
+const SPOKE_FOR_THE_ACCOUNT =
+  "(turn.status = 'failed' OR turn.inputTokens + turn.outputTokens > 0)";
+
 @Injectable()
 export class BotTurnRepository
   extends ScopedRepositoryBase<BotTurnOrmEntity>
@@ -435,7 +445,7 @@ export class BotTurnRepository
       })
       .andWhere('turn.provider = :provider', { provider })
       .andWhere('turn.status IN (:...ended)', { ended: ENDED_TURN_STATUSES })
-      .andWhere("(turn.status = 'failed' OR turn.inputTokens + turn.outputTokens > 0)")
+      .andWhere(SPOKE_FOR_THE_ACCOUNT)
       // By when it ended, not when it was sent: lanes run a later message
       // before an earlier background turn. The bot's turns, sorted.
       .orderBy('turn.endedAt', 'DESC', 'NULLS LAST')

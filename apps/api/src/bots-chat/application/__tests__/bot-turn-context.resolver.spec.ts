@@ -36,6 +36,7 @@ import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
 import { BotTurnChannelPolicy } from '../bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
+import { BotTurnHoldPolicy } from '../bot-turn-hold.policy';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**
@@ -104,6 +105,13 @@ function setup(
       has: async () => true,
     } satisfies TurnCredentialsPort,
   );
+  const turns = {
+    findLastContext: async () => conversation.lastContext ?? null,
+    findLastOnProvider: async () => conversation.lastOnProvider ?? null,
+  } satisfies Pick<
+    BotTurnRepositoryPort,
+    'findLastContext' | 'findLastOnProvider'
+  > as unknown as BotTurnRepositoryPort;
   const resolver = new BotTurnContextResolver(
     access,
     { findAllForTurn: async () => [] } as unknown as BotDocumentRepositoryPort,
@@ -125,13 +133,7 @@ function setup(
     } as unknown as BotConversationSummaryRepositoryPort,
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
-    {
-      findLastContext: async () => conversation.lastContext ?? null,
-      findLastOnProvider: async () => conversation.lastOnProvider ?? null,
-    } satisfies Pick<
-      BotTurnRepositoryPort,
-      'findLastContext' | 'findLastOnProvider'
-    > as unknown as BotTurnRepositoryPort,
+    turns,
     new BotTurnChannelPolicy({
       findChannelChat: async () => null,
     } as unknown as BotConversationRepositoryPort),
@@ -166,6 +168,7 @@ function setup(
       findForRun: async () =>
         Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),
     } as unknown as BotApprovalRepositoryPort),
+    new BotTurnHoldPolicy(turns),
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({
