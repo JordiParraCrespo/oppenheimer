@@ -151,10 +151,11 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
   build version the API targets feature flags on. Loading the consumer modules
   is what makes this app that product.
 - **`auth-client.ts`** — Better Auth with `expoClient({ scheme, storagePrefix:
-  'oppenheimer', storage: SecureStore })`. The app has no
-  sign-up screen, so `signInSocial` never lifts the API's
-  `disableImplicitSignUp` (`requestSignUp: false`): an account is made on the
-  web. The scheme comes from
+  'oppenheimer', storage: SecureStore })`. `signInSocial`
+  passes `requestSignUp: intent === 'sign-up'`, so only the Create account
+  screen lifts the API's `disableImplicitSignUp`; signing in never creates an
+  account. `webUrl` (`EXPO_PUBLIC_WEB_URL`) is the console, for Terms, Privacy
+  and the workspace address's host. The scheme comes from
   `EXPO_PUBLIC_MOBILE_SCHEME` (default `oppenheimer`) and must match `app.config.ts`
   and `MOBILE_SCHEME` on the API, or the OAuth and password-reset deep links do
   not resolve back into the app. `getAuthHeaders` sends the stored cookie, since

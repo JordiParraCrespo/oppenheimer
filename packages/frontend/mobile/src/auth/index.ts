@@ -1,6 +1,5 @@
 export { AuthLayout, type AuthLayoutProps } from './components/auth-layout';
 export * from './components/auth-primitives';
-export { BrandLogo } from './components/brand-logo';
 export { PasswordInput } from './components/password-input';
 export * from './components/provider-icons';
 export { SocialLoginButtons } from './components/social-login-buttons';

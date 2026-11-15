@@ -1,5 +1,6 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTranslation } from 'react-i18next';
+import { WorkspaceGate } from '../../features/organizations/sections/workspace-gate';
 
 /**
  * The export's sections, in the order its tab bar draws them. The bar is the
@@ -46,13 +47,15 @@ export default function AppLayout() {
   const { t } = useTranslation();
 
   return (
-    <NativeTabs minimizeBehavior="onScrollDown">
-      {SECTIONS.map((section) => (
-        <NativeTabs.Trigger key={section.name} name={section.name}>
-          <NativeTabs.Trigger.Label>{t(section.title)}</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon sf={section.sf} md={section.md} />
-        </NativeTabs.Trigger>
-      ))}
-    </NativeTabs>
+    <WorkspaceGate>
+      <NativeTabs minimizeBehavior="onScrollDown">
+        {SECTIONS.map((section) => (
+          <NativeTabs.Trigger key={section.name} name={section.name}>
+            <NativeTabs.Trigger.Label>{t(section.title)}</NativeTabs.Trigger.Label>
+            <NativeTabs.Trigger.Icon sf={section.sf} md={section.md} />
+          </NativeTabs.Trigger>
+        ))}
+      </NativeTabs>
+    </WorkspaceGate>
   );
 }

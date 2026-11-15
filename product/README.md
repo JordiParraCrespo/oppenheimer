@@ -1677,3 +1677,8 @@ earlier note:
   back buttons are the platform's own controls, and floating surfaces are
   `UIGlassEffect`, so iOS 26 draws Apple's Liquid Glass
   (`next-steps/0.5-mobile.md`).
+- 0.5's shell left sign-up to the web, where the workspace is named. On
+  2026-11-15 the owner asked for the whole auth flow on the phone: Create
+  account, the workspace step, Ready, forgot and reset password, all in the
+  native frame; GitHub and the first host stay the computer's
+  (`next-steps/0.5-mobile.md`).

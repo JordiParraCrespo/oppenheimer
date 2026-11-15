@@ -9,6 +9,10 @@ import * as SecureStore from 'expo-secure-store';
 // the REST client can never default to two different hosts.
 export const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+// The console on the web: Terms and Privacy live there, and a workspace's
+// address is printed under its host.
+export const webUrl = process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:3000';
+
 // Must match the `scheme` in app.config.ts and MOBILE_SCHEME on the API so
 // OAuth and password-reset deep links resolve back into the app.
 const scheme = process.env.EXPO_PUBLIC_MOBILE_SCHEME ?? 'oppenheimer';
@@ -58,7 +62,7 @@ export const mobileAuthClient: IAuthClient = {
     );
   },
 
-  async signInSocial(provider) {
+  async signInSocial(provider, intent = 'sign-in') {
     // Opens an in-app browser and deep-links back via the app scheme.
     unwrap(
       await authClient.signIn.social({
@@ -68,11 +72,11 @@ export const mobileAuthClient: IAuthClient = {
         // path into a deep link with `Linking.createURL`, which is what makes
         // it resolve in a dev client (`exp://…/--/login`) as well as a
         // standalone build.
-        errorCallbackURL: '/login',
+        errorCallbackURL: intent === 'sign-up' ? '/register' : '/login',
         // The API refuses a provider identity that has no account here
-        // (`disableImplicitSignUp`). The app has no sign-up screen: an account
-        // is made on the web, where its workspace is named.
-        requestSignUp: false,
+        // (`disableImplicitSignUp`); only the Create account screen lifts it,
+        // so signing in never silently creates an account.
+        requestSignUp: intent === 'sign-up',
       }),
     );
   },

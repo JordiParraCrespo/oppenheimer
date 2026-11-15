@@ -17,16 +17,11 @@ import {
 import { ResetPasswordForm } from '../forms/reset-password-form';
 
 export interface ResetPasswordScreenProps {
-  brandLabel?: string;
   forgotPasswordHref: Href;
   loginHref: Href;
 }
 
-export function ResetPasswordScreen({
-  brandLabel,
-  forgotPasswordHref,
-  loginHref,
-}: ResetPasswordScreenProps) {
+export function ResetPasswordScreen({ forgotPasswordHref, loginHref }: ResetPasswordScreenProps) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const { token } = useLocalSearchParams<{ token?: string }>();
@@ -87,7 +82,7 @@ export function ResetPasswordScreen({
   }
 
   return (
-    <AuthLayout brandLabel={brandLabel} legalNote={t('auth.resetPassword.legal')}>
+    <AuthLayout footer={<Text variant="caption">{t('auth.resetPassword.legal')}</Text>}>
       {content}
     </AuthLayout>
   );

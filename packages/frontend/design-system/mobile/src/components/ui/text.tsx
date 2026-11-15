@@ -47,6 +47,8 @@ const textVariants = cva(
         muted: 'text-muted-foreground',
         accent: 'text-primary',
         destructive: 'text-destructive',
+        // A check that passed: an address free to take.
+        success: 'text-status-active',
         // Over a photograph or the primary fill, in either theme.
         inverse: 'text-white',
       },

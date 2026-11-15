@@ -4,9 +4,10 @@ import { Glass } from '@oppenheimer/design-system-mobile/glass';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Mail } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
-import { authControlClass, SocialLoginButtons } from '@oppenheimer/frontend-mobile';
+import { AuthLink, authControlClass, SocialLoginButtons } from '@oppenheimer/frontend-mobile';
 import { Link, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
+import { openBrowserAsync } from 'expo-web-browser';
+import { Trans, useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,9 +16,10 @@ const portrait = require('../../../assets/imagery/oppenheimer-portrait.webp');
 /**
  * The first screen signed out: the portrait full bleed, and over it one card
  * with every way in. The providers the deployment has are buttons; email is
- * a screen of its own.
+ * a screen of its own. Terms and Privacy are the console's pages, opened in
+ * the system browser.
  */
-export function WelcomeScreen() {
+export function WelcomeScreen({ webUrl }: { webUrl: string }) {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -56,6 +58,15 @@ export function WelcomeScreen() {
               </Button>
             </Link>
           </View>
+          <Text variant="caption">
+            <Trans
+              i18nKey="auth.legal"
+              components={{
+                terms: <AuthLink onPress={() => openBrowserAsync(`${webUrl}/terms`)} />,
+                privacy: <AuthLink onPress={() => openBrowserAsync(`${webUrl}/privacy`)} />,
+              }}
+            />
+          </Text>
         </Glass>
       </SafeAreaView>
     </View>

@@ -19,6 +19,7 @@ export function AuthGate() {
         </Stack.Protected>
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="(app)" />
+          <Stack.Screen name="onboarding" />
         </Stack.Protected>
       </Stack>
 

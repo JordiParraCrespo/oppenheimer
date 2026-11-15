@@ -12,8 +12,9 @@ import { Pressable, View } from 'react-native';
 /**
  * The shared vocabulary of the auth screens, the mobile half of
  * `@oppenheimer/frontend-web`'s `auth-primitives`. Same type ramp, same rhythm, same
- * names, so the two platforms' screens read as one design: 24px/500 title,
- * 14px ink-600 subtitle, 13px labels, pill CTAs.
+ * names, so the two platforms' screens read as one design. On the phone the title
+ * is the export's 34px large title and the subtitle its 15px subhead, with
+ * 13px labels and pill CTAs.
  */
 
 /**
@@ -28,14 +29,12 @@ export const authControlClass = 'h-12 w-full';
 /** Inputs are the same 48px, on the brand's 8px control radius. */
 export const authInputClass = cn(authControlClass, 'rounded-md px-[13px] text-base');
 
-export function AuthTitle({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <Text className={cn('mb-1.5 text-2xl font-medium text-ink-900', className)}>{children}</Text>
-  );
+export function AuthTitle({ children }: { children: ReactNode }) {
+  return <Text variant="largeTitle">{children}</Text>;
 }
 
-export function AuthSubtitle({ children, className }: { children: ReactNode; className?: string }) {
-  return <Text className={cn('mb-8 text-base text-ink-600', className)}>{children}</Text>;
+export function AuthSubtitle({ children }: { children: ReactNode }) {
+  return <Text variant="subhead">{children}</Text>;
 }
 
 /** The 52px disc that heads a terminal state (mail sent, password updated). */
@@ -85,9 +84,9 @@ export function AuthBackLink({ children, href }: { children?: ReactNode; href: H
   );
 }
 
-/** The centred "Already have an account? Sign in" line at the foot of a form. */
+/** The "Already have an account? Sign in" line at the foot of a screen. */
 export function AuthFooterNote({ children }: { children: ReactNode }) {
-  return <View className="mt-7 flex-row items-center justify-center gap-1">{children}</View>;
+  return <View className="flex-row flex-wrap items-center gap-1">{children}</View>;
 }
 
 /**

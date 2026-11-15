@@ -28,7 +28,7 @@ From the root and from the matching subpath (`./analytics`, `./auth`,
   from `@oppenheimer/frontend-core/react` and are re-exported for compatibility.
 - **i18n** — the i18next instance, `LOCALE_STORAGE_KEY`, `setLocale`,
   `LanguageSwitcher`.
-- **theme** — `THEME`, `NAV_THEME`, `BrandGlyph`, `ThemeToggle`.
+- **theme** — `THEME`, `NAV_THEME`.
 - **auth** — the sign-in chrome both apps wear, mirroring
   `@oppenheimer/frontend-web`'s concern of the same name: `AuthLayout`, `BrandLogo`,
   the `Auth*` primitives (title, subtitle, divider, note, form error, …),

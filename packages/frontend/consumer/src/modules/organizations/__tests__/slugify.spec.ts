@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { slugify } from '../lib/slugify';
+import { slugify } from '../slugify';
 
 /**
  * The preview under the name field. It must produce what

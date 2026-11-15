@@ -9,7 +9,7 @@ import {
   StepHeader,
   Link as TextLink,
 } from '@oppenheimer/design-system-web';
-import { isProvisionalSlug } from '@oppenheimer/frontend-consumer';
+import { isProvisionalSlug, slugify } from '@oppenheimer/frontend-consumer';
 import { useClaimPersonalWorkspace, useOrganizations } from '@oppenheimer/frontend-consumer/react';
 import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -17,7 +17,6 @@ import { Navigate, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAddressCheck } from '@/features/organizations/hooks/use-address-check';
-import { slugify } from '@/features/organizations/lib/slugify';
 import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-address';
 
 /**

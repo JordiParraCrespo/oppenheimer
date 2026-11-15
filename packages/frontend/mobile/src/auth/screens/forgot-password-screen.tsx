@@ -17,18 +17,17 @@ import {
 import { ForgotPasswordForm } from '../forms/forgot-password-form';
 
 export interface ForgotPasswordScreenProps {
-  brandLabel?: string;
   loginHref: Href;
 }
 
-export function ForgotPasswordScreen({ brandLabel, loginHref }: ForgotPasswordScreenProps) {
+export function ForgotPasswordScreen({ loginHref }: ForgotPasswordScreenProps) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const { mutate, isPending, error } = useForgotPassword();
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   return (
-    <AuthLayout brandLabel={brandLabel} legalNote={t('auth.forgotPassword.legal')}>
+    <AuthLayout footer={<Text variant="caption">{t('auth.forgotPassword.legal')}</Text>}>
       {sentTo ? (
         <>
           <AuthIconCircle>

@@ -18,7 +18,7 @@ compiles it with the app.
 | Concern | What it holds | Layer |
 | --- | --- | --- |
 | `platform` | `createQueryPersistence`, `ExpoSecureStoreService`, the MMKV stores (`storage`, `stateStorage`, `queryStorage`), the fetch polyfills | leaf |
-| `theme` | `THEME` (the NativeWind variable sets), `NAV_THEME` for React Navigation, `BrandGlyph`, `ThemeToggle` | leaf |
+| `theme` | `THEME` (the NativeWind variable sets), `NAV_THEME` for React Navigation | leaf |
 | `forms` | `useZodResolver`, `FormField` (a `Controller` field with its label and error) | leaf |
 | `analytics` | `ScreenViewTracker` | leaf |
 | `i18n` | the i18next instance, `LOCALE_STORAGE_KEY`, `setLocale`, `LanguageSwitcher`, and — re-exported from `@oppenheimer/frontend-core` — `useLocale` and the date formatters; it reads `platform`'s MMKV store for the saved locale | middle |

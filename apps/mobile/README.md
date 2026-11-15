@@ -4,9 +4,11 @@ Oppenheimer on a phone (0.5, `product/next-steps/0.5-mobile.md`), drawn from
 the version-1 export's `Mobile.dc.html`. Today it is the shell: the welcome
 screen (a social provider through a deep link, or email), email sign-in,
 password reset, and the signed-in app's five sections behind a floating tab
-bar. Account is real (who is signed in, light or dark, sign out); Sessions,
-Employees, Pull requests and Automations say they are coming. Accounts are
-made on the web, where the workspace is named; the app has no sign-up.
+bar. Account is real (who is signed in, light or dark, language, sign out);
+Sessions, Employees, Pull requests and Automations say they are coming.
+Signing up works here too: Create account, then the workspace step and
+Ready (`app/onboarding/`); GitHub and the first host are added from the
+console on the computer.
 
 ## Stack
 
@@ -43,7 +45,8 @@ pnpm --filter @oppenheimer/mobile build:dev    # EAS build (development profile)
 index.ts               # the nitro-fetch polyfill first, then expo-router/entry
 app/                   # expo-router routes: a default export that mounts a screen
 ├── _layout.tsx        # providers, theme vars, error boundaries, AuthGate
-├── (auth)/            # welcome, login (email), forgot-password, reset-password
+├── (auth)/            # welcome, login (email), register, forgot-password, reset-password
+├── onboarding/        # workspace (name it, claim its address), ready
 └── (app)/             # the tabs: index (sessions), employees, pull-requests, automations, account
 features/              # <module>/{screens,sections,dialogs,forms,components,hooks,lib,__tests__}
 lib/                   # configuration only: oppenheimer.ts, auth-client.ts, query.ts

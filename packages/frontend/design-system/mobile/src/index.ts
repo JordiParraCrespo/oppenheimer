@@ -219,6 +219,7 @@ export {
   TooltipContent,
   TooltipTrigger,
 } from './components/ui/tooltip';
+export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useHardwareBack } from './hooks/use-hardware-back';
 
 export { cn } from './lib/utils';
