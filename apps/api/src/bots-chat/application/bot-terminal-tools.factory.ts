@@ -62,12 +62,12 @@ const waitFields = {
 };
 
 /**
- * Driving a terminal (`25-bots.md` §4.2): a bot opens a blank terminal (a
- * session whose window 0 is a plain shell) on a host, types into it as a
- * person would, and reads the screen back, so it can run bash, ssh into a
- * machine, answer a program's questions or watch a long job. The session is
- * an ordinary one: the person sees it in the console and can take over. A
- * host lets a bot drive a shell only when its own exec policy is `full`.
+ * Driving a terminal: a bot opens a blank terminal (a session whose window 0 is
+ * a plain shell) on a host, types into it as a person would, and reads the
+ * screen back, so it can run bash, ssh into a machine, answer a program's
+ * questions or watch a long job. The session is an ordinary one: the person
+ * sees it in the console and can take over. A host lets a bot drive a shell
+ * only when its own exec policy is `full`.
  */
 @Injectable()
 export class BotTerminalToolsFactory implements BotToolArea {

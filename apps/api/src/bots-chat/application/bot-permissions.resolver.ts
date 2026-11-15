@@ -8,7 +8,7 @@ import type { BotToolPermissionRepositoryPort } from '../database/bot-tool-permi
 import { type BotPermissions, permissionsOf } from '../domain/bot-tool-permission.policy';
 
 /**
- * What a bot's owner set for its tools (`25-bots.md` §5), read in the bot's
+ * What a bot's owner set for its tools, read in the bot's
  * workspace when a turn starts or an approved call runs: the settings, the
  * standing grants and the rules, as one value the policy reads.
  */

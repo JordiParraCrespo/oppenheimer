@@ -28,15 +28,14 @@ export interface TurnCancelWatch {
 }
 
 /**
- * Builds the watch a running turn keeps for Stop (`25-bots.md` §2): it reads
- * the turn's cancel request every `CANCEL_POLL_MS`, starting the next read
- * only once the last has settled, so a slow database never stacks reads.
- * A read that fails is logged and the watch keeps looking; Stop aborts the
- * signal and ends the watch. A turn has no time limit (`25-bots.md` §2,
- * 2026-11-09); the same signal aborts when the engine has said nothing for
- * `idleLimitMs` while none of the turn's tools runs (a call of ours may take
- * as long as it takes; a provider retry stretches the wait by its delay),
- * and when the loop guard has refused `BOT_TURN_LOOP_REFUSALS` calls.
+ * Builds the watch a running turn keeps for Stop: it reads the turn's cancel
+ * request every `CANCEL_POLL_MS`, starting the next read only once the last has
+ * settled, so a slow database never stacks reads. A read that fails is logged
+ * and the watch keeps looking; Stop aborts the signal and ends the watch. A
+ * turn has no time limit; the same signal aborts when the engine has said
+ * nothing for `idleLimitMs` while none of the turn's tools runs (a call of ours
+ * may take as long as it takes; a provider retry stretches the wait by its
+ * delay), and when the loop guard has refused `BOT_TURN_LOOP_REFUSALS` calls.
  */
 @Injectable()
 export class TurnCancelWatchFactory {

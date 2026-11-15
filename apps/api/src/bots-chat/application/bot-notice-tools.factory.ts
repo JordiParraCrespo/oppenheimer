@@ -32,14 +32,14 @@ const notifyInput = z.object({
 });
 
 /**
- * How a bot that works on its own tells the person something, or that there
- * is nothing to tell. `notify` is a line for the person's Inbox (`product/next-steps/agent-tools.md` §5), the
- * bot's `runner sessions notify`: a reply shows only in the bot's chat, which
- * the person may not be watching. It asks nothing and reaches nothing outside
- * Oppenheimer, so it never asks first; a bot keeps one notice, its latest.
- * `nothing_to_report` is a turn nobody is waiting on (a heartbeat, a wake)
- * ending quietly (`26-bot-routines.md` §6): a tool, so it cannot be mistaken
- * for prose, and never offered where a person waits for an answer.
+ * How a bot that works on its own tells the person something, or that there is
+ * nothing to tell. `notify` is a line for the person's Inbox, the bot's `runner
+ * sessions notify`: a reply shows only in the bot's chat, which the person may
+ * not be watching. It asks nothing and reaches nothing outside Oppenheimer, so
+ * it never asks first; a bot keeps one notice, its latest. `nothing_to_report`
+ * is a turn nobody is waiting on (a heartbeat, a wake) ending quietly: a tool,
+ * so it cannot be mistaken for prose, and never offered where a person waits
+ * for an answer.
  */
 @Injectable()
 export class BotNoticeToolsFactory implements BotToolArea {

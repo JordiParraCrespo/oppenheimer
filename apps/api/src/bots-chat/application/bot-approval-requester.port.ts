@@ -30,7 +30,7 @@ export type BotApprovalRequestOutcome =
   | { status: 'waiting'; summary: string };
 
 /**
- * How an asking tool asks under Approve for me (`25-bots.md` §5): it records
+ * How an asking tool asks under Approve for me: it records
  * the call as a pending approval, the Needs input card, instead of running
  * it. One waits per bot at a time.
  */

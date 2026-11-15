@@ -7,9 +7,9 @@ export interface OwnerHost extends BotPromptHost {
 }
 
 /**
- * The hosts a bot's owner can reach, in the shape a turn's prompt takes
- * (`25-bots.md` §2). A refusal the hosts module raises comes through as
- * its `AppError`; anything else is a fault.
+ * The hosts a bot's owner can reach, in the shape a turn's prompt takes. A
+ * refusal the hosts module raises comes through as its `AppError`; anything
+ * else is a fault.
  */
 export interface OwnerHostsPort {
   hostsOf(owner: AccessScope): Promise<OwnerHost[]>;

@@ -35,15 +35,14 @@ export interface BotApprovalOutcome {
 }
 
 /**
- * Applies one of a card's decisions to it and says what that owes
- * (`25-bots.md` §5): a yes moves the card, stages the call, with the
- * permission it leaves standing when it reaches past this call, and queues
- * the turn where the bot says it is on it while the call runs, so you hear
- * back at once rather than after the call; a no queues the turn that tells
- * the bot, so it carries on; both turns run under what both the asking
- * turn's and the decider's scopes cover. A stop writes its line outside any
- * turn, queues none, and stops the asking turn if it still runs. The
- * decision is one the card offers; the handler checks that first.
+ * Applies one of a card's decisions to it and says what that owes: a yes moves
+ * the card, stages the call, with the permission it leaves standing when it
+ * reaches past this call, and queues the turn where the bot says it is on it
+ * while the call runs, so you hear back at once rather than after the call; a
+ * no queues the turn that tells the bot, so it carries on; both turns run under
+ * what both the asking turn's and the decider's scopes cover. A stop writes its
+ * line outside any turn, queues none, and stops the asking turn if it still
+ * runs. The decision is one the card offers; the handler checks that first.
  */
 export function decideApproval(
   approval: BotApprovalEntity,

@@ -1,12 +1,11 @@
 /**
- * A bot that gets a job gets its heartbeat (`26-bot-routines.md` §6). What
- * breaks this: a bot with a job and no routine that wakes it, a redelivered
- * event saving a second heartbeat, a heartbeat saved wider than the token that
- * wrote the job, one saved for someone other than the bot's owner, and one
- * saved for a bot or owner that is gone. When the event is raised is
- * `bot-document.entity.spec.ts`; the routine save itself is
- * `save-bot-routine.command-handler.spec.ts`; the minute and the prompt are
- * `bot-heartbeat.policy.spec.ts`.
+ * A bot that gets a job gets its heartbeat. What breaks this: a bot with a job
+ * and no routine that wakes it, a redelivered event saving a second heartbeat,
+ * a heartbeat saved wider than the token that wrote the job, one saved for
+ * someone other than the bot's owner, and one saved for a bot or owner that is
+ * gone. When the event is raised is `bot-document.entity.spec.ts`; the routine
+ * save itself is `save-bot-routine.command-handler.spec.ts`; the minute and the
+ * prompt are `bot-heartbeat.policy.spec.ts`.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { type AccessScope, emptyScope } from '@oppenheimer/backend-authz';

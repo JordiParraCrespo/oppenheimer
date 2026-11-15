@@ -59,9 +59,9 @@ export const DELIVER_CHANNEL_REPLY_JOB = 'deliver-channel-reply';
  * flight on a deployment carry it, so the worker accepts it for one release.
  */
 export const DELIVER_TELEGRAM_REPLY_JOB = 'deliver-telegram-reply';
-/** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
+/** A turn of a bot with a goal ended: the goal decides whether to go on. */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
-/** A run of a bot's loop ended: the loop decides whether it ends (`25-bots.md` §4.1, `/loop`). */
+/** A run of a bot's loop ended: the loop decides whether it ends. */
 export const FINISH_BOT_LOOP_RUN_JOB = 'finish-bot-loop-run';
 
 /** The order lanes run in (`BotQueueLanes`), as SQL over `bot_turn."lane"`. */
@@ -738,9 +738,8 @@ export async function lockBot(
 
 /**
  * The line of the card the bot has waiting, of either kind, or null: a bot
- * has one card up at a time, an approval or a card of questions
- * (`25-bots.md` §5). Read under `lockBot`, so two cards raised at once see
- * each other.
+ * has one card up at a time, an approval or a card of questions. Read under
+ * `lockBot`, so two cards raised at once see each other.
  */
 export async function waitingCardWithin(
   manager: EntityManager,
