@@ -8,7 +8,7 @@ import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 
 /**
  * Closes every session on a host removed with "Also delete everything on this
- * machine" (`product/versions/mvp/14-hosts-settings.md`). The host was told to close
+ * machine". The host was told to close
  * them all as its link closed (`RUNNER_LINK_CLOSE_REASONS.WIPE`), so their worktrees
  * are going: every session not resolved yet is closed, stopped ones included, and the
  * console offers no restart into one. A plain removal is

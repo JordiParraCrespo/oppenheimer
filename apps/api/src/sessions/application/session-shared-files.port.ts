@@ -14,7 +14,7 @@ export type SessionSharedPreviewOutcome =
 
 /**
  * What the module that owns the runner link implements so a bot can show a
- * file an agent shared (`product/next-steps/agent-tools.md` §7). The bytes
+ * file an agent shared. The bytes
  * live on the host; like `SessionPortsPort` it waits for the runner's answer,
  * and nothing is cached.
  */

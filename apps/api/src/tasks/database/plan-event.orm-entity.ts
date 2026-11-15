@@ -7,8 +7,8 @@ import {
 import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
- * One change worth logging on Plan, of a task or a milestone, and who made it
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §4). Append-only:
+ * One change worth logging on Plan, of a task or a milestone, and who made it;
+ * Stats counts tasks from it. Append-only:
  * no `updatedAt`, and its subject has no foreign key, so the row outlives what
  * it names. The organization's key cascades it away with the workspace.
  */

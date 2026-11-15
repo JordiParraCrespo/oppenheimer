@@ -23,7 +23,7 @@ import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import { StartCloudSessionCommand } from './start-cloud-session.command';
 
 /**
- * Starts a session in a vendor's cloud (`product/next-steps/cloud-agents.md`):
+ * Starts a session in a vendor's cloud:
  * the vendor's agent on one repository, on the caller's own key, listed under
  * a project like any session.
  *

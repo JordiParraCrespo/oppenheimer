@@ -2,8 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 
 /**
- * What a prompt to a cloud session can be refused for
- * (`product/next-steps/cloud-agents.md`, "Follow-ups to a cloud agent"): one a
+ * What a prompt to a cloud session can be refused for: one a
  * host started takes input at its vendor, and one a vendor runs through its
  * API takes it as a new run, on its launcher's key, once its last run ended.
  */

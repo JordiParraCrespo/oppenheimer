@@ -18,8 +18,7 @@ export type SessionPortsOutcome =
 
 /**
  * What the module that owns the runner link implements so the Browser tab can
- * list the ports a session listens on
- * (`product/versions/mvp/30-session-previews.md`). Like `HostFoldersPort` it
+ * list the ports a session listens on. Like `HostFoldersPort` it
  * waits for the runner's answer, and nothing is cached.
  */
 export interface SessionPortsPort {

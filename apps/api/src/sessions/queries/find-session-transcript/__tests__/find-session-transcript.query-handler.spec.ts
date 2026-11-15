@@ -14,7 +14,7 @@ import { FindSessionTranscriptQuery } from '../find-session-transcript.query';
 import { FindSessionTranscriptQueryHandler } from '../find-session-transcript.query-handler';
 
 /**
- * A reader's page of a session's conversation (`agent-tools.md` §8): the
+ * A reader's page of a session's conversation: the
  * session is read in the caller's scope before anything is asked of a host,
  * a cloud session's host is never asked (its conversation is at the vendor),
  * what comes back has its secrets taken out, its cursor continues where the
