@@ -510,9 +510,9 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
 }
 
 /**
- * The workspace's bots, their sidebar groups, their two documents and what
- * they remember (`product/versions/mvp/25-bots.md`, slice 1). Every call is
- * the API's; nothing here holds a rule of its own, so there is no service.
+ * The workspace's bots, their sidebar groups, their two documents and what they
+ * remember. Every call is the API's; nothing here holds a rule of its own, so
+ * there is no service.
  */
 @injectable()
 export class BotsRepository {
@@ -852,7 +852,7 @@ export class BotsRepository {
     });
   }
 
-  /** A bot's routines, oldest first (`26-bot-routines.md` §7). */
+  /** A bot's routines, oldest first. */
   findRoutines(id: string): Promise<BotRoutineEntity[]> {
     return callApi(BotsErrors.FETCH_ROUTINES_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.findBotRoutines({ path: { id } }));

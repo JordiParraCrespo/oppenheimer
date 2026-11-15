@@ -2,9 +2,9 @@ import type { MailPlan } from '@oppenheimer/shared/schemas/mail';
 import { useTranslation } from 'react-i18next';
 
 /**
- * What a send card adds under the message (`product/next-steps/mail.md`
- * §3.4): a draft goes as it stands in Gmail; anything else says the message
- * it answers or forwards, and the signature that goes below it.
+ * What a send card adds under the message: a draft goes as it stands in Gmail;
+ * anything else says the message it answers or forwards, and the signature that
+ * goes below it.
  */
 export function ChatMailSendNote({ mail }: { mail: MailPlan }) {
   const { t } = useTranslation();

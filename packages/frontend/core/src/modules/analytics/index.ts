@@ -5,7 +5,7 @@ export type {
   IAnalyticsClient,
 } from './analytics.client';
 export {
-  /** @public The event names `useCaptureEvent` takes (`apps/docs/docs/architecture/analytics.md`). */
+  /** @public The event names `useCaptureEvent` takes. */
   ANALYTICS_EVENTS,
   type AnalyticsEvent,
   type AuthMethod,

@@ -80,7 +80,7 @@ export const LIVE_POLL = {
   /**
    * The PR queue filling the parts of the rows it deferred. The rows are
    * drawn from the first read; each poll fills a budget more, out of a cache
-   * that keeps what it has, until nothing is left unread (#247). Not in the
+   * that keeps what it has, until nothing is left unread. Not in the
    * background: nobody is watching a page they left, and GitHub's budget is
    * better spent on the page in front of someone. The stream has no event for
    * "the read has stopped filling", so it never stands this poll down.

@@ -293,10 +293,9 @@ function Composer({
 }
 
 /**
- * ComposerPill — New session's prompt (`NewSessionComposer.dc.html`, the
- * 2026-10-25 export): one 28px-radius box holding a line that grows, with
- * Add files (+) at its start and the mic and the round send at its end, so
- * the box reads as a sentence to finish rather than a form to fill. It
+ * ComposerPill — New session's prompt: one 28px-radius box holding a line that
+ * grows, with Add files (+) at its start and the mic and the round send at its
+ * end, so the box reads as a sentence to finish rather than a form to fill. It
  * stands as tall as a session chat's `ChatComposer` (`inline`), 46px for one
  * line, so the box New session starts in is the box the session goes on in.
  * What the run will use is not inside it: the caller lays those choices on a

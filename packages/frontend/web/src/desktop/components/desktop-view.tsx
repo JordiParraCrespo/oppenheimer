@@ -12,11 +12,10 @@ import type { DesktopChannel } from '../lib/desktop-channel';
 import { DesktopNotice } from './desktop-notice';
 
 /**
- * A host's own desktop, live (`product/research/device-streaming.md`, "A
- * host's desktop"): a bar naming it and saying whether the reader watches or
- * drives it, Take control, Full screen, and the screen scaled into whatever
- * room it is given. It opens watching: clicks and keys reach the host only
- * after Take control, and the host itself drops them until then.
+ * A host's own desktop, live: a bar naming it and saying whether the reader
+ * watches or drives it, Take control, Full screen, and the screen scaled into
+ * whatever room it is given. It opens watching: clicks and keys reach the host
+ * only after Take control, and the host itself drops them until then.
  *
  * `connect` is the product package's factory for one dial; `name` is what the
  * bar calls the machine.

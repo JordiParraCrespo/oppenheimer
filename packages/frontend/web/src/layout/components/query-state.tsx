@@ -46,8 +46,7 @@ const DATA: Rung = { rung: 'data' };
  * ```
  *
  * `Pending` draws the section's shape (its container, its labels, a bar per
- * line), not a slab: `.agents/rules/frontend-ui.md`, "A placeholder has the
- * shape of what replaces it".
+ * line), not a slab: a placeholder has the shape of what replaces it.
  *
  * TanStack's recipe: `react-error-boundary` inside `QueryErrorResetBoundary`.
  * The children draw three times — under `<Suspense>`, as its placeholder, and

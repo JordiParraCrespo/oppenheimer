@@ -15,10 +15,10 @@ import type {
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
 /**
- * A bot as the console needs it (`product/versions/mvp/25-bots.md`): who it
- * is, where it sits in the Employees sidebar, the host it runs on and how its
- * turns start. What it is told and what it remembers are read separately
- * ({@link BotDocumentEntity}, {@link BotMemoryFactEntity}).
+ * A bot as the console needs it: who it is, where it sits in the Employees
+ * sidebar, the host it runs on and how its turns start. What it is told and
+ * what it remembers are read separately ({@link BotDocumentEntity},
+ * {@link BotMemoryFactEntity}).
  */
 export class BotEntity {
   constructor(
@@ -151,10 +151,10 @@ export class BotMemoryFactEntity {
 }
 
 /**
- * What the reader's bots know about them (Settings → Memory, `25-bots.md`
- * §4.1): what they wrote about themselves, in every bot's prompt and never
- * changed by a bot, and every fact about them a bot of theirs keeps, newest
- * first, each changed on the bot that keeps it.
+ * What the reader's bots know about them (Settings → Memory): what they wrote
+ * about themselves, in every bot's prompt and never changed by a bot, and every
+ * fact about them a bot of theirs keeps, newest first, each changed on the bot
+ * that keeps it.
  */
 export class PersonMemoryEntity {
   constructor(
@@ -171,8 +171,8 @@ export class PersonMemoryEntity {
 }
 
 /**
- * One of a bot's skills (`25-bots.md` §4.1): a reusable way of doing one task,
- * run by the person as `/<name>` and used by the bot when a request fits.
+ * One of a bot's skills: a reusable way of doing one task, run by the person as
+ * `/<name>` and used by the bot when a request fits.
  */
 export class BotSkillEntity {
   constructor(
@@ -309,9 +309,9 @@ export interface BotRoutineLastRun {
 }
 
 /**
- * One of a bot's routines (`26-bot-routines.md` §7): what it is told, when it
- * runs, whether it is on, and how it last went. The bot makes and changes it
- * in chat; the Routines tab turns it on or off, runs it now or deletes it.
+ * One of a bot's routines: what it is told, when it runs, whether it is on, and
+ * how it last went. The bot makes and changes it in chat; the Routines tab
+ * turns it on or off, runs it now or deletes it.
  */
 export class BotRoutineEntity {
   constructor(
