@@ -25,7 +25,7 @@ export function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const resolveError = useErrorMessage();
-  const { mutate, isPending, error } = useRegister();
+  const { mutate, isPending, error, reset } = useRegister();
 
   const toWorkspace = () => router.replace('/onboarding/workspace');
 
@@ -58,6 +58,7 @@ export function RegisterScreen() {
         <RegisterForm
           isPending={isPending}
           error={error ? resolveError(error, t('auth.register.failed')).message : undefined}
+          onEdit={reset}
           onSubmit={(values) => mutate(values, { onSuccess: toWorkspace })}
         />
       </View>

@@ -19,6 +19,8 @@ export interface RegisterFormProps {
   isPending: boolean;
   /** The resolved failure message, if the last attempt failed. */
   error?: string;
+  /** Called on any edit and on each try, so a failure the server gave clears. */
+  onEdit?: () => void;
 }
 
 /**
@@ -26,19 +28,24 @@ export interface RegisterFormProps {
  * The API builds the workspace's first name from the person's, so both name
  * fields stay, side by side.
  */
-export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) {
+export function RegisterForm({ onSubmit, isPending, error, onEdit }: RegisterFormProps) {
   const { t } = useTranslation();
   const { control, handleSubmit } = useForm<RegisterDto>({
     resolver: useZodResolver(registerSchema),
     defaultValues: { firstName: '', lastName: '', email: '', password: '' },
   });
 
-  const submit = handleSubmit((values) => onSubmit(values));
+  const submit = () => {
+    onEdit?.();
+    void handleSubmit((values) => onSubmit(values))();
+  };
+  const edit = (onChange: (value: string) => void) => (value: string) => {
+    onChange(value);
+    onEdit?.();
+  };
 
   return (
     <View className="gap-4">
-      {error ? <AuthFormError>{error}</AuthFormError> : null}
-
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Controller
@@ -55,7 +62,7 @@ export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) 
                   placeholder={t('auth.firstNamePlaceholder')}
                   aria-labelledby="firstName"
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChangeText={edit(field.onChange)}
                   onBlur={field.onBlur}
                   editable={!isPending}
                   autoComplete="given-name"
@@ -80,7 +87,7 @@ export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) 
                   placeholder={t('auth.lastNamePlaceholder')}
                   aria-labelledby="lastName"
                   value={field.value}
-                  onChangeText={field.onChange}
+                  onChangeText={edit(field.onChange)}
                   onBlur={field.onBlur}
                   editable={!isPending}
                   autoComplete="family-name"
@@ -102,7 +109,7 @@ export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) 
               placeholder={t('auth.emailPlaceholder')}
               aria-labelledby="reg-email"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoCapitalize="none"
@@ -127,7 +134,7 @@ export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) 
               placeholder={t('auth.register.passwordPlaceholder')}
               aria-labelledby="reg-password"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoComplete="new-password"
@@ -138,6 +145,7 @@ export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) 
         )}
       />
 
+      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Button onPress={submit} disabled={isPending} className={authControlClass}>
         <Text>{isPending ? t('auth.register.submitting') : t('auth.register.submit')}</Text>
       </Button>

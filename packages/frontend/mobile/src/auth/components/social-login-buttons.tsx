@@ -74,9 +74,11 @@ export function SocialLoginButtons({
           API unreachable, the provider rejected server-side. It used to fail
           into a native alert the form knew nothing about. */}
       {social.error ? (
-        <AuthFormError className="mb-2.5">
-          {resolveError(social.error, t('auth.login.socialFailed')).message}
-        </AuthFormError>
+        <View className="mb-2.5">
+          <AuthFormError>
+            {resolveError(social.error, t('auth.login.socialFailed')).message}
+          </AuthFormError>
+        </View>
       ) : null}
       <View className="gap-2.5">
         {google ? (

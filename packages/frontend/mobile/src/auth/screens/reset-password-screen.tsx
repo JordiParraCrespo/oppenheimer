@@ -25,7 +25,7 @@ export function ResetPasswordScreen({ forgotPasswordHref, loginHref }: ResetPass
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const { token } = useLocalSearchParams<{ token?: string }>();
-  const { mutate, isPending, error } = useResetPassword();
+  const { mutate, isPending, error, reset } = useResetPassword();
   const [done, setDone] = useState(false);
 
   const stage = resetStage(token, done);
@@ -72,6 +72,7 @@ export function ResetPasswordScreen({ forgotPasswordHref, loginHref }: ResetPass
           <ResetPasswordForm
             isPending={isPending}
             error={error ? resolveError(error, t('auth.resetPassword.error')).message : undefined}
+            onEdit={reset}
             onSubmit={({ password }) =>
               mutate({ token: stage.token, password }, { onSuccess: () => setDone(true) })
             }

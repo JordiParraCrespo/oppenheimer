@@ -12,20 +12,33 @@ export interface ForgotPasswordFormProps {
   onSubmit: (values: ForgotPasswordDto) => void;
   isPending: boolean;
   error?: string;
+  /** Called on any edit and on each try, so a failure the server gave clears. */
+  onEdit?: () => void;
 }
 
-export function ForgotPasswordForm({ onSubmit, isPending, error }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({
+  onSubmit,
+  isPending,
+  error,
+  onEdit,
+}: ForgotPasswordFormProps) {
   const { t } = useTranslation();
   const { control, handleSubmit } = useForm<ForgotPasswordDto>({
     resolver: useZodResolver(forgotPasswordSchema),
     defaultValues: { email: '' },
   });
 
-  const submit = handleSubmit((values) => onSubmit(values));
+  const submit = () => {
+    onEdit?.();
+    void handleSubmit((values) => onSubmit(values))();
+  };
+  const edit = (onChange: (value: string) => void) => (value: string) => {
+    onChange(value);
+    onEdit?.();
+  };
 
   return (
     <View className="gap-4">
-      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Controller
         control={control}
         name="email"
@@ -36,7 +49,7 @@ export function ForgotPasswordForm({ onSubmit, isPending, error }: ForgotPasswor
               placeholder={t('auth.emailPlaceholder')}
               aria-labelledby="fp-email"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoCapitalize="none"
@@ -47,6 +60,7 @@ export function ForgotPasswordForm({ onSubmit, isPending, error }: ForgotPasswor
           </FormField>
         )}
       />
+      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Button onPress={submit} disabled={isPending} className={authControlClass}>
         <Text>
           {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submit')}

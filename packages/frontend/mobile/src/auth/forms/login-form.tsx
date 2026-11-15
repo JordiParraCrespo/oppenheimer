@@ -15,20 +15,34 @@ export interface LoginFormProps {
   isPending: boolean;
   error?: string;
   forgotPasswordLink: ReactNode;
+  /** Called on any edit and on each try, so a failure the server gave clears. */
+  onEdit?: () => void;
 }
 
-export function LoginForm({ onSubmit, isPending, error, forgotPasswordLink }: LoginFormProps) {
+export function LoginForm({
+  onSubmit,
+  isPending,
+  error,
+  forgotPasswordLink,
+  onEdit,
+}: LoginFormProps) {
   const { t } = useTranslation();
   const { control, handleSubmit } = useForm<LoginDto>({
     resolver: useZodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
 
-  const submit = handleSubmit((values) => onSubmit(values));
+  const submit = () => {
+    onEdit?.();
+    void handleSubmit((values) => onSubmit(values))();
+  };
+  const edit = (onChange: (value: string) => void) => (value: string) => {
+    onChange(value);
+    onEdit?.();
+  };
 
   return (
     <View className="gap-4">
-      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Controller
         control={control}
         name="email"
@@ -39,7 +53,7 @@ export function LoginForm({ onSubmit, isPending, error, forgotPasswordLink }: Lo
               placeholder={t('auth.emailPlaceholder')}
               aria-labelledby="email"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoCapitalize="none"
@@ -64,7 +78,7 @@ export function LoginForm({ onSubmit, isPending, error, forgotPasswordLink }: Lo
               placeholder={t('auth.passwordPlaceholder')}
               aria-labelledby="password"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoComplete="password"
@@ -73,6 +87,7 @@ export function LoginForm({ onSubmit, isPending, error, forgotPasswordLink }: Lo
           </FormField>
         )}
       />
+      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Button onPress={submit} disabled={isPending} className={authControlClass}>
         <Text>{isPending ? t('auth.login.submitting') : t('auth.login.submit')}</Text>
       </Button>

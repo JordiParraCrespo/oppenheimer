@@ -17,7 +17,7 @@ export function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const resolveError = useErrorMessage();
-  const { mutate, isPending, error } = useLogin();
+  const { mutate, isPending, error, reset } = useLogin();
 
   return (
     <AuthLayout
@@ -47,6 +47,7 @@ export function LoginScreen() {
             </Pressable>
           </Link>
         }
+        onEdit={reset}
         onSubmit={(values) => mutate(values, { onSuccess: () => router.replace('/(app)') })}
       />
     </AuthLayout>

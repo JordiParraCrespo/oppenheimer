@@ -23,7 +23,7 @@ export interface ForgotPasswordScreenProps {
 export function ForgotPasswordScreen({ loginHref }: ForgotPasswordScreenProps) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const { mutate, isPending, error } = useForgotPassword();
+  const { mutate, isPending, error, reset } = useForgotPassword();
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   return (
@@ -56,6 +56,7 @@ export function ForgotPasswordScreen({ loginHref }: ForgotPasswordScreenProps) {
           <ForgotPasswordForm
             isPending={isPending}
             error={error ? resolveError(error, t('auth.forgotPassword.error')).message : undefined}
+            onEdit={reset}
             onSubmit={({ email }) => mutate(email, { onSuccess: () => setSentTo(email) })}
           />
           <AuthBackLink href={loginHref} />

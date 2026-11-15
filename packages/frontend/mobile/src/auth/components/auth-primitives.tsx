@@ -1,4 +1,3 @@
-import { Alert, AlertDescription } from '@oppenheimer/design-system-mobile/alert';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { ArrowLeft, CircleAlert } from '@oppenheimer/design-system-mobile/icons';
 import { Separator } from '@oppenheimer/design-system-mobile/separator';
@@ -99,21 +98,22 @@ export function AuthLink({ className, ...props }: React.ComponentProps<typeof Te
 }
 
 /**
- * Failed submissions surface here, above the first field — never in a native
- * `Alert.alert`, which buries the failure behind a dismissal and leaves the
- * form with nothing to show for it. The design system's `Alert` carries the
- * destructive treatment and the `role="alert"`.
+ * A failed submission, said once, on the line above the button that sent it:
+ * a red icon and the server's words, no box. A field's own complaint sits
+ * under that field; this is only for what the server answered. The form
+ * clears it as soon as the person edits a field or tries again, so the two
+ * never stand on screen together. Never a native `Alert.alert`, which buries
+ * the failure behind a dismissal.
  */
-export function AuthFormError({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function AuthFormError({ children }: { children: ReactNode }) {
   return (
-    <Alert icon={CircleAlert} variant="destructive" className={className}>
-      <AlertDescription>{children}</AlertDescription>
-    </Alert>
+    <View role="alert" className="flex-row items-start gap-2">
+      <Icon as={CircleAlert} size={15} className="mt-0.5 text-destructive" />
+      <View className="min-w-0 flex-1">
+        <Text variant="caption" tone="destructive">
+          {children}
+        </Text>
+      </View>
+    </View>
   );
 }

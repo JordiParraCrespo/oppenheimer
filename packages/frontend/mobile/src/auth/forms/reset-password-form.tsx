@@ -13,20 +13,28 @@ export interface ResetPasswordFormProps {
   onSubmit: (values: NewPasswordValues) => void;
   isPending: boolean;
   error?: string;
+  /** Called on any edit and on each try, so a failure the server gave clears. */
+  onEdit?: () => void;
 }
 
-export function ResetPasswordForm({ onSubmit, isPending, error }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ onSubmit, isPending, error, onEdit }: ResetPasswordFormProps) {
   const { t } = useTranslation();
   const { control, handleSubmit } = useForm<NewPasswordValues>({
     resolver: useZodResolver(newPasswordSchema(t('auth.passwordsDoNotMatch'))),
     defaultValues: { password: '', confirmPassword: '' },
   });
 
-  const submit = handleSubmit((values) => onSubmit(values));
+  const submit = () => {
+    onEdit?.();
+    void handleSubmit((values) => onSubmit(values))();
+  };
+  const edit = (onChange: (value: string) => void) => (value: string) => {
+    onChange(value);
+    onEdit?.();
+  };
 
   return (
     <View className="gap-4">
-      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Controller
         control={control}
         name="password"
@@ -40,7 +48,7 @@ export function ResetPasswordForm({ onSubmit, isPending, error }: ResetPasswordF
               placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
               aria-labelledby="rp-password"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoComplete="new-password"
@@ -62,7 +70,7 @@ export function ResetPasswordForm({ onSubmit, isPending, error }: ResetPasswordF
               placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
               aria-labelledby="rp-confirm"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={edit(field.onChange)}
               onBlur={field.onBlur}
               editable={!isPending}
               autoComplete="new-password"
@@ -71,6 +79,7 @@ export function ResetPasswordForm({ onSubmit, isPending, error }: ResetPasswordF
           </FormField>
         )}
       />
+      {error ? <AuthFormError>{error}</AuthFormError> : null}
       <Button onPress={submit} disabled={isPending} className={cn(authControlClass, 'mt-2')}>
         <Text>
           {isPending ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit')}
