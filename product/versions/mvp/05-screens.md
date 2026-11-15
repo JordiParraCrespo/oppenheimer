@@ -351,7 +351,10 @@
   it. The device is the simulator or emulator the session's host gave it,
   the one its agent drives through Argent
   (`../research/device-streaming.md`); a host that offers none says so in
-  the pane. The Browser tab followed on 2026-10-27 (`30-session-previews.md`):
+  the pane. Since 2026-11-15 the device's name is a picker when the host
+  offers more than one: the reader moves the session onto a free one (one
+  another session holds is listed, greyed), and Refresh beside it looks at
+  the host's devices again and restarts the screen. The Browser tab followed on 2026-10-27 (`30-session-previews.md`):
   Browser and Simulator are the header's pill tabs, the last one chosen
   kept on the device; Browser opens on the session's likeliest dev server
   among the ports its processes listen on, with an address bar (a port
