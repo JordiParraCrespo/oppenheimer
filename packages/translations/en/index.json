@@ -4079,10 +4079,12 @@
         "failed": "That did not save. Try again.",
         "making": "Making the link…",
         "newLink": "New link",
-        "byHand": "No Telegram app? Send this message to the bot yourself, in the app or on the web:",
-        "openWeb": "Open the chat on Telegram Web",
+        "openWeb": "Open Telegram Web",
         "copy": "Copy message",
-        "copied": "Copied"
+        "copied": "Copied",
+        "noApp": "No Telegram app? Link it from Telegram Web",
+        "stepOpen": "Open the bot’s chat on Telegram Web.",
+        "stepSend": "Send it this message. The code works for ten minutes."
       }
     },
     "agents": {

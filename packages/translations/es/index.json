@@ -4126,10 +4126,12 @@
         "failed": "No se ha guardado. Inténtalo de nuevo.",
         "making": "Creando el enlace…",
         "newLink": "Nuevo enlace",
-        "byHand": "¿No tienes la app de Telegram? Envía tú este mensaje al bot, en la app o en la web:",
-        "openWeb": "Abrir el chat en Telegram Web",
+        "openWeb": "Abrir Telegram Web",
         "copy": "Copiar mensaje",
-        "copied": "Copiado"
+        "copied": "Copiado",
+        "noApp": "¿No tienes la app de Telegram? Vincúlalo desde Telegram Web",
+        "stepOpen": "Abre el chat del bot en Telegram Web.",
+        "stepSend": "Envíale este mensaje. El código vale diez minutos."
       }
     },
     "agents": {

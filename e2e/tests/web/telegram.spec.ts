@@ -200,9 +200,10 @@ test('the bot picked to answer on Shop is saved, and the owner link is opened fi
   // Without the app, Telegram Web drops the link's code: the same code is
   // offered as the message to send, beside the bot's chat on Telegram Web.
   const byHand = page.getByTestId('telegram-owner-link-by-hand');
+  await byHand.getByRole('button', { name: 'No Telegram app? Link it from Telegram Web' }).click();
   const codeOf = (href: string | null) => new URL(href ?? '').searchParams.get('start');
   await expect(byHand).toContainText(`/start ${codeOf(await open.getAttribute('href'))}`);
-  await expect(byHand.getByRole('link', { name: 'Open the chat on Telegram Web' })).toHaveAttribute(
+  await expect(byHand.getByRole('link', { name: 'Open Telegram Web' })).toHaveAttribute(
     'href',
     'https://web.telegram.org/k/#@shop_helper_bot',
   );

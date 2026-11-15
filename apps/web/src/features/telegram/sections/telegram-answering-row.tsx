@@ -6,6 +6,7 @@ import {
   useOpenTelegramOwnerLink,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OwnerLinkByHand } from '@/features/telegram/components/owner-link-by-hand';
 import { answeringRowState } from '@/features/telegram/lib/answering-row';
@@ -33,6 +34,7 @@ export function TelegramAnsweringRow({
   const { t } = useTranslation();
   const answer = useAnswerTelegramAs();
   const ownerLink = useOpenTelegramOwnerLink();
+  const [byHandOpen, setByHandOpen] = useState(false);
   const failed = answer.error ?? ownerLink.error;
   const state = answeringRowState({
     ownerLinked: account.ownerLinked,
@@ -99,7 +101,9 @@ export function TelegramAnsweringRow({
           }}
         />
       </SettingsListRow>
-      {ownerLink.data ? <OwnerLinkByHand url={ownerLink.data.url} /> : null}
+      {ownerLink.data ? (
+        <OwnerLinkByHand url={ownerLink.data.url} open={byHandOpen} onOpenChange={setByHandOpen} />
+      ) : null}
     </>
   );
 }
