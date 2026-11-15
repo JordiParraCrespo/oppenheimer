@@ -737,7 +737,26 @@
       "headlessOnly": "headless turns",
       "measuredHeadless": "Measured on headless turns"
     },
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "selection": {
+      "label": "Selected projects",
+      "count_one": "{{count}} selected",
+      "count_other": "{{count}} selected",
+      "selectOne": "Select {{name}}",
+      "selectAll": "Select all",
+      "selectNone": "Select none",
+      "delete": "Delete selected",
+      "clear": "Clear selection"
+    },
+    "deleteProjects": {
+      "title_one": "Delete {{count}} project?",
+      "title_other": "Delete {{count}} projects?",
+      "description": "Their sessions stay where they are. Automations targeting them are paused.",
+      "confirm_one": "Delete project",
+      "confirm_other": "Delete {{count}} projects",
+      "partial_one": "{{count}} project was not deleted",
+      "partial_other": "{{count}} projects were not deleted"
+    }
   },
   "sessions": {
     "provisioning": {
@@ -747,6 +766,8 @@
       "retry": "Try again",
       "retrying": "Trying again",
       "retryFailed": "The session could not be started again.",
+      "openTerminal": "Open a terminal on {{host}}",
+      "openTerminalTitle": "A blank terminal in ~ on {{host}}, to fix what stopped the start (a sign-in, a missing tool), then try again",
       "working": "Working…",
       "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
       "failed": "Failed",
@@ -1460,7 +1481,16 @@
       "portsFailed": "Couldn't list the session's ports",
       "previewFailed": "Couldn't open the preview",
       "opening": "Opening localhost:{{port}}…",
-      "desktop": "Desktop"
+      "desktop": "Desktop",
+      "device": "Device",
+      "deviceSearch": "Find a device",
+      "deviceEmpty": "No device",
+      "deviceTaken": "In use by another session",
+      "refreshDevice": "Refresh devices",
+      "platform": {
+        "ios": "iOS simulator",
+        "android": "Android emulator"
+      }
     },
     "cloud": {
       "eyebrow": "Claude Code cloud",
@@ -1842,6 +1872,24 @@
           "comment": "Pull request #{{number}} of {{repository}}: new comment",
           "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
         },
+        "task": {
+          "created": "“{{title}}” was added to {{to}}",
+          "status_changed": "“{{title}}” moved from {{from}} to {{to}}",
+          "completed": "“{{title}}” is done",
+          "reopened": "“{{title}}” was reopened to {{to}}",
+          "blocked": "“{{title}}” is blocked",
+          "unblocked": "“{{title}}” is no longer blocked",
+          "deleted": "“{{title}}” was deleted",
+          "rescheduled": "“{{title}}” has a new due date",
+          "reassigned": "“{{title}}” moved to another project or milestone",
+          "session_linked": "A session was attached to “{{title}}”",
+          "column": {
+            "todo": "Not started",
+            "doing": "In progress",
+            "review": "In review",
+            "done": "Done"
+          }
+        },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
           "continuedOpen": "Goal · continuation {{step}}",
@@ -1878,8 +1926,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls and routine runs",
-      "showToolCalls": "Show tool calls and routine runs",
+      "hideToolCalls": "Hide tool calls, routine runs and task updates",
+      "showToolCalls": "Show tool calls, routine runs and task updates",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -2982,7 +3030,8 @@
       },
       "briefFailed": "Could not load the brief.",
       "waiting": "waiting",
-      "pass": "Pass",
+      "previous": "Previous",
+      "next": "Next",
       "open": "Review in depth",
       "confirmMerge": "Press again to merge",
       "held": "Cannot merge yet: {{reason}}.",
@@ -4040,7 +4089,13 @@
         "linkReady": "Open the link in Telegram within ten minutes and press Start. Make a new link if it has expired.",
         "failed": "That did not save. Try again.",
         "making": "Making the link…",
-        "newLink": "New link"
+        "newLink": "New link",
+        "openWeb": "Open Telegram Web",
+        "copy": "Copy message",
+        "copied": "Copied",
+        "noApp": "No Telegram app? Link it from Telegram Web",
+        "stepOpen": "Open the bot’s chat on Telegram Web.",
+        "stepSend": "Send it this message. The code works for ten minutes."
       }
     },
     "agents": {
@@ -4349,6 +4404,7 @@
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",
     "projectDeleted": "“{{name}}” deleted.",
+    "projectsDeleted": "{{n}} projects deleted.",
     "hostRenamed": "Renamed to “{{name}}”.",
     "hostRemoved": "“{{name}}” removed.",
     "hostUpdateRequested": "Update requested for “{{name}}”. If a newer runner is out, the host restarts on it.",

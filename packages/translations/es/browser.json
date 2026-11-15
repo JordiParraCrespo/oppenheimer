@@ -743,7 +743,30 @@
       "headlessOnly": "turnos sin terminal",
       "measuredHeadless": "Medido en los turnos sin terminal"
     },
-    "unassigned": "Sin asignar"
+    "unassigned": "Sin asignar",
+    "selection": {
+      "label": "Proyectos seleccionados",
+      "count_one": "{{count}} seleccionado",
+      "count_other": "{{count}} seleccionados",
+      "count_many": "{{count}} seleccionados",
+      "selectOne": "Seleccionar {{name}}",
+      "selectAll": "Seleccionar todos",
+      "selectNone": "No seleccionar ninguno",
+      "delete": "Eliminar seleccionados",
+      "clear": "Quitar selección"
+    },
+    "deleteProjects": {
+      "title_one": "¿Eliminar {{count}} proyecto?",
+      "title_other": "¿Eliminar {{count}} proyectos?",
+      "title_many": "¿Eliminar {{count}} proyectos?",
+      "description": "Sus sesiones se quedan donde están. Las automatizaciones que los usan se pausan.",
+      "confirm_one": "Eliminar proyecto",
+      "confirm_other": "Eliminar {{count}} proyectos",
+      "confirm_many": "Eliminar {{count}} proyectos",
+      "partial_one": "No se ha eliminado {{count}} proyecto",
+      "partial_other": "No se han eliminado {{count}} proyectos",
+      "partial_many": "No se han eliminado {{count}} proyectos"
+    }
   },
   "sessions": {
     "provisioning": {
@@ -753,6 +776,8 @@
       "retry": "Reintentar",
       "retrying": "Reintentando",
       "retryFailed": "No se pudo volver a iniciar la sesión.",
+      "openTerminal": "Abrir un terminal en {{host}}",
+      "openTerminalTitle": "Un terminal en blanco en ~ de {{host}}, para arreglar lo que impidió el inicio (un inicio de sesión, una herramienta que falta) y volver a intentarlo",
       "working": "Trabajando…",
       "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
       "failed": "Error",
@@ -1472,7 +1497,16 @@
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
       "opening": "Abriendo localhost:{{port}}…",
-      "desktop": "Escritorio"
+      "desktop": "Escritorio",
+      "device": "Dispositivo",
+      "deviceSearch": "Buscar un dispositivo",
+      "deviceEmpty": "Ningún dispositivo",
+      "deviceTaken": "En uso por otra sesión",
+      "refreshDevice": "Actualizar dispositivos",
+      "platform": {
+        "ios": "Simulador de iOS",
+        "android": "Emulador de Android"
+      }
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
@@ -1864,6 +1898,24 @@
           "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
           "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
         },
+        "task": {
+          "created": "«{{title}}» se añadió a {{to}}",
+          "status_changed": "«{{title}}» pasó de {{from}} a {{to}}",
+          "completed": "«{{title}}» está hecha",
+          "reopened": "«{{title}}» se reabrió en {{to}}",
+          "blocked": "«{{title}}» está bloqueada",
+          "unblocked": "«{{title}}» ya no está bloqueada",
+          "deleted": "«{{title}}» se eliminó",
+          "rescheduled": "«{{title}}» tiene una nueva fecha de entrega",
+          "reassigned": "«{{title}}» pasó a otro proyecto o hito",
+          "session_linked": "Se adjuntó una sesión a «{{title}}»",
+          "column": {
+            "todo": "Sin empezar",
+            "doing": "En curso",
+            "review": "En revisión",
+            "done": "Hecha"
+          }
+        },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
           "continuedOpen": "Objetivo · continuación {{step}}",
@@ -1900,8 +1952,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
-      "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
+      "hideToolCalls": "Ocultar llamadas a herramientas, rutinas y cambios de tareas",
+      "showToolCalls": "Mostrar llamadas a herramientas, rutinas y cambios de tareas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
@@ -3013,7 +3065,8 @@
       },
       "briefFailed": "No se pudo cargar el resumen.",
       "waiting": "esperando",
-      "pass": "Pasar",
+      "previous": "Anterior",
+      "next": "Siguiente",
       "open": "Revisar a fondo",
       "confirmMerge": "Pulsa otra vez para fusionar",
       "held": "Aún no se puede fusionar: {{reason}}.",
@@ -4083,7 +4136,13 @@
         "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar. Crea un enlace nuevo si ha caducado.",
         "failed": "No se ha guardado. Inténtalo de nuevo.",
         "making": "Creando el enlace…",
-        "newLink": "Nuevo enlace"
+        "newLink": "Nuevo enlace",
+        "openWeb": "Abrir Telegram Web",
+        "copy": "Copiar mensaje",
+        "copied": "Copiado",
+        "noApp": "¿No tienes la app de Telegram? Vincúlalo desde Telegram Web",
+        "stepOpen": "Abre el chat del bot en Telegram Web.",
+        "stepSend": "Envíale este mensaje. El código vale diez minutos."
       }
     },
     "agents": {
@@ -4392,6 +4451,7 @@
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",
     "projectDeleted": "Se ha eliminado «{{name}}».",
+    "projectsDeleted": "{{n}} proyectos eliminados.",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
     "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",

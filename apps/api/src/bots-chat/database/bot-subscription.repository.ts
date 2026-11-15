@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import type { Repository } from 'typeorm';
+import type { BotPlanWatchScope } from '@oppenheimer/shared';
+import { type FindOptionsWhere, In, type Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
@@ -46,6 +47,7 @@ export class BotSubscriptionRepository
   async subscribe(subscription: BotSubscriptionEntity): Promise<BotSubscriptionEntity> {
     if (subscription.resourceKind === 'pull_request')
       return this.subscribePullRequest(subscription);
+    if (subscription.plan) return this.subscribePlan(subscription);
     const record = this.mapper.toPersistence(subscription);
     // UQ_bot_subscription_bot_resource. A second subscribe replaces what is
     // followed and why, and keeps the id, the newest wake recorded (the
@@ -122,6 +124,38 @@ export class BotSubscriptionRepository
     return this.mapper.toDomain(this.repository.create(rows[0]));
   }
 
+  /**
+   * UQ_bot_subscription_bot_resource. Watching again replaces the changes
+   * followed and why, and keeps the id and the wake count.
+   */
+  private async subscribePlan(subscription: BotSubscriptionEntity): Promise<BotSubscriptionEntity> {
+    const record = this.mapper.toPersistence(subscription);
+    const rows: BotSubscriptionOrmEntity[] = await this.repository.query(
+      `INSERT INTO bot_subscription AS s
+         ("id", "organizationId", "botId", "resourceKind", "resourceId", "taskEvents",
+          "originTurnId", "purpose", "until", "credentialScopes", "timeZone")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'closed', $9, $10)
+       ON CONFLICT ("organizationId", "botId", "resourceKind", "resourceId") DO UPDATE
+         SET "taskEvents" = EXCLUDED."taskEvents",
+             ${RESUBSCRIBED},
+             ${VERSIONED}
+       RETURNING *`,
+      [
+        record.id,
+        record.organizationId,
+        record.botId,
+        record.resourceKind,
+        record.resourceId,
+        JSON.stringify(record.taskEvents ?? []),
+        record.originTurnId,
+        record.purpose,
+        scopesParam(record),
+        record.timeZone,
+      ],
+    );
+    return this.mapper.toDomain(this.repository.create(rows[0]));
+  }
+
   async findForWake(subscriptionId: string): Promise<BotSubscriptionEntity | null> {
     // PK_bot_subscription.
     const record = await this.repository.findOne({ where: { id: subscriptionId } });
@@ -147,6 +181,31 @@ export class BotSubscriptionRepository
       select: { id: true },
       where: { organizationId, resourceKind: 'pull_request', githubRepoId, pullNumber },
     });
+    return records.map((record) => record.id);
+  }
+
+  async findIdsForPlan(
+    organizationId: string,
+    places: { projectIds: readonly string[]; milestoneIds: readonly string[] },
+  ): Promise<string[]> {
+    // IDX_bot_subscription_resource, once per kind; a change names one or two of each.
+    const where: FindOptionsWhere<BotSubscriptionOrmEntity>[] = [];
+    if (places.projectIds.length > 0) {
+      where.push({
+        organizationId,
+        resourceKind: 'project',
+        resourceId: In([...places.projectIds]),
+      });
+    }
+    if (places.milestoneIds.length > 0) {
+      where.push({
+        organizationId,
+        resourceKind: 'milestone',
+        resourceId: In([...places.milestoneIds]),
+      });
+    }
+    if (where.length === 0) return [];
+    const records = await this.repository.find({ select: { id: true }, where });
     return records.map((record) => record.id);
   }
 
@@ -195,6 +254,14 @@ export class BotSubscriptionRepository
       [subscriptionId, limit],
     );
     return rows[0]?.wakes ?? null;
+  }
+
+  async countWake(subscriptionId: string): Promise<void> {
+    // PK_bot_subscription. Outside the version, as a claimed wake is.
+    await this.repository.query(
+      `UPDATE bot_subscription SET "wakes" = "wakes" + 1, "updatedAt" = now() WHERE "id" = $1`,
+      [subscriptionId],
+    );
   }
 
   async releaseWake(subscriptionId: string): Promise<void> {
@@ -259,5 +326,31 @@ export class BotSubscriptionRepository
       pullNumber: pull.number,
     });
     return (result.affected ?? 0) > 0;
+  }
+
+  async unsubscribePlan(
+    organizationId: string,
+    botId: string,
+    scope: BotPlanWatchScope,
+    resourceId: string,
+  ): Promise<boolean> {
+    // UQ_bot_subscription_bot_resource.
+    const result = await this.repository.delete({
+      organizationId,
+      botId,
+      resourceKind: scope,
+      resourceId,
+    });
+    return (result.affected ?? 0) > 0;
+  }
+
+  async endForMilestone(organizationId: string, milestoneId: string): Promise<number> {
+    // IDX_bot_subscription_resource.
+    const result = await this.repository.delete({
+      organizationId,
+      resourceKind: 'milestone',
+      resourceId: milestoneId,
+    });
+    return result.affected ?? 0;
   }
 }

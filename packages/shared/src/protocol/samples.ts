@@ -139,7 +139,12 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     serial: 'emulator-5554',
     name: 'Android emulator',
     platform: 'android',
+    devices: [
+      { serial: 'emulator-5554', name: 'Android emulator', platform: 'android', free: true },
+      { serial: 'emulator-5556', name: 'Pixel 7 API 35', platform: 'android', free: false },
+    ],
   },
+  'device.select': { type: 'device.select', attachmentId: 9, serial: 'emulator-5556' },
   'device.input': { type: 'device.input', attachmentId: 9, kind: 'tap', x: 0.5, y: 0.42 },
   'device.detach': { type: 'device.detach', commandId, sessionId, attachmentId: 9 },
   'port.list': { type: 'port.list', commandId, sessionId },

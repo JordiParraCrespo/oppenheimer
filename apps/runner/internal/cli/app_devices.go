@@ -167,4 +167,8 @@ watches and taps the same device from the console, beside the terminal.
   list-devices to pick one, and do not boot, shut down or use any other
   device on this host: other sessions own them.
 - Plain adb already targets it (ANDROID_SERIAL).
+- The person can move this session onto another device from the console.
+  This note then names the new one, while your environment's
+  OPPENHEIMER_DEVICE and ANDROID_SERIAL keep the old one: this note wins.
+  Read it again before you next use a device.
 `

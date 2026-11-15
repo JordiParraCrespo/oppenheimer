@@ -1654,6 +1654,41 @@
             "android",
             "ios"
           ]
+        },
+        "devices": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "serial": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "platform": {
+                "type": "string",
+                "enum": [
+                  "android",
+                  "ios"
+                ]
+              },
+              "free": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "serial",
+              "name",
+              "platform",
+              "free"
+            ]
+          }
         }
       },
       "required": [
@@ -1731,6 +1766,28 @@
         "type",
         "attachmentId",
         "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.select"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "serial": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "serial"
       ]
     },
     {

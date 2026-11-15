@@ -12,6 +12,7 @@ import {
   deviceDetachSchema,
   deviceInfoSchema,
   deviceInputSchema,
+  deviceSelectSchema,
 } from './devices.js';
 import { hintSchema } from './hint.js';
 import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
@@ -1384,6 +1385,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   deviceAttachSchema,
   deviceInfoSchema,
   deviceInputSchema,
+  deviceSelectSchema,
   deviceDetachSchema,
   portListSchema,
   portListingSchema,

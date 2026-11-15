@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 
 /**
- * The rows picked for a bulk action, as keys of the open rows shown. A key
- * that leaves the list (marked from another tab, filtered out) leaves the
- * selection with it. A shift-click selects the run from the last row clicked;
- * Escape clears it all.
+ * The rows (or cards) picked for a bulk action, as keys of the pickable ones
+ * shown, in `shown`'s order. A key that leaves the list (changed from another
+ * tab, filtered out, deleted) leaves the selection with it. A shift-click
+ * selects the run from the last one clicked; Escape clears it all. The Inbox
+ * and Projects share it, so every bulk list picks the same way.
  */
-export function useInboxSelection(shown: readonly string[]) {
+export function useMultiSelection(shown: readonly string[]) {
   const [picked, setPicked] = useState<ReadonlySet<string>>(() => new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const keys = shown.filter((key) => picked.has(key));
@@ -50,6 +51,11 @@ export function useInboxSelection(shown: readonly string[]) {
       setPicked(any && keys.length === shown.length ? new Set() : new Set(shown));
       setAnchor(null);
     },
+    /** Keep only these picked: the ones a bulk action failed on. */
+    keep(left: readonly string[]) {
+      setPicked(new Set(left));
+      setAnchor(null);
+    },
     clear() {
       setPicked(new Set());
       setAnchor(null);
@@ -57,4 +63,4 @@ export function useInboxSelection(shown: readonly string[]) {
   };
 }
 
-export type InboxSelection = ReturnType<typeof useInboxSelection>;
+export type MultiSelection = ReturnType<typeof useMultiSelection>;

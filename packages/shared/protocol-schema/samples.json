@@ -259,7 +259,26 @@
     "attachmentId": 9,
     "serial": "emulator-5554",
     "name": "Android emulator",
-    "platform": "android"
+    "platform": "android",
+    "devices": [
+      {
+        "serial": "emulator-5554",
+        "name": "Android emulator",
+        "platform": "android",
+        "free": true
+      },
+      {
+        "serial": "emulator-5556",
+        "name": "Pixel 7 API 35",
+        "platform": "android",
+        "free": false
+      }
+    ]
+  },
+  "device.select": {
+    "type": "device.select",
+    "attachmentId": 9,
+    "serial": "emulator-5556"
   },
   "device.input": {
     "type": "device.input",

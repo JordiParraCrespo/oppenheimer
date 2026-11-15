@@ -49,6 +49,7 @@ function subscription(overrides: Partial<BotSubscriptionProps> = {}): BotSubscri
       wakes: 0,
       terminalWatch: null,
       matches: 0,
+      taskEvents: null,
       version: 1,
       ...overrides,
     },

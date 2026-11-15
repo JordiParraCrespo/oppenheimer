@@ -2018,7 +2018,7 @@ describe('device attach socket', () => {
     return ticket;
   }
 
-  it('opens the session’s device on a runner that streams one, relays its frames, credit and input, and detaches', async () => {
+  it('opens the session’s device on a runner that streams one, relays its frames, credit, input and device picks, and detaches', async () => {
     vi.mocked(h.flags.isEnabled).mockReturnValue(true);
     const runner = await runnerUp(h, { capabilities: ['device.screen'] });
     sockets.push(runner);
@@ -2045,6 +2045,10 @@ describe('device attach socket', () => {
         serial: 'emulator-5554',
         name: 'Android emulator',
         platform: 'android',
+        devices: [
+          { serial: 'emulator-5554', name: 'Android emulator', platform: 'android', free: true },
+          { serial: 'emulator-5556', name: 'Pixel 7', platform: 'android', free: true },
+        ],
       }),
     );
     expect((await info).text).toEqual({
@@ -2052,6 +2056,10 @@ describe('device attach socket', () => {
       serial: 'emulator-5554',
       name: 'Android emulator',
       platform: 'android',
+      devices: [
+        { serial: 'emulator-5554', name: 'Android emulator', platform: 'android', free: true },
+        { serial: 'emulator-5556', name: 'Pixel 7', platform: 'android', free: true },
+      ],
     });
 
     // A frame of the screen reaches the browser bare.
@@ -2072,6 +2080,14 @@ describe('device attach socket', () => {
       kind: 'tap',
       x: 0.5,
       y: 0.25,
+    });
+
+    const pick = nextMessage(runner);
+    browser.send(JSON.stringify({ type: 'device.select', serial: 'emulator-5556' }));
+    expect((await pick).text).toEqual({
+      type: 'device.select',
+      attachmentId: 1,
+      serial: 'emulator-5556',
     });
 
     const detach = nextMessage(runner);
@@ -2109,7 +2125,7 @@ describe('device attach socket', () => {
     });
   });
 
-  it('drops a watcher’s input: a read-only share sees the device and cannot touch it', async () => {
+  it('drops a watcher’s input and picks: a read-only share sees the device and cannot touch or switch it', async () => {
     vi.mocked(h.flags.isEnabled).mockReturnValue(true);
     vi.mocked(h.lookup.shareAdmits).mockResolvedValue(true);
     vi.mocked(h.owners.findActiveOwner).mockResolvedValue({
@@ -2128,10 +2144,12 @@ describe('device attach socket', () => {
     await nextMessage(runner); // device.attach
     runner.on('message', (data) => sent.push(String(data)));
     browser.send(JSON.stringify({ type: 'device.input', kind: 'tap', x: 0.5, y: 0.5 }));
+    browser.send(JSON.stringify({ type: 'device.select', serial: 'emulator-5556' }));
     browser.send(JSON.stringify({ type: 'credit', bytes: 10 }));
     const credit = await nextMessage(runner);
     expect(credit.text).toMatchObject({ type: 'attachment.credit' });
     expect(sent.some((text) => String(text).includes('device.input'))).toBe(false);
+    expect(sent.some((text) => String(text).includes('device.select'))).toBe(false);
   });
 });
 

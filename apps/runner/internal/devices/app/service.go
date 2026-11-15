@@ -85,6 +85,18 @@ func (s *Service) ForSession(sessionID string) (domain.Device, error) {
 	return device, err
 }
 
+// refreshOffer looks at the host's devices and offers what it finds, so a
+// viewer's Choices are current. It hands no device to anyone.
+func (s *Service) refreshOffer() {
+	found, ok := s.find()
+	if !ok {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.pool.Offer(found)
+}
+
 // find is the host's devices now, when the service looks for them. Run
 // outside the lock: listing a host's devices takes a moment. A failed look
 // reports !ok, so the last offer stands rather than every device going away.
@@ -116,6 +128,32 @@ func (s *Service) endLook(sessionID string, l *look) {
 	}
 }
 
+// Choices is every device this host offers as the session may pick it.
+func (s *Service) Choices(sessionID string) []domain.Choice {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.pool.Choices(sessionID)
+}
+
+// Held is the session's device, if it holds one.
+func (s *Service) Held(sessionID string) (domain.Device, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.pool.Held(sessionID)
+}
+
+// Choose moves the session onto another device the host offers, free or its
+// own already; the device it held is freed for other sessions.
+func (s *Service) Choose(sessionID, serial string) (domain.Device, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	device, err := s.pool.Choose(sessionID, serial)
+	if err != nil {
+		return domain.Device{}, domain.ErrNoDevice.WithDetail("%s", err.Error())
+	}
+	return device, nil
+}
+
 // Release frees the session's device, once the session is gone.
 func (s *Service) Release(sessionID string) {
 	s.mu.Lock()
@@ -127,12 +165,31 @@ func (s *Service) Release(sessionID string) {
 	}
 }
 
-// Watch opens the session's device screen for one viewer.
+// Watch opens the session's device screen for one viewer, after a fresh
+// look at the host's devices, so Choices lists the ones booted since.
 func (s *Service) Watch(ctx context.Context, sessionID string) (domain.Device, Screen, error) {
+	s.refreshOffer()
 	device, err := s.ForSession(sessionID)
 	if err != nil {
 		return domain.Device{}, nil, err
 	}
+	return s.open(ctx, device)
+}
+
+// WatchHeld opens the screen of the device the session holds now, without
+// looking for another: the viewer just moved the session onto it.
+func (s *Service) WatchHeld(ctx context.Context, sessionID string) (domain.Device, Screen, error) {
+	s.mu.Lock()
+	device, held := s.pool.Held(sessionID)
+	s.mu.Unlock()
+	if !held {
+		return domain.Device{}, nil, domain.ErrNoDevice
+	}
+	return s.open(ctx, device)
+}
+
+// open wakes the device and opens its screen.
+func (s *Service) open(ctx context.Context, device domain.Device) (domain.Device, Screen, error) {
 	if s.waker != nil {
 		// Best effort: a device that cannot be woken may still be awake.
 		_ = s.waker.Wake(ctx, device)

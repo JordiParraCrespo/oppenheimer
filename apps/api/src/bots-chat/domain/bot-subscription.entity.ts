@@ -5,7 +5,13 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import type { BotSessionWakeState, Scope } from '@oppenheimer/shared';
+import {
+  BOT_TASK_WAKE_EVENTS,
+  type BotPlanWatchScope,
+  type BotSessionWakeState,
+  type PlanTaskEventKind,
+  type Scope,
+} from '@oppenheimer/shared';
 import {
   BOT_SUBSCRIPTION_PURPOSE_MAX,
   type BotSubscriptionKind,
@@ -29,7 +35,10 @@ export interface BotSubscriptionProps {
   organizationId: string;
   botId: string;
   resourceKind: BotSubscriptionKind;
-  /** The session followed; null for a pull request, which is not ours and has no id here. */
+  /**
+   * The session, project or milestone followed; null for a pull request,
+   * which is not ours and has no id here.
+   */
   resourceId: string | null;
   /** The pull request followed; null for a session. */
   pullRequest: PullRequestRef | null;
@@ -53,13 +62,16 @@ export interface BotSubscriptionProps {
   terminalWatch: { id: string; pattern: string } | null;
   /** The newest count of matching lines a wake reported; 0 while it never matched. */
   matches: number;
+  /** The changes to a task that wake the bot, for a project or a milestone; null otherwise. */
+  taskEvents: readonly PlanTaskEventKind[] | null;
   /** How many writes the row has had; 0 for one not stored yet. */
   version: number;
 }
 
 /**
  * A bot following work it delegated (`27-bot-subscriptions.md`): one bot,
- * one session or pull request, the reason and the turn behind it, and the wakes it caused.
+ * one session, pull request, project or milestone, the reason and the turn
+ * behind it, and the wakes it caused.
  * Its writes are conditioned on the version it was loaded at, so two wakes
  * of one subscription never both record.
  */
@@ -111,6 +123,7 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
         wakes: 0,
         terminalWatch: null,
         matches: 0,
+        taskEvents: null,
         version: 0,
       },
     });
@@ -150,6 +163,51 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
         wakes: 0,
         terminalWatch: null,
         matches: 0,
+        taskEvents: null,
+        version: 0,
+      },
+    });
+    subscription.validate();
+    return subscription;
+  }
+
+  /**
+   * A bot starts following the tasks of a project, or of one milestone
+   * (27 §7.2): each change it named wakes it, until it unwatches it or its
+   * owner can no longer read it. No task, no terminal, no wake limit.
+   */
+  static subscribeToPlan(props: {
+    organizationId: string;
+    botId: string;
+    scope: BotPlanWatchScope;
+    /** The project's or the milestone's id. */
+    resourceId: string;
+    taskEvents: readonly PlanTaskEventKind[];
+    originTurnId: string | null;
+    purpose: string | null;
+    credentialScopes: readonly Scope[] | null;
+    timeZone: string | null;
+  }): BotSubscriptionEntity {
+    const subscription = new BotSubscriptionEntity({
+      id: randomUUID(),
+      props: {
+        organizationId: props.organizationId,
+        botId: props.botId,
+        resourceKind: props.scope,
+        resourceId: props.resourceId,
+        pullRequest: null,
+        originTurnId: props.originTurnId,
+        purpose: props.purpose?.trim() || null,
+        until: 'closed',
+        watchedTurn: null,
+        credentialScopes: props.credentialScopes,
+        timeZone: props.timeZone,
+        lastTurn: null,
+        lastState: null,
+        wakes: 0,
+        terminalWatch: null,
+        matches: 0,
+        taskEvents: [...new Set(props.taskEvents)],
         version: 0,
       },
     });
@@ -204,6 +262,25 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   }
   get matches(): number {
     return this.props.matches;
+  }
+  get taskEvents(): readonly PlanTaskEventKind[] | null {
+    return this.props.taskEvents;
+  }
+  /** Whether it follows a project's or a milestone's tasks, rather than a session or a pull request. */
+  get plan(): {
+    scope: BotPlanWatchScope;
+    id: string;
+    taskEvents: readonly PlanTaskEventKind[];
+  } | null {
+    const { resourceKind, resourceId, taskEvents } = this.props;
+    if (
+      (resourceKind !== 'project' && resourceKind !== 'milestone') ||
+      !resourceId ||
+      !taskEvents
+    ) {
+      return null;
+    }
+    return { scope: resourceKind, id: resourceId, taskEvents };
   }
   /** The version its next write is conditioned on. */
   get versionAtLoad(): number {
@@ -273,10 +350,21 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
    */
   private validateSubject(): void {
     const { props } = this;
+    if (
+      props.resourceKind !== 'project' &&
+      props.resourceKind !== 'milestone' &&
+      props.taskEvents
+    ) {
+      throw new ArgumentInvalidException('Only a project or a milestone is followed for its tasks');
+    }
     if (props.resourceKind === 'session') {
       if (!props.resourceId || props.pullRequest) {
         throw new ArgumentNotProvidedException('A session subscription names the session alone');
       }
+      return;
+    }
+    if (props.resourceKind === 'project' || props.resourceKind === 'milestone') {
+      this.validatePlanSubject();
       return;
     }
     const pull = props.pullRequest;
@@ -294,6 +382,29 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
     }
     if (props.until !== 'closed' || props.lastTurn !== null || props.terminalWatch) {
       throw new ArgumentInvalidException('A pull request has no task and no terminal to follow');
+    }
+  }
+
+  /**
+   * A project or a milestone is named by its id, follows at least one kind
+   * of change, each one Plan logs, and has no session task or terminal.
+   */
+  private validatePlanSubject(): void {
+    const { props } = this;
+    if (!props.resourceId || props.pullRequest) {
+      throw new ArgumentNotProvidedException(`A ${props.resourceKind} subscription names it alone`);
+    }
+    const events = props.taskEvents;
+    if (!events || events.length === 0) {
+      throw new ArgumentInvalidException('A plan subscription follows at least one kind of change');
+    }
+    if (events.some((kind) => !BOT_TASK_WAKE_EVENTS.includes(kind))) {
+      throw new ArgumentInvalidException('A plan subscription follows the changes Plan logs');
+    }
+    if (props.until !== 'closed' || props.lastTurn !== null || props.terminalWatch) {
+      throw new ArgumentInvalidException(
+        'A project or a milestone has no task and no terminal to follow',
+      );
     }
   }
 }
