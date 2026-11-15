@@ -3,15 +3,17 @@ import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { ArrowUp } from '@oppenheimer/design-system-mobile/icons';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useAnswerSessionDecision } from '@oppenheimer/frontend-consumer/react';
+import { useQuestionStepper } from '@oppenheimer/frontend-mobile';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, TextInput, View } from 'react-native';
 import { DecisionCard } from '../components/decision-card';
 import { KeyRow } from '../components/key-row';
-import { permissionAnswer, questionAnswer, togglePick } from '../lib/decision-answer';
+import { permissionAnswer, questionAnswer } from '../lib/decision-answer';
 import type { TerminalKey } from '../lib/terminal-keys';
 import { withCtrl } from '../lib/terminal-keys';
 
+const NO_QUESTIONS: readonly never[] = [];
 const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
 /**
@@ -39,50 +41,20 @@ export function SessionDock({
   const [draft, setDraft] = useState('');
   const [ctrl, setCtrl] = useState(false);
   const decision = session.isLive ? session.decision : null;
-  const [answering, setAnswering] = useState<{ id: string; step: number; picks: number[][] }>({
-    id: '',
-    step: 0,
-    picks: [],
-  });
   const answer = useAnswerSessionDecision();
-
-  // Picks belong to the decision they were made for; a new one starts over.
-  const current =
-    decision && answering.id === decision.id
-      ? answering
-      : { id: decision?.id ?? '', step: 0, picks: [] };
-
-  const submit = (picks: number[][]) => {
+  const questions = decision?.kind === 'question' ? decision.questions : NO_QUESTIONS;
+  const stepper = useQuestionStepper(decision?.id ?? '', questions, (picks) => {
     if (decision?.kind !== 'question') return;
     const body = questionAnswer(decision, picks);
     if (body) answer.mutate({ sessionId: session.id, answer: body });
-  };
+  });
 
   const pick = (index: number) => {
-    if (!decision) return;
-    if (decision.kind === 'permission') {
+    if (decision?.kind === 'permission') {
       answer.mutate({ sessionId: session.id, answer: permissionAnswer(decision.id, index) });
       return;
     }
-    const question = decision.questions[current.step];
-    if (!question) return;
-    const picks = [...current.picks];
-    picks[current.step] = togglePick(picks[current.step] ?? [], index, question.multiSelect);
-    if (question.multiSelect) {
-      setAnswering({ ...current, picks });
-      return;
-    }
-    advance(picks);
-  };
-
-  const advance = (picks: number[][]) => {
-    if (decision?.kind !== 'question') return;
-    if (current.step + 1 < decision.questions.length) {
-      setAnswering({ id: decision.id, step: current.step + 1, picks });
-      return;
-    }
-    setAnswering({ id: decision.id, step: current.step, picks });
-    submit(picks);
+    stepper.pick(index);
   };
 
   const key = (pressed: TerminalKey) => {
@@ -121,8 +93,8 @@ export function SessionDock({
         {decision ? (
           <DecisionCard
             decision={decision}
-            step={current.step}
-            picked={current.picks[current.step] ?? []}
+            step={stepper.step}
+            picked={stepper.picked}
             pending={answer.isPending}
             error={answer.isError ? t('sessions.mobile.answerFailed') : null}
             labels={{
@@ -132,7 +104,7 @@ export function SessionDock({
               sending: t('inbox.session.sending'),
             }}
             onPick={pick}
-            onSend={() => advance(current.picks)}
+            onSend={stepper.send}
           />
         ) : null}
         <View className={decision ? '' : 'pt-3'}>

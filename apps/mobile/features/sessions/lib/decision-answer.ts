@@ -27,18 +27,3 @@ export function questionAnswer(
 export function permissionAnswer(decisionId: string, option: number): AnswerSessionDecisionDto {
   return { id: decisionId, option };
 }
-
-/**
- * The picks after a tap on option `index` of a question: a single-select
- * question takes that one, a multi-select one toggles it.
- */
-export function togglePick(
-  chosen: readonly number[],
-  index: number,
-  multiSelect: boolean,
-): number[] {
-  if (!multiSelect) return [index];
-  return chosen.includes(index)
-    ? chosen.filter((value) => value !== index)
-    : [...chosen, index].sort((a, b) => a - b);
-}

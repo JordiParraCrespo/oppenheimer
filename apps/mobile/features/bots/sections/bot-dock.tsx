@@ -10,12 +10,15 @@ import {
   useDecideBotApproval,
   useSendBotMessage,
 } from '@oppenheimer/frontend-consumer/react';
+import { useQuestionStepper } from '@oppenheimer/frontend-mobile';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, TextInput, View } from 'react-native';
 import { ApprovalCard } from '../components/approval-card';
 import { QuestionCard } from '../components/question-card';
 import { approvalDetail } from '../lib/approval-detail';
+
+const NO_QUESTIONS: readonly never[] = [];
 
 /**
  * The glass at the foot of a bot's chat: the card it waits on (an approval,
@@ -39,45 +42,17 @@ export function BotDock({
   const decide = useDecideBotApproval();
   const answer = useAnswerBotQuestion();
   const send = useSendBotMessage();
-  const [answering, setAnswering] = useState<{ id: string; step: number; picks: number[][] }>({
-    id: '',
-    step: 0,
-    picks: [],
-  });
-
   const card = approval.data ?? null;
   const asked = card ? null : (question.data ?? null);
-  const current =
-    asked && answering.id === asked.id ? answering : { id: asked?.id ?? '', step: 0, picks: [] };
-  const part = asked?.questions[current.step];
-
-  const submit = (picks: number[][]) => {
+  const stepper = useQuestionStepper(asked?.id ?? '', asked?.questions ?? NO_QUESTIONS, (picks) => {
     if (!asked) return;
-    if (current.step + 1 < asked.questions.length) {
-      setAnswering({ id: asked.id, step: current.step + 1, picks });
-      return;
-    }
-    setAnswering({ id: asked.id, step: current.step, picks });
     answer.mutate({
       id: botId,
       questionId: asked.id,
       answers: picks.map((chosen) => ({ picks: chosen, other: null })),
     });
-  };
-
-  const pick = (index: number) => {
-    if (!part) return;
-    const picks = [...current.picks];
-    const chosen = picks[current.step] ?? [];
-    picks[current.step] = part.multiSelect
-      ? chosen.includes(index)
-        ? chosen.filter((value) => value !== index)
-        : [...chosen, index].sort((a, b) => a - b)
-      : [index];
-    if (part.multiSelect) setAnswering({ ...current, picks });
-    else submit(picks);
-  };
-
+  });
+  const part = asked?.questions[stepper.step];
   const sendDraft = () => {
     const content = draft.trim();
     if (!content) return;
@@ -117,7 +92,7 @@ export function BotDock({
         {asked && part ? (
           <QuestionCard
             question={part}
-            picked={current.picks[current.step] ?? []}
+            picked={stepper.picked}
             pending={answer.isPending}
             error={answer.isError ? t('bots.mobile.answerFailed') : null}
             labels={{
@@ -125,8 +100,8 @@ export function BotDock({
               send: t('inbox.session.send'),
               sending: t('inbox.session.sending'),
             }}
-            onPick={pick}
-            onSend={() => submit(current.picks)}
+            onPick={stepper.pick}
+            onSend={stepper.send}
           />
         ) : null}
         <View

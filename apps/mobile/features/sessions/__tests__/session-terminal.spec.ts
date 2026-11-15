@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { permissionAnswer, questionAnswer, togglePick } from '../lib/decision-answer';
+import { permissionAnswer, questionAnswer } from '../lib/decision-answer';
 import { withCtrl } from '../lib/terminal-keys';
 import { terminalColour } from '../lib/terminal-palette';
 import { TerminalScreen } from '../lib/terminal-screen';
@@ -66,7 +66,5 @@ describe('the session screen', () => {
       ],
     });
     expect(permissionAnswer('p', 1)).toEqual({ id: 'p', option: 1 });
-    expect(togglePick([1], 0, false)).toEqual([0]);
-    expect(togglePick([0, 2], 2, true)).toEqual([0]);
   });
 });
