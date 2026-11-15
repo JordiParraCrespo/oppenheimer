@@ -130,7 +130,7 @@ const CONSTANT_DOCS = {
     'the link starts with.',
   ],
   creditWindowBytes: [
-    "CreditWindow is 256 KB: the bytes an attachment may have in flight",
+    'CreditWindow is 256 KB: the bytes an attachment may have in flight',
     'before its PTY reads pause. A runaway build stalls its own pane, never the',
     'link.',
   ],
