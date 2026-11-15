@@ -6,6 +6,8 @@
     "retry": "Reintentar",
     "retrying": "Reintentando",
     "retryFailed": "No se pudo volver a iniciar la sesión.",
+    "openTerminal": "Abrir un terminal en {{host}}",
+    "openTerminalTitle": "Un terminal en blanco en ~ de {{host}}, para arreglar lo que impidió el inicio (un inicio de sesión, una herramienta que falta) y volver a intentarlo",
     "working": "Trabajando…",
     "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
