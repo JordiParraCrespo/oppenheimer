@@ -11,7 +11,7 @@
  *
  * The trust is the vendor's release over HTTPS: this catches a download that
  * was cut short, corrupted, or swapped on a mirror or CDN, not a vendor whose
- * own release is compromised (`product/versions/mvp/02-runner.md` §10).
+ * own release is compromised.
  *
  * Private to the agents directory: the catalogs only spell data with it.
  */

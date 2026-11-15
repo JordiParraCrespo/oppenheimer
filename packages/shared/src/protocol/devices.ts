@@ -3,10 +3,10 @@ import { DEVICE_BUTTONS, DEVICE_INPUT_KINDS, DEVICE_KEYS } from './link.js';
 import { attachmentIdSchema, commandIdSchema, sessionIdSchema } from './primitives.js';
 
 /**
- * A session's device on the link (`product/research/device-streaming.md`):
- * the messages behind the `device.screen` capability. Part of
- * `protocolMessageSchema`, which is where every kind is listed; kept here so
- * the union stays the index of kinds rather than the home of every shape.
+ * A session's device on the link: the messages behind the `device.screen`
+ * capability. Part of `protocolMessageSchema`, which is where every kind is
+ * listed; kept here so the union stays the index of kinds rather than the home
+ * of every shape.
  */
 
 /**

@@ -2,17 +2,16 @@ import { z } from 'zod';
 import { createSessionSchema, startCloudSessionSchema } from './session.schema.js';
 
 /**
- * Plan's board (`product/versions/mvp/17-plan.md`): a **task** is work a person
- * asks for, filed under a project and optionally under one of that project's
- * **milestones**, in one of four columns. A task starts sessions or links existing
- * ones; the session is where the work happens.
+ * Plan's board: a **task** is work a person asks for, filed under a project and
+ * optionally under one of that project's **milestones**, in one of four
+ * columns. A task starts sessions or links existing ones; the session is where
+ * the work happens.
  *
  * Dates are wall-clock: a due date is a calendar day and a due time a time of
  * day, both read in the viewer's own timezone. Nothing fires on them, so no
- * timezone is stored (`product/versions/mvp/18-plan-product.md`). A focus
- * date is the day the person means to work on it, apart from when it is due:
- * To do lists it that day and every later one until it is done
- * (`product/versions/mvp/20-plan-calendar.md` §6).
+ * timezone is stored. A focus date is the day the person means to work on it,
+ * apart from when it is due: To do lists it that day and every later one until
+ * it is done.
  */
 
 /** The board's columns, in the order the board draws them. */
@@ -22,15 +21,14 @@ export type TaskStatus = z.infer<typeof taskStatusSchema>;
 
 /**
  * The statuses attaching a session moves to In progress: work not started yet.
- * In progress and Done stay as they are (`product/versions/mvp/19-plan-tasks-and-goals.md` §5).
+ * In progress and Done stay as they are.
  */
 export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['todo'];
 
 /**
  * Who made a task: its person, or an agent working for them (a bot, or a call
  * on an API token or an OAuth grant). An agent's task waits in Plan's Inbox
- * until the person triages it (`product/versions/mvp/29-inbox.md`, "Tasks an
- * agent made").
+ * until the person triages it.
  */
 export const TASK_ORIGINS = ['person', 'agent'] as const;
 export type TaskOrigin = (typeof TASK_ORIGINS)[number];
@@ -46,8 +44,7 @@ export const IDEMPOTENCY_KEY_MAX = 128;
 /**
  * The version a writer read. With it a write is refused (`TASKS_008`) when
  * someone else wrote first; without it the write lands, and still bumps the
- * version, so a writer that did send one sees it changed
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §7).
+ * version, so a writer that did send one sees it changed.
  */
 export const expectedVersionSchema = z.number().int().min(1);
 
@@ -213,8 +210,7 @@ export const listMilestonesQuerySchema = z.object({
 export type ListMilestonesQueryDto = z.infer<typeof listMilestonesQuerySchema>;
 
 /**
- * What Plan's event log records, and nothing else
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §4). A reorder
+ * What Plan's event log records, and nothing else. A reorder
  * within a column and edits to a title, notes or a milestone's description
  * write nothing; a new kind needs a reader first.
  */

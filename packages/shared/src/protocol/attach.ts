@@ -10,9 +10,9 @@ import {
 
 /**
  * The browser attach socket's control vocabulary — the second of the two
- * sockets `product/versions/mvp/01-protocol.md` decides, and deliberately not
- * the runner link's: one socket per attachment, so no attachment id travels in
- * a frame, and a PTY read reaches the terminal as a bare binary frame.
+ * sockets, and deliberately not the runner link's: one socket per attachment,
+ * so no attachment id travels in a frame, and a PTY read reaches the terminal
+ * as a bare binary frame.
  *
  * Binary frames: control plane → browser is PTY output, browser → control plane
  * is keystrokes. Text frames are the JSON below, and nothing else.

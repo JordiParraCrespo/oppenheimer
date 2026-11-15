@@ -2,12 +2,10 @@ import { z } from 'zod/v4';
 import { commandIdSchema } from './primitives.js';
 
 /**
- * A reply that wakes an idle Claude Code cloud session
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session",
- * decision 2): what the person typed in the console's chat, sent from a host
- * signed in to the claude.ai account the session runs on, with
- * `claude -p <text> --cloud <id>`. Part of `protocolMessageSchema`, which is
- * where every kind is listed.
+ * A reply that wakes an idle Claude Code cloud session: what the person typed
+ * in the console's chat, sent from a host signed in to the claude.ai account
+ * the session runs on, with `claude -p <text> --cloud <id>`. Part of
+ * `protocolMessageSchema`, which is where every kind is listed.
  */
 
 /**

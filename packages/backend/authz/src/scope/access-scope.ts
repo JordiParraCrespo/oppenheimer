@@ -3,7 +3,7 @@ import type { AbilityScopeContext, ScopeGrant } from '@oppenheimer/shared';
 /**
  * Everything the caller may reach, before capabilities are considered.
  *
- * This answers Q1 (which tenant) and Q2 (which slice within it). What the
+ * This answers which tenant, and which slice within it. What the
  * caller may *do* to those rows is a separate question, answered by their CASL
  * ability. Both must pass.
  */

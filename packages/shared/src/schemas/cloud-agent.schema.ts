@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
 /**
- * Cloud agents (`product/next-steps/cloud-agents.md`): a coding agent that
- * runs in a vendor's cloud rather than on a person's host. Started from New
- * session, it is a session like any other, in the place `cloud`
- * (`session.schema.ts`); this file is the vendors' half: who runs it, the
- * person's key for them, and what a run reports.
+ * Cloud agents: a coding agent that runs in a vendor's cloud rather than on a
+ * person's host. Started from New session, it is a session like any other, in
+ * the place `cloud` (`session.schema.ts`); this file is the vendors' half: who
+ * runs it, the person's key for them, and what a run reports.
  */
 
 /**

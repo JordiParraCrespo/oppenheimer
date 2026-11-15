@@ -1,7 +1,6 @@
 # Spike: the dev deployment's API, Postgres, Redis and the tunnel as one Kamal
 # app. Deployed from CI with images it already built:
 #   kamal deploy -c deploy/kamal/deploy.api.yml --skip-push --version <sha>
-# See deploy/kamal/SPIKE.md for what this replaces and what it does not.
 service: oppenheimer-api
 image: <%= ENV.fetch("IMAGE_NAMESPACE") %>/oppenheimer-api
 

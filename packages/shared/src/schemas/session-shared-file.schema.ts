@@ -1,12 +1,11 @@
 import { z } from 'zod';
 
 /**
- * A file an agent shared from its session (`runner sessions send-file`,
- * `product/next-steps/agent-tools.md` §1 and §7): logged by the runner as
- * `file.shared` with what the file is — never its path on the host, never its
- * bytes — and kept on the session, the last `SESSION_SHARED_FILES_MAX`, so a
- * bot can list them and ask the host for an image's preview
- * (`shared.preview.get`).
+ * A file an agent shared from its session (`runner sessions send-file`): logged
+ * by the runner as `file.shared` with what the file is — never its path on the
+ * host, never its bytes — and kept on the session, the last
+ * `SESSION_SHARED_FILES_MAX`, so a bot can list them and ask the host for an
+ * image's preview (`shared.preview.get`).
  */
 
 /** The event kind a shared file is logged as. */

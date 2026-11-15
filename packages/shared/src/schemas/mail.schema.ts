@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
 /**
- * Mail: a person's own Gmail accounts, worked by their bots
- * (`product/next-steps/mail.md`). A connection is the person's, like a Google
- * Calendar one, and at most this many per person.
+ * Mail: a person's own Gmail accounts, worked by their bots. A connection is
+ * the person's, like a Google Calendar one, and at most this many per person.
  */
 export const GMAIL_ACCOUNTS_MAX = 5;
 
@@ -47,9 +46,9 @@ export const gmailConnectionSchema = z.object({
 export type GmailConnection = z.infer<typeof gmailConnectionSchema>;
 
 /**
- * Sending and drafts (`product/next-steps/mail.md` §3.3–3.4). A bot never
- * sends to more than this many people at once, and never more than
- * {@link MAIL_SENDS_PER_DAY} messages a day from one account.
+ * Sending and drafts. A bot never sends to more than this many people at once,
+ * and never more than {@link MAIL_SENDS_PER_DAY} messages a day from one
+ * account.
  */
 export const MAIL_RECIPIENTS_MAX = 10;
 export const MAIL_SENDS_PER_DAY = 50;
@@ -151,8 +150,8 @@ export type MailPlan = z.infer<typeof mailPlanSchema>;
 export const MAIL_DRAFT_CARD_BODY_MAX = 5_000;
 
 /**
- * A draft a bot saved, as the chat draws it under the call (`product/next-steps/mail.md`
- * §3.3): the message as planned, its draft id, and where it opens in Gmail.
+ * A draft a bot saved, as the chat draws it under the call: the message as
+ * planned, its draft id, and where it opens in Gmail.
  */
 export const botMailDraftSchema = z.object({
   saved: z.enum(['created', 'updated']),
@@ -163,8 +162,8 @@ export const botMailDraftSchema = z.object({
 
 export type BotMailDraft = z.infer<typeof botMailDraftSchema>;
 
-/** The most threads or messages one organizing call touches (`mail.md` §3.5); more is several calls, each on its card. */
+/** The most threads or messages one organizing call touches; more is several calls, each on its card. */
 export const MAIL_ORGANIZE_MAX = 100;
 
-/** How far ahead a bot may schedule a send (`mail.md` §3.4). */
+/** How far ahead a bot may schedule a send. */
 export const MAIL_SCHEDULE_MAX_DAYS = 90;

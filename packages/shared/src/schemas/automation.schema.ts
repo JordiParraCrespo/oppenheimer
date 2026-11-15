@@ -24,7 +24,7 @@ import {
 } from './primitives.js';
 
 /**
- * Automation shapes (`product/versions/mvp/16-automations-architecture.md`).
+ * Automation shapes.
  *
  * What the editor's three steps send — Task, Trigger, Where it runs — and the
  * queries the overview, the runs list, the history chart and the trigger
@@ -102,10 +102,9 @@ export type GithubTriggerInputDto = z.infer<typeof githubTriggerInputSchema>;
 export const GMAIL_TRIGGER_QUERY_MAX = 500;
 
 /**
- * A Gmail card (`next-steps/mail.md` §5): one of the owner's connected
- * accounts, and the Gmail query a new message must match (`from:bank
- * label:work`); without one, every new message in the inbox fires it.
- * Bot routines only.
+ * A Gmail card: one of the owner's connected accounts, and the Gmail query a
+ * new message must match (`from:bank label:work`); without one, every new
+ * message in the inbox fires it. Bot routines only.
  */
 export const gmailTriggerInputSchema = z.object({
   source: z.literal('gmail'),

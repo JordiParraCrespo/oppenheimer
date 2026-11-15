@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 /**
- * A Claude Code cloud session's chat in the console
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): two
+ * A Claude Code cloud session's chat in the console: two
  * hooks in the session send its transcript here and collect the replies typed
  * in the console, and the console reads both.
  */
