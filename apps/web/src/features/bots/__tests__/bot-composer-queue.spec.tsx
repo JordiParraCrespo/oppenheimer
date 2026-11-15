@@ -160,4 +160,24 @@ describe('BotComposer while the bot works', () => {
     fireEvent.keyDown(document.body, { key: 'Escape', ctrlKey: true });
     expect(state.cancel).not.toHaveBeenCalled();
   });
+
+  it('leaves Escape to the `/` menu, which closes on it', () => {
+    composer();
+    const field = screen.getByRole('textbox');
+    fireEvent.change(field, { target: { value: '/' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(state.cancel).not.toHaveBeenCalled();
+    // The menu shut, the next Escape is the composer's again.
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves Escape to another field, such as the sidebar search clearing itself', () => {
+    composer();
+    const search = document.createElement('input');
+    document.body.append(search);
+    fireEvent.keyDown(search, { key: 'Escape' });
+    search.remove();
+    expect(state.cancel).not.toHaveBeenCalled();
+  });
 });
