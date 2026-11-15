@@ -38,9 +38,12 @@ colour, with a friendly, proactive `SOUL.md` that says its name
 first name is a placeholder: a name says who it is, the description says
 its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
 its prompt carries a **Getting started** section instead (2026-10-16):
-work the first message asks for comes first, then it asks what to call it
-(2026-11-10, from OpenClaw's `BOOTSTRAP.md`), lists what it can do for
-them from the areas of tools its turn offers (2026-11-10) and learns one job, sets
+work the first message asks for is just done, with no name question after
+it (2026-11-13); otherwise a short, warm welcome of a few sentences asks
+what to call it (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), names two or
+three things it can do for them from the areas of tools its turn offers
+(2026-11-10) and asks for one job; a name or a job that matches one of
+their projects says which project it is for (2026-11-13). Then it sets
 itself up and offers a first task. The steps are `gettingStarted` in
 `bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
 they are the specification, not this paragraph. Names are given first-free, so a deleted
@@ -169,9 +172,17 @@ worker runs it and streams what happens back to the chat.
     by a new one with the same task), when the way round serves the same
     purpose, stays within its permissions and instructions and nobody
     said no to it, and never past a rule that says to stop and ask (a
-    host the person named, a refused command, a failed session);
+    host the person named, a refused command, a task that failed on its
+    own; until 2026-11-15 any failed session);
     otherwise it says once what blocks it, and never the same blocker
-    twice (2026-11-12);
+    twice (2026-11-12); at a failed step it steps back to what the step
+    was for, lists the other ways it has (another host, another of its
+    tools, another source, another approach), checks which can work now
+    and takes the most promising, never ending on "I can retry" while one
+    is untried, and takes a route only if it changes what made the step
+    fail: a cause that travels with the task (a missing branch, a wrong
+    repository, a bad command) is fixed or reported, not carried to
+    another host (2026-11-15);
   - **check before you report** (2026-11-07), the one statement every
     other section and the session wakes point at: every action that
     changes something is checked before it is reported, from what the
@@ -198,11 +209,14 @@ worker runs it and streams what happens back to the chat.
     agent) and another online host can, it starts there and says why
     (2026-11-08); when a session it started on a host it chose fails and
     the failure looks like the host's (the agent not signed in or not
-    installed, the checkout missing), it offers to run the task it wrote on
-    another online host that has the agent and starts it only on the
-    person's yes: nothing but the session's own words says why it failed,
-    and `list_hosts` cannot see whether an agent is signed in. It never
-    offers a host the task failed on; a session it only watches, or a task
+    installed, the repository not cloned there), it starts the task it
+    wrote, from its own words and never the wake's, on another online
+    host that has the agent, asking first as its permissions say (a card
+    under Approve for me), and says where and why (2026-11-15; until then
+    it only offered, and started on the person's yes, because nothing but
+    the session's own words says why it failed). It never starts it on a
+    host the task failed on, and never moves a task off a host the person
+    named: there it names the hosts that could run it and asks; a session it only watches, or a task
     that fails on its own merits, is reported, not retried, as before (the
     `failed` wake); it
     works only in a known project's repository or a folder it was given;
@@ -2207,3 +2221,37 @@ The decisions it produced:
   and its person already told no longer says the blocker on every run.
   Measured with `pnpm eval:bot-blocked-run`, scored on what the chat
   keeps: 30 of 30 runs right, that case 5 of 5.
+- 2026-11-13: **a new bot's welcome is short and warm, a first task is
+  just done, and a name that is a project says what it is for** (§1).
+  The owner found the welcome too long (a list of ten things it could do,
+  an offer to connect five services, three job examples) and a bot that
+  did the task asked of it and then asked its name. 2026-11-11's "always
+  end that same reply with the name and job questions" is gone: work the
+  first message asks for is done like any other request, ending at most
+  with one line offering to make it the bot's job. The welcome is three to
+  five sentences, no list: its name question, two or three things it can
+  do, one or two job examples; the offer to connect waits for the job it
+  needs. A bot named "Zengue Jewels" after the owner's project offered
+  only jobs on another project its general memory named: it now checks
+  `list_projects` when given a name or a job and tailors the examples to
+  the project that matches, never to one only its memory mentions. Every
+  turn's "How a turn goes" also asks for kindness without filler (greet
+  back, thank, share a win, say what went wrong gently).
+  `pnpm eval:bot-first-chat`: 17 of 18 runs right, every case passing.
+- 2026-11-15: **a failed step is looked at from what it was for, and a
+  session that failed on a host the bot chose is started on another** (§1,
+  the `failed` wake). The owner saw Telegram stop at "Claude Code on New
+  host isn't signed in… then I can retry" with other hosts online, and asked
+  for bots that zoom out when the straight path fails rather than a rule
+  for sessions. "How a turn goes" now has the bot list the other ways it
+  has to the same end, check which can work now, take the best, and never
+  end on "I can retry" while one is untried; a route is taken only if it
+  changes the cause, so a missing branch is not carried to another host.
+  The `failed` wake starts the bot's own task on another capable host
+  instead of offering to (its approval level still decides whether that
+  asks first), never off a host the person named, where it names the hosts
+  that could run it and asks. `start_cloud_session`'s failure answer, and the prompt's "Cloud
+  sessions" bullet, now send the bot to another host with the CLI before
+  saying what to sign in (`list_hosts` shows it installed, not signed in). `pnpm eval:bot-blocked-run` gained three
+  cases: before, `failed-not-signed-in` was 0 of 3; after, every case
+  passes, 27 of 27 runs.
