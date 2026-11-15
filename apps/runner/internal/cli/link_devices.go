@@ -114,24 +114,32 @@ const maxDeviceChoices = 32
 // deviceSelect moves the attachment's session onto the device the reader
 // picked and streams it in place. A pick that cannot be honoured (another
 // session took the device meanwhile) leaves the session where it was, and
-// the device.info that answers says so.
+// the device.info that answers says so. A device that cannot be opened puts
+// the session back on the one it had, whose screen is still streaming.
+// Every other viewer of the session follows it onto the new device: input
+// reaches the session's device, so a screen of the old one would mislead.
 func (h *linkHandler) deviceSelect(m link.DeviceSelect) {
 	att := h.screenByID(m.AttachmentID)
-	if att == nil || h.devices == nil {
+	if att == nil || h.devices == nil || att.life.Err() != nil {
 		return
 	}
-	if att.life.Err() != nil {
-		return
-	}
+	previous, hadOne := h.devices.Held(att.sessionID)
 	if _, err := h.devices.Choose(att.sessionID, m.Serial); err != nil {
 		h.logger.Info("device pick refused", slog.String("session", att.sessionID), slog.String("serial", m.Serial), slog.Any("error", err))
-		if current, held := h.devices.Held(att.sessionID); held {
-			h.sendDeviceInfo(att, current)
+		if hadOne {
+			h.sendDeviceInfo(att, previous)
 		}
 		return
 	}
 	device, screen, err := h.devices.WatchHeld(att.life, att.sessionID)
 	if err != nil {
+		h.logger.Warn("picked device could not be opened", slog.String("session", att.sessionID), slog.String("serial", m.Serial), slog.Any("error", err))
+		if hadOne {
+			if _, back := h.devices.Choose(att.sessionID, previous.Serial); back == nil {
+				h.sendDeviceInfo(att, previous)
+				return
+			}
+		}
 		h.endScreen(att, err)
 		return
 	}
@@ -142,6 +150,40 @@ func (h *linkHandler) deviceSelect(m link.DeviceSelect) {
 	h.repinDevice(att.sessionID, device)
 	h.sendDeviceInfo(att, device)
 	h.startPump(att, screen)
+	for _, other := range h.screensOf(att.sessionID) {
+		if other != att {
+			h.followDevice(other)
+		}
+	}
+}
+
+// followDevice streams the session's device now on another of its
+// attachments, after a pick on one of them moved the session.
+func (h *linkHandler) followDevice(att *deviceAttachment) {
+	device, screen, err := h.devices.WatchHeld(att.life, att.sessionID)
+	if err != nil {
+		h.endScreen(att, err)
+		return
+	}
+	if att.life.Err() != nil {
+		_ = screen.Close()
+		return
+	}
+	h.sendDeviceInfo(att, device)
+	h.startPump(att, screen)
+}
+
+// screensOf is every attachment watching the session's device.
+func (h *linkHandler) screensOf(sessionID string) []*deviceAttachment {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	var watching []*deviceAttachment
+	for _, att := range h.screens {
+		if att.sessionID == sessionID {
+			watching = append(watching, att)
+		}
+	}
+	return watching
 }
 
 // repinDevice rewrites the session's note for its agent with the device it
