@@ -689,7 +689,8 @@
       "title": "Proyectos",
       "new": "Nuevo proyecto",
       "noRepositories": "Sin repositorios",
-      "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
+      "emptyTitle": "Aún no hay proyectos",
+      "empty": "Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
       "loadFailed": "No se pudieron cargar tus proyectos.",
       "status": {
         "needsInput": "Necesita tu respuesta",
@@ -2374,7 +2375,8 @@
         "runs": "Ejecuciones"
       },
       "new": "Nueva automatización",
-      "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+      "empty": "Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+      "emptyTitle": "Todavía no hay automatizaciones",
       "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
       "loadFailed": "No se han podido cargar las automatizaciones.",
       "actionFailed": "No se ha podido completar.",
@@ -2694,7 +2696,8 @@
       "routine": "Rutina de bot",
       "runsOn": "La ejecuta {{bot}}",
       "loadFailed": "No se pudieron cargar las rutinas de los bots.",
-      "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
+      "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
+      "emptyTitle": "Aún no hay rutinas de bots"
     }
   },
   "pullRequests": {
@@ -3218,7 +3221,8 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "empty": "Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "emptyTitle": "Aún no hay nada en este día",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
       "addLabel": "Añadir una tarea para este día",

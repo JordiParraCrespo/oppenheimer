@@ -685,7 +685,8 @@
       "title": "Projects",
       "new": "New project",
       "noRepositories": "No repositories",
-      "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
+      "emptyTitle": "No projects yet",
+      "empty": "A project groups your sessions and starts new ones with its repositories, host and agent.",
       "loadFailed": "Could not load your projects.",
       "status": {
         "needsInput": "Needs input",
@@ -2345,7 +2346,8 @@
         "runs": "Runs"
       },
       "new": "New automation",
-      "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
+      "empty": "An automation starts a session on a schedule or when something happens on GitHub.",
+      "emptyTitle": "No automations yet",
       "runsEmpty": "No runs yet. Each run appears here with the session it started.",
       "loadFailed": "Automations could not be loaded.",
       "actionFailed": "That did not go through.",
@@ -2663,7 +2665,8 @@
       "routine": "Bot routine",
       "runsOn": "Runs on {{bot}}",
       "loadFailed": "Bot routines could not be loaded.",
-      "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
+      "empty": "A bot's routines are made in its chat, with /schedule.",
+      "emptyTitle": "No bot routines yet"
     }
   },
   "pullRequests": {
@@ -3186,7 +3189,8 @@
       "todayWeek": "Today · Week {{week}}",
       "weekNumber": "Week {{week}}",
       "includeOverdue": "Include overdue",
-      "empty": "Nothing on this day yet. Add a task below, or pick some with Add tasks.",
+      "empty": "Add a task below, or pick some with Add tasks.",
+      "emptyTitle": "Nothing on this day yet",
       "noMatch": "No tasks match these filters.",
       "add": "Add a task",
       "addLabel": "Add a task for this day",
