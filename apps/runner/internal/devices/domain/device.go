@@ -1,6 +1,5 @@
 // Package domain is what a session's device is: a simulator or emulator this
-// host offers, held by at most one session at a time
-// (product/research/device-streaming.md).
+// host offers, held by at most one session at a time.
 package domain
 
 import (

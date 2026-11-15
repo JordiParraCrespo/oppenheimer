@@ -40,7 +40,7 @@ func (s *Store) ConfigPath() string { return filepath.Join(s.dir, ConfigFile) }
 func (s *Store) KeyPath() string { return filepath.Join(s.dir, KeyFile) }
 
 // Load reads the identity and the key. A key any other account can read is
-// refused rather than used: the whole host authenticates with it (F8).
+// refused rather than used: the whole host authenticates with it.
 func (s *Store) Load() (domain.Identity, ed25519.PrivateKey, error) {
 	raw, err := os.ReadFile(s.ConfigPath())
 	if errors.Is(err, os.ErrNotExist) {

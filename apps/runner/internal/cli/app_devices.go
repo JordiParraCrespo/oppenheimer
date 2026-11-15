@@ -96,7 +96,7 @@ func writeSessionNote(session sessionsdomain.Session, previews bool, device *dev
 }
 
 // helpersNote points the agent at the manual for working with other agents
-// on this host, which the runner prints itself (skill.md).
+// on this host, which the runner prints itself (`runner --skill`).
 const helpersNote = `
 ## Other agents on this host
 
@@ -135,8 +135,7 @@ When you finish a task, end your last message with the recap above, unasked,
 kept to this session.
 `
 
-// previewNote is how a dev server reaches the console's Browser tab
-// (product/versions/mvp/30-session-previews.md).
+// previewNote is how a dev server reaches the console's Browser tab.
 const previewNote = `
 ## Previewing what you build
 

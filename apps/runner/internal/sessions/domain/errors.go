@@ -28,7 +28,7 @@ var (
 	ErrFile         = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The file cannot be given to the session")
 	// ErrFolderMissing and ErrFolderNotDirectory refuse a folder session
 	// whose folder went away, or was never a directory, between the picker
-	// and the create (24 §4).
+	// and the create.
 	ErrFolderMissing      = problem.New("SESS_006", http.StatusNotFound, "The session's folder is not on this host")
 	ErrFolderNotDirectory = problem.New("SESS_007", http.StatusBadRequest, "The session's folder is not a directory")
 	// ErrCloudStart is `claude --cloud` ending without naming the cloud

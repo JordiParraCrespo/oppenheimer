@@ -1,6 +1,6 @@
 package cli
 
-// The direct path's handler side (product/versions/mvp/22): the link
+// The direct path's handler side: the link
 // forwards a browser's offer, this file answers it and tells the attachment's
 // path (attachment_path.go) what happened. Which bytes go where is the
 // path's; this file only translates between the link, the channel and it.

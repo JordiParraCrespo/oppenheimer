@@ -1,9 +1,9 @@
 // Package transcript reads a session's first message off the agent's own
-// transcript, which is how a session launched with no task gets a name
-// (02-runner §7): the person typed the task into the terminal, and the CLI
+// transcript, which is how a session launched with no task gets a name:
+// the person typed the task into the terminal, and the CLI
 // wrote it down. The PTY is never scraped for it. It also follows the
 // transcript while a browser is attached, for the console's chat view
-// (`follow.go`, 0.7), compacting each line before it leaves the host
+// (`follow.go`), compacting each line before it leaves the host
 // (`claude_chat.go`).
 //
 // Each agent keeps its transcript its own way, so each has its own reader in

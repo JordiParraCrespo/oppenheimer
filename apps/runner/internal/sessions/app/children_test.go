@@ -15,7 +15,7 @@ import (
 
 // Agents run agents: a session's agent starts helpers as sessions of its
 // own, sends them work and hears back from them, through the runner on its
-// host (`product/research/lessons-from-herdr.md`).
+// host.
 
 type family struct {
 	svc       *app.Service

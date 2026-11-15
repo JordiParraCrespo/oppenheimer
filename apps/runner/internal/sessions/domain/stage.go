@@ -8,7 +8,7 @@ type Stage string
 const (
 	// StageTerminal is the session's tmux session, made before the repository
 	// is there: the pane is what a console attaches to, and it is ready about
-	// thirty milliseconds in rather than after the clone (02 §5).
+	// thirty milliseconds in rather than after the clone.
 	//
 	// It is the one stage with no step on the wire. The console's stepper is
 	// `host/clone/worktree/agent` and stays that way; what this stage reports

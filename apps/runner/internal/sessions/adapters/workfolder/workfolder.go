@@ -1,5 +1,5 @@
 // Package workfolder is app.Places on disk: the work folder's own bookkeeping
-// (24 §2) and the check a folder session's folder gets (24 §3).
+// and the check a folder session's folder gets.
 //
 // Every folder the runner makes in the work folder carries `.oppenheimer/`,
 // the one hidden name a managed folder has, whose `meta.json` says what the
