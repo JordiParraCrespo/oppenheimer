@@ -127,10 +127,10 @@ const CONSTANT_DOCS = {
   ],
   frameHeaderBytes: [
     'FrameHeader is the 4-byte big-endian attachment id every binary frame on',
-    'the link starts with (01-protocol, "Framing").',
+    'the link starts with.',
   ],
   creditWindowBytes: [
-    "CreditWindow is 01's 256 KB: the bytes an attachment may have in flight",
+    "CreditWindow is 256 KB: the bytes an attachment may have in flight",
     'before its PTY reads pause. A runaway build stalls its own pane, never the',
     'link.',
   ],
