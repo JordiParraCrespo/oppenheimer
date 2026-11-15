@@ -599,6 +599,12 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// attachment, so a tap and the text after it land in order.
 			h.lanes.run(fmt.Sprintf("device:%d", m.AttachmentID), func() { h.deviceInput(m) })
 		}
+	case link.TypeDeviceSelect:
+		var m link.DeviceSelect
+		if msg.Decode(&m) == nil {
+			// Opening the new device's screen takes seconds: off the read loop.
+			go h.deviceSelect(m)
+		}
 	case link.TypeDeviceDetach:
 		var m link.DeviceDetach
 		if msg.Decode(&m) == nil {

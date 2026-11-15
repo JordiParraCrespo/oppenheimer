@@ -60,6 +60,7 @@ export type {
 export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
 export type {
+  DeviceChoice,
   DeviceInfo,
   DeviceInput,
   DeviceStatus,

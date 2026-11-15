@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	devdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/domain"
@@ -18,11 +19,23 @@ import (
 // sees fewer frames, never older ones, and the link never queues a backlog of
 // a screen nobody has drawn yet. The credit is bytes, as for a PTY, so the
 // browser credits each frame once it has drawn it.
+//
+// A device.select moves the session onto another device and streams its
+// screen on the same attachment: the old screen's pump is stopped and a new
+// one started, under the attachment's context.
 type deviceAttachment struct {
 	id        uint32
 	sessionID string
-	cancel    context.CancelFunc
-	credits   chan int
+	// life is the attachment's, cancelled when it is dropped.
+	life    context.Context
+	cancel  context.CancelFunc
+	credits chan int
+
+	// switching holds one device.select at a time; stopPump ends the screen
+	// being streamed now.
+	switching sync.Mutex
+	pumpMu    sync.Mutex
+	stopPump  context.CancelFunc
 }
 
 func (d *deviceAttachment) credit(bytes int) {
@@ -47,7 +60,7 @@ func (h *linkHandler) deviceAttach(m link.DeviceAttach, epoch uint64) {
 		h.fail(m.CommandID, err)
 		return
 	}
-	att := &deviceAttachment{id: m.AttachmentID, sessionID: m.SessionID, cancel: cancel, credits: make(chan int, 64)}
+	att := &deviceAttachment{id: m.AttachmentID, sessionID: m.SessionID, life: ctx, cancel: cancel, credits: make(chan int, 64)}
 	h.mu.Lock()
 	if !h.linkUp || h.epoch != epoch {
 		h.mu.Unlock()
@@ -58,11 +71,92 @@ func (h *linkHandler) deviceAttach(m link.DeviceAttach, epoch uint64) {
 	h.screens[att.id] = att
 	h.mu.Unlock()
 
+	h.sendDeviceInfo(att, device)
+	h.startPump(att, screen)
+}
+
+// startPump streams a screen on the attachment in place of the one before.
+func (h *linkHandler) startPump(att *deviceAttachment, screen devapp.Screen) {
+	ctx, stop := context.WithCancel(att.life)
+	att.pumpMu.Lock()
+	previous := att.stopPump
+	att.stopPump = stop
+	att.pumpMu.Unlock()
+	if previous != nil {
+		previous()
+	}
+	go h.pumpScreen(ctx, att, screen)
+}
+
+// sendDeviceInfo tells the browser which device the attachment shows, and
+// which others the session could move to.
+func (h *linkHandler) sendDeviceInfo(att *deviceAttachment, device devdomain.Device) {
+	choices := h.devices.Choices(att.sessionID)
+	if len(choices) > maxDeviceChoices {
+		choices = choices[:maxDeviceChoices]
+	}
+	listed := make([]link.DeviceInfoDevices, 0, len(choices))
+	for _, c := range choices {
+		listed = append(listed, link.DeviceInfoDevices{
+			Serial: c.Serial, Name: c.Name, Platform: string(c.Platform), Free: c.Free,
+		})
+	}
 	_ = h.client.Send(link.DeviceInfo{
 		Type: link.TypeDeviceInfo, AttachmentID: att.id,
 		Serial: device.Serial, Name: device.Name, Platform: string(device.Platform),
+		Devices: listed,
 	})
-	go h.pumpScreen(ctx, att, screen)
+}
+
+// maxDeviceChoices is DEVICE_CHOICES_MAX, the most a device.info may list.
+const maxDeviceChoices = 32
+
+// deviceSelect moves the attachment's session onto the device the reader
+// picked and streams it in place. A pick that cannot be honoured (another
+// session took the device meanwhile) leaves the session where it was, and
+// the device.info that answers says so.
+func (h *linkHandler) deviceSelect(m link.DeviceSelect) {
+	att := h.screenByID(m.AttachmentID)
+	if att == nil || h.devices == nil {
+		return
+	}
+	att.switching.Lock()
+	defer att.switching.Unlock()
+	if att.life.Err() != nil {
+		return
+	}
+	if _, err := h.devices.Choose(att.sessionID, m.Serial); err != nil {
+		h.logger.Info("device pick refused", slog.String("session", att.sessionID), slog.String("serial", m.Serial), slog.Any("error", err))
+		if current, held := h.devices.Held(att.sessionID); held {
+			h.sendDeviceInfo(att, current)
+		}
+		return
+	}
+	device, screen, err := h.devices.WatchHeld(att.life, att.sessionID)
+	if err != nil {
+		h.endScreen(att, err)
+		return
+	}
+	if att.life.Err() != nil {
+		_ = screen.Close()
+		return
+	}
+	h.repinDevice(att.sessionID, device)
+	h.sendDeviceInfo(att, device)
+	h.startPump(att, screen)
+}
+
+// repinDevice rewrites the session's note for its agent with the device it
+// has now. Its environment keeps the serial it started with.
+func (h *linkHandler) repinDevice(sessionID string, device devdomain.Device) {
+	if h.app == nil || h.app.Sessions == nil {
+		return
+	}
+	session, err := h.app.Sessions.Get(sessionID)
+	if err != nil {
+		return
+	}
+	writeSessionNote(session, h.app.Ports != nil, &device)
 }
 
 // pumpScreen reads the device's frames and sends the newest one each time
@@ -96,7 +190,10 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 		case <-ctx.Done():
 			return
 		case err := <-ended:
-			h.endScreen(att, err)
+			// A screen replaced by a device.select ends with its context.
+			if ctx.Err() == nil {
+				h.endScreen(att, err)
+			}
 			return
 		case n := <-att.credits:
 			window += n

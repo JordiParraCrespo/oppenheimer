@@ -28,7 +28,27 @@ export const deviceAttachSchema = z.object({
 
 export type DeviceAttachMessage = z.infer<typeof deviceAttachSchema>;
 
-/** The runner's answer to `device.attach`: which device the session has. */
+/** The most devices a `device.info` lists: a host offers a handful. */
+export const DEVICE_CHOICES_MAX = 32;
+
+/**
+ * One device the host offers, as a session may pick it: `free` is a device no
+ * other session holds (the session's own is free to it).
+ */
+export const deviceChoiceSchema = z.object({
+  serial: z.string().min(1).max(200),
+  name: z.string().min(1).max(200),
+  platform: z.enum(['android', 'ios']),
+  free: z.boolean(),
+});
+
+export type DeviceChoice = z.infer<typeof deviceChoiceSchema>;
+
+/**
+ * The runner's answer to `device.attach`, and to each `device.select`: which
+ * device the session has, and the devices it could move to. A runner that
+ * cannot move a session lists none, and the console offers no picker.
+ */
 export const deviceInfoSchema = z.object({
   type: z.literal('device.info'),
   attachmentId: attachmentIdSchema,
@@ -37,6 +57,8 @@ export const deviceInfoSchema = z.object({
   /** What the pane's header calls it ("Android emulator"). */
   name: z.string().min(1).max(200),
   platform: z.enum(['android', 'ios']),
+  /** Every device the host offers now, the session's own included. */
+  devices: z.array(deviceChoiceSchema).max(DEVICE_CHOICES_MAX).optional(),
 });
 
 export type DeviceInfoMessage = z.infer<typeof deviceInfoSchema>;
@@ -65,6 +87,22 @@ export const deviceInputSchema = z.object({
 });
 
 export type DeviceInputMessage = z.infer<typeof deviceInputSchema>;
+
+/**
+ * The reader moves the session onto another of its host's devices, one
+ * `device.info` listed as free. The runner releases the session's old device,
+ * holds this one, streams its screen on the same attachment and answers with
+ * `device.info`; a device another session took meanwhile leaves the session
+ * where it was, and the answer says so. Sent only on an attachment whose
+ * `device.info` listed `devices`.
+ */
+export const deviceSelectSchema = z.object({
+  type: z.literal('device.select'),
+  attachmentId: attachmentIdSchema,
+  serial: z.string().min(1).max(200),
+});
+
+export type DeviceSelectMessage = z.infer<typeof deviceSelectSchema>;
 
 /** The control plane frees a device attachment: the browser went away. */
 export const deviceDetachSchema = z.object({

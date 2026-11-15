@@ -103,6 +103,7 @@ export class DeviceAttachment implements AttachmentSink {
       serial: message.serial,
       name: message.name,
       platform: message.platform,
+      ...(message.devices ? { devices: message.devices } : {}),
     });
   }
 
@@ -152,6 +153,15 @@ export class DeviceAttachment implements AttachmentSink {
     if (message.data.type === 'device.input' && !this.readOnly) {
       const { type: _type, ...input } = message.data;
       this.link.send({ type: 'device.input', attachmentId: this.attachmentId, ...input });
+      return;
+    }
+    // Moving the session onto another device is driving it: a watcher cannot.
+    if (message.data.type === 'device.select' && !this.readOnly) {
+      this.link.send({
+        type: 'device.select',
+        attachmentId: this.attachmentId,
+        serial: message.data.serial,
+      });
     }
   }
 

@@ -8,7 +8,12 @@ would take here, and records a proof of concept run on 2026-10-17
 
 What was decided from it is in the notes that own it: on 2026-10-26 the
 console's preview pane got its Simulator, a session's device streamed over
-the link and driven through Argent (`../versions/mvp/05-screens.md`). The
+the link and driven through Argent (`../versions/mvp/05-screens.md`). On
+2026-11-15 the reader got a picker over the host's devices and a Refresh:
+`device.info` lists them, each free or held by another session, and
+`device.select` moves the session onto a free one, its screen switched on
+the same attachment and its agent's note rewritten (its environment keeps
+the serial it started with). The
 open questions below are still open for that build.
 
 ## What exists
