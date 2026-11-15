@@ -86,11 +86,15 @@ function HostCard({
         <div className="flex min-w-0 flex-1 flex-col gap-0.75">
           {rename ?? <span className="truncate font-mono text-operate text-fg">{name}</span>}
           {meta || runner ? (
-            <span className="flex min-w-0 text-[12.5px] whitespace-pre text-fg-muted">
-              {meta ? <span className="truncate">{meta}</span> : null}
+            <span className="flex min-w-0 gap-1 text-[12.5px] whitespace-pre text-fg-muted">
+              {meta ? (
+                <span className="truncate">
+                  {meta}
+                  {runner ? ' ·' : null}
+                </span>
+              ) : null}
               {runner ? (
                 <span data-slot="host-card-runner" className="shrink-0">
-                  {meta ? ' · ' : null}
                   {runner}
                 </span>
               ) : null}
