@@ -195,6 +195,17 @@ describe('Session cache (integration)', () => {
       const credential = () =>
         call('/api/v1/me/credential', { token: apiToken }).then((r) => expect(r.status).toBe(200));
       await credential();
+      // That first use stamps `lastUsedAt` without awaiting it: wait for the
+      // stamp to land, or the measured use below races it and stamps again.
+      await expect
+        .poll(async () => {
+          const rows: { stamped: boolean }[] = await dataSource.query(
+            `SELECT "lastUsedAt" IS NOT NULL AS "stamped" FROM "api_token" WHERE "userId" = $1`,
+            [owner.id],
+          );
+          return rows.every((row) => row.stamped);
+        })
+        .toBe(true);
 
       const cookie = await queriesDuring(() => me({ cookie: owner.cookie }));
       const bearer = await queriesDuring(() => me({ token: owner.sessionToken }));

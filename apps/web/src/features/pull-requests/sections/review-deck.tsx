@@ -1,8 +1,6 @@
-import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { CircleCheck, ListChecks, RotateCcw } from '@oppenheimer/design-system-web/icons';
 import { useSuspensePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReviewSearch } from '../hooks/use-review-search';
@@ -10,6 +8,7 @@ import { pullRequestLink } from '../lib/pull-request-search';
 import { filterQueue } from '../lib/queue-filter';
 import { DECK_END, deckKey, deckPosition } from '../lib/review-deck';
 import { BriefAhead } from './brief-ahead';
+import { DeckEnd } from './deck-end';
 import { QueueEmpty } from './queue-empty';
 import { ReviewActions } from './review-actions';
 import { ReviewCard } from './review-card';
@@ -17,13 +16,14 @@ import { ReviewCard } from './review-card';
 /**
  * The review deck: the queue one pull request at a time, in the queue's own
  * order (the deepest lane first, then the longest wait). Each card is acted
- * on or passed and the next one takes its place, until there is none left.
+ * on or stepped past and the next one takes its place, until there is none
+ * left; Previous steps back, from the end too.
  *
  * A card is the high level only, at the pane's width: what the pull request
- * is and what holds it. The diff is one link away (Review in depth), never
- * on the card. The queue is read here because the card, its actions and the
+ * is and what holds it. The rest (the full description, the diff) is one
+ * link away (Review in depth), never on the card. The queue is read here because the card, its actions and the
  * count all stand on the same row. The next card's brief is asked for while this one
- * is read, so moving on does not wait for a model. Opening a card's changes
+ * is read, so moving on does not wait for a model. Opening a card's details
  * leaves the deck with its address in the history, and the pull request's
  * Back returns to this card. A card that has left the queue (it merged) is
  * never replaced by another under the same actions: the deck says it left.
@@ -38,7 +38,8 @@ export function ReviewDeck() {
   // first card it drew, by name: a refetch that puts another pull request
   // first must not slide it under the same actions.
   const [first] = useState(() => (rows[0] ? deckKey(rows[0]) : undefined));
-  const { current, next, index, gone } = deckPosition(rows, at ?? first);
+  const { current, previous, next, index, gone } = deckPosition(rows, at ?? first);
+  const goPrevious = previous ? () => setAt(deckKey(previous)) : undefined;
 
   const queueSearch = { ...filters, scope: scope === 'all' ? undefined : scope };
   if (!rows.length) {
@@ -51,48 +52,20 @@ export function ReviewDeck() {
   }
   if (!current) {
     return (
-      <div className="w-full rounded-xl bg-card py-10">
-        <EmptyState>
-          <EmptyState.Header>
-            <EmptyState.Media variant="icon">
-              <CircleCheck />
-            </EmptyState.Media>
-            <EmptyState.Title>
-              {t(gone ? 'pullRequests.deck.goneTitle' : 'pullRequests.deck.doneTitle')}
-            </EmptyState.Title>
-            <EmptyState.Description>
-              {gone ? null : t('pullRequests.deck.doneHint')}
-            </EmptyState.Description>
-          </EmptyState.Header>
-          <EmptyState.Content>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setAt(rows[0] ? deckKey(rows[0]) : undefined)}
-              >
-                <RotateCcw />
-                {t(gone ? 'pullRequests.deck.fromTop' : 'pullRequests.deck.again')}
-              </Button>
-              <Button
-                variant="secondary"
-                nativeButton={false}
-                render={<Link to="/pulls" search={queueSearch} />}
-              >
-                <ListChecks />
-                {t('pullRequests.detail.back')}
-              </Button>
-            </div>
-          </EmptyState.Content>
-        </EmptyState>
-      </div>
+      <DeckEnd
+        gone={gone}
+        queueSearch={queueSearch}
+        onRestart={() => setAt(rows[0] ? deckKey(rows[0]) : undefined)}
+        onPrevious={goPrevious}
+      />
     );
   }
 
   const moveOn = () => setAt(next ? deckKey(next) : DECK_END);
-  // The way from a card to its diff: the address of the card rides in the
+  // The way from a card to its details: the address of the card rides in the
   // history, so the pull request's Back returns to it.
   const depth = {
-    ...pullRequestLink(current.address, 'changes'),
+    ...pullRequestLink(current.address, 'description'),
     state: {
       pullsReturn: { to: 'deck' as const, search: { ...queueSearch, at: deckKey(current) } },
     },
@@ -122,7 +95,13 @@ export function ReviewDeck() {
       {next ? <BriefAhead key={deckKey(next)} address={next.address} /> : null}
       <div key={deckKey(current)} className="flex animate-appear flex-col gap-4">
         <ReviewCard pull={current} depth={depth} />
-        <ReviewActions pull={current} onActed={moveOn} onPass={moveOn} onOpen={openDepth} />
+        <ReviewActions
+          pull={current}
+          onActed={moveOn}
+          onPrevious={goPrevious}
+          onNext={moveOn}
+          onOpen={openDepth}
+        />
       </div>
     </div>
   );
