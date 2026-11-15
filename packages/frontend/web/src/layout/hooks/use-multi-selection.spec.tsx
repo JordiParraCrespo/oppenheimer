@@ -1,21 +1,21 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { useInboxSelection } from '../hooks/use-inbox-selection';
+import { useMultiSelection } from './use-multi-selection';
 
 /**
- * The rows picked for a bulk action in the Inbox: a shift-click takes the run
+ * The rows picked for a bulk action (the Inbox's, the Projects cards): a shift-click takes the run
  * from the last row picked, select all toggles every row shown, a row that
  * leaves the list leaves the selection (so a bulk action never reaches an
  * item no longer on screen), and Escape clears it.
  */
 
 function setup(initial: string[]) {
-  return renderHook(({ shown }) => useInboxSelection(shown), {
+  return renderHook(({ shown }) => useMultiSelection(shown), {
     initialProps: { shown: initial },
   });
 }
 
-describe('selecting Inbox rows for a bulk action', () => {
+describe('selecting rows for a bulk action', () => {
   it('takes the run since the last row picked on a shift-click', () => {
     const { result } = setup(['a', 'b', 'c', 'd', 'e']);
     act(() => result.current.toggle('b', true));

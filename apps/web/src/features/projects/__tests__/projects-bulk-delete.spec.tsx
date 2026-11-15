@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectsList } from '../sections/projects-list';
 
-vi.mock('react-i18next', () => ({
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
     t: (key: string, options?: { count?: number; name?: string }) =>
       [key, options?.count, options?.name].filter((part) => part !== undefined).join(':'),
@@ -34,27 +35,9 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useArchiveProject: () => ({ mutateAsync: api.archive }),
 }));
 
-vi.mock('@oppenheimer/frontend-web', () => ({
-  ErrorAlert: ({ title }: { title?: string }) => (title ? <p>{title}</p> : null),
+vi.mock('@oppenheimer/frontend-web', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@oppenheimer/frontend-web')>()),
   notifySuccess: vi.fn(),
-  ConfirmDialog: ({
-    title,
-    confirmLabel,
-    onConfirm,
-    children,
-  }: {
-    title: string;
-    confirmLabel: string;
-    onConfirm: () => void;
-    children?: ReactNode;
-  }) => (
-    <div role="alertdialog" aria-label={title}>
-      {children}
-      <button type="button" onClick={onConfirm}>
-        {confirmLabel}
-      </button>
-    </div>
-  ),
 }));
 
 function project(id: string, name: string, isUnassigned = false) {

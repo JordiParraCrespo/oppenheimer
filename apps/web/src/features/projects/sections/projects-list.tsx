@@ -11,12 +11,11 @@ import {
 import { Trash2, X } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useMultiSelection } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DeleteProjectsDialog } from '../dialogs/delete-projects';
-import { useProjectSelection } from '../hooks/use-project-selection';
 import {
   projectRepositoriesLine,
   projectStatusOf,
@@ -49,7 +48,7 @@ export function ProjectsList({ onNew }: { onNew: () => void }) {
   const pickable = projects
     .filter((project) => !project.isUnassigned && !held.has(project.id))
     .map((project) => project.id);
-  const selection = useProjectSelection(pickable);
+  const selection = useMultiSelection(pickable);
   const [deleting, setDeleting] = useState<ProjectEntity[] | null>(null);
   const alert = <ErrorAlert error={error} fallback={t('projects.list.loadFailed')} />;
 
@@ -118,7 +117,7 @@ export function ProjectsList({ onNew }: { onNew: () => void }) {
       {selection.any ? (
         <TaskSelectionBar
           aria-label={t('projects.selection.label')}
-          count={t('projects.selection.count', { count: selection.ids.length })}
+          count={t('projects.selection.count', { count: selection.keys.length })}
         >
           <Button size="sm" variant="ghost" onClick={selection.toggleAll}>
             {selection.all ? t('projects.selection.selectNone') : t('projects.selection.selectAll')}
