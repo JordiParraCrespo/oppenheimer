@@ -91,17 +91,20 @@ it('refreshes after "no device", so a simulator booted since is picked up', asyn
 });
 
 it('closes the old socket on refresh and keeps one open when a refresh overtakes a dial', async () => {
-  let release: (() => void) | null = null;
+  const gate: { release?: () => void } = {};
   let calls = 0;
   const { stream, sockets } = harness(async () => {
     calls += 1;
     // The first dial's ticket is slow; the refresh's comes at once.
-    if (calls === 1) await new Promise<void>((resolve) => (release = resolve));
+    if (calls === 1)
+      await new Promise<void>((resolve) => {
+        gate.release = resolve;
+      });
     return { ticket: `t-${calls}`, url: '/api/v1/relay/attach' };
   });
   stream.refresh();
   await settle();
-  release?.();
+  gate.release?.();
   await settle();
   expect(sockets).toHaveLength(1);
 
