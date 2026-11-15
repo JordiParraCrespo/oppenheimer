@@ -602,8 +602,10 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case link.TypeDeviceSelect:
 		var m link.DeviceSelect
 		if msg.Decode(&m) == nil {
-			// Opening the new device's screen takes seconds: off the read loop.
-			go h.deviceSelect(m)
+			// Opening the new device's screen takes seconds: off the read
+			// loop, on the attachment's lane, so a pick lands after the input
+			// sent before it and two picks never overlap.
+			h.lanes.run(fmt.Sprintf("device:%d", m.AttachmentID), func() { h.deviceSelect(m) })
 		}
 	case link.TypeDeviceDetach:
 		var m link.DeviceDetach

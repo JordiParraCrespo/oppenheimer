@@ -12,8 +12,9 @@ the link and driven through Argent (`../versions/mvp/05-screens.md`). On
 2026-11-15 the reader got a picker over the host's devices and a Refresh:
 `device.info` lists them, each free or held by another session, and
 `device.select` moves the session onto a free one, its screen switched on
-the same attachment and its agent's note rewritten (its environment keeps
-the serial it started with). The
+the same attachment and its agent's note rewritten. The note is the
+contract: the environment keeps the serial the session started with, so an
+agent mid-task may need a restart (or a nudge to reread the note) to follow. The
 open questions below are still open for that build.
 
 ## What exists

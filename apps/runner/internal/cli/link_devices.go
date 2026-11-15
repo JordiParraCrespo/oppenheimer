@@ -21,8 +21,9 @@ import (
 // browser credits each frame once it has drawn it.
 //
 // A device.select moves the session onto another device and streams its
-// screen on the same attachment: the old screen's pump is stopped and a new
-// one started, under the attachment's context.
+// screen on the same attachment: the old screen's pump is told it was
+// replaced and stops, and a new one starts. Picks run on the attachment's
+// lane, behind its input, one at a time.
 type deviceAttachment struct {
 	id        uint32
 	sessionID string
@@ -31,11 +32,10 @@ type deviceAttachment struct {
 	cancel  context.CancelFunc
 	credits chan int
 
-	// switching holds one device.select at a time; stopPump ends the screen
-	// being streamed now.
-	switching sync.Mutex
-	pumpMu    sync.Mutex
-	stopPump  context.CancelFunc
+	pumpMu sync.Mutex
+	// replaced is closed to stop the screen being streamed now, once a
+	// device.select has another to stream in its place.
+	replaced chan struct{}
 }
 
 func (d *deviceAttachment) credit(bytes int) {
@@ -77,15 +77,15 @@ func (h *linkHandler) deviceAttach(m link.DeviceAttach, epoch uint64) {
 
 // startPump streams a screen on the attachment in place of the one before.
 func (h *linkHandler) startPump(att *deviceAttachment, screen devapp.Screen) {
-	ctx, stop := context.WithCancel(att.life)
+	replaced := make(chan struct{})
 	att.pumpMu.Lock()
-	previous := att.stopPump
-	att.stopPump = stop
+	previous := att.replaced
+	att.replaced = replaced
 	att.pumpMu.Unlock()
 	if previous != nil {
-		previous()
+		close(previous)
 	}
-	go h.pumpScreen(ctx, att, screen)
+	go h.pumpScreen(att.life, att, screen, replaced)
 }
 
 // sendDeviceInfo tells the browser which device the attachment shows, and
@@ -120,8 +120,6 @@ func (h *linkHandler) deviceSelect(m link.DeviceSelect) {
 	if att == nil || h.devices == nil {
 		return
 	}
-	att.switching.Lock()
-	defer att.switching.Unlock()
 	if att.life.Err() != nil {
 		return
 	}
@@ -161,7 +159,10 @@ func (h *linkHandler) repinDevice(sessionID string, device devdomain.Device) {
 
 // pumpScreen reads the device's frames and sends the newest one each time
 // the browser has credit for it.
-func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, screen devapp.Screen) {
+// It stops when the attachment ends, or quietly when replaced is closed: a
+// device.select streams another screen in its place.
+func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, screen devapp.Screen, replaced <-chan struct{}) {
+	// Closing the screen also ends the reader below, blocked in Next.
 	defer func() { _ = screen.Close() }()
 	latest := make(chan []byte, 1)
 	ended := make(chan error, 1)
@@ -189,11 +190,10 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 		select {
 		case <-ctx.Done():
 			return
+		case <-replaced:
+			return
 		case err := <-ended:
-			// A screen replaced by a device.select ends with its context.
-			if ctx.Err() == nil {
-				h.endScreen(att, err)
-			}
+			h.endScreen(att, err)
 			return
 		case n := <-att.credits:
 			window += n
@@ -203,6 +203,8 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 		for window <= 0 {
 			select {
 			case <-ctx.Done():
+				return
+			case <-replaced:
 				return
 			case n := <-att.credits:
 				window += n

@@ -61,14 +61,8 @@ func New(opts Options) *Service {
 
 // ForSession is the session's device, taken from the free ones on first ask.
 func (s *Service) ForSession(sessionID string) (domain.Device, error) {
-	return s.forSession(sessionID, false)
-}
-
-// forSession is ForSession; fresh looks at the host's devices even for a
-// session that holds one, so a viewer's list of them is current.
-func (s *Service) forSession(sessionID string, fresh bool) (domain.Device, error) {
 	s.mu.Lock()
-	if device, held := s.pool.Held(sessionID); held && (!fresh || s.finder == nil) {
+	if device, held := s.pool.Held(sessionID); held {
 		s.mu.Unlock()
 		return device, nil
 	}
@@ -89,6 +83,18 @@ func (s *Service) forSession(sessionID string, fresh bool) (domain.Device, error
 		return domain.Device{}, domain.ErrNoDevice.WithDetail("%s", err.Error())
 	}
 	return device, err
+}
+
+// refreshOffer looks at the host's devices and offers what it finds, so a
+// viewer's Choices are current. It hands no device to anyone.
+func (s *Service) refreshOffer() {
+	found, ok := s.find()
+	if !ok {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.pool.Offer(found)
 }
 
 // find is the host's devices now, when the service looks for them. Run
@@ -162,7 +168,8 @@ func (s *Service) Release(sessionID string) {
 // Watch opens the session's device screen for one viewer, after a fresh
 // look at the host's devices, so Choices lists the ones booted since.
 func (s *Service) Watch(ctx context.Context, sessionID string) (domain.Device, Screen, error) {
-	device, err := s.forSession(sessionID, true)
+	s.refreshOffer()
+	device, err := s.ForSession(sessionID)
 	if err != nil {
 		return domain.Device{}, nil, err
 	}

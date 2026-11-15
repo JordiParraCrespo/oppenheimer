@@ -65,7 +65,7 @@ The console shows window 0, the agent's window. Extra shell windows can be made 
 The preview toggle opens a pane beside the terminal:
 
 - **Browser** shows a dev server the session runs, through the host's runner: pick any port the session listens on from 1024 up; the tab opens on the likeliest one (5173, 3000…). The app sees `localhost`. It shows "Waiting for a dev server" until one starts, and needs the deployment to have a preview domain configured.
-- **Simulator** shows an iOS simulator or Android emulator the host offers to its sessions, which you can watch and tap. When the host runs more than one, click the device's name to move the session onto another free one; **Refresh** looks for simulators booted since and restarts the screen. It appears only on hosts set up with devices.
+- **Simulator** shows an iOS simulator or Android emulator the host offers to its sessions, which you can watch and tap. When the host runs more than one, click the device's name to move the session onto another free one; **Refresh** looks for simulators booted since and restarts the screen. The agent is told about the new device in its session notes; one already in the middle of a task may keep using the old device until it rereads them or the session restarts. It appears only on hosts set up with devices.
 
 ## Sharing a session
 
