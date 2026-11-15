@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { TaskActivityLoggedDomainEvent } from '../domain/events/task-activity-logged.domain-event';
 import { userActor } from '../domain/plan-change.types';
 import { TaskEntity } from '../domain/task.entity';
 import { rankBetween } from '../domain/task-rank.policy';
@@ -75,5 +76,52 @@ describe('TaskEntity: a task an agent made', () => {
     task.triage('person', at);
     task.triage('person', new Date('2026-11-13T09:00:00Z'));
     expect(task.triagedAt).toEqual(at);
+  });
+});
+
+describe('TaskEntity: what a follower of its project is told', () => {
+  // Regression: a bot following a project woke for a move with the wrong
+  // columns, or twice for a placement retried after a lost rank race.
+  it('raises one event per logged change, naming the columns a move went between', () => {
+    const task = newTask();
+    task.clearChanges();
+    task.place('review', rankBetween('', null), new Date());
+    task.place('review', rankBetween(rankBetween('', null), null), new Date());
+    task.block('waiting on design');
+    const events = task.activityEvents();
+    expect(events.every((event) => event instanceof TaskActivityLoggedDomainEvent)).toBe(true);
+    expect(events.map(({ kind, from, to }) => ({ kind, from, to }))).toEqual([
+      { kind: 'status_changed', from: 'todo', to: 'review' },
+      { kind: 'blocked', from: null, to: 'review' },
+    ]);
+    expect(events[0]).toMatchObject({
+      aggregateId: task.id,
+      projectId: task.projectId,
+      title: 'Biometric unlock',
+    });
+  });
+
+  it('tells completion, reopening and deletion by the column left and the one reached', () => {
+    const task = newTask('doing');
+    task.clearChanges();
+    task.place('done', rankBetween('', null), new Date());
+    expect(task.activityEvents().map(({ kind, from, to }) => [kind, from, to])).toEqual([
+      ['completed', 'doing', 'done'],
+    ]);
+    task.clearChanges();
+    task.remove();
+    expect(task.activityEvents().map(({ kind, from, to }) => [kind, from, to])).toEqual([
+      ['deleted', 'done', null],
+    ]);
+  });
+
+  it('names where a reassigned task was, so followers of the place it left hear of it', () => {
+    const task = newTask();
+    const before = { projectId: task.projectId, milestoneId: null };
+    task.clearChanges();
+    task.file(randomUUID(), null);
+    const [event] = task.activityEvents();
+    expect(event).toMatchObject({ kind: 'reassigned', previous: before });
+    expect(event.projectId).not.toBe(before.projectId);
   });
 });

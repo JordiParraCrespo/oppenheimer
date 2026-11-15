@@ -38726,6 +38726,98 @@
           "event"
         ]
       },
+      "BotTaskEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "task"
+            ]
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription that woke the bot."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "project",
+              "milestone"
+            ],
+            "description": "What the bot follows: the whole project, or one milestone of it."
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The project the task is filed under."
+          },
+          "milestoneId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "taskId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "description": "The task's title at the change, cut to 200 characters."
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "created",
+              "deleted",
+              "completed",
+              "reopened",
+              "status_changed",
+              "rescheduled",
+              "reassigned",
+              "blocked",
+              "unblocked",
+              "session_linked"
+            ],
+            "description": "What Plan logged."
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "doing",
+              "review",
+              "done"
+            ],
+            "nullable": true,
+            "description": "The column it left, for a move, a completion or a reopening."
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "doing",
+              "review",
+              "done"
+            ],
+            "nullable": true,
+            "description": "The column it is in after the change; null once deleted."
+          }
+        },
+        "required": [
+          "kind",
+          "subscriptionId",
+          "scope",
+          "projectId",
+          "milestoneId",
+          "taskId",
+          "title",
+          "event",
+          "from",
+          "to"
+        ]
+      },
       "BotGoalEventResponseDto": {
         "type": "object",
         "properties": {
@@ -39129,6 +39221,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotPullRequestEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotTaskEventResponseDto"
               },
               {
                 "$ref": "#/components/schemas/BotGoalEventResponseDto"

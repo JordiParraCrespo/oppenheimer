@@ -1160,6 +1160,11 @@ earlier note:
   event's metadata alone, never a re-read: the pull request is GitHub's, not
   ours to re-read on every event. A close without a merge makes no event
   yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/27-bot-subscriptions.md` §3 ended every subscription at
+  20 wakes. On 2026-11-14 a bot following a project or a milestone
+  (`watch_project`, `watch_milestone`) has no wake limit: it follows the
+  plan for as long as it is worked on. What bounds it instead is that a
+  change the bot made itself never wakes it (27 §7.2).
 - `versions/mvp/25-bots.md` treated text from tools as information, not
   instructions, and left every tool to the turn that reads it. On
   2026-11-03 a pull request watch made that text a stranger's comment

@@ -29,9 +29,11 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
+  BOT_PLAN_WATCH_SCOPES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
+  BOT_TASK_WAKE_EVENTS,
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
@@ -238,7 +240,7 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask, or a session or a pull request the bot follows waking it. An outcome or a state
+ * to an ask, or a session, a pull request or a project's task the bot follows waking it. An outcome or a state
  * this client does not know reads as no event, and the chat falls back to
  * the message's first line.
  */
@@ -320,6 +322,24 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             repository: dto.repository,
             number: dto.number,
             event,
+          }
+        : null;
+    }
+    case 'task': {
+      const event = BOT_TASK_WAKE_EVENTS.find((candidate) => candidate === dto.event);
+      const scope = BOT_PLAN_WATCH_SCOPES.find((candidate) => candidate === dto.scope);
+      return event && scope
+        ? {
+            kind: 'task',
+            subscriptionId: dto.subscriptionId,
+            scope,
+            projectId: dto.projectId,
+            milestoneId: dto.milestoneId,
+            taskId: dto.taskId,
+            title: dto.title,
+            event,
+            from: dto.from,
+            to: dto.to,
           }
         : null;
     }
