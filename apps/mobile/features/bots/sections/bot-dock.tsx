@@ -81,8 +81,12 @@ export function BotDock({
   const sendDraft = () => {
     const content = draft.trim();
     if (!content) return;
-    send.mutate({ id: botId, content });
     setDraft('');
+    // A refused send gives its words back, unless something new was typed since.
+    send.mutate(
+      { id: botId, content },
+      { onError: () => setDraft((typed) => (typed.trim() ? typed : content)) },
+    );
   };
 
   return (

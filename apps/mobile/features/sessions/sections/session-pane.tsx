@@ -105,6 +105,7 @@ export function SessionPane({ session }: { session: SessionEntity }) {
         )}
         <SessionDock
           session={session}
+          connected={link.status === 'live'}
           sendKeys={link.send}
           sendReply={(text) => link.chat.send(text)}
           onHeight={setDockHeight}

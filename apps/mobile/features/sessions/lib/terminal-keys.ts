@@ -1,6 +1,7 @@
 /**
  * The keys a phone's keyboard does not have, in the row over the reply
- * field, as the export draws them. `ctrl` is a modifier, not a key: it holds
+ * field, as the export draws them, and a bare Enter, which the reply line
+ * cannot send on its own. `ctrl` is a modifier, not a key: it holds
  * until the next letter, which it turns into its control code.
  */
 export const TERMINAL_KEYS = [
@@ -8,6 +9,8 @@ export const TERMINAL_KEYS = [
   { id: 'tab', label: 'tab', sends: '\t' },
   { id: 'ctrl', label: 'ctrl', sends: null },
   { id: 'interrupt', label: '^C', sends: '\u0003' },
+  // Enter on its own: an empty line, or an option picked with the arrows.
+  { id: 'enter', label: '⏎', sends: '\r' },
   { id: 'up', label: '↑', sends: '\u001b[A' },
   { id: 'down', label: '↓', sends: '\u001b[B' },
   { id: 'left', label: '←', sends: '\u001b[D' },

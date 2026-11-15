@@ -23,11 +23,14 @@ const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' });
  */
 export function SessionDock({
   session,
+  connected,
   sendKeys,
   sendReply,
   onHeight,
 }: {
   session: SessionEntity;
+  /** The stream is attached: until it is, keys and a reply would go nowhere, so they wait. */
+  connected: boolean;
   sendKeys: (data: string) => void;
   sendReply: (text: string) => void;
   onHeight: (height: number) => void;
@@ -83,6 +86,7 @@ export function SessionDock({
   };
 
   const key = (pressed: TerminalKey) => {
+    if (!connected) return;
     if (pressed.id === 'ctrl') {
       setCtrl((held) => !held);
       return;
@@ -92,7 +96,7 @@ export function SessionDock({
   };
 
   const type = (next: string) => {
-    if (ctrl && next.length === draft.length + 1) {
+    if (ctrl && connected && next.length === draft.length + 1) {
       sendKeys(withCtrl(next.slice(-1)));
       setCtrl(false);
       return;
@@ -101,7 +105,8 @@ export function SessionDock({
   };
 
   const send = () => {
-    if (!draft.trim()) return;
+    // A reply typed while the stream is down stays in the field until it can go.
+    if (!draft.trim() || !connected) return;
     sendReply(draft);
     setDraft('');
   };
@@ -149,7 +154,7 @@ export function SessionDock({
           />
           <Pressable
             onPress={send}
-            disabled={!draft.trim()}
+            disabled={!draft.trim() || !connected}
             accessibilityRole="button"
             accessibilityLabel={t('sessions.chat.composer.send')}
             className="size-11 items-center justify-center rounded-full bg-primary active:opacity-80 disabled:opacity-40"
