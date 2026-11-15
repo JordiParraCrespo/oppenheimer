@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { ChatView } from '../components/chat-view';
 import { TerminalView } from '../components/terminal-view';
+import { useChatOffered } from '../hooks/use-chat-offered';
 import { useSessionLink } from '../hooks/use-session-link';
 import { SessionDock } from './session-dock';
 
@@ -20,15 +21,19 @@ const AGE_TICK_MS = 60_000;
 
 /**
  * A live session on the phone: the line with its branch, its age and the
- * Terminal / Chat switch (the system's segmented control), the view picked,
- * and the dock over its foot. One stream feeds both views; only the terminal
+ * Terminal / Chat switch (the system's segmented control, offered as the
+ * console offers it: once the host sends the chat, with `session_chat_view`
+ * on), the view picked, and the dock over its foot. One stream feeds both views; only the terminal
  * view sizes the host's window.
  */
 export function SessionPane({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   const link = useSessionLink(session.id);
-  const [view, setView] = useState<PaneView>('terminal');
+  const [picked, setPicked] = useState<PaneView>('terminal');
+  const chatOffered = useChatOffered(link.chat);
+  // Chat goes with the switch: a host that stops sending it leaves the terminal.
+  const view: PaneView = chatOffered ? picked : 'terminal';
   const [dockHeight, setDockHeight] = useState(0);
   const now = useNow(AGE_TICK_MS);
   const branch = session.cwdCheckout?.branch ?? session.cloud?.branch ?? null;
@@ -63,12 +68,16 @@ export function SessionPane({ session }: { session: SessionEntity }) {
           </View>
           {status ? <Text variant="caption">{status}</Text> : null}
         </View>
-        <SegmentedControl
-          values={[t('sessions.chat.view.terminal'), t('sessions.chat.view.chat')]}
-          selectedIndex={VIEWS.indexOf(view)}
-          onChange={(event) => setView(VIEWS[event.nativeEvent.selectedSegmentIndex] ?? 'terminal')}
-          style={{ width: 150 }}
-        />
+        {chatOffered ? (
+          <SegmentedControl
+            values={[t('sessions.chat.view.terminal'), t('sessions.chat.view.chat')]}
+            selectedIndex={VIEWS.indexOf(view)}
+            onChange={(event) =>
+              setPicked(VIEWS[event.nativeEvent.selectedSegmentIndex] ?? 'terminal')
+            }
+            style={{ width: 150 }}
+          />
+        ) : null}
       </View>
       <View className="flex-1">
         {view === 'terminal' ? (

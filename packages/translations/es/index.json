@@ -151,7 +151,6 @@
     "error": "Algo ha ido mal",
     "comingToMobile": {
       "title": "Próximamente en el móvil",
-      "employees": "Habla con tus empleados desde el móvil.",
       "pullRequests": "Revisa las pull requests que te necesitan.",
       "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
       "plan": "Tus tareas, hitos y calendario, desde aquí."
