@@ -10,7 +10,8 @@ import { BotComposer } from '../sections/bot-composer';
  * loses its words; Send now offered on a message that is not next, or on one
  * whose images the field could not hold again; Enter that queues instead of
  * steering the turn under way, Alt+Enter that steers instead of queueing, a
- * steer shown as if it waited for after.
+ * steer shown as if it waited for after; Escape that does not stop the turn,
+ * or that stops it while a menu or dialog open over the chat wanted the key.
  */
 
 vi.mock('react-i18next', () => ({
@@ -139,5 +140,24 @@ describe('BotComposer while the bot works', () => {
     const remove = screen.getAllByRole('button', { name: 'common.chat.queue.remove' });
     fireEvent.click(remove[1] as HTMLElement);
     expect(state.cancel).toHaveBeenCalledWith({ id: 'b1', turnId: 'q2' });
+  });
+
+  it('stops the turn under way on Escape, from the field or anywhere in the chat', () => {
+    composer();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledWith({ id: 'b1', turnId: 'run' });
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves Escape to a menu or dialog open over the chat', () => {
+    composer();
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    document.body.append(menu);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    menu.remove();
+    fireEvent.keyDown(document.body, { key: 'Escape', ctrlKey: true });
+    expect(state.cancel).not.toHaveBeenCalled();
   });
 });

@@ -36,6 +36,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useEscapeToStop } from '@/features/bots/hooks/use-escape-to-stop';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import {
@@ -55,6 +56,7 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * Enter steers it (Codex's `turn/steer`): the turn takes the message at its
  * next tool call, and runs it after itself if it reaches none; Alt+Enter
  * queues it for after instead, and a message with images always waits,
+ * Escape stops the turn, as Stop does, unless a menu or dialog takes it (`useEscapeToStop`);
  * since the running turn would not read them. Each message waiting shows
  * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
  * back, Edit takes it back into the field, and the first one's Send now
@@ -167,6 +169,8 @@ export function BotComposer({
   function stopTurn(turnId: string) {
     if (!isSendingBotTurn(turnId)) cancel.mutate({ id: botId, turnId });
   }
+
+  useEscapeToStop(active !== null, () => active && stopTurn(active.id));
 
   // Edit: the waiting turn is called off, and its words come back into the field.
   function takeBack(message: BotWaitingMessage) {
