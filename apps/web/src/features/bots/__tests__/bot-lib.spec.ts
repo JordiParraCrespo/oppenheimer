@@ -1,7 +1,8 @@
-import type {
-  BotDocumentRevisionEntity,
-  BotEntity,
-  BotGroupEntity,
+import {
+  type BotDocumentRevisionEntity,
+  type BotEntity,
+  type BotGroupEntity,
+  botGroupSections,
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
@@ -13,14 +14,7 @@ import {
   keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
-import {
-  botSections,
-  firstBot,
-  groupOrder,
-  inGroupOrder,
-  inOrder,
-  sectionOrder,
-} from '../lib/bot-groups';
+import { firstBot, groupOrder, inGroupOrder, inOrder, sectionOrder } from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
@@ -34,10 +28,10 @@ const bot = (id: string, groupId: string | null, position: number, name = id) =>
 const group = (id: string, position: number, name = id) =>
   ({ id, name, position }) as BotGroupEntity;
 
-const ids = (sections: ReturnType<typeof botSections>) =>
+const ids = (sections: ReturnType<typeof botGroupSections>) =>
   sections.map((section) => [section.id, section.bots.map((row) => row.id)]);
 
-describe('botSections', () => {
+describe('botGroupSections', () => {
   const groups = [group('research', 1), group('engineering', 0)];
   const bots = [
     bot('quota', 'engineering', 1, 'Quota Bot'),
@@ -47,7 +41,7 @@ describe('botSections', () => {
   ];
 
   it('draws the groups in their order, each bot by position, and Ungrouped last', () => {
-    expect(ids(botSections(bots, groups, ''))).toEqual([
+    expect(ids(botGroupSections(bots, groups, ''))).toEqual([
       ['engineering', ['release', 'quota']],
       ['research', ['scholar']],
       [null, ['fresh']],
@@ -55,7 +49,7 @@ describe('botSections', () => {
   });
 
   it('keeps an empty group, somewhere to move a bot, but no empty Ungrouped', () => {
-    const sections = botSections([bot('release', 'engineering', 0)], [...groups], '');
+    const sections = botGroupSections([bot('release', 'engineering', 0)], [...groups], '');
     expect(ids(sections)).toEqual([
       ['engineering', ['release']],
       ['research', []],
@@ -64,7 +58,7 @@ describe('botSections', () => {
 
   it('keeps an empty Ungrouped while a drag is held, somewhere to drop a bot out of its group', () => {
     const grouped = [bot('release', 'engineering', 0)];
-    expect(ids(botSections(grouped, groups, '', { keepUngrouped: true }))).toEqual([
+    expect(ids(botGroupSections(grouped, groups, '', { keepUngrouped: true }))).toEqual([
       ['engineering', ['release']],
       ['research', []],
       [null, []],
@@ -72,7 +66,7 @@ describe('botSections', () => {
   });
 
   it('draws a dropped bot in the section and place the drag put it, the others closing up', () => {
-    const sections = botSections(bots, groups, '');
+    const sections = botGroupSections(bots, groups, '');
     expect(sectionOrder(sections)).toEqual({
       engineering: ['release', 'quota'],
       research: ['scholar'],
@@ -91,25 +85,25 @@ describe('botSections', () => {
   });
 
   it('draws the groups in the order a group drag put them, Ungrouped still last', () => {
-    const sections = botSections(bots, groups, '');
+    const sections = botGroupSections(bots, groups, '');
     expect(groupOrder(sections)).toEqual(['engineering', 'research']);
     const dropped = inGroupOrder(sections, ['research', 'engineering']);
     expect(dropped.map((section) => section.id)).toEqual(['research', 'engineering', null]);
   });
 
   it('leaves a hidden bot out of its group, but a search still finds it', () => {
-    expect(ids(botSections(bots, groups, '', { hidden: ['quota'] }))).toEqual([
+    expect(ids(botGroupSections(bots, groups, '', { hidden: ['quota'] }))).toEqual([
       ['engineering', ['release']],
       ['research', ['scholar']],
       [null, ['fresh']],
     ]);
-    expect(ids(botSections(bots, groups, 'quota', { hidden: ['quota'] }))).toEqual([
+    expect(ids(botGroupSections(bots, groups, 'quota', { hidden: ['quota'] }))).toEqual([
       ['engineering', ['quota']],
     ]);
   });
 
   it('counts the hidden bots of a group, so one with all of them hidden is not called empty', () => {
-    const sections = botSections(bots, groups, '', { hidden: ['scholar', 'quota'] });
+    const sections = botGroupSections(bots, groups, '', { hidden: ['scholar', 'quota'] });
     expect(sections.map((section) => [section.id, section.hiddenCount])).toEqual([
       ['engineering', 1],
       ['research', 1],
@@ -118,12 +112,14 @@ describe('botSections', () => {
   });
 
   it('narrows to the bots whose name matches, whatever its case, and drops empty sections', () => {
-    expect(ids(botSections(bots, groups, '  RESEARCH '))).toEqual([['research', ['scholar']]]);
-    expect(botSections(bots, groups, 'nobody')).toEqual([]);
+    expect(ids(botGroupSections(bots, groups, '  RESEARCH '))).toEqual([['research', ['scholar']]]);
+    expect(botGroupSections(bots, groups, 'nobody')).toEqual([]);
   });
 
   it('counts a bot whose group the groups read does not hold yet as Ungrouped', () => {
-    expect(ids(botSections([bot('moved', 'brand-new', 0)], [], ''))).toEqual([[null, ['moved']]]);
+    expect(ids(botGroupSections([bot('moved', 'brand-new', 0)], [], ''))).toEqual([
+      [null, ['moved']],
+    ]);
   });
 });
 

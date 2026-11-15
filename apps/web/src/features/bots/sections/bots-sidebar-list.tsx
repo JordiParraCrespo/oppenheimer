@@ -4,6 +4,7 @@ import {
   SortableGroup,
   sortableProjectId,
 } from '@oppenheimer/design-system-web';
+import type { BotGroupSection } from '@oppenheimer/frontend-consumer';
 import { useSuspenseBotsAndGroups } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField, useDragLabels } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { BotsFilterMenu } from '@/features/bots/components/bots-filter-menu';
 import { GROUPS, useBotOrder } from '@/features/bots/hooks/use-bot-order';
 import { BotPinsContext, useBotPins } from '@/features/bots/hooks/use-bot-pins';
 import { useHiddenBots } from '@/features/bots/hooks/use-hidden-bots';
-import { type BotSection, groupOrder, sectionKey } from '@/features/bots/lib/bot-groups';
+import { groupOrder, sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotGroup } from './bot-group';
 import { BotsEmptyCard } from './bots-empty-card';
 import { NewGroup } from './new-group';
@@ -52,7 +53,7 @@ export function BotsSidebarList() {
   const { pinned, sections, carrying, handlers, botError, groupError, resetBot, resetGroup } =
     useBotOrder(bots, groups, term, pins, hidden);
   const dragLabels = useDragLabels();
-  const drawSection = (section: BotSection) => {
+  const drawSection = (section: BotGroupSection) => {
     const key = sectionKey(section);
     return (
       <BotGroup

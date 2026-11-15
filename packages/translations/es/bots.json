@@ -799,5 +799,17 @@
     "checkedHint": "Los bots marcados aparecen en {{section}}.",
     "manageAll": "Gestionar en {{employees}}",
     "hide": "Ocultar de {{section}}"
+  },
+  "mobile": {
+    "search": "Buscar empleados",
+    "loadFailed": "No se pudieron cargar tus empleados.",
+    "ungrouped": "Sin grupo",
+    "noMatches": "Ningún empleado se llama «{{query}}».",
+    "empty": "Aún no hay empleados. Crea uno desde la consola en tu ordenador.",
+    "notFound": "Este empleado ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "chatFailed": "No se pudo cargar el chat.",
+    "actions": "Acciones del empleado",
+    "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
+    "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo."
   }
 }

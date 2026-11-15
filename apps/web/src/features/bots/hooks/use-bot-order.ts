@@ -3,17 +3,14 @@ import {
   sortableProjectId,
   useSortableGroups,
 } from '@oppenheimer/design-system-web';
-import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
+import {
+  type BotEntity,
+  type BotGroupEntity,
+  botGroupSections,
+} from '@oppenheimer/frontend-consumer';
 import { useMoveBotGroup, useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
-import {
-  botSections,
-  groupIdOf,
-  groupOrder,
-  inGroupOrder,
-  inOrder,
-  sectionOrder,
-} from '../lib/bot-groups';
+import { groupIdOf, groupOrder, inGroupOrder, inOrder, sectionOrder } from '../lib/bot-groups';
 import { botDrop, PINNED_BOTS, splitPinnedBots } from '../lib/bot-pins';
 import type { BotPins } from './use-bot-pins';
 
@@ -59,7 +56,7 @@ export function useBotOrder(
   const moveGroup = useMoveBotGroup();
   const split = splitPinnedBots(bots, pins.pins, term);
   const shownPins = term ? split.pinned : split.pinned.filter((bot) => !hidden.includes(bot.id));
-  const sections = botSections(split.rest, groups, term, { keepUngrouped: dragging, hidden });
+  const sections = botGroupSections(split.rest, groups, term, { keepUngrouped: dragging, hidden });
   const byId = new Map(bots.map((bot) => [bot.id, bot]));
   const byItemId = new Map(groups.map((group) => [sortableProjectId(group.id), group.id]));
   const groupIdsOf = (value: SortableGroups) =>

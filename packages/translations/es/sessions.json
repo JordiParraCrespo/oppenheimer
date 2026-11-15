@@ -800,5 +800,22 @@
       "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
       "agentLabel": "Prompt para tu agente"
     }
+  },
+  "mobile": {
+    "notFound": "Esta sesión ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "shareLink": "Compartir enlace",
+    "actions": "Acciones de la sesión",
+    "answerFailed": "La respuesta no llegó al agente. Vuelve a intentarlo.",
+    "needsApproval": "Necesita aprobación",
+    "keys": "Teclas del terminal",
+    "replyToAgent": "Responde al agente",
+    "reply": "Responde o ejecuta un comando",
+    "starting": "Iniciando la sesión en su host…",
+    "cloud": "Esta sesión se ejecuta en {{place}}. Ábrela allí para seguirla.",
+    "openCloud": "Abrir en el navegador",
+    "failed": "No se pudo iniciar la sesión.",
+    "connecting": "Conectando…",
+    "steps_one": "{{count}} paso",
+    "steps_other": "{{count}} pasos"
   }
 }

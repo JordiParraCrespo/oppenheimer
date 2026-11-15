@@ -13,12 +13,13 @@ import {
   sessionAgentLabel,
 } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
-import { formatAge } from '@oppenheimer/frontend-mobile';
+import { formatAge, ListGroup } from '@oppenheimer/frontend-mobile';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { FilterChips } from '../components/filter-chips';
-import { SessionGroup } from '../components/session-group';
+
 import { SessionRow } from '../components/session-row';
 import { SessionRowSkeleton } from '../components/session-row-skeleton';
 import {
@@ -75,11 +76,11 @@ export function SessionsList() {
     return (
       <View aria-busy>
         {search}
-        <SessionGroup title={t('sessions.sidebar.sessions')} count={0}>
+        <ListGroup title={t('sessions.sidebar.sessions')} count={null}>
           {[0, 1, 2].map((index) => (
             <SessionRowSkeleton key={index} first={index === 0} />
           ))}
-        </SessionGroup>
+        </ListGroup>
       </View>
     );
   }
@@ -120,16 +121,19 @@ export function SessionsList() {
   const row = (session: SessionEntity, index: number, lead: string) => {
     const agent = sessionAgentLabel(session.agent);
     return (
-      <SessionRow
-        key={session.id}
-        first={index === 0}
-        name={session.name}
-        agentInitial={agent.charAt(0)}
-        dot={dotOf(session)}
-        meta={[lead, agent, placeOf(session)].filter(Boolean).join(' · ')}
-        ask={needsInput(session) ? askOf(session) : null}
-        age={formatAge(session.lastEventAt ?? session.createdAt, now, t)}
-      />
+      <Link key={session.id} href={`/sessions/${session.id}`} asChild>
+        <Pressable accessibilityRole="button" className="active:bg-surface-hover">
+          <SessionRow
+            first={index === 0}
+            name={session.name}
+            agentInitial={agent.charAt(0)}
+            dot={dotOf(session)}
+            meta={[lead, agent, placeOf(session)].filter(Boolean).join(' · ')}
+            ask={needsInput(session) ? askOf(session) : null}
+            age={formatAge(session.lastEventAt ?? session.createdAt, now, t)}
+          />
+        </Pressable>
+      </Link>
     );
   };
 
@@ -156,23 +160,23 @@ export function SessionsList() {
       </View>
 
       {waiting.length > 0 ? (
-        <SessionGroup
+        <ListGroup
           title={t('sessions.session.state.waiting-on-you')}
           count={waiting.length}
           attention
         >
           {waiting.map((session, index) => row(session, index, projectName(session.projectId)))}
-        </SessionGroup>
+        </ListGroup>
       ) : null}
 
       {groups.map((group) => (
-        <SessionGroup
+        <ListGroup
           key={group.project?.id ?? 'unfiled'}
           title={group.project?.name ?? t('sessions.sidebar.unfiled')}
           count={group.sessions.length}
         >
           {group.sessions.map((session, index) => row(session, index, t(leadKeyOf(session))))}
-        </SessionGroup>
+        </ListGroup>
       ))}
 
       {waiting.length === 0 && groups.length === 0 ? (

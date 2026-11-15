@@ -94,6 +94,20 @@ module.exports = {
         'theme-toggle-knob': token('theme-toggle-knob'),
         'theme-toggle-icon': token('theme-toggle-icon'),
         'theme-toggle-icon-idle': token('theme-toggle-icon-idle'),
+
+        // A bot's avatar: its initials on one of the export's eight colours
+        // (the web's `--avatar-*`, oklch there, sRGB here), an identity like
+        // a file's mark rather than a state, so the same in both themes; the
+        // ink on all of them is the dark one.
+        'avatar-mint': '#2DC5A6',
+        'avatar-tangerine': '#FA7C20',
+        'avatar-snow': '#F2F2F2',
+        'avatar-sky': '#5CB4EF',
+        'avatar-lilac': '#B699EB',
+        'avatar-lemon': '#EFD956',
+        'avatar-coral': '#F47A7D',
+        'avatar-moss': '#7DAF61',
+        'avatar-ink': '#181818',
       },
       // The brand ships four sizes: 12 / 13 / 14 for UI, 24 for headings.
       fontSize: {

@@ -22,7 +22,7 @@ import {
   type WorkspaceBotApprovalResponseDto,
   type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, callApi } from '@oppenheimer/frontend-core';
+import { AppError, callApi, type EventSourceFactory } from '@oppenheimer/frontend-core';
 import {
   BOT_APPROVAL_DECISIONS,
   BOT_DREAM_ACTIVITIES,
@@ -500,6 +500,9 @@ export class BotsRepository {
     @inject(TOKENS.ApiBaseUrl)
     @optional()
     private readonly apiBaseUrl: string = '',
+    @inject(TOKENS.EventSourceFactory)
+    @optional()
+    private readonly sourceFactory?: EventSourceFactory,
   ) {}
 
   /** The newest messages of the chat, oldest first, and their turns. */
@@ -715,7 +718,11 @@ export class BotsRepository {
 
   /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */
   openStream(id: string): BotStream {
-    return new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
+    return new BotStream({
+      apiBaseUrl: this.apiBaseUrl,
+      botId: id,
+      sourceFactory: this.sourceFactory,
+    });
   }
 
   findAll(): Promise<BotEntity[]> {
