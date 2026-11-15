@@ -4080,7 +4080,13 @@
         "linkReady": "Open the link in Telegram within ten minutes and press Start. Make a new link if it has expired.",
         "failed": "That did not save. Try again.",
         "making": "Making the link…",
-        "newLink": "New link"
+        "newLink": "New link",
+        "openWeb": "Open Telegram Web",
+        "copy": "Copy message",
+        "copied": "Copied",
+        "noApp": "No Telegram app? Link it from Telegram Web",
+        "stepOpen": "Open the bot’s chat on Telegram Web.",
+        "stepSend": "Send it this message. The code works for ten minutes."
       }
     },
     "agents": {

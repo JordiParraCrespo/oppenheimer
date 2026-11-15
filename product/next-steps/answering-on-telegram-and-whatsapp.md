@@ -91,7 +91,10 @@ apart, as OpenClaw and Hermes do.
 - **The owner on Telegram** is recorded when the bot is connected. The
   console shows a `t.me/<bot>?start=<code>` link (a one-time code, ten
   minutes); opening it sends `/start <code>`, and the sender's Telegram
-  user id becomes the owner's for that bot. Hermes's **Create with QR**
+  user id becomes the owner's for that bot. Telegram Web drops the code,
+  so the console also shows the `/start <code>` message to copy and a link
+  to the bot's chat on Telegram Web (2026-11-15; until then the code was
+  never shown). Hermes's **Create with QR**
   does the same. A plain `/start` from anyone is a stranger's.
 - **The owner on WhatsApp** is their personal number, confirmed by a
   code (§1).
