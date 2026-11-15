@@ -101,7 +101,7 @@ describe('the cloud half of a session', () => {
     const answer = cloudStartAnswer(plan, 'session-1', session);
     expect(answer).toContain('could not start its Claude Code cloud session');
     expect(answer).toContain(
-      'another online host whose claude is signed in can start it instead (list_hosts)',
+      'so try another online host that has claude (list_hosts shows it installed; whether it is signed in shows only when it starts)',
     );
   });
 });

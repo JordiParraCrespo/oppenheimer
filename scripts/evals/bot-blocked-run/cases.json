@@ -170,6 +170,21 @@
         "kind": "tell"
       },
       "why": "The task itself failed, not the host: another host would fail the same way, so the bot tells the person what failed and starts nothing."
+    },
+    {
+      "id": "cloud-not-signed-in",
+      "bot": "oppie",
+      "closed": false,
+      "earlier": [],
+      "cloud": {
+        "failsOn": "pop-os",
+        "ask": "Start a Claude Code cloud session in the Oppenheimer project that triages the Sentry errors from the last day, read-only, and tell me what's actionable."
+      },
+      "expect": {
+        "kind": "move_cloud",
+        "from": "pop-os"
+      },
+      "why": "2026-11-15, the owner's screenshot: a Claude Code cloud session failed to start from the bot's home host because its claude is not signed in to claude.ai. Another host is online with claude: the bot tries it rather than stopping at what to sign in."
     }
   ]
 }

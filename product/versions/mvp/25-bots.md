@@ -172,7 +172,8 @@ worker runs it and streams what happens back to the chat.
     by a new one with the same task), when the way round serves the same
     purpose, stays within its permissions and instructions and nobody
     said no to it, and never past a rule that says to stop and ask (a
-    host the person named, a refused command, a failed session);
+    host the person named, a refused command, a task that failed on its
+    own; until 2026-11-15 any failed session);
     otherwise it says once what blocks it, and never the same blocker
     twice (2026-11-12); at a failed step it steps back to what the step
     was for, lists the other ways it has (another host, another of its
@@ -2248,7 +2249,8 @@ The decisions it produced:
   The `failed` wake starts the bot's own task on another capable host
   instead of offering to (its approval level still decides whether that
   asks first), never off a host the person named, where it names the hosts
-  that could run it and asks. `start_cloud_session`'s failure answer points
-  at another signed-in host. `pnpm eval:bot-blocked-run` gained three
+  that could run it and asks. `start_cloud_session`'s failure answer, and the prompt's "Cloud
+  sessions" bullet, now send the bot to another host with the CLI before
+  saying what to sign in (`list_hosts` shows it installed, not signed in). `pnpm eval:bot-blocked-run` gained three
   cases: before, `failed-not-signed-in` was 0 of 3; after, every case
   passes, 27 of 27 runs.

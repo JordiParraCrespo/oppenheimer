@@ -29,6 +29,10 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  type CloudSessionPlan,
+  cloudStartAnswer,
+} from '../../../apps/api/src/bots-chat/application/bot-cloud-session.policy';
 import { BotNoticeToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-notice-tools.factory';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
@@ -45,6 +49,8 @@ import {
   composeTurnContext,
   withTurnContext,
 } from '../../../apps/api/src/bots-chat/domain/bot-turn-context.policy';
+import { SESSION_EVENT_KINDS } from '../../../apps/api/src/sessions/domain/session-state.policy';
+import { WorkSessionEntity } from '../../../apps/api/src/sessions/domain/work-session.entity';
 import {
   arg,
   type EvalTool,
@@ -68,6 +74,8 @@ type Expect =
   | { kind: 'keep_host'; host: string }
   /** Starts the work again on another host than the one it failed on. */
   | { kind: 'move'; from: string }
+  /** Starts the cloud session again from another host than the one it failed on. */
+  | { kind: 'move_cloud'; from: string }
   /** Starts nothing and does not say the blocker again. */
   | { kind: 'quiet' };
 
@@ -93,6 +101,11 @@ interface Case {
    * before it (the person's ask and the bot's reply).
    */
   failed?: { host: string; detail: string; chat: string[] };
+  /**
+   * The run is the person asking for a Claude Code cloud session, whose start
+   * fails from one host (its claude not signed in) and works from any other.
+   */
+  cloud?: { failsOn: string; ask: string };
   expect: Expect;
   why: string;
   /** Why the case is known to fail today: it is run and reported, and does not fail the eval. */
@@ -165,6 +178,46 @@ function refusingClosed(tool: EvalTool, closed: boolean): EvalTool {
   };
 }
 
+/**
+ * `start_cloud_session` as production describes it, answering as production
+ * does (`cloudStartAnswer`): failed when started from `failsOn`, started with
+ * a claude.ai link from any other host.
+ */
+function cloudStandIn(
+  tool: EvalTool,
+  failsOn: string,
+  home: string,
+  hostName: (id: string) => string | undefined,
+): EvalTool {
+  return {
+    ...tool,
+    run: async (input) => {
+      const hostId = (input as { host_id?: string } | null)?.host_id ?? home;
+      const session = WorkSessionEntity.request({
+        organizationId: 'org-1',
+        projectId: 'project-1',
+        createdByUserId: 'owner-1',
+        slug: 'bold-otter-3f9a7k',
+        hostId,
+        agent: 'claude-code',
+        place: 'cloud',
+        origin: 'bot',
+      });
+      const fails = hostName(hostId) === failsOn;
+      session.recordEvent({
+        seq: 1,
+        kind: fails ? SESSION_EVENT_KINDS.FAILED : SESSION_EVENT_KINDS.STARTED,
+        payload: fails
+          ? { reason: 'agent_failed' }
+          : { agentSessionId: 'session_01Eval', checkouts: [] },
+        occurredAt: new Date(),
+      });
+      const plan = { kind: 'host', agent: 'claude-code', hostId } as CloudSessionPlan;
+      return { content: cloudStartAnswer(plan, 'c10d0000-0000-4000-8000-000000000001', session) };
+    },
+  };
+}
+
 /** The wake of the session the bot started, failed as the case says: the real wake text and ask. */
 function failedWake(c: Case, session: { name: string; task: string }): string {
   const failed = c.failed as NonNullable<Case['failed']>;
@@ -221,6 +274,8 @@ function runMessage(c: Case, routine: { name: string; instructions: string }): s
 /** What a run did, read once from its calls and its words. */
 interface Did {
   started: TurnCall[];
+  /** Its `start_cloud_session` calls. */
+  cloud: TurnCall[];
   sent: TurnCall[];
   /** It wrote to the person, in the chat or in their Inbox. */
   said: boolean;
@@ -241,6 +296,17 @@ const SCORERS: {
       : did.said
         ? { right: false, mark: 'T', note: 'reported the blocker' }
         : { right: false, mark: '-', note: 'did nothing' },
+  move_cloud: (did, expect) => {
+    const from = did.hostId(expect.from);
+    const moved = did.cloud.find((call) => {
+      const id = (call.input as { host_id?: string } | null)?.host_id;
+      return id !== undefined && id !== from;
+    });
+    if (moved) return { right: true, mark: 'M', note: inputOf(moved) };
+    return did.said
+      ? { right: false, mark: 'T', note: 'reported the failure' }
+      : { right: false, mark: '-', note: 'did nothing' };
+  },
   move: (did, expect) => {
     const from = did.hostId(expect.from);
     const moved = did.started.find(
@@ -308,6 +374,7 @@ function scoreRun(turn: Turn, expect: Expect, hostId: (name: string) => string |
   const made = (tool: string) => turn.calls.filter((call) => call.tool === tool && !call.isError);
   const did: Did = {
     started: made('start_session'),
+    cloud: made('start_cloud_session'),
     sent: made('send_to_session'),
     said: keptWords(turn).trim().length > 0 || made('notify').length > 0,
     hostId,
@@ -346,6 +413,7 @@ async function main(): Promise<void> {
           id: SESSION_ID,
           name: file.session.name,
           host: c.failed?.host ?? host.name,
+          ...(c.failed ? { origin: 'bot' as const } : {}),
           project: project.name,
           log: c.failed
             ? [
@@ -358,8 +426,21 @@ async function main(): Promise<void> {
     });
   const toolsOf = (c: Case) => {
     const space = spaceOf(c);
+    const cloud = c.cloud
+      ? space
+          .tools(['start_cloud_session'])
+          .map((tool) =>
+            cloudStandIn(
+              tool,
+              (c.cloud as NonNullable<Case['cloud']>).failsOn,
+              host.id,
+              (id) => space.hostById(id)?.name,
+            ),
+          )
+      : [];
     return [
       ...space.tools(PRODUCTION).map((tool) => refusingClosed(tool, c.closed)),
+      ...cloud,
       ...noticeTools(space.context),
     ];
   };
@@ -402,7 +483,11 @@ async function main(): Promise<void> {
       system: systemOf(c),
       message: withTurnContext(
         contextOf(c),
-        c.failed ? failedWake(c, file.session) : runMessage(c, file.routine),
+        c.cloud
+          ? c.cloud.ask
+          : c.failed
+            ? failedWake(c, file.session)
+            : runMessage(c, file.routine),
       ),
       // A fresh workspace each run: nothing one run did is seen by another.
       tools: toolsOf(c),

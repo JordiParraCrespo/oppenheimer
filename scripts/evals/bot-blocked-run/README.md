@@ -24,9 +24,11 @@ what this eval is for.
 ## The cases
 
 `cases.json` holds Oppie twice (free to start sessions, and told to use only
-the Sentry watch session), the routine and 9 cases. Each case is one run of
+the Sentry watch session), the routine and 10 cases. Each case is one run of
 the routine, or (the `failed-*` cases, 2026-11-15) the wake of a session the
-bot started that failed, with the real `failed` wake text and ask:
+bot started that failed, with the real `failed` wake text and ask, or
+(`cloud-not-signed-in`) a person's ask for a cloud session, answered by
+production's `cloudStartAnswer`:
 
 | Case | The run | A right run |
 | --- | --- | --- |
@@ -39,6 +41,7 @@ bot started that failed, with the real `failed` wake text and ask:
 | `failed-not-signed-in` | the wake of a session the bot started on its home host, failed because Claude Code there is not signed in; another host is online | starts the task on the other host |
 | `failed-named-host` | the same failure, on a host the person named | starts nothing elsewhere, says what failed and asks |
 | `failed-task-itself` | the session failed on a missing branch | starts nothing, tells the person |
+| `cloud-not-signed-in` | the person asks for a Claude Code cloud session; `start_cloud_session` fails from the home host (claude not signed in) and works from any other | starts it from another host |
 
 Add a case whenever a bot stops at a blocker it could have solved, or
 solves one in a way that made no sense.
@@ -95,6 +98,7 @@ Then it prints the totals and writes every run to `reports/` (ignored by git).
 | 2026-11-13 | the same wording; a quiet turn keeps no words | claude-sonnet-5-5 | 30/30 at 5 runs | 0 | 0 | 0 |
 | 2026-11-15 | `main` before, with the three `failed-*` cases | claude-sonnet-5-5 | `failed-not-signed-in` 0/3 (reported the failure); `failed-named-host` 3/3; `failed-task-itself` 3/3 | 3 | 0 | 0 |
 | 2026-11-15 | step back to what the step was for; the `failed` wake starts the task on another capable host; a route must change the cause | claude-sonnet-5-5 | 27/27 at 3 runs | 0 | 0 | 0 |
+| 2026-11-15 | the same, after review: the cloud bullet tries another host, a failed session is no longer a reason to stop and ask, the wake's session marked as the bot's; `cloud-not-signed-in` added (3/3 on `main` before too: the tool's own failure answer moved it) | claude-sonnet-5-5 | 29/30 at 3 runs | 0 | 0 | 1 |
 
 On the old wording a first run already started a new session; it was the
 chat full of the bot's own "still closed" that made every later run write
