@@ -52,7 +52,6 @@
     "not_launchable": "Omitida: la sesión no pudo iniciarse",
     "agent_unavailable": "Omitida: el agente no está en el host",
     "unattended": "Omitida: el propietario de su bot no está",
-    "outside_active_hours": "Omitida: fuera del horario de su propietario",
     "idle": "Omitida: nada nuevo desde el último latido"
   },
   "pausedReason": {

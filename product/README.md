@@ -1572,12 +1572,13 @@ earlier note:
 - `versions/mvp/26-bot-routines.md` §6 gave every bot with a job an hourly
   Heartbeat (2026-11-06). On 2026-11-15 the owner found it eating their
   tokens: a model turn an hour, all day, on each bot. No bot is given one by
-  default any more, and the migration pauses every running Heartbeat as its
-  owner would. One the owner turns back on beats only between 08:00 and
-  22:00 in the zone they last wrote to the bot from (UTC when unknown), and
-  skips without a model turn when nothing happened in the bot's chat since
-  its last beat (another routine's or a loop's turn does not count). Run
-  now always runs (26 §6, "Changed 2026-11-15").
+  default any more; the migration moved every default Heartbeat to twice a
+  day (09:00 and 18:00 in the zone its owner last wrote from, UTC when
+  unknown) and paused it, so the owner turns it on and changes its times
+  like any routine. A scheduled beat with nothing new in the bot's chat
+  since the last one (another routine's or a loop's turn does not count) is
+  skipped as `idle` without a model turn; Run now always runs (26 §6,
+  "Changed 2026-11-15").
 - `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
   the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
   screenshot into the terminal with Ctrl+V and Claude Code, reading the

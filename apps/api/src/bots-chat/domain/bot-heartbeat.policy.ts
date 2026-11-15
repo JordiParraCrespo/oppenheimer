@@ -3,18 +3,16 @@ import type { AutomationRunCause } from '@oppenheimer/shared/automations';
 /**
  * A bot's heartbeat (`26-bot-routines.md` §6): a routine named Heartbeat that
  * wakes the bot on its own to check in on what it looks after. Since
- * 2026-11-15 no bot is given one by default; a bot that has one (an owner
- * resumed it, or asked the bot for one) beats only when a beat can be worth a
- * model turn: inside the owner's waking hours, and when something happened in
- * the bot's chat since its last beat. Event wakes (a pull request it watches,
- * new mail, a session it follows) still wake it at once, at any hour.
+ * 2026-11-15 no bot is given one by default, and the ones bots had were moved
+ * to twice a day (09:00 and 18:00, migration `PauseDefaultBotHeartbeats`) and
+ * paused; the owner turns one on, and
+ * changes its times, from the Routines tab or in chat. A beat with nothing new
+ * to look at is skipped before any model turn. Event wakes (a pull request it
+ * watches, new mail, a session it follows) still wake the bot at once.
  */
 
 /** The routine's name, which is how a bot's heartbeat is recognised. */
 export const HEARTBEAT_NAME = 'Heartbeat';
-
-/** The owner's waking hours, in their zone: a beat at or after `start` and before `end`. */
-export const HEARTBEAT_ACTIVE_HOURS = { start: 8, end: 22 } as const;
 
 /** What a scheduled beat is decided on, read once from the bot's turns. */
 export interface HeartbeatView {
@@ -27,44 +25,14 @@ export interface HeartbeatView {
    * each other awake. Null when it has none.
    */
   lastActivityAt: Date | null;
-  /** The zone the owner last wrote to the bot from; null when unknown. */
-  ownerTimeZone: string | null;
 }
-
-export type HeartbeatSkip = 'outside_active_hours' | 'idle';
 
 /**
- * Whether this beat is skipped without a model turn, and why. Only a
- * scheduled beat is: the owner's Run now always runs. Outside the owner's
- * waking hours it waits for morning; inside them it runs on its first beat
- * and whenever something happened since the last one, and otherwise has
- * nothing new to look at.
+ * Whether this beat is skipped as `idle`, without a model turn: a scheduled
+ * beat after an earlier one, with nothing in the bot's chat since. The
+ * owner's Run now always runs, and so does a first beat.
  */
-export function heartbeatSkip(
-  cause: AutomationRunCause,
-  view: HeartbeatView,
-  now: Date,
-): HeartbeatSkip | null {
-  if (cause === 'manual') return null;
-  const hour = localHour(now, view.ownerTimeZone);
-  if (hour < HEARTBEAT_ACTIVE_HOURS.start || hour >= HEARTBEAT_ACTIVE_HOURS.end) {
-    return 'outside_active_hours';
-  }
-  if (view.lastBeatAt === null) return null;
-  if (view.lastActivityAt !== null && view.lastActivityAt > view.lastBeatAt) return null;
-  return 'idle';
-}
-
-/** The hour of `now` on the clock of `timeZone`, or UTC's when it is unknown or not a zone. */
-function localHour(now: Date, timeZone: string | null): number {
-  try {
-    const hour = new Intl.DateTimeFormat('en-GB', {
-      hour: 'numeric',
-      hourCycle: 'h23',
-      timeZone: timeZone ?? 'UTC',
-    }).format(now);
-    return Number(hour);
-  } catch {
-    return now.getUTCHours();
-  }
+export function heartbeatIsIdle(cause: AutomationRunCause, view: HeartbeatView): boolean {
+  if (cause === 'manual' || view.lastBeatAt === null) return false;
+  return view.lastActivityAt === null || view.lastActivityAt <= view.lastBeatAt;
 }

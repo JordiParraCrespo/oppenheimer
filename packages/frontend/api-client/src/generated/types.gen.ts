@@ -2686,7 +2686,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;

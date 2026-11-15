@@ -23,7 +23,6 @@ import type { BotStreamPort } from '../bot-stream.port';
  * a refusal read as a fault the queue retries forever, or a heartbeat with
  * nothing new spending a model turn.
  */
-// 11:00 in UTC, inside the heartbeat's waking hours for an owner whose zone is unknown.
 const now = new Date('2026-11-15T11:00:00Z');
 
 function routine(name = 'Morning PR digest') {
@@ -87,7 +86,7 @@ function setup(
   }));
   const findHeartbeatView = vi.fn(
     async (): Promise<HeartbeatView> =>
-      options.heartbeat ?? { lastBeatAt: null, lastActivityAt: null, ownerTimeZone: null },
+      options.heartbeat ?? { lastBeatAt: null, lastActivityAt: null },
   );
   const turns = { enqueueOnce, findHeartbeatView } as unknown as BotTurnRepositoryPort;
   const publish = vi.fn(async () => undefined);
@@ -183,7 +182,6 @@ describe('BotRoutineTarget', () => {
       heartbeat: {
         lastBeatAt: new Date('2026-11-15T10:00:00Z'),
         lastActivityAt: new Date('2026-11-15T09:00:00Z'),
-        ownerTimeZone: null,
       },
     });
     await expect(target.decide(context)).resolves.toEqual({
@@ -195,7 +193,6 @@ describe('BotRoutineTarget', () => {
       'org-1',
       'bot-1',
       `automation-run:${context.automation.id}:`,
-      'owner-1',
     );
     expect(enqueueOnce).not.toHaveBeenCalled();
   });
@@ -206,7 +203,6 @@ describe('BotRoutineTarget', () => {
       heartbeat: {
         lastBeatAt: new Date('2026-11-15T10:00:00Z'),
         lastActivityAt: new Date('2026-11-15T10:30:00Z'),
-        ownerTimeZone: null,
       },
     });
     await expect(target.decide(context)).resolves.toMatchObject({ kind: 'launch' });
