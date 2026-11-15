@@ -3,7 +3,7 @@ import { type APIRequestContext, expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
 
 /**
- * Bots through the deployed API (`product/versions/mvp/25-bots.md`, slice 1):
+ * Bots through the deployed API:
  * a blank bot created, renamed, grouped and given a home host; its soul and
  * instructions edited, refused over a stale revision and reverted; its memory
  * taught, reworded, forgotten and cleared; and the bot deleted with all of it.
@@ -252,7 +252,7 @@ test.describe('Bots', () => {
     await api.dispose();
   });
 
-  // `26-bot-routines.md` §6. What breaks this: a bot with a job that never
+  // What breaks this: a bot with a job that never
   // wakes on its own, a blank bot woken hourly to greet nobody, or a second
   // heartbeat on the next edit of its job.
   test('a bot is given an hourly heartbeat once it has a job, and only one', async () => {

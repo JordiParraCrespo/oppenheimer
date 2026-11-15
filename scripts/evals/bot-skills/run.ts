@@ -4,9 +4,8 @@
 // Since 2026-11-09 a bot may save a skill without being asked, after hard
 // work it will be asked to do again, and fixes a skill of its own it found
 // wrong while following it; a skill the person wrote it changes only when
-// they asked, and Oppenheimer's own never (`25-bots.md` §4.1, "The bot learns
-// on its own"). Whether it does is a question about what a model makes of
-// the prompt's words and the tools' descriptions.
+// they asked, and Oppenheimer's own never. Whether it does is a question about
+// what a model makes of the prompt's words and the tools' descriptions.
 //
 // Each case in `cases.json` is one bot, the skills it already has (and who
 // wrote each), one message from the person, and what the hosts answer the

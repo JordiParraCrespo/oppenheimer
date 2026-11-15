@@ -7,9 +7,8 @@ import { createPullsStub } from './github-stub-pulls.ts';
  * Repositories and branches are answered live through a GitHub App
  * installation, and creating a session validates its repository the same way,
  * so a deployment with no App cannot exercise the create path at all. The API
- * is pointed here with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
- * (`product/versions/mvp/03-control-plane.md`); the fake stops at the network
- * boundary the product does not own.
+ * is pointed here with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`; the fake
+ * stops at the network boundary the product does not own.
  *
  * The shapes are GitHub's own, copied from its REST reference rather than from
  * the adapter's readers: a stub written to suit the parser would pass while

@@ -15,7 +15,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * name derived from that task.
  *
  * Only GitHub is faked (`support/github-stub.ts`); the run needs the stack up
- * and the API pointed at the stub (`e2e/README.md`).
+ * and the API pointed at the stub.
  */
 test.describe('New session', () => {
   test('starts a session with the scope, the foot row and the first task', async ({ page }) => {

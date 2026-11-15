@@ -8,9 +8,8 @@
  *   node scripts/stack/stack.mjs api-port-free
  *
  * `up` is Postgres and Redis, the GitHub, namer and Cursor stubs (`e2e/support`), the
- * migrated API and, with `--web`, the console — the steps `e2e/README.md`
- * lists under "Running it", in order. Hosts are the fleet's
- * (`support/fleet.ts`); this starts none.
+ * migrated API and, with `--web`, the console, in that order. Hosts are the
+ * fleet's (`support/fleet.ts`); this starts none.
  *
  * It leaves the checkout's own setup alone:
  *

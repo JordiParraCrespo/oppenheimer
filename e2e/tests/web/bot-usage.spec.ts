@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * The built-in `/usage` in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md` §4.1, "Built-in commands"): the chat's
- * `/` menu offers it, running it puts the usage card in the chat without
- * sending the bot a message, Close takes it away, and the API answers the chat's usage and refuses `/usage`
- * as a message. What a turn and a goal review add to the figures is the
- * API's integration spec, since a real model is not run here.
+ * The built-in `/usage` in a browser, against the real control plane: the
+ * chat's `/` menu offers it, running it puts the usage card in the chat without
+ * sending the bot a message, Close takes it away, and the API answers the
+ * chat's usage and refuses `/usage` as a message. What a turn and a goal review
+ * add to the figures is the API's integration spec, since a real model is not
+ * run here.
  */
 test('the /usage command opens the usage card and sends nothing', async ({ page }) => {
   const owner = await provisionedUser('botusage');

@@ -3,7 +3,7 @@ import { insertBotActivity, insertPendingBotApproval, insertScheduledMail } from
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Settings → Mail, in a browser (`product/next-steps/mail.md` §1): the
+ * Settings → Mail, in a browser: the
  * reader's own Gmail accounts. Against the real control plane, a reader with
  * none sees what connecting gives their bots. The stack has no Google account
  * behind it, so the connected case answers the list, the rename and the

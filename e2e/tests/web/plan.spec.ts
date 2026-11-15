@@ -28,13 +28,12 @@ async function drag(page: Page, from: Locator, to: Locator) {
 }
 
 /**
- * Plan, in a browser, against the real control plane
- * (`product/versions/mvp/17-plan.md`): the rail's third list, a task's life on
- * the board — added from the dialog and inline, dragged across columns,
- * ticked done, filed under a milestone (made on the Milestones view, where it
- * lies on the timeline), deleted — and a session started from a card,
- * which moves it to In progress and links back from the session.
- * Only GitHub is faked; the host has no runner, so the session is queued.
+ * Plan, in a browser, against the real control plane: the rail's third list, a
+ * task's life on the board — added from the dialog and inline, dragged across
+ * columns, ticked done, filed under a milestone (made on the Milestones view,
+ * where it lies on the timeline), deleted — and a session started from a card,
+ * which moves it to In progress and links back from the session. Only GitHub is
+ * faked; the host has no runner, so the session is queued.
  */
 /** A row of Plan's sidebar head: Tasks, Milestones, Calendar. */
 function planNav(page: Page, name: string) {
