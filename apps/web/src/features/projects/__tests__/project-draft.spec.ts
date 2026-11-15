@@ -19,7 +19,7 @@ describe('projectBlock', () => {
   });
 });
 
-/** What the project dialog sends (`product/versions/mvp/05-screens.md`). */
+/** What the project dialog sends. */
 describe('projectInputOf', () => {
   const id = repositoryKey({ installationId: 'inst-1', githubRepoId: 2 });
   const values = (rows: { id: string; isDefault: boolean; branch: string }[]) => ({

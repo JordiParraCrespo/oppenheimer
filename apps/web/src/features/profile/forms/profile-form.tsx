@@ -37,12 +37,11 @@ const profileFormSchema = z.object({
 export type ProfileFormValues = z.input<typeof profileFormSchema>;
 
 /**
- * The profile card (`design/version1/Settings.dc.html`) as one form: the rows
- * above the fields (`children` — picture, email) are the card's too, then
- * Full name and Username, then the save row that appears only when something
- * changed and reads Saved after a save until the next edit. `values` is the
- * saved profile: the form follows it, so a save or a refetch resets the card
- * to what the server holds.
+ * The profile card as one form: the rows above the fields (`children` —
+ * picture, email) are the card's too, then Full name and Username, then the
+ * save row that appears only when something changed and reads Saved after a
+ * save until the next edit. `values` is the saved profile: the form follows
+ * it, so a save or a refetch resets the card to what the server holds.
  *
  * Full name is two fields: the account keeps first and last name apart.
  */

@@ -2,11 +2,10 @@ import { createDialogSlot } from '@oppenheimer/frontend-web';
 import { useMatches } from '@tanstack/react-router';
 
 /**
- * The console's dialogs, named by what opens them
- * (`product/versions/mvp/05-screens.md`, `13-automations.md`). A surface only
- * says which one to open; one owner at the authenticated layout mounts it
- * (`providers/console-dialogs.tsx`). The callbacks carry what the dialog hands
- * back to the surface that asked.
+ * The console's dialogs, named by what opens them. A surface only says which
+ * one to open; one owner at the authenticated layout mounts it
+ * (`providers/console-dialogs.tsx`). The callbacks carry what the dialog
+ * hands back to the surface that asked.
  */
 export type ConsoleDialogRequest =
   | {

@@ -21,15 +21,15 @@ import { NewGroup } from './new-group';
 import { PinnedBots } from './pinned-bots';
 
 /**
- * The Employees sidebar under its brand row (`design/version1/Bots.dc.html`):
- * Search bots and its filter menu, then the groups in their order and
- * Ungrouped after them, then New group. It reads the bots and the groups
- * under Suspense, side by side, and holds what the sections share: the
- * settled search, which are folded, and the bots the reader hid
- * (`useHiddenBots`, from a row's menu or the filter menu's Show bots). The
- * half-typed search lives in the field and each section's clock in the section, so a keystroke or a tick does not redraw the rows. Before
- * the first bot the list opens on the design's empty card. A refetch that
- * fails keeps the sections and says so above them.
+ * The Employees sidebar under its brand row: Search bots and its filter menu,
+ * then the groups in their order and Ungrouped after them, then New group. It
+ * reads the bots and the groups under Suspense, side by side, and holds what
+ * the sections share: the settled search, which are folded, and the bots the
+ * reader hid (`useHiddenBots`, from a row's menu or the filter menu's Show
+ * bots). The half-typed search lives in the field and each section's clock in
+ * the section, so a keystroke or a tick does not redraw the rows. Before the
+ * first bot the list opens on the design's empty card. A refetch that fails
+ * keeps the sections and says so above them.
  *
  * The bots drag into another place in their group or into another group
  * (`useBotOrder`), and the groups by their heads into another order, on the

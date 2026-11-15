@@ -25,7 +25,7 @@ import { hostLinkPhaseOf } from '../lib/host-link-phase';
 import { takeFilePaste } from '../lib/terminal-files';
 import { HostLinkFix } from './host-link-fix';
 
-/** Window 0 is the agent's (05); the pane shows only that one today. */
+/** Window 0 is the agent's; the pane shows only that one today. */
 const AGENT_WINDOW = 0;
 
 /**

@@ -2,10 +2,10 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import type { BotApprovalEvent } from '@oppenheimer/shared/schemas/bot';
 
 /**
- * How the chat draws an approval (`25-bots.md` §5), in one place. An
- * approved call has two lines: the yes, which opens the turn where the bot
- * says it is on it (`started`), and how it went, which opens the turn that
- * reports it (`finished`).
+ * How the chat draws an approval, in one place. An approved call has two
+ * lines: the yes, which opens the turn where the bot says it is on it
+ * (`started`), and how it went, which opens the turn that reports it
+ * (`finished`).
  */
 
 /**

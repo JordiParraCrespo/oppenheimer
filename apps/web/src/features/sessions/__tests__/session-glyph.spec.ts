@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { sessionGlyph } from '../lib/session-glyph';
 
-/** The sidebar's mark per row (`product/versions/mvp/24-session-places.md` §5). */
+/** The sidebar's mark per row. */
 describe('sessionGlyph', () => {
   it('draws the branch for a worktree session', () => {
     expect(sessionGlyph({ agent: 'claude-code', place: 'worktree', cloud: null })).toBe('branch');

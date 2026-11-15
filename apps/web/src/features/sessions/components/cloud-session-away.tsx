@@ -6,9 +6,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * A cloud session's page: it has no terminal of ours, so the page says where
  * it runs, what its vendor last said, and opens the vendor's own page, where
- * it is followed up and stopped (`SessionsConsole.dc.html`: a cloud row opens
- * the vendor). Reached from the Inbox or an address; its sidebar row goes to
- * the vendor directly.
+ * it is followed up and stopped. Reached from the Inbox or an address; its
+ * sidebar row goes to the vendor directly.
  */
 export function CloudSessionAway({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();

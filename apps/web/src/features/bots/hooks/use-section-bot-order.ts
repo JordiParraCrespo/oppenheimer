@@ -8,12 +8,12 @@ import { placementInSection } from '../lib/section-order';
 /**
  * A section's Bots heading in the order the reader drags it into, and the
  * drag that changes it. The order is the one Employees draws, not the
- * section's own (`28-bots-in-sections.md`), so a drop is saved as the bot's
- * place there (`placementInSection`) and every page that lists it follows.
- * The bot is drawn where it was dropped while the write is in flight and
- * until the list is read again after it lands; a write that fails puts it
- * back and says so. Spread `handlers` on the heading's `DragProvider`, and
- * give its `SortableGroup` the `group` key.
+ * section's own, so a drop is saved as the bot's place there
+ * (`placementInSection`) and every page that lists it follows. The bot is
+ * drawn where it was dropped while the write is in flight and until the
+ * list is read again after it lands; a write that fails puts it back and
+ * says so. Spread `handlers` on the heading's `DragProvider`, and give its
+ * `SortableGroup` the `group` key.
  */
 export function useSectionBotOrder(section: BotSection, bots: readonly BotEntity[]) {
   // The order the drag layer last published while a drag is held, then the

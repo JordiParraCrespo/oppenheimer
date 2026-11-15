@@ -13,13 +13,13 @@ import { NEW_TASK } from '../lib/board-search';
 import { TaskEditor } from '../sections/task-editor';
 
 /**
- * New task and Edit task (`18-plan-product.md` §3), open while the screen's
- * address says `?task=`: `new`, or a task's id, which is the link the session
- * header's "Back to task" sends. The board and To do both open it in place,
- * so saving leaves you where you were; `filter` files a new task where the
- * board is narrowed. It owns the three writes; the form takes values and
- * hands them back. The editor reads under Suspense; this draws its
- * placeholder and a first failure.
+ * New task and Edit task, open while the screen's address says `?task=`:
+ * `new`, or a task's id, which is the link the session header's "Back to
+ * task" sends. The board and To do both open it in place, so saving leaves
+ * you where you were; `filter` files a new task where the board is
+ * narrowed. It owns the three writes; the form takes values and hands them
+ * back. The editor reads under Suspense; this draws its placeholder and a
+ * first failure.
  */
 export function TaskDialog({
   open,

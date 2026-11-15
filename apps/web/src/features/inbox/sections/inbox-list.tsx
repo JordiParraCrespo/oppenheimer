@@ -34,12 +34,12 @@ import { ALL_PROJECTS, NO_PROJECT } from '@/features/inbox/lib/inbox-search';
 import { InboxRow } from '@/features/inbox/sections/inbox-row';
 
 /**
- * The Inbox's list column (`29-inbox.md` §5, the 2026-10-29 frame): its head
- * with the unread count, Refresh and the filter, the search, a mail row per item with
- * its age (one minute tick for the list), the done ones of this visit under
- * Show done, and Snoozed with when each comes back. Rows checked for a bulk
- * action swap the head for the selection's bar. It reads the Inbox itself
- * because it draws it; the reading pane reads the same cache.
+ * The Inbox's list column: its head with the unread count, Refresh and the
+ * filter, the search, a mail row per item with its age (one minute tick for
+ * the list), the done ones of this visit under Show done, and Snoozed with
+ * when each comes back. Rows checked for a bulk action swap the head for the
+ * selection's bar. It reads the Inbox itself because it draws it; the
+ * reading pane reads the same cache.
  */
 export function InboxList() {
   const { t } = useTranslation();

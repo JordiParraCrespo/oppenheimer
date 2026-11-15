@@ -11,12 +11,12 @@ import { NewSessionFolderBrowser } from './new-session-folder-browser';
 import { NewSessionFolderSearch } from './new-session-folder-search';
 
 /**
- * The folder chip, bound to the draft: a folder already on the host, opened as
- * it is (`product/versions/mvp/24-session-places.md` §4). The host's folders
- * are read only while the popup is open, by the browser it draws; the chip
- * itself names the folder from what this host's last pick remembered, `~/…`
- * under its home. A `?path=` under `~` is resolved against the host's home by
- * a section of its own, the one read made with the popup shut.
+ * The folder chip, bound to the draft: a folder already on the host, opened
+ * as it is. The host's folders are read only while the popup is open, by the
+ * browser it draws; the chip itself names the folder from what this host's
+ * last pick remembered, `~/…` under its home. A `?path=` under `~` is
+ * resolved against the host's home by a section of its own, the one read made
+ * with the popup shut.
  */
 export function NewSessionFolder() {
   const { t } = useTranslation();

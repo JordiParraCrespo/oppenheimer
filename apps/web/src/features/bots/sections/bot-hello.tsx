@@ -24,17 +24,17 @@ const JOBS = [
 ] as const;
 
 /**
- * The bot's hello, before there is a conversation (the Bots frame's empty
- * chat): its name and what it is waiting for at 34px, centred. A bot with no
- * instructions asks for the job and suggests four under Try asking, as
- * tiles; one that has them suggests next steps as pills. Either fills the
- * composer with a first message to finish and send; nothing is applied
- * until it is sent (there are no templates yet, `25-bots.md` §7). Which hello it is
- * depends on the instructions, so this reads them (narrowed to "are they
- * blank?"; `BotChat` starts that read beside the conversation's, so it has
- * usually landed by now) and until it knows draws the quiet shape both share,
- * the centred title as a bar, rather than greeting one way and switching. A read that fails greets the plain way: the hello is a
- * courtesy, not a fact the reader acts on.
+ * The bot's hello, before there is a conversation (the Bots frame's empty chat):
+ * its name and what it is waiting for at 34px, centred. A bot with no instructions
+ * asks for the job and suggests four under Try asking, as tiles; one that has them
+ * suggests next steps as pills. Either fills the composer with a first message to
+ * finish and send; nothing is applied until it is sent (there are no templates
+ * yet). Which hello it is depends on the instructions, so this reads them (narrowed
+ * to "are they blank?"; `BotChat` starts that read beside the conversation's, so it
+ * has usually landed by now) and until it knows draws the quiet shape both share,
+ * the centred title as a bar, rather than greeting one way and switching. A read
+ * that fails greets the plain way: the hello is a courtesy, not a fact the reader
+ * acts on.
  */
 export function BotHello({ botId, name }: { botId: string; name: string }) {
   const { t } = useTranslation();

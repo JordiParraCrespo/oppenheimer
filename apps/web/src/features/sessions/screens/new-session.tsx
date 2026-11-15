@@ -7,11 +7,9 @@ import { NewSessionDropContext, useNewSessionDrop } from '../hooks/use-new-sessi
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
- * New session, the console's pane when nothing is open
- * (`product/versions/mvp/05-screens.md`, the export's `.op-newsession`), on
- * the grey ground the shell lays under every pane, so the white composer
- * reads as the one surface. The screen only composes; every read belongs to
- * the section.
+ * New session, the console's pane when nothing is open, on the grey ground
+ * the shell lays under every pane, so the white composer reads as the one
+ * surface. The screen only composes; every read belongs to the section.
  *
  * The shell frames it at the `prompt` measure, at the pane's foot
  * (`routes/_authenticated/sessions/new.tsx`), and the pane takes its drops (`usePaneDrop`): files

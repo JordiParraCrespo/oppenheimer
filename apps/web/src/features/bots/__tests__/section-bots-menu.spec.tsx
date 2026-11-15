@@ -5,11 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SectionBotsMenu } from '../sections/section-bots-menu';
 
 /**
- * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
- * every bot is listed with whether this section shows it, so a bot already
- * made is placed here without leaving the page; the search narrows the list;
- * and New bot still makes one.
- * The bots read is the product package's `useBots`, mocked here.
+ * The plus on a section's Bots heading: every bot is listed with whether
+ * this section shows it, so a bot already made is placed here without
+ * leaving the page; the search narrows the list; and New bot still makes
+ * one. The bots read is the product package's `useBots`, mocked here.
  */
 
 vi.mock('react-i18next', () => ({

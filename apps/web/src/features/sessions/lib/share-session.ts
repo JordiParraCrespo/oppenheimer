@@ -21,7 +21,7 @@ export const SHARE_LIFETIME_CHOICES: readonly ShareLifetimeChoice[] = [
   'never',
 ];
 
-/** The Share dialog's values (`ShareSession.dc.html`): who, permission, for how long. */
+/** The Share dialog's values: who, permission, for how long. */
 export interface ShareSessionValues {
   audience: SessionShareAudience;
   /** Lowercased emails, in the order they were added. */

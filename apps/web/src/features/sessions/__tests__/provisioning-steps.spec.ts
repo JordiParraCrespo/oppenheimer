@@ -92,9 +92,9 @@ describe('provisioningSteps', () => {
 });
 
 /**
- * A folder session clones nothing and makes no branch
- * (`product/versions/mvp/24-session-places.md` §3): its start reads host,
- * open the folder, start — never a clone or a worktree it does not do.
+ * A folder session clones nothing and makes no branch: its start reads
+ * host, open the folder, start — never a clone or a worktree it does not
+ * do.
  */
 describe('provisioningSteps for a folder session', () => {
   const folder = { ...context, folder: '/home/jordi/code/atlas' };

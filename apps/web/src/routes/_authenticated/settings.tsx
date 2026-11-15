@@ -18,11 +18,10 @@ import { HostCount } from '@/features/hosts/sections/host-count';
 import { WatchedCount } from '@/features/pull-requests/sections/watched-count';
 
 /**
- * Settings: its own chrome beside the console
- * (`design/version1/Settings.dc.html`, `product/versions/mvp/05-screens.md`).
- * Under `_authenticated` for its guard and no-workspace redirect;
- * `shell: 'own'` tells that route to render no `AppShell`, since the console's
- * rail and session list are not part of Settings.
+ * Settings: its own chrome beside the console. Under `_authenticated` for its
+ * guard and no-workspace redirect; `shell: 'own'` tells that route to render
+ * no `AppShell`, since the console's rail and session list are not part of
+ * Settings.
  */
 export const Route = createFileRoute('/_authenticated/settings')({
   component: SettingsLayout,
