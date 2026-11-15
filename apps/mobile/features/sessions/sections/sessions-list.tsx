@@ -89,15 +89,20 @@ export function SessionsList() {
     );
   }
 
-  if (sessions.isError) {
+  // A first read that failed has nothing to draw; a later one keeps the list
+  // on screen, since the next poll can bring it back.
+  if (sessions.isError && !sessions.data) {
     return (
-      <View className="items-start gap-3 px-5 pt-6">
-        <Text variant="body" tone="destructive">
-          {t('sessions.sidebar.loadFailed')}
-        </Text>
-        <Button variant="outline" onPress={() => sessions.refetch()}>
-          <Text>{t('common.retry')}</Text>
-        </Button>
+      <View>
+        {search}
+        <View className="items-start gap-3 px-5 pt-6">
+          <Text variant="body" tone="destructive">
+            {t('sessions.sidebar.loadFailed')}
+          </Text>
+          <Button variant="outline" onPress={() => sessions.refetch()}>
+            <Text>{t('common.retry')}</Text>
+          </Button>
+        </View>
       </View>
     );
   }
@@ -179,7 +184,14 @@ export function SessionsList() {
           count={group.sessions.length}
         >
           {group.sessions.map((session, index) =>
-            row(session, index, t(`sessions.session.state.${stateWordFor(session)}`)),
+            row(
+              session,
+              index,
+              // A delete its host refused is red; its line says why, not its state.
+              session.closeRefusal
+                ? t('sessions.sidebar.notDeleted')
+                : t(`sessions.session.state.${stateWordFor(session)}`),
+            ),
           )}
         </SessionGroup>
       ))}

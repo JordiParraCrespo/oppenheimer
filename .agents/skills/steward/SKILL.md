@@ -59,6 +59,7 @@ reviewer can read alone.
 - **When the bottom merges**, the next layer's base becomes `main` and it
   merges `main` in. A layer merges only after everything below it has.
 
+## Before every push
 
 1. Commit, then run `pnpm ci:local`. It refuses uncommitted changes and
    untracked files, checks what the branch touches against `origin/main`, and
