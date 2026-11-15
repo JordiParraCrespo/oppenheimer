@@ -1395,6 +1395,7 @@ person can, past the installation that is the workspace's access control
 | `ask_bot` | Give another bot a task; its answer comes back as a new turn | auto |
 | `message_bot` | Send another bot a message, no answer owed | auto |
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
+| `update_bot` | Change one or more bots' settings: provider, model, effort, permission, group, name, description, colour, learning | ask |
 
 `message_bot` and `ask_bot` (built 2026-10-18) queue a turn on the other
 bot, opened by an *event* message holding the words, in its `bots` lane
@@ -1459,6 +1460,20 @@ input is the name, description, soul, instructions, provider, model
   group by id), so a yes creates what the card showed even if the
   creator's engine changed while it waited. The card reads
   `Create bot "Scout" on GLM GLM-5.3, in group Research: Finds papers`.
+
+`update_bot` (built 2026-11-15) changes bots that already exist, several
+in one call, so "move the web team to GPT-6.1 Sol" is one card, not five.
+It takes the bots' ids (up to 25) and any of: provider, model (id or
+label), effort, permission, group (by id or name, or null to ungroup),
+name (one bot only), description, avatar colour and whether they learn
+without asking. It dispatches the console's own update command as the
+owner, once per bot, and holds `create_bot`'s rules: a provider needs a
+workspace key, a model must be one its provider offers (each bot's own
+provider when none is named), an effort must be one the resulting model
+takes, and no bot is given looser permissions than the caller's. A call
+any bot would refuse is refused whole, before any card. The card reads
+`Update 2 bots (Zengue Jewels, Coverd Web): runs on ChatGPT GPT-6.1 Sol`.
+It does not edit a bot's soul or instructions.
 
 Two named policies bound bots talking to bots. Both belong to the turn
 queue (`bot-turns`, §8): it checks the chain before it enqueues a turn a

@@ -204,7 +204,10 @@ const AREA_INTROS: readonly AreaIntro[] = [
     doneBy: ['update_routine'],
     example: 'a morning report on a schedule',
   },
-  { does: 'work with their other bots and create new ones', doneBy: ['message_bot', 'create_bot'] },
+  {
+    does: 'work with their other bots, create new ones and change their settings',
+    doneBy: ['message_bot', 'create_bot', 'update_bot'],
+  },
   {
     does: 'read pages on the web and research a topic',
     doneBy: ['web_fetch'],

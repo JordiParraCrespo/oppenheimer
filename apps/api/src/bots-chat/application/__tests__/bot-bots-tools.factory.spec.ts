@@ -2,6 +2,7 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { BOT_AVATAR_COLORS } from '@oppenheimer/shared';
 import { CreateBotCommand } from '../../../bots/commands/create-bot/create-bot.command';
+import { UpdateBotCommand } from '../../../bots/commands/update-bot/update-bot.command';
 import { BotEntity } from '../../../bots/domain/bot.entity';
 import { BotGroupEntity } from '../../../bots/domain/bot-group.entity';
 import { FindBotQuery } from '../../../bots/queries/find-bot/find-bot.query';
@@ -423,6 +424,143 @@ describe('create_bot', () => {
     expect(keys[0]).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
     expect(keys[1]).toBe(keys[0]);
     expect(keys[2]).not.toBe(keys[0]);
+  });
+});
+
+describe('update_bot', () => {
+  const ZENGUE = '44444444-4444-4444-8444-444444444444';
+  const COVERD = '55555555-5555-4555-8555-555555555555';
+  const web = BotGroupEntity.createNew({ organizationId: 'org-1', name: 'Web' });
+
+  function updating(permission: BotToolContext['permission'], options: { keyed?: string[] } = {}) {
+    const bots = new Map<string, BotEntity>([
+      [SELF_ID, creator(permission)],
+      [ZENGUE, bot(ZENGUE, 'Zengue Jewels', 'Shop')],
+      [COVERD, bot(COVERD, 'Coverd Web', 'Site')],
+    ]);
+    const queryBus = {
+      execute: vi.fn(async (query: unknown) => {
+        if (query instanceof FindModelProviderCredentialsQuery) {
+          return (options.keyed ?? ['glm', 'chatgpt']).map((provider) => ({ provider }));
+        }
+        if (query instanceof FindBotGroupsQuery) return [web];
+        if (query instanceof FindBotsQuery) return [...bots.values()];
+        if (query instanceof FindBotQuery) return bots.get(query.botId);
+        throw new Error('unexpected query');
+      }),
+    };
+    const commandBus = {
+      execute: vi.fn(async (command: unknown) => {
+        const update = command as UpdateBotCommand;
+        bots.get(update.botId)?.edit(update.input);
+        return update.botId;
+      }),
+    };
+    const approvals = {
+      request: vi.fn<BotApprovalRequesterPort['request']>(async () => ({
+        status: 'requested',
+        approvalId: 'approval-1',
+      })),
+    };
+    const factory = new BotPeerToolsFactory(
+      queryBus as unknown as QueryBus,
+      commandBus as unknown as CommandBus,
+    );
+    const definition = factory.definitions().find((candidate) => candidate.name === 'update_bot');
+    if (!definition) throw new Error('no update_bot');
+    const call = (input: unknown) =>
+      definition
+        .bind({ ...context, permission, approvals })
+        .run(input, { signal: new AbortController().signal });
+    const commands = () =>
+      commandBus.execute.mock.calls.map(([command]) => command as UpdateBotCommand);
+    return { definition, commandBus, approvals, call, commands };
+  }
+
+  it('asks under Approve for me with a card naming every bot and the engine they move to, changing nothing', async () => {
+    const { commandBus, approvals, call } = updating('auto');
+    const result = await call({
+      bot_ids: [ZENGUE, COVERD],
+      provider: 'chatgpt',
+      model: 'GPT-6.1 Sol',
+    });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'update_bot',
+        summary: 'Update 2 bots (Zengue Jewels, Coverd Web): runs on ChatGPT GPT-6.1 Sol',
+      }),
+    );
+    expect(result.content).toContain('End your turn now');
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('moves every bot named to the model under Full access, as the owner, and answers with each as it now stands', async () => {
+    const { commands, call } = updating('full');
+    const result = await call({
+      bot_ids: [ZENGUE, COVERD, ZENGUE],
+      provider: 'chatgpt',
+      model: 'gpt-6.1-sol',
+    });
+    expect(commands()).toHaveLength(2);
+    for (const command of commands()) {
+      expect(command).toBeInstanceOf(UpdateBotCommand);
+      expect(command.scope).toBe(owner);
+      expect(command.input).toEqual({ provider: 'chatgpt', model: 'gpt-6.1-sol' });
+    }
+    expect(commands().map((command) => command.botId)).toEqual([ZENGUE, COVERD]);
+    expect(result.isError).toBe(false);
+    expect(result.content).toContain(`${ZENGUE} "Zengue Jewels": runs on ChatGPT GPT-6.1 Sol`);
+    expect(result.content).toContain(`${COVERD} "Coverd Web": runs on ChatGPT GPT-6.1 Sol`);
+  });
+
+  it('changes the look, group and learning of a bot, the group by name', async () => {
+    const { commands, call } = updating('full');
+    await call({
+      bot_ids: [ZENGUE],
+      name: 'Zengue',
+      description: 'Runs the jewellery shop',
+      avatar_color: 'coral',
+      group: 'web',
+      learn_automatically: false,
+    });
+    expect(commands()[0].input).toEqual({
+      name: 'Zengue',
+      description: 'Runs the jewellery shop',
+      avatarColor: 'coral',
+      groupId: web.id,
+      learnAutomatically: false,
+    });
+  });
+
+  it('refuses a provider the workspace has no key for, a model the provider lacks, or nothing to change, changing nothing', async () => {
+    const { commandBus, approvals, call } = updating('auto', { keyed: ['glm'] });
+    const keyless = await call({ bot_ids: [ZENGUE], provider: 'chatgpt' });
+    expect(keyless.content).toContain('The workspace has no ChatGPT key');
+    const unknownModel = await call({ bot_ids: [ZENGUE], model: 'gpt-9' });
+    expect(unknownModel.content).toContain('For "Zengue Jewels": GLM has no model "gpt-9"');
+    const empty = await call({ bot_ids: [ZENGUE] });
+    expect(empty.content).toContain('Name at least one thing to change');
+    expect([keyless, unknownModel, empty].every((result) => result.isError)).toBe(true);
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('never gives a bot looser permissions than the caller’s, and renames one bot at a time', async () => {
+    const { commandBus, call } = updating('auto');
+    const looser = await call({ bot_ids: [ZENGUE], permission: 'full' });
+    expect(looser.content).toContain('You run under Approve for me');
+    const rename = await call({ bot_ids: [ZENGUE, COVERD], name: 'Twin' });
+    expect(rename.content).toContain('one bot at a time');
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses a bot id the workspace does not have', async () => {
+    const { commandBus, call } = updating('full');
+    const missing = '66666666-6666-4666-8666-666666666666';
+    const result = await call({ bot_ids: [ZENGUE, missing], model: null });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain(`no bot ${missing}`);
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 });
 

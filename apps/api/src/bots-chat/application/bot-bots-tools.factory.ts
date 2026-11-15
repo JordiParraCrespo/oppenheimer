@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
+  BOT_AVATAR_COLORS,
   BOT_DESCRIPTION_MAX,
   BOT_DOCUMENT_MAX,
   BOT_MESSAGE_MAX,
@@ -12,6 +13,7 @@ import {
 import { SESSION_EFFORTS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { CreateBotCommand } from '../../bots/commands/create-bot/create-bot.command';
+import { UpdateBotCommand } from '../../bots/commands/update-bot/update-bot.command';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { BotGroupEntity } from '../../bots/domain/bot-group.entity';
 import type { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
@@ -20,13 +22,19 @@ import { FindBotGroupsQuery } from '../../bots/queries/find-bot-groups/find-bot-
 import { FindBotsQuery } from '../../bots/queries/find-bots/find-bots.query';
 import { FindModelProviderCredentialsQuery } from '../../bots/queries/find-model-provider-credentials/find-model-provider-credentials.query';
 import {
+  BOT_PERMISSION_LABELS,
   type BotCreationPlan,
+  type BotUpdatePlan,
   botCreatedAnswer,
   botCreationSummary,
+  botsUpdatedAnswer,
+  botUpdateSummary,
   type CreateBotInput,
   engineLabelOf,
   explicitCreateBotInput,
   planBotCreation,
+  planBotUpdate,
+  type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
 import {
   SendBotPeerMessageCommand,
@@ -48,8 +56,8 @@ import {
  * is for, so a bot can point the person at the right one; `message_bot` and
  * `ask_bot`, which hand another bot a message as a queued turn of its own
  * (the answer to an ask comes back the same way, never by waiting); and
- * `create_bot`, which makes the person a new bot (it asks under Approve for
- * me).
+ * `create_bot`, which makes the person a new bot, and `update_bot`, which
+ * changes existing ones, several at once (both ask under Approve for me).
  */
 @Injectable()
 export class BotPeerToolsFactory implements BotToolArea {
@@ -62,7 +70,14 @@ export class BotPeerToolsFactory implements BotToolArea {
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
-    return [this.listBots(), this.getBot(), this.messageBot(), this.askBot(), this.createBot()];
+    return [
+      this.listBots(),
+      this.getBot(),
+      this.messageBot(),
+      this.askBot(),
+      this.createBot(),
+      this.updateBot(),
+    ];
   }
 
   private messageBot(): BotToolDefinition {
@@ -222,6 +237,128 @@ export class BotPeerToolsFactory implements BotToolArea {
     return plan;
   }
 
+  private updateBot(): BotToolDefinition {
+    return defineBotTool({
+      name: 'update_bot',
+      scope: 'bots:write',
+      asks: true,
+      description: `Changes the settings of one or more of the person's bots (you included) in one call: what runs them (provider, model and effort), their permission, their group, their name, description and avatar colour, and whether they save what they learn without asking. Give every bot the change applies to in bot_ids (from list_bots), at most ${BOT_UPDATE_MAX}; a field left out stays as it is. A model is an id or label of the bot's provider (the one named here, else each bot's own); a provider needs a workspace key. Permission is never looser than yours; a rename goes to one bot at a time; you cannot create groups. It does not edit a bot's soul or instructions.`,
+      input: z.strictObject({
+        bot_ids: z
+          .array(z.uuid())
+          .min(1)
+          .max(BOT_UPDATE_MAX)
+          .describe('The bots to change, from list_bots.'),
+        name: z
+          .string()
+          .trim()
+          .min(1)
+          .max(BOT_NAME_MAX)
+          .optional()
+          .describe('A new name; one bot only.'),
+        description: z
+          .string()
+          .trim()
+          .max(BOT_DESCRIPTION_MAX)
+          .optional()
+          .describe('What it is for, in a sentence.'),
+        avatar_color: z
+          .enum(BOT_AVATAR_COLORS)
+          .optional()
+          .describe('The colour its face is drawn in.'),
+        provider: z
+          .enum(BOT_PROVIDERS)
+          .optional()
+          .describe(
+            "Who answers them; switching provider without a model runs that provider's default.",
+          ),
+        model: z
+          .string()
+          .min(1)
+          .max(128)
+          .nullable()
+          .optional()
+          .describe("A model id or label the provider offers; null is the provider's default."),
+        effort: z
+          .enum(SESSION_EFFORTS)
+          .nullable()
+          .optional()
+          .describe("Only for a model that takes one; null is the model's own default."),
+        permission: z
+          .enum(BOT_PERMISSIONS)
+          .optional()
+          .describe('auto (Approve for me) or full (Full access); never looser than yours.'),
+        group: z
+          .string()
+          .min(1)
+          .max(80)
+          .nullable()
+          .optional()
+          .describe('An existing bot group, by name or id; null takes them out of their group.'),
+        learn_automatically: z
+          .boolean()
+          .optional()
+          .describe('Whether what they decide to remember is saved without asking.'),
+      }),
+      normalize: (input) => ({ ...input, bot_ids: [...new Set(input.bot_ids)] }),
+      summarize: async (input, context) =>
+        botUpdateSummary(input, await this.updatePlan(input, context)),
+      run: async (input, context) => {
+        const plan = await this.updatePlan(input, context);
+        for (const step of plan.steps) {
+          await this.commandBus.execute(
+            new UpdateBotCommand({ scope: context.owner, botId: step.bot.id, input: step.body }),
+          );
+        }
+        const updated = await Promise.all(
+          plan.steps.map((step) =>
+            this.queryBus.execute<FindBotQuery, BotEntity>(
+              new FindBotQuery({ scope: context.owner, botId: step.bot.id }),
+            ),
+          ),
+        );
+        return botsUpdatedAnswer(updated);
+      },
+    });
+  }
+
+  /** The change to each bot, read as the owner: the caller, the bots, the keyed providers, the groups. */
+  private async updatePlan(
+    input: UpdateBotsInput,
+    context: BotToolCallContext,
+  ): Promise<BotUpdatePlan> {
+    const [all, credentials, groups] = await Promise.all([
+      this.queryBus.execute<FindBotsQuery, BotEntity[]>(
+        new FindBotsQuery({ scope: context.owner }),
+      ),
+      input.provider
+        ? this.queryBus.execute<FindModelProviderCredentialsQuery, ModelProviderCredentialEntity[]>(
+            new FindModelProviderCredentialsQuery(context.owner),
+          )
+        : Promise.resolve([]),
+      input.group
+        ? this.queryBus.execute<FindBotGroupsQuery, BotGroupEntity[]>(
+            new FindBotGroupsQuery({ scope: context.owner }),
+          )
+        : Promise.resolve([]),
+    ]);
+    const caller = all.find((bot) => bot.id === context.botId);
+    if (!caller) throw new BotToolRefusal('You are no longer one of the workspace’s bots.');
+    const byId = new Map(all.map((bot) => [bot.id, bot]));
+    const ids = [...new Set(input.bot_ids)];
+    const unknown = ids.filter((id) => !byId.has(id));
+    if (unknown.length) {
+      throw new BotToolRefusal(
+        `The workspace has no bot ${unknown.join(', ')}. Use list_bots for their ids.`,
+      );
+    }
+    const bots = ids.map((id) => byId.get(id) as BotEntity);
+    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const plan = planBotUpdate(input, caller, bots, keyed, groups);
+    if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
+    return plan;
+  }
+
   private listBots(): BotToolDefinition {
     return defineBotTool({
       name: 'list_bots',
@@ -258,7 +395,9 @@ export class BotPeerToolsFactory implements BotToolArea {
         return [
           `Bot ${bot.id} "${bot.name}"${bot.id === context.botId ? ' (you)' : ''}`,
           `- for: ${bot.description || '(no description)'}`,
-          `- runs on: ${engineLabelOf(bot.provider, bot.model)}`,
+          `- runs on: ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'}, effort ${bot.effort ?? 'default'})`,
+          `- permission: ${BOT_PERMISSION_LABELS[bot.permission]} (${bot.permission})`,
+          `- group: ${bot.groupId ?? 'ungrouped'}`,
           `- home host: ${bot.homeHostId ?? 'none chosen'}`,
           `- last message: ${formatToolTime(bot.lastMessageAt, context.timeZone)}`,
         ].join('\n');
@@ -266,6 +405,9 @@ export class BotPeerToolsFactory implements BotToolArea {
     });
   }
 }
+
+/** How many bots one `update_bot` call may change. */
+const BOT_UPDATE_MAX = 25;
 
 const peerMessageInput = z.strictObject({
   bot_id: z.uuid().describe('The other bot, from list_bots. Not yourself.'),
