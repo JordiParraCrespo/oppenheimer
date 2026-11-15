@@ -24,17 +24,12 @@ import { FindModelProviderCredentialsQuery } from '../../bots/queries/find-model
 import {
   BOT_PERMISSION_LABELS,
   type BotCreationPlan,
-  type BotUpdatePlan,
   botCreatedAnswer,
   botCreationSummary,
-  botsUpdatedAnswer,
-  botUpdateSummary,
   type CreateBotInput,
   engineLabelOf,
   explicitCreateBotInput,
   planBotCreation,
-  planBotUpdate,
-  type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
 import {
   SendBotPeerMessageCommand,
@@ -50,6 +45,13 @@ import {
   BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
+import {
+  type BotUpdatePlan,
+  botsUpdatedAnswer,
+  botUpdateSummary,
+  planBotUpdate,
+  type UpdateBotsInput,
+} from './bot-update.policy';
 
 /**
  * Other bots (`25-bots.md` §4.6): which bots the workspace has and what each
