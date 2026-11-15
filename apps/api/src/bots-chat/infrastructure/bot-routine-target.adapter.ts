@@ -14,6 +14,7 @@ import { BotModelAccessResolver } from '../application/bot-model-access.resolver
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import { heldByProvider } from '../domain/bot-provider-hold.policy';
 import { routinePrefix, routineTurn } from '../domain/bot-routine.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from './bot-stream.port';
@@ -77,6 +78,17 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
 
     const bot = await this.access.bot(automation.organizationId, botId);
+    // The provider just refused the account (out of quota, a refused key):
+    // the run is skipped, not queued to fail the same way, and the next one
+    // tries again once the hold passes (`bot-provider-hold.policy.ts`).
+    const last = await this.turns.findLastOnProvider(
+      automation.organizationId,
+      botId,
+      bot.provider,
+    );
+    if (heldByProvider({ origin: 'routine' }, last, now)) {
+      return { kind: 'skip', reason: 'not_launchable', pause: null };
+    }
     const trigger = automation.triggers.find((candidate) => candidate.id === run.triggerId);
     return {
       kind: 'launch',

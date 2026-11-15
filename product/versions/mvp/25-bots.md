@@ -346,10 +346,11 @@ worker runs it and streams what happens back to the chat.
   routine's run and a subscription's wake were queued regardless, and each
   failed the same way within a second: one bot's chat became a column of
   "out of quota or credit" cards. Now a routine's or a wake's turn whose
-  provider's last answer for the bot (its newest turn on that provider that
-  spent a token or failed) was one of those two, under an hour ago, ends at
-  once without asking the provider and draws nothing; the first one after
-  the hour tries again, so a bot left alone shows at most one such card an
+  provider's last answer for the bot (the last of its turns on that provider
+  to end having spent a token or failed) was one of those two, under an hour ago, ends at
+  once without asking the provider and draws nothing (a routine's run is
+  skipped before it queues a turn, so Automations shows it skipped, not
+  completed); the first one after the hour tries again, so a bot left alone shows at most one such card an
   hour. A person's message, a goal, a loop and another bot's ask are never
   held, and a message that gets through lifts the hold
   (`bot-provider-hold.policy.ts`).

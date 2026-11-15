@@ -426,7 +426,7 @@ export class BotTurnRepository
     botId: string,
     provider: BotProvider,
   ): Promise<BotTurnEntity | null> {
-    // IDX_bot_turn_bot, read backwards from the newest turn.
+    // IDX_bot_turn_bot finds the bot's turns.
     const record = await this.repository
       .createQueryBuilder('turn')
       .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
@@ -436,7 +436,9 @@ export class BotTurnRepository
       .andWhere('turn.provider = :provider', { provider })
       .andWhere('turn.status IN (:...ended)', { ended: ENDED_TURN_STATUSES })
       .andWhere("(turn.status = 'failed' OR turn.inputTokens + turn.outputTokens > 0)")
-      .orderBy('turn.createdAt', 'DESC')
+      // By when it ended, not when it was sent: lanes run a later message
+      // before an earlier background turn. The bot's turns, sorted.
+      .orderBy('turn.endedAt', 'DESC', 'NULLS LAST')
       .addOrderBy('turn.id', 'DESC')
       .getOne();
     return record ? this.mapper.toDomain(record) : null;

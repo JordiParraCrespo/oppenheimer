@@ -164,7 +164,7 @@ export interface BotTurnRepositoryPort {
    */
   findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
   /**
-   * The bot's newest ended turn on the provider that reached it (spent a
+   * The bot's last turn to end on the provider that reached it (spent a
    * token) or failed: what the provider last said of the account
    * (`bot-provider-hold.policy.ts`). A turn that ended without asking it
    * says nothing. Null when there is none.

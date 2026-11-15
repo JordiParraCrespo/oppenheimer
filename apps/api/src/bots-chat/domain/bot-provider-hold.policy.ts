@@ -8,8 +8,9 @@ import type { BotTurnEntity } from './bot-turn.entity';
  * each a second long: a goal pauses and a loop stops on that failure, but a
  * routine or a subscription's wake queued the next turn regardless. Once a
  * turn on the provider fails because the account is spent or its key or
- * sign-in was refused, the routines' and wakes' turns that follow end
- * without reaching it (silently, as a turn with nothing to say) until
+ * sign-in was refused, the routines' runs that follow are skipped before
+ * they queue a turn (`BotRoutineTarget`), and the wakes' turns end without
+ * reaching it (silently, as a turn with nothing to say), until
  * `BOT_PROVIDER_HOLD_MS` has passed; the first after that tries again, and
  * one more failure holds them again. A person's message always runs, and
  * once one gets through the hold is gone.
