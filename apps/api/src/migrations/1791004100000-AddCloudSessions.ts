@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Cloud sessions the control plane launches (`product/next-steps/cloud-agents.md`):
+ * Cloud sessions the control plane launches:
  * a session that runs as a vendor's agent in the vendor's cloud, Cursor's
  * first, started from New session on a person's own key for the vendor and
  * listed with every other session.

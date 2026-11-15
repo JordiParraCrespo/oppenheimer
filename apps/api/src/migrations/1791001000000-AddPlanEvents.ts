@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Plan's second cut (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
- * §3, §4 and §7): what a task and a milestone need for agents to work beside
+ * Plan's second cut: what a task and a milestone need for agents to work beside
  * people, and the log Stats counts from.
  *
  * - `task.version` and `milestone.version` go up on every write. A writer that

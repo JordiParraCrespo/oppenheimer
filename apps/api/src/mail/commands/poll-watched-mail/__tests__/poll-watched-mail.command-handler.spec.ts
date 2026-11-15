@@ -13,7 +13,7 @@ import { PollWatchedMailCommand } from '../poll-watched-mail.command';
 import { PollWatchedMailCommandHandler } from '../poll-watched-mail.command-handler';
 
 /**
- * The poll that wakes mail routines (`product/next-steps/mail.md` §5): only
+ * The poll that wakes mail routines: only
  * accounts a live routine watches are read, an account starts from now, a
  * trigger's query decides which new messages reach the hub, the mark moves
  * on, and one account failing leaves the others read. What breaks this: a

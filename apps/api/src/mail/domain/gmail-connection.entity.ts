@@ -22,8 +22,8 @@ export interface GmailConnectionProps {
   scopes: string[];
   status: GmailConnectionStatus;
   /**
-   * Where the poll for a watching routine last read the mailbox's history
-   * (`mail.md` §5); null until a routine first watches it. Written only by
+   * Where the poll for a watching routine last read the mailbox's history;
+   * null until a routine first watches it. Written only by
    * the poll, never by a save.
    */
   historyId?: string | null;
@@ -38,7 +38,7 @@ export interface GmailGrantProps {
 }
 
 /**
- * One of a person's Gmail accounts (`product/next-steps/mail.md` §1): a grant
+ * One of a person's Gmail accounts: a grant
  * of their own, separate from Google sign-in and from the calendar's. Nothing
  * of the mailbox is stored, only what it takes to reach it.
  */

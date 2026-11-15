@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A goal the person sets with `/goal` (`product/versions/mvp/25-bots.md`
- * §4.1, "Built-in commands"; from Claude Code's `/goal`).
+ * A goal the person sets with `/goal` (from Claude Code's `/goal`).
  *
  * - `objective` grows from 500 to 2,000 characters: the person writes a
  *   condition with its check and its constraints ("`pnpm test` exits 0, and

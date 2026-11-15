@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * A bot follows the tasks of a project, or of one milestone, and is woken by
- * the changes it names (`product/versions/mvp/27-bot-subscriptions.md` §7.2),
+ * the changes it names,
  * beside the sessions and pull requests it follows.
  *
  * - `"resourceKind"` gains `project` and `milestone`; `"resourceId"` names

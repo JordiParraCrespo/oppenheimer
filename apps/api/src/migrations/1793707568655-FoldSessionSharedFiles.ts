@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * The files a session's agent shared, folded from the log's `file.shared`
- * entries (`product/next-steps/agent-tools.md` §7), for bots to list and show.
+ * entries, for bots to list and show.
  *
  * - `jsonb`, not null, `[]` for none: the fold writes the whole list, the
  *   last twenty, each `{ id, name, mediaType, size, caption?, hasPreview, at }`

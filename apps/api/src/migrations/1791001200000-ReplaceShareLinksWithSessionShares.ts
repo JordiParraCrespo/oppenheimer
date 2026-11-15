@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * `session_share` replaces `session_share_link`
- * (`product/versions/mvp/21-session-share-links.md`, decided 2026-10-13): a
+ * `session_share` replaces `session_share_link`: a
  * session is shared once, at one stable address, to named people or to
  * anyone signed in with the address, instead of through many bearer links
  * whose secret was shown once. The links made since 2026-10-08 are dropped,

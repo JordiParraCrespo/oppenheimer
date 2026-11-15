@@ -60,7 +60,7 @@ export class GmailConnectionRepository
   }
 
   async forgetHistoryExcept(polledIds: readonly string[]): Promise<number> {
-    // An UPDATE answers `[rows, affected]` through `manager.query` (`typeorm.md`).
+    // An UPDATE answers `[rows, affected]` through `manager.query`.
     const [, affected]: [unknown[], number] = await this.repository.manager.query(
       `UPDATE "gmail_connection" SET "historyId" = NULL
         WHERE "historyId" IS NOT NULL AND NOT ("id" = ANY($1::uuid[]))`,

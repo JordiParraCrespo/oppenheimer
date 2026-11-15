@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * The Pull requests area (`product/next-steps/0.2-pull-requests-api-plan.md`).
+ * The Pull requests area.
  * Pull requests themselves are GitHub's and are read through the installation,
  * so two small tables are all it stores:
  *

@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * A bot searches every session of its owner's workspace for words
- * (`search_sessions`, `product/versions/mvp/25-bots.md` §4.2): "where did I
+ * (`search_sessions`): "where did I
  * work on the auth bug?", on any host. What it searches is what Postgres
  * holds: the session's name and the human-readable text of its log. The
  * agent's own transcript lives on the host and is not searched here.
@@ -49,8 +49,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * with it.
  *
  * Plain `CREATE INDEX`, not `CONCURRENTLY`: migrations run at boot in one
- * transaction, and no deployment holds sessions anyone needs yet
- * (`database-design.md`, "While nothing is deployed").
+ * transaction, and no deployment holds sessions anyone needs yet.
  */
 export class AddSessionSearch1794264706567 implements MigrationInterface {
   name = 'AddSessionSearch1794264706567';

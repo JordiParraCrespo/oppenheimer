@@ -93,7 +93,7 @@ interface GmailSession {
 
 /**
  * Gmail, through the same OAuth client as Google sign-in, with a grant of its
- * own (`product/next-steps/mail.md` §1–2). The redirect lands on the console
+ * own. The redirect lands on the console
  * (`/settings/mail/google`), which posts the code back, as the calendar does;
  * so the redirect URI is the console's.
  *
@@ -102,8 +102,8 @@ interface GmailSession {
  * its connection (one Google account, so a person with several has a bucket
  * per account, and one paused account does not stop the others) and the
  * project. A refusal pauses whichever Google named, and a paused bucket
- * answers `MAIL_008` without asking Google again, on every replica
- * (`.agents/rules/integrations.md`). Anything else that kept Google from
+ * answers `MAIL_008` without asking Google again, on every replica.
+ * Anything else that kept Google from
  * answering is a `GmailProviderError`. Access tokens are minted per call and
  * never kept.
  */
