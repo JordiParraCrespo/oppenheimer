@@ -81,7 +81,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Q3. One row, nothing it writes indexed, so a HOT update. Keeping what is on
+   * One row, nothing it writes indexed, so a HOT update. Keeping what is on
    * file means a hello that carries no load does not blank the last heartbeat's.
    *
    * The pairing check rides the insert: the row to write is selected from
@@ -119,7 +119,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Q4. The common path is one primary-key read that finds the same hash and
+   * The common path is one primary-key read that finds the same hash and
    * writes nothing. Only a real change takes the row lock, re-reads under it
    * (a concurrent hello and heartbeat must not both append the same diff),
    * writes the row and appends what changed.
@@ -201,7 +201,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Q5. Under the presence row's lock, so two links racing on a reconnect agree
+   * Under the presence row's lock, so two links racing on a reconnect agree
    * on what "before" was.
    */
   async recordNetwork(
@@ -274,7 +274,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     });
   }
 
-  /** Q6. One row over the page, to know there is more. */
+  /** One row over the page, to know there is more. */
   async findTimeline(
     hostId: string,
     before: TimelineCursor | null,
@@ -296,7 +296,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     };
   }
 
-  /** Q7. A batch through the index, never a network some host is on now. */
+  /** A batch through the index, never a network some host is on now. */
   async deleteNetworksUnseenSince(cutoff: Date, batch: number): Promise<number> {
     const [, count] = (await this.dataSource.query(
       `DELETE FROM "host_network" WHERE ctid = ANY (ARRAY(
@@ -309,7 +309,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     return count;
   }
 
-  /** Q8. A batch through the BRIN. */
+  /** A batch through the BRIN. */
   async deleteTimelineBefore(cutoff: Date, batch: number): Promise<number> {
     const [, count] = (await this.dataSource.query(
       `DELETE FROM "host_event" WHERE ctid = ANY (ARRAY(

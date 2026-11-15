@@ -86,7 +86,10 @@ request for someone else, because the next reader meets the comment first.
   \`HostPresence\``) is not prose and may stay when the code here needs it:
   the editor follows it and a rename breaks it loudly. A pointer to prose
   survives only for an external spec the code implements (an RFC, a vendor's
-  documented quirk). TODOs keep their issue number. Find the candidates with:
+  documented quirk). TODOs keep their issue number. A label that numbers a
+  note's items (`Q7.`, `the note's Q7 and Q8`) is the same pointer without the
+  file name: cut it with the pointer, and grep the area for `the note` and
+  such labels once the pointers are gone. Find the candidates with:
 
   ```bash
   git grep -nE '^\s*(//|#|\*|/\*\*?).*(product/|\.agents/|[A-Za-z0-9_-]+\.md\b|§)' -- <paths>

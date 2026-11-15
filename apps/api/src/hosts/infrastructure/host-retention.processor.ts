@@ -11,10 +11,9 @@ import { HOST_METADATA_REPOSITORY } from '../hosts.di-tokens';
 const SCHEDULER_ID = 'host-retention-daily';
 
 /**
- * Deletes what a host's metadata does not keep: networks
- * unseen for `retention.hostNetworkDays` (never a host's current one) and timeline
- * entries past `retention.hostTimelineDays`, in batches through their own index, as
- * the note's Q7 and Q8.
+ * Deletes what a host's metadata does not keep: networks unseen for
+ * `retention.hostNetworkDays` (never a host's current one) and timeline entries
+ * past `retention.hostTimelineDays`, in batches through their own index.
  *
  * A BullMQ job scheduler, not a timer per process: one entry in Redis, so however
  * many replicas run, the purge runs once a day. Upserting it at boot is idempotent.
