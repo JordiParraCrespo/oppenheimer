@@ -450,6 +450,7 @@ export class BotTurnRepository
       // before an earlier background turn. The bot's turns, sorted.
       .orderBy('turn.endedAt', 'DESC', 'NULLS LAST')
       .addOrderBy('turn.id', 'DESC')
+      .limit(1)
       .getOne();
     return record ? this.mapper.toDomain(record) : null;
   }
