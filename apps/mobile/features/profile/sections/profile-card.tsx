@@ -2,8 +2,8 @@ import { Avatar, AvatarFallback } from '@oppenheimer/design-system-mobile/avatar
 import { Skeleton } from '@oppenheimer/design-system-mobile/skeleton';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useProfile } from '@oppenheimer/frontend-core/react';
+import { initials } from '@oppenheimer/frontend-mobile';
 import { View } from 'react-native';
-import { initials } from '../lib/initials';
 
 export function ProfileCard() {
   const { data: user, isLoading } = useProfile();

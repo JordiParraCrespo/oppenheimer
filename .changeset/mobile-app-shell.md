@@ -10,9 +10,10 @@ Bring back the Expo app for 0.5 as a shell drawn from the version-1 export's
 `Mobile.dc.html`, in native Liquid Glass on iOS 26.
 
 - `@oppenheimer/mobile`: the welcome screen (the portrait, Google, GitHub or
-  email), email sign-in, password reset, and five tabs in the system's tab bar:
-  Sessions, Employees, Pull requests and Automations say they are coming;
-  Account shows who is signed in, light or dark, the language, and signs
+  email), email sign-in, password reset, and the console rail's five sections
+  in its order (Sessions, Plan, Employees, Automations, Pull requests) in the
+  system's tab bar, each saying it is coming; Account, a sheet from the
+  avatar on every tab, shows who is signed in, light or dark, the language, and signs
   out. The whole auth flow: Create account (email or a provider), the
   workspace step (name and address, checked as typed) and Ready, with Terms
   and Privacy on Welcome opening the console's pages.

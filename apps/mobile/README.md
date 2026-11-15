@@ -3,9 +3,10 @@
 Oppenheimer on a phone (0.5, `product/next-steps/0.5-mobile.md`), drawn from
 the version-1 export's `Mobile.dc.html`. Today it is the shell: the welcome
 screen (a social provider through a deep link, or email), email sign-in,
-password reset, and the signed-in app's five sections behind a floating tab
-bar. Account is real (who is signed in, light or dark, language, sign out);
-Sessions, Employees, Pull requests and Automations say they are coming.
+password reset, and the signed-in app's five sections in the console rail's
+order (Sessions, Plan, Employees, Automations, Pull requests) in the system's
+tab bar, with Account a sheet from the avatar on every tab. Account is real (who is signed in, light or dark, language, sign out);
+The five sections say they are coming.
 Signing up works here too: Create account, then the workspace step and
 Ready (`app/onboarding/`); GitHub and the first host are added from the
 console on the computer.
@@ -47,7 +48,7 @@ app/                   # expo-router routes: a default export that mounts a scre
 ├── _layout.tsx        # providers, theme vars, error boundaries, AuthGate
 ├── (auth)/            # welcome, login (email), register, forgot-password, reset-password
 ├── onboarding/        # workspace (name it, claim its address), ready
-└── (app)/             # the tabs: index (sessions), employees, pull-requests, automations, account
+└── (app)/             # (tabs)/: index (sessions), plan, employees, automations, pull-requests; account (a sheet)
 features/              # <module>/{screens,sections,dialogs,forms,components,hooks,lib,__tests__}
 lib/                   # configuration only: oppenheimer.ts, auth-client.ts, query.ts
 app.config.ts          # Expo config — the source of truth for native
