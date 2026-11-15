@@ -10,7 +10,7 @@ import { LinkAttachments } from './link-attachments.util';
 
 /**
  * The bytes a runner may have queued for it before it is dropped as a slow
- * consumer. Bounded queues everywhere (`02-runner.md` §7): a link that cannot
+ * consumer. Bounded queues everywhere: a link that cannot
  * keep up is closed, never allowed to hold the process's memory.
  */
 export const LINK_MAX_BUFFERED_BYTES = 8 * 1024 * 1024;

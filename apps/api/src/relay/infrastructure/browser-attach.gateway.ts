@@ -463,7 +463,7 @@ class BrowserAttachment implements AttachmentSink {
     if (this.ws.readyState !== this.ws.OPEN) return;
     if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
       // A client that cannot keep up is disconnected, never allowed to stall
-      // the relay (02 §7).
+      // the relay.
       this.ws.close(1008, 'slow consumer');
       return;
     }

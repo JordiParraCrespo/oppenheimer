@@ -1,7 +1,7 @@
 import type { AutomationPausedReason, AutomationSkipReason } from '@oppenheimer/shared/automations';
 
 /**
- * What a refused session create means for a run (§Q5). The owner's access is
+ * What a refused session create means for a run. The owner's access is
  * checked at dispatch by the same command a person's session goes through, so
  * its refusals are the vocabulary: a host the owner can no longer use pauses
  * the automation — it would fail every hour otherwise — and so does a retired

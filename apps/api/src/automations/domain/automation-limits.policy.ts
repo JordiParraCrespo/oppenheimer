@@ -1,7 +1,7 @@
 import type { AutomationOverlapPolicy } from '@oppenheimer/shared/automations';
 
 /**
- * The three-level configuration (§Configuration): the tightest of the platform
+ * The three-level configuration: the tightest of the platform
  * ceiling, the workspace's setting and the automation's own wins. One pure
  * resolver, read by every guard, so nothing hard-codes a number.
  */

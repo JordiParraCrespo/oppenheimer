@@ -12,7 +12,7 @@ import { SaveBotRoutineCommand } from '../save-bot-routine.command';
 import { SaveBotRoutineCommandHandler } from '../save-bot-routine.command-handler';
 
 /**
- * Saving a bot's routine (`26-bot-routines.md` §4): an edit of what it runs or
+ * Saving a bot's routine: an edit of what it runs or
  * when takes the scopes of the credential that made it, so a routine never
  * runs wider than its last editor; a pause or a resume leaves them alone.
  * What breaks this: an edit through a narrow API token leaving the routine on

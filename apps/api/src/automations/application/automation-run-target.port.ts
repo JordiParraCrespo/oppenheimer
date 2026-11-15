@@ -11,7 +11,7 @@ import type { RunRefusal } from '../domain/run-refusal.policy';
 export interface RunTargetContext {
   run: AutomationRunEntity;
   automation: AutomationEntity;
-  /** The owner's access in the workspace, resolved at dispatch (§Q5). */
+  /** The owner's access in the workspace, resolved at dispatch. */
   scope: AccessScope;
   limits: AutomationLimits;
   /** The event that fired it, for an event trigger; null for a schedule or Run now. */
@@ -25,9 +25,9 @@ export type RunTargetDecision<TInput> =
   | { kind: 'launch'; input: TInput };
 
 /**
- * How a run of one kind of automation is carried out (`26-bot-routines.md`
- * §3). The dispatcher runs the guards every run shares and then hands the run
- * to the target its automation names: the target runs its own guards, says
+ * How a run of one kind of automation is carried out. The dispatcher runs the
+ * guards every run shares and then hands the run to the target its automation
+ * names: the target runs its own guards, says
  * what it will launch, and launches it as the owner. A target is contributed
  * by the module that owns what it starts (`AutomationsModule.contributeRunTargets`),
  * so the dispatcher names no other module.

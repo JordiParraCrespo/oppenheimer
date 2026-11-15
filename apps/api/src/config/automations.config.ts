@@ -3,8 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * Deployment overrides of the automation limits
- * (`product/versions/mvp/16-automations-architecture.md` §Configuration). The numbers
+ * Deployment overrides of the automation limits. The numbers
  * live in the domain's `DEFAULT_PLATFORM_LIMITS`: each key here, when set, replaces the
  * platform ceiling of the same name (the roof no workspace or automation setting
  * exceeds), and `diskFloorBytes` the free disk a host must report before it is given a

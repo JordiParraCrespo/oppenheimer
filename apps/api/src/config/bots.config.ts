@@ -3,8 +3,6 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * Bots (`product/versions/mvp/25-bots.md` §2).
- *
  * `providerKey` is optional capability config: it is the AES-256-GCM key a
  * workspace's model provider keys are sealed under, 32 bytes as base64. With
  * it the `bot_providers` capability is on; without it the provider routes

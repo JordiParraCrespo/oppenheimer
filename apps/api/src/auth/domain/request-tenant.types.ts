@@ -2,7 +2,7 @@
  * The one organization a request acts in — its **tenant**. Written once, when
  * the request is authenticated, and read by everything that asks which
  * organization: the ability, the `${activeOrganizationId}` placeholder, the
- * access scope and the handlers. The rule is `product/versions/mvp/08-auth.md`.
+ * access scope and the handlers.
  */
 export interface RequestTenant {
   /** `null` when the request acts in no organization: only global roles count. */

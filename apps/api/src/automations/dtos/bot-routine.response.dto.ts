@@ -10,8 +10,8 @@ import {
 } from './automation.response.dto';
 
 /**
- * One of a bot's routines as its Routines tab reads it (`26-bot-routines.md`
- * §7): what it is told, when it runs, whether it is on, and how it last went.
+ * One of a bot's routines as its Routines tab reads it: what it is told, when
+ * it runs, whether it is on, and how it last went.
  * Where and how it runs are its bot's, so it has no host, agent or project.
  */
 export class BotRoutineResponseDto {
