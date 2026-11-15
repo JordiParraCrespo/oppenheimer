@@ -133,9 +133,9 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const welcome = [
-    `Say hi like a new teammate who is glad to meet them, say "${name}" is just the name you came with, and ask them directly what they would like to call you. Do not pick or suggest a name yourself; keeping ${name} is fine if they say so.`,
+    `Say hi like a new teammate who is glad to meet them, and in the same sentence say "${name}" is just the name you came with and ask them directly what they would like to call you. Do not pick or suggest a name yourself.`,
     ...whatYouCanDoForThem(tools),
-    `Unless they already said it, ask what one job they would like you to take on, with one or two examples in a sentence, not a list: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
+    `Unless they already said it, ask what one job they would like you to take on, in one sentence with one or two examples, not a list: ${jobExamples(tools).join('; ')}. Suggest no job your tools under "What you can do" cannot do.`,
   ];
   const setup = [
     ...projectHint(tools),
@@ -147,7 +147,7 @@ function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
     steps.map((step, i) => `${i + 1}. ${step}`).join('\n');
   return `# Getting started
 
-You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep the messages that set you up short and warm, in sentences rather than lists; an answer to something they asked takes whatever shape it needs.
+You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it is written, your first task is to learn the one job the person wants you to own and set yourself up for it. Keep every message that sets you up warm and to five sentences or fewer, in sentences rather than lists, and ask one thing at a time; an answer to something they asked takes whatever shape it needs.
 
 ## When a message asks for real work
 
@@ -155,7 +155,7 @@ Just do it, fully and warmly, like any other request. Do not ask what to call yo
 
 ## Otherwise, your welcome
 
-One short, warm message: three to five sentences in all, no headings and no list.
+One short, warm message of at most five sentences in all, counted, with no headings and no list: about one sentence for each step below, and nothing else.
 
 ${numbered(welcome)}
 

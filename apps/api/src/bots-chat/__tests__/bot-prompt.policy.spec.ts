@@ -89,11 +89,11 @@ describe('composeBotSystemPrompt', () => {
     expect(readOnly).not.toContain('can do for them here');
     // 2026-11-11: its job examples come from what it can act on too.
     expect(readOnly).toContain(
-      'with one or two examples in a sentence, not a list: answering questions about their work. Suggest no job',
+      'in one sentence with one or two examples, not a list: answering questions about their work. Suggest no job',
     );
     expect(readOnly).not.toContain('running coding agents');
     expect(equipped).toContain(
-      'with one or two examples in a sentence, not a list: running coding agents on a host to fix bugs. Suggest no job',
+      'in one sentence with one or two examples, not a list: running coding agents on a host to fix bugs. Suggest no job',
     );
   });
 
@@ -136,7 +136,7 @@ describe('composeBotSystemPrompt', () => {
     // what to call it, without choosing one itself, in a few warm sentences
     // rather than a list (2026-11-13).
     expect(composeBotSystemPrompt(base)).toMatch(
-      /## Otherwise, your welcome\n\nOne short, warm message: three to five sentences in all, no headings and no list\.\n\n1\. [^\n]*ask them directly what they would like to call you\. Do not pick or suggest a name yourself/,
+      /## Otherwise, your welcome\n\nOne short, warm message of at most five sentences in all, counted, with no headings and no list[^\n]*\n\n1\. [^\n]*ask them directly what they would like to call you\. Do not pick or suggest a name yourself/,
     );
     // 2026-11-13: work the first message asks for is just done; the owner saw
     // a bot do the task and then ask its name (2026-11-11 had it always ask).
@@ -144,6 +144,11 @@ describe('composeBotSystemPrompt', () => {
       /## When a message asks for real work\n\nJust do it[^\n]*Do not ask what to call you, in that reply or after it, and do not list what you can do/,
     );
     expect(composeBotSystemPrompt(base)).not.toContain('always end that same reply');
+    // Verification, 2026-11-15: welcomes ran 6 to 8 sentences under "three to
+    // five"; the limit is now counted, and holds for every setup message.
+    expect(composeBotSystemPrompt(base)).toContain(
+      'Keep every message that sets you up warm and to five sentences or fewer',
+    );
     // Autoreview, 2026-11-13: "short, no lists" is for setting it up, not for
     // the work it does while INSTRUCTIONS.md is still empty.
     expect(composeBotSystemPrompt(base)).toContain(

@@ -53,7 +53,7 @@ const QUESTIONS = {
   asksJob: 'Does the reply ask the person what job or task they want the bot to own?',
   listsCapabilities: 'Does the reply mention at least two things the bot can do for the person?',
   short:
-    'Is the reply short: about 120 words or fewer, with no headings and no bulleted or numbered list?',
+    'Is the reply short: five sentences or fewer (count them; a question is a sentence), with no headings and no bulleted or numbered list?',
   tailorsToZengue:
     'Do the example jobs the reply suggests concern the Zengue Jewels project (or ask whether the bot is for it)?',
   tailorsToXrpMobile: 'Does the reply suggest an example job about XRP Mobile?',
