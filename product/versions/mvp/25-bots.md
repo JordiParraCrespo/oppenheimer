@@ -341,6 +341,18 @@ worker runs it and streams what happens back to the chat.
   with no key for the turn is `credential`. It is `bot_turn."failure"`,
   beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
   whether sending the message again can help.
+- **A refused account holds the turns nobody asked for** (2026-11-15). A
+  goal pauses and a loop stops on `usage_limit` or `credential`, but a
+  routine's run and a subscription's wake were queued regardless, and each
+  failed the same way within a second: one bot's chat became a column of
+  "out of quota or credit" cards. Now a routine's or a wake's turn whose
+  provider's last answer for the bot (its newest turn on that provider that
+  spent a token or failed) was one of those two, under an hour ago, ends at
+  once without asking the provider and draws nothing; the first one after
+  the hour tries again, so a bot left alone shows at most one such card an
+  hour. A person's message, a goal, a loop and another bot's ask are never
+  held, and a message that gets through lifts the hold
+  (`bot-provider-hold.policy.ts`).
 - **A turn whose record cannot be saved fails as `storage`, and one call
   whose result cannot be saved fails alone** (2026-11-08, issue #728). Text
   a tool brings in from outside (a PDF's text layer, a page, a session's

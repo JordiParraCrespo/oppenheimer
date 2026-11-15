@@ -81,6 +81,8 @@ function setup(
     approval?: 'running' | 'ran';
     /** What the owner wrote about themselves in Settings → Memory. */
     about?: string;
+    /** The bot's last turn that reached the provider or failed. */
+    lastOnProvider?: BotTurnEntity;
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -125,7 +127,11 @@ function setup(
     { hostsOf: vi.fn(hostsOf) },
     {
       findLastContext: async () => conversation.lastContext ?? null,
-    } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
+      findLastOnProvider: async () => conversation.lastOnProvider ?? null,
+    } satisfies Pick<
+      BotTurnRepositoryPort,
+      'findLastContext' | 'findLastOnProvider'
+    > as unknown as BotTurnRepositoryPort,
     new BotTurnChannelPolicy({
       findChannelChat: async () => null,
     } as unknown as BotConversationRepositoryPort),
@@ -255,6 +261,38 @@ describe('BotTurnContextResolver', () => {
       },
     );
     expect(await resolver.resolve(turn, new Date())).toBeNull();
+  });
+
+  // What breaks this: a routine run or a wake reaching a provider that just
+  // said the account is out of credit, one failure card each, while the
+  // person's own message still has to get through to find it fixed.
+  it('ends a routine run at once after the provider refused the account, but runs your message', async () => {
+    const at = new Date('2026-10-15T09:00:00Z');
+    const refused = BotTurnEntity.queue({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      requestedByUserId: 'owner-1',
+      provider: 'glm',
+      model: 'model-1',
+      effort: null,
+    });
+    refused.start(new Date(at.getTime() - 60_000));
+    refused.end('failed', new Date(at.getTime() - 60_000), {
+      error: 'Credit balance is too low',
+      failure: 'usage_limit',
+    });
+    const { resolver, shape } = setup(async () => [], { lastOnProvider: refused });
+    const routine = BotTurnEntity.queue({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      requestedByUserId: 'owner-1',
+      provider: 'glm',
+      model: 'model-1',
+      effort: null,
+      origin: 'routine',
+    });
+    expect(await resolver.resolve(routine, at)).toBeNull();
+    expect(await shape(at)).not.toBeNull();
   });
 
   it('names the home host among the owner’s hosts', async () => {

@@ -531,6 +531,37 @@ describe('bots chat (integration)', () => {
     expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
   });
 
+  // What breaks this: a turn that never reached the provider (a held run,
+  // ending at once with no token) hiding the refusal before it, which
+  // would let every other routine run reach the provider again.
+  it('reads the last turn that reached the provider or failed, past the turns that never asked it', async () => {
+    const bot = await create('Spent');
+    async function ended(
+      content: string,
+      status: 'completed' | 'failed',
+      props: Parameters<BotTurnEntity['end']>[2] = {},
+    ) {
+      const { turn, message } = sent(bot, content);
+      await turns.enqueue(turn, message, null);
+      const running = (await turns.findForRun(turn.id)).unwrap();
+      running.start(new Date());
+      await turns.claim(running);
+      running.end(status, new Date(), props);
+      await turns.finish(running, null);
+      return turn.id;
+    }
+    expect(await turns.findLastOnProvider(bot.organizationId, bot.id, 'glm')).toBeNull();
+    const refused = await ended('One', 'failed', { error: 'Credit', failure: 'usage_limit' });
+    await ended('Held', 'completed');
+    expect(await turns.findLastOnProvider(bot.organizationId, bot.id, 'glm')).toMatchObject({
+      id: refused,
+      failure: 'usage_limit',
+    });
+    expect(await turns.findLastOnProvider(bot.organizationId, bot.id, 'anthropic')).toBeNull();
+    const answered = await ended('Two', 'completed', { inputTokens: 10, outputTokens: 2 });
+    expect((await turns.findLastOnProvider(bot.organizationId, bot.id, 'glm'))?.id).toBe(answered);
+  });
+
   it('makes the end of a turn wait for the bot row a send holds', async () => {
     const bot = await create('Locked');
     const first = sent(bot, 'One');

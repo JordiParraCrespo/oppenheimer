@@ -1,4 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { BotProvider } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
@@ -162,6 +163,17 @@ export interface BotTurnRepositoryPort {
    * turn reported one.
    */
   findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
+  /**
+   * The bot's newest ended turn on the provider that reached it (spent a
+   * token) or failed: what the provider last said of the account
+   * (`bot-provider-hold.policy.ts`). A turn that ended without asking it
+   * says nothing. Null when there is none.
+   */
+  findLastOnProvider(
+    organizationId: string,
+    botId: string,
+    provider: BotProvider,
+  ): Promise<BotTurnEntity | null>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
     scope: AccessScope,

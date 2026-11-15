@@ -34,6 +34,7 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
+import { heldByProvider, holdableOrigin } from '../domain/bot-provider-hold.policy';
 import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
@@ -69,7 +70,9 @@ export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'ste
  * turn ended. A message that opens with `/<name>` runs that skill of the
  * bot's: the skill's body is sent before the words. The bot's own rows are read by the turn's
  * workspace; what the owner can reach is read as the owner, so the bot sees
- * no more than they do.
+ * no more than they do. A routine's run or a wake that follows the
+ * provider refusing the account reads nothing and ends at once
+ * (`bot-provider-hold.policy.ts`).
  */
 @Injectable()
 export class BotTurnContextResolver {
@@ -100,6 +103,7 @@ export class BotTurnContextResolver {
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
     if (!(await this.channels.answerable(turn))) return null;
+    if (await this.heldByProvider(turn, now)) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
@@ -217,6 +221,20 @@ export class BotTurnContextResolver {
       contextWindow: lastContext?.window ?? null,
     };
     return this.approvalStarted.shape(message, request);
+  }
+
+  /**
+   * Whether a routine's run or a wake ends here without asking the provider,
+   * which just refused the account (`bot-provider-hold.policy.ts`).
+   */
+  private async heldByProvider(turn: BotTurnEntity, now: Date): Promise<boolean> {
+    if (!holdableOrigin(turn.origin)) return false;
+    const last = await this.turns.findLastOnProvider(
+      turn.organizationId,
+      turn.botId,
+      turn.provider,
+    );
+    return heldByProvider(turn, last, now);
   }
 
   /**

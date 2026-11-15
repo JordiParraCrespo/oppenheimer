@@ -4,6 +4,7 @@ import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-aut
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import {
   BOT_ACTIVE_TURN_STATUSES,
+  type BotProvider,
   type BotTurnLane,
   isChannelOrigin,
   QUEUE_NAMES,
@@ -22,7 +23,11 @@ import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import { loopKeyPrefix } from '../domain/bot-loop.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { heldBy } from '../domain/bot-rate-limit.policy';
-import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
+import {
+  type BotTurnContext,
+  type BotTurnEntity,
+  ENDED_TURN_STATUSES,
+} from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import {
@@ -414,6 +419,27 @@ export class BotTurnRepository
       .addOrderBy('turn.id', 'DESC')
       .getOne();
     return record ? this.mapper.toDomain(record).context : null;
+  }
+
+  async findLastOnProvider(
+    organizationId: string,
+    botId: string,
+    provider: BotProvider,
+  ): Promise<BotTurnEntity | null> {
+    // IDX_bot_turn_bot, read backwards from the newest turn.
+    const record = await this.repository
+      .createQueryBuilder('turn')
+      .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere('turn.provider = :provider', { provider })
+      .andWhere('turn.status IN (:...ended)', { ended: ENDED_TURN_STATUSES })
+      .andWhere("(turn.status = 'failed' OR turn.inputTokens + turn.outputTokens > 0)")
+      .orderBy('turn.createdAt', 'DESC')
+      .addOrderBy('turn.id', 'DESC')
+      .getOne();
+    return record ? this.mapper.toDomain(record) : null;
   }
 
   async findForConversation(
