@@ -90,10 +90,23 @@ export function useBotOrder(
     if (!id) return;
     const keys = groupIdsOf(next);
     const before = ungroupedBeforeIn(keys);
-    if (before !== null) ungrouped.setBefore(before);
-    if (id === UNGROUPED) return;
+    if (id === UNGROUPED) {
+      if (before !== null) ungrouped.setBefore(before);
+      // A write still in flight drew its drop from the held order; keep holding it.
+      if (moveGroup.isPending || move.isPending) setOrder(next);
+      return;
+    }
+    // The held order draws Ungrouped beside the group until the write lands; a failure leaves its place.
     setOrder(next);
-    moveGroup.mutate({ id, position: groupPosition(keys, id) }, { onSettled });
+    moveGroup.mutate(
+      { id, position: groupPosition(keys, id) },
+      {
+        onSuccess: () => {
+          if (before !== null) ungrouped.setBefore(before);
+        },
+        onSettled,
+      },
+    );
   };
   /** A bot dropped on Pinned or in a group. */
   const dropBot = (moved: { id: string; from: string; to: string }, next: SortableGroups) => {
