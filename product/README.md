@@ -1670,3 +1670,9 @@ earlier note:
   "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
   to be warmer: it reads "You're all caught up", centred under a small
   drawing of an empty tray; the line under it is unchanged.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had
+  the owner link opened from the console with its code never shown. On
+  2026-11-15 the owner, with no Telegram app, opened it on Telegram Web,
+  which drops the `start` code, and had to type `/start <code>` by hand.
+  Under a link just made the console now also shows that message, with
+  Copy, and opens the bot's chat on Telegram Web.
