@@ -44,7 +44,7 @@ describe('cardStatusOf', () => {
 });
 
 describe('metaPartsOf', () => {
-  it('reads the frame’s order: OS, vCPUs, where it connects from, runner', () => {
+  it('reads the frame’s order: OS, vCPUs, where it connects from; the runner is the card’s own slot', () => {
     expect(
       metaPartsOf(
         host({
@@ -59,7 +59,6 @@ describe('metaPartsOf', () => {
       { kind: 'text', value: 'Ubuntu 24.04.1 LTS' },
       { kind: 'cpus', count: 32 },
       { kind: 'text', value: 'Madrid, ES' },
-      { kind: 'runner', version: '0.14.2' },
     ]);
   });
 
