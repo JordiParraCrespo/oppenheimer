@@ -151,7 +151,6 @@
     "error": "Algo ha ido mal",
     "comingToMobile": {
       "title": "Próximamente en el móvil",
-      "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
       "employees": "Habla con tus empleados desde el móvil.",
       "pullRequests": "Revisa las pull requests que te necesitan.",
       "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
@@ -1108,7 +1107,8 @@
       "openAtVendor": "Se abre en {{vendor}}",
       "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
       "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
-      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
+      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros.",
+      "noSessionsPhone": "Aún no hay sesiones. Empieza una desde la consola en tu ordenador; aparecerá aquí."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",

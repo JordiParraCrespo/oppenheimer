@@ -347,7 +347,8 @@
     "openAtVendor": "Opens in {{vendor}}",
     "allHidden": "Every project is hidden. Show them again from the filter menu.",
     "noSessions": "No sessions yet. Start one with New session above.",
-    "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
+    "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu.",
+    "noSessionsPhone": "No sessions yet. Start one from the console on your computer; it shows up here."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
