@@ -47,7 +47,7 @@ The queue reads the open pull requests of the repositories you watch.
 - Pictures the description links to are shown when your browser can load them; pictures attached to a private repository's pull request usually cannot be, and are left out.
 - **Previous** (`←`) and **Next** (`→`) step through the cards without acting on them.
 - Actions, each of which moves to the next card: on your own pull requests **Merge** (`M`, press twice) and **Comment** (`C`); on others' **Approve** (`A`), **Approve and merge** (`M`, press twice) and **Request changes** (`C`). A held key does nothing after its first press.
-- A card stays at the high level and never shows the diff: **Review in depth** on the card (Enter) opens the pull request's changes, and Back returns to the same card.
+- A card stays at the high level and never shows the diff: **Review in depth** on the card (Enter) opens the pull request's page on its description (the diff is a tab away), and Back returns to the same card.
 - After the last card you can walk them again or go back to the queue.
 
 ### One pull request

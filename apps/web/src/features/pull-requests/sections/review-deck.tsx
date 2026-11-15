@@ -20,10 +20,10 @@ import { ReviewCard } from './review-card';
  * left; Previous steps back, from the end too.
  *
  * A card is the high level only, at the pane's width: what the pull request
- * is and what holds it. The diff is one link away (Review in depth), never
- * on the card. The queue is read here because the card, its actions and the
+ * is and what holds it. The rest (the full description, the diff) is one
+ * link away (Review in depth), never on the card. The queue is read here because the card, its actions and the
  * count all stand on the same row. The next card's brief is asked for while this one
- * is read, so moving on does not wait for a model. Opening a card's changes
+ * is read, so moving on does not wait for a model. Opening a card's details
  * leaves the deck with its address in the history, and the pull request's
  * Back returns to this card. A card that has left the queue (it merged) is
  * never replaced by another under the same actions: the deck says it left.
@@ -62,10 +62,10 @@ export function ReviewDeck() {
   }
 
   const moveOn = () => setAt(next ? deckKey(next) : DECK_END);
-  // The way from a card to its diff: the address of the card rides in the
+  // The way from a card to its details: the address of the card rides in the
   // history, so the pull request's Back returns to it.
   const depth = {
-    ...pullRequestLink(current.address, 'changes'),
+    ...pullRequestLink(current.address, 'description'),
     state: {
       pullsReturn: { to: 'deck' as const, search: { ...queueSearch, at: deckKey(current) } },
     },

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 /**
  * The deck's keys on the document: ← and → step to the previous and next card
- * without acting on it, `a` says yes to the card, Enter opens its changes, `c`
+ * without acting on it, `a` says yes to the card, Enter opens its details, `c`
  * writes a comment, `m` approves and merges, Esc lets go of what is armed. Off while typing and inside a dialog; a key whose
  * action is absent is left alone.
  */

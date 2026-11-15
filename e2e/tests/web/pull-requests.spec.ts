@@ -227,9 +227,9 @@ test.describe('Pull requests', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: /^Merge/ })).toBeDisabled();
 
-    // ── Opening its changes and coming Back lands on the same card ───────────
+    // ── Opening its details and coming Back lands on the same card ───────────
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/view=changes/);
+    await expect(page).toHaveURL(/\/pulls\/[^/]+\/\d+\/\d+$/);
     await page.getByRole('button', { name: 'Back to the review' }).click();
     await expect(
       card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
