@@ -11,7 +11,7 @@ import { triggerFromInput } from '../../../automations/domain/trigger-config.pol
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { HEARTBEAT_NAME, type HeartbeatView } from '../../domain/bot-heartbeat.policy';
+import type { HeartbeatView } from '../../domain/bot-heartbeat.policy';
 import { BotRoutineTarget } from '../bot-routine-target.adapter';
 import type { BotStreamPort } from '../bot-stream.port';
 
@@ -178,7 +178,7 @@ describe('BotRoutineTarget', () => {
 
   it('skips a heartbeat with nothing new since its last beat, and queues nothing', async () => {
     const { target, context, enqueueOnce, findHeartbeatView } = setup({
-      name: HEARTBEAT_NAME,
+      name: 'Heartbeat',
       heartbeat: {
         lastBeatAt: new Date('2026-11-15T10:00:00Z'),
         lastActivityAt: new Date('2026-11-15T09:00:00Z'),
@@ -200,7 +200,7 @@ describe('BotRoutineTarget', () => {
 
   it('launches a heartbeat when something happened since its last beat', async () => {
     const { target, context } = setup({
-      name: HEARTBEAT_NAME,
+      name: 'Heartbeat',
       heartbeat: {
         lastBeatAt: new Date('2026-11-15T10:00:00Z'),
         lastActivityAt: new Date('2026-11-15T10:30:00Z'),

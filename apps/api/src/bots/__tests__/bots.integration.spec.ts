@@ -217,23 +217,13 @@ describe('bots (integration)', () => {
     ]);
   });
 
-  // What breaks this: a bot given a job at its creation, or later, without the
-  // event that announces it; or an event left by a write that lost.
-  it('stages a first job on the outbox with the write that sets it, and nothing for a blank bot', async () => {
-    const staged = async (botId: string) =>
-      dataSource.query(`SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`, [
-        botId,
-      ]) as Promise<{ eventName: string }[]>;
-
+  // What breaks this: a write from a stale copy landing over the one that won.
+  it('lands the first write of a document and refuses a rival from the same copy', async () => {
     const blank = await create('Cleo');
-    expect(await staged(blank.id)).toEqual([]);
-
     const instructions = await documents.findOne(scope(), blank.id, 'instructions');
     const document = instructions.unwrap();
     document.write({ content: 'Review PRs.', baseRevision: 1, actor: userActor(userId) });
     expect(await documents.save(document)).toBe('saved');
-    expect(await staged(blank.id)).toEqual([{ eventName: 'BotJobSetDomainEvent' }]);
-    expect(document.domainEvents).toEqual([]);
 
     const stale = (await documents.findOne(scope(), blank.id, 'instructions')).unwrap();
     const rival = BotDocumentEntity.create({
@@ -242,7 +232,9 @@ describe('bots (integration)', () => {
     });
     rival.write({ content: 'Something else.', baseRevision: 1, actor: userActor(userId) });
     expect(await documents.save(rival)).toBe('conflict');
-    expect(await staged(blank.id)).toHaveLength(1);
+    expect((await documents.findOne(scope(), blank.id, 'instructions')).unwrap().content).toBe(
+      'Review PRs.',
+    );
   });
 
   it('moves a bot into a group at an index and closes up both lists', async () => {

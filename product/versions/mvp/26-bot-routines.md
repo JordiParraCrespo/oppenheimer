@@ -282,7 +282,8 @@ customized"). An hourly model turn on every bot with a job, around the
 clock, spent tokens to say `nothing_to_report`. So:
 
 - **No heartbeat by default.** The listener on `BotJobSetDomainEvent` is
-  gone. A bot gets a heartbeat only when its owner asks it for one in chat.
+  gone, and so is the event, which nothing else read. A bot gets a
+  heartbeat only when its owner asks it for one in chat.
 - **Twice a day.** Migration `PauseDefaultBotHeartbeats` moved every
   heartbeat still on its one hourly trigger to two daily triggers, 09:00 and
   18:00, in the zone its owner last wrote to the bot from (their own
@@ -297,9 +298,11 @@ clock, spent tokens to say `nothing_to_report`. So:
   wake, a goal); otherwise the run is skipped as `idle`, before any model
   turn, and silently (it is not a failure; the routine's runs show it).
   Another schedule does not count, or two would keep each other awake. The
-  owner's Run now always runs. The rule is `heartbeatIsIdle`
-  (`bot-heartbeat.policy.ts`), asked by `BotRoutineTarget` for the routine
-  named Heartbeat only.
+  owner's Run now, and a run an event trigger the owner added fired, always
+  run. The rule is `routineIsIdle` (`bot-heartbeat.policy.ts`), which
+  recognises the heartbeat by its name; `BotRoutineTarget` asks it for
+  every routine run and only returns its answer. Which origins are not news
+  is one list there, `HEARTBEAT_QUIET_ORIGINS`, that the query reads.
 
 - **Quiet turns.** A routine turn with nothing to say calls
   `nothing_to_report` instead of writing a message; the chat draws one

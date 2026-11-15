@@ -1,3 +1,4 @@
+import type { BotTurnOrigin } from '@oppenheimer/shared';
 import type { AutomationRunCause } from '@oppenheimer/shared/automations';
 
 /**
@@ -12,28 +13,46 @@ import type { AutomationRunCause } from '@oppenheimer/shared/automations';
  */
 
 /** The routine's name, which is how a bot's heartbeat is recognised. */
-export const HEARTBEAT_NAME = 'Heartbeat';
+const HEARTBEAT_NAME = 'Heartbeat';
+
+/**
+ * The turns that are not news to a heartbeat: another schedule's (a
+ * routine's, a loop's), its own included. Every other origin (a message, an
+ * approval, an answer, another bot's ask, a wake, a goal) is activity. One
+ * list, read by the repository's query and by nothing else.
+ */
+export const HEARTBEAT_QUIET_ORIGINS = [
+  'routine',
+  'loop',
+] as const satisfies readonly BotTurnOrigin[];
 
 /** What a scheduled beat is decided on, read once from the bot's turns. */
 export interface HeartbeatView {
   /** When the heartbeat's own last turn was queued; null before its first beat. */
   lastBeatAt: Date | null;
   /**
-   * When the bot's newest turn that the heartbeat could have something to
-   * say about was queued: a message, an approval, an answer, a wake, a goal.
-   * Another routine's or a loop's turn is not one: two schedules would keep
-   * each other awake. Null when it has none.
+   * When the bot's newest turn whose origin is not in
+   * `HEARTBEAT_QUIET_ORIGINS` was queued; null when it has none. Another
+   * schedule's turn does not count, or two schedules would keep each other
+   * awake.
    */
   lastActivityAt: Date | null;
 }
 
 /**
- * Whether this beat is skipped as `idle`, without a model turn: a scheduled
- * beat after an earlier one, with nothing in the bot's chat since. The
- * owner's Run now always runs, so does a first beat, and so does a run an
- * event trigger the owner added fired: the event is the news.
+ * Whether this run of a bot's routine is skipped as `idle`, before any
+ * model turn: a scheduled beat of its heartbeat, after an earlier one, with
+ * nothing in the bot's chat since. Any other routine, the owner's Run now, a
+ * run an event trigger the owner added fired (the event is the news) and a
+ * first beat all run. `readView` is asked only for a scheduled heartbeat
+ * beat, so no other run pays for the read.
  */
-export function heartbeatIsIdle(cause: AutomationRunCause, view: HeartbeatView): boolean {
-  if (cause !== 'schedule' || view.lastBeatAt === null) return false;
-  return view.lastActivityAt === null || view.lastActivityAt <= view.lastBeatAt;
+export async function routineIsIdle(
+  routine: { name: string; cause: AutomationRunCause },
+  readView: () => Promise<HeartbeatView>,
+): Promise<boolean> {
+  if (routine.name !== HEARTBEAT_NAME || routine.cause !== 'schedule') return false;
+  const { lastBeatAt, lastActivityAt } = await readView();
+  if (lastBeatAt === null) return false;
+  return lastActivityAt === null || lastActivityAt <= lastBeatAt;
 }
