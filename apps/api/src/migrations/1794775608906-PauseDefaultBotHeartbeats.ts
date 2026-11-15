@@ -6,11 +6,13 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * an hourly model turn on every bot with a job, around the clock, was
  * spending the owner's tokens to say nothing.
  *
- * - Every live bot routine named Heartbeat still on the one hourly trigger
- *   it was given has that trigger made daily at 09:00, and a second daily
- *   trigger at 18:00, both in the zone its owner last wrote to the bot from
- *   (their newest message to it that carried one), UTC when they never did.
- *   A heartbeat whose owner changed its triggers keeps them.
+ * - Every live bot routine named Heartbeat still on the one trigger it was
+ *   given, exactly (hourly, in UTC, at the minute `heartbeatMinute` drew
+ *   from its bot's id: the first four bytes of the id's SHA-256, mod 60),
+ *   has that trigger made daily at 09:00, and a second daily trigger at
+ *   18:00, both in the zone its owner last wrote to the bot from (their
+ *   newest message to it that carried one), UTC when they never did. A
+ *   heartbeat whose owner changed its triggers in any way keeps them.
  * - Every such routine that is running is paused as its owner would pause
  *   it (`pausedReason = 'user'`, its schedule triggers' `nextFireAt`
  *   cleared, as `AutomationEntity.pause` does), so it wakes again only when
@@ -20,6 +22,14 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * No chat line says so: the activity lines are written from domain events,
  * which a migration does not raise, and the owner asked for the change.
  */
+/**
+ * The minute past the hour a bot's default heartbeat beat on, in SQL: what
+ * `heartbeatMinute(botId)` computed, the id's SHA-256 read as a big-endian
+ * unsigned 32-bit integer from its first four bytes, mod 60. Reads
+ * `automation."botId"`.
+ */
+const DEFAULT_MINUTE = `(('x' || left(encode(sha256(convert_to(automation."botId"::text, 'UTF8')), 'hex'), 8))::bit(32)::bigint % 60)::int`;
+
 export class PauseDefaultBotHeartbeats1794775608906 implements MigrationInterface {
   name = 'PauseDefaultBotHeartbeats1794775608906';
 
@@ -39,7 +49,9 @@ export class PauseDefaultBotHeartbeats1794775608906 implements MigrationInterfac
          FROM automation_trigger trigger
          JOIN automation ON automation.id = trigger."automationId"
         WHERE automation.id IN (${heartbeats})
-          AND trigger.source = 'schedule' AND trigger.config ->> 'frequency' = 'hourly'
+          AND trigger.source = 'schedule' AND trigger.timezone = 'UTC'
+          AND trigger.config = jsonb_build_object('frequency', 'hourly', 'hour', 0,
+                'minute', ${DEFAULT_MINUTE})
           AND (SELECT count(*) FROM automation_trigger other
                 WHERE other."automationId" = automation.id) = 1`,
     );
@@ -72,9 +84,33 @@ export class PauseDefaultBotHeartbeats1794775608906 implements MigrationInterfac
     );
   }
 
-  public async down(): Promise<void> {
-    // Nothing tells a heartbeat this moved or paused from one its owner
-    // changed, so each keeps its two times and stays paused until its owner
-    // resumes it, which recomputes its next slots.
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // The heartbeats on the two times `up` gave them go back to their hourly
+    // trigger. Nothing tells a pause this made from one the owner made, so
+    // each stays paused until its owner resumes it, which computes its slot.
+    const moved: { automationId: string }[] = await queryRunner.query(
+      `SELECT automation.id AS "automationId" FROM automation
+        WHERE "runTarget" = 'bot' AND name = 'Heartbeat' AND "deletedAt" IS NULL
+          AND (SELECT array_agg(trigger.config ORDER BY trigger."position")
+                 FROM automation_trigger trigger WHERE trigger."automationId" = automation.id)
+              = ARRAY['{"frequency":"daily","hour":9,"minute":0}'::jsonb,
+                      '{"frequency":"daily","hour":18,"minute":0}'::jsonb]`,
+    );
+    for (const { automationId } of moved) {
+      await queryRunner.query(
+        `DELETE FROM automation_trigger
+          WHERE "automationId" = $1 AND config ->> 'hour' = '18'`,
+        [automationId],
+      );
+      await queryRunner.query(
+        `UPDATE automation_trigger trigger
+            SET config = jsonb_build_object('frequency', 'hourly', 'hour', 0,
+                  'minute', ${DEFAULT_MINUTE}),
+                timezone = 'UTC', "nextFireAt" = NULL, "updatedAt" = now()
+           FROM automation
+          WHERE automation.id = trigger."automationId" AND trigger."automationId" = $1`,
+        [automationId],
+      );
+    }
   }
 }

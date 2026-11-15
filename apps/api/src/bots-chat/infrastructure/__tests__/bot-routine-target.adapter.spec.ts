@@ -193,6 +193,7 @@ describe('BotRoutineTarget', () => {
       'org-1',
       'bot-1',
       `automation-run:${context.automation.id}:`,
+      `automation-run:${context.automation.id}:${context.run.id}`,
     );
     expect(enqueueOnce).not.toHaveBeenCalled();
   });

@@ -30,9 +30,10 @@ export interface HeartbeatView {
 /**
  * Whether this beat is skipped as `idle`, without a model turn: a scheduled
  * beat after an earlier one, with nothing in the bot's chat since. The
- * owner's Run now always runs, and so does a first beat.
+ * owner's Run now always runs, so does a first beat, and so does a run an
+ * event trigger the owner added fired: the event is the news.
  */
 export function heartbeatIsIdle(cause: AutomationRunCause, view: HeartbeatView): boolean {
-  if (cause === 'manual' || view.lastBeatAt === null) return false;
+  if (cause !== 'schedule' || view.lastBeatAt === null) return false;
   return view.lastActivityAt === null || view.lastActivityAt <= view.lastBeatAt;
 }

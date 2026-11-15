@@ -533,7 +533,8 @@ describe('bots chat (integration)', () => {
 
   // What breaks this: a heartbeat that reads its own turns, another routine's
   // or a loop's as activity (so it never idles), misses another bot's ask (so
-  // it sleeps through it), or reads another bot's turns.
+  // it sleeps through it), reads another bot's turns, or takes a retried
+  // run's own queued turn for the beat before it.
   it('reads a heartbeat’s last beat and the bot’s last activity', async () => {
     const bot = await create('Heartbeat Bot');
     const automationId = '6a1c4f9e-0000-4000-8000-0000000000b1';
@@ -548,7 +549,8 @@ describe('bots chat (integration)', () => {
     const at = async (turnId: string, iso: string) =>
       dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [turnId, iso]);
     const prefix = routinePrefix(automationId);
-    const view = () => turns.findHeartbeatView(bot.organizationId, bot.id, prefix);
+    const view = (ownSourceKey = 'automation-run:none') =>
+      turns.findHeartbeatView(bot.organizationId, bot.id, prefix, ownSourceKey);
 
     expect(await view()).toEqual({ lastBeatAt: null, lastActivityAt: null });
 
@@ -605,6 +607,11 @@ describe('bots chat (integration)', () => {
 
     expect(await view()).toEqual({
       lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    // A retried dispatch of that beat's run finds its own turn queued: not a beat before it.
+    expect(await view(beat.turn.sourceKey ?? '')).toEqual({
+      lastBeatAt: null,
       lastActivityAt: new Date('2026-11-15T09:30:00Z'),
     });
     const elsewhere = await create('Quiet Bot');

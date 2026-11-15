@@ -421,6 +421,7 @@ export class BotTurnRepository
     organizationId: string,
     botId: string,
     routinePrefix: string,
+    ownSourceKey: string,
   ): Promise<HeartbeatView> {
     // Each is IDX_bot_turn_bot read backwards from the newest turn, to the first that matches.
     const [row]: { lastBeatAt: Date | null; lastActivityAt: Date | null }[] =
@@ -428,11 +429,12 @@ export class BotTurnRepository
         `SELECT
            (SELECT "createdAt" FROM bot_turn
              WHERE "organizationId" = $1 AND "botId" = $2 AND starts_with("sourceKey", $3)
+               AND "sourceKey" <> $4
              ORDER BY "createdAt" DESC LIMIT 1) AS "lastBeatAt",
            (SELECT "createdAt" FROM bot_turn
              WHERE "organizationId" = $1 AND "botId" = $2 AND origin NOT IN ('routine', 'loop')
              ORDER BY "createdAt" DESC LIMIT 1) AS "lastActivityAt"`,
-        [organizationId, botId, routinePrefix],
+        [organizationId, botId, routinePrefix, ownSourceKey],
       );
     return { lastBeatAt: row?.lastBeatAt ?? null, lastActivityAt: row?.lastActivityAt ?? null };
   }

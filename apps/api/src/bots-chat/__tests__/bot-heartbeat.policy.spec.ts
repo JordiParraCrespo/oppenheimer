@@ -2,8 +2,8 @@
  * When a bot's heartbeat beats (`26-bot-routines.md` §6). What breaks this:
  * a beat with nothing new since the last one spending a model turn to say
  * nothing, a first beat or one after real activity skipped, or the owner's
- * Run now refused. Which turns count as activity is the repository's read,
- * in `bots-chat.integration.spec.ts`.
+ * Run now or a run an event trigger fired dropped. Which turns count as
+ * activity is the repository's read, in `bots-chat.integration.spec.ts`.
  */
 import { type HeartbeatView, heartbeatIsIdle } from '../domain/bot-heartbeat.policy';
 
@@ -32,7 +32,8 @@ describe('heartbeatIsIdle', () => {
     );
   });
 
-  it('never skips the owner’s Run now', () => {
+  it('never skips the owner’s Run now, nor a run an event fired', () => {
     expect(heartbeatIsIdle('manual', view())).toBe(false);
+    expect(heartbeatIsIdle('event', view())).toBe(false);
   });
 });

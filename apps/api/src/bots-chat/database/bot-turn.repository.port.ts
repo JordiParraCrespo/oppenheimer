@@ -165,13 +165,16 @@ export interface BotTurnRepositoryPort {
   findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
   /**
    * What a heartbeat's scheduled beat is decided on (`heartbeatIsIdle`): when
-   * the routine whose turns begin with `routinePrefix` last queued one, and
-   * when the bot last had a turn that was neither a routine's nor a loop's.
+   * the routine whose turns begin with `routinePrefix` last queued one, other
+   * than this run's own (`ownSourceKey`, already queued when a dispatch is
+   * retried), and when the bot last had a turn that was neither a routine's
+   * nor a loop's.
    */
   findHeartbeatView(
     organizationId: string,
     botId: string,
     routinePrefix: string,
+    ownSourceKey: string,
   ): Promise<HeartbeatView>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
