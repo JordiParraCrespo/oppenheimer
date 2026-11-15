@@ -11,9 +11,8 @@ import {
 } from 'typeorm';
 
 /**
- * A Telegram bot a person connected on one of their hosts
- * (`product/next-steps/telegram.md` §2). One per host, since a runner polls
- * one; the bot's token stays on the host and is never here.
+ * A Telegram bot a person connected on one of their hosts. One per host, since
+ * a runner polls one; the bot's token stays on the host and is never here.
  */
 @Entity('telegram_account')
 @Index('UQ_telegram_account_host', ['hostId'], { unique: true })

@@ -1,11 +1,11 @@
 import { BOT_AVATAR_COLORS, BOT_NAME_MAX, type BotAvatarColor } from '@oppenheimer/shared';
 
 /**
- * The first names a blank bot is born with (`25-bots.md` §1), in the order a
- * workspace meets them. Short, easy to say, no two with the same initial, so
- * neighbours in the sidebar read and draw apart, and none a product or
- * someone famous enough to be mistaken for one. A name says who the bot is;
- * its description says the job, which it writes itself in its first chat.
+ * The first names a blank bot is born with, in the order a workspace meets
+ * them. Short, easy to say, no two with the same initial, so neighbours in the
+ * sidebar read and draw apart, and none a product or someone famous enough to
+ * be mistaken for one. A name says who the bot is; its description says the
+ * job, which it writes itself in its first chat.
  */
 export const BOT_FIRST_NAMES = [
   'Juno',

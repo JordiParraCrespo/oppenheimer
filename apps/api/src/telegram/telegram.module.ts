@@ -70,12 +70,11 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Telegram (`product/next-steps/telegram.md`): a bot the person made with
- * @BotFather, long-polled on the Bot API by the runner on one of their hosts
- * (OpenClaw's route, on WhatsApp's gateway), and the messages it receives,
- * kept for their Oppenheimer bots. The token and the poller are the host's;
- * this module reaches them over the runner link (`TELEGRAM_DEVICE`, bound by
- * `links/`).
+ * Telegram: a bot the person made with @BotFather, long-polled on the Bot API
+ * by the runner on one of their hosts (OpenClaw's route, on WhatsApp's
+ * gateway), and the messages it receives, kept for their Oppenheimer bots. The
+ * token and the poller are the host's; this module reaches them over the runner
+ * link (`TELEGRAM_DEVICE`, bound by `links/`).
  */
 @Module({
   imports: [

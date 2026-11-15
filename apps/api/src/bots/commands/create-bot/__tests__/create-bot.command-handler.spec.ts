@@ -22,12 +22,12 @@ import { CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
 /**
- * New bot (`product/versions/mvp/25-bots.md` §2): a numbered default name, a
- * soul that says it, empty instructions, both at revision 1, and every id it
- * names checked as the caller before anything is written. A bot creating one
- * (`create_bot`, §4.6) also sets its engine, its level and both documents,
- * marks it as its own, is held to its own level, and creates once per key.
- * The write itself, and two racing creations, are the integration spec's.
+ * New bot: a numbered default name, a soul that says it, empty instructions,
+ * both at revision 1, and every id it names checked as the caller before
+ * anything is written. A bot creating one (`create_bot`) also sets its engine,
+ * its level and both documents, marks it as its own, is held to its own level,
+ * and creates once per key. The write itself, and two racing creations, are the
+ * integration spec's.
  */
 const userId = randomUUID();
 const organizationId = randomUUID();

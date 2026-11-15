@@ -22,14 +22,15 @@ import { BotErrors } from '../../domain/bots.errors';
 import { CreateBotCommand, firstDocumentsOf } from './create-bot.command';
 
 /**
- * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`, on the
- * next avatar colour, last in its group, in the sections named, born with a `SOUL.md` that
- * says its name and an empty `INSTRUCTIONS.md`, both at revision 1, so its history starts
- * with its creation. A home host, when given, is one the caller may use.
- * The optional fields set what the form does not: the engine, the level, both documents,
- * a creating bot, an idempotency key (`create_bot`, §4.6) and the credential's scopes,
- * which its heartbeat keeps. The new bot is the caller's whoever creates it; a creating
- * bot marks it and caps its level, under a lock on its row until the write commits.
+ * A blank bot: named by `nameForNewBot`, on the next avatar colour, last in its
+ * group, in the sections named, born with a `SOUL.md` that says its name and an
+ * empty `INSTRUCTIONS.md`, both at revision 1, so its history starts with its
+ * creation. A home host, when given, is one the caller may use. The optional
+ * fields set what the form does not: the engine, the level, both documents, a
+ * creating bot, an idempotency key (`create_bot`) and the credential's scopes,
+ * which its heartbeat keeps. The new bot is the caller's whoever creates it; a
+ * creating bot marks it and caps its level, under a lock on its row until the
+ * write commits.
  */
 @CommandHandler(CreateBotCommand)
 export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand, AggregateID> {

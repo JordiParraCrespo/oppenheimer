@@ -5,10 +5,9 @@ import { BotDocumentEntity } from '../domain/bot-document.entity';
 import { BotJobSetDomainEvent } from '../domain/events/bot-job-set.domain-event';
 
 /**
- * A document's revision rules (`product/versions/mvp/25-bots.md` §1): a save
- * lands only over the revision it read, an unchanged save makes no revision,
- * and a revert appends rather than rewinds. The repository's conditional write
- * is the integration spec's.
+ * A document's revision rules: a save lands only over the revision it read, an
+ * unchanged save makes no revision, and a revert appends rather than rewinds.
+ * The repository's conditional write is the integration spec's.
  */
 const author = randomUUID();
 

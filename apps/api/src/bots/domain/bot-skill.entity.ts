@@ -118,10 +118,10 @@ export class BotSkillEntity extends AggregateRoot<BotSkillProps> {
   }
 
   /**
-   * A name the product holds (`BOT_SKILL_RESERVED_NAMES`) is refused when it
-   * is given, never when a row is read: a skill saved under a name before the
-   * product reserved it keeps its row and stays the bot's (`25-bots.md` §4.1),
-   * so loading it must not throw.
+   * A name the product holds (`BOT_SKILL_RESERVED_NAMES`) is refused when it is
+   * given, never when a row is read: a skill saved under a name before the
+   * product reserved it keeps its row and stays the bot's, so loading it must
+   * not throw.
    */
   private refuseReservedName(): void {
     if ((BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(this.props.name)) {

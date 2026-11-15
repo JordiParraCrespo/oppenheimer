@@ -142,7 +142,7 @@ describe('one page of open pull requests', () => {
     expect(read?.pull.fromFork).toBe(true);
   });
 
-  // A list cut at the page is never shown as all of it (#244).
+  // A list cut at the page is never shown as all of it.
   it('says a part ran past its page instead of answering the first hundred as all of it', () => {
     const [read] = openPullRequestsOf(
       answer([node({ files: { pageInfo: { hasNextPage: true }, nodes: [{ path: 'a.ts' }] } })]),

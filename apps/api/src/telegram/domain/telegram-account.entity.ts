@@ -25,9 +25,7 @@ export interface TelegramAccountProps {
   /** Why it is revoked or unlinked, in the runner's words. */
   statusReason: string | null;
   /**
-   * The Oppenheimer bot that answers the owner here
-   * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1); null
-   * while none does.
+   * The Oppenheimer bot that answers the owner here; null while none does.
    */
   answeringBotId: string | null;
   /** The owner's Telegram user id, recorded by the one-time `start` link; null until then. */
@@ -56,9 +54,9 @@ export interface TelegramBotReport {
 
 /**
  * A Telegram bot the person made with @BotFather, polled by the runner on one
- * of their hosts (`product/next-steps/telegram.md`). The token stays on the
- * host; this is what the control plane knows of it: where it lives, what it
- * is called, and how the host last said it stands.
+ * of their hosts. The token stays on the host; this is what the control plane
+ * knows of it: where it lives, what it is called, and how the host last said it
+ * stands.
  */
 export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
   /** A report of another Telegram bot forgot the owner: the next save writes that. */

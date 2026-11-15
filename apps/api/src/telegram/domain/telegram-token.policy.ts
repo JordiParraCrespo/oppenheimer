@@ -15,13 +15,13 @@ export interface TelegramTokenRefusalOutcome {
 const REASON_MAX = 200;
 
 /**
- * A token the host refused (`telegram.md` §2). The host drops nothing it
- * holds on a refusal, so a bot it was already polling keeps running on its
- * old token: that account stays connected and says the new token did not
- * take. Any other account has no working token: a token Telegram refused
- * (`TG_001`) or one for another bot (`TG_002`) is `revoked`, and a token
- * the host could not get checked (Telegram out of reach) leaves it
- * `unlinked`, to connect again, rather than claim the token was bad.
+ * A token the host refused. The host drops nothing it holds on a refusal, so a
+ * bot it was already polling keeps running on its old token: that account stays
+ * connected and says the new token did not take. Any other account has no
+ * working token: a token Telegram refused (`TG_001`) or one for another bot
+ * (`TG_002`) is `revoked`, and a token the host could not get checked (Telegram
+ * out of reach) leaves it `unlinked`, to connect again, rather than claim the
+ * token was bad.
  */
 export function telegramTokenRefusal(
   refusal: TelegramTokenRefusal,

@@ -9,12 +9,12 @@ import {
 } from '../infrastructure/relay-session-transcript.adapter';
 
 /**
- * A reader's ask for a page of a session's conversation
- * (`product/next-steps/agent-tools.md` §8): a `transcript.read` the protocol
- * accepts, carrying the cursor's conversation and offset as they were, settled
- * by the reply that names its command from that host only, by the runner's
- * refusal, or by nothing in time; and never sent to a runner that cannot
- * answer it. The runner's half is `apps/runner/internal/cli/link_transcript_test.go`.
+ * A reader's ask for a page of a session's conversation: a `transcript.read`
+ * the protocol accepts, carrying the cursor's conversation and offset as they
+ * were, settled by the reply that names its command from that host only, by the
+ * runner's refusal, or by nothing in time; and never sent to a runner that
+ * cannot answer it. The runner's half is
+ * `apps/runner/internal/cli/link_transcript_test.go`.
  */
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';

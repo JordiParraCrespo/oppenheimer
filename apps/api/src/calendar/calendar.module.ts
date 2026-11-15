@@ -70,11 +70,10 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Plan's calendar (`product/versions/mvp/20-plan-calendar.md`): the workspace's own
- * events, and a person's Google accounts (up to five, `23-plan-milestones-stats-accounts.md`
- * §5) read through to Google and never stored.
- * Task due dates and automation runs are the console's to place beside them, from
- * the modules that own them.
+ * Plan's calendar: the workspace's own events, and a person's Google accounts
+ * (up to five) read through to Google and never stored. Task due dates and
+ * automation runs are the console's to place beside them, from the modules that
+ * own them.
  */
 @Module({
   imports: [

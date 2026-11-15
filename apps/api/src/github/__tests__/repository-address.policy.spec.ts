@@ -9,7 +9,7 @@ import {
 } from '../domain/repository-address.policy';
 
 /**
- * The one place a repository address meets the wire and a URL (§6.2): the
+ * The one place a repository address meets the wire and a URL: the
  * wire's `installationId: null` and the URL's `tokens` both mean the
  * caller's own tokens. A translation that lost the kind would send a token
  * repository down the App's path, or the reverse, with nothing failing.
