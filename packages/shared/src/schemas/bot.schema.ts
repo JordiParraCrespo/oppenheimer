@@ -397,7 +397,7 @@ const positionSchema = z.number().int().min(0).max(10_000);
 
 /**
  * `POST /bots`. Everything is optional: a blank bot takes the next first
- * name the workspace does not have ("Juno", "Milo"…), on the next avatar colour, ungrouped, with no
+ * name the workspace does not have (a physicist's, at random: "Feynman", "Curie"…), on the next avatar colour, ungrouped, with no
  * home host until one is chosen.
  */
 export const createBotSchema = z.object({
