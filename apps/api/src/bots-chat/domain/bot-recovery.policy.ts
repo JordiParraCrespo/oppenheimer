@@ -25,32 +25,19 @@ const ROUTES: readonly string[] = [
   REPLACE_WHAT_IS_GONE,
 ];
 
-/** What no route lifts. */
+/** What no route lifts: each one a real incident's. */
 const LIMITS: readonly string[] = [
-  'Do not try the same thing the same way twice.',
-  'Take a route only if it changes what made the step fail: a cause that travels with the task (a missing branch, a wrong repository, a bad command or task) fails the same way on another host, so fix the task or say what is wrong instead.',
-  'Work still under way (a queued or stalled session) has not failed: follow it rather than start a second one elsewhere.',
-  'A person\'s "no" is not a failure: a denial, a dismissed question or "stop" ends that route, and you do not try it another way.',
+  'a host the person named, a "no" from the person (a denial, a dismissed question or "stop"), and work still under way (a queued or stalled session is followed, not started again elsewhere).',
+  'The same thing the same way twice is not a new try, and a cause that travels with the task (a missing branch, a wrong repository, a bad command) fails the same way on another host.',
 ];
 
 /**
- * What a bot does at a blocker (2026-11-12): Oppie's half-hourly Sentry
- * check answered "the designated session is still closed" for hours, when
- * a new session would have run it. A blocker is a problem the bot solves
- * before it is one it reports, and the solution has to serve what the
- * blocked step was for.
+ * What a blocker is (2026-11-12): Oppie's half-hourly Sentry check answered
+ * "the designated session is still closed" for hours, when a new session
+ * would have run it. What it was told to use is the means, not the purpose.
  */
-const BLOCKER_RULE = [
-  'A blocker is yours to solve before it is yours to report.',
-  'Stop and ask what the blocked step was for, then what else you can reach that end with: what you were told to use (a session, a terminal, a branch, a source) is the means, not the purpose, unless your instructions say only that one will do.',
-  'Take a way round when it serves the same purpose, stays within your permissions and instructions, and nobody said no to it, and say in a line what you did instead and why.',
-  'Where a rule here says to stop and ask (a host the person named, a refused command, a task that failed on its own), that rule stands: a way round is never a way past it.',
-  'When none makes sense, say once what blocks you, what you tried and the one thing that would unblock it.',
-].join(' ');
-
-/** What no later turn does with a blocker an earlier one reported. */
-const BLOCKER_NOT_TWICE =
-  'Never report the same blocker twice. One you reported before is not a reason to skip the work now: check whether it still holds, and if it does, solve it this time.';
+const BLOCKER_RULE =
+  'A blocker is yours to solve before it is yours to report: what you were told to use (a session, a terminal, a branch, a source) is the means, not the purpose, unless your instructions say only that one will do, so a closed session is replaced by a new one with the same task.';
 
 /**
  * What a turn nobody asked for (a routine, a loop's run) is told about the
@@ -92,14 +79,20 @@ const HOST_CASES: readonly { when: string; action: string }[] = [
   },
 ];
 
-/** The bullets "How a turn goes" carries about failures. */
+/**
+ * The bullets "How a turn goes" carries about failures (2026-11-15): Claude
+ * Code's few lines ("identify root causes", "try a different approach",
+ * "hand back only when done, waiting on something external, or the next step
+ * needs the user's decision") in place of a page of cases, keeping the limits
+ * real incidents earned. The owner asked for fewer, looser rules and for
+ * imagination when a plan does not work.
+ */
 export function recoveryBullets(): string {
   return [
-    `- A failed step is not the end of the request. Step back from the route that failed to what it was for, and list the other ways you have to get there: ${ROUTES.join(', ')}. Check which of them can work now (list_hosts says which hosts are online and have the agent; the failure itself often says why), take the most promising one within your permissions, and say in a line what failed and what you did instead. Never end a reply on "I can retry" or on what the person could do while you still have a way you have not tried. Report a blocker only when the ways you have are used up: say what you tried, and give the options left with the one you recommend.`,
-    ...LIMITS.map((limit) => `- ${limit}`),
+    `- When something fails, find out why before you react, and fix the cause rather than the symptom; never take a destructive shortcut to make an error go away. Then step back to what you were trying to do and think of other ways there, imaginatively: ${ROUTES.join(', ')}. Take the one that changes what went wrong, and say in a line what failed and what you did instead.`,
     `- ${BLOCKER_RULE}`,
-    `- ${BLOCKER_NOT_TWICE}`,
-    '- Saying what you are about to do is not a result. Do it in the same turn, and end with the result, a concrete blocker, or how the person will hear back (a session you follow).',
+    '- Keep going until it is done, or until the next step really needs the person; then say what failed, what you tried and the one thing you recommend, and never the same blocker twice. Never end on "I can retry" while you still have a way you have not tried.',
+    `- What you never route around: ${LIMITS.join(' ')}`,
   ].join('\n');
 }
 

@@ -1,45 +1,53 @@
 import { BOT_AVATAR_COLORS, BOT_NAME_MAX, type BotAvatarColor } from '@oppenheimer/shared';
 
 /**
- * The first names a blank bot is born with (`25-bots.md` §1), in the order a
- * workspace meets them. Short, easy to say, no two with the same initial, so
- * neighbours in the sidebar read and draw apart, and none a product or
- * someone famous enough to be mistaken for one. A name says who the bot is;
- * its description says the job, which it writes itself in its first chat.
+ * The first names a blank bot is born with (`25-bots.md` §1): physicists, in
+ * keeping with the product's name (2026-11-15, the owner's pick; they were
+ * Juno, Milo, Wren… until then). Surnames, short and easy to say, no two with
+ * the same initial, so neighbours in the sidebar read and draw apart, and
+ * none that is also a product or a company. A name says who the bot is; its
+ * description says the job, which it writes itself in its first chat, and it
+ * offers a name of its own there too.
  */
 export const BOT_FIRST_NAMES = [
-  'Juno',
-  'Milo',
-  'Wren',
-  'Iris',
-  'Otto',
-  'Sage',
-  'Pip',
-  'Hazel',
-  'Quill',
-  'Lark',
-  'Fern',
-  'Dex',
-  'Clio',
-  'Rune',
-  'Tess',
-  'Birch',
-  'Vega',
-  'Nell',
-  'Gus',
-  'Ember',
+  'Alvarez',
+  'Bohr',
+  'Curie',
+  'Dirac',
+  'Feynman',
+  'Gauss',
+  'Hawking',
+  'Joule',
+  'Kepler',
+  'Lorentz',
+  'Meitner',
+  'Noether',
+  'Ohm',
+  'Planck',
+  'Rubin',
+  'Salam',
+  'Thomson',
+  'Volta',
+  'Wu',
+  'Zwicky',
 ] as const;
 
 /**
- * The name of a bot created without one: the first of `BOT_FIRST_NAMES` the
- * workspace does not have, so a new workspace's bots walk the list in order
- * and a deleted bot's name is the next one given. Once every name is taken,
- * the first is numbered ("Juno 2").
+ * The name of a bot created without one: one of `BOT_FIRST_NAMES` the
+ * workspace does not have, picked at random, so two workspaces do not both
+ * start with the same bot (it was the first free one in order, so every
+ * workspace's first bot was Juno). Once every name is taken, a random one is
+ * numbered ("Feynman 2").
  */
 export function firstNameFor(taken: readonly string[]): string {
   const used = new Set(taken.map((name) => name.trim().toLowerCase()));
-  const free = BOT_FIRST_NAMES.find((name) => !used.has(name.toLowerCase()));
-  return free ?? uniqueBotName(BOT_FIRST_NAMES[0], taken);
+  const free = BOT_FIRST_NAMES.filter((name) => !used.has(name.toLowerCase()));
+  if (free.length > 0) return pick(free);
+  return uniqueBotName(pick(BOT_FIRST_NAMES), taken);
+}
+
+function pick<T>(from: readonly T[]): T {
+  return from[Math.floor(Math.random() * from.length)] as T;
 }
 
 /** A new bot's name: the one asked for, numbered if taken, or the next first name. */
