@@ -4,7 +4,11 @@ import {
   SortableGroup,
   sortableProjectId,
 } from '@oppenheimer/design-system-web';
-import { type SessionEntity, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
+import {
+  matchesQuery,
+  type SessionEntity,
+  sessionAgentLabel,
+} from '@oppenheimer/frontend-consumer';
 import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
@@ -39,7 +43,7 @@ import {
   repositoryOptions,
   withoutChip,
 } from '../lib/session-filters';
-import { matchesQuery, sidebarList } from '../lib/session-groups';
+import { sidebarList } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
 import { PinnedGroup } from './pinned-group';
 import { ProjectGroup } from './project-group';

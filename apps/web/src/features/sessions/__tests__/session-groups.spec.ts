@@ -1,14 +1,8 @@
-import { ProjectEntity, type SessionEntity } from '@oppenheimer/frontend-consumer';
+import { groupByProject, ProjectEntity, type SessionEntity } from '@oppenheimer/frontend-consumer';
 import { sessionCheckout, sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import {
-  currentProjectOf,
-  emptyMessage,
-  groupByProject,
-  matchesQuery,
-  shownGroups,
-} from '../lib/session-groups';
+import { currentProjectOf, emptyMessage, shownGroups } from '../lib/session-groups';
 
 /**
  * The sidebar's groups and the move pane's targets
@@ -44,22 +38,6 @@ const session = (id: string, projectId: string, repos: string[], name = id): Ses
     checkouts: repos.map((githubRepoId) => sessionCheckout({ githubRepoId })),
   });
 
-describe('groupByProject', () => {
-  it('keeps the projects’ order, includes empty ones, and files orphans last', () => {
-    const groups = groupByProject(
-      [project('b', ['1']), project('a', ['2'])],
-      [session('s1', 'a', ['2']), session('s2', 'gone', ['3']), session('s3', 'b', ['1'])],
-    );
-    expect(groups.map((group) => group.project?.id ?? null)).toEqual(['b', 'a', null]);
-    expect(groups.map((group) => group.sessions.map((s) => s.id))).toEqual([
-      ['s3'],
-      ['s1'],
-      ['s2'],
-    ]);
-    expect(groupByProject([project('empty', [])], [])[0]?.sessions).toEqual([]);
-  });
-});
-
 describe('currentProjectOf', () => {
   it('names the project the sessions share, so a move can tick it rather than hide it', () => {
     expect(currentProjectOf([session('a', 'here', []), session('b', 'here', [])])).toBe('here');
@@ -69,15 +47,6 @@ describe('currentProjectOf', () => {
   it('names none when the sessions are spread over projects, or there are none', () => {
     expect(currentProjectOf([session('a', 'here', []), session('b', 'there', [])])).toBeNull();
     expect(currentProjectOf([])).toBeNull();
-  });
-});
-
-describe('matchesQuery', () => {
-  it('narrows on the name, ignoring case and blank queries', () => {
-    const row = session('s', 'p', [], 'Wallet empty state');
-    expect(matchesQuery(row, '  ')).toBe(true);
-    expect(matchesQuery(row, 'EMPTY')).toBe(true);
-    expect(matchesQuery(row, 'ledger')).toBe(false);
   });
 });
 

@@ -34,29 +34,6 @@ export function isWorking(session: SessionEntity): boolean {
   return session.state === 'working' && session.isLive && !session.isClosing;
 }
 
-/**
- * The word beside the dot in a session's header ("Running", the frame's
- * `paneState`), under `sessions.session.state`. The lifecycle speaks first —
- * a session still starting, one that failed to, one stopped or deleted is
- * that, whatever its group — and a live one reads its group.
- */
-export type SessionStateWord =
-  | 'starting'
-  | 'failed'
-  | 'stopped'
-  | 'deleted'
-  | 'deleting'
-  | SessionGroup;
-
-export function stateWordFor(session: SessionEntity): SessionStateWord {
-  if (session.isClosing) return 'deleting';
-  if (session.isProvisioning) return 'starting';
-  if (session.lifecycle === 'failed') return 'failed';
-  if (session.isResolved) return 'deleted';
-  if (!session.isLive) return 'stopped';
-  return session.state;
-}
-
 /** Why the agent says it waits, under `sessions.session.agentReport`. */
 export type AgentReportWord = 'permission' | 'question' | 'auth' | 'error';
 

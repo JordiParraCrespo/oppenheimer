@@ -1,12 +1,12 @@
 import { Button, CommandRow, StatusDot } from '@oppenheimer/design-system-web';
 import { ExternalLink } from '@oppenheimer/design-system-web/icons';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, stateWordFor } from '@oppenheimer/frontend-consumer';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudLink } from '../components/cloud-link';
 import { canContinueOnHost } from '../lib/cloud-continue';
 import { hostCloudCopy } from '../lib/session-options';
-import { dotFor, stateWordFor } from '../lib/session-run-state';
+import { dotFor } from '../lib/session-run-state';
 import { SessionCloudContinue } from './session-cloud-continue';
 
 const DeleteSessionDialog = lazy(() =>
