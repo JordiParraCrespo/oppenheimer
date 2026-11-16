@@ -241,11 +241,11 @@ function Composer({
           className="px-3 pb-2.5"
         />
         {dictation?.recorder ? (
-          // The bar is 16px taller than the foot row it replaces; it takes
+          // The bar is 14px taller than the foot row it replaces; it takes
           // that from the field's bottom padding, so the box keeps its height.
           <ComposerRecorder
             data-slot="composer-recorder"
-            className="-mt-4 px-2.5 pb-2.5"
+            className="-mt-3.5 px-2.5 pb-2.5"
             onEnter={submit}
           >
             {dictation.recorder}

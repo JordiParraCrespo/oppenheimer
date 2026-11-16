@@ -12,8 +12,8 @@ import { IconButton } from './icon-button';
  * - `VoiceRecorderBar`: while dictating, the composer's foot gives way to
  *   the recorder: a waveform growing in from the right over a dashed
  *   midline, the elapsed time in mono, cancel and the blue arrow up that
- *   stops it. Before the microphone answers it says so; after,
- *   "Transcribing…".
+ *   stops it, on a faint tint rather than a box of its own. Before the
+ *   microphone answers it says so; after, "Transcribing…", in the same row.
  * - `DictationButton`: the mic, a 30px square, on the danger surface while
  *   it records. Every field that takes dictation shows this one.
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
@@ -44,30 +44,29 @@ function VoiceRecorderBar({
   labels?: { waiting?: string; transcribing?: string; cancel?: string; stop?: string };
   className?: string;
 }) {
+  const bar = 'flex items-center gap-2.5 rounded-lg bg-hover-surface py-2 pr-2 pl-3.5';
   if (state !== 'recording') {
+    // The same row as the recording, its midline still drawn, so the box
+    // does not jump between listening, waiting and transcribing.
     return (
       <div
         data-slot="voice-recorder-bar"
         data-state={state}
         role="status"
-        className={cn('flex items-center gap-2.5 rounded-lg border border-border-subtle bg-card py-2 pr-2 pl-3.5 text-[13px] text-fg-muted', className)}
+        className={cn(bar, 'text-[13px] text-fg-muted', className)}
       >
-        <span className="flex flex-1 items-center gap-1.5">
+        <span className="flex h-7 shrink-0 items-center gap-2">
           <LoaderIcon aria-hidden className="size-3.5 motion-safe:animate-spin" />
-          {state === 'waiting' ? (labels?.waiting ?? 'Waiting for microphone…') : null}
+          {state === 'waiting'
+            ? (labels?.waiting ?? 'Waiting for microphone…')
+            : (labels?.transcribing ?? 'Transcribing…')}
         </span>
-        {state === 'transcribing' ? (
-          <span className="font-mono text-[12px]">{labels?.transcribing ?? 'Transcribing…'}</span>
-        ) : null}
+        <span aria-hidden className="h-0 min-w-0 flex-1 border-t border-dashed border-border" />
       </div>
     );
   }
   return (
-    <div
-      data-slot="voice-recorder-bar"
-      data-state="recording"
-      className={cn('flex items-center gap-2.5 rounded-lg border border-border-subtle bg-card py-2 pr-2 pl-3.5', className)}
-    >
+    <div data-slot="voice-recorder-bar" data-state="recording" className={cn(bar, className)}>
       <div aria-hidden className="relative flex h-7 min-w-0 flex-1 items-center overflow-hidden">
         <span className="absolute inset-x-0 top-1/2 border-t border-dashed border-border" />
         <div className="relative ml-auto flex h-full items-center gap-0.5">
