@@ -190,7 +190,7 @@ export function PlanBoard() {
               ) : null}
               {folded[status] ? (
                 <Pressable
-                  onPress={() => setShowOlder(true)}
+                  onPress={() => setShowOlder((shown) => !shown)}
                   accessibilityRole="button"
                   className={
                     columns[status].length > 0
@@ -199,7 +199,9 @@ export function PlanBoard() {
                   }
                 >
                   <Text variant="caption" tone="accent">
-                    {t('tasks.board.showOlder', { count: folded[status] })}
+                    {showOlder
+                      ? t('tasks.board.hideOlder')
+                      : t('tasks.board.showOlder', { count: folded[status] })}
                   </Text>
                 </Pressable>
               ) : null}
