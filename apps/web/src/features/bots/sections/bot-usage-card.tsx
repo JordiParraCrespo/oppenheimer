@@ -19,7 +19,7 @@ export function BotUsageCard({ botId }: { botId: string }) {
   if (!open) return null;
   return (
     // The chat's own column, so the card lines up with its messages and the composer.
-    <ChatTranscript className="mt-5">
+    <ChatTranscript ground="recessed" className="mt-5">
       <ChatUserMessage>/usage</ChatUserMessage>
       <Card className="w-full max-w-sm px-4 py-3">
         <QueryState>

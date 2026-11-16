@@ -77,7 +77,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
       {all.length === 0 ? (
         <BotHello botId={botId} name={name} />
       ) : (
-        <ChatTranscript>
+        <ChatTranscript ground="recessed">
           {blocks.map((block, index) => {
             const markers = markersBefore(blocks, index);
             return (

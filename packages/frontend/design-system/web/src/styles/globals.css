@@ -201,7 +201,8 @@
     --chat-ground: var(--term-bg);
     /* The chat's one wash: the person's bubble, a code block, inline code and
        a table's header row, a warm off-white that reads on the white ground
-       without a hairline. */
+       without a hairline. A chat on a recessed ground takes the card instead
+       (`ChatTranscript`'s `ground`). */
     --chat-wash: #f6f5f2;
     /* The agent's word for what it is doing, under a session's chat while it
        works ("✻ Mustering…"): Claude's clay, the hue its own terminal draws

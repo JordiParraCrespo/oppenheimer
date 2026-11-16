@@ -11,7 +11,8 @@ import { cn } from '../lib/utils';
  * where the person's turns are cards on the right and the agent's are
  * unboxed prose on the left, each agent turn opened by a `TurnHeader`.
  *
- * - `ChatTranscript`: the column; turns 20px apart.
+ * - `ChatTranscript`: the column; turns 20px apart. Its `ground` sets the
+ *   chat's wash for what it stands on.
  * - `ChatUserMessage`: the person's turn, a bubble at 80% of the column with
  *   the 18px radius at 15px, its line breaks kept (Bots); attachments sit
  *   above it, the time and its actions (copy, edit) under it, on hover.
@@ -27,11 +28,24 @@ import { cn } from '../lib/utils';
  *   ended or the tokens it took.
  * - `StreamingCaret`: the write head while a reply streams in.
  */
-function ChatTranscript({ className, ...props }: React.ComponentProps<'div'>) {
+function ChatTranscript({
+  ground = 'card',
+  className,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /**
+   * What the column stands on, which sets the chat's wash (the person's
+   * bubble, code, a table's header): `card`, a white ground, takes the warm
+   * wash; `recessed`, a bot's grey pane, takes the card itself, which the
+   * warm wash would vanish into.
+   */
+  ground?: 'card' | 'recessed';
+}) {
   return (
     <div
       data-slot="chat-transcript"
-      className={cn('mx-auto flex w-full max-w-190 flex-col gap-5', className)}
+      data-ground={ground}
+      className={cn('mx-auto flex w-full max-w-190 flex-col gap-5', ground === 'recessed' && '[--chat-wash:var(--card)]', className)}
       {...props}
     />
   );
@@ -354,8 +368,8 @@ function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
         '[&_a]:text-link [&_a]:underline-offset-2 [&_a:hover]:underline',
         '[&_img]:block [&_img]:h-auto [&_img]:max-h-[min(60vh,32rem)] [&_img]:max-w-full [&_img]:rounded-sm',
         '[&_summary]:cursor-pointer [&_summary]:font-medium',
-        // Inline code, on the chat's wash, which shows on a recessed ground
-        // and on a card-coloured one alike (a fenced block is a `ChatCodeBlock`)
+        // Inline code, on the chat's wash, which its `ChatTranscript` sets for
+        // the ground it stands on (a fenced block is a `ChatCodeBlock`)
         '[&_:not(pre)>code]:rounded-[5px] [&_:not(pre)>code]:bg-chat-wash [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
         // Tables: the header row on the wash, its ends rounded; rows on hairlines
         '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[14px] [&_table]:leading-normal [&_table]:tabular-nums',
