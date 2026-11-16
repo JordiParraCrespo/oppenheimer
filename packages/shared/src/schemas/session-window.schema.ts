@@ -1,14 +1,20 @@
 import { z } from 'zod';
+import { codingAgentSchema } from './primitives.js';
 
 /**
  * A session's terminal windows as the console reads them
  * (`GET/POST /sessions/{id}/windows`, `DELETE /sessions/{id}/windows/{window}`):
  * the tmux windows of its session on the host. Window 0 is the agent; 1 and up
- * are the plain shells the session pane's Terminal tab opens in its worktree.
- * Nothing is stored: each read asks the host's runner.
+ * are the plain shells, or the second agents, the session pane opens in its
+ * worktree. Nothing is stored: each read asks the host's runner.
  */
 
-/** One window: its tmux index (what an attach ticket's `window` names), its name, and whether it is the agent's. */
+/**
+ * One window: its tmux index (what an attach ticket's `window` names), its
+ * name, and whether it is the session's agent. Only window 0 is: a second
+ * agent opened in a window is named by its catalog id and is not the one the
+ * session's state is read from.
+ */
 export const sessionTerminalWindowSchema = z.object({
   index: z.number().int().min(0),
   name: z.string(),
@@ -30,7 +36,27 @@ export const sessionWindowsResponseSchema = z.object({
 
 export type SessionWindowsResponse = z.infer<typeof sessionWindowsResponseSchema>;
 
-/** `POST /sessions/{id}/windows`: the shell it opened, and every window after it. */
+/**
+ * A coding agent a session can start in a window of its own worktree, beside
+ * the agent in window 0: every catalog agent but `shell`, which is what a
+ * window without one already is.
+ */
+export const sessionWindowAgentSchema = codingAgentSchema.exclude(['shell']);
+
+export type SessionWindowAgent = z.infer<typeof sessionWindowAgentSchema>;
+
+/**
+ * `POST /sessions/{id}/windows`: a plain shell, or with `agent` that coding
+ * agent started in the new window, with the session's permission level (and
+ * its model and effort when it is the session's own agent).
+ */
+export const openSessionWindowBodySchema = z.object({
+  agent: sessionWindowAgentSchema.optional(),
+});
+
+export type OpenSessionWindowBody = z.infer<typeof openSessionWindowBodySchema>;
+
+/** `POST /sessions/{id}/windows`: the window it opened, and every window after it. */
 export const openedSessionWindowResponseSchema = z.object({
   window: sessionTerminalWindowSchema,
   windows: z.array(sessionTerminalWindowSchema),

@@ -1,7 +1,14 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSidePane } from '../hooks/use-side-pane';
-import { closeTab, openKept, rememberSidePane, shownTab, storedSidePane } from '../lib/side-pane';
+import {
+  closeTab,
+  openKept,
+  rememberSidePane,
+  shownTab,
+  storedSidePane,
+  windowAgent,
+} from '../lib/side-pane';
 
 /**
  * What a session's side pane keeps on this device, and which tab shows.
@@ -97,5 +104,16 @@ describe('useSidePane', () => {
       active: 'terminal:1',
     });
     expect(storedSidePane(SESSION).items).toEqual([{ kind: 'bot', botId: 'b1' }]);
+  });
+});
+
+describe('windowAgent', () => {
+  // The tab says which agent runs in a window. The regression: a shell tab
+  // titled as an agent, or a second Codex titled "Terminal 2".
+  it('is the agent a window is named after, and none for a shell or an unknown name', () => {
+    expect(windowAgent('codex')).toBe('codex');
+    expect(windowAgent('claude-code')).toBe('claude-code');
+    expect(windowAgent('shell')).toBeNull();
+    expect(windowAgent('bash')).toBeNull();
   });
 });

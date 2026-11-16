@@ -1,3 +1,4 @@
+import { type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
 import type { PreviewTab } from './preview-open';
 
 /**
@@ -107,4 +108,15 @@ export function closeTab(order: readonly string[], active: string | null, key: s
 export function shownTab(order: readonly string[], active: string | null): string | null {
   if (active === null) return null;
   return order.includes(active) ? active : (order[0] ?? null);
+}
+
+/**
+ * The agent a session window runs, read off its name: the runner names a
+ * window opened for an agent after the agent's catalog id, and a plain shell
+ * `shell`. Anything else (an older runner's name, a window renamed on the
+ * host) is a shell too.
+ */
+export function windowAgent(name: string): Exclude<CodingAgentId, 'shell'> | null {
+  if (!isCodingAgentId(name) || name === 'shell') return null;
+  return name;
 }

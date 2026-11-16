@@ -506,7 +506,8 @@
       "SESSIONS_056": "El runner de este host no puede abrir ni cerrar terminales. Actualiza el runner del host.",
       "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
       "SESSIONS_058": "Esa terminal ya no está abierta.",
-      "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión."
+      "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
+      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1498,7 +1499,11 @@
         "bots": "Elige un bot",
         "searchBots": "Buscar bots",
         "noBots": "Aún no hay bots. Crea uno en Empleados.",
-        "noMatch": "Nada coincide con «{{query}}»."
+        "noMatch": "Nada coincide con «{{query}}».",
+        "agent": "Agente",
+        "agentDetail": "Otro agente en este worktree",
+        "agents": "Elige un agente",
+        "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí."
       },
       "terminal": {
         "name": "Terminal {{index}}",
@@ -1511,7 +1516,12 @@
         "gone": "Esta terminal se ha cerrado"
       },
       "openFull": "Abrir en su propia página",
-      "sessionLoadFailed": "No se pudo cargar esa sesión"
+      "sessionLoadFailed": "No se pudo cargar esa sesión",
+      "agent": {
+        "name": "{{agent}} {{index}}",
+        "opening": "Iniciando {{agent}}…",
+        "openFailed": "El agente no se inició"
+      }
     },
     "preview": {
       "simulator": "Simulador",

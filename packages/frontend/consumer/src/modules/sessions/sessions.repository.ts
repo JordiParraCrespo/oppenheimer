@@ -8,6 +8,7 @@ import {
   type StartCloudSessionRequest,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
+import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type {
@@ -502,10 +503,15 @@ export class SessionsRepository {
     });
   }
 
-  /** Opens a plain shell in the session's worktree: the window it made, and every window after. */
-  openWindow(id: string): Promise<OpenedSessionWindow> {
+  /**
+   * Opens a window in the session's worktree, a plain shell or with `agent`
+   * that coding agent started in it: the window it made, and every window
+   * after. `shell` is the plain shell, sent as no agent at all.
+   */
+  openWindow(id: string, agent?: CodingAgentId): Promise<OpenedSessionWindow> {
     return callApi(SessionsErrors.WINDOW_OPEN_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.openSessionWindow({ path: { id } }));
+      const body = agent === undefined || agent === 'shell' ? {} : { agent };
+      const data = await api.body(heyApiSdk.openSessionWindow({ path: { id }, body }));
       return { window: toWindow(data.window), windows: data.windows.map(toWindow) };
     });
   }

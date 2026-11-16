@@ -336,7 +336,8 @@
     "SESSIONS_056": "El runner de este host no puede abrir ni cerrar terminales. Actualiza el runner del host.",
     "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
     "SESSIONS_058": "Esa terminal ya no está abierta.",
-    "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión."
+    "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
+    "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
   },
   "notFound": {
     "title": "Esta página no existe",

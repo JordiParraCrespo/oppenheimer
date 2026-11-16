@@ -6,6 +6,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
+import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
@@ -774,10 +775,21 @@ export function useSessionWindows(sessionId: string | undefined) {
   });
 }
 
-/** Opens a shell in a session; its answer is written to the session's windows. */
-export const useOpenSessionWindow = mutation<OpenedSessionWindow, string>({
-  run: (app, sessionId) => app.sessions.openWindow(sessionId),
-  update: (queryClient, opened, sessionId) => {
+export interface OpenSessionWindowVariables {
+  sessionId: string;
+  /**
+   * A coding agent to start in the new window, beside the session's own in
+   * window 0: at the session's permission level, with its model and effort
+   * only when it is the session's own agent. Absent, or `shell`, is a plain
+   * shell. A runner too old to start one refuses with `SESSIONS_060`.
+   */
+  agent?: CodingAgentId;
+}
+
+/** Opens a shell, or a second agent, in a session; its answer is written to the session's windows. */
+export const useOpenSessionWindow = mutation<OpenedSessionWindow, OpenSessionWindowVariables>({
+  run: (app, { sessionId, agent }) => app.sessions.openWindow(sessionId, agent),
+  update: (queryClient, opened, { sessionId }) => {
     queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
       state: 'listed',
       windows: opened.windows,

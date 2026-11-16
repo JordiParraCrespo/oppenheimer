@@ -369,7 +369,13 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     cols: 100,
     rows: 30,
   },
-  'session.window.open': { type: 'session.window.open', commandId, sessionId, name: 'tests' },
+  'session.window.open': {
+    type: 'session.window.open',
+    commandId,
+    sessionId,
+    name: 'tests',
+    agent: 'codex',
+  },
   'session.window.close': { type: 'session.window.close', commandId, sessionId, window: 1 },
   'session.windows.list': { type: 'session.windows.list', commandId, sessionId },
   'session.windows': {

@@ -1,3 +1,4 @@
+import type { SessionWindowAgent } from '@oppenheimer/shared';
 import type { SessionWindowsMessage } from '@oppenheimer/shared/protocol';
 
 /** One tmux window of a session, as its runner listed it. */
@@ -18,6 +19,13 @@ export type SessionWindowsOutcome =
   | { kind: 'failed'; code: string; detail?: string };
 
 /**
+ * What an open came back with: any of the above, or, for an open that asked
+ * for a second agent, a live runner that does not start one in a window
+ * (its hello did not name `session.window.agent`), so nothing was asked.
+ */
+export type SessionWindowOpenOutcome = SessionWindowsOutcome | { kind: 'agent_not_supported' };
+
+/**
  * What the module that owns the runner link implements so the session pane's
  * Terminal tab can list, open and close a session's plain shells: tmux windows
  * 1 and up, window 0 being the agent. Like `SessionPortsPort` it waits for the
@@ -25,6 +33,11 @@ export type SessionWindowsOutcome =
  */
 export interface SessionWindowsPort {
   list(hostId: string, sessionId: string): Promise<SessionWindowsOutcome>;
-  open(hostId: string, sessionId: string): Promise<SessionWindowsOutcome>;
+  /** A plain shell, or with `agent` that coding agent started in the new window. */
+  open(
+    hostId: string,
+    sessionId: string,
+    agent?: SessionWindowAgent,
+  ): Promise<SessionWindowOpenOutcome>;
   close(hostId: string, sessionId: string, window: number): Promise<SessionWindowsOutcome>;
 }

@@ -13047,7 +13047,7 @@
         ]
       },
       "post": {
-        "description": "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it.",
+        "description": "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it. With `agent`, that coding agent is started in the new window instead, at the session's permission level, with the session's model and effort only when it is the session's own agent; the window is named after it. Window 0 stays the session's agent. The body is optional: without one the window is a plain shell.",
         "operationId": "openSessionWindow",
         "parameters": [
           {
@@ -13059,6 +13059,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenSessionWindowRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "",
@@ -13101,7 +13111,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_059 — The host refused to change the session's terminals\n\nSESSIONS_056 — This host's runner cannot open or close a session's terminals\n\nSESSIONS_005 — That session is closed",
+            "description": "SESSIONS_060 — This host's runner cannot start a second agent in a session\n\nSESSIONS_059 — The host refused to change the session's terminals\n\nSESSIONS_056 — This host's runner cannot open or close a session's terminals\n\nSESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -32745,11 +32755,11 @@
           "name": {
             "type": "string",
             "example": "zsh",
-            "description": "The window’s name on the host."
+            "description": "The window’s name on the host: a second agent’s window is named by its catalog id (`codex`)."
           },
           "agent": {
             "type": "boolean",
-            "description": "Window 0, the agent’s; the rest are plain shells."
+            "description": "Window 0, the session’s agent, whose state the session shows; the rest are plain shells or a second agent."
           }
         },
         "required": [
@@ -32783,11 +32793,27 @@
           "windows"
         ]
       },
+      "OpenSessionWindowRequest": {
+        "type": "object",
+        "properties": {
+          "agent": {
+            "type": "string",
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "pi",
+              "omp"
+            ]
+          }
+        }
+      },
       "OpenedSessionWindowResponseDto": {
         "type": "object",
         "properties": {
           "window": {
-            "description": "The shell just opened.",
+            "description": "The window just opened.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/SessionTerminalWindowDto"

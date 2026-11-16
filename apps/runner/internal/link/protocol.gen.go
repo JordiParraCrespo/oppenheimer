@@ -102,6 +102,7 @@ const (
 	CapabilityHostExec                 = "host.exec"
 	CapabilityTerminalDrive            = "terminal.drive"
 	CapabilitySessionWindowsList       = "session.windows.list"
+	CapabilitySessionWindowAgent       = "session.window.agent"
 )
 
 // The `type` of every message on the link.
@@ -640,6 +641,7 @@ type SessionWindowOpen struct {
 	CommandID string `json:"commandId"`
 	SessionID string `json:"sessionId"`
 	Name      string `json:"name,omitempty"`
+	Agent     string `json:"agent,omitempty"`
 }
 
 // SessionWindowClose is the `session.window.close` message.

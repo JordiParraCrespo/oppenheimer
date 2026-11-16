@@ -171,9 +171,15 @@ func (s *Server) Create(ctx context.Context, name, dir, command string, env map[
 
 // NewWindow opens a tab: a plain shell in the same worktree. In the
 // background (-d): without it tmux makes it the session's current window, and
-// every client watching the agent's switches to the shell.
-func (s *Server) NewWindow(ctx context.Context, name, dir string) (int, error) {
-	out, err := s.command(ctx, "new-window", "-d", "-t", name+":", "-c", dir, "-P", "-F", "#{window_index}")
+// every client watching the agent's switches to the shell. A title (-n) names
+// the window for good: tmux renames a window it named itself after whatever
+// runs in it, and one named here keeps saying which agent it holds.
+func (s *Server) NewWindow(ctx context.Context, name, dir, title string) (int, error) {
+	args := []string{"new-window", "-d", "-t", name + ":", "-c", dir, "-P", "-F", "#{window_index}"}
+	if title != "" {
+		args = append(args, "-n", title)
+	}
+	out, err := s.command(ctx, args...)
 	if err != nil {
 		return 0, err
 	}

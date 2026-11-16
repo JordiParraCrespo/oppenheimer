@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { SessionLoaderResolver } from '../application/session-loader.resolver';
 import type {
-  SessionWindowsOutcome,
+  SessionWindowOpenOutcome,
   SessionWindowsPort,
 } from '../application/session-windows.port';
 import { CloseSessionWindowCommand } from '../commands/close-session-window/close-session-window.command';
@@ -32,7 +32,7 @@ const SCOPE = {
 };
 
 describe('session window handlers', () => {
-  let outcome: SessionWindowsOutcome;
+  let outcome: SessionWindowOpenOutcome;
   let windows: {
     list: ReturnType<typeof vi.fn>;
     open: ReturnType<typeof vi.fn>;
@@ -68,9 +68,9 @@ describe('session window handlers', () => {
     new FindSessionWindowsQueryHandler(loader, hosts, port()).execute(
       new FindSessionWindowsQuery({ scope: SCOPE, sessionId: work.id }),
     );
-  const open = () =>
+  const open = (agent?: 'codex') =>
     new OpenSessionWindowCommandHandler(loader, hosts, port()).execute(
-      new OpenSessionWindowCommand({ scope: SCOPE, sessionId: work.id }),
+      new OpenSessionWindowCommand({ scope: SCOPE, sessionId: work.id, agent }),
     );
   const close = (window: number) =>
     new CloseSessionWindowCommandHandler(loader, hosts, port()).execute(
@@ -116,7 +116,28 @@ describe('session window handlers', () => {
         { index: 3, name: 'zsh', agent: false },
       ],
     });
-    expect(windows.open).toHaveBeenCalledWith('host-1', work.id);
+    expect(windows.open).toHaveBeenCalledWith('host-1', work.id, undefined);
+  });
+
+  it('asks the host for the second agent an open names, and answers with its window', async () => {
+    outcome = {
+      kind: 'listed',
+      windows: [
+        { index: 0, name: 'claude' },
+        { index: 2, name: 'codex' },
+      ],
+      opened: 2,
+    };
+
+    await expect(open('codex')).resolves.toMatchObject({
+      window: { index: 2, name: 'codex', agent: false },
+    });
+    expect(windows.open).toHaveBeenCalledWith('host-1', work.id, 'codex');
+  });
+
+  it('refuses a second agent on a runner that cannot start one with SESSIONS_060', async () => {
+    outcome = { kind: 'agent_not_supported' };
+    await expect(open('codex')).rejects.toMatchObject({ code: 'SESSIONS_060' });
   });
 
   it('refuses an open or a close the host could not take, each with its own code', async () => {

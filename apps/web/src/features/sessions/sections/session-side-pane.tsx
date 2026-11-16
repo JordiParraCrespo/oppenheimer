@@ -8,12 +8,13 @@ import {
   useSessionWindows,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSidePane } from '../hooks/use-side-pane';
 import type { PreviewTab } from '../lib/preview-open';
-import { type SideItem, shownTab, sideItemKey } from '../lib/side-pane';
+import { type SideItem, shownTab, sideItemKey, windowAgent } from '../lib/side-pane';
 import { SessionBrowser } from './session-browser';
 import { SessionDesktop } from './session-desktop';
 import { SessionDevice } from './session-device';
@@ -23,9 +24,11 @@ import { SideTerminal } from './side-terminal';
 /**
  * The side pane beside a session: a tab for each thing opened beside it, and
  * the launcher when none is shown (`product/versions/mvp/32-side-pane.md`).
- * A terminal is one of the session's shell windows, listed by its host, so
- * its tabs follow the host: one opened on another device shows here too, and
- * closing its tab closes the shell. Another session, a bot's chat and the
+ * A terminal is one of the session's windows past the agent's, listed by its
+ * host, so its tabs follow the host: one opened on another device shows here
+ * too, and closing its tab closes the window. It runs a plain shell, or a
+ * second agent in the same worktree, named after it. Another session, a
+ * bot's chat and the
  * previews are what this device chose to keep beside this session.
  *
  * Another session and a bot's chat are drawn by the screen around this pane
@@ -61,9 +64,15 @@ export function SessionSidePane({
     select: (bots) => new Map(bots.map((one) => [one.id, one.name])),
   });
 
-  const terminalItems: SideItem[] = (windows.data?.windows ?? [])
-    .filter((window) => !window.agent)
-    .map((window) => ({ kind: 'terminal', window: window.index }));
+  const shells = (windows.data?.windows ?? []).filter((window) => !window.agent);
+  const terminalItems: SideItem[] = shells.map((window) => ({
+    kind: 'terminal',
+    window: window.index,
+  }));
+  const agentIn = (index: number) => {
+    const name = shells.find((window) => window.index === index)?.name;
+    return name ? windowAgent(name) : null;
+  };
   // A preview this console no longer offers, or a bot with no chat to draw it,
   // stays kept on the device and is left off the strip.
   const kept = side.kept.items.filter((item) =>
@@ -80,8 +89,12 @@ export function SessionSidePane({
 
   const title = (item: SideItem) => {
     switch (item.kind) {
-      case 'terminal':
-        return t('sessions.side.terminal.name', { index: item.window });
+      case 'terminal': {
+        const agent = agentIn(item.window);
+        return agent
+          ? t('sessions.side.agent.name', { agent: CODING_AGENTS[agent].label, index: item.window })
+          : t('sessions.side.terminal.name', { index: item.window });
+      }
       case 'session':
         return sessionNames?.get(item.sessionId) ?? t('sessions.side.launcher.session');
       case 'bot':
@@ -95,10 +108,13 @@ export function SessionSidePane({
     if (item.kind === 'terminal') closeWindow.mutate({ sessionId, window: item.window });
     side.close(key, order);
   };
-  const newTerminal = () =>
-    openWindow.mutate(sessionId, {
-      onSuccess: (opened) => side.show(`terminal:${opened.window.index}`),
-    });
+  // A plain shell is the catalog's `shell`, which the API takes as no agent.
+  const newWindow = (agent: CodingAgentId) =>
+    openWindow.mutate(
+      { sessionId, ...(agent === 'shell' ? {} : { agent }) },
+      { onSuccess: (opened) => side.show(`terminal:${opened.window.index}`) },
+    );
+  const opening = openWindow.isPending ? (openWindow.variables?.agent ?? 'shell') : null;
 
   return (
     <aside
@@ -158,6 +174,16 @@ export function SessionSidePane({
         className="m-3"
       />
       <ErrorAlert
+        error={openWindow.error}
+        fallback={
+          openWindow.variables?.agent
+            ? t('sessions.side.agent.openFailed')
+            : t('sessions.side.terminal.openFailed')
+        }
+        onDismiss={() => openWindow.reset()}
+        className="m-3"
+      />
+      <ErrorAlert
         error={closeWindow.error}
         fallback={t('sessions.side.terminal.closeFailed')}
         onDismiss={() => closeWindow.reset()}
@@ -170,10 +196,8 @@ export function SessionSidePane({
           terminals={windows.data?.state === 'listed'}
           bots={Boolean(bot)}
           onOpen={side.open}
-          onNewTerminal={newTerminal}
-          opening={openWindow.isPending}
-          openError={openWindow.error}
-          onDismissError={() => openWindow.reset()}
+          onNewWindow={newWindow}
+          opening={opening}
         />
       ) : null}
       {shown?.kind === 'terminal' && hostId ? (

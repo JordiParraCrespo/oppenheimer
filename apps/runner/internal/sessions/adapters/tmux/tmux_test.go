@@ -98,7 +98,7 @@ func TestWindowsAreTheSessionsTabs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	index, err := s.NewWindow(ctx, "opp-tabs", dir)
+	index, err := s.NewWindow(ctx, "opp-tabs", dir, "")
 	if err != nil {
 		t.Fatalf("new-window: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestTheEnvironmentIsInheritedByEveryWindow(t *testing.T) {
 	if err := s.Create(ctx, "opp-env", dir, "", env); err != nil {
 		t.Fatal(err)
 	}
-	index, err := s.NewWindow(ctx, "opp-env", dir)
+	index, err := s.NewWindow(ctx, "opp-env", dir, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,7 +449,7 @@ func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 	if err := s.Create(ctx, "opp-view", t.TempDir(), "", nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir()); err != nil {
+	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir(), ""); err != nil {
 		t.Fatal(err)
 	}
 	agent, err := s.Attach(ctx, "opp-view:0", app.Size{Cols: 120, Rows: 40}, false)
@@ -529,10 +529,37 @@ func TestOpeningAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 	}
 
-	if _, err := s.NewWindow(ctx, "opp-bg", t.TempDir()); err != nil {
+	if _, err := s.NewWindow(ctx, "opp-bg", t.TempDir(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if got := current(); got != "0" {
 		t.Fatalf("the agent's client is on window %q after a shell opened, want 0", got)
+	}
+}
+
+// A window opened with a title keeps it once a program runs in it: tmux
+// renames a window it named itself after the program, and the tab would
+// then say `node` where the agent it holds is codex.
+func TestATitledWindowKeepsItsNameWhileAProgramRuns(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := s.Create(ctx, "opp-titled", dir, "", nil); err != nil {
+		t.Fatal(err)
+	}
+	index, err := s.NewWindow(ctx, "opp-titled", dir, "codex")
+	if err != nil {
+		t.Fatalf("new-window: %v", err)
+	}
+	if err := s.Launch(ctx, "opp-titled:"+itoa(index), dir, "sleep 30"); err != nil {
+		t.Fatalf("launch: %v", err)
+	}
+
+	windows, err := s.Windows(ctx, "opp-titled")
+	if err != nil || len(windows) != 2 {
+		t.Fatalf("windows = %v, err = %v", windows, err)
+	}
+	if windows[1].Name != "codex" || windows[1].Agent {
+		t.Fatalf("the titled window is %+v, want codex and not the session's agent", windows[1])
 	}
 }

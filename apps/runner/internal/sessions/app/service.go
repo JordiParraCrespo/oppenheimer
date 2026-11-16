@@ -222,10 +222,21 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
-// OpenWindow adds a tab: a plain shell where the agent runs. It holds the
+// OpenWindow adds a tab where the agent runs: a plain shell, or with agent
+// set a second coding agent started in the session's worktree. It holds the
 // session like every command, so a refresh running meanwhile keeps the
 // window (see observe).
-func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
+//
+// The second agent takes the session's permission level, and its model and
+// effort only when it is the session's own agent: a model names one CLI's.
+// It starts a conversation of its own, so it is launched with no first task,
+// no conversation id, no server and no observer wrapper; window 0 stays the
+// session's agent, the one its state is read from. A launch that fails takes
+// its window with it.
+func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent) (domain.Window, error) {
+	if agent != "" && agent.Command() == "" {
+		return domain.Window{}, domain.ErrInvalidInput.WithDetail("%q is not an agent a window can start", agent)
+	}
 	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
@@ -234,15 +245,41 @@ func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, err
 	if !session.State.Live() {
 		return domain.Window{}, domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
-	index, err := s.terminals.NewWindow(ctx, session.TmuxName(), session.Cwd())
+	index, err := s.terminals.NewWindow(ctx, session.TmuxName(), session.Cwd(), agent.CatalogID())
 	if err != nil {
 		return domain.Window{}, err
 	}
 	window := domain.Window{Index: index, Name: "shell"}
+	if agent != "" {
+		if err := s.launchInWindow(ctx, session, index, agent); err != nil {
+			_ = s.terminals.KillWindow(context.WithoutCancel(ctx), session.Target(index))
+			return domain.Window{}, err
+		}
+		window.Name = agent.CatalogID()
+	}
 	session.Windows = append(session.Windows, window)
 	session.Updated = s.now().UTC()
 	s.record(session)
 	return window, nil
+}
+
+// launchInWindow starts agent in one of session's windows, the way a create
+// starts window 0's: its folder trusted, the agent's executable held still
+// while it starts.
+func (s *Service) launchInWindow(ctx context.Context, session domain.Session, index int, agent domain.Agent) error {
+	launch := domain.Launch{Permission: session.Launch.Permission}
+	if agent == session.Agent {
+		launch.Model = session.Launch.Model
+		launch.Effort = session.Launch.Effort
+		launch.EffortIsLevel = session.Launch.EffortIsLevel
+	}
+	// The runner's status line keeps what Claude Code hands it under the
+	// conversation's own id, so a second Claude's figures never reach the
+	// session's chat, which reads window 0's conversation.
+	launch.StatusLine = s.statusLine
+	s.trustFolder(agent, session.Cwd())
+	defer s.holdLaunch(ctx, agent)()
+	return s.terminals.Launch(ctx, session.Target(index), session.Cwd(), launch.CommandLine(agent))
 }
 
 // Windows lists a live session's windows as tmux holds them now, and keeps

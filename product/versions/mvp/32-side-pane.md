@@ -43,11 +43,33 @@ session or a bot tab adds a link to its own page beside the strip.
 - Only the owner reaches a session's windows: a share still opens window 0
   and nothing else (`session-share.schema.ts`).
 
-## 3. Not yet
+## 3. A second agent in the worktree
 
-- **A second agent in the same worktree** (the owner's third kind). It is
-  a window with an agent started in it rather than a shell, on the terminal
-  tab's plumbing, and its own proposal: two agents edit the same files and
-  the same git index, so the launcher will say "shares this worktree", and
-  its chat view and state dot come after its terminal.
+The owner's third kind, built on 2026-11-16. The launcher's **Agent** opens
+a window like Terminal does and starts a coding agent in it instead of
+leaving a shell: one of the agents this device offers (Settings → Agents,
+as New session's engine picker reads them), the blank terminal left out
+since it is Terminal. Before anything is picked, the pane says what it
+means: the agent works in this session's worktree, on the same files and
+the same git index as the agent already there. Nothing stops two agents
+editing one file; that is the reader's call, said once, not a lock.
+
+- **On the wire.** `session.window.open` takes an optional `agent`, a
+  catalog id other than `shell`, and a runner that can start one names
+  `session.window.agent` in its hello. `POST /sessions/:id/windows` takes
+  `{ agent }`; a runner without the capability is `SESSIONS_060`.
+- **On the host.** The runner opens the window in the background, as for a
+  shell, and launches the agent in it the way window 0's is launched, with
+  the session's permission level; the model and effort go along only when
+  it is the session's own agent, since a model belongs to one agent. It has
+  no first task, no conversation id and no chat server: its own
+  conversation is the CLI's. The window is named after the agent, so a
+  listing says what runs there, and the tab reads "Codex 2".
+- **What it is not, yet.** Window 0 is still the session's agent: its state
+  dot, its chat view and its transcript are window 0's. A second agent is
+  read in its terminal only.
+
+## 4. Not yet
+
+- A second agent's chat view and state dot.
 - Review, Files and Source control from the screenshot are not asked for.

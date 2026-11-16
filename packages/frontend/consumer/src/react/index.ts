@@ -271,6 +271,7 @@ export {
   type CloseSessionVariables,
   type CreateSessionVariables,
   type MoveSessionVariables,
+  type OpenSessionWindowVariables,
   type PutSessionShareVariables,
   type RenameSessionVariables,
   type SetSessionHiddenVariables,

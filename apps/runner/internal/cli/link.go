@@ -333,7 +333,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
 		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
-		link.CapabilitySessionWindowsList,
+		link.CapabilitySessionWindowsList, link.CapabilitySessionWindowAgent,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)

@@ -20,8 +20,9 @@ type Terminals interface {
 	// command (empty for a plain shell), carrying env.
 	Create(ctx context.Context, name, dir, command string, env map[string]string) error
 	// NewWindow opens another window in the same session and directory and
-	// returns its index.
-	NewWindow(ctx context.Context, name, dir string) (int, error)
+	// returns its index. title names the window and keeps it so; empty lets
+	// tmux name it after the program running in it.
+	NewWindow(ctx context.Context, name, dir, title string) (int, error)
 	// KillWindow closes one window.
 	KillWindow(ctx context.Context, target string) error
 	// Kill ends the whole tmux session.

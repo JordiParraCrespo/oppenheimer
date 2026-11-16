@@ -39,6 +39,7 @@ import {
   sessionIdSchema,
   sessionSnapshotSchema,
   sessionWindowSchema,
+  windowAgentSchema,
   windowIndexSchema,
 } from './primitives.js';
 import {
@@ -229,6 +230,13 @@ export const RUNNER_CAPABILITIES = [
    * word back.
    */
   'session.windows.list',
+  /**
+   * Takes `agent` on `session.window.open`: the new window starts that coding
+   * agent in the session's worktree, beside the session's own in window 0. A
+   * runner without it would open a plain shell and ignore the field, so the
+   * control plane refuses the open before sending it.
+   */
+  'session.window.agent',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -673,6 +681,14 @@ export const sessionWindowOpenSchema = z.object({
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
   name: z.string().min(1).max(200).optional(),
+  /**
+   * A second coding agent to start in the new window, in the same worktree:
+   * the session's permission level always, its model and effort only when it
+   * is the session's own agent. Absent is a plain shell. Sent only to a runner
+   * whose hello named `session.window.agent`. Window 0 stays the session's
+   * agent, the one its state is read from.
+   */
+  agent: windowAgentSchema.optional(),
 });
 
 export type SessionWindowOpenMessage = z.infer<typeof sessionWindowOpenSchema>;

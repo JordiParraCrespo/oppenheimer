@@ -109,6 +109,33 @@ describe('RelaySessionWindowsAdapter', () => {
     expect(old.link.send).not.toHaveBeenCalled();
   });
 
+  it('sends the agent an open names, to a runner that starts one in a window', async () => {
+    const { adapter, link } = harness(true, ['session.windows.list', 'session.window.agent']);
+
+    void adapter.open(HOST, SESSION, 'codex');
+
+    const message = sessionWindowOpenSchema.strict().parse(sentMessage(link));
+    expect(message).toMatchObject({ sessionId: SESSION, agent: 'codex' });
+  });
+
+  it('never sends an agent to a runner that would open a plain shell in its place', async () => {
+    const { adapter, link } = harness(true, ['session.windows.list']);
+
+    await expect(adapter.open(HOST, SESSION, 'codex')).resolves.toEqual({
+      kind: 'agent_not_supported',
+    });
+    expect(link.send).not.toHaveBeenCalled();
+
+    // A shell still opens there, and a runner with no window commands at all
+    // is the shell's own refusal.
+    void adapter.open(HOST, SESSION);
+    expect(sessionWindowOpenSchema.strict().parse(sentMessage(link))).not.toHaveProperty('agent');
+    const old = harness(true, ['port.forward']);
+    await expect(old.adapter.open(HOST, SESSION, 'codex')).resolves.toEqual({
+      kind: 'not_supported',
+    });
+  });
+
   it('times out when the runner does not answer', async () => {
     vi.useFakeTimers();
     const { adapter } = harness(true);

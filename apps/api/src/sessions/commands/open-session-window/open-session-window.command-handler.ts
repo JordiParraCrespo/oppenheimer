@@ -12,9 +12,11 @@ import { SESSION_WINDOWS } from '../../sessions.di-tokens';
 import { OpenSessionWindowCommand } from './open-session-window.command';
 
 /**
- * Opens a plain shell in the session's worktree, a new tmux window, and
- * answers with its index so the Terminal tab can mint an attach ticket for
- * it. Nothing is stored: the host is the record of a session's windows.
+ * Opens a plain shell in the session's worktree, a new tmux window, or with
+ * `agent` a second coding agent started there, and answers with its index so
+ * the Terminal tab can mint an attach ticket for it. Nothing is stored: the
+ * host is the record of a session's windows, and window 0 stays the session's
+ * agent.
  *
  * Owner only, through the workspace scope: a share guest never gets past
  * window 0.
@@ -35,13 +37,13 @@ export class OpenSessionWindowCommandHandler
     const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     await this.hosts.assertUsable(command.scope, session.hostId);
     const { windows, opened } = changedOrThrow(
-      await this.windows.open(session.hostId, session.id),
+      await this.windows.open(session.hostId, session.id, command.agent),
       session.hostId,
     );
     const window = windows.find((candidate) => candidate.index === opened);
     if (!window) {
       // The runner said it opened a window and then did not list it: the
-      // shell exited at once. There is nothing to attach to.
+      // shell or the agent exited at once. There is nothing to attach to.
       throw new AppError(SessionErrors.WINDOW_REFUSED, {
         detail: 'The host opened a terminal that closed at once',
       });

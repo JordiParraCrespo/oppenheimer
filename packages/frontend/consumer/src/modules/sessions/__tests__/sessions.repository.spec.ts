@@ -9,6 +9,7 @@ vi.mock('@oppenheimer/api-client', () => ({
     findSessionEvents: vi.fn(),
     closeSession: vi.fn(),
     answerSessionDecision: vi.fn(),
+    openSessionWindow: vi.fn(),
   },
 }));
 
@@ -107,6 +108,44 @@ describe('SessionsRepository.close', () => {
   it('answers the row of a close its host was sent', async () => {
     vi.mocked(heyApiSdk.closeSession).mockResolvedValue(ok(session('s1')));
     await expect(new SessionsRepository().close('s1')).resolves.toMatchObject({ id: 's1' });
+  });
+});
+
+/**
+ * The open's body is what decides between a shell and a second agent: `shell`
+ * is the plain shell, which the API takes as no agent at all (it refuses
+ * `shell` as one), and any other agent is sent by its catalog id.
+ */
+describe('SessionsRepository.openWindow', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const opened = ok({
+    window: { index: 1, name: 'codex', agent: false },
+    windows: [
+      { index: 0, name: 'claude', agent: true },
+      { index: 1, name: 'codex', agent: false },
+    ],
+  });
+  const sentBody = () => vi.mocked(heyApiSdk.openSessionWindow).mock.calls[0]?.[0]?.body;
+
+  it('sends the agent it names, and answers with the window it made', async () => {
+    vi.mocked(heyApiSdk.openSessionWindow).mockResolvedValue(opened);
+
+    const result = await new SessionsRepository().openWindow('s1', 'codex');
+
+    expect(sentBody()).toEqual({ agent: 'codex' });
+    expect(result.window).toMatchObject({ index: 1, name: 'codex' });
+  });
+
+  it('sends no agent for a plain shell, named or not', async () => {
+    vi.mocked(heyApiSdk.openSessionWindow).mockResolvedValue(opened);
+
+    await new SessionsRepository().openWindow('s1', 'shell');
+    await new SessionsRepository().openWindow('s1');
+
+    for (const [options] of vi.mocked(heyApiSdk.openSessionWindow).mock.calls) {
+      expect(options?.body).toEqual({});
+    }
   });
 });
 
