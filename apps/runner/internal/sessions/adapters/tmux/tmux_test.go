@@ -436,3 +436,92 @@ func TestLaunchReplacesTheShellWithTheProgramInPlace(t *testing.T) {
 		t.Fatalf("the pane still holds what came before the program, or how it was started:\n%s", all)
 	}
 }
+
+// Watching a shell window must not move anyone watching the agent's. tmux
+// keeps one current window per session, so attaching a second client to
+// `name:1` switched the first client, the agent's terminal, to the shell
+// too. A view keeps each client on its own window, and leaves no session the
+// runner would list or count as an orphan; killing the session ends it.
+func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-view", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+	agent, err := s.Attach(ctx, "opp-view:0", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer agent.Close()
+	go io.Copy(io.Discard, agent) //nolint:errcheck // drains the client
+	shell, err := s.Attach(ctx, "opp-view:1", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go io.Copy(io.Discard, shell) //nolint:errcheck // drains the client
+
+	clients := func() string {
+		out, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "list-clients", "-F", "#{session_name}:#{window_index}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for strings.Count(clients(), "\n") < 1 && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+	}
+	got := clients()
+	if !strings.Contains(got, "opp-view:0") || !strings.Contains(got, "~view~") {
+		t.Fatalf("clients = %q, want the agent's on opp-view:0 and the shell's on a view", got)
+	}
+	for line := range strings.SplitSeq(got, "\n") {
+		if strings.HasPrefix(line, "opp-view:") && line != "opp-view:0" {
+			t.Fatalf("the agent's client moved to %q", line)
+		}
+	}
+	if names, _ := s.List(ctx); len(names) != 1 || names[0] != "opp-view" {
+		t.Fatalf("list = %v, want the session alone", names)
+	}
+
+	if err := s.Kill(ctx, "opp-view"); err != nil {
+		t.Fatal(err)
+	}
+	out, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "list-sessions").CombinedOutput()
+	if strings.Contains(string(out), "opp-view") {
+		t.Fatalf("sessions left after kill: %s", out)
+	}
+	_ = shell.Close()
+}
+
+// Opening a shell must not take the agent's terminal with it: without -d,
+// tmux made the new window the session's current one, and the agent's
+// client showed the shell while the side pane's tab was open.
+func TestOpeningAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-bg", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	agent, err := s.Attach(ctx, "opp-bg:0", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer agent.Close()
+	go io.Copy(io.Discard, agent) //nolint:errcheck // drains the client
+	current := func() string {
+		out, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "list-clients", "-F", "#{window_index}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for current() == "" && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	if _, err := s.NewWindow(ctx, "opp-bg", t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+	if got := current(); got != "0" {
+		t.Fatalf("the agent's client is on window %q after a shell opened, want 0", got)
+	}
+}
