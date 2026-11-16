@@ -58,6 +58,21 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * sent messages are being stepped through). It is told to a screen reader as
  * it changes.
  */
+/**
+ * The send button's look, by layout and state. Inline, send is ink and rests
+ * on the wash until there is something to send, and Stop, the one control a
+ * reader reaches for while the agent works, takes the action blue. Stacked,
+ * send is the primary and Stop the ink.
+ */
+function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
+  if (layout === 'inline') {
+    return busy
+      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
+  }
+  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
+}
+
 function ChatComposer({
   value,
   onValueChange,
@@ -182,17 +197,7 @@ function ChatComposer({
         sendBlockedReason={sendBlockedReason}
         labels={label}
         onClick={submit}
-        className={cn(
-          inline
-            ? 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100'
-            : 'ml-1 size-8.5',
-          // Stop is the one control a reader reaches for while the agent
-          // works: inline it takes the action blue, stacked the ink.
-          busy &&
-            (inline
-              ? 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
-              : 'bg-fg text-background hover:bg-fg hover:text-background'),
-        )}
+        className={sendButtonClass(layout, busy)}
       >
         {busy ? (
           <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />

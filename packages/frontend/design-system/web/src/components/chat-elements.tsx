@@ -4,7 +4,7 @@ import { CheckIcon, CopyIcon, WrapTextIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { useCopy } from '../hooks/use-copy';
-import { useWideLines } from '../internal/use-wide-lines';
+import { useBoxOverflow } from '../internal/use-box-overflow';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 import { type JsonTreeAnnotate, JsonTree } from './json-tree';
@@ -200,7 +200,7 @@ function ChatCodeBlock({
   children?: React.ReactNode;
 }) {
   const [wrapped, setWrapped] = React.useState(false);
-  const { ref, wide } = useWideLines<HTMLDivElement>(wrapped, code);
+  const { ref, overflows: wide } = useBoxOverflow<HTMLDivElement>('x', wrapped, code);
   return (
     <div data-slot="chat-code-block" className={cn('my-0.5 overflow-hidden rounded-sm bg-chat-wash', className)}>
       <CodeBlockBand
