@@ -11,7 +11,8 @@ import { BotComposer } from '../sections/bot-composer';
  * whose images the field could not hold again; Enter that queues instead of
  * steering the turn under way, Alt+Enter that steers instead of queueing, a
  * steer shown as if it waited for after; Escape that does not stop the turn,
- * or that stops it while a menu or dialog open over the chat wanted the key.
+ * or that stops it while a menu or dialog open over the chat wanted the key,
+ * or, beside a session, while the key was the session's.
  */
 
 vi.mock('react-i18next', () => ({
@@ -61,9 +62,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function composer() {
+function composer(dropsOn: 'pane' | 'box' = 'pane') {
   render(
     <BotComposer
+      dropsOn={dropsOn}
       botId="b1"
       name="Ada"
       provider="anthropic"
@@ -176,6 +178,16 @@ describe('BotComposer while the bot works', () => {
     composer();
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape', isComposing: true });
     expect(state.cancel).not.toHaveBeenCalled();
+  });
+
+  it('beside a session, leaves Escape on the session to it and stops only from its own box', () => {
+    composer('box');
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(state.cancel).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'bots.chat.stop' }), { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledWith({ id: 'b1', turnId: 'run' });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledTimes(2);
   });
 
   it('leaves Escape to another field, such as the sidebar search clearing itself', () => {

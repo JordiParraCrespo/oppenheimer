@@ -52,9 +52,9 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * next tool call, and runs it after itself if it reaches none; Alt+Enter
  * queues it for after instead, and a message with images always waits,
  * since the running turn would not read them. Escape stops the turn, as
- * Stop does, unless another field or an open menu takes it
- * (`useEscapeToStop`). Each message waiting shows
- * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
+ * Stop does, unless another field or an open menu takes it; beside a
+ * session, only from inside the box (`useEscapeToStop`). Each message
+ * waiting shows over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
  * back, Edit takes it back into the field, and the first one's Send now
  * stops the turn under way so it runs next. A message that carried images is not taken back to edit: they were
  * sent once and the field cannot hold them again. A provider with no key in the workspace keeps
@@ -128,6 +128,7 @@ export function BotComposer({
   const modelLabel = botModelOf(provider, model)?.label ?? providerLabel;
   const images = useBotImages(botId, takesImages, modelLabel);
   const picker = useRef<HTMLInputElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   // The images each send took off the composer, to hold again if the API refuses it.
   const heldFor = useRef(new WeakMap<SendBotMessageVariables, readonly HeldImage[]>());
   const send = useSendBotMessage({
@@ -169,7 +170,8 @@ export function BotComposer({
     if (!isSendingBotTurn(turnId)) cancel.mutate({ id: botId, turnId });
   }
 
-  useEscapeToStop(field, active ? () => stopTurn(active.id) : null);
+  // On its own page the chat is the screen; beside a session, only its box is the bot's.
+  useEscapeToStop(field, dropsOn === 'box' ? box : null, active ? () => stopTurn(active.id) : null);
 
   // Edit: the waiting turn is called off, and its words come back into the field.
   function takeBack(message: BotWaitingMessage) {
@@ -250,7 +252,7 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div className="relative">
+      <div ref={box} className="relative">
         {slash.open ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
