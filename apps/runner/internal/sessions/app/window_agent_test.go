@@ -131,3 +131,36 @@ func TestAFailedSecondAgentLeavesNoWindow(t *testing.T) {
 		t.Fatalf("tmux holds %+v and the record %+v, want only window 0", windows, held.Windows)
 	}
 }
+
+// A second copy of the session's own agent is refused when that agent finds
+// its conversation by the folder (Codex, OpenCode, Pi): the session's chat
+// and its restart would follow the newer one. Claude Code names its
+// conversation, so a second Claude in a Claude session starts, and another
+// kind of agent in a Codex session starts too. The regression: the session's
+// chat flipping to the side agent, or a restart reopening its conversation.
+func TestASecondCopyOfAnAgentFoundByItsFolderIsRefused(t *testing.T) {
+	h := newFakeHarness(t)
+	ctx := context.Background()
+	codex, err := h.svc.Create(ctx, app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentCodex,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	if _, err := h.svc.OpenWindow(ctx, codex.ID, domain.AgentCodex); !isProblem(err, domain.ErrInvalidInput) {
+		t.Fatalf("a second codex: err = %v, want %s", err, domain.ErrInvalidInput.Code)
+	}
+	if windows, _ := h.svc.Windows(ctx, codex.ID); len(windows) != 1 {
+		t.Fatalf("windows = %+v, want only the agent's", windows)
+	}
+	if _, err := h.svc.OpenWindow(ctx, codex.ID, domain.AgentClaude); err != nil {
+		t.Fatalf("claude beside codex: %v", err)
+	}
+
+	claude := h.open(t)
+	if _, err := h.svc.OpenWindow(ctx, claude.ID, domain.AgentClaude); err != nil {
+		t.Fatalf("a second claude: %v", err)
+	}
+}

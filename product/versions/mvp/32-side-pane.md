@@ -65,6 +65,14 @@ editing one file; that is the reader's call, said once, not a lock.
   no first task, no conversation id and no chat server: its own
   conversation is the CLI's. The window is named after the agent, so a
   listing says what runs there, and the tab reads "Codex 2".
+- **Not a second copy of an agent found by its folder.** The runner finds
+  the conversation of Codex, OpenCode, Pi and Oh My Pi by the session's
+  directory (the newest transcript there; a restart resumes "the last"), so
+  a second Codex in a Codex session would become the session's chat and be
+  what a restart reopens. Only an agent whose CLI takes the conversation's
+  id (Claude Code's `--session-id`, Grok's) may run twice: the picker leaves
+  the session's own agent out otherwise, and the runner refuses it. Any
+  other agent beside it is fine.
 - **What it is not, yet.** Window 0 is still the session's agent: its state
   dot, its chat view and its transcript are window 0's. A second agent is
   read in its terminal only.

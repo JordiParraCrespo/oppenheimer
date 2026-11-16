@@ -37,6 +37,7 @@ import { SideTerminal } from './side-terminal';
  */
 export function SessionSidePane({
   sessionId,
+  sessionAgent,
   hostId,
   previews,
   onClose,
@@ -44,6 +45,8 @@ export function SessionSidePane({
   bot,
 }: {
   sessionId: string;
+  /** The agent window 0 runs. */
+  sessionAgent: string;
   hostId: string | null;
   /** The previews this console and deployment can show. */
   previews: readonly PreviewTab[];
@@ -192,6 +195,7 @@ export function SessionSidePane({
       {shown === undefined ? (
         <SidePaneLauncher
           sessionId={sessionId}
+          sessionAgent={sessionAgent}
           previews={previews}
           terminals={windows.data?.state === 'listed'}
           bots={Boolean(bot)}

@@ -40,6 +40,7 @@ const ICONS: Record<Choice, LucideIcon> = {
  */
 export function SidePaneLauncher({
   sessionId,
+  sessionAgent,
   previews,
   terminals,
   bots,
@@ -48,6 +49,8 @@ export function SidePaneLauncher({
   opening,
 }: {
   sessionId: string;
+  /** The agent window 0 runs, which the Agent pick may leave out. */
+  sessionAgent: string;
   previews: readonly PreviewTab[];
   /** Whether this session's host can open windows: a shell, or another agent. */
   terminals: boolean;
@@ -122,7 +125,11 @@ export function SidePaneLauncher({
             {t('sessions.side.launcher.back')}
           </Button>
           {pane === 'agent' ? (
-            <SideAgentPicker onPick={onNewWindow} opening={opening === 'shell' ? null : opening} />
+            <SideAgentPicker
+              sessionAgent={sessionAgent}
+              onPick={onNewWindow}
+              opening={opening === 'shell' ? null : opening}
+            />
           ) : pane === 'session' ? (
             <SideSessionPicker
               currentSessionId={sessionId}

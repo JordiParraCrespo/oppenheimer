@@ -852,6 +852,17 @@ export function isCodingAgentId(value: unknown): value is CodingAgentId {
 }
 
 /**
+ * Whether the agent's CLI takes the id of the conversation it starts (Claude
+ * Code's `--session-id`). One that does not is found by its folder, so a
+ * second copy of it in a session's worktree would be read, and resumed, as
+ * the session's own; the side pane does not offer one, and the runner
+ * refuses it.
+ */
+export function codingAgentNamesConversation(agent: CodingAgentId): boolean {
+  return Boolean(CODING_AGENTS[agent].launch.conversation?.create);
+}
+
+/**
  * The agents a host can start in their vendor's cloud with the host's own CLI
  * and sign-in, a session in the place `cloud` with a host: Claude Code with
  * `claude --cloud`, Codex as a thread in Codex cloud. The task runs on the
