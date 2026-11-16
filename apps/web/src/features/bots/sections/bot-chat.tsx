@@ -41,7 +41,7 @@ export function BotChat({ botId }: { botId: string }) {
           </>
         }
       />
-      <BotChatBody bot={bot} toolCallsShown={toolCalls.shown}>
+      <BotChatBody bot={bot} toolCallsShown={toolCalls.shown} dropsOn="pane">
         <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
       </BotChatBody>
       {deleting ? <DeleteBotDialog bot={bot} onClose={() => setDeleting(false)} /> : null}

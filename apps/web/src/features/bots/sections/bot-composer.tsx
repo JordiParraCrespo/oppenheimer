@@ -59,7 +59,7 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * the draft alone: the chips in `tools` and `engine` are elements its parent
  * made, so a keystroke renders the field and none of them. The draft is
  * kept per bot (`bot-drafts`), so it survives leaving the chat, and a
- * suggestion in the hello can fill it; the field takes focus on open and
+ * picked `/` command can fill it; the field takes focus on open and
  * after a fill. Enter sends, Shift+Enter starts a new line. The mic dictates
  * into the draft (`useDictation`), added to its end, to be read before it is
  * sent. A draft that is a `/` command being typed opens the menu of the
@@ -95,7 +95,7 @@ export function BotComposer({
   model,
   tools,
   engine,
-  layout = 'stacked',
+  dropsOn = 'pane',
 }: {
   botId: string;
   name: string;
@@ -104,11 +104,8 @@ export function BotComposer({
   model: string | null;
   tools: ReactNode;
   engine: ReactNode;
-  /**
-   * The design system's composer layouts: `stacked` on the bot's own page,
-   * `inline` beside a session, one row with the chips under the box.
-   */
-  layout?: 'stacked' | 'inline';
+  /** Where a dropped image is taken: anywhere on the `pane`, or on the `box` alone. */
+  dropsOn?: 'pane' | 'box';
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -257,10 +254,10 @@ export function BotComposer({
             onPick={slash.pick}
           />
         ) : null}
-        {layout === 'stacked' ? <BotPaneDrop onFiles={images.hold} /> : null}
-        <DropZone onFiles={images.hold} disabled={layout === 'stacked'}>
+        {dropsOn === 'pane' ? <BotPaneDrop onFiles={images.hold} /> : null}
+        <DropZone onFiles={images.hold} disabled={dropsOn === 'pane'}>
           <ChatComposer
-            layout={layout}
+            layout="inline"
             onKeyDownCapture={onKeyDownCapture}
             value={draft}
             command={leadingCommand(draft) ?? undefined}

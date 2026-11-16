@@ -25,7 +25,7 @@ test('a GLM bot answers in its chat', async ({ page }) => {
 
   await page.goto(`/bots/${bot.id}`);
   await expect(
-    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+    page.getByText('Ask Fruit Bot anything. It can read your sessions and act on them.'),
   ).toBeVisible();
   const box = page.getByPlaceholder('Message Fruit Bot');
   await box.fill('Reply with exactly the word: pineapple');
@@ -62,6 +62,6 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await expect(page.getByText('No messages yet.')).toBeVisible();
   await page.goto(`/bots/${bot.id}`);
   await expect(
-    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+    page.getByText('Ask Fruit Bot anything. It can read your sessions and act on them.'),
   ).toBeVisible();
 });

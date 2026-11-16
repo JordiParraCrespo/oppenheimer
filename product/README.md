@@ -1706,3 +1706,8 @@ earlier note:
   side pane (`versions/mvp/32-side-pane.md`), where the previews are three
   of the things the launcher opens, each a tab beside a shell, another
   session or a bot's chat.
+- `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
+  a job over four tiles (next-step pills once it had instructions), over the
+  stacked composer. On 2026-11-16 the owner found it loud in the side pane
+  and then on the page: the chat greets with the bot's face, its name and
+  one line, over the composer's one-row layout, in both places.

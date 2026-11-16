@@ -31,7 +31,6 @@ import {
   visibleTurns,
 } from '@/features/bots/lib/chat-turns';
 import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
-import { BotHello } from './bot-hello';
 
 /**
  * The chat itself (`25-bots.md` §3): every turn as you sent it and as the bot
@@ -49,13 +48,11 @@ import { BotHello } from './bot-hello';
  */
 export function BotTranscript({
   botId,
-  name,
   hello,
 }: {
   botId: string;
-  name: string;
-  /** What greets an empty chat; the bot's own page's hello when absent. */
-  hello?: ReactNode;
+  /** What greets an empty chat (`BotHello`), made by the chat that knows the bot's face. */
+  hello: ReactNode;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -84,7 +81,7 @@ export function BotTranscript({
     <>
       <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
       {all.length === 0 ? (
-        (hello ?? <BotHello botId={botId} name={name} />)
+        hello
       ) : (
         <ChatTranscript>
           {blocks.map((block, index) => {

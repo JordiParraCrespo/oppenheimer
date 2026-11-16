@@ -2,12 +2,12 @@ import { BotAvatar, type BotFaceSpec, EmptyState } from '@oppenheimer/design-sys
 import { useTranslation } from 'react-i18next';
 
 /**
- * A bot's empty chat beside a session: its face, its name and one line on
- * what it is there for, centred and quiet. The bot's own page asks for a job
- * at 34px over tiles; beside a session the work is already in view, so this
- * leaves the room to it and to the box.
+ * A bot's empty chat, on its own page and beside a session: its face, its
+ * name and one line on what it is there for, centred and quiet, leaving the
+ * room to the box under it. Until 2026-11-16 the page asked for a job at
+ * 34px over four tiles (`25-bots.md` §3); the owner found it loud.
  */
-export function BotSideHello({
+export function BotHello({
   name,
   initials,
   face,
@@ -24,7 +24,7 @@ export function BotSideHello({
       </EmptyState.Media>
       <EmptyState.Header>
         <EmptyState.Title>{name}</EmptyState.Title>
-        <EmptyState.Description>{t('bots.chat.sideHello', { name })}</EmptyState.Description>
+        <EmptyState.Description>{t('bots.chat.hello', { name })}</EmptyState.Description>
       </EmptyState.Header>
     </EmptyState>
   );

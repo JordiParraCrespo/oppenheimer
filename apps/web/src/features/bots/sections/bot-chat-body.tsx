@@ -4,6 +4,7 @@ import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
+import { BotHello } from '@/features/bots/components/bot-hello';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { BotTranscriptSkeleton } from '@/features/bots/components/bot-transcript-skeleton';
 import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
@@ -21,8 +22,9 @@ import { BotUsageCard } from './bot-usage-card';
  * the latest line while you are there and offers the way back when you scroll
  * up, and the composer, whose chips are how the bot's turns start (its model,
  * effort and approval level), each saved on the bot as it is picked, after
- * the meter of the room the bot has left (`BotUsage`). Its own page draws it
- * under the `PageBar` (`BotChat`); a session's side pane under its tab.
+ * the meter of the room the bot has left (`BotUsage`). An empty chat greets
+ * quietly (`BotHello`) over the composer's one-row layout. Its own page draws
+ * it under the `PageBar` (`BotChat`); a session's side pane under its tab.
  * `children` lead the transcript: the head's failure to read the bot again.
  *
  * The chips are made here, not in the composer, so the draft the composer
@@ -34,17 +36,17 @@ import { BotUsageCard } from './bot-usage-card';
 export function BotChatBody({
   bot,
   toolCallsShown,
-  hello,
-  layout = 'stacked',
+  dropsOn,
   children,
 }: {
   bot: BotEntity;
   /** Whether the transcript shows each turn's tool calls, the head's choice. */
   toolCallsShown: boolean;
-  /** What greets an empty chat; the bot's own page's hello when absent. */
-  hello?: ReactNode;
-  /** The composer's layout: `inline` beside a session, a row with its chips under it. */
-  layout?: 'stacked' | 'inline';
+  /**
+   * Where a dropped image is taken: anywhere on the `pane` on the bot's own
+   * page, on its `box` alone beside a session, where the rest is the session's.
+   */
+  dropsOn: 'pane' | 'box';
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -69,14 +71,19 @@ export function BotChatBody({
             </QueryState.Pending>
             <QueryState.Error fallback={t('bots.chat.loadFailed')} />
             <QueryState.Data>
-              <BotTranscript botId={bot.id} name={bot.name} hello={hello} />
+              <BotTranscript
+                botId={bot.id}
+                hello={<BotHello name={bot.name} initials={bot.initials} face={bot.face} />}
+              />
             </QueryState.Data>
           </QueryState>
           <BotUsageCard botId={bot.id} />
         </BotChatScroller>
       </ToolCallsShownContext>
-      <div className={layout === 'inline' ? 'px-3 pb-3' : 'px-4 pb-4 sm:px-8'}>
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
+      {/* The gutter follows the chat's own width, not the window's: a bot
+          beside a session is narrow on the widest screen. */}
+      <div className="@container">
+        <div className="mx-auto flex w-full max-w-190 flex-col gap-2 px-3 pb-3 @2xl:px-8 @2xl:pb-4">
           <BotApprovalCard botId={bot.id} name={bot.name} />
           <BotQuestionCard botId={bot.id} />
           <ErrorAlert
@@ -86,7 +93,7 @@ export function BotChatBody({
           />
           <BotComposer
             key={bot.id}
-            layout={layout}
+            dropsOn={dropsOn}
             botId={bot.id}
             name={bot.name}
             provider={bot.provider}
