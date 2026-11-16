@@ -156,7 +156,7 @@ func TestRefreshPutsTheLoginURLOnTheSession(t *testing.T) {
 func TestListAndGetHandOutIndependentSessions(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
-	if _, err := h.svc.OpenWindow(context.Background(), session.ID, ""); err != nil {
+	if _, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -407,7 +407,7 @@ func TestTheSessionMapIsPersistedOnEveryChange(t *testing.T) {
 	session := h.open(t)
 	before := h.store.saves
 
-	if _, err := h.svc.OpenWindow(context.Background(), session.ID, ""); err != nil {
+	if _, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{}); err != nil {
 		t.Fatal(err)
 	}
 

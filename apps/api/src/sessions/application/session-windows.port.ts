@@ -1,4 +1,4 @@
-import type { SessionWindowAgent } from '@oppenheimer/shared';
+import type { OpenSessionWindowBody } from '@oppenheimer/shared';
 import type { SessionWindowsMessage } from '@oppenheimer/shared/protocol';
 
 /** One tmux window of a session, as its runner listed it. */
@@ -33,11 +33,15 @@ export type SessionWindowOpenOutcome = SessionWindowsOutcome | { kind: 'agent_no
  */
 export interface SessionWindowsPort {
   list(hostId: string, sessionId: string): Promise<SessionWindowsOutcome>;
-  /** A plain shell, or with `agent` that coding agent started in the new window. */
+  /**
+   * A plain shell, or with `agent` that coding agent started in the new
+   * window, with the `model`, `effort` and `permission` given (each absent the
+   * session's own, which the runner holds). Without `agent` those are not sent.
+   */
   open(
     hostId: string,
     sessionId: string,
-    agent?: SessionWindowAgent,
+    window?: OpenSessionWindowBody,
   ): Promise<SessionWindowOpenOutcome>;
   close(hostId: string, sessionId: string, window: number): Promise<SessionWindowsOutcome>;
 }

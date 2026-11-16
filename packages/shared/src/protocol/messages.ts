@@ -1,5 +1,10 @@
 import { z } from 'zod/v4';
-import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import {
+  type HostCloudAgentId,
+  isHostCloudAgent,
+  SESSION_EFFORTS,
+  SESSION_PERMISSIONS,
+} from '../agents/catalog.js';
 import { cloudRepliedSchema, cloudReplySchema } from './cloud-reply.js';
 import {
   desktopCloseSchema,
@@ -682,13 +687,26 @@ export const sessionWindowOpenSchema = z.object({
   sessionId: sessionIdSchema,
   name: z.string().min(1).max(200).optional(),
   /**
-   * A second coding agent to start in the new window, in the same worktree:
-   * the session's permission level always, its model and effort only when it
-   * is the session's own agent. Absent is a plain shell. Sent only to a runner
-   * whose hello named `session.window.agent`. Window 0 stays the session's
-   * agent, the one its state is read from.
+   * A second coding agent to start in the new window, in the same worktree.
+   * Absent is a plain shell. Sent only to a runner whose hello named
+   * `session.window.agent`. Window 0 stays the session's agent, the one its
+   * state is read from.
    */
   agent: windowAgentSchema.optional(),
+  /**
+   * How that agent is started, as `session.create`'s launch carries it, and
+   * meaningful only with `agent`. Each one given wins; each one absent falls
+   * back to the session's own: its permission level always, its model and
+   * effort only when `agent` is the session's agent (a model names one CLI's).
+   * A runner from before these fields ignores them and takes that fallback.
+   * The bounds are `launchOptionsSchema`'s, spelled again rather than shared:
+   * a schema used twice is lifted into the JSON Schema's `$defs`, which would
+   * rename `session.create`'s launch fields for every generator.
+   */
+  model: z.string().min(1).max(128).optional(),
+  permission: z.enum(SESSION_PERMISSIONS).optional(),
+  /** As `launchOptionsSchema.effort`: a level the model does not offer is dropped. */
+  effort: z.enum(SESSION_EFFORTS).optional(),
 });
 
 export type SessionWindowOpenMessage = z.infer<typeof sessionWindowOpenSchema>;

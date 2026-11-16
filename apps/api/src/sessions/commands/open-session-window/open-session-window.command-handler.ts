@@ -37,7 +37,7 @@ export class OpenSessionWindowCommandHandler
     const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     await this.hosts.assertUsable(command.scope, session.hostId);
     const { windows, opened } = changedOrThrow(
-      await this.windows.open(session.hostId, session.id, command.agent),
+      await this.windows.open(session.hostId, session.id, command.window),
       session.hostId,
     );
     const window = windows.find((candidate) => candidate.index === opened);

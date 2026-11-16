@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSidePane } from '../hooks/use-side-pane';
 import {
+  agentsBeside,
   closeTab,
   openKept,
   rememberSidePane,
@@ -115,5 +116,16 @@ describe('windowAgent', () => {
     expect(windowAgent('claude-code')).toBe('claude-code');
     expect(windowAgent('shell')).toBeNull();
     expect(windowAgent('bash')).toBeNull();
+  });
+});
+
+describe('agentsBeside', () => {
+  // Which agents the side pane offers beside a session. The regression: a
+  // second Codex in a Codex session, whose conversation the session's chat
+  // and restart would then follow, or the blank terminal listed as an agent.
+  it("leaves out the terminal, and the session's own agent when it is found by its folder", () => {
+    const offered = ['claude-code', 'codex', 'shell'] as const;
+    expect(agentsBeside('codex', offered)).toEqual(['claude-code']);
+    expect(agentsBeside('claude-code', offered)).toEqual(['claude-code', 'codex']);
   });
 });

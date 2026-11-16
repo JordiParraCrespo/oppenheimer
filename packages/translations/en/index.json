@@ -1487,7 +1487,8 @@
         "agent": "Agent",
         "agentDetail": "Another agent in this worktree",
         "agents": "Pick an agent",
-        "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there."
+        "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
+        "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
       },
       "terminal": {
         "name": "Terminal {{index}}",
@@ -1504,7 +1505,8 @@
       "agent": {
         "name": "{{agent}} {{index}}",
         "opening": "Starting {{agent}}…",
-        "openFailed": "The agent didn't start"
+        "openFailed": "The agent didn't start",
+        "start": "Start {{agent}}"
       }
     },
     "preview": {

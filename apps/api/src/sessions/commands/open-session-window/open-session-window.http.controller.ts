@@ -48,7 +48,7 @@ export class OpenSessionWindowHttpController {
   @ApiOperation({
     summary: 'Open a terminal in a session',
     description:
-      "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it. With `agent`, that coding agent is started in the new window instead, at the session's permission level, with the session's model and effort only when it is the session's own agent; the window is named after it. Window 0 stays the session's agent. The body is optional: without one the window is a plain shell.",
+      "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it. With `agent`, that coding agent is started in the new window instead, named after it, with the `model`, `effort` and `permission` given; each one absent is the session's own (its permission level always, its model and effort only when `agent` is the session's agent). They are ignored without `agent`. Window 0 stays the session's agent. The body is optional: without one the window is a plain shell.",
   })
   @ApiBody({ type: OpenSessionWindowRequest, required: false })
   @ApiResponse({ status: 201, type: OpenedSessionWindowResponseDto })
@@ -82,7 +82,7 @@ export class OpenSessionWindowHttpController {
     body: OpenSessionWindowBody,
   ): Promise<OpenedSessionWindowResponseDto> {
     return this.commandBus.execute<OpenSessionWindowCommand, OpenedSessionWindowResponse>(
-      new OpenSessionWindowCommand({ scope, sessionId: id, agent: body.agent }),
+      new OpenSessionWindowCommand({ scope, sessionId: id, window: body }),
     );
   }
 }

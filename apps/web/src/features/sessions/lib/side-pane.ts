@@ -1,4 +1,10 @@
-import { type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
+import {
+  CODING_AGENTS,
+  type CodingAgentId,
+  isCodingAgentId,
+  type SessionEffort,
+  type SessionPermission,
+} from '@oppenheimer/shared/agents';
 import type { PreviewTab } from './preview-open';
 
 /**
@@ -119,4 +125,35 @@ export function shownTab(order: readonly string[], active: string | null): strin
 export function windowAgent(name: string): Exclude<CodingAgentId, 'shell'> | null {
   if (!isCodingAgentId(name) || name === 'shell') return null;
   return name;
+}
+
+/**
+ * The agents that may start beside a session whose own agent is
+ * `sessionAgent`, out of `offered`: never the blank terminal (that is
+ * Terminal), and the session's own agent only when its CLI takes the id of
+ * the conversation it starts (Claude Code's `--session-id`). One that does
+ * not is found by its folder, so a second copy in the same worktree would be
+ * read, and resumed, as the session's; the runner refuses it as well.
+ */
+export function agentsBeside(
+  sessionAgent: string,
+  offered: readonly CodingAgentId[],
+): Exclude<CodingAgentId, 'shell'>[] {
+  return offered.filter(
+    (agent): agent is Exclude<CodingAgentId, 'shell'> =>
+      agent !== 'shell' &&
+      (agent !== sessionAgent || Boolean(CODING_AGENTS[agent].launch.conversation?.create)),
+  );
+}
+
+/**
+ * What a second agent starts with, as the side pane's Agent pick sends it:
+ * the agent, and its model, effort and permission. Null is the CLI's own
+ * default, never sent.
+ */
+export interface SideEngine {
+  agent: Exclude<CodingAgentId, 'shell'>;
+  model: string | null;
+  effort: SessionEffort | null;
+  permission: SessionPermission | null;
 }

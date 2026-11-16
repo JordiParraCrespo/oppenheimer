@@ -2301,6 +2301,9 @@ export type SessionWindowsResponseDto = {
 };
 
 export type OpenSessionWindowRequest = {
+    model?: string;
+    permission?: 'ask' | 'auto' | 'full';
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
     agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
 };
 

@@ -11,10 +11,10 @@ import {
   SquareTerminalIcon,
 } from '@oppenheimer/design-system-web/icons';
 import type { CodingAgentId } from '@oppenheimer/shared/agents';
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PreviewTab } from '../lib/preview-open';
-import type { KeptSideItem } from '../lib/side-pane';
+import type { KeptSideItem, SideEngine } from '../lib/side-pane';
 import { SideAgentPicker } from './side-agent-picker';
 import { SideBotPicker } from './side-bot-picker';
 import { SideSessionPicker } from './side-session-picker';
@@ -40,25 +40,26 @@ const ICONS: Record<Choice, LucideIcon> = {
  */
 export function SidePaneLauncher({
   sessionId,
-  sessionAgent,
+  session,
   previews,
   terminals,
   bots,
   onOpen,
-  onNewWindow,
+  onNewTerminal,
+  onStartAgent,
   opening,
 }: {
   sessionId: string;
-  /** The agent window 0 runs, which the Agent pick may leave out. */
-  sessionAgent: string;
+  /** The session's own engine, which the Agent pick opens on. */
+  session: ComponentProps<typeof SideAgentPicker>['session'];
   previews: readonly PreviewTab[];
   /** Whether this session's host can open windows: a shell, or another agent. */
   terminals: boolean;
   /** Whether the screen around the pane can draw a bot's chat. */
   bots: boolean;
   onOpen: (item: KeptSideItem) => void;
-  /** Open a window running `agent`; `shell` is a plain terminal. */
-  onNewWindow: (agent: CodingAgentId) => void;
+  onNewTerminal: () => void;
+  onStartAgent: (engine: SideEngine) => void;
   /** What a window is being opened for, while it opens. */
   opening: CodingAgentId | null;
 }) {
@@ -75,7 +76,7 @@ export function SidePaneLauncher({
       ? t(`sessions.side.launcher.${choice}`)
       : t(`sessions.preview.${choice}`);
   const choose = (choice: Choice) => {
-    if (choice === 'terminal') onNewWindow('shell');
+    if (choice === 'terminal') onNewTerminal();
     else if (choice === 'agent' || choice === 'session' || choice === 'bot') setPane(choice);
     else onOpen({ kind: 'preview', tab: choice });
   };
@@ -126,8 +127,8 @@ export function SidePaneLauncher({
           </Button>
           {pane === 'agent' ? (
             <SideAgentPicker
-              sessionAgent={sessionAgent}
-              onPick={onNewWindow}
+              session={session}
+              onStart={onStartAgent}
               opening={opening === 'shell' ? null : opening}
             />
           ) : pane === 'session' ? (

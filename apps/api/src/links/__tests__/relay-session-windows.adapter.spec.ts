@@ -112,16 +112,44 @@ describe('RelaySessionWindowsAdapter', () => {
   it('sends the agent an open names, to a runner that starts one in a window', async () => {
     const { adapter, link } = harness(true, ['session.windows.list', 'session.window.agent']);
 
-    void adapter.open(HOST, SESSION, 'codex');
+    void adapter.open(HOST, SESSION, { agent: 'codex' });
 
     const message = sessionWindowOpenSchema.strict().parse(sentMessage(link));
     expect(message).toMatchObject({ sessionId: SESSION, agent: 'codex' });
+    // No model, effort or permission chosen: none is sent, and the runner
+    // takes the session's own.
+    for (const field of ['model', 'effort', 'permission']) {
+      expect(message).not.toHaveProperty(field);
+    }
+  });
+
+  it('sends the model, effort and permission chosen for the agent, and none with a shell', async () => {
+    const { adapter, link } = harness(true, ['session.windows.list', 'session.window.agent']);
+
+    void adapter.open(HOST, SESSION, {
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'full',
+    });
+    expect(sessionWindowOpenSchema.strict().parse(sentMessage(link))).toMatchObject({
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'full',
+    });
+
+    vi.mocked(link.send).mockClear();
+    void adapter.open(HOST, SESSION, { model: 'gpt-6.1-terra', permission: 'full' });
+    const shell = sessionWindowOpenSchema.strict().parse(sentMessage(link));
+    expect(shell).not.toHaveProperty('model');
+    expect(shell).not.toHaveProperty('permission');
   });
 
   it('never sends an agent to a runner that would open a plain shell in its place', async () => {
     const { adapter, link } = harness(true, ['session.windows.list']);
 
-    await expect(adapter.open(HOST, SESSION, 'codex')).resolves.toEqual({
+    await expect(adapter.open(HOST, SESSION, { agent: 'codex' })).resolves.toEqual({
       kind: 'agent_not_supported',
     });
     expect(link.send).not.toHaveBeenCalled();
@@ -131,7 +159,7 @@ describe('RelaySessionWindowsAdapter', () => {
     void adapter.open(HOST, SESSION);
     expect(sessionWindowOpenSchema.strict().parse(sentMessage(link))).not.toHaveProperty('agent');
     const old = harness(true, ['port.forward']);
-    await expect(old.adapter.open(HOST, SESSION, 'codex')).resolves.toEqual({
+    await expect(old.adapter.open(HOST, SESSION, { agent: 'codex' })).resolves.toEqual({
       kind: 'not_supported',
     });
   });

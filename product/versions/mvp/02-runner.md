@@ -471,8 +471,9 @@ An open may name a second coding agent instead (`agent`,
 agent's catalog id (`new-window -n codex`, which tmux then never renames),
 and the agent is started in it as window 0's is at create, with
 `respawn-pane` after its folder is trusted and its executable held still,
-at the session's permission level (and its model and effort only when it is
-the session's own agent). A launch that fails kills the window. It is never
+with the model, effort and permission level the open picked for it; each
+one not picked is the session's (its permission level always, its model and
+effort only when it is the session's own agent). A launch that fails kills the window. It is never
 the session's agent: state dots, the chat and the first prompt stay window
 0's. Closing the session is `kill-session`. Working
 directory, environment, and the credential helper socket are set once at

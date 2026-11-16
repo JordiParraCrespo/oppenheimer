@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { SessionWindowAgent } from '@oppenheimer/shared';
+import type { OpenSessionWindowBody } from '@oppenheimer/shared';
 import type {
   SessionWindowCloseMessage,
   SessionWindowOpenMessage,
@@ -51,8 +51,9 @@ export class RelaySessionWindowsAdapter implements SessionWindowsPort {
   open(
     hostId: string,
     sessionId: string,
-    agent?: SessionWindowAgent,
+    window: OpenSessionWindowBody = {},
   ): Promise<SessionWindowOpenOutcome> {
+    const { agent } = window;
     // A runner that answers no window command at all is `not_supported`
     // from `ask`, as for a shell; only one that opens shells but not agents
     // is told apart.
@@ -68,7 +69,7 @@ export class RelaySessionWindowsAdapter implements SessionWindowsPort {
       type: 'session.window.open',
       commandId: randomUUID(),
       sessionId,
-      ...(agent !== undefined ? { agent } : {}),
+      ...(agent !== undefined ? agentLaunch({ ...window, agent }) : {}),
     });
   }
 
@@ -106,4 +107,22 @@ export class RelaySessionWindowsAdapter implements SessionWindowsPort {
       ...(reply.opened !== undefined ? { opened: reply.opened } : {}),
     };
   }
+}
+
+/**
+ * The agent an open names and how it starts, each launch field only when it
+ * was given: an absent one is the session's own, which the runner fills in.
+ */
+function agentLaunch({
+  agent,
+  model,
+  effort,
+  permission,
+}: OpenSessionWindowBody & { agent: NonNullable<OpenSessionWindowBody['agent']> }) {
+  return {
+    agent,
+    ...(model !== undefined ? { model } : {}),
+    ...(effort !== undefined ? { effort } : {}),
+    ...(permission !== undefined ? { permission } : {}),
+  };
 }

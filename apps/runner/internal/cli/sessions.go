@@ -170,7 +170,7 @@ func (a *App) CloseSession(ctx context.Context, out io.Writer, id string, opts C
 
 // OpenWindow adds a tab to a session: a plain shell in its worktree.
 func (a *App) OpenWindow(ctx context.Context, out io.Writer, id string) error {
-	window, err := a.Sessions.OpenWindow(ctx, id, "")
+	window, err := a.Sessions.OpenWindow(ctx, id, sessionsapp.WindowInput{})
 	if err != nil {
 		return err
 	}

@@ -47,21 +47,30 @@ session or a bot tab adds a link to its own page beside the strip.
 
 The owner's third kind, built on 2026-11-16. The launcher's **Agent** opens
 a window like Terminal does and starts a coding agent in it instead of
-leaving a shell: one of the agents this device offers (Settings → Agents,
-as New session's engine picker reads them), the blank terminal left out
-since it is Terminal. Before anything is picked, the pane says what it
-means: the agent works in this session's worktree, on the same files and
-the same git index as the agent already there. Nothing stops two agents
-editing one file; that is the reader's call, said once, not a lock.
+leaving a shell. Asked the same day, the owner wanted the pick to be New
+session's engine without the host, since the agent starts on the session's
+own: the engine button (the agent, its model and its effort), the
+permission level beside it, then Start. It opens on the session's own
+engine when that agent may run twice, so Start alone starts a second copy
+of it; otherwise on the first agent offered, at its defaults. The agents
+are those this device offers (Settings → Agents, as New session's engine
+picker reads them), the blank terminal left out since it is Terminal.
+Before anything starts, the pane says what it means: the agent works in
+this session's worktree, on the same files and the same git index as the
+agent already there. Nothing stops two agents editing one file; that is
+the reader's call, said once, not a lock.
 
 - **On the wire.** `session.window.open` takes an optional `agent`, a
-  catalog id other than `shell`, and a runner that can start one names
+  catalog id other than `shell`, with its `model`, `effort` and
+  `permission`, and a runner that can start one names
   `session.window.agent` in its hello. `POST /sessions/:id/windows` takes
-  `{ agent }`; a runner without the capability is `SESSIONS_060`.
+  the same four; a runner without the capability is `SESSIONS_060`.
 - **On the host.** The runner opens the window in the background, as for a
   shell, and launches the agent in it the way window 0's is launched, with
-  the session's permission level; the model and effort go along only when
-  it is the session's own agent, since a model belongs to one agent. It has
+  the model, effort and permission it was given. A request without them
+  (an older console) takes the session's permission level, and its model
+  and effort only when it is the session's own agent, since a model
+  belongs to one agent. It has
   no first task, no conversation id and no chat server: its own
   conversation is the CLI's. The window is named after the agent, so a
   listing says what runs there, and the tab reads "Codex 2".

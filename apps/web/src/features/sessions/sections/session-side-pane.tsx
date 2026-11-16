@@ -8,13 +8,19 @@ import {
   useSessionWindows,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { Link } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSidePane } from '../hooks/use-side-pane';
 import type { PreviewTab } from '../lib/preview-open';
-import { type SideItem, shownTab, sideItemKey, windowAgent } from '../lib/side-pane';
+import {
+  type SideEngine,
+  type SideItem,
+  shownTab,
+  sideItemKey,
+  windowAgent,
+} from '../lib/side-pane';
 import { SessionBrowser } from './session-browser';
 import { SessionDesktop } from './session-desktop';
 import { SessionDevice } from './session-device';
@@ -37,7 +43,7 @@ import { SideTerminal } from './side-terminal';
  */
 export function SessionSidePane({
   sessionId,
-  sessionAgent,
+  sessionEngine,
   hostId,
   previews,
   onClose,
@@ -45,8 +51,8 @@ export function SessionSidePane({
   bot,
 }: {
   sessionId: string;
-  /** The agent window 0 runs. */
-  sessionAgent: string;
+  /** The session's own agent and launch, which the Agent pick opens on. */
+  sessionEngine: ComponentProps<typeof SidePaneLauncher>['session'];
   hostId: string | null;
   /** The previews this console and deployment can show. */
   previews: readonly PreviewTab[];
@@ -111,11 +117,21 @@ export function SessionSidePane({
     if (item.kind === 'terminal') closeWindow.mutate({ sessionId, window: item.window });
     side.close(key, order);
   };
-  // A plain shell is the catalog's `shell`, which the API takes as no agent.
-  const newWindow = (agent: CodingAgentId) =>
+  const opened = {
+    onSuccess: (window: { window: { index: number } }) =>
+      side.show(`terminal:${window.window.index}`),
+  };
+  const newTerminal = () => openWindow.mutate({ sessionId }, opened);
+  const startAgent = (engine: SideEngine) =>
     openWindow.mutate(
-      { sessionId, ...(agent === 'shell' ? {} : { agent }) },
-      { onSuccess: (opened) => side.show(`terminal:${opened.window.index}`) },
+      {
+        sessionId,
+        agent: engine.agent,
+        ...(engine.model ? { model: engine.model } : {}),
+        ...(engine.effort ? { effort: engine.effort } : {}),
+        ...(engine.permission ? { permission: engine.permission } : {}),
+      },
+      opened,
     );
   const opening = openWindow.isPending ? (openWindow.variables?.agent ?? 'shell') : null;
 
@@ -195,12 +211,13 @@ export function SessionSidePane({
       {shown === undefined ? (
         <SidePaneLauncher
           sessionId={sessionId}
-          sessionAgent={sessionAgent}
+          session={sessionEngine}
           previews={previews}
           terminals={windows.data?.state === 'listed'}
           bots={Boolean(bot)}
           onOpen={side.open}
-          onNewWindow={newWindow}
+          onNewTerminal={newTerminal}
+          onStartAgent={startAgent}
           opening={opening}
         />
       ) : null}

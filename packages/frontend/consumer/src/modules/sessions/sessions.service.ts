@@ -1,4 +1,3 @@
-import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { inject, injectable, optional } from 'inversify';
@@ -10,6 +9,7 @@ import type {
   AttachTicket,
   CreateSessionInput,
   OpenedSessionWindow,
+  OpenSessionWindowInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
@@ -143,10 +143,11 @@ export class SessionsService {
 
   /**
    * Opens a plain shell in the session's worktree, or with `agent` a second
-   * coding agent there; stream it with `openStream(id, window.index)`.
+   * coding agent there, started as `input` says; stream it with
+   * `openStream(id, window.index)`.
    */
-  openWindow(id: string, agent?: CodingAgentId): Promise<OpenedSessionWindow> {
-    return this.repository.openWindow(id, agent);
+  openWindow(id: string, input?: OpenSessionWindowInput): Promise<OpenedSessionWindow> {
+    return this.repository.openWindow(id, input);
   }
 
   /** Closes one of the session's shells, and answers with the windows left. */

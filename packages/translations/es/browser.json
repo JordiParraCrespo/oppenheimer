@@ -1503,7 +1503,8 @@
         "agent": "Agente",
         "agentDetail": "Otro agente en este worktree",
         "agents": "Elige un agente",
-        "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí."
+        "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
+        "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
       },
       "terminal": {
         "name": "Terminal {{index}}",
@@ -1520,7 +1521,8 @@
       "agent": {
         "name": "{{agent}} {{index}}",
         "opening": "Iniciando {{agent}}…",
-        "openFailed": "El agente no se inició"
+        "openFailed": "El agente no se inició",
+        "start": "Iniciar {{agent}}"
       }
     },
     "preview": {

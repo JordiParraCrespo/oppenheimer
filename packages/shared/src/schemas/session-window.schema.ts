@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { codingAgentSchema } from './primitives.js';
+import { sessionLaunchSchema } from './session.schema.js';
 
 /**
  * A session's terminal windows as the console reads them
@@ -47,10 +48,13 @@ export type SessionWindowAgent = z.infer<typeof sessionWindowAgentSchema>;
 
 /**
  * `POST /sessions/{id}/windows`: a plain shell, or with `agent` that coding
- * agent started in the new window, with the session's permission level (and
- * its model and effort when it is the session's own agent).
+ * agent started in the new window. `model`, `effort` and `permission` are how
+ * it starts, the fields and bounds of a new session's launch, and mean
+ * something only with `agent`. Each one absent is the session's own: its
+ * permission level always, its model and effort only when `agent` is the
+ * session's agent.
  */
-export const openSessionWindowBodySchema = z.object({
+export const openSessionWindowBodySchema = sessionLaunchSchema.extend({
   agent: sessionWindowAgentSchema.optional(),
 });
 

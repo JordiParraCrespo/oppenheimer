@@ -748,6 +748,32 @@
             "pi",
             "omp"
           ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "permission": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "auto",
+            "full"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ]
         }
       },
       "required": [

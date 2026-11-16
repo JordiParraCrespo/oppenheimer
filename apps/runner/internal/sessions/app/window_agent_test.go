@@ -33,7 +33,7 @@ func TestASecondAgentStartsInItsOwnWindowAtTheSessionsPermission(t *testing.T) {
 	session := h.openWithLaunch(t, claudeAtFull)
 	agentLaunch := h.terminals.Launches[session.Target(0)]
 
-	window, err := h.svc.OpenWindow(context.Background(), session.ID, domain.AgentCodex)
+	window, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: domain.AgentCodex})
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -70,11 +70,11 @@ func TestASecondAgentTakesTheModelAndEffortOnlyWhenItIsTheSessionsOwn(t *testing
 	h := newFakeHarness(t)
 	session := h.openWithLaunch(t, claudeAtFull)
 
-	codex, err := h.svc.OpenWindow(context.Background(), session.ID, domain.AgentCodex)
+	codex, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: domain.AgentCodex})
 	if err != nil {
 		t.Fatal(err)
 	}
-	claude, err := h.svc.OpenWindow(context.Background(), session.ID, domain.AgentClaude)
+	claude, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: domain.AgentClaude})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,6 +94,66 @@ func TestASecondAgentTakesTheModelAndEffortOnlyWhenItIsTheSessionsOwn(t *testing
 	}
 }
 
+// What the person picked for the second agent wins over the session's own:
+// its model, its effort (spelled as the CLI's level, as a new session's is)
+// and its permission level, for another agent and the session's own alike.
+// The regression: the picker's choices dropped and the session's launched.
+func TestASecondAgentStartsWithTheModelEffortAndPermissionChosenForIt(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.openWithLaunch(t, claudeAtFull)
+
+	codex, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{
+		Agent: domain.AgentCodex, Model: "gpt-6.1-terra", Effort: "xhigh", Permission: "ask",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	claude, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{
+		Agent: domain.AgentClaude, Model: "claude-opus-5-5", Effort: "low", Permission: "auto",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	other := h.terminals.Launches[session.Target(codex.Index)].Command
+	for _, want := range []string{"--model gpt-6.1-terra", "model_reasoning_effort=xhigh", "--ask-for-approval on-request"} {
+		if !strings.Contains(other, want) {
+			t.Fatalf("codex lacks the chosen %q: %q", want, other)
+		}
+	}
+	if strings.Contains(other, "--dangerously-bypass-approvals-and-sandbox") {
+		t.Fatalf("codex took the session's full permission over the one chosen: %q", other)
+	}
+	same := h.terminals.Launches[session.Target(claude.Index)].Command
+	for _, want := range []string{"--model claude-opus-5-5", "--effort low", "--permission-mode auto"} {
+		if !strings.Contains(same, want) {
+			t.Fatalf("the session's own agent lacks the chosen %q: %q", want, same)
+		}
+	}
+	if strings.Contains(same, "claude-sonnet-5-5") || strings.Contains(same, "bypassPermissions") {
+		t.Fatalf("the session's own agent took the session's launch over the one chosen: %q", same)
+	}
+}
+
+// A choice is kept to the catalog the way a create's is: an effort the chosen
+// model does not offer is dropped rather than sent, and the launch goes ahead.
+func TestASecondAgentDropsAnEffortItsModelDoesNotOffer(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.openWithLaunch(t, claudeAtFull)
+
+	window, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{
+		Agent: domain.AgentCodex, Model: "gpt-6-luna", Effort: "ultra",
+	})
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+
+	command := h.terminals.Launches[session.Target(window.Index)].Command
+	if !strings.Contains(command, "--model gpt-6-luna") || strings.Contains(command, "model_reasoning_effort") {
+		t.Fatalf("launched %q, want gpt-6-luna and no effort it does not offer", command)
+	}
+}
+
 // The blank terminal is what a window without an agent already is, and an
 // agent this runner does not know has nothing to launch: both are refused,
 // and no window is left behind.
@@ -102,7 +162,7 @@ func TestAWindowRefusesTheBlankTerminalAndUnknownAgents(t *testing.T) {
 	session := h.open(t)
 
 	for _, agent := range []domain.Agent{domain.AgentShell, domain.Agent("cursor")} {
-		if _, err := h.svc.OpenWindow(context.Background(), session.ID, agent); !isProblem(err, domain.ErrInvalidInput) {
+		if _, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: agent}); !isProblem(err, domain.ErrInvalidInput) {
 			t.Fatalf("%s: err = %v, want %s", agent, err, domain.ErrInvalidInput.Code)
 		}
 	}
@@ -118,7 +178,7 @@ func TestAFailedSecondAgentLeavesNoWindow(t *testing.T) {
 	session := h.open(t)
 	h.terminals.FailLaunch = true
 
-	if _, err := h.svc.OpenWindow(context.Background(), session.ID, domain.AgentCodex); err == nil {
+	if _, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: domain.AgentCodex}); err == nil {
 		t.Fatal("a launch that failed opened a window")
 	}
 
@@ -149,18 +209,18 @@ func TestASecondCopyOfAnAgentFoundByItsFolderIsRefused(t *testing.T) {
 		t.Fatalf("create: %v", err)
 	}
 
-	if _, err := h.svc.OpenWindow(ctx, codex.ID, domain.AgentCodex); !isProblem(err, domain.ErrInvalidInput) {
+	if _, err := h.svc.OpenWindow(ctx, codex.ID, app.WindowInput{Agent: domain.AgentCodex}); !isProblem(err, domain.ErrInvalidInput) {
 		t.Fatalf("a second codex: err = %v, want %s", err, domain.ErrInvalidInput.Code)
 	}
 	if windows, _ := h.svc.Windows(ctx, codex.ID); len(windows) != 1 {
 		t.Fatalf("windows = %+v, want only the agent's", windows)
 	}
-	if _, err := h.svc.OpenWindow(ctx, codex.ID, domain.AgentClaude); err != nil {
+	if _, err := h.svc.OpenWindow(ctx, codex.ID, app.WindowInput{Agent: domain.AgentClaude}); err != nil {
 		t.Fatalf("claude beside codex: %v", err)
 	}
 
 	claude := h.open(t)
-	if _, err := h.svc.OpenWindow(ctx, claude.ID, domain.AgentClaude); err != nil {
+	if _, err := h.svc.OpenWindow(ctx, claude.ID, app.WindowInput{Agent: domain.AgentClaude}); err != nil {
 		t.Fatalf("a second claude: %v", err)
 	}
 }
@@ -181,10 +241,10 @@ func TestASecondClaudeInATeleportedSessionIsRefused(t *testing.T) {
 		t.Fatalf("create: %v", err)
 	}
 
-	if _, err := h.svc.OpenWindow(ctx, session.ID, domain.AgentClaude); !isProblem(err, domain.ErrInvalidInput) {
+	if _, err := h.svc.OpenWindow(ctx, session.ID, app.WindowInput{Agent: domain.AgentClaude}); !isProblem(err, domain.ErrInvalidInput) {
 		t.Fatalf("a second claude: err = %v, want %s", err, domain.ErrInvalidInput.Code)
 	}
-	if _, err := h.svc.OpenWindow(ctx, session.ID, domain.AgentCodex); err != nil {
+	if _, err := h.svc.OpenWindow(ctx, session.ID, app.WindowInput{Agent: domain.AgentCodex}); err != nil {
 		t.Fatalf("codex beside it: %v", err)
 	}
 }

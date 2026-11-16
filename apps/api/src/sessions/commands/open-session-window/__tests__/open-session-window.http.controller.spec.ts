@@ -88,15 +88,35 @@ describe('POST /v1/sessions/:id/windows', () => {
 
     expect(response.status).toBe(201);
     expect(sent()).toBeInstanceOf(OpenSessionWindowCommand);
-    expect(sent()).toMatchObject({ sessionId: SESSION, scope: SCOPE });
-    expect(sent().agent).toBeUndefined();
+    expect(sent()).toMatchObject({ sessionId: SESSION, scope: SCOPE, window: {} });
+    expect(sent().window.agent).toBeUndefined();
   });
 
-  it('hands the agent a body names to the bus', async () => {
-    const response = await post({ agent: 'codex' });
+  it('hands the agent a body names, and how it starts, to the bus', async () => {
+    const response = await post({
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'full',
+    });
 
     expect(response.status).toBe(201);
-    expect(sent()).toMatchObject({ sessionId: SESSION, agent: 'codex' });
+    expect(sent()).toMatchObject({
+      sessionId: SESSION,
+      window: { agent: 'codex', model: 'gpt-6.1-terra', effort: 'high', permission: 'full' },
+    });
+  });
+
+  it('refuses a permission or an effort outside the launch’s own, before the bus sees it', async () => {
+    for (const body of [
+      { agent: 'codex', permission: 'yolo' },
+      { agent: 'codex', effort: 'extreme' },
+      { agent: 'codex', model: '' },
+    ]) {
+      const response = await post(body);
+      expect(response.status).toBe(400);
+    }
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it('refuses the blank terminal and an agent outside the catalog, before the bus sees them', async () => {

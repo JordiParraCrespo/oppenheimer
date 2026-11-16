@@ -222,6 +222,16 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
+// WindowInput is what a window is opened with: no agent for a plain shell,
+// or the coding agent to start in it and how, each of Model, Permission and
+// Effort empty to take the session's own (windowLaunch).
+type WindowInput struct {
+	Agent      domain.Agent
+	Model      string
+	Permission string
+	Effort     string
+}
+
 // OpenWindow adds a tab where the agent runs: a plain shell, or with agent
 // set a second coding agent started in the session's worktree. It holds the
 // session like every command, so a refresh running meanwhile keeps the
@@ -234,7 +244,8 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 // session's agent, the one its state is read from. An agent that would take
 // the session's conversation over is refused (domain.Session.TakesSecond). A
 // launch that fails takes its window with it.
-func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent) (domain.Window, error) {
+func (s *Service) OpenWindow(ctx context.Context, id string, in WindowInput) (domain.Window, error) {
+	agent := in.Agent
 	if agent != "" && agent.Command() == "" {
 		return domain.Window{}, domain.ErrInvalidInput.WithDetail("%q is not an agent a window can start", agent)
 	}
@@ -256,7 +267,7 @@ func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent)
 	}
 	window := domain.Window{Index: index, Name: "shell"}
 	if agent != "" {
-		if err := s.launchInWindow(ctx, session, index, agent); err != nil {
+		if err := s.launchInWindow(ctx, session, index, in); err != nil {
 			_ = s.terminals.KillWindow(context.WithoutCancel(ctx), session.Target(index))
 			return domain.Window{}, err
 		}
@@ -268,16 +279,12 @@ func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent)
 	return window, nil
 }
 
-// launchInWindow starts agent in one of session's windows, the way a create
-// starts window 0's: its folder trusted, the agent's executable held still
-// while it starts.
-func (s *Service) launchInWindow(ctx context.Context, session domain.Session, index int, agent domain.Agent) error {
-	launch := domain.Launch{Permission: session.Launch.Permission}
-	if agent == session.Agent {
-		launch.Model = session.Launch.Model
-		launch.Effort = session.Launch.Effort
-		launch.EffortIsLevel = session.Launch.EffortIsLevel
-	}
+// launchInWindow starts in.Agent in one of session's windows, the way a
+// create starts window 0's: its folder trusted, the agent's executable held
+// still while it starts.
+func (s *Service) launchInWindow(ctx context.Context, session domain.Session, index int, in WindowInput) error {
+	agent := in.Agent
+	launch := windowLaunch(session, in)
 	// The runner's status line keeps what Claude Code hands it under the
 	// conversation's own id, so a second Claude's figures never reach the
 	// session's chat, which reads window 0's conversation.
@@ -285,6 +292,31 @@ func (s *Service) launchInWindow(ctx context.Context, session domain.Session, in
 	s.trustFolder(agent, session.Cwd())
 	defer s.holdLaunch(ctx, agent)()
 	return s.terminals.Launch(ctx, session.Target(index), session.Cwd(), launch.CommandLine(agent))
+}
+
+// windowLaunch is how a window's agent starts: each choice the open made,
+// and for each it did not, the session's own: its permission level always,
+// its model and effort only for the session's own agent, since a model names
+// one CLI's. A choice the agent has no spelling for is dropped by the
+// catalog (Launch.Args), as it is at create, never a refusal.
+func windowLaunch(session domain.Session, in WindowInput) domain.Launch {
+	launch := domain.Launch{Permission: session.Launch.Permission}
+	if in.Agent == session.Agent {
+		launch.Model = session.Launch.Model
+		launch.Effort = session.Launch.Effort
+		launch.EffortIsLevel = session.Launch.EffortIsLevel
+	}
+	if in.Permission != "" {
+		launch.Permission = in.Permission
+	}
+	if in.Model != "" {
+		launch.Model = in.Model
+	}
+	// An effort chosen now is the CLI's own level name, as at create.
+	if in.Effort != "" {
+		launch.Effort, launch.EffortIsLevel = in.Effort, true
+	}
+	return launch
 }
 
 // Windows lists a live session's windows as tmux holds them now, and keeps

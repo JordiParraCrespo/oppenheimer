@@ -637,11 +637,14 @@ type SessionResize struct {
 
 // SessionWindowOpen is the `session.window.open` message.
 type SessionWindowOpen struct {
-	Type      string `json:"type"`
-	CommandID string `json:"commandId"`
-	SessionID string `json:"sessionId"`
-	Name      string `json:"name,omitempty"`
-	Agent     string `json:"agent,omitempty"`
+	Type       string `json:"type"`
+	CommandID  string `json:"commandId"`
+	SessionID  string `json:"sessionId"`
+	Name       string `json:"name,omitempty"`
+	Agent      string `json:"agent,omitempty"`
+	Model      string `json:"model,omitempty"`
+	Permission string `json:"permission,omitempty"`
+	Effort     string `json:"effort,omitempty"`
 }
 
 // SessionWindowClose is the `session.window.close` message.

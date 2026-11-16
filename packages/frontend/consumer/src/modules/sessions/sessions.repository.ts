@@ -1,6 +1,7 @@
 import {
   type CreateSessionRequest,
   heyApiSdk,
+  type OpenSessionWindowRequest,
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
   type SessionShareResponseDto,
@@ -8,7 +9,6 @@ import {
   type StartCloudSessionRequest,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
-import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type {
@@ -23,6 +23,7 @@ import {
   type AttachTicket,
   type CreateSessionInput,
   type OpenedSessionWindow,
+  type OpenSessionWindowInput,
   type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
@@ -184,6 +185,26 @@ export function toStartCloudSessionRequest(
     prompt: input.prompt,
     ...(input.projectId ? { projectId: input.projectId } : {}),
     ...(input.model ? { model: input.model } : {}),
+  };
+}
+
+/**
+ * The open's body: nothing for a plain shell (`shell` included, which the API
+ * refuses as an agent), and for an agent its id with each launch choice that
+ * was made. A choice left out is the session's own, which the host fills in.
+ */
+function toOpenSessionWindowRequest({
+  agent,
+  model,
+  effort,
+  permission,
+}: OpenSessionWindowInput): OpenSessionWindowRequest {
+  if (agent === undefined || agent === 'shell') return {};
+  return {
+    agent,
+    ...(model ? { model } : {}),
+    ...(effort ? { effort } : {}),
+    ...(permission ? { permission } : {}),
   };
 }
 
@@ -506,11 +527,12 @@ export class SessionsRepository {
   /**
    * Opens a window in the session's worktree, a plain shell or with `agent`
    * that coding agent started in it: the window it made, and every window
-   * after. `shell` is the plain shell, sent as no agent at all.
+   * after. `shell` is the plain shell, sent as no agent at all, and how an
+   * agent starts is sent only with one.
    */
-  openWindow(id: string, agent?: CodingAgentId): Promise<OpenedSessionWindow> {
+  openWindow(id: string, input: OpenSessionWindowInput = {}): Promise<OpenedSessionWindow> {
     return callApi(SessionsErrors.WINDOW_OPEN_FAILED, async (api) => {
-      const body = agent === undefined || agent === 'shell' ? {} : { agent };
+      const body = toOpenSessionWindowRequest(input);
       const data = await api.body(heyApiSdk.openSessionWindow({ path: { id }, body }));
       return { window: toWindow(data.window), windows: data.windows.map(toWindow) };
     });

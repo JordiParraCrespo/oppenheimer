@@ -602,7 +602,10 @@
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
     "name": "tests",
-    "agent": "codex"
+    "agent": "codex",
+    "model": "gpt-6.1-sol",
+    "permission": "auto",
+    "effort": "high"
   },
   "session.window.close": {
     "type": "session.window.close",

@@ -13047,7 +13047,7 @@
         ]
       },
       "post": {
-        "description": "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it. With `agent`, that coding agent is started in the new window instead, at the session's permission level, with the session's model and effort only when it is the session's own agent; the window is named after it. Window 0 stays the session's agent. The body is optional: without one the window is a plain shell.",
+        "description": "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it. With `agent`, that coding agent is started in the new window instead, named after it, with the `model`, `effort` and `permission` given; each one absent is the session's own (its permission level always, its model and effort only when `agent` is the session's agent). They are ignored without `agent`. Window 0 stays the session's agent. The body is optional: without one the window is a plain shell.",
         "operationId": "openSessionWindow",
         "parameters": [
           {
@@ -32796,6 +32796,32 @@
       "OpenSessionWindowRequest": {
         "type": "object",
         "properties": {
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "permission": {
+            "type": "string",
+            "enum": [
+              "ask",
+              "auto",
+              "full"
+            ]
+          },
+          "effort": {
+            "type": "string",
+            "enum": [
+              "none",
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ]
+          },
           "agent": {
             "type": "string",
             "enum": [

@@ -164,6 +164,20 @@ export type SessionWindows = SessionWindowsResponse;
 /** A shell just opened in the session, and every window after it. */
 export type OpenedSessionWindow = OpenedSessionWindowResponse;
 
+/**
+ * What to open in a session's worktree: no agent (or `shell`) for a plain
+ * shell, or a coding agent beside the session's own, started with the
+ * `model`, `effort` and `permission` picked for it. Each one left out is the
+ * session's own: its permission level always, its model and effort only when
+ * the agent is the session's.
+ */
+export interface OpenSessionWindowInput {
+  agent?: CodingAgentId;
+  model?: string;
+  effort?: SessionEffort;
+  permission?: SessionPermission;
+}
+
 /** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
 export interface SessionPreview {
   url: string;

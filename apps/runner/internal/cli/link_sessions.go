@@ -162,8 +162,9 @@ type lifecycleCommand struct {
 	Window             int
 	AcceptUnpushedWork bool
 	// Agent is the catalog id of the agent a window.open starts, "" for a
-	// plain shell.
-	Agent string
+	// plain shell, and Model, Permission and Effort how it starts ("" for
+	// the session's own).
+	Agent, Model, Permission, Effort string
 }
 
 // decodeLifecycle decodes a lifecycle message into its own generated struct
@@ -188,6 +189,7 @@ func decodeLifecycle(msg link.Message) (lifecycleCommand, bool) {
 		var body link.SessionWindowOpen
 		err = msg.Decode(&body)
 		m.CommandID, m.SessionID, m.Agent = body.CommandID, body.SessionID, body.Agent
+		m.Model, m.Permission, m.Effort = body.Model, body.Permission, body.Effort
 	case link.TypeSessionWindowClose:
 		var body link.SessionWindowClose
 		err = msg.Decode(&body)
@@ -228,7 +230,8 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 			break
 		}
 		var opened sessionsdomain.Window
-		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID, agent); err == nil {
+		in := sessionsapp.WindowInput{Agent: agent, Model: m.Model, Permission: m.Permission, Effort: m.Effort}
+		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID, in); err == nil {
 			h.windows(ctx, m.CommandID, m.SessionID, opened.Index)
 		}
 	case "session.window.close":
