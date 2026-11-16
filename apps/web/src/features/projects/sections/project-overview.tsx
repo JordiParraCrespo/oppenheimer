@@ -13,7 +13,7 @@ import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { planProjectParam } from '../lib/project-links';
-import { projectTaskGroups, projectWaitingSessions } from '../lib/project-list';
+import { projectNeedsInputRows, projectTaskGroups } from '../lib/project-list';
 
 /**
  * A project's page under Plan's Projects: its milestones with how far each
@@ -45,8 +45,8 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
   }
 
   const own = milestones.filter((milestone) => milestone.projectId === projectId);
-  const { blocked, doing } = projectTaskGroups(projectId, tasks);
-  const waiting = projectWaitingSessions(projectId, sessions);
+  const needsInput = projectNeedsInputRows(projectId, sessions, tasks);
+  const { doing } = projectTaskGroups(projectId, tasks);
   const dueOf = (iso: string | null) => (iso ? formatCalendarDay(iso, locale) : undefined);
   const scope = { project: planProjectParam(project) };
 
@@ -73,28 +73,32 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
         </ProjectOverviewColumn>
         <ProjectOverviewColumn>
           <ProjectPanel label={t('projects.detail.needsInput')}>
-            {blocked.length === 0 && waiting.length === 0 ? (
+            {needsInput.length === 0 ? (
               <ProjectPanelEmpty>{t('projects.detail.nothingNeedsInput')}</ProjectPanelEmpty>
-            ) : null}
-            {waiting.map((session) => (
-              <ProjectTaskRow
-                key={session.id}
-                state="needs-input"
-                reason={session.notice?.text ?? t('projects.detail.sessionWaiting')}
-                title={session.name}
-                render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
-              />
-            ))}
-            {blocked.map((task) => (
-              <ProjectTaskRow
-                key={task.id}
-                state="needs-input"
-                reason={task.blockedReason}
-                title={task.title}
-                due={dueOf(task.dueDate)}
-                render={<Link to="/plan" search={{ ...scope, task: task.id }} />}
-              />
-            ))}
+            ) : (
+              needsInput.map((row) =>
+                row.kind === 'session' ? (
+                  <ProjectTaskRow
+                    key={row.session.id}
+                    state="needs-input"
+                    reason={row.session.notice?.text ?? t('projects.detail.sessionWaiting')}
+                    title={row.session.name}
+                    render={
+                      <Link to="/sessions/$sessionId" params={{ sessionId: row.session.id }} />
+                    }
+                  />
+                ) : (
+                  <ProjectTaskRow
+                    key={row.task.id}
+                    state="needs-input"
+                    reason={row.task.blockedReason}
+                    title={row.task.title}
+                    due={dueOf(row.task.dueDate)}
+                    render={<Link to="/plan" search={{ ...scope, task: row.task.id }} />}
+                  />
+                ),
+              )
+            )}
           </ProjectPanel>
           <ProjectPanel label={t('projects.detail.inProgress')}>
             {doing.length === 0 ? (

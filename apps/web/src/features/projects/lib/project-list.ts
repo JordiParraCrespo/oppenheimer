@@ -56,6 +56,30 @@ export function projectTaskGroups(projectId: string, tasks: readonly TaskEntity[
   };
 }
 
+/** A row under a project's Needs input: a session or a task that waits on you. */
+export type NeedsInputRow =
+  | { kind: 'session'; session: SessionEntity }
+  | { kind: 'task'; task: TaskEntity };
+
+/**
+ * What a project's Needs input panel lists, in order: the sessions that make
+ * its card say Needs input, then its blocked tasks in board order. Empty when
+ * nothing waits on you.
+ */
+export function projectNeedsInputRows(
+  projectId: string,
+  sessions: readonly SessionEntity[],
+  tasks: readonly TaskEntity[],
+): NeedsInputRow[] {
+  return [
+    ...projectWaitingSessions(projectId, sessions).map((session) => ({
+      kind: 'session' as const,
+      session,
+    })),
+    ...projectTaskGroups(projectId, tasks).blocked.map((task) => ({ kind: 'task' as const, task })),
+  ];
+}
+
 /**
  * The projects an open session sits in: the API refuses to delete them
  * (`PROJECTS_005`), so Projects does not offer them for a bulk delete.
