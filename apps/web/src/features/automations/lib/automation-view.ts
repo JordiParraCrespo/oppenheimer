@@ -5,6 +5,8 @@ import type {
   BotRoutineEntity,
 } from '@oppenheimer/frontend-consumer';
 import {
+  clock,
+  dayOffset,
   formatCountdown,
   formatShortDuration,
   viewerTimeZone,
@@ -21,7 +23,6 @@ import {
 } from '@oppenheimer/shared/automations';
 import { CLOUD_AGENT_LABELS, type CloudAgentId } from '@oppenheimer/shared/schemas/cloud-agent';
 import type { TFunction } from 'i18next';
-import { clock, dayOffset } from './time';
 
 /**
  * Entities in, what a row prints out. Nothing here renders and nothing here

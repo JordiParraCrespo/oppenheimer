@@ -150,7 +150,6 @@
     "comingToMobile": {
       "title": "Coming to mobile",
       "pullRequests": "Review the pull requests that need you.",
-      "automations": "See your automations and how their runs went.",
       "plan": "Your tasks, milestones and calendar, from here."
     }
   },
@@ -2706,6 +2705,16 @@
       "runsOn": "Runs on {{bot}}",
       "loadFailed": "Bot routines could not be loaded.",
       "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
+    },
+    "mobile": {
+      "empty": "No automations yet. Make one in the console on your computer.",
+      "pauseFailed": "The automation could not be paused or resumed.",
+      "runFailed": "The run could not be started.",
+      "duplicateFailed": "The automation could not be duplicated.",
+      "started": "Run started",
+      "nextRun": "Next run · {{when}}",
+      "instructions": "Instructions",
+      "recentRuns": "Recent runs"
     }
   },
   "pullRequests": {

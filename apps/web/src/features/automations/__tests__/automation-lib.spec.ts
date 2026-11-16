@@ -4,7 +4,7 @@ import {
   HostEntity,
   ProjectEntity,
 } from '@oppenheimer/frontend-consumer';
-import { daysText, scheduleText } from '@oppenheimer/frontend-web';
+import { dayOffset, daysText, scheduleText } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
@@ -21,7 +21,7 @@ import {
   withFrequency,
 } from '../lib/automation-draft';
 import { nextRunText, runState, sidebarMeta } from '../lib/automation-view';
-import { dayOffset, localDate } from '../lib/time';
+import { localDate } from '../lib/time';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
