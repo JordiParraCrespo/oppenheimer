@@ -41,7 +41,7 @@ func session(layout domain.Layout, id, slug string) domain.SessionFolder {
 	}
 }
 
-// Making a session's folder marks every level it makes (24 §2): the work
+// Making a session's folder marks every level it makes: the work
 // folder says its layout, the account and workspace folders say what they
 // are, and the session folder names its session before anything else is in
 // it.

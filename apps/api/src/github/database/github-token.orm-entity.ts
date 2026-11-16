@@ -23,9 +23,9 @@ export interface GithubTokenRepositoryRecord {
 
 /**
  * A GitHub token a person added for repositories the App will never be
- * installed on (`product/next-steps/0.2-pull-requests.md` §6.2). The secret is
- * sealed with AES-256-GCM under `GITHUB_USER_TOKEN_KEY`; `repositories` is
- * what it opened at `checkedAt`, read and replaced whole.
+ * installed on. The secret is sealed with AES-256-GCM under
+ * `GITHUB_USER_TOKEN_KEY`; `repositories` is what it opened at `checkedAt`,
+ * read and replaced whole.
  */
 @Entity('github_token')
 @Unique('UQ_github_token_user_label', ['userId', 'label'])

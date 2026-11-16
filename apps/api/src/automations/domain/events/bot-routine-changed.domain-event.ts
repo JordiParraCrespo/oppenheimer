@@ -4,8 +4,7 @@ import type { BotRoutineActivity } from '@oppenheimer/shared';
 /**
  * Raised when one of a bot's routines is saved, changed, paused, resumed or
  * deleted, whatever path made the change (its bot's tool, its Routines tab, a
- * system pause), so its bot's chat can say so once (`26-bot-routines.md` §4,
- * "In the chat"). Session automations raise nothing here.
+ * system pause), so its bot's chat can say so once. Session automations raise nothing here.
  */
 export class BotRoutineChangedDomainEvent extends DomainEvent {
   readonly organizationId: string;

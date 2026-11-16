@@ -50,10 +50,9 @@ export class BotSubscriptionRepository
     if (subscription.plan) return this.subscribePlan(subscription);
     const record = this.mapper.toPersistence(subscription);
     // UQ_bot_subscription_bot_resource. A second subscribe replaces what is
-    // followed and why, and keeps the id, the newest wake recorded (the
-    // newer of the two) and the count, so subscribing again never resets
-    // the wake limit or re-wakes for a state already told. An INSERT
-    // answers its rows (typeorm.md).
+    // followed and why, and keeps the id, the newest wake recorded (the newer
+    // of the two) and the count, so subscribing again never resets the wake
+    // limit or re-wakes for a state already told. An INSERT answers its rows.
     const rows: BotSubscriptionOrmEntity[] = await this.repository.query(
       `INSERT INTO bot_subscription AS s
          ("id", "organizationId", "botId", "resourceKind", "resourceId", "originTurnId", "purpose",

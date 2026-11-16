@@ -14,14 +14,14 @@ import { RenameHostForm } from '../forms/rename-host';
 import { cardStatusOf, type MetaPart, metaPartsOf } from '../lib/host-card';
 
 /**
- * One host on Settings (`design/version1/Settings.dc.html`): its dot, name
- * and meta line, its state and when it was last seen, and the ellipsis.
+ * One host on Settings: its dot, name and meta line, its state and when it
+ * was last seen, and the ellipsis.
  *
- * An online host offers **Open terminal**: New session as a folder session in
- * the host's home with the blank terminal, started on arrival
- * (`product/versions/mvp/24-session-places.md` §3), and **Desktop**: the
- * machine's own screen, on its page (`HostDesktopScreen`). Whether the host
- * shares it is its owner's call on the host; the page says how.
+ * An online host offers **Open terminal**: New session as a folder session
+ * in the host's home with the blank terminal, started on arrival, and
+ * **Desktop**: the machine's own screen, on its page (`HostDesktopScreen`).
+ * Whether the host shares it is its owner's call on the host; the page says
+ * how.
  *
  * Update runner asks first, in its own dialog; the row's runner version moves
  * once the runner reconnects on the new release, through the presence poll.

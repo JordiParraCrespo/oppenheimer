@@ -6,7 +6,7 @@ import { GithubTokenRepository } from '../database/github-token.repository';
 import { GithubTokenPinOrmEntity } from '../database/github-token-pin.orm-entity';
 
 /**
- * A person's own GitHub tokens and pins (§6.2), and the watch of a repository
+ * A person's own GitHub tokens and pins, and the watch of a repository
  * read through them, against a real Postgres: what no double can be wrong
  * about. The label unique answered as `label_taken`, a pin that cannot name
  * somebody else's token, pins going with their token, and one watch per token

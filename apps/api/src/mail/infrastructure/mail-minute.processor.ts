@@ -9,7 +9,7 @@ import { SendDueMailCommand } from '../commands/send-due-mail/send-due-mail.comm
 const SCHEDULER_ID = 'mail-minute-tick';
 
 /**
- * Mail's one-minute tick (`product/next-steps/mail.md` §3.4, §5): sends the
+ * Mail's one-minute tick: sends the
  * scheduled mail that is due, then reads the new mail of every account a
  * routine watches. One BullMQ job scheduler is one Redis entry, so
  * it ticks once however many replicas there are; what is due lives in

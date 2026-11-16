@@ -15,9 +15,8 @@ import { INBOUND_EVENT_LOOKUP, INBOUND_EVENT_REPOSITORY } from './inbound-events
 import { InboundEventsProcessor } from './infrastructure/inbound-events.processor';
 
 /**
- * The inbound-events hub (`product/versions/mvp/16-automations-architecture.md`
- * §Q6): provider-neutral storage, de-duplication, normalization and
- * publication of what external systems tell us.
+ * The inbound-events hub: provider-neutral storage, de-duplication,
+ * normalization and publication of what external systems tell us.
  *
  * It imports no provider and no consumer. Providers (`github/`, later `slack/`)
  * contribute a source adapter and dispatch `ReceiveInboundDeliveryCommand` from

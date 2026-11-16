@@ -148,7 +148,7 @@ func New(opts Options) (*Service, error) {
 		}
 		for _, session := range loaded {
 			// A record with no place was made on the work folder's first
-			// layout, which this runner does not read (24: no migration).
+			// layout, which this runner does not read (there is no migration).
 			if session.Place == "" {
 				continue
 			}
@@ -510,8 +510,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 // ReportFirstPrompts is the poll loop's other job: for each session launched
 // with no task, the first message the person typed into the agent, read off
 // the agent's own transcript (never the PTY) and reported once as
-// `prompt.first`, which is what the control plane names the session from
-// (02-runner §7).
+// `prompt.first`, which is what the control plane names the session from.
 //
 // The session is marked reported only when the control plane acknowledges the
 // message. Until then it is in flight, and not offered again by this process;
@@ -652,7 +651,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 
 // Stop ends the agent and the tmux session and leaves every checkout on disk,
 // which is what Restart needs afterwards. It is not Close: nothing is pushed
-// and nothing is removed (02-runner §5, "Stop is not close").
+// and nothing is removed.
 func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
 	defer s.hold(id)()
 	session, err := s.recorded(id)
@@ -837,7 +836,7 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 // nothing is pushed, uncommitted work is not a reason to keep a worktree, and
 // each worktree and session folder goes. A folder session's folder is the
 // person's and stays, as in any Close. It is what an owner who removes a host
-// and asks for it to be cleaned up wants (14); nothing else deletes work like
+// and asks for it to be cleaned up wants; nothing else deletes work like
 // this. It answers the sessions it closed.
 func (s *Service) WipeAll(ctx context.Context) ([]string, error) {
 	if _, err := s.EndAll(ctx); err != nil {

@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * The Codex cloud environment a session was started in, as the person picked
- * it (`product/next-steps/cloud-agents.md`, "Which Codex environment"). Folded
+ * it. Folded
  * from `session.requested` like the rest of the launch, so a create sent again
  * after a reconnect starts the task in the same environment. Null is the host's
  * own pick: the environment linked to the repository. Adding a nullable column

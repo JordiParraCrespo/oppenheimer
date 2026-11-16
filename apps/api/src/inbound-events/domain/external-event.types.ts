@@ -1,8 +1,7 @@
 import type { ExternalTriggerSource, TriggerSubjectKind } from '@oppenheimer/shared/automations';
 
 /**
- * The canonical shape of something that happened elsewhere
- * (`product/versions/mvp/16-automations-architecture.md` §Q6).
+ * The canonical shape of something that happened elsewhere.
  *
  * Every source normalizes its deliveries into this, and everything downstream —
  * the automations matcher, the trigger preview, a run's cause and its prompt —

@@ -1,6 +1,6 @@
 /**
  * A session's terminal printed what a bot watches it for, and the bot is
- * woken (`27-bot-subscriptions.md` §2). What breaks this: the matched text
+ * woken. What breaks this: the matched text
  * reaching the bot (it never leaves the host, and the event carries none);
  * a report delivered twice, or one older than the count the bot was already
  * woken for, queuing a second turn; a match past the wake limit waking the

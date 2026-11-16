@@ -12,7 +12,7 @@ import { permissionForBotMadeBy } from '../bots/domain/bot-creation.policy';
 import type { BotGroupEntity } from '../bots/domain/bot-group.entity';
 
 /**
- * How `create_bot`'s input becomes a bot to create (`25-bots.md` §4.6), one
+ * How `create_bot`'s input becomes a bot to create, one
  * resolve-or-refuse step at a time: the provider (the one named, else the
  * creator's) and only one the workspace has a key for; the model (the one
  * named, by id or label, else the creator's on the same provider, else the

@@ -8,12 +8,11 @@ import { ErrorAlert, formatMediumDate, useLocale } from '@oppenheimer/frontend-w
 import { useTranslation } from 'react-i18next';
 
 /**
- * Tidy memory (`25-bots.md` §4.1, "Dreaming"): what the bot's last dream
- * did, Undo while it stands, and Tidy now, which queues one. A dream runs in
- * the background and says so in the chat; while the API says it is under
- * way, this row says so. Until the state answers, the hint is a bar and
- * Tidy now waits: "never tidied" would be a guess, and a failed read says so
- * in its alert instead.
+ * Tidy memory: what the bot's last dream did, Undo while it stands, and Tidy
+ * now, which queues one. A dream runs in the background and says so in the
+ * chat; while the API says it is under way, this row says so. Until the
+ * state answers, the hint is a bar and Tidy now waits: "never tidied" would
+ * be a guess, and a failed read says so in its alert instead.
  */
 export function BotDreaming({ botId }: { botId: string }) {
   const { t } = useTranslation();

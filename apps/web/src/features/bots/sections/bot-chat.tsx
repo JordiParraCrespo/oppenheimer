@@ -11,11 +11,10 @@ import { useToolCallsShown } from '@/features/bots/hooks/use-tool-calls-shown';
 import { BotChatBody } from './bot-chat-body';
 
 /**
- * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
- * `PageBar`, the sidebar toggle, the bot's face and name, the wrench that
- * shows or hides its tool calls (kept on this device) and its menu, over the
- * conversation (`BotChatBody`). The header and the conversation both draw
- * this one bot, so it is read here once.
+ * A bot's chat: its `PageBar`, the sidebar toggle, the bot's face and name,
+ * the wrench that shows or hides its tool calls (kept on this device) and
+ * its menu, over the conversation (`BotChatBody`). The header and the
+ * conversation both draw this one bot, so it is read here once.
  */
 export function BotChat({ botId }: { botId: string }) {
   const { t } = useTranslation();

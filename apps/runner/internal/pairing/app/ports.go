@@ -13,7 +13,7 @@ import (
 
 // Store persists the identity and the private key. Implementations keep the
 // key 0600 and the directory 0700; `Load` reports ErrKeyPermissions rather
-// than reading a key anyone else can (F8).
+// than reading a key anyone else can.
 type Store interface {
 	Load() (domain.Identity, ed25519.PrivateKey, error)
 	Save(domain.Identity, ed25519.PrivateKey) error
@@ -56,7 +56,7 @@ type TokenSigner interface {
 	Sign(key ed25519.PrivateKey, claims domain.BootClaims) (string, error)
 }
 
-// Unsealer opens a box the control plane sealed to this host's key (F7).
+// Unsealer opens a box the control plane sealed to this host's key.
 type Unsealer interface {
 	Unseal(key ed25519.PrivateKey, sealed []byte) ([]byte, error)
 }

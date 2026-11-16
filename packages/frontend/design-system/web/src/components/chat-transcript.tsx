@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircleIcon, CheckIcon, LayersIcon } from 'lucide-react';
+import { AlertCircleIcon, LayersIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { FoldChevron } from '../internal/fold';
@@ -13,17 +13,18 @@ import { cn } from '../lib/utils';
  *
  * - `ChatTranscript`: the column; turns 20px apart.
  * - `ChatUserMessage`: the person's turn, a bubble at 80% of the column with
- *   the 28px radius at 15px, its line breaks kept (Bots); attachments sit
+ *   the 18px radius at 15px, its line breaks kept (Bots); attachments sit
  *   above it, the time and its actions (copy, edit) under it, on hover.
  * - `ChatAttachment`: a file on a turn, a 44px card with the type's glyph
  *   on a 32px tile, the name over its size in mono; `icon` alone is the
  *   preview tile.
  * - `ChatMention`: an `@file` in a turn, mono on the selected wash in the
  *   link blue; its `token` form names a skill or an agent.
- * - `TurnHeader`: how a turn went, on a hairline that runs to the edge.
+ * - `TurnHeader`: how a turn went ("Worked for 17s ›"), over a hairline
+ *   that spans the column.
  * - `ChatReply`: the agent's answer, `Prose` at the chat's measure.
- * - `MessageTrail`: under a settled reply, its actions and the tokens it
- *   took, in mono.
+ * - `MessageTrail`: under a settled reply, its actions, then the time it
+ *   ended or the tokens it took.
  * - `StreamingCaret`: the write head while a reply streams in.
  */
 function ChatTranscript({ className, ...props }: React.ComponentProps<'div'>) {
@@ -53,11 +54,11 @@ function ChatUserMessage({
   attachments?: React.ReactNode;
   /**
    * The bubble's fill, chosen by the ground it stands on: `card` lifts off a
-   * bot's recessed chat; `accent` (the selected blue wash) is for a chat on
-   * a card-coloured ground, a session's, where a card would vanish, and
-   * tints the person's words apart from the agent's there.
+   * bot's recessed chat; `wash` (the chat's grey wash, a code block's) is
+   * for a chat on a card-coloured ground, a session's, where a card would
+   * vanish; `accent` is the selected blue wash.
    */
-  tone?: 'card' | 'accent';
+  tone?: 'card' | 'wash' | 'accent';
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
@@ -65,8 +66,8 @@ function ChatUserMessage({
       {children != null && children !== false ? (
         <div
           className={cn(
-            'max-w-[80%] rounded-xl px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
-            tone === 'accent' ? 'bg-selected-surface' : 'bg-card',
+            'max-w-[80%] rounded-lg px-4.5 py-2.5 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
+            tone === 'accent' ? 'bg-selected-surface' : tone === 'wash' ? 'bg-chat-wash' : 'bg-card',
           )}
         >
           {children}
@@ -208,12 +209,13 @@ const TURN_LABELS: TurnHeaderLabels = {
 };
 
 /**
- * TurnHeader — opens each agent turn, at 13px muted with a hairline after it
- * to the column's edge, so the boundary between turns is the rule.
+ * TurnHeader — opens each agent turn, at 14px muted over a hairline that
+ * spans the column, so the boundary between turns is the rule.
  *
  * - `working`: "Working 12s", breathing.
- * - `done`: "Worked 1m 13s · <model> · 09:14 ✓"; with `onToggle` the whole
- *   line folds the turn's work, its chevron turning.
+ * - `done`: "Worked for 1m 13s ›", then `model` and `time` when given; with
+ *   `onToggle` the whole line folds the turn's work, its chevron after the
+ *   words turning down as it opens.
  * - `stopped`: the person stopped it, a small square after the word.
  * - `interrupted`: it ended without settling, the amber alert after it.
  * - `resumed`: background work came back; `children` say what.
@@ -243,13 +245,13 @@ function TurnHeader({
   children?: React.ReactNode;
 }) {
   const label = { ...TURN_LABELS, ...labels };
-  const mono = (value: React.ReactNode) => <span className="figures font-mono text-[12px]">{value}</span>;
+  const figure = (value: React.ReactNode) => <span className="tabular-nums">{value}</span>;
   const dot = <span aria-hidden>·</span>;
   const body =
     state === 'working' ? (
       <span className="inline-flex items-center gap-1.5">
         <span className="motion-safe:animate-shimmer">{label.working}</span>
-        {elapsed ? mono(elapsed) : null}
+        {elapsed ? figure(elapsed) : null}
       </span>
     ) : state === 'resumed' ? (
       <>
@@ -259,17 +261,17 @@ function TurnHeader({
           {elapsed ? (
             <>
               {' · '}
-              {mono(elapsed)}
+              {figure(elapsed)}
             </>
           ) : null}
         </span>
       </>
     ) : (
       <>
-        {onToggle ? <FoldChevron open={open} /> : null}
         <span>
-          {label.worked} {elapsed ? mono(elapsed) : null}
+          {label.worked} {elapsed ? figure(elapsed) : null}
         </span>
+        {onToggle ? <FoldChevron open={open} className="-ml-0.5 size-3.5" /> : null}
         {state === 'stopped' ? (
           <>
             {dot}
@@ -293,15 +295,13 @@ function TurnHeader({
         {state === 'done' && time ? (
           <>
             {dot}
-            {mono(time)}
+            {figure(time)}
           </>
         ) : null}
-        {state === 'done' ? <CheckIcon className="size-3.25 text-success" aria-hidden /> : null}
       </>
     );
   const classes = cn(
-    'flex w-full items-center gap-2 text-left text-[13px] text-fg-muted',
-    'after:h-px after:flex-1 after:bg-border-subtle after:content-[""]',
+    'flex w-full items-center gap-1.5 border-b border-border-subtle pb-2.5 text-left text-[14px] text-fg-muted',
     className,
   );
   if (onToggle && state !== 'working' && state !== 'resumed') {
@@ -312,7 +312,7 @@ function TurnHeader({
         data-state={state}
         aria-expanded={open}
         onClick={onToggle}
-        className={cn(classes, 'rounded-xs outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring')}
+        className={cn(classes, 'outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-ring')}
       >
         {body}
       </button>
@@ -326,20 +326,21 @@ function TurnHeader({
 }
 
 /**
- * The agent's answer, unboxed: markdown at 15px on 1.6 across the chat's
- * column, its blocks 12px apart. Pass the rendered markdown as children; it
+ * The agent's answer, unboxed: markdown at 15px on 1.7 across the chat's
+ * column, its blocks 14px apart. Pass the rendered markdown as children; it
  * styles the elements the way `Prose` does at a chat's scale: headings a step
  * or two over the text, lists with muted markers, links in the link blue,
- * a quote behind a 2px rule, inline code on the wash, and tables full width
- * on hairlines, each scrolling sideways in its own box when it is wider
- * than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
+ * a quote behind a 2px rule, inline code on the chat's wash, and tables full
+ * width as a framed card (a hairline round its 10px corners and between its
+ * rows and columns, the header row on the same wash), each scrolling
+ * sideways in its own box when it is wider than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
  */
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="chat-reply"
       className={cn(
-        'flex min-w-0 flex-col gap-3 text-[15px] leading-[1.6] tracking-[-0.011em] text-pretty wrap-anywhere text-fg',
+        'flex min-w-0 flex-col gap-3.5 text-[15px] leading-[1.7] tracking-[-0.011em] text-pretty wrap-anywhere text-fg',
         // Headings
         '[&_:is(h1,h2,h3,h4,h5,h6)]:m-0 [&_:is(h1,h2,h3,h4,h5,h6)]:mt-1.5 [&_:is(h1,h2,h3,h4,h5,h6)]:font-semibold [&_:is(h1,h2,h3,h4,h5,h6)]:tracking-[-0.014em]',
         '[&_h1]:text-[20px] [&_h2]:text-[18px] [&_h3]:text-[17px] [&_:is(h4,h5,h6)]:text-[15px]',
@@ -353,14 +354,15 @@ function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
         '[&_a]:text-link [&_a]:underline-offset-2 [&_a:hover]:underline',
         '[&_img]:block [&_img]:h-auto [&_img]:max-h-[min(60vh,32rem)] [&_img]:max-w-full [&_img]:rounded-sm',
         '[&_summary]:cursor-pointer [&_summary]:font-medium',
-        // Inline code, on the wash, which shows on a recessed ground and on a
-        // card-coloured one alike (a fenced block is a `ChatCodeBlock`)
-        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-hover-surface [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
-        // Tables
-        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[13.5px] [&_table]:leading-normal [&_table]:tabular-nums',
-        '[&_th]:border-b [&_th]:border-border-strong [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-start [&_th]:font-semibold',
-        '[&_td]:border-b [&_td]:border-border-subtle [&_td]:px-2 [&_td]:py-2 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
-        '[&_:is(th,td):first-child]:ps-0 [&_:is(th,td):last-child]:pe-0',
+        // Inline code, on the chat's wash (a fenced block is a `ChatCodeBlock`)
+        '[&_:not(pre)>code]:rounded-[5px] [&_:not(pre)>code]:bg-chat-wash [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
+        // Tables: a framed card, its 10px corners on a hairline; the header
+        // row on the wash over a hairline, hairlines between rows and columns
+        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:rounded-sm [&_table]:border [&_table]:border-border-subtle [&_table]:text-[14px] [&_table]:leading-normal [&_table]:tabular-nums',
+        '[&_:is(th,td)]:border-border-subtle [&_:is(th,td):not(:last-child)]:border-e [&_:is(th,td)]:px-3 [&_:is(th,td)]:text-start',
+        '[&_th]:border-b [&_th]:bg-chat-wash [&_th]:py-2 [&_th]:font-semibold',
+        '[&_thead_tr:first-child_th:first-child]:rounded-ss-[9px] [&_thead_tr:first-child_th:last-child]:rounded-se-[9px]',
+        '[&_td]:border-b [&_td]:py-2.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
         className,
       )}
       {...props}
@@ -375,14 +377,14 @@ function MessageTrail({
 }: {
   /** Icon buttons: copy, fork from here, retry. */
   actions?: React.ReactNode;
-  /** "3.1k tokens · 09:14". */
+  /** "11:06", "3.1k tokens · 09:14". */
   meta?: React.ReactNode;
   className?: string;
 }) {
   return (
     <div data-slot="message-trail" className={cn('-ml-1.5 flex items-center gap-0.5 text-fg-subtle', className)}>
       {actions}
-      {meta ? <span className="figures ml-1.5 font-mono text-[11px]">{meta}</span> : null}
+      {meta ? <span className="ml-1.5 text-[12px] tabular-nums">{meta}</span> : null}
     </div>
   );
 }

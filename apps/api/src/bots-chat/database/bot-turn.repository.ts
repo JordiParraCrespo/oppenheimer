@@ -19,6 +19,7 @@ import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
+import { HEARTBEAT_QUIET_ORIGINS, type HeartbeatView } from '../domain/bot-heartbeat.policy';
 import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import { loopKeyPrefix } from '../domain/bot-loop.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
@@ -64,9 +65,9 @@ export const DELIVER_CHANNEL_REPLY_JOB = 'deliver-channel-reply';
  * flight on a deployment carry it, so the worker accepts it for one release.
  */
 export const DELIVER_TELEGRAM_REPLY_JOB = 'deliver-telegram-reply';
-/** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
+/** A turn of a bot with a goal ended: the goal decides whether to go on. */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
-/** A run of a bot's loop ended: the loop decides whether it ends (`25-bots.md` §4.1, `/loop`). */
+/** A run of a bot's loop ended: the loop decides whether it ends. */
 export const FINISH_BOT_LOOP_RUN_JOB = 'finish-bot-loop-run';
 
 /** The order lanes run in (`BotQueueLanes`), as SQL over `bot_turn."lane"`. */
@@ -431,6 +432,28 @@ export class BotTurnRepository
     return record ? this.mapper.toDomain(record).context : null;
   }
 
+  async findHeartbeatView(
+    organizationId: string,
+    botId: string,
+    routinePrefix: string,
+    ownSourceKey: string,
+  ): Promise<HeartbeatView> {
+    // Each subquery is served by IDX_bot_turn_bot, read backwards from the newest turn.
+    const [row]: { lastBeatAt: Date | null; lastActivityAt: Date | null }[] =
+      await this.repository.query(
+        `SELECT
+           (SELECT "createdAt" FROM bot_turn
+             WHERE "organizationId" = $1 AND "botId" = $2 AND starts_with("sourceKey", $3)
+               AND "sourceKey" <> $4
+             ORDER BY "createdAt" DESC LIMIT 1) AS "lastBeatAt",
+           (SELECT "createdAt" FROM bot_turn
+             WHERE "organizationId" = $1 AND "botId" = $2 AND origin <> ALL($5::varchar[])
+             ORDER BY "createdAt" DESC LIMIT 1) AS "lastActivityAt"`,
+        [organizationId, botId, routinePrefix, ownSourceKey, [...HEARTBEAT_QUIET_ORIGINS]],
+      );
+    return { lastBeatAt: row?.lastBeatAt ?? null, lastActivityAt: row?.lastActivityAt ?? null };
+  }
+
   async findLastOnProvider(
     organizationId: string,
     botId: string,
@@ -777,9 +800,8 @@ export async function lockBot(
 
 /**
  * The line of the card the bot has waiting, of either kind, or null: a bot
- * has one card up at a time, an approval or a card of questions
- * (`25-bots.md` §5). Read under `lockBot`, so two cards raised at once see
- * each other.
+ * has one card up at a time, an approval or a card of questions. Read under
+ * `lockBot`, so two cards raised at once see each other.
  */
 export async function waitingCardWithin(
   manager: EntityManager,

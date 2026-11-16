@@ -51,7 +51,8 @@
     "missed": "Skipped: the slot was missed",
     "not_launchable": "Skipped: the session could not start",
     "agent_unavailable": "Skipped: the agent is not on the host",
-    "unattended": "Skipped: its bot’s owner is away"
+    "unattended": "Skipped: its bot’s owner is away",
+    "idle": "Skipped: nothing new since the last heartbeat"
   },
   "pausedReason": {
     "user": "Paused. Triggers are ignored until you resume it; Run now still works.",

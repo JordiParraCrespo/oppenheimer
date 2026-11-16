@@ -1,6 +1,6 @@
 package cli
 
-// The host's Telegram bot on the link (product/next-steps/telegram.md):
+// The host's Telegram bot on the link:
 // `telegram.link`, `telegram.unlink`, `telegram.send` and `telegram.ack`
 // from the control plane, `telegram.state` and `telegram.messages` to it. The
 // bot lives on the daemon's context, not a link's: a link that drops leaves

@@ -37,7 +37,7 @@ const TEST_RESULTS_NOTE =
   "A run's status says whether its session finished, not whether tests passed: test results are not known unless the session's result says so (read it with get_session).";
 
 /**
- * Automations (`25-bots.md` §4.5), the reads: the workspace's automations,
+ * Automations, the reads: the workspace's automations,
  * one with its triggers and settings, and their past runs. Making, changing,
  * running and pausing one ask the owner first.
  */

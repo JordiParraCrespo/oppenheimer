@@ -117,14 +117,13 @@ import { FindBotTurnQuery } from '../queries/find-bot-turn/find-bot-turn.query';
 import { FindBotTurnQueryHandler } from '../queries/find-bot-turn/find-bot-turn.query-handler';
 
 /**
- * A bot's chat against a real Postgres (`product/versions/mvp/25-bots.md`
- * §2–3): one running turn per bot and the next staged when it ends, a send
- * racing the end of a turn, the failure a turn's column holds, the stored
- * conversation and history, Stop's conditional writes, the cascade from the
- * bot, and a turn's context read in its own workspace only; Needs input
- * cards: one waiting per bot, decided once however many decide at once, the
- * event that opens a decision's turn, the workspace's cards across bots and
- * the event each move stages, and the cascade; a conversation's
+ * A bot's chat against a real Postgres: one running turn per bot and the next
+ * staged when it ends, a send racing the end of a turn, the failure a turn's
+ * column holds, the stored conversation and history, Stop's conditional writes,
+ * the cascade from the bot, and a turn's context read in its own workspace
+ * only; Needs input cards: one waiting per bot, decided once however many
+ * decide at once, the event that opens a decision's turn, the workspace's cards
+ * across bots and the event each move stages, and the cascade; a conversation's
  * summary: one write of two racing ones wins, the cutoff never moves back,
  * and a turn's history and the summarizer's read start after it to the
  * microsecond; a bot's subscriptions to sessions: one per bot and session,
@@ -530,6 +529,98 @@ describe('bots chat (integration)', () => {
     });
     const other = await create('Unmetered');
     expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
+  });
+
+  // What breaks this: a heartbeat that reads its own turns, another routine's
+  // or a loop's as activity (so it never idles), misses another bot's ask (so
+  // it sleeps through it), reads another bot's turns, or takes a retried
+  // run's own queued turn for the beat before it.
+  it('reads a heartbeat’s last beat and the bot’s last activity', async () => {
+    const bot = await create('Heartbeat Bot');
+    const automationId = '6a1c4f9e-0000-4000-8000-0000000000b1';
+    const props = {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    };
+    const at = async (turnId: string, iso: string) =>
+      dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [turnId, iso]);
+    const prefix = routinePrefix(automationId);
+    const view = (ownSourceKey = 'automation-run:none') =>
+      turns.findHeartbeatView(bot.organizationId, bot.id, prefix, ownSourceKey);
+
+    expect(await view()).toEqual({ lastBeatAt: null, lastActivityAt: null });
+
+    const message = sent(bot, 'Watch the release.');
+    await turns.enqueue(message.turn, message.message, null);
+    await at(message.turn.id, '2026-11-15T09:00:00Z');
+    const beat = routineTurn(props, {
+      automationId,
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b2',
+      name: 'Heartbeat',
+      instructions: 'Check in.',
+    });
+    await turns.enqueueOnce(beat.turn, beat.opening, null, null);
+    await at(beat.turn.id, '2026-11-15T10:00:00Z');
+    const other = routineTurn(props, {
+      automationId: '6a1c4f9e-0000-4000-8000-0000000000b3',
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b4',
+      name: 'Sentry triage',
+      instructions: 'Look at Sentry.',
+    });
+    await turns.enqueueOnce(other.turn, other.opening, null, null);
+    await at(other.turn.id, '2026-11-15T10:30:00Z');
+
+    // Another bot of the owner's asks from a routine: activity, unlike that routine's own turn.
+    const askingBot = await create('Asking Bot');
+    const asking = routineTurn(
+      { ...props, botId: askingBot.id },
+      {
+        automationId: '6a1c4f9e-0000-4000-8000-0000000000b5',
+        runId: '6a1c4f9e-0000-4000-8000-0000000000b6',
+        name: 'Release check',
+        instructions: 'Ask the heartbeat bot.',
+      },
+    );
+    await turns.enqueueOnce(asking.turn, asking.opening, null, null);
+    const ask = BotTurnEntity.queueFromBot(asking.turn, {
+      botId: bot.id,
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+      replyRequested: false,
+    });
+    const asked = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: ask.id,
+      role: 'user',
+      content: 'From another bot.',
+      steps: [],
+      position: 0,
+    });
+    await turns.enqueue(ask, asked, null);
+    await at(ask.id, '2026-11-15T09:30:00Z');
+
+    expect(await view()).toEqual({
+      lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    // A retried dispatch of that beat's run finds its own turn queued: not a beat before it.
+    expect(await view(beat.turn.sourceKey ?? '')).toEqual({
+      lastBeatAt: null,
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    const elsewhere = await create('Quiet Bot');
+    expect(
+      await turns.findHeartbeatView(elsewhere.organizationId, elsewhere.id, prefix, 'none'),
+    ).toEqual({
+      lastBeatAt: null,
+      lastActivityAt: null,
+    });
   });
 
   // What breaks this: a turn that never reached the provider (a held run,
@@ -1178,7 +1269,7 @@ describe('bots chat (integration)', () => {
     expect(lastMessagePreview).toBe('Run the check.');
   });
 
-  // Issue #728. What breaks this: a tool's words written as they came, so a
+  // What breaks this: a tool's words written as they came, so a
   // PDF's NUL byte (`unsupported Unicode escape sequence`) or a lone
   // surrogate half (`invalid input syntax for type json`) makes Postgres
   // refuse the line's jsonb steps, or the bot's text column, and the turn dies.
@@ -1935,7 +2026,7 @@ describe('bots chat (integration)', () => {
     expect(count).toBe(1);
   });
 
-  // Issue #728. What breaks this: an approved call's words stored as they
+  // What breaks this: an approved call's words stored as they
   // came, so a NUL makes Postgres refuse the result, the job retries, and
   // the guard that stops a retry (a stored result) never holds: the call
   // runs again.
@@ -2838,7 +2929,7 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
     });
 
-    // 27 §7. What breaks this: a second watch of one pull request holding two
+    // What breaks this: a second watch of one pull request holding two
     // rows (two wakes per event), a watch again resetting the wake limit, the
     // webhook's read finding another pull request's or another workspace's
     // bots, or a row that names a session and a pull request at once.
@@ -2921,7 +3012,7 @@ describe('bots chat (integration)', () => {
       ).toContain(`WHERE (("resourceKind")::text = 'pull_request'::text)`);
     });
 
-    // Codex on #638. What breaks this: two events on one pull request,
+    // What breaks this: two events on one pull request,
     // delivered together, both reading the count before either writes it,
     // so a watch wakes its bot past the limit.
     it('takes one wake per event, never past the limit, even for events delivered together', async () => {
@@ -2953,7 +3044,7 @@ describe('bots chat (integration)', () => {
       );
     });
 
-    // §7.2. What breaks this: a project's subscription refused by the table's
+    // What breaks this: a project's subscription refused by the table's
     // checks, a change to a task not finding the bots that follow its
     // project or milestone, watching again resetting the count, or a
     // deleted milestone's subscriptions left behind.

@@ -11,7 +11,7 @@ import { MAIL_SEND_REPOSITORY } from '../../mail.di-tokens';
 import { ScheduleMailCommand } from './schedule-mail.command';
 
 /**
- * Schedules what an approval approved (`product/next-steps/mail.md` §3.4):
+ * Schedules what an approval approved:
  * a `mail_send` row that waits with the plan until its time, when the minute
  * job sends it. Gmail has no scheduled send, so the wait is ours. A retried
  * job finds the same row. The time is checked again here, when the yes

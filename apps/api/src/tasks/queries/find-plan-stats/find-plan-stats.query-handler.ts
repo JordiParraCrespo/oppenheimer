@@ -14,8 +14,7 @@ import { PLAN_EVENT_REPOSITORY } from '../../tasks.di-tokens';
 import { FindPlanStatsQuery } from './find-plan-stats.query';
 
 /**
- * Composes Stats from the sources that own its rows
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §4): tasks from
+ * Composes Stats from the sources that own its rows: tasks from
  * Plan's event log, tokens and cost from the sessions module's usage. Pull
  * requests are not counted yet (decided: Stats ships without them first).
  */

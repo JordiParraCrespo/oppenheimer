@@ -22,7 +22,6 @@ import type {
   SessionWindowsResponse,
 } from '@oppenheimer/shared/schemas/session-window';
 
-/** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
 /** What a session runs: a host's coding agent, or a vendor's in the cloud (`cursor`). */
 export type SessionAgent = SessionAgentId;
 
@@ -58,8 +57,7 @@ export interface SessionCloudRun {
  * It is organised by what needs you rather than by what the process is doing,
  * which is why it is not the lifecycle below: a session that failed, one whose
  * agent has been blocked for thirty seconds and one whose launch has sat unready
- * for a minute are all `waiting-on-you`, however differently they got there
- * (`product/versions/mvp/03-control-plane.md`).
+ * for a minute are all `waiting-on-you`, however differently they got there.
  */
 export type SessionGroup =
   | 'working'
@@ -249,8 +247,7 @@ export type SessionEntityProps = Pick<
 /**
  * A session as the console needs it: a terminal, an agent, and where it runs
  * on a host — a set of checkouts the runner made (`worktree`), or a folder
- * already there that nothing is written into (`folder`,
- * `product/versions/mvp/24-session-places.md`).
+ * already there that nothing is written into (`folder`).
  *
  * Two state words, because the API has two and they answer different questions:
  * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
@@ -296,7 +293,7 @@ export class SessionEntity {
   readonly stateSeq: number = 0;
   /**
    * What the agent waits on you to decide, as the host read it: a question it
-   * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
+   * asked or a permission dialog; null when nothing is.
    */
   readonly decision: SessionDecision | null = null;
   /**

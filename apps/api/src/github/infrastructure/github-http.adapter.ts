@@ -89,7 +89,7 @@ export class GithubHttp {
    * GitHub's REST root, without a trailing slash. Configuration rather than a
    * constant since GitHub Enterprise Server serves the same API on somebody
    * else's host — and since an end-to-end run has to reach a stub to exercise a
-   * path that needs a repository without registering an App (`e2e/README.md`).
+   * path that needs a repository without registering an App.
    */
   get api(): string {
     return (

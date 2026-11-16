@@ -25,9 +25,9 @@ function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
 }
 
 /**
- * The reader's own WhatsApp numbers (`product/next-steps/whatsapp.md`): linked
- * on one of their hosts by scanning a QR code, paired again, and unlinked.
- * What their bots read and send there never passes through the console.
+ * The reader's own WhatsApp numbers: linked on one of their hosts by scanning a
+ * QR code, paired again, and unlinked. What their bots read and send there
+ * never passes through the console.
  */
 @injectable()
 export class WhatsappRepository {

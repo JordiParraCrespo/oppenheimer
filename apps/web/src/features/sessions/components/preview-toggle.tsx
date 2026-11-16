@@ -3,8 +3,8 @@ import { PanelRightIcon } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The session bar's side pane toggle (`SessionsConsole.dc.html`): the
- * panel-right icon, lit while the side pane is open beside the terminal.
+ * The session bar's side pane toggle: the panel-right icon, lit while the
+ * side pane is open beside the terminal.
  */
 export function PreviewToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { t } = useTranslation();

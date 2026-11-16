@@ -14,7 +14,7 @@ import { UpdateHostRunnerCommand } from './update-host-runner.command';
 /**
  * The console's Update runner: ask a connected host to install the newest
  * release on this deployment's channel now, rather than at its next check and
- * quiet moment (`product/versions/mvp/09-runner-install-and-update.md` §5).
+ * quiet moment.
  *
  * One `host.update` with no `version`, so the runner is left unpinned, and a
  * host already pinned refuses (`UPD_004`, in its log). Nothing waits for an

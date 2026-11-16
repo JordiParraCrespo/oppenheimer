@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { parseEnv, positiveInt } from './env';
 
 /**
- * Dictation (`product/next-steps/voice.md`).
+ * Dictation.
  *
  * A workspace signed in to ChatGPT transcribes on that sign-in and needs
  * nothing here. The `stt*` keys are optional capability config: the

@@ -13,13 +13,12 @@ import { BotMailOrganizeToolsFactory } from '../bot-mail-organize-tools.factory'
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
- * Organizing as a bot's turn sees it (`product/next-steps/mail.md` §3.5):
- * marking under Approve everything runs without a card, trashing asks under
- * every preset until the owner allows it and then runs on its own,
- * untrashing never asks, a label card stores the labels' ids
- * with their names on its line, more than 100 at once is refused before
- * Gmail is asked, and a thread Gmail does not have is named in the answer.
- * Gmail's own calls are the gateway's spec.
+ * Organizing as a bot's turn sees it: marking under Approve everything runs
+ * without a card, trashing asks under every preset until the owner allows it
+ * and then runs on its own, untrashing never asks, a label card stores the
+ * labels' ids with their names on its line, more than 100 at once is refused
+ * before Gmail is asked, and a thread Gmail does not have is named in the
+ * answer. Gmail's own calls are the gateway's spec.
  */
 const ACCOUNT = GmailConnectionEntity.connect({
   organizationId: 'org-1',

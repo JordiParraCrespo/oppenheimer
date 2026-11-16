@@ -29,7 +29,7 @@ export class PullRequestDirectoryResolver implements PullRequestDirectoryPort {
 
   /**
    * Every repository the workspace's usable installations cover, then the ones
-   * only the caller's own tokens open (§6.2): the App reads a repository it
+   * only the caller's own tokens open: the App reads a repository it
    * covers, so a token's copy of it is left out.
    */
   async repositories(scope: AccessScope): Promise<WorkspaceRepository[]> {

@@ -31,10 +31,10 @@ function toScheduled(data: ScheduledMailResponseDto): ScheduledMailEntity {
 }
 
 /**
- * The reader's own Gmail accounts (`product/next-steps/mail.md`): connected
- * through Google's consent page, renamed, and disconnected; and the mail their
- * bots scheduled, which can be cancelled until it goes. What the bots read
- * from them never passes through the console.
+ * The reader's own Gmail accounts: connected through Google's consent page,
+ * renamed, and disconnected; and the mail their bots scheduled, which can be
+ * cancelled until it goes. What the bots read from them never passes through
+ * the console.
  */
 @injectable()
 export class MailRepository {

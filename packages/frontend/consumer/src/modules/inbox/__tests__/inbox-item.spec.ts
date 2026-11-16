@@ -15,10 +15,9 @@ import { InboxMarkEntity } from '../inbox-mark.entity';
 import { InboxReportEntity } from '../inbox-report.entity';
 
 /**
- * The Inbox (`product/versions/mvp/29-inbox.md`): an item per occurrence of a
- * wait, newest first, filed under its projects, and the
- * reader's marks applied to that occurrence only — so a new wait comes back
- * however the last one was marked.
+ * The Inbox: an item per occurrence of a wait, newest first, filed under its
+ * projects, and the reader's marks applied to that occurrence only — so a new
+ * wait comes back however the last one was marked.
  */
 
 const NOW = Date.parse('2026-10-26T12:00:00Z');

@@ -3,9 +3,9 @@ import type { TelegramMediaKind } from '@oppenheimer/shared/protocol';
 import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
- * One message a Telegram bot received or sent (`product/next-steps/telegram.md`
- * §4), kept so the owner's bots can read the chat: the Bot API has no history
- * to ask. Kept for `TELEGRAM_RETENTION_DAYS`, and goes with its account.
+ * One message a Telegram bot received or sent, kept so the owner's bots can
+ * read the chat: the Bot API has no history to ask. Kept for
+ * `TELEGRAM_RETENTION_DAYS`, and goes with its account.
  */
 @Entity('telegram_message')
 @Index('UQ_telegram_message_external', ['organizationId', 'accountId', 'chatId', 'externalId'], {

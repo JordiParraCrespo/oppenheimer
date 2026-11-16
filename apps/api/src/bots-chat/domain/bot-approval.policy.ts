@@ -15,7 +15,7 @@ import { BotMessageEntity } from './bot-message.entity';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * The words around a Needs input card (`25-bots.md` §5): what an asking
+ * The words around a Needs input card: what an asking
  * tool answers the model when it asks instead of running, and the event that
  * opens the turn after the owner decides. The event is one text for two
  * readers: the chat draws it as a small line, and the bot reads it as a note
@@ -62,8 +62,8 @@ export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null 
 }
 
 /**
- * The words that open the turn a yes gives the bot at once (`25-bots.md`
- * §5): who approved what, and that it runs now. The chat draws its fields;
+ * The words that open the turn a yes gives the bot at once: who approved what,
+ * and that it runs now. The chat draws its fields;
  * the bot reads this and says it is on it (`approvalAsk`).
  */
 export function approvalStartedWords(approval: BotApprovalEntity, by: string): string {
@@ -208,7 +208,7 @@ export function intersectScopes(
 type TurnProps = Parameters<typeof BotTurnEntity.queue>[0];
 
 /**
- * The turns a decision gives the bot (`25-bots.md` §5), each queued like a
+ * The turns a decision gives the bot, each queued like a
  * message of yours, on the bot's provider, model and effort as they are now,
  * and opened by an event (its words for the bot, its fields for the chat)
  * rather than by words of yours. A yes gives two: one at once, where the bot

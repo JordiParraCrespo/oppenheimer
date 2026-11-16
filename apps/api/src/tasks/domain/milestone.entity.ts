@@ -39,7 +39,7 @@ export interface MilestoneEdit {
 }
 
 /**
- * A milestone over a project's tasks (`product/versions/mvp/18-plan-product.md` §2–3).
+ * A milestone over a project's tasks.
  * It has no behaviour beyond grouping them: progress is a count of its tasks, read
  * by the query, never stored. Moving it to another project moves its tasks with
  * it, which the database does through the tasks' milestone key.

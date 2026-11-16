@@ -11,9 +11,8 @@ import {
 
 /**
  * A project: a saved scope a person creates — the repositories its sessions
- * usually work on and the defaults a new session is offered
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). Each workspace also
- * has one Unassigned project, where a session that names none is listed.
+ * usually work on and the defaults a new session is offered. Each workspace
+ * also has one Unassigned project, where a session that names none is listed.
  *
  * `UQ_project_organization_slug` keeps a project's slug unique in its workspace
  * for ever: a slug is the project's stable handle and is never reissued, so an

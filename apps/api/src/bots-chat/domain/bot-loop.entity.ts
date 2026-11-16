@@ -33,7 +33,7 @@ export interface BotLoopProps {
 }
 
 /**
- * A loop (`25-bots.md` §4.1, `/loop`): one per bot, a prompt run now and
+ * A loop (`/loop`): one per bot, a prompt run now and
  * again every interval, or when the bot says, until it is stopped, the bot
  * ends it or it expires.
  *

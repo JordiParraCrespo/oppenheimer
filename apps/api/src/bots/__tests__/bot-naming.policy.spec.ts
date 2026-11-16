@@ -7,9 +7,9 @@ import {
 } from '../domain/bot-naming.policy';
 
 /**
- * What a new bot is called and drawn on (`product/versions/mvp/25-bots.md`
- * §2): a name the workspace does not have yet, and the next colour. The
- * create handler's spec covers that it asks; this is the whole rule.
+ * What a new bot is called and drawn on: a name the workspace does not have
+ * yet, and the next colour. The create handler's spec covers that it asks;
+ * this is the whole rule.
  */
 describe('firstNameFor', () => {
   const many = (taken: readonly string[]) => Array.from({ length: 200 }, () => firstNameFor(taken));

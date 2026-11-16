@@ -56,7 +56,7 @@ import {
 const CLOUD_START_WAIT_MAX_SECONDS = 120;
 
 /**
- * Sessions, the writes (`25-bots.md` §4.2): start a coding agent on a host
+ * Sessions, the writes: start a coding agent on a host
  * with a task, or in a vendor's cloud (Claude Code's or Codex's from a host,
  * Cursor's on the owner's key), give a running one a follow-up prompt or answer what it asks,
  * stop one, or close one it started. Each reaches outside Oppenheimer (they run things on the

@@ -34388,6 +34388,7 @@
               "not_launchable",
               "agent_unavailable",
               "unattended",
+              "idle",
               null
             ],
             "nullable": true

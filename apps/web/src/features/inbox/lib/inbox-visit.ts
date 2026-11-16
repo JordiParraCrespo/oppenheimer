@@ -1,12 +1,13 @@
 import { inboxAnswered } from '@oppenheimer/frontend-consumer/react';
 
 /**
- * What happened in the Inbox on this visit (`29-inbox.md` §5): the items sent
- * to the end with Later and what was marked done (for Show done). The marks behind it are stored; this is the page's memory
- * only, kept outside React so the list and the pane, which share no parent
- * below the shell, read one visit. It is cleared when the reader leaves the
- * Inbox. What was answered and waits for its source to say so is the
- * product package's (`inboxAnswered`), so every count leaves it out too.
+ * What happened in the Inbox on this visit: the items sent to the end with
+ * Later and what was marked done (for Show done). The marks behind it are
+ * stored; this is the page's memory only, kept outside React so the list and
+ * the pane, which share no parent below the shell, read one visit. It is
+ * cleared when the reader leaves the Inbox. What was answered and waits for
+ * its source to say so is the product package's (`inboxAnswered`), so every
+ * count leaves it out too.
  */
 export interface InboxVisit {
   /** Keys sent to the end with Later, in the order they were sent. */

@@ -5,7 +5,7 @@ import { searchWords, snippetAround } from '../domain/bot-chat-search.policy';
 import { fenceUntrusted, formatToolTime } from '../domain/bot-tool-text.policy';
 
 /**
- * How `search_sessions` says what it found (`25-bots.md` §4.2): each session
+ * How `search_sessions` says what it found: each session
  * that matched, best first, with what the console files it under and the
  * entries that matched, each a short window around the words, all fenced as
  * the sessions' data. Pure; the search is the sessions module's

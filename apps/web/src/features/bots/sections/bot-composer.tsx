@@ -70,13 +70,13 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * draft (`useSentHistory`); while it does, the box's caption says which
  * one ("History 1/2").
  *
- * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
- * drop anywhere on the chat's pane (`BotPaneDrop`; beside a session, on the
- * box alone) holds them as tiles over
- * the text, each uploaded at once (`useBotImages`). A message may be images
- * alone. A file it will not hold, or one the API refused, is said under the
- * field; while one uploads or failed, or the bot's model reads no images,
- * send is off and says why, and nothing written is lost.
+ * Images ride the message: the paperclip, a paste, or a drop holds them as
+ * tiles over the text, each uploaded at once (`useBotImages`). On the bot's
+ * own page a drop anywhere on the pane counts (`BotPaneDrop`); beside a
+ * session, only one on the box. A message may be images alone. A file it
+ * will not hold, or one the API refused, is said under the field; while one
+ * uploads or failed, or the bot's model reads no images, send is off and
+ * says why, and nothing written is lost.
  *
  * A long paste (over 1,000 characters or 10 lines) goes into the field as one
  * label, `[Pasted text #1 +1000 lines]`, the way Claude Code and Codex hold

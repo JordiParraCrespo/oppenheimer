@@ -26,7 +26,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// ptyRead is the PTY read buffer, 02-runner §5's 32 KB: one read is one frame.
+// ptyRead is the PTY read buffer, 32 KB: one read is one frame.
 const ptyRead = 32 * 1024
 
 // attachmentInput bounds the keystroke frames one attachment can have waiting
@@ -85,11 +85,10 @@ type linkHandler struct {
 	// bootToken mints the assertion a file pull carries.
 	bootToken func(ctx context.Context) (string, error)
 
-	// life is the daemon's context, not a link's. Session commands run on it
-	// (02-runner §4): a link that drops mid-clone must not take the clone
-	// with it, and a stop queued behind a create must not run on a socket
-	// that is already gone. Outcomes travel through the reporter, which
-	// resends them on the next link.
+	// life is the daemon's context, not a link's. Session commands run on it: a
+	// link that drops mid-clone must not take the clone with it, and a stop
+	// queued behind a create must not run on a socket that is already gone.
+	// Outcomes travel through the reporter, which resends them on the next link.
 	//
 	// It ends only when the daemon does, or when the host is unpaired
 	// (endLife): no command runs for a host that is no longer one.
@@ -264,7 +263,7 @@ var (
 )
 
 // unpaired is a person removing this host, and removing a host stops the
-// sessions on it (03, 14): the control plane has already recorded each one
+// sessions on it: the control plane has already recorded each one
 // stopped, and an agent left running would work where no console can see it.
 // Stopping keeps every checkout on disk — it is not a close — unless the
 // owner also asked for the machine to be cleaned up (wipe): then every
@@ -810,7 +809,7 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 
 // FirstPrompt is the session service's publisher for the first message
 // of a session launched with no task, read off the agent's transcript, which
-// the control plane names the session from (02-runner §7). The reporter keeps
+// the control plane names the session from. The reporter keeps
 // the event until the control plane acks it, so a link that is down only
 // delays it, and reported is called on that ack.
 func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, reported func()) bool {
@@ -822,7 +821,7 @@ func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, r
 }
 
 // DecisionChanged is the session service's publisher for what an agent waits
-// on the person for (29-inbox, slice 4): `agent.decision` with the decision,
+// on the person for: `agent.decision` with the decision,
 // or null once it cleared. A question too large for an event's payload is cut
 // down (descriptions first) until it fits; one that never does is reported as
 // none rather than as an event the control plane would refuse.
@@ -835,7 +834,7 @@ func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *
 
 // Notified is the session service's notifier: `agent.notified` with the
 // line an agent sent the person, which the control plane keeps on the
-// session for the Inbox (`product/next-steps/agent-tools.md` §2).
+// session for the Inbox.
 func (h *linkHandler) Notified(sessionID string, notice sessionsdomain.Notice) {
 	if h.reporter == nil {
 		return

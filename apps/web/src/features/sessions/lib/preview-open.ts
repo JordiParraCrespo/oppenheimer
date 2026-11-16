@@ -23,7 +23,7 @@ export function rememberPreviewOpen(open: boolean) {
 }
 
 /**
- * The previews the side pane can open (`SessionsConsole.dc.html`), and the
- * host's own desktop beside them.
+ * The previews the side pane can open, and the host's own desktop beside
+ * them.
  */
 export type PreviewTab = 'browser' | 'simulator' | 'desktop';

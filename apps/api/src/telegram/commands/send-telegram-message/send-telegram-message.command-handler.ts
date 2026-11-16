@@ -21,12 +21,11 @@ import { SendTelegramMessageCommand } from './send-telegram-message.command';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Sends a bot's message through one of its owner's Telegram bots
- * (`telegram.md` §5): only while the host polls it and under the day's share,
- * through the host's runner, which paces sends to Telegram's own limits.
- * What went is kept beside what the Telegram bot received, marked as the
- * bot's, so the chat reads whole and the day's sends can be counted. Answers
- * Telegram's id for the message.
+ * Sends a bot's message through one of its owner's Telegram bots: only while
+ * the host polls it and under the day's share, through the host's runner, which
+ * paces sends to Telegram's own limits. What went is kept beside what the
+ * Telegram bot received, marked as the bot's, so the chat reads whole and the
+ * day's sends can be counted. Answers Telegram's id for the message.
  */
 @CommandHandler(SendTelegramMessageCommand)
 export class SendTelegramMessageCommandHandler

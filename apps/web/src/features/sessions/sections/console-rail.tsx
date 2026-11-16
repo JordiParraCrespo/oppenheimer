@@ -17,13 +17,11 @@ import type { RailItemId } from '../lib/rail-landing';
 import { railEntry } from '../lib/rail-order';
 
 /**
- * The console's rail, switching the sidebar between its lists
- * (`product/versions/mvp/05-screens.md`, `…/13-automations.md`). The current
+ * The console's rail, switching the sidebar between its lists. The current
  * one is `useConsoleList`'s answer, the same the shell picks the sidebar by.
  * A section rather than kit because the counts are product reads: the
- * sessions the sidebar already subscribes to, Plan's open tasks
- * (`18-plan-product.md` §1), the board's own read. The Inbox is Plan's
- * first section (`29-inbox.md`), counted in Plan's sidebar.
+ * sessions the sidebar already subscribes to, Plan's open tasks, the board's
+ * own read. The Inbox is Plan's first section, counted in Plan's sidebar.
  *
  * The reader drags the items into their own order, as the design's rail
  * does; a press still opens the list, and the order is kept on this device

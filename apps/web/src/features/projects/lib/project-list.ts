@@ -17,12 +17,26 @@ export function projectStatusOf(
   projectId: string,
   sessions: readonly Pick<SessionEntity, 'projectId' | 'state'>[],
 ): ProjectStatus {
+  if (projectWaitingSessions(projectId, sessions).length > 0) return 'needs-input';
   const own = sessions.filter((session) => session.projectId === projectId);
-  if (own.some((session) => session.state === 'waiting-on-you')) return 'needs-input';
   if (own.some((session) => session.state === 'working' || session.state === 'landing')) {
     return 'running';
   }
   return 'idle';
+}
+
+/**
+ * The project's sessions that wait on you, the ones that make its card say
+ * Needs input: its page lists each under Needs input, so the card's word
+ * always leads to them.
+ */
+export function projectWaitingSessions<S extends Pick<SessionEntity, 'projectId' | 'state'>>(
+  projectId: string,
+  sessions: readonly S[],
+): S[] {
+  return sessions.filter(
+    (session) => session.projectId === projectId && session.state === 'waiting-on-you',
+  );
 }
 
 /** The card's mono line: each repository's own name, `xrp-mobile · atlas`. */
@@ -42,6 +56,30 @@ export function projectTaskGroups(projectId: string, tasks: readonly TaskEntity[
   };
 }
 
+/** A row under a project's Needs input: a session or a task that waits on you. */
+export type NeedsInputRow =
+  | { kind: 'session'; session: SessionEntity }
+  | { kind: 'task'; task: TaskEntity };
+
+/**
+ * What a project's Needs input panel lists, in order: the sessions that make
+ * its card say Needs input, then its blocked tasks in board order. Empty when
+ * nothing waits on you.
+ */
+export function projectNeedsInputRows(
+  projectId: string,
+  sessions: readonly SessionEntity[],
+  tasks: readonly TaskEntity[],
+): NeedsInputRow[] {
+  return [
+    ...projectWaitingSessions(projectId, sessions).map((session) => ({
+      kind: 'session' as const,
+      session,
+    })),
+    ...projectTaskGroups(projectId, tasks).blocked.map((task) => ({ kind: 'task' as const, task })),
+  ];
+}
+
 /**
  * The projects an open session sits in: the API refuses to delete them
  * (`PROJECTS_005`), so Projects does not offer them for a bulk delete.
@@ -50,4 +88,21 @@ export function projectsWithOpenSessions(
   sessions: readonly Pick<SessionEntity, 'projectId'>[],
 ): ReadonlySet<string> {
   return new Set(sessions.flatMap((session) => (session.projectId ? [session.projectId] : [])));
+}
+
+/**
+ * Whether a project's card stays on Projects under a search: the words match
+ * the name the card shows (Unassigned's translated one) or any repository's
+ * full name (`acme/xrp-mobile`), case aside. No words keep every card.
+ */
+export function projectMatchesQuery(
+  project: Pick<ProjectEntity, 'repositories'>,
+  shownName: string,
+  query: string,
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return [shownName, ...project.repositories.map((repository) => repository.fullName)].some(
+    (text) => text.toLowerCase().includes(needle),
+  );
 }

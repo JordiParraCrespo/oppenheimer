@@ -117,7 +117,7 @@ export const BOT_TURN_ERROR_MAX = 1_000;
 /**
  * How long a completion a bot's work makes outside a turn may run (a
  * conversation's summary, a dream). A turn itself has no time limit and no
- * step limit since 2026-11-09 (`25-bots.md` §2): it runs until the model
+ * step limit since 2026-11-09: it runs until the model
  * answers, held by the compaction and the guards instead
  * (`BOT_TURN_IDLE_LIMIT_MS`, the engine's loop guard, `BOT_TURN_LOOP_REFUSALS`).
  */
@@ -149,7 +149,7 @@ export function isTurnLimitFailure(failure: BotTurnFailure | null): failure is T
 export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'cancelled', 'failed'];
 
 /**
- * One message of yours and the bot's answer to it (`25-bots.md` §2): queued
+ * One message of yours and the bot's answer to it: queued
  * until the bot's turn before it ends, running on one worker, then ended.
  * The status a turn was loaded in is what its next write is conditioned on,
  * so two workers, or a worker and Stop, never both move it.
@@ -223,8 +223,8 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
 
   /**
-   * A turn another bot's `message_bot` or `ask_bot` call queues on this bot
-   * (`25-bots.md` §4.6): in the `bots` lane, one bot deeper in the asking
+   * A turn another bot's `message_bot` or `ask_bot` call queues on this bot: in
+   * the `bots` lane, one bot deeper in the asking
    * turn's chain, marked with the bot and turn that asked. It runs on the
    * receiving bot's own engine, and is sent with no more reach than the
    * asking turn had: the same requester, zone and credential scopes.

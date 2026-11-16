@@ -15,7 +15,7 @@ import { connectInstallation, createSession } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
 /**
- * A Claude Code session read as a chat (0.7), on a real runner: the host
+ * A Claude Code session read as a chat, on a real runner: the host
  * follows the conversation's transcript where Claude Code keeps it, the relay
  * hands its entries to the attached browser, and the console draws them as
  * turns — the history first, then each line the CLI appends. What the chat's

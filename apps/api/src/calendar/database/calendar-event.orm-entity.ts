@@ -10,9 +10,9 @@ import {
 } from 'typeorm';
 
 /**
- * A personal event on Plan's calendar (`product/versions/mvp/20-plan-calendar.md` §2).
- * Wall-clock like a task's due date: a day, and a start and an end on it. The times'
- * rules are the database's, so an event that ends before it starts cannot be stored.
+ * A personal event on Plan's calendar. Wall-clock like a task's due date: a
+ * day, and a start and an end on it. The times' rules are the database's, so an
+ * event that ends before it starts cannot be stored.
  */
 @Entity('calendar_event')
 @Index('IDX_calendar_event_date', ['organizationId', 'date'])

@@ -38,11 +38,11 @@ const purposeInput = z
   .describe('Why you follow it, in a line; you are reminded of it when it wakes you.');
 
 /**
- * Following the plan (`27-bot-subscriptions.md` §7.2): watch a project's
- * tasks, or one milestone's, and stop. `list_watches` lists them with the
- * sessions and pull requests followed. Neither asks, as `watch_session`
- * does not: a watch only reads, wakes the bot when a person or another agent
- * changes a task, and can be undone. Only what the owner can read.
+ * Following the plan: watch a project's tasks, or one milestone's, and stop.
+ * `list_watches` lists them with the sessions and pull requests followed.
+ * Neither asks, as `watch_session` does not: a watch only reads, wakes the bot
+ * when a person or another agent changes a task, and can be undone. Only what
+ * the owner can read.
  */
 @Injectable()
 export class BotPlanWatchToolsFactory implements BotToolArea {

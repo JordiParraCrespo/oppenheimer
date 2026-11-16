@@ -15,8 +15,8 @@ import {
 } from '../domain/mail-send.policy';
 
 /**
- * How an answer is addressed and threaded, and what a bot may send
- * (`product/next-steps/mail.md` §3.4): headers read into addresses with
+ * How an answer is addressed and threaded, and what a bot may send:
+ * headers read into addresses with
  * quoted commas kept, a reply to the Reply-To or sender, a reply-all to
  * everyone but the person's own aliases, the References chain carried on,
  * the recipient, daily and size limits at their edges, and marks as the

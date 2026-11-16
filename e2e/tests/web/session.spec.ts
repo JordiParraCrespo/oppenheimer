@@ -15,7 +15,7 @@ import { linkLive, provisionedUser, signInAs } from '../../support/web';
  *   session and the attach ticket all go through the real API.
  * - **The relay's attach socket**, in the one test about what the terminal
  *   draws, is answered in the browser (`page.routeWebSocket`) with a recorded
- *   transcript in the `01-protocol.md` wire format, because the console always
+ *   transcript in the runner link's wire format, because the console always
  *   builds the real `AttachSessionStream`.
  *
  * The same screen on a real runner, through the real relay, is
@@ -231,7 +231,7 @@ test.describe('Session screen', () => {
   test("the side pane's Browser tab says when the session's host is away", async ({ page }) => {
     // Pairing here is a row with no runner, so the host never links: the
     // ports read answers that it is offline, and the tab says so rather than
-    // waiting for a dev server (30-session-previews.md).
+    // waiting for a dev server.
     const owner = await provisionedUser('sessionbrowser');
     const hostId = await pairHost(owner.api, 'Quiet box');
     const installationId = await connectInstallation(owner.api);

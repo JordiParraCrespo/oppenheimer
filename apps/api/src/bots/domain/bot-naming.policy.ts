@@ -1,10 +1,9 @@
 import { BOT_AVATAR_COLORS, BOT_NAME_MAX, type BotAvatarColor } from '@oppenheimer/shared';
 
 /**
- * The first names a blank bot is born with (`25-bots.md` §1): physicists, in
- * keeping with the product's name (2026-11-15, the owner's pick; they were
- * Juno, Milo, Wren… until then). Surnames, short and easy to say, no two with
- * the same initial, so neighbours in the sidebar read and draw apart, and
+ * The first names a blank bot is born with: physicists, in keeping with the
+ * product's name (the owner's pick). Surnames, short and easy to say, no two
+ * with the same initial, so neighbours in the sidebar read and draw apart, and
  * none that is also a product or a company. A name says who the bot is; its
  * description says the job, which it writes itself in its first chat, and it
  * offers a name of its own there too.

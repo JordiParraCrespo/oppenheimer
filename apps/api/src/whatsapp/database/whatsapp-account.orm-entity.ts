@@ -11,9 +11,9 @@ import {
 } from 'typeorm';
 
 /**
- * A number a person linked as a WhatsApp device on one of their hosts
- * (`product/next-steps/whatsapp.md` §1). One per host, since a runner holds
- * one device; the device's keys stay on the host and are never here.
+ * A number a person linked as a WhatsApp device on one of their hosts. One per
+ * host, since a runner holds one device; the device's keys stay on the host and
+ * are never here.
  */
 @Entity('whatsapp_account')
 @Index('UQ_whatsapp_account_host', ['hostId'], { unique: true })

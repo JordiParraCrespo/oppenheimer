@@ -6,11 +6,11 @@ import { GoogleAccountsSkeleton } from '../components/google-accounts-skeleton';
 import { GoogleAccountRows } from './google-account-rows';
 
 /**
- * The viewer's Google accounts (`23-plan-milestones-stats-accounts.md` §5):
- * read-only, so connecting asks Google for the read scope alone. The rows
- * read the accounts under Suspense; this draws the card around them. Nothing
- * on a deployment with no Google credentials; the card and its placeholder
- * while the deployment has not said.
+ * The viewer's Google accounts: read-only, so connecting asks Google for
+ * the read scope alone. The rows read the accounts under Suspense; this
+ * draws the card around them. Nothing on a deployment with no Google
+ * credentials; the card and its placeholder while the deployment has not
+ * said.
  */
 export function GoogleAccountsCard() {
   const { t } = useTranslation();

@@ -9,8 +9,7 @@ import { GetMembershipQuery } from './get-membership.query';
 
 /**
  * The caller's membership in the organization the route names — not Better
- * Auth's `getActiveMember`, which answers for the session's active one. Which
- * error a non-member gets is `product/versions/mvp/08-auth.md`.
+ * Auth's `getActiveMember`, which answers for the session's active one.
  */
 @QueryHandler(GetMembershipQuery)
 export class GetMembershipQueryHandler implements IQueryHandler<GetMembershipQuery, Membership> {

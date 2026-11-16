@@ -437,7 +437,7 @@ Stop here and tell us; do not retry with a different mirror."
 	*) URL="$RELEASE_BASE/${URL#/}" ;;
 	esac
 	# Only from the release host the command named, and only over HTTPS — the
-	# same rule the runner's own updater applies (09 §5).
+	# same rule the runner's own updater applies.
 	https_or_loopback "$URL" || die "the manifest points at $URL, which is not https; not installing"
 	[ "$(host_of "$URL")" = "$(host_of "$RELEASE_BASE")" ] ||
 		die "the manifest points at $(host_of "$URL"), not the release host $(host_of "$RELEASE_BASE"); not installing"
@@ -459,7 +459,7 @@ Stop here and tell us; do not retry with a different mirror."
 	#    archive carries OppenheimerRunner.app: a copy is kept per version, and
 	#    the one that runs is always ~/.oppenheimer/bin/OppenheimerRunner.app,
 	#    because macOS keeps the runner's permissions for the signed bundle at
-	#    the path it runs from (09 §2). A release from before the bundle has
+	#    the path it runs from. A release from before the bundle has
 	#    none, and installs as a bare binary as on Linux.
 	tar -xzf "$WORK/runner.tar.gz" -C "$WORK"
 	mkdir -p "$RUNNER_HOME/bin" "$HOME/.local/bin"

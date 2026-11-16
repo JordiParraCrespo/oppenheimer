@@ -20,10 +20,10 @@ import { PullRequestSourceResolver } from '../pull-request-source.resolver';
 import { PullRequestWriteResolver } from '../pull-request-write.resolver';
 
 /**
- * #244: one repository's checks refused with a 403 took the whole queue down
- * to an error card. A refused part costs that part, a refused repository
- * costs that repository, and a snapshot missing a part is not kept as if it
- * were whole.
+ * The regression: one repository's checks refused with a 403 took the whole
+ * queue down to an error card. A refused part costs that part, a refused
+ * repository costs that repository, and a snapshot missing a part is not kept
+ * as if it were whole.
  */
 const SCOPE = { userId: 'ana', organizationId: 'org-acme' } as unknown as AccessScope;
 
@@ -448,11 +448,11 @@ describe('who the reader is on GitHub', () => {
 });
 
 /**
- * #247: one page view asked GitHub for five requests times every pull request
- * it found — on a real account, hundreds in a burst, which GitHub answers with
- * a secondary rate limit. A view now spends a budget: every pull request comes
- * back, as many as the budget allows with their parts filled, and the next
- * read fills more from a cache that keeps what it already has.
+ * The regression: one page view asked GitHub for five requests times every pull
+ * request it found — on a real account, hundreds in a burst, which GitHub
+ * answers with a secondary rate limit. A view now spends a budget: every pull
+ * request comes back, as many as the budget allows with their parts filled, and
+ * the next read fills more from a cache that keeps what it already has.
  */
 describe('what one read spends', () => {
   const pullNumbered = (number: number) => ({ ...PULL, number });
@@ -498,7 +498,7 @@ describe('what one read spends', () => {
   /**
    * A pull request this read cannot fill is left out rather than returned with
    * empty parts: a row with no files, checks or reviews read would show a
-   * lane, a checks state and a blocker nobody read (#244).
+   * lane, a checks state and a blocker nobody read.
    */
   it('leaves a pull request out rather than answering with parts nobody read', async () => {
     const { listings, repository } = budgeted(30);
@@ -624,7 +624,7 @@ describe('a merge pinned to the head it was decided on', () => {
 });
 
 /**
- * A repository the App is not on, read through the person's own token (§6.2):
+ * A repository the App is not on, read through the person's own token:
  * its address has no installation, it reads with the token that opens it, and
  * nothing is written to it in anyone's name.
  */

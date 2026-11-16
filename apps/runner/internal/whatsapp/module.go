@@ -1,7 +1,6 @@
-// Package whatsapp wires the host's WhatsApp linked device
-// (product/next-steps/whatsapp.md): one device per host, its keys in the
-// runner's state directory, the messages it receives handed to the control
-// plane over the link.
+// Package whatsapp wires the host's WhatsApp linked device: one device per host,
+// its keys in the runner's state directory, the messages it receives handed to
+// the control plane over the link.
 package whatsapp
 
 import (

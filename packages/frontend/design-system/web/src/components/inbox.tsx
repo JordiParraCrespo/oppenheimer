@@ -14,10 +14,9 @@ import { Skeleton } from './skeleton';
 import { variedWidth } from '../internal/varied-width';
 
 /**
- * The Inbox (`product/versions/mvp/design/version1/Inbox.dc.html`), laid out
- * as a mail client inside Plan: a list column of what needs you, one row per
- * item, and a reading pane with the item in hand as a message, its answers
- * under it and a toolbar over it.
+ * The Inbox, laid out as a mail client inside Plan: a list column of what needs
+ * you, one row per item, and a reading pane with the item in hand as a message,
+ * its answers under it and a toolbar over it.
  */
 function InboxList({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="inbox-list" role="list" className={cn('flex flex-col', className)} {...props} />;

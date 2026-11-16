@@ -7,10 +7,10 @@ import { BotToolGrants } from '@/features/bots/sections/bot-tool-grants';
 import { BotToolPermissions } from '@/features/bots/sections/bot-tool-permissions';
 
 /**
- * `/bots/$botId/settings/permissions`: what the bot may do on its own
- * (`25-bots.md` §5). Each tool's Allow, Ask or Off over the preset, what a
- * yes left standing, and the rules a reviewer reads before an asking call.
- * The three read one answer, so they wait on one boundary.
+ * `/bots/$botId/settings/permissions`: what the bot may do on its own. Each
+ * tool's Allow, Ask or Off over the preset, what a yes left standing, and
+ * the rules a reviewer reads before an asking call. The three read one
+ * answer, so they wait on one boundary.
  */
 export function BotPermissionsScreen({ botId }: { botId: string }) {
   const { t } = useTranslation();

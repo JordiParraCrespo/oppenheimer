@@ -12,8 +12,8 @@ export interface BotRoutineChanges {
 }
 
 /**
- * A bot saves one of its routines (`26-bot-routines.md` §4, `update_routine`
- * create and update): a new one when `routineId` is absent. The bot was
+ * A bot saves one of its routines (`update_routine` create and
+ * update): a new one when `routineId` is absent. The bot was
  * checked by the caller; the routine must be that bot's.
  */
 export class SaveBotRoutineCommand extends CommandBase {

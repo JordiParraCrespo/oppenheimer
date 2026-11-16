@@ -18,12 +18,11 @@ import { WhatsappMessageMapper } from '../../whatsapp-message.mapper';
 import { RequestWhatsappOwnerCommand } from './request-whatsapp-owner.command';
 
 /**
- * The owner names their own number on one of their linked numbers
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1): the linked
+ * The owner names their own number on one of their linked numbers: the linked
  * number sends it a six-digit code, which the owner then enters in Settings.
- * Only the code's hash is kept. A new request replaces a waiting code, and
- * the confirmed owner stays until another number is confirmed. The line is
- * kept with the chat with its digits masked, so no bot reads the code. The code is
+ * Only the code's hash is kept. A new request replaces a waiting code, and the
+ * confirmed owner stays until another number is confirmed. The line is kept
+ * with the chat with its digits masked, so no bot reads the code. The code is
  * saved before it is sent, so it works however fast it arrives; a send that
  * fails forgets it again and is told in the module's own codes.
  */

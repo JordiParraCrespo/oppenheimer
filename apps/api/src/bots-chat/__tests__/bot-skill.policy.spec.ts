@@ -1,10 +1,9 @@
 /**
- * How a person's slash command becomes the turn's message (`25-bots.md`
- * §4.1). What breaks this: `/goal <condition>` read as a skill the bot does
- * not have, so the turn says "no such skill" while the goal it set runs; a
- * bot's old skill named `goal` taking the built-in's place; a `/schedule`
- * that never tells the bot to save the routine, or saves one for a request
- * that is a loop.
+ * How a person's slash command becomes the turn's message. What breaks this:
+ * `/goal <condition>` read as a skill the bot does not have, so the turn says
+ * "no such skill" while the goal it set runs; a bot's old skill named `goal`
+ * taking the built-in's place; a `/schedule` that never tells the bot to save
+ * the routine, or saves one for a request that is a loop.
  */
 import { BOT_RUNNABLE_BUILT_IN_SKILL_NAMES, parseBotSlashCommand } from '@oppenheimer/shared';
 import { BOT_BUILT_IN_SKILLS, composeTurnMessage } from '../domain/bot-skill.policy';

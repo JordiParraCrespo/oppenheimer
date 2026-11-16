@@ -90,7 +90,7 @@ export class BotConversationSummaryRepository
       record.coversThroughMessageId,
     ];
     if (record.version === 0) {
-      // An INSERT answers its rows (typeorm.md).
+      // An INSERT answers its rows.
       const rows: unknown[] = await this.repository.query(
         `INSERT INTO bot_conversation_summary ("organizationId", "botId", ${columns.map(([name]) => `"${name}"`).join(', ')}, "version")
          SELECT $1, $2, ${columns.map(([, value]) => value).join(', ')}, 1
@@ -102,7 +102,7 @@ export class BotConversationSummaryRepository
       );
       return rows.length === 1;
     }
-    // An UPDATE answers `[rows, affected]` (typeorm.md).
+    // An UPDATE answers `[rows, affected]`.
     const [, affected]: [unknown[], number] = await this.repository.query(
       `UPDATE bot_conversation_summary s
           SET ${columns.map(([name, value]) => `"${name}" = ${value}`).join(', ')},

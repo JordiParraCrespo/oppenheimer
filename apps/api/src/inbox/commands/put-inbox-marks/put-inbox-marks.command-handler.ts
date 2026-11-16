@@ -10,8 +10,7 @@ import { INBOX_MARK_REPOSITORY } from '../../inbox.di-tokens';
 import { PutInboxMarksCommand } from './put-inbox-marks.command';
 
 /**
- * A bulk action from the Inbox (`product/versions/mvp/29-inbox.md`, "Bulk
- * actions"): the same mark on every occurrence of a selection, or each one's
+ * A bulk action from the Inbox: the same mark on every occurrence of a selection, or each one's
  * mark cleared. Every key and the snooze's end are checked before anything is
  * written, and the marks are written in one transaction, so a selection is
  * never left half marked; each mark carries its own event, as a single put or

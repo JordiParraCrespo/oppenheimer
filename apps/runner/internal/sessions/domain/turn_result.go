@@ -14,7 +14,7 @@ import (
 // It travels as the payload of `turn.ended`
 // (`packages/shared/src/protocol/turn-event.ts`). The cost is the agent's own
 // figure: nothing here prices tokens, because a price list is a thing someone
-// would have to keep current (23 §4).
+// would have to keep current.
 type TurnResult struct {
 	Result            *string
 	AgentSessionID    *string

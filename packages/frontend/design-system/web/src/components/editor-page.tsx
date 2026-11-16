@@ -7,11 +7,10 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * EditorPage — the frame of a console page: the column that scrolls on its
- * own, and the measured body in it. The console's shell draws it around
- * every page (the web kit's `PageFrame`), so a screen renders its content and
- * nothing of the frame: the scroll, the measure and the gutter are said once,
- * here (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`). The
+ * EditorPage — the frame of a console page: the column that scrolls on its own,
+ * and the measured body in it. The console's shell draws it around every page
+ * (the web kit's `PageFrame`), so a screen renders its content and nothing of
+ * the frame: the scroll, the measure and the gutter are said once, here. The
  * ground is not the frame's: it is whatever the frame sits on, the shell's
  * column in the console.
  *
@@ -22,8 +21,7 @@ import { cn } from '../lib/utils';
  *   both ways: a session being prepared, a new bot's chat.
  * - `prompt` (760px inside its gutter) is the composer's column at the
  *   pane's foot, 40px off its bottom edge: New session, whose box sits where
- *   the session's own input will be once it starts
- *   (`NewSessionComposer.dc.html`).
+ *   the session's own input will be once it starts.
  * - `narrow` (760px), a form, a single card or an article; `wide` (1040px), a
  *   page that holds a table or a briefing, the session terminal's width;
  *   `board` (1240px), Plan's columns. These open 24px under the page bar.
@@ -73,7 +71,7 @@ const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
   status: 'my-auto max-w-105 py-8',
   // `.op-newsession`, centred in the pane, at the reading measure.
   composer: 'my-auto max-w-190 py-12',
-  // `NewSessionComposer.dc.html`: the same column, at the pane's foot, with
+  // The same column, at the pane's foot, with
   // only a hairline of room under its row of choices.
   prompt: 'mt-auto max-w-206 pt-12 pb-3',
   // Every page that opens at the top opens 24px under the page bar.

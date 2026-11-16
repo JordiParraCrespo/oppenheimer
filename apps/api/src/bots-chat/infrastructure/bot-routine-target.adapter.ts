@@ -14,8 +14,9 @@ import { BotModelAccessResolver } from '../application/bot-model-access.resolver
 import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import { routineIsIdle } from '../domain/bot-heartbeat.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import { routinePrefix, routineTurn } from '../domain/bot-routine.policy';
+import { routinePrefix, routineSourceKey, routineTurn } from '../domain/bot-routine.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from './bot-stream.port';
 
@@ -45,11 +46,11 @@ class RoutineBusyError extends Error {
 }
 
 /**
- * A bot routine's run (`26-bot-routines.md` §4): one more queued turn of the
- * bot, on its provider, model and effort as they are now, as the routine's
- * owner and within the scopes of the credential that saved it. The turn
- * queue is what holds a busy bot and survives a restart, and the turn's
- * source key makes a run dispatched twice queue it once.
+ * A bot routine's run: one more queued turn of the bot, on its provider, model
+ * and effort as they are now, as the routine's owner and within the scopes of
+ * the credential that saved it. The turn queue is what holds a busy bot and
+ * survives a restart, and the turn's source key makes a run dispatched twice
+ * queue it once.
  */
 @Injectable()
 export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> {
@@ -77,6 +78,16 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
 
     const instructions = composeRunPrompt(automation.revision.prompt, event);
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
+
+    const idle = await routineIsIdle({ name: automation.name, cause: run.cause }, () =>
+      this.turns.findHeartbeatView(
+        automation.organizationId,
+        botId,
+        routinePrefix(automation.id),
+        routineSourceKey(automation.id, run.id),
+      ),
+    );
+    if (idle) return { kind: 'skip', reason: 'idle', pause: null };
 
     const bot = await this.access.bot(automation.organizationId, botId);
     // The provider just refused the account (out of quota, a refused key):
@@ -116,8 +127,8 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
 
   async launch(context: RunTargetContext, input: RoutineLaunch): Promise<RunDispatchRef> {
     const { turn, opening } = input;
-    // A routine whose last turn still waits or runs: note 16's overlap guard,
-    // read from the bot's queue, under the same lock that queues this one.
+    // A routine whose last turn still waits or runs: the overlap guard, read
+    // from the bot's queue, under the same lock that queues this one.
     const busyPrefix =
       context.limits.overlap === 'skip' ? routinePrefix(context.automation.id) : null;
     const { outcome, turnId } = await this.turns.enqueueOnce(turn, opening, null, busyPrefix);

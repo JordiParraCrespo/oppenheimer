@@ -175,7 +175,7 @@ func (s *Service) Unseal(sealed []byte) ([]byte, error) {
 const directProofContext = "oppenheimer/direct/v1/"
 
 // ProveDirect signs a direct path's host proof with the host key, and returns
-// the public half beside the signature (product/versions/mvp/31). Like
+// the public half beside the signature. Like
 // Unseal, the key never leaves this package.
 func (s *Service) ProveDirect(transcript []byte) (ed25519.PublicKey, []byte, error) {
 	if !bytes.HasPrefix(transcript, []byte(directProofContext)) {

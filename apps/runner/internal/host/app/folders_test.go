@@ -38,7 +38,7 @@ func write(t *testing.T, path, content string) {
 	}
 }
 
-// The folder picker (24 §4) sees directories only, hidden ones left out,
+// The folder picker sees directories only, hidden ones left out,
 // sorted as a person reads them, a link to a directory among them, and the
 // branch of each one that is a checkout — read from what git wrote, the
 // listed directory's own included.

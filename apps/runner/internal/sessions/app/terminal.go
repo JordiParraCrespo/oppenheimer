@@ -35,7 +35,7 @@ type DriveResult struct {
 }
 
 // Drive types into a blank-terminal session and reads its screen back
-// (`terminal.drive`, 25 §4.2). Only a session whose window 0 is a plain shell
+// (`terminal.drive`). Only a session whose window 0 is a plain shell
 // takes it: a bot drives a terminal it opened for that, never an agent's
 // prompt, which has its own verbs. Whether the host lets a bot drive a shell
 // at all is the host's exec policy, checked by the caller.

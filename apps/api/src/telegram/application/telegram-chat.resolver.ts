@@ -16,8 +16,7 @@ export const TELEGRAM_CHATS_SCANNED = 500;
 /**
  * One of the caller's Telegram bots, and a chat of it from what a bot wrote:
  * a chat's id, a person's `@username`, or a person's or group's name. Only a
- * chat with a kept message is one: Telegram refuses a bot writing first
- * (`telegram.md` §5).
+ * chat with a kept message is one: Telegram refuses a bot writing first.
  */
 @Injectable()
 export class TelegramChatResolver {

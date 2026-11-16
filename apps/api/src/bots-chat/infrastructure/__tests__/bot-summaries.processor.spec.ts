@@ -6,10 +6,10 @@ import { SUMMARIZE_BOT_CONVERSATION_JOB } from '../../database/bot-conversation-
 import { BotSummariesProcessor } from '../bot-summaries.processor';
 
 /**
- * The `bot-summaries` worker: a job runs the summarize command; a provider
- * that refused for rate moves the job to delayed until the reset it named,
- * without spending an attempt (`.agents/rules/integrations.md`), where any
- * other failure goes back to the queue's retries.
+ * The `bot-summaries` worker: a job runs the summarize command; a provider that
+ * refused for rate moves the job to delayed until the reset it named, without
+ * spending an attempt, where any other failure goes back to the queue's
+ * retries.
  */
 function setup(outcome: () => Promise<unknown>) {
   const commandBus = { execute: vi.fn(outcome) };

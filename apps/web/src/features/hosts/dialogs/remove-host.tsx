@@ -5,10 +5,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * "Remove optimus?" (`design/version1/Settings.dc.html`): the title, and what
- * it costs from the host's own count. The sessions running on it are stopped
- * (their logs kept) and its runner's token is revoked
- * (`product/versions/mvp/14-hosts-settings.md`).
+ * "Remove optimus?": the title, and what it costs from the host's own count.
+ * The sessions running on it are stopped (their logs kept) and its runner's
+ * token is revoked.
  *
  * The box cleans the machine up as well, for starting again from nothing: the
  * runner closes every session instead of stopping it, and each worktree goes

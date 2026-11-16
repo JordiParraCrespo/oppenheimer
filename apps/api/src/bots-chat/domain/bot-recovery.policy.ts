@@ -1,5 +1,5 @@
 /**
- * What a bot does after a step fails (`25-bots.md` §1, 2026-11-08), said
+ * What a bot does after a step fails, said
  * once. From OpenClaw's "Execution Bias" and "Promised Work" prompt
  * sections: a failed step sends the bot to the next reasonable route
  * before it reports, within limits no route lifts. The system prompt's
@@ -32,9 +32,9 @@ const LIMITS: readonly string[] = [
 ];
 
 /**
- * What a blocker is (2026-11-12): Oppie's half-hourly Sentry check answered
- * "the designated session is still closed" for hours, when a new session
- * would have run it. What it was told to use is the means, not the purpose.
+ * What a blocker is: Oppie's half-hourly Sentry check answered "the designated
+ * session is still closed" for hours, when a new session would have run it.
+ * What it was told to use is the means, not the purpose.
  */
 const BLOCKER_RULE =
   'A blocker is yours to solve before it is yours to report: what you were told to use (a session, a terminal, a branch, a source) is the means, not the purpose, unless your instructions say only that one will do, so a closed session is replaced by a new one with the same task.';

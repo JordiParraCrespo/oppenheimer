@@ -7,8 +7,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
 
-// flowWindow is one attachment's credit, against link.CreditWindow (01's
-// 256 KB, from the protocol's constants): bytes sent minus bytes the browser
+// flowWindow is one attachment's credit, against link.CreditWindow (256 KB,
+// from the protocol's constants): bytes sent minus bytes the browser
 // acknowledged consuming. A pump acquires before every read and blocks while
 // the window is spent; a credit or a close wakes it.
 type flowWindow struct {

@@ -57,7 +57,7 @@ export const BOT_PROMPT_HOSTS_MAX = 10;
 export const TURN_CONTEXT_TAG = 'turn_context';
 
 /**
- * The moment a turn runs in (`25-bots.md` §2): the time in the sender's zone,
+ * The moment a turn runs in: the time in the sender's zone,
  * the bot's home host and the owner's hosts, each online or not. It changes
  * every turn, so it is not in the system prompt, which stays the same from
  * turn to turn and keeps the provider's prompt cache warm; it opens this
@@ -126,7 +126,7 @@ export function withTurnContext(context: string, prompt: string): string {
 
 /**
  * How full the model's context was when its last turn ended, as a share of
- * its window (`research/lessons-from-grok-bot.md` §9, row 2). Past half, the
+ * its window. Past half, the
  * model is asked to keep reads narrow: the turn's own tool answers fill the
  * same window, and older messages fold into the summary only between turns.
  */
@@ -161,7 +161,7 @@ export const BOT_CONTEXT_TIGHT_PERCENT = 50;
  * names none), the tokens alone, and narrow reads from this many on: half
  * the smallest window a bot's provider offers (Claude's 200,000), so a bot
  * whose window is unknown is never told later than one whose window is
- * known (2026-11-08; before, such a bot was never told).
+ * known (before, such a bot was never told).
  */
 export const BOT_CONTEXT_TIGHT_TOKENS = 100_000;
 

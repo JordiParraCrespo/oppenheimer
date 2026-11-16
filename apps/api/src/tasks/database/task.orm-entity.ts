@@ -12,11 +12,11 @@ import {
 } from 'typeorm';
 
 /**
- * A task on Plan's board (`product/versions/mvp/19-plan-tasks-and-goals.md` §1).
+ * A task on Plan's board.
  *
  * `UQ_task_rank` is the board's order and its concurrency guard at once: two moves
  * into the same gap compute the same key, one loses on the constraint, and the move
- * reads its neighbours again (§2). `rank` is `COLLATE "C"` so the database sorts
+ * reads its neighbours again. `rank` is `COLLATE "C"` so the database sorts
  * the keys byte by byte, as the rank policy builds them.
  *
  * The milestone key is one composite foreign key, `(organizationId, milestoneId, projectId)`

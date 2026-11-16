@@ -92,7 +92,7 @@ func (p *placesHarness) events(sessionID string) []link.Event {
 	return out
 }
 
-// A folder session from the console (24 §3): nothing cloned, no checkout to
+// A folder session from the console: nothing cloned, no checkout to
 // report, and the steps the console shows are the host and the agent only.
 func TestALinkedFolderSessionStartsWithNoCheckouts(t *testing.T) {
 	p := newPlacesHarness(t, t.TempDir(), "acct")
@@ -135,7 +135,7 @@ func TestALinkedFolderSessionStartsWithNoCheckouts(t *testing.T) {
 
 // A worktree session lands under the account the host was paired with and
 // the frame's workspace, in a folder named by its slug, its checkout named by
-// the frame (24 §2).
+// the frame.
 func TestALinkedWorktreeSessionLandsInItsWorkspace(t *testing.T) {
 	p := newPlacesHarness(t, t.TempDir(), "acct")
 
@@ -317,7 +317,7 @@ func TestFsFindIsAnsweredWithTheFoldersFound(t *testing.T) {
 }
 
 // The hello says this runner takes folder sessions, lists folders and
-// searches them, so the control plane sends it all three (24 §5).
+// searches them, so the control plane sends it all three.
 func TestTheHelloOffersFolderSessionsAndFolderListing(t *testing.T) {
 	h := &linkHandler{}
 	got := h.capabilities()
@@ -330,7 +330,7 @@ func TestTheHelloOffersFolderSessionsAndFolderListing(t *testing.T) {
 
 // A folder session's folder is the person's, and so is its git: its shell is
 // not pointed at the runner's credential helper, which would hand a session
-// token to whatever repository the folder is (24 §3). A worktree session's is.
+// token to whatever repository the folder is. A worktree session's is.
 func TestOnlyAWorktreeSessionsShellAsksTheRunnerForCredentials(t *testing.T) {
 	paths := Paths{Home: t.TempDir()}
 	folder := sessionEnv(paths, sessionsdomain.Session{ID: "s1", Place: sessionsdomain.PlaceFolder, Folder: "/home/jordi/code"})

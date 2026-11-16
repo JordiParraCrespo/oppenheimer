@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
 /**
- * The Pull requests area (`product/next-steps/0.2-pull-requests-api-plan.md`,
- * drawn in `product/versions/mvp/design/version1/PullRequests.dc.html`). Pull
- * requests are GitHub's: nothing here mirrors one, a request names it by the
- * installation that reaches it, the repository and its number.
+ * The Pull requests area. Pull requests are GitHub's: nothing here mirrors one,
+ * a request names it by the installation that reaches it, the repository and
+ * its number.
  */
 
 /** Whose pull requests the queue shows: yours and your sessions', review requests, the rest of the watched repositories. */
@@ -110,11 +109,10 @@ export const pullRequestAnalyticsQuerySchema = z.object({
 export type PullRequestAnalyticsQueryDto = z.infer<typeof pullRequestAnalyticsQuerySchema>;
 
 /**
- * A CI finding (`product/next-steps/0.2-pull-requests.md`, "CI findings";
- * from Grok Bot's CI investigation, `research/lessons-from-grok-bot.md` §9
- * row 14): what one failing check on a pull request's head came to, as a
- * record rather than prose. How the failure relates to the change, whether
- * it is a flake, what to do about it, and how sure the one who looked is.
+ * A CI finding (from Grok Bot's CI investigation): what one failing check on a
+ * pull request's head came to, as a record rather than prose. How the failure
+ * relates to the change, whether it is a flake, what to do about it, and how
+ * sure the one who looked is.
  */
 export const CI_FINDING_RELATIONS = ['this_change', 'unrelated', 'unclear'] as const;
 export type CiFindingRelation = (typeof CI_FINDING_RELATIONS)[number];

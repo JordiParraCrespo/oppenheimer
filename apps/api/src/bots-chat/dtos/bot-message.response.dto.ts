@@ -34,7 +34,7 @@ import {
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
 
-/** One subagent a `delegate` call ran (`25-bots.md` §4.7). */
+/** One subagent a `delegate` call ran. */
 export class BotSubagentRunResponseDto {
   @ApiProperty({ description: 'The task the bot gave it.' })
   task!: string;
@@ -152,7 +152,7 @@ export class BotAnsweredQuestionResponseDto {
   answer!: string;
 }
 
-/** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
+/** An approval decided: how, for which tool, and the card's line. */
 export class BotApprovalEventResponseDto {
   @ApiProperty({ enum: ['approval'] })
   kind!: 'approval';
@@ -192,7 +192,7 @@ export class BotApprovalEventResponseDto {
   stage?: BotApprovalEventStage;
 }
 
-/** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */
+/** A card of questions decided (`ask_user`): how, its line, and each answer. */
 export class BotQuestionEventResponseDto {
   @ApiProperty({ enum: ['question'] })
   kind!: 'question';
@@ -210,7 +210,7 @@ export class BotQuestionEventResponseDto {
   answers!: BotAnsweredQuestionResponseDto[];
 }
 
-/** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */
+/** What happened to one of the bot's routines. */
 export class BotRoutineEventResponseDto {
   @ApiProperty({ enum: ['routine'] })
   kind!: 'routine';
@@ -241,7 +241,7 @@ export class BotRoutineEventResponseDto {
   reason!: string | null;
 }
 
-/** A message another bot sent this one through `message_bot` or `ask_bot` (`25-bots.md` §4.6). */
+/** A message another bot sent this one through `message_bot` or `ask_bot`. */
 export class BotPeerMessageEventResponseDto {
   @ApiProperty({ enum: ['bot_message'] })
   kind!: 'bot_message';
@@ -281,7 +281,6 @@ export class BotPeerReplyEventResponseDto {
   outcome!: BotReplyOutcome;
 }
 
-/** A session the bot follows woke it (`27-bot-subscriptions.md` §4). */
 /** A terminal watch's match, as a session event names it. */
 export class BotSessionMatchResponseDto {
   @ApiProperty({ description: 'The pattern the bot watches the terminal for.' })
@@ -291,6 +290,7 @@ export class BotSessionMatchResponseDto {
   count!: number;
 }
 
+/** A session the bot follows woke it. */
 export class BotSessionEventResponseDto {
   @ApiProperty({ enum: ['session'] })
   kind!: 'session';
@@ -323,7 +323,7 @@ export class BotSessionEventResponseDto {
   match?: BotSessionMatchResponseDto | null;
 }
 
-/** A pull request the bot follows woke it (`27-bot-subscriptions.md` §7). */
+/** A pull request the bot follows woke it. */
 export class BotPullRequestEventResponseDto {
   @ApiProperty({ enum: ['pull_request'] })
   kind!: 'pull_request';
@@ -347,7 +347,7 @@ export class BotPullRequestEventResponseDto {
   event!: PullRequestWakeEvent;
 }
 
-/** A task on a project or milestone the bot follows changed (`27-bot-subscriptions.md` §7.2). */
+/** A task on a project or milestone the bot follows changed. */
 export class BotTaskEventResponseDto {
   @ApiProperty({ enum: ['task'] })
   kind!: 'task';
@@ -469,7 +469,7 @@ export class BotLoopEventResponseDto {
   reason!: string | null;
 }
 
-/** A turn folded what it had read into a summary (`25-bots.md` §2, "Compaction"). */
+/** A turn folded what it had read into a summary. */
 export class BotCompactionEventResponseDto {
   @ApiProperty({ enum: ['compaction'] })
   kind!: 'compaction';

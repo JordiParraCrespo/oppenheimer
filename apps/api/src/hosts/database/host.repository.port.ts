@@ -5,8 +5,7 @@ import type { HostNetwork, HostVitals, StoredHostInventory } from '../domain/hos
 
 /**
  * How long after its last heartbeat a host still counts as attached: twice the
- * runner's 15-second heartbeat, so one missed beat is not an outage
- * (`product/versions/mvp/01-protocol.md`).
+ * runner's 15-second heartbeat, so one missed beat is not an outage.
  */
 export const HOST_ONLINE_WINDOW_SECONDS = 30;
 

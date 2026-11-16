@@ -96,8 +96,7 @@ function emptyListMessage(
  * all in one. A move lists every project, this one too: ticked and not
  * choosable, so the reader sees where the sessions are (a pinned row is drawn
  * above the projects, not under its own). A project is metadata — a session's
- * directory and branch never name it — so any other project can take them
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * directory and branch never name it — so any other project can take them.
  */
 export function currentProjectOf(sessions: readonly SessionEntity[]): string | null {
   const first = sessions[0]?.projectId;

@@ -3,7 +3,7 @@ import { BotQuestionDecisionResolver } from '../../application/bot-question-deci
 import { DismissBotQuestionCommand } from './dismiss-bot-question.command';
 
 /**
- * The owner declines a bot's card of questions (`25-bots.md` §3.2), with a
+ * The owner declines a bot's card of questions, with a
  * note if they like; the bot gets a turn that is told so and not to ask
  * again unless they bring it up.
  */

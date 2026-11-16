@@ -16,10 +16,9 @@ import { summaryRetryAt } from '../domain/bot-summary.policy';
  * second job never moves the summary back.
  *
  * A provider that refused for rate or quota (`LlmRateLimitError`) is not
- * retried on that schedule (`.agents/rules/integrations.md`): the limit is
- * the workspace key's, so this job alone moves to delayed until the reset the
- * provider named (`summaryRetryAt`), spending no attempt, and the queue's
- * other workspaces carry on.
+ * retried on that schedule: the limit is the workspace key's, so this job alone
+ * moves to delayed until the reset the provider named (`summaryRetryAt`),
+ * spending no attempt, and the queue's other workspaces carry on.
  */
 @Processor(QUEUE_NAMES.BOT_SUMMARIES)
 export class BotSummariesProcessor extends WorkerHost {

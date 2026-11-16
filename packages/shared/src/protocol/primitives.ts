@@ -68,9 +68,7 @@ export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
  * the host is what turns that into a command line, from the same catalog this
  * schema takes its unions from. A control plane that sent argv would be dictating a command
  * to run on somebody's laptop, and the runner would have nothing left to check
- * — so the mapping stays on the machine that executes it
- * (`product/versions/mvp/01-protocol.md`, and
- * `02-runner.md` §5 for what the runner then does with it).
+ * — so the mapping stays on the machine that executes it.
  *
  * `permission` is present exactly when the agent has approvals: the control
  * plane fills an absent level in as `ask` for every such agent before it
@@ -84,8 +82,8 @@ export const launchOptionsSchema = z.object({
   /**
    * A name from the union of every level any CLI takes, which is a vocabulary
    * and not a list of what is legal here: only a level the session's model
-   * offers is spelled, and the runner drops any other rather than forward it
-   * (01). Absent is the CLI's own default.
+   * offers is spelled, and the runner drops any other rather than forward it.
+   * Absent is the CLI's own default.
    */
   effort: z.enum(SESSION_EFFORTS).optional(),
   /**
@@ -113,8 +111,8 @@ export type LaunchOptions = z.infer<typeof launchOptionsSchema>;
 
 /**
  * The first task, bounded by the same rule the DTO is bounded by: 2 KB of
- * UTF-8, which is what `02-runner.md` §7 states and what the event log can
- * actually keep (its payloads are capped at 8 KiB of serialized JSON).
+ * UTF-8, which is what the event log can actually keep (its payloads are capped
+ * at 8 KiB of serialized JSON).
  */
 export const promptTextSchema = z
   .string()
@@ -131,7 +129,7 @@ export const promptTextSchema = z
  * de-duplicated host list, not by or-ing each agent's pattern: an agent that
  * relays other vendors' logins (OpenCode) adds only the hosts that are new, and
  * every alternative is a host compared whole, so the widest this can get is the
- * set of hosts some agent actually prints (F3).
+ * set of hosts some agent actually prints.
  */
 const ANY_VENDOR_LOGIN_URL = new RegExp(
   loginUrlPattern(Object.values(CODING_AGENTS).flatMap((agent) => agent.loginTargets ?? [])),
@@ -253,7 +251,7 @@ export type SessionWindow = z.infer<typeof sessionWindowSchema>;
  * every heartbeat.
  *
  * **`loginUrl` is validated against the reporting agent's own login pattern**,
- * not merely as a URL (F3): it is the one field the console turns into a
+ * not merely as a URL: it is the one field the console turns into a
  * clickable button, and `https://claude.ai.attacker.test/oauth` parses as a
  * perfectly good URL.
  */

@@ -8,7 +8,7 @@ import {
 import type { MailSendStatus } from './mail-send.entity';
 
 /**
- * How much a bot may send (`product/next-steps/mail.md` §3.4), on top of
+ * How much a bot may send, on top of
  * Gmail's own limits: so a loop can never send in bulk from a person's
  * address. Each answers why not, or null.
  */

@@ -18,8 +18,7 @@ export type BotEngineEdit = Partial<BotEngine>;
 export class BotModelUnsupportedException extends ArgumentInvalidException {}
 
 /**
- * The engine a bot has after `edit` (`product/versions/mvp/25-bots.md` §1),
- * always a valid tuple:
+ * The engine a bot has after `edit`, always a valid tuple:
  *
  * - the provider is the edit's, else the current one;
  * - the model is the edit's, else the current one on the same provider, else

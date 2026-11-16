@@ -1,4 +1,4 @@
-// uncatalogued: frontend-ui.md's placeholder rules say how to draw with it
+// uncatalogued: a placeholder primitive; each screen draws it in the shape of what it stands in for
 import { cn } from '../lib/utils';
 
 /**

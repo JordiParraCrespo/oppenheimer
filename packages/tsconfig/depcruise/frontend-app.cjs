@@ -1,8 +1,7 @@
 /**
  * Dependency-cruiser rules for a frontend app (`apps/web`). The app's
  * `.dependency-cruiser.cjs` calls this with its product and its route
- * directory; the rules are the layout contract in
- * `.agents/rules/frontend-architecture.md`.
+ * directory; the rules are the frontend layout contract.
  *
  * The kind directories of a feature are import boundaries as much as folders:
  * `forms/` and `components/` render props and never fetch, `screens/`,

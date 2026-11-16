@@ -4,11 +4,10 @@ import type { BotConversationRepositoryPort } from '../database/bot-conversation
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /**
- * Whether a turn still has somewhere to answer
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): the console
- * chat always does; a channel's conversation (Telegram, WhatsApp) only while
- * its account is still connected, since its answer is sent there. A turn
- * with nowhere to answer ends without running.
+ * Whether a turn still has somewhere to answer: the console chat always does; a
+ * channel's conversation (Telegram, WhatsApp) only while its account is still
+ * connected, since its answer is sent there. A turn with nowhere to answer ends
+ * without running.
  */
 @Injectable()
 export class BotTurnChannelPolicy {

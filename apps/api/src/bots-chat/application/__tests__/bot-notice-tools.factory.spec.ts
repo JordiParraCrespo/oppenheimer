@@ -1,10 +1,9 @@
 /**
- * `notify` (`product/next-steps/agent-tools.md` §5). What breaks this: a
- * notice stored under the bot's last id, so the Inbox's mark on the last one
- * hides the next; an empty or over-long line reaching the store; a notice
- * written without the event that tells the Inbox; the tool asking for a yes
- * the person was never meant to give; a turn that spams the Inbox. The
- * upsert itself is the integration suite's.
+ * `notify`. What breaks this: a notice stored under the bot's last id, so the
+ * Inbox's mark on the last one hides the next; an empty or over-long line
+ * reaching the store; a notice written without the event that tells the Inbox;
+ * the tool asking for a yes the person was never meant to give; a turn that
+ * spams the Inbox. The upsert itself is the integration suite's.
  */
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { BOT_NOTICE_TEXT_MAX } from '@oppenheimer/shared';

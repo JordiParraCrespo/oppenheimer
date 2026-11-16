@@ -67,12 +67,12 @@ const plannedSend = z.object({
 type PlannedSend = z.infer<typeof plannedSend>;
 
 /**
- * Telegram (`product/next-steps/telegram.md` §5): the owner's own connected
- * Telegram bots, the chats people opened with them since they were connected,
- * search over what was said, and a message sent as the Telegram bot. Reads
- * only see the owner's bots; what other people wrote comes back inside
- * `<telegram>`, marked as data. A send asks by default (Settings →
- * Permissions can allow it per chat), because it speaks to someone else.
+ * Telegram: the owner's own connected Telegram bots, the chats people opened
+ * with them since they were connected, search over what was said, and a message
+ * sent as the Telegram bot. Reads only see the owner's bots; what other people
+ * wrote comes back inside `<telegram>`, marked as data. A send asks by default
+ * (Settings → Permissions can allow it per chat), because it speaks to someone
+ * else.
  */
 @Injectable()
 export class BotTelegramToolsFactory implements BotToolArea {

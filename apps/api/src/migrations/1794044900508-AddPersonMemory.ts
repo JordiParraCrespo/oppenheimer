@@ -1,8 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * What a person writes about themselves for their bots (Settings → Memory,
- * `product/versions/mvp/25-bots.md` §4.1): one text per person per
+ * What a person writes about themselves for their bots (Settings → Memory):
+ * one text per person per
  * workspace, in the system prompt of every bot they made there. The bots
  * read it and never write it, so it is not a `bot_memory_fact`: those are
  * the bot's own rows, under its cap and its lock, and go with the bot.

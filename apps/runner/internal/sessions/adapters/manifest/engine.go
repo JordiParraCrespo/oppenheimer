@@ -177,7 +177,7 @@ var urlPattern = regexp.MustCompile(`https://[^\s"'<>)]+`)
 //
 // The host is compared for equality, never by substring: `claude.ai` and
 // `claude.ai.attacker.test` differ by a suffix, and a Contains check would
-// hand a person a button to the second one (F3).
+// hand a person a button to the second one.
 func LoginURL(screen string, targets []domain.LoginTarget) string {
 	if len(targets) == 0 {
 		return ""

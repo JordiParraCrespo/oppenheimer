@@ -15,10 +15,9 @@ import { answeringRowState } from '@/features/telegram/lib/answering-row';
 const NO_BOT = '';
 
 /**
- * Who answers the reader on one of their Telegram bots
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): the bot that
- * answers there, or none, saved as it is picked; and the one-time link that
- * records the reader's own Telegram account as the owner, the only person it
+ * Who answers the reader on one of their Telegram bots: the bot that answers
+ * there, or none, saved as it is picked; and the one-time link that records
+ * the reader's own Telegram account as the owner, the only person it
  * answers. The link is made on request and opened from here; it lasts ten
  * minutes, and New link makes another when it has expired or been used.
  * Telegram Web drops the link's code, so under a link just made the row also

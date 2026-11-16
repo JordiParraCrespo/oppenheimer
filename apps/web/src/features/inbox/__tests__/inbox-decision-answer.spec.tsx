@@ -9,11 +9,11 @@ import { InboxQuestionAnswer } from '../components/inbox-question-answer';
 import { type InboxAnswer, toAnswers } from '../lib/inbox-answer';
 
 /**
- * A session's decision answered on its Inbox card (`29-inbox.md` slice 4).
- * What breaks this: Send answers enabled before every question has an
- * answer; a single choice sent with both a pick and words (the API refuses
- * it, `SESSIONS_033`); a permission answered by anything but the index of
- * the option pressed, in the dialog's own order.
+ * A session's decision answered on its Inbox card. What breaks this: Send
+ * answers enabled before every question has an answer; a single choice sent
+ * with both a pick and words (the API refuses it, `SESSIONS_033`); a
+ * permission answered by anything but the index of the option pressed, in
+ * the dialog's own order.
  */
 
 vi.mock('react-i18next', () => ({

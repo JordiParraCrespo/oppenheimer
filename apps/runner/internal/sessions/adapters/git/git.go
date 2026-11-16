@@ -1,5 +1,5 @@
-// Package git keeps the work folder's stores and the worktrees cut from them
-// (24 §2): one bare store per repository and workspace, one worktree per
+// Package git keeps the work folder's stores and the worktrees cut from them:
+// one bare store per repository and workspace, one worktree per
 // session, in the session's own folder.
 //
 //	<work folder>/<account>/<workspace>/repos/<owner>--<repo>.git        the bare store, never edited
@@ -200,7 +200,7 @@ func (c *Client) Has(repo domain.Repository) bool {
 
 // Ensure makes sure the repository's store exists and that ref is fresh in
 // it; an empty ref fetches every branch. The first call makes the store;
-// later ones fetch. The store is bare and blobless (02-runner §5, 24 §2): a
+// later ones fetch. The store is bare and blobless: a
 // file's contents arrive when a checkout or a command first reads them,
 // through the same credential helper. A first fetch is shallow at ref and the
 // history follows in the background (deepen).
@@ -316,13 +316,13 @@ func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref
 }
 
 // makeStore makes a bare store at dir and fetches ref into it. Bare, so that
-// nobody's `git status` in it sees a checkout and no editor walks into one
-// (24 §2); its branches are origin's, as a clone's would be, under
+// nobody's `git status` in it sees a checkout and no editor walks into one;
+// its branches are origin's, as a clone's would be, under
 // refs/remotes/origin.
 //
 // Shallow first: the base's one commit with its files is what a worktree
 // needs, and on a large repository it is a third of the time a blobless clone
-// of the whole history takes (14). The history follows in the background
+// of the whole history takes. The history follows in the background
 // (deepen), leaving the store blobless as it always was.
 func (c *Client) makeStore(ctx context.Context, repo domain.Repository, remote, ref, dir string) error {
 	quick := command{timeout: quickTimeout, dir: dir}
@@ -738,7 +738,7 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 	session := domain.SessionOf(ctx)
 
 	// A checkout writes its files from one worker per core: on a large tree
-	// that halves the step a person waits on for a worktree (14).
+	// that halves the step a person waits on for a worktree.
 	full := []string{"-c", "advice.detachedHead=false", "-c", "checkout.workers=0"}
 	if c.credentialHelper != "" {
 		// The empty value clears every helper the system, global and repo

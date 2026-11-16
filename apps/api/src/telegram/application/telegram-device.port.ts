@@ -29,11 +29,11 @@ export interface TelegramLinkAttempt {
 }
 
 /**
- * A host's Telegram bot, over its runner link (`product/next-steps/telegram.md`
- * §2): the token and the poller are the runner's, so everything the control
- * plane does to the bot is a frame to it. Connecting hands the token over
- * once, and is answered by the `telegram.state` the host reports (or a
- * refusal); disconnecting is fire and forget; a send waits for its answer.
+ * A host's Telegram bot, over its runner link: the token and the poller are the
+ * runner's, so everything the control plane does to the bot is a frame to it.
+ * Connecting hands the token over once, and is answered by the `telegram.state`
+ * the host reports (or a refusal); disconnecting is fire and forget; a send
+ * waits for its answer.
  */
 export interface TelegramDevicePort {
   reach(hostId: string): TelegramDeviceReach;

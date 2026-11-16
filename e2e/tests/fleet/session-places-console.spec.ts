@@ -6,11 +6,10 @@ import { waitForLifecycle } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
 /**
- * Where a session runs, from the console to a real runner
- * (`product/versions/mvp/24-session-places.md`): New session's Where chip and
- * folder picker start a session in a folder the host already has, Settings'
- * Open terminal starts a blank terminal in the home directory, and the
- * sidebar and the delete dialog say what each one is. Needs the console on
+ * Where a session runs, from the console to a real runner: New session's Where
+ * chip and folder picker start a session in a folder the host already has,
+ * Settings' Open terminal starts a blank terminal in the home directory, and
+ * the sidebar and the delete dialog say what each one is. Needs the console on
  * `WEB_URL`.
  */
 test.describe.configure({ timeout: 240_000 });

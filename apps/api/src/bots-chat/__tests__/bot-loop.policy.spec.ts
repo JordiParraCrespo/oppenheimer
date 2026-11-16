@@ -12,7 +12,7 @@ import {
 } from '../domain/bot-loop.policy';
 
 /**
- * A loop's decisions (`25-bots.md` §4.1, `/loop`), as pure functions of the
+ * A loop's decisions, as pure functions of the
  * loop, the time and the turn that ended. What breaks this: a run job that
  * was moved or already ran queuing a second run; a fixed loop drifting off
  * its slots, or running past its expiry; a busy bot handed a pile of runs; a

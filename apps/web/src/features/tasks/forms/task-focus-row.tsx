@@ -6,7 +6,7 @@ import { TaskDateRow } from './task-date-row';
 /**
  * The To do row: the day the task goes on To do, apart from when it is due.
  * It stays on To do from that day until it is done; clearing it takes the
- * task off (`product/versions/mvp/20-plan-calendar.md` §6).
+ * task off.
  */
 export function TaskFocusRow({
   control,

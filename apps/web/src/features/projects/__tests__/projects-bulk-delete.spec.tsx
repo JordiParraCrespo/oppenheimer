@@ -98,4 +98,18 @@ describe('Projects bulk delete', () => {
     expect(await screen.findByText('projects.deleteProjects.partial:1')).toBeTruthy();
     expect(screen.getByText('projects.selection.count:1')).toBeTruthy();
   });
+
+  it('narrows the cards to a search, and Select all reaches only the ones in view', () => {
+    render(<ProjectsList query="co" onNew={vi.fn()} />);
+    expect(screen.getByText('Coverd')).toBeTruthy();
+    expect(screen.queryByText('Atlas')).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'projects.selection.selectOne:Coverd' }));
+    expect(screen.getByText('projects.selection.count:1')).toBeTruthy();
+  });
+
+  it('says nothing matches when a search hides every card, not that there are no projects', () => {
+    render(<ProjectsList query="zzz" onNew={vi.fn()} />);
+    expect(screen.getByText('common.search.noMatch')).toBeTruthy();
+    expect(screen.queryByText('projects.list.empty')).toBeNull();
+  });
 });

@@ -5,9 +5,9 @@ import { WhatsappAccountsSkeleton } from '@/features/whatsapp/components/whatsap
 import { WhatsappAccounts } from '@/features/whatsapp/sections/whatsapp-accounts';
 
 /**
- * Settings → WhatsApp (`product/next-steps/whatsapp.md` §1): the reader's own
- * numbers, each a WhatsApp linked device held by the runner on one of their
- * hosts, whose chats their bots read and write in.
+ * Settings → WhatsApp: the reader's own numbers, each a WhatsApp linked
+ * device held by the runner on one of their hosts, whose chats their bots
+ * read and write in.
  */
 export function WhatsappSettingsScreen() {
   const { t } = useTranslation();

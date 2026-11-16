@@ -7,8 +7,7 @@ import { CursorCloudAgentsGateway, keyBucket } from '../cursor-cloud-agents.gate
  * on the person's key, our id as Cursor's agent id), how Cursor's answers
  * read in our words (a run's status, branch, pull request and reply), how
  * its refusals map onto the module's codes, and that a refusal for rate is
- * `CLOUD_AGENTS_007` and pauses the next call without reaching the network
- * (`.agents/rules/integrations.md`).
+ * `CLOUD_AGENTS_007` and pauses the next call without reaching the network.
  */
 
 const ACCESS = { apiKey: 'crsr_placeholder_key', bucket: 'user:42' };

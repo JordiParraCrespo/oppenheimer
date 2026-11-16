@@ -28,9 +28,8 @@ async function tokenContext(api: APIRequestContext, scopes: string[]): Promise<A
 }
 
 /**
- * The loop an unattended agent and its owner close through the Inbox
- * (`product/versions/mvp/29-inbox.md`, "Reports"), on the real API: the agent
- * holds only the two report scopes.
+ * The loop an unattended agent and its owner close through the Inbox, on the
+ * real API: the agent holds only the two report scopes.
  */
 test.describe('Inbox reports', () => {
   test('an agent sends a problem with a picture, the owner answers, the agent reads the answer', async () => {

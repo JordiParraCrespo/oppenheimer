@@ -85,7 +85,7 @@ export function usePullRequestQueue<TData = PullRequestQueue>(
     placeholderData: keepPreviousData,
     ...options,
     // The rows are drawn from the first read; each poll fills a few more of
-    // their parts, until the answer says it has stopped filling (#247).
+    // their parts, until the answer says it has stopped filling.
     ...usePollWhile<PullRequestQueue>(
       'pullRequestsFilling',
       pullRequestsKeys.queue(scope),

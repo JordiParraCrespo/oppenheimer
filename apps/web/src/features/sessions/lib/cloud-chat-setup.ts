@@ -1,7 +1,7 @@
 /**
  * What a repository and a Claude Code cloud environment need for a cloud
- * session's chat to reach the console (`product/next-steps/cloud-agents.md`,
- * "The chat of a cloud session"), written out for the setup panel to copy.
+ * session's chat to reach the console, written out for the setup panel to
+ * copy.
  */
 
 /** Where the repository keeps the hook the console hands out (`public/cloud-chat-hook.mjs`). */

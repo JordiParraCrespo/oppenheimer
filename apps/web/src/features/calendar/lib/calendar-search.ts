@@ -3,7 +3,7 @@ import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
 import { CALENDAR_VIEWS } from './calendar-view';
 
-/** What the month draws, each one a toggle in the sidebar (`20-plan-calendar.md` §1). */
+/** What the month draws, each one a toggle in the sidebar. */
 export const CALENDAR_LAYERS = ['google', 'events', 'tasks', 'automations'] as const;
 export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 

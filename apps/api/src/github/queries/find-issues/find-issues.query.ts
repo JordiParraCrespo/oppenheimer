@@ -5,7 +5,7 @@ import type { GithubIssueFilter } from '../../infrastructure/github-issues.port'
 
 /**
  * It has no controller of its own: the console shows no issues yet, and a
- * bot's `list_issues` tool is what dispatches it (`25-bots.md` §4.4).
+ * bot's `list_issues` tool is what dispatches it.
  */
 export class FindIssuesQuery extends QueryBase {
   readonly scope: AccessScope;

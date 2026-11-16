@@ -6,6 +6,8 @@
     "copied": "Copied",
     "copy": "Copy",
     "copyCode": "Copy code",
+    "wrapLines": "Wrap lines",
+    "unwrapLines": "Unwrap lines",
     "loading": "Loading...",
     "or": "or",
     "relative": {
@@ -704,6 +706,7 @@
       "needsInput": "Needs input",
       "inProgress": "In progress",
       "noMilestones": "No milestones yet.",
+      "sessionWaiting": "Session waiting on you",
       "nothingNeedsInput": "Nothing waits on you.",
       "nothingInProgress": "Nothing in progress.",
       "gone": "That project is no longer here.",
@@ -2421,7 +2424,8 @@
       "missed": "Skipped: the slot was missed",
       "not_launchable": "Skipped: the session could not start",
       "agent_unavailable": "Skipped: the agent is not on the host",
-      "unattended": "Skipped: its bot’s owner is away"
+      "unattended": "Skipped: its bot’s owner is away",
+      "idle": "Skipped: nothing new since the last heartbeat"
     },
     "pausedReason": {
       "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -3145,6 +3149,7 @@
       "notesPlaceholder": "Add notes",
       "status": "Status",
       "project": "Project",
+      "chooseProject": "Choose a project",
       "milestone": "Milestone",
       "none": "None",
       "due": "Due",

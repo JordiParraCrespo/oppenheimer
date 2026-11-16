@@ -22,11 +22,10 @@ import { folderInput, leafOf, shortenPath } from '../lib/folder-path';
 import { FolderRow } from './folder-row';
 
 /**
- * The body of the folder chip's popup (`product/versions/mvp/24-session-places.md`
- * §4, the export's path pane): a path field, the recent folders at the start,
- * the crumbs and the way up, the folders of the one listed, the folders
- * further down whose name holds a bare name typed, and **Use** with a line
- * saying what opening it does. Typing a path that ends in `/` lists it;
+ * The body of the folder chip's popup: a path field, the recent folders at
+ * the start, the crumbs and the way up, the folders of the one listed, the
+ * folders further down whose name holds a bare name typed, and **Use** with a
+ * line saying what opening it does. Typing a path that ends in `/` lists it;
  * anything after the last `/` narrows the list to names that hold it.
  *
  * Props in, a path out: the section above reads the host's listing and holds

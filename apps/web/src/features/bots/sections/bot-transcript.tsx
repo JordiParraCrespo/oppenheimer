@@ -33,18 +33,17 @@ import {
 import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
 
 /**
- * The chat itself (`25-bots.md` §3): every turn as you sent it and as the bot
- * answered, live while one runs, with a marker where the day changes or the
- * next turn runs on another model. Before the first message, the bot's
- * hello. It keeps the bot's stream open while it is on screen, so text
- * arrives as the bot writes it and each stored message the moment it lands.
- * A Needs input card decided while the chat is open, here or elsewhere, is
- * drawn as its decided line at once, until the stored line takes its place;
- * an approved call still running is held under the turn its yes opened.
- * Once the newest turn has ended, Retry sends your last message again.
- * While the tool calls are hidden, a routine run that did nothing else is left
- * out (`isQuietRoutineRun`).
- * What you send glides to the top of the pane, the answer beneath it.
+ * The chat itself: every turn as you sent it and as the bot answered, live
+ * while one runs, with a marker where the day changes or the next turn runs
+ * on another model. Before the first message, the bot's hello. It keeps the
+ * bot's stream open while it is on screen, so text arrives as the bot writes
+ * it and each stored message the moment it lands. A Needs input card decided
+ * while the chat is open, here or elsewhere, is drawn as its decided line at
+ * once, until the stored line takes its place; an approved call still running
+ * is held under the turn its yes opened. Once the newest turn has ended,
+ * Retry sends your last message again. While the tool calls are hidden, a
+ * routine run that did nothing else is left out (`isQuietRoutineRun`). What
+ * you send glides to the top of the pane, the answer beneath it.
  */
 export function BotTranscript({
   botId,

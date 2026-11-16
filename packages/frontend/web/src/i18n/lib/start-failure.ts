@@ -28,7 +28,7 @@ export interface FailureReason {
  */
 const HELP_LINKS: Readonly<Record<string, string>> = {
   // A Codex cloud environment the codex CLI cannot reach: the ones made in
-  // ChatGPT's Settings → Codex Cloud (product/next-steps/cloud-agents.md).
+  // ChatGPT's Settings → Codex Cloud.
   SESS_010: 'https://chatgpt.com/settings/codex-cloud',
 };
 

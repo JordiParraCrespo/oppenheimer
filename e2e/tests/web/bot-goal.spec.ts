@@ -2,8 +2,7 @@ import { expect, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * The built-in `/goal` in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md` §4.1, "Built-in commands"): the chat's
+ * The built-in `/goal` in a browser, against the real control plane: the chat's
  * `/` menu offers it under Commands before any skill, `/goal` with no
  * condition keeps send off and says what it lacks, `/goal clear` stops the
  * goal without sending the bot a message, and the API refuses both as

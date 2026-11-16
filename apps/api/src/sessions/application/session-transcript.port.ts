@@ -24,8 +24,7 @@ export type SessionTranscriptOutcome =
 
 /**
  * What the module that owns the runner link implements so a reader with no
- * browser attached can read a session's conversation
- * (`product/next-steps/agent-tools.md` §8). The conversation lives on the
+ * browser attached can read a session's conversation. The conversation lives on the
  * host; like `SessionSharedFilesPort` it waits for the runner's answer, and
  * nothing is cached.
  */

@@ -21,8 +21,7 @@ interface Refusal {
  *
  * It lives in the process rather than in Redis: this package depends on nothing
  * in the workspace, and every caller of `complete` has a fallback, so the cost
- * of another replica learning the limit from its own refusal is one call
- * (`.agents/rules/integrations.md`).
+ * of another replica learning the limit from its own refusal is one call.
  */
 export class ProviderPause {
   private until = 0;

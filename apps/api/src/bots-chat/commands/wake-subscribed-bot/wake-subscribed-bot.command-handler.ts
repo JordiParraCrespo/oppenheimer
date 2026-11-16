@@ -9,7 +9,7 @@ import { wakeFor } from '../../domain/bot-subscription.policy';
 import { WakeSubscribedBotCommand } from './wake-subscribed-bot.command';
 
 /**
- * A session a bot follows moved (`27-bot-subscriptions.md` §4). The event
+ * A session a bot follows moved. The event
  * that led here is not trusted for what happened: the session is read again,
  * as the bot's owner, and `wakeFor` decides from the task as it stands now.
  * The wake itself is the one wake path (`BotSessionWakeResolver`), keyed by
