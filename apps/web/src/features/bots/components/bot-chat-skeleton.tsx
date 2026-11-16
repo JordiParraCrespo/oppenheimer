@@ -41,8 +41,8 @@ export function BotChatSkeleton() {
       <div className="min-h-0 flex-1 overflow-hidden px-4 pt-6 pb-10 sm:px-8">
         <BotTranscriptSkeleton />
       </div>
-      <div className="@container">
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2 px-3 pb-3 @2xl:px-8 @2xl:pb-4">
+      <div className="px-4 pb-4 sm:px-8">
+        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <ChatComposer
             layout="inline"
             inert
