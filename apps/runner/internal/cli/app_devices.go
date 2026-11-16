@@ -31,6 +31,10 @@ func hostDevices(discover bool) (*devapp.Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", EnvDevices, err)
 	}
+	screenWidth, err := deviceScreenWidth(os.Getenv(EnvDeviceScreenWidth))
+	if err != nil {
+		return nil, err
+	}
 	simulatorServer := os.Getenv(EnvArgentSimulatorServer)
 	if simulatorServer == "" {
 		simulatorServer = argent.SimulatorServer()
@@ -47,6 +51,7 @@ func hostDevices(discover bool) (*devapp.Service, error) {
 		ToolsToken:      os.Getenv(EnvArgentToken),
 		ArgentHome:      argentHome,
 		AndroidHome:     os.Getenv("ANDROID_HOME"),
+		ScreenWidth:     screenWidth,
 	}), nil
 }
 

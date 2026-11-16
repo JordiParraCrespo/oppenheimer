@@ -66,6 +66,7 @@ const INTEGER_TYPES = {
   'welcome.protocol': 'int',
   'welcome.epoch': 'uint64',
   'attachment.credit.bytes': 'int',
+  'device.input.durationMs': 'int',
   'attachment.path.offset': 'uint64',
   // A byte offset into a transcript file, as Go's `os` reads one.
   'attachment.chat.before': 'int64',

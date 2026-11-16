@@ -379,7 +379,7 @@ func unit(paths Paths) svcdomain.Unit {
 		env[EnvTelegram] = telegram
 	}
 	// The devices and the Argent the installer was told about.
-	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, "ANDROID_HOME"} {
+	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, EnvDeviceScreenWidth, "ANDROID_HOME"} {
 		if value := os.Getenv(key); value != "" {
 			env[key] = value
 		}
