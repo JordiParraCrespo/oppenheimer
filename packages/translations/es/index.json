@@ -2078,7 +2078,8 @@
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-      }
+      },
+      "sideHello": "Pregunta a {{name}} lo que quieras mientras trabajas. Puede leer tus sesiones y actuar sobre ellas."
     },
     "settings": {
       "back": "Volver al chat",

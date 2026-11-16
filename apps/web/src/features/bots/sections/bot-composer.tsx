@@ -1,4 +1,4 @@
-import { ChatComposer, FieldError } from '@oppenheimer/design-system-web';
+import { ChatComposer, DropZone, FieldError } from '@oppenheimer/design-system-web';
 import { type BotWaitingMessage, isSendingBotTurn } from '@oppenheimer/frontend-consumer';
 import {
   type SendBotMessageVariables,
@@ -11,13 +11,7 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import {
-  dictateInto,
-  dictationSlots,
-  ErrorAlert,
-  useDictation,
-  usePaneDrop,
-} from '@oppenheimer/frontend-web';
+import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
@@ -30,6 +24,7 @@ import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
+import { BotPaneDrop } from '@/features/bots/components/bot-pane-drop';
 import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
@@ -76,7 +71,8 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * one ("History 1/2").
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
- * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
+ * drop anywhere on the chat's pane (`BotPaneDrop`; beside a session, on the
+ * box alone) holds them as tiles over
  * the text, each uploaded at once (`useBotImages`). A message may be images
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
@@ -99,6 +95,7 @@ export function BotComposer({
   model,
   tools,
   engine,
+  layout = 'stacked',
 }: {
   botId: string;
   name: string;
@@ -107,6 +104,11 @@ export function BotComposer({
   model: string | null;
   tools: ReactNode;
   engine: ReactNode;
+  /**
+   * The design system's composer layouts: `stacked` on the bot's own page,
+   * `inline` beside a session, one row with the chips under the box.
+   */
+  layout?: 'stacked' | 'inline';
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -126,7 +128,6 @@ export function BotComposer({
   const modelLabel = botModelOf(provider, model)?.label ?? providerLabel;
   const images = useBotImages(botId, takesImages, modelLabel);
   const picker = useRef<HTMLInputElement>(null);
-  usePaneDrop(images.hold);
   // The images each send took off the composer, to hold again if the API refuses it.
   const heldFor = useRef(new WeakMap<SendBotMessageVariables, readonly HeldImage[]>());
   const send = useSendBotMessage({
@@ -256,62 +257,68 @@ export function BotComposer({
             onPick={slash.pick}
           />
         ) : null}
-        <ChatComposer
-          onKeyDownCapture={onKeyDownCapture}
-          value={draft}
-          command={leadingCommand(draft) ?? undefined}
-          onValueChange={setDraft}
-          inputRef={field}
-          onSubmit={() => submit(running)}
-          onAltSubmit={running ? () => submit(false) : undefined}
-          onStop={() => active && stopTurn(active.id)}
-          busy={
-            (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
-          }
-          caption={recall.at ? t('bots.chat.history', recall.at) : undefined}
-          sendBlockedReason={blocked}
-          allowEmpty={images.images.length > 0}
-          onAttach={() => picker.current?.click()}
-          onPaste={onPaste}
-          attachments={
-            images.images.length > 0
-              ? images.images.map((image) => (
-                  <BotComposerImage
-                    key={image.key}
-                    image={image}
-                    onRemove={() => images.remove(image.key)}
-                  />
-                ))
-              : undefined
-          }
-          placeholder={
-            running
-              ? t('bots.chat.placeholderRunning', { name })
-              : t('bots.chat.placeholder', { name })
-          }
-          tools={tools}
-          engine={engine}
-          above={
-            top ? (
-              <BotComposerTop
-                botId={botId}
-                top={top}
-                runningTurnId={active?.status === 'running' ? active.id : null}
-                noKey={noKey}
-                notice={builtIn.notice}
-                onAddKey={() => navigate({ to: '/settings/model-providers' })}
-                onCancel={stopTurn}
-                onTakeBack={takeBack}
-              />
-            ) : undefined
-          }
-          dictation={dictationSlots(dictation)}
-          labels={{
-            send: t('bots.chat.send'),
-            stop: t('bots.chat.stop'),
-            attach: t('bots.chat.images.attach'),
-          }}
-        />
+        {layout === 'stacked' ? <BotPaneDrop onFiles={images.hold} /> : null}
+        <DropZone onFiles={images.hold} disabled={layout === 'stacked'}>
+          <ChatComposer
+            layout={layout}
+            onKeyDownCapture={onKeyDownCapture}
+            value={draft}
+            command={leadingCommand(draft) ?? undefined}
+            onValueChange={setDraft}
+            inputRef={field}
+            onSubmit={() => submit(running)}
+            onAltSubmit={running ? () => submit(false) : undefined}
+            onStop={() => active && stopTurn(active.id)}
+            busy={
+              (active !== null || send.isPending) &&
+              draft.trim() === '' &&
+              images.images.length === 0
+            }
+            caption={recall.at ? t('bots.chat.history', recall.at) : undefined}
+            sendBlockedReason={blocked}
+            allowEmpty={images.images.length > 0}
+            onAttach={() => picker.current?.click()}
+            onPaste={onPaste}
+            attachments={
+              images.images.length > 0
+                ? images.images.map((image) => (
+                    <BotComposerImage
+                      key={image.key}
+                      image={image}
+                      onRemove={() => images.remove(image.key)}
+                    />
+                  ))
+                : undefined
+            }
+            placeholder={
+              running
+                ? t('bots.chat.placeholderRunning', { name })
+                : t('bots.chat.placeholder', { name })
+            }
+            tools={tools}
+            engine={engine}
+            above={
+              top ? (
+                <BotComposerTop
+                  botId={botId}
+                  top={top}
+                  runningTurnId={active?.status === 'running' ? active.id : null}
+                  noKey={noKey}
+                  notice={builtIn.notice}
+                  onAddKey={() => navigate({ to: '/settings/model-providers' })}
+                  onCancel={stopTurn}
+                  onTakeBack={takeBack}
+                />
+              ) : undefined
+            }
+            dictation={dictationSlots(dictation)}
+            labels={{
+              send: t('bots.chat.send'),
+              stop: t('bots.chat.stop'),
+              attach: t('bots.chat.images.attach'),
+            }}
+          />
+        </DropZone>
       </div>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>

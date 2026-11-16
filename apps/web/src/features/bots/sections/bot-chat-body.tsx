@@ -34,11 +34,17 @@ import { BotUsageCard } from './bot-usage-card';
 export function BotChatBody({
   bot,
   toolCallsShown,
+  hello,
+  layout = 'stacked',
   children,
 }: {
   bot: BotEntity;
   /** Whether the transcript shows each turn's tool calls, the head's choice. */
   toolCallsShown: boolean;
+  /** What greets an empty chat; the bot's own page's hello when absent. */
+  hello?: ReactNode;
+  /** The composer's layout: `inline` beside a session, a row with its chips under it. */
+  layout?: 'stacked' | 'inline';
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -63,13 +69,13 @@ export function BotChatBody({
             </QueryState.Pending>
             <QueryState.Error fallback={t('bots.chat.loadFailed')} />
             <QueryState.Data>
-              <BotTranscript botId={bot.id} name={bot.name} />
+              <BotTranscript botId={bot.id} name={bot.name} hello={hello} />
             </QueryState.Data>
           </QueryState>
           <BotUsageCard botId={bot.id} />
         </BotChatScroller>
       </ToolCallsShownContext>
-      <div className="px-4 pb-4 sm:px-8">
+      <div className={layout === 'inline' ? 'px-3 pb-3' : 'px-4 pb-4 sm:px-8'}>
         <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <BotApprovalCard botId={bot.id} name={bot.name} />
           <BotQuestionCard botId={bot.id} />
@@ -80,6 +86,7 @@ export function BotChatBody({
           />
           <BotComposer
             key={bot.id}
+            layout={layout}
             botId={bot.id}
             name={bot.name}
             provider={bot.provider}

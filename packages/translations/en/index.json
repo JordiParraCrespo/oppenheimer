@@ -2051,7 +2051,8 @@
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."
-      }
+      },
+      "sideHello": "Ask {{name}} anything while you work. It can read your sessions and act on them."
     },
     "settings": {
       "back": "Back to the chat",
