@@ -1,4 +1,4 @@
-import { ChatTab, ChatTabStrip, IconButton } from '@oppenheimer/design-system-web';
+import { Button, ChatTab, ChatTabStrip, IconButton } from '@oppenheimer/design-system-web';
 import { ArrowUpRightIcon, XIcon } from '@oppenheimer/design-system-web/icons';
 import {
   useBots,
@@ -145,6 +145,18 @@ export function SessionSidePane({
           <XIcon />
         </IconButton>
       </header>
+      {/* The shells could not be listed: said here, with a way to ask again,
+          rather than Terminal quietly leaving the launcher. */}
+      <ErrorAlert
+        error={windows.error}
+        fallback={t('sessions.side.terminal.loadFailed')}
+        action={
+          <Button variant="ghost" size="sm" onClick={() => windows.refetch()}>
+            {t('common.retry')}
+          </Button>
+        }
+        className="m-3"
+      />
       <ErrorAlert
         error={closeWindow.error}
         fallback={t('sessions.side.terminal.closeFailed')}

@@ -754,18 +754,23 @@ export function useSuspenseSessionPorts(sessionId: string) {
 /**
  * The session's terminal windows, for its Terminal tab: window 0 the agent,
  * 1 and up the plain shells opened in its worktree. Asked of the host on
- * mount, and kept in step by {@link useOpenSessionWindow} and
+ * mount and again while it is on screen (`sessionWindows` in `LIVE_POLL`),
+ * so another device's shells and a host back online show; kept in step by
+ * {@link useOpenSessionWindow} and
  * {@link useCloseSessionWindow} from their answers. An offline host, or a
  * runner too old to list, is the answer's `state`, not a failure.
  */
 export function useSessionWindows(sessionId: string | undefined) {
   const app = useConsumerApp();
+  const queryKey = sessionsKeys.windows(sessionId);
+  const poll = usePollWhile<SessionWindows>('sessionWindows', queryKey, sessionId !== undefined);
   return useQuery<SessionWindows, Error>({
-    queryKey: sessionsKeys.windows(sessionId),
+    queryKey,
     queryFn: sessionId ? () => app.sessions.listWindows(sessionId) : skipToken,
     staleTime: 0,
     retry: false,
     refetchOnWindowFocus: false,
+    ...poll,
   });
 }
 
