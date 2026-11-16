@@ -153,8 +153,16 @@ const JSON_DEMO = JSON.stringify(
 );
 
 /** The chat sits on the pane's recessed ground in the product (grey in light, the canvas in dark), so its cards read as cards here too. */
+/**
+ * A bot's chat ground: the recessed grey, the chat's own wash, so the wash
+ * takes the card here, as the console's bots chat sets it.
+ */
 function ChatSurface({ children }: { children: React.ReactNode }) {
-  return <div className="w-full rounded-lg border border-border-subtle bg-canvas-recessed p-6">{children}</div>;
+  return (
+    <div className="w-full rounded-lg border border-border-subtle bg-canvas-recessed p-6 [--chat-wash:var(--card)]">
+      {children}
+    </div>
+  );
 }
 
 const icon = (Icon: React.ComponentType<{ className?: string }>, label: string) => (
