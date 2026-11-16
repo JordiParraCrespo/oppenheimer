@@ -25,6 +25,21 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
 };
 
 /**
+ * The send button's look, by layout and state. Inline, send is ink and rests
+ * on the wash until there is something to send, and Stop, the one control a
+ * reader reaches for while the agent works, takes the action blue. Stacked,
+ * send is the primary and Stop the ink.
+ */
+function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
+  if (layout === 'inline') {
+    return busy
+      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
+  }
+  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
+}
+
+/**
  * ChatComposer — a bot's composer (Bots): a card at the 28px radius with no
  * border until it takes focus (the plain border then, no ring), its text at
  * 15px growing from two lines to eight, then a foot row: `tools` (the
@@ -58,21 +73,6 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * sent messages are being stepped through). It is told to a screen reader as
  * it changes.
  */
-/**
- * The send button's look, by layout and state. Inline, send is ink and rests
- * on the wash until there is something to send, and Stop, the one control a
- * reader reaches for while the agent works, takes the action blue. Stacked,
- * send is the primary and Stop the ink.
- */
-function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
-  if (layout === 'inline') {
-    return busy
-      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
-      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
-  }
-  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
-}
-
 function ChatComposer({
   value,
   onValueChange,
