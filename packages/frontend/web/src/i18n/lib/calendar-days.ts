@@ -54,4 +54,4 @@ export function monthGridDays(month: string): string[] {
   return days;
 }
 
-export { daysBetween, todayIn } from '@oppenheimer/frontend-core';
+export { todayIn } from '@oppenheimer/frontend-core';

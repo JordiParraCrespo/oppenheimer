@@ -1,6 +1,6 @@
 import { useNow } from '@oppenheimer/design-system-mobile';
 import { Text } from '@oppenheimer/design-system-mobile/text';
-import { type TaskEntity, taskSessionsOf } from '@oppenheimer/frontend-consumer';
+import { cardView, type TaskEntity, taskSessionsOf } from '@oppenheimer/frontend-consumer';
 import {
   useHosts,
   useMilestones,
@@ -14,7 +14,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { DetailCard } from '../components/detail-card';
 import { DetailLine } from '../components/detail-line';
 import { SessionChip } from '../components/session-chip';
-import { dueOf } from '../lib/task-due';
+import { cardContext } from '../lib/card-context';
 import { TaskCheck } from './task-check';
 import { TaskStatusPicker } from './task-status';
 
@@ -36,11 +36,21 @@ export function TaskDetail({ task }: { task: TaskEntity }) {
   const milestone = task.milestoneId
     ? milestones?.find((row) => row.id === task.milestoneId)
     : null;
-  const due = dueOf(task, today, i18n.resolvedLanguage ?? 'en', {
-    today: t('tasks.dates.today'),
-    tomorrow: t('tasks.dates.tomorrow'),
-    yesterday: t('tasks.dates.yesterday'),
-  });
+  const view = cardView(
+    task,
+    cardContext({
+      filter: {},
+      today,
+      locale: i18n.resolvedLanguage ?? 'en',
+      words: {
+        today: t('tasks.dates.today'),
+        tomorrow: t('tasks.dates.tomorrow'),
+        yesterday: t('tasks.dates.yesterday'),
+      },
+      projects: projects ?? [],
+      milestones: milestones ?? [],
+    }),
+  );
   const working = taskSessionsOf(
     task,
     new Map((sessions ?? []).map((session) => [session.id, session])),
@@ -76,11 +86,11 @@ export function TaskDetail({ task }: { task: TaskEntity }) {
         {milestone ? (
           <DetailLine label={t('tasks.dialog.milestone')} value={milestone.name} first={false} />
         ) : null}
-        {due ? (
+        {view.due ? (
           <DetailLine
             label={t('tasks.mobile.due')}
-            value={due.text}
-            tone={due.tone === 'overdue' ? 'destructive' : undefined}
+            value={view.due}
+            tone={view.dueTone === 'overdue' ? 'destructive' : undefined}
             first={false}
           />
         ) : null}

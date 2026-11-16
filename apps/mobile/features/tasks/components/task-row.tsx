@@ -1,10 +1,10 @@
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cn } from '@oppenheimer/design-system-mobile/utils';
+import type { TaskDueTone } from '@oppenheimer/frontend-consumer';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import type { DueTone } from '../lib/task-due';
 
-const DUE: Record<DueTone, string> = {
+const DUE: Record<TaskDueTone, string> = {
   overdue: 'text-destructive',
   soon: 'text-foreground',
   default: '',
@@ -27,7 +27,7 @@ export function TaskRow({
   title: string;
   done: boolean;
   filed: string | null;
-  due: { text: string; tone: DueTone } | null;
+  due: { text: string; tone: TaskDueTone } | null;
   check: ReactNode;
   session: ReactNode;
   first: boolean;

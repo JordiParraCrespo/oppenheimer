@@ -6,6 +6,7 @@ import {
   type BoardFilter,
   boardColumnsOf,
   boardCounts,
+  cardView,
   doneCutoffOf,
   sessionLineOf,
   type TaskEntity,
@@ -27,7 +28,7 @@ import { Pressable, View } from 'react-native';
 import { SessionChip } from '../components/session-chip';
 import { TaskRow } from '../components/task-row';
 import { TaskRowSkeleton } from '../components/task-row-skeleton';
-import { dueOf } from '../lib/task-due';
+import { cardContext } from '../lib/card-context';
 import { AddTask } from './add-task';
 import { TaskCheck } from './task-check';
 
@@ -103,35 +104,32 @@ export function PlanBoard() {
   const counts = boardCounts(rows, filter, today);
   const sessionsById = new Map((sessions ?? []).map((session) => [session.id, session]));
   const hostsById = new Map((hosts ?? []).map((host) => [host.id, host]));
-  const projectName = (id: string) => {
-    const row = projects?.find((candidate) => candidate.id === id);
-    return row?.isUnassigned ? null : (row?.name ?? null);
-  };
-  const milestoneName = (id: string | null) =>
-    id ? (milestones?.find((candidate) => candidate.id === id)?.name ?? null) : null;
-  const dayWords = {
-    today: t('tasks.dates.today'),
-    tomorrow: t('tasks.dates.tomorrow'),
-    yesterday: t('tasks.dates.yesterday'),
-  };
+  const context = cardContext({
+    filter,
+    today,
+    locale,
+    words: {
+      today: t('tasks.dates.today'),
+      tomorrow: t('tasks.dates.tomorrow'),
+      yesterday: t('tasks.dates.yesterday'),
+    },
+    projects: projects ?? [],
+    milestones: milestones ?? [],
+  });
 
   const row = (task: TaskEntity, index: number) => {
     const line = sessionLineOf(task, sessionsById, hostsById);
-    const filed = [
-      project === ALL ? projectName(task.projectId) : null,
-      milestoneName(task.milestoneId),
-    ]
-      .filter(Boolean)
-      .join(' · ');
+    const view = cardView(task, context);
+    const filed = [view.projectName, view.milestoneName].filter(Boolean).join(' · ');
     return (
       <Link key={task.id} href={`/tasks/${task.id}`} asChild>
         <Pressable accessibilityRole="button" className="active:bg-surface-hover">
           <TaskRow
             first={index === 0}
-            title={task.title}
-            done={task.isDone}
+            title={view.title}
+            done={view.done}
             filed={filed || null}
-            due={dueOf(task, today, locale, dayWords)}
+            due={view.due ? { text: view.due, tone: view.dueTone } : null}
             check={<TaskCheck task={task} />}
             session={
               line && !task.isDone ? (

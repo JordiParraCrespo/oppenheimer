@@ -2,15 +2,16 @@ import {
   afterTaskIdFor,
   boardColumnsOf,
   boardCounts,
+  cardView,
   columnOf,
   doneCutoffOf,
+  dueDayLabel,
   filingOf,
   TaskEntity,
 } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import { boardSearchSchema } from '../lib/board-search';
-import { cardView, dueDayLabel } from '../lib/card-view';
 import { projectIdsOfSlugs, projectParamOf, projectSlugsOf } from '../lib/plan-scope';
 
 function task(

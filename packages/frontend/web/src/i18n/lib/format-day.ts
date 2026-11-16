@@ -38,5 +38,3 @@ export function formatCalendarMonth(month: string, locale: string): string {
     utcMidnight(`${month}-01`),
   );
 }
-
-export { nearDay } from '@oppenheimer/frontend-core';

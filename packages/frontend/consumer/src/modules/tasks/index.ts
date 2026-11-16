@@ -24,6 +24,7 @@ export {
   type TaskMove,
   type TaskSessionLink,
 } from './task.entity';
+export { cardView, dueDayLabel, type TaskCardView, type TaskDueTone } from './task-card';
 export {
   mostUrgent,
   type SessionLine,
