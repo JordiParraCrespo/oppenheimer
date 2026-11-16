@@ -121,12 +121,16 @@ export function groupOrder(sections: readonly BotSection[]): string[] {
 
 /**
  * Where a drop among the groups leaves Ungrouped, from the sections' keys
- * after it: the group it is now above, or `undefined` when it is last.
- * `null` when Ungrouped is not drawn, so the drop says nothing of its place.
+ * after it: above a group, last, or not drawn (the drop says nothing of its
+ * place).
  */
-export function ungroupedBeforeIn(keys: readonly string[]): string | undefined | null {
+export type UngroupedDrop = { kind: 'before'; id: string } | { kind: 'last' } | { kind: 'absent' };
+
+export function ungroupedDropIn(keys: readonly string[]): UngroupedDrop {
   const at = keys.indexOf(UNGROUPED);
-  return at === -1 ? null : keys[at + 1];
+  if (at === -1) return { kind: 'absent' };
+  const below = keys[at + 1];
+  return below === undefined ? { kind: 'last' } : { kind: 'before', id: below };
 }
 
 /** A group's place among the groups alone, as the API's `position` counts it. */
@@ -169,14 +173,17 @@ export function inGroupOrder(
   sections: readonly BotSection[],
   keys: readonly string[],
 ): BotSection[] {
-  const named = sections.filter((section) => keys.includes(sectionKey(section)));
-  const ordered = [...named].sort(
-    (a, b) => keys.indexOf(sectionKey(a)) - keys.indexOf(sectionKey(b)),
-  );
-  let next = 0;
-  return sections.map((section) =>
-    keys.includes(sectionKey(section)) ? (ordered[next++] as BotSection) : section,
-  );
+  // The named sections' slots, in the order they are drawn, take the named sections in `keys`' order.
+  const isNamed = (section: BotSection) => keys.includes(sectionKey(section));
+  const ordered = sections
+    .filter(isNamed)
+    .sort((a, b) => keys.indexOf(sectionKey(a)) - keys.indexOf(sectionKey(b)));
+  const slots = sections.flatMap((section, at) => (isNamed(section) ? [at] : []));
+  const drawn = [...sections];
+  slots.forEach((at, nth) => {
+    drawn[at] = ordered[nth] as BotSection;
+  });
+  return drawn;
 }
 
 /**

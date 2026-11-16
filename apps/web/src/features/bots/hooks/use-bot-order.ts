@@ -15,7 +15,7 @@ import {
   inOrder,
   sectionOrder,
   UNGROUPED,
-  ungroupedBeforeIn,
+  ungroupedDropIn,
 } from '../lib/bot-groups';
 import { botDrop, PINNED_BOTS, splitPinnedBots } from '../lib/bot-pins';
 import type { BotPins } from './use-bot-pins';
@@ -30,8 +30,9 @@ export const GROUPS = 'groups';
  * (`groupId` and `position`, the API closing the others up around it), and
  * so is a group dragged above or below the others (its `position`). Ungrouped
  * drags among the groups too, and its place (`ungrouped`, the group it is
- * above) is kept on this device; a group dropped next to it moves that place
- * with it. Either is drawn where it was dropped while
+ * above) is kept on this device the moment it is dropped; a group dropped
+ * next to it moves that place with it, and a group write that fails puts the
+ * place back unless a later drop has moved it since. Either is drawn where it was dropped while
  * the write is in flight and until the list is read again after it lands,
  * and a write that fails puts it back and says so. While a drag is held the
  * sections are the ones the drag layer last published, and Ungrouped is
@@ -89,20 +90,20 @@ export function useBotOrder(
     const id = byItemId.get(itemId);
     if (!id) return;
     const keys = groupIdsOf(next);
-    const before = ungroupedBeforeIn(keys);
-    if (id === UNGROUPED) {
-      if (before !== null) ungrouped.setBefore(before);
-      // A write still in flight drew its drop from the held order; keep holding it.
-      if (moveGroup.isPending || move.isPending) setOrder(next);
-      return;
-    }
-    // The held order draws Ungrouped beside the group until the write lands; a failure leaves its place.
-    setOrder(next);
+    const drop = ungroupedDropIn(keys);
+    const previous = ungrouped.before;
+    const placed = drop.kind === 'before' ? drop.id : undefined;
+    if (drop.kind !== 'absent') ungrouped.setBefore(placed);
+    const writes = id !== UNGROUPED;
+    // Held while this drop's write, or an earlier one, is in flight: the order on screen is theirs.
+    if (writes || moveGroup.isPending || move.isPending) setOrder(next);
+    if (!writes) return;
     moveGroup.mutate(
       { id, position: groupPosition(keys, id) },
       {
-        onSuccess: () => {
-          if (before !== null) ungrouped.setBefore(before);
+        onError: () => {
+          if (drop.kind !== 'absent')
+            ungrouped.setBefore((current) => (current === placed ? previous : current));
         },
         onSettled,
       },

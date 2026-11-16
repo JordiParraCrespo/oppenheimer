@@ -9,11 +9,16 @@ import { useStoredList } from '@oppenheimer/frontend-web';
  */
 const UNGROUPED_PLACE_KEY = 'oppenheimer.bots.ungroupedBefore';
 
+type Before = string | undefined;
+
 export function useUngroupedPlace() {
   const [stored, setStored] = useStoredList(UNGROUPED_PLACE_KEY);
+  const asList = (groupId: Before) => (groupId ? [groupId] : []);
   return {
-    before: stored[0],
-    setBefore: (groupId: string | undefined) => setStored(groupId ? [groupId] : []),
+    before: stored[0] as Before,
+    /** The group Ungrouped is above, or a function of the one it is above now. */
+    setBefore: (next: Before | ((current: Before) => Before)) =>
+      setStored((current) => asList(typeof next === 'function' ? next(current[0]) : next)),
   };
 }
 

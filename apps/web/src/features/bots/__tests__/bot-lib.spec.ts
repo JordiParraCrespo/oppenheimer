@@ -21,7 +21,7 @@ import {
   inGroupOrder,
   inOrder,
   sectionOrder,
-  ungroupedBeforeIn,
+  ungroupedDropIn,
 } from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
@@ -107,10 +107,13 @@ describe('botSections', () => {
   });
 
   it('reads where a drop left Ungrouped, and a group’s place among the groups alone', () => {
-    expect(ungroupedBeforeIn(['engineering', 'ungrouped', 'research'])).toBe('research');
-    expect(ungroupedBeforeIn(['engineering', 'research', 'ungrouped'])).toBeUndefined();
+    expect(ungroupedDropIn(['engineering', 'ungrouped', 'research'])).toEqual({
+      kind: 'before',
+      id: 'research',
+    });
+    expect(ungroupedDropIn(['engineering', 'research', 'ungrouped'])).toEqual({ kind: 'last' });
     // Ungrouped not drawn: the drop says nothing of its place, which stays as stored.
-    expect(ungroupedBeforeIn(['engineering', 'research'])).toBeNull();
+    expect(ungroupedDropIn(['engineering', 'research'])).toEqual({ kind: 'absent' });
     expect(groupPosition(['ungrouped', 'research', 'engineering'], 'engineering')).toBe(1);
   });
 
