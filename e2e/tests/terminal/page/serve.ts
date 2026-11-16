@@ -37,6 +37,8 @@ declare global {
       renderer(): 'dom' | 'webgl';
       watchCursors(): void;
       stopWatching(): number[];
+      watchBubbles(text: string): void;
+      stopWatchingBubbles(): { grid: number; bubble: number | null }[];
       screen(): { x: number; y: number; width: number; height: number };
     };
   }
