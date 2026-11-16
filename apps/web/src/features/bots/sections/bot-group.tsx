@@ -1,7 +1,6 @@
 import {
   BotList,
   SidebarEmptyRow,
-  SidebarProjectGroup,
   SidebarProjectHeader,
   SortableGroup,
   SortableSidebarProjectGroup,
@@ -23,9 +22,9 @@ import { BotSidebarRow } from './bot-sidebar-row';
  * all hidden. Ungrouped has no menu. A rename is typed in the head's place.
  *
  * Its rows are a `SortableGroup` that takes bots, folded or empty, so a bot
- * drags into another place here or into this group from another. A group of
- * the reader's drags by its head among the other groups (a click still
- * folds it); Ungrouped stays where it is, last.
+ * drags into another place here or into this group from another. Every
+ * section, Ungrouped too, drags by its head among the others (a click still
+ * folds it).
  */
 export function BotGroup({
   section,
@@ -120,11 +119,9 @@ export function BotGroup({
     </SortableGroup>
   );
 
-  return group ? (
-    <SortableSidebarProjectGroup id={group.id} label={name} disabled={searching}>
+  return (
+    <SortableSidebarProjectGroup id={sectionKey(section)} label={name} disabled={searching}>
       {rows}
     </SortableSidebarProjectGroup>
-  ) : (
-    <SidebarProjectGroup>{rows}</SidebarProjectGroup>
   );
 }

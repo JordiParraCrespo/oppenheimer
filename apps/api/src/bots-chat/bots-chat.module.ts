@@ -69,6 +69,7 @@ import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnChannelPolicy } from './application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
+import { BotTurnHoldPolicy } from './application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
@@ -417,6 +418,7 @@ const queryHandlers: Provider[] = [
     BotDreamResolver,
     BotModelAccessResolver,
     BotTurnChannelPolicy,
+    BotTurnHoldPolicy,
     BotChannelWakeResolver,
     BotApprovalRequestFactory,
     BotQuestionDecisionResolver,

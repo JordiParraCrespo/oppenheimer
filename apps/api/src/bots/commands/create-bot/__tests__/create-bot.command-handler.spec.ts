@@ -16,6 +16,7 @@ import type { BotEntity } from '../../../domain/bot.entity';
 import { BotEntity as Bot } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
+import { BOT_FIRST_NAMES } from '../../../domain/bot-naming.policy';
 import type { ModelProviderCredentialEntity } from '../../../domain/model-provider-credential.entity';
 import { defaultBotProvider } from '../../../domain/model-provider-default.policy';
 import { CreateBotCommand } from '../create-bot.command';
@@ -106,11 +107,13 @@ describe('CreateBotCommandHandler', () => {
   });
 
   it('gives a blank bot a first name the workspace does not have yet, on the next colour', async () => {
-    const { handler, written } = setup(['Juno', 'Release manager']);
+    const { handler, written } = setup([...BOT_FIRST_NAMES.slice(1), 'Release manager']);
     await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
     const { bot } = written();
-    expect(bot.name).toBe('Milo');
-    expect(bot.avatarColor).toBe(BOT_AVATAR_COLORS[2]);
+    expect(bot.name).toBe(BOT_FIRST_NAMES[0]);
+    expect(bot.avatarColor).toBe(
+      BOT_AVATAR_COLORS[BOT_FIRST_NAMES.length % BOT_AVATAR_COLORS.length],
+    );
     expect(bot.createdByUserId).toBe(userId);
   });
 

@@ -266,7 +266,7 @@ function isSharedFact(queryClient: QueryClient, id: string, factId: string): boo
   return person?.facts.some((row) => row.id === factId) ?? false;
 }
 
-/** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
+/** A blank bot (a physicist's name such as "Feynman"), ungrouped. Open its chat with the answer. */
 /** A blank bot; the variables are the sections it shows in, none when left out. */
 export const useCreateBot = mutation<BotEntity, BotSection[] | undefined>({
   run: (app, sections) => app.bots.create(sections),

@@ -50,6 +50,7 @@ import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
 import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
 import { BotTurnChannelPolicy } from './bot-turn-channel.policy';
+import { BotTurnHoldPolicy } from './bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -69,7 +70,9 @@ export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'ste
  * turn ended. A message that opens with `/<name>` runs that skill of the
  * bot's: the skill's body is sent before the words. The bot's own rows are read by the turn's
  * workspace; what the owner can reach is read as the owner, so the bot sees
- * no more than they do.
+ * no more than they do. A routine's run or a wake that follows the
+ * provider refusing the account reads nothing and ends at once
+ * (`bot-provider-hold.policy.ts`).
  */
 @Injectable()
 export class BotTurnContextResolver {
@@ -94,12 +97,14 @@ export class BotTurnContextResolver {
     private readonly settings: BotPermissionsResolver,
     private readonly reviewers: BotRuleReviewerFactory,
     private readonly approvalStarted: BotApprovalStartedPolicy,
+    private readonly hold: BotTurnHoldPolicy,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
     if (!(await this.channels.answerable(turn))) return null;
+    if (await this.hold.held(turn, now)) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);

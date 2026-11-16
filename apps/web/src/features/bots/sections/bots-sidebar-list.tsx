@@ -14,6 +14,7 @@ import { BotsFilterMenu } from '@/features/bots/components/bots-filter-menu';
 import { GROUPS, useBotOrder } from '@/features/bots/hooks/use-bot-order';
 import { BotPinsContext, useBotPins } from '@/features/bots/hooks/use-bot-pins';
 import { useHiddenBots } from '@/features/bots/hooks/use-hidden-bots';
+import { useUngroupedPlace } from '@/features/bots/hooks/use-ungrouped-place';
 import { type BotSection, groupOrder, sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotGroup } from './bot-group';
 import { BotsEmptyCard } from './bots-empty-card';
@@ -22,20 +23,22 @@ import { PinnedBots } from './pinned-bots';
 
 /**
  * The Employees sidebar under its brand row: Search bots and its filter menu,
- * then the groups in their order and Ungrouped after them, then New group. It
- * reads the bots and the groups under Suspense, side by side, and holds what
- * the sections share: the settled search, which are folded, and the bots the
- * reader hid (`useHiddenBots`, from a row's menu or the filter menu's Show
- * bots). The half-typed search lives in the field and each section's clock in
- * the section, so a keystroke or a tick does not redraw the rows. Before the
- * first bot the list opens on the design's empty card. A refetch that fails
- * keeps the sections and says so above them.
+ * then the groups in their order with Ungrouped among them (last until the
+ * reader drags it), then New group. It reads the bots and the groups under
+ * Suspense, side by side, and holds what the sections share: the settled
+ * search, which are folded, and the bots the reader hid (`useHiddenBots`, from
+ * a row's menu or the filter menu's Show bots). The half-typed search lives in
+ * the field and each section's clock in the section, so a keystroke or a tick
+ * does not redraw the rows. Before the first bot the list opens on the
+ * design's empty card. A refetch that fails keeps the sections and says so
+ * above them.
  *
  * The bots drag into another place in their group or into another group
  * (`useBotOrder`), and the groups by their heads into another order, on the
- * sidebar's own `DragProvider`; not while a search narrows the list, since a
- * drop would lose the places of what it hides. Ungrouped stays last; a drop
- * beside a hidden bot keeps the hidden bot's place.
+ * sidebar's own `DragProvider`, Ungrouped's head among them (its place kept
+ * on this device, `useUngroupedPlace`); not while a search narrows the
+ * list, since a drop would lose the places of what it hides. A drop beside
+ * a hidden bot keeps the hidden bot's place.
  *
  * The bots the reader pinned (`useBotPins`), from a row's menu or by
  * dropping one on Pinned, are drawn above the groups instead of in them,
@@ -49,8 +52,9 @@ export function BotsSidebarList() {
   const term = query.trim();
   const { hidden, setShown, showAll } = useHiddenBots();
   const pins = useBotPins();
+  const ungrouped = useUngroupedPlace();
   const { pinned, sections, carrying, handlers, botError, groupError, resetBot, resetGroup } =
-    useBotOrder(bots, groups, term, pins, hidden);
+    useBotOrder(bots, groups, term, pins, hidden, ungrouped);
   const dragLabels = useDragLabels();
   const drawSection = (section: BotSection) => {
     const key = sectionKey(section);
@@ -125,9 +129,8 @@ export function BotsSidebarList() {
             items={groupOrder(sections).map(sortableProjectId)}
             accepts={['project']}
           >
-            {sections.filter((section) => section.group).map(drawSection)}
+            {sections.map(drawSection)}
           </SortableGroup>
-          {sections.filter((section) => !section.group).map(drawSection)}
         </DragProvider>
         <NewGroup />
       </div>

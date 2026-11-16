@@ -99,6 +99,7 @@ Then it prints the totals and writes every run to `reports/` (ignored by git).
 | 2026-11-15 | `main` before, with the three `failed-*` cases | claude-sonnet-5-5 | `failed-not-signed-in` 0/3 (reported the failure); `failed-named-host` 3/3; `failed-task-itself` 3/3 | 3 | 0 | 0 |
 | 2026-11-15 | step back to what the step was for; the `failed` wake starts the task on another capable host; a route must change the cause | claude-sonnet-5-5 | 27/27 at 3 runs | 0 | 0 | 0 |
 | 2026-11-15 | the same, after review: the cloud bullet tries another host, a failed session is no longer a reason to stop and ask, the wake's session marked as the bot's; `cloud-not-signed-in` added (3/3 on `main` before too: the tool's own failure answer moved it) | claude-sonnet-5-5 | 29/30 at 3 runs | 0 | 0 | 1 |
+| 2026-11-15 | the prompt rewrite: four-line failure rules; the `failed` wake checks the chat for a named host and speaks in the person's terms | claude-sonnet-5-5 | 29/30 at 3 runs, then the three `failed-*` cases 15/15 at 5 runs (one run had read a named host as its own choice before the chat check) | 0 | 1 then 0 | 0 |
 
 On the old wording a first run already started a new session; it was the
 chat full of the bot's own "still closed" that made every later run write

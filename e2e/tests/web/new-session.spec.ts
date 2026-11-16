@@ -32,7 +32,7 @@ test.describe('New session', () => {
     // ── The prompt box has the size the export gives it ──────────────────────
     // `field-sizing-content` sizes the line to what is in it, so only a browser
     // that applied the stylesheet sees the floor: 44px is `min-h-11`, the one
-    // line of `ComposerPill` (`NewSessionComposer.dc.html`), and the row of
+    // line of `ComposerPill`, and the row of
     // choices sits under the box, not inside it. Asserted here because the
     // composer needs a host, and pairing another would trip the per-IP throttle.
     const composer = page.getByRole('textbox', { name: /Describe a task/ });

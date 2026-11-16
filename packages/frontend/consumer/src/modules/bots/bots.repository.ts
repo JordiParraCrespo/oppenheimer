@@ -753,7 +753,7 @@ export class BotsRepository {
   }
 
   /**
-   * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
+   * A blank bot: a free first name (a physicist's, at random: "Feynman", "Curie"…), ungrouped, on
    * the workspace's default provider, shown in `sections` beside Employees.
    */
   create(sections?: BotSection[]): Promise<BotEntity> {

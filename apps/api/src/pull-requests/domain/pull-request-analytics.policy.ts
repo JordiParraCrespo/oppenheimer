@@ -57,10 +57,9 @@ export function daysOf(window: AnalyticsWindow): string[] {
 }
 
 /**
- * What one bar of the chart covers. A quarter is drawn by the week, as the
- * artboard draws it (`design/version1/PullRequests.dc.html`: thirteen weeks,
- * "Week of Aug 3"): ninety bars say less than thirteen, and a day's count over
- * a quarter is noise either way. A week and a month are drawn by the day.
+ * What one bar of the chart covers. A quarter is drawn by the week: thirteen
+ * bars, "Week of Aug 3", because ninety bars say less than thirteen, and a
+ * day's count over a quarter is noise either way. A week and a month are drawn by the day.
  */
 export type AnalyticsBucket = 'day' | 'week';
 

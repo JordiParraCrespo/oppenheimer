@@ -10,6 +10,7 @@ import { AutomationRunEntity } from '../../../automations/domain/automation-run.
 import { triggerFromInput } from '../../../automations/domain/trigger-config.policy';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
+import { BotTurnHoldPolicy } from '../../application/bot-turn-hold.policy';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { BotRoutineTarget } from '../bot-routine-target.adapter';
 import type { BotStreamPort } from '../bot-stream.port';
@@ -43,7 +44,12 @@ function routine() {
 }
 
 function setup(
-  options: { model?: boolean; outcome?: 'staged' | 'existing' | 'busy' | 'missing' } = {},
+  options: {
+    model?: boolean;
+    outcome?: 'staged' | 'existing' | 'busy' | 'missing';
+    /** How the bot's last turn on its provider failed, a minute ago; none by default. */
+    lastFailure?: 'usage_limit' | 'rate_limit';
+  } = {},
 ) {
   const automation = routine();
   const run = AutomationRunEntity.fire(
@@ -77,9 +83,18 @@ function setup(
     outcome: options.outcome ?? 'staged',
     turnId: options.outcome === 'existing' ? 'turn-first' : turn.id,
   }));
-  const turns = { enqueueOnce } as unknown as BotTurnRepositoryPort;
+  const last = options.lastFailure
+    ? { status: 'failed', failure: options.lastFailure, endedAt: new Date(now.getTime() - 60_000) }
+    : null;
+  const findLastOnProvider = vi.fn(async () => last);
+  const turns = { enqueueOnce, findLastOnProvider } as unknown as BotTurnRepositoryPort;
   const publish = vi.fn(async () => undefined);
-  const target = new BotRoutineTarget(access, turns, { publish } as unknown as BotStreamPort);
+  const target = new BotRoutineTarget(
+    access,
+    turns,
+    { publish } as unknown as BotStreamPort,
+    new BotTurnHoldPolicy(turns),
+  );
   const context: RunTargetContext = {
     run,
     automation,
@@ -129,6 +144,21 @@ describe('BotRoutineTarget', () => {
       pause: 'bot_provider_missing',
     });
     expect(enqueueOnce).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a routine queuing a turn into a provider that just said
+  // the account is out of credit, each run a failure card in the chat and,
+  // once held at the turn instead, a run that reads as completed.
+  it('skips a run, without pausing, while its provider just refused the account, and queues nothing', async () => {
+    const { target, context, enqueueOnce } = setup({ lastFailure: 'usage_limit' });
+    await expect(target.decide(context)).resolves.toEqual({
+      kind: 'skip',
+      reason: 'not_launchable',
+      pause: null,
+    });
+    expect(enqueueOnce).not.toHaveBeenCalled();
+    const passing = setup({ lastFailure: 'rate_limit' });
+    expect((await passing.target.decide(passing.context)).kind).toBe('launch');
   });
 
   it('skips a run while the routine’s last turn still waits or runs, asked under the queue’s lock', async () => {

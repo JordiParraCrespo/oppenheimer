@@ -40,15 +40,19 @@ async function ok<T>(response: Awaited<ReturnType<APIRequestContext['get']>>, st
   return (status === 204 ? undefined : await response.json()) as T;
 }
 
+/** The names a blank bot is given (`BOT_FIRST_NAMES` in the API), at random since 2026-11-15. */
+const PHYSICIST =
+  /^(Alvarez|Bohr|Curie|Dirac|Feynman|Gauss|Hawking|Joule|Kepler|Lorentz|Meitner|Noether|Ohm|Planck|Rubin|Salam|Thomson|Volta|Wu|Zwicky)$/;
+
 test.describe('Bots', () => {
   test('create, rename, group, edit documents, remember and delete a bot', async () => {
     test.setTimeout(120_000);
     const { api, userId } = await signedUpContext('bots');
 
-    // A blank bot takes the next first name; the second one gets the one after.
+    // A blank bot takes a physicist's name at random; the second one another.
     const first = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
     expect(first).toMatchObject({
-      name: 'Juno',
+      name: expect.stringMatching(PHYSICIST),
       groupId: null,
       position: 0,
       homeHostId: null,
@@ -57,7 +61,8 @@ test.describe('Bots', () => {
       learnAutomatically: true,
     });
     const second = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
-    expect(second).toMatchObject({ name: 'Milo', position: 1 });
+    expect(second).toMatchObject({ name: expect.stringMatching(PHYSICIST), position: 1 });
+    expect(second.name).not.toBe(first.name);
     expect(second.avatarColor).not.toBe(first.avatarColor);
 
     // No face until one is picked; a picked face comes back, and null drops it.
@@ -78,7 +83,7 @@ test.describe('Bots', () => {
       ['soul', 1],
       ['instructions', 1],
     ]);
-    expect(documents[0].content).toContain('You are Juno.');
+    expect(documents[0].content).toContain(`You are ${first.name}.`);
     expect(documents[1].content).toBe('');
 
     // Rename and choose a model and effort. A home host is only one the caller

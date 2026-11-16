@@ -4,6 +4,7 @@ import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-aut
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import {
   BOT_ACTIVE_TURN_STATUSES,
+  type BotProvider,
   type BotTurnLane,
   isChannelOrigin,
   QUEUE_NAMES,
@@ -22,7 +23,11 @@ import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import { loopKeyPrefix } from '../domain/bot-loop.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { heldBy } from '../domain/bot-rate-limit.policy';
-import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
+import {
+  type BotTurnContext,
+  type BotTurnEntity,
+  ENDED_TURN_STATUSES,
+} from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import {
@@ -95,6 +100,16 @@ function claimAttachmentsTo(
   if (!turn.requestedByUserId) return Promise.resolve(false);
   return claimAttachmentsWithin(manager, message, turn.requestedByUserId, new Date());
 }
+
+/**
+ * The turns that say something of the account to `findLastOnProvider`
+ * (`bot-provider-hold.policy.ts`): one that failed, or one that reached the
+ * provider and spent a token. A turn that ended without asking it (a held
+ * wake, one with nowhere to answer) says nothing, and must not hide the
+ * refusal before it.
+ */
+const SPOKE_FOR_THE_ACCOUNT =
+  "(turn.status = 'failed' OR turn.inputTokens + turn.outputTokens > 0)";
 
 @Injectable()
 export class BotTurnRepository
@@ -414,6 +429,30 @@ export class BotTurnRepository
       .addOrderBy('turn.id', 'DESC')
       .getOne();
     return record ? this.mapper.toDomain(record).context : null;
+  }
+
+  async findLastOnProvider(
+    organizationId: string,
+    botId: string,
+    provider: BotProvider,
+  ): Promise<BotTurnEntity | null> {
+    // IDX_bot_turn_bot finds the bot's turns.
+    const record = await this.repository
+      .createQueryBuilder('turn')
+      .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere('turn.provider = :provider', { provider })
+      .andWhere('turn.status IN (:...ended)', { ended: ENDED_TURN_STATUSES })
+      .andWhere(SPOKE_FOR_THE_ACCOUNT)
+      // By when it ended, not when it was sent: lanes run a later message
+      // before an earlier background turn. The bot's turns, sorted.
+      .orderBy('turn.endedAt', 'DESC', 'NULLS LAST')
+      .addOrderBy('turn.id', 'DESC')
+      .limit(1)
+      .getOne();
+    return record ? this.mapper.toDomain(record) : null;
   }
 
   async findForConversation(
