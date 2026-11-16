@@ -810,6 +810,7 @@
     "chatFailed": "No se pudo cargar el chat.",
     "actions": "Acciones del empleado",
     "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
-    "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo."
+    "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo.",
+    "botLoadFailed": "No se pudo cargar este empleado."
   }
 }

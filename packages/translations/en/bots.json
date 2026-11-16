@@ -795,6 +795,7 @@
     "chatFailed": "The chat could not be loaded.",
     "actions": "Employee actions",
     "decideFailed": "The decision didn't reach the bot. Try again.",
-    "answerFailed": "The answer didn't reach the bot. Try again."
+    "answerFailed": "The answer didn't reach the bot. Try again.",
+    "botLoadFailed": "This employee could not be loaded."
   }
 }

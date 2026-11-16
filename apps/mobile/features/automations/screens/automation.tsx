@@ -1,4 +1,6 @@
+import { Button } from '@oppenheimer/design-system-mobile/button';
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
+import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useAutomations } from '@oppenheimer/frontend-consumer/react';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
@@ -26,6 +28,15 @@ export function AutomationScreen({ id }: { id: string }) {
         {list.isPending ? (
           <View className="flex-1 items-center justify-center" aria-busy>
             <ActivityIndicator />
+          </View>
+        ) : list.isError ? (
+          <View className="flex-1 items-center justify-center gap-3 px-6">
+            <Text variant="body" tone="destructive">
+              {t('automations.detail.loadFailed')}
+            </Text>
+            <Button variant="outline" onPress={() => list.refetch()}>
+              <Text>{t('common.retry')}</Text>
+            </Button>
           </View>
         ) : (
           <View className="flex-1 justify-center px-6">
