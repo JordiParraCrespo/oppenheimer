@@ -88,11 +88,10 @@ export function useSuspenseBotsAndGroups() {
 }
 
 /**
- * The bots one console section lists beside Employees
- * (`28-bots-in-sections.md`), in the Employees order, under a Suspense
- * `QueryState`. It narrows the one bots read, so a chat that moves a bot's
- * last line moves it here too; `error` is a refetch that failed over data
- * already drawn.
+ * The bots one console section lists beside Employees, in the Employees order,
+ * under a Suspense `QueryState`. It narrows the one bots read, so a chat that
+ * moves a bot's last line moves it here too; `error` is a refetch that failed
+ * over data already drawn.
  */
 export function useSuspenseSectionBots(section: BotSection) {
   return useSuspenseQuery<BotEntity[], Error, BotEntity[]>({
@@ -244,9 +243,9 @@ function settleFacts(
 }
 
 /**
- * A fact about the person is read by every bot of theirs (`25-bots.md`
- * §4.1), so a change to one, or a move in or out of that scope, refreshes
- * every bot's memory that was read, not only the bot that keeps it.
+ * A fact about the person is read by every bot of theirs, so a change to one,
+ * or a move in or out of that scope, refreshes every bot's memory that was
+ * read, not only the bot that keeps it.
  */
 function refreshSharedMemory(queryClient: QueryClient) {
   return Promise.all([
@@ -267,7 +266,7 @@ function isSharedFact(queryClient: QueryClient, id: string, factId: string): boo
   return person?.facts.some((row) => row.id === factId) ?? false;
 }
 
-/** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
+/** A blank bot (a physicist's name such as "Feynman"), ungrouped. Open its chat with the answer. */
 /** A blank bot; the variables are the sections it shows in, none when left out. */
 export const useCreateBot = mutation<BotEntity, BotSection[] | undefined>({
   run: (app, sections) => app.bots.create(sections),

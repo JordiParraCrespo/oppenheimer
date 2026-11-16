@@ -12,8 +12,8 @@ import {
 } from 'typeorm';
 
 /**
- * A person's key for one cloud agent vendor (`product/next-steps/cloud-agents.md`),
- * one per person, workspace and vendor. The key is sealed with AES-256-GCM under
+ * A person's key for one cloud agent vendor, one per person, workspace and vendor.
+ * The key is sealed with AES-256-GCM under
  * `CLOUD_AGENTS_KEY`; what the vendor said about it when it was stored (its name,
  * the account) is kept beside it so Settings can say whose it is without asking.
  */

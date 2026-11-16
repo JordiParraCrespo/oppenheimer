@@ -3,7 +3,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 /**
  * Stop a terminal watch. By the workspace rather than a caller's scope: the
  * module that asked for the watch ends it when its own reason ends, which
- * may be after its owner lost the session (`27-bot-subscriptions.md` §4).
+ * may be after its owner lost the session.
  */
 export class UnwatchSessionTerminalCommand extends CommandBase {
   readonly organizationId: string;

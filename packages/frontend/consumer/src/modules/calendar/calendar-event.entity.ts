@@ -1,7 +1,7 @@
 /**
- * An event on Plan's calendar (`product/versions/mvp/20-plan-calendar.md`): the
- * workspace's own (`personal`, editable) or one of the viewer's Google Calendar
- * (`google`, read-only). Wall-clock: a day, and times on it, in the viewer's zone.
+ * An event on Plan's calendar: the workspace's own (`personal`, editable) or
+ * one of the viewer's Google Calendar (`google`, read-only). Wall-clock: a day,
+ * and times on it, in the viewer's zone.
  */
 export class CalendarEventEntity {
   constructor(
@@ -28,8 +28,8 @@ export class CalendarEventEntity {
 }
 
 /**
- * One of the caller's Google accounts (`23-plan-milestones-stats-accounts.md`
- * §5): up to five, each with the colour the month draws its events in.
+ * One of the caller's Google accounts: up to five, each with the colour the
+ * month draws its events in.
  */
 export class GoogleCalendarConnectionEntity {
   constructor(

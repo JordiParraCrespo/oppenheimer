@@ -50,9 +50,9 @@ const COLUMN_KEYS = {
 } as const;
 
 /**
- * A task on a project or milestone the bot follows that woke it
- * (`27-bot-subscriptions.md` §7.2): "“Ship the docs” moved from Not started
- * to In progress", in red when it was blocked. Drawn from what Plan logged.
+ * A task on a project or milestone the bot follows that woke it: "“Ship the
+ * docs” moved from Not started to In progress", in red when it was blocked.
+ * Drawn from what Plan logged.
  */
 export function TaskEventLine({ event }: { event: BotTaskEvent }) {
   const { t } = useTranslation();

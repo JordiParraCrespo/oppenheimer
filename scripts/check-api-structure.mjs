@@ -21,7 +21,7 @@
  *  - a mapper translates between shapes and builds nothing of the domain's:
  *    it imports no domain event, and it has a cap too
  *
- * See apps/api/ARCHITECTURE.md. Run: pnpm check:api-structure
+ * Run: pnpm check:api-structure
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';

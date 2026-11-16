@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * The face a bot wears (`25-bots.md` §7, "Changed 2026-11-07"): the hat,
+ * The face a bot wears: the hat,
  * the eyes and the mouth its owner picked in Profile.
  *
  * - `bot."avatarFace"`: `jsonb`, `{ "hat", "eyes", "mouth" }`, read whole

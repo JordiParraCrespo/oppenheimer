@@ -22,7 +22,6 @@ import { mintPairingToken } from './sessions';
  *
  * Plain `docker`, not Compose: CI's runner has the daemon but not the plugin,
  * and a test wants to start and break hosts one at a time anyway.
- * What it covers: `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
  *
  * `FLEET_HOSTS=local` runs the same hosts on the machine running the suite
  * instead (`support/fleet-local.ts`), for one that cannot build the image. A
@@ -143,7 +142,7 @@ export interface FleetHost {
    */
   cutLink?(): void;
   restoreLink?(): void;
-  /** Kill `runner run` only; tmux is its sibling and survives (02 §12). */
+  /** Kill `runner run` only; tmux is its sibling and survives. */
   killRunner(): void;
   /** Run a command on the host, as its user. */
   exec(command: string): string;

@@ -169,7 +169,7 @@ export async function replayBotChat(recording: BotRecording) {
             </QueryState.Pending>
             <QueryState.Error fallback="failed" />
             <QueryState.Data>
-              <BotTranscript botId={recording.botId} name="Release Bot" />
+              <BotTranscript botId={recording.botId} hello={null} />
             </QueryState.Data>
           </QueryState>
         </BotChatScroller>

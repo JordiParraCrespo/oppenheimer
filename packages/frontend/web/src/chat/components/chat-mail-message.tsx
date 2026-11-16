@@ -4,11 +4,10 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A message a bot wrote from the owner's Gmail (`product/next-steps/mail.md`
- * §3.3–3.4), the way it goes or was saved: the address it goes from, every
- * recipient, the subject, what the bot wrote and the files. Nothing is cut:
- * on a send card, a yes sends this. What is said about it (sent as is, saved
- * as a draft) is the caller's, as children.
+ * A message a bot wrote from the owner's Gmail, the way it goes or was saved:
+ * the address it goes from, every recipient, the subject, what the bot wrote
+ * and the files. Nothing is cut: on a send card, a yes sends this. What is said
+ * about it (sent as is, saved as a draft) is the caller's, as children.
  */
 export function ChatMailMessage({ mail, children }: { mail: MailPlan; children?: ReactNode }) {
   const { t } = useTranslation();

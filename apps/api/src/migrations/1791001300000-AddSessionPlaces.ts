@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Where a session runs (`product/versions/mvp/24-session-places.md`): a new
+ * Where a session runs: a new
  * `worktree` the runner makes for each checkout, as every session was until
  * now, or a `folder` already on the host, where nothing is cloned or written.
  *
@@ -18,7 +18,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * partial on the place, so worktree sessions, the bulk of the table, cost it
  * nothing; it is written once per insert and never on a fold, because none
  * of its columns move. The direction is the B-tree scanned backwards, so no
- * `DESC` (`database-design.md`).
+ * `DESC`.
  */
 export class AddSessionPlaces1791001300000 implements MigrationInterface {
   name = 'AddSessionPlaces1791001300000';

@@ -11,9 +11,9 @@ import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 
 /**
  * The card a bot has waiting, of either kind: an approval or a card of
- * questions (`25-bots.md` §5). Writing to the bot instead of answering it
- * retires it: the new turn starts fresh, and nobody decided. A decision that
- * lands first wins, and this does nothing.
+ * questions. Writing to the bot instead of answering it retires it: the new
+ * turn starts fresh, and nobody decided. A decision that lands first wins, and
+ * this does nothing.
  */
 @Injectable()
 export class BotWaitingCardResolver {

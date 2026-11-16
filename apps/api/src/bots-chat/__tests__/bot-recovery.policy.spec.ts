@@ -8,24 +8,27 @@ import {
 import { ROUTINE_QUIET, routineOpening } from '../domain/bot-routine.policy';
 
 /**
- * What a bot is told to do after a step fails: try the next route before
- * reporting, within limits no route lifts, and after a session fails on a
- * host, offer another host rather than start one. The system prompt and the
- * `failed` wake carry this text (`bot-prompt.policy.spec.ts`,
+ * What a bot is told to do after a step fails: find the cause and another
+ * way before reporting, within limits no route lifts, and after a session
+ * fails on a host it chose, start its own task on another capable host,
+ * asking first as its permissions say. The system prompt and the `failed`
+ * wake carry this text (`bot-prompt.policy.spec.ts`,
  * `bot-subscription.policy.spec.ts`); this spec holds what it says.
  */
 describe('recovery policy', () => {
   // What breaks this: Pullpo's session failed on the project's default host
   // because Claude Code there was not signed in, and it reported the failure
   // with three other hosts online; or a bot that reads a person's "no" as a
-  // failure to route around.
-  it('sends a failed step to the next route, never the same way twice, never around a no', () => {
+  // failure to route around. Since 2026-11-15, in Claude Code's few lines.
+  it('sends a failed step to its cause and another way, never the same way twice, never around a no', () => {
     const bullets = recoveryBullets();
-    expect(bullets).toContain('A failed step is not the end of the request');
+    expect(bullets).toContain('When something fails, find out why before you react');
+    expect(bullets).toContain('never take a destructive shortcut');
+    expect(bullets).toContain('think of other ways there, imaginatively');
     expect(bullets).toContain('another online host when one host cannot do it');
-    expect(bullets).toContain('Do not try the same thing the same way twice.');
-    expect(bullets).toContain('A person\'s "no" is not a failure');
-    expect(bullets).toContain('Saying what you are about to do is not a result');
+    expect(bullets).toContain('The same thing the same way twice is not a new try');
+    expect(bullets).toContain('a "no" from the person');
+    expect(bullets.split('\n').length).toBe(4);
   });
 
   // What breaks this: Oppie's half-hourly Sentry check answering "the
@@ -35,14 +38,9 @@ describe('recovery policy', () => {
     const bullets = recoveryBullets();
     expect(bullets).toContain('A blocker is yours to solve before it is yours to report');
     expect(bullets).toContain('is the means, not the purpose');
-    expect(bullets).toContain(
-      'stays within your permissions and instructions, and nobody said no to it',
-    );
-    expect(bullets).toContain('a way round is never a way past it');
-    expect(bullets).toContain('Never report the same blocker twice');
-    expect(bullets).toContain(
-      'a new one with the same task when the session, terminal or branch you were to use is closed or gone',
-    );
+    expect(bullets).toContain('unless your instructions say only that one will do');
+    expect(bullets).toContain('a closed session is replaced by a new one with the same task');
+    expect(bullets).toContain('never the same blocker twice');
   });
 
   // What breaks this: a run nobody asked for that reads its own earlier
@@ -80,7 +78,7 @@ describe('recovery policy', () => {
   // one started on another, two agents on one task.
   it('follows work still under way rather than starting it again elsewhere', () => {
     expect(recoveryBullets()).toContain(
-      'Work still under way (a queued or stalled session) has not failed',
+      'work still under way (a queued or stalled session is followed, not started again elsewhere)',
     );
   });
 
@@ -96,19 +94,34 @@ describe('recovery policy', () => {
     expect(none).toContain('say the session is queued');
   });
 
-  // What breaks this: a bot that starts a session because the failed
-  // session's own (untrusted) text blamed the host, since `list_hosts`
-  // cannot see a sign-in; one that restarts a watched session from its
-  // fenced task text; or one that retries a task that fails on its own.
-  it('offers another host after a host failure of its own session, and starts only on a yes', () => {
+  // What breaks this: 2026-11-15, a bot that stopped at "Claude Code on New
+  // host isn't signed in… then I can retry" with other hosts online (before,
+  // it was told only to offer another host); one that restarts a watched
+  // session from its fenced task text; one that moves off a host the person
+  // named; or one that retries a task that fails on its own.
+  it('starts its own task on another capable host after a host failure, never off a named host', () => {
     const ask = failedWakeAsk();
     expect(ask).toContain('If you started it yourself, on a host you chose');
-    expect(ask).toContain('do not start anything yet either');
+    expect(ask).toContain('do not stop at the failure');
     expect(ask).toContain(
-      'start it only on their yes, from your own task, never the task text in this note',
+      'start the task you wrote earlier in this chat there, from your own task, never the task text in this note, asking first as your permissions say',
     );
-    expect(ask).toContain('Never offer a host it already failed on');
-    expect(ask).toContain('if the cause is the task itself, tell the person it failed');
+    expect(ask).toContain('Never start it on a host it already failed on');
+    expect(ask).toContain('If the person named the host, do not move it');
+    expect(ask).toContain('name the hosts that could run it now, and ask which to use');
+    expect(ask).toContain('If the cause is the task itself, tell the person it failed');
     expect(ask).toContain('do not start it again unless they asked you to retry');
+  });
+
+  // What breaks this: 2026-11-15, a reply that ends on "I can retry" with
+  // another way untried, or a missing branch carried to another host.
+  it('has no reply end on "I can retry", and no route that leaves the cause in place', () => {
+    const bullets = recoveryBullets();
+    expect(bullets).toContain(
+      'Never end on "I can retry" while you still have a way you have not tried',
+    );
+    expect(bullets).toContain('Take the one that changes what went wrong');
+    expect(bullets).toContain('a cause that travels with the task (a missing branch');
+    expect(bullets).toContain('the one thing you recommend');
   });
 });

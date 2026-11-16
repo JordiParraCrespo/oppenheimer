@@ -27,9 +27,8 @@ const defaultEmptyText = (query: string): React.ReactNode =>
   query ? `No repository matches “${query}”` : 'Every repository is added';
 
 /**
- * RepositoryAddField — the project dialog's Repositories field
- * (`design/version1/SessionsConsole.dc.html`): a field reading "Add a
- * repository…" that opens the scope chips' pane (search, one row per
+ * RepositoryAddField — the project dialog's Repositories field: a field reading
+ * "Add a repository…" that opens the scope chips' pane (search, one row per
  * repository the App can see and the project lacks, the GitHub mark before its
  * name in the rows' own type, as the repository chip's), over a 14px card with
  * one row per added repository and an X to take it out. What each repository

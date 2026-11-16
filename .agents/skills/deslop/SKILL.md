@@ -23,7 +23,16 @@ Only comments, and only these:
 - a divider or banner that repeats the `describe`, heading or `GroupHead`
   right below it;
 - a doc comment stranded on the wrong symbol: move it back onto the one it
-  names, and drop it if that symbol already carries the same note.
+  names, and drop it if that symbol already carries the same note;
+- a reference: a comment that sends the reader elsewhere (a product note, a
+  rule, an `AGENTS.md` or `README.md`, a skill, an issue or pull request)
+  instead of saying what the code does. Nobody keeps those pointers current,
+  and a pointer that rots misleads. Rewrite the comment to stand on its own,
+  saying what this code does and why in a sentence or two, or drop it when the
+  code already says it. Keep a reference only when the code here cannot be
+  understood without something that lives elsewhere (a wire format defined in
+  another module, an external spec or RFC, a vendor's documented quirk), and
+  then point at the code or spec that owns it, not at prose about it.
 
 When a comment names a constraint the code does not show (a unit, a magic
 number, an ordering, a platform quirk), keep it, or move its meaning into an

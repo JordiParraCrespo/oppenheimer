@@ -43,8 +43,8 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * or down its project or into another; the sidebar keeps where it lands.
  *
  * A cloud session's row leads with its vendor's mark and opens the vendor's
- * page for its agent in a tab of its own (`SessionsConsole.dc.html`), where it
- * is followed up and stopped; there is no terminal of ours to open or share.
+ * page for its agent in a tab of its own, where it is followed up and
+ * stopped; there is no terminal of ours to open or share.
  *
  * Its pick is the sidebar's selection (`SessionSelectionContext`): a click with
  * ⌘, Ctrl or Shift picks the row instead of opening it, and so does any click

@@ -8,10 +8,10 @@ import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-fi
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
 /**
- * The bot's own files a mail carries (`product/next-steps/mail.md` §3.4):
- * images the person sent in this chat, named by id when the message is
- * planned and read from storage only when it is written or sent. The mail
- * module never reads the bot's storage; it is handed the bytes.
+ * The bot's own files a mail carries: images the person sent in this chat,
+ * named by id when the message is planned and read from storage only when it is
+ * written or sent. The mail module never reads the bot's storage; it is handed
+ * the bytes.
  */
 @Injectable()
 export class BotMailChatFilesResolver {

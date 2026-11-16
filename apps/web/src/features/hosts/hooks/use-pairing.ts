@@ -4,7 +4,7 @@ import { useHostsAvailability } from './use-hosts-availability';
 /**
  * When a pairing surface lets the reader move on.
  *
- * Two rules, on purpose (`product/versions/mvp/05-screens.md`, Add a host):
+ * Two rules, on purpose:
  * - `online` — onboarding's Continue. The host row appears when the runner
  *   registers and its service may still be starting; a first-run flow that
  *   ends on a machine which never came up has claimed one the console cannot

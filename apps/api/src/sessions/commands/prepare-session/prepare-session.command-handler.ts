@@ -19,7 +19,7 @@ export interface PrepareSessionResult {
 /**
  * Gets a host ready for the session a person is composing: each repository
  * cloned or fetched there and a spare worktree made, so the create that follows
- * cuts a branch from a checkout that already exists (02 §5).
+ * cuts a branch from a checkout that already exists.
  *
  * The checks are a create's — a host the caller may use, a repository the
  * installation covers — and nothing is written. The token the host's git needs

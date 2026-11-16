@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A Claude Code cloud session's chat in the console
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"). Two
+ * A Claude Code cloud session's chat in the console. Two
  * hooks in the cloud session carry it: a SessionStart hook sends the
  * session's transcript, a Stop hook collects what the person typed.
  *

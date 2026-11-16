@@ -58,7 +58,7 @@ export interface BotGoalProps {
 }
 
 /**
- * A goal a bot keeps working toward (`25-bots.md` §4.1): one per bot, kept
+ * A goal a bot keeps working toward: one per bot, kept
  * until the reviewer finds the bot's claim that it is met holds, or the owner
  * stops it. Nothing else ends it: what would have (a failed turn, a stopped
  * one, turns that do nothing, its budget, the bot blocked) pauses it in

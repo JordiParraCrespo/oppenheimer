@@ -85,6 +85,8 @@ export interface SessionSpec {
   project: string;
   agent?: string;
   branch?: string;
+  /** Who started it, as `get_session` says: the person (default) or a bot. */
+  origin?: 'person' | 'bot';
   log: LogSpec[];
   /** What `read_session_transcript` reads: the agent's conversation, by role. */
   transcript?: { at: string; role: 'user' | 'assistant'; text: string; tool?: string }[];
@@ -151,6 +153,7 @@ function sessionOf(
     slug: `quiet-otter-${spec.id.replace(/-/g, '').slice(-6)}`,
     agent: (spec.agent ?? 'claude-code') as never,
     name: spec.name,
+    ...(spec.origin ? { origin: spec.origin } : {}),
   });
   // The entity's id is its own; the case's id is the one the model reads.
   (session as unknown as { _id: string })._id = spec.id;

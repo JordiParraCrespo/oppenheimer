@@ -19,11 +19,11 @@ import { SendWhatsappMessageCommand } from './send-whatsapp-message.command';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Sends a bot's message from one of its owner's numbers (`whatsapp.md` §4):
- * only while the device is connected and under the day's share, through the
- * host's runner, which keeps a budget of its own. What went is kept beside
- * what the number received, marked as the bot's, so the chat reads whole and
- * the day's sends can be counted. Answers WhatsApp's id for the message.
+ * Sends a bot's message from one of its owner's numbers: only while the device
+ * is connected and under the day's share, through the host's runner, which
+ * keeps a budget of its own. What went is kept beside what the number received,
+ * marked as the bot's, so the chat reads whole and the day's sends can be
+ * counted. Answers WhatsApp's id for the message.
  */
 @CommandHandler(SendWhatsappMessageCommand)
 export class SendWhatsappMessageCommandHandler

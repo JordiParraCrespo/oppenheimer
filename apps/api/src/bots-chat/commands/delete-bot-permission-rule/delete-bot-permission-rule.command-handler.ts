@@ -8,7 +8,7 @@ import { BOT_PERMISSION_RULE_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotPermissionRuleRepositoryPort } from '../../database/bot-permission-rule.repository.port';
 import { DeleteBotPermissionRuleCommand } from './delete-bot-permission-rule.command';
 
-/** Removes one of a bot's rules (`25-bots.md` §5); one that is not this bot's, or is gone, is `BOTS_032`. */
+/** Removes one of a bot's rules; one that is not this bot's, or is gone, is `BOTS_032`. */
 @CommandHandler(DeleteBotPermissionRuleCommand)
 export class DeleteBotPermissionRuleCommandHandler
   implements ICommandHandler<DeleteBotPermissionRuleCommand, string>

@@ -7,7 +7,7 @@ import { HOST_EXEC } from '../../sessions.di-tokens';
 import { RunHostCommandCommand } from './run-host-command.command';
 
 /**
- * A bot's command on a host (`product/versions/mvp/25-bots.md` §4.2). The host
+ * A bot's command on a host. The host
  * is checked with the same check a session's create makes, so a bot reaches
  * only the hosts its owner may start work on, and a host they cannot use is the
  * same not-found. What the host then lets run is its own policy: an outcome,

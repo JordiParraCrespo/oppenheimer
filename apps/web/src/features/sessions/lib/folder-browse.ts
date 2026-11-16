@@ -2,10 +2,10 @@ import type { HostFolderEntry, HostFolders } from '@oppenheimer/frontend-consume
 import { crumbsOf, HOME, parentOf, parseFolderInput, shortenPath } from './folder-path';
 
 /**
- * What New session's folder picker shows for what has been typed and what the
- * host answered (`product/versions/mvp/24-session-places.md` §4): the folder
- * listed, the rows whose name holds what is typed, why there are none, and
- * the one folder **Use** would open — only a folder the host said exists.
+ * What New session's folder picker shows for what has been typed and what
+ * the host answered: the folder listed, the rows whose name holds what is
+ * typed, why there are none, and the one folder **Use** would open — only a
+ * folder the host said exists.
  */
 export interface FolderView {
   /** The folder listed, as shown (`~/code`). */

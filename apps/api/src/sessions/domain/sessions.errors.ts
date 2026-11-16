@@ -82,7 +82,7 @@ export const SessionErrors = {
    * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
    * no frame that adds one to a running session, so a later add is refused
    * before a row is written rather than recorded and never made. The code dates
-   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
+   * from the one-repository MVP; the create bound was raised on 2026-10-26.
    */
   TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
@@ -305,8 +305,7 @@ export const SessionErrors = {
   /**
    * Something only a session a host started has — a terminal, a checkout, a
    * restart, a share, a prompt — asked of a cloud session the control plane
-   * launched at its vendor (Cursor's), which is followed and answered there
-   * (`product/next-steps/cloud-agents.md`).
+   * launched at its vendor (Cursor's), which is followed and answered there.
    */
   VENDOR_SESSION: {
     code: 'SESSIONS_039',
@@ -400,11 +399,43 @@ export const SessionErrors = {
   /**
    * A reply, or a read of the chat, for a session whose conversation does
    * not come here: only a Claude Code cloud session sends its transcript and
-   * collects replies (`product/next-steps/cloud-agents.md`).
+   * collects replies.
    */
   NO_CLOUD_CHAT: {
     code: 'SESSIONS_054',
     message: 'This session has no cloud chat',
+    httpStatus: 409,
+  },
+  /**
+   * The Terminal tab opened or closed a shell on a host whose live runner did
+   * not name `session.windows.list`: it would change the windows without
+   * saying which, so the tab could not attach to the one it asked for.
+   */
+  WINDOWS_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_056',
+    message: "This host's runner cannot open or close a session's terminals",
+    httpStatus: 409,
+  },
+  /** Window 0 is the agent: it ends with the session, never as a tab. */
+  WINDOW_IS_AGENT: {
+    code: 'SESSIONS_057',
+    message: "The agent's window cannot be closed; close the session instead",
+    httpStatus: 409,
+  },
+  /** The session has no window with that index on its host (`SESS_001`): it was closed already. */
+  WINDOW_NOT_FOUND: {
+    code: 'SESSIONS_058',
+    message: 'The session has no such terminal',
+    httpStatus: 404,
+  },
+  /**
+   * The host refused to open or close a terminal for any other reason (the
+   * session is not running there, tmux failed); the runner's own code is
+   * `upstreamCode`.
+   */
+  WINDOW_REFUSED: {
+    code: 'SESSIONS_059',
+    message: "The host refused to change the session's terminals",
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

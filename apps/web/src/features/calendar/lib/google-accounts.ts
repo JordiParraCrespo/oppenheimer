@@ -5,9 +5,9 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 
 /**
- * A person's Google accounts on the calendar (`23-plan-milestones-stats-accounts.md`
- * §5): each wears a colour by its `colorIndex`, and each is a toggle under the
- * Google layer that is this viewer's alone, kept on this device.
+ * A person's Google accounts on the calendar: each wears a colour by its
+ * `colorIndex`, and each is a toggle under the Google layer that is this
+ * viewer's alone, kept on this device.
  */
 
 const ACCENTS: readonly CalendarAccent[] = ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'];

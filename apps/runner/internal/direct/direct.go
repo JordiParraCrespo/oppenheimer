@@ -1,4 +1,4 @@
-// Package direct is the direct terminal path (product/versions/mvp/22): a
+// Package direct is the direct terminal path: a
 // WebRTC data channel between a browser and this host for one attachment, so
 // its bytes stop crossing the relay. The control plane signals it over the
 // link; this package only answers an offer and carries bytes. Which bytes go
@@ -52,7 +52,7 @@ var (
 
 // Options configures an Answerer.
 type Options struct {
-	// MaxPeers caps the data channels open at once (22, "Several browsers").
+	// MaxPeers caps the data channels open at once.
 	MaxPeers int
 	// GatherTimeout bounds how long the answer waits for ICE candidates. The
 	// answer carries every candidate (no trickle), so a STUN server that does

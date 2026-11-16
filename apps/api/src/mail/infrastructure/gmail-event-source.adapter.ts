@@ -7,7 +7,7 @@ import type {
 import { GMAIL_DELIVERY_EVENT, normalizeGmailDelivery } from './gmail-event-normalizer.util';
 
 /**
- * Gmail, as a source of the inbound-events hub (`next-steps/mail.md` §5). Its
+ * Gmail, as a source of the inbound-events hub. Its
  * deliveries come from our own poll of the accounts a routine watches, not a
  * webhook, so there is nothing to verify: the poll names the workspace the
  * account belongs to, and this says what its mail means in the catalog's words.

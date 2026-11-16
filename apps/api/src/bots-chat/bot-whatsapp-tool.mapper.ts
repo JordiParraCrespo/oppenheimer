@@ -7,7 +7,7 @@ import type {
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
- * How a bot's WhatsApp tools (`product/next-steps/whatsapp.md` §4) write a
+ * How a bot's WhatsApp tools write a
  * number's chats for the model: one line per chat or message with its ids
  * inline, and everything another person can write (names, texts) inside
  * `<whatsapp>`, marked as data.

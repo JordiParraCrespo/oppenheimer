@@ -12,12 +12,12 @@ import { useTranslation } from 'react-i18next';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
 /**
- * Settings → Profile's Shows in: the console sections whose sidebar lists the
- * bot under a Bots heading, beside Employees, where every bot is
- * (`28-bots-in-sections.md`). A set that applies the moment a pill flips, as
- * Learn automatically does. Each save sends the whole set, so the pills hold
- * still while one is in flight, showing what was asked for: two saves racing
- * could otherwise land in the wrong order and drop the later pick.
+ * Settings → Profile's Shows in: the console sections whose sidebar lists
+ * the bot under a Bots heading, beside Employees, where every bot is. A set
+ * that applies the moment a pill flips, as Learn automatically does. Each
+ * save sends the whole set, so the pills hold still while one is in flight,
+ * showing what was asked for: two saves racing could otherwise land in the
+ * wrong order and drop the later pick.
  */
 export function BotShowsIn({ bot }: { bot: BotEntity }) {
   const { t } = useTranslation();

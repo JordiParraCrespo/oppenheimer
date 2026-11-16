@@ -2,11 +2,10 @@ import { z } from 'zod/v4';
 import { attachmentIdSchema, commandIdSchema } from './primitives.js';
 
 /**
- * A host's desktop on the link (`product/research/device-streaming.md`,
- * "A host's desktop"): the messages behind the `desktop.stream` capability.
- * Part of `protocolMessageSchema`, which is where every kind is listed; kept
- * here so the union stays the index of kinds rather than the home of every
- * shape.
+ * A host's desktop on the link: the messages behind the `desktop.stream`
+ * capability. Part of `protocolMessageSchema`, which is where every kind is
+ * listed; kept here so the union stays the index of kinds rather than the home
+ * of every shape.
  *
  * The desktop is the host's, not a session's: the screen-sharing server the
  * host already runs on its loopback (macOS Screen Sharing, TigerVNC,

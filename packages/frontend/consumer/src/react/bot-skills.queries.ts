@@ -11,10 +11,10 @@ import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
 /**
- * A bot's skills (`25-bots.md` §4.1): Settings → Skills and the composer's
- * `/` menu read one list, under the bot's detail key so deleting the bot drops
- * it. Every write settles by reading the list again: a rename reorders it, and
- * the bot may have saved one of its own since it was read.
+ * A bot's skills: Settings → Skills and the composer's `/` menu read one list,
+ * under the bot's detail key so deleting the bot drops it. Every write settles
+ * by reading the list again: a rename reorders it, and the bot may have saved
+ * one of its own since it was read.
  */
 
 /** A bot's skills by name, under a Suspense `QueryState`. */

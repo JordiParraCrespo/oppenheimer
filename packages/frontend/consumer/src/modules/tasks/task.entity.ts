@@ -8,10 +8,10 @@ export interface TaskSessionLink {
 }
 
 /**
- * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
- * asks for, in one of four columns, under a project and maybe one of its milestones.
- * Due dates are calendar days (`YYYY-MM-DD`) read in the viewer's timezone, so the
- * caller says what today is.
+ * A task on Plan's board: work a person asks for, in one of four columns, under
+ * a project and maybe one of its milestones. Due dates are calendar days
+ * (`YYYY-MM-DD`) read in the viewer's timezone, so the caller says what today
+ * is.
  */
 export class TaskEntity {
   constructor(
@@ -43,7 +43,7 @@ export class TaskEntity {
 
   /**
    * A task an agent made that its person has not taken up yet: it waits in
-   * Plan's Inbox (`product/versions/mvp/29-inbox.md`, "Tasks an agent made").
+   * Plan's Inbox.
    * A done one is no longer waiting on anyone.
    */
   get awaitsTriage(): boolean {

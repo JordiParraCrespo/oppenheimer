@@ -15,8 +15,7 @@ import type { TypedPrompt } from './session-prompt-typer.resolver';
 
 /**
  * A follow-up to a cloud session a vendor runs (Cursor's), sent as the vendor
- * takes one: a new run on the same agent (`product/next-steps/cloud-agents.md`,
- * "Follow-ups to a cloud agent"). The same three moves as typing into a
+ * takes one: a new run on the same agent. The same three moves as typing into a
  * terminal (`SessionPromptTyperResolver`), so the log reads one way:
  *
  * 1. **Claim.** `prompt.sent`, with the sender as the API read it, appended

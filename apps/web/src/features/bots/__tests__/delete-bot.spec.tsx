@@ -4,9 +4,8 @@ import { DeleteBotDialog } from '../dialogs/delete-bot';
 
 /**
  * Where Delete bot leaves a reader: off every page of the bot that is gone,
- * its chat inside a section included, onto that section's own page
- * (`28-bots-in-sections.md`), and where they were when the page they read was
- * another.
+ * its chat inside a section included, onto that section's own page, and
+ * where they were when the page they read was another.
  */
 
 vi.mock('react-i18next', () => ({

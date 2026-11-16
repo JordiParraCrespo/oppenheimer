@@ -69,15 +69,14 @@ export interface WorkSessionProps extends SessionFold {
   agent: SessionAgent;
   /**
    * The folder already on the host the session runs in, absolute; null for a
-   * session that runs in a worktree per checkout, or in the cloud
-   * (`product/versions/mvp/24-session-places.md`). Immutable, like the agent.
+   * session that runs in a worktree per checkout, or in the cloud. Immutable,
+   * like the agent.
    */
   folderPath: string | null;
   /**
-   * Where it runs (`product/versions/mvp/24-session-places.md`): a worktree
-   * per checkout, a folder on the host (`folderPath`), or a vendor's cloud:
-   * Claude Code's, started from the host and then living on claude.ai/code
-   * (§7), or Cursor's, launched by the control plane with no host
+   * Where it runs: a worktree per checkout, a folder on the host
+   * (`folderPath`), or a vendor's cloud: Claude Code's, started from the host
+   * and then living on claude.ai/code, or Cursor's, launched by the control plane with no host
    * (`cloudRun`). The one stored fact the place is; immutable, like the agent.
    */
   place: SessionPlace;
@@ -144,12 +143,12 @@ export interface CreateCloudSessionProps {
  * or, in the place `cloud`, a vendor's agent: Claude Code's, which a host
  * starts and the browser extension follows, or one the control plane launched
  * (Cursor's), whose log the API writes from what the vendor says about its
- * run (`product/next-steps/cloud-agents.md`).
+ * run.
  *
  * **`recordEvent` is the only mutator.** No `setState`, `setName` or
  * `setCwdCheckout`: every `work_session` column, launch checkout and sidebar inputs
  * included, is a projection of the append-only log, and a direct write would be a
- * second truth a replay disagrees with (`product/versions/mvp/03-control-plane.md`).
+ * second truth a replay disagrees with.
  *
  * The one non-fold is **adding a member**: a checkout is a row in another table with
  * its own unique constraints. Retiring one follows from an event, so
@@ -432,7 +431,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.closeRefusal;
   }
 
-  /** What the agent waits on the person for, or null (`29-inbox.md` slice 4). */
+  /** What the agent waits on the person for, or null. */
   get pendingDecision(): SessionDecision | null {
     return this.props.pendingDecision;
   }

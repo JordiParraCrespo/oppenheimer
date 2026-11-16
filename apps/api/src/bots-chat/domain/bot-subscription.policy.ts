@@ -12,7 +12,7 @@ import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * A bot's subscriptions to the work it delegated (`27-bot-subscriptions.md`),
+ * A bot's subscriptions to the work it delegated,
  * as rules: when a session's task wakes the bot, what the wake is keyed on,
  * and what the bot reads. Pure.
  */
@@ -33,14 +33,14 @@ export type BotSubscriptionUntil = (typeof BOT_SUBSCRIPTION_UNTIL)[number];
 export type BotWatchFrom = 'first_task' | 'now' | { turn: number } | { answered: number };
 
 /**
- * The resources a bot can follow: a session, a pull request on GitHub
- * (27 §7), or the tasks of a project or of one milestone (§7.2). A new kind
+ * The resources a bot can follow: a session, a pull request on GitHub, or the
+ * tasks of a project or of one milestone. A new kind
  * widens the table's CHECK too.
  */
 export const BOT_SUBSCRIPTION_KINDS = ['session', 'pull_request', 'project', 'milestone'] as const;
 export type BotSubscriptionKind = (typeof BOT_SUBSCRIPTION_KINDS)[number];
 
-/** How many times one subscription may wake its bot; the next wake ends it instead (27 §3). */
+/** How many times one subscription may wake its bot; the next wake ends it instead. */
 export const BOT_SUBSCRIPTION_WAKE_LIMIT = 20;
 /** How many sessions, pull requests, projects and milestones, together, one bot may follow at once. */
 export const BOT_SUBSCRIPTIONS_PER_BOT = 50;
@@ -92,8 +92,7 @@ function rank(state: BotSessionWakeState): number {
 }
 
 /**
- * Whether the session's task, as it stands now, wakes the bot
- * (`27-bot-subscriptions.md` §2, §4). The task is read fresh, never taken
+ * Whether the session's task, as it stands now, wakes the bot. The task is read fresh, never taken
  * from the event that prompted the read, so a late or reordered event wakes
  * for what holds now; and a task wakes once per state at most, input needed
  * once, its end once.
@@ -162,7 +161,7 @@ export function knownStateOf(
 }
 
 /**
- * How long after a bot hands a session a task its first check runs (§4.1):
+ * How long after a bot hands a session a task its first check runs:
  * long enough for a healthy launch to be seen working, short enough that a
  * stuck one is told while the person still remembers asking.
  */
@@ -170,7 +169,7 @@ export const BOT_STALL_CHECK_DELAY_MS = 5 * 60_000;
 
 /**
  * How often, after the first, a task the bot handed off and that is still
- * running is checked on again (§4.2): a person who delegates looks over the
+ * running is checked on again: a person who delegates looks over the
  * work every so often instead of waiting for it to say it is done.
  */
 export const BOT_PROGRESS_CHECK_INTERVAL_MS = 10 * 60_000;
@@ -283,7 +282,7 @@ export interface StallTask {
   drive: string;
 }
 
-/** What a check found that wakes the bot: a stall (§4.1), or a task due its look (§4.2). */
+/** What a check found that wakes the bot: a stall, or a task due its look. */
 export type CheckFinding =
   | { kind: 'stall'; reason: StallReason }
   | { kind: 'progress'; check: number };
@@ -303,7 +302,7 @@ export type CheckDecision =
   | { kind: 'wake'; finding: CheckFinding; next: boolean };
 
 /**
- * Check number `check` of a task the bot handed off (§4.1, §4.2), as one
+ * Check number `check` of a task the bot handed off, as one
  * table. Only Oppenheimer's records decide, never a guess from silence: the
  * runner reports on change, so a quiet log is also what an agent working
  * steadily looks like.
@@ -368,10 +367,9 @@ const STALL_PHRASES: Readonly<Record<StallReason, string>> = {
 
 /**
  * Why a subscription wakes its bot: its task reached a state a watch wakes
- * for, its terminal printed a line matching the pattern the bot watches for
- * (`27-bot-subscriptions.md` §2), the stall check found the task it handed
- * off stuck (§4.1), or its agent sent a line (`runner sessions notify`,
- * `product/next-steps/agent-tools.md` §9). One wake model: the key, the
+ * for, its terminal printed a line matching the pattern the bot watches for,
+ * the stall check found the task it handed
+ * off stuck, or its agent sent a line (`runner sessions notify`). One wake model: the key, the
  * words, the prompt and the turn are written once over it.
  */
 export type SessionWakeCause =

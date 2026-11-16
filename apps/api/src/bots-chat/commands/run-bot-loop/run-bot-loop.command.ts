@@ -1,7 +1,7 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
- * A loop's run came due (`25-bots.md` §4.1, `/loop`): queue it, skip it, or
+ * A loop's run came due: queue it, skip it, or
  * end the loop. Dispatched by the `bot-turns` worker from the delayed job the
  * loop staged for that run.
  */

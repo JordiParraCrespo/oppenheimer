@@ -17,7 +17,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { DecideBotApprovalCommand } from './decide-bot-approval.command';
 
 /**
- * The owner answers a Needs input card (`25-bots.md` §5) with one of the
+ * The owner answers a Needs input card with one of the
  * decisions it offers (`availableDecisions`); any other is `BOTS_030`. The
  * decision is a conditional write on `pending`, so a second click, or a click
  * racing a new message, loses with `BOTS_016` and writes nothing. What it

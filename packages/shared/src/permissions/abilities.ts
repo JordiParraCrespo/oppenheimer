@@ -65,29 +65,29 @@ export const KNOWN_SUBJECTS = [
   // Workspace-owned, like sessions: an automation is a saved prompt the
   // workspace runs, and each of its runs is a session.
   'Automation',
-  // Plan (`product/versions/mvp/17-plan.md`), workspace-owned like the rest:
-  // `Task` covers tasks, their milestones and their links to sessions; `Calendar`
-  // the workspace's own events and a person's Google Calendar connection.
+  // Plan, workspace-owned like the rest: `Task` covers tasks, their milestones
+  // and their links to sessions; `Calendar` the workspace's own events and a
+  // person's Google Calendar connection.
   'Task',
   'Calendar',
-  // A person's own Gmail accounts, worked by their bots (`product/next-steps/mail.md`):
-  // workspace-owned like the calendar, and every read of a connection adds its owner.
+  // A person's own Gmail accounts, worked by their bots: workspace-owned like
+  // the calendar, and every read of a connection adds its owner.
   'Mail',
-  // A number a person linked as a WhatsApp device on one of their hosts
-  // (`product/next-steps/whatsapp.md`): like `Mail`, every read adds its owner.
+  // A number a person linked as a WhatsApp device on one of their hosts: like
+  // `Mail`, every read adds its owner.
   'Whatsapp',
-  // A Telegram bot a person connected on one of their hosts
-  // (`product/next-steps/telegram.md`): like `Whatsapp`, every read adds its owner.
+  // A Telegram bot a person connected on one of their hosts: like `Whatsapp`,
+  // every read adds its owner.
   'Telegram',
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
-  // Bots (`product/versions/mvp/25-bots.md`), workspace-owned like automations:
-  // `Bot` covers a bot, its sidebar groups, its documents and its memory.
+  // Bots, workspace-owned like automations: `Bot` covers a bot, its sidebar
+  // groups, its documents and its memory.
   'Bot',
-  // Cloud agents (`product/next-steps/cloud-agents.md`): a coding agent run in
-  // a vendor's cloud, and the caller's own key for that vendor. Workspace-owned
-  // like sessions, and every read is also the caller's own.
+  // Cloud agents: a coding agent run in a vendor's cloud, and the caller's own
+  // key for that vendor. Workspace-owned like sessions, and every read is also
+  // the caller's own.
   'CloudAgent',
   'all',
 ] as const;

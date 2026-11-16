@@ -2274,6 +2274,50 @@ export type SessionPortsResponseDto = {
     ports: Array<SessionPortDto>;
 };
 
+export type SessionTerminalWindowDto = {
+    /**
+     * The tmux window index: what an attach ticket's `window` names.
+     */
+    index: number;
+    /**
+     * The window’s name on the host.
+     */
+    name: string;
+    /**
+     * Window 0, the agent’s; the rest are plain shells.
+     */
+    agent: boolean;
+};
+
+export type SessionWindowsResponseDto = {
+    /**
+     * `listed`: `windows` is what the session holds now. `host_offline`: the host has no link. `not_supported`: its runner cannot list them.
+     */
+    state: 'listed' | 'host_offline' | 'not_supported';
+    /**
+     * The session’s tmux windows, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
+export type OpenedSessionWindowResponseDto = {
+    /**
+     * The shell just opened.
+     */
+    window: SessionTerminalWindowDto;
+    /**
+     * The session’s tmux windows after it opened, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
+export type ClosedSessionWindowResponseDto = {
+    /**
+     * The session’s tmux windows left, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
 export type CloudAgentProviderStatusDto = {
     id: 'cursor';
     label: string;
@@ -2686,7 +2730,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -11514,6 +11558,164 @@ export type FindSessionPortsResponses = {
 };
 
 export type FindSessionPortsResponse = FindSessionPortsResponses[keyof FindSessionPortsResponses];
+
+export type FindSessionWindowsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows';
+};
+
+export type FindSessionWindowsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindSessionWindowsError = FindSessionWindowsErrors[keyof FindSessionWindowsErrors];
+
+export type FindSessionWindowsResponses = {
+    200: SessionWindowsResponseDto;
+};
+
+export type FindSessionWindowsResponse = FindSessionWindowsResponses[keyof FindSessionWindowsResponses];
+
+export type OpenSessionWindowData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows';
+};
+
+export type OpenSessionWindowErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_059 — The host refused to change the session's terminals
+     *
+     * SESSIONS_056 — This host's runner cannot open or close a session's terminals
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type OpenSessionWindowError = OpenSessionWindowErrors[keyof OpenSessionWindowErrors];
+
+export type OpenSessionWindowResponses = {
+    201: OpenedSessionWindowResponseDto;
+};
+
+export type OpenSessionWindowResponse = OpenSessionWindowResponses[keyof OpenSessionWindowResponses];
+
+export type CloseSessionWindowData = {
+    body?: never;
+    path: {
+        id: string;
+        /**
+         * The tmux window index, from 1 up.
+         */
+        window: number;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows/{window}';
+};
+
+export type CloseSessionWindowErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_058 — The session has no such terminal
+     *
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_059 — The host refused to change the session's terminals
+     *
+     * SESSIONS_057 — The agent's window cannot be closed; close the session instead
+     *
+     * SESSIONS_056 — This host's runner cannot open or close a session's terminals
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type CloseSessionWindowError = CloseSessionWindowErrors[keyof CloseSessionWindowErrors];
+
+export type CloseSessionWindowResponses = {
+    200: ClosedSessionWindowResponseDto;
+};
+
+export type CloseSessionWindowResponse = CloseSessionWindowResponses[keyof CloseSessionWindowResponses];
 
 export type FindCloudAgentStatusData = {
     body?: never;

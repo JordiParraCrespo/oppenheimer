@@ -14,7 +14,7 @@ import { SessionLaunchCredentials } from './session-launch-credentials.resolver'
  * port. One place, so every command that dispatches a launch — create, restart,
  * add a checkout, the hello reconciliation — names the same directories. No
  * project name travels (see `sessionCreateSchema`), and no account: the runner
- * learnt that when it was paired (24 §2).
+ * learnt that when it was paired.
  *
  * A cloud session's files are not sent as `images`: its host only starts it,
  * so the task carries a fresh link to each instead, minted on every launch so

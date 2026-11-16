@@ -48,8 +48,7 @@ const REPLY_ON: {
 };
 
 /**
- * A channel turn's answer goes back to the chat it was asked in
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §4): its last
+ * A channel turn's answer goes back to the chat it was asked in: its last
  * text, or what happened to it, as a reply to the message that opened it.
  * The channel's module sends it (telegram, whatsapp), and only while this
  * bot still answers that chat. The job is not retried, so an answer is not

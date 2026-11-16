@@ -15,12 +15,12 @@ function focusInPicker(): boolean {
 }
 
 /**
- * Who a session is shared with, as the design system's `PeoplePicker`
- * (`ShareSession.dc.html`). Workspaces are personal, so there is no member to
- * suggest: a whole address offers "Invite …". What is still typed is handed
- * up as it changes. The picker clears its text when focus leaves it, so a
- * whole address there is taken as a chip at that moment: leaving the field,
- * or pressing Share, never drops it. People already on the share are never
+ * Who a session is shared with, as the design system's `PeoplePicker`.
+ * Workspaces are personal, so there is no member to suggest: a whole
+ * address offers "Invite …". What is still typed is handed up as it
+ * changes. The picker clears its text when focus leaves it, so a whole
+ * address there is taken as a chip at that moment: leaving the field, or
+ * pressing Share, never drops it. People already on the share are never
  * added twice.
  */
 export function SharePeoplePicker({

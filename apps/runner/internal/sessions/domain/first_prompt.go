@@ -6,11 +6,11 @@ import (
 )
 
 // FirstPromptMaxBytes is what a `prompt.first` carries of the first message:
-// 2 KB, the cap 02-runner §7 sets and the control plane measures in bytes.
+// 2 KB, a cap the control plane measures in bytes.
 const FirstPromptMaxBytes = 2 * 1024
 
 // AwaitsFirstPrompt reports a session whose first message the runner still
-// has to read off the agent's transcript and report (02-runner §7): an agent
+// has to read off the agent's transcript and report: an agent
 // launched with no task, under a conversation name the transcript can be
 // found by, that has not reported one yet. A stopped session still does: an
 // agent that exited between the first message and the next poll wrote it

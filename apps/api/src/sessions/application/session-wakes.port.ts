@@ -1,8 +1,8 @@
 import type { SessionWakeSource } from '../domain/session-prompt.policy';
 
 /**
- * A line to type into a session for its own agent, once it is at its prompt
- * (`product/next-steps/agent-tools.md` §3–4). `wakeId` names the wake across
+ * A line to type into a session for its own agent, once it is at its prompt.
+ * `wakeId` names the wake across
  * its attempts: the prompt it types is claimed by it, so it types once.
  */
 export interface SessionWake {

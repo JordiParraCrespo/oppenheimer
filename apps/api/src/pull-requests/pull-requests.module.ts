@@ -92,7 +92,7 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * The Pull requests area (`product/next-steps/0.2-pull-requests-api-plan.md`):
+ * The Pull requests area:
  * the queue, a pull request's briefing, files and comments, reviews and merges
  * in the caller's own name, and analytics. Pull requests are GitHub's, read
  * through the `PULL_REQUEST_*` ports; what this module keeps is which repositories a

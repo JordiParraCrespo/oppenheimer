@@ -25,9 +25,9 @@ import { OppenheimerSection } from './oppenheimer-section';
 import { SessionRow } from './session-row';
 
 /**
- * The popup: the Inbox (`product/versions/mvp/design/version1/Brain.dc.html`)
- * cut down to Claude Code cloud sessions. What needs you first; what is still
- * running as a count and a list; what is done behind a switch.
+ * The popup: the Inbox cut down to Claude Code cloud sessions. What needs you
+ * first; what is still running as a count and a list; what is done behind a
+ * switch.
  */
 export function App() {
   const { t } = useTranslation();

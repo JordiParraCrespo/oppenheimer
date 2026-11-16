@@ -20,19 +20,18 @@ export interface PairedMachine {
 }
 
 /**
- * The pairing column, agent first (`design/version1/AddHost.dc.html`, the
- * 2026-10-13 export): the agent prompt to paste into the coding agent on the
- * machine, the token's clock and the way to replace it with "Install manually
- * instead" across from them, a rule, and the Connection list that turns green
- * as the runner installs and dials in.
+ * The pairing column, agent first: the agent prompt to paste into the coding
+ * agent on the machine, the token's clock and the way to replace it with
+ * "Install manually instead" across from them, a rule, and the Connection list
+ * that turns green as the runner installs and dials in.
  *
- * The onboarding step and the console's Add a host dialog draw it. `layout`
- * is the export's two sizes: the step's 12px prompt and 14px rows, the
- * dialog's 11.5px prompt and 13px rows (`SessionsConsole.dc.html`). It lands
- * on the root as `data-layout`, and each part sizes itself from that through
- * the `pairing` group, so none of them takes the layout as a prop. Settings
- * shows the instruction outright, so it composes `PairingToken`,
- * `PairingInstruction` and `PairingStatus`, at the dialog's sizes.
+ * The onboarding step and the console's Add a host dialog draw it. `layout` is
+ * the export's two sizes: the step's 12px prompt and 14px rows, the dialog's
+ * 11.5px prompt and 13px rows. It lands on the root as `data-layout`, and each
+ * part sizes itself from that through the `pairing` group, so none of them
+ * takes the layout as a prop. Settings shows the instruction outright, so it
+ * composes `PairingToken`, `PairingInstruction` and `PairingStatus`, at the
+ * dialog's sizes.
  */
 export function PairingChrome({
   pairing,
@@ -124,8 +123,7 @@ export function PairingToken({
 }
 
 /**
- * Settings' Connect row, drawn as the frames draw it
- * (`design/version1/Settings.dc.html`): a 7px dot, 13px words, inside a 44px
+ * Settings' Connect row: a 7px dot, 13px words, inside a 44px
  * card the page provides. The status word says only what the API reports: a
  * host row exists once the runner registers, and `online` is all the control
  * plane says about it.

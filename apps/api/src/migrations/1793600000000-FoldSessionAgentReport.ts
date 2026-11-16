@@ -3,8 +3,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * The agent's own word on what it is doing, folded from the `program` of the
  * log's `agent.observed` entries: what it reported through OSC 7501 (the
- * Program Status Protocol), which the runner's `pty` wrapper keeps
- * (`product/research/lessons-from-herdr.md`).
+ * Program Status Protocol), which the runner's `pty` wrapper keeps.
  *
  * - One nullable `jsonb` value, like `pendingDecision`: read and written
  *   whole, parsed by its schema (`SessionAgentReport`) on the way in, bounded

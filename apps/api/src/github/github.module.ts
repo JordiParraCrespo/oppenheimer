@@ -177,8 +177,7 @@ const adapters: Provider[] = [
  * which installations a workspace claimed. Repositories and branches are read
  * live through the installation token and tokens are minted on demand, so the
  * two facts that would otherwise drift — what access exists, and what it covers —
- * both have their owner on GitHub's side
- * (`product/versions/mvp/03-control-plane.md`).
+ * both have their owner on GitHub's side.
  */
 @Module({
   imports: [

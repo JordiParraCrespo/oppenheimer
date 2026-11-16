@@ -11,13 +11,12 @@ import { taskWakeFor, taskWakeTurn } from '../../domain/bot-task-wake.policy';
 import { WakeOnTaskActivityCommand } from './wake-on-task-activity.command';
 
 /**
- * A change to a task on a project or milestone a bot follows
- * (`27-bot-subscriptions.md` §7.2). The bot and its owner are resolved again,
- * as for any wake, and so is what it follows, as that owner reads it now: a
- * project or milestone the owner can no longer read ends the subscription.
- * It is the one wake path (`BotSessionWakeResolver.queueTurn`), keyed by the
- * subscription and the change, so a change delivered twice queues one turn
- * and counts one wake.
+ * A change to a task on a project or milestone a bot follows. The bot and its
+ * owner are resolved again, as for any wake, and so is what it follows, as that
+ * owner reads it now: a project or milestone the owner can no longer read ends
+ * the subscription. It is the one wake path
+ * (`BotSessionWakeResolver.queueTurn`), keyed by the subscription and the
+ * change, so a change delivered twice queues one turn and counts one wake.
  */
 @CommandHandler(WakeOnTaskActivityCommand)
 export class WakeOnTaskActivityCommandHandler

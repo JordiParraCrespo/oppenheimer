@@ -55,7 +55,7 @@ describe('WatchedRepositoriesResolver', () => {
 
   // The queue and the analytics ask this before anything else, so a workspace
   // that has picked no repository costs GitHub nothing: no repository listing,
-  // which is what every account's first visit used to pay for (#247).
+  // which is what every account's first visit used to pay for.
   it('answers whether anything is watched without asking GitHub', async () => {
     const repositories = vi.fn().mockResolvedValue([MOBILE, WEB]);
     const resolver = new WatchedRepositoriesResolver(

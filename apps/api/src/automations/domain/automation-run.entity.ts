@@ -60,8 +60,8 @@ export type NewRunProps = Omit<
 >;
 
 /**
- * One firing of an automation, and what became of it before a session existed
- * (§Q4). Once it is dispatched, how the run goes is the session's turn to say;
+ * One firing of an automation, and what became of it before a session existed.
+ * Once it is dispatched, how the run goes is the session's turn to say;
  * this aggregate only ever records why it happened and what the guards decided.
  */
 export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {

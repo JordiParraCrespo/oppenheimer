@@ -3,7 +3,7 @@ import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 /**
  * `CLOUD_AGENTS_001`, `008` and `009` are retired: an agent that is not found,
  * busy or already stopped were the codes of the agent's own page, which is a
- * cloud session's at its vendor now (`product/next-steps/cloud-agents.md`).
+ * cloud session's at its vendor now.
  */
 export const CloudAgentErrors = {
   /** No `CLOUD_AGENTS_KEY` on this server, so no vendor key can be kept. */

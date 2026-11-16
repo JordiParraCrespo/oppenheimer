@@ -371,6 +371,17 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   },
   'session.window.open': { type: 'session.window.open', commandId, sessionId, name: 'tests' },
   'session.window.close': { type: 'session.window.close', commandId, sessionId, window: 1 },
+  'session.windows.list': { type: 'session.windows.list', commandId, sessionId },
+  'session.windows': {
+    type: 'session.windows',
+    commandId,
+    sessionId,
+    windows: [
+      { index: 0, name: 'agent' },
+      { index: 1, name: 'zsh' },
+    ],
+    opened: 1,
+  },
   'session.close': { type: 'session.close', commandId, sessionId, acceptUnpushedWork: false },
   'session.watch': {
     type: 'session.watch',

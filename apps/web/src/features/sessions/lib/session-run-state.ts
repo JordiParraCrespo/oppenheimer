@@ -4,12 +4,12 @@ type SessionDot = 'running' | 'idle' | 'failed' | 'pending' | 'completed';
 
 /**
  * How a session's **group** reads as a dot. The sidebar shows the group
- * because it is organised by what needs you, not what a process is doing
- * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
- * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
- * that is the **lifecycle**, and {@link dotFor} combines the two. A delete its
- * host has not carried out pulses the same way, and one its host refused is
- * red: both say so in the row's status word, since the row is not what it was.
+ * because it is organised by what needs you, not what a process is doing. A
+ * session the host has not built yet is `idle` by group, but the artboard
+ * draws it with a pulsing grey glyph: that is the **lifecycle**, and {@link
+ * dotFor} combines the two. A delete its host has not carried out pulses the
+ * same way, and one its host refused is red: both say so in the row's status
+ * word, since the row is not what it was.
  */
 const DOT: Record<SessionGroup, SessionDot> = {
   working: 'running',

@@ -2,14 +2,13 @@
 # a GitHub Release, together with the manifest hosts read.
 #
 # The release manifest is **not signed here**. The Ed25519 key that authorises an
-# update lives offline and never enters CI — that is the whole property F26
-# buys (see product/versions/mvp/09-runner-install-and-update.md §5). This
-# workflow produces the artifacts and the unsigned manifest; whoever holds the
-# key signs and publishes on their own machine with
+# update lives offline and never enters CI, so a compromised CI cannot ship an
+# update to hosts. This workflow produces the artifacts and the unsigned
+# manifest; whoever holds the key signs and publishes on their own machine with
 # scripts/runner/publish-dev.sh, which downloads what this job attached to the
 # release, signs that manifest, and hands those same files to
-# `oppctl publish-release` on the server (deploy/dev/README.md, "Runner
-# releases"). A manifest without its signature is never published.
+# `oppctl publish-release` on the server. A manifest without its signature is
+# never published.
 name: Release runner
 
 on:

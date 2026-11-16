@@ -10,10 +10,9 @@ import { CalendarSurface } from './calendar-surface';
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 
 /**
- * The month (`20-plan-calendar.md` §2) on the design system's calendar: a
- * personal event or a task dragged onto another day moves there
- * (`monthMove`); empty space on a day opens New event; a day's number opens
- * that day on the hours.
+ * The month on the design system's calendar: a personal event or a task
+ * dragged onto another day moves there (`monthMove`); empty space on a day
+ * opens New event; a day's number opens that day on the hours.
  */
 export function MonthGrid() {
   const { t } = useTranslation();

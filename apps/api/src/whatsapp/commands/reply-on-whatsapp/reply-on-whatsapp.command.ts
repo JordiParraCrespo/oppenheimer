@@ -2,10 +2,9 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
  * Send an Oppenheimer bot's answer in the owner's chat with the linked number
- * it answers on (`product/next-steps/answering-on-telegram-and-whatsapp.md`
- * §4): the reply to the owner's own message, quoting it, not a tool's send,
- * so it asks nothing and counts against no daily limit (only the host's own
- * send budget).
+ * it answers on: the reply to the owner's own message, quoting it, not a
+ * tool's send, so it asks nothing and counts against no daily limit (only the
+ * host's own send budget).
  */
 export class ReplyOnWhatsappCommand extends CommandBase {
   readonly organizationId: string;

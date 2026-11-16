@@ -5,8 +5,8 @@ import { WORKSPACE_EVENT_BUS } from '../../workspace-events.di-tokens';
 import type { WorkspaceEventBusPort } from '../workspace-event-bus.port';
 
 /**
- * A bot sent the person a notice (`notify`, `product/next-steps/agent-tools.md`
- * §5): tell its workspace's consoles, whose Inbox lists every bot's latest.
+ * A bot sent the person a notice (`notify`): tell its workspace's consoles,
+ * whose Inbox lists every bot's latest.
  */
 @Injectable()
 export class BotNoticeChangesDomainEventHandler {

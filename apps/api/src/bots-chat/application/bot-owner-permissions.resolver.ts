@@ -4,7 +4,7 @@ import { expandScopes, grantableScopes, ROLES, type Scope } from '@oppenheimer/s
 import { AbilityFactory } from '../../roles/application/ability.factory';
 
 /**
- * What a bot's owner may do now, as scopes (`25-bots.md` §4): the scopes
+ * What a bot's owner may do now, as scopes: the scopes
  * their live roles in the bot's workspace would let them grant a token,
  * `grantableScopes` as API tokens use it, so a bot reaches no further than a
  * token its owner could mint. Built fresh for every turn and every approved

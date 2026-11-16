@@ -5,13 +5,13 @@ export interface StallCheck {
   sessionId: string;
   /** The task handed off. */
   turn: number;
-  /** Which check of the task, from 1 (§4.2). */
+  /** Which check of the task, from 1. */
   check: number;
 }
 
 /**
- * Owes a hand-off a check at `at` (`27-bot-subscriptions.md` §4.1, §4.2),
- * durably: the check runs once the time comes, across a restart.
+ * Owes a hand-off a check at `at`, durably: the check runs once the time
+ * comes, across a restart.
  */
 export interface BotStallChecksPort {
   schedule(check: StallCheck, at: Date, correlationId: string | null): Promise<void>;

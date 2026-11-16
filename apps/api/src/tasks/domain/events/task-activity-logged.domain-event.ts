@@ -5,7 +5,7 @@ import type { PlanActor } from '../plan-change.types';
 /**
  * Plan logged a change to a task: one event per `plan_event` row, staged in
  * the same transaction, for whoever follows the task's project or milestone
- * (bots, `27-bot-subscriptions.md` §7.2). It carries what a follower is told
+ * (bots). It carries what a follower is told
  * and nothing of the task's notes.
  */
 export class TaskActivityLoggedDomainEvent extends DomainEvent {

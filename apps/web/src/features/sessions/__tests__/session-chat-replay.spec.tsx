@@ -58,6 +58,7 @@ const PARTS: Record<string, string> = {
   'tool-call-row': 'call',
   'tool-call-live': 'running',
   'chat-reply': 'reply',
+  'message-trail': 'trail',
   'answered-questions': 'answered',
   'changed-files-card': 'changes',
   'chat-marker': 'note',
@@ -89,7 +90,7 @@ function outline(root: HTMLElement): string[] {
 }
 
 /**
- * A turn's time as the header shows it: in the host's time zone, so the
+ * A turn's time as its trail shows it: in the host's time zone, so the
  * outline reads the same on a machine that is not on UTC.
  */
 const clock = (iso: string) =>
@@ -124,16 +125,17 @@ describe('a session replayed from its transcript', () => {
     // Settled, it folds to what it asked, its answer and its card.
     expect(outline(chat.container)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
+      '▸ sessions.chat.turn.worked 1m 20s',
       '  answered: Which fix? Wait for the toast',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
       '  changes: sign-in.spec.ts tests +2 −1',
+      `  trail: ${clock('2026-10-30T10:01:20.000Z')}`,
     ]);
 
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
     expect(outline(chat.container)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
+      '▾ sessions.chat.turn.worked 1m 20s',
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  call: sessions.chat.verb.read sign-in.spec.ts tests',
       '  call: Run it twenty times pnpm test sign-in --repeat 20 sessions.chat.failedCall',
@@ -141,6 +143,7 @@ describe('a session replayed from its transcript', () => {
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
       '  changes: sign-in.spec.ts tests +2 −1',
+      `  trail: ${clock('2026-10-30T10:01:20.000Z')}`,
     ]);
     // The composer is back, with the list the agent last wrote within reach.
     expect(composer().closest('[hidden]')).toBeNull();
@@ -172,10 +175,11 @@ describe('a session replayed from its transcript', () => {
 
     expect(outline(chat.container)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
+      '▸ sessions.chat.turn.worked 1m 20s',
       '  answered: Which fix? Wait for the toast',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
       '  changes: sign-in.spec.ts tests +2 −1',
+      `  trail: ${clock('2026-10-30T10:01:20.000Z')}`,
       'you: Now run the whole suite',
       '… sessions.chat.turn.working 15s',
       '  reply: Running the suite.',
@@ -190,25 +194,27 @@ describe('a session replayed from its transcript', () => {
     chat.playAll();
 
     // What it said on the way and the command it ran fold away; its answer stays.
-    expect(outline(chat.container).slice(5)).toEqual([
+    expect(outline(chat.container).slice(6)).toEqual([
       'you: Now run the whole suite',
-      `▸ sessions.chat.turn.worked 1m 32s · ${clock('2026-10-30T10:06:32.000Z')}`,
+      '▸ sessions.chat.turn.worked 1m 32s',
       '  reply: All 212 tests pass.',
+      `  trail: ${clock('2026-10-30T10:06:32.000Z')}`,
     ]);
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked 1m 32s/ }));
-    expect(outline(chat.container).slice(5)).toEqual([
+    expect(outline(chat.container).slice(6)).toEqual([
       'you: Now run the whole suite',
-      `▾ sessions.chat.turn.worked 1m 32s · ${clock('2026-10-30T10:06:32.000Z')}`,
+      '▾ sessions.chat.turn.worked 1m 32s',
       '  reply: Running the suite.',
       '  call: Run the suite pnpm test',
       '  reply: All 212 tests pass.',
+      `  trail: ${clock('2026-10-30T10:06:32.000Z')}`,
     ]);
     expect(screen.queryByRole('button', { name: 'sessions.chat.composer.stop' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked 1m 20s/ }));
     expect(outline(chat.container).slice(0, 9)).toEqual([
       'you: The sign-in test is flaky — find out why',
-      `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
+      '▾ sessions.chat.turn.worked 1m 20s',
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  call: sessions.chat.verb.read sign-in.spec.ts tests',
       '  call: Run it twenty times pnpm test sign-in --repeat 20 sessions.chat.failedCall',

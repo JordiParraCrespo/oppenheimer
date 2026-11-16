@@ -36,7 +36,7 @@ const MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
  * `target: 'device'`): the runner's JPEG frames out as binary frames, the
  * browser's taps and keys in as `device.input`, its credit relayed as for a
  * terminal. The browser never names a device: the runner applies input to the
- * session's own (`product/research/device-streaming.md`).
+ * session's own.
  *
  * It shares the terminal's socket path, ticket and authorisation, and is
  * judged again on the same interval, so a revoked grant or a stopped session

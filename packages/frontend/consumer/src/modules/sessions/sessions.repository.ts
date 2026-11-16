@@ -4,6 +4,7 @@ import {
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
   type SessionShareResponseDto,
+  type SessionTerminalWindowDto,
   type StartCloudSessionRequest,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
@@ -20,6 +21,7 @@ import type { CloudChatPage } from './chat/cloud-chat-feed';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type OpenedSessionWindow,
   type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
@@ -27,6 +29,8 @@ import {
   type SessionPorts,
   type SessionPreview,
   type SessionShare,
+  type SessionWindow,
+  type SessionWindows,
   type SharedSession,
   type StartCloudSessionInput,
 } from './session.entity';
@@ -490,6 +494,30 @@ export class SessionsRepository {
     });
   }
 
+  /** The session's terminal windows, as its host lists them now. */
+  listWindows(id: string): Promise<SessionWindows> {
+    return callApi(SessionsErrors.WINDOWS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findSessionWindows({ path: { id } }));
+      return { state: data.state, windows: data.windows.map(toWindow) };
+    });
+  }
+
+  /** Opens a plain shell in the session's worktree: the window it made, and every window after. */
+  openWindow(id: string): Promise<OpenedSessionWindow> {
+    return callApi(SessionsErrors.WINDOW_OPEN_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.openSessionWindow({ path: { id } }));
+      return { window: toWindow(data.window), windows: data.windows.map(toWindow) };
+    });
+  }
+
+  /** Closes one of the session's shells: the windows left. Window 0, the agent, is refused. */
+  closeWindow(id: string, window: number): Promise<SessionWindow[]> {
+    return callApi(SessionsErrors.WINDOW_CLOSE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.closeSessionWindow({ path: { id, window } }));
+      return data.windows.map(toWindow);
+    });
+  }
+
   /**
    * Where one of the session's ports opens: framed by the Browser tab
    * (`embed`) or in a tab of its own. Never cached: the ticket is single use.
@@ -584,4 +612,9 @@ export class SessionsRepository {
       await api.result(heyApiSdk.pasteSessionImage({ path: { id }, body: { file: file, window } }));
     });
   }
+}
+
+/** A window off the wire, copied so the generated DTO type stays at this boundary. */
+function toWindow(window: SessionTerminalWindowDto): SessionWindow {
+  return { index: window.index, name: window.name, agent: window.agent };
 }

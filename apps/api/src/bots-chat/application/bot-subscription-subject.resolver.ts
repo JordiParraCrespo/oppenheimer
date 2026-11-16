@@ -18,11 +18,10 @@ export interface WakeSubjectRead {
 }
 
 /**
- * Everything a subscription's wake reads before deciding
- * (`27-bot-subscriptions.md` §4, §5), as one answer: the subject, or null
- * when the bot is gone, it has no owner, the owner left the workspace, or
- * the owner can no longer read the session. Null is the one way a wake
- * learns that access was lost.
+ * Everything a subscription's wake reads before deciding, as one answer: the
+ * subject, or null when the bot is gone, it has no owner, the owner left the
+ * workspace, or the owner can no longer read the session. Null is the one way a
+ * wake learns that access was lost.
  */
 @Injectable()
 export class BotSubscriptionSubjectResolver {
@@ -44,7 +43,7 @@ export class BotSubscriptionSubjectResolver {
   /**
    * The bot and the owner it acts as, or null when the bot is gone, has no
    * owner, or the owner left the workspace: all a pull request's wake reads,
-   * since the pull request itself is GitHub's, not ours to re-read (27 §7).
+   * since the pull request itself is GitHub's, not ours to re-read.
    */
   async resolveOwner(
     subscription: BotSubscriptionEntity,

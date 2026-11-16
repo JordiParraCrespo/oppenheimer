@@ -45,7 +45,7 @@ export class GithubAccessResolver {
 
   /**
    * The repository an address names, checked reachable: covered by the
-   * installation it names, or opened by one of the caller's own tokens (§6.2).
+   * installation it names, or opened by one of the caller's own tokens.
    */
   async repositoryOf(scope: AccessScope, address: RepositoryAddress): Promise<WorkspaceRepository> {
     if (address.kind === 'tokens') return this.tokenRepositoryOf(scope, address.githubRepoId);
@@ -77,7 +77,7 @@ export class GithubAccessResolver {
   /**
    * What reads the repository: the installation's token, held for most of its
    * hour and counted against the installation, or the caller's own token that
-   * opens it (§6.2).
+   * opens it.
    */
   async readCredential(scope: AccessScope, address: RepositoryAddress): Promise<GithubCredential> {
     if (address.kind === 'tokens') {

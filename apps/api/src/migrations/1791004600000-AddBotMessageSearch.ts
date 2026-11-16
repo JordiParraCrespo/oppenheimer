@@ -1,9 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot searches its own chat (`search_chat`, `product/versions/mvp/25-bots.md`
- * §4.1): what the person and the bot said, including what has folded into
- * the conversation's summary and is no longer in the turn's history.
+ * A bot searches its own chat (`search_chat`): what the person and the bot
+ * said, including what has folded into the conversation's summary and is no
+ * longer in the turn's history.
  *
  * - `IDX_bot_message_search`: GIN over `to_tsvector('simple', "content")`,
  *   partial on the two roles that are searched (`user`, `assistant`).

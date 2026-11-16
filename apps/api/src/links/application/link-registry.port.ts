@@ -16,8 +16,7 @@ export interface AttachmentSink {
   /** The runner refused the command that opened this attachment. */
   refused(code: string, detail?: string): void;
   /**
-   * The runner's side of this attachment's direct path
-   * (`product/versions/mvp/22-direct-terminal-path.md`): its answer to the
+   * The runner's side of this attachment's direct path: its answer to the
    * browser's offer, its refusal, or the output offset the path moved at.
    */
   signal(message: AttachmentSignal): void;
@@ -94,7 +93,7 @@ export interface RunnerLink {
   /**
    * The last ping/pong round trip on this link, in milliseconds; absent until
    * the first pong. Measured by the process holding the socket, so it is
-   * always the true one (`product/versions/mvp/15-host-metadata.md`).
+   * always the true one.
    */
   readonly roundTripMillis?: number | null;
   /** The number of attachments open; read by the tests. */

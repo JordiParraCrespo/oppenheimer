@@ -3,9 +3,8 @@ export type TelegramAccountStatus = 'connecting' | 'connected' | 'revoked' | 'un
 
 /**
  * One of the reader's own Telegram bots, made with @BotFather and polled by a
- * runner on one of their hosts for their Oppenheimer bots
- * (`product/next-steps/telegram.md` §2). Its token stays on the host; this is
- * how the bot stands and who it is on Telegram.
+ * runner on one of their hosts for their Oppenheimer bots. Its token stays on
+ * the host; this is how the bot stands and who it is on Telegram.
  */
 export class TelegramAccountEntity {
   constructor(
@@ -23,9 +22,8 @@ export class TelegramAccountEntity {
     public readonly statusReason: string | null,
     public readonly linkedAt: string,
     /**
-     * The reader's Oppenheimer bot that answers them here
-     * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1); null
-     * while none does.
+     * The reader's Oppenheimer bot that answers them here; null while none
+     * does.
      */
     public readonly answeringBotId: string | null = null,
     /** Whether the reader's own Telegram account is recorded, by the one-time `start` link. */

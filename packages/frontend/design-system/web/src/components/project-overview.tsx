@@ -12,10 +12,10 @@ import { dotVariants, type StatusState } from './status-dot';
 
 /**
  * ProjectOverview — a project's page on Plan, as the Projects view draws it
- * once a card is opened (`design/version1/Tasks.dc.html`): two columns of
- * panels at 320px or more each, Milestones on the left, Needs input and In
- * progress stacked on the right. Each panel is a `Card` headed by an
- * uppercase eyebrow, its rows under it, and a muted line when it has none.
+ * once a card is opened: two columns of panels at 320px or more each,
+ * Milestones on the left, Needs input and In progress stacked on the right.
+ * Each panel is a `Card` headed by an uppercase eyebrow, its rows under it, and
+ * a muted line when it has none.
  */
 function ProjectOverview({ className, ...props }: React.ComponentProps<'div'>) {
   return (

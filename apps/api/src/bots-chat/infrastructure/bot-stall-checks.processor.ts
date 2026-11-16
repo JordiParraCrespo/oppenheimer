@@ -7,11 +7,10 @@ import { CheckStalledSessionCommand } from '../commands/check-stalled-session/ch
 import { CHECK_STALLED_SESSION_JOB } from './outbox-bot-stall-checks.adapter';
 
 /**
- * The `bot-stall-checks` worker: one job per task a bot hands a session,
- * staged on the outbox to run a few minutes later (`27-bot-subscriptions.md`
- * §4.1). The queue retries a job that throws (`DURABLE_JOB_OPTIONS`); the
- * wake it may queue is keyed by the subscription and the task, so a retry
- * tells the bot once.
+ * The `bot-stall-checks` worker: one job per task a bot hands a session, staged
+ * on the outbox to run a few minutes later. The queue retries a job that throws
+ * (`DURABLE_JOB_OPTIONS`); the wake it may queue is keyed by the subscription
+ * and the task, so a retry tells the bot once.
  */
 @Processor(QUEUE_NAMES.BOT_STALL_CHECKS)
 export class BotStallChecksProcessor extends WorkerHost {

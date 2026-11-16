@@ -57,7 +57,7 @@ interface IssueRead {
 }
 
 /**
- * GitHub issues (`25-bots.md` §4.4): read a repository's issues and one with
+ * GitHub issues: read a repository's issues and one with
  * its conversation, open one, comment on one. Reads go through the
  * workspace's installations; the writes ask first under Approve for me and
  * are made with the owner's own GitHub user token, so GitHub records the

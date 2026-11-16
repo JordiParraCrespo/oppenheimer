@@ -9,12 +9,15 @@ import { sessionEntity } from '../../testing';
 import { sessionsKeys } from '../sessions.keys';
 import {
   useCloseSession,
+  useCloseSessionWindow,
   useCreateSession,
+  useOpenSessionWindow,
   useRenameSession,
   useRestartSession,
   useSessionOpening,
   useSessionStartProgress,
   useSessions,
+  useSessionWindows,
   useSuspenseSession,
   watchSessionStart,
 } from '../sessions.queries';
@@ -40,6 +43,9 @@ function setup(
     create?: unknown;
     rename?: unknown;
     restart?: unknown;
+    listWindows?: unknown;
+    openWindow?: unknown;
+    closeWindow?: unknown;
   },
   // The console's own defaults, for the specs whose rule is its stale window.
   defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
@@ -83,7 +89,7 @@ describe('useSuspenseSession', () => {
    * TanStack Query pauses an interval while the document is hidden unless the
    * poll says otherwise, and a start launched from a tab the reader then
    * leaves is exactly the case: the pane came back frozen on a step that had
-   * finished a minute before (#111).
+   * finished a minute before.
    */
   it('keeps reading a starting session while the tab is hidden', async () => {
     focusManager.setFocused(false);
@@ -539,5 +545,57 @@ describe('useSessionOpening', () => {
 
     expect(queryClient.getQueryState(sessionsKeys.start('s-1', false))?.error).toBeNull();
     expect(startProgress).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * The Terminal tab reads a session's windows once and then trusts the
+ * answers to its own opens and closes: each writes the windows the host
+ * answered with into the read, so a shell just opened is a tab before any
+ * second round trip to the host, and a closed one is gone.
+ */
+describe("a session's terminal windows", () => {
+  const agent = { index: 0, name: 'claude', agent: true };
+  const shell = { index: 1, name: 'zsh', agent: false };
+
+  it('lists the windows, and an open adds the one it made to them', async () => {
+    const listWindows = vi.fn().mockResolvedValue({ state: 'listed', windows: [agent] });
+    const openWindow = vi.fn().mockResolvedValue({ window: shell, windows: [agent, shell] });
+    const { wrapper } = setup({ listWindows, openWindow });
+    const { result } = renderHook(
+      () => ({ read: useSessionWindows('s-1'), open: useOpenSessionWindow() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent]));
+
+    const opened = await result.current.open.mutateAsync('s-1');
+
+    expect(opened.window).toEqual(shell);
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, shell]));
+    expect(listWindows).toHaveBeenCalledTimes(1);
+    expect(openWindow).toHaveBeenCalledWith('s-1');
+  });
+
+  it('a close leaves the windows the host answered with', async () => {
+    const listWindows = vi.fn().mockResolvedValue({ state: 'listed', windows: [agent, shell] });
+    const closeWindow = vi.fn().mockResolvedValue([agent]);
+    const { wrapper } = setup({ listWindows, closeWindow });
+    const { result } = renderHook(
+      () => ({ read: useSessionWindows('s-1'), close: useCloseSessionWindow() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, shell]));
+
+    await result.current.close.mutateAsync({ sessionId: 's-1', window: 1 });
+
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent]));
+    expect(closeWindow).toHaveBeenCalledWith('s-1', 1);
+  });
+
+  it('asks nothing until there is a session', () => {
+    const listWindows = vi.fn();
+    const { wrapper } = setup({ listWindows });
+    renderHook(() => useSessionWindows(undefined), { wrapper });
+    expect(listWindows).not.toHaveBeenCalled();
   });
 });

@@ -48,13 +48,13 @@ function keyOf(event: BotGoalEvent): (typeof GOAL_KEYS)[keyof typeof GOAL_KEYS] 
 }
 
 /**
- * A bot's goal (`25-bots.md` §4.1): "Goal · continuation 2" where a
- * continuation opens a turn ("2 of 5" for a goal set with a limit), how the
- * goal ended when the bot did not end it (the reviewer found it met or out
- * of reach, you stopped it, it ran out of continuations, its owner lost
- * access), or that it paused, and why, or you resumed it. The reviewer's
- * reason follows, muted, where it gave one (never for `stopped` or
- * `paused`, whose reason is a code: a pause's is in its words).
+ * A bot's goal: "Goal · continuation 2" where a continuation opens a turn
+ * ("2 of 5" for a goal set with a limit), how the goal ended when the bot
+ * did not end it (the reviewer found it met or out of reach, you stopped
+ * it, it ran out of continuations, its owner lost access), or that it
+ * paused, and why, or you resumed it. The reviewer's reason follows, muted,
+ * where it gave one (never for `stopped` or `paused`, whose reason is a
+ * code: a pause's is in its words).
  */
 export function GoalEventLine({ event }: { event: BotGoalEvent }) {
   const { t } = useTranslation();

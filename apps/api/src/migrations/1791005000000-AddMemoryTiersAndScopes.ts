@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot's memory gets a tier and a scope (`product/versions/mvp/25-bots.md`
- * §4.1; from Grok Bot's memory, `research/lessons-from-grok-bot.md` §9 row 11).
+ * A bot's memory gets a tier and a scope (from Grok Bot's memory).
  *
  * - `tier`: `profile` is in mind in every turn, `log` waits for `recall`.
  *   Every fact kept so far was in every prompt, so it starts `profile`.

@@ -6,6 +6,8 @@
     "copied": "Copied",
     "copy": "Copy",
     "copyCode": "Copy code",
+    "wrapLines": "Wrap lines",
+    "unwrapLines": "Unwrap lines",
     "loading": "Loading...",
     "or": "or",
     "relative": {
@@ -498,7 +500,11 @@
       "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
       "BOTS_041": "This bot has no tidy of its memory to undo.",
       "BOTS_042": "This bot answers on a Telegram bot. Choose another bot, or none, under Settings → Telegram before you delete it.",
-      "BOTS_043": "This bot answers on a WhatsApp number. Choose another bot, or none, under Settings → WhatsApp before you delete it."
+      "BOTS_043": "This bot answers on a WhatsApp number. Choose another bot, or none, under Settings → WhatsApp before you delete it.",
+      "SESSIONS_056": "This host's runner can't open or close terminals. Update the runner on the host.",
+      "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
+      "SESSIONS_058": "That terminal is no longer open.",
+      "SESSIONS_059": "The host refused to change the session's terminals."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -700,6 +706,7 @@
       "needsInput": "Needs input",
       "inProgress": "In progress",
       "noMilestones": "No milestones yet.",
+      "sessionWaiting": "Session waiting on you",
       "nothingNeedsInput": "Nothing waits on you.",
       "nothingInProgress": "Nothing in progress.",
       "gone": "That project is no longer here.",
@@ -1448,12 +1455,50 @@
         }
       }
     },
+    "side": {
+      "show": "Show side pane",
+      "hide": "Hide side pane",
+      "label": "Side pane",
+      "tabs": "Open beside this session",
+      "new": "Open something else",
+      "close": "Close side pane",
+      "closeTab": "Close {{name}}",
+      "launcher": {
+        "title": "Open beside this session",
+        "description": "Keep this session in view while you work on something else.",
+        "terminal": "Terminal",
+        "terminalDetail": "A shell in this session's worktree",
+        "session": "Session",
+        "sessionDetail": "Another session, on any host",
+        "bot": "Bot",
+        "botDetail": "Pick one of your bots and chat",
+        "browserDetail": "The session's dev server",
+        "simulatorDetail": "The device the session's agent drives",
+        "desktopDetail": "The host's own screen",
+        "back": "Back",
+        "sessions": "Pick a session",
+        "searchSessions": "Search sessions",
+        "noSessions": "No other session to open yet.",
+        "bots": "Pick a bot",
+        "searchBots": "Search bots",
+        "noBots": "No bot yet. Create one under Employees.",
+        "noMatch": "Nothing matches “{{query}}”."
+      },
+      "terminal": {
+        "name": "Terminal {{index}}",
+        "opening": "Opening a terminal…",
+        "openFailed": "The terminal didn't open",
+        "closeFailed": "The terminal didn't close",
+        "loadFailed": "Couldn't read this session's terminals",
+        "notSupported": "This host can't open more terminals",
+        "notSupportedDetail": "Update its runner to open shells beside the agent.",
+        "gone": "This terminal has closed"
+      },
+      "openFull": "Open on its own page",
+      "sessionLoadFailed": "Couldn't load that session"
+    },
     "preview": {
-      "show": "Show preview",
-      "hide": "Hide preview",
-      "label": "Preview",
       "simulator": "Simulator",
-      "close": "Close preview",
       "frame": "App running on {{name}}",
       "title": "{{name}} running on this session's host",
       "connecting": "Connecting to the session's device…",
@@ -1614,9 +1659,7 @@
       "actions": "Bot options",
       "settings": "Settings",
       "delete": "Delete bot",
-      "helloBlank": "{{name}} is ready. Tell it what job to do.",
-      "startFrom": "Try asking",
-      "hello": "{{name}} is ready. What should we work on?",
+      "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
       "placeholder": "Message {{name}}",
       "history": "History {{position}}/{{total}}",
       "pasted": {
@@ -1744,48 +1787,6 @@
         "moreLines_one": "+{{count}} line",
         "moreLines_other": "+{{count}} lines",
         "fullLines": "Show full lines"
-      },
-      "suggest": {
-        "task": {
-          "research": {
-            "name": "Research a topic",
-            "prompt": "Search the web and give me a short summary, with sources, of "
-          },
-          "summarise": {
-            "name": "Summarise something",
-            "prompt": "Summarise this in five bullet points:\n\n"
-          },
-          "draft": {
-            "name": "Draft a message",
-            "prompt": "Draft a short, friendly message to "
-          },
-          "plan": {
-            "name": "Make a plan",
-            "prompt": "Make a step-by-step plan to "
-          }
-        },
-        "job": {
-          "research": {
-            "name": "Research assistant",
-            "description": "Finds and sums up what I ask about",
-            "prompt": "Be my research assistant: when I name a topic, search the web and give me a short summary with its sources."
-          },
-          "writing": {
-            "name": "Writing partner",
-            "description": "Tightens my drafts in my own voice",
-            "prompt": "Be my writing partner: tighten what I write, suggest clearer wording and keep my tone."
-          },
-          "planner": {
-            "name": "Planner",
-            "description": "Turns goals into next steps",
-            "prompt": "Be my planner: break my goals into steps, keep a to-do list and tell me what to do next."
-          },
-          "news": {
-            "name": "News digest",
-            "description": "The latest on what I follow",
-            "prompt": "Be my news digest: when I ask, search the web for the latest on the topics I follow and sum it up in five bullets."
-          }
-        }
       },
       "model": "Model",
       "searchModels": "Search models…",
@@ -2423,7 +2424,8 @@
       "missed": "Skipped: the slot was missed",
       "not_launchable": "Skipped: the session could not start",
       "agent_unavailable": "Skipped: the agent is not on the host",
-      "unattended": "Skipped: its bot’s owner is away"
+      "unattended": "Skipped: its bot’s owner is away",
+      "idle": "Skipped: nothing new since the last heartbeat"
     },
     "pausedReason": {
       "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -3147,6 +3149,7 @@
       "notesPlaceholder": "Add notes",
       "status": "Status",
       "project": "Project",
+      "chooseProject": "Choose a project",
       "milestone": "Milestone",
       "none": "None",
       "due": "Due",

@@ -22,7 +22,7 @@ export interface RegisterHostResult {
   hostId: string;
   /**
    * The account the host is now paired with, its owner. The runner keeps it
-   * and names the top level of its work folder by it (24 §2), so no command
+   * and names the top level of its work folder by it, so no command
    * the control plane sends it later has to say whose the work is.
    */
   accountId: string;

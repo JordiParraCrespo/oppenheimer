@@ -6,9 +6,9 @@ import { ModelProvidersSkeleton } from '../components/model-providers-skeleton';
 import { ModelProviders } from '../sections/model-providers';
 
 /**
- * Settings → Model providers (`product/versions/mvp/25-bots.md` §2): one row
- * per provider a bot can run on, with whether the workspace has a key for it.
- * A server with no sealing key says so above the list, whose edits are off.
+ * Settings → Model providers: one row per provider a bot can run on, with
+ * whether the workspace has a key for it. A server with no sealing key says
+ * so above the list, whose edits are off.
  */
 export function ModelProvidersSettingsScreen() {
   const { t } = useTranslation();

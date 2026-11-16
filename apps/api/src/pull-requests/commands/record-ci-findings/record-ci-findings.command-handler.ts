@@ -10,8 +10,7 @@ import { CI_FINDING_REPOSITORY } from '../../pull-requests.di-tokens';
 import { RecordCiFindingsCommand } from './record-ci-findings.command';
 
 /**
- * Files what failing checks on a pull request came to
- * (`0.2-pull-requests.md`, "CI findings"). The pull request is read as the
+ * Files what failing checks on a pull request came to. The pull request is read as the
  * caller, so a finding is filed only on one they can read, against the head
  * GitHub shows now, and only for a check failing on it: a finding about a
  * check that passed, or on a commit since pushed over, is not one. Answers the

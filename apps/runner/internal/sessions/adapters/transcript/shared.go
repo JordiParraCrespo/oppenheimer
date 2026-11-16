@@ -20,8 +20,7 @@ import (
 // SharedEntryType names the chat entry for a file an agent showed the person
 // (`runner sessions send-file`): its name, where it is on the host, what it
 // is, and as much of it as the chat has room for — a JPEG preview of an
-// image, the text of a small text file. The file itself stays on the host
-// (`product/next-steps/agent-tools.md` §1).
+// image, the text of a small text file. The file itself stays on the host.
 const SharedEntryType = "oppenheimer.file"
 
 const (

@@ -8,7 +8,7 @@ import (
 )
 
 // turnResultMaxBytes keeps a turn's answer well inside the 8 KB an event
-// payload may carry (01), with room for the rest of the payload. The full
+// payload may carry, with room for the rest of the payload. The full
 // answer stays in the agent's own transcript.
 const turnResultMaxBytes = 4096
 

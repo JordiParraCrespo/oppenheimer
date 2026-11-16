@@ -1,6 +1,6 @@
 // Package directtest is the console's side of the direct path for tests: a
 // pion peer that offers the way the browser does and runs the browser's half
-// of the host proof (product/versions/mvp/31). Like net/http/httptest, it is
+// of the host proof. Like net/http/httptest, it is
 // imported by tests only.
 package directtest
 

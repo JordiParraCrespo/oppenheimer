@@ -1,9 +1,9 @@
 /**
- * A change to a task on a project or milestone a bot follows wakes it
- * (`27-bot-subscriptions.md` §7.2). What breaks this: the bot woken by its own
- * move; a change delivered twice counted twice; a bot whose owner can no
- * longer read the project woken, or kept subscribed; a session subscription
- * woken by a task. The text the bot reads is `bot-task-wake.policy.spec.ts`.
+ * A change to a task on a project or milestone a bot follows wakes it. What
+ * breaks this: the bot woken by its own move; a change delivered twice counted
+ * twice; a bot whose owner can no longer read the project woken, or kept
+ * subscribed; a session subscription woken by a task. The text the bot reads is
+ * `bot-task-wake.policy.spec.ts`.
  */
 import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';

@@ -1,7 +1,7 @@
 # The dev deployment on one Hetzner server. Nothing here is built on the
 # server: every image is either a digest-pinned upstream image below or one the
 # `Deploy dev` workflow built and pushed to GHCR, which `oppctl deploy` pins by
-# digest in the release's `release.env`. See deploy/dev/README.md.
+# digest in the release's `release.env`.
 #
 # Run only through `oppctl`, which supplies the two env files compose
 # interpolates from (`config/host.env` for this server, `release.env` for the
@@ -167,11 +167,10 @@ services:
 
   # The runner's releases, for hosts to install and update from: the signed
   # manifest, the binaries and the installer. Built and signed off this server
-  # and put into /srv/oppenheimer/public by `oppctl publish-release` (README,
-  # "Runner releases"); served read-only, and reached through the tunnel's
-  # /releases/ and /install.sh. Both are relative symlinks into one set under
-  # public/.releases, so they resolve inside this container too and one
-  # rename publishes them together.
+  # and put into /srv/oppenheimer/public by `oppctl publish-release`; served
+  # read-only, and reached through the tunnel's /releases/ and /install.sh.
+  # Both are relative symlinks into one set under public/.releases, so they
+  # resolve inside this container too and one rename publishes them together.
   releases:
     image: nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
     restart: unless-stopped

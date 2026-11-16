@@ -2,14 +2,14 @@ import { z } from 'zod/v4';
 import { commandIdSchema } from './primitives.js';
 
 /**
- * Telegram on the link (`product/next-steps/telegram.md`): the messages behind
- * the `telegram` capability. A runner that names it holds one Telegram bot —
- * OpenClaw's route, the official Bot API on a token from @BotFather, long
- * polled — and the token never leaves the host after `telegram.link` hands it
- * over. The control plane asks it to connect, disconnect and send; the runner
- * tells it how the bot stands and hands it each message the bot receives,
- * which the control plane keeps so the owner's bots can read the chats. Part
- * of `protocolMessageSchema`, which is where every kind is listed.
+ * Telegram on the link: the messages behind the `telegram` capability. A runner
+ * that names it holds one Telegram bot — OpenClaw's route, the official Bot API
+ * on a token from @BotFather, long polled — and the token never leaves the host
+ * after `telegram.link` hands it over. The control plane asks it to connect,
+ * disconnect and send; the runner tells it how the bot stands and hands it each
+ * message the bot receives, which the control plane keeps so the owner's bots
+ * can read the chats. Part of `protocolMessageSchema`, which is where every
+ * kind is listed.
  */
 
 /** How many messages one `telegram.messages` carries at most. */

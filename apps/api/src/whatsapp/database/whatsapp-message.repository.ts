@@ -101,7 +101,7 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
     return rows[0]?.switchesToBotId ?? null;
   }
 
-  /** A batch picked through `IDX_whatsapp_message_account_sent`, deleted by `ctid` (`database-design.md`). */
+  /** A batch picked through `IDX_whatsapp_message_account_sent`, deleted by `ctid`. */
   async pruneBefore(account: WhatsappAccountRef, before: Date, limit: number): Promise<number> {
     const [, affected]: [unknown, number] = await this.repository.query(
       `DELETE FROM whatsapp_message WHERE ctid = ANY (ARRAY(

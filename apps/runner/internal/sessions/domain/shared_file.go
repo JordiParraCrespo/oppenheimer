@@ -1,7 +1,7 @@
 package domain
 
 // FileSharedKind is the event kind a file an agent shared is logged as
-// (`runner sessions send-file`, `product/next-steps/agent-tools.md` §7): what
+// (`runner sessions send-file`): what
 // the file is, never where it is on the host nor its bytes.
 const FileSharedKind = "file.shared"
 

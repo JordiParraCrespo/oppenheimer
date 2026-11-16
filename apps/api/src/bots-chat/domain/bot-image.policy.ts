@@ -1,10 +1,10 @@
 import type { HistoryMessage } from './bot-history.policy';
 
 /**
- * What a turn is told of an earlier message's images (`25-bots.md` §3.1): a
+ * What a turn is told of an earlier message's images: a
  * turn is sent only its own message's images, so an earlier message of
  * yours that carried some says so in its text, and that the bot cannot see
- * them now; one of the bot's says which it showed (`show_image`, §4.7). The
+ * them now; one of the bot's says which it showed (`show_image`). The
  * history itself (`botHistory`) reads back whatever text it is given.
  */
 export function withEarlierImages(

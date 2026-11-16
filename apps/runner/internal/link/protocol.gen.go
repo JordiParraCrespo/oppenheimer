@@ -40,10 +40,10 @@ const (
 )
 
 // FrameHeader is the 4-byte big-endian attachment id every binary frame on
-// the link starts with (01-protocol, "Framing").
+// the link starts with.
 const FrameHeader = 4
 
-// CreditWindow is 01's 256 KB: the bytes an attachment may have in flight
+// CreditWindow is 256 KB: the bytes an attachment may have in flight
 // before its PTY reads pause. A runaway build stalls its own pane, never the
 // link.
 const CreditWindow = 262144
@@ -101,6 +101,7 @@ const (
 	CapabilityTranscriptRead           = "transcript.read"
 	CapabilityHostExec                 = "host.exec"
 	CapabilityTerminalDrive            = "terminal.drive"
+	CapabilitySessionWindowsList       = "session.windows.list"
 )
 
 // The `type` of every message on the link.
@@ -122,6 +123,8 @@ const (
 	TypeSessionResize           = "session.resize"
 	TypeSessionWindowOpen       = "session.window.open"
 	TypeSessionWindowClose      = "session.window.close"
+	TypeSessionWindowsList      = "session.windows.list"
+	TypeSessionWindows          = "session.windows"
 	TypeSessionClose            = "session.close"
 	TypeSessionWatch            = "session.watch"
 	TypeSessionUnwatch          = "session.unwatch"
@@ -202,6 +205,8 @@ var MessageTypes = []string{
 	TypeSessionResize,
 	TypeSessionWindowOpen,
 	TypeSessionWindowClose,
+	TypeSessionWindowsList,
+	TypeSessionWindows,
 	TypeSessionClose,
 	TypeSessionWatch,
 	TypeSessionUnwatch,
@@ -301,6 +306,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(SessionWindowOpen), true
 	case TypeSessionWindowClose:
 		return new(SessionWindowClose), true
+	case TypeSessionWindowsList:
+		return new(SessionWindowsList), true
+	case TypeSessionWindows:
+		return new(SessionWindows), true
 	case TypeSessionClose:
 		return new(SessionClose), true
 	case TypeSessionWatch:
@@ -639,6 +648,22 @@ type SessionWindowClose struct {
 	CommandID string `json:"commandId"`
 	SessionID string `json:"sessionId"`
 	Window    int    `json:"window"`
+}
+
+// SessionWindowsList is the `session.windows.list` message.
+type SessionWindowsList struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+}
+
+// SessionWindows is the `session.windows` message.
+type SessionWindows struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	SessionID string   `json:"sessionId"`
+	Windows   []Window `json:"windows"`
+	Opened    int      `json:"opened,omitempty"`
 }
 
 // SessionClose is the `session.close` message.
@@ -1207,7 +1232,7 @@ type SessionSnapshot struct {
 	LoginURL       *string  `json:"loginUrl"`
 }
 
-// Window is SessionSnapshot.Windows.
+// Window is `#/$defs/window`.
 type Window struct {
 	Index int    `json:"index"`
 	Name  string `json:"name,omitempty"`

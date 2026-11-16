@@ -240,7 +240,7 @@ export const BotErrors = {
   },
   /**
    * A bot that answers on a Telegram bot is not deleted until another bot
-   * answers there, or none (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1).
+   * answers there, or none.
    */
   ANSWERS_ON_TELEGRAM: {
     code: 'BOTS_042',

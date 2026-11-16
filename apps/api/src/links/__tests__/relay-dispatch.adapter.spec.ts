@@ -95,8 +95,8 @@ describe('RelayDispatchAdapter', () => {
     const parsed = sessionCreateSchema.parse(message);
     expect(parsed.sessionId).toBe(entity.id);
     expect(parsed.organizationSlug).toBe('jordi');
-    // The work folder's level under the account the host is paired with
-    // (24 §2); the account itself is the pairing's, never the frame's.
+    // The work folder's level under the account the host is paired with;
+    // the account itself is the pairing's, never the frame's.
     expect(parsed.workspaceId).toBe(ORG);
     expect(message).not.toHaveProperty('accountId');
     expect(parsed.sessionSlug).toBe('bold-otter-3f9a7k');

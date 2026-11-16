@@ -16,7 +16,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunApprovedCallCommand } from './run-approved-call.command';
 
 /**
- * Carries out an approved call (`25-bots.md` §5), from the job the yes staged.
+ * Carries out an approved call, from the job the yes staged.
  * It runs only while the approval is approved with no result: a retry after
  * the result landed does nothing. The call runs as the owner under what both
  * the asking turn's and the deciding credential's scopes cover; its answer

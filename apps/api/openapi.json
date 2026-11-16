@@ -12960,6 +12960,314 @@
         ]
       }
     },
+    "/api/v1/sessions/{id}/windows": {
+      "get": {
+        "description": "The session's tmux windows, asked of its host's runner now: window 0 is the agent, 1 and up the plain shells its Terminal tab opened in its worktree. An attach ticket's `window` names one. Nothing is cached.",
+        "operationId": "findSessionWindows",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWindowsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a session's terminal windows",
+        "tags": [
+          "Sessions"
+        ]
+      },
+      "post": {
+        "description": "Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it.",
+        "operationId": "openSessionWindow",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenedSessionWindowResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_059 — The host refused to change the session's terminals\n\nSESSIONS_056 — This host's runner cannot open or close a session's terminals\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_016 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Open a terminal in a session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{id}/windows/{window}": {
+      "delete": {
+        "description": "Closes one of the session's shells (a tmux window from 1 up) on its host, and answers with the windows left. Window 0 is the agent and is refused: close the session instead.",
+        "operationId": "closeSessionWindow",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "window",
+            "required": true,
+            "in": "path",
+            "description": "The tmux window index, from 1 up.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClosedSessionWindowResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_058 — The session has no such terminal\n\nHOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_059 — The host refused to change the session's terminals\n\nSESSIONS_057 — The agent's window cannot be closed; close the session instead\n\nSESSIONS_056 — This host's runner cannot open or close a session's terminals\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_016 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Close a terminal in a session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/cloud-agents/status": {
       "get": {
         "description": "Every vendor in order, with whether the caller stored a key for it and whose the key is. Never the key, and never a call to the vendor.",
@@ -20205,7 +20513,7 @@
         ]
       },
       "post": {
-        "description": "A blank bot: the next free first name (\"Juno\", \"Milo\"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.",
+        "description": "A blank bot: a free first name, picked at random among physicists (\"Feynman\", \"Curie\"…), unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.",
         "operationId": "createBot",
         "parameters": [],
         "requestBody": {
@@ -32426,6 +32734,94 @@
           "ports"
         ]
       },
+      "SessionTerminalWindowDto": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "number",
+            "example": 1,
+            "description": "The tmux window index: what an attach ticket's `window` names."
+          },
+          "name": {
+            "type": "string",
+            "example": "zsh",
+            "description": "The window’s name on the host."
+          },
+          "agent": {
+            "type": "boolean",
+            "description": "Window 0, the agent’s; the rest are plain shells."
+          }
+        },
+        "required": [
+          "index",
+          "name",
+          "agent"
+        ]
+      },
+      "SessionWindowsResponseDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "listed",
+              "host_offline",
+              "not_supported"
+            ],
+            "description": "`listed`: `windows` is what the session holds now. `host_offline`: the host has no link. `not_supported`: its runner cannot list them."
+          },
+          "windows": {
+            "description": "The session’s tmux windows, in index order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionTerminalWindowDto"
+            }
+          }
+        },
+        "required": [
+          "state",
+          "windows"
+        ]
+      },
+      "OpenedSessionWindowResponseDto": {
+        "type": "object",
+        "properties": {
+          "window": {
+            "description": "The shell just opened.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionTerminalWindowDto"
+              }
+            ]
+          },
+          "windows": {
+            "description": "The session’s tmux windows after it opened, in index order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionTerminalWindowDto"
+            }
+          }
+        },
+        "required": [
+          "window",
+          "windows"
+        ]
+      },
+      "ClosedSessionWindowResponseDto": {
+        "type": "object",
+        "properties": {
+          "windows": {
+            "description": "The session’s tmux windows left, in index order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionTerminalWindowDto"
+            }
+          }
+        },
+        "required": [
+          "windows"
+        ]
+      },
       "CloudAgentProviderStatusDto": {
         "type": "object",
         "properties": {
@@ -33992,6 +34388,7 @@
               "not_launchable",
               "agent_unavailable",
               "unattended",
+              "idle",
               null
             ],
             "nullable": true
@@ -37444,7 +37841,7 @@
           },
           "name": {
             "type": "string",
-            "example": "Juno"
+            "example": "Feynman"
           },
           "description": {
             "type": "string",
@@ -37804,7 +38201,7 @@
           },
           "content": {
             "type": "string",
-            "example": "# Soul\n\nYou are Juno."
+            "example": "# Soul\n\nYou are Feynman."
           },
           "revision": {
             "type": "number",

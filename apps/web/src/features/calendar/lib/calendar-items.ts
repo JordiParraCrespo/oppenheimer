@@ -108,9 +108,9 @@ export function taskItems(tasks: readonly TaskEntity[], from: string, to: string
 
 /**
  * The scheduled runs of active automations between two days, computed here
- * from each schedule trigger's rule and zone (`20-plan-calendar.md` §1):
- * the API serves the rules, and the same arithmetic the scheduler runs
- * (`nextScheduleOccurrence`) places them. Hourly rules are left off.
+ * from each schedule trigger's rule and zone: the API serves the rules, and
+ * the same arithmetic the scheduler runs (`nextScheduleOccurrence`) places
+ * them. Hourly rules are left off.
  */
 export function automationItems(
   automations: readonly AutomationEntity[],

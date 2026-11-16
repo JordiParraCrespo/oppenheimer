@@ -13,8 +13,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// A conversation read one page at a time on request (`transcript.read`,
-// `product/next-steps/agent-tools.md` §8), for a reader with no browser
+// A conversation read one page at a time on request (`transcript.read`),
+// for a reader with no browser
 // attached: a bot, the `opp` CLI, an MCP client. The entries are the ones
 // Follow sends the chat view; a page is addressed by the conversation's name
 // and a byte offset where one of its lines starts, which the control plane

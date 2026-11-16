@@ -2,9 +2,9 @@ import { searchFlag } from '@oppenheimer/frontend-web';
 
 /**
  * The first-run walk, as a fact the URL carries. Onboarding is shown once
- * (`05-screens.md`) and Ready enforces it: it is the one page under
- * `/onboarding` meaningless to a finished account, while Connect GitHub and
- * Add host stay reachable because New session links at them.
+ * and Ready enforces it: it is the one page under `/onboarding` meaningless
+ * to a finished account, while Connect GitHub and Add host stay reachable
+ * because New session links at them.
  *
  * Ready cannot read *when* off the account: the address is claimed by the end
  * of step 2, so a legitimate arrival looks as finished as one a week later.

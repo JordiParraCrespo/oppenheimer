@@ -96,7 +96,7 @@ func TestOnlyLiveStatesExpectATmuxSession(t *testing.T) {
 	}
 }
 
-// The work folder is named by ids that never change (24 §2): an agent keys its
+// The work folder is named by ids that never change: an agent keys its
 // own history on its working directory, so a path that moved when a slug was
 // edited would strand every conversation the session had. A store is bare and
 // named `<owner>--<repo>.git` beside the sessions, and its spare beside it.

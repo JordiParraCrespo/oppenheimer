@@ -27,9 +27,9 @@ export interface WhatsappMessagesOwed {
 }
 
 /**
- * A number's messages (`product/next-steps/whatsapp.md` §3). Reads take an
- * account the caller already proved is theirs (`WhatsappAccountRepositoryPort`),
- * so this port holds no scope of its own; every list is bounded.
+ * A number's messages. Reads take an account the caller already proved is
+ * theirs (`WhatsappAccountRepositoryPort`), so this port holds no scope of its
+ * own; every list is bounded.
  */
 export interface WhatsappMessageRepositoryPort {
   /**

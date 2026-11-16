@@ -18,7 +18,7 @@ export interface BotRoutineRef {
 /**
  * A run as the lists read it: the firing joined to its automation, its
  * revision, and — once dispatched — its session and that session's first
- * turn, where execution lives (§Q4). Status is derived once, in the repository's SQL.
+ * turn, where execution lives. Status is derived once, in the repository's SQL.
  */
 export interface RunReadModel {
   id: string;

@@ -348,3 +348,31 @@ func TestRefreshesRacingCommandsStayConsistent(t *testing.T) {
 		t.Fatalf("published %v, want closed last and no stop", events)
 	}
 }
+
+// A shell the user ended with `exit` is gone from tmux without a word to the
+// runner. Closing its tab must still succeed and drop it: killing it again
+// was a tmux error, so the console's tab could never be closed.
+func TestCloseWindowOfAnExitedShellSucceeds(t *testing.T) {
+	h := newRefreshHarness(t)
+	session := h.open(t)
+	ctx := context.Background()
+	shell, err := h.svc.OpenWindow(ctx, session.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The shell exits on the host: tmux drops the window, the record keeps it.
+	if err := h.terminals.KillWindow(ctx, session.Target(shell.Index)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.svc.CloseWindow(ctx, session.ID, shell.Index); err != nil {
+		t.Fatalf("close an exited shell: %v", err)
+	}
+	windows, err := h.svc.Windows(ctx, session.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(windows) != 1 || windows[0].Index != 0 {
+		t.Fatalf("windows = %+v, want the agent's alone", windows)
+	}
+}

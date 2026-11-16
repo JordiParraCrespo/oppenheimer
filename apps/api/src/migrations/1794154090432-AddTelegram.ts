@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Telegram (`product/next-steps/telegram.md`): a bot a person made with
+ * Telegram: a bot a person made with
  * @BotFather, long-polled on the Bot API by the runner on one of their hosts,
  * the way OpenClaw runs one, and the messages it receives, kept so their
  * Oppenheimer bots can read the chats.

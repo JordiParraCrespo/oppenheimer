@@ -1,0 +1,10 @@
+Tauri bridge flood throughput (MB/s), the build before the review refactor (096afd32)
+against the one after it, interleaved two runs at a time, later on 2026-11-16 with the
+API and a preview server running on the same machine (busier than the main runs):
+
+old  64.0  73.9  60.9  70.5  75.3  75.0   median ~72
+new  71.9  73.9  64.6  72.2  63.3  82.4   median ~72
+
+The refactor is neutral. Throughput follows how many runner frames are already waiting
+to be coalesced, which depends on the machine's load: 99 MB/s in the quieter main runs,
+about 72 here. Electron's bridge, in two runs under the same load: 66.3 and ~57 (median 61.5).

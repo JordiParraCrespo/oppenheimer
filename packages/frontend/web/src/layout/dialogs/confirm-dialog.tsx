@@ -16,11 +16,10 @@ import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 
 /**
- * The console's "are you sure?", as the inventory draws it
- * (`product/versions/mvp/design/version1/Components.dc.html`, "Dialog ·
- * Destructive confirm"): the title names the thing, the description states the
- * cost, and the destructive button repeats the verb — never "Confirm", which is
- * why `confirmLabel` is required. Cancel is `secondary`, as on every dialog foot.
+ * The console's "are you sure?": the title names the thing, the description
+ * states the cost, and the destructive button repeats the verb — never
+ * "Confirm", which is why `confirmLabel` is required. Cancel is `secondary`, as
+ * on every dialog foot.
  *
  * Each caller keeps its own mutation and hands over its state: `pending` locks
  * both buttons and the dismissal and swaps in `pendingLabel`; `error` (with

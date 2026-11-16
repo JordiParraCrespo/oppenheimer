@@ -8,6 +8,7 @@ import {
   SESSION_SHARED_FILES,
   SESSION_TERMINAL,
   SESSION_TRANSCRIPT,
+  SESSION_WINDOWS,
 } from '../sessions/sessions.di-tokens';
 import { TELEGRAM_DEVICE } from '../telegram/telegram.di-tokens';
 import { WHATSAPP_DEVICE } from '../whatsapp/whatsapp.di-tokens';
@@ -22,6 +23,7 @@ import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.a
 import { RelaySessionSharedFilesAdapter } from './infrastructure/relay-session-shared-files.adapter';
 import { RelaySessionTerminalAdapter } from './infrastructure/relay-session-terminal.adapter';
 import { RelaySessionTranscriptAdapter } from './infrastructure/relay-session-transcript.adapter';
+import { RelaySessionWindowsAdapter } from './infrastructure/relay-session-windows.adapter';
 import { RelayTelegramDeviceAdapter } from './infrastructure/relay-telegram-device.adapter';
 import { RelayWhatsappDeviceAdapter } from './infrastructure/relay-whatsapp-device.adapter';
 import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from './links.di-tokens';
@@ -46,6 +48,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
     { provide: HOST_EXEC, useClass: RelayHostExecAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
+    { provide: SESSION_WINDOWS, useClass: RelaySessionWindowsAdapter },
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
     { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
     { provide: SESSION_TERMINAL, useClass: RelaySessionTerminalAdapter },
@@ -62,6 +65,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     HOST_FOLDERS,
     HOST_EXEC,
     SESSION_PORTS,
+    SESSION_WINDOWS,
     SESSION_SHARED_FILES,
     SESSION_TRANSCRIPT,
     SESSION_TERMINAL,

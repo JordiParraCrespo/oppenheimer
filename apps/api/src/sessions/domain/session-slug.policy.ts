@@ -10,7 +10,7 @@ import { randomInt } from 'node:crypto';
  * to say out loud.
  *
  * The display name starts as the slug and is replaced by a title from the first
- * prompt; the slug never changes (`product/versions/mvp/03-control-plane.md`).
+ * prompt; the slug never changes.
  */
 
 /**

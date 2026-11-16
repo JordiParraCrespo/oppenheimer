@@ -22,8 +22,8 @@
  * `google_calendar` says whether Plan's calendar can show a person's Google
  * Calendar: the Google client and the key its refresh tokens are sealed under.
  *
- * `gmail` says whether a person can connect their Gmail for their bots
- * (`product/next-steps/mail.md`): the same Google client and `MAIL_TOKEN_KEY`.
+ * `gmail` says whether a person can connect their Gmail for their bots: the
+ * same Google client and `MAIL_TOKEN_KEY`.
  *
  * `voice_transcription` says whether the deployment has a speech-to-text key
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can

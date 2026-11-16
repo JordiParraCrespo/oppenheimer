@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Routine activity in a bot's chat (`product/versions/mvp/26-bot-routines.md`
- * §4, "In the chat"), the second half of slice C.
+ * Routine activity in a bot's chat.
  *
  * - `bot_message."turnId"` nullable: a routine saved, changed, paused,
  *   resumed, deleted or failed is a line in the chat at the moment it

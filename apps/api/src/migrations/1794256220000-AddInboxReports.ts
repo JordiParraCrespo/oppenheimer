@@ -1,10 +1,10 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A report sent to a workspace's Inbox (`product/versions/mvp/29-inbox.md`,
- * "Reports"): a problem an unattended agent found, with its pictures, that
- * the owner answers in the Inbox and the agent reads back. It is the one
- * Inbox item with a table, because no other source knows it.
+ * A report sent to a workspace's Inbox: a problem an unattended agent found,
+ * with its pictures, that the owner answers in the Inbox and the agent reads
+ * back. It is the one Inbox item with a table, because no other source knows
+ * it.
  *
  * - A report is the workspace's, not a person's, so it carries no owner:
  *   `"createdByUserId"` is whose credential sent it and `"answeredByUserId"`
@@ -29,7 +29,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *        → IDX_inbox_report_created_by, IDX_inbox_report_answered_by
  *
  * Retention: a report is kept after it is answered, with its pictures
- * (29, "Reports" §4); nothing deletes one yet. Deleting a workspace removes
+ * nothing deletes one yet. Deleting a workspace removes
  * its rows and leaves their files in storage, as it does a bot's images.
  */
 export class AddInboxReports1794256220000 implements MigrationInterface {

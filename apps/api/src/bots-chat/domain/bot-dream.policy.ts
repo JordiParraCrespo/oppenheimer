@@ -70,7 +70,7 @@ export interface DreamTrigger {
 }
 
 /**
- * When a bot dreams on its own (`25-bots.md` §4.1, "Dreaming"): only a bot
+ * When a bot dreams on its own: only a bot
  * that may change its own memory, once it keeps enough of its own facts to
  * have something to tidy, has written enough since the last dream to have
  * made a mess, and has not dreamed in the last day. A dream costs a model

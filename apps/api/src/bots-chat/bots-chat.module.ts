@@ -69,12 +69,12 @@ import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnChannelPolicy } from './application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
+import { BotTurnHoldPolicy } from './application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
-import { BotHeartbeatDomainEventHandler } from './application/event-handlers/bot-heartbeat.domain-event-handler';
 import { BotMilestoneDeletedDomainEventHandler } from './application/event-handlers/bot-milestone-deleted.domain-event-handler';
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
@@ -343,14 +343,14 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * A bot's chat (`product/versions/mvp/25-bots.md` §2–3): your messages queued
+ * A bot's chat: your messages queued
  * as turns, one running per bot, the `bot-turns` worker that runs each on
  * `@oppenheimer/backend-agents`, the conversation they leave, the live
  * stream a chat follows, the Needs input cards an asking tool raises and the
  * owner answers, and the summary that stands in for a long conversation's
  * oldest messages, written by the `bot-summaries` worker; and the sessions
  * a bot follows, whose news wakes it, and the `bot-stall-checks` worker
- * that checks a handed-off task got going (`27-bot-subscriptions.md`). It reads the bot,
+ * that checks a handed-off task got going. It reads the bot,
  * its documents, its memory and the workspace's provider key through the
  * ports `BotsModule` exports, and serves routes under `/bots/:id` whose last
  * segment no route of that module has.
@@ -417,6 +417,7 @@ const queryHandlers: Provider[] = [
     BotDreamResolver,
     BotModelAccessResolver,
     BotTurnChannelPolicy,
+    BotTurnHoldPolicy,
     BotChannelWakeResolver,
     BotApprovalRequestFactory,
     BotQuestionDecisionResolver,
@@ -474,7 +475,6 @@ const queryHandlers: Provider[] = [
     BotSubagentRunnerFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
-    BotHeartbeatDomainEventHandler,
     BotRoutineActivityDomainEventHandler,
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,

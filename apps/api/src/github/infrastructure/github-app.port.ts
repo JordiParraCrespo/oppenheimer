@@ -75,13 +75,13 @@ export interface GithubAppPort {
    * Exchange the OAuth code from the install redirect and return which
    * installations that account can see.
    *
-   * This is the claim proof, and it has no fallback: matching the installation's
-   * `account.login` against the caller's linked GitHub account fails for
-   * organization installations, where that login is the org rather than a user
-   * (`product/versions/mvp/10-api-modules-and-data-model.md`). The code is used once, here, and never
-   * stored. The user token it is exchanged for comes back with it, with the
-   * account it belongs to, so the Pull requests area can later act in that
-   * person's name; the caller decides whether to keep it.
+   * This is the claim proof, and it has no fallback: matching the
+   * installation's `account.login` against the caller's linked GitHub account
+   * fails for organization installations, where that login is the org rather
+   * than a user account. The code is used once, here, and never stored. The
+   * user token it is exchanged for comes back with it, with the account it
+   * belongs to, so the Pull requests area can later act in that person's name;
+   * the caller decides whether to keep it.
    */
   listUserInstallations(code: string): Promise<GithubUserAuthorization>;
   /** A fresh user token from a refresh token; GitHub rotates the refresh token too. */

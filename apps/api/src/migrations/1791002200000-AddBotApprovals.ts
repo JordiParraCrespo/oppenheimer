@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots, slice 3 (`product/versions/mvp/25-bots.md` §5): the Needs input card.
+ * Bots: the Needs input card.
  *
  * - `bot_approval`: one call of an asking tool (`start_session`, …) that a
  *   turn made under Approve for me and that waits for the bot's owner. The

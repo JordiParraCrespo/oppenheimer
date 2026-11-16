@@ -1,5 +1,5 @@
 /**
- * The owner stops a bot's goal (`25-bots.md` §4.1). What breaks this: a
+ * The owner stops a bot's goal. What breaks this: a
  * stop leaving no trace in the chat; a bot in another workspace reached. The
  * waiting continuation it cancels is `BotGoalResolver`'s, specced there.
  */

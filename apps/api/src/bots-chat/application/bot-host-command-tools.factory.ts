@@ -25,12 +25,11 @@ import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-t
 export const RUN_COMMAND_MAX_TIMEOUT_SECONDS = 120;
 
 /**
- * Commands on a host (`25-bots.md` §4.2, "Commands on a host"): one program,
- * run on one of the owner's hosts by its runner, its output read back in the
- * same turn. It reaches outside Oppenheimer, so under Approve for me it asks
- * first; and whatever the bot's permissions say, the host runs only what its
- * own policy (`runner exec`) allows, which is off until the person on the
- * host turns it on.
+ * Commands on a host: one program, run on one of the owner's hosts by its
+ * runner, its output read back in the same turn. It reaches outside
+ * Oppenheimer, so under Approve for me it asks first; and whatever the bot's
+ * permissions say, the host runs only what its own policy (`runner exec`)
+ * allows, which is off until the person on the host turns it on.
  */
 @Injectable()
 export class BotHostCommandToolsFactory implements BotToolArea {

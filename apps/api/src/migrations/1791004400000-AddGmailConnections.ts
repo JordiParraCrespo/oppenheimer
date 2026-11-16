@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Mail (`product/next-steps/mail.md` §1): `gmail_connection`, a person's own
+ * Mail: `gmail_connection`, a person's own
  * Gmail grant, up to five per person per workspace, worked by their bots.
  *
  * No mail is stored. The only row is the grant: the refresh token, sealed with
