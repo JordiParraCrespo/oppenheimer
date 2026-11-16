@@ -345,9 +345,9 @@ function TurnHeader({
  * styles the elements the way `Prose` does at a chat's scale: headings a step
  * or two over the text, lists with muted markers, links in the link blue,
  * a quote behind a 2px rule, inline code on the chat's wash, and tables full
- * width, their header row on the same wash with rounded ends and their rows
- * on hairlines, each scrolling sideways in its own box when it is wider than
- * the column. A fenced block is a `ChatCodeBlock` the renderer draws.
+ * width as a framed card (a hairline round its 10px corners and between its
+ * rows and columns, the header row on the same wash), each scrolling
+ * sideways in its own box when it is wider than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
  */
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -371,11 +371,13 @@ function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
         // Inline code, on the chat's wash, which its `ChatTranscript` sets for
         // the ground it stands on (a fenced block is a `ChatCodeBlock`)
         '[&_:not(pre)>code]:rounded-[5px] [&_:not(pre)>code]:bg-chat-wash [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
-        // Tables: the header row on the wash, its ends rounded; rows on hairlines
-        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[14px] [&_table]:leading-normal [&_table]:tabular-nums',
-        '[&_th]:bg-chat-wash [&_th]:px-3 [&_th]:py-2 [&_th]:text-start [&_th]:font-semibold',
-        '[&_th:first-child]:rounded-s-sm [&_th:last-child]:rounded-e-sm',
-        '[&_td]:border-b [&_td]:border-border-subtle [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
+        // Tables: a framed card, its 10px corners on a hairline; the header
+        // row on the wash over a hairline, hairlines between rows and columns
+        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:rounded-sm [&_table]:border [&_table]:border-border-subtle [&_table]:text-[14px] [&_table]:leading-normal [&_table]:tabular-nums',
+        '[&_:is(th,td)]:border-border-subtle [&_:is(th,td):not(:last-child)]:border-e [&_:is(th,td)]:px-3 [&_:is(th,td)]:text-start',
+        '[&_th]:border-b [&_th]:bg-chat-wash [&_th]:py-2 [&_th]:font-semibold',
+        '[&_thead_tr:first-child_th:first-child]:rounded-ss-[9px] [&_thead_tr:first-child_th:last-child]:rounded-se-[9px]',
+        '[&_td]:border-b [&_td]:py-2.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
         className,
       )}
       {...props}
