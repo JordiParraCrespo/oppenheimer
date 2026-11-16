@@ -245,6 +245,30 @@ func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, err
 	return window, nil
 }
 
+// Windows lists a live session's windows as tmux holds them now, and keeps
+// the record in step: a shell whose user typed `exit` is gone from tmux
+// without a word to the runner.
+func (s *Service) Windows(ctx context.Context, id string) ([]domain.Window, error) {
+	defer s.hold(id)()
+	session, err := s.recorded(id)
+	if err != nil {
+		return nil, err
+	}
+	if !session.State.Live() {
+		return nil, domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
+	}
+	windows, err := s.terminals.Windows(ctx, session.TmuxName())
+	if err != nil {
+		return nil, err
+	}
+	if !slices.Equal(windows, session.Windows) {
+		session.Windows = slices.Clone(windows)
+		session.Updated = s.now().UTC()
+		s.record(session)
+	}
+	return windows, nil
+}
+
 // CloseWindow closes a tab. Window 0 is the agent and is closed by closing
 // the session, not by closing a tab.
 func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {

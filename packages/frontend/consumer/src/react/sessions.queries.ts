@@ -18,12 +18,15 @@ import {
 } from '@tanstack/react-query';
 import type {
   CreateSessionInput,
+  OpenedSessionWindow,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
   SessionPorts,
   SessionPreview,
   SessionShare,
+  SessionWindow,
+  SessionWindows,
   SharedSession,
   StartCloudSessionInput,
 } from '../modules/sessions/session.entity';
@@ -747,6 +750,52 @@ export function useSuspenseSessionPorts(sessionId: string) {
     ...poll,
   });
 }
+
+/**
+ * The session's terminal windows, for its Terminal tab: window 0 the agent,
+ * 1 and up the plain shells opened in its worktree. Asked of the host on
+ * mount, and kept in step by {@link useOpenSessionWindow} and
+ * {@link useCloseSessionWindow} from their answers. An offline host, or a
+ * runner too old to list, is the answer's `state`, not a failure.
+ */
+export function useSessionWindows(sessionId: string | undefined) {
+  const app = useConsumerApp();
+  return useQuery<SessionWindows, Error>({
+    queryKey: sessionsKeys.windows(sessionId),
+    queryFn: sessionId ? () => app.sessions.listWindows(sessionId) : skipToken,
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** Opens a shell in a session; its answer is written to the session's windows. */
+export const useOpenSessionWindow = mutation<OpenedSessionWindow, string>({
+  run: (app, sessionId) => app.sessions.openWindow(sessionId),
+  update: (queryClient, opened, sessionId) => {
+    queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
+      state: 'listed',
+      windows: opened.windows,
+    });
+  },
+});
+
+export interface CloseSessionWindowVariables {
+  sessionId: string;
+  /** The tmux window to close, from 1 up; window 0 is the agent and is refused. */
+  window: number;
+}
+
+/** Closes one of a session's shells; the windows left are written to the session's windows. */
+export const useCloseSessionWindow = mutation<SessionWindow[], CloseSessionWindowVariables>({
+  run: (app, { sessionId, window }) => app.sessions.closeWindow(sessionId, window),
+  update: (queryClient, windows, { sessionId }) => {
+    queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
+      state: 'listed',
+      windows,
+    });
+  },
+});
 
 /**
  * Where the Browser tab frames one of the session's ports. A query, though

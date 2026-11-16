@@ -334,6 +334,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
 		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
+		link.CapabilitySessionWindowsList,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -540,6 +541,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.SessionUnwatch
 		if msg.Decode(&m) == nil {
 			h.lanes.run(m.SessionID, func() { h.app.Sessions.Unwatch(m.SessionID, m.WatchID) })
+		}
+	case link.TypeSessionWindowsList:
+		var m link.SessionWindowsList
+		if msg.Decode(&m) == nil {
+			// On the session's lane, so a listing sent right after an open
+			// sees the window it made.
+			h.lanes.run(m.SessionID, func() { h.windows(h.life, m.CommandID, m.SessionID, 0) })
 		}
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
 		if m, ok := decodeLifecycle(msg); ok {

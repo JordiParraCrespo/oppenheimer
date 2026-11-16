@@ -1700,3 +1700,9 @@ earlier note:
   2026-11-08 to 2026-11-15, a page of cases, became four lines in Claude
   Code's manner, keeping the limits the incidents earned.
 
+- `versions/mvp/30-session-previews.md` put the Browser and Simulator in a
+  preview pane of their own, as pill tabs. On 2026-11-16 the owner asked
+  for side chats, terminals and bots beside a session: that pane became the
+  side pane (`versions/mvp/32-side-pane.md`), where the previews are three
+  of the things the launcher opens, each a tab beside a shell, another
+  session or a bot's chat.

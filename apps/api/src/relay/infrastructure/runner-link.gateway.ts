@@ -412,6 +412,7 @@ export class RunnerLinkGateway {
       case 'fs.listing':
       case 'fs.found':
       case 'port.listing':
+      case 'session.windows':
       case 'cloud.replied':
       case 'whatsapp.sent':
       case 'telegram.sent':

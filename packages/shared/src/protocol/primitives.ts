@@ -237,6 +237,18 @@ export type ObservedAgentState = (typeof OBSERVED_AGENT_STATES)[number];
 export const observedAgentStateSchema = z.enum(OBSERVED_AGENT_STATES);
 
 /**
+ * One tmux window of a session: window 0 is the agent, 1 and up are the
+ * plain shells its Terminal tab opens. The snapshot lists them, and so does
+ * `session.windows`.
+ */
+export const sessionWindowSchema = z.object({
+  index: windowIndexSchema,
+  name: z.string().max(FIELD_BOUNDS.displayName.max).optional(),
+});
+
+export type SessionWindow = z.infer<typeof sessionWindowSchema>;
+
+/**
  * One session as the host currently holds it: in bulk at hello, per session on
  * every heartbeat.
  *
@@ -258,12 +270,7 @@ export const sessionSnapshotSchema = z
      * into `waiting-on-you`.
      */
     stateSeconds: z.number().int().min(0),
-    windows: z.array(
-      z.object({
-        index: windowIndexSchema,
-        name: z.string().max(FIELD_BOUNDS.displayName.max).optional(),
-      }),
-    ),
+    windows: z.array(sessionWindowSchema),
     /** The agent's own conversation id, once it has one. */
     agentSessionId: z.string().min(1).nullable(),
     /**
@@ -313,6 +320,7 @@ for (const [id, schema] of [
   ['commandId', commandIdSchema],
   ['attachmentId', attachmentIdSchema],
   ['windowIndex', windowIndexSchema],
+  ['window', sessionWindowSchema],
   ['githubRepoId', githubRepoIdSchema],
   ['gitRef', gitRefSchema],
   ['hostPath', hostPathSchema],

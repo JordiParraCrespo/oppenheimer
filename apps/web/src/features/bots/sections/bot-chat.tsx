@@ -1,62 +1,28 @@
 import { BotAvatar } from '@oppenheimer/design-system-web';
-import {
-  useBotDocuments,
-  useSuspenseBot,
-  useUpdateBotOptimistically,
-} from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, PageBar, QueryState } from '@oppenheimer/frontend-web';
+import { useSuspenseBot } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert, PageBar } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
-import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
-import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
-import { BotTranscriptSkeleton } from '@/features/bots/components/bot-transcript-skeleton';
 import { ToolCallsToggle } from '@/features/bots/components/tool-calls-toggle';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
-import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
-import {
-  ToolCallsShownContext,
-  useToolCallsShown,
-} from '@/features/bots/hooks/use-tool-calls-shown';
-import { BotApprovalCard } from './bot-approval-card';
-import { BotComposer } from './bot-composer';
-import { BotEngine } from './bot-engine';
-import { BotQuestionCard } from './bot-question-card';
-import { BotTranscript } from './bot-transcript';
-import { BotUsage } from './bot-usage';
-import { BotUsageCard } from './bot-usage-card';
+import { useToolCallsShown } from '@/features/bots/hooks/use-tool-calls-shown';
+import { BotChatBody } from './bot-chat-body';
 
 /**
  * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
  * `PageBar`, the sidebar toggle, the bot's face and name, the wrench that
- * shows or hides its tool calls (kept on this device) and its menu; the
- * transcript, which follows the latest line while you are there and offers
- * the way back when you scroll up; and the
- * composer, whose chips are how the bot's turns start (its model, effort and
- * approval level), each saved on the bot as it is picked, after the meter
- * of the room the bot has left (`BotUsage`). The header, the
- * transcript and the chips all draw this one bot, so it is read here once.
- *
- * The chips are made here, not in the composer, so the draft the composer
- * owns never re-renders them; and this section owns their save. The save
- * writes the pick into the bot it reads, so a picked value shows at once, a
- * refused one snaps back and says why above the box. A bot left on a provider
- * with no key, while another has one, is moved onto it the same way.
+ * shows or hides its tool calls (kept on this device) and its menu, over the
+ * conversation (`BotChatBody`). The header and the conversation both draw
+ * this one bot, so it is read here once.
  */
 export function BotChat({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: bot, error } = useSuspenseBot(botId);
-  const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
   const toolCalls = useToolCallsShown();
-  useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
-  // Starts the documents' read beside the conversation's, so a chat with no
-  // messages yet greets with its hello as the transcript lands, not a round
-  // trip later. Nothing here reads the result, and an empty
-  // `notifyOnChangeProps` keeps the read's fetch states from redrawing the chat.
-  useBotDocuments(bot.id, { notifyOnChangeProps: [] });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -75,59 +41,9 @@ export function BotChat({ botId }: { botId: string }) {
           </>
         }
       />
-      <ToolCallsShownContext value={toolCalls.shown}>
-        <BotChatScroller>
-          <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
-          <QueryState>
-            <QueryState.Pending>
-              <div aria-busy>
-                <BotTranscriptSkeleton />
-              </div>
-            </QueryState.Pending>
-            <QueryState.Error fallback={t('bots.chat.loadFailed')} />
-            <QueryState.Data>
-              <BotTranscript botId={bot.id} name={bot.name} />
-            </QueryState.Data>
-          </QueryState>
-          <BotUsageCard botId={bot.id} />
-        </BotChatScroller>
-      </ToolCallsShownContext>
-      <div className="px-4 pb-4 sm:px-8">
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
-          <BotApprovalCard botId={bot.id} name={bot.name} />
-          <BotQuestionCard botId={bot.id} />
-          <ErrorAlert
-            error={update.error}
-            fallback={t('bots.chat.saveFailed')}
-            onDismiss={() => update.reset()}
-          />
-          <BotComposer
-            key={bot.id}
-            botId={bot.id}
-            name={bot.name}
-            provider={bot.provider}
-            model={bot.model}
-            tools={
-              <BotPermissionChip
-                value={bot.permission}
-                onValueChange={(next) => update.mutate({ id: bot.id, input: { permission: next } })}
-              />
-            }
-            engine={
-              <>
-                <BotUsage botId={bot.id} />
-                <BotEngine
-                  provider={bot.provider}
-                  model={bot.model}
-                  effort={bot.effort}
-                  onModelChange={(next) => update.mutate({ id: bot.id, input: next })}
-                  onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
-                />
-              </>
-            }
-          />
-        </div>
-      </div>
+      <BotChatBody bot={bot} toolCallsShown={toolCalls.shown}>
+        <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
+      </BotChatBody>
       {deleting ? <DeleteBotDialog bot={bot} onClose={() => setDeleting(false)} /> : null}
     </div>
   );

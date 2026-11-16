@@ -609,6 +609,27 @@
     "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
     "window": 1
   },
+  "session.windows.list": {
+    "type": "session.windows.list",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40"
+  },
+  "session.windows": {
+    "type": "session.windows",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "windows": [
+      {
+        "index": 0,
+        "name": "agent"
+      },
+      {
+        "index": 1,
+        "name": "zsh"
+      }
+    ],
+    "opened": 1
+  },
   "session.close": {
     "type": "session.close",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

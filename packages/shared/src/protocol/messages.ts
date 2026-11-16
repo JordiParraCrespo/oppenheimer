@@ -38,6 +38,7 @@ import {
   protocolRangeSchema,
   sessionIdSchema,
   sessionSnapshotSchema,
+  sessionWindowSchema,
   windowIndexSchema,
 } from './primitives.js';
 import {
@@ -229,6 +230,14 @@ export const RUNNER_CAPABILITIES = [
    * "Driving a terminal").
    */
   'terminal.drive',
+  /**
+   * Answers `session.windows.list`, `session.window.open` and
+   * `session.window.close` with `session.windows`: the session's windows
+   * after the command, so the console's Terminal tab learns the index of the
+   * shell it opened. A runner without it opens and closes windows without a
+   * word back.
+   */
+  'session.windows.list',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -665,7 +674,11 @@ export const sessionResizeSchema = z.object({
 
 export type SessionResizeMessage = z.infer<typeof sessionResizeSchema>;
 
-/** Open a new tmux window in the session. Tabs in the console are tmux windows. */
+/**
+ * Open a new tmux window in the session: a plain shell in its worktree, the
+ * console's Terminal tab. A runner that named `session.windows.list` answers
+ * with `session.windows`, `opened` the new window's index.
+ */
 export const sessionWindowOpenSchema = z.object({
   type: z.literal('session.window.open'),
   commandId: commandIdSchema,
@@ -675,7 +688,11 @@ export const sessionWindowOpenSchema = z.object({
 
 export type SessionWindowOpenMessage = z.infer<typeof sessionWindowOpenSchema>;
 
-/** Close one tmux window. The session survives its windows. */
+/**
+ * Close one tmux window. The session survives its windows; window 0 is the
+ * agent and is refused. A runner that named `session.windows.list` answers
+ * with `session.windows`.
+ */
 export const sessionWindowCloseSchema = z.object({
   type: z.literal('session.window.close'),
   commandId: commandIdSchema,
@@ -684,6 +701,39 @@ export const sessionWindowCloseSchema = z.object({
 });
 
 export type SessionWindowCloseMessage = z.infer<typeof sessionWindowCloseSchema>;
+
+/**
+ * The session's windows, as tmux holds them now. Sent only to a runner whose
+ * hello named `session.windows.list`; answered by `session.windows` with the
+ * same `commandId`, or by `command.failed`.
+ */
+export const sessionWindowsListSchema = z.object({
+  type: z.literal('session.windows.list'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+});
+
+export type SessionWindowsListMessage = z.infer<typeof sessionWindowsListSchema>;
+
+/** How many windows one `session.windows` names at most. */
+export const SESSION_WINDOWS_MAX_ENTRIES = 64;
+
+/**
+ * A session's windows after a command, in index order: the answer a runner
+ * that named `session.windows.list` gives `session.windows.list`,
+ * `session.window.open` and `session.window.close` alike, under the command's
+ * `commandId`. A refusal is `command.failed`, as before. `opened` is the
+ * window an open made, which is also in `windows`.
+ */
+export const sessionWindowsSchema = z.object({
+  type: z.literal('session.windows'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  windows: z.array(sessionWindowSchema).max(SESSION_WINDOWS_MAX_ENTRIES),
+  opened: windowIndexSchema.optional(),
+});
+
+export type SessionWindowsMessage = z.infer<typeof sessionWindowsSchema>;
 
 /**
  * Close the session: push each checkout's branch, then remove the worktrees and
@@ -1357,6 +1407,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionResizeSchema,
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
+  sessionWindowsListSchema,
+  sessionWindowsSchema,
   sessionCloseSchema,
   sessionWatchSchema,
   sessionUnwatchSchema,
