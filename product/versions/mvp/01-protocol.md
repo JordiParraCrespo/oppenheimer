@@ -110,6 +110,18 @@ runner does with it and point back.
   `session.started` in its log, an attachment says so with its first
   frame. **`attachment.closed`** is the runner freeing an id whose PTY
   ended on its own.
+- **`session.windows` answers the window commands** (since 2026-11-16, 32):
+  a runner whose `hello` names `session.windows.list` answers
+  `session.windows.list`, `window.open` and `window.close` with the
+  session's windows as tmux holds them after the command (`{ index, name }`
+  each, the snapshot's shape), under the command's id, and `opened` names
+  the window an open made. That index is what the console's Terminal tab
+  mints its attach ticket for, so without it a shell could be opened but
+  never shown. Refusals stay `command.failed` (window 0 is the agent's and
+  is `SESS_002`, a window the host does not hold `SESS_001`). The control
+  plane waits for the answer like a folder listing and stores nothing: the
+  host is the record of a session's windows. A runner without the
+  capability is not sent window commands at all.
 - **`session.started` means the session has a terminal, not that its agent
   is up.** The host builds the tmux session *before* it clones, so the pane
   is there about thirty milliseconds in and the clone, the worktree and the

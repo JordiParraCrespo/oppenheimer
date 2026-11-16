@@ -392,6 +392,15 @@ worker runs it and streams what happens back to the chat.
 
 ## 3. The chat
 
+An empty chat greets quietly: the bot's face, its name and one line ("Ask
+Curie anything. It can read your sessions and act on them."), over the
+composer in its one-row layout, the approval, model and effort chips in a
+quiet line under the box. The same chat opens beside a session, in its
+side pane (`32-side-pane.md`). Until 2026-11-16 the page asked for a job at
+34px ("Curie is ready. Tell it what job to do.") over four job tiles, or
+next-step pills once it had instructions, over the stacked composer; the
+owner found both loud, beside a session first and then on the page.
+
 The chat shows what the bot says, not everything it does:
 
 - the bot's text, streamed;

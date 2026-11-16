@@ -406,4 +406,36 @@ export const SessionErrors = {
     message: 'This session has no cloud chat',
     httpStatus: 409,
   },
+  /**
+   * The Terminal tab opened or closed a shell on a host whose live runner did
+   * not name `session.windows.list`: it would change the windows without
+   * saying which, so the tab could not attach to the one it asked for.
+   */
+  WINDOWS_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_056',
+    message: "This host's runner cannot open or close a session's terminals",
+    httpStatus: 409,
+  },
+  /** Window 0 is the agent: it ends with the session, never as a tab. */
+  WINDOW_IS_AGENT: {
+    code: 'SESSIONS_057',
+    message: "The agent's window cannot be closed; close the session instead",
+    httpStatus: 409,
+  },
+  /** The session has no window with that index on its host (`SESS_001`): it was closed already. */
+  WINDOW_NOT_FOUND: {
+    code: 'SESSIONS_058',
+    message: 'The session has no such terminal',
+    httpStatus: 404,
+  },
+  /**
+   * The host refused to open or close a terminal for any other reason (the
+   * session is not running there, tmux failed); the runner's own code is
+   * `upstreamCode`.
+   */
+  WINDOW_REFUSED: {
+    code: 'SESSIONS_059',
+    message: "The host refused to change the session's terminals",
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

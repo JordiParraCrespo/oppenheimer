@@ -99,7 +99,6 @@ const NESTED_NAMES = {
   'events.append.events[]': 'Event',
   'session.create.launch': 'LaunchOptions',
   'session.create.checkouts[]': 'Checkout',
-  'sessionSnapshot.windows[]': 'Window',
   'port.listing.ports[]': 'ListedPort',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
 };

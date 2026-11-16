@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionSkeleton } from '../components/session-skeleton';
 import { SessionPane } from '../sections/session-pane';
 import { SessionTerminal } from '../sections/session-terminal';
+import { SideSession } from '../sections/side-session';
 
 /**
  * One session, in whichever state the URL lands on. The pane reads the
@@ -25,6 +26,7 @@ export function SessionScreen({
   sessionId,
   closed,
   bar,
+  sideBot,
 }: {
   sessionId: string;
   /**
@@ -33,6 +35,11 @@ export function SessionScreen({
    * tasks feature's.
    */
   bar?: { back?: ReactNode };
+  /**
+   * A bot's chat in the side pane beside the session, from the route: the
+   * chat is the bots feature's. Without it the pane offers no bots.
+   */
+  sideBot?: (botId: string) => ReactNode;
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -85,6 +92,7 @@ export function SessionScreen({
           sessionId={sessionId}
           closed={closed}
           bar={bar}
+          side={bar ? { session: (id) => <SideSession sessionId={id} />, bot: sideBot } : undefined}
           terminal={(session, reading, statusItems) => (
             <SessionTerminal
               sessionId={session.id}

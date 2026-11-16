@@ -18,6 +18,7 @@ export const sessionsKeys = {
   share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
   shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
   ports: (id: string) => [...sessionsKeys.all, 'ports', id] as const,
+  windows: (id: string | undefined) => [...sessionsKeys.all, 'windows', id] as const,
   preview: (id: string, port: number, opened: number) =>
     [...sessionsKeys.all, 'preview', id, port, opened] as const,
 };

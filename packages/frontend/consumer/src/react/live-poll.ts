@@ -50,6 +50,11 @@ import { useStreamCovers } from './workspace-stream-status';
  * - `sessionPorts`: the ports a session listens on, while its Browser tab is
  *   open: a dev server the agent just started shows within a few seconds.
  *   Not in the background, and the workspace stream carries no such fact.
+ * - `sessionWindows`: the shells a session has, while its side pane is open:
+ *   one opened or ended on another device shows, and a host back online
+ *   offers Terminal again. Each read asks the host, so it is slower than the
+ *   ports'. Not in the background, and the workspace stream carries no such
+ *   fact.
  * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
  *   back while a session's terminal waits on it. A reader who left the tab is
  *   redialled by the terminal's own visibility wake, so it still pauses.
@@ -77,6 +82,7 @@ export const LIVE_POLL = {
   hostPresence: { interval: 15_000, inBackground: false },
   cloudSession: { interval: 5000, inBackground: true },
   sessionPorts: { interval: 3000, inBackground: false },
+  sessionWindows: { interval: 10_000, inBackground: false },
   /**
    * The PR queue filling the parts of the rows it deferred. The rows are
    * drawn from the first read; each poll fills a budget more, out of a cache

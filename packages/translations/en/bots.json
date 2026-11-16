@@ -48,9 +48,7 @@
     "actions": "Bot options",
     "settings": "Settings",
     "delete": "Delete bot",
-    "helloBlank": "{{name}} is ready. Tell it what job to do.",
-    "startFrom": "Try asking",
-    "hello": "{{name}} is ready. What should we work on?",
+    "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
     "placeholder": "Message {{name}}",
     "history": "History {{position}}/{{total}}",
     "pasted": {
@@ -178,48 +176,6 @@
       "moreLines_one": "+{{count}} line",
       "moreLines_other": "+{{count}} lines",
       "fullLines": "Show full lines"
-    },
-    "suggest": {
-      "task": {
-        "research": {
-          "name": "Research a topic",
-          "prompt": "Search the web and give me a short summary, with sources, of "
-        },
-        "summarise": {
-          "name": "Summarise something",
-          "prompt": "Summarise this in five bullet points:\n\n"
-        },
-        "draft": {
-          "name": "Draft a message",
-          "prompt": "Draft a short, friendly message to "
-        },
-        "plan": {
-          "name": "Make a plan",
-          "prompt": "Make a step-by-step plan to "
-        }
-      },
-      "job": {
-        "research": {
-          "name": "Research assistant",
-          "description": "Finds and sums up what I ask about",
-          "prompt": "Be my research assistant: when I name a topic, search the web and give me a short summary with its sources."
-        },
-        "writing": {
-          "name": "Writing partner",
-          "description": "Tightens my drafts in my own voice",
-          "prompt": "Be my writing partner: tighten what I write, suggest clearer wording and keep my tone."
-        },
-        "planner": {
-          "name": "Planner",
-          "description": "Turns goals into next steps",
-          "prompt": "Be my planner: break my goals into steps, keep a to-do list and tell me what to do next."
-        },
-        "news": {
-          "name": "News digest",
-          "description": "The latest on what I follow",
-          "prompt": "Be my news digest: when I ask, search the web for the latest on the topics I follow and sum it up in five bullets."
-        }
-      }
     },
     "model": "Model",
     "searchModels": "Search models…",

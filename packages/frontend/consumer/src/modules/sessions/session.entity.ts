@@ -16,6 +16,11 @@ import {
 import type { SessionAgentId, SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { SessionAgentReport } from '@oppenheimer/shared/schemas/session-agent-report';
 import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
+import type {
+  OpenedSessionWindowResponse,
+  SessionTerminalWindow,
+  SessionWindowsResponse,
+} from '@oppenheimer/shared/schemas/session-window';
 
 /** What a session runs: a host's coding agent, or a vendor's in the cloud (`cursor`). */
 export type SessionAgent = SessionAgentId;
@@ -142,6 +147,22 @@ export interface SessionPorts {
   state: 'listed' | 'host_offline' | 'not_supported';
   ports: SessionPort[];
 }
+
+/**
+ * One of a session's terminal windows (tmux windows on its host): window 0
+ * is the agent, 1 and up the plain shells its Terminal tab opened. `index` is
+ * what an attach ticket's `window` names.
+ */
+export type SessionWindow = SessionTerminalWindow;
+
+/**
+ * What the session's host said about its windows: the windows, or why it
+ * said nothing (no link now, or a runner too old to list them).
+ */
+export type SessionWindows = SessionWindowsResponse;
+
+/** A shell just opened in the session, and every window after it. */
+export type OpenedSessionWindow = OpenedSessionWindowResponse;
 
 /** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
 export interface SessionPreview {

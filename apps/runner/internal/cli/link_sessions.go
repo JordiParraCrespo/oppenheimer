@@ -146,6 +146,12 @@ func (h *linkHandler) account() string {
 	return h.identity.HostID
 }
 
+// sessionWindowsMax is SESSION_WINDOWS_MAX_ENTRIES in the shared protocol.
+const sessionWindowsMax = 64
+
+// windowNameMax is FIELD_BOUNDS.displayName.max, a window name's bound on the wire.
+const windowNameMax = 200
+
 // lifecycleCommand is what lifecycle reads of stop, restart, close,
 // window.open and window.close: each is its own message on the wire, and
 // this is the union of the fields the handler acts on.
@@ -214,13 +220,40 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 		}
 		h.credentials.Forget(m.SessionID)
 	case "session.window.open":
-		_, err = h.app.Sessions.OpenWindow(ctx, m.SessionID)
+		var opened sessionsdomain.Window
+		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID); err == nil {
+			h.windows(ctx, m.CommandID, m.SessionID, opened.Index)
+		}
 	case "session.window.close":
-		err = h.app.Sessions.CloseWindow(ctx, m.SessionID, m.Window)
+		if err = h.app.Sessions.CloseWindow(ctx, m.SessionID, m.Window); err == nil {
+			h.windows(ctx, m.CommandID, m.SessionID, 0)
+		}
 	}
 	if err != nil {
 		h.fail(m.CommandID, err)
 	}
+}
+
+// windows answers a window command, or a listing, with the session's windows
+// as tmux holds them now: what the console's Terminal tab draws. opened is
+// the window an open made, 0 for none (window 0 is never opened).
+func (h *linkHandler) windows(ctx context.Context, commandID, sessionID string, opened int) {
+	windows, err := h.app.Sessions.Windows(ctx, sessionID)
+	if err != nil {
+		h.fail(commandID, err)
+		return
+	}
+	listed := make([]link.Window, 0, min(len(windows), sessionWindowsMax))
+	for _, w := range windows {
+		if len(listed) == sessionWindowsMax {
+			break
+		}
+		listed = append(listed, link.Window{Index: w.Index, Name: truncate(w.Name, windowNameMax)})
+	}
+	_ = h.client.Send(link.SessionWindows{
+		Type: link.TypeSessionWindows, CommandID: commandID, SessionID: sessionID,
+		Windows: listed, Opened: opened,
+	})
 }
 
 // preflight re-collects the host facts and reports them at once, as a

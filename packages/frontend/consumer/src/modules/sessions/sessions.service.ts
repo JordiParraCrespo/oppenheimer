@@ -8,12 +8,15 @@ import type { SessionChat } from './chat/session-chat';
 import type {
   AttachTicket,
   CreateSessionInput,
+  OpenedSessionWindow,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
   SessionPorts,
   SessionPreview,
   SessionShare,
+  SessionWindow,
+  SessionWindows,
   SharedSession,
   StartCloudSessionInput,
 } from './session.entity';
@@ -130,6 +133,21 @@ export class SessionsService {
   /** The ports the session's processes listen on, for its Browser tab. */
   findPorts(id: string): Promise<SessionPorts> {
     return this.repository.findPorts(id);
+  }
+
+  /** The session's terminal windows, for its Terminal tab: window 0 the agent, the rest shells. */
+  listWindows(id: string): Promise<SessionWindows> {
+    return this.repository.listWindows(id);
+  }
+
+  /** Opens a plain shell in the session's worktree; stream it with `openStream(id, window.index)`. */
+  openWindow(id: string): Promise<OpenedSessionWindow> {
+    return this.repository.openWindow(id);
+  }
+
+  /** Closes one of the session's shells, and answers with the windows left. */
+  closeWindow(id: string, window: number): Promise<SessionWindow[]> {
+    return this.repository.closeWindow(id, window);
   }
 
   /** Where one of the session's ports opens, framed by the Browser tab or in a tab of its own. */
