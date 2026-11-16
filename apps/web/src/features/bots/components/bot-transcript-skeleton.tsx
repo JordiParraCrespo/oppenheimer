@@ -13,7 +13,7 @@ const SECOND_REPLY = ['w-4/5', 'w-2/3'];
  */
 export function BotTranscriptSkeleton() {
   return (
-    <ChatTranscript ground="recessed" aria-hidden>
+    <ChatTranscript aria-hidden>
       <div className="flex justify-end pt-2 opacity-80">
         <span className="flex h-12 w-60 items-center rounded-xl bg-card px-5">
           <Skeleton shape="sm" className="h-3 w-full" />

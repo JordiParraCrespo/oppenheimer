@@ -43,7 +43,7 @@ export function BotHello({ botId, name }: { botId: string; name: string }) {
   });
   if (isPending) {
     return (
-      <ChatTranscript ground="recessed" aria-hidden>
+      <ChatTranscript aria-hidden>
         <div className="flex h-[37px] items-center justify-center">
           <Skeleton shape="sm" className="h-6 w-80 max-w-full" />
         </div>
@@ -52,7 +52,7 @@ export function BotHello({ botId, name }: { botId: string; name: string }) {
   }
 
   return (
-    <ChatTranscript ground="recessed">
+    <ChatTranscript>
       {blank ? (
         <ChatEmptyState align="center" title={t('bots.chat.helloBlank', { name })}>
           <div className="flex flex-col gap-2.5">
