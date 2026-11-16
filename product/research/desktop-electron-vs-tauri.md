@@ -124,6 +124,9 @@ Both rendered the console the same way after sign-in
 
 ## For the owner
 
+**Decided 2026-11-16: Electron.** The owner kept Electron for the desktop
+on the recommendation below (`../README.md`, "decisions that changed").
+
 Recommendation: **stay on Electron for the first desktop.** Make Tauri a
 macOS-only question, and measure it on a Mac before choosing it. On the one
 platform measured, Tauri saves download size but costs memory, start-up

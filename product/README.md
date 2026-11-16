@@ -1709,4 +1709,12 @@ earlier note:
   new bots take a physicist's name at random. The failure rules of
   2026-11-08 to 2026-11-15, a page of cases, became four lines in Claude
   Code's manner, keeping the limits the incidents earned.
+- Note 00 §5 rejected Electron because state must live server-side, and
+  the desktop spike (`research/desktop-app-spike.md`, 2026-10-18) kept that
+  rule with Electron on the hosted console. On 2026-11-16 the owner chose
+  Electron over Tauri for the desktop, on the measurements in
+  `research/desktop-electron-vs-tauri.md`: on Linux Tauri saves download
+  size (2.3 vs 86 MiB) and costs memory, start-up time, Rust and a WebView
+  per platform. Tauri is reconsidered only if download size starts to
+  matter, and then measured on a Mac first. State still lives server-side.
 
