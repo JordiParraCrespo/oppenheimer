@@ -243,11 +243,15 @@ function ChatComposer({
     </div>
   ) : null;
   const recorder = dictation?.recorder ? (
-    // The bar is 10px taller than the foot row it replaces; it takes
-    // that from the field's bottom padding, so the box keeps its height.
+    // Stacked, the bar is 10px taller than the foot row it replaces; it
+    // takes that from the field's bottom padding, so the box keeps its
+    // height. Inline, it stands in the row's 44px: 6px around it and a
+    // 32px bar.
     <ComposerRecorder
       data-slot="chat-composer-recorder"
-      className={inline ? 'w-full p-1.5' : '-mt-2.5 px-3 pb-3'}
+      className={
+        inline ? 'w-full p-1.5 *:data-[slot=voice-recorder-bar]:py-0.5' : '-mt-2.5 px-3 pb-3'
+      }
       onEnter={submit}
     >
       {dictation.recorder}
