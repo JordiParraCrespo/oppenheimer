@@ -150,6 +150,7 @@ const (
 	TypeDeviceAttach            = "device.attach"
 	TypeDeviceInfo              = "device.info"
 	TypeDeviceInput             = "device.input"
+	TypeDeviceSelect            = "device.select"
 	TypeDeviceDetach            = "device.detach"
 	TypePortList                = "port.list"
 	TypePortListing             = "port.listing"
@@ -229,6 +230,7 @@ var MessageTypes = []string{
 	TypeDeviceAttach,
 	TypeDeviceInfo,
 	TypeDeviceInput,
+	TypeDeviceSelect,
 	TypeDeviceDetach,
 	TypePortList,
 	TypePortListing,
@@ -355,6 +357,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DeviceInfo), true
 	case TypeDeviceInput:
 		return new(DeviceInput), true
+	case TypeDeviceSelect:
+		return new(DeviceSelect), true
 	case TypeDeviceDetach:
 		return new(DeviceDetach), true
 	case TypePortList:
@@ -882,11 +886,20 @@ type DeviceAttach struct {
 
 // DeviceInfo is the `device.info` message.
 type DeviceInfo struct {
-	Type         string `json:"type"`
-	AttachmentID uint32 `json:"attachmentId"`
-	Serial       string `json:"serial"`
-	Name         string `json:"name"`
-	Platform     string `json:"platform"`
+	Type         string              `json:"type"`
+	AttachmentID uint32              `json:"attachmentId"`
+	Serial       string              `json:"serial"`
+	Name         string              `json:"name"`
+	Platform     string              `json:"platform"`
+	Devices      []DeviceInfoDevices `json:"devices,omitempty"`
+}
+
+// DeviceInfoDevices is DeviceInfo.Devices.
+type DeviceInfoDevices struct {
+	Serial   string `json:"serial"`
+	Name     string `json:"name"`
+	Platform string `json:"platform"`
+	Free     bool   `json:"free"`
 }
 
 // DeviceInput is the `device.input` message.
@@ -901,6 +914,13 @@ type DeviceInput struct {
 	Text         string  `json:"text,omitempty"`
 	Key          string  `json:"key,omitempty"`
 	Button       string  `json:"button,omitempty"`
+}
+
+// DeviceSelect is the `device.select` message.
+type DeviceSelect struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Serial       string `json:"serial"`
 }
 
 // DeviceDetach is the `device.detach` message.

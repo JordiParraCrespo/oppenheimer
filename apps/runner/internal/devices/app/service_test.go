@@ -97,3 +97,46 @@ func TestASessionThatClosesMidLookIsNotHandedADevice(t *testing.T) {
 		t.Fatalf("the device was not free for the next session: %+v %v", got, err)
 	}
 }
+
+type screens struct{ opened []string }
+
+func (s *screens) Open(_ context.Context, device domain.Device) (app.Screen, error) {
+	s.opened = append(s.opened, device.Serial)
+	return nil, nil
+}
+
+// A reader who opens the Simulator sees every simulator running now, not the
+// ones running when the session first got its device, and can move the
+// session onto a free one, whose screen they then watch.
+func TestAViewerSeesTheHostsDevicesNowAndMovesTheSession(t *testing.T) {
+	phone := domain.Device{Serial: "UDID-1", Name: "iPhone 17 Pro", Platform: domain.IOS}
+	tablet := domain.Device{Serial: "UDID-2", Name: "iPad Air", Platform: domain.IOS}
+	found := &finder{devices: []domain.Device{phone}}
+	shown := &screens{}
+	service := app.New(app.Options{Finder: found, Screens: shown})
+	if _, err := service.ForSession("s1"); err != nil {
+		t.Fatal(err)
+	}
+
+	found.devices = []domain.Device{phone, tablet}
+	if _, _, err := service.Watch(context.Background(), "s1"); err != nil {
+		t.Fatal(err)
+	}
+	if choices := service.Choices("s1"); len(choices) != 2 || !choices[1].Free {
+		t.Fatalf("the iPad booted since was not offered: %+v", choices)
+	}
+
+	if _, err := service.Choose("s1", tablet.Serial); err != nil {
+		t.Fatal(err)
+	}
+	device, _, err := service.WatchHeld(context.Background(), "s1")
+	if err != nil || device != tablet {
+		t.Fatalf("the viewer watches %+v after picking the iPad: %v", device, err)
+	}
+	if got, err := service.ForSession("s2"); err != nil || got != phone {
+		t.Fatalf("the iPhone s1 left was not free for s2: %+v %v", got, err)
+	}
+	if _, err := service.Choose("s1", phone.Serial); !noDevice(err) {
+		t.Fatalf("s1 took back the iPhone s2 now holds: %v", err)
+	}
+}

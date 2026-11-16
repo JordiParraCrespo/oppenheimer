@@ -721,7 +721,16 @@
     "portsFailed": "Couldn't list the session's ports",
     "previewFailed": "Couldn't open the preview",
     "opening": "Opening localhost:{{port}}…",
-    "desktop": "Desktop"
+    "desktop": "Desktop",
+    "device": "Device",
+    "deviceSearch": "Find a device",
+    "deviceEmpty": "No device",
+    "deviceTaken": "In use by another session",
+    "refreshDevice": "Refresh devices",
+    "platform": {
+      "ios": "iOS simulator",
+      "android": "Android emulator"
+    }
   },
   "cloud": {
     "eyebrow": "Claude Code cloud",

@@ -28,6 +28,19 @@ type Device struct {
 // ErrNoneFree is a session asking for a device when every one is held.
 var ErrNoneFree = errors.New("every device on this host belongs to another session")
 
+// ErrTaken is a session picking a device another session holds.
+var ErrTaken = errors.New("that device belongs to another session")
+
+// ErrNotOffered is a session picking a device this host does not offer.
+var ErrNotOffered = errors.New("this host does not offer that device")
+
+// Choice is one device on offer as a session sees it: Free when no other
+// session holds it, the session's own included.
+type Choice struct {
+	Device
+	Free bool
+}
+
 // ParseDevices reads the host's offer: comma-separated serials, each
 // optionally `serial=Name`. An emulator serial is Android; anything else is
 // taken as an iOS simulator UDID.
@@ -59,8 +72,9 @@ func ParseDevices(spec string) ([]Device, error) {
 }
 
 // Pool is which session holds which device. A session keeps its device for
-// its whole life, so its agent and its reader always reach the same one, and
-// no two sessions ever share one.
+// its whole life unless its reader moves it onto another free one (Choose),
+// so its agent and its reader reach the same one, and no two sessions ever
+// share one.
 type Pool struct {
 	devices []Device
 	holders map[string]string // serial → session id
@@ -113,6 +127,32 @@ func (p *Pool) Held(sessionID string) (Device, bool) {
 		}
 	}
 	return Device{}, false
+}
+
+// Choices is every device on offer, each marked free or not for the session.
+func (p *Pool) Choices(sessionID string) []Choice {
+	choices := make([]Choice, 0, len(p.devices))
+	for _, d := range p.devices {
+		holder, held := p.holders[d.Serial]
+		choices = append(choices, Choice{Device: d, Free: !held || holder == sessionID})
+	}
+	return choices
+}
+
+// Choose moves the session onto the device with this serial: one it already
+// holds, or a free one, which it then holds in place of whatever it held. A
+// device another session holds is refused and the session keeps its own.
+func (p *Pool) Choose(sessionID, serial string) (Device, error) {
+	i := slices.IndexFunc(p.devices, func(d Device) bool { return d.Serial == serial })
+	if i < 0 {
+		return Device{}, ErrNotOffered
+	}
+	if holder, held := p.holders[serial]; held && holder != sessionID {
+		return Device{}, ErrTaken
+	}
+	p.Release(sessionID)
+	p.holders[serial] = sessionID
+	return p.devices[i], nil
 }
 
 // Release frees whatever the session held.
