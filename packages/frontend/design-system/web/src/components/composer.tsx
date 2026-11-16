@@ -211,7 +211,7 @@ function Composer({
         data-tabbed={scope ? '' : undefined}
         data-above={above ? '' : undefined}
         className={cn(
-          'flex flex-col rounded-lg border border-field-border bg-field [--composer-row:1.875rem] transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+          'flex flex-col rounded-lg border border-field-border bg-field [--composer-row:2rem] transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
           className,
         )}
         {...props}
