@@ -121,7 +121,8 @@ function ChatComposer({
    * one row, the field opening at one line with send at its end, and `tools`
    * and `engine` as a quiet line under the box, so it does not crowd the
    * conversation above it. Its send is ink, not the blue: a round button
-   * that sits on the wash until there is something to send.
+   * that sits on the wash until there is something to send; while `busy`
+   * its stop takes the blue.
    */
   layout?: 'stacked' | 'inline';
   /**
@@ -185,7 +186,12 @@ function ChatComposer({
           inline
             ? 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100'
             : 'ml-1 size-8.5',
-          busy && 'bg-fg text-background hover:bg-fg hover:text-background',
+          // Stop is the one control a reader reaches for while the agent
+          // works: inline it takes the action blue, stacked the ink.
+          busy &&
+            (inline
+              ? 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+              : 'bg-fg text-background hover:bg-fg hover:text-background'),
         )}
       >
         {busy ? (
