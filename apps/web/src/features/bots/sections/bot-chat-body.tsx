@@ -80,10 +80,10 @@ export function BotChatBody({
           <BotUsageCard botId={bot.id} />
         </BotChatScroller>
       </ToolCallsShownContext>
-      {/* The gutter follows the chat's own width, not the window's: a bot
-          beside a session is narrow on the widest screen. */}
-      <div className="@container">
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2 px-3 pb-3 @2xl:px-8 @2xl:pb-4">
+      {/* The scroller's gutter and measure, so the box's edges are the
+          conversation's, on the page and beside a session alike. */}
+      <div className="px-4 pb-4 sm:px-8">
+        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <BotApprovalCard botId={bot.id} name={bot.name} />
           <BotQuestionCard botId={bot.id} />
           <ErrorAlert
