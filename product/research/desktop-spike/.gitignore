@@ -1,0 +1,3 @@
+# What the README's `npm init -y && npm install` leaves behind; the spike installs on its own.
+package.json
+package-lock.json
