@@ -1,7 +1,8 @@
 import { RoutineTable, RoutineTableEmpty, RoutineTableHead } from '@oppenheimer/design-system-web';
 import { Bot } from '@oppenheimer/design-system-web/icons';
+import { triggerListText } from '@oppenheimer/frontend-consumer';
 import { useBots, useSuspenseAllBotRoutines } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, triggerListText, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BotRoutineTableRow } from '../components/bot-routine-table-row';

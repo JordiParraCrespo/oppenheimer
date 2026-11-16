@@ -1,10 +1,12 @@
 import {
   AutomationEntity,
   type AutomationTrigger,
+  daysText,
   HostEntity,
   ProjectEntity,
+  scheduleText,
 } from '@oppenheimer/frontend-consumer';
-import { dayOffset, daysText, scheduleText } from '@oppenheimer/frontend-web';
+import { dayOffset } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {

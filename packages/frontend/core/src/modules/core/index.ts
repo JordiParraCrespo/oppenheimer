@@ -25,17 +25,6 @@ export {
   weekdayDate,
 } from './format-date';
 export {
-  calendarDate,
-  daysText,
-  eventLabel,
-  type ScheduleWords,
-  scheduleText,
-  type TriggerWords,
-  triggerListText,
-  WEEK_ORDER,
-  weekdayName,
-} from './format-trigger';
-export {
   type EventSourceFactory,
   type EventSourceLike,
   ServerEventStream,

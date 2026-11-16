@@ -1,14 +1,3 @@
-export {
-  calendarDate,
-  daysText,
-  eventLabel,
-  type ScheduleWords,
-  scheduleText,
-  type TriggerWords,
-  triggerListText,
-  WEEK_ORDER,
-  weekdayName,
-} from '@oppenheimer/frontend-core';
 export { LanguageSwitcher } from './components/language-switcher';
 export { RelativeTime } from './components/relative-time';
 export { StartFailureDetail } from './components/start-failure-detail';

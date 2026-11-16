@@ -1,5 +1,6 @@
 import type { BotRoutineEntity } from '@oppenheimer/frontend-consumer';
-import { dateFormatter, triggerListText } from '@oppenheimer/frontend-web';
+import { triggerListText } from '@oppenheimer/frontend-consumer';
+import { dateFormatter } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 
 /** A routine's *when*, as its card says it: "Schedule · Weekdays at 09:00 +1". */

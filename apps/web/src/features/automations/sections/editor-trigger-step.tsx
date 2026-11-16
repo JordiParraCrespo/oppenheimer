@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
-import { eventLabel, viewerTimeZone } from '@oppenheimer/frontend-web';
+import { eventLabel } from '@oppenheimer/frontend-consumer';
+import { viewerTimeZone } from '@oppenheimer/frontend-web';
 import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
 import { MAX_AUTOMATION_TRIGGERS } from '@oppenheimer/shared/schemas/automation';
 import { useState } from 'react';

@@ -1,6 +1,7 @@
 import { TokenMono, useNow, WeekdayStrip } from '@oppenheimer/design-system-web';
+import { weekdayName } from '@oppenheimer/frontend-consumer';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { formatCountdown, useLocale, viewerTimeZone, weekdayName } from '@oppenheimer/frontend-web';
+import { formatCountdown, useLocale, viewerTimeZone } from '@oppenheimer/frontend-web';
 import { nextScheduleOccurrence } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
 import type { ScheduleCard } from '../lib/automation-draft';
