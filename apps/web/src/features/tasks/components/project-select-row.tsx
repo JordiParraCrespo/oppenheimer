@@ -22,7 +22,6 @@ export function ProjectSelectRow({
     <div className="grid grid-cols-[96px_1fr] items-center gap-3">
       <span className="flex h-(--control-h-md) items-center text-sm text-fg-muted">{label}</span>
       <FieldSelect
-        className="w-64 max-w-full"
         aria-label={label}
         placeholder={t('tasks.dialog.chooseProject')}
         searchPlaceholder={t('common.search.projects')}

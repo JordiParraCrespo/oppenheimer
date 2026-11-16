@@ -15,6 +15,13 @@ const column = (page: Page, name: keyof typeof STATUS) =>
 const card = (page: Page, title: string) =>
   page.locator('[data-slot="task-card"]').filter({ has: page.getByText(title, { exact: true }) });
 
+/** A task's project, from the dialog's select: open it, search, pick the one named. */
+async function pickProject(page: Page, dialog: Locator, name: string) {
+  await dialog.getByRole('button', { name: 'Project', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Search projects' }).fill(name);
+  await page.getByRole('option', { name, exact: true }).click();
+}
+
 /** Drag on the drag layer: press, pass its 5px threshold, glide over, let go. */
 async function drag(page: Page, from: Locator, to: Locator) {
   const a = await from.boundingBox();
@@ -143,7 +150,7 @@ test('a session started from a card moves it to In progress and links back', asy
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New task' });
   await dialog.getByLabel('Title').fill('Fix the empty state');
-  await dialog.getByRole('button', { name: 'Wallet' }).click();
+  await pickProject(page, dialog, 'Wallet');
   await dialog.getByRole('button', { name: 'Add task' }).click();
   await expect(column(page, 'Not started').getByText('Fix the empty state')).toBeVisible();
 
@@ -170,7 +177,7 @@ test('a session started from a card moves it to In progress and links back', asy
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const second = page.getByRole('dialog', { name: 'New task' });
   await second.getByLabel('Title').fill('Polish the wallet list');
-  await second.getByRole('button', { name: 'Wallet' }).click();
+  await pickProject(page, second, 'Wallet');
   await second.getByRole('button', { name: 'Add task' }).click();
   await card(page, 'Polish the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });

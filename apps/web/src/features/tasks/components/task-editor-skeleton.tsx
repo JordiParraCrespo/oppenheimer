@@ -34,7 +34,7 @@ export function TaskEditorSkeleton({ existing }: { existing: boolean }) {
           written={TASK_STATUSES.map((status) => t(`tasks.columns.${status}`))}
         />
         <ChoiceRowSkeleton label={t('tasks.dialog.project')} align="center">
-          <Skeleton className="h-(--control-h-md) w-64 rounded-[10px]" />
+          <Skeleton className="h-(--control-h-md) w-full rounded-[10px]" />
         </ChoiceRowSkeleton>
         <ChoiceRowSkeleton
           label={t('tasks.dialog.milestone')}
