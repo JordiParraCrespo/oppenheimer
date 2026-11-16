@@ -31,6 +31,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useEscapeToStop } from '@/features/bots/hooks/use-escape-to-stop';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import {
@@ -50,8 +51,10 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * Enter steers it (Codex's `turn/steer`): the turn takes the message at its
  * next tool call, and runs it after itself if it reaches none; Alt+Enter
  * queues it for after instead, and a message with images always waits,
- * since the running turn would not read them. Each message waiting shows
- * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
+ * since the running turn would not read them. Escape stops the turn, as
+ * Stop does, unless another field or an open menu takes it; beside a
+ * session, only from inside the box (`useEscapeToStop`). Each message
+ * waiting shows over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
  * back, Edit takes it back into the field, and the first one's Send now
  * stops the turn under way so it runs next. A message that carried images is not taken back to edit: they were
  * sent once and the field cannot hold them again. A provider with no key in the workspace keeps
@@ -125,6 +128,7 @@ export function BotComposer({
   const modelLabel = botModelOf(provider, model)?.label ?? providerLabel;
   const images = useBotImages(botId, takesImages, modelLabel);
   const picker = useRef<HTMLInputElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   // The images each send took off the composer, to hold again if the API refuses it.
   const heldFor = useRef(new WeakMap<SendBotMessageVariables, readonly HeldImage[]>());
   const send = useSendBotMessage({
@@ -165,6 +169,9 @@ export function BotComposer({
   function stopTurn(turnId: string) {
     if (!isSendingBotTurn(turnId)) cancel.mutate({ id: botId, turnId });
   }
+
+  // On its own page the chat is the screen; beside a session, only its box is the bot's.
+  useEscapeToStop(field, dropsOn === 'box' ? box : null, active ? () => stopTurn(active.id) : null);
 
   // Edit: the waiting turn is called off, and its words come back into the field.
   function takeBack(message: BotWaitingMessage) {
@@ -245,7 +252,7 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div className="relative">
+      <div ref={box} className="relative">
         {slash.open ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}

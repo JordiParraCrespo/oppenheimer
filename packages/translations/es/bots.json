@@ -61,7 +61,7 @@
       "showLess": "Mostrar menos"
     },
     "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
+    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después, Esc lo detiene",
     "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
