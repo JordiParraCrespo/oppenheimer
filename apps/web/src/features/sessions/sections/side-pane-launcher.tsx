@@ -78,43 +78,48 @@ export function SidePaneLauncher({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
       {pane === 'root' ? (
-        <>
-          <EmptyState>
-            <EmptyState.Header>
-              <EmptyState.Title>{t('sessions.side.launcher.title')}</EmptyState.Title>
-              <EmptyState.Description>
-                {t('sessions.side.launcher.description')}
-              </EmptyState.Description>
-            </EmptyState.Header>
-          </EmptyState>
-          <ErrorAlert
-            error={openError}
-            fallback={t('sessions.side.terminal.openFailed')}
-            onDismiss={onDismissError}
-          />
-          <ChipSelectList density="menu" aria-label={t('sessions.side.launcher.title')}>
-            {choices.map((choice) => {
-              const Icon = ICONS[choice];
-              return (
-                <ChipSelectItem
-                  key={choice}
-                  density="menu"
-                  leading={<Icon className="size-4" />}
-                  description={t(`sessions.side.launcher.${choice}Detail`)}
-                  disabled={choice === 'terminal' && opening}
-                  aria-busy={choice === 'terminal' && opening ? true : undefined}
-                  onClick={() => choose(choice)}
-                >
-                  {choice === 'terminal' && opening
-                    ? t('sessions.side.terminal.opening')
-                    : label(choice)}
-                </ChipSelectItem>
-              );
-            })}
-          </ChipSelectList>
-        </>
+        <EmptyState>
+          <EmptyState.Header>
+            <EmptyState.Title>{t('sessions.side.launcher.title')}</EmptyState.Title>
+            <EmptyState.Description>
+              {t('sessions.side.launcher.description')}
+            </EmptyState.Description>
+          </EmptyState.Header>
+          <EmptyState.Content className="w-full text-left">
+            <ErrorAlert
+              error={openError}
+              fallback={t('sessions.side.terminal.openFailed')}
+              onDismiss={onDismissError}
+            />
+            <ChipSelectList
+              density="menu"
+              className="w-full"
+              role="listbox"
+              aria-label={t('sessions.side.launcher.title')}
+            >
+              {choices.map((choice) => {
+                const Icon = ICONS[choice];
+                return (
+                  <ChipSelectItem
+                    key={choice}
+                    density="menu"
+                    leading={<Icon className="size-4" />}
+                    description={t(`sessions.side.launcher.${choice}Detail`)}
+                    disabled={choice === 'terminal' && opening}
+                    aria-busy={choice === 'terminal' && opening ? true : undefined}
+                    onClick={() => choose(choice)}
+                  >
+                    {choice === 'terminal' && opening
+                      ? t('sessions.side.terminal.opening')
+                      : label(choice)}
+                  </ChipSelectItem>
+                );
+              })}
+            </ChipSelectList>
+          </EmptyState.Content>
+        </EmptyState>
       ) : (
         <>
           <Button variant="ghost" size="sm" className="self-start" onClick={() => setPane('root')}>

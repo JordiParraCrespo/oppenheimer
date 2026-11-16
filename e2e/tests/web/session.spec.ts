@@ -189,15 +189,15 @@ test.describe('Session screen', () => {
     await page.getByRole('button', { name: 'Show side pane' }).click();
     const pane = page.getByRole('complementary', { name: 'Side pane' });
     await expect(pane.getByText('Open beside this session')).toBeVisible();
-    await expect(pane.getByRole('button', { name: /^Terminal/ })).toHaveCount(0);
+    await expect(pane.getByRole('option', { name: /^Terminal/ })).toHaveCount(0);
 
-    await pane.getByRole('button', { name: /^Bot/ }).click();
+    await pane.getByRole('option', { name: /^Bot/ }).click();
     await pane.getByRole('option', { name: /Side Bot/ }).click();
     await expect(pane.getByRole('tab', { name: 'Side Bot' })).toBeVisible();
     await expect(pane.getByPlaceholder('Message Side Bot')).toBeVisible();
 
     await pane.getByRole('button', { name: 'Open something else' }).click();
-    await pane.getByRole('button', { name: /^Session/ }).click();
+    await pane.getByRole('option', { name: /^Session/ }).click();
     await pane.getByRole('option', { name: /Other work/ }).click();
     await expect(pane.getByRole('tab', { name: 'Other work' })).toBeVisible();
 
@@ -242,7 +242,7 @@ test.describe('Session screen', () => {
     await page.goto(`/sessions/${sessionId}`);
     await page.getByRole('button', { name: 'Show side pane' }).click();
     const pane = page.getByRole('complementary', { name: 'Side pane' });
-    await pane.getByRole('button', { name: /^Browser/ }).click();
+    await pane.getByRole('option', { name: /^Browser/ }).click();
     await expect(pane.getByText('The host is offline')).toBeVisible();
     await expect(pane.getByText('The preview comes back when the host reconnects.')).toBeVisible();
   });
