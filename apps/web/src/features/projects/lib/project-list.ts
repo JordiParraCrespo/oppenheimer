@@ -89,3 +89,20 @@ export function projectsWithOpenSessions(
 ): ReadonlySet<string> {
   return new Set(sessions.flatMap((session) => (session.projectId ? [session.projectId] : [])));
 }
+
+/**
+ * Whether a project's card stays on Projects under a search: the words match
+ * the name the card shows (Unassigned's translated one) or any repository's
+ * full name (`acme/xrp-mobile`), case aside. No words keep every card.
+ */
+export function projectMatchesQuery(
+  project: Pick<ProjectEntity, 'repositories'>,
+  shownName: string,
+  query: string,
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return [shownName, ...project.repositories.map((repository) => repository.fullName)].some(
+    (text) => text.toLowerCase().includes(needle),
+  );
+}

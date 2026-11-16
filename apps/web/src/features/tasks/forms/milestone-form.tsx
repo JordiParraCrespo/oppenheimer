@@ -16,7 +16,7 @@ import { type CreateMilestoneDto, createMilestoneSchema } from '@oppenheimer/sha
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { input } from 'zod';
-import { ChoiceRow } from '../components/choice-row';
+import { ProjectSelectRow } from '../components/project-select-row';
 import { targetQuickDays } from '../lib/task-form';
 
 export type MilestoneFormValues = input<typeof createMilestoneSchema>;
@@ -75,11 +75,11 @@ export function MilestoneForm({
         control={control}
         name="projectId"
         render={({ field }) => (
-          <ChoiceRow
+          <ProjectSelectRow
             label={t('tasks.dialog.project')}
-            choices={projects.map((project) => ({ value: project.id, label: project.name }))}
+            projects={projects}
             value={field.value}
-            onChange={(value) => value && field.onChange(value)}
+            onChange={field.onChange}
           />
         )}
       />

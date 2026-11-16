@@ -19,6 +19,7 @@ import type { ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ChoiceRow } from '../components/choice-row';
+import { ProjectSelectRow } from '../components/project-select-row';
 import type { TaskFormInput, TaskFormOutput, TaskFormValues } from '../lib/task-form';
 import { TaskDueRow } from './task-due-row';
 import { TaskFocusRow } from './task-focus-row';
@@ -111,12 +112,11 @@ export function TaskForm({
           control={control}
           name="projectId"
           render={({ field }) => (
-            <ChoiceRow
+            <ProjectSelectRow
               label={t('tasks.dialog.project')}
-              choices={projects.map((project) => ({ value: project.id, label: project.name }))}
+              projects={projects}
               value={field.value ?? null}
               onChange={(value) => {
-                if (!value) return;
                 field.onChange(value);
                 // A milestone of another project goes with the change.
                 const milestoneId = getValues('milestoneId');
