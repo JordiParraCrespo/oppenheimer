@@ -26,6 +26,28 @@ export function dotFor(session: SessionEntity): SessionDot {
 }
 
 /**
+ * The sidebar row's glyph: grey, but for what the row is going through (a
+ * session still building or being deleted pulses, a refused delete is red).
+ * What the session needs from the reader is the row's dot ({@link attentionFor}),
+ * and work in flight is its name's shimmer, so the glyph carries neither.
+ */
+export function rowGlyphFor(session: SessionEntity): 'idle' | 'pending' | 'failed' {
+  if (session.closeRefusal) return 'failed';
+  return session.isProvisioning || session.isClosing ? 'pending' : 'idle';
+}
+
+/**
+ * The sidebar row's dot, as the bots draw theirs: amber while the session
+ * waits on the reader, blue once it is ready for review; none otherwise.
+ */
+export function attentionFor(session: SessionEntity): 'needs-you' | 'done' | undefined {
+  if (session.isClosing || session.isProvisioning) return undefined;
+  if (session.state === 'waiting-on-you') return 'needs-you';
+  if (session.state === 'ready-for-review') return 'done';
+  return undefined;
+}
+
+/**
  * Whether the agent is at work right now, which the row's name shimmers for:
  * the `working` group of a session that is up, not one the dot merely draws
  * green (`ready-for-review` is green and done).
