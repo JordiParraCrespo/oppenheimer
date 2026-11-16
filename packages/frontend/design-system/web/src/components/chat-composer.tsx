@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
+import { ArrowUpIcon, PaperclipIcon, PlusIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import {
@@ -48,8 +48,8 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * what was said; the next Enter sends it.
  *
  * Files ride a message in either layout: `onAttach` puts the paperclip
- * first, in the foot row before `tools` (`stacked`) or at the start of the
- * row before the field (`inline`); `attachments` are what the message
+ * first in the foot row before `tools` (`stacked`), or a round "+" at the
+ * start of the row before the field (`inline`); `attachments` are what the message
  * carries, in a row over the text: a bot's `ChatImage` tiles, a session's
  * `ComposerFile` chips. `allowEmpty` lets a message of files alone be sent.
  *
@@ -120,7 +120,8 @@ function ChatComposer({
    * holding `tools`, `engine` and send. `inline` (a session read as a chat):
    * one row, the field opening at one line with send at its end, and `tools`
    * and `engine` as a quiet line under the box, so it does not crowd the
-   * conversation above it.
+   * conversation above it. Its send is ink, not the blue: a round button
+   * that sits on the wash until there is something to send.
    */
   layout?: 'stacked' | 'inline';
   /**
@@ -181,7 +182,9 @@ function ChatComposer({
         labels={label}
         onClick={submit}
         className={cn(
-          inline ? 'ml-1 size-8' : 'ml-1 size-8.5',
+          inline
+            ? 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100'
+            : 'ml-1 size-8.5',
           busy && 'bg-fg text-background hover:bg-fg hover:text-background',
         )}
       >
@@ -198,12 +201,12 @@ function ChatComposer({
       aria-label={label.attach}
       title={label.attach}
       size="sm"
-      shape="square"
+      shape={inline ? 'pill' : 'square'}
       onClick={onAttach}
       disabled={disabled}
-      className={inline ? 'size-8' : 'size-7.5'}
+      className={inline ? 'size-8 text-fg-muted hover:text-fg' : 'size-7.5'}
     >
-      <PaperclipIcon className="size-3.75" />
+      {inline ? <PlusIcon className="size-4" /> : <PaperclipIcon className="size-3.75" />}
     </IconButton>
   ) : null;
   // The live region stays mounted, empty without a caption: a screen reader
