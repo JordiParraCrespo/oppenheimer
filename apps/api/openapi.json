@@ -20205,7 +20205,7 @@
         ]
       },
       "post": {
-        "description": "A blank bot: the next free first name (\"Juno\", \"Milo\"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.",
+        "description": "A blank bot: a free first name, picked at random among physicists (\"Feynman\", \"Curie\"…), unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.",
         "operationId": "createBot",
         "parameters": [],
         "requestBody": {
@@ -37444,7 +37444,7 @@
           },
           "name": {
             "type": "string",
-            "example": "Juno"
+            "example": "Feynman"
           },
           "description": {
             "type": "string",
@@ -37804,7 +37804,7 @@
           },
           "content": {
             "type": "string",
-            "example": "# Soul\n\nYou are Juno."
+            "example": "# Soul\n\nYou are Feynman."
           },
           "revision": {
             "type": "number",
