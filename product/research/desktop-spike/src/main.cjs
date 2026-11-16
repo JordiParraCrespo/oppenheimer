@@ -149,6 +149,20 @@ function createWindow() {
       shell.openExternal(url);
     }
   });
+  // The Tauri comparison's bench (`../desktop-tauri/bench/run.mjs`): print
+  // when the console has loaded, run the bench script in it, and print what
+  // it reports. The harness ends the process.
+  win.webContents.on('did-finish-load', () => {
+    console.log(`LOADED ${Math.round(performance.now())} ms ${win.webContents.getURL()}`);
+    if (process.env.OPPENHEIMER_BENCH) {
+      const fs = require('node:fs');
+      win.webContents.executeJavaScript(fs.readFileSync(process.env.OPPENHEIMER_BENCH, 'utf8'));
+    }
+  });
+  win.webContents.on('console-message', (event, _level, legacyMessage) => {
+    const message = event.message ?? legacyMessage;
+    if (typeof message === 'string' && message.startsWith('BENCH ')) console.log(message);
+  });
   win.loadURL(CONSOLE_URL);
   return win;
 }
