@@ -17,12 +17,26 @@ export function projectStatusOf(
   projectId: string,
   sessions: readonly Pick<SessionEntity, 'projectId' | 'state'>[],
 ): ProjectStatus {
+  if (projectWaitingSessions(projectId, sessions).length > 0) return 'needs-input';
   const own = sessions.filter((session) => session.projectId === projectId);
-  if (own.some((session) => session.state === 'waiting-on-you')) return 'needs-input';
   if (own.some((session) => session.state === 'working' || session.state === 'landing')) {
     return 'running';
   }
   return 'idle';
+}
+
+/**
+ * The project's sessions that wait on you, the ones that make its card say
+ * Needs input: its page lists each under Needs input, so the card's word
+ * always leads to them.
+ */
+export function projectWaitingSessions<S extends Pick<SessionEntity, 'projectId' | 'state'>>(
+  projectId: string,
+  sessions: readonly S[],
+): S[] {
+  return sessions.filter(
+    (session) => session.projectId === projectId && session.state === 'waiting-on-you',
+  );
 }
 
 /** The card's mono line: each repository's own name, `xrp-mobile · atlas`. */

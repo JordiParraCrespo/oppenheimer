@@ -8,24 +8,25 @@ import {
   ProjectPanelEmpty,
   ProjectTaskRow,
 } from '@oppenheimer/design-system-web';
-import { useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
+import { useSuspenseTaskBoard } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { planProjectParam } from '../lib/project-links';
-import { projectTaskGroups } from '../lib/project-list';
+import { projectTaskGroups, projectWaitingSessions } from '../lib/project-list';
 
 /**
  * A project's page under Plan's Projects: its milestones with how far each
- * is, the tasks that wait on a person and the ones in progress. A milestone
- * opens Milestones narrowed to the project, a task its dialog on the board.
+ * is, the sessions and tasks that wait on a person and the tasks in progress.
+ * A milestone opens Milestones narrowed to the project, a session its page, a
+ * task its dialog on the board.
  * It reads under Suspense, in the screen's `QueryState`; a refetch that fails
  * keeps the panels and says so above them. A project that is gone says so.
  */
 export function ProjectOverviewSection({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { tasks, projects, milestones, error } = useSuspensePlan();
+  const { tasks, projects, milestones, sessions, error } = useSuspenseTaskBoard();
   const project = projects.find((row) => row.id === projectId);
 
   if (!project) {
@@ -45,6 +46,7 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
 
   const own = milestones.filter((milestone) => milestone.projectId === projectId);
   const { blocked, doing } = projectTaskGroups(projectId, tasks);
+  const waiting = projectWaitingSessions(projectId, sessions);
   const dueOf = (iso: string | null) => (iso ? formatCalendarDay(iso, locale) : undefined);
   const scope = { project: planProjectParam(project) };
 
@@ -71,20 +73,28 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
         </ProjectOverviewColumn>
         <ProjectOverviewColumn>
           <ProjectPanel label={t('projects.detail.needsInput')}>
-            {blocked.length === 0 ? (
+            {blocked.length === 0 && waiting.length === 0 ? (
               <ProjectPanelEmpty>{t('projects.detail.nothingNeedsInput')}</ProjectPanelEmpty>
-            ) : (
-              blocked.map((task) => (
-                <ProjectTaskRow
-                  key={task.id}
-                  state="needs-input"
-                  reason={task.blockedReason}
-                  title={task.title}
-                  due={dueOf(task.dueDate)}
-                  render={<Link to="/plan" search={{ ...scope, task: task.id }} />}
-                />
-              ))
-            )}
+            ) : null}
+            {waiting.map((session) => (
+              <ProjectTaskRow
+                key={session.id}
+                state="needs-input"
+                reason={session.notice?.text ?? t('projects.detail.sessionWaiting')}
+                title={session.name}
+                render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
+              />
+            ))}
+            {blocked.map((task) => (
+              <ProjectTaskRow
+                key={task.id}
+                state="needs-input"
+                reason={task.blockedReason}
+                title={task.title}
+                due={dueOf(task.dueDate)}
+                render={<Link to="/plan" search={{ ...scope, task: task.id }} />}
+              />
+            ))}
           </ProjectPanel>
           <ProjectPanel label={t('projects.detail.inProgress')}>
             {doing.length === 0 ? (
