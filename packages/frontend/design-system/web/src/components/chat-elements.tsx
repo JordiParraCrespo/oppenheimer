@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { CheckIcon, CopyIcon, WrapTextIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { useCopy } from '../hooks/use-copy';
@@ -20,11 +20,11 @@ import { SegmentedControl, SegmentedControlItem } from './segmented-control';
  *   on a hairline, wrapping; one tap fills the composer.
  * - `ChatSources` + `ChatSource`: the pages a search found, numbered pills
  *   that open each page in a new tab.
- * - `ChatCodeBlock`: a fenced block in a reply, on the card at the 18px
- *   radius: the language over the code with the copy button at its end,
- *   then the code at 13.5px mono on 1.7, its lines numbered in the gutter,
- *   scrolling sideways rather than wrapping.
- * - `ChatJsonBlock`: a fenced block that parses as JSON, the same card
+ * - `ChatCodeBlock`: a fenced block in a reply, on the chat's warm wash at
+ *   the 10px radius: the language in small mono over the code, Wrap and
+ *   Copy at its end, then the code at 13.5px mono on 1.7, scrolling
+ *   sideways until Wrap folds its long lines.
+ * - `ChatJsonBlock`: a fenced block that parses as JSON, the same block
  *   opening on the code as written, Raw / Tree on its band.
  */
 function ChatMarker({
@@ -104,42 +104,66 @@ function ChatSource({
   );
 }
 
-type ChatCodeBlockLabels = { copy: string; copied: string };
+type ChatCodeBlockLabels = { copy: string; copied: string; wrap: string; unwrap: string };
 
-/** The band over a block: its language, the views it offers, Copy at the end. */
+const CODE_LABELS: ChatCodeBlockLabels = { copy: 'Copy code', copied: 'Copied', wrap: 'Wrap lines', unwrap: 'Unwrap lines' };
+
+/**
+ * The band over a block: its language in small mono, the views it offers,
+ * then Wrap (when the block offers it) and Copy at the end.
+ */
 function CodeBlockBand({
   code,
   language,
   labels,
   views,
+  wrapped,
+  onWrap,
 }: {
   code: string;
   language: string | undefined;
   labels: Partial<ChatCodeBlockLabels> | undefined;
   views?: React.ReactNode;
+  wrapped?: boolean;
+  onWrap?: () => void;
 }) {
-  const label = { copy: 'Copy code', copied: 'Copied', ...labels };
+  const label = { ...CODE_LABELS, ...labels };
   const { copied, copy } = useCopy(code);
+  const wrapLabel = wrapped ? label.unwrap : label.wrap;
   return (
-    <div className="flex items-center gap-2 pt-3 pr-2.5 pl-5.5">
-      <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-fg">{language || 'text'}</span>
+    <div className="flex items-center gap-0.5 pt-1.5 pr-1.5 pl-4">
+      <span className="min-w-0 flex-1 truncate font-mono text-[13px] text-fg-muted">{language || 'text'}</span>
       {views}
-      <IconButton size="sm" aria-label={copied ? label.copied : label.copy} title={copied ? label.copied : label.copy} onClick={copy}>
+      {onWrap ? (
+        <IconButton
+          size="sm"
+          aria-label={wrapLabel}
+          aria-pressed={wrapped}
+          title={wrapLabel}
+          onClick={onWrap}
+          className="text-fg-subtle aria-pressed:text-fg"
+        >
+          <WrapTextIcon />
+        </IconButton>
+      ) : null}
+      <IconButton
+        size="sm"
+        aria-label={copied ? label.copied : label.copy}
+        title={copied ? label.copied : label.copy}
+        onClick={copy}
+        className="text-fg-subtle"
+      >
         {copied ? <CheckIcon /> : <CopyIcon />}
       </IconButton>
     </div>
   );
 }
 
-/** The code with its lines numbered in the gutter, scrolling sideways. */
-function NumberedCode({ code, children }: { code: string; children?: React.ReactNode }) {
-  const lines = code.replace(/\n$/, '').split('\n').length;
+/** The code, scrolling sideways, or folding its long lines when `wrapped`. */
+function PlainCode({ code, wrapped, children }: { code: string; wrapped?: boolean; children?: React.ReactNode }) {
   return (
-    <div className="flex overflow-x-auto pt-2 pb-4.5 font-mono text-[13.5px] leading-[1.7]">
-      <pre aria-hidden className="figures m-0 w-11 shrink-0 pr-3.5 text-right font-mono text-fg-subtle select-none">
-        {Array.from({ length: lines }, (_, index) => index + 1).join('\n')}
-      </pre>
-      <pre className="m-0 min-w-0 flex-1 pr-5.5 font-mono text-fg">
+    <div className="overflow-x-auto px-4 pt-1 pb-3.5 font-mono text-[13.5px] leading-[1.7]">
+      <pre className={cn('m-0 font-mono text-fg', wrapped && 'break-normal whitespace-pre-wrap [overflow-wrap:anywhere]')}>
         <code>{children ?? code}</code>
       </pre>
     </div>
@@ -153,7 +177,7 @@ function ChatCodeBlock({
   className,
   children,
 }: {
-  /** The code as written: what Copy copies and what the gutter counts. */
+  /** The code as written: what Copy copies. */
   code: string;
   /** The fence's language, over the code; "text" when it names none. */
   language?: string;
@@ -162,10 +186,19 @@ function ChatCodeBlock({
   /** The code drawn (highlighted spans); the text itself when left out. */
   children?: React.ReactNode;
 }) {
+  const [wrapped, setWrapped] = React.useState(false);
   return (
-    <div data-slot="chat-code-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
-      <CodeBlockBand code={code} language={language} labels={labels} />
-      <NumberedCode code={code}>{children}</NumberedCode>
+    <div data-slot="chat-code-block" className={cn('my-0.5 overflow-hidden rounded-sm bg-chat-wash', className)}>
+      <CodeBlockBand
+        code={code}
+        language={language}
+        labels={labels}
+        wrapped={wrapped}
+        onWrap={() => setWrapped(!wrapped)}
+      />
+      <PlainCode code={code} wrapped={wrapped}>
+        {children}
+      </PlainCode>
     </div>
   );
 }
@@ -173,7 +206,7 @@ function ChatCodeBlock({
 type ChatJsonBlockLabels = ChatCodeBlockLabels & { tree: string; raw: string };
 
 /**
- * A fenced block that holds JSON, on the same card as `ChatCodeBlock`: it
+ * A fenced block that holds JSON, on the same wash as `ChatCodeBlock`: it
  * opens on the code as written and switches to a `JsonTree` of `value`
  * (Raw / Tree on its band). Copy always copies the code as written.
  */
@@ -204,7 +237,7 @@ function ChatJsonBlock({
   const label = { tree: 'Tree', raw: 'Raw', ...labels };
   const [view, setView] = React.useState<'tree' | 'raw'>('raw');
   return (
-    <div data-slot="chat-json-block" className={cn('my-1 overflow-hidden rounded-lg bg-card', className)}>
+    <div data-slot="chat-json-block" className={cn('my-0.5 overflow-hidden rounded-sm bg-chat-wash', className)}>
       <CodeBlockBand
         code={code}
         language={language || 'json'}
@@ -217,9 +250,9 @@ function ChatJsonBlock({
         }
       />
       {view === 'raw' ? (
-        <NumberedCode code={code}>{children}</NumberedCode>
+        <PlainCode code={code}>{children}</PlainCode>
       ) : (
-        <div className="overflow-x-auto pt-2 pr-5.5 pb-4 pl-3">
+        <div className="overflow-x-auto px-3 pt-1 pb-3.5">
           <JsonTree value={value} annotate={annotate} moreLabel={moreLabel} />
         </div>
       )}
