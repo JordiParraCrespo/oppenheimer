@@ -101,6 +101,13 @@ export const LIVE_POLL = {
    * carries none of GitHub's news.
    */
   inbox: { interval: 60_000, inBackground: false },
+  /**
+   * The workspace's pending approvals behind the sidebar's and the rail's
+   * amber dots, while the workspace stream is down or turned off: a card
+   * raised or answered elsewhere lands within this. Not in the background,
+   * and stood down while the stream announces `botApproval.changed`.
+   */
+  botApprovals: { interval: 15_000, inBackground: false, streamCanCover: true },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;

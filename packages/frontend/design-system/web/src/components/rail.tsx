@@ -85,7 +85,7 @@ function RailItem({
   label: string;
   /** Shown after the name in the tip, and read out as the button's description. */
   count?: React.ReactNode;
-  /** Something behind it waits on the person (a bot's approval): a 7px amber dot on the corner. */
+  /** A 7px amber dot on the corner. */
   attention?: boolean;
   active?: boolean;
 }) {

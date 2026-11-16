@@ -1,13 +1,12 @@
 import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
-import { useBotNeedsInput } from '@oppenheimer/frontend-consumer/react';
-import { MarkdownLine } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SectionBotRowMenu } from '@/features/bots/components/section-bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
+import { useBotRowItem } from '@/features/bots/hooks/use-bot-row-item';
 import { botChatDestination } from '@/features/bots/lib/bot-chat-destination';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
@@ -37,19 +36,13 @@ export function SectionBotRow({
   const active = useRouterState({ select: (state) => state.location.pathname === path });
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const needsInput = useBotNeedsInput(bot.id);
-  const line = bot.lastMessagePreview || bot.description;
+  const item = useBotRowItem(bot);
 
   return (
     <>
       <SortableBotItem
-        id={bot.id}
-        name={bot.name}
-        initials={bot.initials}
-        face={bot.face}
-        preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
+        {...item}
         active={active}
-        needsInput={needsInput}
         menuOpen={menuOpen}
         render={<Link to={to} params={params} />}
         action={

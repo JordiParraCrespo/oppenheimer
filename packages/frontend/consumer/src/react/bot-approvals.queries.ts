@@ -8,6 +8,7 @@ import type {
 } from '../modules/bots/bot-conversation.entity';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
+import { usePollWhile } from './live-poll';
 import { mutation } from './mutation';
 
 /**
@@ -41,25 +42,28 @@ export function usePendingBotApprovalsQuery() {
 }
 
 /**
- * Whether the bot waits on the person: a card of its is pending. One read
- * across the workspace (the Inbox's), which `botApproval.changed` keeps
- * current, so the sidebar's yellow dot comes and goes with the card.
+ * One fact read off the workspace's pending cards: the Inbox's read, which
+ * `botApproval.changed` keeps current and which polls as `botApprovals` while
+ * the workspace stream does not cover it. `fallback` stands in until it lands.
  */
-export function useBotNeedsInput(id: string): boolean {
-  const { data } = useQuery({
-    ...usePendingBotApprovalsQuery(),
-    select: (rows: WorkspaceBotApprovalEntity[]) => rows.some((row) => row.botId === id),
-  });
-  return data ?? false;
+function usePendingApprovalsSelect<T>(
+  select: (rows: WorkspaceBotApprovalEntity[]) => T,
+  fallback: T,
+): T {
+  const query = usePendingBotApprovalsQuery();
+  const poll = usePollWhile('botApprovals', query.queryKey, true);
+  const { data } = useQuery({ ...query, select, ...poll });
+  return data ?? fallback;
 }
 
-/** Whether any of the workspace's bots waits on the person: the rail's dot. */
+/** Whether the bot waits on the person: a card of its is pending (the sidebar's amber dot). */
+export function useBotNeedsInput(id: string): boolean {
+  return usePendingApprovalsSelect((rows) => rows.some((row) => row.botId === id), false);
+}
+
+/** Whether any of the workspace's bots waits on the person (the rail's amber dot). */
 export function useAnyBotNeedsInput(): boolean {
-  const { data } = useQuery({
-    ...usePendingBotApprovalsQuery(),
-    select: (rows: WorkspaceBotApprovalEntity[]) => rows.length > 0,
-  });
-  return data ?? false;
+  return usePendingApprovalsSelect((rows) => rows.length > 0, false);
 }
 
 export interface DecideBotApprovalVariables {

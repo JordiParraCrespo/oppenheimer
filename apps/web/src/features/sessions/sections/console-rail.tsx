@@ -42,6 +42,9 @@ export function ConsoleRail() {
     sessions: sessionCount,
     plan: openTasks,
   };
+  const attentions: Partial<Record<RailItemId, boolean>> = {
+    bots: botsNeedYou,
+  };
 
   return (
     <Rail aria-label={t('nav.primaryNavigation')}>
@@ -72,7 +75,7 @@ export function ConsoleRail() {
                   id={id}
                   label={t(entry.labelKey)}
                   count={counts[id]}
-                  attention={id === 'bots' && botsNeedYou}
+                  attention={attentions[id]}
                   active={lists.includes(list)}
                   render={<Link to={entry.to} />}
                 >
