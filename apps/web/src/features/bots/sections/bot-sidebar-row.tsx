@@ -1,6 +1,6 @@
 import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
-import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
+import { useBotNeedsInput, useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, MarkdownLine } from '@oppenheimer/frontend-web';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -42,6 +42,7 @@ export function BotSidebarRow({
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
   const pin = useBotPin(bot.id);
+  const needsInput = useBotNeedsInput(bot.id);
   const line = bot.lastMessagePreview || bot.description;
 
   return (
@@ -54,6 +55,7 @@ export function BotSidebarRow({
         face={bot.face}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
+        needsInput={needsInput}
         menuOpen={menuOpen}
         render={<Link to="/bots/$botId" params={{ botId: bot.id }} />}
         action={

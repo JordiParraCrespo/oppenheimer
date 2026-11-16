@@ -1,5 +1,6 @@
 import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
+import { useBotNeedsInput } from '@oppenheimer/frontend-consumer/react';
 import { MarkdownLine } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
@@ -36,6 +37,7 @@ export function SectionBotRow({
   const active = useRouterState({ select: (state) => state.location.pathname === path });
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const needsInput = useBotNeedsInput(bot.id);
   const line = bot.lastMessagePreview || bot.description;
 
   return (
@@ -47,6 +49,7 @@ export function SectionBotRow({
         face={bot.face}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
+        needsInput={needsInput}
         menuOpen={menuOpen}
         render={<Link to={to} params={params} />}
         action={

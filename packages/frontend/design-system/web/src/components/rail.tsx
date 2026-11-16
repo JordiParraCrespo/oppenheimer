@@ -72,6 +72,7 @@ function RailMark({ className, label, render, ref, ...props }: useRender.Compone
 function RailItem({
   label,
   count,
+  attention,
   active,
   className,
   children,
@@ -84,6 +85,8 @@ function RailItem({
   label: string;
   /** Shown after the name in the tip, and read out as the button's description. */
   count?: React.ReactNode;
+  /** Something behind it waits on the person (a bot's approval): a 7px amber dot on the corner. */
+  attention?: boolean;
   active?: boolean;
 }) {
   const countId = React.useId();
@@ -98,6 +101,7 @@ function RailItem({
       type: render ? undefined : 'button',
       'data-slot': 'rail-item',
       'data-active': active || undefined,
+      'data-attention': attention || undefined,
       'aria-label': label,
       // A sortable item's drag instructions describe it too; the count stays beside them.
       'aria-describedby': [describedBy, hasCount ? countId : undefined].filter(Boolean).join(' ') || undefined,
@@ -110,6 +114,12 @@ function RailItem({
       children: (
         <>
           {children}
+          {attention ? (
+            <span
+              aria-hidden
+              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar"
+            />
+          ) : null}
           <RailTip count={hasCount ? count : undefined} countId={countId}>
             {label}
           </RailTip>

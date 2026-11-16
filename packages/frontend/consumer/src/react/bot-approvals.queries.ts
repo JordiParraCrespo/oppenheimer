@@ -2,7 +2,10 @@
 
 import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { BotApprovalDecision } from '@oppenheimer/shared/schemas/bot';
-import type { BotApprovalEntity } from '../modules/bots/bot-conversation.entity';
+import type {
+  BotApprovalEntity,
+  WorkspaceBotApprovalEntity,
+} from '../modules/bots/bot-conversation.entity';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
@@ -35,6 +38,28 @@ export function usePendingBotApprovalsQuery() {
     queryKey: botsKeys.pendingApprovals(),
     queryFn: () => app.bots.findWorkspacePendingApprovals(),
   };
+}
+
+/**
+ * Whether the bot waits on the person: a card of its is pending. One read
+ * across the workspace (the Inbox's), which `botApproval.changed` keeps
+ * current, so the sidebar's yellow dot comes and goes with the card.
+ */
+export function useBotNeedsInput(id: string): boolean {
+  const { data } = useQuery({
+    ...usePendingBotApprovalsQuery(),
+    select: (rows: WorkspaceBotApprovalEntity[]) => rows.some((row) => row.botId === id),
+  });
+  return data ?? false;
+}
+
+/** Whether any of the workspace's bots waits on the person: the rail's dot. */
+export function useAnyBotNeedsInput(): boolean {
+  const { data } = useQuery({
+    ...usePendingBotApprovalsQuery(),
+    select: (rows: WorkspaceBotApprovalEntity[]) => rows.length > 0,
+  });
+  return data ?? false;
 }
 
 export interface DecideBotApprovalVariables {

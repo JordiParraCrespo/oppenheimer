@@ -18,6 +18,8 @@ export {
 } from './automations.queries';
 export {
   type DecideBotApprovalVariables,
+  useAnyBotNeedsInput,
+  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';
