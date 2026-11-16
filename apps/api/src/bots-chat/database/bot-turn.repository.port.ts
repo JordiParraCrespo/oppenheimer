@@ -3,6 +3,7 @@ import type { BotProvider } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
+import type { HeartbeatView } from '../domain/bot-heartbeat.policy';
 import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
@@ -163,6 +164,19 @@ export interface BotTurnRepositoryPort {
    * turn reported one.
    */
   findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
+  /**
+   * What a heartbeat's scheduled beat is decided on (`routineIsIdle`): when
+   * the routine whose turns begin with `routinePrefix` last queued one, other
+   * than this run's own (`ownSourceKey`, already queued when a dispatch is
+   * retried), and when the bot last had a turn whose origin is not in
+   * `HEARTBEAT_QUIET_ORIGINS`.
+   */
+  findHeartbeatView(
+    organizationId: string,
+    botId: string,
+    routinePrefix: string,
+    ownSourceKey: string,
+  ): Promise<HeartbeatView>;
   /**
    * The bot's last turn to end on the provider that reached it (spent a
    * token) or failed: what the provider last said of the account

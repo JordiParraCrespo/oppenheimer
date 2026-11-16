@@ -14,8 +14,9 @@ import { BotModelAccessResolver } from '../application/bot-model-access.resolver
 import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import { routineIsIdle } from '../domain/bot-heartbeat.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import { routinePrefix, routineTurn } from '../domain/bot-routine.policy';
+import { routinePrefix, routineSourceKey, routineTurn } from '../domain/bot-routine.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from './bot-stream.port';
 
@@ -77,6 +78,16 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
 
     const instructions = composeRunPrompt(automation.revision.prompt, event);
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
+
+    const idle = await routineIsIdle({ name: automation.name, cause: run.cause }, () =>
+      this.turns.findHeartbeatView(
+        automation.organizationId,
+        botId,
+        routinePrefix(automation.id),
+        routineSourceKey(automation.id, run.id),
+      ),
+    );
+    if (idle) return { kind: 'skip', reason: 'idle', pause: null };
 
     const bot = await this.access.bot(automation.organizationId, botId);
     // The provider just refused the account (out of quota, a refused key):

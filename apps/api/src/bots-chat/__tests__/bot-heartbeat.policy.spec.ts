@@ -1,50 +1,54 @@
 /**
- * A bot's heartbeat: what breaks this is a trigger
- * the routine save refuses (so no bot gets one), every bot of a workspace
- * waking on the same minute, a minute that moves between replicas or
- * retries, a redelivered creation saving a second heartbeat, and a prompt
- * that no longer tells a beat with nothing to say to stay quiet. That the
- * listener saves it is `bot-heartbeat.domain-event-handler.spec.ts`.
+ * When a bot's heartbeat beats. What breaks this:
+ * a beat with nothing new since the last one spending a model turn to say
+ * nothing, a first beat or one after real activity skipped, the owner's Run
+ * now or a run an event trigger fired dropped, another routine skipped, or
+ * the view read for a run that never needs it. Which turns count as activity
+ * is the repository's read, in `bots-chat.integration.spec.ts`.
  */
-import { randomUUID } from 'node:crypto';
-import { scheduleTriggerInputSchema } from '@oppenheimer/shared';
-import {
-  HEARTBEAT_NAME,
-  HEARTBEAT_PROMPT,
-  heartbeatMinute,
-  heartbeatTrigger,
-  needsHeartbeat,
-} from '../domain/bot-heartbeat.policy';
+import type { AutomationRunCause } from '@oppenheimer/shared/automations';
+import { type HeartbeatView, routineIsIdle } from '../domain/bot-heartbeat.policy';
 
-describe('bot heartbeat', () => {
-  it('is an hourly schedule the routine save accepts', () => {
-    const trigger = heartbeatTrigger('bot-1');
-    expect(scheduleTriggerInputSchema.safeParse(trigger).success).toBe(true);
-    expect(trigger).toMatchObject({ source: 'schedule', frequency: 'hourly' });
+const at = (iso: string) => new Date(iso);
+const view = (patch: Partial<HeartbeatView> = {}): HeartbeatView => ({
+  lastBeatAt: at('2026-11-15T09:00:00Z'),
+  lastActivityAt: at('2026-11-15T08:00:00Z'),
+  ...patch,
+});
+
+function decide(
+  cause: AutomationRunCause,
+  seen: HeartbeatView = view(),
+  name = 'Heartbeat',
+): { idle: Promise<boolean>; reads: () => number } {
+  let reads = 0;
+  const idle = routineIsIdle({ name, cause }, async () => {
+    reads += 1;
+    return seen;
+  });
+  return { idle, reads: () => reads };
+}
+
+describe('routineIsIdle', () => {
+  it('skips a scheduled beat with nothing new since the last one', async () => {
+    await expect(decide('schedule').idle).resolves.toBe(true);
+    await expect(decide('schedule', view({ lastActivityAt: null })).idle).resolves.toBe(true);
   });
 
-  it('beats on the same minute for the same bot, every time it is asked', () => {
-    const botId = randomUUID();
-    expect(heartbeatMinute(botId)).toBe(heartbeatMinute(botId));
-    expect(heartbeatTrigger(botId).minute).toBe(heartbeatMinute(botId));
+  it('beats when something happened since the last beat', async () => {
+    const busy = view({ lastActivityAt: at('2026-11-15T12:00:00Z') });
+    await expect(decide('schedule', busy).idle).resolves.toBe(false);
   });
 
-  it("spreads a workspace's bots across the hour instead of waking them all at :00", () => {
-    const minutes = Array.from({ length: 200 }, () => heartbeatMinute(randomUUID()));
-    expect(minutes.every((minute) => Number.isInteger(minute) && minute >= 0 && minute < 60)).toBe(
-      true,
-    );
-    expect(new Set(minutes).size).toBeGreaterThan(30);
+  it('beats the first time, with no beat before it', async () => {
+    const first = view({ lastBeatAt: null, lastActivityAt: null });
+    await expect(decide('schedule', first).idle).resolves.toBe(false);
   });
 
-  it('is owed only to a bot that has no routine by its name', () => {
-    expect(needsHeartbeat([])).toBe(true);
-    expect(needsHeartbeat(['Morning PR review'])).toBe(true);
-    expect(needsHeartbeat(['Morning PR review', HEARTBEAT_NAME])).toBe(false);
-  });
-
-  it('tells a beat with nothing to say to end quietly, and one with news to notify', () => {
-    expect(HEARTBEAT_PROMPT).toContain('nothing_to_report');
-    expect(HEARTBEAT_PROMPT).toContain('notify');
+  it('runs the owner’s Run now, a run an event fired, and any other routine, unread', async () => {
+    for (const run of [decide('manual'), decide('event'), decide('schedule', view(), 'Digest')]) {
+      await expect(run.idle).resolves.toBe(false);
+      expect(run.reads()).toBe(0);
+    }
   });
 });

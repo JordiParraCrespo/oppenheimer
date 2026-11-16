@@ -408,6 +408,11 @@ export const AUTOMATION_SKIP_REASONS = [
    * 2026-11-10. Nothing records it now; it stays for the runs that did.
    */
   'unattended',
+  /**
+   * A bot's heartbeat with nothing new in its chat since its last beat
+   * (`26-bot-routines.md` §6): no model turn is spent to say nothing.
+   */
+  'idle',
 ] as const;
 export type AutomationSkipReason = (typeof AUTOMATION_SKIP_REASONS)[number];
 

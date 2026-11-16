@@ -531,6 +531,98 @@ describe('bots chat (integration)', () => {
     expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
   });
 
+  // What breaks this: a heartbeat that reads its own turns, another routine's
+  // or a loop's as activity (so it never idles), misses another bot's ask (so
+  // it sleeps through it), reads another bot's turns, or takes a retried
+  // run's own queued turn for the beat before it.
+  it('reads a heartbeat’s last beat and the bot’s last activity', async () => {
+    const bot = await create('Heartbeat Bot');
+    const automationId = '6a1c4f9e-0000-4000-8000-0000000000b1';
+    const props = {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    };
+    const at = async (turnId: string, iso: string) =>
+      dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [turnId, iso]);
+    const prefix = routinePrefix(automationId);
+    const view = (ownSourceKey = 'automation-run:none') =>
+      turns.findHeartbeatView(bot.organizationId, bot.id, prefix, ownSourceKey);
+
+    expect(await view()).toEqual({ lastBeatAt: null, lastActivityAt: null });
+
+    const message = sent(bot, 'Watch the release.');
+    await turns.enqueue(message.turn, message.message, null);
+    await at(message.turn.id, '2026-11-15T09:00:00Z');
+    const beat = routineTurn(props, {
+      automationId,
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b2',
+      name: 'Heartbeat',
+      instructions: 'Check in.',
+    });
+    await turns.enqueueOnce(beat.turn, beat.opening, null, null);
+    await at(beat.turn.id, '2026-11-15T10:00:00Z');
+    const other = routineTurn(props, {
+      automationId: '6a1c4f9e-0000-4000-8000-0000000000b3',
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b4',
+      name: 'Sentry triage',
+      instructions: 'Look at Sentry.',
+    });
+    await turns.enqueueOnce(other.turn, other.opening, null, null);
+    await at(other.turn.id, '2026-11-15T10:30:00Z');
+
+    // Another bot of the owner's asks from a routine: activity, unlike that routine's own turn.
+    const askingBot = await create('Asking Bot');
+    const asking = routineTurn(
+      { ...props, botId: askingBot.id },
+      {
+        automationId: '6a1c4f9e-0000-4000-8000-0000000000b5',
+        runId: '6a1c4f9e-0000-4000-8000-0000000000b6',
+        name: 'Release check',
+        instructions: 'Ask the heartbeat bot.',
+      },
+    );
+    await turns.enqueueOnce(asking.turn, asking.opening, null, null);
+    const ask = BotTurnEntity.queueFromBot(asking.turn, {
+      botId: bot.id,
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+      replyRequested: false,
+    });
+    const asked = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: ask.id,
+      role: 'user',
+      content: 'From another bot.',
+      steps: [],
+      position: 0,
+    });
+    await turns.enqueue(ask, asked, null);
+    await at(ask.id, '2026-11-15T09:30:00Z');
+
+    expect(await view()).toEqual({
+      lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    // A retried dispatch of that beat's run finds its own turn queued: not a beat before it.
+    expect(await view(beat.turn.sourceKey ?? '')).toEqual({
+      lastBeatAt: null,
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    const elsewhere = await create('Quiet Bot');
+    expect(
+      await turns.findHeartbeatView(elsewhere.organizationId, elsewhere.id, prefix, 'none'),
+    ).toEqual({
+      lastBeatAt: null,
+      lastActivityAt: null,
+    });
+  });
+
   // What breaks this: a turn that never reached the provider (a held run,
   // ending at once with no token) hiding the refusal before it, which
   // would let every other routine run reach the provider again.
