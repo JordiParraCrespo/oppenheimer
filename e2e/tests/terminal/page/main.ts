@@ -147,6 +147,7 @@ if (params.get('spin')) host.spin();
 let watching = false;
 let frames: number[] = [];
 let bubbleFrames: { grid: number; bubble: number | null }[] = [];
+let bubbleObserver: MutationObserver | null = null;
 
 /** Everything the spec reads or does, on `window.harness`. */
 const harness = {
@@ -198,29 +199,29 @@ const harness = {
    * laid over it starts on. `stopWatchingBubbles` hands them back.
    */
   watchBubbles(text: string): void {
-    watching = true;
     bubbleFrames = [];
-    const sample = () => {
-      setTimeout(() => {
-        const rows = Array.from(container.querySelectorAll('.xterm-rows > div'));
-        const grid = rows.findIndex((row) => row.textContent?.includes(text));
-        const screen = container.querySelector('.xterm-screen') as HTMLElement;
-        const cellHeight = screen.getBoundingClientRect().height / rows.length;
-        // The bubble is the overlay's rounded box, reaching the inset above
-        // its first row (`user-turns.ts`).
-        const bubble = Array.from(
-          screen.querySelectorAll<HTMLElement>('div[style*="border-radius"]'),
-        )
-          .map((element) => Math.round((Number.parseFloat(element.style.top) + 8) / cellHeight))
-          .at(0);
-        bubbleFrames.push({ grid, bubble: bubble ?? null });
-      });
-      if (watching) requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
+    // Sampled as xterm draws the rows, in the frame it draws them: what is
+    // painted is that grid with the bubble as it stands then. A sample taken
+    // on a timer could fall between output being parsed and the frame that
+    // draws it, a state never painted.
+    const rowsElement = container.querySelector('.xterm-rows') as HTMLElement;
+    bubbleObserver?.disconnect();
+    bubbleObserver = new MutationObserver(() => {
+      const rows = Array.from(rowsElement.children);
+      const grid = rows.findIndex((row) => row.textContent?.includes(text));
+      const screen = container.querySelector('.xterm-screen') as HTMLElement;
+      const cellHeight = screen.getBoundingClientRect().height / rows.length;
+      // The bubble is the overlay's rounded box, reaching the inset above
+      // its first row (`user-turns.ts`).
+      const bubble = Array.from(screen.querySelectorAll<HTMLElement>('div[style*="border-radius"]'))
+        .map((element) => Math.round((Number.parseFloat(element.style.top) + 8) / cellHeight))
+        .at(0);
+      bubbleFrames.push({ grid, bubble: bubble ?? null });
+    });
+    bubbleObserver.observe(rowsElement, { childList: true, subtree: true, characterData: true });
   },
   stopWatchingBubbles(): { grid: number; bubble: number | null }[] {
-    watching = false;
+    bubbleObserver?.disconnect();
     return bubbleFrames;
   },
   /**
