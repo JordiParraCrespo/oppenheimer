@@ -1,13 +1,14 @@
 import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, MarkdownLine } from '@oppenheimer/frontend-web';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useBotPin } from '@/features/bots/hooks/use-bot-pins';
+import { useBotRowItem } from '@/features/bots/hooks/use-bot-row-item';
 
 /**
  * One bot in the Employees sidebar, on one line: its face on its colour
@@ -42,17 +43,13 @@ export function BotSidebarRow({
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
   const pin = useBotPin(bot.id);
-  const line = bot.lastMessagePreview || bot.description;
+  const item = useBotRowItem(bot);
 
   return (
     <>
       <SortableBotItem
-        id={bot.id}
+        {...item}
         disabled={dragDisabled}
-        name={bot.name}
-        initials={bot.initials}
-        face={bot.face}
-        preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}
         render={<Link to="/bots/$botId" params={{ botId: bot.id }} />}

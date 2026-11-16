@@ -6,7 +6,7 @@ import {
   SortableGroup,
   SortableRailItem,
 } from '@oppenheimer/design-system-web';
-import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
+import { useAnyBotNeedsInput, useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -34,12 +34,16 @@ export function ConsoleRail() {
   const { data: openTasks } = useTasks({
     select: (rows) => rows.filter((row) => !row.isDone).length,
   });
+  const botsNeedYou = useAnyBotNeedsInput();
   const list = useConsoleList();
   const dragLabels = useDragLabels();
   const { order, handlers } = useRailOrder();
   const counts: Partial<Record<RailItemId, ReactNode>> = {
     sessions: sessionCount,
     plan: openTasks,
+  };
+  const attentions: Partial<Record<RailItemId, boolean>> = {
+    bots: botsNeedYou,
   };
 
   return (
@@ -71,6 +75,7 @@ export function ConsoleRail() {
                   id={id}
                   label={t(entry.labelKey)}
                   count={counts[id]}
+                  attention={attentions[id]}
                   active={lists.includes(list)}
                   render={<Link to={entry.to} />}
                 >

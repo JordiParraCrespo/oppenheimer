@@ -16,7 +16,7 @@ import { SessionRowMenu } from '../components/session-row-menu';
 import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
 import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
-import { dotFor, isWorking } from '../lib/session-run-state';
+import { attentionFor, isWorking, rowGlyphFor } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
 
 /** The row's lead glyph; the branch is the row's own default, a vendor's mark the session's own. */
@@ -163,7 +163,8 @@ export function SessionRow({
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       status={status}
       title={statusHint}
-      state={dotFor(session)}
+      state={rowGlyphFor(session)}
+      attention={attentionFor(session)}
       working={isWorking(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'vendor' ? <AgentMark agent={session.agent} /> : GLYPHS[glyph]}

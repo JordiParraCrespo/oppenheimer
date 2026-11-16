@@ -2,9 +2,13 @@
 
 import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { BotApprovalDecision } from '@oppenheimer/shared/schemas/bot';
-import type { BotApprovalEntity } from '../modules/bots/bot-conversation.entity';
+import type {
+  BotApprovalEntity,
+  WorkspaceBotApprovalEntity,
+} from '../modules/bots/bot-conversation.entity';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
+import { usePollWhile } from './live-poll';
 import { mutation } from './mutation';
 
 /**
@@ -35,6 +39,31 @@ export function usePendingBotApprovalsQuery() {
     queryKey: botsKeys.pendingApprovals(),
     queryFn: () => app.bots.findWorkspacePendingApprovals(),
   };
+}
+
+/**
+ * One fact read off the workspace's pending cards: the Inbox's read, which
+ * `botApproval.changed` keeps current and which polls as `botApprovals` while
+ * the workspace stream does not cover it. `fallback` stands in until it lands.
+ */
+function usePendingApprovalsSelect<T>(
+  select: (rows: WorkspaceBotApprovalEntity[]) => T,
+  fallback: T,
+): T {
+  const query = usePendingBotApprovalsQuery();
+  const poll = usePollWhile('botApprovals', query.queryKey, true);
+  const { data } = useQuery({ ...query, select, ...poll });
+  return data ?? fallback;
+}
+
+/** Whether the bot waits on the person: a card of its is pending (the sidebar's amber dot). */
+export function useBotNeedsInput(id: string): boolean {
+  return usePendingApprovalsSelect((rows) => rows.some((row) => row.botId === id), false);
+}
+
+/** Whether any of the workspace's bots waits on the person (the rail's amber dot). */
+export function useAnyBotNeedsInput(): boolean {
+  return usePendingApprovalsSelect((rows) => rows.length > 0, false);
 }
 
 export interface DecideBotApprovalVariables {
