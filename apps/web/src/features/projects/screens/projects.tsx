@@ -25,7 +25,10 @@ export function ProjectsScreen() {
   const query = projectsRoute.useSearch().q ?? '';
   const navigate = projectsRoute.useNavigate();
   const setQuery = (next: string) =>
-    navigate({ search: { q: next.trim() ? next : undefined }, replace: true });
+    navigate({
+      search: (previous) => ({ ...previous, q: next.trim() ? next : undefined }),
+      replace: true,
+    });
 
   return (
     <div className="flex flex-col gap-7">
