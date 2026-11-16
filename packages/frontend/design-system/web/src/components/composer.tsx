@@ -211,7 +211,7 @@ function Composer({
         data-tabbed={scope ? '' : undefined}
         data-above={above ? '' : undefined}
         className={cn(
-          'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
+          'flex flex-col rounded-lg border border-field-border bg-field [--composer-row:1.875rem] transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
           className,
         )}
         {...props}
@@ -241,11 +241,11 @@ function Composer({
           className="px-3 pb-2.5"
         />
         {dictation?.recorder ? (
-          // The bar is 14px taller than the foot row it replaces; it takes
-          // that from the field's bottom padding, so the box keeps its height.
+          // The bar stands at the foot's `--composer-row`, so the box keeps
+          // its height.
           <ComposerRecorder
             data-slot="composer-recorder"
-            className="-mt-3.5 px-2.5 pb-2.5"
+            className="px-2.5 pb-2.5"
             onEnter={submit}
           >
             {dictation.recorder}
@@ -253,7 +253,7 @@ function Composer({
         ) : (
         <ComposerFoot
           data-slot="composer-foot"
-          className="gap-1.5 px-2.5 pb-2.5"
+          className="min-h-(--composer-row) gap-1.5 px-2.5 pb-2.5"
           leading={
             <>
               {onAttach ? (
@@ -426,7 +426,7 @@ function ComposerPill({
         )}
       </div>
       {dictation?.recorder ? (
-        <ComposerRecorder data-slot="composer-recorder" className="p-1.5" onEnter={submit}>
+        <ComposerRecorder data-slot="composer-recorder" className="p-1.5 [--composer-row:2rem]" onEnter={submit}>
           {dictation.recorder}
         </ComposerRecorder>
       ) : null}

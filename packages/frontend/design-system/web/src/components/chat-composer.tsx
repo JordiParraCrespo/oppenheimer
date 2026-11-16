@@ -243,15 +243,11 @@ function ChatComposer({
     </div>
   ) : null;
   const recorder = dictation?.recorder ? (
-    // Stacked, the bar is 10px taller than the foot row it replaces; it
-    // takes that from the field's bottom padding, so the box keeps its
-    // height. Inline, it stands in the row's 44px: 6px around it and a
-    // 32px bar.
+    // The bar stands at `--composer-row`, the height of the row it
+    // replaces, so the box keeps its height.
     <ComposerRecorder
       data-slot="chat-composer-recorder"
-      className={
-        inline ? 'w-full p-1.5 *:data-[slot=voice-recorder-bar]:py-0.5' : '-mt-2.5 px-3 pb-3'
-      }
+      className={inline ? 'w-full p-1.5' : 'px-3 pb-3'}
       onEnter={submit}
     >
       {dictation.recorder}
@@ -268,6 +264,9 @@ function ChatComposer({
         className={cn(
           'flex rounded-xl border border-border-subtle bg-card transition-[border-color] duration-fast ease-standard has-focus-visible:border-border data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
           'flex-col',
+          // The control row's height: the foot's (or the inline row's
+          // controls'), and the recorder's in its place.
+          inline ? '[--composer-row:2rem]' : '[--composer-row:2.125rem]',
           className,
         )}
         {...props}
@@ -292,7 +291,7 @@ function ChatComposer({
             {recorder ?? (
               <ComposerFoot
                 data-slot="chat-composer-foot"
-                className="gap-1 px-3 pb-3"
+                className="min-h-(--composer-row) gap-1 px-3 pb-3"
                 leading={
                   paperclip ? (
                     <>
