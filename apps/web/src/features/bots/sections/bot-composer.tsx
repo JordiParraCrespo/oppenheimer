@@ -56,8 +56,9 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * Enter steers it (Codex's `turn/steer`): the turn takes the message at its
  * next tool call, and runs it after itself if it reaches none; Alt+Enter
  * queues it for after instead, and a message with images always waits,
- * Escape stops the turn, as Stop does, unless another field or an open menu takes it (`useEscapeToStop`);
- * since the running turn would not read them. Each message waiting shows
+ * since the running turn would not read them. Escape stops the turn, as
+ * Stop does, unless another field or an open menu takes it
+ * (`useEscapeToStop`). Each message waiting shows
  * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
  * back, Edit takes it back into the field, and the first one's Send now
  * stops the turn under way so it runs next. A message that carried images is not taken back to edit: they were

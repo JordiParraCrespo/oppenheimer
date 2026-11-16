@@ -18,9 +18,10 @@ function inField(target: EventTarget | null): boolean {
  * Escape stops the bot's turn under way, as the composer's Stop does, the
  * way Claude Code and Codex take it: from the composer's field or from
  * anywhere that is not a field. Off while there is no turn (`onStop` null).
- * The key is left alone when something took it first (the `/` menu), when
- * it lands in another field (the sidebar's search clears on Escape), and
- * while a dialog, menu or list is open, since there Escape closes it.
+ * The key is left alone while an input method composes, when something
+ * took it first (the `/` menu), when it lands in another field (the
+ * sidebar's search clears on Escape), and while a dialog, menu or list is
+ * open, since there Escape closes it.
  */
 export function useEscapeToStop(
   composer: RefObject<HTMLTextAreaElement | null>,
@@ -28,6 +29,8 @@ export function useEscapeToStop(
 ): void {
   const press = useEffectEvent((event: KeyboardEvent) => {
     if (!onStop || event.key !== 'Escape' || event.defaultPrevented || event.repeat) return;
+    // An Escape that dismisses an input method's candidates is the composition's, not the turn's.
+    if (event.isComposing) return;
     if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.target !== composer.current && inField(event.target)) return;
     if (document.querySelector(POPUP)) return;

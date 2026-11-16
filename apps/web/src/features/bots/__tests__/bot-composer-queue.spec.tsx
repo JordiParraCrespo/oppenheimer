@@ -172,6 +172,12 @@ describe('BotComposer while the bot works', () => {
     expect(state.cancel).toHaveBeenCalledTimes(1);
   });
 
+  it('leaves Escape to an input method dismissing its candidates in the field', () => {
+    composer();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape', isComposing: true });
+    expect(state.cancel).not.toHaveBeenCalled();
+  });
+
   it('leaves Escape to another field, such as the sidebar search clearing itself', () => {
     composer();
     const search = document.createElement('input');
