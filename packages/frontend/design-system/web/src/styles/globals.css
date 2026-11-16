@@ -200,10 +200,10 @@
        cards (the composer, the code) keep their hairlines to stand on it. */
     --chat-ground: var(--term-bg);
     /* The chat's one wash: the person's bubble, a code block, inline code and
-       a table's header row, a warm off-white that reads on the white ground
-       without a hairline. A chat on a recessed ground takes the card instead
+       a table's header row: the palette's lightest grey, which reads on the
+       white ground without a hairline. A chat on a recessed ground takes the card instead
        (`ChatTranscript`'s `ground`). */
-    --chat-wash: #f6f5f2;
+    --chat-wash: var(--op-gray-50);
     /* The agent's word for what it is doing, under a session's chat while it
        works ("✻ Mustering…"): Claude's clay, the hue its own terminal draws
        the spinner in. The glyph is decoration and wears the mark's orange;

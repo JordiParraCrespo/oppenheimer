@@ -35,9 +35,9 @@ function ChatTranscript({
 }: React.ComponentProps<'div'> & {
   /**
    * What the column stands on, which sets the chat's wash (the person's
-   * bubble, code, a table's header): `card`, a white ground, takes the warm
+   * bubble, code, a table's header): `card`, a white ground, takes the grey
    * wash; `recessed`, a bot's grey pane, takes the card itself, which the
-   * warm wash would vanish into.
+   * grey wash would vanish into.
    */
   ground?: 'card' | 'recessed';
 }) {
@@ -68,7 +68,7 @@ function ChatUserMessage({
   attachments?: React.ReactNode;
   /**
    * The bubble's fill, chosen by the ground it stands on: `card` lifts off a
-   * bot's recessed chat; `wash` (the chat's warm wash, a code block's) is
+   * bot's recessed chat; `wash` (the chat's grey wash, a code block's) is
    * for a chat on a card-coloured ground, a session's, where a card would
    * vanish; `accent` is the selected blue wash.
    */

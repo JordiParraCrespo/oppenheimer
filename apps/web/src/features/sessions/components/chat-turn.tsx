@@ -61,7 +61,7 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       {turn.prompt ? (
         <ChatUserMessage
           // A session's chat stands on its terminal's ground, the card's own
-          // colour, so the turn takes the chat's warm wash, a code block's.
+          // colour, so the turn takes the chat's grey wash, a code block's.
           tone="wash"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}

@@ -20,7 +20,7 @@ import { SegmentedControl, SegmentedControlItem } from './segmented-control';
  *   on a hairline, wrapping; one tap fills the composer.
  * - `ChatSources` + `ChatSource`: the pages a search found, numbered pills
  *   that open each page in a new tab.
- * - `ChatCodeBlock`: a fenced block in a reply, on the chat's warm wash at
+ * - `ChatCodeBlock`: a fenced block in a reply, on the chat's grey wash at
  *   the 10px radius: the language in small mono over the code, Wrap and
  *   Copy at its end, then the code at 13.5px mono on 1.7, scrolling
  *   sideways until Wrap folds its long lines.
