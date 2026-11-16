@@ -71,8 +71,10 @@ editing one file; that is the reader's call, said once, not a lock.
   a second Codex in a Codex session would become the session's chat and be
   what a restart reopens. Only an agent whose CLI takes the conversation's
   id (Claude Code's `--session-id`, Grok's) may run twice: the picker leaves
-  the session's own agent out otherwise, and the runner refuses it. Any
-  other agent beside it is fine.
+  the session's own agent out otherwise, and the runner refuses it. A
+  Claude Code session that continues a cloud one (teleport) is found by its
+  folder too, so the runner refuses a second Claude there; the pane says
+  so if it is asked. Any other agent beside it is fine.
 - **What it is not, yet.** Window 0 is still the session's agent: its state
   dot, its chat view and its transcript are window 0's. A second agent is
   read in its terminal only.

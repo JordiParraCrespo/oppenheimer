@@ -164,3 +164,27 @@ func TestASecondCopyOfAnAgentFoundByItsFolderIsRefused(t *testing.T) {
 		t.Fatalf("a second claude: %v", err)
 	}
 }
+
+// A Claude session that continues a cloud session finds its conversation by
+// the folder, not by its id: a restart continues the newest one there. A
+// second Claude beside it would be what the restart reopens, so it is
+// refused like a second Codex.
+func TestASecondClaudeInATeleportedSessionIsRefused(t *testing.T) {
+	h := newFakeHarness(t)
+	ctx := context.Background()
+	session, err := h.svc.Create(ctx, app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Launch: domain.Launch{Teleport: "session_01ABCDEFGHIJKLMNOPQRSTUV"},
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	if _, err := h.svc.OpenWindow(ctx, session.ID, domain.AgentClaude); !isProblem(err, domain.ErrInvalidInput) {
+		t.Fatalf("a second claude: err = %v, want %s", err, domain.ErrInvalidInput.Code)
+	}
+	if _, err := h.svc.OpenWindow(ctx, session.ID, domain.AgentCodex); err != nil {
+		t.Fatalf("codex beside it: %v", err)
+	}
+}

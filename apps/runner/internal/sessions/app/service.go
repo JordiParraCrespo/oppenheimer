@@ -248,8 +248,10 @@ func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent)
 		return domain.Window{}, domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
 	// The session's conversation is window 0's: a second copy of an agent
-	// found by its folder would be read, and resumed, in its place.
-	if agent == session.Agent && !agent.NamesConversation() {
+	// found by its folder would be read, and resumed, in its place. A
+	// teleported session is found by its folder too, whatever the agent: a
+	// restart continues the newest conversation there (FindTeleported).
+	if agent == session.Agent && (!agent.NamesConversation() || session.Launch.Teleport != "") {
 		return domain.Window{}, domain.ErrInvalidInput.WithDetail(
 			"a second %s in this worktree would take over the session's conversation", agent.CatalogID())
 	}
