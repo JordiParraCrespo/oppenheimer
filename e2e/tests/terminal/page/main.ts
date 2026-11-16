@@ -136,12 +136,17 @@ if (face) {
 
 const host = new FakeHost(mode);
 const container = document.getElementById('terminal') as HTMLElement;
-mountSessionTerminal(container, host, { typeahead: () => true });
+mountSessionTerminal(container, host, {
+  typeahead: () => true,
+  // The agent's window draws the reader's messages as bubbles (`user-turns.ts`).
+  agentWindow: params.get('agent') === '1',
+});
 host.start();
 if (params.get('spin')) host.spin();
 
 let watching = false;
 let frames: number[] = [];
+let bubbleFrames: { grid: number; bubble: number | null }[] = [];
 
 /** Everything the spec reads or does, on `window.harness`. */
 const harness = {
@@ -186,6 +191,37 @@ const harness = {
   stopWatching(): number[] {
     watching = false;
     return frames;
+  },
+  /**
+   * Starts noting, in every painted frame, the row the grid draws the
+   * reader's message on (the DOM row holding `text`) and the row the bubble
+   * laid over it starts on. `stopWatchingBubbles` hands them back.
+   */
+  watchBubbles(text: string): void {
+    watching = true;
+    bubbleFrames = [];
+    const sample = () => {
+      setTimeout(() => {
+        const rows = Array.from(container.querySelectorAll('.xterm-rows > div'));
+        const grid = rows.findIndex((row) => row.textContent?.includes(text));
+        const screen = container.querySelector('.xterm-screen') as HTMLElement;
+        const cellHeight = screen.getBoundingClientRect().height / rows.length;
+        // The bubble is the overlay's rounded box, reaching the inset above
+        // its first row (`user-turns.ts`).
+        const bubble = Array.from(
+          screen.querySelectorAll<HTMLElement>('div[style*="border-radius"]'),
+        )
+          .map((element) => Math.round((Number.parseFloat(element.style.top) + 8) / cellHeight))
+          .at(0);
+        bubbleFrames.push({ grid, bubble: bubble ?? null });
+      });
+      if (watching) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  },
+  stopWatchingBubbles(): { grid: number; bubble: number | null }[] {
+    watching = false;
+    return bubbleFrames;
   },
   /**
    * The terminal's screen in page CSS pixels. Only the prompt line changes
