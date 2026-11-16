@@ -80,22 +80,140 @@ enum Out {
     Close,
 }
 
-struct Attachment {
-    owner: String,
-    out: mpsc::UnboundedSender<Out>,
-    inflight: Arc<AtomicUsize>,
-    drained: Arc<Notify>,
-    closing: Arc<AtomicBool>,
+/// The credit window of one attachment: bytes sent to the page and not yet
+/// drained. The reader spends, the page gives back, and closing wakes a
+/// reader that is waiting, because a page that is gone never gives back.
+#[derive(Default)]
+struct Credit {
+    inflight: AtomicUsize,
+    drained: Notify,
+    closing: AtomicBool,
 }
 
-impl Attachment {
-    /// Close the socket and wake a reader paused on the credit window: a
-    /// page that is gone never returns its credit, and a reader left waiting
-    /// would keep the attachment, its channel and its socket forever.
+impl Credit {
+    /// Count `n` bytes sent; past HIGH, wait until the page drains below LOW
+    /// or the attachment closes. False once it is closing.
+    async fn spend(&self, n: usize) -> bool {
+        if self.inflight.fetch_add(n, Ordering::AcqRel) + n > HIGH {
+            while self.inflight.load(Ordering::Acquire) >= LOW && !self.is_closing() {
+                self.drained.notified().await;
+            }
+        }
+        !self.is_closing()
+    }
+
+    fn give(&self, n: usize) {
+        let before = self
+            .inflight
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
+                Some(v.saturating_sub(n))
+            })
+            .unwrap_or(0);
+        if before.saturating_sub(n) < LOW {
+            self.drained.notify_one();
+        }
+    }
+
     fn close(&self) {
         self.closing.store(true, Ordering::Release);
         self.drained.notify_one();
+    }
+
+    fn is_closing(&self) -> bool {
+        self.closing.load(Ordering::Acquire)
+    }
+}
+
+/// The runner's frames as the page receives them: each batch is one frame
+/// plus the frames already waiting behind it, up to `limit` bytes. Each
+/// channel message larger than a few bytes costs the page one IPC fetch,
+/// which, not the bytes, is what limits throughput; a lone keystroke's echo
+/// still goes at once.
+struct Batches<S> {
+    stream: S,
+    limit: usize,
+    ended: bool,
+}
+
+impl<S> Batches<S>
+where
+    S: futures_util::Stream<Item = Result<Message, tokio_tungstenite::tungstenite::Error>> + Unpin,
+{
+    async fn next(&mut self) -> Option<Vec<u8>> {
+        if self.ended {
+            return None;
+        }
+        let mut batch = loop {
+            match self.stream.next().await {
+                Some(Ok(Message::Binary(first))) => break Vec::from(first),
+                Some(Ok(_)) => continue,
+                _ => return None,
+            }
+        };
+        while batch.len() < self.limit {
+            match self.stream.next().now_or_never() {
+                Some(Some(Ok(Message::Binary(more)))) => batch.extend_from_slice(&more),
+                Some(Some(Ok(_))) => {}
+                // The stream ended behind this batch: send it, then stop.
+                Some(_) => {
+                    self.ended = true;
+                    break;
+                }
+                None => break,
+            }
+        }
+        Some(batch)
+    }
+}
+
+struct Attachment {
+    owner: String,
+    out: mpsc::UnboundedSender<Out>,
+    credit: Arc<Credit>,
+}
+
+impl Attachment {
+    /// Close the socket and wake the reader if it waits for credit.
+    fn close(&self) {
+        self.credit.close();
         let _ = self.out.send(Out::Close);
+    }
+}
+
+/// Page -> runner: what the page writes, until it closes or the socket goes.
+async fn write_to_runner<S>(mut sink: S, mut rx: mpsc::UnboundedReceiver<Out>)
+where
+    S: futures_util::Sink<Message> + Unpin,
+{
+    while let Some(msg) = rx.recv().await {
+        let sent = match msg {
+            Out::Bytes(b) => sink.send(Message::Binary(b.into())).await,
+            Out::Text(t) => sink.send(Message::Text(t.into())).await,
+            Out::Close => {
+                let _ = sink.close().await;
+                return;
+            }
+        };
+        if sent.is_err() {
+            return;
+        }
+    }
+}
+
+/// Runner -> page: batch, send, pay the credit window, until the runner ends
+/// the stream or the attachment closes. Dropping `on_data` tells the page.
+async fn read_to_page<S>(
+    mut batches: Batches<S>,
+    on_data: Channel<InvokeResponseBody>,
+    credit: Arc<Credit>,
+) where
+    S: futures_util::Stream<Item = Result<Message, tokio_tungstenite::tungstenite::Error>> + Unpin,
+{
+    while let Some(batch) = batches.next().await {
+        let n = batch.len();
+        if on_data.send(InvokeResponseBody::Raw(batch)).is_err() || !credit.spend(n).await {
+            return;
+        }
     }
 }
 
@@ -160,82 +278,33 @@ async fn local_attach(
     let (ws, _) = tokio::time::timeout(Duration::from_secs(5), dial)
         .await
         .map_err(|_| "timeout")??;
-    let (mut sink, mut stream) = ws.split();
+    let (sink, stream) = ws.split();
 
     let attachments = state.inner().clone();
     let handle = attachments.next.fetch_add(1, Ordering::Relaxed) + 1;
-    let (tx, mut rx) = mpsc::unbounded_channel::<Out>();
-    let inflight = Arc::new(AtomicUsize::new(0));
-    let drained = Arc::new(Notify::new());
-    let closing = Arc::new(AtomicBool::new(false));
+    let (tx, rx) = mpsc::unbounded_channel::<Out>();
+    let credit = Arc::new(Credit::default());
     attachments.map.lock().unwrap().insert(
         handle,
         Attachment {
             owner: webview.label().to_string(),
             out: tx,
-            inflight: inflight.clone(),
-            drained: drained.clone(),
-            closing: closing.clone(),
+            credit: credit.clone(),
         },
     );
-
-    // Page -> runner.
-    tauri::async_runtime::spawn(async move {
-        while let Some(msg) = rx.recv().await {
-            let sent = match msg {
-                Out::Bytes(b) => sink.send(Message::Binary(b.into())).await,
-                Out::Text(t) => sink.send(Message::Text(t.into())).await,
-                Out::Close => {
-                    let _ = sink.close().await;
-                    break;
-                }
-            };
-            if sent.is_err() {
-                break;
-            }
-        }
-    });
-
-    // Runner -> page, paused past the credit window. Dropping `on_data` at the
-    // end tells the page the attachment closed. Frames already waiting are
-    // sent as one message (up to COALESCE bytes): each channel message larger
-    // than a few bytes costs the page one IPC fetch, which, not the bytes, is
-    // what limits throughput. A lone keystroke's echo still goes at once.
-    let coalesce = if std::env::var_os("OPPENHEIMER_NO_COALESCE").is_some() {
+    let limit = if std::env::var_os("OPPENHEIMER_NO_COALESCE").is_some() {
         0
     } else {
         COALESCE
     };
+    let batches = Batches {
+        stream,
+        limit,
+        ended: false,
+    };
+    tauri::async_runtime::spawn(write_to_runner(sink, rx));
     tauri::async_runtime::spawn(async move {
-        'read: while let Some(Ok(msg)) = stream.next().await {
-            let Message::Binary(first) = msg else {
-                continue;
-            };
-            let mut batch: Vec<u8> = first.into();
-            while batch.len() < coalesce {
-                match stream.next().now_or_never() {
-                    Some(Some(Ok(Message::Binary(more)))) => batch.extend_from_slice(&more),
-                    Some(Some(Ok(_))) => {}
-                    Some(_) => {
-                        let _ = on_data.send(InvokeResponseBody::Raw(batch));
-                        break 'read;
-                    }
-                    None => break,
-                }
-            }
-            let n = batch.len();
-            if on_data.send(InvokeResponseBody::Raw(batch)).is_err() {
-                break;
-            }
-            if inflight.fetch_add(n, Ordering::AcqRel) + n > HIGH {
-                while inflight.load(Ordering::Acquire) >= LOW && !closing.load(Ordering::Acquire) {
-                    drained.notified().await;
-                }
-            }
-            if closing.load(Ordering::Acquire) {
-                break;
-            }
-        }
+        read_to_page(batches, on_data, credit).await;
         attachments.map.lock().unwrap().remove(&handle);
         eprintln!("attachment {handle} ended");
     });
@@ -275,17 +344,7 @@ fn local_credit(
         if a.owner != webview.label() {
             return;
         }
-        let before = a
-            .inflight
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
-                Some(v.saturating_sub(bytes))
-            });
-        if before
-            .map(|v| v.saturating_sub(bytes) < LOW)
-            .unwrap_or(false)
-        {
-            a.drained.notify_one();
-        }
+        a.credit.give(bytes);
     }
 }
 

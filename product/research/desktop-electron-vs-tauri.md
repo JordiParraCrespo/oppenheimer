@@ -68,6 +68,10 @@ Both rendered the console the same way after sign-in
   keystroke's echo still goes at once (`results/2026-11-16-both-before-coalescing.txt`
   beside `…-both.txt`). Electron sends one IPC message per frame and would
   gain from the same change.
+  The coalesced rate depends on how many frames are already waiting, so it
+  follows the machine's load: later that day, with the API and a second
+  server running, the Tauri bridge measured about 72 MB/s and Electron's
+  about 62 (`results/2026-11-16-tauri-refactor-ab.txt`).
 - **WebKit clamps `performance.now()` to 1 ms**, so a single echo reads 0
   or 1 ms there. The mean over 300 round trips is the fair comparison.
 - **`.bin/electron` is a Node wrapper.** Launching through it added a

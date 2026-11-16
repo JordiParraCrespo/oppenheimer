@@ -8,16 +8,10 @@
   if (!ipc) return;
   const invoke = (cmd, args) => ipc.invoke(cmd, args);
 
-  const dataListeners = new Map();
-  const closeListeners = new Map();
-  // Chunks that arrive before the page has subscribed to its handle.
-  const early = new Map();
-
-  function on(map, handle, listener) {
-    if (!map.has(handle)) map.set(handle, new Set());
-    map.get(handle).add(listener);
-    return () => map.get(handle)?.delete(listener);
-  }
+  // handle -> its attachment: one queue for output nobody listens to yet,
+  // and its listeners. Each attach owns its own, so two terminals attaching
+  // at once never take each other's output.
+  const attachments = new Map();
 
   // A Tauri channel, by hand: Rust calls back with `{ message, index }` per
   // chunk and `{ end, index }` when it drops the channel. Large chunks are
@@ -41,25 +35,17 @@
   }
 
   async function attach(id, windowIndex, cols, rows) {
-    let handle;
-    // Chunks that arrive before this attach resolves stay with this attach:
-    // two terminals attaching at once must not take each other's output.
-    const pending = [];
+    const a = { queue: [], data: new Set(), close: new Set(), ended: false };
     const deliver = (buffer) => {
       const chunk = new Uint8Array(buffer);
-      if (handle === undefined) return void pending.push(chunk);
-      const listeners = dataListeners.get(handle);
-      if (listeners?.size) for (const l of listeners) l(chunk);
-      else {
-        if (!early.has(handle)) early.set(handle, []);
-        early.get(handle).push(chunk);
-      }
+      if (a.data.size) for (const l of a.data) l(chunk);
+      else a.queue.push(chunk);
     };
+    let handle;
     const closed = () => {
-      for (const l of closeListeners.get(handle) ?? []) l();
-      dataListeners.delete(handle);
-      closeListeners.delete(handle);
-      early.delete(handle);
+      a.ended = true;
+      for (const l of a.close) l();
+      attachments.delete(handle);
     };
     handle = await invoke('local_attach', {
       id,
@@ -68,8 +54,15 @@
       rows,
       onData: channel(deliver, closed),
     });
-    if (pending.length) early.set(handle, pending);
+    if (!a.ended) attachments.set(handle, a);
     return handle;
+  }
+
+  function on(handle, kind, listener) {
+    const a = attachments.get(handle);
+    if (!a) return () => {};
+    a[kind].add(listener);
+    return () => a[kind].delete(listener);
   }
 
   window.oppenheimerDesktop = Object.freeze({
@@ -82,14 +75,11 @@
     credit: (handle, bytes) => void invoke('local_credit', { handle, bytes }),
     close: (handle) => void invoke('local_close', { handle }),
     onData: (handle, listener) => {
-      const off = on(dataListeners, handle, listener);
-      const backlog = early.get(handle);
-      if (backlog) {
-        early.delete(handle);
-        for (const chunk of backlog) listener(chunk);
-      }
+      const off = on(handle, 'data', listener);
+      const a = attachments.get(handle);
+      if (a?.queue.length) for (const chunk of a.queue.splice(0)) listener(chunk);
       return off;
     },
-    onClose: (handle, listener) => on(closeListeners, handle, listener),
+    onClose: (handle, listener) => on(handle, 'close', listener),
   });
 })();
