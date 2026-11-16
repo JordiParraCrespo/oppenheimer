@@ -6,8 +6,8 @@ import type { HostAccessPort } from '../../../hosts/application/host-access.port
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { SessionWindowsPort } from '../../application/session-windows.port';
-import { toTerminalWindow } from '../../application/session-windows-refusal.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
+import { SessionWindowMapper } from '../../session-window.mapper';
 import { SESSION_WINDOWS } from '../../sessions.di-tokens';
 import { FindSessionWindowsQuery } from './find-session-windows.query';
 
@@ -39,7 +39,7 @@ export class FindSessionWindowsQueryHandler
     const outcome = await this.windows.list(session.hostId, session.id);
     switch (outcome.kind) {
       case 'listed':
-        return { state: 'listed', windows: outcome.windows.map(toTerminalWindow) };
+        return { state: 'listed', windows: outcome.windows.map(SessionWindowMapper.toResponse) };
       case 'host_offline':
       case 'not_supported':
         return { state: outcome.kind, windows: [] };

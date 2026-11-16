@@ -1,16 +1,11 @@
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionTerminalWindow } from '@oppenheimer/shared';
 import { SessionErrors } from '../domain/sessions.errors';
-import type { SessionWindowListing, SessionWindowsOutcome } from './session-windows.port';
+import { SessionWindowMapper } from '../session-window.mapper';
+import type { SessionWindowsOutcome } from './session-windows.port';
 
 /** The runner's `SESS_001`: no such session or window on the host. */
 const RUNNER_NOT_FOUND = 'SESS_001';
-
-/** A window as the console reads it: window 0 is the agent's, the rest are shells. */
-export function toTerminalWindow(window: SessionWindowListing): SessionTerminalWindow {
-  const agent = window.index === 0;
-  return { index: window.index, name: window.name || (agent ? 'agent' : 'shell'), agent };
-}
 
 /**
  * The windows a host answered an open or a close with, or the problem for why
@@ -27,7 +22,7 @@ export function changedOrThrow(
   switch (outcome.kind) {
     case 'listed':
       return {
-        windows: outcome.windows.map(toTerminalWindow),
+        windows: outcome.windows.map(SessionWindowMapper.toResponse),
         ...(outcome.opened !== undefined ? { opened: outcome.opened } : {}),
       };
     case 'host_offline':
