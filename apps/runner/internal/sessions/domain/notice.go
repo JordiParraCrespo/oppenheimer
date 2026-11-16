@@ -1,7 +1,7 @@
 package domain
 
 // AgentNotifiedKind is the event kind a notice an agent sent the person is
-// logged as (`runner sessions notify`, `product/next-steps/agent-tools.md` §2).
+// logged as (`runner sessions notify`).
 const AgentNotifiedKind = "agent.notified"
 
 // NoticeMaxBytes bounds a notice's words: a line for the Inbox, not a report.

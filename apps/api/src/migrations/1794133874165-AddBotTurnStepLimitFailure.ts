@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * A bot turn that used all its model round trips (`BOT_TURN_MAX_STEPS`) fails
- * with its own kind, `step_limit` (`product/versions/mvp/25-bots.md` §2), so
+ * with its own kind, `step_limit`, so
  * the chat says it stopped there instead of the turn ending as completed with
  * nothing said.
  *

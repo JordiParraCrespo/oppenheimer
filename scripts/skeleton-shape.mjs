@@ -1,8 +1,7 @@
 /**
  * A placeholder has the shape of what replaces it: the real container, its
- * static labels written, a bar at the height of each line still to come
- * (`.agents/rules/frontend-ui.md`, "A placeholder has the shape of what
- * replaces it"). The one shape a script can tell is wrong is the slab: a
+ * static labels written, a bar at the height of each line still to come.
+ * The one shape a script can tell is wrong is the slab: a
  * `Skeleton` that is a block 64px tall or more (`h-16` and up, `size-16`,
  * `h-[64px]`) or one that fills its frame (`flex-1`, `h-full`, `min-h-*`),
  * wherever it is drawn. That is a guess at a height, and the page jumps by

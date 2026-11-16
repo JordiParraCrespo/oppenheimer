@@ -21,8 +21,8 @@ export interface TaskFilingRequest {
 }
 
 /**
- * Turns a request's project and milestone into where the task is filed, by the rules of
- * `product/versions/mvp/18-plan-product.md` §3: a milestone brings its own project, a
+ * Turns a request's project and milestone into where the task is filed: a milestone
+ * brings its own project, a
  * project change drops a milestone of another project, and no project is the workspace's
  * Unassigned one. A project must be active to take a task.
  */

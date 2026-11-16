@@ -82,7 +82,7 @@ export const SessionErrors = {
    * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
    * no frame that adds one to a running session, so a later add is refused
    * before a row is written rather than recorded and never made. The code dates
-   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
+   * from the one-repository MVP; the create bound was raised on 2026-10-26.
    */
   TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
@@ -305,8 +305,7 @@ export const SessionErrors = {
   /**
    * Something only a session a host started has — a terminal, a checkout, a
    * restart, a share, a prompt — asked of a cloud session the control plane
-   * launched at its vendor (Cursor's), which is followed and answered there
-   * (`product/next-steps/cloud-agents.md`).
+   * launched at its vendor (Cursor's), which is followed and answered there.
    */
   VENDOR_SESSION: {
     code: 'SESSIONS_039',
@@ -400,7 +399,7 @@ export const SessionErrors = {
   /**
    * A reply, or a read of the chat, for a session whose conversation does
    * not come here: only a Claude Code cloud session sends its transcript and
-   * collects replies (`product/next-steps/cloud-agents.md`).
+   * collects replies.
    */
   NO_CLOUD_CHAT: {
     code: 'SESSIONS_054',

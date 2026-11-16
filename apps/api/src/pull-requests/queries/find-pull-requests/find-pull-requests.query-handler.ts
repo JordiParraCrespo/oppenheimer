@@ -17,10 +17,10 @@ import { FindPullRequestsQuery } from './find-pull-requests.query';
  * **Watched is the whole of it.** Reading every repository an installation
  * reaches so that yours and your review requests could come from anywhere cost
  * one page view a request per pull request per repository — on an account with
- * 79 of them, a burst GitHub answers with a secondary limit (#247), from the
+ * 79 of them, a burst GitHub answers with a secondary limit, from the
  * moment a reader watched their first. The cheap way to find your pull
- * requests outside what you watch is one search, not 79 listings
- * (`0.2-pull-requests.md` §Identity); until that exists, the queue shows what
+ * requests outside what you watch is one search, not 79 listings; until that
+ * exists, the queue shows what
  * you asked it to watch.
  */
 @QueryHandler(FindPullRequestsQuery)
@@ -39,7 +39,7 @@ export class FindPullRequestsQueryHandler
   async execute({ scope, queue }: FindPullRequestsQuery): Promise<PullRequestQueueResponseDto> {
     // Nothing watched is where every workspace starts, and it is answered from
     // our own rows: a queue drawn before the reader has picked a repository
-    // asks GitHub for nothing at all (#247).
+    // asks GitHub for nothing at all.
     if (!(await this.watched.anyWatched(scope))) {
       return this.mapper.toQueue([], queue, null, []);
     }
@@ -47,9 +47,9 @@ export class FindPullRequestsQueryHandler
       this.watched.watched(scope),
       this.directory.viewerLogin(scope),
     ]);
-    // A repository GitHub will not answer costs its own rows, not the queue (#244).
+    // A repository GitHub will not answer costs its own rows, not the queue.
     // One budget for the whole view: the rows all draw, and as many of them as
-    // it allows come back filled, the rest on the reads after this one (#247).
+    // it allows come back filled, the rest on the reads after this one.
     const budget = this.listings.readBudget();
     const reads = await Promise.all(
       repositories.map((repository) => this.listings.openPullRequests(scope, repository, budget)),

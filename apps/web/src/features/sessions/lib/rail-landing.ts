@@ -66,12 +66,10 @@ export function rememberRailOrder(order: readonly RailItemId[]) {
 }
 
 /**
- * Where the console opens (`product/versions/mvp/29-inbox.md`, Decided 1):
- * Plan, on the view at the top of its sidebar, for a reader who never
- * dragged the rail, or whose stored order led with the Inbox when it was a
- * rail item; otherwise the first item
- * of the reader's order, so a reader who dragged Employees to the top lands
- * there.
+ * Where the console opens: Plan, on the view at the top of its sidebar, for
+ * a reader who never dragged the rail, or whose stored order led with the
+ * Inbox when it was a rail item; otherwise the first item of the reader's
+ * order, so a reader who dragged Employees to the top lands there.
  */
 export function railLanding(): (typeof RAIL_ROUTES)[number]['to'] {
   const first = storedIds().find((id) => id === FORMER_INBOX || isRailItemId(id));

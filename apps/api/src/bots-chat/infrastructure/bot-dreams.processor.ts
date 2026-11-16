@@ -10,12 +10,11 @@ import { summaryRetryAt } from '../domain/bot-summary.policy';
 
 /**
  * The `bot-dreams` worker: one job per dream of a bot's memory, staged on the
- * outbox when a turn ends past the trigger or the owner asks. The queue
- * retries a job that throws (a model that failed); the write is refused when
- * the memory changed since the dream read it, so a retry or a second job
- * never writes over a newer memory. A rate limit on the workspace's key
- * delays this job alone until the reset, spending no attempt, as the summary
- * worker does (`.agents/rules/integrations.md`).
+ * outbox when a turn ends past the trigger or the owner asks. The queue retries
+ * a job that throws (a model that failed); the write is refused when the memory
+ * changed since the dream read it, so a retry or a second job never writes over
+ * a newer memory. A rate limit on the workspace's key delays this job alone
+ * until the reset, spending no attempt, as the summary worker does.
  */
 @Processor(QUEUE_NAMES.BOT_DREAMS)
 export class BotDreamsProcessor extends WorkerHost {

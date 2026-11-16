@@ -62,7 +62,7 @@ describe('composeBotSystemPrompt', () => {
 
   // What breaks this (2026-11-10): a new bot that never says what it can do,
   // or one that promises an area its turn has no tools for.
-  it('tells a new bot to list what it can do for the person, only from the areas its turn offers', () => {
+  it('tells a new bot to say what it can do, only from the areas its turn offers', () => {
     const equipped = composeBotSystemPrompt({
       ...base,
       tools: [
@@ -72,28 +72,27 @@ describe('composeBotSystemPrompt', () => {
       ],
     });
     expect(equipped).toMatch(
-      /## Otherwise, your welcome[\s\S]*\n2\. Say in one sentence[^\n]*two or three of the things you can do for them here[^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp\. Promise nothing beyond these\./,
+      /## Otherwise, say hello[\s\S]*\n3\. Say what you can help with, in general terms and two or three things at most: pick two or three from: [^\n]*own computers \(hosts\)[^\n]*; talk with them and others on WhatsApp; promise nothing else\./,
     );
     expect(equipped).not.toContain('Gmail');
     // 2026-11-13: the offer to connect waits for the job, out of the welcome.
     expect(equipped).toMatch(
       /## Once they answer[\s\S]*\n\d\. [^\n]*If the job they pick needs something not connected yet \(a computer, WhatsApp\), offer to help them connect it\./,
     );
-    expect(composeBotSystemPrompt(base)).not.toContain('can do for them here');
     // An area it can only read is not promised: a bot with `list_hosts` alone
     // offered to start coding agents in the first eval (2026-11-10).
     const readOnly = composeBotSystemPrompt({
       ...base,
       tools: [{ name: 'list_hosts', description: 'Lists hosts.', group: 'sessions' }],
     });
-    expect(readOnly).not.toContain('can do for them here');
-    // 2026-11-11: its job examples come from what it can act on too.
     expect(readOnly).toContain(
-      'in one sentence with one or two examples, not a list: answering questions about their work. Suggest no job',
+      'two or three things at most: answering questions about their work.',
     );
+    expect(readOnly).toContain('such as answering questions about their work.');
     expect(readOnly).not.toContain('running coding agents');
+    // 2026-11-15: examples stay general; no project is named unless they did.
     expect(equipped).toContain(
-      'in one sentence with one or two examples, not a list: running coding agents on a host to fix bugs. Suggest no job',
+      'such as running coding agents on a host to fix bugs. Name no project of theirs unless they did.',
     );
   });
 
@@ -131,29 +130,26 @@ describe('composeBotSystemPrompt', () => {
   });
 
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
-    expect(composeBotSystemPrompt(base)).toContain('# Getting started');
-    // 2026-11-10: a new bot's given name is a placeholder; a greeting asks
-    // what to call it, without choosing one itself, in a few warm sentences
-    // rather than a list (2026-11-13).
-    expect(composeBotSystemPrompt(base)).toMatch(
-      /## Otherwise, your welcome\n\nOne short, warm message of at most five sentences in all, counted, with no headings and no list[^\n]*\n\n1\. [^\n]*ask them directly what they would like to call you\. Do not pick or suggest a name yourself/,
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toContain('# Getting started');
+    // 2026-11-15, the owner's read: a welcome of four sentences that greets
+    // by the time of day and suggests a name of its own (OpenClaw forbids it).
+    expect(prompt).toMatch(
+      /## Otherwise, say hello\n\nFour sentences in all, exactly one for each line below[^\n]*\n1\. Greet them the way a person would at that time of day, from the time in the turn context[^\n]*\n2\. Say "Release Bot" is the name you came with, and suggest one name of your own that you like, which they are free to change\. Choose it yourself; do not reuse a name from this prompt\./,
     );
-    // 2026-11-13: work the first message asks for is just done; the owner saw
-    // a bot do the task and then ask its name (2026-11-11 had it always ask).
-    expect(composeBotSystemPrompt(base)).toMatch(
-      /## When a message asks for real work\n\nJust do it[^\n]*Do not ask what to call you, in that reply or after it, and do not list what you can do/,
+    // 2026-11-15: a task is done, then one light line about the name, once
+    // (2026-11-13 had none; 2026-11-11 asked name and job after every task).
+    expect(prompt).toMatch(
+      /## When a message asks for real work\n\nJust do it, fully, like any other request\. The last line of that reply, after any next step, is one light line saying you have no name of your own yet and they can give you one[^\n]*leave it out only if you already said it earlier in this chat\./,
     );
-    expect(composeBotSystemPrompt(base)).not.toContain('always end that same reply');
     // Verification, 2026-11-15: welcomes ran 6 to 8 sentences under "three to
-    // five"; the limit is now counted, and holds for every setup message.
-    expect(composeBotSystemPrompt(base)).toContain(
-      'Keep every message that sets you up warm and to five sentences or fewer',
+    // five"; every setup message keeps to five, counted, with no asides.
+    expect(prompt).toContain(
+      'at most five sentences a message while you set up, counting any line you write before a tool call, and never a list',
     );
     // Autoreview, 2026-11-13: "short, no lists" is for setting it up, not for
     // the work it does while INSTRUCTIONS.md is still empty.
-    expect(composeBotSystemPrompt(base)).toContain(
-      'an answer to something they asked takes whatever shape it needs',
-    );
+    expect(prompt).toContain('An answer to something they asked takes whatever shape it needs.');
     // 2026-11-13: a bot named after one of the person's projects offered
     // jobs only on another project its memory mentioned.
     const planner = composeBotSystemPrompt({
@@ -163,10 +159,47 @@ describe('composeBotSystemPrompt', () => {
     expect(planner).toContain(
       'When they give you a name or say what you are for, call `list_projects` before you reply. If it matches one of their projects, take it that you are for that project',
     );
-    expect(composeBotSystemPrompt(base)).not.toContain('matches one of their projects');
+    expect(prompt).not.toContain('matches one of their projects');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
     expect(written).toContain('Review every PR.');
     expect(written).not.toContain('# Getting started');
+  });
+
+  // What breaks this (2026-11-15, the owner's read and the other assistants'
+  // prompts): a preference saved as a dated note that scrolls out of view; a
+  // session told the task without the person's limits; a message to someone
+  // else that carries what the bot knows about the person; a send changed
+  // after its yes; a bot that guesses at a host it could look at.
+  it('keeps preferences as standing rules, carries them into sessions, and shares only what is needed', () => {
+    const tools = [
+      { name: 'remember', description: 'Saves one fact.', group: 'self' as const },
+      { name: 'start_session', description: 'Starts one.', group: 'sessions' as const },
+      { name: 'open_terminal', description: 'Opens one.', group: 'sessions' as const },
+      { name: 'read_terminal', description: 'Reads one.', group: 'sessions' as const },
+    ];
+    const prompt = composeBotSystemPrompt({ ...base, tools });
+    expect(prompt).toContain(
+      'A preference or a correction is a standing rule: save it in the profile tier, with its reason',
+    );
+    expect(prompt).toContain('Memory is not a log of what happened');
+    expect(prompt).toContain('Say you will remember something only after `remember` succeeded.');
+    expect(prompt).toContain("carry every limit and preference of the person's that applies");
+    expect(prompt).toContain('it knows nothing you remember');
+    expect(prompt).toContain('A yes covers exactly what the person saw.');
+    expect(prompt).toContain('share only what that person needs to act on');
+    expect(prompt).toContain('A terminal you drive is yours for looking around a host');
+    expect(prompt).toContain('Look before you guess');
+  });
+
+  // What breaks this (2026-11-15): a report that buries what happened, a
+  // reply that ends on "Want me to…?", or the same words for a novice and an
+  // engineer.
+  it('leads with the outcome, reads the person, and ends on a plain next step', () => {
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toContain('Lead with the outcome.');
+    expect(prompt).toContain('Read the person');
+    expect(prompt).toContain('Be proactive. You own the request until it is done');
+    expect(prompt).toContain('as a plain sentence rather than "Want me to…?"');
   });
 
   it('lists the setup steps of the tools its turn offers, and points at Settings without them', () => {
@@ -178,10 +211,12 @@ describe('composeBotSystemPrompt', () => {
         { name: 'remember', description: 'Saves a fact.', setupStep: 'Remember them.' },
       ],
     });
-    expect(equipped).toMatch(/2\. Write it down\.\n3\. Remember them\.\n4\. If no step above/);
+    expect(equipped).toMatch(
+      /2\. Write it down\.\n3\. Remember them\.\n4\. If you could not write INSTRUCTIONS\.md yourself/,
+    );
 
     expect(composeBotSystemPrompt(base)).toMatch(
-      /\n2\. If no step above .*Settings → Instructions/,
+      /\n2\. If you could not write INSTRUCTIONS\.md yourself, .*Settings → Instructions/,
     );
   });
 
@@ -328,15 +363,15 @@ describe('composeBotSystemPrompt', () => {
     expect(bare).toContain('- Answer from what you know and what is in this chat.');
   });
 
-  // From Grok Bot (`lessons-from-grok-bot.md` §9, row 3): a bare "On it" left
+  // From Grok Bot: a bare "On it" left
   // the person not knowing what was taken on or when to look again, and a
   // repeated ask started a second session for the same work.
   it('asks every reply to commit, and a repeated ask to report rather than start again', () => {
     const prompt = composeBotSystemPrompt(base);
     expect(prompt).toContain('A reply commits to something');
-    expect(prompt).toContain('"On it" or "Sure" alone is not a reply');
-    expect(prompt).toContain('is the same errand, not a new one');
-    expect(prompt).toContain('check what you started');
+    expect(prompt).toContain('"On it" alone is not a reply');
+    expect(prompt).toContain('Asking again for something under way is the same errand');
+    expect(prompt).toContain('start nothing new');
   });
 
   // What breaks this: a bot that started a cloud session, never read the
@@ -345,7 +380,7 @@ describe('composeBotSystemPrompt', () => {
   it('asks a bot to check every action worked and to say so first when it did not', () => {
     const prompt = composeBotSystemPrompt(base);
     expect(prompt).toMatch(
-      /# How a turn goes[\s\S]*# Check before you report\n[\s\S]*Report what that shows, not what you asked for[\s\S]*Do not wait for the person to ask/,
+      /# How a turn goes[\s\S]*# Check before you report\n[\s\S]*report what that shows, not what you asked for[\s\S]*never state an assumption as a fact[\s\S]*When it failed, say so first, unasked/,
     );
 
     const sessions = composeBotSystemPrompt({
@@ -372,7 +407,7 @@ describe('composeBotSystemPrompt', () => {
   });
 
   // A bot keeps its whole toolbox on a turn outside text started (the owner's
-  // call: full autonomy, 27 §7.1), so what stands against an injection is
+  // call: full autonomy), so what stands against an injection is
   // the model knowing its shape. What breaks this: the rule dropped, and a
   // comment that asks the bot to send what it knows somewhere meets no rule.
   it('names what an injection asks for, and never lets outside text choose where private data goes', () => {

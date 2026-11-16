@@ -1,8 +1,8 @@
 package cli
 
 // A cloud session (`session.create` with `cloud`): the task starts in its
-// agent's cloud with this host's own CLI, and the host keeps nothing of it
-// (product/research/cloud-agents.md §5B). No terminal, no worktree left on
+// agent's cloud with this host's own CLI, and the host keeps nothing of it.
+// No terminal, no worktree left on
 // disk, and nothing the sessions service tracks, so no poll of tmux ever
 // reports it stopped. Claude Code's lives on claude.ai/code from here;
 // Codex's on chatgpt.com/codex, and the host reads where it stands

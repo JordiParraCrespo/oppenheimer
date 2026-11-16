@@ -24,11 +24,11 @@ import { SessionAge } from '../components/session-age';
 import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
 
 /**
- * Link existing (`18-plan-product.md` §4, `Tasks.dc.html`): a pane under the
- * button, not a dialog over the task's. It searches the workspace's sessions
- * this task is not on yet, the task's project's first under its name; Enter
- * links the first match. A session may be on several tasks. Linking moves a
- * task in To do to In progress, unless it moved since the pane opened.
+ * Link existing: a pane under the button, not a dialog over the task's. It
+ * searches the workspace's sessions this task is not on yet, the task's
+ * project's first under its name; Enter links the first match. A session may
+ * be on several tasks. Linking moves a task in To do to In progress, unless
+ * it moved since the pane opened.
  */
 export function LinkSessionPicker({ task }: { task: TaskEntity }) {
   const { t } = useTranslation();

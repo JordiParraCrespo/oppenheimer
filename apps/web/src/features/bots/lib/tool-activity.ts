@@ -8,12 +8,11 @@ import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 import { looksAround } from '@/features/bots/lib/explored-steps';
 
 /**
- * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
- * trace): a line per call in plain verbs ("Searched the web for “bun vs
- * node”", "Updated its plan"), never the tools' own names, and, while one
- * runs, what it is doing now ("Searching the web for …"). The words are the
- * caller's (`t()`); this says which kind of call each is and what it was
- * pointed at.
+ * How the chat words a bot's tool calls: a line per call in plain verbs
+ * ("Searched the web for “bun vs node”", "Updated its plan"), never the
+ * tools' own names, and, while one runs, what it is doing now ("Searching
+ * the web for …"). The words are the caller's (`t()`); this says which kind
+ * of call each is and what it was pointed at.
  */
 
 /** What one call did, as the chat says it. */

@@ -1700,3 +1700,13 @@ earlier note:
   and asked for bots that look for another way: the bot now starts its own
   task on another capable host, its approval level deciding whether that
   asks first, and never moves off a host the person named.
+- `versions/mvp/25-bots.md` §1 had a new bot never pick or suggest a name of
+  its own (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), say nothing about
+  its name after a first task (2026-11-13), and take the next of Juno,
+  Milo, Wren… in order, so every workspace's first bot was Juno. On
+  2026-11-15 the owner asked for the opposite on each: the welcome suggests
+  a name, a first task ends with one line that the bot has no name yet, and
+  new bots take a physicist's name at random. The failure rules of
+  2026-11-08 to 2026-11-15, a page of cases, became four lines in Claude
+  Code's manner, keeping the limits the incidents earned.
+

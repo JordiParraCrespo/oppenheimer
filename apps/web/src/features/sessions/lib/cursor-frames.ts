@@ -20,9 +20,9 @@ const browserTimers: CursorFrameTimers = {
 
 /**
  * Paints a program's hide, draw, show as one frame: synchronized output
- * (DEC 2026) opens in front of the hide and closes behind the show, in place
- * in the byte stream, because tmux drops the program's own markers (02 §6).
- * A hide with no show behind it is painted after `maxMs`.
+ * (DEC 2026) opens in front of the hide and closes behind the show, in
+ * place in the byte stream, because tmux drops the program's own markers. A
+ * hide with no show behind it is painted after `maxMs`.
  */
 export class CursorFrames {
   private open = false;

@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots: long conversations (`product/versions/mvp/25-bots.md` §2).
+ * Bots: long conversations.
  *
  * A turn used to be sent the bot's last 40 messages and nothing older. It is
  * now sent a token budget of history: the conversation's summary, then the

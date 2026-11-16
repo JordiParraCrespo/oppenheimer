@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Review sessions (`product/next-steps/0.2-pull-requests.md`, "The screens
- * as built"): a session a person starts from a pull request's Chat tab, in a
- * worktree of its head branch. It is a session like any other, with the
+ * Review sessions: a session a person starts from a pull request's Chat tab, in
+ * a worktree of its head branch. It is a session like any other, with the
  * origin `review` so the Sessions list leaves it out, and one row here that
  * says which pull request it reviews.
  *

@@ -23,8 +23,7 @@
  *
  * It is shared rather than copied into each package because the failure mode is
  * silent: a package that sets up only the `unit` project still runs its budget
- * specs, with the compiler on, and they pass. See
- * `.agents/rules/frontend-architecture.md`.
+ * specs, with the compiler on, and they pass.
  */
 
 /** Specs whose subject is what a component *costs*, not what it shows. */

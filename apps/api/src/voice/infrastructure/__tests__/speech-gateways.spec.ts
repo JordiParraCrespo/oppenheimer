@@ -8,7 +8,7 @@ import { OpenAiCompatibleSpeechGateway } from '../openai-compatible-speech.gatew
  * route gets the sign-in and Oppenheimer's own name, never a browser's or the
  * Codex app's), that a transcript is read from `{ text }` and anything else
  * is `VOICE_006`, and that a refusal for rate is `VOICE_007` and pauses the
- * next call without reaching the network (`.agents/rules/integrations.md`).
+ * next call without reaching the network.
  */
 
 const CLIP = {

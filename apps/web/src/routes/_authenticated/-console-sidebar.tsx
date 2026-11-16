@@ -44,14 +44,13 @@ const SectionBots = lazy(() =>
  * The sidebar body beside the rail, for the list the address is under. Route
  * composition, beside the layout that mounts it (the `-` keeps it out of the
  * route tree): Plan's sidebar is the tasks feature's head (Inbox, Tasks,
- * Milestones, Calendar), with the calendar's layers and accounts under it on the
- * calendar; the board and Milestones filter by project in the page.
- * Every section but Employees carries the bots placed in it
- * (`product/versions/mvp/28-bots-in-sections.md`): the bots feature draws
- * them, and each sidebar takes them as its `bots` slot and places them where
- * the design does. On sessions, the first page most visits open, the bots'
- * code arriving after the shell's holds its place (`SectionBotsSkeleton`) so
- * the list under it does not drop when it lands.
+ * Milestones, Calendar), with the calendar's layers and accounts under it on
+ * the calendar; the board and Milestones filter by project in the page.
+ * Every section but Employees carries the bots placed in it: the bots
+ * feature draws them, and each sidebar takes them as its `bots` slot and
+ * places them where the design does. On sessions, the first page most visits
+ * open, the bots' code arriving after the shell's holds its place
+ * (`SectionBotsSkeleton`) so the list under it does not drop when it lands.
  * Two features that never import each other.
  */
 export function ConsoleSidebar({ list }: { list: ConsoleList }) {

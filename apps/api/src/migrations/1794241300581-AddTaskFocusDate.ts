@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * A task's focus date: the day its person means to work on it, apart from
- * when it is due (`product/versions/mvp/20-plan-calendar.md` §6). Plan's To
+ * when it is due. Plan's To
  * do lists a task on its focus date and on every later day until it is done,
  * so work that takes days stays on the list without a range.
  *

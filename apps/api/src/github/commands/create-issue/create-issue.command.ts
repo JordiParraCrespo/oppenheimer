@@ -9,7 +9,7 @@ export interface CreatedIssue {
   htmlUrl: string;
 }
 
-/** No controller: a bot's `create_issue` tool dispatches it (`25-bots.md` §4.4). */
+/** No controller: a bot's `create_issue` tool dispatches it. */
 export class CreateIssueCommand extends CommandBase {
   readonly scope: AccessScope;
   /** Opened in the caller's name, so only where the App reaches. */

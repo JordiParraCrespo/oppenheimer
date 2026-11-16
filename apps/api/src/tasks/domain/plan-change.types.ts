@@ -1,8 +1,7 @@
 import type { PlanEventKind } from '@oppenheimer/shared';
 
 /**
- * Who changed something on Plan: a person, or an agent acting for one
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §7). An agent can
+ * Who changed something on Plan: a person, or an agent acting for one. An agent can
  * do no more than its person may; the person is always named.
  */
 export type PlanActor =

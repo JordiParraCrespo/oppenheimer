@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot's dream (`product/versions/mvp/25-bots.md` §4.1, "Dreaming"): an
+ * A bot's dream: an
  * offline pass of its own model that rewrites the facts it wrote, and what
  * it takes to undo the latest one.
  *

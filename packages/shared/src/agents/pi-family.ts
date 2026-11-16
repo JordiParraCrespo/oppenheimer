@@ -39,10 +39,10 @@ const PI_PROVIDERS = ['anthropic/', 'openai/', 'xai/', 'google/'] as const;
  * runs, defaulting to their `defaultThinkingLevel` setting (`medium` in pi,
  * `high` in omp), so that is where every row's slider starts.
  *
- * A seed with the limit the others have (`product/versions/mvp/05-screens.md`,
- * question 6): a row the host's pi has no provider for fails in the session's
- * own terminal. A ChatGPT subscription is pi's `openai-codex` provider rather
- * than `openai`, so a host signed in that way picks its model in pi.
+ * A seed with the limit the others have: a row the host's pi has no provider
+ * for fails in the session's own terminal. A ChatGPT subscription is pi's
+ * `openai-codex` provider rather than `openai`, so a host signed in that way
+ * picks its model in pi.
  */
 function piFamilyModels(
   names: readonly SessionEffort[],

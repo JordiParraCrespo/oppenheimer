@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Steer (`product/next-steps/0.7-terminal-and-chat.md`): a message sent
+ * Steer: a message sent
  * while the bot works can go into the turn under way instead of waiting for
  * the next one, the way Codex's composer steers a running turn.
  *

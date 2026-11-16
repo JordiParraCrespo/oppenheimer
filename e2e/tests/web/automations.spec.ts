@@ -7,8 +7,7 @@ const toast = (page: Page, text: string) =>
   page.locator('[data-sonner-toast]').filter({ hasText: text });
 
 /**
- * Automations, in a browser, against the real control plane
- * (`product/versions/mvp/13-automations.md`, the 2026-09-27 export).
+ * Automations, in a browser, against the real control plane.
  *
  * The rail's second list and its pages, then an automation's whole life as a
  * person drives it: made in the three-step editor, listed in the table and

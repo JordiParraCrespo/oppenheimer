@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 /**
- * The key that makes an asking tool's effect happen once (`25-bots.md` §5):
+ * The key that makes an asking tool's effect happen once:
  * the same call in the same turn starts one session or creates one bot,
  * however often the model repeats it; an approved call does it once per
  * approval, however often its job is retried. `call` is what the effect is

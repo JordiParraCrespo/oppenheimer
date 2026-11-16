@@ -6,8 +6,8 @@ import {
 } from '@oppenheimer/shared';
 
 /**
- * Where each built-in's console side lives in the API (`25-bots.md` §4.1,
- * "Built-in commands"): what a client calls instead of sending the command.
+ * Where each built-in's console side lives in the API: what a client calls
+ * instead of sending the command.
  * A new built-in is an entry here, which the compiler asks for.
  */
 const CONSOLE_ROUTES: Record<BotBuiltInCommand, string> = {

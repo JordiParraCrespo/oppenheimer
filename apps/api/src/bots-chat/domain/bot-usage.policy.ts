@@ -9,7 +9,7 @@ import {
 } from '@oppenheimer/shared';
 
 /**
- * What a bot spends (`25-bots.md` §4.1, `/usage`): its turns by model, and
+ * What a bot spends (`/usage`): its turns by model, and
  * the calls it makes on its owner's key outside them. A call's spend is what
  * the provider reported; a provider that said nothing is a call that spent
  * nothing as far as anyone can tell, and is not recorded.

@@ -1,5 +1,5 @@
 /**
- * How a bot learns from its own work (`25-bots.md` §4.1, 2026-11-09). What
+ * How a bot learns from its own work. What
  * breaks this: the reminder firing on a short turn, twice in one turn, on a
  * turn that already used or saved a skill, or on a call that raised a card;
  * the reminder left in what the chat stores; a patch that replaces the

@@ -3,10 +3,9 @@ import { CHAT_ENTRY_MAX_BYTES } from './link.js';
 import { commandIdSchema, sessionIdSchema } from './primitives.js';
 
 /**
- * A session's conversation, read by the control plane on request
- * (`product/next-steps/agent-tools.md` §8): the messages behind the
- * `transcript.read` capability. Part of `protocolMessageSchema`, which is
- * where every kind is listed.
+ * A session's conversation, read by the control plane on request: the messages
+ * behind the `transcript.read` capability. Part of `protocolMessageSchema`,
+ * which is where every kind is listed.
  *
  * The runner already compacts each agent's own transcript into the chat
  * view's entries (Claude Code's line shape, `attachment.chat`). This reads

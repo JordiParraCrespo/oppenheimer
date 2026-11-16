@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 /**
- * Dictation (`product/next-steps/voice.md`): one recorded clip in, the text
- * it says out. The console records 16 kHz mono 16-bit PCM and sends it as a
- * WAV file, the one format every provider behind the API takes as is
- * (ChatGPT's dictation route among them, which has refused Ogg/Opus).
+ * Dictation: one recorded clip in, the text it says out. The console records 16
+ * kHz mono 16-bit PCM and sends it as a WAV file, the one format every provider
+ * behind the API takes as is (ChatGPT's dictation route among them, which has
+ * refused Ogg/Opus).
  */
 
 /** The rate the console records at: speech models resample to it anyway. */

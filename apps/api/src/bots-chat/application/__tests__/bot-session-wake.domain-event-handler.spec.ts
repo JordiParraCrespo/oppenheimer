@@ -1,9 +1,8 @@
 /**
- * Where a session's news reaches the bots that follow it
- * (`27-bot-subscriptions.md` §1): a task reaching a state that wakes, or the
- * session closing, asks every subscription to that session to wake; a task
- * merely starting or working asks none. What each wake then does is
- * `wake-subscribed-bot.command-handler.spec.ts`.
+ * Where a session's news reaches the bots that follow it: a task reaching a
+ * state that wakes, or the session closing, asks every subscription to that
+ * session to wake; a task merely starting or working asks none. What each wake
+ * then does is `wake-subscribed-bot.command-handler.spec.ts`.
  */
 import type { CommandBus } from '@nestjs/cqrs';
 import { WakeOnAgentNoticeCommand } from '../../commands/wake-on-agent-notice/wake-on-agent-notice.command';

@@ -26,8 +26,8 @@ export interface ChatgptLoginFlow {
 }
 
 /**
- * The ChatGPT sign-in (`product/versions/mvp/25-bots.md` §2): one device
- * code, and a poll of it until the person approves it on OpenAI's page.
+ * The ChatGPT sign-in: one device code, and a poll of it until the person
+ * approves it on OpenAI's page.
  *
  * Reading the current sign-in is what asks for the code, as reading the
  * current pairing token mints it, so `enabled: false` keeps the flow idle.

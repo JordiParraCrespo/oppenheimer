@@ -2,11 +2,10 @@ import { expect, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * A bot's chat in a browser, against the real control plane and a real model
- * (`product/versions/mvp/25-bots.md` §3): a message sent from the composer
- * becomes a turn that works and then shows how it went, the bot's answer
- * beneath it, and the box is Send again. The model is GLM, through
- * `GLM_API_KEY`; without it the spec is skipped.
+ * A bot's chat in a browser, against the real control plane and a real model: a
+ * message sent from the composer becomes a turn that works and then shows how
+ * it went, the bot's answer beneath it, and the box is Send again. The model is
+ * GLM, through `GLM_API_KEY`; without it the spec is skipped.
  */
 
 test.describe.configure({ timeout: 180_000 });

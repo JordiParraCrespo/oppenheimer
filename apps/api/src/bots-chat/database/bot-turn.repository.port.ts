@@ -1,4 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { BotProvider } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
@@ -94,7 +95,7 @@ export interface BotTurnRepositoryPort {
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
 
   /**
-   * `enqueue` for a goal's continuation (`25-bots.md` §4.1), with the goal's
+   * `enqueue` for a goal's continuation, with the goal's
    * count claimed in the same transaction: `lost` when the goal was stopped,
    * ended or replaced, or another end claimed the count; `existing` when this
    * continuation was queued already.
@@ -109,12 +110,12 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
 
   /**
-   * A loop's run, due now (`25-bots.md` §4.1, `/loop`), under the bot's
-   * lock: when a run of the loop is still queued or running, nothing is
-   * queued and the run moves to `whenBusy` (`busy`); otherwise the turn is
-   * queued, and the loop's count and its next run are claimed in the same
-   * transaction, with that next run staged. `lost` when the loop was stopped,
-   * ended or replaced, or moved, since it was loaded.
+   * A loop's run, due now, under the bot's lock: when a run of the loop is
+   * still queued or running, nothing is queued and the run moves to `whenBusy`
+   * (`busy`); otherwise the turn is queued, and the loop's count and its next
+   * run are claimed in the same transaction, with that next run staged. `lost`
+   * when the loop was stopped, ended or replaced, or moved, since it was
+   * loaded.
    */
   enqueueLoopRun(
     turn: BotTurnEntity,
@@ -176,6 +177,17 @@ export interface BotTurnRepositoryPort {
     routinePrefix: string,
     ownSourceKey: string,
   ): Promise<HeartbeatView>;
+  /**
+   * The bot's last turn to end on the provider that reached it (spent a
+   * token) or failed: what the provider last said of the account
+   * (`bot-provider-hold.policy.ts`). A turn that ended without asking it
+   * says nothing. Null when there is none.
+   */
+  findLastOnProvider(
+    organizationId: string,
+    botId: string,
+    provider: BotProvider,
+  ): Promise<BotTurnEntity | null>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
     scope: AccessScope,

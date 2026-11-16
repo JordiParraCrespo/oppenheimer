@@ -57,12 +57,11 @@ const askUserInput = z.object({
 });
 
 /**
- * Questions for the person (`25-bots.md` §3.2; Claude Code's
- * `AskUserQuestion`): `ask_user` puts them on a card of their own in the
- * chat and ends the turn, and the answers open the next one. A card of
- * questions is not an approval: nothing runs on it, it is answered or
- * dismissed, and the bot has one card up at a time of either kind. Offered
- * only on a turn a person is waiting on.
+ * Questions for the person (Claude Code's `AskUserQuestion`): `ask_user` puts
+ * them on a card of their own in the chat and ends the turn, and the answers
+ * open the next one. A card of questions is not an approval: nothing runs on
+ * it, it is answered or dismissed, and the bot has one card up at a time of
+ * either kind. Offered only on a turn a person is waiting on.
  */
 @Injectable()
 export class BotQuestionToolsFactory implements BotToolArea {

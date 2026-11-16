@@ -1,5 +1,5 @@
 /**
- * A bot's dream against real Postgres (`25-bots.md` §4.1, "Dreaming"): the
+ * A bot's dream against real Postgres: the
  * write that swaps the facts it read for the ones it wrote, and its undo.
  * What breaks this: a dream that read a memory the bot has since saved to
  * writing over that save; the person's own facts rewritten; a dated log fact

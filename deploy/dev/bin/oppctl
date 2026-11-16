@@ -44,7 +44,7 @@ APPS=(
   backup
 )
 # The services a deploy, a rollback and a reload swap without a gap, in this
-# order (README, "Deploys without downtime"). Everything else is started by
+# order. Everything else is started by
 # compose, which leaves a container already on the release's config alone.
 ROLLED=(
   api

@@ -38,12 +38,11 @@ import {
 } from './bot-tool.factory';
 
 /**
- * Projects and the plan (`25-bots.md` §4.3), the tools that run without
- * asking: reading projects, tasks and where each project stands, and adding,
- * editing and moving tasks. Every write is made as an agent acting for the
- * owner, so Plan's log names the bot and the person. Making, changing and
- * archiving projects, and moving a session between them, are
- * `BotProjectToolsFactory`'s.
+ * Projects and the plan, the tools that run without asking: reading projects,
+ * tasks and where each project stands, and adding, editing and moving tasks.
+ * Every write is made as an agent acting for the owner, so Plan's log names the
+ * bot and the person. Making, changing and archiving projects, and moving a
+ * session between them, are `BotProjectToolsFactory`'s.
  */
 @Injectable()
 export class BotPlanToolsFactory implements BotToolArea {

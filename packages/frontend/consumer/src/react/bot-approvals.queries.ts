@@ -8,9 +8,9 @@ import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
 /**
- * A bot's Needs input card (`product/versions/mvp/25-bots.md` §5): the one
- * call it waits on, and your answer to it. The chat reads it again when the
- * bot's stream says a card was raised or settled, or a turn ended.
+ * A bot's Needs input card: the one call it waits on, and your answer to it.
+ * The chat reads it again when the bot's stream says a card was raised or
+ * settled, or a turn ended.
  */
 
 /**

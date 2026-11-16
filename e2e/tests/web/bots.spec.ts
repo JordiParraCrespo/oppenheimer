@@ -3,9 +3,7 @@ import { pairHost } from '../../support/sessions';
 import { provisionedUser, reloadFromServer, signInAs } from '../../support/web';
 
 /**
- * Bots, slice 1, in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md`, `design/version1/Bots.dc.html` and
- * `BotSettings.dc.html`).
+ * Bots in a browser, against the real control plane.
  *
  * One bot's whole life outside the chat: made blank from the Employees
  * sidebar, greeted in its chat (which says its provider needs a key first), renamed and
@@ -35,10 +33,11 @@ test('a bot from New bot to Delete bot', async ({ page }) => {
   await expect(page).toHaveURL(/\/bots\/[0-9a-f-]{36}$/);
   const chatUrl = page.url();
   const botId = chatUrl.split('/').pop() as string;
-  await expect(
-    page.getByRole('heading', { name: 'Juno is ready. Tell it what job to do.' }),
-  ).toBeVisible();
-  await expect(page.getByRole('link', { name: /Juno/ })).toBeVisible();
+  // Its name is a physicist's, picked at random (`BOT_FIRST_NAMES`).
+  const ready = page.getByRole('heading', { name: / is ready\. Tell it what job to do\.$/ });
+  await expect(ready).toBeVisible();
+  const name = ((await ready.textContent()) ?? '').replace(/ is ready\..*$/, '');
+  await expect(page.getByRole('link', { name: new RegExp(name) })).toBeVisible();
   // With a bot, Employees opens its chat rather than the greeting.
   await page.getByRole('link', { name: 'Employees', exact: true }).click();
   await expect(page).toHaveURL(chatUrl);

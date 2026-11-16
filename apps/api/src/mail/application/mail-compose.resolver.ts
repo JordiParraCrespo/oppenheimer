@@ -25,7 +25,7 @@ import { GmailCallResolver } from './gmail-call.resolver';
 
 /**
  * Turns what a bot asks to write into a {@link MailPlan}, every default
- * resolved against the account (`product/next-steps/mail.md` §3.3–3.4), and
+ * resolved against the account, and
  * a plan into the message Gmail is handed. A plan is what a send card shows
  * and what a yes sends: the message is built from it and nothing else.
  */

@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * The Claude Code cloud session a worktree session continues (`claude
- * --teleport <id>`, `product/next-steps/cloud-agents.md`, "Bring it here").
+ * --teleport <id>`).
  * Folded from `session.requested` like the rest of the launch, so a create
  * sent again after a reconnect continues the same cloud session rather than
  * starting an empty conversation. Null for every other session. Adding a

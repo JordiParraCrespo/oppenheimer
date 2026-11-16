@@ -13,7 +13,7 @@ import { BotLoopEntity } from './bot-loop.entity';
 import { isTurnLimitFailure } from './bot-turn.entity';
 
 /**
- * A loop runs a prompt again and again (`25-bots.md` §4.1, `/loop`; from
+ * A loop runs a prompt again and again (from
  * Claude Code's `/loop`). Each run is a queued turn keyed by the loop and its
  * number, so a run dispatched twice queues one; the next is a delayed job
  * carrying the time it was staged for, so a run that moved leaves the old job

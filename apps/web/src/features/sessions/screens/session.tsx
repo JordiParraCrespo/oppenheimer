@@ -28,20 +28,20 @@ export function SessionScreen({
 }: {
   sessionId: string;
   /**
-   * Present: the screen draws the session's bar. `back` leads it with the task
-   * this session is on ("Back to task", `18-plan-product.md` §4); the route
-   * composes it, since the task is the tasks feature's.
+   * Present: the screen draws the session's bar. `back` leads it with the
+   * task this session is on; the route composes it, since the task is the
+   * tasks feature's.
    */
   bar?: { back?: ReactNode };
   /**
    * What to draw instead of the session's own stopped pane.
    *
    * A run opened from the automations list is the same terminal and a
-   * different thing to say about it: 16 §Resume calls a run's end "the turn
-   * ended, the session did not", and the way back in is **Open in terminal**,
-   * not Restart, with no New session under it. The route composes the two —
-   * the terminal is this feature's, the run's vocabulary is the automations
-   * feature's, and neither imports the other.
+   * different thing to say about it: a run's turn ended and its session did
+   * not, and the way back in is **Open in terminal**, not Restart, with no
+   * New session under it. The route composes the two — the terminal is this
+   * feature's, the run's vocabulary is the automations feature's, and
+   * neither imports the other.
    */
   closed?: (session: {
     name: string;

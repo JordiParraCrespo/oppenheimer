@@ -5,10 +5,9 @@ import { BOT_SUBSCRIPTION_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 
 /**
- * A deleted milestone ends every bot's subscription to it
- * (`27-bot-subscriptions.md` §7.2): nothing will change under it again, and
- * the row names it with no foreign key to cascade it away. Deleting nothing
- * twice is harmless, so a redelivery is too.
+ * A deleted milestone ends every bot's subscription to it: nothing will change
+ * under it again, and the row names it with no foreign key to cascade it away.
+ * Deleting nothing twice is harmless, so a redelivery is too.
  */
 @Injectable()
 export class BotMilestoneDeletedDomainEventHandler {

@@ -2,8 +2,7 @@ import { expect, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * The built-in `/loop` in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md` §4.1, "Built-in commands"): the chat's
+ * The built-in `/loop` in a browser, against the real control plane: the chat's
  * `/` menu offers it, an interval out of range keeps send off and says the
  * range, `/loop stop` stops the loop without sending the bot a message, and
  * the API refuses both as messages and answers no loop. Setting a loop, its

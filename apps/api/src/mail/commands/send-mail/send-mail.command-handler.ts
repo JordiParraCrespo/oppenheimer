@@ -13,7 +13,7 @@ import { MAIL_SEND_REPOSITORY } from '../../mail.di-tokens';
 import { SendMailCommand } from './send-mail.command';
 
 /**
- * Sends what an approval approved (`product/next-steps/mail.md` §3.4), once.
+ * Sends what an approval approved, once.
  * The send is claimed under the approval's id before Gmail is asked, so a
  * retried job finds it: sent, it answers the same send; started and never
  * confirmed, it refuses rather than risk a second copy (`MAIL_015`). The

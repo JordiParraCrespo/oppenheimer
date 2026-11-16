@@ -7,9 +7,9 @@ import { useCallback, useEffect, useRef } from 'react';
  * that scheduled it, so unmounting cancels it, or a settled search would fire
  * into a component that is gone.
  *
- * `useCallback` and the ref are the exception the rule allows: the returned
- * function goes to an input's `onChange`, and a new identity every render would
- * make the field a re-render path for everything above it.
+ * `useCallback` and the ref are on purpose: the returned function goes to an
+ * input's `onChange`, and a new identity every render would make the field a
+ * re-render path for everything above it.
  *
  * `cancelKey` drops a pending call whenever it changes (`useSearchDraft` passes
  * a revision it bumps when its settled `value` changes under the field). To read the

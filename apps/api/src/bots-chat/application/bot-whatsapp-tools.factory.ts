@@ -71,11 +71,10 @@ const plannedSend = z.object({
 type PlannedSend = z.infer<typeof plannedSend>;
 
 /**
- * WhatsApp (`product/next-steps/whatsapp.md` §4): the owner's own linked
- * numbers, their chats as the host saw them since the number was linked,
- * search over what was said, and a message sent as the owner. Reads only see
- * the owner's numbers; what other people wrote comes back inside
- * `<whatsapp>`, marked as data. A send asks by default (Settings →
+ * WhatsApp: the owner's own linked numbers, their chats as the host saw them
+ * since the number was linked, search over what was said, and a message sent as
+ * the owner. Reads only see the owner's numbers; what other people wrote comes
+ * back inside `<whatsapp>`, marked as data. A send asks by default (Settings →
  * Permissions can allow it per chat), because it speaks for the owner to
  * someone else.
  */

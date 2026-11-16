@@ -64,8 +64,8 @@ function patternProblem(pattern: string): string | null {
 }
 
 /**
- * A pattern a session's runner watches its screen for
- * (`27-bot-subscriptions.md` §2). The runner holds it in memory and is sent
+ * A pattern a session's runner watches its screen for. The runner holds it in
+ * memory and is sent
  * it again on every hello; a match reaches the session's log as a count,
  * never as the text.
  */

@@ -71,15 +71,15 @@ const resolvedNames = z
 const RESERVED_ADD = new Set(['TRASH', 'SPAM', 'DRAFT', 'SENT']);
 
 /**
- * Mail (`product/next-steps/mail.md` §3.5), organizing: read state, stars,
- * importance, labels, the inbox and Trash, on threads or messages of the
- * owner's Gmail. Each asks under Approve for me and runs on its own under
- * Full access, except `trash_mail`, which asks under Full access too until
- * the owner allows it (Settings, or "always" on its card); bringing threads
- * back from Trash never asks. A card stores the account's id and the
- * labels' ids, so a rename while it waits does not change what a yes does,
- * and a call that changes nothing or more than `MAIL_ORGANIZE_MAX` is refused
- * before any card is raised. Nothing is ever deleted for good.
+ * Mail, organizing: read state, stars, importance, labels, the inbox and Trash,
+ * on threads or messages of the owner's Gmail. Each asks under Approve for me
+ * and runs on its own under Full access, except `trash_mail`, which asks under
+ * Full access too until the owner allows it (Settings, or "always" on its
+ * card); bringing threads back from Trash never asks. A card stores the
+ * account's id and the labels' ids, so a rename while it waits does not change
+ * what a yes does, and a call that changes nothing or more than
+ * `MAIL_ORGANIZE_MAX` is refused before any card is raised. Nothing is ever
+ * deleted for good.
  */
 @Injectable()
 export class BotMailOrganizeToolsFactory implements BotToolArea {

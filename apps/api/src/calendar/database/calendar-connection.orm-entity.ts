@@ -10,13 +10,12 @@ import {
 } from 'typeorm';
 
 /**
- * A person's Google Calendar grant (`product/versions/mvp/20-plan-calendar.md` §4),
- * one per Google account, up to five per person per workspace
- * (`23-plan-milestones-stats-accounts.md` §5). The account is keyed by Google's
- * `sub`; a row written before that has none, and at most one such row per person
- * exists (`1791000900000-AddCalendarAccounts`). The refresh token is sealed with AES-256-GCM under
- * `CALENDAR_TOKEN_KEY`; access tokens are minted per read and never stored, and no
- * calendar data is kept.
+ * A person's Google Calendar grant, one per Google account, up to five per
+ * person per workspace. The account is keyed by Google's `sub`; a row written
+ * before that has none, and at most one such row per person exists
+ * (`1791000900000-AddCalendarAccounts`). The refresh token is sealed with
+ * AES-256-GCM under `CALENDAR_TOKEN_KEY`; access tokens are minted per read and
+ * never stored, and no calendar data is kept.
  */
 @Entity('calendar_connection')
 @Index(

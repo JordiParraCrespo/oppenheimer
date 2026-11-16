@@ -5,10 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FolderBrowser } from '../components/folder-browser';
 
 /**
- * New session's folder picker (`product/versions/mvp/24-session-places.md`
- * §4), given what the host listed: it narrows as a path is typed, drills in
- * on a row, says why a folder has no rows, and opens only a folder the host
- * said exists. The section above reads the host; this is what it draws.
+ * New session's folder picker, given what the host listed: it narrows as a
+ * path is typed, drills in on a row, says why a folder has no rows, and
+ * opens only a folder the host said exists. The section above reads the
+ * host; this is what it draws.
  */
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

@@ -44,10 +44,9 @@ function closeRecording(holder: { current: Recording | null }): Recording | null
 const CHUNK = 4096;
 
 /**
- * Records one dictation from the microphone (`product/next-steps/voice.md`)
- * and hands it to `onRecorded` as the WAV the API takes: 16-bit PCM, mono, at
- * `sampleRate`. It knows nothing of where the audio goes next; `useDictation`,
- * above it, does.
+ * Records one dictation from the microphone and hands it to `onRecorded` as the
+ * WAV the API takes: 16-bit PCM, mono, at `sampleRate`. It knows nothing of
+ * where the audio goes next; `useDictation`, above it, does.
  *
  * Plain Web Audio rather than `MediaRecorder`, because the browsers record
  * Opus or AAC and ChatGPT's dictation route takes WAV: the samples are kept
@@ -139,7 +138,7 @@ export function useRecorder({
     source.connect(processor);
     // A processor that reaches no destination is never called in Chrome; its output is silence.
     // ScriptProcessorNode is deprecated and kept on purpose: it needs no module of its own,
-    // which an AudioWorklet does (`product/next-steps/voice.md`).
+    // which an AudioWorklet does.
     processor.connect(context.destination);
     recording.current = open;
     setState('recording');

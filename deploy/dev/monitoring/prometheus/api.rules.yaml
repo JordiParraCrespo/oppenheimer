@@ -6,8 +6,6 @@
 # `MetricsModule.forRoot` in `apps/api/src/app.module.ts`; adjust the matcher
 # if the stack relabels it. `apps/api/src/__tests__/monitoring-config.spec.ts`
 # fails when an expression names a metric the API does not export.
-#
-# What the metrics are: apps/docs/docs/deployment/monitoring.md.
 
 groups:
   - name: api.availability

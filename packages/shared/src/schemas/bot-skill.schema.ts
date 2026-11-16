@@ -1,12 +1,10 @@
 import { z } from 'zod';
 
 /**
- * A bot's skills (`product/versions/mvp/25-bots.md` §4.1, from OpenClaw's and
- * Grok Bot's, `research/lessons-from-openclaw-and-grok-bot-skills.md`): a
- * reusable way of doing one task, saved under a short name. The model sees each
- * skill's name and description every turn and reads the body only when a
- * request calls for it (`use_skill`); the person runs one by typing
- * `/<name>` in the chat.
+ * A bot's skills (from OpenClaw's and Grok Bot's): a reusable way of doing one
+ * task, saved under a short name. The model sees each skill's name and
+ * description every turn and reads the body only when a request calls for it
+ * (`use_skill`); the person runs one by typing `/<name>` in the chat.
  */
 
 /**
@@ -74,13 +72,12 @@ export function parseBotSlashCommand(message: string): BotSlashCommand | null {
 }
 
 /**
- * The commands Oppenheimer runs itself, whatever skills the bot has
- * (`25-bots.md` §4.1, "Built-in commands"; from Claude Code's): a built-in
- * drives a feature the product owns, where a skill only puts words in front
- * of the bot. `goal` sets, shows or clears the bot's goal; `usage` shows
- * what the chat has spent, and is the console's alone; `loop` runs a prompt
- * again and again, or stops the loop; `schedule` has the bot save a routine
- * on a schedule, or opens its routines.
+ * The commands Oppenheimer runs itself, whatever skills the bot has (from
+ * Claude Code's): a built-in drives a feature the product owns, where a skill
+ * only puts words in front of the bot. `goal` sets, shows or clears the bot's
+ * goal; `usage` shows what the chat has spent, and is the console's alone;
+ * `loop` runs a prompt again and again, or stops the loop; `schedule` has the
+ * bot save a routine on a schedule, or opens its routines.
  */
 export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage', 'loop', 'schedule'] as const;
 export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
@@ -125,11 +122,10 @@ export interface BotBuiltInSkillText {
 
 /**
  * Oppenheimer's own guide, the way Claude Code reads its own docs before it
- * answers a question about Claude Code (`25-bots.md` §4.1, "Oppenheimer's own
- * guide"). Every bot has it from its first turn: a bot that only knew the one
- * line its prompt opens with answered "how do I pair a host?" from its
- * training, which knows nothing of Oppenheimer. Not the person's to run as a
- * command: they ask, and the bot reads.
+ * answers a question about Claude Code. Every bot has it from its first turn: a
+ * bot that only knew the one line its prompt opens with answered "how do I pair
+ * a host?" from its training, which knows nothing of Oppenheimer. Not the
+ * person's to run as a command: they ask, and the bot reads.
  */
 export const BOT_OPPENHEIMER_SKILL: BotBuiltInSkillText = {
   name: 'oppenheimer',
@@ -147,12 +143,11 @@ export const BOT_OPPENHEIMER_SKILL: BotBuiltInSkillText = {
 };
 
 /**
- * The catch-up a person runs when they come back and want to know what is
- * going on, adapted from pstack's `recall` (`25-bots.md` §4.1, "A built-in
- * catch-up"). Named `recap`, not `recall`, since `recall` is the bot's tool
- * for reading its own memory. The person runs it with `/recap [topic]`, and
- * the bot uses it unasked when someone asks to be caught up, and to close
- * the report on a session it follows that finished.
+ * The catch-up a person runs when they come back and want to know what is going
+ * on, adapted from pstack's `recall`. Named `recap`, not `recall`, since
+ * `recall` is the bot's tool for reading its own memory. The person runs it
+ * with `/recap [topic]`, and the bot uses it unasked when someone asks to be
+ * caught up, and to close the report on a session it follows that finished.
  */
 export const BOT_RECAP_SKILL: BotBuiltInSkillText = {
   name: 'recap',
@@ -250,7 +245,7 @@ export function botGoalCommandOf(command: BotSlashCommand | null): BotGoalComman
 }
 
 /**
- * `/loop` (`25-bots.md` §4.1; from Claude Code's `/loop`): a prompt run now
+ * `/loop` (from Claude Code's `/loop`): a prompt run now
  * and again every interval, from a minute to a day, or self-paced, when the
  * bot says next (`schedule_loop`, up to an hour away). A loop expires
  * `BOT_LOOP_LIFETIME_MS` after it was set. This is the longest prompt.
@@ -321,11 +316,10 @@ export function botLoopCommandOf(command: BotSlashCommand | null): BotLoopComman
 }
 
 /**
- * `/schedule` (`25-bots.md` §4.1; from Claude Code's `/schedule`): the bot
- * saves a routine (`26-bot-routines.md`) from the person's words, what to do
- * and when ("every weekday at 9, check open PRs"), on a calendar where a
- * loop runs on minutes. Nothing after it opens the bot's routines instead.
- * Null for a command that is not `/schedule`.
+ * `/schedule` (from Claude Code's `/schedule`): the bot saves a routine from
+ * the person's words, what to do and when ("every weekday at 9, check open
+ * PRs"), on a calendar where a loop runs on minutes. Nothing after it opens the
+ * bot's routines instead. Null for a command that is not `/schedule`.
  */
 export type BotScheduleCommand = { kind: 'open' } | { kind: 'set'; request: string };
 

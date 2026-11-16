@@ -8,11 +8,10 @@ import { WakeOnTaskActivityCommand } from '../../commands/wake-on-task-activity/
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 
 /**
- * Where a change Plan logged on a task reaches the bots that follow its
- * project or its milestone (`27-bot-subscriptions.md` §7.2): each subscription
- * to either, woken once per change. A task moved to another project or
- * milestone also reaches those that followed where it was, so they learn it
- * left.
+ * Where a change Plan logged on a task reaches the bots that follow its project
+ * or its milestone: each subscription to either, woken once per change. A task
+ * moved to another project or milestone also reaches those that followed where
+ * it was, so they learn it left.
  */
 @Injectable()
 export class BotTaskWakeDomainEventHandler {

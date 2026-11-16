@@ -2,8 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * What a bot may do, tool by tool, and the rules a reviewer reads before an
- * asking call (`product/versions/mvp/25-bots.md` §5; from Grok Bot's
- * approvals, `research/lessons-from-grok-bot.md` §9 rows 6 and 7).
+ * asking call (from Grok Bot's approvals).
  *
  * - `bot_tool_permission`: the owner's setting for one tool, where it
  *   differs from the catalog. A row with no subject is the tool's decision:

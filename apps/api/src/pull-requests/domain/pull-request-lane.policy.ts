@@ -2,8 +2,7 @@ import type { PullRequestLane } from '@oppenheimer/shared';
 
 /**
  * Why a pull request is in its lane, as a code the console words: the lane
- * policy decides from what code can read, never from a model
- * (`product/next-steps/0.2-pull-requests-api-plan.md` §4.3).
+ * policy decides from what code can read, never from a model.
  */
 export type LaneReason =
   | { code: 'risky_path'; path: string }

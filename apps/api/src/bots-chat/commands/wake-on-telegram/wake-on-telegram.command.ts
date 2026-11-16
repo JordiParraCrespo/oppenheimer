@@ -1,8 +1,7 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
- * The owner wrote to their Telegram bot, and `botId` answers there
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): a turn for
+ * The owner wrote to their Telegram bot, and `botId` answers there: a turn for
  * their message, a fresh conversation (`new`), or the running turn stopped
  * (`stop`). Dispatched once per stored message.
  */

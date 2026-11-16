@@ -17,12 +17,12 @@ import { BotMailWriteToolsFactory } from '../bot-mail-write-tools.factory';
 import type { ApprovedCallContext, BotToolContext } from '../bot-tool.factory';
 
 /**
- * The mail writes as a bot's turn sees them (`product/next-steps/mail.md`
- * §3.3–3.4): a draft is written without asking, a send asks under every
- * preset (Approve everything included), even set to Allow, with the planned
- * message stored on the card, and a yes sends exactly that plan once, under its approval; a
- * send carried out with no stored plan, or outside an approval, is refused.
- * What the plan and the send do with Gmail is the mail module's spec.
+ * The mail writes as a bot's turn sees them: a draft is written without asking,
+ * a send asks under every preset (Approve everything included), even set to
+ * Allow, with the planned message stored on the card, and a yes sends exactly
+ * that plan once, under its approval; a send carried out with no stored plan,
+ * or outside an approval, is refused. What the plan and the send do with Gmail
+ * is the mail module's spec.
  */
 const ACCOUNT = GmailConnectionEntity.connect({
   organizationId: 'org-1',

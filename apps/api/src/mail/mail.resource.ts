@@ -1,10 +1,9 @@
 import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
- * Mail is a person's own Gmail accounts, worked by their bots
- * (`product/next-steps/mail.md`). The rows sit in a workspace like the
- * calendar's, and every read of one adds its owner, so nobody reaches
- * another person's mailbox, a workspace admin included.
+ * Mail is a person's own Gmail accounts, worked by their bots. The rows sit in
+ * a workspace like the calendar's, and every read of one adds its owner, so
+ * nobody reaches another person's mailbox, a workspace admin included.
  */
 export const MailResource = defineResource({
   subject: 'Mail',

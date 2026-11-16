@@ -12,10 +12,10 @@ import { isValidTimeZone } from '../automations/schedule.js';
 import { PLAN_TASK_EVENT_KINDS, type PlanTaskEventKind, type TaskStatus } from './task.schema.js';
 
 /**
- * Bot shapes (`product/versions/mvp/25-bots.md`, slice 1): a bot, the sidebar
- * groups it sits in, its two documents with their revisions, and the facts it
- * remembers. The constraints decidable from the body alone are here; whether a
- * group, a host or a model exists for the caller is the API's to answer.
+ * Bot shapes: a bot, the sidebar groups it sits in, its two documents with
+ * their revisions, and the facts it remembers. The constraints decidable from
+ * the body alone are here; whether a group, a host or a model exists for the
+ * caller is the API's to answer.
  */
 
 /**
@@ -53,16 +53,15 @@ export const BOT_DOCUMENT_NAMES = ['soul', 'instructions'] as const;
 export type BotDocumentName = (typeof BOT_DOCUMENT_NAMES)[number];
 
 /**
- * How far a bot's turns may go without asking. `ask` arrives with approvals
- * (slice 4): a headless turn with no prompt tool would refuse every tool.
+ * How far a bot's turns may go without asking. `ask` is left out: a headless
+ * turn with no prompt tool would refuse every tool.
  */
 export const BOT_PERMISSIONS = ['auto', 'full'] as const satisfies readonly SessionPermission[];
 export type BotPermission = (typeof BOT_PERMISSIONS)[number];
 
 /**
- * The console sections a bot shows in, beside Employees
- * (`product/versions/mvp/28-bots-in-sections.md`): each section's sidebar lists
- * the bots that name it under a Bots heading. A bot names none until its
+ * The console sections a bot shows in, beside Employees: each section's sidebar
+ * lists the bots that name it under a Bots heading. A bot names none until its
  * owner, or the section's plus that made it, puts it there.
  */
 export const BOT_SECTIONS = ['sessions', 'automations', 'plan', 'pulls'] as const;
@@ -83,13 +82,12 @@ export const BOT_MEMORY_FACT_MAX = 500;
  * How many facts one bot may keep, both tiers together. A person adding one
  * by hand to a full memory is refused; the bot's own `remember` makes room
  * by dropping its oldest `log` fact, as Grok Bot's journal lets old entries
- * go (`research/lessons-from-grok-bot.md` §10).
+ * go.
  */
 export const BOT_MEMORY_FACTS_MAX = 500;
 
 /**
- * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's profile and
- * journal, `research/lessons-from-grok-bot.md` §9 row 11 and §10):
+ * How a fact is kept (from Grok Bot's profile and journal):
  * `profile`, standing instructions and who the person is, in mind every
  * turn; `log`, everything else, dated, its newest entries in the prompt and
  * the rest looked up with `recall`.
@@ -109,12 +107,12 @@ export const BOT_MEMORY_PROFILE_IN_PROMPT_CHARS = 4_000;
 /** The characters of the newest `log` facts one turn is given, each with its date. */
 export const BOT_MEMORY_LOG_IN_PROMPT_CHARS = 2_000;
 /**
- * A bot's dream (`25-bots.md` §4.1, "Dreaming"; from Managed Agents' dreams):
- * an offline pass of its own model over the memory it wrote and its recent
- * conversation that merges duplicates, rewrites each fact as one clear
- * sentence, drops what is stale or contradicted, and keeps what the
- * conversation shows will matter. It replaces the bot's own facts in one
- * write; the facts as they were are kept, so the owner can undo the latest.
+ * A bot's dream (from Managed Agents' dreams): an offline pass of its own model
+ * over the memory it wrote and its recent conversation that merges duplicates,
+ * rewrites each fact as one clear sentence, drops what is stale or
+ * contradicted, and keeps what the conversation shows will matter. It replaces
+ * the bot's own facts in one write; the facts as they were are kept, so the
+ * owner can undo the latest.
  *
  * It runs after a turn once the bot has written `BOT_DREAM_WRITES_MIN` facts
  * since its last dream (or since it began) and keeps at least
@@ -170,8 +168,8 @@ export const BOT_SOUL_TEMPLATE = `# Soul
 You are {name}. You are becoming someone, not a chatbot.
 
 ## How you are
-- **Friendly.** Warm and easy to talk to, glad to help. Use the person's name once you know it. A little humour when it fits.
-- **Proactive.** Notice what comes next and offer it, or just do it when it is yours to do. Come back with answers, not questions: read, check and look it up first. End with the next step you could take.
+- **Friendly.** Warm and easy to talk to, glad to help. Use the person's name now and then, not in every message. A little humour when it fits.
+- **Proactive.** Notice what comes next and offer it, or just do it when it is yours to do. Come back with answers, not questions: read, check and look it up first. When there is a clear next step, end with it in a plain sentence, not a "Want me to…?".
 - **Genuinely helpful, not performatively.** No "Great question!" or "I'd be happy to help!": just help.
 - **Opinionated.** Have a take and say it. If the person is about to make a mistake, say so kindly.
 - **Trustworthy.** Do what you are asked, fully. Never pretend a step finished when it did not. Ask before anything public or hard to undo that nobody asked for.
@@ -188,10 +186,10 @@ export function botSoulFor(name: string): string {
 }
 
 /**
- * Who answers a bot (`product/versions/mvp/25-bots.md` §2): the provider picks
- * the engine, Anthropic and GLM the Claude Agent SDK, OpenAI, ChatGPT and xAI
- * the OpenAI Agents SDK. Each runs on the workspace's own key for it; ChatGPT's
- * is a sign-in to a ChatGPT subscription rather than an API key.
+ * Who answers a bot: the provider picks the engine, Anthropic and GLM the
+ * Claude Agent SDK, OpenAI, ChatGPT and xAI the OpenAI Agents SDK. Each runs on
+ * the workspace's own key for it; ChatGPT's is a sign-in to a ChatGPT
+ * subscription rather than an API key.
  */
 export const BOT_PROVIDERS = ['anthropic', 'glm', 'openai', 'chatgpt', 'xai'] as const;
 export type BotProvider = (typeof BOT_PROVIDERS)[number];
@@ -236,7 +234,7 @@ export interface BotProviderDefinition {
   readonly auth: BotProviderAuth;
   /**
    * Whether the provider's models read images: a message may carry
-   * attachments only to a bot on one that does (`25-bots.md` §3.1).
+   * attachments only to a bot on one that does.
    */
   readonly images: boolean;
   readonly models: readonly BotModel[];
@@ -397,7 +395,7 @@ const positionSchema = z.number().int().min(0).max(10_000);
 
 /**
  * `POST /bots`. Everything is optional: a blank bot takes the next first
- * name the workspace does not have ("Juno", "Milo"…), on the next avatar colour, ungrouped, with no
+ * name the workspace does not have (a physicist's, at random: "Feynman", "Curie"…), on the next avatar colour, ungrouped, with no
  * home host until one is chosen.
  */
 export const createBotSchema = z.object({
@@ -503,18 +501,16 @@ export const updateBotMemoryFactSchema = z
 export type UpdateBotMemoryFactDto = z.infer<typeof updateBotMemoryFactSchema>;
 
 /**
- * A bot's turn (`product/versions/mvp/25-bots.md` §2): one message of yours
- * and what the bot did with it. `queued` waits for the bot's turn before it;
- * one turn per bot runs at a time.
+ * A bot's turn: one message of yours and what the bot did with it. `queued`
+ * waits for the bot's turn before it; one turn per bot runs at a time.
  */
 export const BOT_TURN_STATUSES = ['queued', 'running', 'completed', 'cancelled', 'failed'] as const;
 export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
 
 /**
- * Why a failed turn failed, as a kind the chat can act on (`25-bots.md` §2):
- * whether sending it again can help, and what to do instead when it cannot.
- * From Grok Bot's failure lines (`research/lessons-from-grok-bot.md` §9,
- * row 4). The words of the failure stay in the turn's `error`.
+ * Why a failed turn failed, as a kind the chat can act on: whether sending it
+ * again can help, and what to do instead when it cannot. From Grok Bot's
+ * failure lines. The words of the failure stay in the turn's `error`.
  *
  * - `rate_limit`: the provider said "not now"; it passes.
  * - `usage_limit`: the account's quota or credit is spent; it passes when the
@@ -576,9 +572,9 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
 };
 
 /**
- * Which of a bot's waiting turns runs first (`25-bots.md` §4.6,
- * `BotQueueLanes`): yours, then what other bots sent it, then work nobody
- * waits on. Within a lane, the oldest first.
+ * Which of a bot's waiting turns runs first (`BotQueueLanes`): yours, then what
+ * other bots sent it, then work nobody waits on. Within a lane, the oldest
+ * first.
  */
 export const BOT_TURN_LANES = ['owner', 'bots', 'background'] as const;
 export type BotTurnLane = (typeof BOT_TURN_LANES)[number];
@@ -590,7 +586,7 @@ export const BOT_ACTIVE_TURN_STATUSES = [
 ] as const satisfies readonly BotTurnStatus[];
 
 /**
- * What the chat draws (§3): your message, the bot's text, one activity line
+ * What the chat draws: your message, the bot's text, one activity line
  * per run of tool calls, and an `event`: something Oppenheimer tells the bot
  * on the person's behalf (an approval decided, and what the approved call
  * answered). An event opens the turn it starts, like a message of yours, but
@@ -601,12 +597,11 @@ export const BOT_MESSAGE_ROLES = ['user', 'assistant', 'activity', 'event'] as c
 export type BotMessageRole = (typeof BOT_MESSAGE_ROLES)[number];
 
 /**
- * What an `event` message says happened, for the chat to draw without
- * reading its words: an approval decided (`25-bots.md` §5), how it went,
- * and the card's line; a routine that changed, ran or failed
- * (`26-bot-routines.md` §4); a message from another bot, or its answer
- * (`25-bots.md` §4.6); or a session the bot follows that needs it
- * (`27-bot-subscriptions.md`). The words stay in the message for the bot.
+ * What an `event` message says happened, for the chat to draw without reading
+ * its words: an approval decided, how it went, and the card's line; a routine
+ * that changed, ran or failed; a message from another bot, or its answer; or a
+ * session the bot follows that needs it. The words stay in the message for the
+ * bot.
  */
 export const BOT_EVENT_OUTCOMES = ['approved', 'denied', 'stopped', 'failed'] as const;
 export type BotEventOutcome = (typeof BOT_EVENT_OUTCOMES)[number];
@@ -627,10 +622,10 @@ export interface BotApprovalEvent {
    */
   approvalId?: string;
   /**
-   * Which of an approved call's two lines this is (`25-bots.md` §5):
-   * `started` opens the short turn where the bot says it is on it, written
-   * with the yes while the call runs; `finished` opens the turn that reports
-   * how it went. Absent on a no, and on lines written before the call had two.
+   * Which of an approved call's two lines this is: `started` opens the short
+   * turn where the bot says it is on it, written with the yes while the call
+   * runs; `finished` opens the turn that reports how it went. Absent on a no,
+   * and on lines written before the call had two.
    */
   stage?: BotApprovalEventStage;
 }
@@ -643,7 +638,7 @@ export type BotApprovalEventStage = (typeof BOT_APPROVAL_EVENT_STAGES)[number];
 export const BOT_QUESTION_OUTCOMES = ['answered', 'dismissed'] as const;
 export type BotQuestionOutcome = (typeof BOT_QUESTION_OUTCOMES)[number];
 
-/** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */
+/** A card of questions decided (`ask_user`): how, its line, and each answer. */
 export interface BotQuestionEvent {
   kind: 'question';
   outcome: BotQuestionOutcome;
@@ -661,8 +656,8 @@ export interface BotAnsweredQuestion {
 }
 
 /**
- * What happened to a routine, as one activity whatever path made it
- * (`26-bot-routines.md` §4, "In the chat"): a change, a run, or a failure.
+ * What happened to a routine, as one chat activity whatever path made it:
+ * a change, a run, or a failure.
  */
 export const BOT_ROUTINE_ACTIVITIES = [
   'saved',
@@ -689,9 +684,9 @@ export interface BotRoutineEvent {
 }
 
 /**
- * A session a bot is subscribed to woke it (`27-bot-subscriptions.md` §4):
- * the task it delegated needs input, ended, failed, was stopped or expired.
- * The ids and names are Oppenheimer's record, never the session's words.
+ * A session a bot is subscribed to woke it: the task it delegated needs input,
+ * ended, failed, was stopped or expired. The ids and names are Oppenheimer's
+ * record, never the session's words.
  */
 export const BOT_SESSION_WAKE_STATES = [
   'requires_action',
@@ -705,10 +700,9 @@ export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 /**
  * What a session event says: a task's wake state; `matched`, its terminal
  * printed a line matching a watch's pattern; `stalled`, the silent stall
- * check found the task stuck before it reached any wake state
- * (`27-bot-subscriptions.md` §4.1); `progress`, the regular look at a
- * task still running (§4.2); or `notice`, its agent sent a line
- * (`runner sessions notify`, `product/next-steps/agent-tools.md` §9).
+ * check found the task stuck before it reached any wake state; `progress`,
+ * the regular look at a task still running; or `notice`, its agent sent a
+ * line (`runner sessions notify`).
  */
 export const BOT_SESSION_EVENT_STATES = [
   ...BOT_SESSION_WAKE_STATES,
@@ -738,11 +732,10 @@ export interface BotSessionEvent {
 }
 
 /**
- * The GitHub events on a pull request that wake whoever follows it: a
- * session's agent that ran `runner sessions watch-pr`
- * (`product/next-steps/agent-tools.md` §3), or a bot subscribed with
- * `watch_pull_request` (`27-bot-subscriptions.md` §7). Each is a type the
- * GitHub adapter already normalizes a delivery to.
+ * The GitHub events on a pull request that wake whoever follows it: a session's
+ * agent that ran `runner sessions watch-pr`, or a bot subscribed with
+ * `watch_pull_request`. Each is a type the GitHub adapter already normalizes a
+ * delivery to.
  */
 export const PULL_REQUEST_WAKE_EVENTS = [
   'check_failed',
@@ -754,10 +747,9 @@ export const PULL_REQUEST_WAKE_EVENTS = [
 export type PullRequestWakeEvent = (typeof PULL_REQUEST_WAKE_EVENTS)[number];
 
 /**
- * A pull request a bot is subscribed to woke it (`27-bot-subscriptions.md`
- * §7): what GitHub said happened, from the event's metadata alone. The
- * repository is the name it had when the bot watched it; never a comment's
- * or a review's words.
+ * A pull request a bot is subscribed to woke it: what GitHub said happened,
+ * from the event's metadata alone. The repository is the name it had when the
+ * bot watched it; never a comment's or a review's words.
  */
 export interface BotPullRequestEvent {
   kind: 'pull_request';
@@ -773,10 +765,10 @@ export interface BotPullRequestEvent {
 }
 
 /**
- * What a bot following a project, or one milestone of it, can be woken by
- * (`27-bot-subscriptions.md` §7.2): the changes Plan logs for a task. The bot
- * names the ones it wants; `BOT_TASK_WAKE_DEFAULT` is what it follows when it
- * names none, where the task stands rather than its words or its dates.
+ * What a bot following a project, or one milestone of it, can be woken by: the
+ * changes Plan logs for a task. The bot names the ones it wants;
+ * `BOT_TASK_WAKE_DEFAULT` is what it follows when it names none, where the task
+ * stands rather than its words or its dates.
  */
 export const BOT_TASK_WAKE_EVENTS = PLAN_TASK_EVENT_KINDS;
 export const BOT_TASK_WAKE_DEFAULT = [
@@ -794,9 +786,9 @@ export const BOT_PLAN_WATCH_SCOPES = ['project', 'milestone'] as const;
 export type BotPlanWatchScope = (typeof BOT_PLAN_WATCH_SCOPES)[number];
 
 /**
- * A task on a project or milestone the bot follows changed
- * (`27-bot-subscriptions.md` §7.2): which task, what Plan logged, and for a
- * move the column it left and the one it is in. Never its notes.
+ * A task on a project or milestone the bot follows changed: which task, what
+ * Plan logged, and for a move the column it left and the one it is in. Never
+ * its notes.
  */
 export interface BotTaskEvent {
   kind: 'task';
@@ -816,16 +808,15 @@ export interface BotTaskEvent {
 }
 
 /**
- * A goal keeps a bot going (`25-bots.md` §4.1; from Codex's and Grok Bot's
- * goals, `research/lessons-from-long-running-agents.md`): the person sets one
- * with `/goal <condition>`, or the bot with `set_goal`. It has no limit of
+ * A goal keeps a bot going (from Codex's and Grok Bot's goals): the person sets
+ * one with `/goal <condition>`, or the bot with `set_goal`. It has no limit of
  * continuations since 2026-11-09: after each turn of it the next is queued,
  * until the bot calls `end_goal` and a reviewer, the bot's own model with no
- * tools, finds the condition met. It pauses, keeping its place, when a turn
- * of it fails, is stopped, goes `BOT_GOAL_IDLE_TURNS` turns without calling a
+ * tools, finds the condition met. It pauses, keeping its place, when a turn of
+ * it fails, is stopped, goes `BOT_GOAL_IDLE_TURNS` turns without calling a
  * tool, spends its token budget, or the bot says it is blocked; the owner
- * resumes it. One goal per bot at a time; an ended goal is deleted. This is
- * the longest condition.
+ * resumes it. One goal per bot at a time; an ended goal is deleted. This is the
+ * longest condition.
  */
 export const BOT_GOAL_OBJECTIVE_MAX = 2_000;
 
@@ -892,7 +883,7 @@ export interface BotGoalEvent {
 }
 
 /**
- * What a loop line says (`25-bots.md` §4.1, `/loop`): `ran` opens a run's
+ * What a loop line says (`/loop`): `ran` opens a run's
  * turn; the others say, outside any turn, how the loop ended when the bot
  * did not end it itself (its `end_loop` call is the record of that): the
  * owner stopped it (`cleared`), its 3 days ran out (`expired`), a run of it
@@ -931,11 +922,11 @@ export interface BotLoop {
 }
 
 /**
- * What a bot spends, for `/usage` (`25-bots.md` §4.1, "Built-in commands";
- * from Claude Code's `/usage`): its turns, by the provider and model each ran
- * on, and the calls it makes on its owner's key outside them. Every count is
- * the chat's as it stands: clearing the conversation starts them again.
- * Cache reads and writes are part of the input, never on top of it.
+ * What a bot spends, for `/usage` (from Claude Code's `/usage`): its turns, by
+ * the provider and model each ran on, and the calls it makes on its owner's key
+ * outside them. Every count is the chat's as it stands: clearing the
+ * conversation starts them again. Cache reads and writes are part of the input,
+ * never on top of it.
  */
 export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
@@ -994,7 +985,7 @@ export interface BotGoal {
  * decision, a card of questions answered or dismissed, a routine's run, a
  * session the bot is subscribed to, a goal it set itself, a loop's run, or a
  * message of yours to the bot on a channel: your Telegram bot, or your spare
- * WhatsApp number (`product/next-steps/answering-on-telegram-and-whatsapp.md`).
+ * WhatsApp number.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -1040,15 +1031,15 @@ export function isChannelOrigin(origin: BotTurnOrigin): origin is BotChannelOrig
 }
 
 /**
- * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`
- * §4.6): its turn ended with an answer, failed, or was stopped.
+ * How a bot's answer to another bot's `ask_bot` came back: its turn ended with
+ * an answer, failed, or was stopped.
  */
 export const BOT_REPLY_OUTCOMES = ['answered', 'failed', 'cancelled'] as const;
 export type BotReplyOutcome = (typeof BOT_REPLY_OUTCOMES)[number];
 
 /**
- * How one of a bot's subagents ended (`25-bots.md` §4.7, `delegate`): it
- * answered, failed, was stopped with the turn, or ran out of its time.
+ * How one of a bot's subagents ended: it answered, failed, was stopped with the
+ * turn, or ran out of its time.
  */
 export const BOT_SUBAGENT_STATUSES = ['completed', 'failed', 'cancelled', 'timed_out'] as const;
 export type BotSubagentStatus = (typeof BOT_SUBAGENT_STATUSES)[number];
@@ -1108,10 +1099,10 @@ export const botSubagentProgressSchema = z.object({
 export type BotSubagentProgress = z.infer<typeof botSubagentProgressSchema>;
 
 /**
- * A message another bot sent this one through `message_bot` or `ask_bot`
- * (`25-bots.md` §4.6). The sender is the bot whose turn made the call, as
- * Oppenheimer recorded it, never a name the message claims; its name is the
- * one it had when it sent. The words are the message's content.
+ * A message another bot sent this one through `message_bot` or `ask_bot`. The
+ * sender is the bot whose turn made the call, as Oppenheimer recorded it, never
+ * a name the message claims; its name is the one it had when it sent. The words
+ * are the message's content.
  */
 export interface BotPeerMessageEvent {
   kind: 'bot_message';
@@ -1131,7 +1122,7 @@ export interface BotPeerReplyEvent {
   outcome: BotReplyOutcome;
 }
 
-/** A dream rewrote the bot's memory, or the owner undid it (`25-bots.md` §4.1, "Dreaming"). */
+/** A dream rewrote the bot's memory, or the owner undid it. */
 export interface BotDreamEvent {
   kind: 'dream';
   activity: BotDreamActivity;
@@ -1141,9 +1132,9 @@ export interface BotDreamEvent {
 }
 
 /**
- * A turn folded what it had read into a summary to stay inside its window
- * (`25-bots.md` §2, "Compaction"): the tokens the next call would have been
- * sent, before and after, as the engine estimated them.
+ * A turn folded what it had read into a summary to stay inside its window: the
+ * tokens the next call would have been sent, before and after, as the engine
+ * estimated them.
  */
 export interface BotCompactionEvent {
   kind: 'compaction';
@@ -1196,7 +1187,7 @@ export const BOT_CONVERSATION_PAGE_MAX = 200;
 export const BOT_CONVERSATION_PAGE_DEFAULT = 100;
 
 /**
- * The images a message may carry (`25-bots.md` §3.1): the four formats every
+ * The images a message may carry: the four formats every
  * provider that reads images takes, at most `BOT_IMAGE_MAX_BYTES` each (the
  * strictest provider's limit, Anthropic's), `BOT_MESSAGE_IMAGES_MAX` a message.
  */
@@ -1257,18 +1248,18 @@ export const findBotConversationSchema = z.object({
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
 /**
- * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch
- * (`26-bot-routines.md` §7). The tab changes whether a routine runs, never
- * what it is: that is the chat's, through the bot's own tool.
+ * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch. The tab
+ * changes whether a routine runs, never what it is: that is the chat's, through
+ * the bot's own tool.
  */
 export const updateBotRoutineSchema = z.object({ enabled: z.boolean() });
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
 
 /**
- * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call of an
- * asking tool, waiting for the owner. `pending` until they decide; `approved`
- * once the call ran on their yes, `failed` when it ran and failed; `denied`;
- * `expired` when they wrote to the bot instead of answering.
+ * A Needs input card: one call of an asking tool, waiting for the owner.
+ * `pending` until they decide; `approved` once the call ran on their yes,
+ * `failed` when it ran and failed; `denied`; `expired` when they wrote to the
+ * bot instead of answering.
  */
 export const BOT_APPROVAL_STATUSES = [
   'pending',
@@ -1280,7 +1271,7 @@ export const BOT_APPROVAL_STATUSES = [
 export type BotApprovalStatus = (typeof BOT_APPROVAL_STATUSES)[number];
 
 /**
- * What a card may offer, in the order it offers them (`25-bots.md` §5): a
+ * What a card may offer, in the order it offers them: a
  * yes to this call; a yes that stands for the call's subject, or for the
  * tool; a no the bot is told about and carries on from; and a no that stops
  * the turn, the bot getting no turn back. The API chooses which a card offers
@@ -1303,7 +1294,7 @@ export type BotApprovalResolution = (typeof BOT_APPROVAL_RESOLUTIONS)[number];
 export const BOT_APPROVAL_NOTE_MAX = 1_000;
 
 /**
- * How far a yes reaches (`25-bots.md` §5): `once`, this call only; `tool`,
+ * How far a yes reaches: `once`, this call only; `tool`,
  * every call of the tool from now on (the tool becomes Allow); `subject`,
  * every call of the tool on the same thing (this repository, this session),
  * offered only when the card names one. A tool that is per call only offers
@@ -1313,9 +1304,9 @@ export const BOT_APPROVAL_REACHES = ['once', 'tool', 'subject'] as const;
 export type BotApprovalReach = (typeof BOT_APPROVAL_REACHES)[number];
 
 /**
- * A card of questions a bot put to its owner (`ask_user`, `25-bots.md`
- * §3.2): `pending` until they answer it or dismiss it, `expired` when they
- * wrote to the bot instead. Nothing runs on it; the answers go to the bot.
+ * A card of questions a bot put to its owner (`ask_user`): `pending` until they
+ * answer it or dismiss it, `expired` when they wrote to the bot instead.
+ * Nothing runs on it; the answers go to the bot.
  */
 export const BOT_QUESTION_STATUSES = ['pending', 'answered', 'dismissed', 'expired'] as const;
 export type BotQuestionStatus = (typeof BOT_QUESTION_STATUSES)[number];
@@ -1404,7 +1395,7 @@ export const decideBotApprovalSchema = z.object({
 
 /**
  * What a bot may do with one tool, set by its owner in Settings →
- * Permissions (`25-bots.md` §5): `allow` runs without asking, `ask` raises a
+ * Permissions: `allow` runs without asking, `ask` raises a
  * Needs input card, `off` takes the tool away (the model never sees it). A
  * tool with no setting follows the bot's preset and the tool's own default.
  */
@@ -1413,8 +1404,8 @@ export type BotToolDecision = (typeof BOT_TOOL_DECISIONS)[number];
 
 /**
  * The groups Settings → Permissions lists a bot's tools under, in order:
- * `25-bots.md` §4.1 to §4.7 (itself, sessions, projects and the plan,
- * GitHub, automations, other bots, work and the web).
+ * itself, sessions, projects and the plan, GitHub, automations, other bots,
+ * work and the web.
  */
 export const BOT_TOOL_GROUPS = [
   'self',
@@ -1437,9 +1428,9 @@ export const setBotToolDecisionSchema = z.object({
 export type SetBotToolDecisionDto = z.infer<typeof setBotToolDecisionSchema>;
 
 /**
- * A plain-language rule a reviewer reads before an asking call
- * (`25-bots.md` §5): `allow` lets a matching call run without a card, `ask`
- * makes one ask even where it would not. When both match, `ask` wins.
+ * A plain-language rule a reviewer reads before an asking call: `allow` lets a
+ * matching call run without a card, `ask` makes one ask even where it would
+ * not. When both match, `ask` wins.
  */
 export const BOT_PERMISSION_RULE_EFFECTS = ['allow', 'ask'] as const;
 export type BotPermissionRuleEffect = (typeof BOT_PERMISSION_RULE_EFFECTS)[number];
@@ -1489,7 +1480,7 @@ export const BOT_APPROVALS_PAGE_MAX = 50;
 
 /**
  * `GET /bot-approvals`: the workspace's approvals across its bots, in one
- * status, `pending` unless another is named (the Inbox, `29-inbox.md` §4).
+ * status, `pending` unless another is named (the Inbox).
  */
 export const findWorkspaceBotApprovalsSchema = z.object({
   status: z.enum(BOT_APPROVAL_STATUSES).default('pending'),
@@ -1500,10 +1491,9 @@ export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprov
 export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
- * A line a bot sent the person with its `notify` tool
- * (`product/next-steps/agent-tools.md` §5): a bot keeps only its latest, and
- * the Inbox shows it until the person marks it done. Each notice has an id
- * of its own, so a mark on one never hides the next. The bound is the
+ * A line a bot sent the person with its `notify` tool: a bot keeps only its
+ * latest, and the Inbox shows it until the person marks it done. Each notice
+ * has an id of its own, so a mark on one never hides the next. The bound is the
  * session notice's (`SESSION_NOTICE_TEXT_MAX`): a line, not a report.
  */
 export const BOT_NOTICE_TEXT_MAX = 500;

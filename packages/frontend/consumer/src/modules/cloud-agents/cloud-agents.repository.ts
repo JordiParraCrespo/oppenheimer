@@ -24,9 +24,8 @@ function toStatus(dto: StatusDto): CloudAgentStatusEntity {
 }
 
 /**
- * The reader's keys for the vendors a cloud session runs on
- * (`product/next-steps/cloud-agents.md`), and the models each offers. The key
- * goes to the API once and never comes back.
+ * The reader's keys for the vendors a cloud session runs on, and the models
+ * each offers. The key goes to the API once and never comes back.
  */
 @injectable()
 export class CloudAgentsRepository {

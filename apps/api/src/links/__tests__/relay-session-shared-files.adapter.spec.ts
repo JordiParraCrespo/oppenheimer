@@ -9,11 +9,11 @@ import {
 } from '../infrastructure/relay-session-shared-files.adapter';
 
 /**
- * A bot's ask for a shared file's preview (`product/next-steps/agent-tools.md`
- * §7): a `shared.preview.get` the protocol accepts, settled by the reply that
- * names its command from that host only, by the runner's refusal, or by
- * nothing in time; and never sent to a runner that cannot answer it. The
- * runner's half is `apps/runner/internal/cli/link_shared_test.go`.
+ * A bot's ask for a shared file's preview: a `shared.preview.get` the protocol
+ * accepts, settled by the reply that names its command from that host only, by
+ * the runner's refusal, or by nothing in time; and never sent to a runner that
+ * cannot answer it. The runner's half is
+ * `apps/runner/internal/cli/link_shared_test.go`.
  */
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';

@@ -2,10 +2,10 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { PullRequestWakeEvent } from '@oppenheimer/shared';
 
 /**
- * Wake a bot for an event on a pull request it follows
- * (`27-bot-subscriptions.md` §7); dispatched for each subscription to the
- * pull request a stored GitHub event names. It carries the event's metadata
- * only: its context (a comment's words) never leaves the inbound store.
+ * Wake a bot for an event on a pull request it follows; dispatched for each
+ * subscription to the pull request a stored GitHub event names. It carries the
+ * event's metadata only: its context (a comment's words) never leaves the
+ * inbound store.
  */
 export class WakeOnPullRequestCommand extends CommandBase {
   readonly subscriptionId: string;

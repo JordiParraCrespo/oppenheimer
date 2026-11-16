@@ -134,9 +134,9 @@ describe('PlaceSelect', () => {
   });
 
   /**
-   * Beside the hosts, the clouds (`NewSessionComposer.dc.html`): a vendor with
-   * the reader's key is picked outright, as the place; one without sends the
-   * reader to connect it rather than starting a session it would refuse.
+   * Beside the hosts, the clouds: a vendor with the reader's key is picked
+   * outright, as the place; one without sends the reader to connect it
+   * rather than starting a session it would refuse.
    */
   it('picks a connected cloud outright, and sends a vendor with no key to connect it', () => {
     const picked = renderChip();

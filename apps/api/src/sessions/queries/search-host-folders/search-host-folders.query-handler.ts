@@ -8,7 +8,7 @@ import { HOST_FOLDERS } from '../../sessions.di-tokens';
 import { SearchHostFoldersQuery } from './search-host-folders.query';
 
 /**
- * The folder picker's search (`product/versions/mvp/24-session-places.md` §4):
+ * The folder picker's search:
  * the same host check a listing makes, then the runner's walk, live. Its
  * refusals are a listing of home's.
  */

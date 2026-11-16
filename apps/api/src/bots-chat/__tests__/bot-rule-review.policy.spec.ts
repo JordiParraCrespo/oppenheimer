@@ -2,11 +2,10 @@ import { composeRuleReview, rulesToReview, ruleVerdict } from '../domain/bot-rul
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 
 /**
- * How the owner's rules turn the reviewer's answer into a decision
- * (`25-bots.md` §5). What breaks this: an allow rule beating an ask rule
- * that also matched; an unreadable answer, or one naming a rule that is not
- * there, read as "no rule applies" (fail open); a review spent on a call no
- * rule could change.
+ * How the owner's rules turn the reviewer's answer into a decision. What breaks
+ * this: an allow rule beating an ask rule that also matched; an unreadable
+ * answer, or one naming a rule that is not there, read as "no rule applies"
+ * (fail open); a review spent on a call no rule could change.
  */
 const rules = [
   { id: 'r-1', effect: 'allow' as const, text: 'Comments on acme/docs are fine' },

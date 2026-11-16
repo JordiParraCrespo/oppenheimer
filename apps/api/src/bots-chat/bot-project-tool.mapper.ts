@@ -9,7 +9,7 @@ import type { ZodType as SharedSchema, ZodTypeDef } from 'zod';
 
 /**
  * How the project tools' input becomes the body the projects' own commands
- * take (`25-bots.md` §4.3): snake_case to the request DTO, checked against the
+ * take: snake_case to the request DTO, checked against the
  * schema the console's route validates it with, so a bot cannot send what a
  * person could not; or, when it would not pass, the sentence that says which
  * field. Pure.

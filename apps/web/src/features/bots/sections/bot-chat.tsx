@@ -28,15 +28,14 @@ import { BotUsage } from './bot-usage';
 import { BotUsageCard } from './bot-usage-card';
 
 /**
- * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
- * `PageBar`, the sidebar toggle, the bot's face and name, the wrench that
- * shows or hides its tool calls (kept on this device) and its menu; the
- * transcript, which follows the latest line while you are there and offers
- * the way back when you scroll up; and the
- * composer, whose chips are how the bot's turns start (its model, effort and
- * approval level), each saved on the bot as it is picked, after the meter
- * of the room the bot has left (`BotUsage`). The header, the
- * transcript and the chips all draw this one bot, so it is read here once.
+ * A bot's chat: its `PageBar`, the sidebar toggle, the bot's face and name,
+ * the wrench that shows or hides its tool calls (kept on this device) and
+ * its menu; the transcript, which follows the latest line while you are
+ * there and offers the way back when you scroll up; and the composer, whose
+ * chips are how the bot's turns start (its model, effort and approval
+ * level), each saved on the bot as it is picked, after the meter of the
+ * room the bot has left (`BotUsage`). The header, the transcript and the
+ * chips all draw this one bot, so it is read here once.
  *
  * The chips are made here, not in the composer, so the draft the composer
  * owns never re-renders them; and this section owns their save. The save

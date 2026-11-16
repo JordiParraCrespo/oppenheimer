@@ -5,11 +5,11 @@ import { BOT_PROVIDER_CATALOG, BOT_TURN_FAILURE_RETRIES } from '@oppenheimer/sha
 import { useTranslation } from 'react-i18next';
 
 /**
- * Why a turn failed, and what helps (`25-bots.md` §2, from Grok Bot's failure
- * lines): the title says what happened and whether sending it again can
- * succeed, the details keep the provider's own words. Retry is offered only
- * when it can help; a refused key or sign-in points at Model providers
- * instead, where it is fixed.
+ * Why a turn failed, and what helps (from Grok Bot's failure lines): the
+ * title says what happened and whether sending it again can succeed, the
+ * details keep the provider's own words. Retry is offered only when it can
+ * help; a refused key or sign-in points at Model providers instead, where
+ * it is fixed.
  */
 export function BotTurnFailure({
   turn,

@@ -1,11 +1,10 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Which way a cloud session's reply reached its agent
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session",
- * decision 2): `hook`, collected by the session's Stop hook as before, or
- * `host`, sent from a host signed in to the session's claude.ai account with
- * `claude -p … --cloud <id>`, which wakes an idle session.
+ * Which way a cloud session's reply reached its agent: `hook`, collected by the
+ * session's Stop hook as before, or `host`, sent from a host signed in to the
+ * session's claude.ai account with `claude -p … --cloud <id>`, which wakes an
+ * idle session.
  *
  * - `session_cloud_reply."deliveredVia"`: set in the same statement that sets
  *   `collectedAt`, so one is null exactly when the other is

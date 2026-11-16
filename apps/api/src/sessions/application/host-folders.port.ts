@@ -21,8 +21,8 @@ export type HostFoldersOutcome<T = HostFolderListing> =
 
 /**
  * What the module that owns the runner link implements so the folder picker
- * can list a host's directories (`product/versions/mvp/24-session-places.md`
- * §4). Unlike `SessionDispatchPort` it waits for the runner's answer: nothing
+ * can list a host's directories. Unlike `SessionDispatchPort` it waits for the
+ * runner's answer: nothing
  * is cached, and nothing is written.
  */
 export interface HostFoldersPort {

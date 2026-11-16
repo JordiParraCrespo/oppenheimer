@@ -8,13 +8,12 @@ import { WHATSAPP_ACCOUNT_REPOSITORY } from '../../whatsapp.di-tokens';
 import { ConfirmWhatsappOwnerCommand } from './confirm-whatsapp-owner.command';
 
 /**
- * The code the owner's number received, entered in Settings
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1): the
- * waiting one, in time and within its tries, makes that number the owner,
- * the only one the linked number answers. Typed in the console, a code sent
- * to a mistyped number is useless to whoever got it. The write is
- * conditional on the code checked, so an entry that raced a new code, or
- * the tries running out, changes nothing and is refused as that.
+ * The code the owner's number received, entered in Settings: the waiting one,
+ * in time and within its tries, makes that number the owner, the only one the
+ * linked number answers. Typed in the console, a code sent to a mistyped number
+ * is useless to whoever got it. The write is conditional on the code checked,
+ * so an entry that raced a new code, or the tries running out, changes nothing
+ * and is refused as that.
  */
 @CommandHandler(ConfirmWhatsappOwnerCommand)
 export class ConfirmWhatsappOwnerCommandHandler

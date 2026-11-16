@@ -22,12 +22,12 @@ import { NewSessionSend } from './new-session-send';
  * leave them still; the shape does not lean on the React Compiler, and
  * `new-session-form-render.spec.tsx` holds it.
  *
- * The layout is `NewSessionComposer.dc.html` (the 2026-10-26 export): the
- * heading, the project over the box (it fills the rest in, so it is picked
- * first), the box, and under it one row of choices — where it runs and what
- * it may touch on the left (`NewSessionScope`, then the permission level),
- * the agent and effort on the right. The address can seed the draft
- * (`new-session-search.ts`): it is read once, for the store's first values.
+ * The layout: the heading, the project over the box (it fills the rest in,
+ * so it is picked first), the box, and under it one row of choices — where
+ * it runs and what it may touch on the left (`NewSessionScope`, then the
+ * permission level), the agent and effort on the right. The address can
+ * seed the draft (`new-session-search.ts`): it is read once, for the
+ * store's first values.
  */
 export function NewSessionForm({ heading }: { heading?: ReactNode }) {
   const search = useSearch({ from: '/_authenticated/sessions/new' });

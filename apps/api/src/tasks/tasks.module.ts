@@ -94,7 +94,7 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Plan's board (`product/versions/mvp/17-plan.md`): tasks, milestones and the links from
+ * Plan's board: tasks, milestones and the links from
  * a task to its sessions. A session is started through the sessions module's own
  * command on the bus, so this module knows no session internals; the console joins
  * a task's links to the sessions it already lists.

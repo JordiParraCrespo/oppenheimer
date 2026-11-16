@@ -1,5 +1,5 @@
 /**
- * A loop's run came due (`25-bots.md` §4.1, `/loop`). What breaks this: a job
+ * A loop's run came due. What breaks this: a job
  * for a run that was already queued, or moved by the bot, queuing a second
  * one; an expired loop running once more instead of ending; a run queued for
  * an owner who left the workspace; a run queued with the wrong key or apart

@@ -1,7 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
-/** The owner stops a bot's loop (`25-bots.md` §4.1, `/loop`). */
+/** The owner stops a bot's loop. */
 export class ClearBotLoopCommand extends CommandBase {
   readonly scope: AccessScope;
   readonly botId: string;

@@ -24,10 +24,11 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 const LOADING_ROWS = ['w-28', 'w-36', 'w-24'];
 
 /**
- * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
- * a search over every bot, each with a check for whether this section lists
- * it, and a foot that says what the check means, with New bot in the link
- * blue (the one way to make a bot from here) and the way to Employees, where bots are grouped, ordered and deleted. A check flips the bot's placement at once and the popup stays
+ * The plus on a section's Bots heading: a search over every bot, each with
+ * a check for whether this section lists it, and a foot that says what the
+ * check means, with New bot in the link blue (the one way to make a bot
+ * from here) and the way to Employees, where bots are grouped, ordered and
+ * deleted. A check flips the bot's placement at once and the popup stays
  * open for the next. The bots read arrives whole, as Employees' own search
  * has it, so the search filters it here, on the name and the description.
  *

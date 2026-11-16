@@ -7,7 +7,7 @@ import { BOT_ATTACHMENT_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 
 /**
- * The images a message to a bot names (`25-bots.md` §3.1), in the order they
+ * The images a message to a bot names, in the order they
  * were attached, as the message keeps them: only for a bot whose model reads
  * images, and only images of that bot. Whether the sender may send each one
  * (their own upload, not sent yet, inside the send window) is decided once,

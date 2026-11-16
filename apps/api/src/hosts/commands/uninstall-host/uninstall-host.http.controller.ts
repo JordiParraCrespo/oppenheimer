@@ -10,8 +10,7 @@ import { UninstallHostCommand } from './uninstall-host.command';
 
 /**
  * `DELETE /hosts/self`, the call a runner makes when uninstalled, with the daemon
- * stopped and so no link to ride (`product/versions/mvp/01-protocol.md`,
- * `…/03-control-plane.md`).
+ * stopped and so no link to ride.
  *
  * `HostPrincipalGuard` is the whole authorization: no person is on this request for
  * a policy to be about, and the path names no host so a host can only remove itself.

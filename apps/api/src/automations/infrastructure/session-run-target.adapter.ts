@@ -34,10 +34,10 @@ const CLAIM_LOST_DELAY_MS = 5_000;
 const CLAIM_TTL_MS = 2 * 60_000;
 
 /**
- * A run that starts a session where the automation runs (§Q4): on its host,
+ * A run that starts a session where the automation runs: on its host,
  * in Claude Code's cloud from that host, or at a vendor with no host
  * (`AUTOMATION_PLACES`). It is created **as the owner** through the same
- * command a person's session goes through (§Q5): the guards that only a
+ * command a person's session goes through: the guards that only a
  * session needs — overlap, the host's capacity and disk, the slot claim —
  * and then the session itself. A session in the cloud holds no place on a
  * host, so only overlap holds it back. The session's idempotency key is the

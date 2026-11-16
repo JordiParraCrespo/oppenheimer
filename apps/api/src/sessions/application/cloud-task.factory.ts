@@ -16,8 +16,7 @@ export interface LaunchTask {
 
 /**
  * How a cloud session's files travel: as links in its task, since its host
- * only starts it (`product/next-steps/cloud-agents.md`, "Files for a cloud
- * session"). The one place that composes that task, so what a create measures
+ * only starts it. The one place that composes that task, so what a create measures
  * and what a launch sends are the same string, built by the same function.
  */
 @Injectable()

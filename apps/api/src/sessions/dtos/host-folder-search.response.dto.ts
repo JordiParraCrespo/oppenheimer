@@ -18,7 +18,7 @@ export class HostFoundFolderResponseDto {
 }
 
 /**
- * The folder picker's search (`product/versions/mvp/24-session-places.md` §4):
+ * The folder picker's search:
  * the folders under the host's home whose name holds what was typed, as its
  * runner found them just now, best match first.
  */

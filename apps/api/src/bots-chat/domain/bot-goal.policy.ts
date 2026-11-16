@@ -16,8 +16,8 @@ import { BotMessageEntity } from './bot-message.entity';
 import { BotTurnEntity, isTurnLimitFailure } from './bot-turn.entity';
 
 /**
- * A goal keeps a bot going (`25-bots.md` §4.1; from Codex's and Grok Bot's
- * goals, `research/lessons-from-long-running-agents.md`). When a turn of the
+ * A goal keeps a bot going (from Codex's and Grok Bot's
+ * goals). When a turn of the
  * goal ends, the next is queued, keyed by the goal and its number, so an end
  * delivered twice queues one; with no limit of continuations since
  * 2026-11-09. The bot says when it is done (`end_goal`) and a reviewer checks
@@ -56,8 +56,7 @@ export interface GoalSettingTurn {
 }
 
 /**
- * The goal a person's message sets (`25-bots.md` §4.1, "Built-in
- * commands"): `/goal <condition>` sets one on the turn it queues, with no
+ * The goal a person's message sets: `/goal <condition>` sets one on the turn it queues, with no
  * budget; null for any other message, `/goal` alone and
  * `/goal clear` included, which `refuseConsoleCommand`
  * (`bot-built-in.policy.ts`) refuses first.

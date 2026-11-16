@@ -18,9 +18,8 @@ import { MoveSessionCommand } from './move-session.command';
  * `projectId`, like a rename.
  *
  * Nothing moves on disk and no host is told: a project is metadata, and a
- * session's directory and branch never name it, so this is the whole of a move
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). There is no rule
- * about repositories: a session may work on any, in any project.
+ * session's directory and branch never name it, so this is the whole of a move.
+ * There is no rule about repositories: a session may work on any, in any project.
  */
 @CommandHandler(MoveSessionCommand)
 export class MoveSessionCommandHandler

@@ -22,8 +22,8 @@ import { targetQuickDays } from '../lib/task-form';
 export type MilestoneFormValues = input<typeof createMilestoneSchema>;
 
 /**
- * New milestone and Edit milestone (`18-plan-product.md` §3): the name, the project (a
- * milestone always has one), and a target day with End of month and In 3 months.
+ * New milestone and Edit milestone: the name, the project (a milestone always has
+ * one), and a target day with End of month and In 3 months.
  */
 export function MilestoneForm({
   values,

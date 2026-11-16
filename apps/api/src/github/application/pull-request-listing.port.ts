@@ -11,13 +11,13 @@ import type {
  * A repository's pull requests as the queue and the figures read them, each
  * filled with its parts as far as one page view's budget goes. Read through
  * the workspace's installations, or the caller's own token for a repository
- * only it opens (§6.2), and cached briefly as GitHub's own answers.
+ * only it opens, and cached briefly as GitHub's own answers.
  */
 export interface PullRequestListingPort {
   /**
    * What one page view may spend on filling pull requests' parts, shared by
    * every call it makes. Opened by `readBudget()` and passed along, so the
-   * ceiling belongs to the view and not to each repository under it (#247).
+   * ceiling belongs to the view and not to each repository under it.
    */
   readBudget(): ReadBudget;
   /** One repository's open pull requests, each with its paths, checks and reviews. Never throws for GitHub's refusals. */

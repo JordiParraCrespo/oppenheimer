@@ -13,14 +13,13 @@ import { SessionDesktop } from './session-desktop';
 import { SessionDevice } from './session-device';
 
 /**
- * The preview pane beside a session (`SessionsConsole.dc.html`): the design's
- * pill tabs, Browser and Simulator, over what the chosen one shows, and
- * Close. Browser is the session's dev server through its host's runner
- * (`product/versions/mvp/30-session-previews.md`); Simulator its device, the
- * one its agent drives through Argent; Desktop the host's own screen. Each
- * tab opens its own connection only while it is the one shown. `offered` is
- * what this console and deployment can show, never empty; Desktop is offered
- * only with `hostId`, a session a host started.
+ * The preview pane beside a session: pill tabs, Browser and Simulator, over
+ * what the chosen one shows, and Close. Browser is the session's dev server
+ * through its host's runner; Simulator its device, the one its agent drives
+ * through Argent; Desktop the host's own screen. Each tab opens its own
+ * connection only while it is the one shown. `offered` is what this console
+ * and deployment can show, never empty; Desktop is offered only with
+ * `hostId`, a session a host started.
  */
 export function SessionPreview({
   sessionId,

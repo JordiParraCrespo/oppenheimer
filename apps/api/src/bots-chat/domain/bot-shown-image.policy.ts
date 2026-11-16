@@ -1,5 +1,5 @@
 /**
- * Images a bot shows the person (`25-bots.md` §4.7, `show_image`): fetched
+ * Images a bot shows the person (`show_image`): fetched
  * from the web by their address, stored as the chat's own images, and drawn
  * under the bot's reply the way the person's sit over theirs.
  */

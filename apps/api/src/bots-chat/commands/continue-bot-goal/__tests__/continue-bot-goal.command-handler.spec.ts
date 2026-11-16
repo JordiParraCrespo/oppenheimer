@@ -1,6 +1,6 @@
 /**
- * A turn of a goal ended (`25-bots.md` §4.1), with no limit of continuations
- * since 2026-11-09. What breaks this: a goal ending on a failed or stopped
+ * A turn of a goal ended, with no limit of continuations.
+ * What breaks this: a goal ending on a failed or stopped
  * turn instead of pausing; a goal going on after the reviewer found the
  * bot's claim met; the reviewer asked after every turn rather than on a
  * claim; a turn's spend or its idleness not counted, so the budget and the

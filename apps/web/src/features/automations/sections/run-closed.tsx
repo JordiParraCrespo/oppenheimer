@@ -7,13 +7,13 @@ import { useTranslation } from 'react-i18next';
  * A run whose terminal is gone.
  *
  * The session's own stopped pane says "this session has stopped" and offers
- * Restart and New session, and neither sentence is a run's. 16 §Resume puts it
- * exactly: *a run's turn ends; its session does not*. What a reader wants from
- * a finished run is to see what it did and, if they mean to carry on, to take
- * the session over interactively — "Open in terminal", which is the same
- * `--resume` a restart uses, described the way a run's reader thinks about it.
- * Starting an unrelated session is not a step from here, so there is no New
- * session; the way out is back to the automation that owns the run.
+ * Restart and New session, and neither sentence is a run's. A run's turn ends;
+ * its session does not. What a reader wants from a finished run is to see what
+ * it did and, if they mean to carry on, to take the session over interactively
+ * — "Open in terminal", which is the same `--resume` a restart uses, described
+ * the way a run's reader thinks about it. Starting an unrelated session is not
+ * a step from here, so there is no New session; the way out is back to the
+ * automation that owns the run.
  *
  * What is still missing is the run transcript beside the terminal (13, "not
  * built"), which is the headless slice's structured output. Until it lands

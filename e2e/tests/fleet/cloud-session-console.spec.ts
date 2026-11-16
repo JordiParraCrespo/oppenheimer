@@ -8,8 +8,8 @@ import { connectInstallation, STUB_REPOSITORIES, waitForLifecycle } from '../../
 import { signInAs } from '../../support/web';
 
 /**
- * A session in Claude Code's cloud, from the console to a real runner
- * (`product/research/cloud-agents.md` §5B): New session's Where chip offers
+ * A session in Claude Code's cloud, from the console to a real runner: New
+ * session's Where chip offers
  * Claude Code cloud on a host, the session opens on a pane with no terminal —
  * its state, a link to claude.ai/code and the teleport command — and the state
  * follows what the browser extension reports. Needs the console on `WEB_URL`.

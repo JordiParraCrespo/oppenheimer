@@ -60,23 +60,21 @@ type Tab = 'hosts' | 'cloud';
 /**
  * The first chip of New session: where the session runs, read as one — a
  * host and where on it ("mac-studio · New worktree"), or a vendor's cloud
- * ("Cursor · Cloud") — as `NewSessionComposer.dc.html` draws it. The pane
- * is two tabs under the search, each with its count: Hosts, each with its
- * presence dot and summary, and Cloud, the vendors the console launches a
- * cloud session at, each with whose key it is (the frame's third tab, saved
- * environments, is not built). It opens on the tab of what is picked. A host opens its Start in pane, and picking
- * a place there picks the host with it
- * (`product/versions/mvp/24-session-places.md` §3). Claude Code's cloud and
- * Codex's are a place on a host: that host starts the task in the cloud with
- * its own `claude` or `codex` (`product/research/cloud-agents.md` §5B). The
- * place is offered twice: in each host's pane, where it takes the engine
- * picked (`engineForPlace`), and as a row per agent first under Cloud
- * (`hostClouds`), which names the host the section above chose for it and
- * opens a Start from pane of every host as the section above judged it, the
- * ones that cannot start it disabled with the reason; with no host to start
- * from it is greyed out (§7). A connected vendor is picked outright,
- * and one with no key yet goes to connect it. Add host… is the foot. Props
- * in, choices out: the section above fetches.
+ * ("Cursor · Cloud"). The pane is two tabs under the search, each with its
+ * count: Hosts, each with its presence dot and summary, and Cloud, the
+ * vendors the console launches a cloud session at, each with whose key it is
+ * (a third tab, saved environments, is not built). It opens on the tab of
+ * what is picked. A host opens its Start in pane, and picking a place there
+ * picks the host with it. Claude Code's cloud and Codex's are a place on a
+ * host: that host starts the task in the cloud with its own `claude` or
+ * `codex`. The place is offered twice: in each host's pane, where it takes
+ * the engine picked (`engineForPlace`), and as a row per agent first under
+ * Cloud (`hostClouds`), which names the host the section above chose for it
+ * and opens a Start from pane of every host as the section above judged it,
+ * the ones that cannot start it disabled with the reason; with no host to
+ * start from it is greyed out. A connected vendor is picked outright, and
+ * one with no key yet goes to connect it. Add host… is the foot. Props in,
+ * choices out: the section above fetches.
  *
  * Codex's cloud runs in one of the ChatGPT account's environments, so a host
  * picked in its Start from pane opens that host's Environments pane, as the

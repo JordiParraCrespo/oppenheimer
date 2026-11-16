@@ -7,9 +7,8 @@ import { pickProjectAndRepository, provisionedUser, signInAs } from '../../suppo
  * Cloud sessions from Plan's tasks and from automations, on the Cursor stub
  * (`support/cursor-stub.ts`): Start session's Where chip launches the task at
  * Cursor with no host, and an automation set to run in Cursor launches its
- * run there on its owner's key (`product/next-steps/cloud-agents.md`, "Tasks
- * and automations"). Claude Code's cloud needs a runner that can start it,
- * which the fleet suites have and this one does not.
+ * run there on its owner's key. Claude Code's cloud needs a runner that can
+ * start it, which the fleet suites have and this one does not.
  */
 
 async function connectCursor(api: Awaited<ReturnType<typeof provisionedUser>>['api']) {

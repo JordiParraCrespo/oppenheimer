@@ -14,7 +14,7 @@ import { cn } from '../lib/utils';
  * of 32px rows with an icon, a label and a mono count on the right. The
  * current row is lit (the sidebar's active surface) and medium weight. It is
  * the version-1 glass rail at 264px: the sidebar surface at 72% over the
- * page, blurred (`design/version1/ds-base.js`, `.op-sidebar`).
+ * page, blurred.
  *
  * It has two layouts, and the width picks one with no script or re-render:
  * the `STRIP` under 768px, where there is no room for a column beside the

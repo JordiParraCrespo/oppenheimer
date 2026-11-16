@@ -5,8 +5,7 @@ export type InstallationAccountType = 'User' | 'Organization';
 
 /**
  * A GitHub App installation, as the console needs it: the account the
- * Oppenheimer App was installed on and what it may read there
- * (`product/versions/mvp/03-control-plane.md`).
+ * Oppenheimer App was installed on and what it may read there.
  *
  * `id` is the control plane's own; `githubInstallationId` is GitHub's, and is
  * only ever used on the connect call. Everything else addresses the row by
@@ -71,7 +70,7 @@ export class RepositoryEntity {
  *
  * Answered live by GitHub and never stored: the branch somebody pushed a minute
  * ago is the one they are looking for, so there is nothing here worth a cache
- * that could be stale (`product/versions/mvp/03-control-plane.md`).
+ * that could be stale.
  */
 export class BranchEntity {
   constructor(

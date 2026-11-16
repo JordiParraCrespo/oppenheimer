@@ -8,7 +8,7 @@ import {
 /** What the image picker offers: the four types a bot reads. */
 export const BOT_IMAGE_ACCEPT = BOT_IMAGE_MIME_TYPES.join(',');
 
-/** One image the composer holds for the next message (`25-bots.md` §3.1). */
+/** One image the composer holds for the next message. */
 export interface HeldImage {
   /** Its key in the composer, so two files with one name stay two tiles. */
   key: string;

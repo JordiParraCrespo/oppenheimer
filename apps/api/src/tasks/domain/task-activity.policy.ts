@@ -10,8 +10,8 @@ export interface TaskActivity {
 }
 
 /**
- * What a logged change tells a follower of the task (`27-bot-subscriptions.md`
- * §7.2), from the change and the column the task is in once the write lands.
+ * What a logged change tells a follower of the task, from the change and the
+ * column the task is in once the write lands.
  * A move names both columns; a completion the one it left; a reopening the
  * one it went to; a delete the one it was in. Any other change names the
  * column it stays in. Pure.

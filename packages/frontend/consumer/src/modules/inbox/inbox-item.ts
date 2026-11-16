@@ -12,13 +12,12 @@ import type { InboxMarkEntity } from './inbox-mark.entity';
 import type { InboxReportEntity } from './inbox-report.entity';
 
 /**
- * The Inbox (`product/versions/mvp/29-inbox.md`): what needs you, composed
- * from six reads the API already serves. Nothing here is stored but the
- * marks and the reports; an item is there while its source says it needs
- * you. A `notice` is a line a session's agent sent you (`runner sessions
- * notify`), read off the same sessions as a waiting session is; a
- * `botNotice` is a bot's own line (its `notify` tool), each bot's latest; a
- * `report` is a problem an unattended agent sent with its pictures, there
+ * The Inbox: what needs you, composed from six reads the API already serves.
+ * Nothing here is stored but the marks and the reports; an item is there while
+ * its source says it needs you. A `notice` is a line a session's agent sent you
+ * (`runner sessions notify`), read off the same sessions as a waiting session
+ * is; a `botNotice` is a bot's own line (its `notify` tool), each bot's latest;
+ * a `report` is a problem an unattended agent sent with its pictures, there
  * until it is answered; a `task` is one an agent made, there until its person
  * takes it up (a TODO day, a session, or Dismiss).
  */
@@ -36,7 +35,7 @@ export type InboxItemKind =
 export type InboxPullReason = 'requested' | 'ready';
 
 interface InboxItemBase {
-  /** The occurrence (§3): what a mark is keyed by, so a new wait comes back. */
+  /** The occurrence: what a mark is keyed by, so a new wait comes back. */
   key: string;
   /** When the wait began: the list's age and its order, newest first. */
   since: Date;
@@ -169,7 +168,7 @@ function compareInboxItems(a: InboxItem, b: InboxItem): number {
 
 /**
  * Every item the sources say needs you, before any mark: one per occurrence,
- * each with its projects (§1, Project).
+ * each with its projects.
  */
 function inboxItems(sources: InboxSources): InboxItem[] {
   const placed = new Set(
@@ -294,7 +293,7 @@ function inboxItems(sources: InboxSources): InboxItem[] {
 }
 
 /**
- * The Inbox after the caller's marks (§3): done and deleted hide, done
+ * The Inbox after the caller's marks: done and deleted hide, done
  * staying under Show done; a snooze hides until it ends and lists in
  * Snoozed; low sorts last. A mark whose occurrence no source names is
  * never read. `answered` are occurrences answered here whose source has not

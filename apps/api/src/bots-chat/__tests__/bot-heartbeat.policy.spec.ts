@@ -1,5 +1,5 @@
 /**
- * When a bot's heartbeat beats (`26-bot-routines.md` §6). What breaks this:
+ * When a bot's heartbeat beats. What breaks this:
  * a beat with nothing new since the last one spending a model turn to say
  * nothing, a first beat or one after real activity skipped, the owner's Run
  * now or a run an event trigger fired dropped, another routine skipped, or

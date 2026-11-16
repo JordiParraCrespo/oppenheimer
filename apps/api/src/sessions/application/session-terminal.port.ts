@@ -22,8 +22,7 @@ export type SessionTerminalOutcome =
 
 /**
  * What the module that owns the runner link implements so a bot can type
- * into a blank terminal and read its screen (`product/versions/mvp/25-bots.md`
- * §4.2, "Driving a terminal"). It waits for the runner's answer, for as long
+ * into a blank terminal and read its screen. It waits for the runner's answer, for as long
  * as the drive's own wait; the screen is never stored.
  */
 export interface SessionTerminalPort {

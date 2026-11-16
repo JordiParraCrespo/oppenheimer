@@ -598,8 +598,7 @@ describe('Hosts & pairing (integration)', () => {
   });
 
   /**
-   * The four side tables a host's metadata lives in
-   * (`product/versions/mvp/15-host-metadata.md`). Their writes are raw SQL —
+   * The four side tables a host's metadata lives in. Their writes are raw SQL —
    * upserts, keyset reads, batched deletes — so nothing but a real Postgres
    * checks them. The heartbeat and the connect go through `HostPresencePort`,
    * the same entry the runner link calls.

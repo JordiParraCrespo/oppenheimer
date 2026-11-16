@@ -6,7 +6,7 @@ import { SessionTerminalWatchEntity } from '../domain/session-terminal-watch.ent
 import { WorkSessionEntity } from '../domain/work-session.entity';
 
 /**
- * Terminal watches, the session's half (`27-bot-subscriptions.md` §2). What
+ * Terminal watches, the session's half. What
  * breaks this: a pattern the runner's RE2 cannot take accepted here, so the
  * bot is told it watches and nothing ever matches; a `terminal.matched` log
  * entry that moves the session's state, or that raises no event, so nobody

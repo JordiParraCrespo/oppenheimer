@@ -11,8 +11,8 @@ import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * A bot following a project, or one milestone of it (`27-bot-subscriptions.md`
- * §7.2), as rules: which change to a task there wakes it, what the wake is
+ * A bot following a project, or one milestone of it, as rules: which change to
+ * a task there wakes it, what the wake is
  * keyed on, and what the bot reads. The wake is the change as Plan logged
  * it: the task's title, fenced, and the columns it moved between, never its
  * notes; `get_task` reads the rest. Pure.

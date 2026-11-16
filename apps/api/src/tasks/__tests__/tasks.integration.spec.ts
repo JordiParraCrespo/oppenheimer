@@ -18,7 +18,7 @@ import { PlanEventMapper } from '../plan-event.mapper';
 import { TaskMapper } from '../task.mapper';
 
 /**
- * Plan's board against a real Postgres (`product/versions/mvp/19-plan-tasks-and-goals.md`):
+ * Plan's board against a real Postgres:
  * the order a column keeps under concurrent moves, the one milestone key and what it carries,
  * and the attach rule's lock. The schema is the migrations', so a wrong key fails here.
  */

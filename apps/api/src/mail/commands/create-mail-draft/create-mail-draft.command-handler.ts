@@ -6,7 +6,7 @@ import { CreateMailDraftCommand } from './create-mail-draft.command';
 
 /**
  * Writes a draft into the caller's Gmail, where they see it, edit it and send
- * it themselves (`product/next-steps/mail.md` §3.3). Gmail's draft and message
+ * it themselves. Gmail's draft and message
  * ids come back: Gmail owns the draft, and they are what a link opens.
  */
 @CommandHandler(CreateMailDraftCommand)

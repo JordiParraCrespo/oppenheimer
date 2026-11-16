@@ -1,5 +1,5 @@
 /**
- * A session's conversation read as a chat (`product/next-steps/0.7-terminal-and-chat.md`):
+ * A session's conversation read as a chat:
  * the entries of the agent's own transcript, which the runner follows beside
  * the terminal and the relay hands over as they came (`attachment.chat`), put
  * into turns of typed steps the console can draw as cards.

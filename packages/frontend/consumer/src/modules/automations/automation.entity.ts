@@ -102,10 +102,9 @@ export interface AutomationRunSummary {
 }
 
 /**
- * An automation (`product/versions/mvp/16-automations-architecture.md`): a
- * saved prompt that starts a session of its owner on a schedule, on a GitHub
- * event, or on Run now. The console lists and edits these; the runs they made
- * are {@link AutomationRunEntity}.
+ * An automation: a saved prompt that starts a session of its owner on a
+ * schedule, on a GitHub event, or on Run now. The console lists and edits
+ * these; the runs they made are {@link AutomationRunEntity}.
  */
 export class AutomationEntity {
   constructor(

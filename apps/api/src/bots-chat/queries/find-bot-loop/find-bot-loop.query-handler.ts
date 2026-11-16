@@ -7,7 +7,7 @@ import type { BotLoopRepositoryPort } from '../../database/bot-loop.repository.p
 import type { BotLoopEntity } from '../../domain/bot-loop.entity';
 import { FindBotLoopQuery } from './find-bot-loop.query';
 
-/** A bot's loop, open now, or none (`25-bots.md` §4.1, `/loop`). A bot in another workspace is `BOTS_001`. */
+/** A bot's loop, open now, or none (`/loop`). A bot in another workspace is `BOTS_001`. */
 @QueryHandler(FindBotLoopQuery)
 export class FindBotLoopQueryHandler
   implements IQueryHandler<FindBotLoopQuery, BotLoopEntity | null>

@@ -16,12 +16,11 @@ import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
- * A task an agent made (`29-inbox.md`, "Tasks an agent made"), in the pane:
- * its notes and when it is due, then what the person does with it. **Put on
- * today** gives it today as its TODO day, **Start session** opens Start
- * session for it on the board, and **Dismiss** keeps it on the board as it
- * is; each takes it up, and it leaves the Inbox. Open task opens it on the
- * board to read or edit first.
+ * A task an agent made, in the pane: its notes and when it is due, then
+ * what the person does with it. **Put on today** gives it today as its TODO
+ * day, **Start session** opens Start session for it on the board, and
+ * **Dismiss** keeps it on the board as it is; each takes it up, and it
+ * leaves the Inbox. Open task opens it on the board to read or edit first.
  */
 export function InboxTaskCard({
   item,

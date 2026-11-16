@@ -11,12 +11,11 @@ export const SESSION_SORTS = ['custom', 'recent', 'oldest', 'name'] as const;
 export type SessionSort = (typeof SESSION_SORTS)[number];
 
 /**
- * What the sidebar's filter menu holds
- * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): four
- * facets that narrow the list and one order that does not. Every facet is a
- * set of picked values, empty for "do not narrow"; a session shows when it
- * matches any value of every non-empty facet. Which facets take more than
- * one value is `MULTI_FACETS`, the one place that decides it.
+ * What the sidebar's filter menu holds: four facets that narrow the list
+ * and one order that does not. Every facet is a set of picked values, empty
+ * for "do not narrow"; a session shows when it matches any value of every
+ * non-empty facet. Which facets take more than one value is `MULTI_FACETS`,
+ * the one place that decides it.
  */
 export type SessionFilters = Record<SessionFacet, readonly string[]> & { sort: SessionSort };
 

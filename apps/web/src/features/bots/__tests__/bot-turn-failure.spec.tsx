@@ -6,12 +6,12 @@ import { BotTurnFailure } from '../components/bot-turn-failure';
 
 /**
  * A failed turn says whether sending it again can help, from the kind the
- * API recorded (`25-bots.md` §2). What breaks this: Retry offered where it
- * cannot succeed (a refused key, a spent quota), so the person retries into
- * the same wall; no way to Model providers from a refused key; a turn
- * from before kinds were recorded drawing nothing; or Show details on an
- * error that already fits, a button that does nothing when pressed; or an
- * error that changes in place without being measured again.
+ * API recorded. What breaks this: Retry offered where it cannot succeed (a
+ * refused key, a spent quota), so the person retries into the same wall; no
+ * way to Model providers from a refused key; a turn from before kinds were
+ * recorded drawing nothing; or Show details on an error that already fits,
+ * a button that does nothing when pressed; or an error that changes in
+ * place without being measured again.
  */
 
 vi.mock('react-i18next', () => ({

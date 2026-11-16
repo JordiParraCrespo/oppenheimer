@@ -21,7 +21,7 @@ const REVIEW_TIME_LIMIT_MS = 60_000;
 const REVIEW_READ_MAX = 200;
 
 /**
- * The reviewer a goal's ended turn is read by (`25-bots.md` §4.1): the bot's
+ * The reviewer a goal's ended turn is read by: the bot's
  * own provider and model as they are now, one completion with no tools
  * (`BotCompletionResolver`). It reads the conversation before the turn
  * and what the turn wrote. It never throws: a bot with no credential, a
