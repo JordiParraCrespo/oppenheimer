@@ -42,14 +42,17 @@
 
   async function attach(id, windowIndex, cols, rows) {
     let handle;
+    // Chunks that arrive before this attach resolves stay with this attach:
+    // two terminals attaching at once must not take each other's output.
+    const pending = [];
     const deliver = (buffer) => {
       const chunk = new Uint8Array(buffer);
-      const listeners = handle === undefined ? undefined : dataListeners.get(handle);
+      if (handle === undefined) return void pending.push(chunk);
+      const listeners = dataListeners.get(handle);
       if (listeners?.size) for (const l of listeners) l(chunk);
       else {
-        const key = handle ?? 'pending';
-        if (!early.has(key)) early.set(key, []);
-        early.get(key).push(chunk);
+        if (!early.has(handle)) early.set(handle, []);
+        early.get(handle).push(chunk);
       }
     };
     const closed = () => {
@@ -65,10 +68,7 @@
       rows,
       onData: channel(deliver, closed),
     });
-    if (early.has('pending')) {
-      early.set(handle, early.get('pending'));
-      early.delete('pending');
-    }
+    if (pending.length) early.set(handle, pending);
     return handle;
   }
 

@@ -9,7 +9,7 @@ use std::{
     collections::HashMap,
     path::PathBuf,
     sync::{
-        atomic::{AtomicU32, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
         Arc, Mutex,
     },
     time::Duration,
@@ -85,6 +85,18 @@ struct Attachment {
     out: mpsc::UnboundedSender<Out>,
     inflight: Arc<AtomicUsize>,
     drained: Arc<Notify>,
+    closing: Arc<AtomicBool>,
+}
+
+impl Attachment {
+    /// Close the socket and wake a reader paused on the credit window: a
+    /// page that is gone never returns its credit, and a reader left waiting
+    /// would keep the attachment, its channel and its socket forever.
+    fn close(&self) {
+        self.closing.store(true, Ordering::Release);
+        self.drained.notify_one();
+        let _ = self.out.send(Out::Close);
+    }
 }
 
 #[derive(Default)]
@@ -97,7 +109,7 @@ impl Attachments {
     fn close_owned_by(&self, owner: &str) {
         for a in self.map.lock().unwrap().values() {
             if a.owner == owner {
-                let _ = a.out.send(Out::Close);
+                a.close();
             }
         }
     }
@@ -155,6 +167,7 @@ async fn local_attach(
     let (tx, mut rx) = mpsc::unbounded_channel::<Out>();
     let inflight = Arc::new(AtomicUsize::new(0));
     let drained = Arc::new(Notify::new());
+    let closing = Arc::new(AtomicBool::new(false));
     attachments.map.lock().unwrap().insert(
         handle,
         Attachment {
@@ -162,6 +175,7 @@ async fn local_attach(
             out: tx,
             inflight: inflight.clone(),
             drained: drained.clone(),
+            closing: closing.clone(),
         },
     );
 
@@ -214,12 +228,16 @@ async fn local_attach(
                 break;
             }
             if inflight.fetch_add(n, Ordering::AcqRel) + n > HIGH {
-                while inflight.load(Ordering::Acquire) >= LOW {
+                while inflight.load(Ordering::Acquire) >= LOW && !closing.load(Ordering::Acquire) {
                     drained.notified().await;
                 }
             }
+            if closing.load(Ordering::Acquire) {
+                break;
+            }
         }
         attachments.map.lock().unwrap().remove(&handle);
+        eprintln!("attachment {handle} ended");
     });
     Ok(handle)
 }
@@ -273,7 +291,11 @@ fn local_credit(
 
 #[tauri::command]
 fn local_close(webview: tauri::Webview, state: State<'_, Arc<Attachments>>, handle: u32) {
-    state.send(&webview, handle, Out::Close);
+    if let Some(a) = state.map.lock().unwrap().get(&handle) {
+        if a.owner == webview.label() {
+            a.close();
+        }
+    }
 }
 
 /// The bench's only hook: the page reports a JSON result and the shell prints

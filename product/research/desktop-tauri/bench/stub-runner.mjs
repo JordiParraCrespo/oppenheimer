@@ -35,6 +35,12 @@ server.on('upgrade', (req, socket, head) => {
   if (!/^\/v1\/sessions\/[^/?]+\/attach/.test(req.url ?? '')) return socket.destroy();
   wss.handleUpgrade(req, socket, head, (ws) => {
     socket.setNoDelay?.(true);
+    // STUB_GREETING=1: say which window attached, before any input, as a
+    // shell's prompt arrives before the first key.
+    if (process.env.STUB_GREETING) {
+      const window = new URL(req.url, 'http://runner').searchParams.get('window');
+      ws.send(Buffer.from(`attached:${window}`), { binary: true });
+    }
     ws.on('message', async (data, isBinary) => {
       if (!isBinary) return; // a resize
       if (data.length === 1 && data[0] === 0x06) {
