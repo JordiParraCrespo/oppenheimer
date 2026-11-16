@@ -69,7 +69,7 @@ export interface BotSubscriptionProps {
 }
 
 /**
- * A bot following work it delegated (`27-bot-subscriptions.md`): one bot,
+ * A bot following work it delegated: one bot,
  * one session, pull request, project or milestone, the reason and the turn
  * behind it, and the wakes it caused.
  * Its writes are conditioned on the version it was loaded at, so two wakes
@@ -132,7 +132,7 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   }
 
   /**
-   * A bot starts following a pull request (27 §7): every event on it wakes
+   * A bot starts following a pull request: every event on it wakes
    * the bot until it is merged, the bot unwatches it, or the wake limit.
    */
   static subscribeToPullRequest(props: {
@@ -172,8 +172,8 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   }
 
   /**
-   * A bot starts following the tasks of a project, or of one milestone
-   * (27 §7.2): each change it named wakes it, until it unwatches it or its
+   * A bot starts following the tasks of a project, or of one milestone: each
+   * change it named wakes it, until it unwatches it or its
    * owner can no longer read it. No task, no terminal, no wake limit.
    */
   static subscribeToPlan(props: {

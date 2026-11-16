@@ -99,11 +99,11 @@ const GROUP_GLOSSARY = SESSION_GROUPS.map(
 ).join('; ');
 
 /**
- * Hosts and sessions (`25-bots.md` §4.2), the reads: what a bot needs to
- * answer "which hosts are online", "what is running" and "how is that
- * session doing". The one write is `update_host_runner`, the console's
- * Update runner, which asks the owner first; starting, typing into and
- * stopping sessions are `BotSessionToolsFactory`'s.
+ * Hosts and sessions, the reads: what a bot needs to answer "which hosts are
+ * online", "what is running" and "how is that session doing". The one write is
+ * `update_host_runner`, the console's Update runner, which asks the owner
+ * first; starting, typing into and stopping sessions are
+ * `BotSessionToolsFactory`'s.
  */
 @Injectable()
 export class BotHostToolsFactory implements BotToolArea {

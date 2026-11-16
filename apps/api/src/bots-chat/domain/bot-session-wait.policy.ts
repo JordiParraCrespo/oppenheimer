@@ -2,8 +2,8 @@ import type { BotSessionWakeState } from '@oppenheimer/shared';
 import { wakeStateOf } from './bot-subscription.policy';
 
 /**
- * A bot's bounded wait on a session inside its turn (`25-bots.md` §4.2;
- * from Grok Bot's `Await`, `research/lessons-from-grok-bot.md` §9 row 8):
+ * A bot's bounded wait on a session inside its turn (from
+ * Grok Bot's `Await`):
  * it waits until the session's current task stops for something a watch
  * would wake it for (input needed, finished, failed, stopped, expired), or
  * the session is resolved, or its deadline passes, whichever comes first.

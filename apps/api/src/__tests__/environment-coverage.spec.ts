@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * The root `.env.example` is the documentation of every variable the API
- * reads, and lists nothing that nothing reads (`api-config.md`). Both
+ * reads, and lists nothing that nothing reads. Both
  * directions drift silently: an undocumented variable is a knob nobody knows
  * exists, and a documented one nothing reads is a knob an operator sets
  * expecting it to do something.

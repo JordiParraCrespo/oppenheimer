@@ -44,7 +44,7 @@ import {
 } from './bot-tool.factory';
 
 /**
- * Other bots (`25-bots.md` §4.6): which bots the workspace has and what each
+ * Other bots: which bots the workspace has and what each
  * is for, so a bot can point the person at the right one; `message_bot` and
  * `ask_bot`, which hand another bot a message as a queued turn of its own
  * (the answer to an ask comes back the same way, never by waiting); and

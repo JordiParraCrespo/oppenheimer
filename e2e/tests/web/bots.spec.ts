@@ -3,9 +3,7 @@ import { pairHost } from '../../support/sessions';
 import { provisionedUser, reloadFromServer, signInAs } from '../../support/web';
 
 /**
- * Bots, slice 1, in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md`, `design/version1/Bots.dc.html` and
- * `BotSettings.dc.html`).
+ * Bots in a browser, against the real control plane.
  *
  * One bot's whole life outside the chat: made blank from the Employees
  * sidebar, greeted in its chat (which says its provider needs a key first), renamed and

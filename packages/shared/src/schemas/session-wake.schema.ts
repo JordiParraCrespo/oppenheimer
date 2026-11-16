@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
 /**
- * What wakes a session's agent when it is not being typed to
- * (`product/next-steps/agent-tools.md` §3 and §4): its pull requests, which
- * it asks to watch with `runner sessions watch-pr`, logged by the runner as
- * `pull.watched`; the GitHub events on one are typed into the session as a
- * line once its agent is at its prompt.
+ * What wakes a session's agent when it is not being typed to: its pull
+ * requests, which it asks to watch with `runner sessions watch-pr`, logged by
+ * the runner as `pull.watched`; the GitHub events on one are typed into the
+ * session as a line once its agent is at its prompt.
  */
 
 /** The event kind a watch (or its end) is logged as. */
@@ -29,7 +28,7 @@ export type SessionWatchedPull = z.infer<typeof sessionWatchedPullSchema>;
 
 /**
  * The event kind an agent's wake at a time it set is logged as
- * (`runner sessions wake-in`, `product/next-steps/agent-tools.md` §4).
+ * (`runner sessions wake-in`).
  */
 export const WAKE_REQUESTED_EVENT_KIND = 'wake.requested';
 

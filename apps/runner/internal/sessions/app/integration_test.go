@@ -162,7 +162,7 @@ func TestARealSessionIsAWorktreeWithATerminal(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(session.Worktree, "README.md")); err != nil {
 		t.Fatalf("the worktree has no files: %v", err)
 	}
-	// The work folder's layout (24 §2): the CLI's own levels, the session's
+	// The work folder's layout: the CLI's own levels, the session's
 	// folder with its marker, the checkout in it, and a bare store beside.
 	if want := filepath.Join(session.Dir, "oppenheimer"); session.Worktree != want {
 		t.Fatalf("worktree = %q, want %q", session.Worktree, want)
@@ -296,7 +296,7 @@ func TestARealSessionTakesAPastedImage(t *testing.T) {
 	}
 }
 
-// A folder session runs in a folder that is the person's (24 §3): the agent
+// A folder session runs in a folder that is the person's: the agent
 // starts there, nothing is written into it, and closing the session ends the
 // terminal and leaves the folder exactly as it was — no marker, no checkout,
 // nothing removed.

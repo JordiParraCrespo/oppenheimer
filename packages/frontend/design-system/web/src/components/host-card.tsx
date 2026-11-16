@@ -30,8 +30,7 @@ type HostCardOffline = {
  * end, which the line never cuts: a narrow card truncates the other facts
  * first, because the version is what tells a stale runner apart. The state
  * and last-seen on the right in mono, and an ellipsis for the host's menu
- * (Rename, Remove host). Measured against
- * `design/version1/Components.dc.html` ("Host card").
+ * (Rename, Remove host).
  *
  * `offline` opens the host's detail under a hairline, in the name's column:
  * the note, the commands as `CommandRow`s, and the action with its answer.

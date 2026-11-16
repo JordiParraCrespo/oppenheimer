@@ -7,11 +7,11 @@ import { inboxCopy, matchesQuery } from '../lib/inbox-copy';
 import { listedItems } from '../lib/inbox-filter';
 
 /**
- * A report in the Inbox (`29-inbox.md`, "Reports"): a problem an agent sent,
- * read as a row and answered on its card. What breaks this: a row that reads
- * anything but the sender's own words (its source, title and body), so the
- * search cannot find it; a report with no source left without a sender; an
- * answer sent empty or untrimmed, which the API refuses.
+ * A report in the Inbox: a problem an agent sent, read as a row and answered
+ * on its card. What breaks this: a row that reads anything but the sender's
+ * own words (its source, title and body), so the search cannot find it; a
+ * report with no source left without a sender; an answer sent empty or
+ * untrimmed, which the API refuses.
  */
 
 vi.mock('react-i18next', () => ({

@@ -4,9 +4,8 @@ import { pairedHosts } from '../../support/fleet';
 import { connectInstallation, createSession, waitForLifecycle } from '../../support/sessions';
 
 /**
- * A reply that wakes an idle Claude Code cloud session
- * (`product/next-steps/cloud-agents.md`, "Waking an idle session"), on a real
- * runner whose `claude` answers `-p … --cloud <id>` as the real one does
+ * A reply that wakes an idle Claude Code cloud session, on a real runner whose
+ * `claude` answers `-p … --cloud <id>` as the real one does
  * (`e2e/fleet/claude`): a reply no Stop hook takes is sent from the host signed
  * in to the session's claude.ai account, once, and the chat says it went that
  * way; one the host's Claude Code refuses goes back to waiting for the hook.

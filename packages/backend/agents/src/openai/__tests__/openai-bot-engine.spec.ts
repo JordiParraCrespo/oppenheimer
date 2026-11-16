@@ -443,9 +443,9 @@ describe('OpenAiBotEngine', () => {
     expect(done).not.toHaveProperty('rateLimit');
   });
 
-  // The chat says whether sending it again can help (`lessons-from-grok-bot.md`
-  // §9, row 4): a spent quota or a refused key never passes on a retry, and a
-  // spent quota must not be waited out as a rate limit either.
+  // The chat says whether sending it again can help: a spent quota or a refused
+  // key never passes on a retry, and a spent quota must not be waited out as a
+  // rate limit either.
   it.each([
     [401, undefined, 'credential'],
     [403, undefined, 'credential'],

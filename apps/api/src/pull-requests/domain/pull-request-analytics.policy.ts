@@ -5,7 +5,7 @@ const DAY_MS = 86_400_000;
 /**
  * The most closed pull requests one Analytics read takes in full, newest
  * first: what keeps a page view's cost bounded by the window rather than by
- * the installation (#247). Past it the answer says it is not complete.
+ * the installation. Past it the answer says it is not complete.
  */
 export const CLOSED_CEILING = 150;
 const RANGE_DAYS: Record<PullRequestAnalyticsRange, number> = { week: 7, month: 30, quarter: 90 };
@@ -57,10 +57,9 @@ export function daysOf(window: AnalyticsWindow): string[] {
 }
 
 /**
- * What one bar of the chart covers. A quarter is drawn by the week, as the
- * artboard draws it (`design/version1/PullRequests.dc.html`: thirteen weeks,
- * "Week of Aug 3"): ninety bars say less than thirteen, and a day's count over
- * a quarter is noise either way. A week and a month are drawn by the day.
+ * What one bar of the chart covers. A quarter is drawn by the week: thirteen
+ * bars, "Week of Aug 3", because ninety bars say less than thirteen, and a
+ * day's count over a quarter is noise either way. A week and a month are drawn by the day.
  */
 export type AnalyticsBucket = 'day' | 'week';
 

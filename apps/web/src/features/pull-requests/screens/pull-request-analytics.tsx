@@ -7,9 +7,9 @@ import { AnalyticsHeader } from '../sections/analytics-header';
 import { AnalyticsOverview } from '../sections/analytics-overview';
 
 /**
- * Analytics, inside Pull requests for now (`product/next-steps/0.2-pull-requests.md`).
- * The overview reads the period under Suspense; this draws its placeholder —
- * the real header and range, the panels in outline — and a first failure.
+ * Analytics, inside Pull requests for now. The overview reads the period
+ * under Suspense; this draws its placeholder — the real header and range,
+ * the panels in outline — and a first failure.
  */
 export function PullRequestAnalyticsScreen() {
   const { t } = useTranslation();

@@ -126,7 +126,7 @@ export class PullRequestMapper {
         : null,
       viewerLogin,
       // This read left pull requests for the next one, so there are more rows
-      // to come: the client polls while that holds (#247).
+      // to come: the client polls while that holds.
       filling: reads.some((read) => read.deferred > 0),
       unreadable: this.toUnreadable(reads),
     };
@@ -134,7 +134,7 @@ export class PullRequestMapper {
 
   /**
    * Every gap the reads left, with GitHub's own refusal, once per part and
-   * refusal — deliberately not per repository (#244). One toast says what
+   * refusal — deliberately not per repository. One toast says what
    * GitHub did, so a second repository refusing the same part the same way
    * adds nothing a reader could act on, and naming the repository would put
    * it in the browser's persisted cache.
@@ -257,7 +257,7 @@ export class PullRequestMapper {
     const all = dedupe([...input.open, ...input.closed]);
     // A figure counts listings, not snapshots: a pull request this read had no
     // budget to fill is still one that was opened or merged, and the numbers
-    // must not move with how much of it we happened to read (#247). The
+    // must not move with how much of it we happened to read. The
     // medians and the lane mix below stay on what was read, and deepen.
     const everyPull = dedupePulls([...all.map((s) => s.pull), ...input.counted]);
     const figure = (at: (pull: GithubPullRequestSummary) => string | null) => ({

@@ -6,7 +6,7 @@ package cli
 // this account can dial it; that is the whole of its authorization, the same
 // as the credential helper's.
 //
-// Spike (product/versions/mvp/27-desktop-app.md): binary frames are PTY bytes
+// Spike: binary frames are PTY bytes
 // both ways, text frames are `{"type":"resize","cols":…,"rows":…}`. Flow
 // control is the socket's own: a reader that stops reading stalls the write,
 // which stalls the PTY read, which leaves the backlog in tmux.

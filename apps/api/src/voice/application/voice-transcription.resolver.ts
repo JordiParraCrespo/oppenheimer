@@ -19,13 +19,13 @@ export interface HeardClip {
 }
 
 /**
- * Who hears a workspace's clip (`product/next-steps/voice.md`): the first
- * provider in `SpeechProviderRegistry` available for the workspace, and the
- * next one when it fails. A refusal for rate (`VOICE_007`) is not retried on
- * another provider: it is the provider saying "not now", and spending a
- * second provider's budget on it hides that. When every available provider
- * failed, the first failure is the answer, since it is the provider the
- * workspace would have used; when none is available, `VOICE_005`.
+ * Who hears a workspace's clip: the first provider in `SpeechProviderRegistry`
+ * available for the workspace, and the next one when it fails. A refusal for
+ * rate (`VOICE_007`) is not retried on another provider: it is the provider
+ * saying "not now", and spending a second provider's budget on it hides that.
+ * When every available provider failed, the first failure is the answer, since
+ * it is the provider the workspace would have used; when none is available,
+ * `VOICE_005`.
  */
 @Injectable()
 export class VoiceTranscriptionResolver {

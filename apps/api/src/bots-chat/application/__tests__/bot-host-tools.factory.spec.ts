@@ -665,9 +665,9 @@ describe('BotHostToolsFactory', () => {
    * The regression: a broad turn (a recap) reads `read_session` and
    * `read_session_transcript` across dozens of large sessions, the pages pile
    * into the bot's own context faster than autocompaction sheds them, and the
-   * provider refuses the whole turn. The two share one per-turn budget,
-   * counted in the characters they return, so a turn that has read its fill is
-   * made to answer rather than overflow (`25-bots.md` §4.2).
+   * provider refuses the whole turn. The two share one per-turn budget, counted
+   * in the characters they return, so a turn that has read its fill is made to
+   * answer rather than overflow.
    */
   describe('the per-turn session-read budget', () => {
     const work = finished();

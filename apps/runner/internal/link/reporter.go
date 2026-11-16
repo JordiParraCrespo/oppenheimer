@@ -20,7 +20,7 @@ type Sender interface {
 
 // maxPendingBatches bounds what the reporter holds while the link is gone for
 // long. The runner keeps no durable outbox and the next hello's snapshot
-// reconciles (02-runner §4), so past the cap the oldest batch is dropped — and
+// reconciles, so past the cap the oldest batch is dropped — and
 // the log says which, never silently.
 const maxPendingBatches = 4096
 
@@ -34,7 +34,7 @@ const maxPendingBatches = 4096
 const ackTimeout = time.Minute
 
 // Reporter batches a session's events and keeps every batch until an ack
-// accounts for each of its keys (01, "events.append and events.ack"). Keys
+// accounts for each of its keys. Keys
 // are `<runId>:<n>`: `runId` is minted at process start and `n` is this
 // process's own counter, so a replay after a lost ack is de-duplicated by the
 // control plane and no key depends on anything the link assigned.

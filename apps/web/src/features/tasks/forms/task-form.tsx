@@ -25,10 +25,9 @@ import { TaskFocusRow } from './task-focus-row';
 import { TaskMilestoneRow } from './task-milestone-row';
 
 /**
- * The task dialog's form (`Tasks.dc.html`): the title and notes as the design
- * system's labelled fields, then the rows — Status, Project, Milestone, the sessions (the dialog's,
- * passed in), To do (the day it is on To do from), Due — and the footer. Enter in the title saves. The notes can
- * be dictated.
+ * The task dialog's form: the title and notes as the design system's labelled fields, then the rows
+ * — Status, Project, Milestone, the sessions (the dialog's, passed in), To do (the day it is on To
+ * do from), Due — and the footer. Enter in the title saves. The notes can be dictated.
  */
 export function TaskForm({
   values,
@@ -119,7 +118,7 @@ export function TaskForm({
               onChange={(value) => {
                 if (!value) return;
                 field.onChange(value);
-                // A milestone of another project goes with the change (18 §3).
+                // A milestone of another project goes with the change.
                 const milestoneId = getValues('milestoneId');
                 if (
                   milestoneId &&

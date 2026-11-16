@@ -6,10 +6,8 @@ import { WakeOnWhatsappCommand } from '../../commands/wake-on-whatsapp/wake-on-w
 
 /**
  * Where the confirmed owner's message to their linked number reaches the
- * Oppenheimer bot that answers the chat
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): one wake per
- * stored message, which the wake keys by its row, so a delivery twice queues
- * one turn.
+ * Oppenheimer bot that answers the chat: one wake per stored message, which the
+ * wake keys by its row, so a delivery twice queues one turn.
  */
 @Injectable()
 export class BotWhatsappWakeDomainEventHandler {

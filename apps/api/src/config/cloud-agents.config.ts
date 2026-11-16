@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * Cloud agents (`product/next-steps/cloud-agents.md`).
+ * Cloud agents.
  *
  * `sealKey` is optional capability config: it is the AES-256-GCM key a
  * person's vendor key (Cursor's) is sealed under, 32 bytes as base64. With it

@@ -6,15 +6,15 @@ import { closeUsageCard, usageCardOpen } from '../lib/usage-cards';
 import { BotComposer } from '../sections/bot-composer';
 
 /**
- * Running a command or a skill from the composer (`25-bots.md` §4.1). What
- * breaks this: the menu staying shut while a command is typed, or opening
- * over an ordinary message; Enter sending a half-typed `/rel` instead of
- * picking the skill it names; the keyboard moving no highlight; Escape not
- * letting the person send what they typed; a skill only the bot may use
- * offered as a command; `/goal` missing from the menu, or a skill named
- * `goal` offered in its place; `/goal clear` sent to the bot as a message
- * instead of stopping the goal; `/goal` with no condition sent at all;
- * `/usage` sent to the bot instead of putting the usage card in the chat.
+ * Running a command or a skill from the composer. What breaks this: the
+ * menu staying shut while a command is typed, or opening over an ordinary
+ * message; Enter sending a half-typed `/rel` instead of picking the skill
+ * it names; the keyboard moving no highlight; Escape not letting the person
+ * send what they typed; a skill only the bot may use offered as a command;
+ * `/goal` missing from the menu, or a skill named `goal` offered in its
+ * place; `/goal clear` sent to the bot as a message instead of stopping the
+ * goal; `/goal` with no condition sent at all; `/usage` sent to the bot
+ * instead of putting the usage card in the chat.
  */
 
 vi.mock('react-i18next', () => ({

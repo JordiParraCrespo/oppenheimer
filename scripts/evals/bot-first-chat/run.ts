@@ -4,8 +4,8 @@
 // message asks for first?
 //
 // While a bot's INSTRUCTIONS.md is empty its prompt carries Getting started
-// (`gettingStarted` in `apps/api/src/bots-chat/domain/bot-prompt.policy.ts`,
-// `25-bots.md` §1): work the message asks for first, then the name and the
+// (`gettingStarted` in `apps/api/src/bots-chat/domain/bot-prompt.policy.ts`):
+// work the message asks for first, then the name and the
 // job; a list of what it can do from `AREA_INTROS`, only for areas whose
 // acting tools the turn offers; job examples from the same table. A change
 // to those, or to the default soul (`botSoulFor`), is what this eval is for.

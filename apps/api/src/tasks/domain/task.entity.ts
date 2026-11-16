@@ -97,10 +97,10 @@ export interface TaskEdit {
 }
 
 /**
- * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
+ * A task on Plan's board: work a person
  * asks for, in one of four columns, under a project and maybe one of its milestones. It
  * starts sessions or links existing ones, and attaching one is the only thing that
- * moves it on its own (§4).
+ * moves it on its own.
  */
 export class TaskEntity extends AggregateRoot<TaskProps> {
   private actor: PlanActor | null = null;
@@ -182,7 +182,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
 
   /**
    * One event per change it logs, for whoever follows its project or
-   * milestone (`27-bot-subscriptions.md` §7.2). Built from the log when the
+   * milestone. Built from the log when the
    * write stages it, so a placement retried after a rank race raises what
    * it logs and nothing it replaced.
    */
@@ -258,8 +258,8 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   }
 
   /**
-   * Its person took up a task an agent made (`29-inbox.md`, "Tasks an agent
-   * made"): gave it a TODO day, started or linked a session on it, or
+   * Its person took up a task an agent made: gave it a TODO day, started or
+   * linked a session on it, or
    * dismissed it from the Inbox. Only the person's own request counts; an
    * agent's write leaves it waiting. Taken up once, it stays so.
    */

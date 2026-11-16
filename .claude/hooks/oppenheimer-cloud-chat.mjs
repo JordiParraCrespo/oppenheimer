@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Oppenheimer's hook for a Claude Code cloud session: its chat in the
-// console, both ways (`product/next-steps/cloud-agents.md`, "The chat of a
-// cloud session"). One file, two hooks, in the repository's
+// console, both ways. One file, two hooks, in the repository's
 // `.claude/settings.json`:
 //
 //   SessionStart: node .claude/hooks/oppenheimer-cloud-chat.mjs session-start

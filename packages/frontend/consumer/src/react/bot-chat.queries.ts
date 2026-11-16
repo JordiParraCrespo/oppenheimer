@@ -54,8 +54,8 @@ import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
 /**
- * A bot's chat (`product/versions/mvp/25-bots.md` §3): the stored
- * conversation, sending, Stop, and the text a running turn is writing.
+ * A bot's chat: the stored conversation, sending, Stop, and the text a running
+ * turn is writing.
  */
 
 /** What a send drew in the chat, kept while the API answers it. */

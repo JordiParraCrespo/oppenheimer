@@ -1,5 +1,5 @@
 /**
- * What a bot checks before it names a project (`25-bots.md` §4.3): a project
+ * What a bot checks before it names a project: a project
  * the person already has under that name. The console lets two projects share
  * a name, so this is the bot's own care, not a rule of the projects module: a
  * bot asked to "create local SEO" twice, or to rename one project onto

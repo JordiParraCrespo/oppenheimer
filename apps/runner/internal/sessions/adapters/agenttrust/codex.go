@@ -9,9 +9,9 @@ import (
 )
 
 // trustCodex records dir, and the repository a worktree belongs to, as
-// `[projects."<dir>"] trust_level = "trusted"` in Codex's config.toml. The
-// rules (append to the person's text, keep an existing answer, never write a
-// file that no longer parses) are product/versions/mvp/02-runner.md §5.
+// `[projects."<dir>"] trust_level = "trusted"` in Codex's config.toml: it
+// appends to the person's text, keeps an existing answer, and never writes a
+// file that no longer parses.
 func (s *Store) trustCodex(dir string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

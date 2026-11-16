@@ -3,7 +3,7 @@ package git
 // Spare worktrees: each store keeps one worktree checked out ahead of the
 // next create, so a create moves it into the session's folder and checks out
 // only what changed since, instead of writing the whole tree while a person
-// waits (02-runner §5).
+// waits.
 //
 //	<workspace>/repos/.spares/<owner>--<repo>   detached at the base it was made from
 //

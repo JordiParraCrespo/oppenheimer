@@ -8,7 +8,7 @@ import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
 /**
- * A bot's Settings → Permissions (`product/versions/mvp/25-bots.md` §5):
+ * A bot's Settings → Permissions:
  * every tool's Allow, Ask or Off, the standing grants a yes left, and the
  * plain-language rules. A write answers the whole view, which replaces the
  * cached one; a delete answers nothing, so the view is read again.

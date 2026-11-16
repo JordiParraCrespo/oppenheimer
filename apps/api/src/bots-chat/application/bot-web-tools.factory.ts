@@ -39,11 +39,11 @@ const shownImageInput = z.object({
 });
 
 /**
- * Work and the web (`25-bots.md` §4.7): `web_fetch`, ours rather than the
- * engine's, reaching public addresses only (`GuardedWebPageAdapter`), and
- * `show_image`, which fetches images the same way and shows them to the
- * person under the reply. A page is data: it comes back fenced, and the
- * prompt says fenced text never authorises anything.
+ * Work and the web: `web_fetch`, ours rather than the engine's, reaching public
+ * addresses only (`GuardedWebPageAdapter`), and `show_image`, which fetches
+ * images the same way and shows them to the person under the reply. A page is
+ * data: it comes back fenced, and the prompt says fenced text never authorises
+ * anything.
  */
 @Injectable()
 export class BotWebToolsFactory implements BotToolArea {

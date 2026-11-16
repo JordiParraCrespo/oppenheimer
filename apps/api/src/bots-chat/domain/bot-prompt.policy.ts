@@ -59,7 +59,7 @@ export interface BotPromptInput {
 }
 
 /**
- * The bot's system prompt (`25-bots.md` §1–2). It is the whole prompt: no
+ * The bot's system prompt. It is the whole prompt: no
  * engine default comes before it. In order: who the bot is, how a turn
  * goes, how it checks what it did, what it can and cannot do (a closed list, so a missing tool is a
  * plain "I can't" rather than a search of the machine it runs on), the
@@ -118,18 +118,18 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
 }
 
 /**
- * A new bot's first chat (`25-bots.md` §1): while INSTRUCTIONS.md is empty
+ * A new bot's first chat: while INSTRUCTIONS.md is empty
  * the bot learns its one job and sets itself up for it, rather than waiting
  * for the person to find Settings. The steps between learning the job and
  * reporting back are the `setupStep`s of the tools the turn offers, so a
  * tool the turn lacks adds no step and a new setup tool needs no edit here.
- * From Grok Bot's guide (`lessons-from-grok-bot.md` §6): one focused job per
- * bot, a first concrete task. Since 2026-11-15, after the owner's read of the
- * prompt: the welcome greets by the time of day and suggests a name of its
- * own (OpenClaw's BOOTSTRAP.md forbids that; the owner asked for it), a first
- * task is done and ends with one line about the name, job examples stay
- * general until a project is named, and setup reads like Claude Code's
- * `/init`: look first, draft, confirm. Fewer, looser rules than before.
+ * From Grok Bot's guide: one focused job per bot, a first concrete task. After
+ * the owner's read of the prompt: the welcome greets by the time of day and
+ * suggests a name of its own (OpenClaw's BOOTSTRAP.md forbids that; the owner
+ * asked for it), a first task is done and ends with one line about the name,
+ * job examples stay general until a project is named, and setup reads like
+ * Claude Code's `/init`: look first, draft, confirm. Fewer, looser rules than
+ * before.
  */
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const setup = [
@@ -162,7 +162,7 @@ ${numbered(setup)}`;
 
 /**
  * What a new bot tells the person it can do for them, one phrase per area of
- * tools its turn offers (2026-11-10), so a person who knows nothing yet hears
+ * tools its turn offers, so a person who knows nothing yet hears
  * what Oppenheimer's bots are for and a tool the turn lacks is never promised.
  */
 interface AreaIntro {
@@ -179,8 +179,7 @@ interface AreaIntro {
 /**
  * Keyed by the tools that act, not by area, so an area the turn can only
  * read (a read-only credential, a tool switched Off) is not promised: an
- * eval of a bot with `list_hosts` alone offered to start coding agents
- * (2026-11-10).
+ * eval of a bot with `list_hosts` alone offered to start coding agents.
  */
 const AREA_INTROS: readonly AreaIntro[] = [
   {
@@ -236,7 +235,7 @@ const MAX_JOB_EXAMPLES = 2;
 
 /**
  * The jobs a new bot suggests, from the areas its turn can act in, so a bot
- * without session tools never suggests running coding agents (2026-11-11).
+ * without session tools never suggests running coding agents.
  * One that can act nowhere suggests answering questions.
  */
 function jobExamples(tools: readonly BotPromptTool[]): string[] {
@@ -319,7 +318,7 @@ ${recoveryBullets()}
 - End with the one next step that matters, when there is one, as a plain sentence rather than "Want me to…?". Write in the person's language, briefly, in Markdown when a list or a table helps.`;
 
 /**
- * The one statement of how a bot checks its own actions (2026-11-07): a bot
+ * The one statement of how a bot checks its own actions: a bot
  * started a cloud session that could not start and said so only when asked.
  * Other sections and the wake prompts name this heading rather than restate it.
  */
@@ -355,7 +354,7 @@ const TOOL_GROUP_LABELS: Readonly<Record<BotToolGroup, string>> = {
  * The closed list of what the bot can do: the engine's own abilities in
  * words, then our tools by name, area by area. The tools' definitions carry
  * what each does, so the list names them rather than repeating them: it was
- * 62% of the prompt when it quoted each tool's first sentence (2026-11-07).
+ * 62% of the prompt when it quoted each tool's first sentence.
  */
 function whatYouCanDo(
   engine: readonly string[],
@@ -482,7 +481,7 @@ const RUN_COMMAND_OR_SESSION =
   'You never see the live terminal. A quick command or a script you write yourself is `run_command` (see "Commands on a host"); changing code in a repository, or anything longer than a couple of minutes, is a session.';
 
 /**
- * Real work on code is a session on a host (`25-bots.md` §1, §4.2): every
+ * Real work on code is a session on a host: every
  * bot that may start one is told so here, once, rather than each owner
  * writing it into INSTRUCTIONS.md. The host order is `sessionHostId`'s.
  * Static per tool set, so the prompt stays the same bytes; the hosts of the moment are
@@ -507,7 +506,7 @@ ${hostCases()}
 }
 
 /**
- * How to drive a terminal (`25-bots.md` §4.2, "Driving a terminal"), built
+ * How to drive a terminal, built
  * from the terminal tools the turn is offered, since the owner turns each
  * on or off: a bot is never told to open or type with a tool it lacks. The
  * same bytes for the same tool set.
@@ -596,7 +595,7 @@ const TERMINAL_LINES: readonly TerminalLine[] = [
 ];
 
 /**
- * How to use `run_command` (`25-bots.md` §4.2, "Commands on a host"). Static,
+ * How to use `run_command`. Static,
  * like the rest, so the prompt stays the same bytes.
  */
 const COMMANDS_ON_A_HOST = `# Commands on a host

@@ -10,7 +10,7 @@ import { BotLoopResolver } from './bot-loop.resolver';
 import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
 /**
- * A loop the person set with `/loop` (`25-bots.md` §4.1): the bot says when
+ * A loop the person set with `/loop`: the bot says when
  * a self-paced one runs next, and ends one that has served its purpose.
  * Neither asks: the person set the loop, its spend is bounded by its
  * interval and its 3 days, every run is a line in the chat, and Stop is one

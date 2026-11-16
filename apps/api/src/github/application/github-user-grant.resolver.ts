@@ -26,8 +26,7 @@ export interface GithubActor {
 
 /**
  * A person's GitHub user token: kept from the install's user authorization,
- * opened and refreshed when the Pull requests area acts in their name
- * (`product/next-steps/0.2-pull-requests-api-plan.md` §3).
+ * opened and refreshed when the Pull requests area acts in their name.
  *
  * A grant that cannot be opened (sealed under a replaced key) or refreshed
  * (revoked on GitHub, refresh token expired) is dropped, and the person is asked

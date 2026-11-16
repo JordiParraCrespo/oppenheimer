@@ -15,7 +15,7 @@ import (
 
 // A session from the control plane lands in its account's and workspace's
 // levels of the work folder, in a folder named by its slug, with the checkout
-// named by the frame (24 §2); the folder is made, marker and all, before the
+// named by the frame; the folder is made, marker and all, before the
 // terminal starts in it.
 func TestAWorktreeSessionLivesInItsWorkspacesSessionsFolder(t *testing.T) {
 	h := newFakeHarness(t)
@@ -119,7 +119,7 @@ func openFolder(t *testing.T, h *fakeHarness, folder string) domain.Session {
 	return session
 }
 
-// A folder session (24 §3) runs in the person's folder: the terminal and the
+// A folder session runs in the person's folder: the terminal and the
 // agent start there, nothing is fetched or cut, no session folder is made,
 // and its git is left to the person's own credentials.
 func TestAFolderSessionStartsInTheFolderAndMakesNothing(t *testing.T) {
@@ -235,7 +235,7 @@ func TestAFolderSessionRestartsInItsFolderUntilTheFolderGoes(t *testing.T) {
 }
 
 // A record from the work folder's first layout has no place; this runner does
-// not read that layout (24: no migration), so the record is not taken up.
+// not read that layout (there is no migration), so the record is not taken up.
 func TestARecordFromTheFirstLayoutIsIgnored(t *testing.T) {
 	store := &memoryStore{sessions: []domain.Session{
 		{ID: "old", State: domain.StateIdle, Repo: "jordi/oppenheimer", Worktree: "/home/jordi/oppenheimer-ai/workspaces/jordi/oppenheimer/.worktrees/x"},

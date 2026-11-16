@@ -2,14 +2,12 @@ import { expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
 
 /**
- * Images in a bot's chat through the deployed API
- * (`product/versions/mvp/25-bots.md` §3.1): an image is uploaded, judged by
- * its bytes, read back only through the bot, and sent once by naming it on a
+ * Images in a bot's chat through the deployed API: an image is uploaded, judged
+ * by its bytes, read back only through the bot, and sent once by naming it on a
  * message, which carries it in the conversation; a file that is not an image,
- * an image for a GLM bot, a message of nothing and a second send of one
- * image are each refused with their code. No model is called: the turn the
- * send queues runs on a placeholder key and may fail, which is not what this
- * proves.
+ * an image for a GLM bot, a message of nothing and a second send of one image
+ * are each refused with their code. No model is called: the turn the send
+ * queues runs on a placeholder key and may fail, which is not what this proves.
  */
 
 /** A 1×1 PNG. */

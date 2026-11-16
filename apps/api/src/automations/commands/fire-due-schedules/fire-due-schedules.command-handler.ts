@@ -17,7 +17,7 @@ import { FireDueSchedulesCommand } from './fire-due-schedules.command';
 const HOUR = 60 * 60 * 1000;
 
 /**
- * The scheduler (§Q8). The database is the truth: due triggers are claimed
+ * The scheduler. The database is the truth: due triggers are claimed
  * under a row lock, each owes at most one run for the slot it reached — keyed
  * by `(trigger, slot)` — and its next slot is computed **from now**, so an
  * outage of a day fires one late run within the grace, or records one missed

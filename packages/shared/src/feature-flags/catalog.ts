@@ -86,14 +86,13 @@ export const FEATURE_FLAGS = {
     bucketBy: 'user',
   },
   /**
-   * The direct terminal path (`product/versions/mvp/22-direct-terminal-path.md`):
-   * a session's terminal moves from the relay to a WebRTC data channel between
-   * the browser and its host once one connects, and falls back to the relay if
-   * it cannot. Read by the console, which offers only while it is on, and by
-   * the relay, which offers a direct path only to someone it is on for. On by
-   * default, like every flag, and falls back to the relay wherever WebRTC
-   * cannot connect; bucketed by person, since it is a per-reader choice of
-   * path, not a workspace's product.
+   * The direct terminal path: a session's terminal moves from the relay to a
+   * WebRTC data channel between the browser and its host once one connects, and
+   * falls back to the relay if it cannot. Read by the console, which offers
+   * only while it is on, and by the relay, which offers a direct path only to
+   * someone it is on for. On by default, like every flag, and falls back to the
+   * relay wherever WebRTC cannot connect; bucketed by person, since it is a
+   * per-reader choice of path, not a workspace's product.
    */
   terminal_direct_path: {
     description:
@@ -107,13 +106,13 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
-   * A session's device beside its terminal (`product/research/device-streaming.md`):
-   * the simulator or emulator the session's host gives it, its screen streamed
-   * into the preview pane on the session's right, taking the reader's taps and
-   * keys while the agent drives it through Argent. Read by the console, which
-   * offers the pane, and by the relay, which opens a device only for someone
-   * it is on for. On by default like every flag; it shows only on a host that
-   * offers devices. Bucketed by person, since the pane is a reader's choice.
+   * A session's device beside its terminal: the simulator or emulator the
+   * session's host gives it, its screen streamed into the preview pane on the
+   * session's right, taking the reader's taps and keys while the agent drives
+   * it through Argent. Read by the console, which offers the pane, and by the
+   * relay, which opens a device only for someone it is on for. On by default
+   * like every flag; it shows only on a host that offers devices. Bucketed by
+   * person, since the pane is a reader's choice.
    */
   session_device_preview: {
     description: "Show a session's simulator or emulator in the preview pane beside its terminal.",
@@ -126,11 +125,10 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
-   * A host's own desktop in the console (`product/research/device-streaming.md`,
-   * "A host's desktop"): the session pane's Desktop tab and a host's Desktop
-   * in Settings, through the screen-sharing server its owner shared with
-   * `runner desktop on`. Read by the console, which offers both, and by the
-   * API, which refuses the ticket and the socket when off.
+   * A host's own desktop in the console: the session pane's Desktop tab and a
+   * host's Desktop in Settings, through the screen-sharing server its owner
+   * shared with `runner desktop on`. Read by the console, which offers both,
+   * and by the API, which refuses the ticket and the socket when off.
    */
   host_desktop: {
     description: "Show a host's own desktop, live, in the session pane and in Settings.",
@@ -143,10 +141,10 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-05-31',
   },
   /**
-   * The session pane's Browser tab (`product/versions/mvp/30-session-previews.md`):
-   * a session's dev server, served through the runner's link on a preview
-   * domain of the deployment's. Read by the console, which offers the tab,
-   * and by the API, which refuses the preview routes and the proxy when off.
+   * The session pane's Browser tab: a session's dev server, served through the
+   * runner's link on a preview domain of the deployment's. Read by the console,
+   * which offers the tab, and by the API, which refuses the preview routes and
+   * the proxy when off.
    */
   session_browser_preview: {
     description: "Show a session's dev server in the preview pane's Browser tab.",
@@ -159,8 +157,7 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
-   * The chat view of a Claude Code session
-   * (`product/next-steps/0.7-terminal-and-chat.md`): beside the terminal, the
+   * The chat view of a Claude Code session: beside the terminal, the
    * conversation read off the agent's own transcript, which the host follows
    * while the terminal is attached, drawn as prompts, replies and tool cards.
    * The agent still runs in its terminal; typing in the chat types into it.
@@ -179,11 +176,10 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
-   * Dictation in the console (`product/next-steps/voice.md`): the composer's
-   * mic records, the API transcribes on the workspace's ChatGPT sign-in or
-   * the deployment's speech key, and the text lands in the field to read
-   * before sending. Read by the console, which shows the mic only while it is
-   * on, and by `POST /v1/voice/transcriptions`.
+   * Dictation in the console: the composer's mic records, the API transcribes
+   * on the workspace's ChatGPT sign-in or the deployment's speech key, and the
+   * text lands in the field to read before sending. Read by the console, which
+   * shows the mic only while it is on, and by `POST /v1/voice/transcriptions`.
    *
    * Default `true`, like every flag: dictation is live in every prose field,
    * and nothing happens without a provider (the mic shows only where one can
@@ -201,9 +197,9 @@ export const FEATURE_FLAGS = {
     bucketBy: 'user',
   },
   /**
-   * The Inbox (`product/versions/mvp/29-inbox.md`): one place for what needs
-   * you, and the marks a person leaves on its items. Gates the rail item and
-   * the `/v1/inbox/marks` routes while it settles.
+   * The Inbox: one place for what needs you, and the marks a person leaves on
+   * its items. Gates the rail item and the `/v1/inbox/marks` routes while it
+   * settles.
    */
   inbox: {
     description: 'Show the Inbox: what needs you, one item at a time, with done, low and snooze.',

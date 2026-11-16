@@ -15,10 +15,9 @@ import type { GithubTokenInspection, GithubTokensPort } from '../infrastructure/
 import type { UserTokenSealerPort } from '../infrastructure/user-token-sealer.port';
 
 /**
- * A person's own GitHub tokens (`product/next-steps/0.2-pull-requests.md`
- * §6.2): adding and checking them against GitHub, and which one reads a
- * repository no installation covers. The secrets are opened here and nowhere
- * else, and only into a {@link GithubCredential} for one read.
+ * A person's own GitHub tokens: adding and checking them against GitHub, and
+ * which one reads a repository no installation covers. The secrets are opened
+ * here and nowhere else, and only into a {@link GithubCredential} for one read.
  */
 @Injectable()
 export class GithubTokenResolver {

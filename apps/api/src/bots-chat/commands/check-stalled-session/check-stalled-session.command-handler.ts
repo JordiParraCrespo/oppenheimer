@@ -16,17 +16,17 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { CheckStalledSessionCommand } from './check-stalled-session.command';
 
 /**
- * One check of a task a bot handed off (`27-bot-subscriptions.md` §4.1,
- * §4.2): the session read again as the bot's owner, and `checkFor` deciding.
- * A task stuck short of every state that wakes the bot wakes it as a stall,
- * once per task; a task still running wakes it for a look at its progress,
- * once per check, which it ends with `nothing_to_report` when all is well.
- * While the task is live the next check is staged, up to
- * `BOT_PROGRESS_CHECKS_PER_TASK`. Each wake is keyed by the subscription, the
- * task and what it is, so a retried job tells the bot once, and none records
- * anything on the subscription: the task's own end still wakes the bot as
- * before. A subscription gone, or a session the owner can no longer read, is
- * the wake path's to end; the check only stays quiet and stages no more.
+ * One check of a task a bot handed off: the session read again as the bot's
+ * owner, and `checkFor` deciding. A task stuck short of every state that wakes
+ * the bot wakes it as a stall, once per task; a task still running wakes it for
+ * a look at its progress, once per check, which it ends with
+ * `nothing_to_report` when all is well. While the task is live the next check
+ * is staged, up to `BOT_PROGRESS_CHECKS_PER_TASK`. Each wake is keyed by the
+ * subscription, the task and what it is, so a retried job tells the bot once,
+ * and none records anything on the subscription: the task's own end still wakes
+ * the bot as before. A subscription gone, or a session the owner can no longer
+ * read, is the wake path's to end; the check only stays quiet and stages no
+ * more.
  */
 @CommandHandler(CheckStalledSessionCommand)
 export class CheckStalledSessionCommandHandler

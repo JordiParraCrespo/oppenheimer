@@ -19,7 +19,7 @@ var wireSteps = map[sessionsdomain.Stage]link.SessionStep{
 	sessionsdomain.StageAgent:    link.SessionStepAgent,
 }
 
-// startSteps logs one session's start as `session.step` events (01): `host`
+// startSteps logs one session's start as `session.step` events: `host`
 // running the moment the create frame arrives, `host` done once create has
 // accepted the session and begun its first stage, then each stage as it
 // starts and lands, with the time it took measured here.
@@ -27,7 +27,7 @@ var wireSteps = map[sessionsdomain.Stage]link.SessionStep{
 // It also reports `session.started`, off StageTerminal landing. That is the
 // moment the session has a pane to attach to, which with the terminal built
 // before the clone is seconds before the agent runs — so `session.started`
-// means "there is a terminal here", not "the agent is up" (02 §5, 03).
+// means "there is a terminal here", not "the agent is up".
 type startSteps struct {
 	emit     func(link.SessionStepPayload)
 	started  func(sessionsdomain.Session)

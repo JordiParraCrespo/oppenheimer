@@ -11,10 +11,10 @@ import { StartTaskSessionCommand } from './start-task-session.command';
 
 /**
  * Starts a session for a task, through the same command New session sends, filed
- * under the task's project (`product/versions/mvp/19-plan-tasks-and-goals.md` §5):
+ * under the task's project:
  * `CreateSessionCommand` for a session a host runs or starts (Claude Code's
  * cloud among them), `StartCloudSessionCommand` for one a vendor runs with no
- * host (`product/next-steps/cloud-agents.md`).
+ * host.
  * A person clicked Start, so the session's origin is `person`; that it came from
  * this task is the link's `started`.
  *

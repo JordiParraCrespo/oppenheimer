@@ -8,9 +8,8 @@ import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
 /**
- * A bot's card of questions (`ask_user`, `product/versions/mvp/25-bots.md`
- * §3.2): what it asked, and your answers. The chat reads it again when the
- * bot's stream says a card was raised or settled.
+ * A bot's card of questions (`ask_user`): what it asked, and your answers. The
+ * chat reads it again when the bot's stream says a card was raised or settled.
  */
 
 /**

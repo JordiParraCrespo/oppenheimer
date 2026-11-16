@@ -20,7 +20,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/httpx"
 )
 
-// Agents run agents (`product/research/lessons-from-herdr.md`): from inside
+// Agents run agents: from inside
 // a session, `runner sessions run|send|wait|report|children` start a child
 // session, type into one, wait for children, report to the parent and list
 // them. They go to the running daemon over its local socket, the one process

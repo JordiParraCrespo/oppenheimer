@@ -15,12 +15,12 @@ import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 
 /**
- * Gives a bot its heartbeat once it has a job (`26-bot-routines.md` §6): when
- * its `INSTRUCTIONS.md` is first written, at its creation or later, an hourly
- * routine, on, saved as the bot's owner within the scopes of the credential
- * that wrote them. A bot with no job gets none, so it never wakes to greet
- * nobody. The outbox delivers at least once, so a bot that already has one
- * gets no second; a bot that is gone, or whose owner is, gets none.
+ * Gives a bot its heartbeat once it has a job: when its `INSTRUCTIONS.md` is
+ * first written, at its creation or later, an hourly routine, on, saved as the
+ * bot's owner within the scopes of the credential that wrote them. A bot with
+ * no job gets none, so it never wakes to greet nobody. The outbox delivers at
+ * least once, so a bot that already has one gets no second; a bot that is gone,
+ * or whose owner is, gets none.
  */
 @Injectable()
 export class BotHeartbeatDomainEventHandler {

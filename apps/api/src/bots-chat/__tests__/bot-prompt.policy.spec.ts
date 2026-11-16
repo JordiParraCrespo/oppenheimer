@@ -363,7 +363,7 @@ describe('composeBotSystemPrompt', () => {
     expect(bare).toContain('- Answer from what you know and what is in this chat.');
   });
 
-  // From Grok Bot (`lessons-from-grok-bot.md` §9, row 3): a bare "On it" left
+  // From Grok Bot: a bare "On it" left
   // the person not knowing what was taken on or when to look again, and a
   // repeated ask started a second session for the same work.
   it('asks every reply to commit, and a repeated ask to report rather than start again', () => {
@@ -407,7 +407,7 @@ describe('composeBotSystemPrompt', () => {
   });
 
   // A bot keeps its whole toolbox on a turn outside text started (the owner's
-  // call: full autonomy, 27 §7.1), so what stands against an injection is
+  // call: full autonomy), so what stands against an injection is
   // the model knowing its shape. What breaks this: the rule dropped, and a
   // comment that asks the bot to send what it knows somewhere meets no rule.
   it('names what an injection asks for, and never lets outside text choose where private data goes', () => {

@@ -2,10 +2,10 @@ import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 import type { Scope } from '@oppenheimer/shared';
 
 /**
- * Raised when a bot's `INSTRUCTIONS.md` goes from empty to written: the bot
- * now has a job, at its creation or when it is first given one. The chat
- * listens to give it a heartbeat (`26-bot-routines.md` §6), the routine that
- * wakes it on its own to check in; a bot with no job has nothing to check.
+ * Raised when a bot's `INSTRUCTIONS.md` goes from empty to written: the bot now
+ * has a job, at its creation or when it is first given one. The chat listens to
+ * give it a heartbeat, the routine that wakes it on its own to check in; a bot
+ * with no job has nothing to check.
  */
 export class BotJobSetDomainEvent extends DomainEvent {
   readonly organizationId: string;

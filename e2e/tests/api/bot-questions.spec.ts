@@ -3,12 +3,12 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
 import { query } from '../../support/db';
 
 /**
- * A bot's card of questions through the deployed API (`ask_user`,
- * `product/versions/mvp/25-bots.md` §3.2), seeded as the tool stores it: a
- * card of its own, read at `GET /bots/:id/question`, answered or dismissed
- * at its own routes and never through an approval's decision. Answers that
- * do not fit are `BOTS_036`; the answers reach the bot's next turn fenced
- * and the chat as a `question` event; a second answer is `BOTS_037`.
+ * A bot's card of questions through the deployed API (`ask_user`), seeded as
+ * the tool stores it: a card of its own, read at `GET /bots/:id/question`,
+ * answered or dismissed at its own routes and never through an approval's
+ * decision. Answers that do not fit are `BOTS_036`; the answers reach the bot's
+ * next turn fenced and the chat as a `question` event; a second answer is
+ * `BOTS_037`.
  */
 
 interface Conversation {

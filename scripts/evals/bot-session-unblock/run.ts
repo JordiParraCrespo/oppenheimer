@@ -3,7 +3,7 @@
 //
 // Since 2026-11-10 a bot woken because a session's agent waits on a question
 // or a permission dialog answers it itself with `answer_session` instead of
-// sending the person to the session (`25-bots.md` §4.2): what the session's
+// sending the person to the session: what the session's
 // task and its instructions point to, No to what goes against the task, and
 // a destructive approval still through the tool, which puts it on a card.
 // When nothing settles a question, or there is nothing to answer, it tells

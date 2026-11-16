@@ -1,6 +1,6 @@
 /**
  * A message one of the reader's bots will send from their Gmail at a time,
- * still waiting (`product/next-steps/mail.md` §3.4). Cancelled, it never goes.
+ * still waiting. Cancelled, it never goes.
  */
 export class ScheduledMailEntity {
   constructor(

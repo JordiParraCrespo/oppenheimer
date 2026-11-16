@@ -1,5 +1,5 @@
 /**
- * A bot following a project or a milestone (`27-bot-subscriptions.md` §7.2),
+ * A bot following a project or a milestone,
  * as rules: what such a subscription may hold, which changes wake the bot,
  * the key that makes one change one turn, and what the bot is told: the
  * title fenced, the columns, never the notes. The stored row's checks are
@@ -142,7 +142,7 @@ describe('what a task wake tells the bot', () => {
 
   // Regression: a title is anyone's words; unfenced, one reading "ignore your
   // instructions" would sit in the prompt as Oppenheimer's own note.
-  // Codex on #866. What breaks this: a task moved out of a followed project
+  // What breaks this: a task moved out of a followed project
   // named the project it went to, so the bot would act on the wrong watch.
   it('names what the bot follows, not where the task went', () => {
     const text = taskWakeText(

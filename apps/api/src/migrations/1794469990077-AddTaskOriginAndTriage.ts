@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Who made a task, and whether its person has taken it up
- * (`product/versions/mvp/29-inbox.md`, "Tasks an agent made"). A task an
+ * Who made a task, and whether its person has taken it up. A task an
  * agent makes (a bot's plan tool, or a call on an API token or an OAuth grant,
  * which is how the MCP server and the CLI reach the API) waits in Plan's Inbox
  * until the person triages it: gives it a TODO day, starts or links a
@@ -22,9 +21,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   of waiting tasks would add `("organizationId", "createdAt") WHERE
  *   "triagedAt" IS NULL`.
  * - Nothing is logged for a triage: like planning a day, it is not a change
- *   Plan's log records (`23`, §4).
+ *   Plan's log records.
  * - The backfill is one `UPDATE` over `task`: nothing is deployed with data
- *   that matters yet (`database-design.md`, "While nothing is deployed").
+ *   that matters yet.
  */
 export class AddTaskOriginAndTriage1794469990077 implements MigrationInterface {
   name = 'AddTaskOriginAndTriage1794469990077';

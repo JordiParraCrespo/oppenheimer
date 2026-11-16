@@ -83,7 +83,7 @@ describe('useSuspenseSession', () => {
    * TanStack Query pauses an interval while the document is hidden unless the
    * poll says otherwise, and a start launched from a tab the reader then
    * leaves is exactly the case: the pane came back frozen on a step that had
-   * finished a minute before (#111).
+   * finished a minute before.
    */
   it('keeps reading a starting session while the tab is hidden', async () => {
     focusManager.setFocused(false);

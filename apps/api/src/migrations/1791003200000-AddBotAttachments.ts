@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Images in a bot's chat (`product/versions/mvp/25-bots.md` §3.1).
+ * Images in a bot's chat.
  *
  * - `bot_attachment`: one row per image uploaded to a bot's composer, the
  *   file itself in storage under `"storageKey"`. An image is uploaded when

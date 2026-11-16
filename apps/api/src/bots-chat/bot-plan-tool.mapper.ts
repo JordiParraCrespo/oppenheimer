@@ -16,7 +16,7 @@ import type { TaskActivityFields, TaskWake } from './domain/bot-task-wake.policy
 import { cut, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
- * How the plan tools write what they read (`25-bots.md` §4.3): tasks,
+ * How the plan tools write what they read: tasks,
  * projects and summaries as labelled lines, the day in the sender's zone, and
  * the actor the bot writes as. Pure.
  */
@@ -184,7 +184,7 @@ export interface PlanWatch {
   taskEvents: readonly PlanTaskEventKind[];
 }
 
-/** A new project or milestone subscription from the turn that asked for it (27 §7.2). */
+/** A new project or milestone subscription from the turn that asked for it. */
 export function toPlanWatchProps(
   asker: Pick<
     BotToolCallContext,

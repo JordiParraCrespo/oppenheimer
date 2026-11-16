@@ -2,12 +2,11 @@ import { expect, type Page, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Images in a bot's chat, in a browser (`product/versions/mvp/25-bots.md`
- * §3.1): an image picked in the composer is a tile over the text, sent with
- * the message and drawn above its bubble, read back through the API; on a
- * GLM bot, whose model reads no images, the pick is refused under the box
- * and what was written stays. No model is called: the turn runs on a
- * placeholder key, and how it ends is not what this proves.
+ * Images in a bot's chat, in a browser: an image picked in the composer is a
+ * tile over the text, sent with the message and drawn above its bubble, read
+ * back through the API; on a GLM bot, whose model reads no images, the pick is
+ * refused under the box and what was written stays. No model is called: the
+ * turn runs on a placeholder key, and how it ends is not what this proves.
  */
 
 /** A 1×1 PNG. */

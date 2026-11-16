@@ -289,9 +289,9 @@ const SESSIONS = new Map(
 const HOSTS = new Map();
 
 /**
- * TODO's "With agents" strip (`20-plan-calendar.md` §6, "Changed on 2026-11-12"): a task an agent is
- * working on leaves the list; one whose agents need the person stays on it
- * with a mark, most urgent first.
+ * TODO's "With agents" strip: a task an agent is working on leaves the
+ * list; one whose agents need the person stays on it with a mark, most
+ * urgent first.
  */
 describe("TODO's agents", () => {
   const placeOf = (row: TaskEntity) => {

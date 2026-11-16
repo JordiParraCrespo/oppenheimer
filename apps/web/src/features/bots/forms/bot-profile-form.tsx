@@ -45,13 +45,13 @@ function changesFrom(saved: BotProfileValues, edited: z.output<typeof botProfile
 }
 
 /**
- * The Profile card as one form (`design/version1/BotSettings.dc.html`): Name
- * and Description stacked, then the card's other rows (`children`, handed the
- * form's `control`: the colour, the face and the sidebar group, each binding its own
- * field), then the save row that appears only when something changed and
- * reads Saved after a save until the next edit. Nothing saves before Save.
- * `values` is the saved bot: the form follows it, so a save or a refetch
- * resets the card to what the server holds.
+ * The Profile card as one form: Name and Description stacked, then the card's
+ * other rows (`children`, handed the form's `control`: the colour, the face
+ * and the sidebar group, each binding its own field), then the save row that
+ * appears only when something changed and reads Saved after a save until the
+ * next edit. Nothing saves before Save. `values` is the saved bot: the form
+ * follows it, so a save or a refetch resets the card to what the server
+ * holds.
  */
 export function BotProfileForm({
   values,

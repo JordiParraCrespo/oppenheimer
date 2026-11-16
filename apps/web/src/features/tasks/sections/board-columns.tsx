@@ -47,15 +47,14 @@ import { SESSION_STATUS } from '../lib/session-state';
 const board = getRouteApi('/_authenticated/plan/');
 
 /**
- * The four columns (`18-plan-product.md` §2) on the design system's board:
- * cards in board order, dragged within and across columns on the drag
- * layer, ticked to Done and back, added at a column's foot. A drop moves the
- * card at once and the server's answer settles it; a refused move puts it
- * back and says why above the columns. Done shows the past week's tasks and
- * folds the older ones under "Show older" (`?older=1` opens it), so the
- * column does not grow without end. It reads under Suspense, in the
- * screen's `QueryState`; a refetch that fails keeps the columns and says so
- * above them.
+ * The four columns on the design system's board: cards in board order,
+ * dragged within and across columns on the drag layer, ticked to Done and
+ * back, added at a column's foot. A drop moves the card at once and the
+ * server's answer settles it; a refused move puts it back and says why
+ * above the columns. Done shows the past week's tasks and folds the older
+ * ones under "Show older" (`?older=1` opens it), so the column does not
+ * grow without end. It reads under Suspense, in the screen's `QueryState`;
+ * a refetch that fails keeps the columns and says so above them.
  *
  * Cards can be picked to act on together (`useCardSelection`): ⌘/Ctrl-click
  * toggles one, Shift-click takes the run from the last one toggled, and while

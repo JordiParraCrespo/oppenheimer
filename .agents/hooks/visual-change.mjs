@@ -2,9 +2,7 @@
 // that change. The one definition: the screenshot guard
 // (`screenshot-guard.mjs`, which asks it before a push or a pull request is
 // opened or updated), the camera (`scripts/stack/screens.mjs`) and the
-// pr-screenshots eval all import it, and the prose in AGENTS.md, the
-// `local-stack` and `steward` skills and `.agents/rules/frontend-ui.md`
-// points here rather than restating the list.
+// pr-screenshots eval all import it.
 //
 // The fingerprint is a hash of each visual file the branch changes, by what
 // it says: a script with its comments taken out and its layout reprinted, a

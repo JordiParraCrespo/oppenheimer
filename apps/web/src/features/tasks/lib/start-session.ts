@@ -21,7 +21,7 @@ import { defaultModelFor } from './agent-options';
  */
 export type StartPlace = AutomationPlace;
 
-/** The Start session dialog's choices (`18-plan-product.md` §4). */
+/** The Start session dialog's choices. */
 export interface StartSessionValues {
   prompt: string;
   /** The project repository's row id; null starts on a host with none, in its home. */
@@ -40,9 +40,9 @@ export type StartSessionBody =
   | Pick<Extract<StartTaskSessionVariables, { cloud: unknown }>, 'cloud'>;
 
 /**
- * The repository chip's value for "No repository" (`repositoryId: null`): on a
- * host, a folder session in the host's home, as Open terminal starts
- * (`24-session-places.md` §3). A cloud starts from a repository.
+ * The repository chip's value for "No repository" (`repositoryId: null`):
+ * on a host, a folder session in the host's home, as Open terminal starts.
+ * A cloud starts from a repository.
  */
 export const NO_REPOSITORY = 'none';
 
@@ -50,10 +50,10 @@ export const NO_REPOSITORY = 'none';
 export type StartHold = 'task' | 'repository' | 'home' | 'host';
 
 /**
- * Whether Start session can start now, and how (`18-plan-product.md` §4).
- * A cloud starts on a task, from a repository. A host session with no
- * repository needs its host online to say where home is; any other host
- * session to an offline host is queued until the host is back.
+ * Whether Start session can start now, and how. A cloud starts on a task,
+ * from a repository. A host session with no repository needs its host
+ * online to say where home is; any other host session to an offline host is
+ * queued until the host is back.
  */
 export function startReadiness({
   place,

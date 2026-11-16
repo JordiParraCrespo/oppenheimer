@@ -10,7 +10,7 @@ import {
 import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-changed.domain-event';
 
 /**
- * A Needs input card is decided once (`25-bots.md` §5): pending moves to
+ * A Needs input card is decided once: pending moves to
  * approved, denied or expired and never again; only an approved call records
  * what it answered, and an error ends it failed. The event the bot is then
  * told says who decided, what, and what came of it.

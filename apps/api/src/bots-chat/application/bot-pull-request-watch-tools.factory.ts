@@ -22,11 +22,11 @@ const repository = z
   );
 
 /**
- * Following a pull request (`27-bot-subscriptions.md` §7): watch one, or
- * stop. `list_watches` lists them with the sessions followed. Neither asks,
- * as `watch_session` does not: a watch only wakes the bot when something
- * happens on GitHub, it is bounded by the merge or the wake limit, and it can
- * be undone. A repository is followed only if its owner can read it.
+ * Following a pull request: watch one, or stop. `list_watches` lists them with
+ * the sessions followed. Neither asks, as `watch_session` does not: a watch
+ * only wakes the bot when something happens on GitHub, it is bounded by the
+ * merge or the wake limit, and it can be undone. A repository is followed only
+ * if its owner can read it.
  */
 @Injectable()
 export class BotPullRequestWatchToolsFactory implements BotToolArea {

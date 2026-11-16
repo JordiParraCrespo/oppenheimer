@@ -11,12 +11,11 @@ import {
 } from '../../support/sessions';
 
 /**
- * A session's agent woken by the pull request it watches
- * (`product/next-steps/agent-tools.md` §3), on a real runner: the agent runs
- * `runner sessions watch-pr`, the runner logs the watch over its link, a
- * signed GitHub delivery goes through the App's webhook and the inbound-events
- * hub, and the wake is typed into the session as a prompt from the wake —
- * made of the event's metadata, never the words a stranger wrote.
+ * A session's agent woken by the pull request it watches, on a real runner: the
+ * agent runs `runner sessions watch-pr`, the runner logs the watch over its
+ * link, a signed GitHub delivery goes through the App's webhook and the
+ * inbound-events hub, and the wake is typed into the session as a prompt from
+ * the wake — made of the event's metadata, never the words a stranger wrote.
  */
 test.describe.configure({ timeout: 180_000 });
 

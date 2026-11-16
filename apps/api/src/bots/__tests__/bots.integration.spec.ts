@@ -40,14 +40,12 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
 import { PersonMemoryMapper } from '../person-memory.mapper';
 
 /**
- * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
- * the migration's keys and checks, the sidebar order a move and a group delete
- * leave, the document's conditional write under two writers, the memory cap
- * under two adders, a skill's unique name and cap, and the workspace boundary
- * on every read; a bot made by a
- * bot, its composite "created by" link and the key that makes its creation
- * happen once, under two racing creations. The schema is the migrations', so a
- * wrong key fails here.
+ * Bots against a real Postgres: the migration's keys and checks, the sidebar
+ * order a move and a group delete leave, the document's conditional write under
+ * two writers, the memory cap under two adders, a skill's unique name and cap,
+ * and the workspace boundary on every read; a bot made by a bot, its composite
+ * "created by" link and the key that makes its creation happen once, under two
+ * racing creations. The schema is the migrations', so a wrong key fails here.
  */
 describe('bots (integration)', () => {
   let dataSource: DataSource;

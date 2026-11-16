@@ -3,8 +3,8 @@ import { newSessionSearchSchema } from '@/features/sessions/lib/new-session-sear
 import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
 /**
- * New session: the composer at the pane's foot, at the `prompt` measure
- * (`NewSessionComposer.dc.html`). The pane is its drop zone (`usePaneDrop`).
+ * New session: the composer at the pane's foot, at the `prompt` measure. The
+ * pane is its drop zone (`usePaneDrop`).
  *
  * `?project=` and `?host=`: see `newSessionSearchSchema`.
  */

@@ -36,9 +36,8 @@
 /* =============================================================================
    Oppenheimer design system — foundations
    =============================================================================
-   Ported from the Claude Design export in `product/versions/mvp/design/_ds/`
-   (tokens/*.css) with the version-1 artboards' ramp applied on top
-   (`product/versions/mvp/design/version1/ds-base.js`).
+   Ported from the Claude Design export's tokens, with the version-1
+   artboards' ramp applied on top.
 
    The system in one sentence: the product is the work, and the design system
    is the silence around it. Achromatic by default, colour rationed to one
@@ -103,10 +102,10 @@
        `--card` is what separates them. */
     --canvas: var(--op-white);
     --background: var(--canvas);
-    /* The console's ground: the export's grey `--canvas`
-       (`design/version1/console.css`), under every pane the shell draws and
-       under Settings, so white cards float on it without a border. The shell
-       paints it once (`AppShell`'s pane); no frame or screen does. */
+    /* The console's ground: the export's grey `--canvas`, under every pane
+       the shell draws and under Settings, so white cards float on it without
+       a border. The shell paints it once (`AppShell`'s pane); no frame or
+       screen does. */
     --canvas-recessed: var(--op-gray-50);
     --card: var(--op-white); /* the only lit surface on the canvas */
     /* A lit surface that is also a control — the social sign-in buttons — needs
@@ -211,9 +210,9 @@
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
     --term-caret: var(--op-blue-600);
-    /* A phone's bezel around a session's device screen (the preview pane in
-       `SessionsConsole.dc.html`): the frame's own near-black, `#0b0b0c`, in
-       both themes, because it is the hardware's colour and not the UI's. */
+    /* A phone's bezel around a session's device screen (the preview pane):
+       the frame's own near-black, `#0b0b0c`, in both themes, because it is
+       the hardware's colour and not the UI's. */
     --device-bezel: #0b0b0c;
     --term-selection: rgba(0, 113, 227, 0.16);
     /* ANSI magenta and cyan have no UI counterpart — nothing in the product is
@@ -319,8 +318,7 @@
     --glass-blur: blur(20px) saturate(1.6);
     /* The rail is glass too, but of its own tier rather than of white: it
        floats over the canvas and over an expanded terminal, so it thins the
-       sidebar's own surface instead of laying a sheet of white over it
-       (`product/versions/mvp/design/version1/ds-base.js`). */
+       sidebar's own surface instead of laying a sheet of white over it. */
     --rail-blur: blur(20px) saturate(1.8);
 
     /* =====================================================================
@@ -599,7 +597,7 @@
     --chart-axis: var(--op-gray-500);
     --brand-glyph-filter: invert(1);
 
-    /* The session artboard's (`SessionsConsole.dc.html`): `#1a1a1c`, the
+    /* The session artboard's: `#1a1a1c`, the
        card's lift. The session screen paints its frame in it too, as the
        artboard does, so the terminal is one surface from the sidebar's edge
        rather than a lighter slab on the `#121213` canvas. */

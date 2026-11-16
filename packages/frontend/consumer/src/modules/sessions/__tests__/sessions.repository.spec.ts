@@ -147,9 +147,9 @@ describe('SessionsRepository.findStartLog', () => {
 });
 
 /**
- * A session runs in its checkouts or in a folder, never both
- * (`product/versions/mvp/24-session-places.md`): the API refuses a body that
- * carries the two, so a folder create must not grow an empty `checkouts`.
+ * A session runs in its checkouts or in a folder, never both: the API refuses a
+ * body that carries the two, so a folder create must not grow an empty
+ * `checkouts`.
  */
 describe('toCreateSessionRequest', () => {
   it('sends a folder session with its folder and no checkouts', () => {
@@ -177,9 +177,9 @@ describe('toCreateSessionRequest', () => {
 });
 
 /**
- * A session's pending decision (`29-inbox.md` slice 4) reaches the console as
- * the API states it, with what the runner left out read as null, and an
- * answer goes to the decision route as the body the API takes.
+ * A session's pending decision reaches the console as the API states it, with
+ * what the runner left out read as null, and an answer goes to the decision
+ * route as the body the API takes.
  */
 describe('SessionsRepository decisions', () => {
   let repository: SessionsRepository;

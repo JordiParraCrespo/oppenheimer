@@ -7,8 +7,8 @@ import type { HostAssertionPort } from './host-assertion.port';
 
 /**
  * The boot assertion a runner signs with the key it registered, presented as an
- * ordinary `Authorization: Bearer` because the protocol says so
- * (`product/versions/mvp/03-control-plane.md`). Parsing and verifying stay behind
+ * ordinary `Authorization: Bearer`, the same header every other API caller
+ * sends. Parsing and verifying stay behind
  * {@link HostAssertionPort}.
  *
  * It yields a credential with no owner and no scopes: `ScopesGuard` refuses it on

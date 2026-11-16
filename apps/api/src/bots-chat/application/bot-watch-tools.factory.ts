@@ -26,12 +26,11 @@ import {
 } from './bot-tool.factory';
 
 /**
- * Following sessions (`27-bot-subscriptions.md` §3): watch one, stop
- * watching it, list what is watched, or wait on one inside the turn, a
- * bounded `wait_for_session`. None asks: a watch only wakes the bot
- * when a session a person or an approved call started moves, it is bounded
- * by its task or the wake limit, and it can be undone. `start_session`
- * subscribes on its own.
+ * Following sessions: watch one, stop watching it, list what is watched, or
+ * wait on one inside the turn, a bounded `wait_for_session`. None asks: a watch
+ * only wakes the bot when a session a person or an approved call started moves,
+ * it is bounded by its task or the wake limit, and it can be undone.
+ * `start_session` subscribes on its own.
  */
 @Injectable()
 export class BotWatchToolsFactory implements BotToolArea {

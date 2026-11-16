@@ -10,13 +10,13 @@ import {
 } from '@/features/bots/lib/slash-menu';
 
 /**
- * The composer's `/` menu (`25-bots.md` §4.1, OpenClaw's skill commands and
- * Claude Code's built-ins): while the draft is a command being typed, the
- * rows `slashMenuRows` decides for what is typed, the bot's skills read only
- * while it is open. Up and Down move through them, Tab
- * or Enter picks one (the draft becomes `/<name> `), Escape closes the menu
- * for that draft. The highlight belongs to what was typed, so a new letter
- * starts it at the top again with no effect to reset it.
+ * The composer's `/` menu (OpenClaw's skill commands and Claude Code's
+ * built-ins): while the draft is a command being typed, the rows
+ * `slashMenuRows` decides for what is typed, the bot's skills read only
+ * while it is open. Up and Down move through them, Tab or Enter picks one
+ * (the draft becomes `/<name> `), Escape closes the menu for that draft.
+ * The highlight belongs to what was typed, so a new letter starts it at the
+ * top again with no effect to reset it.
  */
 export function useSlashMenu(botId: string, draft: string, setDraft: (next: string) => void) {
   const { t } = useTranslation();

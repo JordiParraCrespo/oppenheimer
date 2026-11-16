@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot can stop on questions for its owner (`ask_user`,
- * `product/versions/mvp/25-bots.md` §3.2; from Grok Bot's form cards,
- * `research/lessons-from-grok-bot.md` §9 row 12).
+ * A bot can stop on questions for its owner (`ask_user`; from Grok Bot's
+ * form cards).
  *
  * - `bot_question`: one card of up to four questions, waiting for the owner.
  *   It is answered or dismissed, never approved, and nothing runs on it, so

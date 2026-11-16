@@ -1,10 +1,9 @@
 import type { CloudAgentProviderId } from '@oppenheimer/shared/schemas/cloud-agent';
 
 /**
- * The reader's keys for the vendors that run a cloud session
- * (`product/next-steps/cloud-agents.md`). A cloud session itself is a session
- * (`SessionEntity`, place `cloud`); this is whether the reader can start one,
- * on which vendors, and on which models.
+ * The reader's keys for the vendors that run a cloud session. A cloud session
+ * itself is a session (`SessionEntity`, place `cloud`); this is whether the
+ * reader can start one, on which vendors, and on which models.
  */
 
 /** One vendor, and whether the reader can start a cloud session on it. */

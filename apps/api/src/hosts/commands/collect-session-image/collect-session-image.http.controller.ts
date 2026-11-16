@@ -20,7 +20,7 @@ import { CollectSessionImageCommand } from './collect-session-image.command';
 
 /**
  * `GET /hosts/self/images/{commandId}` — the runner pulling the file a
- * `session.image` named (`product/versions/mvp/01-protocol.md`). The bytes
+ * `session.image` command named. The bytes
  * never ride the link; this is where they come from.
  *
  * Like `DELETE /hosts/self`, the credential is the host's boot assertion and

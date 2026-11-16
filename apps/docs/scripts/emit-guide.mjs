@@ -5,10 +5,9 @@
  * `docs/guide/*.md` is the one copy of "Using Oppenheimer": the docs site
  * publishes it, and every bot reads the same pages through its
  * `read_oppenheimer_docs` tool, so a bot knows the product as it is in the
- * version the API runs, with no docs site to reach (`product/versions/mvp/25-bots.md`
- * §4.1, "Oppenheimer's own guide"). The API cannot read this app's files at
- * run time, so the pages are generated into the shared package, the way
- * `generate:api-client` writes the client, and committed.
+ * version the API runs, with no docs site to reach. The API cannot read
+ * this app's files at run time, so the pages are generated into the shared
+ * package, the way `generate:api-client` writes the client, and committed.
  *
  *   node scripts/emit-guide.mjs          write the module
  *   node scripts/emit-guide.mjs --check  fail when the committed module is stale

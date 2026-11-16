@@ -24,7 +24,7 @@ import { runRefusalOf } from '../domain/run-refusal.policy';
 import { triggerFromInput } from '../domain/trigger-config.policy';
 
 /**
- * The dispatcher's seam with what a run starts (`26-bot-routines.md` §3): the
+ * The dispatcher's seam with what a run starts: the
  * shared guards decide first, the automation's target decides and launches
  * second, and what the target says — a launch, a refusal, a fault — is what
  * the run records. The session target's own guards and launch are the

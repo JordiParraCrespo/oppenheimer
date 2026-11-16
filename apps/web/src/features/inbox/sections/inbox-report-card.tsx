@@ -13,12 +13,12 @@ import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 import { InboxReportImages } from '@/features/inbox/sections/inbox-report-images';
 
 /**
- * A problem an unattended agent sent (`29-inbox.md`, "Reports"), in the
- * pane: its words as written, where it can be seen, its pictures, and the
- * answer, which is given here and nowhere else. Answering takes it out of
- * the Inbox; Done puts it away unanswered. An answer refused because the
- * report was answered somewhere else first reads the reports again, and the
- * refusal stays on the card until the list has it gone.
+ * A problem an unattended agent sent, in the pane: its words as written,
+ * where it can be seen, its pictures, and the answer, which is given here
+ * and nowhere else. Answering takes it out of the Inbox; Done puts it away
+ * unanswered. An answer refused because the report was answered somewhere
+ * else first reads the reports again, and the refusal stays on the card
+ * until the list has it gone.
  */
 export function InboxReportCard({
   item,

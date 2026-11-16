@@ -9,10 +9,10 @@ export interface Choice {
 }
 
 /**
- * One labelled row of the task dialog (`Tasks.dc.html`): a label in the left
- * column and the choices as pills, the picked one in the selected tint. The
- * pills stand at the field height, level with the inputs above and below
- * them, and the label takes the same height so it centres on the first line.
+ * One labelled row of the task dialog: a label in the left column and the
+ * choices as pills, the picked one in the selected tint. The pills stand at
+ * the field height, level with the inputs above and below them, and the
+ * label takes the same height so it centres on the first line.
  */
 export function ChoiceRow({
   label,

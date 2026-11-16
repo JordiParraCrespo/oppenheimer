@@ -3,7 +3,7 @@ import { cut, fenceUntrusted, formatToolTime, RUNNER_TOO_OLD_ADVICE } from './bo
 
 /**
  * A page of a session's conversation, as `read_session_transcript` words it
- * for the model (`product/next-steps/agent-tools.md` §8): what Oppenheimer
+ * for the model: what Oppenheimer
  * says about the page in its own words, the conversation fenced as the
  * session's output, and how to read on. Pure.
  */

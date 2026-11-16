@@ -18,12 +18,12 @@ import { SessionRetryStart } from './session-retry-start';
 /**
  * A session that is not a terminal yet.
  *
- * The export's provisioning pane (`SessionsConsole.dc.html`, `op-provision`):
- * the host as the eyebrow, "Starting your session", the scope line, and named
- * steps with a ring, a check and a mono meta line, so a slow step is
- * diagnosable instead of just slow. The steps are the host's own account of
- * the start, read off the session's log; a step the host has not reported is
- * pending, so nothing on this pane advances on its own.
+ * The provisioning pane: the host as the eyebrow, "Starting your session",
+ * the scope line, and named steps with a ring, a check and a mono meta line,
+ * so a slow step is diagnosable instead of just slow. The steps are the
+ * host's own account of the start, read off the session's log; a step the
+ * host has not reported is pending, so nothing on this pane advances on its
+ * own.
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();

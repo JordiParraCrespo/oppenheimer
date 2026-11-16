@@ -23,8 +23,7 @@ const SENDS_PER_SECOND = 50;
  * A provider that refuses for rate or quota (`EmailRateLimitedError`) holds the
  * whole queue until it said it will take mail again, and the job goes back to
  * waiting without spending an attempt: retrying each job on its own backoff
- * would spend all five against the same refusal and drop the mail
- * (`.agents/rules/integrations.md`).
+ * would spend all five against the same refusal and drop the mail.
  */
 @Processor(QUEUE_NAMES.EMAIL, { limiter: { max: SENDS_PER_SECOND, duration: 1_000 } })
 export class EmailProcessor extends WorkerHost {

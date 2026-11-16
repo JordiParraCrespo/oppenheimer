@@ -267,8 +267,8 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     UsersModule,
     ProfileModule,
     RolesModule,
-    // The Better Auth organization row is the personal workspace
-    // (`product/versions/mvp/00-scope.md`); the roster and invitation routes
+    // The Better Auth organization row is the personal workspace; the roster
+    // and invitation routes
     // it ships stay until the teams slice needs them.
     OrganizationsModule,
     InboundEventsModule,

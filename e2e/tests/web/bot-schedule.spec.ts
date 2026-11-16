@@ -2,13 +2,12 @@ import { expect, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * The built-in `/schedule` in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md` §4.1, "Built-in commands"): the chat's
- * `/` menu offers it, `/schedule` alone opens the bot's Routines tab without
- * sending the bot a message, and the API refuses it as a message. The bot
- * saving the routine a `/schedule <request>` asks for, with no card, is the
- * API's unit specs (`update_routine`, `composeTurnMessage`), since a real
- * model is not run here.
+ * The built-in `/schedule` in a browser, against the real control plane: the
+ * chat's `/` menu offers it, `/schedule` alone opens the bot's Routines tab
+ * without sending the bot a message, and the API refuses it as a message. The
+ * bot saving the routine a `/schedule <request>` asks for, with no card, is the
+ * API's unit specs (`update_routine`, `composeTurnMessage`), since a real model
+ * is not run here.
  */
 test('the /schedule command from the chat’s menu to the routines', async ({ page }) => {
   const owner = await provisionedUser('botschedule');

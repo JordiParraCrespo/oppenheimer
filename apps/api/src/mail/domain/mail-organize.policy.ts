@@ -1,5 +1,5 @@
 /**
- * Organizing mail (`product/next-steps/mail.md` §3.5) as the label changes
+ * Organizing mail as the label changes
  * Gmail makes it: read state, stars, importance and the inbox are system
  * labels, so marking and archiving are labels added and taken off like any
  * other.

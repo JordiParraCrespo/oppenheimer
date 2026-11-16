@@ -1,10 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Automations that run in the cloud (`product/next-steps/cloud-agents.md`,
- * "Tasks and automations"): a session automation's run starts its session on
- * the host, as before, in Claude Code's cloud from that host, or at a vendor
- * the control plane launches on the owner's key, with no host.
+ * Automations that run in the cloud: a session automation's run starts its
+ * session on the host, as before, in Claude Code's cloud from that host, or at
+ * a vendor the control plane launches on the owner's key, with no host.
  *
  * - `automation_revision."place"`: where a run's session runs, one of
  *   `host`, `claude-cloud` and `cursor` (a vendor's place is its provider's

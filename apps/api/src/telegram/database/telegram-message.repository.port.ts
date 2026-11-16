@@ -23,9 +23,9 @@ export interface TelegramMessagesOwed {
 }
 
 /**
- * A Telegram bot's messages (`product/next-steps/telegram.md` §4). Reads take an
- * account the caller already proved is theirs (`TelegramAccountRepositoryPort`),
- * so this port holds no scope of its own; every list is bounded.
+ * A Telegram bot's messages. Reads take an account the caller already proved is
+ * theirs (`TelegramAccountRepositoryPort`), so this port holds no scope of its
+ * own; every list is bounded.
  */
 export interface TelegramMessageRepositoryPort {
   /**

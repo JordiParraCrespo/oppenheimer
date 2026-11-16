@@ -16,11 +16,11 @@ import { BotRoutineTarget } from '../bot-routine-target.adapter';
 import type { BotStreamPort } from '../bot-stream.port';
 
 /**
- * A bot routine's run (`26-bot-routines.md` §4): one queued turn of its bot,
- * on the bot's model as it is now, as the owner, within the routine's scopes.
- * What breaks this: a run with no usable provider queuing a turn that fails,
- * a busy routine queuing a second turn, a retried dispatch queuing twice, or
- * a refusal read as a fault the queue retries forever.
+ * A bot routine's run: one queued turn of its bot, on the bot's model as it is
+ * now, as the owner, within the routine's scopes. What breaks this: a run with
+ * no usable provider queuing a turn that fails, a busy routine queuing a second
+ * turn, a retried dispatch queuing twice, or a refusal read as a fault the
+ * queue retries forever.
  */
 const now = new Date();
 

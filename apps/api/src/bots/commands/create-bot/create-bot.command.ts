@@ -5,8 +5,7 @@ import type { SessionEffort } from '@oppenheimer/shared/agents';
 
 /**
  * A new bot. `input` is what the console's form sends; the rest is optional
- * and the console leaves it unset (a bot's `create_bot` tool sets it,
- * `25-bots.md` §4.6).
+ * and the console leaves it unset (a bot's `create_bot` tool sets it).
  */
 export class CreateBotCommand extends CommandBase {
   /** The caller, who is recorded as the bot's creator and its documents' first author. */

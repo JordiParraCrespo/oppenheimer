@@ -7,12 +7,12 @@ import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The questions a bot stopped on (`ask_user`, `25-bots.md` §3.2), a card of
- * their own beside the approval card, answered above the composer one at a
- * time with the same picker a session's questions use. Submit sends every
- * answer at once and Dismiss declines; either way the card goes and the bot
- * carries on in the chat. An answer that could not be sent starts the picker
- * over beside the error. It draws nothing while no card waits.
+ * The questions a bot stopped on (`ask_user`), a card of their own beside
+ * the approval card, answered above the composer one at a time with the
+ * same picker a session's questions use. Submit sends every answer at once
+ * and Dismiss declines; either way the card goes and the bot carries on in
+ * the chat. An answer that could not be sent starts the picker over beside
+ * the error. It draws nothing while no card waits.
  */
 export function BotQuestionCard({ botId }: { botId: string }) {
   const { t } = useTranslation();

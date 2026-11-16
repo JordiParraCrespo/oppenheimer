@@ -5,8 +5,7 @@
  * every entry carries behaviour the runner needs code for anyway (how to
  * launch it, where it writes its transcript, which variable scopes its
  * login), so a row would be a second source of truth that could drift from
- * the code that acts on it. `product/versions/mvp/10-api-modules-and-data-model.md`
- * argues this under "The two 'not a table' decisions".
+ * the code that acts on it.
  *
  * Whether *this machine* actually has the agent on PATH is the other half and
  * is a host fact (`host.capabilities`), reported by the runner and shown as a
@@ -71,10 +70,9 @@ export interface CodingAgentTranscriptLocation {
  * What the agent may do on the host without asking, in the product's own three
  * words rather than any one CLI's.
  *
- * The console draws these three and only these (`product/versions/mvp/05-screens.md`):
- * a hand for "Ask for approval", a shield for "Approve for me", an alert ring
- * for "Full access" — the last in a warning tone, because it is the one that
- * changes a machine unattended.
+ * The console draws these three and only these: a hand for "Ask for approval",
+ * a shield for "Approve for me", an alert ring for "Full access" — the last in
+ * a warning tone, because it is the one that changes a machine unattended.
  */
 export const SESSION_PERMISSIONS = ['ask', 'auto', 'full'] as const;
 
@@ -256,8 +254,8 @@ export interface CodingAgentLaunch {
    *
    * A launch option, never a message typed at the running TUI: these CLIs do
    * not take a first task that way, and "the TUI is up" has no moment to race
-   * against (`product/versions/mvp/02-runner.md` §5). In argv the task is
-   * present before the agent starts, with nothing to synchronise.
+   * against. In argv the task is present before the agent starts, with nothing
+   * to synchronise.
    *
    * Absent: this agent takes no task on the command line, and the person types
    * the first one themselves.
@@ -269,9 +267,9 @@ export interface CodingAgentLaunch {
  * A vendor login the console may turn into a button: a host, compared for
  * equality, and optionally a path the URL's path must start with.
  *
- * Hosts are hosts and not regex, because F3 is host equality: `claude.ai` and
- * `claude.ai.attacker.test` differ by a suffix (`product/04-security-review.md`).
- * GitHub is a login host only at `/login/device`, which is what `path` says.
+ * Hosts are hosts and not regex, so a match is host equality: `claude.ai` and
+ * `claude.ai.attacker.test` differ only by a suffix. GitHub is a login host
+ * only at `/login/device`, which is what `path` says.
  */
 export interface CodingAgentLoginTarget {
   readonly host: string;
@@ -280,8 +278,7 @@ export interface CodingAgentLoginTarget {
 
 /**
  * How the runner installs a CLI on a host that does not have it, unattended
- * and as the person's own account: no `sudo`, no terminal, nothing on stdin
- * (`product/versions/mvp/02-runner.md` §10).
+ * and as the person's own account: no `sudo`, no terminal, nothing on stdin.
  *
  * Each platform's entry is a POSIX `sh` script, run with `sh -c`, and a
  * user-level destination. A vendor that publishes release binaries with
@@ -319,8 +316,7 @@ export interface InstallMethod {
  * `submit` is typed after `pasteGapMs`: a CLI that reads an Enter arriving
  * with the paste as part of the paste leaves the message unsent.
  *
- * The values are herdr-core's defaults, which the CLIs here all take
- * (`product/research/lessons-from-herdr.md`).
+ * The values are herdr-core's defaults, which the CLIs here all take.
  */
 export interface CodingAgentInput {
   /** The keys that send what was typed. */
@@ -376,8 +372,7 @@ export interface CodingAgentDefinition {
    * outright and the button names the agent itself, which is what a blank
    * terminal wants. Every agent here carries a **seed** — the models its CLI
    * documents, not ids invented for the picker — and which of them a given
-   * machine's CLI actually knows is open question 6 in
-   * `product/versions/mvp/05-screens.md`; until it is probed, an unknown id
+   * machine's CLI actually knows is not probed yet; until it is, an unknown id
    * fails in the session's own terminal, where the person can see it.
    */
   readonly models: readonly CodingAgentModel[];
@@ -561,7 +556,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     configDirEnv: 'CODEX_HOME',
     // What codex's own picker lists, in its order, with the slugs `codex
     // --model` takes and each model's levels and default as codex reports them;
-    // a seed, with the limit Claude Code's has (`05-screens.md`, question 6).
+    // a seed, with the limit Claude Code's has: nothing probes which a host's
+    // CLI knows.
     models: Object.freeze([
       Object.freeze({
         id: 'gpt-6.1-sol',
@@ -682,7 +678,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // the machine's whole data home, which would relocate every XDG program in
     // the window along with it. That is not one login per directory, so the
     // accounts slice has nothing to set here until OpenCode has a variable of
-    // its own (`product/06-multi-account.md`).
+    // its own.
     models: OPENCODE_MODELS,
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
@@ -771,8 +767,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // 1.0.70's built-in `default_models.json` reads `"default": "grok-4.6"`,
     // with 4.5 beside it); 4.7 is xAI's newest, which the CLI lists once the
     // account's catalog is fetched after sign-in. Same seed argument as the
-    // others: whether a given account's `grok` offers 4.7 is the probe still
-    // open in `product/versions/mvp/05-screens.md`.
+    // others: nothing probes yet whether a given account's `grok` offers 4.7.
     //
     // Each row's levels are that model's own menu: grok takes the canonical
     // `none` to `max` on `--reasoning-effort` but "a model only accepts the
@@ -838,7 +833,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   omp: OMP_AGENT,
   shell: Object.freeze({
     id: 'shell',
-    // The design's own name for it (`product/versions/mvp/design/`).
+    // The design's own name for it.
     label: 'Blank terminal',
     // The host's own login shell, nothing launched in it: a session that is
     // only a worktree and a terminal. No models, no approvals, no effort, and
@@ -858,10 +853,10 @@ export function isCodingAgentId(value: unknown): value is CodingAgentId {
 
 /**
  * The agents a host can start in their vendor's cloud with the host's own CLI
- * and sign-in, a session in the place `cloud` with a host
- * (`product/next-steps/cloud-agents.md`): Claude Code with `claude --cloud`,
- * Codex as a thread in Codex cloud. The task runs on the vendor's machines; the
- * host only starts it, and for Codex reads where it stands.
+ * and sign-in, a session in the place `cloud` with a host: Claude Code with
+ * `claude --cloud`, Codex as a thread in Codex cloud. The task runs on the
+ * vendor's machines; the host only starts it, and for Codex reads where it
+ * stands.
  */
 export const HOST_CLOUD_AGENT_IDS = [
   'claude-code',

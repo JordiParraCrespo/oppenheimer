@@ -21,8 +21,8 @@ import { SESSION_TRANSCRIPT } from '../../sessions.di-tokens';
 import { FindSessionTranscriptQuery } from './find-session-transcript.query';
 
 /**
- * A page of a session's conversation (`product/next-steps/agent-tools.md`
- * §8). The session is read first, in the caller's scope, and that read is the
+ * A page of a session's conversation. The session is read first, in the
+ * caller's scope, and that read is the
  * authorization: one outside it is not found, whatever the cursor says. A
  * cloud session's conversation is at its vendor, which no supported API reads
  * for us, so it is `unsupported` with the vendor's link and its host is never

@@ -8,8 +8,7 @@ import { hostsAreConfigured } from '../../config/hosts.config';
  * and the fingerprint of the control plane's key, which the runner pins.
  *
  * All from **deploy-owned configuration**, never a column: a workspace-writable
- * install or launch string would be remote code execution on somebody's laptop
- * (`product/versions/mvp/09-runner-install-and-update.md` §1).
+ * install or launch string would be remote code execution on somebody's laptop.
  */
 @Injectable()
 export class RunnerReleaseConfig {

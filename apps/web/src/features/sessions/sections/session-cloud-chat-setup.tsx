@@ -16,12 +16,11 @@ import { cloudChatApiUrl, cloudChatHookUrl } from '../lib/cloud-chat-setup';
 type SetupReader = 'you' | 'agent';
 
 /**
- * How to turn on a Claude Code cloud session's chat
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): a
- * key for the workspace, then the rest either as steps to follow or as a
- * prompt for a coding agent, the two ways Add host offers its install. Shown
- * on a cloud session that has sent no line yet. The key's secret is in the
- * mutation's result alone, so it is gone once the pane is.
+ * How to turn on a Claude Code cloud session's chat: a key for the
+ * workspace, then the rest either as steps to follow or as a prompt for a
+ * coding agent, the two ways Add host offers its install. Shown on a cloud
+ * session that has sent no line yet. The key's secret is in the mutation's
+ * result alone, so it is gone once the pane is.
  */
 export function SessionCloudChatSetup({ organizationId }: { organizationId: string }) {
   const { t } = useTranslation();

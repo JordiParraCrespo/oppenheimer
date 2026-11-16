@@ -1,15 +1,14 @@
 /**
- * Every bot knows Oppenheimer from its own guide (`25-bots.md` §4.1,
- * "Oppenheimer's own guide"): the prompt lists the built-in `oppenheimer`
- * skill whenever the turn can read the guide, and `read_oppenheimer_docs`
- * answers with the pages the docs site publishes. What breaks this: the
- * skill listed on a turn that cannot read the guide (the bot is told to call
- * a tool it does not have), or missing from one that can (it answers "how do
- * I pair a host?" from its training); a page asked for by the link a page
- * carries (`./hosts.md`) not found; a deployment's docs address dropped from
- * the answer, or one invented where none is configured; a page grown past
- * what a tool answer holds, which the bot would get cut from the middle.
- * That the bundled pages are the site's own is `pnpm --filter
+ * Every bot knows Oppenheimer from its own guide: the prompt lists the built-in
+ * `oppenheimer` skill whenever the turn can read the guide, and
+ * `read_oppenheimer_docs` answers with the pages the docs site publishes. What
+ * breaks this: the skill listed on a turn that cannot read the guide (the bot
+ * is told to call a tool it does not have), or missing from one that can (it
+ * answers "how do I pair a host?" from its training); a page asked for by the
+ * link a page carries (`./hosts.md`) not found; a deployment's docs address
+ * dropped from the answer, or one invented where none is configured; a page
+ * grown past what a tool answer holds, which the bot would get cut from the
+ * middle. That the bundled pages are the site's own is `pnpm --filter
  * @oppenheimer/docs check:guide`.
  */
 import { GUIDE_PAGES } from '@oppenheimer/shared/guide';

@@ -17,10 +17,9 @@ export type WhatsappSendOutcome =
   | { kind: 'failed'; code: string; detail?: string };
 
 /**
- * A host's WhatsApp linked device, over its runner link
- * (`product/next-steps/whatsapp.md` §2): the socket and the keys are the
- * runner's, so everything the control plane does to the device is a frame to
- * it. Pairing and unpairing are fire and forget, answered by the
+ * A host's WhatsApp linked device, over its runner link: the socket and the
+ * keys are the runner's, so everything the control plane does to the device is
+ * a frame to it. Pairing and unpairing are fire and forget, answered by the
  * `whatsapp.state` the host reports; a send waits for its answer.
  */
 export interface WhatsappDevicePort {

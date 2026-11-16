@@ -14,8 +14,7 @@ export type CloudSessionReplyOutcome =
 
 /**
  * What the module that owns the runner link implements so a reply typed in a
- * cloud session's chat can wake the session (`product/next-steps/cloud-agents.md`,
- * "The chat of a cloud session", decision 2): `cloud.reply` to one host, the
+ * cloud session's chat can wake the session: `cloud.reply` to one host, the
  * host's own `claude -p … --cloud <id>` on its claude.ai sign-in, which the
  * control plane never holds.
  */

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
 /**
- * `n` opens New task, outside a field (`18-plan-product.md` §1). Syncs with the
- * document's keyboard: a key pressed anywhere on the board, not in one control.
+ * `n` opens New task, outside a field. Syncs with the document's keyboard: a
+ * key pressed anywhere on the board, not in one control.
  */
 export function useNewTaskShortcut(onNew: () => void) {
   useEffect(() => {

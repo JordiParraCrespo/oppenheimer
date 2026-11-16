@@ -18,9 +18,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * renewals stay HOT updates.
  *
  * Plain `CREATE INDEX`, not `CONCURRENTLY`: migrations run at boot in one
- * transaction, which `CONCURRENTLY` cannot join, and no deployment holds
- * outbox rows anyone needs yet (`database-design.md`, "While nothing is
- * deployed"). Retention keeps the table to a week of rows either way.
+ * transaction, which `CONCURRENTLY` cannot join, and no deployment holds outbox
+ * rows anyone needs yet. Retention keeps the table to a week of rows either
+ * way.
  */
 export class AddOutboxFailedIndex1791000600000 implements MigrationInterface {
   name = 'AddOutboxFailedIndex1791000600000';

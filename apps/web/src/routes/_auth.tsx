@@ -8,11 +8,10 @@ import { AuthPanel } from '@/features/auth/sections/auth-panel';
  * drift. The column width and legal line are route `staticData` that
  * `AuthLayout` reads off the innermost match.
  *
- * `_auth` is chrome, not a gate: `_public` turns a signed-in visitor away and
- * `onboarding` a signed-out one, so each child carries its own guard. A
+ * `_auth` is chrome, not a gate: `_public` turns a signed-in visitor away
+ * and `onboarding` a signed-out one, so each child carries its own guard. A
  * `redirectSignedIn` here would bounce the account `_authenticated` sends to
- * `/onboarding` for having no workspace, closing the recovery path
- * (`08-auth.md`).
+ * `/onboarding` for having no workspace, closing the recovery path.
  */
 export const Route = createFileRoute('/_auth')({
   component: ConsumerAuthLayout,

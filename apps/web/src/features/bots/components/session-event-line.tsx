@@ -40,12 +40,13 @@ const SESSION_ICONS = {
 } as const;
 
 /**
- * A session the bot follows that woke it (`27-bot-subscriptions.md`):
- * "Session “Research” finished" with Open session, in red when it failed;
- * or its terminal printed what the bot watches for: the pattern and how
- * many lines matched, never the lines; "looks stuck" when its stall
- * check found it so; "Checked on" for its regular look at a task still running; or that its agent sent a message (`runner sessions
- * notify`), whose words are in the bot's turn, not on the line.
+ * A session the bot follows that woke it: "Session “Research” finished"
+ * with Open session, in red when it failed; or its terminal printed what
+ * the bot watches for: the pattern and how many lines matched, never the
+ * lines; "looks stuck" when its stall check found it so; "Checked on" for
+ * its regular look at a task still running; or that its agent sent a
+ * message (`runner sessions notify`), whose words are in the bot's turn,
+ * not on the line.
  */
 export function SessionEventLine({ event }: { event: BotSessionEvent }) {
   const { t } = useTranslation();

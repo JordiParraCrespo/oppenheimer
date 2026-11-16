@@ -23,11 +23,10 @@ export interface PlanWatchResult {
 }
 
 /**
- * A bot starts or stops following the tasks of a project or of one
- * milestone (`27-bot-subscriptions.md` §7.2), and a wake reads what it follows
- * again. Both read it as the bot's owner, so a bot follows only what its
- * owner can read, and a wake whose owner no longer can ends the
- * subscription.
+ * A bot starts or stops following the tasks of a project or of one milestone,
+ * and a wake reads what it follows again. Both read it as the bot's owner, so a
+ * bot follows only what its owner can read, and a wake whose owner no longer
+ * can ends the subscription.
  */
 @Injectable()
 export class BotPlanWatchResolver {

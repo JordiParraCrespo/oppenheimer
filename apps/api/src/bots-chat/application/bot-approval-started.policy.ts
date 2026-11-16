@@ -22,7 +22,7 @@ export interface BotTurnShape<Request> {
 }
 
 /**
- * The one place that knows the turn a yes opens at once (`25-bots.md` §5),
+ * The one place that knows the turn a yes opens at once,
  * where the bot only says it is on it while the approved call runs. Every
  * turn passes here as it is about to run; any other comes back as it is.
  * That one keeps the bot's usual tools, so the provider's cache of the

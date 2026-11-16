@@ -1,7 +1,6 @@
 /**
  * The two names a checkout takes on disk and in git, both derived and both
- * unique-constrained (`product/11-workspace-layout.md`,
- * `product/versions/mvp/03-control-plane.md`).
+ * unique-constrained.
  *
  * ```
  * checkout  workspaces/<organization.slug>/sessions/<session.slug>/<directoryName>
@@ -9,8 +8,7 @@
  * ```
  *
  * No project in either: a project is metadata, so a session listed under another
- * project names the same directory and branch
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). Both are functions of
+ * project names the same directory and branch. Both are functions of
  * rows the control plane holds, never of the filesystem, so two runner versions
  * cannot disagree and a path is never an identity (the UUID is).
  */

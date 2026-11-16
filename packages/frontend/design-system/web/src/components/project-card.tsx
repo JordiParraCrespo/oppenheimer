@@ -27,7 +27,7 @@ const SELECT_TAKES_TILE =
  * 17px semibold, its repositories on a mono line under it, and its status
  * (a compact `StatusDot`) at the top right. The whole card is the way into
  * the project, so it renders a button by default and takes `render` for a
- * link. Measured against `design/version1/Tasks.dc.html` (Projects, View).
+ * link.
  *
  * `select` is its checkbox (a `Checkbox`), beside the card rather than in it
  * so a control never nests in the link: it takes the folder tile's place on

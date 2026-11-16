@@ -11,7 +11,7 @@ import { BotPermissionRuleEntity } from '../../domain/bot-permission-rule.entity
 import { CreateBotPermissionRuleCommand } from './create-bot-permission-rule.command';
 
 /**
- * A plain-language rule for a bot (`25-bots.md` §5): `allow` lets a matching
+ * A plain-language rule for a bot: `allow` lets a matching
  * asking call run without a card, `ask` makes one ask. Past
  * `BOT_PERMISSION_RULES_MAX` is `BOTS_031`, counted under a lock on the bot.
  */

@@ -46,13 +46,12 @@ const skillName = z
   .describe('The skill\'s name, as the skills list or /<name> shows it, e.g. "release-notes".');
 
 /**
- * Its skills (`25-bots.md` §4.1, from OpenClaw's skills and Grok Bot's saved
- * skills): the bot reads one when a request fits it, saves the way it did a
- * task as one when the person asks or the work was hard and will come again,
- * and fixes one that turned out wrong (Hermes Agent's learning loop). Every
- * tool acts on the turn's bot, its id the context's and never an input.
- * Listed under Itself in Settings →
- * Permissions, beside its documents and memory.
+ * Its skills (from OpenClaw's skills and Grok Bot's saved skills): the bot
+ * reads one when a request fits it, saves the way it did a task as one when the
+ * person asks or the work was hard and will come again, and fixes one that
+ * turned out wrong (Hermes Agent's learning loop). Every tool acts on the
+ * turn's bot, its id the context's and never an input. Listed under Itself in
+ * Settings → Permissions, beside its documents and memory.
  */
 @Injectable()
 export class BotSkillToolsFactory implements BotToolArea {

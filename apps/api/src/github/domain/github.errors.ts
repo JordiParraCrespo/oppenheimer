@@ -181,7 +181,7 @@ export const GithubErrors = {
   },
   /**
    * Reviewing, commenting, merging and review sessions on a repository read
-   * through the person's own tokens are done on GitHub (§6.2): the tokens are
+   * through the person's own tokens are done on GitHub: the tokens are
    * for reading, and sessions clone through the App.
    */
   READ_ONLY_REPOSITORY: {

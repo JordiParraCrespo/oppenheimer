@@ -8,7 +8,7 @@ import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.p
 import { ResumeBotGoalCommand } from './resume-bot-goal.command';
 
 /**
- * Resume a bot's paused goal from its chat (`25-bots.md` §4.1): it runs again
+ * Resume a bot's paused goal from its chat: it runs again
  * from where it paused, with its count, its spend and its history, and its
  * next continuation is queued with a line saying the owner resumed it. A
  * turn of it still running when it is resumed is counted at its end all the

@@ -12,9 +12,8 @@ const ACTIVITY: Readonly<Record<AutomationChange, BotRoutineChangedDomainEvent['
 } satisfies Record<AutomationChange, BotRoutineActivity>;
 
 /**
- * What a save of one of a bot's routines tells its chat (`26-bot-routines.md`
- * §4, "In the chat"): one event per kind of change the save made, so a save
- * that renames and re-prompts says "changed" once. The aggregate only records
+ * What a save of one of a bot's routines tells its chat: one event per kind
+ * of change the save made, so a save that renames and re-prompts says "changed" once. The aggregate only records
  * what changed; a session automation's changes tell no chat anything.
  */
 export function routineActivityEvents(

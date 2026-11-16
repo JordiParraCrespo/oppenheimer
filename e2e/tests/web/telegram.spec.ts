@@ -4,7 +4,7 @@ import { query } from '../../support/db';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Settings → Telegram, in a browser (`product/next-steps/telegram.md` §2): the
+ * Settings → Telegram, in a browser: the
  * reader's own Telegram bots, each polled by the runner on one of their hosts.
  * Against the real control plane, a reader with none sees what connecting gives
  * their bots, and that a host comes first. The stack has no Telegram behind it,

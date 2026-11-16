@@ -4,8 +4,7 @@ import { attach, pairedHosts } from '../../support/fleet';
 import { connectInstallation, createSession, waitForLifecycle } from '../../support/sessions';
 
 /**
- * Where a session runs, checked on the machine
- * (`product/versions/mvp/24-session-places.md`): a worktree session lands in
+ * Where a session runs, checked on the machine: a worktree session lands in
  * the work folder under its account, workspace and slug, carries the marker
  * that licenses its removal, and is removed on close; a folder session runs in
  * a folder the person already has, writes nothing into it and leaves it there

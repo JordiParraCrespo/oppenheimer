@@ -1,7 +1,7 @@
 /**
  * One meeting invited to two of a person's addresses comes back from both
- * accounts (`23-plan-milestones-stats-accounts.md` §5). It is one item on the
- * month, so the copies after the first are dropped.
+ * accounts. It is one item on the month, so the copies after the first are
+ * dropped.
  *
  * Two copies are the same when they share a key (`keyOf`): the event's `iCalUID`
  * and its occurrence (an instance of a recurring event by its

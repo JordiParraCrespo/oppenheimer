@@ -8,11 +8,10 @@ import { BotRoutineTableRow } from '../components/bot-routine-table-row';
 import { botRoutineColumns } from '../lib/automation-view';
 
 /**
- * The workspace's bot routines, the overview's Bot routines tab
- * (`26-bot-routines.md` §7): a bot's own work, kept apart from the sessions
- * the automations start, with the bot that runs each. A row opens that bot's
- * Routines tab. With none, the empty row says where they are made: a bot's
- * chat, not here.
+ * The workspace's bot routines, the overview's Bot routines tab: a bot's
+ * own work, kept apart from the sessions the automations start, with the
+ * bot that runs each. A row opens that bot's Routines tab. With none, the
+ * empty row says where they are made: a bot's chat, not here.
  *
  * Read under Suspense: the screen's `QueryState` draws the placeholder and a
  * first failure. A refetch that fails keeps the rows and says so above them.

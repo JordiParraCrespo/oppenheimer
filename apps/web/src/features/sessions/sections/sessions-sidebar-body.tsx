@@ -58,13 +58,13 @@ const DeleteSessionsDialog = lazy(() =>
 
 /**
  * The console's sidebar below New session, in `SessionsSidebar`'s
- * `QueryState.Data`: the sessions grouped by project
- * (`product/versions/mvp/05-screens.md`). It reads the sessions, the projects
- * in API order and the hosts a facet names under Suspense, side by side, and
- * holds only the state siblings share: the filters and settled search, the
- * folded groups, the row whose delete is up (its dialog outlives the row) and
- * the last failed write (a menu closes on its pick, so it shows above the
- * list). A refetch that fails keeps the groups and says so above them.
+ * `QueryState.Data`: the sessions grouped by project. It reads the sessions,
+ * the projects in API order and the hosts a facet names under Suspense, side
+ * by side, and holds only the state siblings share: the filters and settled
+ * search, the folded groups, the row whose delete is up (its dialog outlives
+ * the row) and the last failed write (a menu closes on its pick, so it shows
+ * above the list). A refetch that fails keeps the groups and says so above
+ * them.
  *
  * Filters and search are state, not URL: the console's URL is the open
  * session, and a filter must not change which one that is. The filters and
