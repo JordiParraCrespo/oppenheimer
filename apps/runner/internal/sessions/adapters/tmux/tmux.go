@@ -193,8 +193,8 @@ func (s *Server) KillWindow(ctx context.Context, target string) error {
 // Kill ends a session. A session that is already gone is not an error: the
 // caller wanted it gone.
 func (s *Server) Kill(ctx context.Context, name string) error {
-	// A shell tab watched through a view (see viewOf) holds the session's
-	// windows too: ended first, or its shells would outlive the session.
+	// A shell tab watched through a view (see viewOf) holds one of the
+	// session's windows too: ended first, or its shell would outlive it.
 	if views, err := s.views(ctx, name); err == nil {
 		for _, view := range views {
 			_, _ = s.run(ctx, "kill-session", "-t", view) //nolint:errcheck // gone already is fine
@@ -227,21 +227,27 @@ func (s *Server) List(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-// viewMark names a view: a tmux session grouped with a runner session, one
-// per browser watching a shell window, so it is not a session of its own.
+// viewMark names a view: a tmux session that holds one of a runner
+// session's windows for one browser watching it, so it is not a session of
+// its own.
 const viewMark = "~view~"
 
 // viewOf is the client command that watches window `window` of session
-// `name` without moving anyone else. tmux keeps one current window per
-// session, so a second client attaching to `name:1` would switch every
-// client of `name`, the agent's terminal included, to the shell. A session
-// grouped with `name` shares its windows and has its own current window; it
-// goes away with its client (destroy-unattached).
+// `name` without moving or resizing anyone else. tmux keeps one current
+// window per session, so a second client attaching to `name:1` would switch
+// every client of `name`, the agent's terminal included, to the shell; and a
+// session grouped with `name` shares all its windows, so under `window-size
+// latest` a small side-pane client would shrink the agent's window too. A
+// view holds the shell window alone, linked in (the window lives on in
+// `name`), its own first window dropped; it goes away with its client
+// (destroy-unattached).
 func viewOf(name, window string) []string {
 	view := name + viewMark + strconv.FormatInt(time.Now().UnixNano(), 36)
 	return []string{
-		"new-session", "-t", name, "-s", view,
+		"new-session", "-s", view, "sleep", "60",
 		";", "set-option", "-t", view, "destroy-unattached", "on",
+		";", "link-window", "-s", name + ":" + window, "-t", view + ":" + window,
+		";", "kill-window", "-t", view + ":0",
 		";", "select-window", "-t", view + ":" + window,
 	}
 }

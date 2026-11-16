@@ -437,10 +437,11 @@ func TestLaunchReplacesTheShellWithTheProgramInPlace(t *testing.T) {
 	}
 }
 
-// Watching a shell window must not move anyone watching the agent's. tmux
-// keeps one current window per session, so attaching a second client to
-// `name:1` switched the first client, the agent's terminal, to the shell
-// too. A view keeps each client on its own window, and leaves no session the
+// Watching a shell window must not move or resize anyone watching the
+// agent's. tmux keeps one current window per session, so attaching a second
+// client to `name:1` switched the first client, the agent's terminal, to the
+// shell too; and a view grouped with the session shrank the agent's window to
+// the side pane's size. A view keeps each client on its own window, and leaves no session the
 // runner would list or count as an orphan; killing the session ends it.
 func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 	s := server(t)
@@ -451,13 +452,13 @@ func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir()); err != nil {
 		t.Fatal(err)
 	}
-	agent, err := s.Attach(ctx, "opp-view:0", app.Size{Cols: 80, Rows: 24}, false)
+	agent, err := s.Attach(ctx, "opp-view:0", app.Size{Cols: 120, Rows: 40}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer agent.Close()
 	go io.Copy(io.Discard, agent) //nolint:errcheck // drains the client
-	shell, err := s.Attach(ctx, "opp-view:1", app.Size{Cols: 80, Rows: 24}, false)
+	shell, err := s.Attach(ctx, "opp-view:1", app.Size{Cols: 50, Rows: 20}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -479,6 +480,16 @@ func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 		if strings.HasPrefix(line, "opp-view:") && line != "opp-view:0" {
 			t.Fatalf("the agent's client moved to %q", line)
 		}
+	}
+	// The side pane's small client sizes the shell's window, never the agent's,
+	// even once the console resizes it after attaching.
+	if err := shell.Resize(app.Size{Cols: 48, Rows: 18}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(300 * time.Millisecond)
+	size, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "display-message", "-p", "-t", "opp-view:0", "#{window_width}x#{window_height}").Output()
+	if got := strings.TrimSpace(string(size)); got != "120x40" {
+		t.Fatalf("the agent's window is %s with a small shell client beside it, want 120x40", got)
 	}
 	if names, _ := s.List(ctx); len(names) != 1 || names[0] != "opp-view" {
 		t.Fatalf("list = %v, want the session alone", names)
