@@ -151,8 +151,7 @@
     "error": "Algo ha ido mal",
     "comingToMobile": {
       "title": "Próximamente en el móvil",
-      "pullRequests": "Revisa las pull requests que te necesitan.",
-      "plan": "Tus tareas, hitos y calendario, desde aquí."
+      "pullRequests": "Revisa las pull requests que te necesitan."
     }
   },
   "validation": {
@@ -3330,6 +3329,13 @@
       "partial_one": "{{count}} tarea no se ha eliminado",
       "partial_many": "{{count}} de tareas no se han eliminado",
       "partial_other": "{{count}} tareas no se han eliminado"
+    },
+    "mobile": {
+      "actions": "Acciones de la tarea",
+      "notFound": "Esta tarea ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "due": "Vence",
+      "sessions": "Sesiones",
+      "noSessions": "Ninguna sesión trabaja en esta tarea todavía. Inicia una desde la consola en tu ordenador."
     }
   },
   "calendar": {

@@ -5,10 +5,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@oppenheimer/design-system-web';
+import { type BoardFilter } from '@oppenheimer/frontend-consumer';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { TaskEditorSkeleton } from '../components/task-editor-skeleton';
-import type { BoardFilter } from '../lib/board';
 import { NEW_TASK } from '../lib/board-search';
 import { TaskEditor } from '../sections/task-editor';
 

@@ -1,5 +1,5 @@
-import { compareRank, type MilestoneEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
 import { TASK_STATUSES, type TaskStatus } from '@oppenheimer/shared/schemas/task';
+import { compareRank, type MilestoneEntity, type TaskEntity } from './task.entity';
 
 /**
  * What the board is narrowed to: a set of projects (their ids; absent is All

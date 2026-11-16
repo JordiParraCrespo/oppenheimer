@@ -1,7 +1,7 @@
 import type { TaskDueTone } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
+import { type BoardFilter, soleProjectOf } from '@oppenheimer/frontend-consumer';
 import { daysBetween, nearDay } from '@oppenheimer/frontend-web';
-import { type BoardFilter, soleProjectOf } from './board';
 
 /** What a card draws, in the reader's words. */
 export interface TaskCardView {

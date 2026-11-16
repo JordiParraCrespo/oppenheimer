@@ -1,11 +1,11 @@
 import type { MilestoneTimelineControls } from '@oppenheimer/design-system-web';
+import { soleProjectOf } from '@oppenheimer/frontend-consumer';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MilestonesTimelineSkeleton } from '../components/milestones-timeline-skeleton';
 import { MilestoneDialog } from '../dialogs/milestone';
 import { useScopeProject } from '../hooks/use-scope-project';
-import { soleProjectOf } from '../lib/board';
 import { MilestonesHeader } from '../sections/milestones-header';
 import { MilestonesTimeline } from '../sections/milestones-timeline';
 import { PlanFilters } from '../sections/plan-filters';

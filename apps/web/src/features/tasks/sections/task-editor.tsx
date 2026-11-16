@@ -1,4 +1,5 @@
 import { FieldDescription } from '@oppenheimer/design-system-web';
+import { type BoardFilter, filingOf } from '@oppenheimer/frontend-consumer';
 import {
   useCreateTask,
   useDeleteTask,
@@ -12,7 +13,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TaskForm } from '../forms/task-form';
 import { useToday } from '../hooks/use-today';
-import { type BoardFilter, filingOf } from '../lib/board';
 import { newTaskValues, type TaskFormOutput, taskValues } from '../lib/task-form';
 import { TaskSessionsRow } from './task-sessions-row';
 

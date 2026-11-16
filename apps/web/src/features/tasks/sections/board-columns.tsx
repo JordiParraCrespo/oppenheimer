@@ -14,6 +14,12 @@ import {
 import { Trash2, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import {
+  boardColumnsOf,
+  doneCutoffOf,
+  filingOf,
+  sessionLineOf,
+} from '@oppenheimer/frontend-consumer';
+import {
   useCreateTask,
   useMoveTask,
   useSuspenseTaskBoard,
@@ -38,10 +44,8 @@ import { useBoardMarquee } from '../hooks/use-board-marquee';
 import { useBulkMove } from '../hooks/use-bulk-move';
 import { useCardSelection } from '../hooks/use-card-selection';
 import { useToday } from '../hooks/use-today';
-import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
 import { cardClickPick, droppedMoves, movesToColumn, OWNS_PRESS } from '../lib/card-selection';
 import { cardView, dueDayLabel } from '../lib/card-view';
-import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
 
 const board = getRouteApi('/_authenticated/plan/');

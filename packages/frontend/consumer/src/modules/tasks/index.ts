@@ -1,3 +1,13 @@
+export {
+  afterTaskIdFor,
+  type BoardFilter,
+  boardColumnsOf,
+  boardCounts,
+  columnOf,
+  doneCutoffOf,
+  filingOf,
+  soleProjectOf,
+} from './board';
 export type {
   PlanStats,
   PlanStatsModelTokens,
@@ -14,6 +24,15 @@ export {
   type TaskMove,
   type TaskSessionLink,
 } from './task.entity';
+export {
+  mostUrgent,
+  type SessionLine,
+  sessionLineOf,
+  sessionStateOf,
+  type TaskSession,
+  type TaskSessionState,
+  taskSessionsOf,
+} from './task-sessions';
 export { TasksModule } from './tasks.module';
 export {
   type StartedTaskSession,

@@ -251,5 +251,12 @@
     "partial_one": "{{count}} tarea no se ha eliminado",
     "partial_many": "{{count}} de tareas no se han eliminado",
     "partial_other": "{{count}} tareas no se han eliminado"
+  },
+  "mobile": {
+    "actions": "Acciones de la tarea",
+    "notFound": "Esta tarea ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "due": "Vence",
+    "sessions": "Sesiones",
+    "noSessions": "Ninguna sesión trabaja en esta tarea todavía. Inicia una desde la consola en tu ordenador."
   }
 }

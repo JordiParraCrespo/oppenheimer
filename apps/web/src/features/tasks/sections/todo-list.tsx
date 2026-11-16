@@ -10,6 +10,7 @@ import {
   TodoRow,
 } from '@oppenheimer/design-system-web';
 import { Play } from '@oppenheimer/design-system-web/icons';
+import { taskSessionsOf } from '@oppenheimer/frontend-consumer';
 import {
   useMoveTask,
   useSuspenseTaskBoard,
@@ -22,7 +23,6 @@ import { TodoMove } from '../components/todo-move';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
 import { TODO_GROUP, useTodoOrder } from '../hooks/use-todo-order';
-import { taskSessionsOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
 import { heldByDeadline, type TodoEntry, todoDay, todoLabels, todoPlaceOf } from '../lib/todo';
 import { todoStatusOf } from '../lib/todo-status';

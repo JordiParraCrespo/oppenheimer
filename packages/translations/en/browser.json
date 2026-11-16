@@ -149,8 +149,7 @@
     "error": "Something went wrong",
     "comingToMobile": {
       "title": "Coming to mobile",
-      "pullRequests": "Review the pull requests that need you.",
-      "plan": "Your tasks, milestones and calendar, from here."
+      "pullRequests": "Review the pull requests that need you."
     }
   },
   "validation": {
@@ -3295,6 +3294,13 @@
       "confirm": "Delete tasks",
       "partial_one": "{{count}} task was not deleted",
       "partial_other": "{{count}} tasks were not deleted"
+    },
+    "mobile": {
+      "actions": "Task actions",
+      "notFound": "This task is gone. It may have been deleted from another device.",
+      "due": "Due",
+      "sessions": "Sessions",
+      "noSessions": "No session works on this task yet. Start one from the console on your computer."
     }
   },
   "calendar": {
