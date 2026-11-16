@@ -1,7 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 import { STUB_KEY_PREFIX } from '../../support/cursor-stub';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
-import { pickProjectAndRepository, provisionedUser, signInAs } from '../../support/web';
+import {
+  pickDialogProject,
+  pickProjectAndRepository,
+  provisionedUser,
+  signInAs,
+} from '../../support/web';
 
 /**
  * Cloud sessions from Plan's tasks and from automations, on the Cursor stub
@@ -36,7 +41,7 @@ test('a task starts in Cursor’s cloud, with no host, and links the session', a
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New task' });
   await dialog.getByLabel('Title').fill('Fix the login redirect loop');
-  await dialog.getByRole('button', { name: 'Wallet' }).click();
+  await pickDialogProject(page, dialog, 'Wallet');
   await dialog.getByRole('button', { name: 'Add task' }).click();
 
   await card(page, 'Fix the login redirect loop').hover();

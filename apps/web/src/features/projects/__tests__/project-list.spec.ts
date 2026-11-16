@@ -1,6 +1,7 @@
 import type { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import {
+  projectMatchesQuery,
   projectNeedsInputRows,
   projectStatusOf,
   projectTaskGroups,
@@ -76,5 +77,16 @@ describe('projectTaskGroups', () => {
     const groups = projectTaskGroups('a', [blocked, doing, task('a', 'todo'), task('b', 'doing')]);
     expect(groups.blocked).toEqual([blocked]);
     expect(groups.doing).toEqual([doing]);
+  });
+});
+
+describe('projectMatchesQuery', () => {
+  const xrp = { repositories: [{ fullName: 'acme/xrp-mobile' }] } as never;
+
+  it('matches the shown name or a repository, case aside, and keeps every card on no words', () => {
+    expect(projectMatchesQuery(xrp, 'XRP Mobile', 'mobile')).toBe(true);
+    expect(projectMatchesQuery(xrp, 'Wallet', 'ACME/XRP')).toBe(true);
+    expect(projectMatchesQuery(xrp, 'Wallet', 'atlas')).toBe(false);
+    expect(projectMatchesQuery(xrp, 'Wallet', '  ')).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
-import { provisionedUser, signInAs } from '../../support/web';
+import { pickDialogProject, provisionedUser, signInAs } from '../../support/web';
 
 const STATUS = {
   'Not started': 'todo',
@@ -143,7 +143,7 @@ test('a session started from a card moves it to In progress and links back', asy
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New task' });
   await dialog.getByLabel('Title').fill('Fix the empty state');
-  await dialog.getByRole('button', { name: 'Wallet' }).click();
+  await pickDialogProject(page, dialog, 'Wallet');
   await dialog.getByRole('button', { name: 'Add task' }).click();
   await expect(column(page, 'Not started').getByText('Fix the empty state')).toBeVisible();
 
@@ -170,7 +170,7 @@ test('a session started from a card moves it to In progress and links back', asy
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const second = page.getByRole('dialog', { name: 'New task' });
   await second.getByLabel('Title').fill('Polish the wallet list');
-  await second.getByRole('button', { name: 'Wallet' }).click();
+  await pickDialogProject(page, second, 'Wallet');
   await second.getByRole('button', { name: 'Add task' }).click();
   await card(page, 'Polish the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });

@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DeleteProjectsDialog } from '../dialogs/delete-projects';
 import {
+  projectMatchesQuery,
   projectRepositoriesLine,
   projectStatusOf,
   projectsWithOpenSessions,
@@ -40,10 +41,17 @@ const STATUS_KEY = {
  * rather than opening it, and the selection bar at the foot deletes them all.
  * Unassigned and a project with an open session take no checkbox: the API
  * refuses to delete either, as the project dialog's Delete is off for them.
+ *
+ * `query` narrows the cards to those whose name or a repository matches; a
+ * card it hides leaves the selection, so Select all and Delete only reach the
+ * cards in view.
  */
-export function ProjectsList({ onNew }: { onNew: () => void }) {
+export function ProjectsList({ query = '', onNew }: { query?: string; onNew: () => void }) {
   const { t } = useTranslation();
-  const { projects, sessions, error } = useSuspenseSessionsSidebar();
+  const { projects: all, sessions, error } = useSuspenseSessionsSidebar();
+  const nameOf = (project: ProjectEntity) =>
+    project.isUnassigned ? t('projects.unassigned') : project.name;
+  const projects = all.filter((project) => projectMatchesQuery(project, nameOf(project), query));
   const held = projectsWithOpenSessions(sessions);
   const pickable = projects
     .filter((project) => !project.isUnassigned && !held.has(project.id))
@@ -51,6 +59,21 @@ export function ProjectsList({ onNew }: { onNew: () => void }) {
   const selection = useMultiSelection(pickable);
   const [deleting, setDeleting] = useState<ProjectEntity[] | null>(null);
   const alert = <ErrorAlert error={error} fallback={t('projects.list.loadFailed')} />;
+
+  if (all.length > 0 && projects.length === 0) {
+    return (
+      <>
+        {alert}
+        <EmptyState>
+          <EmptyState.Header>
+            <EmptyState.Description>
+              {t('common.search.noMatch', { query: query.trim() })}
+            </EmptyState.Description>
+          </EmptyState.Header>
+        </EmptyState>
+      </>
+    );
+  }
 
   if (projects.length === 0) {
     return (
@@ -74,7 +97,7 @@ export function ProjectsList({ onNew }: { onNew: () => void }) {
       <ProjectCardGrid>
         {projects.map((project) => {
           const status = projectStatusOf(project.id, sessions);
-          const name = project.isUnassigned ? t('projects.unassigned') : project.name;
+          const name = nameOf(project);
           const canPick = pickable.includes(project.id);
           const picked = selection.has(project.id);
           return (
