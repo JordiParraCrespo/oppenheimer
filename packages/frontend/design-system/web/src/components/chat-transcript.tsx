@@ -245,7 +245,7 @@ function TurnHeader({
   children?: React.ReactNode;
 }) {
   const label = { ...TURN_LABELS, ...labels };
-  const figure = (value: React.ReactNode) => <span className="figures">{value}</span>;
+  const figure = (value: React.ReactNode) => <span className="tabular-nums">{value}</span>;
   const dot = <span aria-hidden>·</span>;
   const body =
     state === 'working' ? (
@@ -383,7 +383,7 @@ function MessageTrail({
   return (
     <div data-slot="message-trail" className={cn('-ml-1.5 flex items-center gap-0.5 text-fg-subtle', className)}>
       {actions}
-      {meta ? <span className="figures ml-1.5 text-[12px]">{meta}</span> : null}
+      {meta ? <span className="ml-1.5 text-[12px] tabular-nums">{meta}</span> : null}
     </div>
   );
 }
