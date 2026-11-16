@@ -1,3 +1,4 @@
+import type { TFunction } from '@oppenheimer/frontend-core';
 import { clock, dayOffset, viewerTimeZone, weekdayDate } from '@oppenheimer/frontend-core';
 import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
 import {
@@ -7,7 +8,6 @@ import {
   type AutomationRunStatus,
 } from '@oppenheimer/shared/automations';
 import { CLOUD_AGENT_LABELS, type CloudAgentId } from '@oppenheimer/shared/schemas/cloud-agent';
-import type { TFunction } from 'i18next';
 import type { AutomationEntity } from './automation.entity';
 
 /**
