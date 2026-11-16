@@ -4,6 +4,7 @@ import { CheckIcon, CopyIcon, WrapTextIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { useCopy } from '../hooks/use-copy';
+import { useWideLines } from '../internal/use-wide-lines';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 import { type JsonTreeAnnotate, JsonTree } from './json-tree';
@@ -23,7 +24,8 @@ import { SegmentedControl, SegmentedControlItem } from './segmented-control';
  * - `ChatCodeBlock`: a fenced block in a reply, on the chat's grey wash at
  *   the 10px radius: the language in small mono over the code, Wrap and
  *   Copy at its end, then the code at 13.5px mono on 1.7, scrolling
- *   sideways until Wrap folds its long lines.
+ *   sideways until Wrap folds its long lines. Wrap is there only when a
+ *   line is wider than the block.
  * - `ChatJsonBlock`: a fenced block that parses as JSON, the same block
  *   opening on the code as written, Raw / Tree on its band.
  */
@@ -160,9 +162,20 @@ function CodeBlockBand({
 }
 
 /** The code, scrolling sideways, or folding its long lines when `wrapped`. */
-function PlainCode({ code, wrapped, children }: { code: string; wrapped?: boolean; children?: React.ReactNode }) {
+function PlainCode({
+  code,
+  wrapped,
+  boxRef,
+  children,
+}: {
+  code: string;
+  wrapped?: boolean;
+  /** The scrolling box, for a caller that measures its lines. */
+  boxRef?: React.Ref<HTMLDivElement>;
+  children?: React.ReactNode;
+}) {
   return (
-    <div className="overflow-x-auto px-4 pt-1 pb-3.5 font-mono text-[13.5px] leading-[1.7]">
+    <div ref={boxRef} className="overflow-x-auto px-4 pt-1 pb-3.5 font-mono text-[13.5px] leading-[1.7]">
       <pre className={cn('m-0 font-mono text-fg', wrapped && 'break-normal whitespace-pre-wrap [overflow-wrap:anywhere]')}>
         <code>{children ?? code}</code>
       </pre>
@@ -187,6 +200,7 @@ function ChatCodeBlock({
   children?: React.ReactNode;
 }) {
   const [wrapped, setWrapped] = React.useState(false);
+  const { ref, wide } = useWideLines<HTMLDivElement>(wrapped, code);
   return (
     <div data-slot="chat-code-block" className={cn('my-0.5 overflow-hidden rounded-sm bg-chat-wash', className)}>
       <CodeBlockBand
@@ -194,9 +208,9 @@ function ChatCodeBlock({
         language={language}
         labels={labels}
         wrapped={wrapped}
-        onWrap={() => setWrapped(!wrapped)}
+        onWrap={wide ? () => setWrapped(!wrapped) : undefined}
       />
-      <PlainCode code={code} wrapped={wrapped}>
+      <PlainCode code={code} wrapped={wrapped} boxRef={ref}>
         {children}
       </PlainCode>
     </div>
