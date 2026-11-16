@@ -411,3 +411,30 @@ func TestAClaudeSessionRunsTheRunnersStatusLineWhichIsNeverSaved(t *testing.T) {
 		t.Fatalf("saved launch = %s", saved)
 	}
 }
+
+// Which agent may join a session in another window without taking its
+// conversation over: any other kind; a second copy of its own only when the
+// session is found by its conversation's id. The regression: a second Codex,
+// or a second Claude in a teleported session, becoming the session's chat
+// and what its restart reopens.
+func TestTakesSecond(t *testing.T) {
+	claude := Session{Agent: AgentClaude}
+	teleported := Session{Agent: AgentClaude, Launch: Launch{Teleport: "session_01ABCDEFGHIJKLMNOPQRSTUV"}}
+	codex := Session{Agent: AgentCodex}
+	for _, c := range []struct {
+		session Session
+		agent   Agent
+		want    bool
+	}{
+		{claude, AgentClaude, true},
+		{claude, AgentCodex, true},
+		{teleported, AgentClaude, false},
+		{teleported, AgentCodex, true},
+		{codex, AgentCodex, false},
+		{codex, AgentClaude, true},
+	} {
+		if got := c.session.TakesSecond(c.agent); got != c.want {
+			t.Errorf("%s session, %s: TakesSecond = %v, want %v", c.session.Agent, c.agent, got, c.want)
+		}
+	}
+}

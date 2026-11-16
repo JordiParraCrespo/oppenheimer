@@ -231,10 +231,9 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 // effort only when it is the session's own agent: a model names one CLI's.
 // It starts a conversation of its own, so it is launched with no first task,
 // no conversation id, no server and no observer wrapper; window 0 stays the
-// session's agent, the one its state is read from. A second copy of the
-// session's own agent is refused when that agent cannot name its
-// conversation (domain.Agent.NamesConversation). A launch that fails takes
-// its window with it.
+// session's agent, the one its state is read from. An agent that would take
+// the session's conversation over is refused (domain.Session.TakesSecond). A
+// launch that fails takes its window with it.
 func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent) (domain.Window, error) {
 	if agent != "" && agent.Command() == "" {
 		return domain.Window{}, domain.ErrInvalidInput.WithDetail("%q is not an agent a window can start", agent)
@@ -247,11 +246,7 @@ func (s *Service) OpenWindow(ctx context.Context, id string, agent domain.Agent)
 	if !session.State.Live() {
 		return domain.Window{}, domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
-	// The session's conversation is window 0's: a second copy of an agent
-	// found by its folder would be read, and resumed, in its place. A
-	// teleported session is found by its folder too, whatever the agent: a
-	// restart continues the newest conversation there (FindTeleported).
-	if agent == session.Agent && (!agent.NamesConversation() || session.Launch.Teleport != "") {
+	if agent != "" && !session.TakesSecond(agent) {
 		return domain.Window{}, domain.ErrInvalidInput.WithDetail(
 			"a second %s in this worktree would take over the session's conversation", agent.CatalogID())
 	}
