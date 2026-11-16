@@ -283,16 +283,19 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 	if _, ok := session.Window(index); !ok {
 		return domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, index)
 	}
-	if err := s.terminals.KillWindow(ctx, session.Target(index)); err != nil {
+	// Read tmux first: a shell whose user typed `exit` is gone from tmux but
+	// still in the record, and killing it again is a tmux error that would
+	// leave its tab in the console for good. Gone already is closed.
+	live, err := s.terminals.Windows(ctx, session.TmuxName())
+	if err != nil {
 		return err
 	}
-	kept := session.Windows[:0]
-	for _, w := range session.Windows {
-		if w.Index != index {
-			kept = append(kept, w)
+	if slices.ContainsFunc(live, func(w domain.Window) bool { return w.Index == index }) {
+		if err := s.terminals.KillWindow(ctx, session.Target(index)); err != nil {
+			return err
 		}
 	}
-	session.Windows = kept
+	session.Windows = slices.DeleteFunc(live, func(w domain.Window) bool { return w.Index == index })
 	session.Updated = s.now().UTC()
 	s.record(session)
 	return nil

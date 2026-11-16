@@ -1,4 +1,6 @@
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { useSidePane } from '../hooks/use-side-pane';
 import { closeTab, openKept, rememberSidePane, shownTab, storedSidePane } from '../lib/side-pane';
 
 /**
@@ -78,5 +80,22 @@ describe('shownTab', () => {
     expect(shownTab(['terminal:2', 'bot:b1'], 'terminal:1')).toBe('terminal:2');
     expect(shownTab(['terminal:2'], null)).toBeNull();
     expect(shownTab([], 'terminal:1')).toBeNull();
+  });
+});
+
+describe('useSidePane', () => {
+  it('keeps a bot opened while a terminal was opening when the terminal is shown', () => {
+    const { result } = renderHook(() => useSidePane(SESSION));
+    // The terminal's open answers over a round trip, from a handler made
+    // before the bot was picked.
+    const showTerminal = result.current.show;
+    act(() => result.current.open({ kind: 'bot', botId: 'b1' }));
+    act(() => showTerminal('terminal:1'));
+
+    expect(result.current.kept).toEqual({
+      items: [{ kind: 'bot', botId: 'b1' }],
+      active: 'terminal:1',
+    });
+    expect(storedSidePane(SESSION).items).toEqual([{ kind: 'bot', botId: 'b1' }]);
   });
 });
