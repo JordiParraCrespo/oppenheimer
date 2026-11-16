@@ -1,10 +1,7 @@
-import { Button } from '@oppenheimer/design-system-mobile/button';
-import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
-import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useTasks } from '@oppenheimer/frontend-consumer/react';
+import { RecordState } from '@oppenheimer/frontend-mobile';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
 import { TaskActions } from '../sections/task-actions';
 import { TaskDetail } from '../sections/task-detail';
 
@@ -18,28 +15,12 @@ export function TaskScreen({ id }: { id: string }) {
     return (
       <>
         <Stack.Screen options={{ title: '' }} />
-        {list.isPending ? (
-          <View className="flex-1 items-center justify-center" aria-busy>
-            <ActivityIndicator />
-          </View>
-        ) : list.isError ? (
-          <View className="flex-1 items-center justify-center gap-3 px-6">
-            <Text variant="body" tone="destructive">
-              {t('tasks.board.loadFailed')}
-            </Text>
-            <Button variant="outline" onPress={() => list.refetch()}>
-              <Text>{t('common.retry')}</Text>
-            </Button>
-          </View>
-        ) : (
-          <View className="flex-1 justify-center px-6">
-            <EmptyState>
-              <EmptyState.Header>
-                <EmptyState.Description>{t('tasks.mobile.notFound')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </View>
-        )}
+        <RecordState
+          pending={list.isPending}
+          failed={list.isError ? t('tasks.board.loadFailed') : null}
+          onRetry={() => list.refetch()}
+          notFound={t('tasks.mobile.notFound')}
+        />
       </>
     );
   }

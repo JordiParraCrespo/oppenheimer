@@ -1,11 +1,8 @@
-import { Button } from '@oppenheimer/design-system-mobile/button';
-import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
-import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cloudProviderLabel, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
+import { RecordState } from '@oppenheimer/frontend-mobile';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
 import { SessionTitle } from '../components/session-title';
 import { dotOf, leadKeyOf, needsInput } from '../lib/session-filters';
 import { SessionActions } from '../sections/session-actions';
@@ -28,28 +25,12 @@ export function SessionScreen({ id, webUrl }: { id: string; webUrl: string }) {
     return (
       <>
         <Stack.Screen options={{ title: '' }} />
-        {list.isPending ? (
-          <View className="flex-1 items-center justify-center" aria-busy>
-            <ActivityIndicator />
-          </View>
-        ) : list.isError ? (
-          <View className="flex-1 items-center justify-center gap-3 px-6">
-            <Text variant="body" tone="destructive">
-              {t('sessions.mobile.loadFailed')}
-            </Text>
-            <Button variant="outline" onPress={() => list.refetch()}>
-              <Text>{t('common.retry')}</Text>
-            </Button>
-          </View>
-        ) : (
-          <View className="flex-1 justify-center px-6">
-            <EmptyState>
-              <EmptyState.Header>
-                <EmptyState.Description>{t('sessions.mobile.notFound')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </View>
-        )}
+        <RecordState
+          pending={list.isPending}
+          failed={list.isError ? t('sessions.mobile.loadFailed') : null}
+          onRetry={() => list.refetch()}
+          notFound={t('sessions.mobile.notFound')}
+        />
       </>
     );
   }
