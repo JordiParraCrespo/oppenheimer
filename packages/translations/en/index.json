@@ -700,6 +700,7 @@
       "needsInput": "Needs input",
       "inProgress": "In progress",
       "noMilestones": "No milestones yet.",
+      "sessionWaiting": "Session waiting on you",
       "nothingNeedsInput": "Nothing waits on you.",
       "nothingInProgress": "Nothing in progress.",
       "gone": "That project is no longer here.",
