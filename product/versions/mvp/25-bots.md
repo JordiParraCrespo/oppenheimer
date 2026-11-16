@@ -30,24 +30,27 @@ it lives.
 | Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
 | The conversation | Turns and messages | The chat; Settings → Profile counts, exports and clears it |
 
-**A new bot.** Created blank, a bot takes the next of twenty first names
-the workspace does not have yet (`BOT_FIRST_NAMES`: Juno, Milo, Wren…,
-no two with the same initial, so neighbours' avatars differ), on the next
+**A new bot.** Created blank, a bot takes one of twenty physicists' names
+the workspace does not have yet, at random (`BOT_FIRST_NAMES`: Bohr,
+Curie, Feynman, Noether…, no two with the same initial, so neighbours'
+avatars differ; until 2026-11-15 Juno, Milo, Wren… in order), on the next
 colour, with a friendly, proactive `SOUL.md` that says its name
 (after OpenClaw's default, 2026-11-10) and an empty `INSTRUCTIONS.md`. The
 first name is a placeholder: a name says who it is, the description says
 its job, and the bot writes both of those itself. While `INSTRUCTIONS.md` is empty
 its prompt carries a **Getting started** section instead (2026-10-16):
-work the first message asks for is just done, with no name question after
-it (2026-11-13); otherwise a short, warm welcome of a few sentences asks
-what to call it (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), names two or
-three things it can do for them from the areas of tools its turn offers
-(2026-11-10) and asks for one job; a name or a job that matches one of
-their projects says which project it is for (2026-11-13). Then it sets
-itself up and offers a first task. The steps are `gettingStarted` in
+work the first message asks for is just done, and that reply ends with
+one light line that it has no name of its own yet, once (2026-11-15);
+otherwise a welcome of four sentences greets by the time of day, suggests
+a name of its own the person can change (2026-11-15; OpenClaw's
+`BOOTSTRAP.md` forbids that, the owner asked for it), says in general
+terms what it can help with from the areas of tools its turn offers, and
+asks for one job, naming no project unless the person did; a name or a
+job that matches one of their projects says which project it is for
+(2026-11-13). Then it looks before it asks, sets itself up one question at
+a time and offers a first task. The steps are `gettingStarted` in
 `bot-prompt.policy.ts` plus the `setupStep` of each tool the turn offers;
-they are the specification, not this paragraph. Names are given first-free, so a deleted
-bot's name is the next one handed out.
+they are the specification, not this paragraph.
 
 Postgres is the source of truth for all of it. A bot changes what it is
 and what it knows only through Oppenheimer's tools (§4), and every change
@@ -2255,3 +2258,28 @@ The decisions it produced:
   saying what to sign in (`list_hosts` shows it installed, not signed in). `pnpm eval:bot-blocked-run` gained three
   cases: before, `failed-not-signed-in` was 0 of 3; after, every case
   passes, 27 of 27 runs.
+- 2026-11-15: **the owner's read of the prompt, with what Meta Muse,
+  ChatGPT, Grok Bot, Claude Code and OpenAI's dots do** (§1, §4.1). The
+  owner read `bot-prompt.policy.ts` and asked for bots that sound like a
+  teammate and say less, with fewer and looser rules; the other assistants'
+  prompts, read from public sources, gave the rest. The bot opens as a
+  teammate there to get work done. A new bot greets by the time of day,
+  suggests a name of its own, says in general terms what it can do, and
+  ends a first task with one line that it has no name yet; setup looks
+  before it asks, one question at a time. New bots take a physicist's name
+  at random. "How a turn goes" leads with the outcome, reads the person,
+  is proactive and ends on a plain next step rather than "Want me to…?".
+  "When something fails" is four lines in Claude Code's manner (find the
+  cause, another way imaginatively, keep going, the limits real incidents
+  earned) in place of a page of cases. "Check before you report" says what
+  was checked apart from what is believed. Memory keeps a preference as a
+  standing rule (profile) with its reason, skips what is short-lived or
+  sensitive, says it remembered only after it did, and a session's task
+  carries the person's limits and preferences. Two rules join the ones no
+  instruction overrides: a yes covers exactly what the person saw, and a
+  message to someone else shares only what they need. A terminal is the
+  bot's to look around a host with. `notify` and a routine's run speak only
+  for what the person asked to hear, what needs them, or what is new and
+  worth interrupting them for. Evals: `bot-first-chat` 2/18 before (new
+  cases), 17/18 after; `bot-memory` 99/100; `bot-blocked-run` 30/30.
+

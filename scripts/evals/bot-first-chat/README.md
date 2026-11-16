@@ -29,11 +29,11 @@ and 6 messages:
 
 | Case | Message | A right run |
 | --- | --- | --- |
-| `hola-es` | "hola!" | in Spanish, short: asks its name and its job, names what it can do |
-| `hi-en` | "hi" | the same, in English |
-| `work-first` | "What hosts do I have paired?" | calls `list_hosts` and answers, without asking its name |
+| `hola-es` | "hola!" at 09:30 in Madrid | in Spanish, at most five sentences: greets for the morning, suggests a name of its own, says what it can do, asks for a job |
+| `hi-en` | "hi" at 20:30 in Madrid | the same, in English, for the evening |
+| `work-first` | "What hosts do I have paired?" | answers, then one line that it has no name of its own yet |
 | `named-after-project` | "You are Zengue Jewels", with XRP Mobile in the general memory | short, job examples about the ZENGUE JEWELS project, none about XRP Mobile |
-| `read-only` | "hey" | asks its name and its job, promises no sessions and suggests no coding agents |
+| `read-only` | "hey" | suggests a name and asks for a job, promises no sessions and suggests no coding agents |
 | `person-facts` | "Soy Jordi, founder… háblame de tú. ¿Qué hosts tengo?", to a bot that already has a job | answers, and saves who Jordi is to the general memory |
 
 `read-only` and `work-first` are the two that failed on 2026-11-10 and
@@ -73,3 +73,6 @@ reply, calls and grades go to `reports/` (ignored by git).
 | 2026-11-13 | claude-sonnet-5-5 | 16/18 | after autoreview: "short, no lists" only for the messages that set it up; misses: one long `named-after-project`, one `read-only` without the name question |
 | 2026-11-13 | claude-sonnet-5-5 | 16/18 | Getting started split into a work path, a welcome and the setup after it (review on #858), name asked directly: `read-only` 3/3; misses are a right `named-after-project` reply the grader read as general, and one `person-facts` run without a general memory |
 | 2026-11-15 | claude-sonnet-5-5 | 17/18 | `short` now counts sentences (five at most) instead of about 120 words, after a verifier found welcomes of 6 to 8 sentences passing; the welcome is one sentence per step and every setup message keeps to five |
+| 2026-11-15 | claude-sonnet-5-5 | 2/18 → 17/18 | the owner's read: new cases for a time-of-day greeting, a suggested name and a name line after a task (2/18 on `main`, as expected); after the rewrite every case passes. Each message now carries the turn context (the time, no hosts), so the bot may answer from it rather than call `list_hosts` |
+| 2026-11-15 | claude-sonnet-5-5 | 29/30 at 5 runs | after verification found 15/18 (the name line after a task 1/3, the reply after naming asking two things): the name line is the reply's last line, checked before sending; the project match asks one question; every case passes, `work-first` 4/5 |
+| 2026-11-15 | claude-sonnet-5-5 | 28/30 at 5 runs | `named-after-project` also grades one question and no "I have no name" line (5/5): the name line no longer leaks into the reply after naming; `work-first` 3/5 on this run, 4/5 and 5/5 on others |

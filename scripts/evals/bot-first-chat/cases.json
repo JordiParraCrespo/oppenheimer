@@ -62,26 +62,29 @@
       "toolset": "full",
       "message": "hola!",
       "want": {
-        "asksName": true,
+        "suggestsName": true,
         "asksJob": true,
         "listsCapabilities": true,
-        "promisesSessions": true,
         "spanish": true,
-        "short": true
-      }
+        "short": true,
+        "greetsByTime": true
+      },
+      "now": "2026-11-15T08:30:00Z"
     },
     {
       "id": "hi-en",
       "toolset": "full",
       "message": "hi",
       "want": {
-        "asksName": true,
+        "suggestsName": true,
         "asksJob": true,
         "listsCapabilities": true,
         "promisesSessions": true,
         "spanish": false,
-        "short": true
-      }
+        "short": true,
+        "greetsByTime": true
+      },
+      "now": "2026-11-15T19:30:00Z"
     },
     {
       "id": "work-first",
@@ -89,9 +92,8 @@
       "message": "What hosts do I have paired?",
       "want": {
         "answersQuestion": true,
-        "asksName": false
-      },
-      "wantCalls": ["list_hosts"]
+        "mentionsName": true
+      }
     },
     {
       "id": "named-after-project",
@@ -101,7 +103,9 @@
       "want": {
         "tailorsToZengue": true,
         "tailorsToXrpMobile": false,
-        "short": true
+        "short": true,
+        "oneQuestion": true,
+        "saysNoName": false
       }
     },
     {
@@ -109,10 +113,11 @@
       "toolset": "read-only",
       "message": "hey",
       "want": {
-        "asksName": true,
+        "suggestsName": true,
         "asksJob": true,
         "promisesSessions": false,
-        "suggestsCodingAgents": false
+        "suggestsCodingAgents": false,
+        "short": true
       }
     },
     {
@@ -123,7 +128,6 @@
       "want": {
         "answersQuestion": true
       },
-      "wantCalls": ["list_hosts"],
       "wantGeneralMemory": true
     }
   ]

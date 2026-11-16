@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { botChatDestination } from '@/features/bots/lib/bot-chat-destination';
 
 /**
- * New bot: a blank bot (a first name such as "Juno", no instructions), then
+ * New bot: a blank bot (a physicist's name such as "Feynman", no instructions), then
  * its chat, where it asks for its job and writes its own instructions. The sidebar's plus, its empty card
  * and the landing page all start one the same way. From a section's Bots
  * heading (`28-bots-in-sections.md`) the bot shows in that section, and its

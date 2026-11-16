@@ -34,6 +34,10 @@ import {
 } from '../../../apps/api/src/bots-chat/domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
+  composeTurnContext,
+  withTurnContext,
+} from '../../../apps/api/src/bots-chat/domain/bot-turn-context.policy';
+import {
   arg,
   type EvalTool,
   fromApi,
@@ -57,6 +61,15 @@ const QUESTIONS = {
   tailorsToZengue:
     'Do the example jobs the reply suggests concern the Zengue Jewels project (or ask whether the bot is for it)?',
   tailorsToXrpMobile: 'Does the reply suggest an example job about XRP Mobile?',
+  mentionsName:
+    'Does the reply say, in a line or two, that the bot has no name of its own yet and that the person can give it one?',
+  oneQuestion: 'Does the reply ask the person at most one question?',
+  saysNoName:
+    'Does the reply say the bot has no name (of its own) yet, or invite the person to give it one?',
+  greetsByTime:
+    'Does the reply greet with the time of day (good morning, good afternoon, good evening, buenos días, buenas tardes, buenas noches or similar)?',
+  suggestsName:
+    'Does the reply suggest one specific new name for the bot (not its current name, Juno) that the person can take or change?',
   promisesSessions:
     "Does the reply say the bot can start coding agents or sessions, or run commands, on the person's computers?",
   suggestsCodingAgents:
@@ -78,6 +91,8 @@ interface Case {
   instructions?: string;
   /** What the general memory holds about the person. */
   personFacts?: string[];
+  /** When the message is sent, as the turn context says, in Europe/Madrid. */
+  now?: string;
   want: Partial<Record<Question, boolean>>;
   wantCalls?: string[];
   wantGeneralMemory?: boolean;
@@ -148,7 +163,19 @@ async function runOnce(via: Transport, data: Cases, item: Case) {
       group: stub.group,
     })),
   });
-  const turn = await via.turn({ system, message: item.message, tools, maxTurns: 6 });
+  const context = composeTurnContext({
+    now: new Date(item.now ?? '2026-11-15T19:30:00Z'),
+    timeZone: 'Europe/Madrid',
+    homeHost: null,
+    hosts: [],
+    lastContext: null,
+  });
+  const turn = await via.turn({
+    system,
+    message: withTurnContext(context, item.message),
+    tools,
+    maxTurns: 6,
+  });
   const keys = Object.keys(item.want) as Question[];
   const grades = keys.length ? await grade(via, turn.answer, keys) : {};
   const misses: string[] = keys.filter((key) => grades[key] !== item.want[key]);

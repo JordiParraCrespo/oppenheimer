@@ -32,7 +32,7 @@ export class BotResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty({ example: 'Juno' })
+  @ApiProperty({ example: 'Feynman' })
   name!: string;
 
   @ApiProperty({ example: 'Keeps the release notes honest.' })
