@@ -4,7 +4,6 @@ import {
   dayOffset,
   viewerTimeZone,
   wallClock,
-  weekdayDate,
 } from '@oppenheimer/frontend-core';
 import type { TFunction } from 'i18next';
 import { formatShortDuration } from './format-duration';
@@ -135,4 +134,4 @@ export function formatDateTime(date: Date, locale: string): string {
   }).format(date);
 }
 
-export { clock, dateFormatter, dayOffset, viewerTimeZone, wallClock, weekdayDate };
+export { clock, dateFormatter, dayOffset, viewerTimeZone, wallClock };

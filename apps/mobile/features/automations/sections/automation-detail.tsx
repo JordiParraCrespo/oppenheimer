@@ -2,7 +2,13 @@ import { useNow } from '@oppenheimer/design-system-mobile';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Clock, Github } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
-import { type AutomationEntity, triggerListText } from '@oppenheimer/frontend-consumer';
+import {
+  type AutomationEntity,
+  nextRunText,
+  pausedReasonText,
+  runState,
+  triggerListText,
+} from '@oppenheimer/frontend-consumer';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
 import { formatAge } from '@oppenheimer/frontend-mobile';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +16,7 @@ import { ScrollView, View } from 'react-native';
 import { DetailField } from '../components/detail-field';
 import { DetailSection } from '../components/detail-section';
 import { RunRow } from '../components/run-row';
-import { agentWords, nextRunWords, pausedReasonKey, runTone } from '../lib/automation-words';
+import { whereFields } from '../lib/where-fields';
 import { AutomationSwitch } from './automation-switch';
 
 const AGE_TICK_MS = 60_000;
@@ -31,26 +37,10 @@ export function AutomationDetail({
   const { data: hosts } = useHosts();
   const now = useNow(AGE_TICK_MS);
   const locale = i18n.resolvedLanguage ?? 'en';
-  const next = nextRunWords(automation, now, locale);
-  const nextText =
-    'text' in next ? next.text : t(next.key, 'time' in next ? { time: next.time } : {});
-  const { revision } = automation;
-  const host = revision.hostId ? hosts?.find((item) => item.id === revision.hostId)?.name : null;
-  const where = [
-    revision.repositories.length > 0
-      ? {
-          label: t('automations.editor.repositories'),
-          value: revision.repositories
-            .map((repository) => repository.fullName.split('/').pop())
-            .join(', '),
-        }
-      : null,
-    host ? { label: t('automations.editor.host'), value: host } : null,
-    {
-      label: t('automations.editor.agent'),
-      value: agentWords(automation, t('automations.editor.placeClaudeCloud')),
-    },
-  ].filter((field): field is { label: string; value: string } => field !== null);
+  const host = automation.revision.hostId
+    ? (hosts?.find((item) => item.id === automation.revision.hostId)?.name ?? null)
+    : null;
+  const where = whereFields(automation, host, t);
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: bottomInset + 16 }}>
@@ -64,8 +54,10 @@ export function AutomationDetail({
             </Text>
             <Text variant="caption">
               {automation.isPaused
-                ? t(pausedReasonKey(automation.pausedReason))
-                : t('automations.mobile.nextRun', { when: nextText })}
+                ? pausedReasonText(automation.pausedReason, t)
+                : t('automations.mobile.nextRun', {
+                    when: nextRunText(automation, now, locale, t),
+                  })}
             </Text>
           </View>
           <AutomationSwitch automation={automation} />
@@ -87,7 +79,7 @@ export function AutomationDetail({
 
       <DetailSection title={t('automations.mobile.instructions')}>
         <Text variant="body" className="px-4 py-3" selectable>
-          {revision.prompt}
+          {automation.revision.prompt}
         </Text>
       </DetailSection>
 
@@ -113,7 +105,7 @@ export function AutomationDetail({
               key={run.id}
               first={index === 0}
               state={t(`automations.runStatus.${run.status}`)}
-              tone={runTone(run.status)}
+              tone={runState(run.status)}
               title={run.title}
               age={formatAge(run.createdAt, now, t)}
             />

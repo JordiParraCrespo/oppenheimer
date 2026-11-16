@@ -2,16 +2,10 @@ import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Clock, Github } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cn } from '@oppenheimer/design-system-mobile/utils';
+import type { AutomationRunTone } from '@oppenheimer/frontend-consumer';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import type { RunTone } from '../lib/automation-words';
-
-const DOT: Record<RunTone | 'paused', string> = {
-  running: 'bg-status-active',
-  completed: 'bg-status-active',
-  failed: 'bg-destructive',
-  paused: 'bg-ink-400',
-};
+import { RUN_DOT } from '../lib/run-dot';
 
 /**
  * One automation, as the export's row draws it: its trigger's glyph (GitHub
@@ -33,7 +27,7 @@ export function AutomationRow({
   github: boolean;
   trigger: string;
   status: string;
-  tone: RunTone | 'paused';
+  tone: AutomationRunTone | 'paused';
   paused: boolean;
   first: boolean;
   trailing: ReactNode;
@@ -61,7 +55,7 @@ export function AutomationRow({
           {trigger}
         </Text>
         <View className="flex-row items-center gap-1.5">
-          <View className={cn('size-1.5 rounded-full', DOT[tone])} />
+          <View className={cn('size-1.5 rounded-full', RUN_DOT[tone])} />
           <Text variant="caption" className="text-[12px]" numberOfLines={1}>
             {status}
           </Text>

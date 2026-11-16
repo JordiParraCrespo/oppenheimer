@@ -3,7 +3,9 @@ import {
   type AutomationTrigger,
   daysText,
   HostEntity,
+  nextRunText,
   ProjectEntity,
+  runState,
   scheduleText,
 } from '@oppenheimer/frontend-consumer';
 import { dayOffset } from '@oppenheimer/frontend-web';
@@ -22,7 +24,7 @@ import {
   whereGap,
   withFrequency,
 } from '../lib/automation-draft';
-import { nextRunText, runState, sidebarMeta } from '../lib/automation-view';
+import { sidebarMeta } from '../lib/automation-view';
 import { localDate } from '../lib/time';
 import { automationTriggerText } from '../lib/trigger-text';
 

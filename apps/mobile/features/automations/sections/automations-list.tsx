@@ -4,7 +4,7 @@ import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Zap } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
-import { type AutomationEntity, triggerListText } from '@oppenheimer/frontend-consumer';
+import { type AutomationEntity, runState, triggerListText } from '@oppenheimer/frontend-consumer';
 import { useAutomations } from '@oppenheimer/frontend-consumer/react';
 import { formatAge, ListGroup } from '@oppenheimer/frontend-mobile';
 import { Link } from 'expo-router';
@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 import { AutomationRow } from '../components/automation-row';
 import { AutomationRowSkeleton } from '../components/automation-row-skeleton';
-import { runTone } from '../lib/automation-words';
 import { AutomationSwitch } from './automation-switch';
 
 const AGE_TICK_MS = 60_000;
@@ -92,7 +91,7 @@ export function AutomationsList() {
                 tone={
                   automation.isPaused
                     ? 'paused'
-                    : runTone(automation.lastRuns[0]?.status ?? 'completed')
+                    : runState(automation.lastRuns[0]?.status ?? 'completed')
                 }
                 paused={automation.isPaused}
                 trailing={<AutomationSwitch automation={automation} />}

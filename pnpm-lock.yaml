@@ -1311,6 +1311,9 @@ importers:
       dependency-cruiser:
         specifier: ^18.1.0
         version: 18.1.0
+      i18next:
+        specifier: ^26.4.2
+        version: 26.4.2(typescript@6.0.3)
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1(@noble/hashes@2.2.0)

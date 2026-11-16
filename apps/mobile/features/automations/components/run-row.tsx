@@ -1,13 +1,8 @@
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cn } from '@oppenheimer/design-system-mobile/utils';
+import type { AutomationRunTone } from '@oppenheimer/frontend-consumer';
 import { View } from 'react-native';
-import type { RunTone } from '../lib/automation-words';
-
-const DOT: Record<RunTone, string> = {
-  running: 'bg-status-active',
-  completed: 'bg-status-active',
-  failed: 'bg-destructive',
-};
+import { RUN_DOT } from '../lib/run-dot';
 
 /** One of an automation's recent runs: its state under a dot, what started it, and when. */
 export function RunRow({
@@ -18,7 +13,7 @@ export function RunRow({
   first,
 }: {
   state: string;
-  tone: RunTone;
+  tone: AutomationRunTone;
   title: string;
   age: string;
   first: boolean;
@@ -27,7 +22,7 @@ export function RunRow({
     <View className={cn('flex-row gap-3 px-4 py-3', !first && 'border-t border-border-subtle')}>
       <View className="min-w-0 flex-1 gap-0.5">
         <View className="flex-row items-center gap-2">
-          <View className={cn('size-2 rounded-full', DOT[tone])} />
+          <View className={cn('size-2 rounded-full', RUN_DOT[tone])} />
           <Text variant="body">{state}</Text>
         </View>
         <Text variant="caption" numberOfLines={1}>

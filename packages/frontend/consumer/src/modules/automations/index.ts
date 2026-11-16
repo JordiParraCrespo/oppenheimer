@@ -23,6 +23,14 @@ export {
   type TriggerPreviewMatch,
   type UpdateAutomationInput,
 } from './automation.entity';
+export {
+  type AutomationRunTone,
+  automationAgentText,
+  nextInstantText,
+  nextRunText,
+  pausedReasonText,
+  runState,
+} from './automation-words';
 export { AutomationsModule } from './automations.module';
 export { AutomationsRepository } from './automations.repository';
 export {
