@@ -5,18 +5,25 @@ import {
   useGoogleCalendarEvents,
   useTasks,
 } from '@oppenheimer/frontend-consumer/react';
+import { getRouteApi } from '@tanstack/react-router';
 import { automationItems, taskItems } from '../lib/calendar-items';
-import { inProjects, inScope } from '../lib/calendar-search';
+import { hiddenLayers, inProjects, inScope } from '../lib/calendar-search';
 import { useCalendarScope } from './use-calendar-scope';
 import { useCalendarView } from './use-calendar-view';
 
+const calendar = getRouteApi('/_authenticated/plan/calendar');
+
 /**
  * The header's line under the title (the `Tasks` frame): meetings (personal
- * and Google's), tasks due and automation runs on the view's own days,
- * whatever layers are on; tasks and runs as the filter row narrows them. The same reads the view draws from, so they cost
- * nothing more. Undefined until the view's own events have arrived.
+ * and Google's), tasks due and automation runs on the view's own days, as
+ * the calendar shows them: a kind switched off counts nothing, and tasks and
+ * runs are narrowed as the filter row narrows them. The same reads the view
+ * draws from, so they cost nothing more. Undefined until the view's own
+ * events have arrived.
  */
 export function useViewCounts() {
+  const { off } = calendar.useSearch();
+  const hidden = hiddenLayers(off);
   const scope = useCalendarScope();
   const { range, inView } = useCalendarView();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -25,7 +32,7 @@ export function useViewCounts() {
   const google = useGoogleCalendarEvents(
     range,
     timeZone,
-    connections.some((connection) => connection.isActive),
+    !hidden.has('google') && connections.some((connection) => connection.isActive),
   );
   const { data: due } = useTasks({
     select: (rows) =>
@@ -38,8 +45,13 @@ export function useViewCounts() {
       ),
   });
   if (!events) return undefined;
-  const meetings = [...events, ...(google.data?.events ?? [])].filter((event) =>
-    inView(event.date),
-  ).length;
-  return { meetings, due: due?.length ?? 0, runs: runs?.length ?? 0 };
+  const meetings = [
+    ...(hidden.has('events') ? [] : events),
+    ...(hidden.has('google') ? [] : (google.data?.events ?? [])),
+  ].filter((event) => inView(event.date)).length;
+  return {
+    meetings,
+    due: hidden.has('tasks') ? 0 : (due?.length ?? 0),
+    runs: hidden.has('automations') ? 0 : (runs?.length ?? 0),
+  };
 }

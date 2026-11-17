@@ -1737,3 +1737,7 @@ earlier note:
   tasks violet, each Google account its own; automation runs stay grey),
   and the first Google accounts moved off blue and violet to keep the
   legend unambiguous.
+- `versions/mvp/20-plan-calendar.md` counted every item of the view in the
+  header whatever layers were on. On 2026-11-17 the owner asked for filters
+  (kind, project, status, who added a task, §7) and the counts now follow
+  what the calendar shows: a hidden layer counts nothing.
