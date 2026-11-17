@@ -8,9 +8,10 @@ import { useEffect, useRef } from 'react';
  * dot) is marked read, at once or when the reader comes back to the tab. A
  * turn that ends in a tab nobody is looking at stays blue until they do.
  *
- * One try each time the session's log moves (`lastEventAt`): a failed read
- * is not retried until something new happens to the session, so an API that is down is not asked in a
- * loop for as long as the pane is open.
+ * One try each time the session's log moves (`lastEventAt`) or the reader
+ * comes back to the tab: a failed read is not retried in a loop while an API
+ * that is down keeps failing it, and leaving the tab and coming back tries it
+ * again, since a session that sits at its prompt may not move for hours.
  */
 export function useReadOnOpen(session: Pick<SessionEntity, 'id' | 'state' | 'lastEventAt'>): void {
   const { mutate } = useAcknowledgeSessionReport();
@@ -22,7 +23,11 @@ export function useReadOnOpen(session: Pick<SessionEntity, 'id' | 'state' | 'las
   useEffect(() => {
     if (!unread) return;
     const read = () => {
-      if (document.visibilityState !== 'visible' || tried.current === key) return;
+      if (document.visibilityState !== 'visible') {
+        tried.current = null;
+        return;
+      }
+      if (tried.current === key) return;
       tried.current = key;
       mutate(id);
     };
