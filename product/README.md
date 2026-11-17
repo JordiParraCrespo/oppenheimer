@@ -1751,3 +1751,8 @@ earlier note:
   while its console link opened only the Codex home page. The console now
   preserves the thread id at `https://chatgpt.com/local/<id>`
   (`next-steps/cloud-agents.md`, "On Codex's current cloud").
+- `versions/mvp/05-screens.md` had GPT-6.1 Sol as Codex's default. On
+  2026-11-17 OpenAI released GPT-6.2 Sol and GPT-6.2 Astra, and the owner
+  asked for both in new sessions and in bots: they lead Codex's list,
+  GPT-6.2 Sol is the default, and OpenCode's `openai/` row gains both. The
+  OpenAI and ChatGPT bots read Codex's list, so they follow.
