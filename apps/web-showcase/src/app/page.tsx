@@ -74,7 +74,7 @@ import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
-import { TaskBoardDemo, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
+import { TaskBoardDemo, TaskPriorityIcons, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
 import {
   AccountMenuDemo,
 
@@ -1368,6 +1368,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       >
         <div className="flex w-full flex-col gap-6">
           <TaskStatusDots />
+          <TaskPriorityIcons />
           <TaskBoardDemo />
           <TaskSelectionDemo />
         </div>

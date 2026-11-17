@@ -1,5 +1,5 @@
 import { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import { taskSessionsOf } from '../lib/session-line';
 import {
@@ -25,6 +25,7 @@ function task(
     dueDate: string | null;
     dueTime: string | null;
     focusDate: string | null;
+    priority: TaskPriority | null;
     completedAt: string;
     sessionIds: string[];
   }> = {},
@@ -50,6 +51,9 @@ function task(
     null,
     1,
     overrides.focusDate ?? null,
+    'person',
+    null,
+    overrides.priority ?? null,
   );
 }
 
@@ -213,6 +217,17 @@ describe("To do's day", () => {
     expect(
       addableTasks(rows, new Set(), { projectIds: ['p-2'], statuses: [] }).map((row) => row.id),
     ).toEqual(['d']);
+  });
+
+  it('offers the most important first, a task with no priority last, keeping the board order within a level', () => {
+    const rows = [
+      task('a'),
+      task('b', { priority: 'low' }),
+      task('c', { priority: 'urgent' }),
+      task('d', { priority: 'high' }),
+      task('e', { priority: 'urgent' }),
+    ];
+    expect(addableTasks(rows, new Set()).map((row) => row.id)).toEqual(['c', 'e', 'd', 'b', 'a']);
   });
 
   it('narrows to the projects and columns picked, both at once', () => {

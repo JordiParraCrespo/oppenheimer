@@ -21,6 +21,8 @@ import {
   TaskColumnAdd,
   TaskColumnMore,
   TaskComposer,
+  TaskPriorityIcon,
+  type TaskPriority,
   TaskSelectionBar,
   TaskSessionChip,
   type TaskStatus,
@@ -39,16 +41,17 @@ interface Task {
   milestone?: string;
   due?: string;
   dueTone?: 'soon' | 'overdue';
+  priority?: TaskPriority;
   session?: { state: 'running' | 'needs-input' | 'completed'; word: string; name: string; more?: number };
 }
 
 const TASKS: Record<string, Task> = {
-  t1: { id: 't1', title: 'Write a migration guide for legacy wallet users', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight' },
+  t1: { id: 't1', title: 'Write a migration guide for legacy wallet users', priority: 'low', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight' },
   t2: { id: 't2', title: 'Evaluate Codex for nightly refactors', notes: 'Compare against Claude Code on the atlas test suite before switching anything over.' },
   t3: { id: 't3', title: 'Address review comments on PR #121', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Oct 7', session: { state: 'running', word: 'Running', name: 'PR #121 porting to peersyst' } },
-  t4: { id: 't4', title: 'Draft the beta waitlist email', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 10' },
-  t5: { id: 't5', title: 'Rotate flama-ai API keys', project: 'Client sites', due: 'Yesterday', dueTone: 'overdue' },
-  t6: { id: 't6', title: 'Biometric unlock on Android', notes: 'Blocked on a keystore edge case on Pixel 6.', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Tomorrow', dueTone: 'soon', session: { state: 'needs-input', word: 'Needs input', name: 'biometric-unlock', more: 1 } },
+  t4: { id: 't4', title: 'Draft the beta waitlist email', priority: 'medium', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 10' },
+  t5: { id: 't5', title: 'Rotate flama-ai API keys', priority: 'urgent', project: 'Client sites', due: 'Yesterday', dueTone: 'overdue' },
+  t6: { id: 't6', title: 'Biometric unlock on Android', priority: 'high', notes: 'Blocked on a keystore edge case on Pixel 6.', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight', due: 'Tomorrow', dueTone: 'soon', session: { state: 'needs-input', word: 'Needs input', name: 'biometric-unlock', more: 1 } },
   t7: { id: 't7', title: 'Atlas onboarding flow', project: 'Atlas', milestone: 'Atlas public beta', due: 'Oct 11', session: { state: 'running', word: 'Running', name: 'atlas-onboarding-flow' } },
   t8: { id: 't8', title: 'Upgrade React Native to 0.76', project: 'XRP Mobile', milestone: 'Ship XRP Mobile 2.0 to TestFlight' },
   t9: { id: 't9', title: 'flama-ai landing copy', project: 'Client sites', session: { state: 'completed', word: 'Completed', name: 'First version of the landing' } },
@@ -255,6 +258,8 @@ function Card({
       milestone={hideMilestone ? undefined : task.milestone}
       due={task.due}
       dueTone={task.dueTone}
+      priority={task.priority ?? null}
+      priorityLabel={task.priority ? `${PRIORITY_WORDS[task.priority]} priority` : undefined}
       onStart={lifted ? undefined : () => {}}
       session={
         task.session ? (
@@ -272,6 +277,27 @@ function Card({
 }
 
 /** The four statuses on the run-state dots, as the column heads and the task dialog draw them. */
+const PRIORITY_WORDS: Record<TaskPriority, string> = {
+  urgent: 'Urgent',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+};
+
+/** The priorities, most first, and none: what the task dialog's Priority row offers. */
+export function TaskPriorityIcons() {
+  return (
+    <div className="flex flex-wrap items-center gap-4 text-sm text-fg-muted">
+      {([null, 'urgent', 'high', 'medium', 'low'] as const).map((priority) => (
+        <span key={priority ?? 'none'} className="inline-flex items-center gap-1.5">
+          <TaskPriorityIcon priority={priority} />
+          {priority ? PRIORITY_WORDS[priority] : 'No priority'}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function TaskStatusDots() {
   return (
     <div className="flex flex-wrap items-center gap-4">

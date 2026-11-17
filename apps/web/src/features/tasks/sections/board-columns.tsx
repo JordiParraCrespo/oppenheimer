@@ -146,6 +146,12 @@ export function BoardColumns() {
         milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
         dueTone={view.dueTone}
+        priority={view.priority}
+        priorityLabel={
+          view.priority
+            ? t('tasks.card.priority', { level: t(`tasks.priority.${view.priority}`) })
+            : undefined
+        }
         startLabel={t('tasks.card.start')}
         onStart={
           lifted || task.sessions.length > 0

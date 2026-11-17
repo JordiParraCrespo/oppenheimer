@@ -24,6 +24,7 @@ import {
   describeTaskInFull,
   dueTimeHasDate,
   expectedVersionInput,
+  priorityInput,
   statusInput,
   TASKS_LIMIT_MAX,
   timeOfDay,
@@ -118,7 +119,7 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'list_tasks',
       readOnly: true,
       scope: 'tasks:read',
-      description: `Lists tasks on the plan's board with their column, version, project, milestone, due date and blocked reason, filtered by project, milestone, column or due dates; at most ${TASKS_LIMIT_MAX} per call. Use get_task for a task's notes and sessions, and plan_summary for progress and what needs the person. No tasks means none match the filters, not that the board is empty.`,
+      description: `Lists tasks on the plan's board with their column, version, project, milestone, due date, priority and blocked reason, filtered by project, milestone, column or due dates; at most ${TASKS_LIMIT_MAX} per call. Use get_task for a task's notes and sessions, and plan_summary for progress and what needs the person. No tasks means none match the filters, not that the board is empty.`,
       input: z
         .object({
           project_id: z.uuid().optional().describe('Only tasks of this project (list_projects).'),
@@ -163,7 +164,7 @@ export class BotPlanToolsFactory implements BotToolArea {
       readOnly: true,
       scope: 'tasks:read',
       description:
-        'Reads one task: its title, column, version, project, milestone, due date, blocked reason, notes, and the sessions working on it. Read it again before update_task or move_task when your version may be old.',
+        'Reads one task: its title, column, version, project, milestone, due date, priority, blocked reason, notes, and the sessions working on it. Read it again before update_task or move_task when your version may be old.',
       input: z.object({ task_id: z.uuid().describe('A task id from list_tasks.') }),
       run: async (input, context) => {
         const task = await this.readTask(input.task_id, context);
@@ -225,6 +226,7 @@ export class BotPlanToolsFactory implements BotToolArea {
           milestone_id: z.uuid().optional().describe('A milestone of that project.'),
           due_date: calendarDate.optional().describe('A calendar day, YYYY-MM-DD.'),
           due_time: timeOfDay.optional().describe('HH:MM on the due day; needs due_date.'),
+          priority: priorityInput.optional(),
         })
         .refine(dueTimeHasDate, { path: ['due_time'], message: 'due_time needs a due_date' }),
       run: async (input, context) => {
@@ -243,6 +245,7 @@ export class BotPlanToolsFactory implements BotToolArea {
               milestoneId: input.milestone_id,
               dueDate: input.due_date,
               dueTime: input.due_time,
+              priority: input.priority,
             },
           }),
         );
@@ -256,7 +259,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_task',
       scope: 'tasks:write',
-      description: `Edits a task's title, notes, project, milestone, due date or blocked reason; only the fields you pass change, and null clears one. Use move_task to change its column. blocked_reason (up to ${TASK_BLOCKED_REASON_MAX} characters) marks it as waiting on the person; null unblocks it. Needs the version you read.`,
+      description: `Edits a task's title, notes, project, milestone, due date, priority or blocked reason; only the fields you pass change, and null clears one. Use move_task to change its column. blocked_reason (up to ${TASK_BLOCKED_REASON_MAX} characters) marks it as waiting on the person; null unblocks it. Needs the version you read.`,
       input: z
         .object({
           task_id: z.uuid().describe('A task id from list_tasks.'),
@@ -274,6 +277,7 @@ export class BotPlanToolsFactory implements BotToolArea {
             .describe("A milestone (it moves the task to the milestone's project), or null."),
           due_date: calendarDate.nullable().optional().describe('YYYY-MM-DD, or null to clear.'),
           due_time: timeOfDay.nullable().optional().describe('HH:MM, or null to clear.'),
+          priority: priorityInput.nullable().optional(),
           blocked_reason: z
             .string()
             .trim()
@@ -292,6 +296,7 @@ export class BotPlanToolsFactory implements BotToolArea {
               'milestone_id',
               'due_date',
               'due_time',
+              'priority',
               'blocked_reason',
             ].some((field) => value[field as keyof typeof value] !== undefined),
           { message: 'nothing to change: pass at least one field' },
@@ -310,6 +315,7 @@ export class BotPlanToolsFactory implements BotToolArea {
               milestoneId: input.milestone_id,
               dueDate: input.due_date,
               dueTime: input.due_time,
+              priority: input.priority,
               blockedReason: input.blocked_reason,
               expectedVersion: input.expected_version,
             },

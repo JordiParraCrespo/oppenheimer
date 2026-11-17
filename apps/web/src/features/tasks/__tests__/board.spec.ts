@@ -1,5 +1,5 @@
 import { TaskEntity } from '@oppenheimer/frontend-consumer';
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import {
   afterTaskIdFor,
@@ -22,6 +22,7 @@ function task(
     dueDate: string | null;
     dueTime: string | null;
     completedAt: Date | null;
+    priority: TaskPriority | null;
   }> = {},
 ) {
   return new TaskEntity(
@@ -42,6 +43,12 @@ function task(
     [],
     new Date('2026-10-01T00:00:00Z'),
     new Date('2026-10-01T00:00:00Z'),
+    null,
+    1,
+    null,
+    'person',
+    null,
+    overrides.priority ?? null,
   );
 }
 
@@ -62,6 +69,15 @@ describe('the board', () => {
   it('orders a column by byte order of the rank, as the API does', () => {
     // 'Z' < 'a' in byte order, whatever a locale compare says.
     expect(columnOf(rows, 'todo', {}).map((row) => row.id)).toEqual(['Z', 'a', 'o', 'b']);
+  });
+
+  it('keeps a column in the person’s order whatever the priorities, so an urgent task never jumps the queue', () => {
+    const rows = [
+      task('a', { rank: 'a', priority: 'low' }),
+      task('b', { rank: 'b', priority: 'urgent' }),
+      task('c', { rank: 'c' }),
+    ];
+    expect(columnOf(rows, 'todo', {}).map((row) => row.id)).toEqual(['a', 'b', 'c']);
   });
 
   it('narrows a column to the project and milestone it is filtered to', () => {
@@ -141,6 +157,12 @@ describe('a card', () => {
       filter: { projectIds: ['p-1'], milestoneId: 'g' },
     });
     expect(filtered).toMatchObject({ projectName: null, milestoneName: null });
+  });
+
+  it('shows an open task’s priority and drops it once done', () => {
+    expect(cardView(task('1', { priority: 'urgent' }), context).priority).toBe('urgent');
+    expect(cardView(task('2'), context).priority).toBeNull();
+    expect(cardView(task('3', { status: 'done', priority: 'high' }), context).priority).toBeNull();
   });
 
   it('keeps the project on the card while several are picked', () => {

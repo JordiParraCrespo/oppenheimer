@@ -1,4 +1,9 @@
-import { TASK_NOTES_MAX, TASK_STATUSES, TASK_TITLE_MAX } from '@oppenheimer/shared';
+import {
+  TASK_NOTES_MAX,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  TASK_TITLE_MAX,
+} from '@oppenheimer/shared';
 import { z } from 'zod';
 import { defineTool } from './tool';
 
@@ -7,7 +12,7 @@ export const taskTools = [
     name: 'list_tasks',
     title: 'List tasks',
     description:
-      'List the Plan board’s tasks: id, title, status (todo, doing, review, done), project and due date.',
+      'List the Plan board’s tasks: id, title, status (todo, doing, review, done), project, due date and priority (urgent, high, medium, low, or null for none).',
     requiredScopes: ['tasks:read'],
     inputSchema: z.object({
       project_id: z.string().uuid().optional().describe('Only this project’s tasks'),
@@ -30,6 +35,10 @@ export const taskTools = [
         .string()
         .regex(/^\d{4}-\d{2}-\d{2}$/)
         .optional(),
+      priority: z
+        .enum(TASK_PRIORITIES)
+        .optional()
+        .describe('urgent, high, medium or low; leave it off unless it was asked for'),
     }),
     handler: (args, { client }) =>
       client.post('/tasks', {
@@ -38,6 +47,7 @@ export const taskTools = [
         status: args.status,
         projectId: args.project_id,
         dueDate: args.due_date,
+        priority: args.priority,
       }),
   }),
 

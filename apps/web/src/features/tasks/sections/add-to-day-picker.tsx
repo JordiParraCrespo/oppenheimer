@@ -5,6 +5,7 @@ import {
   EmptyState,
   SearchList,
   TASK_STATUS_STATE,
+  TaskPriorityIcon,
 } from '@oppenheimer/design-system-web';
 import { useSuspensePlan, useUpdateTask } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
@@ -62,9 +63,21 @@ export function AddToDayPicker({ onClose }: { onClose: () => void }) {
       value: task.id,
       label: task.title,
       leading: (
-        <span aria-hidden className={dotVariants({ state: TASK_STATUS_STATE[task.status] })} />
+        <span className="inline-flex items-center gap-2">
+          <span aria-hidden className={dotVariants({ state: TASK_STATUS_STATE[task.status] })} />
+          <TaskPriorityIcon
+            priority={task.priority}
+            className={task.priority ? undefined : 'invisible'}
+          />
+        </span>
       ),
-      keywords: [project?.name, t(`tasks.columns.${task.status}`)].filter(Boolean).join(' '),
+      keywords: [
+        project?.name,
+        t(`tasks.columns.${task.status}`),
+        task.priority ? t(`tasks.priority.${task.priority}`) : null,
+      ]
+        .filter(Boolean)
+        .join(' '),
     };
   });
 

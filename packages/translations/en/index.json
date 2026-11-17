@@ -3118,7 +3118,8 @@
       "markDone": "Mark as done",
       "markNotDone": "Mark as not done",
       "start": "Start session",
-      "openSession": "Open session {{name}}"
+      "openSession": "Open session {{name}}",
+      "priority": "{{level}} priority"
     },
     "sessionState": {
       "waiting": "Needs input",
@@ -3195,7 +3196,8 @@
       "loadFailed": "Couldn’t load the board.",
       "gone": "This task no longer exists.",
       "deleting": "Deleting…",
-      "focus": "TODO day"
+      "focus": "TODO day",
+      "priority": "Priority"
     },
     "link": {
       "search": "Search sessions",
@@ -3322,6 +3324,12 @@
       "confirm": "Delete tasks",
       "partial_one": "{{count}} task was not deleted",
       "partial_other": "{{count}} tasks were not deleted"
+    },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
     }
   },
   "calendar": {

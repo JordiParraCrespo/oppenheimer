@@ -110,6 +110,7 @@ export class TaskRepository
         dueDate: task.dueDate,
         dueTime: task.dueTime,
         focusDate: task.focusDate,
+        priority: task.priority,
         projectId: task.projectId,
         milestoneId: task.milestoneId,
         blockedReason: task.blockedReason,

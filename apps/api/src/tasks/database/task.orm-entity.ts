@@ -1,5 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import type { TaskOrigin, TaskStatus } from '@oppenheimer/shared';
+import type { TaskOrigin, TaskPriority, TaskStatus } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -40,6 +40,7 @@ import {
 @Check('CHK_task_blocked', `("blockedReason" IS NULL) = ("blockedAt" IS NULL)`)
 @Check('CHK_task_origin', `"origin" IN ('person', 'agent')`)
 @Check('CHK_task_triage', `"origin" = 'agent' OR "triagedAt" IS NOT NULL`)
+@Check('CHK_task_priority', `"priority" IN ('urgent', 'high', 'medium', 'low')`)
 @Index('UQ_task_idempotency_key', ['organizationId', 'idempotencyKey'], {
   unique: true,
   where: '"idempotencyKey" IS NOT NULL',
@@ -80,6 +81,9 @@ export class TaskOrmEntity {
   /** The day the person means to work on it, apart from when it is due; To do lists it from then. */
   @Column({ type: 'date', nullable: true })
   focusDate!: string | null;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  priority!: TaskPriority | null;
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   completedAt!: Date | null;

@@ -4,6 +4,7 @@ import {
   FieldError,
   FieldLabel,
   Input,
+  TaskPriorityIcon,
   Textarea,
 } from '@oppenheimer/design-system-web';
 import {
@@ -14,7 +15,7 @@ import {
   useZodResolver,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
-import { createTaskSchema, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
+import { createTaskSchema, TASK_PRIORITIES, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import type { ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +28,7 @@ import { TaskMilestoneRow } from './task-milestone-row';
 
 /**
  * The task dialog's form: the title and notes as the design system's labelled fields, then the rows
- * — Status, Project, Milestone, the sessions (the dialog's, passed in), To do (the day it is on To
+ * — Status, Priority, Project, Milestone, the sessions (the dialog's, passed in), To do (the day it is on To
  * do from), Due — and the footer. Enter in the title saves. The notes can be dictated.
  */
 export function TaskForm({
@@ -105,6 +106,22 @@ export function TaskForm({
               }))}
               value={field.value ?? null}
               onChange={(value) => value && field.onChange(value)}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="priority"
+          render={({ field }) => (
+            <ChoiceRow
+              label={t('tasks.dialog.priority')}
+              choices={[null, ...TASK_PRIORITIES].map((priority) => ({
+                value: priority,
+                label: t(priority ? `tasks.priority.${priority}` : 'tasks.dialog.none'),
+                icon: <TaskPriorityIcon priority={priority} />,
+              }))}
+              value={field.value ?? null}
+              onChange={field.onChange}
             />
           )}
         />
