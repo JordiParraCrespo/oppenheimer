@@ -560,9 +560,19 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // CLI knows.
     models: Object.freeze([
       Object.freeze({
+        id: 'gpt-6.2-sol',
+        label: 'GPT-6.2 Sol',
+        default: true as const,
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
+      Object.freeze({
+        id: 'gpt-6.2-astra',
+        label: 'GPT-6.2 Astra',
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
+      Object.freeze({
         id: 'gpt-6.1-sol',
         label: 'GPT-6.1 Sol',
-        default: true as const,
         effort: levels(CODEX_ULTRA_LEVELS, 'low'),
       }),
       Object.freeze({

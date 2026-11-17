@@ -67,6 +67,16 @@ export const OPENCODE_MODELS: readonly CodingAgentModel[] = Object.freeze([
     effort: levels(['none', ...CLAUDE_LEVELS], 'none'),
   }),
   Object.freeze({
+    id: 'openai/gpt-6.2-sol',
+    label: 'GPT-6.2 Sol',
+    effort: levels(CODEX_LEVELS, 'medium'),
+  }),
+  Object.freeze({
+    id: 'openai/gpt-6.2-astra',
+    label: 'GPT-6.2 Astra',
+    effort: levels(CODEX_LEVELS, 'medium'),
+  }),
+  Object.freeze({
     id: 'openai/gpt-6.1-sol',
     label: 'GPT-6.1 Sol',
     effort: levels(CODEX_LEVELS, 'medium'),
