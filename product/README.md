@@ -1746,3 +1746,8 @@ earlier note:
   header whatever layers were on. On 2026-11-17 the owner asked for filters
   (kind, project, status, who added a task, §7) and the counts now follow
   what the calendar shows: a hidden layer counts nothing.
+
+- On 2026-11-17, a runner-started Codex cloud session was confirmed complete
+  while its console link opened only the Codex home page. The console now
+  preserves the thread id at `https://chatgpt.com/local/<id>`
+  (`next-steps/cloud-agents.md`, "On Codex's current cloud").
