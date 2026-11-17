@@ -83,7 +83,7 @@ describe('OfflineOnce', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('takes a refetch that failed offline too', () => {
+  it('takes a refetch that failed offline too, with no Try again that would do nothing', () => {
     show(
       <OfflineOnce>
         <Refetched error={offline()} />
@@ -91,6 +91,7 @@ describe('OfflineOnce', () => {
       </OfflineOnce>,
     );
     expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'common.retry' })).toBeNull();
   });
 
   it('leaves a failure the server answered in its section', () => {

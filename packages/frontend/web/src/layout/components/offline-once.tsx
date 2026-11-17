@@ -10,14 +10,16 @@ import { OfflineOnceContext, type OfflineRetry } from '../hooks/use-offline-once
  * bots, then its sessions) says nothing the first did not. A section opts in
  * (`QueryState.Error offlineOnce`, or `useOfflineOnce` over a refetch's
  * error); its offline failure is drawn here, at the top of the scope, with
- * one Try again that retries every section that handed one over. A failure
+ * one Try again that retries every section that handed one over, and none
+ * when only refetches failed (their next poll retries them). A failure
  * the server answered stays in its section, and a section that did not opt in
  * (a dialog's, say) is never hidden.
  */
 export function OfflineOnce({ children, className }: { children: ReactNode; className?: string }) {
   const { t } = useTranslation();
   const [failed, setFailed] = useState<ReadonlyMap<string, OfflineRetry>>(new Map());
-  const handOver = (id: string, retry: OfflineRetry) => {
+  // One function for the scope's life: the sections' effects depend on it.
+  const [handOver] = useState(() => (id: string, retry: OfflineRetry) => {
     setFailed((current) => new Map(current).set(id, retry));
     return () =>
       setFailed((current) => {
@@ -25,8 +27,8 @@ export function OfflineOnce({ children, className }: { children: ReactNode; clas
         next.delete(id);
         return next;
       });
-  };
-  const retries = [...failed.values()];
+  });
+  const retries = [...failed.values()].filter((retry) => retry !== null);
 
   return (
     <OfflineOnceContext value={handOver}>
@@ -34,15 +36,17 @@ export function OfflineOnce({ children, className }: { children: ReactNode; clas
         message={failed.size > 0 ? t('errors.unreachable') : null}
         className={className}
         action={
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              for (const retry of retries) retry.current?.();
-            }}
-          >
-            {t('common.retry')}
-          </Button>
+          retries.length > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                for (const retry of retries) retry.current?.();
+              }}
+            >
+              {t('common.retry')}
+            </Button>
+          ) : undefined
         }
       />
       {children}

@@ -1,8 +1,11 @@
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { createContext, type RefObject, use, useId, useLayoutEffect, useRef } from 'react';
 
-/** A section's own Try again, read when the scope's is pressed. */
-export type OfflineRetry = RefObject<(() => void) | undefined>;
+/**
+ * A section's own Try again, read when the scope's is pressed; `null` for a
+ * section that has none (a refetch, which the next poll retries by itself).
+ */
+export type OfflineRetry = RefObject<(() => void) | undefined> | null;
 
 /** Hand a section's offline failure to the enclosing `OfflineOnce`; returns the release. */
 export const OfflineOnceContext = createContext<
@@ -23,12 +26,13 @@ export function useOfflineOnce<TError>(error: TError, retry?: () => void): TErro
   useLayoutEffect(() => {
     latest.current = retry;
   });
+  const retries = retry !== undefined;
   const handed =
     handOver !== null && error !== null && error !== undefined && resolveError(error).unreachable;
   // Syncs with the enclosing OfflineOnce, which draws the failure while it is handed
   // over; before paint, so the section's own alert and the scope's never both show.
   useLayoutEffect(() => {
-    if (handed && handOver) return handOver(id, latest);
-  }, [handed, handOver, id]);
+    if (handed && handOver) return handOver(id, retries ? latest : null);
+  }, [handed, handOver, id, retries]);
   return handed ? null : error;
 }
