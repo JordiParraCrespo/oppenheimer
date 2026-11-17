@@ -7,6 +7,7 @@ import {
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
 import {
+  hashKey,
   type QueryClient,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -265,17 +266,7 @@ export function useMoveTasks() {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   const mutation = useMutation<void, Error, TaskRun>({
-    mutationFn: async ({ moves, before, unsettled }) => {
-      for (const [index, move] of moves.entries()) {
-        const task = await app.tasks.move(move.id, {
-          status: move.status,
-          afterTaskId: move.afterTaskId,
-        });
-        unsettled.delete(move.id);
-        await settleTask(queryClient, task.id, task, before.get(move.id));
-        placeProvisionally(queryClient, moves.slice(index + 1));
-      }
-    },
+    mutationFn: (run) => sendRun(app, queryClient, run),
     onError: (_error, { before, unsettled }) => {
       queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) =>
         rows?.map((row) => (unsettled.has(row.id) ? (before.get(row.id) ?? row) : row)),
@@ -303,6 +294,45 @@ export function useMoveTasks() {
     error: mutation.error,
     reset: mutation.reset,
   };
+}
+
+/**
+ * Sends a run's moves in order, each card settled with its row from before the
+ * run, and the cards still waiting placed under it after every answer.
+ */
+async function sendRun(
+  app: ReturnType<typeof useConsumerApp>,
+  queryClient: QueryClient,
+  { moves, before, unsettled }: TaskRun,
+) {
+  let waiting = moves;
+  // A board read can land between two answers (a task.changed from this run's own
+  // moves): it has the waiting cards where they were, so they go back under the run.
+  const board = hashKey(tasksKeys.list());
+  const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+    if (
+      event.type === 'updated' &&
+      event.action.type === 'success' &&
+      !event.action.manual &&
+      event.query.queryHash === board
+    ) {
+      placeProvisionally(queryClient, waiting);
+    }
+  });
+  try {
+    for (const [index, move] of moves.entries()) {
+      const task = await app.tasks.move(move.id, {
+        status: move.status,
+        afterTaskId: move.afterTaskId,
+      });
+      unsettled.delete(move.id);
+      waiting = moves.slice(index + 1);
+      await settleTask(queryClient, task.id, task, before.get(move.id));
+      placeProvisionally(queryClient, waiting);
+    }
+  } finally {
+    unsubscribe();
+  }
 }
 
 /** Writes `moves` onto the board, in order, each with the provisional key a single move gets. */

@@ -254,7 +254,7 @@ describe('useMoveTasks', () => {
       wrapper,
     });
     const rows = () => queryClient.getQueryData<TaskEntity[]>(tasksKeys.list());
-    return { ...rendered, rows };
+    return { ...rendered, rows, queryClient };
   }
 
   it('lands every picked card on the drop and keeps their order while each answer comes back', async () => {
@@ -280,6 +280,34 @@ describe('useMoveTasks', () => {
     expect(doingOf(rows())).toEqual(['x', 'b', 'a', 'c', 'y']);
   });
 
+  it('keeps the waiting cards in the run when a board read lands between two answers', async () => {
+    const answers = {
+      a: deferred<TaskEntity>(),
+      b: deferred<TaskEntity>(),
+      c: deferred<TaskEntity>(),
+    };
+    const move = vi.fn((id: string) => answers[id as keyof typeof answers].promise);
+    // The server after b's move only: a and c are still in To do there.
+    const afterB = [
+      task('a'),
+      task('b', { status: 'doing', rank: 'xm' }),
+      task('c'),
+      task('x', { status: 'doing' }),
+      task('y', { status: 'doing' }),
+    ];
+    const { result, rows, queryClient } = board({ move });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+    act(() => result.current.moveAll.run(picked));
+
+    await act(async () => answers.b.resolve(afterB[1] as TaskEntity));
+    await waitFor(() => expect(move).toHaveBeenCalledTimes(2));
+    await act(() =>
+      queryClient.fetchQuery({ queryKey: tasksKeys.list(), queryFn: async () => afterB }),
+    );
+
+    expect(doingOf(rows())).toEqual(['x', 'b', 'a', 'c', 'y']);
+  });
+
   it('refreshes milestone progress for cards that turn Done in a run', async () => {
     const findMilestones = vi.fn().mockResolvedValue([]);
     const { wrapper } = setup({
@@ -294,6 +322,7 @@ describe('useMoveTasks', () => {
       { wrapper },
     );
     await waitFor(() => expect(result.current.milestones.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
     const reads = findMilestones.mock.calls.length;
 
     act(() =>
