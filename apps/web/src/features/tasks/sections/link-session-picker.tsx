@@ -1,7 +1,9 @@
 import {
   Button,
+  ChipSelectCombobox,
   ChipSelectEmpty,
   ChipSelectItem,
+  ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
   dotVariants,
@@ -113,49 +115,48 @@ export function LinkSessionPicker({ task }: { task: TaskEntity }) {
         {t('tasks.dialog.linkExisting')}
       </PopoverTrigger>
       <ChipSelectPopup width={380} maxHeight={260} side="bottom" align="start">
-        <ChipSelectSearch
-          value={query}
-          placeholder={t('tasks.link.search')}
-          aria-label={t('tasks.link.search')}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            const first = mine[0] ?? others[0];
-            if (event.key === 'Enter' && first && !link.isPending) {
-              event.preventDefault();
-              pick(first);
-            }
-          }}
-        />
-        <ErrorAlert
-          error={link.error}
-          fallback={t('tasks.link.failed')}
-          onDismiss={link.reset}
-          className="m-1"
-        />
-        <div role="listbox" aria-label={t('tasks.link.search')} className="flex flex-col">
-          {mine.length ? heading(t('tasks.link.inProject', { name: projectName ?? '' })) : null}
-          {mine.map(row)}
-          {mine.length && others.length ? heading(t('tasks.link.others')) : null}
-          {others.map(row)}
-          {free === undefined ? (
-            // The sessions have not answered: rows to come, not "no sessions".
-            <div aria-busy className="flex flex-col">
-              <LoadingStatus />
-              {['w-40', 'w-28', 'w-36'].map((width) => (
-                <span key={width} aria-hidden className="flex h-6.5 items-center gap-2 px-2.5">
-                  <Skeleton shape="pill" className="size-1.5 shrink-0" />
-                  <Skeleton shape="sm" className={`h-2.5 ${width}`} />
-                </span>
-              ))}
-            </div>
-          ) : matching.length ? null : (
-            <ChipSelectEmpty>
-              {free?.length
-                ? t('tasks.link.noMatch', { query: query.trim() })
-                : t('tasks.link.empty')}
-            </ChipSelectEmpty>
-          )}
-        </div>
+        {/* The first session is lit from the start, so typing and Enter links the best match. */}
+        <ChipSelectCombobox
+          query={query}
+          onQueryChange={setQuery}
+          autoHighlight="always"
+          loading={free === undefined}
+        >
+          <ChipSelectSearch
+            placeholder={t('tasks.link.search')}
+            aria-label={t('tasks.link.search')}
+          />
+          <ErrorAlert
+            error={link.error}
+            fallback={t('tasks.link.failed')}
+            onDismiss={link.reset}
+            className="m-1"
+          />
+          <ChipSelectList aria-label={t('tasks.link.search')} className="flex flex-col">
+            {mine.length ? heading(t('tasks.link.inProject', { name: projectName ?? '' })) : null}
+            {mine.map(row)}
+            {mine.length && others.length ? heading(t('tasks.link.others')) : null}
+            {others.map(row)}
+            {free === undefined ? (
+              // The sessions have not answered: rows to come, not "no sessions".
+              <div aria-busy className="flex flex-col">
+                <LoadingStatus />
+                {['w-40', 'w-28', 'w-36'].map((width) => (
+                  <span key={width} aria-hidden className="flex h-6.5 items-center gap-2 px-2.5">
+                    <Skeleton shape="pill" className="size-1.5 shrink-0" />
+                    <Skeleton shape="sm" className={`h-2.5 ${width}`} />
+                  </span>
+                ))}
+              </div>
+            ) : matching.length ? null : (
+              <ChipSelectEmpty>
+                {free?.length
+                  ? t('tasks.link.noMatch', { query: query.trim() })
+                  : t('tasks.link.empty')}
+              </ChipSelectEmpty>
+            )}
+          </ChipSelectList>
+        </ChipSelectCombobox>
       </ChipSelectPopup>
     </Popover>
   );
