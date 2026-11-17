@@ -1,3 +1,4 @@
+export { ProjectFacet } from './components/project-facet';
 export { useManageRepositoryAccess } from './hooks/use-manage-repository-access';
 export { type MintAddress, useOpenMinted } from './hooks/use-open-minted';
 export { useStoredBoolean } from './hooks/use-stored-boolean';

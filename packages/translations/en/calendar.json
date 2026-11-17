@@ -9,10 +9,18 @@
     "automations": "Automations"
   },
   "filters": {
-    "project": "Project",
-    "allProjects": "All projects",
-    "noProject": "No project",
-    "clear": "Clear"
+    "clear": "Clear",
+    "kind": "Kind",
+    "allKinds": "All kinds",
+    "searchKinds": "Search kinds",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "searchStatuses": "Search statuses",
+    "origin": "Added by",
+    "anyOrigin": "Anyone",
+    "originPerson": "Me",
+    "originAgent": "An agent",
+    "projectsFailed": "Couldn’t load your projects, so the project filter shows nothing."
   },
   "header": {
     "previous": "Previous",

@@ -149,6 +149,11 @@
       "hosts": "Buscar hosts",
       "groups": "Buscar grupos",
       "noMatch": "Nada coincide con «{{query}}»."
+    },
+    "projectFilter": {
+      "label": "Proyecto",
+      "all": "Todos los proyectos",
+      "none": "Sin proyecto"
     }
   },
   "validation": {
@@ -3346,10 +3351,18 @@
       "automations": "Automatizaciones"
     },
     "filters": {
-      "project": "Proyecto",
-      "allProjects": "Todos los proyectos",
-      "noProject": "Sin proyecto",
-      "clear": "Limpiar"
+      "clear": "Limpiar",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "searchKinds": "Buscar tipos",
+      "status": "Estado",
+      "allStatuses": "Todos los estados",
+      "searchStatuses": "Buscar estados",
+      "origin": "Añadida por",
+      "anyOrigin": "Cualquiera",
+      "originPerson": "Yo",
+      "originAgent": "Un agente",
+      "projectsFailed": "No se pudieron cargar tus proyectos, así que el filtro de proyecto no muestra nada."
     },
     "header": {
       "previous": "Anterior",

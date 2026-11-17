@@ -146,5 +146,10 @@
     "hosts": "Search hosts",
     "groups": "Search groups",
     "noMatch": "Nothing matches “{{query}}”."
+  },
+  "projectFilter": {
+    "label": "Project",
+    "all": "All projects",
+    "none": "No project"
   }
 }

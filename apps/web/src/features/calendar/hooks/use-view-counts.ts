@@ -6,18 +6,18 @@ import {
   useTasks,
 } from '@oppenheimer/frontend-consumer/react';
 import { automationItems, taskItems } from '../lib/calendar-items';
-import { inProjects } from '../lib/calendar-search';
-import { useCalendarProjects } from './use-calendar-projects';
+import { inProjects, inScope } from '../lib/calendar-search';
+import { useCalendarScope } from './use-calendar-scope';
 import { useCalendarView } from './use-calendar-view';
 
 /**
  * The header's line under the title (the `Tasks` frame): meetings (personal
  * and Google's), tasks due and automation runs on the view's own days,
- * whatever layers are on; tasks and runs of the picked projects only. The same reads the view draws from, so they cost
+ * whatever layers are on; tasks and runs as the filter row narrows them. The same reads the view draws from, so they cost
  * nothing more. Undefined until the view's own events have arrived.
  */
 export function useViewCounts() {
-  const { projectIds } = useCalendarProjects();
+  const scope = useCalendarScope();
   const { range, inView } = useCalendarView();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data: events } = useCalendarEvents(range);
@@ -29,13 +29,11 @@ export function useViewCounts() {
   );
   const { data: due } = useTasks({
     select: (rows) =>
-      taskItems(inProjects(rows, projectIds), range.from, range.to).filter((item) =>
-        inView(item.day),
-      ),
+      taskItems(inScope(rows, scope), range.from, range.to).filter((item) => inView(item.day)),
   });
   const { data: runs } = useAutomations({
     select: (rows) =>
-      automationItems(inProjects(rows, projectIds), range.from, range.to).filter((item) =>
+      automationItems(inProjects(rows, scope.projectIds), range.from, range.to).filter((item) =>
         inView(item.day),
       ),
   });

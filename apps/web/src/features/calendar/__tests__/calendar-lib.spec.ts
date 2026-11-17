@@ -6,6 +6,11 @@ import {
   calendarSearchSchema,
   hiddenLayers,
   inProjects,
+  inScope,
+  offParamOf,
+  shownLayers,
+  shownStatuses,
+  statusParamOf,
   toggleLayer,
 } from '../lib/calendar-search';
 
@@ -92,6 +97,36 @@ describe('the Project filter', () => {
 
   it('narrows a link to a project that no longer exists to nothing, not to everything', () => {
     expect(inProjects([{ projectId: 'p-1' }], projectIdsOfSlugs(['gone'], projects))).toEqual([]);
+  });
+});
+
+describe('the Kind, Status and Added by filters', () => {
+  it('reads Kind off the same `off` the sidebar toggles, a bare URL when every kind shows', () => {
+    expect(shownLayers(undefined)).toEqual([]);
+    expect(shownLayers('automations')).toEqual(['google', 'events', 'tasks']);
+    expect(offParamOf(['tasks'])).toBe('google,events,automations');
+    expect(offParamOf(['google', 'events', 'tasks', 'automations'])).toBeUndefined();
+    expect(offParamOf([])).toBeUndefined();
+  });
+
+  it('keeps statuses in the board’s order, and every status is no key', () => {
+    expect(shownStatuses('done,todo,nonsense')).toEqual(['todo', 'done']);
+    expect(statusParamOf(['done', 'todo'])).toBe('todo,done');
+    expect(statusParamOf(['todo', 'doing', 'review', 'done'])).toBeUndefined();
+  });
+
+  it('narrows tasks by project, status and who added them, all at once', () => {
+    const tasks = [
+      { id: 'a', projectId: 'p-1', status: 'done', origin: 'person' },
+      { id: 'b', projectId: 'p-1', status: 'todo', origin: 'agent' },
+      { id: 'c', projectId: 'p-2', status: 'todo', origin: 'person' },
+    ] as const;
+    const ids = (scope: Parameters<typeof inScope>[1]) => inScope(tasks, scope).map((t) => t.id);
+    expect(ids({ statuses: [] })).toEqual(['a', 'b', 'c']);
+    // Hiding done tasks: the struck-through ones leave the calendar.
+    expect(ids({ statuses: ['todo', 'doing', 'review'] })).toEqual(['b', 'c']);
+    expect(ids({ statuses: [], origin: 'agent' })).toEqual(['b']);
+    expect(ids({ statuses: ['todo'], projectIds: ['p-1'] })).toEqual(['b']);
   });
 });
 
