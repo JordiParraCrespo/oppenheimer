@@ -6,7 +6,7 @@ import type * as React from 'react';
  *
  * The focus stays in the search, so typing still filters: ↑ and ↓ move a
  * `data-active` mark across the pane's enabled options, and Enter clicks the
- * marked one. The mark lives on the DOM rather than in state because the
+ * marked one (`chooseActive`). The mark lives on the DOM rather than in state because the
  * rows belong to whichever component drew them.
  */
 const ACTIVE = 'data-active';
@@ -28,6 +28,21 @@ function clearActive(pane: HTMLElement | null) {
   for (const el of pane.querySelectorAll(`[${ACTIVE}]`)) el.removeAttribute(ACTIVE);
 }
 
+/**
+ * Enter on a row the arrows marked: clicks it and says so. It runs before the
+ * caller's own handler, because a caller that picks its first row on Enter
+ * (the task's Link existing) would otherwise take a row the reader never chose.
+ */
+function chooseActive(event: React.KeyboardEvent<HTMLInputElement>) {
+  if (event.key !== 'Enter') return false;
+  const pane = paneOf(event.currentTarget);
+  const marked = pane ? optionsIn(pane).find((el) => el.hasAttribute(ACTIVE)) : undefined;
+  if (!marked) return false;
+  event.preventDefault();
+  marked.click();
+  return true;
+}
+
 function moveActive(event: React.KeyboardEvent<HTMLInputElement>) {
   const pane = paneOf(event.currentTarget);
   if (!pane) return;
@@ -47,10 +62,7 @@ function moveActive(event: React.KeyboardEvent<HTMLInputElement>) {
     const target = options[next];
     target?.setAttribute(ACTIVE, '');
     target?.scrollIntoView({ block: 'nearest' });
-  } else if (event.key === 'Enter' && current !== -1) {
-    event.preventDefault();
-    options[current]?.click();
   }
 }
 
-export { clearActive, moveActive, paneOf };
+export { chooseActive, clearActive, moveActive, paneOf };

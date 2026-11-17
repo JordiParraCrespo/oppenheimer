@@ -3,7 +3,7 @@
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { clearActive, moveActive, paneOf } from '../internal/option-keys';
+import { chooseActive, clearActive, moveActive, paneOf } from '../internal/option-keys';
 import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
@@ -244,6 +244,7 @@ function ChipSelectSearch({
         // A caller that keeps its own highlight handles the keys first and
         // prevents the default; every other pane gets them here.
         onKeyDown={(event) => {
+          if (chooseActive(event)) return;
           onKeyDown?.(event);
           if (!event.defaultPrevented) moveActive(event);
         }}
