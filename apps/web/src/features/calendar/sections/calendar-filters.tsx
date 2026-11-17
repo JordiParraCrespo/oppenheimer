@@ -1,10 +1,10 @@
 import { Button, SearchableFacetMultiSelect, Skeleton } from '@oppenheimer/design-system-web';
 import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { projectParamOf, UNASSIGNED_SLUG } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useCalendarProjects } from '../hooks/use-calendar-projects';
-import { projectParamOf, UNASSIGNED_SLUG } from '../lib/calendar-search';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 

@@ -4,6 +4,12 @@ export { useStoredBoolean } from './hooks/use-stored-boolean';
 export { useStoredFold } from './hooks/use-stored-fold';
 export { useStoredList } from './hooks/use-stored-list';
 export { useStoredText } from './hooks/use-stored-text';
+export {
+  projectIdsOfSlugs,
+  projectParamOf,
+  projectSlugsOf,
+  UNASSIGNED_SLUG,
+} from './lib/project-scope';
 export { sanitizeRedirect } from './lib/sanitize-redirect';
 export { searchFlag, searchPage, searchText } from './lib/search-params';
 export { reloadOnStaleBuild } from './lib/stale-build-reload';

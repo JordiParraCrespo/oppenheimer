@@ -7,11 +7,12 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
+import { projectParamOf, UNASSIGNED_SLUG } from '@oppenheimer/frontend-web';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { type PlanFilterView, rememberPlanFilters } from '../lib/plan-filter-memory';
-import { planCounts, projectParamOf, UNASSIGNED_SLUG } from '../lib/plan-scope';
+import { planCounts } from '../lib/plan-scope';
 
 /** The facets' first option: nothing narrowed. */
 const ALL = 'all';

@@ -1,6 +1,6 @@
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { projectIdsOfSlugs, projectSlugsOf } from '@oppenheimer/frontend-web';
 import { useRouterState } from '@tanstack/react-router';
-import { projectIdsOfSlugs, projectSlugsOf } from '../lib/plan-scope';
 
 /**
  * The projects the Plan view in the address is narrowed to: their slugs from

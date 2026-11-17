@@ -11,7 +11,6 @@ import {
 } from '../lib/board';
 import { boardSearchSchema } from '../lib/board-search';
 import { cardView, dueDayLabel } from '../lib/card-view';
-import { projectIdsOfSlugs, projectParamOf, projectSlugsOf } from '../lib/plan-scope';
 
 function task(
   id: string,
@@ -67,6 +66,8 @@ describe('the board', () => {
 
   it('narrows a column to the project and milestone it is filtered to', () => {
     expect(columnOf(rows, 'todo', { projectIds: ['p-2'] }).map((row) => row.id)).toEqual(['o']);
+    // A stale `?project=` names no project: it shows nothing, never every project.
+    expect(columnOf(rows, 'todo', { projectIds: [] })).toEqual([]);
   });
 
   it('shows every project picked, not just the first', () => {
@@ -239,28 +240,5 @@ describe('filingOf', () => {
       projectId: undefined,
       milestoneId: 'm-gone',
     });
-  });
-});
-
-describe('?project=', () => {
-  const projects = [
-    { id: 'p-web', slug: 'web', isUnassigned: false },
-    { id: 'p-none', slug: 'unassigned-x', isUnassigned: true },
-  ];
-
-  it('reads one slug as it always did, and several comma-separated, each once', () => {
-    expect(projectSlugsOf('web')).toEqual(['web']);
-    expect(projectSlugsOf('web,billing,,web')).toEqual(['web', 'billing']);
-    expect(projectSlugsOf(undefined)).toEqual([]);
-    expect(projectParamOf([])).toBeUndefined();
-    expect(projectParamOf(['web', 'billing'])).toBe('web,billing');
-  });
-
-  it('turns slugs into ids, leaving a stale one out but never widening to All projects', () => {
-    expect(projectIdsOfSlugs(['web', 'unassigned', 'gone'], projects)).toEqual(['p-web', 'p-none']);
-    // Reading `?project=gone` as no filter would show every project's tasks.
-    expect(projectIdsOfSlugs(['gone'], projects)).toEqual([]);
-    expect(columnOf([task('t')], 'todo', { projectIds: [] })).toEqual([]);
-    expect(projectIdsOfSlugs([], projects)).toBeUndefined();
   });
 });

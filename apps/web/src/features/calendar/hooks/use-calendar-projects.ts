@@ -1,6 +1,6 @@
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { projectIdsOfSlugs, projectSlugsOf } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
-import { projectIdsOfSlugs, projectSlugsOf } from '../lib/calendar-search';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 

@@ -1,7 +1,7 @@
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { projectIdsOfSlugs, projectSlugsOf } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import type { BoardFilter } from '../lib/board';
-import { projectIdsOfSlugs, projectSlugsOf } from '../lib/plan-scope';
 
 const board = getRouteApi('/_authenticated/plan/');
 

@@ -1,11 +1,11 @@
 import { AutomationEntity, CalendarEventEntity } from '@oppenheimer/frontend-consumer';
+import { projectIdsOfSlugs } from '@oppenheimer/frontend-web';
 import { describe, expect, it } from 'vitest';
 import { automationItems, eventItems, toEntry } from '../lib/calendar-items';
 import {
   calendarSearchSchema,
   hiddenLayers,
   inProjects,
-  projectIdsOfSlugs,
   toggleLayer,
 } from '../lib/calendar-search';
 

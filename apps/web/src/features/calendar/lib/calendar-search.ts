@@ -57,41 +57,6 @@ export function toggleLayer(off: string | undefined, layer: CalendarLayer): stri
   return hidden.size ? CALENDAR_LAYERS.filter((name) => hidden.has(name)).join(',') : undefined;
 }
 
-/** `?project=unassigned` names the workspace's Unassigned project, as on Plan's board. */
-export const UNASSIGNED_SLUG = 'unassigned';
-
-/** The slugs `?project=` lists, each once, in the order they were picked. */
-export function projectSlugsOf(param: string | undefined): string[] {
-  return [
-    ...new Set(
-      (param ?? '')
-        .split(',')
-        .map((slug) => slug.trim())
-        .filter(Boolean),
-    ),
-  ];
-}
-
-/** `?project=` for a set of slugs; none is no key, so the calendar shows every project. */
-export function projectParamOf(slugs: readonly string[]): string | undefined {
-  return slugs.length ? slugs.join(',') : undefined;
-}
-
-/**
- * The ids of the projects a set of slugs names, `undefined` for none (every
- * project). A slug no project has names nothing, so a stale link narrows to
- * an empty set rather than widening to every project.
- */
-export function projectIdsOfSlugs(
-  slugs: readonly string[],
-  projects: readonly { id: string; slug: string; isUnassigned: boolean }[],
-): string[] | undefined {
-  if (slugs.length === 0) return undefined;
-  return projects
-    .filter((row) => slugs.includes(row.isUnassigned ? UNASSIGNED_SLUG : row.slug))
-    .map((row) => row.id);
-}
-
 /** The rows of the picked projects, every row while none is picked. */
 export function inProjects<T extends { projectId: string | null }>(
   rows: readonly T[],
