@@ -190,9 +190,12 @@ export const SESSION_EVENT_KINDS = {
    * `SESSION_SHARED_FILES_MAX` for bots to list and show.
    */
   FILE_SHARED: FILE_SHARED_EVENT_KIND,
-  /** The agent left a report. Payload `{ hash }` — never the report itself. */
+  /**
+   * The agent left a report. Payload `{ hash }` — never the report itself. A
+   * turn that ends publishes one of its own off `agent.observed` (`turn:<seq>`).
+   */
   REPORT_PUBLISHED: 'report.published',
-  /** Somebody read that report. Payload `{ hash }`. */
+  /** Somebody read that report (the console opened the session). Payload `{ hash }`. */
   REPORT_ACKNOWLEDGED: 'report.acknowledged',
 } as const;
 
@@ -648,6 +651,11 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
         next.observedSince = next.observedSince ?? event.occurredAt;
         return next;
       }
+      // A turn that ends leaves a report for the reader: the agent was at work
+      // (or asking) and now sits at its prompt. The entry's place in the log is
+      // the report's identity, so a replay derives the same one, and the next
+      // turn's end is a new report however the last one was read.
+      if (isTurnEnd(next.lastObservedState, state)) next.reportHash = `turn:${event.seq}`;
       // The first report of a state records the transition but claims no duration
       // yet — one report cannot be evidence of having been stuck.
       next.lastObservedState = state;
@@ -708,6 +716,17 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     default:
       return next;
   }
+}
+
+/**
+ * Whether an observation ends the agent's turn: it was `working` or `blocked`
+ * and is now at its prompt (`idle`, or `done`, the manifest's own end). From
+ * nothing or `unknown` it is the agent loading, not a turn that finished.
+ */
+function isTurnEnd(previous: AgentObservedState | null, state: AgentObservedState): boolean {
+  return (
+    (previous === 'working' || previous === 'blocked') && (state === 'idle' || state === 'done')
+  );
 }
 
 /** `initial` exists so a fold can resume from a stored row. */

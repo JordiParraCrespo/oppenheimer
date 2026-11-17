@@ -11391,6 +11391,38 @@ export type SetSessionVisibilityResponses = {
 
 export type SetSessionVisibilityResponse = SetSessionVisibilityResponses[keyof SetSessionVisibilityResponses];
 
+export type AcknowledgeSessionReportData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/report/acknowledge';
+};
+
+export type AcknowledgeSessionReportErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type AcknowledgeSessionReportError = AcknowledgeSessionReportErrors[keyof AcknowledgeSessionReportErrors];
+
+export type AcknowledgeSessionReportResponses = {
+    200: SessionResponseDto;
+};
+
+export type AcknowledgeSessionReportResponse = AcknowledgeSessionReportResponses[keyof AcknowledgeSessionReportResponses];
+
 export type MoveSessionData = {
     body: MoveSessionRequest;
     path: {

@@ -15,6 +15,7 @@ import { PreviewFrame } from '../components/preview-frame';
 import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
+import { useReadOnOpen } from '../hooks/use-read-on-open';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
@@ -111,6 +112,8 @@ export function SessionPane({
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
   const { data: session, error } = useSuspenseSession(sessionId);
+  // Opening a session reads what its last turn left: its blue dot goes.
+  useReadOnOpen(session);
   const previewTabs: PreviewTab[] = [
     ...(browserOffered ? (['browser'] as const) : []),
     ...(simulatorOffered ? (['simulator'] as const) : []),
