@@ -120,7 +120,7 @@ function CalendarEntry({
       <span
         className={cn(
           'min-w-0 flex-1 truncate',
-          free || entry.done ? 'font-normal text-fg-muted' : 'font-medium',
+          free || entry.done || entry.kind === 'automation' ? 'font-normal text-fg-muted' : 'font-medium',
           entry.done && 'line-through',
         )}
       >
@@ -326,8 +326,14 @@ function MonthCalendar({
   );
 }
 
-/** The colour each kind of entry wears when it names no calendar: a legend's swatch reads it. */
-const CALENDAR_KIND_ACCENT = KIND_TONE;
+/**
+ * The colour an event and a task wear when they name no calendar, for a
+ * legend's swatch; an automation run has none (it stays in subtle ink).
+ */
+const CALENDAR_KIND_ACCENT = {
+  event: KIND_TONE.event as CalendarAccent,
+  task: KIND_TONE.task as CalendarAccent,
+};
 
 export { CALENDAR_KIND_ACCENT, CalendarEntry, MonthCalendar };
 export type { CalendarAccent, CalendarEntryData, CalendarEntryKind };

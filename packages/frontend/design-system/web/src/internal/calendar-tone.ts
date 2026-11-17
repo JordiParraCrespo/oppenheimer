@@ -3,17 +3,21 @@ import type { CalendarAccent, CalendarEntryKind } from '../components/month-cale
 /**
  * The colour a calendar entry wears, so the month, the day and the week can
  * be read at a glance: the calendar it came from when it has one (a Google
- * account), else its kind's (events blue, tasks violet, automation runs
- * amber). Each class sets `--tone`; the entry tints its wash, its edge and
- * its glyph from it.
+ * account), else its kind's (events blue, tasks violet). An automation run
+ * stays in subtle ink: it is a schedule, not a commitment, and amber is the
+ * warning hue. Each class sets `--tone`; the entry tints its wash, its edge
+ * and its glyph from it.
  */
-const KIND_TONE: Record<CalendarEntryKind, CalendarAccent> = {
+type CalendarTone = CalendarAccent | 'muted';
+
+const KIND_TONE: Record<CalendarEntryKind, CalendarTone> = {
   event: 'chart-1',
   task: 'chart-3',
-  automation: 'chart-5',
+  automation: 'muted',
 };
 
-const TONE_VAR: Record<CalendarAccent, string> = {
+const TONE_VAR: Record<CalendarTone, string> = {
+  muted: '[--tone:var(--fg-subtle)]',
   'chart-1': '[--tone:var(--chart-1)]',
   'chart-2': '[--tone:var(--chart-2)]',
   'chart-3': '[--tone:var(--chart-3)]',
@@ -21,7 +25,7 @@ const TONE_VAR: Record<CalendarAccent, string> = {
   'chart-5': '[--tone:var(--chart-5)]',
 };
 
-function toneOf(entry: { kind: CalendarEntryKind; accent?: CalendarAccent }): CalendarAccent {
+function toneOf(entry: { kind: CalendarEntryKind; accent?: CalendarAccent }): CalendarTone {
   return entry.accent ?? KIND_TONE[entry.kind];
 }
 

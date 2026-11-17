@@ -28,13 +28,14 @@ const ICON: Record<CalendarLayer, ReactNode> = {
 
 /**
  * The colour each layer's entries wear, so the list is the grid's legend.
- * Google's has none of its own: each account wears its colour, by its row.
+ * Google's has none of its own (each account wears its colour, by its row),
+ * and automation runs stay in subtle ink.
  */
 const ACCENT: Record<CalendarLayer, CalendarAccent | undefined> = {
   events: CALENDAR_KIND_ACCENT.event,
   google: undefined,
   tasks: CALENDAR_KIND_ACCENT.task,
-  automations: CALENDAR_KIND_ACCENT.automation,
+  automations: undefined,
 };
 
 /**

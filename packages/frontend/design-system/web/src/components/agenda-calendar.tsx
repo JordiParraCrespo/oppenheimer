@@ -161,7 +161,7 @@ function blockLook(placed: Placed, hourHeight: number, compact: boolean) {
     ),
     edgeClassName: free ? 'bg-(--tone)/45' : 'bg-(--tone)',
     titleClassName: cn(
-      free || entry.done ? 'font-normal text-fg-muted' : 'font-medium text-fg',
+      free || entry.done || entry.kind === 'automation' ? 'font-normal text-fg-muted' : 'font-medium text-fg',
       entry.done && 'line-through',
     ),
     time: short && compact ? null : entry.kind === 'automation' ? (entry.time ?? null) : `${entry.time}–${timeOf(end)}`,
