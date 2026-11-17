@@ -1,8 +1,10 @@
 import {
   Button,
+  ChipSelectCombobox,
   ChipSelectEmpty,
   ChipSelectItem,
   ChipSelectList,
+  ChipSelectSearch,
   IconButton,
 } from '@oppenheimer/design-system-web';
 import {
@@ -97,174 +99,182 @@ export function FolderBrowser({
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return;
+    // A row the arrows lit is the combobox's to open; with none, Enter uses
+    // the folder typed.
+    if (event.currentTarget.getAttribute('aria-activedescendant')) return;
     event.preventDefault();
     if (view.target) onUse(view.target.path);
   }
 
   return (
     <div className="flex min-h-0 flex-col" data-slot="folder-browser">
-      <div className="mb-1 flex items-center gap-2 border-b border-border-subtle px-2.5 py-1.5">
-        <Folder className="size-3.5 shrink-0 text-fg-subtle" />
-        <input
-          // biome-ignore lint/a11y/noAutofocus: the path is the reason the popup opened
-          autoFocus
-          type="text"
-          value={input}
-          onChange={(event) => onInputChange(event.target.value)}
+      {/* The path is the query: ↑ ↓ walk the folders under it, and Enter opens
+          the one lit, or uses the folder typed when none is. Nothing is lit
+          until the arrows ask, so typing a path and Enter always uses it. */}
+      <ChipSelectCombobox
+        // A folder opened lists other rows: the light goes out with the old ones.
+        key={view.dir}
+        query={input}
+        onQueryChange={onInputChange}
+        autoHighlight={false}
+        loading={loading}
+      >
+        <ChipSelectSearch
+          icon={<Folder />}
+          trailing={
+            home ? (
+              <span className="shrink-0 truncate text-micro text-fg-subtle">
+                {t('sessions.new.folder.homeHint', { home })}
+              </span>
+            ) : null
+          }
           onKeyDown={onKeyDown}
           placeholder={t('sessions.new.folder.inputPlaceholder')}
           aria-label={t('sessions.new.folder.input')}
           spellCheck={false}
-          autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent p-0 font-mono text-xs text-fg outline-none placeholder:text-field-placeholder"
+          className="font-mono text-xs"
         />
-        {home ? (
-          <span className="shrink-0 truncate text-micro text-fg-subtle">
-            {t('sessions.new.folder.homeHint', { home })}
-          </span>
-        ) : null}
-      </div>
 
-      <div className="flex items-center gap-1 px-1 py-0.5">
-        {view.up !== null ? (
-          <IconButton
-            size="sm"
-            aria-label={t('sessions.new.folder.up')}
-            title={t('sessions.new.folder.up')}
-            onClick={() => onInputChange(folderInput(view.up ?? '/'))}
-          >
-            <ChevronLeft />
-          </IconButton>
-        ) : null}
-        <nav
-          aria-label={t('sessions.new.folder.crumbs')}
-          className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 font-mono text-xs"
-        >
-          {view.crumbs.map((crumb, index) => (
-            <span key={crumb.dir} className="flex items-center gap-0.5">
-              {index > 0 && view.crumbs[index - 1]?.dir !== '/' ? (
-                <span className="text-fg-subtle">/</span>
-              ) : null}
-              <button
-                type="button"
-                aria-current={index === view.crumbs.length - 1 ? 'location' : undefined}
-                onClick={() => onInputChange(folderInput(crumb.dir))}
-                className="rounded-sm px-1 py-0.5 text-fg-muted outline-none hover:bg-hover-surface focus-visible:bg-hover-surface aria-[current=location]:text-fg"
-              >
-                {crumb.name}
-              </button>
-            </span>
-          ))}
-        </nav>
-      </div>
-
-      <ChipSelectList
-        role="listbox"
-        aria-label={t('sessions.new.folder.label')}
-        loading={loading}
-        loadingText={t('sessions.new.folder.loading')}
-        className="max-h-62"
-      >
-        {recent.length > 0 ? (
-          <div className="mb-1 flex flex-col border-b border-border-subtle pb-1">
-            <span className="px-2.5 pt-1.5 pb-1 text-micro font-medium text-fg-subtle uppercase">
-              {t('sessions.new.folder.recent', { host: hostName })}
-            </span>
-            {recent.map((folder) => {
-              const age = compactAge(folder.lastUsedAt, now);
-              return (
-                <ChipSelectItem
-                  key={folder.path}
-                  leading={<History />}
-                  title={folder.path}
-                  trailing={
-                    <span className="figures shrink-0 font-mono text-micro text-fg-subtle">
-                      {age
-                        ? t(`common.relative.${age.unit}`, { count: age.count })
-                        : t('common.relative.now')}
-                    </span>
-                  }
-                  mono
-                  onClick={() => onUse(folder.path)}
-                >
-                  {shown(folder.path)}
-                </ChipSelectItem>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {failure ? (
-          <ChipSelectEmpty role="alert">{failure}</ChipSelectEmpty>
-        ) : emptyShown ? (
-          <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
-        ) : (
-          view.rows.map((entry) => (
-            <FolderRow
-              key={entry.path}
-              path={entry.path}
-              branch={entry.branch}
-              onOpen={() => onInputChange(folderInput(shown(entry.path)))}
+        <div className="flex items-center gap-1 px-1 py-0.5">
+          {view.up !== null ? (
+            <IconButton
+              size="sm"
+              aria-label={t('sessions.new.folder.up')}
+              title={t('sessions.new.folder.up')}
+              onClick={() => onInputChange(folderInput(view.up ?? '/'))}
             >
-              {entry.name}
-            </FolderRow>
-          ))
-        )}
-
-        {found.length > 0 ? (
-          <div
-            className="mt-1 flex flex-col border-t border-border-subtle pt-1"
-            data-slot="folder-search"
+              <ChevronLeft />
+            </IconButton>
+          ) : null}
+          <nav
+            aria-label={t('sessions.new.folder.crumbs')}
+            className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 font-mono text-xs"
           >
-            <span className="px-2.5 pt-1.5 pb-1 text-micro font-medium text-fg-subtle uppercase">
-              {t('sessions.new.folder.searchHeading')}
-            </span>
-            {found.map((entry) => (
+            {view.crumbs.map((crumb, index) => (
+              <span key={crumb.dir} className="flex items-center gap-0.5">
+                {index > 0 && view.crumbs[index - 1]?.dir !== '/' ? (
+                  <span className="text-fg-subtle">/</span>
+                ) : null}
+                <button
+                  type="button"
+                  aria-current={index === view.crumbs.length - 1 ? 'location' : undefined}
+                  onClick={() => onInputChange(folderInput(crumb.dir))}
+                  className="rounded-sm px-1 py-0.5 text-fg-muted outline-none hover:bg-hover-surface focus-visible:bg-hover-surface aria-[current=location]:text-fg"
+                >
+                  {crumb.name}
+                </button>
+              </span>
+            ))}
+          </nav>
+        </div>
+
+        <ChipSelectList
+          aria-label={t('sessions.new.folder.label')}
+          loading={loading}
+          loadingText={t('sessions.new.folder.loading')}
+          className="max-h-62"
+        >
+          {recent.length > 0 ? (
+            <div className="mb-1 flex flex-col border-b border-border-subtle pb-1">
+              <span className="px-2.5 pt-1.5 pb-1 text-micro font-medium text-fg-subtle uppercase">
+                {t('sessions.new.folder.recent', { host: hostName })}
+              </span>
+              {recent.map((folder) => {
+                const age = compactAge(folder.lastUsedAt, now);
+                return (
+                  <ChipSelectItem
+                    key={folder.path}
+                    leading={<History />}
+                    title={folder.path}
+                    trailing={
+                      <span className="figures shrink-0 font-mono text-micro text-fg-subtle">
+                        {age
+                          ? t(`common.relative.${age.unit}`, { count: age.count })
+                          : t('common.relative.now')}
+                      </span>
+                    }
+                    mono
+                    onClick={() => onUse(folder.path)}
+                  >
+                    {shown(folder.path)}
+                  </ChipSelectItem>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {failure ? (
+            <ChipSelectEmpty role="alert">{failure}</ChipSelectEmpty>
+          ) : emptyShown ? (
+            <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
+          ) : (
+            view.rows.map((entry) => (
               <FolderRow
                 key={entry.path}
                 path={entry.path}
                 branch={entry.branch}
-                mono
                 onOpen={() => onInputChange(folderInput(shown(entry.path)))}
               >
-                {shown(entry.path)}
+                {entry.name}
               </FolderRow>
-            ))}
-            {search?.truncated ? (
-              <span className="px-2.5 py-1.5 text-micro text-fg-subtle">
-                {t('sessions.new.folder.searchTruncated')}
+            ))
+          )}
+
+          {found.length > 0 ? (
+            <div
+              className="mt-1 flex flex-col border-t border-border-subtle pt-1"
+              data-slot="folder-search"
+            >
+              <span className="px-2.5 pt-1.5 pb-1 text-micro font-medium text-fg-subtle uppercase">
+                {t('sessions.new.folder.searchHeading')}
               </span>
-            ) : null}
-          </div>
-        ) : failed ? (
-          <div
-            role="alert"
-            className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-fg-muted"
-            data-slot="folder-search"
-          >
-            <CircleAlert className="size-3.5 shrink-0 text-fg-subtle" />
-            <span className="min-w-0 flex-1">{searchFailure}</span>
-            {onRetrySearch ? (
-              <IconButton
-                size="sm"
-                aria-label={t('common.retry')}
-                title={t('common.retry')}
-                onClick={onRetrySearch}
-              >
-                <RotateCw />
-              </IconButton>
-            ) : null}
-          </div>
-        ) : pending ? (
-          <div
-            className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-fg-subtle"
-            data-slot="folder-search"
-          >
-            <LoaderCircle className="size-3.5 shrink-0 motion-safe:animate-spin" />
-            {t('sessions.new.folder.searching')}
-          </div>
-        ) : null}
-      </ChipSelectList>
+              {found.map((entry) => (
+                <FolderRow
+                  key={entry.path}
+                  path={entry.path}
+                  branch={entry.branch}
+                  mono
+                  onOpen={() => onInputChange(folderInput(shown(entry.path)))}
+                >
+                  {shown(entry.path)}
+                </FolderRow>
+              ))}
+              {search?.truncated ? (
+                <span className="px-2.5 py-1.5 text-micro text-fg-subtle">
+                  {t('sessions.new.folder.searchTruncated')}
+                </span>
+              ) : null}
+            </div>
+          ) : failed ? (
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-fg-muted"
+              data-slot="folder-search"
+            >
+              <CircleAlert className="size-3.5 shrink-0 text-fg-subtle" />
+              <span className="min-w-0 flex-1">{searchFailure}</span>
+              {onRetrySearch ? (
+                <IconButton
+                  size="sm"
+                  aria-label={t('common.retry')}
+                  title={t('common.retry')}
+                  onClick={onRetrySearch}
+                >
+                  <RotateCw />
+                </IconButton>
+              ) : null}
+            </div>
+          ) : pending ? (
+            <div
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-fg-subtle"
+              data-slot="folder-search"
+            >
+              <LoaderCircle className="size-3.5 shrink-0 motion-safe:animate-spin" />
+              {t('sessions.new.folder.searching')}
+            </div>
+          ) : null}
+        </ChipSelectList>
+      </ChipSelectCombobox>
 
       <div className="-mx-1 -mb-1 mt-1 flex items-center gap-2.5 border-t border-border-subtle py-2 pr-2 pl-3">
         <span className="min-w-0 flex-1 text-xs text-fg-subtle">{footNote}</span>

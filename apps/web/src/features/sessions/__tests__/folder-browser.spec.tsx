@@ -57,7 +57,7 @@ function Harness(props: Partial<ComponentProps<typeof FolderBrowser>> & { initia
   );
 }
 
-const field = () => screen.getByRole<HTMLInputElement>('textbox');
+const field = () => screen.getByRole<HTMLInputElement>('combobox');
 const useButton = () =>
   screen.getByRole<HTMLButtonElement>('button', { name: /^sessions\.new\.folder\.use/ });
 
@@ -223,5 +223,37 @@ describe('FolderBrowser', () => {
 
     expect(screen.getByRole('alert').textContent).toBe('The host is offline.');
     expect(useButton().disabled).toBe(true);
+  });
+
+  /**
+   * The path field walks the folders under it: ↓ lights a row and Enter
+   * opens it, as a click does. Nothing is lit until the arrows ask, so a
+   * path typed and Enter still uses that path. A regression either left
+   * the arrows doing nothing or traded a typed path for the first row.
+   */
+  it('opens the folder the arrows light on Enter', () => {
+    const onUse = vi.fn();
+    render(<Harness onUse={onUse} />);
+
+    // The recent folder leads, then home's own: ↓↓ lights `code`.
+    fireEvent.keyDown(field(), { key: 'ArrowDown' });
+    fireEvent.keyDown(field(), { key: 'ArrowDown' });
+    const lit = field().getAttribute('aria-activedescendant');
+    expect(lit && document.getElementById(lit)?.textContent).toBe('code');
+
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(field().value).toBe('~/code/');
+    expect(onUse).not.toHaveBeenCalled();
+    // `code`'s folders are other rows: none is lit, so Enter uses `code`.
+    expect(field().getAttribute('aria-activedescendant')).toBeNull();
+  });
+
+  it('uses the folder typed on Enter while no row is lit', () => {
+    const onUse = vi.fn();
+    render(<Harness onUse={onUse} initial="~/" />);
+
+    expect(field().getAttribute('aria-activedescendant')).toBeNull();
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    expect(onUse).toHaveBeenCalledWith('/home/jordi');
   });
 });

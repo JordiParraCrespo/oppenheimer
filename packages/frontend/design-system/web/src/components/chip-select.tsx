@@ -253,12 +253,18 @@ function ChipSelectSearch({
   density = 'chip',
   variant = 'row',
   leadingSize = 'mark',
+  icon,
+  trailing,
   className,
   ...props
 }: Omit<React.ComponentProps<'input'>, 'type'> & {
   density?: ChipSelectDensity;
   variant?: 'row' | 'boxed';
   leadingSize?: ChipSelectLeadingSize;
+  /** In place of the magnifier, for a field that takes something else (a path). */
+  icon?: React.ReactNode;
+  /** A quiet note at the row's end, after the text (the host's home). */
+  trailing?: React.ReactNode;
 }) {
   const boxed = variant === 'boxed';
   const combobox = React.useContext(ComboboxScope);
@@ -279,10 +285,12 @@ function ChipSelectSearch({
     >
       {boxed ? (
         <ChipSelectLeading size={leadingSize}>
-          <SearchIcon className="size-3.5" />
+          {icon ?? <SearchIcon className="size-3.5" />}
         </ChipSelectLeading>
       ) : (
-        <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
+        <span className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-3.5">
+          {icon ?? <SearchIcon />}
+        </span>
       )}
       {combobox ? (
         <ComboboxPrimitive.Input
@@ -300,6 +308,7 @@ function ChipSelectSearch({
           {...props}
         />
       )}
+      {trailing}
     </div>
   );
 }
