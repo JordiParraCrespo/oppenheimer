@@ -243,27 +243,79 @@ export function useMoveTask(
   });
 }
 
+/** A run of moves, each card under the one before it; see `useMoveTasks`. */
+interface TaskRun {
+  moves: readonly MoveTaskVariables[];
+  /** Each card as it was before the run, for what it put back and what it settled. */
+  before: ReadonlyMap<string, TaskEntity>;
+  /** The cards whose move has not been answered yet. */
+  unsettled: Set<string>;
+}
+
 /**
- * Puts several cards where a run of moves will, all in the same frame: a drop
- * of picked cards sends its moves one at a time (each lands under the one
- * before), and without this each card would wait for the answer to the move
- * ahead of it before leaving its column. Each move's own write follows and
- * the server's keys replace these; a refusal reads the board again.
+ * Several cards moved as one: a drop of picked cards, or Move to. Every card
+ * lands on the board in the frame `run` is called; the moves go to the API one
+ * at a time, since each is placed under the one moved before it, and each
+ * answer settles its card and draws the cards still waiting under it, so the
+ * run keeps its order while the server's keys replace the provisional ones. A
+ * refusal stops the run: every card it had not settled goes back where it was,
+ * and the board is read again.
  */
-export function usePlaceTasks() {
+export function useMoveTasks() {
+  const app = useConsumerApp();
   const queryClient = useQueryClient();
-  return (moves: readonly MoveTaskVariables[]) => {
-    void queryClient.cancelQueries({ queryKey: tasksKeys.list() });
-    queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (current) =>
-      current
-        ? moves.reduce(
-            (rows, move) =>
-              rows.map((row) => (row.id === move.id ? provisionallyMoved(row, move, rows) : row)),
-            current,
-          )
-        : current,
-    );
+  const mutation = useMutation<void, Error, TaskRun>({
+    mutationFn: async ({ moves, before, unsettled }) => {
+      for (const [index, move] of moves.entries()) {
+        const task = await app.tasks.move(move.id, {
+          status: move.status,
+          afterTaskId: move.afterTaskId,
+        });
+        unsettled.delete(move.id);
+        await settleTask(queryClient, task.id, task, before.get(move.id));
+        placeProvisionally(queryClient, moves.slice(index + 1));
+      }
+    },
+    onError: (_error, { before, unsettled }) => {
+      queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (rows) =>
+        rows?.map((row) => (unsettled.has(row.id) ? (before.get(row.id) ?? row) : row)),
+      );
+      void queryClient.invalidateQueries({ queryKey: tasksKeys.list() });
+    },
+  });
+  return {
+    run: (moves: readonly MoveTaskVariables[], onSettled?: () => void) => {
+      const rows = queryClient.getQueryData<TaskEntity[]>(tasksKeys.list()) ?? [];
+      const ids = new Set(moves.map((move) => move.id));
+      // Written before anything is awaited, as a single move's is: the drop lets go of its order in this handler.
+      void queryClient.cancelQueries({ queryKey: tasksKeys.list() });
+      placeProvisionally(queryClient, moves);
+      mutation.mutate(
+        {
+          moves,
+          before: new Map(rows.filter((row) => ids.has(row.id)).map((row) => [row.id, row])),
+          unsettled: ids,
+        },
+        { onSettled },
+      );
+    },
+    isPending: mutation.isPending,
+    error: mutation.error,
+    reset: mutation.reset,
   };
+}
+
+/** Writes `moves` onto the board, in order, each with the provisional key a single move gets. */
+function placeProvisionally(queryClient: QueryClient, moves: readonly MoveTaskVariables[]) {
+  queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (current) =>
+    current
+      ? moves.reduce(
+          (rows, move) =>
+            rows.map((row) => (row.id === move.id ? provisionallyMoved(row, move, rows) : row)),
+          current,
+        )
+      : current,
+  );
 }
 
 function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]): TaskEntity {
