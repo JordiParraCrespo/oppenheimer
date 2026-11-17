@@ -256,4 +256,17 @@ describe('FolderBrowser', () => {
     fireEvent.keyDown(field(), { key: 'Enter' });
     expect(onUse).toHaveBeenCalledWith('/home/jordi');
   });
+
+  /**
+   * Typing a path moves the folder listed with every `/`, but the field is
+   * never remounted for it: a remount put the caret at the end mid-edit and
+   * dropped text an IME was composing. Only opening a folder starts afresh.
+   */
+  it('keeps the same field while a path is typed across folders', () => {
+    render(<Harness />);
+    const before = field();
+    fireEvent.change(before, { target: { value: '~/code/' } });
+    fireEvent.change(field(), { target: { value: '~/code/app/' } });
+    expect(field()).toBe(before);
+  });
 });

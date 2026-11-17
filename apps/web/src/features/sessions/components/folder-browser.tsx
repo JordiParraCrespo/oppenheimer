@@ -17,7 +17,7 @@ import {
 } from '@oppenheimer/design-system-web/icons';
 import type { HostFolderSearch, HostFolders } from '@oppenheimer/frontend-consumer';
 import { compactAge } from '@oppenheimer/frontend-web';
-import type { KeyboardEvent } from 'react';
+import { type KeyboardEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { folderView } from '../lib/folder-browse';
 import { folderInput, leafOf, shortenPath } from '../lib/folder-path';
@@ -73,6 +73,7 @@ export function FolderBrowser({
   onUse: (path: string) => void;
 }) {
   const { t } = useTranslation();
+  const [hops, setHops] = useState(0);
   const view = folderView({ input, home, listing, missing });
   const recent = view.showRecent && !failure ? (listing?.recent ?? []) : [];
   const shown = (path: string) => shortenPath(path, home);
@@ -97,6 +98,12 @@ export function FolderBrowser({
       ? t('sessions.new.folder.footRepository', { branch: view.target.branch })
       : t('sessions.new.folder.footFolder');
 
+  /** Moves to another folder, as against typing towards one. */
+  function open(path: string) {
+    setHops((count) => count + 1);
+    onInputChange(path);
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return;
     // A row the arrows lit is the combobox's to open; with none, Enter uses
@@ -112,12 +119,13 @@ export function FolderBrowser({
           the one lit, or uses the folder typed when none is. Nothing is lit
           until the arrows ask, so typing a path and Enter always uses it. */}
       <ChipSelectCombobox
-        // A folder opened lists other rows: the light goes out with the old ones.
-        key={view.dir}
+        // A folder opened (a row, a crumb, Up) lists other rows: the light goes
+        // out with the old ones. Never keyed on what is typed, so typing never
+        // remounts the field under the caret.
+        key={hops}
         query={input}
         onQueryChange={onInputChange}
         autoHighlight={false}
-        loading={loading}
       >
         <ChipSelectSearch
           icon={<Folder />}
@@ -141,7 +149,7 @@ export function FolderBrowser({
               size="sm"
               aria-label={t('sessions.new.folder.up')}
               title={t('sessions.new.folder.up')}
-              onClick={() => onInputChange(folderInput(view.up ?? '/'))}
+              onClick={() => open(folderInput(view.up ?? '/'))}
             >
               <ChevronLeft />
             </IconButton>
@@ -158,7 +166,7 @@ export function FolderBrowser({
                 <button
                   type="button"
                   aria-current={index === view.crumbs.length - 1 ? 'location' : undefined}
-                  onClick={() => onInputChange(folderInput(crumb.dir))}
+                  onClick={() => open(folderInput(crumb.dir))}
                   className="rounded-sm px-1 py-0.5 text-fg-muted outline-none hover:bg-hover-surface focus-visible:bg-hover-surface aria-[current=location]:text-fg"
                 >
                   {crumb.name}
@@ -213,7 +221,7 @@ export function FolderBrowser({
                 key={entry.path}
                 path={entry.path}
                 branch={entry.branch}
-                onOpen={() => onInputChange(folderInput(shown(entry.path)))}
+                onOpen={() => open(folderInput(shown(entry.path)))}
               >
                 {entry.name}
               </FolderRow>
@@ -234,7 +242,7 @@ export function FolderBrowser({
                   path={entry.path}
                   branch={entry.branch}
                   mono
-                  onOpen={() => onInputChange(folderInput(shown(entry.path)))}
+                  onOpen={() => open(folderInput(shown(entry.path)))}
                 >
                   {shown(entry.path)}
                 </FolderRow>

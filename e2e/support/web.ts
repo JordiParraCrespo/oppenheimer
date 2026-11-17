@@ -144,6 +144,6 @@ export async function pickProjectAndRepository(page: Page, editor: Locator) {
  */
 export async function pickDialogProject(page: Page, dialog: Locator, name: string) {
   await dialog.getByRole('button', { name: 'Project', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Search projects' }).fill(name);
+  await page.getByRole('combobox', { name: 'Search projects' }).fill(name);
   await page.getByRole('option', { name, exact: true }).click();
 }

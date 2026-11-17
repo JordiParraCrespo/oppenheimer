@@ -4,6 +4,7 @@ import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { ComboboxScope, takeFirstOnEnter } from '../internal/combobox-scope';
 import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
@@ -71,8 +72,7 @@ function matches(option: ChipSelectOption, term: string) {
 
 /* ── Parts ───────────────────────────────────────────────────────────────── */
 
-/** Whether the parts are inside a `ChipSelectCombobox`, so they draw as its parts. */
-const ComboboxScope = React.createContext(false);
+
 
 /**
  * The keyboard and the screen reader for one pane: wrap the search, the list
@@ -93,23 +93,20 @@ function ChipSelectCombobox({
   query,
   onQueryChange,
   autoHighlight = true,
-  loading = false,
   children,
 }: {
   query: string;
   onQueryChange: (query: string) => void;
   autoHighlight?: boolean | 'always';
-  /**
-   * The rows are still being read. The combobox takes its rows as they mount
-   * rather than from a list it is handed, so it lights the first one only
-   * when it mounts itself: it starts again once they land.
-   */
-  loading?: boolean;
   children: React.ReactNode;
 }) {
+  const [list, setList] = React.useState<HTMLElement | null>(null);
+  const scope = React.useMemo(
+    () => ({ registerList: setList, list, firstOnEnter: autoHighlight === 'always' }),
+    [list, autoHighlight],
+  );
   return (
     <ComboboxPrimitive.Root
-      key={loading ? 'loading' : 'ready'}
       inline
       open
       filter={null}
@@ -120,10 +117,11 @@ function ChipSelectCombobox({
       // Root's types narrow `'always'` away; the core it hands its props to takes it.
       autoHighlight={autoHighlight as boolean}
     >
-      <ComboboxScope.Provider value>{children}</ComboboxScope.Provider>
+      <ComboboxScope.Provider value={scope}>{children}</ComboboxScope.Provider>
     </ComboboxPrimitive.Root>
   );
 }
+
 
 const TRIGGER_CLASSES =
   'group/chip-select inline-flex h-(--control-h-md) shrink-0 items-center gap-[7px] rounded-md border border-border-subtle bg-control px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard hover:border-border hover:bg-control-hover data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
@@ -268,6 +266,7 @@ function ChipSelectSearch({
 }) {
   const boxed = variant === 'boxed';
   const combobox = React.useContext(ComboboxScope);
+  const { onKeyDown, ...inputProps } = props;
   const inputClasses = cn(
     'min-w-0 flex-1 bg-transparent p-0 text-fg outline-none placeholder:text-field-placeholder',
     boxed ? 'text-[13px]' : 'text-[12.5px]',
@@ -297,7 +296,11 @@ function ChipSelectSearch({
           // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
           autoFocus
           className={inputClasses}
-          {...withoutValue(props)}
+          {...withoutValue(inputProps)}
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+            if (!event.defaultPrevented) takeFirstOnEnter(combobox, event);
+          }}
         />
       ) : (
         <input
@@ -635,7 +638,7 @@ function ChipSelectList({
       ? undefined
       : Math.min(rows, Math.max(1, total)) * LIST_ROW[density] + 2;
 
-  const combobox = React.useContext(ComboboxScope);
+  const registerList = React.useContext(ComboboxScope)?.registerList;
   const listProps = {
     'data-slot': 'chip-select-list',
     className: cn(
@@ -654,9 +657,10 @@ function ChipSelectList({
   ) : (
     children
   );
-  if (combobox) {
+  if (registerList) {
     return (
       <ComboboxPrimitive.List
+        ref={registerList}
         {...listProps}
         {...props}
         onKeyDown={(event) => {
@@ -892,7 +896,6 @@ function ChipSelect({
             onQueryChange?.(next);
           }}
           autoHighlight="always"
-          loading={loading}
         >
           <ChipSelectSearch placeholder={searchPlaceholder} aria-label={searchPlaceholder} />
           <ChipSelectList

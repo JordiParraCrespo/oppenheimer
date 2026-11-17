@@ -62,8 +62,14 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   screen reader. A pane never keeps a highlight index or a key handler of
   its own; a row's `onClick` is the one place a choice is made, by pointer
   or key. A pane that opens on a choice to make (`ChipSelect`, a host's
-  places) lights its first row with `autoHighlight="always"`; a pane that
-  changes under the search takes a `key`, so its highlight starts again.
+  places) lights its first row with `autoHighlight="always"`, and Enter with
+  nothing lit takes that first row (rows that land after the popup opened).
+  A pane that changes under the search (another tab, a host's places, a
+  folder opened) takes a `key`, so its highlight starts again; never one
+  that changes as the reader types or as a read lands, since a remount
+  moves the caret and drops what an IME was composing. Rows are divs, so
+  the focus stays in the search: a multi-pick list stays open for the next
+  pick, and Escape closes it.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
   Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's

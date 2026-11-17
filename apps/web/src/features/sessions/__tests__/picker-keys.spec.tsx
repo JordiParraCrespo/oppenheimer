@@ -70,12 +70,13 @@ describe('RepositorySelect from the keyboard', () => {
 
 /**
  * A chip whose options are still being read (the project and branch chips)
- * opens on a loading line; when the options land, the first is lit, so
- * Enter takes it as it did before the keys moved into the combobox. A
- * regression left nothing lit and Enter doing nothing.
+ * opens on a loading line. When the options land, Enter takes the first, as
+ * it did before the keys moved into the combobox, and the search under the
+ * caret stays the same field: a regression remounted it as the rows landed,
+ * which moved the caret and dropped text an IME was still composing.
  */
 describe('ChipSelect from the keyboard', () => {
-  it('lights the first option once a pending list lands, and Enter takes it', () => {
+  it('takes the first option on Enter once a pending list lands, without remounting the search', () => {
     const onValueChange = vi.fn();
     const chip = (loading: boolean) => (
       <ChipSelect
@@ -95,9 +96,11 @@ describe('ChipSelect from the keyboard', () => {
     );
     const { rerender } = render(chip(true));
     fireEvent.click(screen.getByRole('button', { name: 'Branch' }));
+    const before = screen.getByRole('combobox');
     rerender(chip(false));
 
     const search = screen.getByRole('combobox');
+    expect(search).toBe(before);
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(onValueChange).toHaveBeenCalledWith('main');
   });
