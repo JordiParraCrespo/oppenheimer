@@ -1530,6 +1530,7 @@ export type {
   OpenSessionWindowData,
   OpenSessionWindowError,
   OpenSessionWindowErrors,
+  OpenSessionWindowRequest,
   OpenSessionWindowResponse,
   OpenSessionWindowResponses,
   OpenTelegramOwnerLinkData,

@@ -190,6 +190,7 @@ test.describe('Session screen', () => {
     const pane = page.getByRole('complementary', { name: 'Side pane' });
     await expect(pane.getByText('Open beside this session')).toBeVisible();
     await expect(pane.getByRole('option', { name: /^Terminal/ })).toHaveCount(0);
+    await expect(pane.getByRole('option', { name: /^Agent/ })).toHaveCount(0);
 
     await pane.getByRole('option', { name: /^Bot/ }).click();
     await pane.getByRole('option', { name: /Side Bot/ }).click();

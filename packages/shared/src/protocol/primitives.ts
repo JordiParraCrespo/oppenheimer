@@ -61,6 +61,13 @@ export const githubRepoIdSchema = z.number().int().positive();
 export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 
 /**
+ * A coding agent a session can start beside its own, in a window of its
+ * worktree (`session.window.open`): every catalog agent but `shell`, which is
+ * what a window without one already is.
+ */
+export const windowAgentSchema = protocolAgentSchema.exclude(['shell']);
+
+/**
  * How the agent is started, as the host receives it.
  *
  * **Structured, never argv.** The control plane says which of the product's
@@ -321,6 +328,7 @@ for (const [id, schema] of [
   ['window', sessionWindowSchema],
   ['githubRepoId', githubRepoIdSchema],
   ['gitRef', gitRefSchema],
+  ['promptText', promptTextSchema],
   ['hostPath', hostPathSchema],
   ['codexEnvironmentRef', codexEnvironmentRefSchema],
 ] as const) {

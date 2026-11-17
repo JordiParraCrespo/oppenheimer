@@ -486,10 +486,17 @@ export class SessionTerminalWindowDto {
   })
   index!: number;
 
-  @ApiProperty({ example: 'zsh', description: 'The window’s name on the host.' })
+  @ApiProperty({
+    example: 'zsh',
+    description:
+      'The window’s name on the host: a second agent’s window is named by its catalog id (`codex`).',
+  })
   name!: string;
 
-  @ApiProperty({ description: 'Window 0, the agent’s; the rest are plain shells.' })
+  @ApiProperty({
+    description:
+      'Window 0, the session’s agent, whose state the session shows; the rest are plain shells or a second agent.',
+  })
   agent!: boolean;
 }
 
@@ -509,7 +516,7 @@ export class SessionWindowsResponseDto {
 }
 
 export class OpenedSessionWindowResponseDto {
-  @ApiProperty({ type: () => SessionTerminalWindowDto, description: 'The shell just opened.' })
+  @ApiProperty({ type: () => SessionTerminalWindowDto, description: 'The window just opened.' })
   window!: SessionTerminalWindowDto;
 
   @ApiProperty({

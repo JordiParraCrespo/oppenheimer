@@ -381,6 +381,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityHostExec,
 		link.CapabilityTerminalDrive,
 		link.CapabilitySessionWindowsList,
+		link.CapabilitySessionWindowAgent,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

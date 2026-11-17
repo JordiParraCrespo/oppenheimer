@@ -2280,11 +2280,11 @@ export type SessionTerminalWindowDto = {
      */
     index: number;
     /**
-     * The window’s name on the host.
+     * The window’s name on the host: a second agent’s window is named by its catalog id (`codex`).
      */
     name: string;
     /**
-     * Window 0, the agent’s; the rest are plain shells.
+     * Window 0, the session’s agent, whose state the session shows; the rest are plain shells or a second agent.
      */
     agent: boolean;
 };
@@ -2300,9 +2300,17 @@ export type SessionWindowsResponseDto = {
     windows: Array<SessionTerminalWindowDto>;
 };
 
+export type OpenSessionWindowRequest = {
+    model?: string;
+    permission?: 'ask' | 'auto' | 'full';
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    prompt?: string;
+};
+
 export type OpenedSessionWindowResponseDto = {
     /**
-     * The shell just opened.
+     * The window just opened.
      */
     window: SessionTerminalWindowDto;
     /**
@@ -11602,7 +11610,7 @@ export type FindSessionWindowsResponses = {
 export type FindSessionWindowsResponse = FindSessionWindowsResponses[keyof FindSessionWindowsResponses];
 
 export type OpenSessionWindowData = {
-    body?: never;
+    body?: OpenSessionWindowRequest;
     path: {
         id: string;
     };
@@ -11626,6 +11634,8 @@ export type OpenSessionWindowErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_060 — This host's runner cannot start a second agent in a session
+     *
      * SESSIONS_059 — The host refused to change the session's terminals
      *
      * SESSIONS_056 — This host's runner cannot open or close a session's terminals

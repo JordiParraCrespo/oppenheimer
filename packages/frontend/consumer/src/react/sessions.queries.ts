@@ -19,6 +19,7 @@ import {
 import type {
   CreateSessionInput,
   OpenedSessionWindow,
+  OpenSessionWindowInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
@@ -774,10 +775,20 @@ export function useSessionWindows(sessionId: string | undefined) {
   });
 }
 
-/** Opens a shell in a session; its answer is written to the session's windows. */
-export const useOpenSessionWindow = mutation<OpenedSessionWindow, string>({
-  run: (app, sessionId) => app.sessions.openWindow(sessionId),
-  update: (queryClient, opened, sessionId) => {
+/**
+ * Opens a window in a session: no `agent` (or `shell`) for a plain shell, or
+ * a coding agent beside the session's own in window 0, started with the
+ * `model`, `effort` and `permission` picked for it, each left out the
+ * session's own, and on the first `prompt` typed for it. A runner too old to start one refuses with `SESSIONS_060`.
+ */
+export interface OpenSessionWindowVariables extends OpenSessionWindowInput {
+  sessionId: string;
+}
+
+/** Opens a shell, or a second agent, in a session; its answer is written to the session's windows. */
+export const useOpenSessionWindow = mutation<OpenedSessionWindow, OpenSessionWindowVariables>({
+  run: (app, { sessionId, ...input }) => app.sessions.openWindow(sessionId, input),
+  update: (queryClient, opened, { sessionId }) => {
     queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
       state: 'listed',
       windows: opened.windows,

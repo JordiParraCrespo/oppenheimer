@@ -1900,12 +1900,16 @@ export const findSessionWindows = <ThrowOnError extends boolean = false>(options
 /**
  * Open a terminal in a session
  *
- * Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it.
+ * Opens a plain shell in the session's worktree, a new tmux window on its host, and answers with its index (mint an attach ticket for that `window` to stream it) and every window after it. With `agent`, that coding agent is started in the new window instead, named after it, with the `model`, `effort` and `permission` given; each one absent is the session's own (its permission level always, its model and effort only when `agent` is the session's agent). `prompt` is the agent's first task, bounded as a new session's. All four are ignored without `agent`. Window 0 stays the session's agent. The body is optional: without one the window is a plain shell.
  */
 export const openSessionWindow = <ThrowOnError extends boolean = false>(options: Options<OpenSessionWindowData, ThrowOnError>): RequestResult<OpenSessionWindowResponses, OpenSessionWindowErrors, ThrowOnError> => (options.client ?? client).post<OpenSessionWindowResponses, OpenSessionWindowErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/sessions/{id}/windows',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
