@@ -116,7 +116,12 @@ export function LinkSessionPicker({ task }: { task: TaskEntity }) {
       </PopoverTrigger>
       <ChipSelectPopup width={380} maxHeight={260} side="bottom" align="start">
         {/* The first session is lit from the start, so typing and Enter links the best match. */}
-        <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
+        <ChipSelectCombobox
+          query={query}
+          onQueryChange={setQuery}
+          autoHighlight="always"
+          loading={free === undefined}
+        >
           <ChipSelectSearch
             placeholder={t('tasks.link.search')}
             aria-label={t('tasks.link.search')}

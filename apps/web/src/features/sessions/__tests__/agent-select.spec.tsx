@@ -96,4 +96,17 @@ describe('the engine popup’s configure glyph', () => {
     expect(onConfigure).toHaveBeenCalledOnce();
     expect(screen.queryByRole('listbox')).toBeNull();
   });
+
+  /**
+   * A favourite's star sits in the row beside the model, inside the list
+   * that walks the models with the arrows. Enter on the star is the star's:
+   * a regression let the list take it and switch to the highlighted model.
+   */
+  it('leaves Enter on a star to the star, and switches no model', () => {
+    const { onValueChange } = open('claude-opus-5-5');
+    const star = screen.getAllByRole('button', { pressed: false })[1];
+    star.focus();
+    fireEvent.keyDown(star, { key: 'Enter' });
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
 });

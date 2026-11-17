@@ -465,7 +465,10 @@ export function PlaceSelect({
           key={pane.kind === 'root' ? `root-${tab}` : pane.kind}
           query={query}
           onQueryChange={(next) => show({ query: next })}
-          autoHighlight="always"
+          // The environments pane's search can be an id to use as typed, which
+          // Enter would trade for the first row if one were lit.
+          autoHighlight={pane.kind === 'environments' ? false : 'always'}
+          loading={list.loading}
         >
           <ChipSelectSearch placeholder={list.search} aria-label={list.search} />
           {paneHead()}

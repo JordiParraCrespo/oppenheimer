@@ -1,3 +1,4 @@
+import { ChipSelectItem, ChipSelectList } from '@oppenheimer/design-system-web';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaceSelect } from '../components/place-select';
@@ -254,6 +255,29 @@ describe('PlaceSelect', () => {
 
     expect(picked.onHostCloudChange).toHaveBeenCalledWith('host-1', 'codex');
     expect(screen.getByRole('listbox', { name: 'environments' }).textContent).toBe('host-1');
+  });
+
+  /**
+   * The Environments pane's search can be an environment id to use as typed.
+   * Enter there is the pane's own, never the first row's: a regression lit
+   * Default as the id was typed, and Enter chose it in place of the id.
+   */
+  it('lights no environment as an id is typed, so Enter never trades it for Default', () => {
+    const useDefault = vi.fn();
+    const environments = () => (
+      <ChipSelectList aria-label="environments">
+        <ChipSelectItem onClick={useDefault}>Default</ChipSelectItem>
+      </ChipSelectList>
+    );
+    renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], HOSTS[2], { environments });
+    openTab('clouds');
+    fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }));
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
+
+    const search = screen.getByRole('combobox');
+    fireEvent.change(search, { target: { value: 'asenvcfg_123' } });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(useDefault).not.toHaveBeenCalled();
   });
 
   it('names the Codex environment picked on the host', () => {

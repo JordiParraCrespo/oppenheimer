@@ -1,7 +1,7 @@
-import { type RepositoryScope, RepositorySelect } from '@oppenheimer/design-system-web';
+import { ChipSelect, type RepositoryScope, RepositorySelect } from '@oppenheimer/design-system-web';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * The repository chip on New session is picked from the keyboard as well as
@@ -65,5 +65,40 @@ describe('RepositorySelect from the keyboard', () => {
     fireEvent.keyDown(branches, { key: 'Enter' });
 
     expect(scope()).toBe('xrp-mobile@release/1');
+  });
+});
+
+/**
+ * A chip whose options are still being read (the project and branch chips)
+ * opens on a loading line; when the options land, the first is lit, so
+ * Enter takes it as it did before the keys moved into the combobox. A
+ * regression left nothing lit and Enter doing nothing.
+ */
+describe('ChipSelect from the keyboard', () => {
+  it('lights the first option once a pending list lands, and Enter takes it', () => {
+    const onValueChange = vi.fn();
+    const chip = (loading: boolean) => (
+      <ChipSelect
+        aria-label="Branch"
+        options={
+          loading
+            ? []
+            : [
+                { value: 'main', label: 'main' },
+                { value: 'dev', label: 'dev' },
+              ]
+        }
+        value={null}
+        onValueChange={onValueChange}
+        loading={loading}
+      />
+    );
+    const { rerender } = render(chip(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Branch' }));
+    rerender(chip(false));
+
+    const search = screen.getByRole('combobox');
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(onValueChange).toHaveBeenCalledWith('main');
   });
 });

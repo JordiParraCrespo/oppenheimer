@@ -93,15 +93,23 @@ function ChipSelectCombobox({
   query,
   onQueryChange,
   autoHighlight = true,
+  loading = false,
   children,
 }: {
   query: string;
   onQueryChange: (query: string) => void;
   autoHighlight?: boolean | 'always';
+  /**
+   * The rows are still being read. The combobox takes its rows as they mount
+   * rather than from a list it is handed, so it lights the first one only
+   * when it mounts itself: it starts again once they land.
+   */
+  loading?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <ComboboxPrimitive.Root
+      key={loading ? 'loading' : 'ready'}
       inline
       open
       filter={null}
@@ -639,7 +647,18 @@ function ChipSelectList({
   );
   if (combobox) {
     return (
-      <ComboboxPrimitive.List {...listProps} {...props}>
+      <ComboboxPrimitive.List
+        {...listProps}
+        {...props}
+        onKeyDown={(event) => {
+          // Enter on a control inside a row (a favourite's star) is that
+          // control's; the list would click the highlighted row instead.
+          if (event.key === 'Enter' && event.target !== event.currentTarget) {
+            event.preventBaseUIHandler();
+          }
+          props.onKeyDown?.(event as unknown as React.KeyboardEvent<HTMLDivElement>);
+        }}
+      >
         {body}
       </ComboboxPrimitive.List>
     );
@@ -864,6 +883,7 @@ function ChipSelect({
             onQueryChange?.(next);
           }}
           autoHighlight="always"
+          loading={loading}
         >
           <ChipSelectSearch placeholder={searchPlaceholder} aria-label={searchPlaceholder} />
           <ChipSelectList
