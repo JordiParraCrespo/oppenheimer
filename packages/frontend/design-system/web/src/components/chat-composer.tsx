@@ -58,8 +58,8 @@ function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
  * focus into it (on open, after a suggestion fills it).
  *
  * `dictation` (`DictationSlot`) works as in `Composer`: the mic before send,
- * the recorder in the foot row's place while dictating, the notice under the
- * box. Enter while it records ends the recording and puts the caret after
+ * the recorder in the foot row's place while dictating (inline, in a row
+ * under the line, as `ComposerPill` draws it), the notice under the box. Enter while it records ends the recording and puts the caret after
  * what was said; the next Enter sends it.
  *
  * Files ride a message in either layout: `onAttach` puts the paperclip
@@ -243,8 +243,9 @@ function ChatComposer({
     </div>
   ) : null;
   const recorder = dictation?.recorder ? (
-    // The bar stands at `--composer-row`, the height of the row it
-    // replaces, so the box keeps its height.
+    // The bar stands at `--composer-row`: stacked, the height of the foot
+    // it replaces, so the box keeps its height; inline, a 32px row under
+    // the line.
     <ComposerRecorder
       data-slot="chat-composer-recorder"
       className={inline ? 'w-full p-1.5' : 'px-3 pb-3'}
@@ -264,25 +265,26 @@ function ChatComposer({
         className={cn(
           'flex rounded-xl border border-border-subtle bg-card transition-[border-color] duration-fast ease-standard has-focus-visible:border-border data-above:rounded-t-none data-above:border-t-border-subtle data-disabled:opacity-50',
           'flex-col',
-          // The control row's height: the foot's (or the inline row's
-          // controls'), and the recorder's in its place.
+          // The control row's height: the foot's, or the inline line's
+          // controls', and the recorder's.
           inline ? '[--composer-row:2rem]' : '[--composer-row:2.125rem]',
           className,
         )}
         {...props}
       >
         {inline ? (
-          (recorder ?? (
-            <>
-              {captioned}
-              {attached}
-              <div className="flex items-end">
-                {paperclip ? <span className="flex shrink-0 items-center p-1.5 pr-0">{paperclip}</span> : null}
-                {field}
-                <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
-              </div>
-            </>
-          ))
+          <>
+            {captioned}
+            {attached}
+            <div className="flex items-end">
+              {paperclip ? <span className="flex shrink-0 items-center p-1.5 pr-0">{paperclip}</span> : null}
+              {field}
+              {/* While a recording is open its bar holds the controls, under
+                  the line, as in New session's `ComposerPill`. */}
+              {recorder ? null : <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>}
+            </div>
+            {recorder}
+          </>
         ) : (
           <>
             {captioned}
