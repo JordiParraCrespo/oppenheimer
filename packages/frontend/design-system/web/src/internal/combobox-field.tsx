@@ -4,7 +4,7 @@ import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
 import * as React from 'react';
 
 import { inputVariants } from '../components/input';
-import { ComboboxScope, takeFirstOnEnter } from './combobox-scope';
+import { ComboboxScope, enterWithNothingLit } from './combobox-scope';
 import { cn } from '../lib/utils';
 
 /**
@@ -44,7 +44,7 @@ function ComboboxField({
         className="min-w-0 flex-1 border-0 bg-transparent p-0 font-[inherit] text-inherit tracking-inherit outline-none placeholder:text-field-placeholder"
         onKeyDown={(event) => {
           onKeyDown?.(event);
-          if (!event.defaultPrevented) takeFirstOnEnter(scope, event);
+          if (!event.defaultPrevented) enterWithNothingLit(scope, event);
         }}
         {...props}
       />

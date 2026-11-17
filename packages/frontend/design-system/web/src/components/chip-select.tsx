@@ -4,7 +4,7 @@ import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { ComboboxScope, takeFirstOnEnter } from '../internal/combobox-scope';
+import { ComboboxScope, enterWithNothingLit } from '../internal/combobox-scope';
 import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
@@ -93,20 +93,32 @@ function ChipSelectCombobox({
   query,
   onQueryChange,
   autoHighlight = true,
+  resetOn,
+  onEnterUnlit,
   children,
 }: {
   query: string;
   onQueryChange: (query: string) => void;
   autoHighlight?: boolean | 'always';
+  /**
+   * Changes when the pane shows other rows (another tab, a folder opened),
+   * so the highlight starts again on them. Base UI keeps its highlight in a
+   * store it offers no reset for, so this remounts the pane: never pass what
+   * changes as the reader types, or the caret moves under them.
+   */
+  resetOn?: React.Key;
+  /** Enter with nothing lit, in a pane that does not take its first row. */
+  onEnterUnlit?: () => void;
   children: React.ReactNode;
 }) {
   const [list, setList] = React.useState<HTMLElement | null>(null);
   const scope = React.useMemo(
-    () => ({ registerList: setList, list, firstOnEnter: autoHighlight === 'always' }),
-    [list, autoHighlight],
+    () => ({ registerList: setList, list, firstOnEnter: autoHighlight === 'always', onEnterUnlit }),
+    [list, autoHighlight, onEnterUnlit],
   );
   return (
     <ComboboxPrimitive.Root
+      key={resetOn}
       inline
       open
       filter={null}
@@ -299,7 +311,7 @@ function ChipSelectSearch({
           {...withoutValue(inputProps)}
           onKeyDown={(event) => {
             onKeyDown?.(event);
-            if (!event.defaultPrevented) takeFirstOnEnter(combobox, event);
+            if (!event.defaultPrevented) enterWithNothingLit(combobox, event);
           }}
         />
       ) : (

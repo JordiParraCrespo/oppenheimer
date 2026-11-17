@@ -462,7 +462,7 @@ export function PlaceSelect({
       <ChipSelectPopup width={320} maxHeight={420}>
         <ChipSelectCombobox
           // A pane or tab of its own starts its highlight on its own first row.
-          key={pane.kind === 'root' ? `root-${tab}` : pane.kind}
+          resetOn={pane.kind === 'root' ? `root-${tab}` : pane.kind}
           query={query}
           onQueryChange={(next) => show({ query: next })}
           // The environments pane's search can be an id to use as typed, which

@@ -17,7 +17,7 @@ import {
 } from '@oppenheimer/design-system-web/icons';
 import type { HostFolderSearch, HostFolders } from '@oppenheimer/frontend-consumer';
 import { compactAge } from '@oppenheimer/frontend-web';
-import { type KeyboardEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { folderView } from '../lib/folder-browse';
 import { folderInput, leafOf, shortenPath } from '../lib/folder-path';
@@ -104,28 +104,21 @@ export function FolderBrowser({
     onInputChange(path);
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return;
-    // A row the arrows lit is the combobox's to open; with none, Enter uses
-    // the folder typed.
-    if (event.currentTarget.getAttribute('aria-activedescendant')) return;
-    event.preventDefault();
-    if (view.target) onUse(view.target.path);
-  }
-
   return (
     <div className="flex min-h-0 flex-col" data-slot="folder-browser">
       {/* The path is the query: ↑ ↓ walk the folders under it, and Enter opens
           the one lit, or uses the folder typed when none is. Nothing is lit
           until the arrows ask, so typing a path and Enter always uses it. */}
       <ChipSelectCombobox
-        // A folder opened (a row, a crumb, Up) lists other rows: the light goes
-        // out with the old ones. Never keyed on what is typed, so typing never
-        // remounts the field under the caret.
-        key={hops}
+        // A folder opened (a row, a crumb, Up) lists other rows: the light
+        // goes out with the old ones. Never what is typed.
+        resetOn={hops}
         query={input}
         onQueryChange={onInputChange}
         autoHighlight={false}
+        onEnterUnlit={() => {
+          if (view.target) onUse(view.target.path);
+        }}
       >
         <ChipSelectSearch
           icon={<Folder />}
@@ -136,7 +129,6 @@ export function FolderBrowser({
               </span>
             ) : null
           }
-          onKeyDown={onKeyDown}
           placeholder={t('sessions.new.folder.inputPlaceholder')}
           aria-label={t('sessions.new.folder.input')}
           spellCheck={false}
