@@ -278,11 +278,18 @@ export interface BotCompletion {
 }
 
 /**
- * A completion that did not complete for any reason but a rate limit (that
- * one is `LlmRateLimitError`): the turn's reason, and the kind of failure the
- * engine named (null when it named none, as on a cancel). The kind is what
- * lets a caller tell the provider refusing the account (`usage_limit`,
- * `credential`), which no retry fixes, from a fault worth reporting.
+ * A completion that did not complete for any reason but a rate limit: the
+ * turn's reason, and the kind of failure the engine named (null when it named
+ * none, as on a cancel). The kind is what lets a caller tell the provider
+ * refusing the account (`usage_limit`, `credential`), which no retry fixes,
+ * from a fault worth reporting.
+ *
+ * A rate limit stays `LlmRateLimitError` on purpose, not a kind of this one:
+ * it is the one rate-limit type both model stacks raise (this package's
+ * `complete` and `@oppenheimer/backend-llm`'s), so a caller handles a model's
+ * rate limit once, whichever stack refused (`.agents/rules/integrations.md`).
+ * A caller that needs every kind reads both, in one place (the API's
+ * `bot-summaries` worker, `refusalOf`).
  */
 export class BotCompletionError extends Error {
   override readonly name = 'BotCompletionError';
