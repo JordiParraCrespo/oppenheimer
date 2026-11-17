@@ -1,7 +1,13 @@
 import { AutomationEntity, CalendarEventEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { automationItems, eventItems, toEntry } from '../lib/calendar-items';
-import { calendarSearchSchema, hiddenLayers, toggleLayer } from '../lib/calendar-search';
+import {
+  calendarSearchSchema,
+  hiddenLayers,
+  inProjects,
+  projectIdsOfSlugs,
+  toggleLayer,
+} from '../lib/calendar-search';
 
 /** The rule is set in the reader's own zone, so its wall-clock time is the grid's. */
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -66,6 +72,26 @@ describe('the layers in the address', () => {
   it('reads a month it cannot use as this month', () => {
     expect(calendarSearchSchema.parse({ month: '2026-13' }).month).toBeUndefined();
     expect(calendarSearchSchema.parse({ month: '2026-10' }).month).toBe('2026-10');
+  });
+});
+
+describe('the Project filter', () => {
+  const projects = [
+    { id: 'p-1', slug: 'web', isUnassigned: false },
+    { id: 'p-2', slug: 'billing', isUnassigned: false },
+    { id: 'p-0', slug: 'x-unassigned', isUnassigned: true },
+  ];
+
+  it('keeps only the picked projects’ tasks and runs, and all of them with none picked', () => {
+    const ids = projectIdsOfSlugs(['web', 'unassigned'], projects);
+    expect(ids).toEqual(['p-1', 'p-0']);
+    const rows = [{ projectId: 'p-1' }, { projectId: 'p-2' }, { projectId: 'p-0' }];
+    expect(inProjects(rows, ids)).toEqual([{ projectId: 'p-1' }, { projectId: 'p-0' }]);
+    expect(inProjects(rows, projectIdsOfSlugs([], projects))).toBe(rows);
+  });
+
+  it('narrows a link to a project that no longer exists to nothing, not to everything', () => {
+    expect(inProjects([{ projectId: 'p-1' }], projectIdsOfSlugs(['gone'], projects))).toEqual([]);
   });
 });
 

@@ -8,6 +8,12 @@
     "tasks": "Fechas de tareas",
     "automations": "Automatizaciones"
   },
+  "filters": {
+    "project": "Proyecto",
+    "allProjects": "Todos los proyectos",
+    "noProject": "Sin proyecto",
+    "clear": "Limpiar"
+  },
   "header": {
     "previous": "Anterior",
     "next": "Siguiente",

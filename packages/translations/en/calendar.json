@@ -8,6 +8,12 @@
     "tasks": "Task due dates",
     "automations": "Automations"
   },
+  "filters": {
+    "project": "Project",
+    "allProjects": "All projects",
+    "noProject": "No project",
+    "clear": "Clear"
+  },
   "header": {
     "previous": "Previous",
     "next": "Next",
