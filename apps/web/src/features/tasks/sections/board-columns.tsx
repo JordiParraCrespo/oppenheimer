@@ -193,6 +193,11 @@ export function BoardColumns() {
         onDismiss={move.reset}
       />
       <ErrorAlert
+        error={bulk.error}
+        fallback={t('tasks.board.moveFailed')}
+        onDismiss={bulk.reset}
+      />
+      <ErrorAlert
         error={create.error}
         fallback={t('tasks.board.addFailed')}
         onDismiss={create.reset}
