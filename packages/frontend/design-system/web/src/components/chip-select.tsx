@@ -3,6 +3,7 @@
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { clearActive, moveActive, paneOf } from '../internal/option-keys';
 import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
@@ -154,6 +155,7 @@ function ChipSelectPopup({
   width,
   maxHeight,
   style,
+  onPointerMove,
   ...props
 }: React.ComponentProps<typeof PopoverContent> & {
   density?: ChipSelectDensity;
@@ -172,6 +174,11 @@ function ChipSelectPopup({
         className,
       )}
       style={{ width: width ?? POPUP_WIDTH[density], maxHeight: height, ...style }}
+      // The pointer takes over from the arrow keys: one highlighted row, never two.
+      onPointerMove={(event) => {
+        clearActive(event.currentTarget);
+        onPointerMove?.(event);
+      }}
       {...props}
     />
   );
@@ -199,6 +206,8 @@ function ChipSelectSearch({
   variant = 'row',
   leadingSize = 'mark',
   className,
+  onKeyDown,
+  onChange,
   ...props
 }: Omit<React.ComponentProps<'input'>, 'type'> & {
   density?: ChipSelectDensity;
@@ -232,6 +241,16 @@ function ChipSelectSearch({
           boxed ? 'text-[13px]' : 'text-[12.5px]',
           className,
         )}
+        // A caller that keeps its own highlight handles the keys first and
+        // prevents the default; every other pane gets them here.
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (!event.defaultPrevented) moveActive(event);
+        }}
+        onChange={(event) => {
+          clearActive(paneOf(event.currentTarget));
+          onChange?.(event);
+        }}
         {...props}
       />
     </div>
@@ -339,7 +358,7 @@ function ChipSelectTab({
 }
 
 const ITEM_CLASSES =
-  'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
+  'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-active:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
 
 /** The gap after a row's leading slot, shared with a boxed search. */
 const ROW_GAP: Record<ChipSelectDensity, string> = {
