@@ -8,6 +8,7 @@ import {
   ProjectPanelEmpty,
   ProjectTaskRow,
 } from '@oppenheimer/design-system-web';
+import { Compass } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseTaskBoard } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -33,6 +34,9 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
     return (
       <EmptyState>
         <EmptyState.Header>
+          <EmptyState.Media variant="icon">
+            <Compass />
+          </EmptyState.Media>
           <EmptyState.Description>{t('projects.detail.gone')}</EmptyState.Description>
         </EmptyState.Header>
         <EmptyState.Content>

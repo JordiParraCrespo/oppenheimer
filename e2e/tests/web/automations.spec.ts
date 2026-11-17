@@ -54,7 +54,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
 
   await signInAs(page, owner.user);
   await page.goto('/automations');
-  await expect(page.getByText('No automations yet. An automation starts a session')).toBeVisible();
+  await expect(page.getByText('No automations yet', { exact: true })).toBeVisible();
 
   // Task: Next waits for both fields.
   await page.getByRole('button', { name: 'New automation', exact: true }).first().click();
@@ -195,7 +195,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete automation' }).click();
   await expect(toast(page, '“Nightly dependency audit” deleted.')).toBeVisible();
   await expect(page).toHaveURL(/\/automations$/);
-  await expect(page.getByText('No automations yet. An automation starts a session')).toBeVisible();
+  await expect(page.getByText('No automations yet', { exact: true })).toBeVisible();
   await page.goto('/automations/runs');
   await expect(page.getByRole('row').filter({ hasText: 'Deleted automation' })).toBeVisible();
 

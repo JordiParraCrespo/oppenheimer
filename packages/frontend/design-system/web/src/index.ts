@@ -316,7 +316,7 @@ export {
 } from './components/editor-page';
 export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
-export { EmptyState } from './components/empty-state';
+export { type EmptyArtName, EmptyState } from './components/empty-state';
 export type { FacetOption } from './components/facet-select';
 export {
   FacetSelect,
@@ -383,7 +383,7 @@ export { JsonTree } from './components/json-tree';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
-export { MilestoneCard, MilestoneEmpty, MilestoneGrid } from './components/milestone-card';
+export { MilestoneCard, MilestoneGrid } from './components/milestone-card';
 export type {
   MilestoneTimelineControls,
   TimelineMilestone,
@@ -473,7 +473,6 @@ export {
 export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
 export {
   RoutineTable,
-  RoutineTableEmpty,
   RoutineTableHead,
   RoutineTableRow,
   RoutineTableRowSkeleton,

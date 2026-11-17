@@ -1,5 +1,5 @@
 import {
-  MilestoneEmpty,
+  EmptyState,
   MilestoneTimeline,
   type MilestoneTimelineControls,
 } from '@oppenheimer/design-system-web';
@@ -16,18 +16,16 @@ import { timelineRows } from '../lib/timeline';
  * Milestones on time (the 2026-10-13 `Tasks` frame): a track per project with
  * its share of tasks done and a diamond per milestone, today a line through
  * every row, edge to edge. A milestone opens its edit dialog; a project's name
- * opens the board filtered to it. With none, the frame's empty card opens New
- * milestone. It reads under Suspense, in the screen's `QueryState`; a
+ * opens the board filtered to it. With none, an illustrated empty state says what a
+ * milestone is; the header's New milestone makes one. It reads under Suspense, in the screen's `QueryState`; a
  * refetch that fails keeps the timeline and says so above it.
  */
 export function MilestonesTimeline({
   controls,
   onEdit,
-  onNew,
 }: {
   controls: Ref<MilestoneTimelineControls>;
   onEdit: (milestoneId: string) => void;
-  onNew: () => void;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -46,13 +44,13 @@ export function MilestonesTimeline({
     return (
       <>
         {alert}
-        <MilestoneEmpty
-          title={t('tasks.milestones.emptyTitle')}
-          onClick={onNew}
-          className="max-w-105"
-        >
-          {t('tasks.milestones.empty')}
-        </MilestoneEmpty>
+        <EmptyState className="rounded-xl bg-card py-14">
+          <EmptyState.Header>
+            <EmptyState.Art name="milestones" />
+            <EmptyState.Title>{t('tasks.milestones.emptyTitle')}</EmptyState.Title>
+            <EmptyState.Description>{t('tasks.milestones.empty')}</EmptyState.Description>
+          </EmptyState.Header>
+        </EmptyState>
       </>
     );
   }

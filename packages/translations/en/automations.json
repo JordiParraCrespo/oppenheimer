@@ -21,7 +21,8 @@
       "runs": "Runs"
     },
     "new": "New automation",
-    "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
+    "empty": "An automation starts a session on a schedule or when something happens on GitHub.",
+    "emptyTitle": "No automations yet",
     "runsEmpty": "No runs yet. Each run appears here with the session it started.",
     "loadFailed": "Automations could not be loaded.",
     "actionFailed": "That did not go through.",
@@ -340,6 +341,7 @@
     "routine": "Bot routine",
     "runsOn": "Runs on {{bot}}",
     "loadFailed": "Bot routines could not be loaded.",
-    "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
+    "empty": "A bot's routines are made in its chat, with /schedule.",
+    "emptyTitle": "No bot routines yet"
   }
 }

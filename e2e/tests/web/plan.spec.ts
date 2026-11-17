@@ -307,9 +307,7 @@ test('TODO: a task added to today, ticked done, and the overdue switch', async (
   await page.goto('/plan');
   await planNav(page, 'TODO').click();
   await expect(page).toHaveURL(/\/plan\/todo/);
-  await expect(
-    page.getByText('Nothing on this day yet. Add a task below, or pick some with Add tasks.'),
-  ).toBeVisible();
+  await expect(page.getByText('Nothing on this day yet', { exact: true })).toBeVisible();
 
   const add = page.getByRole('textbox', { name: 'Add a task for this day' });
   await add.fill('Pay the hosting invoice');

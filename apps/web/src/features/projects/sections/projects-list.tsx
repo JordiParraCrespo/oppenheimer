@@ -81,6 +81,8 @@ export function ProjectsList({ query = '', onNew }: { query?: string; onNew: () 
         {alert}
         <EmptyState>
           <EmptyState.Header>
+            <EmptyState.Art name="projects" />
+            <EmptyState.Title>{t('projects.list.emptyTitle')}</EmptyState.Title>
             <EmptyState.Description>{t('projects.list.empty')}</EmptyState.Description>
           </EmptyState.Header>
           <EmptyState.Content>

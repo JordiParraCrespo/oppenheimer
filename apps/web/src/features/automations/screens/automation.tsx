@@ -1,4 +1,5 @@
 import { EditorPageBack, EmptyState } from '@oppenheimer/design-system-web';
+import { Compass } from '@oppenheimer/design-system-web/icons';
 import { AppError } from '@oppenheimer/frontend-core';
 import { QueryState, RouteError } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -40,6 +41,9 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
           error instanceof AppError && error.status === 404 ? (
             <EmptyState>
               <EmptyState.Header>
+                <EmptyState.Media variant="icon">
+                  <Compass />
+                </EmptyState.Media>
                 <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
               </EmptyState.Header>
             </EmptyState>

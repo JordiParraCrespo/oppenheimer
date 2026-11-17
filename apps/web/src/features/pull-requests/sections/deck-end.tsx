@@ -27,9 +27,13 @@ export function DeckEnd({
     <div className="w-full rounded-xl bg-card py-10">
       <EmptyState>
         <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <CircleCheck />
-          </EmptyState.Media>
+          {gone ? (
+            <EmptyState.Media variant="icon">
+              <CircleCheck />
+            </EmptyState.Media>
+          ) : (
+            <EmptyState.Art name="done" />
+          )}
           <EmptyState.Title>
             {t(gone ? 'pullRequests.deck.goneTitle' : 'pullRequests.deck.doneTitle')}
           </EmptyState.Title>
