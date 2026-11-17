@@ -162,9 +162,9 @@ type lifecycleCommand struct {
 	Window             int
 	AcceptUnpushedWork bool
 	// Agent is the catalog id of the agent a window.open starts, "" for a
-	// plain shell, and Model, Permission and Effort how it starts ("" for
-	// the session's own).
-	Agent, Model, Permission, Effort string
+	// plain shell, Model, Permission and Effort how it starts ("" for the
+	// session's own), and Prompt its first task ("" for none).
+	Agent, Model, Permission, Effort, Prompt string
 }
 
 // decodeLifecycle decodes a lifecycle message into its own generated struct
@@ -189,7 +189,7 @@ func decodeLifecycle(msg link.Message) (lifecycleCommand, bool) {
 		var body link.SessionWindowOpen
 		err = msg.Decode(&body)
 		m.CommandID, m.SessionID, m.Agent = body.CommandID, body.SessionID, body.Agent
-		m.Model, m.Permission, m.Effort = body.Model, body.Permission, body.Effort
+		m.Model, m.Permission, m.Effort, m.Prompt = body.Model, body.Permission, body.Effort, body.Prompt
 	case link.TypeSessionWindowClose:
 		var body link.SessionWindowClose
 		err = msg.Decode(&body)
@@ -230,7 +230,9 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 			break
 		}
 		var opened sessionsdomain.Window
-		in := sessionsapp.WindowInput{Agent: agent, Model: m.Model, Permission: m.Permission, Effort: m.Effort}
+		in := sessionsapp.WindowInput{
+			Agent: agent, Model: m.Model, Permission: m.Permission, Effort: m.Effort, Prompt: m.Prompt,
+		}
 		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID, in); err == nil {
 			h.windows(ctx, m.CommandID, m.SessionID, opened.Index)
 		}

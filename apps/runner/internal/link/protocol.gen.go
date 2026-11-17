@@ -645,6 +645,7 @@ type SessionWindowOpen struct {
 	Model      string `json:"model,omitempty"`
 	Permission string `json:"permission,omitempty"`
 	Effort     string `json:"effort,omitempty"`
+	Prompt     string `json:"prompt,omitempty"`
 }
 
 // SessionWindowClose is the `session.window.close` message.

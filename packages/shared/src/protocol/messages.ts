@@ -707,6 +707,13 @@ export const sessionWindowOpenSchema = z.object({
   permission: z.enum(SESSION_PERMISSIONS).optional(),
   /** As `launchOptionsSchema.effort`: a level the model does not offer is dropped. */
   effort: z.enum(SESSION_EFFORTS).optional(),
+  /**
+   * The agent's first task, bounded as `session.create`'s, meaningful only
+   * with `agent`: the runner hands it to the CLI as its trailing positional,
+   * as it does window 0's, and never logs it. A runner from before this field
+   * ignores it and starts the agent with no task.
+   */
+  prompt: promptTextSchema.optional(),
 });
 
 export type SessionWindowOpenMessage = z.infer<typeof sessionWindowOpenSchema>;

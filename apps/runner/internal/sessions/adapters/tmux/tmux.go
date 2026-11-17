@@ -405,13 +405,21 @@ func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (
 // on a fresh screen: no line is typed for it, and neither the shell's prompt
 // nor its scrollback survives. The command runs with the session's
 // environment, under the runner's PATH rather than a login shell's.
+//
+// A failure names the window, never the command: the command line carries
+// the first task, which is the person's and never goes into a log or a
+// `command.failed` detail.
 func (s *Server) Launch(ctx context.Context, target, dir, command string) error {
 	args := []string{"respawn-pane", "-k", "-t", target, "-c", dir}
 	if command != "" {
 		args = append(args, command)
 	}
-	_, err := s.command(ctx, args...)
-	return err
+	out, err := s.run(ctx, args...)
+	if err != nil {
+		return domain.ErrTmuxCommand.WithDetail(
+			"tmux respawn-pane -t %s: %s", target, firstLine(out, err)).WithCause(err)
+	}
+	return nil
 }
 
 // Paste puts text into a window through a tmux buffer. `-p` makes it a

@@ -176,6 +176,8 @@ export interface OpenSessionWindowInput {
   model?: string;
   effort?: SessionEffort;
   permission?: SessionPermission;
+  /** The agent's first task, which it starts on; left out, it starts with none. */
+  prompt?: string;
 }
 
 /** Where a session's port opens: its preview origin, with a ticket that lives a minute. */

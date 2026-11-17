@@ -159,8 +159,8 @@ func TestTheHelloOffersSessionWindowAgent(t *testing.T) {
 	}
 }
 
-// The model, effort and permission an open carries reach the agent's command
-// line: the regression is fields the wire carries and the handler drops, so
+// The model, effort, permission and first task an open carries reach the
+// agent's command line: the regression is fields the wire carries and the handler drops, so
 // the picker's choices launch as the session's.
 func TestAWindowOpenLaunchesTheAgentAsItWasChosen(t *testing.T) {
 	p := newPlacesHarness(t, t.TempDir(), "acct")
@@ -169,11 +169,14 @@ func TestAWindowOpenLaunchesTheAgentAsItWasChosen(t *testing.T) {
 	const open = "e1111111-1111-4111-8111-111111111111"
 	p.h.Message(context.Background(), message(t, link.TypeSessionWindowOpen, map[string]any{
 		"commandId": open, "sessionId": sessionUnderTest, "agent": "codex",
-		"model": "gpt-6.1-terra", "effort": "high", "permission": "full",
+		"model": "gpt-6.1-terra", "effort": "high", "permission": "full", "prompt": "Fix the picker",
 	}))
 	opened := p.sent.waitFor(t, "session.windows", isSessionWindows(open)).(link.SessionWindows)
 
 	command := p.terminals.Launches[session.Target(opened.Opened)].Command
+	if !strings.HasSuffix(command, " 'Fix the picker'") {
+		t.Fatalf("window %d launched %q, want the first task as its last word", opened.Opened, command)
+	}
 	for _, want := range []string{"--model gpt-6.1-terra", "model_reasoning_effort=high", "--dangerously-bypass-approvals-and-sandbox"} {
 		if !strings.Contains(command, want) {
 			t.Fatalf("window %d launched %q, missing %q", opened.Opened, command, want)

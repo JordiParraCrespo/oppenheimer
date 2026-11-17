@@ -110,19 +110,22 @@ export class RelaySessionWindowsAdapter implements SessionWindowsPort {
 }
 
 /**
- * The agent an open names and how it starts, each launch field only when it
- * was given: an absent one is the session's own, which the runner fills in.
+ * The agent an open names, how it starts and its first task, each field only
+ * when it was given: an absent launch field is the session's own, which the
+ * runner fills in, and an absent prompt starts the agent with no task.
  */
 function agentLaunch({
   agent,
   model,
   effort,
   permission,
+  prompt,
 }: OpenSessionWindowBody & { agent: NonNullable<OpenSessionWindowBody['agent']> }) {
   return {
     agent,
     ...(model !== undefined ? { model } : {}),
     ...(effort !== undefined ? { effort } : {}),
     ...(permission !== undefined ? { permission } : {}),
+    ...(prompt !== undefined ? { prompt } : {}),
   };
 }

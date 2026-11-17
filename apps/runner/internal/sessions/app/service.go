@@ -224,12 +224,14 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 
 // WindowInput is what a window is opened with: no agent for a plain shell,
 // or the coding agent to start in it and how, each of Model, Permission and
-// Effort empty to take the session's own (windowLaunch).
+// Effort empty to take the session's own (windowLaunch). Prompt is the
+// agent's first task, empty for none; like any launch's, it is never logged.
 type WindowInput struct {
 	Agent      domain.Agent
 	Model      string
 	Permission string
 	Effort     string
+	Prompt     string
 }
 
 // OpenWindow adds a tab where the agent runs: a plain shell, or with agent
@@ -237,10 +239,10 @@ type WindowInput struct {
 // session like every command, so a refresh running meanwhile keeps the
 // window (see observe).
 //
-// The second agent takes the session's permission level, and its model and
-// effort only when it is the session's own agent: a model names one CLI's.
-// It starts a conversation of its own, so it is launched with no first task,
-// no conversation id, no server and no observer wrapper; window 0 stays the
+// The second agent starts as the open chose (windowLaunch), the session's
+// own launch filling in what it left out, with the first task it was given if
+// any. It starts a conversation of its own, so it is launched with no
+// conversation id, no first-task files, no server and no observer wrapper; window 0 stays the
 // session's agent, the one its state is read from. An agent that would take
 // the session's conversation over is refused (domain.Session.TakesSecond). A
 // launch that fails takes its window with it.
@@ -316,6 +318,10 @@ func windowLaunch(session domain.Session, in WindowInput) domain.Launch {
 	if in.Effort != "" {
 		launch.Effort, launch.EffortIsLevel = in.Effort, true
 	}
+	// The first task rides as the CLI's trailing positional, as window 0's
+	// does. With no conversation named, the catalog still sends it: the
+	// agent starts a conversation of its own with it.
+	launch.Prompt = in.Prompt
 	return launch
 }
 

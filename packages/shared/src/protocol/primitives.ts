@@ -328,6 +328,7 @@ for (const [id, schema] of [
   ['window', sessionWindowSchema],
   ['githubRepoId', githubRepoIdSchema],
   ['gitRef', gitRefSchema],
+  ['promptText', promptTextSchema],
   ['hostPath', hostPathSchema],
   ['codexEnvironmentRef', codexEnvironmentRefSchema],
 ] as const) {

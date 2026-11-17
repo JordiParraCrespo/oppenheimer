@@ -148,7 +148,7 @@ export function agentsBeside(
 
 /**
  * What a second agent starts with, as the side pane's Agent pick sends it:
- * the agent, and its model, effort and permission. Null is the CLI's own
+ * the agent, its model, effort and permission, and its first task. Null is the CLI's own
  * default, never sent.
  */
 export interface SideEngine {
@@ -156,4 +156,6 @@ export interface SideEngine {
   model: string | null;
   effort: SessionEffort | null;
   permission: SessionPermission | null;
+  /** The agent's first task, as typed; null starts it with none. */
+  prompt: string | null;
 }

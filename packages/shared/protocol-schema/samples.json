@@ -605,7 +605,8 @@
     "agent": "codex",
     "model": "gpt-6.1-sol",
     "permission": "auto",
-    "effort": "high"
+    "effort": "high",
+    "prompt": "Write the tests for the repo picker."
   },
   "session.window.close": {
     "type": "session.window.close",

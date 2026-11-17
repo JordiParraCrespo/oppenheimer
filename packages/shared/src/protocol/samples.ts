@@ -378,6 +378,7 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     model: 'gpt-6.1-sol',
     permission: 'auto',
     effort: 'high',
+    prompt: 'Write the tests for the repo picker.',
   },
   'session.window.close': { type: 'session.window.close', commandId, sessionId, window: 1 },
   'session.windows.list': { type: 'session.windows.list', commandId, sessionId },

@@ -2305,6 +2305,7 @@ export type OpenSessionWindowRequest = {
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
     agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    prompt?: string;
 };
 
 export type OpenedSessionWindowResponseDto = {

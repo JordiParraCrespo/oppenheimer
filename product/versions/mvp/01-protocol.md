@@ -130,10 +130,13 @@ runner does with it and point back.
   and bounds, meaningful only with `agent`), and each one it leaves out is
   the session's: its permission level always, its model and effort only when
   it is the session's own agent (a model names one CLI's). An effort the
-  model does not offer is dropped, as at create. No first task, no
-  conversation id, no agent server. Those three fields came after the
-  capability and need none: a runner from before them ignores them and
-  launches with the session's fallback. It names the window by the catalog id
+  model does not offer is dropped, as at create. An optional `prompt`, the
+  agent's first task with `session.create`'s bounds (`promptText`, 2 KB of
+  UTF-8), rides as the CLI's trailing positional as window 0's does, and is
+  never logged; there are no first-task files, no conversation id and no
+  agent server. Those four fields came after the capability and need none: a
+  runner from before them ignores them, launches with the session's fallback
+  and starts the agent with no task. It names the window by the catalog id
   (`codex`), so listings say what runs there, and a launch that fails takes
   its window with it (`command.failed`). Window 0 stays the session's agent,
   the only one its state is read from. Only a runner whose `hello` names

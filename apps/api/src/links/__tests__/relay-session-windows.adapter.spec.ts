@@ -118,12 +118,12 @@ describe('RelaySessionWindowsAdapter', () => {
     expect(message).toMatchObject({ sessionId: SESSION, agent: 'codex' });
     // No model, effort or permission chosen: none is sent, and the runner
     // takes the session's own.
-    for (const field of ['model', 'effort', 'permission']) {
+    for (const field of ['model', 'effort', 'permission', 'prompt']) {
       expect(message).not.toHaveProperty(field);
     }
   });
 
-  it('sends the model, effort and permission chosen for the agent, and none with a shell', async () => {
+  it('sends the model, effort, permission and first task chosen for the agent, and none with a shell', async () => {
     const { adapter, link } = harness(true, ['session.windows.list', 'session.window.agent']);
 
     void adapter.open(HOST, SESSION, {
@@ -131,19 +131,26 @@ describe('RelaySessionWindowsAdapter', () => {
       model: 'gpt-6.1-terra',
       effort: 'high',
       permission: 'full',
+      prompt: 'Fix the picker',
     });
     expect(sessionWindowOpenSchema.strict().parse(sentMessage(link))).toMatchObject({
       agent: 'codex',
       model: 'gpt-6.1-terra',
       effort: 'high',
       permission: 'full',
+      prompt: 'Fix the picker',
     });
 
     vi.mocked(link.send).mockClear();
-    void adapter.open(HOST, SESSION, { model: 'gpt-6.1-terra', permission: 'full' });
+    void adapter.open(HOST, SESSION, {
+      model: 'gpt-6.1-terra',
+      permission: 'full',
+      prompt: 'Fix the picker',
+    });
     const shell = sessionWindowOpenSchema.strict().parse(sentMessage(link));
-    expect(shell).not.toHaveProperty('model');
-    expect(shell).not.toHaveProperty('permission');
+    for (const field of ['model', 'permission', 'prompt']) {
+      expect(shell).not.toHaveProperty(field);
+    }
   });
 
   it('never sends an agent to a runner that would open a plain shell in its place', async () => {

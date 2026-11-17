@@ -191,13 +191,14 @@ export function toStartCloudSessionRequest(
 /**
  * The open's body: nothing for a plain shell (`shell` included, which the API
  * refuses as an agent), and for an agent its id with each launch choice that
- * was made. A choice left out is the session's own, which the host fills in.
+ * was made and its first task. A choice left out is the session's own, which the host fills in.
  */
 function toOpenSessionWindowRequest({
   agent,
   model,
   effort,
   permission,
+  prompt,
 }: OpenSessionWindowInput): OpenSessionWindowRequest {
   if (agent === undefined || agent === 'shell') return {};
   return {
@@ -205,6 +206,8 @@ function toOpenSessionWindowRequest({
     ...(model ? { model } : {}),
     ...(effort ? { effort } : {}),
     ...(permission ? { permission } : {}),
+    // A task of only whitespace is no task: the API would refuse it.
+    ...(prompt?.trim() ? { prompt } : {}),
   };
 }
 

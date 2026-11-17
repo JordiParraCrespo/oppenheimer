@@ -779,7 +779,7 @@ export function useSessionWindows(sessionId: string | undefined) {
  * Opens a window in a session: no `agent` (or `shell`) for a plain shell, or
  * a coding agent beside the session's own in window 0, started with the
  * `model`, `effort` and `permission` picked for it, each left out the
- * session's own. A runner too old to start one refuses with `SESSIONS_060`.
+ * session's own, and on the first `prompt` typed for it. A runner too old to start one refuses with `SESSIONS_060`.
  */
 export interface OpenSessionWindowVariables extends OpenSessionWindowInput {
   sessionId: string;

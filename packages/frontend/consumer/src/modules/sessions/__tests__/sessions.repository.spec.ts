@@ -131,7 +131,7 @@ describe('SessionsRepository.openWindow', () => {
   const sentBodies = () =>
     vi.mocked(heyApiSdk.openSessionWindow).mock.calls.map(([options]) => options?.body);
 
-  it('sends the agent it names with the launch chosen for it, and answers with its window', async () => {
+  it('sends the agent it names with the launch and first task chosen for it, and answers with its window', async () => {
     vi.mocked(heyApiSdk.openSessionWindow).mockResolvedValue(opened);
 
     const result = await new SessionsRepository().openWindow('s1', {
@@ -139,11 +139,18 @@ describe('SessionsRepository.openWindow', () => {
       model: 'gpt-6.1-terra',
       effort: 'high',
       permission: 'full',
+      prompt: 'Fix the picker',
     });
-    await new SessionsRepository().openWindow('s1', { agent: 'codex' });
+    await new SessionsRepository().openWindow('s1', { agent: 'codex', prompt: '   ' });
 
     expect(sentBodies()).toEqual([
-      { agent: 'codex', model: 'gpt-6.1-terra', effort: 'high', permission: 'full' },
+      {
+        agent: 'codex',
+        model: 'gpt-6.1-terra',
+        effort: 'high',
+        permission: 'full',
+        prompt: 'Fix the picker',
+      },
       { agent: 'codex' },
     ]);
     expect(result.window).toMatchObject({ index: 1, name: 'codex' });
@@ -156,6 +163,7 @@ describe('SessionsRepository.openWindow', () => {
       agent: 'shell',
       model: 'm',
       permission: 'full',
+      prompt: 'ls',
     });
     await new SessionsRepository().openWindow('s1', { effort: 'high' });
     await new SessionsRepository().openWindow('s1');

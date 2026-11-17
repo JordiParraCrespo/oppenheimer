@@ -36,7 +36,8 @@ export interface SessionWindowsPort {
   /**
    * A plain shell, or with `agent` that coding agent started in the new
    * window, with the `model`, `effort` and `permission` given (each absent the
-   * session's own, which the runner holds). Without `agent` those are not sent.
+   * session's own, which the runner holds) and its first `prompt`. Without
+   * `agent` none of those is sent.
    */
   open(
     hostId: string,

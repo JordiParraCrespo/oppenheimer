@@ -593,6 +593,7 @@ describe("a session's terminal windows", () => {
       model: 'gpt-6.1-terra',
       effort: 'high',
       permission: 'auto',
+      prompt: 'Fix the picker',
     });
 
     expect(openWindow).toHaveBeenCalledWith('s-1', {
@@ -600,6 +601,7 @@ describe("a session's terminal windows", () => {
       model: 'gpt-6.1-terra',
       effort: 'high',
       permission: 'auto',
+      prompt: 'Fix the picker',
     });
     await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, codex]));
   });

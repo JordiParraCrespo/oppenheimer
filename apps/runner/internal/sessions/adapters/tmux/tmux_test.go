@@ -563,3 +563,24 @@ func TestATitledWindowKeepsItsNameWhileAProgramRuns(t *testing.T) {
 		t.Fatalf("the titled window is %+v, want codex and not the session's agent", windows[1])
 	}
 }
+
+// A launch that fails says which window, never what was launched: the
+// command line carries the person's first task, and this error is logged and
+// sent back as `command.failed`'s detail.
+func TestAFailedLaunchKeepsTheCommandOutOfItsError(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := s.Create(ctx, "opp-secret", dir, "", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	err := s.Launch(ctx, "opp-secret:9", dir, "codex 'the private first task'")
+
+	if err == nil {
+		t.Fatal("a launch into a window that does not exist succeeded")
+	}
+	if strings.Contains(err.Error(), "private first task") || !strings.Contains(err.Error(), "opp-secret:9") {
+		t.Fatalf("err = %v, want the window named and the command left out", err)
+	}
+}

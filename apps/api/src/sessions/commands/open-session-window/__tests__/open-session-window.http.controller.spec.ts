@@ -8,6 +8,7 @@ import {
 import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { AllExceptionsFilter, SanitizePipe } from '@oppenheimer/backend-core';
+import { FIELD_BOUNDS } from '@oppenheimer/shared';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiAuthGuard } from '../../../../auth/guards/api-auth.guard';
@@ -92,26 +93,36 @@ describe('POST /v1/sessions/:id/windows', () => {
     expect(sent().window.agent).toBeUndefined();
   });
 
-  it('hands the agent a body names, and how it starts, to the bus', async () => {
+  it('hands the agent a body names, how it starts and its first task, to the bus', async () => {
     const response = await post({
       agent: 'codex',
       model: 'gpt-6.1-terra',
       effort: 'high',
       permission: 'full',
+      prompt: '  Fix the picker  ',
     });
 
     expect(response.status).toBe(201);
     expect(sent()).toMatchObject({
       sessionId: SESSION,
-      window: { agent: 'codex', model: 'gpt-6.1-terra', effort: 'high', permission: 'full' },
+      window: {
+        agent: 'codex',
+        model: 'gpt-6.1-terra',
+        effort: 'high',
+        permission: 'full',
+        // Trimmed, as a new session's first task is.
+        prompt: 'Fix the picker',
+      },
     });
   });
 
-  it('refuses a permission or an effort outside the launch’s own, before the bus sees it', async () => {
+  it('refuses a launch or a first task outside a new session’s bounds, before the bus sees it', async () => {
     for (const body of [
       { agent: 'codex', permission: 'yolo' },
       { agent: 'codex', effort: 'extreme' },
       { agent: 'codex', model: '' },
+      { agent: 'codex', prompt: '   ' },
+      { agent: 'codex', prompt: 'x'.repeat(FIELD_BOUNDS.prompt.maxBytes + 1) },
     ]) {
       const response = await post(body);
       expect(response.status).toBe(400);

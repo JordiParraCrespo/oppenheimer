@@ -1,4 +1,4 @@
-import { Button, Callout } from '@oppenheimer/design-system-web';
+import { Callout } from '@oppenheimer/design-system-web';
 import { useStoredList } from '@oppenheimer/frontend-web';
 import {
   CODING_AGENTS,
@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
 import { PermissionSelect } from '../components/permission-select';
+import { SideAgentComposer } from '../components/side-agent-composer';
 import { useModelFavourites } from '../hooks/use-model-favourites';
 import { AGENT_CHOICES_KEY, shownAgents } from '../lib/agent-choices';
 import {
@@ -24,11 +25,13 @@ import {
 import { agentsBeside, type SideEngine } from '../lib/side-pane';
 
 /**
- * The launcher's Agent pane: New session's engine, without the host, since
- * the agent starts on the session's own. The agent, its model and effort in
- * the engine button, the permission level beside it, then Start. It opens on
- * the session's own engine when that agent may run twice, so Start alone is a
- * second copy of it; otherwise on the first agent offered, at its defaults.
+ * The launcher's Agent pane: New session's composer without the host,
+ * project and branch, since the agent starts in the session's worktree. The
+ * box takes the agent's first task; under it, the permission level and the
+ * engine button (the agent, its model and effort). Send starts it, with the
+ * task or with none. It opens on the session's own engine when that agent
+ * may run twice, so send alone starts a second copy of it; otherwise on the
+ * first agent offered, at its defaults.
  *
  * The agents are those this device offers (Settings → Agents, as New
  * session reads them) that may start beside this session (`agentsBeside`).
@@ -76,46 +79,45 @@ export function SideAgentPicker({
   return (
     <>
       <Callout tone="info">{t('sessions.side.launcher.agentShares')}</Callout>
-      <div className="flex flex-wrap items-center gap-2">
-        <AgentSelect
-          agents={toEngineAgents(false, null).filter((option) =>
-            allowed.some((one) => one === option.id),
-          )}
-          value={{ agent, model }}
-          onValueChange={(engine) => {
-            const next = allowed.find((one) => one === engine.agent);
-            if (!next || !isCodingAgentId(engine.agent)) return;
-            setAgent(next);
-            setModel(engine.model ?? defaultModelFor(next));
-          }}
-          favourites={favourites}
-          onFavouritesChange={setFavourites}
-          effort={effort}
-          onEffortChange={(level) => setEfforts({ ...efforts, [agent]: level })}
-          onConfigure={() => navigate({ to: '/settings/agents' })}
-          disabled={opening !== null}
-        />
-        {takesPermission ? (
-          <PermissionSelect value={permission} onValueChange={setPermission} />
-        ) : null}
-      </div>
-      <Button
-        className="self-start"
-        pending={opening === agent}
-        pendingLabel={t('sessions.side.agent.opening', { agent: label })}
-        disabled={opening !== null}
-        onClick={() =>
+      <SideAgentComposer
+        sendLabel={t('sessions.side.agent.start', { agent: label })}
+        starting={opening !== null}
+        onSubmit={(task) =>
           onStart({
             agent,
             model,
             // An effort nobody picked is left to the CLI, as on New session.
             effort: effort?.chosen ? effort.value : null,
             permission: takesPermission ? permission : null,
+            prompt: task === '' ? null : task,
           })
         }
-      >
-        {t('sessions.side.agent.start', { agent: label })}
-      </Button>
+        tools={
+          takesPermission ? (
+            <PermissionSelect value={permission} onValueChange={setPermission} />
+          ) : null
+        }
+        engine={
+          <AgentSelect
+            agents={toEngineAgents(false, null).filter((option) =>
+              allowed.some((one) => one === option.id),
+            )}
+            value={{ agent, model }}
+            onValueChange={(engine) => {
+              const next = allowed.find((one) => one === engine.agent);
+              if (!next || !isCodingAgentId(engine.agent)) return;
+              setAgent(next);
+              setModel(engine.model ?? defaultModelFor(next));
+            }}
+            favourites={favourites}
+            onFavouritesChange={setFavourites}
+            effort={effort}
+            onEffortChange={(level) => setEfforts({ ...efforts, [agent]: level })}
+            onConfigure={() => navigate({ to: '/settings/agents' })}
+            disabled={opening !== null}
+          />
+        }
+      />
     </>
   );
 }

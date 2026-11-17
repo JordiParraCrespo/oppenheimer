@@ -130,6 +130,7 @@ export function SessionSidePane({
         ...(engine.model ? { model: engine.model } : {}),
         ...(engine.effort ? { effort: engine.effort } : {}),
         ...(engine.permission ? { permission: engine.permission } : {}),
+        ...(engine.prompt ? { prompt: engine.prompt } : {}),
       },
       opened,
     );

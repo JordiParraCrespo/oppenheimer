@@ -429,9 +429,7 @@
           }
         },
         "prompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2048
+          "$ref": "#/$defs/promptText"
         },
         "images": {
           "maxItems": 5,
@@ -774,6 +772,9 @@
             "max",
             "ultra"
           ]
+        },
+        "prompt": {
+          "$ref": "#/$defs/promptText"
         }
       },
       "required": [
@@ -3122,6 +3123,12 @@
       "minLength": 1,
       "maxLength": 255,
       "id": "gitRef"
+    },
+    "promptText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "id": "promptText"
     },
     "hostPath": {
       "type": "string",

@@ -154,6 +154,42 @@ func TestASecondAgentDropsAnEffortItsModelDoesNotOffer(t *testing.T) {
 	}
 }
 
+// The first task typed for a second agent is its CLI's trailing positional,
+// as window 0's is, for an agent that is told a conversation id at create
+// (Claude Code, here with none) and one that is not (codex); with no task
+// there is no positional at all. The regression: the task dropped, or typed
+// into the pane where the person would see it echoed.
+func TestASecondAgentStartsOnTheFirstTaskItWasGiven(t *testing.T) {
+	const task = "Write the tests for the repo picker; don't touch the API."
+	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex} {
+		t.Run(string(agent), func(t *testing.T) {
+			h := newFakeHarness(t)
+			session := h.openWithLaunch(t, claudeAtFull)
+
+			bare, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: agent})
+			if err != nil {
+				t.Fatal(err)
+			}
+			tasked, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{Agent: agent, Prompt: task})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			without := h.terminals.Launches[session.Target(bare.Index)].Command
+			with := h.terminals.Launches[session.Target(tasked.Index)].Command
+			if want := without + " " + `'Write the tests for the repo picker; don'\''t touch the API.'`; with != want {
+				t.Fatalf("launched %q, want the task as the last word of %q", with, without)
+			}
+			if strings.Contains(without, "repo picker") {
+				t.Fatalf("a window opened with no task launched one: %q", without)
+			}
+			if screen := h.terminals.Screens[session.Target(tasked.Index)]; screen != "" {
+				t.Fatalf("the task was typed into the pane: %q", screen)
+			}
+		})
+	}
+}
+
 // The blank terminal is what a window without an agent already is, and an
 // agent this runner does not know has nothing to launch: both are refused,
 // and no window is left behind.
