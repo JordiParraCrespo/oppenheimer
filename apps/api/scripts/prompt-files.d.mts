@@ -5,6 +5,6 @@ export interface PromptFilePrompt {
   slots: string[];
 }
 
-export function parsePromptFile(name: string, source: string): PromptFilePrompt[];
+export function parsePromptFile(name: string, source: string, folder?: string): PromptFilePrompt[];
 export function readPrompts(dir: string): PromptFilePrompt[];
 export function renderPromptModule(prompts: readonly PromptFilePrompt[]): string;

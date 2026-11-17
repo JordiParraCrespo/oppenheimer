@@ -20,6 +20,9 @@ const promptDirs = readdirSync(SRC, { withFileTypes: true })
   .map((entry) => join(SRC, entry.name, 'domain', 'prompts'))
   .filter((dir) => existsSync(dir));
 
+/** The longest a single prompt may be, in characters: about 2,000 tokens. */
+const PROMPT_CEILING = 8_000;
+
 describe('prompt files', () => {
   it('finds the modules that keep prompts', () => {
     expect(promptDirs.length).toBeGreaterThan(0);
@@ -31,6 +34,16 @@ describe('prompt files', () => {
   it.each(promptDirs)('%s: the committed module is what its Markdown generates', (dir) => {
     const committed = readFileSync(join(dir, 'prompts.gen.ts'), 'utf8');
     expect(committed).toBe(renderPromptModule(readPrompts(dir)));
+  });
+
+  // Every prompt is paid for on each call it is sent in. A ceiling makes a
+  // prompt that outgrows it a decision someone takes in a diff: split it, or
+  // raise the number here and say why.
+  it.each(promptDirs)('%s: no prompt is longer than the ceiling', (dir) => {
+    const over = readPrompts(dir)
+      .filter((prompt) => prompt.text.length > PROMPT_CEILING)
+      .map((prompt) => `${prompt.id} (${prompt.text.length})`);
+    expect(over).toEqual([]);
   });
 
   it('reads a file with no marker as one prompt, named for the file', () => {
@@ -53,6 +66,20 @@ describe('prompt files', () => {
       { id: 'identity.opening', text: 'You are {{name}}, and {{name}} only.', slots: ['name'] },
       { id: 'identity.closing', text: 'Ask {{owner}}.', slots: ['owner'] },
     ]);
+  });
+
+  // A folder says where its words are sent, so two files of one name (a
+  // section of the system prompt, the note that opens a turn) stay apart.
+  it('puts the folder a file sits in at the front of its ids', () => {
+    expect(parsePromptFile('rules.md', 'Never guess.', 'system')).toEqual([
+      { id: 'system/rules', text: 'Never guess.', slots: [] },
+    ]);
+    expect(
+      parsePromptFile('context.md', '<!-- fragment: now -->\nIt is {{now}}.', 'turn')[0]?.id,
+    ).toBe('turn/context.now');
+    expect(() => parsePromptFile('rules.md', 'Never guess.', 'System Prompt')).toThrow(
+      /kebab-case/,
+    );
   });
 
   // A note says why the words are what they are. One that reached the model

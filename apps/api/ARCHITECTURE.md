@@ -59,7 +59,7 @@ holding only the file names that layer admits:
 
 | Directory                     | Holds                                                                                    |
 | ----------------------------- | ---------------------------------------------------------------------------------------- |
-| `domain/`                     | `*.entity.ts`, `*.errors.ts`, `*.policy.ts`, `*.factory.ts`, `*.types.ts`, and `value-objects/*.value-object.ts`, `events/*.domain-event.ts`, `prompts/*.md` with its `prompts.gen.ts` |
+| `domain/`                     | `*.entity.ts`, `*.errors.ts`, `*.policy.ts`, `*.factory.ts`, `*.types.ts`, and `value-objects/*.value-object.ts`, `events/*.domain-event.ts`, `prompts/*.md` with its `prompts.gen.ts`, in folders one level deep (`prompts/system/*.md`) |
 | `database/`                   | `*.orm-entity.ts`, `*.repository.port.ts`, `*.repository.ts`                               |
 | `infrastructure/`             | `*.port.ts`, `*.adapter.ts`, `*.gateway.ts`, `*.processor.ts`, `*.config.ts`, `*.util.ts`, `*.types.ts` |
 | `commands/<use-case>/`        | `<use-case>.command.ts`, `.command-handler.ts`, `.http.controller.ts`, `.request.dto.ts`   |

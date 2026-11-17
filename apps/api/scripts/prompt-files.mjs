@@ -3,11 +3,14 @@
  * holds what a model is told, so the words are edited as prose and the code
  * beside them only decides which are sent.
  *
- * A file is one prompt, or several fragments the code chooses among:
+ * A file is one prompt, or several fragments the code chooses among. A
+ * folder, one level deep, says where its words are sent (`system/` for
+ * sections of the system prompt, `turn/` for what opens a turn), and is
+ * part of the id:
  *
- *   rules.md                      one prompt, id `rules`
- *   what-you-can-do.md            with `<!-- fragment: plain-refusal -->`
- *                                 markers: `what-you-can-do.plain-refusal`
+ *   system/rules.md               one prompt, id `system/rules`
+ *   system/what-you-can-do.md     with `<!-- fragment: plain-refusal -->`
+ *                                 markers: `system/what-you-can-do.plain-refusal`
  *
  * `{{name}}` is a slot the code fills; a prompt's slots become its type. Any
  * other HTML comment is a note for whoever edits the file: it goes above the
@@ -18,6 +21,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const FILE_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*\.md$/;
+const FOLDER_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const MARKER = /<!--\s*fragment:\s*([^>]*?)\s*-->/g;
 const FRAGMENT_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const LEADING_NOTE = /^\s*<!--[\s\S]*?-->/;
@@ -42,12 +46,15 @@ function slotsOf(text, where) {
   return slots;
 }
 
-/** One file's prompts, in the order it writes them. */
-export function parsePromptFile(name, source) {
+/** One file's prompts, in the order it writes them; `folder` is the one it sits in, if any. */
+export function parsePromptFile(name, source, folder) {
   if (!FILE_NAME.test(name)) {
     throw new Error(`${name}: a prompt file is named in kebab-case and ends in .md.`);
   }
-  const file = name.replace(/\.md$/, '');
+  if (folder !== undefined && !FOLDER_NAME.test(folder)) {
+    throw new Error(`${folder}/: a folder of prompt files is named in kebab-case.`);
+  }
+  const file = `${folder === undefined ? '' : `${folder}/`}${name.replace(/\.md$/, '')}`;
   const text = source.replace(/\r\n/g, '\n');
   const markers = [...text.matchAll(MARKER)];
   if (markers.length === 0) {
@@ -71,14 +78,33 @@ export function parsePromptFile(name, source) {
   });
 }
 
-/** Every prompt of the Markdown files in `dir`, by file name then by order in the file. */
-export function readPrompts(dir) {
-  const names = readdirSync(dir)
+/** The Markdown files in `dir`, by name. */
+function markdownIn(dir) {
+  return readdirSync(dir)
     .filter((name) => name.endsWith('.md'))
     .sort();
-  const prompts = names.flatMap((name) =>
-    parsePromptFile(name, readFileSync(join(dir, name), 'utf8')),
-  );
+}
+
+/**
+ * Every prompt of the Markdown files in `dir` and in its folders, one level
+ * deep: the files of `dir` first, then each folder's, by name, and by order
+ * within a file.
+ */
+export function readPrompts(dir) {
+  const folders = readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const prompts = [
+    ...markdownIn(dir).flatMap((name) =>
+      parsePromptFile(name, readFileSync(join(dir, name), 'utf8')),
+    ),
+    ...folders.flatMap((folder) =>
+      markdownIn(join(dir, folder)).flatMap((name) =>
+        parsePromptFile(name, readFileSync(join(dir, folder, name), 'utf8'), folder),
+      ),
+    ),
+  ];
   const seen = new Set();
   for (const { id } of prompts) {
     if (seen.has(id)) throw new Error(`${id}: two prompts with one id.`);
@@ -97,7 +123,7 @@ export function renderPromptModule(prompts) {
     '// DO NOT EDIT. Edit the .md files, then run',
     '// `pnpm --filter @oppenheimer/api generate:prompts`.',
     '',
-    '/** Every prompt, by `<file>` or `<file>.<fragment>`. */',
+    '/** Every prompt, by `<file>` or `<file>.<fragment>`, after `<folder>/` when it sits in one. */',
     'export type PromptId =',
     ...prompts.map(
       (prompt, index) => `  | ${key(prompt.id)}${index === prompts.length - 1 ? ';' : ''}`,
