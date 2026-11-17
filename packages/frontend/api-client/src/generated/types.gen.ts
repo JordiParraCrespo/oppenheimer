@@ -2875,7 +2875,7 @@ export type TaskResponseDto = {
     /**
      * How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.
      */
-    priority?: 'urgent' | 'high' | 'medium' | 'low';
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.

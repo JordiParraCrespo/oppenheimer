@@ -34860,13 +34860,14 @@
           },
           "priority": {
             "type": "string",
-            "nullable": true,
             "enum": [
               "urgent",
               "high",
               "medium",
-              "low"
+              "low",
+              null
             ],
+            "nullable": true,
             "description": "How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column."
           },
           "completedAt": {

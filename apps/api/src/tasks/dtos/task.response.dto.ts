@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   TASK_ORIGINS,
   TASK_PRIORITIES,
@@ -75,8 +76,7 @@ export class TaskResponseDto {
   focusDate!: string | null;
 
   @ApiPropertyOptional({
-    nullable: true,
-    enum: TASK_PRIORITIES,
+    ...nullableEnum(TASK_PRIORITIES),
     description:
       'How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.',
   })

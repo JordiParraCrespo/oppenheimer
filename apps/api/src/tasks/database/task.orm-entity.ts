@@ -40,6 +40,7 @@ import {
 @Check('CHK_task_blocked', `("blockedReason" IS NULL) = ("blockedAt" IS NULL)`)
 @Check('CHK_task_origin', `"origin" IN ('person', 'agent')`)
 @Check('CHK_task_triage', `"origin" = 'agent' OR "triagedAt" IS NOT NULL`)
+@Check('CHK_task_priority', `"priority" IN ('urgent', 'high', 'medium', 'low')`)
 @Index('UQ_task_idempotency_key', ['organizationId', 'idempotencyKey'], {
   unique: true,
   where: '"idempotencyKey" IS NOT NULL',
