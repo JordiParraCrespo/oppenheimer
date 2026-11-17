@@ -13,8 +13,7 @@
 #
 # macOS archives carry the binary inside OppenheimerRunner.app, signed with a
 # Developer ID and notarized, because macOS keeps a permission for a signed
-# bundle's identity and loses it for a bare binary on every update
-# (product/versions/mvp/09-runner-install-and-update.md §2). That needs
+# bundle's identity and loses it for a bare binary on every update. That needs
 # rcodesign (or RCODESIGN=<path>) and:
 #
 #   MACOS_SIGN_P12           the Developer ID Application certificate, .p12

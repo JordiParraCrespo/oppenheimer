@@ -82,7 +82,7 @@ export class HostAssertionResolver implements HostAssertionPort {
     if (found.isNone()) throw this.rejected('no such host');
 
     const host = found.unwrap();
-    // One key until the link can carry a rotation (09 §3).
+    // One key until the link can carry a rotation.
     if (!assertionIsSignedBy(decoded, [host.publicKey])) {
       throw this.rejected('not signed by this host');
     }

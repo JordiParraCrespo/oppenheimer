@@ -5,8 +5,7 @@ import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
 
 /**
  * The owner's message to their linked number, for the Oppenheimer bot that
- * answers the chat there
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): a turn in
+ * answers the chat there: a turn in
  * the chat's conversation that holds the message, the one starting at the
  * later of the owner's last `/new` and last switch by name before it (fixed
  * when the message was stored, by `whatsapp_message.seq`, so deliveries in

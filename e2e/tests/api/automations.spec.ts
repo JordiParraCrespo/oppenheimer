@@ -12,8 +12,7 @@ import {
 } from '../../support/sessions';
 
 /**
- * Automations through the deployed pipeline
- * (`product/versions/mvp/16-automations-architecture.md`).
+ * Automations through the deployed pipeline.
  *
  * Everything here is the real thing except GitHub: a signed webhook delivery
  * goes through the App's endpoint, the inbound-events hub stores and

@@ -149,7 +149,7 @@ describe('coding agent catalog', () => {
   });
 
   /**
-   * F3 on the wire is asserted in `src/protocol/__tests__/protocol.spec.ts`
+   * The login URL check on the wire is asserted in `src/protocol/__tests__/protocol.spec.ts`
    * ("F3: a login URL on the wire is a vendor login URL"), against
    * `sessionSnapshotSchema` — the field the console actually turns into a button.
    * The tests below cover the pattern itself; that suite covers the enforcement,

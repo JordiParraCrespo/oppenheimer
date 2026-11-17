@@ -24,7 +24,7 @@ export function dictationSlots(dictation: Dictation): DictationSlot {
 }
 
 /**
- * A plain multi-line field that takes dictation (`product/next-steps/voice.md`):
+ * A plain multi-line field that takes dictation:
  * the field as its child, framed with the slot. What is heard goes to
  * `onText`, which adds it to the field (`dictateInto`, `dictateIntoField`).
  */

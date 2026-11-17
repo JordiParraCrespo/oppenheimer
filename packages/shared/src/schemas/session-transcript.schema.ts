@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 /**
  * A session's conversation, as its agent wrote it, read a page at a time
- * (`GET /v1/sessions/{id}/transcript`, `product/next-steps/agent-tools.md`
- * §8). The session's log (`/events`) says what happened to it; this says what
- * the agent and the person said and did in it: messages, tool calls and their
- * results, as the console's chat view draws them.
+ * (`GET /v1/sessions/{id}/transcript`). The session's log (`/events`) says
+ * what happened to it; this says what the agent and the person said and did in
+ * it: messages, tool calls and their results, as the console's chat view draws
+ * them.
  *
  * Nothing of it is kept by the control plane. A page is read off the session's
  * host when it is asked for, so it is only there while the host is online,

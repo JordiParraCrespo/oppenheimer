@@ -145,7 +145,7 @@ export class PullRequestSourceResolver {
 
 /**
  * A pull request the one read answered whole, or null when a part ran past
- * its page: a part cut short is never shown as all of it (#244).
+ * its page: a part cut short is never shown as all of it.
  */
 function wholeSnapshot(
   repository: WorkspaceRepository,

@@ -7,8 +7,7 @@ import { defineResource } from '@oppenheimer/backend-authz';
  * Installation`, exactly the access GitHub is about to be asked to honour.
  *
  * `credentialScope` is `repositories`, the scope catalog's name for the group;
- * the vendor name stops at the directory
- * (`product/versions/mvp/03-control-plane.md`).
+ * the vendor name stops at the directory.
  */
 export const InstallationResource = defineResource({
   subject: 'Installation',

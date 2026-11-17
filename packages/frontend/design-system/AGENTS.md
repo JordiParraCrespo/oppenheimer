@@ -167,7 +167,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   calendar source a `Checkbox` row, and a page that opens on its own name
   `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
   is given at its parent's width; `MonthCalendar` and `DatePicker` are the
-  two faces of one month grid.
+  two faces of one month grid. A calendar entry is the one place a data
+  tone is an identity outside a chart: it wears its calendar's or its
+  kind's (`internal/calendar-tone.ts`) as a wash and an edge, and an
+  automation run, which is not a commitment, stays in subtle ink.
 - **A gate is a status, not a new vocabulary.** Whether something may go
   ahead (checks, conflicts, a merge step) is a `StatusDot` gate state
   (`passing`, `blocked`, `waiting`), worded by the caller; a run's state

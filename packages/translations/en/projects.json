@@ -62,6 +62,7 @@
     "needsInput": "Needs input",
     "inProgress": "In progress",
     "noMilestones": "No milestones yet.",
+    "sessionWaiting": "Session waiting on you",
     "nothingNeedsInput": "Nothing waits on you.",
     "nothingInProgress": "Nothing in progress.",
     "gone": "That project is no longer here.",
@@ -99,5 +100,24 @@
     "headlessOnly": "headless turns",
     "measuredHeadless": "Measured on headless turns"
   },
-  "unassigned": "Unassigned"
+  "unassigned": "Unassigned",
+  "selection": {
+    "label": "Selected projects",
+    "count_one": "{{count}} selected",
+    "count_other": "{{count}} selected",
+    "selectOne": "Select {{name}}",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "delete": "Delete selected",
+    "clear": "Clear selection"
+  },
+  "deleteProjects": {
+    "title_one": "Delete {{count}} project?",
+    "title_other": "Delete {{count}} projects?",
+    "description": "Their sessions stay where they are. Automations targeting them are paused.",
+    "confirm_one": "Delete project",
+    "confirm_other": "Delete {{count}} projects",
+    "partial_one": "{{count}} project was not deleted",
+    "partial_other": "{{count}} projects were not deleted"
+  }
 }

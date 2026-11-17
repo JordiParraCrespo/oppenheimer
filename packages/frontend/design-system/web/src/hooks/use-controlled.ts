@@ -40,7 +40,7 @@ export function useControlled<T>({
   const controlled = value !== undefined;
   const current = controlled ? value : own;
 
-  // `useCallback` is the exception the rule allows in `hooks/`: the setter is
+  // `useCallback` on purpose: the setter is
   // handed to children and to effects, and a new identity every render would
   // make each of them a re-render path for the component that owns it.
   const setValue = useCallback(

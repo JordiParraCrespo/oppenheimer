@@ -2,10 +2,9 @@ import { z } from 'zod';
 import { calendarDateSchema, timeOfDaySchema } from './task.schema.js';
 
 /**
- * Plan's calendar (`product/versions/mvp/20-plan-calendar.md`). Events are
- * wall-clock, like a task's due date: a day, and a start and an end on it, read
- * in the viewer's timezone. Google's events come back in the zone the console
- * asks for, so both layers draw the same way.
+ * Plan's calendar. Events are wall-clock, like a task's due date: a day, and a
+ * start and an end on it, read in the viewer's timezone. Google's events come
+ * back in the zone the console asks for, so both layers draw the same way.
  */
 
 export const CALENDAR_EVENT_TITLE_MAX = 500;
@@ -85,9 +84,9 @@ export const connectGoogleCalendarSchema = z.object({
 export type ConnectGoogleCalendarDto = z.infer<typeof connectGoogleCalendarSchema>;
 
 /**
- * Several Google accounts per person (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
- * §5): at most this many connections, and one colour per connection, from the
- * lowest index none of the person's others holds.
+ * Several Google accounts per person: at most this many connections, and one
+ * colour per connection, from the lowest index none of the person's others
+ * holds.
  */
 export const GOOGLE_CALENDAR_ACCOUNTS_MAX = 5;
 

@@ -34,7 +34,7 @@ func (s *Service) SetExecPolicy(policy domain.ExecPolicy) error {
 	return nil
 }
 
-// Exec runs one program for a bot (`host.exec`, 25 §4.2). The policy is read
+// Exec runs one program for a bot (`host.exec`). The policy is read
 // from disk on every call, so a `runner exec` change applies to the next
 // command without a restart, and it is checked before anything is created or
 // run. The run starts in req.Dir, which must be a directory already there, or

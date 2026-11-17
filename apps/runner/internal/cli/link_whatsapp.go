@@ -1,6 +1,6 @@
 package cli
 
-// The host's WhatsApp linked device on the link (product/next-steps/whatsapp.md):
+// The host's WhatsApp linked device on the link:
 // `whatsapp.link`, `whatsapp.unlink`, `whatsapp.send` and `whatsapp.ack`
 // from the control plane, `whatsapp.state` and `whatsapp.messages` to it. The
 // device lives on the daemon's context, not a link's: a link that drops

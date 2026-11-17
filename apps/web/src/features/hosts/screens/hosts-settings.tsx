@@ -5,10 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { HostList } from '../sections/host-list';
 
 /**
- * Settings → Hosts (`design/version1/Settings.dc.html`): the title and its
- * line, Add host on the right — the pairing page, opened inside Settings —
- * then a card per machine with its status and running sessions, renamed or
- * removed in place.
+ * Settings → Hosts: the title and its line, Add host on the right — the
+ * pairing page, opened inside Settings — then a card per machine with its
+ * status and running sessions, renamed or removed in place.
  */
 export function HostsSettingsScreen() {
   const { t } = useTranslation();

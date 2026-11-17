@@ -104,6 +104,7 @@
     "notesPlaceholder": "Añade notas",
     "status": "Estado",
     "project": "Proyecto",
+    "chooseProject": "Elige un proyecto",
     "milestone": "Hito",
     "none": "Ninguno",
     "due": "Vence",

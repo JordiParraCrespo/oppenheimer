@@ -17,7 +17,7 @@ import {
 import { FindBotPermissionsQuery } from './find-bot-permissions.query';
 
 /**
- * A bot's Settings → Permissions (`25-bots.md` §5): every tool the catalog
+ * A bot's Settings → Permissions: every tool the catalog
  * has, with where it stands for this bot (its owner's setting, else the
  * preset's default), the standing grants and the rules. A bot in another
  * workspace is one that does not exist (`BOTS_001`).

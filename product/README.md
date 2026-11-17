@@ -1160,6 +1160,11 @@ earlier note:
   event's metadata alone, never a re-read: the pull request is GitHub's, not
   ours to re-read on every event. A close without a merge makes no event
   yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/27-bot-subscriptions.md` §3 ended every subscription at
+  20 wakes. On 2026-11-14 a bot following a project or a milestone
+  (`watch_project`, `watch_milestone`) has no wake limit: it follows the
+  plan for as long as it is worked on. What bounds it instead is that a
+  change the bot made itself never wakes it (27 §7.2).
 - `versions/mvp/25-bots.md` treated text from tools as information, not
   instructions, and left every tool to the turn that reads it. On
   2026-11-03 a pull request watch made that text a stranger's comment
@@ -1564,6 +1569,16 @@ earlier note:
   line, `POST /bots/:id/seen`); the migration resumes what it had paused.
   Routines run until paused; the run budget, the overlap guard and quiet
   turns bound the cost (26 §6, "Removed 2026-11-10").
+- `versions/mvp/26-bot-routines.md` §6 gave every bot with a job an hourly
+  Heartbeat (2026-11-06). On 2026-11-15 the owner found it eating their
+  tokens: a model turn an hour, all day, on each bot. No bot is given one by
+  default any more; the migration moved every default Heartbeat to twice a
+  day (09:00 and 18:00 in the zone its owner last wrote from, UTC when
+  unknown) and paused it, so the owner turns it on and changes its times
+  like any routine. A scheduled beat with nothing new in the bot's chat
+  since the last one (another routine's or a loop's turn does not count) is
+  skipped as `idle` without a model turn; Run now always runs (26 §6,
+  "Changed 2026-11-15").
 - `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
   the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
   screenshot into the terminal with Ctrl+V and Claude Code, reading the
@@ -1665,3 +1680,60 @@ earlier note:
   "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
   to be warmer: it reads "You're all caught up", centred under a small
   drawing of an empty tray; the line under it is unchanged.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had
+  the owner link opened from the console with its code never shown. On
+  2026-11-15 the owner, with no Telegram app, opened it on Telegram Web,
+  which drops the `start` code, and had to type `/start <code>` by hand.
+  Under a link just made the console now also shows that message, with
+  Copy, and opens the bot's chat on Telegram Web.
+- `versions/mvp/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
+  did the work its first message asked for with its name and job
+  questions. On 2026-11-13 the owner found asking its name after the task
+  odd and the welcome too long: work is now just done, and the welcome is
+  a few warm sentences with no list. A name or job that matches one of the
+  owner's projects now says which project the bot is for.
+- `versions/mvp/25-bots.md` §1 (2026-11-08) had a bot whose own session
+  failed on a host it chose, for a reason that looked like the host's,
+  offer the task on another host and start it only on a yes, since only
+  the session's untrusted words said the host was at fault. On 2026-11-15
+  the owner saw a bot stop at "then I can retry" with other hosts online
+  and asked for bots that look for another way: the bot now starts its own
+  task on another capable host, its approval level deciding whether that
+  asks first, and never moves off a host the person named.
+- `versions/mvp/25-bots.md` §1 had a new bot never pick or suggest a name of
+  its own (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), say nothing about
+  its name after a first task (2026-11-13), and take the next of Juno,
+  Milo, Wren… in order, so every workspace's first bot was Juno. On
+  2026-11-15 the owner asked for the opposite on each: the welcome suggests
+  a name, a first task ends with one line that the bot has no name yet, and
+  new bots take a physicist's name at random. The failure rules of
+  2026-11-08 to 2026-11-15, a page of cases, became four lines in Claude
+  Code's manner, keeping the limits the incidents earned.
+- Note 00 §5 rejected Electron because state must live server-side, and
+  the desktop spike (`research/desktop-app-spike.md`, 2026-10-18) kept that
+  rule with Electron on the hosted console. On 2026-11-16 the owner chose
+  Electron over Tauri for the desktop, on the measurements in
+  `research/desktop-electron-vs-tauri.md`: on Linux Tauri saves download
+  size (2.3 vs 86 MiB) and costs memory, start-up time, Rust and a WebView
+  per platform. Tauri is reconsidered only if download size starts to
+  matter, and then measured on a Mac first. State still lives server-side.
+
+- `versions/mvp/30-session-previews.md` put the Browser and Simulator in a
+  preview pane of their own, as pill tabs. On 2026-11-16 the owner asked
+  for side chats, terminals and bots beside a session: that pane became the
+  side pane (`versions/mvp/32-side-pane.md`), where the previews are three
+  of the things the launcher opens, each a tab beside a shell, another
+  session or a bot's chat.
+- `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
+  a job over four tiles (next-step pills once it had instructions), over the
+  stacked composer. On 2026-11-16 the owner found it loud in the side pane
+  and then on the page: the chat greets with the bot's face, its name and
+  one line, over the composer's one-row layout, in both places.
+- `versions/mvp/20-plan-calendar.md` §1 drew the calendar nearly
+  achromatic: busy events in ink on the control wash, free ones and
+  automation runs muted, only a Google account's ring in its colour. On
+  2026-11-17 the owner asked for colour, like Google Calendar's: each item
+  is a wash of its colour with a bar down its edge (personal events blue,
+  tasks violet, each Google account its own; automation runs stay grey),
+  and the first Google accounts moved off blue and violet to keep the
+  legend unambiguous.

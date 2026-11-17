@@ -12,7 +12,7 @@ interface PasteEvent {
  * to `onFiles`, and the paste goes no further, so the field it landed in
  * (xterm's textarea, the chat's composer) inserts nothing for it. The agent
  * reads its host's clipboard, never the browser's, so the files are taken out
- * of the event for the upload that puts them on the host (05). A transfer
+ * of the event for the upload that puts them on the host. A transfer
  * with text as well (a copy from a web page) is taken as its files, since the
  * text is usually their alt or URL. A paste without a file is left alone.
  */

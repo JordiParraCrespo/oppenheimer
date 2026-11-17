@@ -5,6 +5,7 @@ import { Navigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useBotPins } from '@/features/bots/hooks/use-bot-pins';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
+import { useUngroupedPlace } from '@/features/bots/hooks/use-ungrouped-place';
 import { firstBot } from '@/features/bots/lib/bot-groups';
 
 /**
@@ -22,6 +23,7 @@ export function BotsLanding() {
   const groups = useBotGroups();
   const newBot = useNewBot();
   const { pins } = useBotPins();
+  const ungrouped = useUngroupedPlace();
   if (bots.isPending || groups.isPending) {
     return (
       <div aria-busy className="flex-1">
@@ -32,7 +34,7 @@ export function BotsLanding() {
   // A failed read is not "no bots": the sidebar beside this says what failed.
   const error = bots.error ?? groups.error;
   if (error) return <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} />;
-  const first = firstBot(bots.data ?? [], groups.data ?? [], pins);
+  const first = firstBot(bots.data ?? [], groups.data ?? [], pins, ungrouped.before);
   if (first) return <Navigate to="/bots/$botId" params={{ botId: first.id }} replace />;
 
   return (

@@ -18,7 +18,7 @@ const (
 )
 
 // transcriptRead answers `transcript.read` with a page of the session's
-// conversation (`product/next-steps/agent-tools.md` §8), its entries cut to
+// conversation, its entries cut to
 // the chat's own bound as `attachment.chat` carries them. A session this
 // host does not hold is SESS_001, an agent with no transcript the runner
 // reads SESS_018, both as command.failed.

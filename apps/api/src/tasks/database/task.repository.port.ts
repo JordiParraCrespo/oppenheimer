@@ -41,8 +41,7 @@ export type TaskAttachOutcome = 'attached' | 'session-not-found';
 /**
  * Reads take an {@link AccessScope}; writes take a task the caller already read
  * through one. A task's place in its column is the repository's to choose, in the
- * same transaction as the write, because it depends on its neighbours
- * (`product/versions/mvp/19-plan-tasks-and-goals.md` §2). Every write bumps the
+ * same transaction as the write, because it depends on its neighbours. Every write bumps the
  * task's version, logs the changes the task recorded to `plan_event` and stages
  * its events, in one transaction.
  */

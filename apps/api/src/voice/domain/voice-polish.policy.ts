@@ -1,7 +1,7 @@
 /**
- * How a transcript is tidied into writing (`product/next-steps/voice.md`,
- * step 2): the part that makes dictation read as typed. One short model
- * call, given the words as heard and the names the console shows.
+ * How a transcript is tidied into writing: the part that makes dictation
+ * read as typed. One short model call, given the words as heard and the
+ * names the console shows.
  *
  * The brief is a light touch, the way Wispr Flow's is: what comes out is
  * what the speaker said, as they would have typed it, in the language they

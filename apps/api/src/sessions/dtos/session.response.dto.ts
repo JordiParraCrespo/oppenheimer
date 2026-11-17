@@ -89,7 +89,7 @@ export class SessionCheckoutResponseDto {
  *
  * It is on the read as well as the write because the console shows the engine
  * button on a session that already exists, and because a restart has to
- * reproduce the launch (`product/versions/mvp/03-control-plane.md`). What each
+ * reproduce the launch. What each
  * value means to a given CLI is catalog data in `@oppenheimer/shared`, not
  * something this API translates.
  */
@@ -477,6 +477,54 @@ export class SentSessionPromptResponseDto {
 
   @ApiProperty({ type: () => SessionResponseDto })
   session!: SessionResponseDto;
+}
+
+export class SessionTerminalWindowDto {
+  @ApiProperty({
+    example: 1,
+    description: "The tmux window index: what an attach ticket's `window` names.",
+  })
+  index!: number;
+
+  @ApiProperty({ example: 'zsh', description: 'The window’s name on the host.' })
+  name!: string;
+
+  @ApiProperty({ description: 'Window 0, the agent’s; the rest are plain shells.' })
+  agent!: boolean;
+}
+
+export class SessionWindowsResponseDto {
+  @ApiProperty({
+    enum: ['listed', 'host_offline', 'not_supported'],
+    description:
+      '`listed`: `windows` is what the session holds now. `host_offline`: the host has no link. `not_supported`: its runner cannot list them.',
+  })
+  state!: 'listed' | 'host_offline' | 'not_supported';
+
+  @ApiProperty({
+    type: [SessionTerminalWindowDto],
+    description: 'The session’s tmux windows, in index order.',
+  })
+  windows!: SessionTerminalWindowDto[];
+}
+
+export class OpenedSessionWindowResponseDto {
+  @ApiProperty({ type: () => SessionTerminalWindowDto, description: 'The shell just opened.' })
+  window!: SessionTerminalWindowDto;
+
+  @ApiProperty({
+    type: [SessionTerminalWindowDto],
+    description: 'The session’s tmux windows after it opened, in index order.',
+  })
+  windows!: SessionTerminalWindowDto[];
+}
+
+export class ClosedSessionWindowResponseDto {
+  @ApiProperty({
+    type: [SessionTerminalWindowDto],
+    description: 'The session’s tmux windows left, in index order.',
+  })
+  windows!: SessionTerminalWindowDto[];
 }
 
 export class SessionPortDto {

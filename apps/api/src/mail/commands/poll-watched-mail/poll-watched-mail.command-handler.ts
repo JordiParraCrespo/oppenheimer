@@ -13,7 +13,7 @@ import { GMAIL_CONNECTION_REPOSITORY } from '../../mail.di-tokens';
 import { PollWatchedMailCommand } from './poll-watched-mail.command';
 
 /**
- * Waking on new mail (`product/next-steps/mail.md` §5), the noticing half:
+ * Waking on new mail, the noticing half:
  * once a minute, for each account a live routine watches and only those,
  * read Gmail's history from the stored mark (`users.history.list`, two quota
  * units), run each watched query on what arrived, and hand the messages some

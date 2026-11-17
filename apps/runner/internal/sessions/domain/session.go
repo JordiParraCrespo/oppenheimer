@@ -142,10 +142,10 @@ type Session struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	// Place is where the session runs: a worktree this runner made, or a
-	// folder that was already on the host (24 §3).
+	// folder that was already on the host.
 	Place Place `json:"place"`
 	// AccountID and WorkspaceID are the work folder's two levels the
-	// session's folder and its stores sit under (24 §2): the control plane's
+	// session's folder and its stores sit under: the control plane's
 	// ids, or `local` for a session the CLI made. Empty for a folder session,
 	// which owns nothing in the work folder.
 	AccountID   string `json:"accountId,omitempty"`
@@ -185,7 +185,7 @@ type Session struct {
 	Created time.Time  `json:"created"`
 	Updated time.Time  `json:"updated"`
 	// LoginURL is the vendor login link the classifier saw, if any. The
-	// console turns it into a button; nothing else is ever linkified (F3).
+	// console turns it into a button; nothing else is ever linkified.
 	LoginURL string `json:"loginUrl,omitempty"`
 	// Program is the agent's own last word on what it is doing (OSC 7501),
 	// when it said one: why it is blocked, how far along it is, its message.
@@ -350,7 +350,7 @@ func (s Session) WithState(state State, now time.Time) Session {
 }
 
 // ID generation: 12 random characters, lowercase base32 without padding, so a
-// session id is unguessable (F25) and still fits a tmux session name, a
+// session id is unguessable and still fits a tmux session name, a
 // branch name and a directory name without quoting.
 var idEncoding = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567").WithPadding(base32.NoPadding)
 

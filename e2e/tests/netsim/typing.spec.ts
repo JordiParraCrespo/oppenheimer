@@ -24,8 +24,7 @@ import { linkLive, signInAs } from '../../support/web';
 
 /**
  * How typing feels from different places to hosts behind different internet
- * connections, on the relay and on the direct path
- * (`product/versions/mvp/22-direct-terminal-path.md`): the browser and every
+ * connections, on the relay and on the direct path: the browser and every
  * host on a simulated network (`e2e/netsim`), the relay in Falkenstein where
  * the dev deployment runs, and the console's own echo readout as the measure —
  * keystroke out to its echo drawn, the number the typeahead also reads.

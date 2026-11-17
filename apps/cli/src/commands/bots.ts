@@ -7,8 +7,8 @@ import { resolveBot } from '../lib/resolve';
 import { parseDuration, waitForTurn } from '../lib/wait';
 
 /**
- * The console calls bots Employees; in the product they are bots
- * (`product/versions/mvp/25-bots.md`), and so they are here.
+ * The console calls bots Employees; in the product they are bots, and so they
+ * are here.
  */
 export function botsCommand(): Command {
   const bots = new Command('bots')

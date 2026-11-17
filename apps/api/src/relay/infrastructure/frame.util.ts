@@ -2,7 +2,7 @@ import { LINK_FRAME_HEADER_BYTES } from '@oppenheimer/shared/protocol';
 
 /**
  * The runner link's binary frame: a 4-byte big-endian attachment id, then the
- * PTY bytes (`product/versions/mvp/01-protocol.md`, "Framing"). The width is
+ * PTY bytes. The width is
  * the protocol's, shared with the runner.
  */
 export const FRAME_HEADER_BYTES = LINK_FRAME_HEADER_BYTES;

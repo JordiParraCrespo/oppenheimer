@@ -30,12 +30,11 @@ const defaultBranchEmptyText = (query: string): React.ReactNode => `No branch na
 const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
 
 /**
- * RepositoryRowList — "Cloned by default", inside the project dialog's
- * Defaults fold (`design/version1/SessionsConsole.dc.html`, `op-prepo`): a
- * 14px card with one 40px row per repository the project holds — a checkbox
- * (ticked, it is cloned into every new session of the project), the name in
- * the picker's 13px type, and a 168px base-branch pill opening the scope
- * chips' searchable pane. Which repositories are in the project is
+ * RepositoryRowList — "Cloned by default", inside the project dialog's Defaults
+ * fold: a 14px card with one 40px row per repository the project holds — a
+ * checkbox (ticked, it is cloned into every new session of the project), the
+ * name in the picker's 13px type, and a 168px base-branch pill opening the
+ * scope chips' searchable pane. Which repositories are in the project is
  * `RepositoryAddField`'s to decide.
  *
  * A form control, not a menu: the caller owns `value`, one row per repository

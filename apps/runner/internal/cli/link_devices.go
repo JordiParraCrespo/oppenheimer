@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	devdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/domain"
@@ -18,11 +19,23 @@ import (
 // sees fewer frames, never older ones, and the link never queues a backlog of
 // a screen nobody has drawn yet. The credit is bytes, as for a PTY, so the
 // browser credits each frame once it has drawn it.
+//
+// A device.select moves the session onto another device and streams its
+// screen on the same attachment: the old screen's pump is told it was
+// replaced and stops, and a new one starts. Picks run on the attachment's
+// lane, behind its input, one at a time.
 type deviceAttachment struct {
 	id        uint32
 	sessionID string
-	cancel    context.CancelFunc
-	credits   chan int
+	// life is the attachment's, cancelled when it is dropped.
+	life    context.Context
+	cancel  context.CancelFunc
+	credits chan int
+
+	pumpMu sync.Mutex
+	// replaced is closed to stop the screen being streamed now, once a
+	// device.select has another to stream in its place.
+	replaced chan struct{}
 }
 
 func (d *deviceAttachment) credit(bytes int) {
@@ -47,7 +60,7 @@ func (h *linkHandler) deviceAttach(m link.DeviceAttach, epoch uint64) {
 		h.fail(m.CommandID, err)
 		return
 	}
-	att := &deviceAttachment{id: m.AttachmentID, sessionID: m.SessionID, cancel: cancel, credits: make(chan int, 64)}
+	att := &deviceAttachment{id: m.AttachmentID, sessionID: m.SessionID, life: ctx, cancel: cancel, credits: make(chan int, 64)}
 	h.mu.Lock()
 	if !h.linkUp || h.epoch != epoch {
 		h.mu.Unlock()
@@ -58,16 +71,140 @@ func (h *linkHandler) deviceAttach(m link.DeviceAttach, epoch uint64) {
 	h.screens[att.id] = att
 	h.mu.Unlock()
 
+	h.sendDeviceInfo(att, device)
+	h.startPump(att, screen)
+}
+
+// startPump streams a screen on the attachment in place of the one before.
+func (h *linkHandler) startPump(att *deviceAttachment, screen devapp.Screen) {
+	replaced := make(chan struct{})
+	att.pumpMu.Lock()
+	previous := att.replaced
+	att.replaced = replaced
+	att.pumpMu.Unlock()
+	if previous != nil {
+		close(previous)
+	}
+	go h.pumpScreen(att.life, att, screen, replaced)
+}
+
+// sendDeviceInfo tells the browser which device the attachment shows, and
+// which others the session could move to.
+func (h *linkHandler) sendDeviceInfo(att *deviceAttachment, device devdomain.Device) {
+	choices := h.devices.Choices(att.sessionID)
+	if len(choices) > maxDeviceChoices {
+		choices = choices[:maxDeviceChoices]
+	}
+	listed := make([]link.DeviceInfoDevices, 0, len(choices))
+	for _, c := range choices {
+		listed = append(listed, link.DeviceInfoDevices{
+			Serial: c.Serial, Name: c.Name, Platform: string(c.Platform), Free: c.Free,
+		})
+	}
 	_ = h.client.Send(link.DeviceInfo{
 		Type: link.TypeDeviceInfo, AttachmentID: att.id,
 		Serial: device.Serial, Name: device.Name, Platform: string(device.Platform),
+		Devices: listed,
 	})
-	go h.pumpScreen(ctx, att, screen)
+}
+
+// maxDeviceChoices is DEVICE_CHOICES_MAX, the most a device.info may list.
+const maxDeviceChoices = 32
+
+// deviceSelect moves the attachment's session onto the device the reader
+// picked and streams it in place. A pick that cannot be honoured (another
+// session took the device meanwhile) leaves the session where it was, and
+// the device.info that answers says so. A device that cannot be opened puts
+// the session back on the one it had, whose screen is still streaming.
+// Every other viewer of the session follows it onto the new device: input
+// reaches the session's device, so a screen of the old one would mislead.
+func (h *linkHandler) deviceSelect(m link.DeviceSelect) {
+	att := h.screenByID(m.AttachmentID)
+	if att == nil || h.devices == nil || att.life.Err() != nil {
+		return
+	}
+	previous, hadOne := h.devices.Held(att.sessionID)
+	if _, err := h.devices.Choose(att.sessionID, m.Serial); err != nil {
+		h.logger.Info("device pick refused", slog.String("session", att.sessionID), slog.String("serial", m.Serial), slog.Any("error", err))
+		if hadOne {
+			h.sendDeviceInfo(att, previous)
+		}
+		return
+	}
+	device, screen, err := h.devices.WatchHeld(att.life, att.sessionID)
+	if err != nil {
+		h.logger.Warn("picked device could not be opened", slog.String("session", att.sessionID), slog.String("serial", m.Serial), slog.Any("error", err))
+		if hadOne {
+			if _, back := h.devices.Choose(att.sessionID, previous.Serial); back == nil {
+				h.sendDeviceInfo(att, previous)
+				return
+			}
+		}
+		h.endScreen(att, err)
+		return
+	}
+	if att.life.Err() != nil {
+		_ = screen.Close()
+		return
+	}
+	h.repinDevice(att.sessionID, device)
+	h.sendDeviceInfo(att, device)
+	h.startPump(att, screen)
+	for _, other := range h.screensOf(att.sessionID) {
+		if other != att {
+			h.followDevice(other)
+		}
+	}
+}
+
+// followDevice streams the session's device now on another of its
+// attachments, after a pick on one of them moved the session.
+func (h *linkHandler) followDevice(att *deviceAttachment) {
+	device, screen, err := h.devices.WatchHeld(att.life, att.sessionID)
+	if err != nil {
+		h.endScreen(att, err)
+		return
+	}
+	if att.life.Err() != nil {
+		_ = screen.Close()
+		return
+	}
+	h.sendDeviceInfo(att, device)
+	h.startPump(att, screen)
+}
+
+// screensOf is every attachment watching the session's device.
+func (h *linkHandler) screensOf(sessionID string) []*deviceAttachment {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	var watching []*deviceAttachment
+	for _, att := range h.screens {
+		if att.sessionID == sessionID {
+			watching = append(watching, att)
+		}
+	}
+	return watching
+}
+
+// repinDevice rewrites the session's note for its agent with the device it
+// has now. Its environment keeps the serial it started with.
+func (h *linkHandler) repinDevice(sessionID string, device devdomain.Device) {
+	if h.app == nil || h.app.Sessions == nil {
+		return
+	}
+	session, err := h.app.Sessions.Get(sessionID)
+	if err != nil {
+		return
+	}
+	writeSessionNote(session, h.app.Ports != nil, &device)
 }
 
 // pumpScreen reads the device's frames and sends the newest one each time
 // the browser has credit for it.
-func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, screen devapp.Screen) {
+// It stops when the attachment ends, or quietly when replaced is closed: a
+// device.select streams another screen in its place.
+func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, screen devapp.Screen, replaced <-chan struct{}) {
+	// Closing the screen also ends the reader below, blocked in Next.
 	defer func() { _ = screen.Close() }()
 	latest := make(chan []byte, 1)
 	ended := make(chan error, 1)
@@ -95,6 +232,8 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 		select {
 		case <-ctx.Done():
 			return
+		case <-replaced:
+			return
 		case err := <-ended:
 			h.endScreen(att, err)
 			return
@@ -106,6 +245,8 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 		for window <= 0 {
 			select {
 			case <-ctx.Done():
+				return
+			case <-replaced:
 				return
 			case n := <-att.credits:
 				window += n

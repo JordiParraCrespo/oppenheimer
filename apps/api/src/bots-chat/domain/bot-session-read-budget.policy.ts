@@ -1,6 +1,6 @@
 /**
- * A turn's budget for reading into its sessions (`25-bots.md` §4.2,
- * 2026-11-10): `read_session` (a session's log) and `read_session_transcript`
+ * A turn's budget for reading into its sessions: `read_session` (a session's
+ * log) and `read_session_transcript`
  * (its agent's conversation) each answer within `BOT_TOOL_OUTPUT_MAX`, but a
  * broad turn — a recap over a day's work — calls them across dozens of
  * sessions, some of them huge, and the pages pile into the bot's own context

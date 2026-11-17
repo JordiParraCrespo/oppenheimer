@@ -26,12 +26,11 @@ import {
  * terminal, not Claude's Haiku, not a vendor's cloud agent — over that
  * model's levels, with a pick kept per agent.
  *
- * Cursor's tab is its cloud agent (`NewSessionComposer.dc.html`: "Cloud
- * only"), shown once the reader has a key: picking one of its models moves
- * the session to the cloud, and picking a host agent's model from the cloud
- * moves it back to a new worktree on the host it left. In the cloud the
- * button names the vendor's agent and its model; the host agent waits in the
- * draft.
+ * Cursor's tab is its cloud agent (it runs only in the cloud), shown once
+ * the reader has a key: picking one of its models moves the session to the
+ * cloud, and picking a host agent's model from the cloud moves it back to a
+ * new worktree on the host it left. In the cloud the button names the
+ * vendor's agent and its model; the host agent waits in the draft.
  *
  * A cloud started from a host runs Claude Code or Codex and nothing else
  * (`isHostCloud`), so there the button offers those two alone, and switching

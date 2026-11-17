@@ -2,7 +2,7 @@ import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 
 /**
  * Raised when a session's runner logged that its agent asked to be woken at
- * a time (`wake.requested`, `product/next-steps/agent-tools.md` §4). It
+ * a time (`wake.requested`). It
  * carries the agent's own words for itself, which the wake types back into
  * the session when the time comes.
  */

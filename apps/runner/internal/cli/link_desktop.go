@@ -1,7 +1,6 @@
 package cli
 
-// `desktop.open`: the host's own screen for one browser
-// (product/research/device-streaming.md, "A host's desktop"). The runner
+// `desktop.open`: the host's own screen for one browser. The runner
 // dials the screen-sharing server on the host's loopback, signs in with the
 // credentials the host's owner gave `runner desktop on`, and then carries
 // RFB both ways as a port tunnel does (link_ports.go), with a Viewer on the

@@ -2,7 +2,7 @@ import type { ChatItemTodo, ChatToolItemType } from '@oppenheimer/shared/schemas
 
 /**
  * What a tool call is, whichever chat it is in: a coding agent's session
- * transcript or a bot's chat (`product/next-steps/0.7-terminal-and-chat.md`).
+ * transcript or a bot's chat.
  * One table of the tools the chat knows, one rule for MCP names, one rule
  * for what a call was pointed at and one for its name in words, so the two
  * chats never disagree about what `WebSearch` or `TodoWrite` is. The words a

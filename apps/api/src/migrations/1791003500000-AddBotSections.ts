@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * The console sections a bot shows in, beside Employees
- * (`product/versions/mvp/28-bots-in-sections.md`).
+ * The console sections a bot shows in, beside Employees.
  *
  * - `bot."sections"` is the set of sections (`sessions`, `automations`,
  *   `plan`, `pulls`) whose sidebar lists the bot under a Bots heading. It is

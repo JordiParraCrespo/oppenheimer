@@ -37,8 +37,8 @@ import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/sha
  * The fold: `(fold, event) → fold`.
  *
  * `work_session_event` is append-only and the truth per session; the columns on
- * `work_session` are a **projection** of it, never a second truth
- * (`product/versions/mvp/03-control-plane.md`). Everything here is pure, so a replay
+ * `work_session` are a **projection** of it, never a second truth. Everything
+ * here is pure, so a replay
  * of any log rebuilds exactly the row the appends produced.
  *
  * Every input the console needs is folded here, lifecycle or not: the agent's last
@@ -146,7 +146,7 @@ export const SESSION_EVENT_KINDS = {
   /**
    * What a blocked agent waits on the person for: an `AskUserQuestion` call or a
    * permission dialog, read on the host. Payload `{ decision }`, null once it
-   * cleared (`SessionDecision`, `29-inbox.md` slice 4).
+   * cleared (`SessionDecision`).
    */
   AGENT_DECISION: AGENT_DECISION_EVENT_KIND,
   /**
@@ -201,7 +201,7 @@ export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[keyof typeof SESSION
 /**
  * How the agent was started, as the fold keeps it: a column so a restart can
  * relaunch the session as it was launched and the console can show the engine
- * button, neither walking a log (`product/versions/mvp/03-control-plane.md`).
+ * button, neither walking a log.
  *
  * `permission` is null exactly when the agent has no approvals (the blank terminal);
  * any other session was launched at some level, and an absent choice meant `ask`

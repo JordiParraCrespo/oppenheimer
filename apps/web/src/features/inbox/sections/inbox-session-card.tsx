@@ -21,10 +21,10 @@ import { InboxSessionFailure } from '@/features/inbox/sections/inbox-session-fai
 
 /**
  * A session waiting on you, in the pane. What its agent waits on, when the
- * host could read it (`29-inbox.md` slice 4), is answered here: a permission
- * dialog by one of its options, a question by an answer to each of its
- * questions. A failed launch says why it failed, as its page does; otherwise
- * the answer is Open session.
+ * host could read it, is answered here: a permission dialog by one of its
+ * options, a question by an answer to each of its questions. A failed launch
+ * says why it failed, as its page does; otherwise the answer is Open
+ * session.
  *
  * The card stays mounted for the session while its decision changes (the
  * pane keys it by session), so an answer refused as stale keeps its error

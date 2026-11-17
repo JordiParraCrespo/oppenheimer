@@ -8,12 +8,15 @@ import type { SessionChat } from './chat/session-chat';
 import type {
   AttachTicket,
   CreateSessionInput,
+  OpenedSessionWindow,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
   SessionPorts,
   SessionPreview,
   SessionShare,
+  SessionWindow,
+  SessionWindows,
   SharedSession,
   StartCloudSessionInput,
 } from './session.entity';
@@ -132,6 +135,21 @@ export class SessionsService {
     return this.repository.findPorts(id);
   }
 
+  /** The session's terminal windows, for its Terminal tab: window 0 the agent, the rest shells. */
+  listWindows(id: string): Promise<SessionWindows> {
+    return this.repository.listWindows(id);
+  }
+
+  /** Opens a plain shell in the session's worktree; stream it with `openStream(id, window.index)`. */
+  openWindow(id: string): Promise<OpenedSessionWindow> {
+    return this.repository.openWindow(id);
+  }
+
+  /** Closes one of the session's shells, and answers with the windows left. */
+  closeWindow(id: string, window: number): Promise<SessionWindow[]> {
+    return this.repository.closeWindow(id, window);
+  }
+
   /** Where one of the session's ports opens, framed by the Browser tab or in a tab of its own. */
   openPreview(
     id: string,
@@ -196,10 +214,10 @@ export class SessionsService {
 
   /**
    * One window's terminal, live: the attach socket, its reconnect ladder, a
-   * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is
-   * opened until this is called, and `dispose()` closes it; the platform only
-   * renders what it delivers. `direct` says whether to take a direct path when
-   * the relay offers one (22); it is asked at each offer.
+   * fresh ticket per dial and the byte credit. Nothing is opened until this is
+   * called, and `dispose()` closes it; the platform only renders what it
+   * delivers. `direct` says whether to take a direct path when the relay offers
+   * one; it is asked at each offer.
    */
   openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
     const remote = () =>

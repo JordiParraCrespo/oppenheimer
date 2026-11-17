@@ -32,9 +32,8 @@ export function keyHintOf(key: string): string {
 }
 
 /**
- * A workspace's key for one model provider (`product/versions/mvp/25-bots.md`
- * §2): one per workspace and provider, replaced whole, read only by the worker
- * that runs a bot's turn.
+ * A workspace's key for one model provider: one per workspace and provider,
+ * replaced whole, read only by the worker that runs a bot's turn.
  */
 export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCredentialProps> {
   static create(

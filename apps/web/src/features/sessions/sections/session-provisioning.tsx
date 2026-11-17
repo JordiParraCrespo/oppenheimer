@@ -18,12 +18,12 @@ import { SessionRetryStart } from './session-retry-start';
 /**
  * A session that is not a terminal yet.
  *
- * The export's provisioning pane (`SessionsConsole.dc.html`, `op-provision`):
- * the host as the eyebrow, "Starting your session", the scope line, and named
- * steps with a ring, a check and a mono meta line, so a slow step is
- * diagnosable instead of just slow. The steps are the host's own account of
- * the start, read off the session's log; a step the host has not reported is
- * pending, so nothing on this pane advances on its own.
+ * The provisioning pane: the host as the eyebrow, "Starting your session",
+ * the scope line, and named steps with a ring, a check and a mono meta line,
+ * so a slow step is diagnosable instead of just slow. The steps are the
+ * host's own account of the start, read off the session's log; a step the
+ * host has not reported is pending, so nothing on this pane advances on its
+ * own.
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
@@ -34,13 +34,16 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   // A read that fails once is a blip the next poll clears; only reads that
   // keep failing are worth an alert over steps that may still be advancing.
   const stalled = useStartLogStalled(progress);
-  // The list is the one place a host's name lives; its presence is the row's.
-  // Only that one name is subscribed to, so a refetch of the host list
-  // re-renders this pane when the name changes and not otherwise.
-  const { data: hostName } = useHosts({
-    select: (hosts) => hosts.find((row) => row.id === session.hostId)?.name,
+  // The list is the one place a host's name and presence live. Only this
+  // host's two are subscribed to, so a refetch of the host list re-renders
+  // this pane when one of them changes and not otherwise.
+  const { data: hostRow } = useHosts({
+    select: (hosts) => {
+      const row = hosts.find((candidate) => candidate.id === session.hostId);
+      return row ? { id: row.id, name: row.name, online: row.online } : undefined;
+    },
   });
-  const host = hostName ?? t('sessions.provisioning.steps.host.fallback');
+  const host = hostRow?.name ?? t('sessions.provisioning.steps.host.fallback');
   const checkout = session.cwdCheckout;
 
   const failure = useStartFailure(progress.data?.failure, t('sessions.provisioning.failed'));
@@ -104,7 +107,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         {/* A start on a host can be sent again: not one at a vendor, which has no
             host, nor a cloud task its vendor took and later failed. */}
         {failed && session.hostId && !session.cloudSessionId ? (
-          <SessionRetryStart sessionId={session.id} />
+          <SessionRetryStart
+            sessionId={session.id}
+            // A terminal on the host to fix the start in, while it can open one.
+            host={hostRow?.online ? hostRow : null}
+          />
         ) : null}
       </div>
     </PageFrame>

@@ -9,10 +9,9 @@ import { TELEGRAM_ACCOUNT_REPOSITORY } from '../../telegram.di-tokens';
 import { UpdateTelegramAccountCommand } from './update-telegram-account.command';
 
 /**
- * Chooses which of the caller's Oppenheimer bots answers them on one of
- * their Telegram bots (`product/next-steps/answering-on-telegram-and-whatsapp.md`
- * §1), or none. The bot is read as the caller, so another person's bot is
- * not found (`BOTS_001`); while it answers here it cannot be deleted.
+ * Chooses which of the caller's Oppenheimer bots answers them on one of their
+ * Telegram bots, or none. The bot is read as the caller, so another person's
+ * bot is not found (`BOTS_001`); while it answers here it cannot be deleted.
  */
 @CommandHandler(UpdateTelegramAccountCommand)
 export class UpdateTelegramAccountCommandHandler

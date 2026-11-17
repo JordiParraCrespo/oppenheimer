@@ -3,10 +3,9 @@ import { insertBotMailRoutine, insertBotRoutine, routinePausedAt } from '../../s
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * A bot's Routines tab in a browser, against the real control plane
- * (`product/versions/mvp/26-bot-routines.md` §7). The chat is where a
- * routine is made, through the bot's own tool and a real model, so the
- * routine is seeded; what is under test is the tab: the card reads the
+ * A bot's Routines tab in a browser, against the real control plane. The chat
+ * is where a routine is made, through the bot's own tool and a real model, so
+ * the routine is seeded; what is under test is the tab: the card reads the
  * routine, the switch pauses and resumes it on the server, Edit hands the
  * change to the chat with the routine named, and Delete takes it away.
  */
@@ -60,8 +59,8 @@ test("a bot's routine on its Routines tab, from the card to Delete", async ({ pa
 /**
  * What became of a routine reaches its bot's history whatever changed it,
  * without a line in the chat for a change the owner made, and the
- * workspace's routines are on the automations overview's Bot routines tab
- * (§4 "In the chat", §7). What breaks this: a change on the tab that the bot
+ * workspace's routines are on the automations overview's Bot routines tab.
+ * What breaks this: a change on the tab that the bot
  * never hears of or hears of twice, a line for it in the middle of the chat,
  * or a routine the Bot routines tab does not list.
  */
@@ -108,10 +107,10 @@ test("a routine's change in its bot's chat, and the routine on the Bot routines 
 });
 
 /**
- * A routine that wakes on new mail reads as mail on its card
- * (`next-steps/mail.md` §5): its glyph and "Gmail · …" line, with the search
- * it waits for or "Any new mail". What breaks this: a mail trigger the
- * console does not know, drawn as a schedule or dropped from the card.
+ * A routine that wakes on new mail reads as mail on its card: its glyph and
+ * "Gmail · …" line, with the search it waits for or "Any new mail". What breaks
+ * this: a mail trigger the console does not know, drawn as a schedule or
+ * dropped from the card.
  */
 test('a routine that wakes on new mail says so on its card', async ({ page }) => {
   const owner = await provisionedUser('botmailroutine');

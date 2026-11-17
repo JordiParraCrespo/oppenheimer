@@ -19,8 +19,7 @@ export const CONSUMER_CONFIG = {
     startLogStallMs: 6000,
   },
   /**
-   * A Claude Code cloud session's chat, read from what its hook sent the API
-   * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session").
+   * A Claude Code cloud session's chat, read from what its hook sent the API.
    */
   cloudChat: {
     /**
@@ -30,9 +29,9 @@ export const CONSUMER_CONFIG = {
      */
     readEveryMs: 1500,
   },
-  /** The terminal's link to the host (`product/versions/mvp/01-protocol.md`). */
+  /** The terminal's link to the host. */
   stream: {
-    /** The delays between reconnect attempts, with jitter on top (`product/research/lessons-from-grok-bot.md`). */
+    /** The delays between reconnect attempts, with jitter on top. */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
   },
   /** The workspace event stream (`src/react/workspace-events.ts`). */

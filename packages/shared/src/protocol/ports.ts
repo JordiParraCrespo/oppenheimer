@@ -2,10 +2,10 @@ import { z } from 'zod/v4';
 import { attachmentIdSchema, commandIdSchema, sessionIdSchema } from './primitives.js';
 
 /**
- * A session's ports on the link (`product/versions/mvp/30-session-previews.md`):
- * the messages behind the `port.forward` capability. Part of
- * `protocolMessageSchema`, which is where every kind is listed; kept here so
- * the union stays the index of kinds rather than the home of every shape.
+ * A session's ports on the link: the messages behind the `port.forward`
+ * capability. Part of `protocolMessageSchema`, which is where every kind is
+ * listed; kept here so the union stays the index of kinds rather than the home
+ * of every shape.
  *
  * The flow control a port attachment's bytes follow is the link's one credit
  * window (`ATTACHMENT_CREDIT_WINDOW_BYTES`, `attachment.credit`), in each

@@ -5,8 +5,8 @@ import type {
 } from '@oppenheimer/shared';
 
 /**
- * A session's conversation as a reader outside the console gets it
- * (`product/next-steps/agent-tools.md` §8): what a page owes about itself,
+ * A session's conversation as a reader outside the console gets it: what a
+ * page owes about itself,
  * the cursor that continues it, and the secrets taken out of it. Pure.
  */
 

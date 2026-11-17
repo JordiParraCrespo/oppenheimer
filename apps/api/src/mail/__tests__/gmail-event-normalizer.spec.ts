@@ -3,7 +3,7 @@ import { matchedQueries, watchedQuery } from '../domain/mail-watch.policy';
 import { normalizeGmailDelivery } from '../infrastructure/gmail-event-normalizer.util';
 
 /**
- * New mail as the hub stores it (`product/next-steps/mail.md` §5): one
+ * New mail as the hub stores it: one
  * `mail_received` per message, unique per account and message, the
  * sender's words only in the untrusted context, and the watched queries a
  * message matched as the attribute a trigger's filter is found in. What

@@ -26,7 +26,7 @@ export interface SummaryCutoff {
 }
 
 /**
- * A bot's conversation summary (`25-bots.md` §2): one per bot, what its
+ * A bot's conversation summary: one per bot, what its
  * oldest messages said, sent as the first entry of a turn's history in their
  * place. Its id is the bot's. Each write is conditioned on the version it was
  * loaded at and only moves the cutoff forward, so two summarizing jobs that

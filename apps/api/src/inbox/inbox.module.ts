@@ -34,10 +34,10 @@ import { ReadInboxReportImageHttpController } from './queries/read-inbox-report-
 import { ReadInboxReportImageQueryHandler } from './queries/read-inbox-report-image/read-inbox-report-image.query-handler';
 
 /**
- * The Inbox's marks (`product/versions/mvp/29-inbox.md` §3, §4): what a person
+ * The Inbox's marks: what a person
  * did to an occurrence of an item. The items are not here; the console reads
  * them from their sources and leaves out what the marks hide. The one item
- * that is here is a report ("Reports"): what an agent sent, with its
+ * that is here is a report: what an agent sent, with its
  * pictures, and the person's answer.
  */
 @Module({

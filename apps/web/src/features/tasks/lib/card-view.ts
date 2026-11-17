@@ -19,10 +19,10 @@ export interface TaskCardView {
 }
 
 /**
- * A task as its card draws it: the project unless the board shows that project
- * alone (several picked, each card still says which it is in), the milestone
- * unless the board is filtered to it, the due date in words, and none of the
- * three extras once it is done (`18-plan-product.md` §2).
+ * A task as its card draws it: the project unless the board shows that
+ * project alone (several picked, each card still says which it is in), the
+ * milestone unless the board is filtered to it, the due date in words, and
+ * none of the three extras once it is done.
  */
 export function cardView(
   task: TaskEntity,

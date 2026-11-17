@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Several Google accounts per person on Plan's calendar
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §5).
+ * Several Google accounts per person on Plan's calendar.
  *
  * `calendar_connection` was one row per person per workspace. An account is now
  * keyed by Google's `sub` (`accountSubject`), not by its address: an address can

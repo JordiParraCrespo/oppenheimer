@@ -31,8 +31,7 @@ export interface SummarizableMessage extends HistoryMessage {
  * oldest of them are folded into it: the history budget less the room the
  * longest summary takes in it, so what the history drops (`botHistory`) has
  * already been folded. It was 1.5 times the budget, which left up to 12,000
- * tokens of conversation in neither the history nor the summary
- * (2026-11-08).
+ * tokens of conversation in neither the history nor the summary.
  */
 export const BOT_SUMMARY_TRIGGER_TOKENS =
   BOT_HISTORY_TOKEN_BUDGET -
@@ -68,8 +67,8 @@ export interface SummaryPlan {
 }
 
 /**
- * Whether the conversation needs summarizing, and what to fold
- * (`25-bots.md` §2). `uncovered` is every message after the summary's cutoff,
+ * Whether the conversation needs summarizing, and what to fold. `uncovered` is
+ * every message after the summary's cutoff,
  * oldest first, as far as `BOT_SUMMARY_READ_MAX`.
  *
  * Only the foldable prefix counts: the messages up to the first one whose

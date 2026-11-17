@@ -774,6 +774,57 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "session.windows.list"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.windows"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "windows": {
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/window"
+          }
+        },
+        "opened": {
+          "$ref": "#/$defs/windowIndex"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "windows"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "session.close"
         },
         "commandId": {
@@ -1654,6 +1705,41 @@
             "android",
             "ios"
           ]
+        },
+        "devices": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "serial": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "platform": {
+                "type": "string",
+                "enum": [
+                  "android",
+                  "ios"
+                ]
+              },
+              "free": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "serial",
+              "name",
+              "platform",
+              "free"
+            ]
+          }
         }
       },
       "required": [
@@ -1731,6 +1817,28 @@
         "type",
         "attachmentId",
         "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.select"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "serial": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "serial"
       ]
     },
     {
@@ -2852,19 +2960,7 @@
         "windows": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "index": {
-                "$ref": "#/$defs/windowIndex"
-              },
-              "name": {
-                "type": "string",
-                "maxLength": 200
-              }
-            },
-            "required": [
-              "index"
-            ]
+            "$ref": "#/$defs/window"
           }
         },
         "agentSessionId": {
@@ -2942,6 +3038,22 @@
         "unknown"
       ],
       "id": "observedAgentState"
+    },
+    "window": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "index"
+      ],
+      "id": "window"
     },
     "windowIndex": {
       "type": "integer",
@@ -3046,7 +3158,8 @@
       "shared.preview",
       "transcript.read",
       "host.exec",
-      "terminal.drive"
+      "terminal.drive",
+      "session.windows.list"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

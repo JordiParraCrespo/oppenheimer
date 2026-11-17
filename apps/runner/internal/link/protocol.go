@@ -1,8 +1,8 @@
 // Package link is the runner's end of the control-plane link: one outbound
 // WebSocket, its reconnect ladder and epoch, the frame layout, and the event
-// batches with their idempotency keys. It is transport, not a context
-// (02-runner §3): what each message *does* to a session is decided by the
-// composition root that wires a Handler, never here.
+// batches with their idempotency keys. It is transport, not a context: what each
+// message *does* to a session is decided by the composition root that wires a
+// Handler, never here.
 package link
 
 import (
@@ -19,7 +19,7 @@ import (
 // the TypeScript tests' samples strictly into it. This file holds only what
 // is not wire shape.
 
-// IsCommandID reports whether id is a UUID, which is all a command id is (01).
+// IsCommandID reports whether id is a UUID, which is all a command id is.
 // The runner names files by command ids, so this is checked where the id
 // arrives, before anything uses it.
 func IsCommandID(id string) bool { return commandIDPattern.MatchString(id) }

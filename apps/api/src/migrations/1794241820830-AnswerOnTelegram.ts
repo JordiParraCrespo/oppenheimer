@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot answers its owner on Telegram, in a conversation of its own
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`, slice 1).
+ * A bot answers its owner on Telegram, in a conversation of its own.
  *
  * Access patterns: a turn's history and the console's chat read a
  * conversation's messages in order (`IDX_bot_message_conversation`); a

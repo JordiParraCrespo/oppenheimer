@@ -19,7 +19,7 @@ export interface BotMemoryFactProps {
   organizationId: string;
   botId: string;
   content: string;
-  /** Who wrote it last: a person in Settings, or the bot through `remember` (slice 3). */
+  /** Who wrote it last: a person in Settings, or the bot through `remember`. */
   source: BotAuthor;
   /** In mind every turn (`profile`), or looked up with `recall` (`log`). */
   tier: BotMemoryTier;

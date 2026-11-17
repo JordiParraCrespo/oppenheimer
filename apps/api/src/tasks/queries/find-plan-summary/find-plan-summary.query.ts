@@ -5,7 +5,7 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
  * Where each project stands (`summarizePlan` in `@oppenheimer/shared/plan`), for a
  * reader outside the console: the agents' tools ask it on the query bus. The
  * console computes the same summary over the lists it already holds; there is no
- * HTTP route (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §3).
+ * HTTP route.
  */
 export class FindPlanSummaryQuery extends QueryBase {
   readonly scope: AccessScope;

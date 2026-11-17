@@ -64,7 +64,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 // createInput reads a `session.create` into what the sessions service takes:
 // a folder session when it names a folder, else a worktree session on its
 // checkouts, one worktree each, under the account's and workspace's levels of
-// the work folder (24 §2, §3). account is the pairing's (linkHandler.account).
+// the work folder. account is the pairing's (linkHandler.account).
 //
 // The checkout the agent is to start in (cwdCheckoutId) is put first, since
 // the first is the one a session of one runs in and the one an older state
@@ -136,7 +136,7 @@ func githubRemote(repo string) string {
 }
 
 // account is the work folder's top level for everything the link sends: the
-// account this host was paired with (24 §2), which no frame repeats. An
+// account this host was paired with, which no frame repeats. An
 // identity paired before registration answered one names its folder by the
 // host's own id, which is as stable.
 func (h *linkHandler) account() string {
@@ -145,6 +145,12 @@ func (h *linkHandler) account() string {
 	}
 	return h.identity.HostID
 }
+
+// sessionWindowsMax is SESSION_WINDOWS_MAX_ENTRIES in the shared protocol.
+const sessionWindowsMax = 64
+
+// windowNameMax is FIELD_BOUNDS.displayName.max, a window name's bound on the wire.
+const windowNameMax = 200
 
 // lifecycleCommand is what lifecycle reads of stop, restart, close,
 // window.open and window.close: each is its own message on the wire, and
@@ -214,13 +220,40 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 		}
 		h.credentials.Forget(m.SessionID)
 	case "session.window.open":
-		_, err = h.app.Sessions.OpenWindow(ctx, m.SessionID)
+		var opened sessionsdomain.Window
+		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID); err == nil {
+			h.windows(ctx, m.CommandID, m.SessionID, opened.Index)
+		}
 	case "session.window.close":
-		err = h.app.Sessions.CloseWindow(ctx, m.SessionID, m.Window)
+		if err = h.app.Sessions.CloseWindow(ctx, m.SessionID, m.Window); err == nil {
+			h.windows(ctx, m.CommandID, m.SessionID, 0)
+		}
 	}
 	if err != nil {
 		h.fail(m.CommandID, err)
 	}
+}
+
+// windows answers a window command, or a listing, with the session's windows
+// as tmux holds them now: what the console's Terminal tab draws. opened is
+// the window an open made, 0 for none (window 0 is never opened).
+func (h *linkHandler) windows(ctx context.Context, commandID, sessionID string, opened int) {
+	windows, err := h.app.Sessions.Windows(ctx, sessionID)
+	if err != nil {
+		h.fail(commandID, err)
+		return
+	}
+	listed := make([]link.Window, 0, min(len(windows), sessionWindowsMax))
+	for _, w := range windows {
+		if len(listed) == sessionWindowsMax {
+			break
+		}
+		listed = append(listed, link.Window{Index: w.Index, Name: truncate(w.Name, windowNameMax)})
+	}
+	_ = h.client.Send(link.SessionWindows{
+		Type: link.TypeSessionWindows, CommandID: commandID, SessionID: sessionID,
+		Windows: listed, Opened: opened,
+	})
 }
 
 // preflight re-collects the host facts and reports them at once, as a
@@ -239,10 +272,10 @@ func (h *linkHandler) preflight(ctx context.Context, commandID string) {
 	_ = h.client.Send(beat)
 }
 
-// prepareRepository gets a repository ready for the create a person is about
-// to send: its store in the workspace's `repos/` made or fetched and a spare
-// worktree checked out (02 §5, 24 §2). Its git runs as `prepare:<command id>`, an identity the broker
-// holds this command's own token for: there is no session to ask one for.
+// prepareRepository gets a repository ready for the create a person is about to
+// send: its store in the workspace's `repos/` made or fetched and a spare
+// worktree checked out. Its git runs as `prepare:<command id>`, an identity the
+// broker holds this command's own token for: there is no session to ask one for.
 func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPrepare) {
 	sealed, err := base64.StdEncoding.DecodeString(m.Sealed)
 	if err != nil {
@@ -281,7 +314,7 @@ func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPr
 
 // update applies a version the control plane asks for: the pin and the safe
 // window are the control plane's to override here, the signature and the
-// digest never are (09 §5). With no version it asks for the newest now, which
+// digest never are. With no version it asks for the newest now, which
 // skips the safe window but not a pin: a pinned host refuses with UPD_004.
 func (h *linkHandler) update(ctx context.Context, m link.HostUpdate) {
 	if h.app.Updates == nil {

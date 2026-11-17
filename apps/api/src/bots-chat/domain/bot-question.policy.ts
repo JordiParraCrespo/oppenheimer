@@ -5,7 +5,7 @@ import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * The words around a card of questions (`ask_user`, `25-bots.md` §3.2): what
+ * The words around a card of questions (`ask_user`): what
  * the tool answers the model when its questions become a card, and the event
  * that opens the turn after the owner answers or dismisses it. The answers
  * are the person's words, so the bot reads them fenced, as data.

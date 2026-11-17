@@ -1,5 +1,5 @@
 /**
- * How a bot's tools write their answers (`25-bots.md` §4): labelled lines
+ * How a bot's tools write their answers: labelled lines
  * with ids inline, times in the sender's zone, and a size a prompt can hold,
  * with every cut saying so.
  */

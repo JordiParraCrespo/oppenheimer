@@ -18,8 +18,7 @@ export interface CloudTaskFile {
  * `curl` line per file the agent can run as it stands, then how to read them.
  *
  * The cloud never sees the host the files would otherwise be saved on, so
- * they travel as links in the task, the one thing `claude --cloud` takes
- * (`product/next-steps/cloud-agents.md`, "Files for a cloud session"). Each is
+ * they travel as links in the task, the one thing `claude --cloud` takes. Each is
  * saved under a name of its own (`1.png`, `2.pdf`), never one a person chose,
  * as the runner names a host session's files. No files is the task unchanged.
  */

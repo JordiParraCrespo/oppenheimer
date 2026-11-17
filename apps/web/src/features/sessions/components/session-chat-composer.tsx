@@ -41,7 +41,8 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * included. While the agent works, send becomes Stop, which presses Escape.
  * The agent's current task list is fused on top, the way Codex keeps it in
  * reach. One row under the conversation, its width, with the agent on the
- * left of the line under it and the model it last answered with on the right.
+ * left of the line under it and the model it last answered with on the right,
+ * then how full its context is.
  * The mic before send dictates into the draft, added to its end, to be read
  * before it is sent: Enter while it records ends the recording, and the
  * next Enter sends.
@@ -51,7 +52,7 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * sent now, taken back into the field to edit (ahead of whatever is being
  * written), or dropped. Enter on the empty field sends the first of them
  * now, so Enter twice sends a message into the turn under way. **The room left**: how full the agent's context is,
- * beside the model, opening to the context in tokens (with Compact) and the
+ * after the model, opening to the context in tokens (with Compact) and the
  * plan's usage limits (`ChatUsage`).
  *
  * **Files**, when the pane hands them in (`files`): the paperclip, a paste on
@@ -234,8 +235,8 @@ export function SessionChatComposer({
         engine={
           meter || model ? (
             <>
-              {meter}
               {model}
+              {meter}
             </>
           ) : undefined
         }

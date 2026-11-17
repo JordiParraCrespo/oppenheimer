@@ -4,8 +4,7 @@ import { z } from 'zod';
 import { parseEnv, positiveInt } from './env';
 
 /**
- * The relay's side of the direct terminal path
- * (`product/versions/mvp/22-direct-terminal-path.md`).
+ * The relay's side of the direct terminal path.
  *
  * `iceServers` are the STUN (or TURN) URLs both ends gather candidates with,
  * handed to the browser in `attached` and to the runner with the offer, so a
@@ -32,7 +31,7 @@ const schema = z.object({
     .refine((value) => entries(value).length <= 8, { message: 'at most 8 ICE servers' })
     .transform(entries),
   /**
-   * Where sessions' previews live (`product/versions/mvp/30-session-previews.md`):
+   * Where sessions' previews live:
    * a scheme, a domain and an optional port, each preview a host under the
    * domain (`p5173-<session>.<domain>`). **Optional**: without it the console
    * offers no Browser tab. Never the console's own origin, and in production

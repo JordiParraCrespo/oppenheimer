@@ -35,11 +35,10 @@ const LIMITS = { maxInFlight: 8, maxQueued: 40, maxWaitMs: 5_000 };
  * Google counts calls per Google account and per project, and enforces both.
  * Every call here goes through one {@link UpstreamLimiter}, by way of the
  * {@link GoogleOAuthClient} Gmail uses too: a call counts against its
- * connection (one Google account, so one bucket each when a person has
- * several) and the project, a refusal pauses whichever Google named, and a
- * paused bucket answers `CALENDAR_010` without asking Google again, on every
- * replica (`.agents/rules/integrations.md`). Anything else that kept Google
- * from answering is a `CalendarProviderError`.
+ * connection (one Google account, so one bucket each when a person has several)
+ * and the project, a refusal pauses whichever Google named, and a paused bucket
+ * answers `CALENDAR_010` without asking Google again, on every replica.
+ * Anything else that kept Google from answering is a `CalendarProviderError`.
  */
 @Injectable()
 export class GoogleCalendarGateway implements CalendarProviderPort {

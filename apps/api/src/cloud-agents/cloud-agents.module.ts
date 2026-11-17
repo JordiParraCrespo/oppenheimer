@@ -51,7 +51,7 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Cloud agents (`product/next-steps/cloud-agents.md`): the vendors that run a
+ * Cloud agents: the vendors that run a
  * coding agent in their cloud, on the caller's own key for the vendor. A cloud
  * session is the sessions module's; this module keeps the person's key, says
  * whether they have one and what the vendor offers (models, repositories), and

@@ -13,7 +13,7 @@ import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment
 import { UploadBotAttachmentCommand } from './upload-bot-attachment.command';
 
 /**
- * An image picked in a bot's composer (`25-bots.md` §3.1), stored before the
+ * An image picked in a bot's composer, stored before the
  * message is sent so the composer can show it, and refuse it, while the
  * person is still writing. It is known by its bytes, never by the type the
  * browser gave it, through the table a session's files are judged by. A bot

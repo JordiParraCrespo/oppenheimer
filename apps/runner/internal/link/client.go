@@ -23,11 +23,10 @@ import (
 // Path is where the control plane mounts the runner link, under its `/api/v1`.
 const Path = "/api/v1/relay/runner"
 
-// HeartbeatInterval is the protocol's 15 s (`product/versions/mvp/01-protocol.md`).
+// HeartbeatInterval is the protocol's 15 s.
 const HeartbeatInterval = 15 * time.Second
 
-// Ladder is the reconnect ladder, with jitter applied on top
-// (`product/research/lessons-from-grok-bot.md`).
+// Ladder is the reconnect ladder, with jitter applied on top.
 var Ladder = []time.Duration{500 * time.Millisecond, time.Second, 2 * time.Second, 5 * time.Second, 10 * time.Second, 30 * time.Second}
 
 // PingInterval is how often the runner pings the control plane, and
@@ -77,7 +76,7 @@ type Options struct {
 	// Token mints the per-dial boot JWT.
 	Token func(ctx context.Context) (string, error)
 	// Fingerprint is the control plane's key fingerprint the host pinned at
-	// registration; a welcome naming another is refused (01 F6).
+	// registration; a welcome naming another is refused.
 	Fingerprint string
 	Handler     Handler
 	UserAgent   string
@@ -153,7 +152,7 @@ func dialURL(origin string) (string, error) {
 }
 
 // Epoch is the reconnect generation of the current link, as the control plane
-// allocated it on welcome (01): frames and callbacks from an older epoch are
+// allocated it on welcome: frames and callbacks from an older epoch are
 // dropped by whoever holds one, and the control plane's log names the same
 // number. Zero before the first welcome.
 func (c *Client) Epoch() uint64 { return c.epoch.Load() }
@@ -280,7 +279,7 @@ func (c *Client) dialAndServe(ctx context.Context) error {
 		return err
 	}
 	if c.opts.Fingerprint != "" && !strings.EqualFold(welcome.KeyFingerprint, c.opts.Fingerprint) {
-		// F6: the host pins the control plane's key at registration and refuses
+		// The host pins the control plane's key at registration and refuses
 		// any other. The socket is TLS-authenticated already; this catches a
 		// control plane that was re-keyed without re-pairing its hosts.
 		return fmt.Errorf("control plane key fingerprint %q is not the pinned %q",
@@ -382,7 +381,7 @@ func (c *Client) readLoop(ctx context.Context, conn *websocket.Conn) error {
 // reader and a heartbeat never interleave a frame, and the outbox decides the
 // order (control first, then attachments in turn). Pings are written here too,
 // by the same pump as `packages/go/ws/conn.go`'s, so nothing else ever writes
-// to the socket (`.agents/rules/go.md`).
+// to the socket.
 //
 // A ping waits for its pong, which holds the writer for one round trip every
 // interval; on a link that has died it holds it until the timeout, which is

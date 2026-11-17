@@ -4,12 +4,12 @@ type SessionDot = 'running' | 'idle' | 'failed' | 'pending' | 'completed';
 
 /**
  * How a session's **group** reads as a dot. The sidebar shows the group
- * because it is organised by what needs you, not what a process is doing
- * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
- * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
- * that is the **lifecycle**, and {@link dotFor} combines the two. A delete its
- * host has not carried out pulses the same way, and one its host refused is
- * red: both say so in the row's status word, since the row is not what it was.
+ * because it is organised by what needs you, not what a process is doing. A
+ * session the host has not built yet is `idle` by group, but the artboard
+ * draws it with a pulsing grey glyph: that is the **lifecycle**, and {@link
+ * dotFor} combines the two. A delete its host has not carried out pulses the
+ * same way, and one its host refused is red: both say so in the row's status
+ * word, since the row is not what it was.
  */
 const DOT: Record<SessionGroup, SessionDot> = {
   working: 'running',
@@ -23,6 +23,28 @@ const DOT: Record<SessionGroup, SessionDot> = {
 export function dotFor(session: SessionEntity): SessionDot {
   if (session.closeRefusal) return 'failed';
   return session.isProvisioning || session.isClosing ? 'pending' : DOT[session.state];
+}
+
+/**
+ * The sidebar row's glyph: grey, but for what the row is going through (a
+ * session still building or being deleted pulses, a refused delete is red).
+ * What the session needs from the reader is the row's dot ({@link attentionFor}),
+ * and work in flight is its name's shimmer, so the glyph carries neither.
+ */
+export function rowGlyphFor(session: SessionEntity): 'idle' | 'pending' | 'failed' {
+  if (session.closeRefusal) return 'failed';
+  return session.isProvisioning || session.isClosing ? 'pending' : 'idle';
+}
+
+/**
+ * The sidebar row's dot, as the bots draw theirs: amber while the session
+ * waits on the reader, blue once it is ready for review; none otherwise.
+ */
+export function attentionFor(session: SessionEntity): 'needs-you' | 'done' | undefined {
+  if (session.isClosing || session.isProvisioning) return undefined;
+  if (session.state === 'waiting-on-you') return 'needs-you';
+  if (session.state === 'ready-for-review') return 'done';
+  return undefined;
 }
 
 /**

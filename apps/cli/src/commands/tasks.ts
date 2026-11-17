@@ -5,7 +5,7 @@ import { contextFor } from '../lib/context';
 import { formatDate, render, style, table } from '../lib/output';
 import { resolveProject } from '../lib/resolve';
 
-/** Plan's tasks (`product/versions/mvp/17-plan.md`). */
+/** Plan's tasks. */
 export function tasksCommand(): Command {
   const tasks = new Command('tasks').description('Plan: the task board');
 

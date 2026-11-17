@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot's work has no fixed length (`product/versions/mvp/25-bots.md` §2 and
- * §4.1, 2026-11-09; `research/lessons-from-long-running-agents.md`): a turn
+ * A bot's work has no fixed length: a turn
  * has no step or time limit, and a goal no limit of continuations. What stops
  * work that goes wrong is a guard or a pause, not a count.
  *

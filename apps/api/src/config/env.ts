@@ -29,7 +29,7 @@ export const positiveInt = (fallback: number) =>
  * a failed boot through `util.inspect`, which on Node >= 23 throws on a `ZodError`
  * (`Cannot read properties of undefined (reading 'value')`); `NestFactory` then calls
  * `process.abort()` and a missing `BETTER_AUTH_SECRET` surfaces as a bare
- * `Aborted (core dumped)`. A plain `Error` stays loud (`api-config.md`) and legible.
+ * `Aborted (core dumped)`. A plain `Error` stays loud and legible.
  *
  * The env var names are passed in so the message can name the variable to set: they
  * are not derivable from the camelCase config keys (`host` is `DB_HOST`).

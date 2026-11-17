@@ -462,7 +462,10 @@ oppenheimer session, named by the session id, created with
 `new-session -d -s <id> -c <worktree>` and window 0 running the agent.
 Each browser tab is a tmux window in that session (`new-window`), so
 every tab has its own scrollback and resize, and a phone-sized tab does
-not shrink the laptop's. Closing the session is `kill-session`. Working
+not shrink the laptop's. Window 0 is the agent; the side pane's Terminal
+tab opens plain shells as windows 1 and up, and the runner answers each
+open, close and listing with the windows tmux lists then (`session.windows`,
+01), so a shell its user ended with `exit` is gone from the next listing. Closing the session is `kill-session`. Working
 directory, environment, and the credential helper socket are set once at
 creation and inherited by every window. The runner attaches by spawning
 a PTY running `tmux attach -t <id>:<window>` per browser connection, so

@@ -261,9 +261,9 @@ export function engineFor(agent: CodingAgentId): { agent: CodingAgentId; model: 
 /**
  * A cloud row's Start from pane: every host, the ones that cannot start
  * `agent`'s cloud disabled and saying why — offline, or a runner the API says
- * cannot — rather than hidden (`.agents/rules/frontend-ui.md`). For Claude
- * Code, one that can names the claude.ai account it is signed in as, which is
- * the account the session runs on: two accounts are two hosts to pick between.
+ * cannot — rather than hidden. For Claude Code, one that can names the
+ * claude.ai account it is signed in as, which is the account the session runs
+ * on: two accounts are two hosts to pick between.
  */
 export function toStartFromOptions(
   hosts: readonly HostEntity[],
@@ -289,12 +289,11 @@ export function toStartFromOptions(
 }
 
 /**
- * The host the place chip's row for `agent`'s cloud starts a session from
- * (`product/versions/mvp/24-session-places.md` §7). Online hosts the API says
- * can start it come first, then ones it could not vouch for either way
- * (`null`: online, its link held by another replica), and within each the
- * picked host before the rest. Null when none qualifies, which greys the row
- * out; a host the API says cannot is never chosen.
+ * The host the place chip's row for `agent`'s cloud starts a session from.
+ * Online hosts the API says can start it come first, then ones it could not
+ * vouch for either way (`null`: online, its link held by another replica),
+ * and within each the picked host before the rest. Null when none qualifies,
+ * which greys the row out; a host the API says cannot is never chosen.
  */
 export function hostCloudHost(
   hosts: readonly HostEntity[],
@@ -476,8 +475,7 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
 /**
  * Whether the draft names somewhere to run, as the create would carry it: a
  * repository `toCheckouts` keeps for a new worktree or Claude Code's cloud
- * (the cloud takes the first), a folder for a folder session
- * (`product/versions/mvp/24-session-places.md`).
+ * (the cloud takes the first), a folder for a folder session.
  */
 export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folder'>): boolean {
   return draft.where === 'folder' ? draft.folder !== null : toCheckouts(draft.scope).length > 0;
@@ -617,12 +615,11 @@ export function toProjectOptions(
 }
 
 /**
- * What picking a project sets on the draft
- * (`product/versions/mvp/05-screens.md`): the host from its
- * default when that host is still in the list, the first default repository
- * with its base branch, and the agent with that agent's default model. A
- * default the workspace no longer has is skipped rather than written, so the
- * chip never names a machine that is gone.
+ * What picking a project sets on the draft: the host from its default when
+ * that host is still in the list, the first default repository with its
+ * base branch, and the agent with that agent's default model. A default the
+ * workspace no longer has is skipped rather than written, so the chip never
+ * names a machine that is gone.
  */
 export function projectPrefill(
   project: ProjectEntity,

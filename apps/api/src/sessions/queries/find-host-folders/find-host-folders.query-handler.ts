@@ -20,7 +20,7 @@ export interface HostFoldersRead {
 }
 
 /**
- * The folder picker's read (`product/versions/mvp/24-session-places.md` §4).
+ * The folder picker's read.
  *
  * The host is checked first with the same check a create makes, so only someone
  * who may start a session on it can see its directory names, and a host they

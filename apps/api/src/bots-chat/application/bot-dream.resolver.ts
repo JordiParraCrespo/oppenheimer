@@ -23,13 +23,13 @@ import { BotCompletionResolver } from './bot-completion.resolver';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 
 /**
- * What a dream would write (`25-bots.md` §4.1, "Dreaming"): the bot (the
- * trigger already decided it should dream, and claimed the day for it); its
- * facts, the ones it wrote itself to rewrite and the rest to
- * leave; its conversation summary and newest messages, the ground truth the
- * notes are checked against; and one tool-less call of its own model, read by
- * `readDream`. Null when there is nothing to do, or when the answer is one
- * nothing of should be used. A model that fails throws, and the queue retries.
+ * What a dream would write: the bot (the trigger already decided it should
+ * dream, and claimed the day for it); its facts, the ones it wrote itself to
+ * rewrite and the rest to leave; its conversation summary and newest messages,
+ * the ground truth the notes are checked against; and one tool-less call of its
+ * own model, read by `readDream`. Null when there is nothing to do, or when the
+ * answer is one nothing of should be used. A model that fails throws, and the
+ * queue retries.
  */
 @Injectable()
 export class BotDreamResolver {

@@ -9,7 +9,7 @@ import { BOT_SUMMARY_READ_MAX, planSummary } from '../domain/bot-summary.policy'
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /**
- * After a turn ends (`25-bots.md` §2): whether the bot's messages the summary
+ * After a turn ends: whether the bot's messages the summary
  * does not cover have passed the threshold, and if so a job that folds the
  * oldest of them into it. The decision is `planSummary`'s; the job decides
  * again on what it reads, so a job staged twice folds once. The turn has

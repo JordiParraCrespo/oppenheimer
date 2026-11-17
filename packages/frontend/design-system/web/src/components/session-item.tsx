@@ -59,6 +59,7 @@ function SessionItem({
   age,
   status,
   state = 'idle',
+  attention,
   working,
   active,
   icon,
@@ -84,6 +85,11 @@ function SessionItem({
    */
   status?: React.ReactNode;
   state?: StatusState;
+  /**
+   * A 7px dot at the row's end, its name set at 600: amber for `needs-you`,
+   * blue for `done`. It gives way to the ellipsis like the age.
+   */
+  attention?: 'needs-you' | 'done';
   /** Whether the agent is at work: the name shimmers while it is. */
   working?: boolean;
   active?: boolean;
@@ -114,6 +120,7 @@ function SessionItem({
     <ButtonPrimitive
       data-slot="session-item"
       data-state={state}
+      data-attention={attention}
       data-active={active || undefined}
       data-selected={selected || undefined}
       role={inRow ? undefined : 'listitem'}
@@ -176,13 +183,23 @@ function SessionItem({
       ) : (
         <span
           className={cn(
-            'min-w-0 flex-1 truncate text-operate tracking-[-0.009em] group-data-active/session:font-medium',
+            'min-w-0 flex-1 truncate text-operate tracking-[-0.009em] group-data-active/session:font-medium group-data-attention/session:font-semibold',
             working && 'motion-safe:animate-shimmer',
           )}
         >
           {name}
         </span>
       )}
+      {attention && !rename ? (
+        <span
+          aria-label={attention === 'needs-you' ? 'Needs input' : 'Done'}
+          className={cn(
+            'size-1.75 shrink-0 rounded-pill',
+            attention === 'needs-you' ? 'bg-warning' : 'bg-primary',
+            withAction && META_GIVES_WAY,
+          )}
+        />
+      ) : null}
       {status && !rename ? (
         <span
           className={cn(

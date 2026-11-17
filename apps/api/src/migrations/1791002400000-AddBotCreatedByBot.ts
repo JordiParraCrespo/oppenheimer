@@ -1,9 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots that create bots (`product/versions/mvp/25-bots.md` §4.6,
- * `create_bot`): the new bot is the person's (`createdByUserId` is the
- * owner the tool acts as), marked "created by" the bot that made it.
+ * Bots that create bots (`create_bot`): the new bot is the person's
+ * (`createdByUserId` is the owner the tool acts as), marked "created by" the
+ * bot that made it.
  *
  * - `bot."createdByBotId"`: the bot that created it; null for a bot made in
  *   the console, or once its creator is deleted. Composite on

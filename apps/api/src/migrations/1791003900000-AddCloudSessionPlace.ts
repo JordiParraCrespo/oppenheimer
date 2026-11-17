@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Cloud sessions (`product/research/cloud-agents.md` §5B): `work_session.place`
+ * Cloud sessions: `work_session.place`
  * admits `cloud`, a session its host starts in Claude Code's cloud and then
  * keeps nothing of. Its Claude Code id is the row's `agentSessionId`, which
  * `session.started` already folds; no column is added.

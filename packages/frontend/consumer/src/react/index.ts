@@ -18,6 +18,8 @@ export {
 } from './automations.queries';
 export {
   type DecideBotApprovalVariables,
+  useAnyBotNeedsInput,
+  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';
@@ -278,11 +280,13 @@ export {
   type StopSessionShareVariables,
   useAnswerSessionDecision,
   useCloseSession,
+  useCloseSessionWindow,
   useCreateCloudChatKey,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
   useOpenSessionPreviewTab,
+  useOpenSessionWindow,
   usePasteSessionFile,
   usePrepareSession,
   usePutSessionShare,
@@ -293,6 +297,7 @@ export {
   useSessionShare,
   useSessionStartProgress,
   useSessions,
+  useSessionWindows,
   useSetSessionHidden,
   useSetSessionSharePeople,
   useStartCloudSession,

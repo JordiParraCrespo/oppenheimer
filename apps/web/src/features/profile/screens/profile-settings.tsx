@@ -7,9 +7,9 @@ import { ProfileDetailsSection } from '../sections/profile-details';
 import { SignInSection } from '../sections/sign-in';
 
 /**
- * Settings → Profile (`design/version1/Settings.dc.html`): the title, the
- * account's facts — picture, email, name, username — then how it signs in
- * and the devices that have, and the one destructive setting last.
+ * Settings → Profile: the title, the account's facts — picture, email,
+ * name, username — then how it signs in and the devices that have, and the
+ * one destructive setting last.
  *
  * The screen fetches nothing: each section subscribes to what it draws, so
  * saving the name does not redraw the device list.

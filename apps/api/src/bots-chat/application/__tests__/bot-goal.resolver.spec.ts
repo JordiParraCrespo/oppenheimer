@@ -1,10 +1,9 @@
 /**
- * Every end, pause and continuation of a goal (`25-bots.md` §4.1). What
- * breaks this: an end or a pause that leaves the goal's continuation
- * waiting, so the bot carries on with work it, or its owner, just stopped;
- * an end said twice; a resume that queues the turn without its line, or
- * claims a goal that is running; a continuation run as someone the
- * workspace no longer has.
+ * Every end, pause and continuation of a goal. What breaks this: an end or a
+ * pause that leaves the goal's continuation waiting, so the bot carries on with
+ * work it, or its owner, just stopped; an end said twice; a resume that queues
+ * the turn without its line, or claims a goal that is running; a continuation
+ * run as someone the workspace no longer has.
  */
 import type { BotEntity } from '../../../bots/domain/bot.entity';
 import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';

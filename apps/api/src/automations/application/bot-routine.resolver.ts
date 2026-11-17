@@ -7,8 +7,8 @@ import type { AutomationEntity } from '../domain/automation.entity';
 import { AutomationErrors } from '../domain/automations.errors';
 
 /**
- * A bot's routine, loaded for a write a bot or its Routines tab makes
- * (`26-bot-routines.md` §7): saving, running now or deleting one. One rule,
+ * A bot's routine, loaded for a write a bot or its Routines tab makes:
+ * saving, running now or deleting one. One rule,
  * on the load: anything but that bot's routine is not found, a session
  * automation and another bot's routine alike, so no handler grows its own
  * copy of the check.

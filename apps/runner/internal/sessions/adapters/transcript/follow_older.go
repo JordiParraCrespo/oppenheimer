@@ -9,10 +9,10 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 )
 
-// A conversation sent tail first (`product/next-steps/0.7-terminal-and-chat.md`,
-// "Tail first"): an attach sends the last turns, and the console asks for
-// the turns before an offset as the reader scrolls up. A long conversation
-// was otherwise megabytes read, previewed, sent and parsed to draw its end.
+// A conversation sent tail first: an attach sends the last turns, and the
+// console asks for the turns before an offset as the reader scrolls up. A long
+// conversation was otherwise megabytes read, previewed, sent and parsed to draw
+// its end.
 const (
 	// tailTurns is how many turns an attach sends as the history: what the
 	// chat draws before the reader scrolls.

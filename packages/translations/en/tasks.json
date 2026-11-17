@@ -103,6 +103,7 @@
     "notesPlaceholder": "Add notes",
     "status": "Status",
     "project": "Project",
+    "chooseProject": "Choose a project",
     "milestone": "Milestone",
     "none": "None",
     "due": "Due",

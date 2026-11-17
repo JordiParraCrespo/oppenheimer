@@ -139,7 +139,12 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     serial: 'emulator-5554',
     name: 'Android emulator',
     platform: 'android',
+    devices: [
+      { serial: 'emulator-5554', name: 'Android emulator', platform: 'android', free: true },
+      { serial: 'emulator-5556', name: 'Pixel 7 API 35', platform: 'android', free: false },
+    ],
   },
+  'device.select': { type: 'device.select', attachmentId: 9, serial: 'emulator-5556' },
   'device.input': { type: 'device.input', attachmentId: 9, kind: 'tap', x: 0.5, y: 0.42 },
   'device.detach': { type: 'device.detach', commandId, sessionId, attachmentId: 9 },
   'port.list': { type: 'port.list', commandId, sessionId },
@@ -366,6 +371,17 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   },
   'session.window.open': { type: 'session.window.open', commandId, sessionId, name: 'tests' },
   'session.window.close': { type: 'session.window.close', commandId, sessionId, window: 1 },
+  'session.windows.list': { type: 'session.windows.list', commandId, sessionId },
+  'session.windows': {
+    type: 'session.windows',
+    commandId,
+    sessionId,
+    windows: [
+      { index: 0, name: 'agent' },
+      { index: 1, name: 'zsh' },
+    ],
+    opened: 1,
+  },
   'session.close': { type: 'session.close', commandId, sessionId, acceptUnpushedWork: false },
   'session.watch': {
     type: 'session.watch',

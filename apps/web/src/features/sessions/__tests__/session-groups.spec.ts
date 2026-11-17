@@ -11,10 +11,9 @@ import {
 } from '../lib/session-groups';
 
 /**
- * The sidebar's groups and the move pane's targets
- * (`product/versions/mvp/05-screens.md`): only a project with sessions is
- * drawn, a session whose project is gone still shows, and a move knows which
- * project the sessions are already in.
+ * The sidebar's groups and the move pane's targets: only a project with
+ * sessions is drawn, a session whose project is gone still shows, and a
+ * move knows which project the sessions are already in.
  */
 const project = (id: string, repos: string[]) =>
   new ProjectEntity(

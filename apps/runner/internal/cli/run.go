@@ -91,7 +91,7 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	}
 
 	// The work folder says which layout it is on before anything is made in
-	// it (24 §2).
+	// it.
 	if a.WorkFolder != nil {
 		if err := a.WorkFolder.Init(); err != nil {
 			logger.Warn("could not prepare the work folder",

@@ -11,11 +11,11 @@ import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 
 /**
- * A bot's loop, as everything that ends or runs it shares it (`25-bots.md`
- * §4.1, `/loop`): an end is one write with its line, and the runs still
- * waiting for that loop are cancelled with it, whoever ended it (the bot's
- * `end_loop`, a loop set in its place, the owner's Stop, its expiry, a run
- * that failed). A run is queued as the bot's owner.
+ * A bot's `/loop`, as everything that ends or runs it shares it: an end is one
+ * write with its line, and the runs still waiting for that loop are cancelled
+ * with it, whoever ended it (the bot's `end_loop`, a loop set in its place, the
+ * owner's Stop, its expiry, a run that failed). A run is queued as the bot's
+ * owner.
  */
 @Injectable()
 export class BotLoopResolver {

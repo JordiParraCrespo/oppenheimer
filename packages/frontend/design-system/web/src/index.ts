@@ -39,7 +39,7 @@ export { Badge, badgeVariants } from './components/badge';
 export { BotFacePicker } from './components/bot-face-picker';
 export { BotItem, BotItemSkeleton, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
-/* ── MVP design system (product/versions/mvp/design) ───────────────────── */
+/* ── MVP design system ──────────────────────────────────────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
 export { BrandMark } from './components/brand-mark';
 export type { ButtonProps } from './components/button';
@@ -395,7 +395,7 @@ export type {
   CalendarEntryData,
   CalendarEntryKind,
 } from './components/month-calendar';
-export { CalendarEntry, MonthCalendar } from './components/month-calendar';
+export { CALENDAR_KIND_ACCENT, CalendarEntry, MonthCalendar } from './components/month-calendar';
 export { NumberStepper } from './components/number-stepper';
 export {
   PageHeader,

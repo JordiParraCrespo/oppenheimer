@@ -43,8 +43,7 @@ export interface WhatsappDecidedBatch {
 
 /**
  * What new messages to a linked number come to, and are answered with besides
- * a bot's turn (`product/next-steps/answering-on-telegram-and-whatsapp.md`
- * §2): only the confirmed owner's, in their own chat, come to anything. A
+ * a bot's turn: only the confirmed owner's, in their own chat, come to anything. A
  * "Name: …" switches the chat to the one bot of the owner's with that name
  * (ignoring case), resolved now so a later rename changes nothing; a name
  * that is no bot's, or several bots', leaves the message as written. The

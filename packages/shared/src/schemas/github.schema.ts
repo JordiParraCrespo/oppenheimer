@@ -49,8 +49,8 @@ export type ConnectInstallationDto = z.infer<typeof connectInstallationSchema>;
 
 /**
  * A person's own GitHub tokens, for repositories the App will never be
- * installed on (`product/next-steps/0.2-pull-requests.md` §6.2). What kind a
- * token is GitHub's prefix says: `github_pat_` fine-grained, `ghp_` classic.
+ * installed on. What kind a token is GitHub's prefix says: `github_pat_`
+ * fine-grained, `ghp_` classic.
  */
 export const GITHUB_TOKEN_KINDS = ['fine_grained', 'classic', 'other'] as const;
 export type GithubTokenKind = (typeof GITHUB_TOKEN_KINDS)[number];

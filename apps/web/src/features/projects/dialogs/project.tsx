@@ -8,9 +8,8 @@ import { SavedProject } from '../sections/saved-project';
 import { ProjectEditorDialog } from './project-editor';
 
 /**
- * New project and Project settings (`product/versions/mvp/05-screens.md`, the
- * 2026-09-27 export), opened from the project chip, the sidebar's plus and a
- * project header's cog.
+ * New project and Project settings, opened from the project chip, the
+ * sidebar's plus and a project header's cog.
  *
  * Without `projectId` it creates. With one, the project is read under
  * Suspense, because neither opener (the sidebar, the composer) holds the

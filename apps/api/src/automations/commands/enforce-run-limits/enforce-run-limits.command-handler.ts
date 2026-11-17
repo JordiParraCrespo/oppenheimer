@@ -18,7 +18,7 @@ const BATCH = 200;
 const ZOMBIE_GRACE_MS = 60 * 60 * 1000;
 
 /**
- * The run limit (§Configuration, `maxRunSeconds`): a run still live past its
+ * The run limit (`maxRunSeconds`): a run still live past its
  * workspace's limit has its session **stopped** as the owner — the agent and
  * tmux end, the worktree stays, so the session can be restarted and the work
  * resumed. Stopping ends the live turn, so the run reads as cancelled and no

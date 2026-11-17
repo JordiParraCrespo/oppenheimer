@@ -52,7 +52,8 @@
     "missed": "Omitida: se perdió el turno",
     "not_launchable": "Omitida: la sesión no pudo iniciarse",
     "agent_unavailable": "Omitida: el agente no está en el host",
-    "unattended": "Omitida: el propietario de su bot no está"
+    "unattended": "Omitida: el propietario de su bot no está",
+    "idle": "Omitida: nada nuevo desde el último latido"
   },
   "pausedReason": {
     "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",

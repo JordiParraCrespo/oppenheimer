@@ -29,6 +29,7 @@ export * from './session-share.schema.js';
 export * from './session-shared-file.schema.js';
 export * from './session-transcript.schema.js';
 export * from './session-wake.schema.js';
+export * from './session-window.schema.js';
 export * from './task.schema.js';
 export * from './telegram.schema.js';
 export * from './user.schema.js';

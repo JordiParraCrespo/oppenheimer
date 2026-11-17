@@ -26,8 +26,8 @@ export interface BotRuleReviewer {
 }
 
 /**
- * The reviewer a turn's asking calls are read by (`25-bots.md` §5): the
- * turn's own provider, model and key, one completion per call with no tools
+ * The reviewer a turn's asking calls are read by: the turn's own provider,
+ * model and key, one completion per call with no tools
  * (`BotCompletionResolver`), stopped with the turn.
  */
 @Injectable()

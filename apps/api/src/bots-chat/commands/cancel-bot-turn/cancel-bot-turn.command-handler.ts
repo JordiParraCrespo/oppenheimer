@@ -8,7 +8,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { CancelBotTurnCommand } from './cancel-bot-turn.command';
 
 /**
- * Stop (`25-bots.md` §2). A queued turn is cancelled here and the bot's next
+ * Stop a turn. A queued turn is cancelled here and the bot's next
  * one becomes due; a running one is asked to stop, and its worker ends it
  * within a second. A turn that already ended is left as it is.
  */

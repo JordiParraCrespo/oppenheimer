@@ -1592,8 +1592,8 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="hostcard"
         title="HostCard"
         meta="host-card.tsx"
-        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
-        code={`<HostCard name="fable" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
+        desc="One card per host. The runner version ends the meta line and is never cut; a narrow card truncates the other facts first. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
+        code={`<HostCard name="fable" meta="Debian 12 · 16 vCPU · us-east" runner="runner 0.13.8" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
   offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />

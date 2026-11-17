@@ -99,7 +99,7 @@ function toolsSummary(tools: HostInventory['tools']): Record<string, string | nu
 
 /**
  * A new runner version is its own entry (`runner_updated`), because the update
- * story reads it on its own (09 §5); everything else that changed is one
+ * story reads it on its own; everything else that changed is one
  * `facts_changed` with a `{ field: [before, after] }` diff, tools summarised as
  * name → version (null when missing). A field that was unknown before is not a
  * change, and no previous inventory is no entry: the `paired` entry already

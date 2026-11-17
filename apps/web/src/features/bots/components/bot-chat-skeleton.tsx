@@ -17,7 +17,7 @@ const chip = (width: string) => (
  * A bot's chat before the bot answers, laid out as `BotChat` draws it: the
  * `PageBar` with the face and name as bars and the actions menu in its slot,
  * the transcript's ghost in the scrolling pane at its padding, and the
- * composer's own frame at its height, the box off and its chips as bars, so
+ * composer's own frame in its one-row layout, the box off and its chips as bars, so
  * nothing moves when the bot lands but the bars turning into words.
  */
 export function BotChatSkeleton() {
@@ -44,6 +44,7 @@ export function BotChatSkeleton() {
       <div className="px-4 pb-4 sm:px-8">
         <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
           <ChatComposer
+            layout="inline"
             inert
             disabled
             value=""

@@ -9,7 +9,7 @@ import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { FindBotApprovalsQuery } from './find-bot-approvals.query';
 
 /**
- * A bot's Needs input cards, newest first (`25-bots.md` §5): `pending` is the
+ * A bot's Needs input cards, newest first: `pending` is the
  * one the chat shows, at most one; the rest are what was decided. A bot in
  * another workspace is one that does not exist (`BOTS_001`).
  */

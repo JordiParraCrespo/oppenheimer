@@ -61,7 +61,7 @@ export interface RefreshInstallationProps {
 /**
  * A GitHub App installation, the whole of what a workspace may reach on
  * GitHub: the installation *is* the access control and GitHub enforces it, so
- * no repository table mirrors it (`product/versions/mvp/03-control-plane.md`).
+ * no repository table mirrors it.
  *
  * `isUsable` is what the listing and the token mint ask, so "suspended" and
  * "uninstalled" are one question with one answer.

@@ -1,6 +1,6 @@
 // Package domain is the WhatsApp linked device's rules: how it stands, which
 // messages it hands the control plane and in what shape, and how many it may
-// send (product/next-steps/whatsapp.md). It knows nothing of whatsmeow.
+// send. It knows nothing of whatsmeow.
 package domain
 
 import "time"

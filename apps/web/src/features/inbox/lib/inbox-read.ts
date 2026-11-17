@@ -1,10 +1,10 @@
 /**
  * Which of the Inbox's items the reader has opened, kept on this device, so
  * the list marks the rest unread as a mail client does. Keyed by the item's
- * occurrence (`29-inbox.md` §3), so a new wait on the same session comes
- * back unread. A convenience of this browser: storage switched off or
- * cleared reads everything as unread, nothing more. Kept outside React so
- * the list and the reading pane read one store.
+ * occurrence, so a new wait on the same session comes back unread. A
+ * convenience of this browser: storage switched off or cleared reads
+ * everything as unread, nothing more. Kept outside React so the list and
+ * the reading pane read one store.
  */
 const STORAGE_KEY = 'oppenheimer.inbox.read';
 

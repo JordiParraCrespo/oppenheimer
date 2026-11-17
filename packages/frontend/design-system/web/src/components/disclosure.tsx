@@ -10,8 +10,7 @@ import { cn } from '../lib/utils';
  * Disclosure — a fold inside a dialog or a step: one row that reads as a
  * label, an optional "optional" beside it, a summary on the right when the
  * fold is closed, and a chevron that turns over 140ms; under it, the
- * content, 14px down. The project dialog folds its Defaults
- * (`design/version1/SessionsConsole.dc.html`).
+ * content, 14px down. The project dialog folds its Defaults.
  *
  * The trigger is the whole row. `tone="muted"` is a fold whose label is a
  * 13px muted line rather than a field label.

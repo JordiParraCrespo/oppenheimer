@@ -23,7 +23,7 @@ const VERIFICATION_KEY_PREFIX = 'verification:';
  * Better Auth keys a session by its **raw token**, and the per-user index by
  * the user id. Hashing every key keeps a live secret out of the key space —
  * `SCAN`, `MONITOR`, a slow log or a key-eviction metric would otherwise print
- * bearer credentials (`.agents/rules/scopes-and-credentials.md`). The values
+ * bearer credentials. The values
  * still hold the session token, exactly as the `session` table does, which is
  * why Redis must be private and password-protected (`REDIS_PASSWORD`).
  */

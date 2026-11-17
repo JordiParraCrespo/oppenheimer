@@ -9,8 +9,7 @@ export type ChannelTurnProps = Omit<
 >;
 
 /**
- * The turn the owner's message on a channel queues
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §3): in the
+ * The turn the owner's message on a channel queues: in the
  * owner lane, as the owner, in the chat's own conversation, opened by what
  * they wrote as their message. It is the owner's own direct chat, so it is
  * theirs as a console message is: the bot's tools and memory. The channel
@@ -70,8 +69,7 @@ export interface ChannelConversationStart {
 }
 
 /**
- * Which conversation a message of a channel's chat belongs to
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): `latest` is
+ * Which conversation a message of a channel's chat belongs to: `latest` is
  * the chat's latest start at or before the message (the asking bot's first
  * when two start there), `startsAt` the chat's last start the messages name
  * at or before it ('0' for none: the owner's `/new`, or on WhatsApp a switch

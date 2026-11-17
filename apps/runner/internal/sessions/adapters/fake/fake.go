@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -155,6 +156,11 @@ func (t *Terminals) KillWindow(_ context.Context, target string) error {
 	session, ok := t.sessions[name]
 	if !ok {
 		return domain.ErrTmuxCommand.WithDetail("no session %q", name)
+	}
+	// tmux refuses a window that is not there, so a caller that kills one
+	// already gone hears it here as it would on a host.
+	if !slices.ContainsFunc(session.windows, func(w domain.Window) bool { return w.Index == index }) {
+		return domain.ErrTmuxCommand.WithDetail("can't find window: %d", index)
 	}
 	kept := session.windows[:0]
 	for _, w := range session.windows {

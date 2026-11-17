@@ -5,9 +5,9 @@ import { TelegramAccountsSkeleton } from '@/features/telegram/components/telegra
 import { TelegramAccounts } from '@/features/telegram/sections/telegram-accounts';
 
 /**
- * Settings → Telegram (`product/next-steps/telegram.md` §2): the reader's own
- * Telegram bots, each made with @BotFather and polled by the runner on one of
- * their hosts, whose chats their Oppenheimer bots read and answer.
+ * Settings → Telegram: the reader's own Telegram bots, each made with
+ * @BotFather and polled by the runner on one of their hosts, whose chats
+ * their Oppenheimer bots read and answer.
  */
 export function TelegramSettingsScreen() {
   const { t } = useTranslation();

@@ -13,11 +13,10 @@ import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
- * The overview's Automations view (`product/versions/mvp/13-automations.md`):
- * one row per automation in the workspace, oldest first as the API lists
- * them. A row opens the automation's page; its menu edits, runs, pauses,
- * duplicates or deletes it in place. What an action could not do stays on
- * screen above the table.
+ * The overview's Automations view: one row per automation in the workspace,
+ * oldest first as the API lists them. A row opens the automation's page;
+ * its menu edits, runs, pauses, duplicates or deletes it in place. What an
+ * action could not do stays on screen above the table.
  *
  * Delete asks first, like the automation's own page. The table owns which
  * row's confirm is open, because a row's menu unmounts when it closes.

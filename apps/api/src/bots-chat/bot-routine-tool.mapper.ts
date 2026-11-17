@@ -31,8 +31,8 @@ export interface RoutineGmailInput {
 export type RoutineTriggerInput = RoutineScheduleInput | RoutineGithubInput | RoutineGmailInput;
 
 /**
- * How `update_routine`'s triggers become the automations' own trigger input
- * (`26-bot-routines.md` §4): a schedule in the sender's zone unless it names
+ * How `update_routine`'s triggers become the automations' own trigger input: a
+ * schedule in the sender's zone unless it names
  * one, a GitHub event filtered by branch or not, new mail on one account
  * filtered by a Gmail search or not. Checked against the shared
  * schema, so a trigger the editor would refuse is refused here too, in a
