@@ -292,6 +292,35 @@
     --file-icon-yml: var(--file-icon-red);
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
+    /* The types internal/file-icon-set.ts adds: vendors' marks and the PDF page. */
+    --file-icon-clojure: var(--file-icon-blue);
+    --file-icon-cmake: var(--file-icon-blue);
+    --file-icon-crystal: var(--file-icon-gray);
+    --file-icon-dart: var(--file-icon-cyan);
+    --file-icon-dotnet: var(--file-icon-indigo);
+    --file-icon-elixir: var(--file-icon-purple);
+    --file-icon-elm: var(--file-icon-cyan);
+    --file-icon-erlang: var(--file-icon-red);
+    --file-icon-fsharp: var(--file-icon-cyan);
+    --file-icon-gleam: var(--file-icon-pink);
+    --file-icon-gnu: var(--file-icon-red);
+    --file-icon-gradle: var(--file-icon-teal);
+    --file-icon-haskell: var(--file-icon-indigo);
+    --file-icon-java: var(--file-icon-orange);
+    --file-icon-julia: var(--file-icon-purple);
+    --file-icon-jupyter: var(--file-icon-orange);
+    --file-icon-kotlin: var(--file-icon-purple);
+    --file-icon-lua: var(--file-icon-blue);
+    --file-icon-nim: var(--file-icon-yellow);
+    --file-icon-nix: var(--file-icon-blue);
+    --file-icon-ocaml: var(--file-icon-orange);
+    --file-icon-pdf: var(--file-icon-red);
+    --file-icon-perl: var(--file-icon-blue);
+    --file-icon-php: var(--file-icon-indigo);
+    --file-icon-purescript: var(--file-icon-gray);
+    --file-icon-r: var(--file-icon-blue);
+    --file-icon-scala: var(--file-icon-red);
+    --file-icon-solidity: var(--file-icon-gray);
 
     /* A bot's avatar: its drawn face (or its initials) on one of the
        export's eight colours (`AV_COLORS`), an identity like a file's mark,

@@ -201,8 +201,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   widened in `internal/file-icon-set.ts`: markup (HTML, XML, templates) is
   `</>` on the set's tile, where the set draws HTML as a CSS-like `#`; a
   file that belongs to a mark the set has takes it (`go.mod` Go,
-  `Cargo.toml` Rust, a certificate the lock); a language with no published
-  mark is the neutral code page, never a redrawn logo. Its hue comes
+  `Cargo.toml` Rust, a certificate the lock); a language the set has no
+  mark for wears its vendor's own, copied from Simple Icons
+  (`VENDOR_MARKS` in that file: Java, Kotlin, PHP, Haskell…), a PDF a
+  red page, and one with no legible published mark the neutral code page,
+  never a redrawn logo. Its hue comes
   from one map, the `--file-icon-*` tokens in `globals.css`, which the
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.
