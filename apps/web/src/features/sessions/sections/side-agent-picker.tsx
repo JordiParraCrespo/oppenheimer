@@ -79,45 +79,48 @@ export function SideAgentPicker({
   return (
     <>
       <Callout tone="info">{t('sessions.side.launcher.agentShares')}</Callout>
-      <SideAgentComposer
-        sendLabel={t('sessions.side.agent.start', { agent: label })}
-        starting={opening !== null}
-        onSubmit={(task) =>
-          onStart({
-            agent,
-            model,
-            // An effort nobody picked is left to the CLI, as on New session.
-            effort: effort?.chosen ? effort.value : null,
-            permission: takesPermission ? permission : null,
-            prompt: task === '' ? null : task,
-          })
-        }
-        tools={
-          takesPermission ? (
-            <PermissionSelect value={permission} onValueChange={setPermission} />
-          ) : null
-        }
-        engine={
-          <AgentSelect
-            agents={toEngineAgents(false, null).filter((option) =>
-              allowed.some((one) => one === option.id),
-            )}
-            value={{ agent, model }}
-            onValueChange={(engine) => {
-              const next = allowed.find((one) => one === engine.agent);
-              if (!next || !isCodingAgentId(engine.agent)) return;
-              setAgent(next);
-              setModel(engine.model ?? defaultModelFor(next));
-            }}
-            favourites={favourites}
-            onFavouritesChange={setFavourites}
-            effort={effort}
-            onEffortChange={(level) => setEfforts({ ...efforts, [agent]: level })}
-            onConfigure={() => navigate({ to: '/settings/agents' })}
-            disabled={opening !== null}
-          />
-        }
-      />
+      {/* At the foot of the pane, where a chat keeps its box. */}
+      <div className="mt-auto">
+        <SideAgentComposer
+          sendLabel={t('sessions.side.agent.start', { agent: label })}
+          starting={opening !== null}
+          onSubmit={(task) =>
+            onStart({
+              agent,
+              model,
+              // An effort nobody picked is left to the CLI, as on New session.
+              effort: effort?.chosen ? effort.value : null,
+              permission: takesPermission ? permission : null,
+              prompt: task === '' ? null : task,
+            })
+          }
+          tools={
+            takesPermission ? (
+              <PermissionSelect value={permission} onValueChange={setPermission} />
+            ) : null
+          }
+          engine={
+            <AgentSelect
+              agents={toEngineAgents(false, null).filter((option) =>
+                allowed.some((one) => one === option.id),
+              )}
+              value={{ agent, model }}
+              onValueChange={(engine) => {
+                const next = allowed.find((one) => one === engine.agent);
+                if (!next || !isCodingAgentId(engine.agent)) return;
+                setAgent(next);
+                setModel(engine.model ?? defaultModelFor(next));
+              }}
+              favourites={favourites}
+              onFavouritesChange={setFavourites}
+              effort={effort}
+              onEffortChange={(level) => setEfforts({ ...efforts, [agent]: level })}
+              onConfigure={() => navigate({ to: '/settings/agents' })}
+              disabled={opening !== null}
+            />
+          }
+        />
+      </div>
     </>
   );
 }
