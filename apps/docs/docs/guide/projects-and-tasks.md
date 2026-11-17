@@ -22,10 +22,16 @@ A project is a saved scope with a name, zero or more repositories (each with a b
 
 **Plan → Tasks** is one board for the workspace, filtered by **Project** and **Milestone** at the top (each view remembers its filter on this device). Columns, in order: **Not started**, **In progress**, **In review**, **Done**. The header counts open, in progress, done and overdue tasks.
 
-- **New task** (or `n`) opens the task dialog: title, notes, Status, Project, Milestone, Sessions, TODO day (the day it goes on your TODO list, apart from when it is due) and Due (a date with Today, Tomorrow, Next Monday, and an optional time).
+- **New task** (or `n`) opens the task dialog: title, notes, Status, Priority, Project, Milestone, Sessions, TODO day (the day it goes on your TODO list, apart from when it is due) and Due (a date with Today, Tomorrow, Next Monday, and an optional time).
 - **Add task** at a column's foot adds a one-line task to that column under the current filter.
 - Drag cards within and across columns. Ticking a card's checkbox moves it to Done.
-- A card shows its title, notes, project, milestone, due date (red when overdue) and its session line.
+- A card shows its title, notes, priority, project, milestone, due date (red when overdue) and its session line.
+
+### Priority
+
+A task can have a priority: **Urgent**, **High**, **Medium** or **Low**, or none, which is where every task starts. Urgent shows as an orange square with an exclamation mark; High, Medium and Low as three bars with three, two or one of them lit. Set it in the task dialog's **Priority** row, or choose None to take it off.
+
+Priority never moves a card: a column keeps the order you dragged it into. **Add tasks** on TODO lists the most important first. A finished task no longer shows its priority.
 
 Tasks have no assignee, since a workspace has one person. Tasks are Oppenheimer's own; there is no import from GitHub Issues or Linear.
 
@@ -37,7 +43,7 @@ Tasks have no assignee, since a workspace has one person. Tasks are Oppenheimer'
 - on today or a later day, open tasks put on an earlier day: they stay until they are done, so work that takes several days stays on the list ("on TODO since …");
 - with **Include overdue** on, open tasks due before today.
 
-A task ticked done stays on the day it was done. The dashed row at the foot adds a task put on that day with no due date, and **Add tasks** puts any open task on the day without changing its due date. Clicking a task opens its dialog over TODO; clear its TODO day there to take it off the list.
+A task ticked done stays on the day it was done. The dashed row at the foot adds a task put on that day with no due date, and **Add tasks** puts any open task on the day without changing its due date; it lists urgent work first. Clicking a task opens its dialog over TODO; clear its TODO day there to take it off the list.
 
 A row's calendar button moves its TODO day: **Tomorrow**, or any day picked on the month it opens. A task due on the day shown, or overdue while Include overdue is on, has no such button: its deadline keeps it on the list whatever its TODO day, so change its due date in its dialog instead.
 
@@ -82,4 +88,4 @@ The header counts the month's meetings, tasks due and automation runs. Times are
 
 ## What bots can do here
 
-Bots can list and read projects, tasks and milestones, create and edit tasks and move them between columns, create and edit projects, move sessions between projects, and archive (always asking first) or restore a project. They cannot read or edit the calendar. See [Bots](./bots.md).
+Bots can list and read projects, tasks and milestones, create and edit tasks (priority included) and move them between columns, create and edit projects, move sessions between projects, and archive (always asking first) or restore a project. They cannot read or edit the calendar. See [Bots](./bots.md).

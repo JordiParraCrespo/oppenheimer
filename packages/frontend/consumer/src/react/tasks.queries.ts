@@ -264,6 +264,9 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
     move.status === 'done' ? null : task.blockedReason,
     task.version,
     task.focusDate,
+    task.origin,
+    task.triagedAt,
+    task.priority,
   );
 }
 

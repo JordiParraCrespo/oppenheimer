@@ -1,5 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import type { TaskOrigin, TaskStatus } from '@oppenheimer/shared';
+import type { TaskOrigin, TaskPriority, TaskStatus } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -80,6 +80,9 @@ export class TaskOrmEntity {
   /** The day the person means to work on it, apart from when it is due; To do lists it from then. */
   @Column({ type: 'date', nullable: true })
   focusDate!: string | null;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  priority!: TaskPriority | null;
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   completedAt!: Date | null;

@@ -46,7 +46,8 @@
     "markDone": "Marcar como hecha",
     "markNotDone": "Marcar como no hecha",
     "start": "Iniciar sesión de trabajo",
-    "openSession": "Abrir la sesión {{name}}"
+    "openSession": "Abrir la sesión {{name}}",
+    "priority": "Prioridad: {{level}}"
   },
   "sessionState": {
     "waiting": "Necesita respuesta",
@@ -123,7 +124,8 @@
     "loadFailed": "No se ha podido cargar el tablero.",
     "gone": "Esta tarea ya no existe.",
     "deleting": "Eliminando…",
-    "focus": "Día en TODO"
+    "focus": "Día en TODO",
+    "priority": "Prioridad"
   },
   "link": {
     "search": "Buscar sesiones",
@@ -252,5 +254,11 @@
     "partial_one": "{{count}} tarea no se ha eliminado",
     "partial_many": "{{count}} de tareas no se han eliminado",
     "partial_other": "{{count}} tareas no se han eliminado"
+  },
+  "priority": {
+    "urgent": "Urgente",
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Baja"
   }
 }

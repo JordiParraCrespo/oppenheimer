@@ -220,7 +220,33 @@ rail item, the routes, and every Plan controller (`@RequireFlag('plan')`
 on the `tasks` and `calendar` controllers and the automations
 occurrences query), so no slice is reachable with the flag off.
 
-## 9. Tests
+## 9. Priority
+
+Added on 2026-11-17, at the owner's request after comparing Linear and
+ClickUp: both settle on four levels and an empty value, and so does Plan.
+
+- **Levels.** `urgent`, `high`, `medium`, `low`, or none (`null`, the
+  default). Stored as the names in `task.priority varchar(16)` with
+  `CHK_task_priority`, as `status` and `origin` are, never as numbers: the
+  API speaks the names, and a level added later is a new `CHECK`, not a
+  renumbering. "Medium", not ClickUp's "Normal", so a task nobody rated
+  does not read as normal.
+- **It never moves a card.** A column's order is the person's own `rank`;
+  priority is drawn on the card and nowhere reorders the board. Lists that
+  rank what to pick up next sort by it, most important first and none last
+  (`comparePriority`): today, TODO's Add tasks.
+- **The icon** is Linear's: Urgent a filled square in the warning ink with
+  the "!" cut out; High, Medium and Low three bars with three, two or one
+  lit; none three quiet dashes (`TaskPriorityIcon`). A done task does not
+  show it.
+- **Who sets it.** The task dialog's Priority row; bots (`create_task`,
+  `update_task`), `opp tasks add --priority` and the MCP `create_task`.
+  Setting it is not a change Plan's log records and does not take up a
+  task an agent made.
+- **Not yet.** A Priority facet on the board's filter, and sorting the
+  board's columns by it.
+
+## 10. Tests
 
 - Integration (`apps/api`, real Postgres): move between neighbours and
   to first/last; concurrent moves to the same gap both persist and

@@ -1,6 +1,7 @@
 import {
   type BotPlanWatchScope,
   type PlanTaskEventKind,
+  TASK_PRIORITIES,
   TASK_STATUSES,
   type TaskStatus,
 } from '@oppenheimer/shared';
@@ -39,6 +40,11 @@ export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected
 export const statusInput = z
   .enum(TASK_STATUSES)
   .describe('The column: todo (Not started), doing (In progress), review (In review) or done.');
+export const priorityInput = z
+  .enum(TASK_PRIORITIES)
+  .describe(
+    'How much it matters: urgent (drop other work for it), high, medium or low. Leave it off unless the person said or it is plainly urgent.',
+  );
 export const expectedVersionInput = z
   .number()
   .int()
@@ -113,6 +119,7 @@ export function describeTask(task: TaskEntity): string {
     `project ${task.projectId}`,
     `milestone ${task.milestoneId ?? 'none'}`,
     describeDue(task),
+    `priority ${task.priority ?? 'none'}`,
   ];
   if (task.blockedReason) parts.push(`blocked: ${task.blockedReason}`);
   return `${task.id} "${task.title}" [${parts.join('; ')}]`;
@@ -130,6 +137,7 @@ export function describeTaskInFull(task: TaskEntity, context: BotToolCallContext
     `- project: ${task.projectId}`,
     `- milestone: ${task.milestoneId ?? 'none'}`,
     `- due: ${describeDue(task)}`,
+    `- priority: ${task.priority ?? 'none'}`,
     `- blocked: ${task.blockedReason ?? 'no'}`,
     `- completed: ${task.completedAt ? formatToolTime(task.completedAt, context.timeZone) : 'no'}`,
     `- updated: ${formatToolTime(task.updatedAt, context.timeZone)}`,

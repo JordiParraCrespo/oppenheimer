@@ -1449,6 +1449,11 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/19-plan-tasks-and-goals.md` gave a task no priority. On
+  2026-11-17 the owner asked for a few levels after looking at Linear and
+  ClickUp: a task has an optional priority, Urgent, High, Medium or Low,
+  drawn with Linear's icons (the "!" square for Urgent), that never
+  reorders a column (§9, "Priority").
 - `versions/mvp/29-inbox.md` gathered what needs the person from the
   sessions, bots, pull requests, runs and reports, and a task an agent made
   went straight onto the board with nothing to say so. On 2026-11-12 the

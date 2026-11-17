@@ -2872,6 +2872,10 @@ export type TaskResponseDto = {
      * The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.
      */
     focusDate?: string | null;
+    /**
+     * How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.
+     */
+    priority?: 'urgent' | 'high' | 'medium' | 'low';
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.
@@ -2907,6 +2911,7 @@ export type CreateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
 };
 
 export type UpdateTaskRequest = {
@@ -2917,6 +2922,7 @@ export type UpdateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     blockedReason?: string | null;
     expectedVersion?: number;
 };

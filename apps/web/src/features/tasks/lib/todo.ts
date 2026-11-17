@@ -1,4 +1,9 @@
-import { compareRank, type SessionEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
+import {
+  comparePriority,
+  compareRank,
+  type SessionEntity,
+  type TaskEntity,
+} from '@oppenheimer/frontend-consumer';
 import { searchText, todayIn } from '@oppenheimer/frontend-web';
 import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
@@ -187,8 +192,9 @@ export const NO_ADD_FILTER: AddFilter = { projectIds: [], statuses: [] };
 
 /**
  * What Add tasks offers for a day: the open tasks not already on its list,
- * in the projects and columns the filter picks (every one when unset), in
- * the board's order. Adding one puts it on that day; its due date stays.
+ * in the projects and columns the filter picks (every one when unset), most
+ * important first and in the board's order within a priority. Adding one puts
+ * it on that day; its due date stays.
  */
 export function addableTasks(
   tasks: readonly TaskEntity[],
@@ -200,7 +206,7 @@ export function addableTasks(
       (task) =>
         !task.isDone && !onDay.has(task.id) && inProjects(task, filter) && inStatuses(task, filter),
     )
-    .sort(compareRank);
+    .sort((a, b) => comparePriority(a, b) || compareRank(a, b));
 }
 
 const inProjects = (task: TaskEntity, filter: AddFilter) =>

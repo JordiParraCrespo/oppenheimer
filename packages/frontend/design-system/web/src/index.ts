@@ -573,7 +573,7 @@ export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
 export { Switch } from './components/switch';
-export type { TaskDueTone, TaskStatus } from './components/task-board';
+export type { TaskDueTone, TaskPriority, TaskStatus } from './components/task-board';
 export {
   TASK_STATUS_STATE,
   TaskBoard,
@@ -584,6 +584,7 @@ export {
   TaskColumnMore,
   TaskComposer,
   TaskMarquee,
+  TaskPriorityIcon,
   TaskSelectionBar,
   TaskSessionChip,
 } from './components/task-board';

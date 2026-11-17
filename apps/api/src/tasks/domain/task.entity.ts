@@ -12,6 +12,7 @@ import {
   TASK_STATUSES_BEFORE_WORK,
   TASK_TITLE_MAX,
   type TaskOrigin,
+  type TaskPriority,
   type TaskStatus,
 } from '@oppenheimer/shared';
 import { TaskActivityLoggedDomainEvent } from './events/task-activity-logged.domain-event';
@@ -49,6 +50,8 @@ export interface TaskProps {
   dueTime: string | null;
   /** The day it is on To do from, until it is done; apart from when it is due. */
   focusDate: string | null;
+  /** How much it matters, or null for none; never moves it on the board. */
+  priority: TaskPriority | null;
   /** When it last moved to Done; cleared when it leaves. */
   completedAt: Date | null;
   /** Why it waits on a person, or null; Done clears it. */
@@ -80,6 +83,7 @@ export interface CreateTaskProps {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  priority?: TaskPriority | null;
   createdByUserId: string;
   actor: PlanActor;
   /** Who made it, as the request came in: an agent's waits for its person. */
@@ -94,6 +98,7 @@ export interface TaskEdit {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  priority?: TaskPriority | null;
 }
 
 /**
@@ -129,6 +134,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         dueDate: props.dueDate ?? null,
         dueTime: props.dueDate ? (props.dueTime ?? null) : null,
         focusDate: props.focusDate ?? null,
+        priority: props.priority ?? null,
         completedAt: props.status === 'done' ? new Date() : null,
         blockedReason: null,
         blockedAt: null,
@@ -232,6 +238,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get focusDate(): string | null {
     return this.props.focusDate;
   }
+  get priority(): TaskPriority | null {
+    return this.props.priority;
+  }
   get completedAt(): Date | null {
     return this.props.completedAt;
   }
@@ -285,6 +294,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     }
     if (changes.dueTime !== undefined) this.props.dueTime = changes.dueTime;
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
+    if (changes.priority !== undefined) this.props.priority = changes.priority;
     this.setUpdatedAt(new Date());
     this.validate();
     if (due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime) {
