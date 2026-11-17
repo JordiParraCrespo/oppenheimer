@@ -197,7 +197,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   custom properties. The theme is the app's: `DiffView` takes
   `colorScheme` from the caller and never reads the OS or the document.
 - **A file wears its type's mark.** `FileIcon` and the tree draw the same
-  published icon set (@pierre/trees, its `complete` set). Its hue comes
+  published icon set (@pierre/trees, its `complete` set), corrected and
+  widened in `internal/file-icon-set.ts`: markup (HTML, XML, templates) is
+  `</>` on the set's tile, where the set draws HTML as a CSS-like `#`; a
+  file that belongs to a mark the set has takes it (`go.mod` Go,
+  `Cargo.toml` Rust, a certificate the lock); a language the set has no
+  mark for wears its vendor's own, copied from Simple Icons
+  (`internal/file-icon-marks.json`: Java, Kotlin, PHP, Haskell…), a PDF a
+  red page, and one with no legible published mark the neutral code page,
+  never a redrawn logo. Its hue comes
   from one map, the `--file-icon-*` tokens in `globals.css`, which the
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.
