@@ -17,16 +17,19 @@ is the kind we are building:
 
 | Kind | Who | Shape |
 | --- | --- | --- |
-| **A product's own prompt, as assets** | Codex, Goose, OpenCode, Cline | plain text or Markdown compiled into the binary, a few slots, no metadata |
-| **Instructions a person writes** | Agent Skills, Claude Code skills, Cursor rules, VS Code prompt files, pi templates, eve | YAML frontmatter that says *when the file applies*, then a Markdown body |
+| **An agent's own prompt, as assets** | Codex, Goose, OpenCode, Cline, eve's instructions | plain text or Markdown compiled into the build, a few slots or none, no metadata |
+| **Instructions a person writes** | Agent Skills, Claude Code skills, Cursor rules, VS Code prompt files, pi templates, eve's skills and schedules | YAML frontmatter that says *when the file applies*, then a Markdown body |
 | **A prompt as a runnable artifact** | dotprompt, Prompty | frontmatter holding the model, its settings and the input and output schemas, then a templated body with role markers |
 
 Ours matches the first kind's best example closely. Codex keeps its
 prompts as Markdown, fills them through a strict template with `{{ name }}`
 slots, compiles them in, and puts no logic in the files. That is the
-design #914 arrived at, so nothing in it needs redoing.
+design #914 arrived at, so nothing in it needs redoing. eve, Vercel's
+framework, goes one step further the same way: its instruction files are
+Markdown with no slots and no frontmatter, and anything that varies is
+TypeScript (§2.5).
 
-Five things are worth taking, in this order (§4 has each with its
+Six things are worth taking, in this order (§4 has each with its
 evidence):
 
 1. **Folders that say where the words are sent**, before the flat
@@ -39,6 +42,8 @@ evidence):
    under a heading in the same voice as our own rules. This one changes
    what a bot is sent, so it is a proposal with an eval, not a tidy-up.
 5. **A size ceiling per prompt, checked.**
+6. **A blank value leaves its section out**, as a rule of the reader
+   rather than an `if` at each call.
 
 Three things are worth refusing: logic in the file, frontmatter that
 carries conditions, and a file a person can drop in to replace a built-in
@@ -118,7 +123,7 @@ one question: when does this file reach the model?
 | Cursor rules (`.mdc`) | `description`, `globs`, `alwaysApply`: three fields, four ways a rule applies (always, by file, chosen by the agent, by hand) | `@file` mentions, read when the rule applies | "Keep rules under 500 lines", "Split large rules into multiple, composable rules" |
 | VS Code prompt files (`.prompt.md`) | `description`, `name`, `argument-hint`, `agent`, `model`, `tools` | `${input:name:placeholder}`, Markdown links, `#tool:name` | none stated |
 | pi templates | `description`, `argument-hint` | `$1`, `$@`, `${1:-default}`, `${@:N}` | none stated |
-| eve | one file per instruction, each with a role and a lifetime (`agent-stack-architecture.md` §2.1) | | |
+| eve skills | `description` (required for a packaged skill), `deferred`, `license`, `metadata`; follows Agent Skills and ignores other fields | relative paths from the skill's folder | a name is letters, digits, `_` and `-`, 64 characters at most |
 
 ### 2.3 A prompt as a runnable artifact
 
@@ -146,6 +151,43 @@ From "Prompting best practices" (platform.claude.com):
   above your query, instructions, and examples."
 - Explaining why an instruction exists "can give Claude more information
   about your goals".
+
+### 2.5 eve
+
+Read on eve.dev (`/docs/instructions`, `/docs/concepts/context-control`,
+`/docs/skills`, `/docs/tools`, `/docs/reference/agent-files`). Its
+documentation, not its source.
+
+- **A Markdown instruction file is only words.** `agent/instructions.md`:
+  "Its contents are the prompt." No frontmatter, no slots, no templating.
+- **Several files are a folder, in file-name order.**
+  `agent/instructions/` holds `.md` and `.ts` files, subfolders are not
+  read, and static entries apply in alphabetical order with the root file
+  first.
+- **Anything that varies is TypeScript.** `defineInstructions({ content,
+  role })` for a value built in code ("blank content adds nothing"), and
+  `defineDynamic((ctx) => …)` for one decided per call, which answers
+  instructions or `null`. A `.ts` file can import a Markdown file as text.
+- **Each piece says which message it is.** System role: outside the
+  history, sent on every call, "for identity and standing rules". User
+  role: added to the history once, and again only when its content
+  changes or a compaction removed it. User-role pieces "only append",
+  which keeps the earlier prefix for the provider's cache.
+- **Memory is not a system section.** It "appears as user-role messages
+  labeled by memory slot, placed before the turn input".
+- **The rule for placing anything**: "Control context by putting
+  information in the narrowest surface that needs it", and "Keep
+  instructions short enough to justify including them on every model
+  call."
+- **A skill is a flat `.md` or a folder with `SKILL.md`** (the Agent
+  Skills format). Only its description is in the prompt until the model
+  loads it.
+- **A tool's description is not Markdown.** It is a string in the tool's
+  `.ts` file, whose file name is the tool's name, and the examples are one
+  sentence. A longer procedure is a skill.
+- **A schedule can be Markdown with `cron` in its frontmatter**: the one
+  place eve uses frontmatter for something other than a skill, and again
+  it says when, not what.
 
 ## 3. Ours, measured
 
@@ -184,7 +226,9 @@ layout.
 
 **Evidence.** Codex groups by concern (`permissions/`, `compact/`,
 `review/`, `guardian/`, `realtime/`); OpenCode by owner
-(`system-prompt/`, `goal/`, `command/`, `tool/`).
+(`system-prompt/`, `goal/`, `command/`, `tool/`). eve makes every piece
+declare whether it is a system instruction or a message in the history,
+because the two are sent, cached and compacted differently.
 
 **For us.** The next pull requests move the wake prompts, the turn
 context, the dream, the goal review, the peer-message envelopes and the
@@ -202,6 +246,14 @@ domain/prompts/
 Ids gain the folder (`system/rules`). `check-api-structure` admits one
 level under `prompts/`. **When:** with the next move, so #914 is not
 touched.
+
+The folder also shows what is in the wrong one. A bot's remembered facts
+are sections of the system prompt today (`documents.general-memory`,
+`documents.own-memory`), so a fact the bot remembers rewrites the prompt
+for the next turn (`agent-stack-architecture.md` §3, "Stable first").
+eve sends memory as labelled messages before the turn's input. Moving
+ours changes what a bot is sent, so it belongs with §4.4, not with the
+move of the files.
 
 ### 4.2 One file per alternative, when the alternative is a paragraph
 
@@ -231,6 +283,14 @@ The generator can then hold every description to a ceiling and the
 catalog becomes something a person can read end to end. Our bots' skill
 descriptions already have such a ceiling (`BOT_SKILL_DESCRIPTION_MAX`,
 280). **When:** its own pull request, after the policies.
+
+eve is the counter-example: its tools keep a one-sentence description in
+code and put anything longer in a skill. Ours are paragraphs (the
+terminal tools' run to about 500 characters each, measured in
+`bot-terminal-tools.factory.ts`), and they carry rules the model needs
+whenever the tool is offered, so they cannot wait behind a skill. The
+files are still the right home for them; the ceiling is what eve's
+choice argues for.
 
 ### 4.4 What a person or a bot wrote goes in a tag it cannot close
 
@@ -265,7 +325,20 @@ prompt and one for the whole, asserted by `prompt-files.spec.ts`, makes
 growth a decision someone takes in a diff rather than something noticed
 later. **When:** with the next move; a few lines.
 
-### 4.6 Small ones
+### 4.6 A blank value leaves its section out
+
+**Evidence.** eve's `defineInstructions`: "blank content adds nothing";
+a dynamic instruction answers `null` to say the same.
+
+**For us, measured.** `composeBotSystemPrompt` asks the question by hand
+before each document and each list of facts
+(`if (input.soul.trim()) parts.push(…)`), five times
+(`bot-prompt.policy.ts`, lines 92 to 117). A reader that answers nothing
+for a prompt whose value is blank removes those branches, and it is the
+first row of the table of sections the Grok review asked for. **When:**
+with the sections step; it does not change the bytes.
+
+### 4.7 Small ones
 
 - **Refuse a value the prompt has no slot for, at run time too.** Codex
   does; ours relies on the types. Three lines.
@@ -281,7 +354,11 @@ later. **When:** with the next move; a few lines.
   Goose's `system.md` is the cost in one screen: nested conditions, and
   whitespace flags to make the output come out right. A condition in a
   template is untyped and untested; ours are TypeScript checked against
-  the tool names. Codex made the same choice.
+  the tool names. Codex made the same choice, and eve allows no syntax
+in a Markdown instruction at all.
+- **Order by file name** (eve's alphabetical folder). It works when
+  every file is always sent. Ours are chosen per bot, so the order is the
+  order of the table in code.
 - **Frontmatter that carries conditions** (`needs: [open_terminal]`).
   Frontmatter earns its place in §2.2 because a person, not code, decides
   when the file applies, and three fields are enough for Cursor. Our
@@ -307,6 +384,9 @@ later. **When:** with the next move; a few lines.
 - `github.com/anomalyco/opencode` at `b0cecfa`: `packages/core/src/plugin/system-prompt/`,
   `packages/core/src/tool/`.
 - `github.com/cline/cline` at `eff43e1`: `sdk/packages/shared/src/prompt/`.
+- eve.dev: `/docs/instructions`, `/docs/concepts/context-control`,
+  `/docs/skills`, `/docs/tools`, `/docs/reference/agent-files`
+  (documentation only; its source was not read).
 - agentskills.io/specification; code.claude.com/docs/en/skills;
   cursor.com/docs/context/rules;
   code.visualstudio.com/docs/copilot/customization/prompt-files;
