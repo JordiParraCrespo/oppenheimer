@@ -37,6 +37,7 @@ import {
   isFiltered,
   projectOptions,
   repositoryOptions,
+  statusOptions,
   withoutChip,
 } from '../lib/session-filters';
 import { matchesQuery, sidebarList } from '../lib/session-groups';
@@ -126,6 +127,9 @@ export function SessionsSidebarBody() {
     // An agent's name is the vendor's product name, the catalog's own.
     agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
+    status: statusOptions(t('sessions.filters.allStatuses'), (status) =>
+      t(`sessions.filters.statuses.${status}`),
+    ),
   };
   const [filters, setFilters] = useSessionFilters(options);
   const hiddenSessions = listedSessions(all, showHidden);

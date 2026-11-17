@@ -1161,6 +1161,7 @@
       "repository": "Repository",
       "agent": "Agent",
       "host": "Host",
+      "status": "Status",
       "sort": "Sort by",
       "clear": "Clear filters",
       "remove": "Clear filter",
@@ -1177,13 +1178,19 @@
       "showAll": "Show all projects",
       "pinnedOnly": "Pinned only",
       "showHidden": "Show hidden sessions",
-      "newProject": "New project…"
+      "newProject": "New project…",
+      "allStatuses": "All statuses",
+      "statuses": {
+        "needs-you": "Needs input",
+        "done": "Ready for review"
+      }
     },
     "sort": {
       "custom": "Custom order",
       "recent": "Last activity",
       "oldest": "Oldest first",
-      "name": "Name"
+      "name": "Name",
+      "attention": "Needs input first"
     },
     "share": {
       "title": "Share session",
