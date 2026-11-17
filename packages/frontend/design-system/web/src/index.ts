@@ -197,6 +197,7 @@ export {
   ChipSelect,
   ChipSelectActionRow,
   ChipSelectBack,
+  ChipSelectCombobox,
   ChipSelectEmpty,
   ChipSelectHeading,
   ChipSelectItem,

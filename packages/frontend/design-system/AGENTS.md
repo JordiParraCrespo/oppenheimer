@@ -55,6 +55,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   four chips behave as one thing. It is built on Popover, not Base UI
   Select, for that reason; `RepositorySelect` reuses its parts for the
   multi-repo pane. A foot action with `href` is a new-tab link.
+- **A picker with a search is picked from the keyboard, one way.** Its
+  search, list and rows sit in a `ChipSelectCombobox` (Base UI Combobox,
+  inline in the popup): ↑ ↓ move the highlight while the focus stays in the
+  search, Enter clicks the highlighted row, and the field names it to a
+  screen reader. A pane never keeps a highlight index or a key handler of
+  its own; a row's `onClick` is the one place a choice is made, by pointer
+  or key. A pane that opens on a choice to make (`ChipSelect`, a host's
+  places) lights its first row with `autoHighlight="always"`; a pane that
+  changes under the search takes a `key`, so its highlight starts again.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
   Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's

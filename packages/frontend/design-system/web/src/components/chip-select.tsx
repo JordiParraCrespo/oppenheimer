@@ -1,9 +1,9 @@
 'use client';
 
+import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { chooseActive, clearActive, moveActive, paneOf } from '../internal/option-keys';
 import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
@@ -70,6 +70,52 @@ function matches(option: ChipSelectOption, term: string) {
 }
 
 /* ── Parts ───────────────────────────────────────────────────────────────── */
+
+/** Whether the parts are inside a `ChipSelectCombobox`, so they draw as its parts. */
+const ComboboxScope = React.createContext(false);
+
+/**
+ * The keyboard and the screen reader for one pane: wrap the search, the list
+ * and its rows in it, and ↑ ↓ move the highlight while the focus stays in the
+ * search, Enter picks it, and the field announces it (Base UI Combobox,
+ * inline, so the `ChipSelectPopup` around it stays the one surface).
+ *
+ * It picks nothing itself: Enter clicks the highlighted row, so a row's own
+ * `onClick` is the one place a choice is made, by the pointer or the keys. It
+ * filters nothing either: the caller narrows the rows from `query`, or hands
+ * the query to the API.
+ *
+ * `autoHighlight` lights the first row as soon as there is a query, so typing
+ * and Enter picks the best match; a pane that opens on a choice to make
+ * (`ChipSelect`) passes `'always'` to light it before anything is typed.
+ */
+function ChipSelectCombobox({
+  query,
+  onQueryChange,
+  autoHighlight = true,
+  children,
+}: {
+  query: string;
+  onQueryChange: (query: string) => void;
+  autoHighlight?: boolean | 'always';
+  children: React.ReactNode;
+}) {
+  return (
+    <ComboboxPrimitive.Root
+      inline
+      open
+      filter={null}
+      inputValue={query}
+      onInputValueChange={(next) => onQueryChange(next)}
+      // The row's own onClick has made the choice; the combobox keeps none.
+      onValueChange={(_value, details) => details.cancel()}
+      // Root's types narrow `'always'` away; the core it hands its props to takes it.
+      autoHighlight={autoHighlight as boolean}
+    >
+      <ComboboxScope.Provider value>{children}</ComboboxScope.Provider>
+    </ComboboxPrimitive.Root>
+  );
+}
 
 const TRIGGER_CLASSES =
   'group/chip-select inline-flex h-(--control-h-md) shrink-0 items-center gap-[7px] rounded-md border border-border-subtle bg-control px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard hover:border-border hover:bg-control-hover data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
@@ -155,7 +201,6 @@ function ChipSelectPopup({
   width,
   maxHeight,
   style,
-  onPointerMove,
   ...props
 }: React.ComponentProps<typeof PopoverContent> & {
   density?: ChipSelectDensity;
@@ -174,11 +219,6 @@ function ChipSelectPopup({
         className,
       )}
       style={{ width: width ?? POPUP_WIDTH[density], maxHeight: height, ...style }}
-      // The pointer takes over from the arrow keys: one highlighted row, never two.
-      onPointerMove={(event) => {
-        clearActive(event.currentTarget);
-        onPointerMove?.(event);
-      }}
       {...props}
     />
   );
@@ -206,8 +246,6 @@ function ChipSelectSearch({
   variant = 'row',
   leadingSize = 'mark',
   className,
-  onKeyDown,
-  onChange,
   ...props
 }: Omit<React.ComponentProps<'input'>, 'type'> & {
   density?: ChipSelectDensity;
@@ -215,6 +253,12 @@ function ChipSelectSearch({
   leadingSize?: ChipSelectLeadingSize;
 }) {
   const boxed = variant === 'boxed';
+  const combobox = React.useContext(ComboboxScope);
+  const inputClasses = cn(
+    'min-w-0 flex-1 bg-transparent p-0 text-fg outline-none placeholder:text-field-placeholder',
+    boxed ? 'text-[13px]' : 'text-[12.5px]',
+    className,
+  );
   return (
     <div
       data-slot="chip-select-search"
@@ -232,30 +276,34 @@ function ChipSelectSearch({
       ) : (
         <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
       )}
-      <input
-        // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
-        autoFocus
-        type="text"
-        className={cn(
-          'min-w-0 flex-1 bg-transparent p-0 text-fg outline-none placeholder:text-field-placeholder',
-          boxed ? 'text-[13px]' : 'text-[12.5px]',
-          className,
-        )}
-        // A caller that keeps its own highlight handles the keys first and
-        // prevents the default; every other pane gets them here.
-        onKeyDown={(event) => {
-          if (chooseActive(event)) return;
-          onKeyDown?.(event);
-          if (!event.defaultPrevented) moveActive(event);
-        }}
-        onChange={(event) => {
-          clearActive(paneOf(event.currentTarget));
-          onChange?.(event);
-        }}
-        {...props}
-      />
+      {combobox ? (
+        <ComboboxPrimitive.Input
+          // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
+          autoFocus
+          className={inputClasses}
+          {...withoutValue(props)}
+        />
+      ) : (
+        <input
+          // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
+          autoFocus
+          type="text"
+          className={inputClasses}
+          {...props}
+        />
+      )}
     </div>
   );
+}
+
+/** In a combobox the root holds the query, so a value or onChange here would fight it. */
+function withoutValue<P extends { value?: unknown; defaultValue?: unknown; onChange?: unknown }>({
+  value: _value,
+  defaultValue: _defaultValue,
+  onChange: _onChange,
+  ...rest
+}: P) {
+  return rest;
 }
 
 const BACK_CLASSES: Record<ChipSelectDensity, string> = {
@@ -359,7 +407,7 @@ function ChipSelectTab({
 }
 
 const ITEM_CLASSES =
-  'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-active:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
+  'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
 
 /** The gap after a row's leading slot, shared with a boxed search. */
 const ROW_GAP: Record<ChipSelectDensity, string> = {
@@ -422,7 +470,6 @@ function ChipSelectItem({
   leadingSize = 'mark',
   description,
   mono,
-  highlighted,
   trailing,
   count,
   className,
@@ -435,28 +482,26 @@ function ChipSelectItem({
   leadingSize?: ChipSelectLeadingSize;
   description?: React.ReactNode;
   mono?: boolean;
-  highlighted?: boolean;
   trailing?: React.ReactNode;
   /** In mono before the check. */
   count?: number;
 }) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={selected}
-      data-slot="chip-select-option"
-      data-selected={selected || undefined}
-      data-highlighted={highlighted || undefined}
-      className={cn(
-        ITEM_CLASSES,
-        ROW_GAP[density],
-        ITEM_DENSITY[density],
-        selected && density === 'chip' && 'text-link',
-        className,
-      )}
-      {...props}
-    >
+  const combobox = React.useContext(ComboboxScope);
+  const value = React.useId();
+  const rowProps = {
+    'aria-selected': selected,
+    'data-slot': 'chip-select-option',
+    'data-selected': selected || undefined,
+    className: cn(
+      ITEM_CLASSES,
+      ROW_GAP[density],
+      ITEM_DENSITY[density],
+      selected && density === 'chip' && 'text-link',
+      className,
+    ),
+  };
+  const content = (
+    <>
       {leading ? <ChipSelectLeading size={leadingSize}>{leading}</ChipSelectLeading> : null}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className={cn('truncate', mono && 'figures text-xs leading-[1.45]')}>{children}</span>
@@ -477,6 +522,37 @@ function ChipSelectItem({
           {selected ? <CheckIcon className="size-3.5" strokeWidth={2.5} /> : null}
         </span>
       )}
+    </>
+  );
+  if (combobox) {
+    // The combobox owns the highlight (`data-highlighted`), the row's id and its disabled state.
+    const { disabled: disabledProp, onClick, ...rest } = props;
+    const disabled = Boolean(disabledProp || props['data-disabled' as keyof typeof props]);
+    return (
+      <ComboboxPrimitive.Item
+        value={value}
+        disabled={disabled}
+        {...rowProps}
+        // A div, as Base UI asks, so a row never takes the focus from the search;
+        // a row's handlers are the same whatever element carries them.
+        {...(rest as unknown as Omit<React.ComponentProps<typeof ComboboxPrimitive.Item>, 'ref'>)}
+        // A div has no disabled of its own to swallow the click, as a button's did.
+        onClick={(event) => {
+          if (!disabled) onClick?.(event as unknown as React.MouseEvent<HTMLButtonElement>);
+        }}
+      >
+        {content}
+      </ComboboxPrimitive.Item>
+    );
+  }
+  return (
+    <button
+      type="button"
+      role="option"
+      {...rowProps}
+      {...props}
+    >
+      {content}
     </button>
   );
 }
@@ -542,26 +618,35 @@ function ChipSelectList({
       ? undefined
       : Math.min(rows, Math.max(1, total)) * LIST_ROW[density] + 2;
 
+  const combobox = React.useContext(ComboboxScope);
+  const listProps = {
+    'data-slot': 'chip-select-list',
+    className: cn(
+      'min-h-0 overflow-y-auto',
+      // A capped list measures its content only, so a caller's padding adds to the cap
+      // instead of clipping the last row.
+      rows === undefined ? '[scrollbar-width:thin]' : 'box-content [scrollbar-width:none]',
+      className,
+    ),
+    style: capped === undefined ? style : { maxHeight: capped, ...style },
+  };
+  const body = loading ? (
+    <ChipSelectEmpty live>{loadingText}</ChipSelectEmpty>
+  ) : empty ? (
+    <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
+  ) : (
+    children
+  );
+  if (combobox) {
+    return (
+      <ComboboxPrimitive.List {...listProps} {...props}>
+        {body}
+      </ComboboxPrimitive.List>
+    );
+  }
   return (
-    <div
-      data-slot="chip-select-list"
-      className={cn(
-        'min-h-0 overflow-y-auto',
-        // A capped list measures its content only, so a caller's padding adds to the cap
-        // instead of clipping the last row.
-        rows === undefined ? '[scrollbar-width:thin]' : 'box-content [scrollbar-width:none]',
-        className,
-      )}
-      style={capped === undefined ? style : { maxHeight: capped, ...style }}
-      {...props}
-    >
-      {loading ? (
-        <ChipSelectEmpty live>{loadingText}</ChipSelectEmpty>
-      ) : empty ? (
-        <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
-      ) : (
-        children
-      )}
+    <div {...listProps} {...props}>
+      {body}
     </div>
   );
 }
@@ -655,45 +740,6 @@ function PlusGlyph() {
 /* ── The single-value picker ─────────────────────────────────────────────── */
 
 /**
- * One option row of `ChipSelect`, memoised on purpose.
- *
- * The highlight moves on every row the pointer crosses and on every arrow key.
- * A row takes its own `highlighted` flag and two callbacks whose identity holds,
- * so a move re-renders the row it left and the row it reached, not the list.
- */
-const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
-  option,
-  index,
-  selected,
-  highlighted,
-  onHighlight,
-  onChoose,
-}: {
-  option: ChipSelectOption;
-  index: number;
-  selected: boolean;
-  highlighted: boolean;
-  onHighlight: (index: number) => void;
-  onChoose: (option: ChipSelectOption) => void;
-}) {
-  return (
-    <ChipSelectItem
-      selected={selected}
-      highlighted={highlighted}
-      leading={option.leading}
-      description={option.description}
-      mono={option.mono}
-      count={option.count}
-      data-disabled={option.disabled || undefined}
-      onMouseEnter={() => onHighlight(index)}
-      onClick={() => onChoose(option)}
-    >
-      {option.label}
-    </ChipSelectItem>
-  );
-});
-
-/**
  * ChipSelect — a scope decision stated as a chip: "Run X in **XRP Mobile**
  * on host **mac-studio**, repo **xrp-mobile**, branch **main**". Four in a
  * row on New session, so the row reads as a sentence instead of a form.
@@ -702,9 +748,9 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
  * grow, a pinned action band ("Add host…") ends in a chevron, because it
  * opens something rather than choosing.
  *
- * Built on Popover because Base UI Select has no filtering. The parts are
- * exported so a multi-pane picker such as `RepositorySelect` is the same chip
- * and rows.
+ * Built on Popover, with the pane a `ChipSelectCombobox` for the keys and the
+ * screen reader. The parts are exported so a multi-pane picker such as
+ * `RepositorySelect` is the same chip, rows and keys.
  *
  * ```tsx
  * <ChipSelect
@@ -768,7 +814,6 @@ function ChipSelect({
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
-  const [active, setActive] = React.useState(0);
   // The option chosen when the popup opened leads the list (`selectedFirst`).
   const [pinned, setPinned] = React.useState<string | null>(null);
   const term = query.trim().toLowerCase();
@@ -779,27 +824,9 @@ function ChipSelect({
   );
   const selected = options.find((option) => option.value === value) ?? null;
 
-  // Stable across a highlight move, so the memoised rows can skip it.
-  const choose = React.useCallback(
-    (option: ChipSelectOption) => {
-      onValueChange(option.value);
-      setOpen(false);
-    },
-    [onValueChange],
-  );
-
-  function onKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setActive((i) => Math.min(i + 1, visible.length - 1));
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      const option = visible[active];
-      if (option && !option.disabled) choose(option);
-    }
+  function choose(option: ChipSelectOption) {
+    onValueChange(option.value);
+    setOpen(false);
   }
 
   return (
@@ -807,7 +834,6 @@ function ChipSelect({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        setActive(0);
         if (next) setPinned(value);
         if (!next && query !== '') {
           setQuery('');
@@ -831,37 +857,39 @@ function ChipSelect({
         }
       />
       <ChipSelectPopup width={width} maxHeight={maxHeight}>
-        <ChipSelectSearch
-          value={query}
-          placeholder={searchPlaceholder}
-          aria-label={searchPlaceholder}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setActive(0);
-            onQueryChange?.(event.target.value);
+        <ChipSelectCombobox
+          query={query}
+          onQueryChange={(next) => {
+            setQuery(next);
+            onQueryChange?.(next);
           }}
-          onKeyDown={onKeyDown}
-        />
-        <ChipSelectList
-          role="listbox"
-          aria-label={ariaLabel}
-          loading={loading}
-          loadingText={loadingText}
-          emptyText={emptyText}
-          empty={visible.length === 0}
+          autoHighlight="always"
         >
-          {visible.map((option, index) => (
-            <ChipSelectOptionRow
-              key={option.value}
-              option={option}
-              index={index}
-              selected={option.value === value}
-              highlighted={index === active}
-              onHighlight={setActive}
-              onChoose={choose}
-            />
-          ))}
-        </ChipSelectList>
+          <ChipSelectSearch placeholder={searchPlaceholder} aria-label={searchPlaceholder} />
+          <ChipSelectList
+            aria-label={ariaLabel}
+            loading={loading}
+            loadingText={loadingText}
+            emptyText={emptyText}
+            empty={visible.length === 0}
+          >
+            {visible.map((option) => (
+              <ChipSelectItem
+                key={option.value}
+                selected={option.value === value}
+                leading={option.leading}
+                description={option.description}
+                mono={option.mono}
+                count={option.count}
+                disabled={option.disabled}
+                data-disabled={option.disabled || undefined}
+                onClick={() => choose(option)}
+              >
+                {option.label}
+              </ChipSelectItem>
+            ))}
+          </ChipSelectList>
+        </ChipSelectCombobox>
         {action ? (
           <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
         ) : null}
@@ -873,6 +901,7 @@ function ChipSelect({
 export {
   ChipSelect,
   ChipSelectActionRow,
+  ChipSelectCombobox,
   ChipSelectBack,
   ChipSelectEmpty,
   ChipSelectHeading,

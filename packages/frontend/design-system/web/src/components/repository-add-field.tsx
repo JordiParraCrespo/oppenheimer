@@ -7,7 +7,9 @@ import { cn } from '../lib/utils';
 import { BrandGlyph } from './brand-glyph';
 import {
   ChipSelectActionRow,
+  ChipSelectCombobox,
   ChipSelectEmpty,
+  ChipSelectList,
   ChipSelectItem,
   ChipSelectPopup,
   ChipSelectSearch,
@@ -109,13 +111,12 @@ function RepositoryAddField({
           {placeholder}
         </PopoverTrigger>
         <ChipSelectPopup width={320} side="bottom" align="start">
+          <ChipSelectCombobox query={query} onQueryChange={setQuery}>
           <ChipSelectSearch
-            value={query}
             placeholder={placeholder}
             aria-label={placeholder}
-            onChange={(event) => setQuery(event.target.value)}
           />
-          <div role="listbox" aria-label={placeholder} className="max-h-[220px] overflow-y-auto">
+          <ChipSelectList aria-label={placeholder} className="max-h-[220px]">
             {options.length > 0 ? (
               options.map((repo) => (
                 <ChipSelectItem
@@ -133,7 +134,8 @@ function RepositoryAddField({
             ) : (
               <ChipSelectEmpty>{emptyText(query)}</ChipSelectEmpty>
             )}
-          </div>
+          </ChipSelectList>
+          </ChipSelectCombobox>
           {onManage ? (
             <ChipSelectActionRow
               action={{

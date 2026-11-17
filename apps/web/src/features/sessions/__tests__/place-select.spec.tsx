@@ -122,12 +122,15 @@ describe('PlaceSelect', () => {
   /** Keys as in `ChipSelect`: the arrows walk the list under the search, Enter takes the row. */
   it('picks a host and a place from the keyboard', () => {
     const { onHostChange, onPlaceChange } = renderChip();
-    const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
+    const search = screen.getByRole('combobox', { name: 'sessions.new.host.search' });
 
     fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
-    fireEvent.keyDown(search, { key: 'ArrowDown' });
-    fireEvent.keyDown(search, { key: 'Enter' });
+    // The host's pane opens on a search of its own, and the focus goes with it.
+    const paneSearch = document.activeElement as HTMLElement;
+    expect(paneSearch.getAttribute('role')).toBe('combobox');
+    fireEvent.keyDown(paneSearch, { key: 'ArrowDown' });
+    fireEvent.keyDown(paneSearch, { key: 'Enter' });
 
     expect(onHostChange).toHaveBeenCalledWith('host-2');
     expect(onPlaceChange).toHaveBeenCalledWith('folder');
@@ -183,7 +186,7 @@ describe('PlaceSelect', () => {
 
     for (const cannot of ['optimus', 'old-box']) {
       const row = screen.getByRole('option', { name: cannot });
-      expect(row).toHaveProperty('disabled', true);
+      expect(row.getAttribute('aria-disabled')).toBe('true');
       fireEvent.click(row);
     }
     expect(picked.onHostCloudChange).not.toHaveBeenCalled();
@@ -200,7 +203,7 @@ describe('PlaceSelect', () => {
     const none = renderChip(CLOUDS, { place: 'worktree', cloud: null }, null);
     openTab('clouds');
     const row = screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' });
-    expect(row).toHaveProperty('disabled', true);
+    expect(row.getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(row);
     expect(none.onHostCloudChange).not.toHaveBeenCalled();
   });
@@ -222,11 +225,15 @@ describe('PlaceSelect', () => {
     renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], null);
     openTab('clouds');
     expect(
-      screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }),
-    ).toHaveProperty('disabled', true);
+      screen
+        .getByRole('option', { name: 'sessions.new.where.codexCloud.label' })
+        .getAttribute('aria-disabled'),
+    ).toBe('true');
     expect(
-      screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }),
-    ).toHaveProperty('disabled', false);
+      screen
+        .getByRole('option', { name: 'sessions.new.where.claudeCloud.label' })
+        .getAttribute('aria-disabled'),
+    ).not.toBe('true');
   });
 
   // Codex's cloud runs in one of the account's environments, as the frame
@@ -285,7 +292,7 @@ describe('PlaceSelect', () => {
    */
   it('opens on the tab of the pick, and the arrows walk that tab only', () => {
     const { onCloudChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
-    const search = screen.getByRole('textbox', { name: 'sessions.new.where.searchClouds' });
+    const search = screen.getByRole('combobox', { name: 'sessions.new.where.searchClouds' });
     expect(screen.queryByRole('option', { name: 'mac-studio' })).toBeNull();
 
     // Past Claude Code's cloud and Codex's, to Cursor.
@@ -334,7 +341,7 @@ describe('PlaceSelect', () => {
 
   it('counts what each tab holds under the search', () => {
     renderChip();
-    fireEvent.change(screen.getByRole('textbox', { name: 'sessions.new.host.search' }), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'sessions.new.host.search' }), {
       target: { value: 'o' },
     });
 

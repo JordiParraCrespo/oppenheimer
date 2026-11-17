@@ -75,7 +75,7 @@ describe('the engine button’s Claude Code tab', () => {
 
   it('finds an earlier model by search without opening More models', () => {
     open('claude-opus-5-5');
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'opus 4' } });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'opus 4' } });
     expect(options()).toEqual(['Opus 4.8', 'Opus 4.7', 'Opus 4.6']);
   });
 });
