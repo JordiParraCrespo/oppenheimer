@@ -1744,6 +1744,14 @@ picked, and "Use its own face" goes back to the id's).
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
   the only code that imports either SDK.
+- **The prompt's words:** Markdown in `apps/api/src/bots-chat/domain/prompts/`
+  (2026-11-17; they were strings in `bot-prompt.policy.ts`, which the owner
+  found the hardest part of the bots' code to read). The policy decides
+  which are sent and fills their slots; `pnpm --filter @oppenheimer/api
+  generate:prompts` writes the module the API imports them from, so nothing
+  is read from disk when a turn runs. The system prompt moved first, byte
+  for byte; the wake prompts, the turn context and the tools' descriptions
+  are still strings (`research/agent-stack-architecture.md` §5).
 - **Revisions and activity:** `bot_document_revision` covers the two
   documents, `SOUL.md` and `INSTRUCTIONS.md`, and only those: they are
   what Settings reads and reverts. A self-edit of the profile (`update_profile`)

@@ -75,6 +75,10 @@ const LAYERS = {
     dirs: {
       'value-objects': { files: [/\.value-object\.ts$/] },
       events: { files: [/\.domain-event\.ts$/] },
+      prompts: {
+        what: 'the words a model is told: prose in *.md, and the prompts.gen.ts generated from it (pnpm --filter @oppenheimer/api generate:prompts)',
+        files: [/\.md$/, /^prompts\.gen\.ts$/],
+      },
       __tests__: { files: [/\.spec\.ts$/] },
     },
   },
