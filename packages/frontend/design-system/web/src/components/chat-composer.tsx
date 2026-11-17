@@ -310,7 +310,7 @@ function ChatComposer({
         )}
       </div>
       {inline && (tools || engine) ? (
-        <div data-slot="chat-composer-meta" className="flex min-h-7 items-center gap-3 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
+        <div data-slot="chat-composer-meta" className="@container/composer-meta flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
           {tools}
           <span className="ml-auto flex items-center gap-2">{engine}</span>
         </div>

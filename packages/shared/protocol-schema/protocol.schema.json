@@ -429,9 +429,7 @@
           }
         },
         "prompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2048
+          "$ref": "#/$defs/promptText"
         },
         "images": {
           "maxItems": 5,
@@ -737,6 +735,46 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 200
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "codex",
+            "opencode",
+            "grok",
+            "pi",
+            "omp"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "permission": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "auto",
+            "full"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ]
+        },
+        "prompt": {
+          "$ref": "#/$defs/promptText"
         }
       },
       "required": [
@@ -3086,6 +3124,12 @@
       "maxLength": 255,
       "id": "gitRef"
     },
+    "promptText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "id": "promptText"
+    },
     "hostPath": {
       "type": "string",
       "minLength": 1,
@@ -3159,7 +3203,8 @@
       "transcript.read",
       "host.exec",
       "terminal.drive",
-      "session.windows.list"
+      "session.windows.list",
+      "session.window.agent"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

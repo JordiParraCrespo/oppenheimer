@@ -1,3 +1,10 @@
+import {
+  CODING_AGENTS,
+  type CodingAgentId,
+  isCodingAgentId,
+  type SessionEffort,
+  type SessionPermission,
+} from '@oppenheimer/shared/agents';
 import type { PreviewTab } from './preview-open';
 
 /**
@@ -107,4 +114,48 @@ export function closeTab(order: readonly string[], active: string | null, key: s
 export function shownTab(order: readonly string[], active: string | null): string | null {
   if (active === null) return null;
   return order.includes(active) ? active : (order[0] ?? null);
+}
+
+/**
+ * The agent a session window runs, read off its name: the runner names a
+ * window opened for an agent after the agent's catalog id, and a plain shell
+ * `shell`. Anything else (an older runner's name, a window renamed on the
+ * host) is a shell too.
+ */
+export function windowAgent(name: string): Exclude<CodingAgentId, 'shell'> | null {
+  if (!isCodingAgentId(name) || name === 'shell') return null;
+  return name;
+}
+
+/**
+ * The agents that may start beside a session whose own agent is
+ * `sessionAgent`, out of `offered`: never the blank terminal (that is
+ * Terminal), and the session's own agent only when its CLI takes the id of
+ * the conversation it starts (Claude Code's `--session-id`). One that does
+ * not is found by its folder, so a second copy in the same worktree would be
+ * read, and resumed, as the session's; the runner refuses it as well.
+ */
+export function agentsBeside(
+  sessionAgent: string,
+  offered: readonly CodingAgentId[],
+): Exclude<CodingAgentId, 'shell'>[] {
+  return offered.filter(
+    (agent): agent is Exclude<CodingAgentId, 'shell'> =>
+      agent !== 'shell' &&
+      (agent !== sessionAgent || Boolean(CODING_AGENTS[agent].launch.conversation?.create)),
+  );
+}
+
+/**
+ * What a second agent starts with, as the side pane's Agent pick sends it:
+ * the agent, its model, effort and permission, and its first task. Null is the CLI's own
+ * default, never sent.
+ */
+export interface SideEngine {
+  agent: Exclude<CodingAgentId, 'shell'>;
+  model: string | null;
+  effort: SessionEffort | null;
+  permission: SessionPermission | null;
+  /** The agent's first task, as typed; null starts it with none. */
+  prompt: string | null;
 }

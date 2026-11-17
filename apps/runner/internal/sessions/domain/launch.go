@@ -93,6 +93,16 @@ func (a Agent) ServesConversation() bool {
 	return a == AgentOpenCode
 }
 
+// NamesConversation reports whether this agent's CLI takes the id of the
+// conversation it starts (Claude Code's `--session-id`). One that does not
+// is found by its folder: its transcript is the newest in the session's
+// directory, and a restart resumes "the last" there. Two of those in one
+// worktree cannot be told apart, so a second one would take the session's
+// conversation over.
+func (a Agent) NamesConversation() bool {
+	return len(launchCatalog[a.CatalogID()].conversationCreate) > 0
+}
+
 // NewAgentServer mints a password for an agent's API on port, for the
 // agent running in directory.
 func NewAgentServer(port int, since int64, directory string) (AgentServer, error) {

@@ -465,7 +465,18 @@ every tab has its own scrollback and resize, and a phone-sized tab does
 not shrink the laptop's. Window 0 is the agent; the side pane's Terminal
 tab opens plain shells as windows 1 and up, and the runner answers each
 open, close and listing with the windows tmux lists then (`session.windows`,
-01), so a shell its user ended with `exit` is gone from the next listing. Closing the session is `kill-session`. Working
+01), so a shell its user ended with `exit` is gone from the next listing.
+An open may name a second coding agent instead (`agent`,
+`session.window.agent`): the window is made the same way, named by the
+agent's catalog id (`new-window -n codex`, which tmux then never renames),
+and the agent is started in it as window 0's is at create, with
+`respawn-pane` after its folder is trusted and its executable held still,
+with the model, effort and permission level the open picked for it; each
+one not picked is the session's (its permission level always, its model and
+effort only when it is the session's own agent). A first task the open
+carries is the CLI's trailing positional, as window 0's is. A launch that fails kills the window. It is never
+the session's agent: state dots, the chat and the first prompt stay window
+0's. Closing the session is `kill-session`. Working
 directory, environment, and the credential helper socket are set once at
 creation and inherited by every window. The runner attaches by spawning
 a PTY running `tmux attach -t <id>:<window>` per browser connection, so

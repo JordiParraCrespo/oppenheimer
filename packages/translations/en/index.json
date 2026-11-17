@@ -504,7 +504,8 @@
       "SESSIONS_056": "This host's runner can't open or close terminals. Update the runner on the host.",
       "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
       "SESSIONS_058": "That terminal is no longer open.",
-      "SESSIONS_059": "The host refused to change the session's terminals."
+      "SESSIONS_059": "The host refused to change the session's terminals.",
+      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1482,7 +1483,12 @@
         "bots": "Pick a bot",
         "searchBots": "Search bots",
         "noBots": "No bot yet. Create one under Employees.",
-        "noMatch": "Nothing matches “{{query}}”."
+        "noMatch": "Nothing matches “{{query}}”.",
+        "agent": "Agent",
+        "agentDetail": "Another agent in this worktree",
+        "agents": "Pick an agent",
+        "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
+        "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
       },
       "terminal": {
         "name": "Terminal {{index}}",
@@ -1495,7 +1501,13 @@
         "gone": "This terminal has closed"
       },
       "openFull": "Open on its own page",
-      "sessionLoadFailed": "Couldn't load that session"
+      "sessionLoadFailed": "Couldn't load that session",
+      "agent": {
+        "name": "{{agent}} {{index}}",
+        "opening": "Starting {{agent}}…",
+        "openFailed": "The agent didn't start",
+        "start": "Start {{agent}}"
+      }
     },
     "preview": {
       "simulator": "Simulator",

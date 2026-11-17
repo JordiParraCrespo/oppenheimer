@@ -568,12 +568,42 @@ describe("a session's terminal windows", () => {
     );
     await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent]));
 
-    const opened = await result.current.open.mutateAsync('s-1');
+    const opened = await result.current.open.mutateAsync({ sessionId: 's-1' });
 
     expect(opened.window).toEqual(shell);
     await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, shell]));
     expect(listWindows).toHaveBeenCalledTimes(1);
-    expect(openWindow).toHaveBeenCalledWith('s-1');
+    expect(openWindow).toHaveBeenCalledWith('s-1', {});
+  });
+
+  it('opens a second agent by name, and adds its window to the session’s', async () => {
+    const codex = { index: 2, name: 'codex', agent: false };
+    const listWindows = vi.fn().mockResolvedValue({ state: 'listed', windows: [agent] });
+    const openWindow = vi.fn().mockResolvedValue({ window: codex, windows: [agent, codex] });
+    const { wrapper } = setup({ listWindows, openWindow });
+    const { result } = renderHook(
+      () => ({ read: useSessionWindows('s-1'), open: useOpenSessionWindow() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent]));
+
+    await result.current.open.mutateAsync({
+      sessionId: 's-1',
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'auto',
+      prompt: 'Fix the picker',
+    });
+
+    expect(openWindow).toHaveBeenCalledWith('s-1', {
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'auto',
+      prompt: 'Fix the picker',
+    });
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, codex]));
   });
 
   it('a close leaves the windows the host answered with', async () => {

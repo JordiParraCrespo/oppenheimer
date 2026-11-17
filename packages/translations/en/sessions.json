@@ -715,7 +715,12 @@
       "bots": "Pick a bot",
       "searchBots": "Search bots",
       "noBots": "No bot yet. Create one under Employees.",
-      "noMatch": "Nothing matches “{{query}}”."
+      "noMatch": "Nothing matches “{{query}}”.",
+      "agent": "Agent",
+      "agentDetail": "Another agent in this worktree",
+      "agents": "Pick an agent",
+      "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
+      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -728,7 +733,13 @@
       "gone": "This terminal has closed"
     },
     "openFull": "Open on its own page",
-    "sessionLoadFailed": "Couldn't load that session"
+    "sessionLoadFailed": "Couldn't load that session",
+    "agent": {
+      "name": "{{agent}} {{index}}",
+      "opening": "Starting {{agent}}…",
+      "openFailed": "The agent didn't start",
+      "start": "Start {{agent}}"
+    }
   },
   "preview": {
     "simulator": "Simulator",

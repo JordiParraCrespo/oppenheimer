@@ -288,6 +288,7 @@ export function SessionPane({
             <Suspense fallback={null}>
               <SessionSidePane
                 sessionId={session.id}
+                sessionEngine={{ agent: session.agent, ...session.launch }}
                 hostId={session.hostId}
                 previews={previewTabs}
                 onClose={() => preview.toggle(false)}

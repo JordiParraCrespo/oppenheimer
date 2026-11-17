@@ -161,6 +161,10 @@ type lifecycleCommand struct {
 	SessionID          string
 	Window             int
 	AcceptUnpushedWork bool
+	// Agent is the catalog id of the agent a window.open starts, "" for a
+	// plain shell, Model, Permission and Effort how it starts ("" for the
+	// session's own), and Prompt its first task ("" for none).
+	Agent, Model, Permission, Effort, Prompt string
 }
 
 // decodeLifecycle decodes a lifecycle message into its own generated struct
@@ -184,7 +188,8 @@ func decodeLifecycle(msg link.Message) (lifecycleCommand, bool) {
 	case link.TypeSessionWindowOpen:
 		var body link.SessionWindowOpen
 		err = msg.Decode(&body)
-		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+		m.CommandID, m.SessionID, m.Agent = body.CommandID, body.SessionID, body.Agent
+		m.Model, m.Permission, m.Effort, m.Prompt = body.Model, body.Permission, body.Effort, body.Prompt
 	case link.TypeSessionWindowClose:
 		var body link.SessionWindowClose
 		err = msg.Decode(&body)
@@ -220,8 +225,15 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 		}
 		h.credentials.Forget(m.SessionID)
 	case "session.window.open":
+		var agent sessionsdomain.Agent
+		if agent, err = windowAgent(m.Agent); err != nil {
+			break
+		}
 		var opened sessionsdomain.Window
-		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID); err == nil {
+		in := sessionsapp.WindowInput{
+			Agent: agent, Model: m.Model, Permission: m.Permission, Effort: m.Effort, Prompt: m.Prompt,
+		}
+		if opened, err = h.app.Sessions.OpenWindow(ctx, m.SessionID, in); err == nil {
 			h.windows(ctx, m.CommandID, m.SessionID, opened.Index)
 		}
 	case "session.window.close":
@@ -232,6 +244,20 @@ func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 	if err != nil {
 		h.fail(m.CommandID, err)
 	}
+}
+
+// windowAgent reads a window.open's `agent`: "" is a plain shell, and the
+// blank terminal is refused with any id outside the catalog, since a window
+// without an agent already is one.
+func windowAgent(id string) (sessionsdomain.Agent, error) {
+	if id == "" {
+		return "", nil
+	}
+	agent, ok := sessionsdomain.AgentFromCatalogID(id)
+	if !ok || agent.Command() == "" {
+		return "", sessionsdomain.ErrInvalidInput.WithDetail("a window cannot start agent %q", id)
+	}
+	return agent, nil
 }
 
 // windows answers a window command, or a listing, with the session's windows

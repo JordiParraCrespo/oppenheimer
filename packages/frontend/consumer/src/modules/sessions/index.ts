@@ -32,6 +32,7 @@ export {
   type CreateSessionInput,
   cloudProviderLabel,
   type OpenedSessionWindow,
+  type OpenSessionWindowInput,
   type PrepareSessionInput,
   type SessionAgent,
   type SessionAttachment,

@@ -201,6 +201,7 @@ export type {
   MoveTaskRequest,
   MyPermissionsResponseDto,
   OpenedSessionWindowResponseDto,
+  OpenSessionWindowRequest,
   OrganizationResponseDto,
   PaginatedAccessGrantsResponseDto,
   PaginatedFlagChangesResponseDto,

@@ -41,29 +41,31 @@ export function BotChatSkeleton() {
       <div className="min-h-0 flex-1 overflow-hidden px-4 pt-6 pb-10 sm:px-8">
         <BotTranscriptSkeleton />
       </div>
-      <div className="px-4 pb-4 sm:px-8">
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
-          <ChatComposer
-            layout="inline"
-            inert
-            disabled
-            value=""
-            onValueChange={noop}
-            onSubmit={noop}
-            onAttach={noop}
-            tools={chip('w-24')}
-            engine={
-              <>
-                {chip('w-20')}
-                {chip('w-14')}
-              </>
-            }
-            labels={{
-              send: t('bots.chat.send'),
-              stop: t('bots.chat.stop'),
-              attach: t('bots.chat.images.attach'),
-            }}
-          />
+      <div className="@container">
+        <div className="px-3 pb-3 @2xl:px-8 @2xl:pb-4">
+          <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
+            <ChatComposer
+              layout="inline"
+              inert
+              disabled
+              value=""
+              onValueChange={noop}
+              onSubmit={noop}
+              onAttach={noop}
+              tools={chip('w-24')}
+              engine={
+                <>
+                  {chip('w-20')}
+                  {chip('w-14')}
+                </>
+              }
+              labels={{
+                send: t('bots.chat.send'),
+                stop: t('bots.chat.stop'),
+                attach: t('bots.chat.images.attach'),
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

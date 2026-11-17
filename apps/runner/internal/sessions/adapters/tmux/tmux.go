@@ -171,9 +171,15 @@ func (s *Server) Create(ctx context.Context, name, dir, command string, env map[
 
 // NewWindow opens a tab: a plain shell in the same worktree. In the
 // background (-d): without it tmux makes it the session's current window, and
-// every client watching the agent's switches to the shell.
-func (s *Server) NewWindow(ctx context.Context, name, dir string) (int, error) {
-	out, err := s.command(ctx, "new-window", "-d", "-t", name+":", "-c", dir, "-P", "-F", "#{window_index}")
+// every client watching the agent's switches to the shell. A title (-n) names
+// the window for good: tmux renames a window it named itself after whatever
+// runs in it, and one named here keeps saying which agent it holds.
+func (s *Server) NewWindow(ctx context.Context, name, dir, title string) (int, error) {
+	args := []string{"new-window", "-d", "-t", name + ":", "-c", dir, "-P", "-F", "#{window_index}"}
+	if title != "" {
+		args = append(args, "-n", title)
+	}
+	out, err := s.command(ctx, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -399,13 +405,21 @@ func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (
 // on a fresh screen: no line is typed for it, and neither the shell's prompt
 // nor its scrollback survives. The command runs with the session's
 // environment, under the runner's PATH rather than a login shell's.
+//
+// A failure names the window, never the command: the command line carries
+// the first task, which is the person's and never goes into a log or a
+// `command.failed` detail.
 func (s *Server) Launch(ctx context.Context, target, dir, command string) error {
 	args := []string{"respawn-pane", "-k", "-t", target, "-c", dir}
 	if command != "" {
 		args = append(args, command)
 	}
-	_, err := s.command(ctx, args...)
-	return err
+	out, err := s.run(ctx, args...)
+	if err != nil {
+		return domain.ErrTmuxCommand.WithDetail(
+			"tmux respawn-pane -t %s: %s", target, firstLine(out, err)).WithCause(err)
+	}
+	return nil
 }
 
 // Paste puts text into a window through a tmux buffer. `-p` makes it a
