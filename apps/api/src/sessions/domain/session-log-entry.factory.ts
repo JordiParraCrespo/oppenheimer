@@ -174,6 +174,19 @@ export function visibilityEntry(commandId: string, hidden: boolean): NewSessionE
   };
 }
 
+/** The person read the report `hash` names: the session's blue dot clears. */
+export function reportAcknowledgedEntry(commandId: string, hash: string): NewSessionEvent {
+  return {
+    idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+      commandId,
+      SESSION_EVENT_KINDS.REPORT_ACKNOWLEDGED,
+    ),
+    source: 'api',
+    kind: SESSION_EVENT_KINDS.REPORT_ACKNOWLEDGED,
+    payload: { hash },
+  };
+}
+
 function hiddenEntry(commandId: string): NewSessionEvent {
   return visibilityEntry(commandId, true);
 }

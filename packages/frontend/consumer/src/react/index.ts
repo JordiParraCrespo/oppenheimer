@@ -279,6 +279,7 @@ export {
   type SetSessionHiddenVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAcknowledgeSessionReport,
   useAnswerSessionDecision,
   useCloseSession,
   useCloseSessionWindow,

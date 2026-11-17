@@ -2,6 +2,7 @@
 
 export {
   acceptInvitation,
+  acknowledgeSessionReport,
   addCheckout,
   addGithubToken,
   addMember,
@@ -331,6 +332,11 @@ export type {
   AcceptInvitationResponses,
   AccessGrantPaginationMetaDto,
   AccessGrantResponseDto,
+  AcknowledgeSessionReportData,
+  AcknowledgeSessionReportError,
+  AcknowledgeSessionReportErrors,
+  AcknowledgeSessionReportResponse,
+  AcknowledgeSessionReportResponses,
   AddCheckoutData,
   AddCheckoutError,
   AddCheckoutErrors,
