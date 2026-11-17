@@ -301,7 +301,9 @@
     --file-icon-elixir: var(--file-icon-purple);
     --file-icon-elm: var(--file-icon-cyan);
     --file-icon-erlang: var(--file-icon-red);
+    --file-icon-font: var(--file-icon-gray);
     --file-icon-fsharp: var(--file-icon-cyan);
+    --file-icon-git: var(--file-icon-red);
     --file-icon-gleam: var(--file-icon-pink);
     --file-icon-gnu: var(--file-icon-red);
     --file-icon-gradle: var(--file-icon-teal);
@@ -321,6 +323,7 @@
     --file-icon-r: var(--file-icon-blue);
     --file-icon-scala: var(--file-icon-red);
     --file-icon-solidity: var(--file-icon-gray);
+    --file-icon-vim: var(--file-icon-green);
 
     /* A bot's avatar: its drawn face (or its initials) on one of the
        export's eight colours (`AV_COLORS`), an identity like a file's mark,
@@ -1392,6 +1395,8 @@
   --trees-file-icon-color-database: var(--file-icon-database);
   --trees-file-icon-color-docker: var(--file-icon-docker);
   --trees-file-icon-color-eslint: var(--file-icon-eslint);
+  --trees-file-icon-color-font: var(--file-icon-font);
+  --trees-file-icon-color-git: var(--file-icon-git);
   --trees-file-icon-color-go: var(--file-icon-go);
   --trees-file-icon-color-graphql: var(--file-icon-graphql);
   --trees-file-icon-color-html: var(--file-icon-html);

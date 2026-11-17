@@ -6,7 +6,7 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { diffStatParts } from './diff-stat';
-import { EXTRA_FILE_ICON_TOKENS, FILE_ICON_SET } from '../internal/file-icon-set';
+import { FILE_ICON_SET, FILE_ICON_TREE_CSS } from '../internal/file-icon-set';
 
 /**
  * DiffFileTree — the files a pull request changes, as a tree beside its
@@ -53,11 +53,9 @@ const TREE_TOKENS = {
 } as React.CSSProperties;
 
 /** The stats are figures, and never give way to a long name. */
-const TREE_CSS = [
-  '[data-item-section="decoration"]{flex:0 0 auto;padding-inline-start:8px;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums}',
-  // The tree colours only its own set's tokens; the ones the icon config adds take their hue from the same map.
-  ...EXTRA_FILE_ICON_TOKENS.map((token) => `[data-icon-token="${token}"]{color:var(--file-icon-${token})}`),
-].join('');
+const TREE_CSS =
+  '[data-item-section="decoration"]{flex:0 0 auto;padding-inline-start:8px;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums}' +
+  FILE_ICON_TREE_CSS;
 
 /** A stable key per `files` array, so a new set builds a new model. */
 const keys = new WeakMap<readonly DiffTreeFile[], number>();

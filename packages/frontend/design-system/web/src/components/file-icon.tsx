@@ -1,10 +1,10 @@
 'use client';
 
-import { createFileTreeIconResolver, getBuiltInSpriteSheet } from '@pierre/trees';
+import { createFileTreeIconResolver } from '@pierre/trees';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
-import { FILE_ICON_SET } from '../internal/file-icon-set';
+import { FILE_ICON_SET, fileIconSprite } from '../internal/file-icon-set';
 
 /**
  * FileIcon — a file's type mark, from the path: the Go gopher's cyan for
@@ -24,14 +24,12 @@ function useSprite() {
   React.useEffect(() => {
     // The document body: the sprite the <use> elements below point into.
     if (document.getElementById(SPRITE_ID)) return;
-    // The HTML parser puts the set's markup in the SVG namespace, as it would inline.
-    const sprite = new DOMParser().parseFromString(getBuiltInSpriteSheet('complete'), 'text/html').body.firstElementChild;
+    // The HTML parser puts the sheet's markup in the SVG namespace, as it would inline.
+    const sprite = new DOMParser().parseFromString(fileIconSprite(), 'text/html').body.firstElementChild;
     if (!sprite) return;
     sprite.id = SPRITE_ID;
     sprite.setAttribute('aria-hidden', 'true');
     sprite.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
-    const own = new DOMParser().parseFromString(FILE_ICON_SET.spriteSheet, 'text/html').body.firstElementChild;
-    sprite.append(...Array.from(own?.children ?? []));
     document.body.append(document.adoptNode(sprite));
   }, []);
 }
