@@ -27,7 +27,10 @@ function takeFirstOnEnter(
   event: React.KeyboardEvent<HTMLInputElement>,
 ) {
   if (!scope?.firstOnEnter || !scope.list || event.key !== 'Enter') return;
-  if (event.nativeEvent.isComposing) return;
+  // Base UI's own Enter ignores a modified one, and so does this.
+  if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+  // An IME confirming its text (Safari says so with 229 rather than isComposing).
+  if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
   if (event.currentTarget.getAttribute('aria-activedescendant')) return;
   const first = scope.list.querySelector<HTMLElement>(
     '[role="option"]:not([aria-disabled="true"]):not([data-disabled])',
