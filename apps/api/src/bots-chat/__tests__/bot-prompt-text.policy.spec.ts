@@ -28,4 +28,12 @@ describe('promptText', () => {
       `# SOUL.md (who you are)\n\n${written}`,
     );
   });
+
+  // The types refuse an unfilled slot, but a cast or an untyped caller gets
+  // past them, and the model would then read a literal `{{description}}`.
+  it('refuses a slot nothing was given for, rather than send the placeholder', () => {
+    expect(() => promptText('identity.description', {} as never)).toThrow(
+      'Prompt identity.description was given nothing for {{description}}.',
+    );
+  });
 });

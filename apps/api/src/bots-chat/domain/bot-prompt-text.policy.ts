@@ -14,11 +14,15 @@ const SLOT = /\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g;
  * reach the code, by id, so a prompt that is renamed or a slot left unfilled
  * does not compile. A value is put in as given, in one pass: what the person
  * or the bot wrote (a document, a fact) is never read for slots of its own.
+ * A caller that gets past the types with a slot unfilled is refused: a model
+ * is never sent a `{{name}}`.
  */
 export function promptText(id: PlainPromptId): string;
 export function promptText<Id extends FilledPromptId>(id: Id, values: PromptSlots[Id]): string;
-export function promptText(id: PromptId, values?: Readonly<Record<string, string>>): string {
-  const text = PROMPT_TEXT[id];
-  if (!values) return text;
-  return text.replace(SLOT, (slot, name: string) => values[name] ?? slot);
+export function promptText(id: PromptId, values: Readonly<Record<string, string>> = {}): string {
+  return PROMPT_TEXT[id].replace(SLOT, (_slot, name: string) => {
+    const value = values[name];
+    if (value === undefined) throw new Error(`Prompt ${id} was given nothing for {{${name}}}.`);
+    return value;
+  });
 }
