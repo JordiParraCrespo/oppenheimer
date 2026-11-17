@@ -6,7 +6,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSectionBots } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useDragLabels, useOfflineOnce } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { BotDragOverlay } from '@/features/bots/components/bot-drag-overlay';
@@ -36,13 +36,14 @@ export function SectionBotsList({
 }) {
   const { t } = useTranslation();
   const { data: listed, error } = useSuspenseSectionBots(section);
+  const loadError = useOfflineOnce(error);
   const { bots, group, handlers, error: moveError, reset } = useSectionBotOrder(section, listed);
   const dragLabels = useDragLabels();
   useRememberSectionBotCount(section, bots.length);
 
   return (
     <>
-      <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} className="mx-3 mb-2" />
+      <ErrorAlert error={loadError} fallback={t('bots.sidebar.loadFailed')} className="mx-3 mb-2" />
       <ErrorAlert
         error={moveError}
         fallback={t('bots.sidebar.moveFailed')}

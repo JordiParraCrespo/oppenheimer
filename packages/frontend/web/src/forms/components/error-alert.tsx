@@ -6,9 +6,8 @@ import {
   Button,
 } from '@oppenheimer/design-system-web';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { type ReactNode, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useUnreachableClaim } from '../hooks/use-unreachable-claim';
 
 /** Where the sentence comes from: a raw failure to resolve, or one already resolved. */
 type ErrorAlertSource =
@@ -40,11 +39,6 @@ type ErrorAlertSource =
  * `message` a form already resolved. It renders nothing without one, so a
  * caller writes `<ErrorAlert error={mutation.error} … />` with no guard.
  *
- * Offline, every read on the page fails with the same "could not reach the
- * server" sentence; only the first such alert draws it, and its Try again
- * retries for the rest (`useUnreachableClaim`). An alert with its own
- * `action`, or one in a dialog, always shows.
- *
  * `title` names what failed when one alert speaks for several rows. The one
  * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
  * `reset`) or the caller's own (`action`, a terminal's Retry).
@@ -52,18 +46,12 @@ type ErrorAlertSource =
 export function ErrorAlert({
   title,
   onDismiss,
-  onRetry,
   action,
   className,
   ...source
 }: ErrorAlertSource & {
   title?: ReactNode;
   onDismiss?: () => void;
-  /**
-   * Try again, in the action slot. Offline, the one alert that shows runs
-   * every hidden alert's too.
-   */
-  onRetry?: () => void;
   /** Takes the action slot instead of Dismiss. */
   action?: ReactNode;
   className?: string;
@@ -78,30 +66,18 @@ export function ErrorAlert({
       : source.error === null || source.error === undefined
         ? null
         : resolveError(source.error, source.fallback);
-  // A caller's own action (a terminal's Retry) is not the pooled Try again, so
-  // that alert always shows.
-  const node = useRef<HTMLDivElement>(null);
-  const offline = useUnreachableClaim(
-    !action && Boolean(resolved && 'unreachable' in resolved && resolved.unreachable),
-    onRetry,
-    node,
-  );
-  if (!resolved || !offline.speaks) return null;
+  if (!resolved) return null;
   const { message, correlationId } = resolved;
   const trailing =
     action ??
-    (offline.retry ? (
-      <Button variant="ghost" size="sm" onClick={offline.retry}>
-        {t('common.retry')}
-      </Button>
-    ) : onDismiss ? (
+    (onDismiss ? (
       <Button variant="ghost" size="sm" onClick={onDismiss}>
         {t('common.dismiss')}
       </Button>
     ) : null);
 
   return (
-    <Alert ref={node} tone="danger" className={className}>
+    <Alert tone="danger" className={className}>
       {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         {message}

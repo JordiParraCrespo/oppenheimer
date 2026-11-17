@@ -1,9 +1,12 @@
+import { Button } from '@oppenheimer/design-system-web';
 import { useCaptureError } from '@oppenheimer/frontend-core/react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { createContext, type ReactNode, Suspense, use } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 import { useLoadingAnnouncement } from '../hooks/use-loading-announcement';
+import { useOfflineOnce } from '../hooks/use-offline-once';
 
 /**
  * The rung a read is on, decided by the root and read by every slot: still
@@ -102,21 +105,34 @@ function QueryStatePending({ children }: { children: ReactNode }) {
  * `children` to say it another way (a screen's `RouteError`, a 404 said as
  * "not found"), handed the same `retry` — only it resets the boundary, so
  * another way of saying the failure wires its own button to it.
+ * `offlineOnce` hands an offline failure to the enclosing `OfflineOnce`.
  */
 function QueryStateError(
   props:
-    | { fallback: string; className?: string; children?: never }
+    | { fallback: string; className?: string; offlineOnce?: boolean; children?: never }
     | { children: (error: unknown, retry: () => void) => ReactNode },
 ) {
+  const { t } = useTranslation();
   const rung = useRung('Error');
+  const failed = rung.rung === 'failed';
+  const offlineOnce = 'fallback' in props && props.offlineOnce === true;
+  const shown = useOfflineOnce(
+    failed && offlineOnce ? rung.error : null,
+    failed ? rung.retry : undefined,
+  );
   if (rung.rung !== 'failed') return null;
+  if (offlineOnce && shown === null) return null;
   if ('fallback' in props)
     return (
       <ErrorAlert
         error={rung.error}
         fallback={props.fallback}
         className={props.className}
-        onRetry={rung.retry}
+        action={
+          <Button variant="ghost" size="sm" onClick={rung.retry}>
+            {t('common.retry')}
+          </Button>
+        }
       />
     );
   return props.children(rung.error, rung.retry);
