@@ -243,6 +243,29 @@ export function useMoveTask(
   });
 }
 
+/**
+ * Puts several cards where a run of moves will, all in the same frame: a drop
+ * of picked cards sends its moves one at a time (each lands under the one
+ * before), and without this each card would wait for the answer to the move
+ * ahead of it before leaving its column. Each move's own write follows and
+ * the server's keys replace these; a refusal reads the board again.
+ */
+export function usePlaceTasks() {
+  const queryClient = useQueryClient();
+  return (moves: readonly MoveTaskVariables[]) => {
+    void queryClient.cancelQueries({ queryKey: tasksKeys.list() });
+    queryClient.setQueryData<TaskEntity[]>(tasksKeys.list(), (current) =>
+      current
+        ? moves.reduce(
+            (rows, move) =>
+              rows.map((row) => (row.id === move.id ? provisionallyMoved(row, move, rows) : row)),
+            current,
+          )
+        : current,
+    );
+  };
+}
+
 function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]): TaskEntity {
   const above = move.afterTaskId ? rows.find((row) => row.id === move.afterTaskId) : undefined;
   // `''` sorts before every key; a key plus the lowest code point sorts directly after it.

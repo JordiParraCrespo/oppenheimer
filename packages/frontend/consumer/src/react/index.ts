@@ -332,6 +332,7 @@ export {
   useLinkTaskSession,
   useMilestones,
   useMoveTask,
+  usePlaceTasks,
   useSessionTasks,
   useStartTaskSession,
   useSuspensePlan,

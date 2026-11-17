@@ -15,6 +15,7 @@ import {
   useDeleteTask,
   useMilestones,
   useMoveTask,
+  usePlaceTasks,
   useSessionTasks,
   useStartTaskSession,
   useTasks,
@@ -219,6 +220,44 @@ describe('useMoveTask', () => {
     );
 
     await waitFor(() => expect(findMilestones).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('usePlaceTasks', () => {
+  it('lands every picked card in the drop column, in order, before the first move answers', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValue([
+        task('a'),
+        task('b'),
+        task('c'),
+        task('x', { status: 'doing' }),
+        task('y', { status: 'doing' }),
+      ]);
+    const { wrapper, queryClient } = setup({
+      findAll,
+      findMilestones: vi.fn().mockResolvedValue([]),
+      move: vi.fn(() => new Promise<TaskEntity>(() => {})),
+    });
+    const { result } = renderHook(() => ({ tasks: useTasks(), place: usePlaceTasks() }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+
+    // A drop of b with a and c picked: b under x, then a and c under it (the board's chained moves).
+    act(() =>
+      result.current.place([
+        { id: 'b', status: 'doing', afterTaskId: 'x' },
+        { id: 'a', status: 'doing', afterTaskId: 'b' },
+        { id: 'c', status: 'doing', afterTaskId: 'a' },
+      ]),
+    );
+
+    const doing = (queryClient.getQueryData<TaskEntity[]>(tasksKeys.list()) ?? [])
+      .filter((row) => row.status === 'doing')
+      .sort((left, right) => (left.rank < right.rank ? -1 : left.rank > right.rank ? 1 : 0))
+      .map((row) => row.id);
+    expect(doing).toEqual(['x', 'b', 'a', 'c', 'y']);
   });
 });
 
