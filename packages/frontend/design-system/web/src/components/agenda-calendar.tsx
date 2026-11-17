@@ -3,6 +3,7 @@
 import { CircleCheckIcon, ZapIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { TONE_WASH, toneClass } from '../internal/calendar-tone';
 import { dateFormat, dateOf, type IsoDate } from '../internal/month';
 import { cn } from '../lib/utils';
 import { useDraggable, useDroppable } from './drag';
@@ -15,8 +16,10 @@ import { CalendarEntry, type CalendarEntryData } from './month-calendar';
  * hour. A timed entry is a block from its `time` to its `end` (half an hour
  * when it names none); entries that overlap share the column side by side.
  * One that starts before 07:00 or from 22:00 sits in All day with its time,
- * so nothing on the day goes undrawn. Busy events sit on the control wash, a task on the card with a border and
- * its check, an automation run and a free event on the card, muted. Today's
+ * so nothing on the day goes undrawn. Each block wears its colour
+ * (`internal/calendar-tone`): a wash of it with a bar down the left edge, a
+ * task's check and a run's bolt in it too; a free event is a lighter wash
+ * behind a dashed edge, its title muted; a done task fades. Today's
  * column carries a line at `now`.
  *
  * Entries move by dragging, on the drag layer inside the page's
@@ -141,8 +144,6 @@ function blockLook(placed: Placed, hourHeight: number, compact: boolean) {
   const top = y(start);
   const height = Math.max(20, y(end) - top - 2);
   const short = height < 52;
-  const task = entry.kind === 'task';
-  const automation = entry.kind === 'automation';
   const free = entry.kind === 'event' && !entry.busy;
   return {
     box: {
@@ -152,13 +153,18 @@ function blockLook(placed: Placed, hourHeight: number, compact: boolean) {
       width: `calc(${100 / lanes}% - 6px)`,
     },
     className: cn(
-      short ? 'flex-row items-center gap-1.5 px-2' : 'flex-col items-start gap-0.5 px-2 py-1.5',
-      task ? 'z-2 border-border bg-card' : automation ? 'z-1 border-border-subtle bg-card' : free ? 'border-border-subtle bg-card' : 'z-2 border-transparent bg-control',
-      automation || free || entry.done ? 'text-fg-muted' : 'text-fg',
+      short ? 'flex-row items-center gap-1.5 pr-2 pl-2.5' : 'flex-col items-start gap-0.5 py-1.5 pr-2 pl-2.5',
+      toneClass(entry),
+      free ? TONE_WASH.free : TONE_WASH.soft,
+      free ? 'z-1 border-dashed border-(--tone)/45' : 'z-2 border-transparent',
       entry.done && 'opacity-60',
     ),
-    titleClassName: cn(automation || entry.done ? 'font-normal' : 'font-medium', entry.done && 'line-through'),
-    time: short && compact ? null : automation ? (entry.time ?? null) : `${entry.time}–${timeOf(end)}`,
+    edgeClassName: free ? 'bg-(--tone)/45' : 'bg-(--tone)',
+    titleClassName: cn(
+      free || entry.done ? 'font-normal text-fg-muted' : 'font-medium text-fg',
+      entry.done && 'line-through',
+    ),
+    time: short && compact ? null : entry.kind === 'automation' ? (entry.time ?? null) : `${entry.time}–${timeOf(end)}`,
   };
 }
 
@@ -185,15 +191,16 @@ function AgendaBlock({
       title={entry.tip ?? entry.title}
       style={look.box}
       className={cn(
-        'absolute flex touch-none overflow-hidden rounded-xs border text-left outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring data-dragging:opacity-40',
+        'absolute flex touch-none overflow-hidden rounded-xs border text-left outline-none transition-[background-color] duration-instant ease-standard focus-visible:outline-2 focus-visible:outline-ring data-dragging:opacity-40',
         look.className,
       )}
     >
+      <span aria-hidden className={cn('absolute inset-y-0 left-0 w-[3px]', look.edgeClassName)} />
       <span className="flex min-w-0 max-w-full flex-auto items-center gap-[5px]">
         {entry.kind === 'task' ? (
-          <CircleCheckIcon aria-hidden className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-fg-subtle')} />
+          <CircleCheckIcon aria-hidden className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-(--tone)')} />
         ) : null}
-        {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-fg-subtle" /> : null}
+        {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-(--tone)" /> : null}
         <span className={cn('min-w-0 truncate text-xs', look.titleClassName)}>{entry.title}</span>
       </span>
       {look.time ? (

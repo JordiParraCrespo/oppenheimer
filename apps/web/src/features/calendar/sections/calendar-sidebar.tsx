@@ -1,4 +1,9 @@
-import { CalendarLayerItem, SidebarListHead } from '@oppenheimer/design-system-web';
+import {
+  CALENDAR_KIND_ACCENT,
+  type CalendarAccent,
+  CalendarLayerItem,
+  SidebarListHead,
+} from '@oppenheimer/design-system-web';
 import { CalendarDays, CircleCheck, User, Zap } from '@oppenheimer/design-system-web/icons';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -19,6 +24,17 @@ const ICON: Record<CalendarLayer, ReactNode> = {
   google: <CalendarDays />,
   tasks: <CircleCheck />,
   automations: <Zap />,
+};
+
+/**
+ * The colour each layer's entries wear, so the list is the grid's legend.
+ * Google's has none of its own: each account wears its colour, by its row.
+ */
+const ACCENT: Record<CalendarLayer, CalendarAccent | undefined> = {
+  events: CALENDAR_KIND_ACCENT.event,
+  google: undefined,
+  tasks: CALENDAR_KIND_ACCENT.task,
+  automations: CALENDAR_KIND_ACCENT.automation,
 };
 
 /**
@@ -43,6 +59,7 @@ export function CalendarSidebar() {
           <CalendarLayerItem
             key={layer}
             icon={ICON[layer]}
+            accent={ACCENT[layer]}
             checked={!hidden.has(layer)}
             onCheckedChange={() =>
               navigate({

@@ -395,7 +395,7 @@ export type {
   CalendarEntryData,
   CalendarEntryKind,
 } from './components/month-calendar';
-export { CalendarEntry, MonthCalendar } from './components/month-calendar';
+export { CALENDAR_KIND_ACCENT, CalendarEntry, MonthCalendar } from './components/month-calendar';
 export { NumberStepper } from './components/number-stepper';
 export {
   PageHeader,
