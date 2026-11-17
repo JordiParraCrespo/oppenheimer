@@ -4,13 +4,12 @@ import {
   type MilestoneTimelineControls,
 } from '@oppenheimer/design-system-web';
 import { useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, UNASSIGNED_SLUG, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import type { Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useToday } from '../hooks/use-today';
-import { UNASSIGNED_SLUG } from '../lib/plan-scope';
 import { timelineRows } from '../lib/timeline';
 
 /**
