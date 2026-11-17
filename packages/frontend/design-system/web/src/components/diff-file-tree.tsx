@@ -6,6 +6,7 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { diffStatParts } from './diff-stat';
+import { FILE_ICON_SET } from '../internal/file-icon-set';
 
 /**
  * DiffFileTree — the files a pull request changes, as a tree beside its
@@ -122,7 +123,7 @@ function Tree({
     initialExpansion: 'open',
     flattenEmptyDirectories: true,
     initialSelectedPaths: selected ? [selected] : [],
-    icons: { set: 'complete', colored: true },
+    icons: FILE_ICON_SET,
     unsafeCSS: TREE_CSS,
     fileTreeSearchMode: 'hide-non-matches',
     onSelectionChange: (paths) => {

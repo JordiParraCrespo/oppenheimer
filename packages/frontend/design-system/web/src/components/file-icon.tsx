@@ -4,17 +4,19 @@ import { createFileTreeIconResolver, getBuiltInSpriteSheet } from '@pierre/trees
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { FILE_ICON_SET } from '../internal/file-icon-set';
 
 /**
  * FileIcon — a file's type mark, from the path: the Go gopher's cyan for
  * `.go`, TypeScript's blue, YAML's red, a neutral page for anything the set
  * does not know. The marks are the published icon set `DiffFileTree` draws
  * (@pierre/trees, its `complete` set): the icon is a `<use>` of the set's
- * own sprite, added to the document once, and its hue is the type's
- * `--file-icon-<type>` token, the map the tree reads too.
+ * own sprite (with the marks `internal/file-icon-set` replaces), added to the document
+ * once, and its hue is the type's `--file-icon-<type>` token, the map the
+ * tree reads too.
  */
 
-const resolver = createFileTreeIconResolver({ set: 'complete', colored: true });
+const resolver = createFileTreeIconResolver(FILE_ICON_SET);
 const SPRITE_ID = 'op-file-icon-sprite';
 
 /** Adds the set's sprite to the document once, so every icon can reference its symbols. */
@@ -28,6 +30,8 @@ function useSprite() {
     sprite.id = SPRITE_ID;
     sprite.setAttribute('aria-hidden', 'true');
     sprite.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+    const own = new DOMParser().parseFromString(FILE_ICON_SET.spriteSheet, 'text/html').body.firstElementChild;
+    sprite.append(...Array.from(own?.children ?? []));
     document.body.append(document.adoptNode(sprite));
   }, []);
 }
