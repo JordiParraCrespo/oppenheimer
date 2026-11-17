@@ -1,7 +1,18 @@
 import { AutomationEntity, CalendarEventEntity } from '@oppenheimer/frontend-consumer';
+import { projectIdsOfSlugs } from '@oppenheimer/frontend-web';
 import { describe, expect, it } from 'vitest';
 import { automationItems, eventItems, toEntry } from '../lib/calendar-items';
-import { calendarSearchSchema, hiddenLayers, toggleLayer } from '../lib/calendar-search';
+import {
+  calendarSearchSchema,
+  hiddenLayers,
+  inProjects,
+  inScope,
+  offParamOf,
+  shownLayers,
+  shownStatuses,
+  statusParamOf,
+  toggleLayer,
+} from '../lib/calendar-search';
 
 /** The rule is set in the reader's own zone, so its wall-clock time is the grid's. */
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -66,6 +77,56 @@ describe('the layers in the address', () => {
   it('reads a month it cannot use as this month', () => {
     expect(calendarSearchSchema.parse({ month: '2026-13' }).month).toBeUndefined();
     expect(calendarSearchSchema.parse({ month: '2026-10' }).month).toBe('2026-10');
+  });
+});
+
+describe('the Project filter', () => {
+  const projects = [
+    { id: 'p-1', slug: 'web', isUnassigned: false },
+    { id: 'p-2', slug: 'billing', isUnassigned: false },
+    { id: 'p-0', slug: 'x-unassigned', isUnassigned: true },
+  ];
+
+  it('keeps only the picked projects’ tasks and runs, and all of them with none picked', () => {
+    const ids = projectIdsOfSlugs(['web', 'unassigned'], projects);
+    expect(ids).toEqual(['p-1', 'p-0']);
+    const rows = [{ projectId: 'p-1' }, { projectId: 'p-2' }, { projectId: 'p-0' }];
+    expect(inProjects(rows, ids)).toEqual([{ projectId: 'p-1' }, { projectId: 'p-0' }]);
+    expect(inProjects(rows, projectIdsOfSlugs([], projects))).toBe(rows);
+  });
+
+  it('narrows a link to a project that no longer exists to nothing, not to everything', () => {
+    expect(inProjects([{ projectId: 'p-1' }], projectIdsOfSlugs(['gone'], projects))).toEqual([]);
+  });
+});
+
+describe('the Kind, Status and Added by filters', () => {
+  it('reads Kind off the same `off` the sidebar toggles, a bare URL when every kind shows', () => {
+    expect(shownLayers(undefined)).toEqual([]);
+    expect(shownLayers('automations')).toEqual(['google', 'events', 'tasks']);
+    expect(offParamOf(['tasks'])).toBe('google,events,automations');
+    expect(offParamOf(['google', 'events', 'tasks', 'automations'])).toBeUndefined();
+    expect(offParamOf([])).toBeUndefined();
+  });
+
+  it('keeps statuses in the board’s order, and every status is no key', () => {
+    expect(shownStatuses('done,todo,nonsense')).toEqual(['todo', 'done']);
+    expect(statusParamOf(['done', 'todo'])).toBe('todo,done');
+    expect(statusParamOf(['todo', 'doing', 'review', 'done'])).toBeUndefined();
+  });
+
+  it('narrows tasks by project, status and who added them, all at once', () => {
+    const tasks = [
+      { id: 'a', projectId: 'p-1', status: 'done', origin: 'person' },
+      { id: 'b', projectId: 'p-1', status: 'todo', origin: 'agent' },
+      { id: 'c', projectId: 'p-2', status: 'todo', origin: 'person' },
+    ] as const;
+    const ids = (scope: Parameters<typeof inScope>[1]) => inScope(tasks, scope).map((t) => t.id);
+    expect(ids({ statuses: [] })).toEqual(['a', 'b', 'c']);
+    // Hiding done tasks: the struck-through ones leave the calendar.
+    expect(ids({ statuses: ['todo', 'doing', 'review'] })).toEqual(['b', 'c']);
+    expect(ids({ statuses: [], origin: 'agent' })).toEqual(['b']);
+    expect(ids({ statuses: ['todo'], projectIds: ['p-1'] })).toEqual(['b']);
   });
 });
 

@@ -3,7 +3,8 @@
 Plan's second section is a month view that shows four **layers**, each
 with a toggle in the sidebar: **Google Calendar**, **Personal**, **Task
 due dates** and **Automations**. The header counts what the month holds:
-*n meetings · n tasks due · n automation runs*. The frames draw a month
+*n meetings · n tasks due · n automation runs* (since 2026-11-17, of what
+the layers and filters show, §7). The frames draw a month
 grid only (Monday first, today circled, "n more" past four items a day,
 compact times under 150 px a column).
 
@@ -298,6 +299,26 @@ One departure from the frame, because the API has no field for it: a
 task gets no planned slot and length of its own (the frame keeps one
 per task in the browser) — its due time is its slot, and an hour its
 length. That is open question 4.
+
+## 7. Filters (2026-11-17)
+
+The owner asked to filter the calendar "by projects, kind of tasks and
+more", to stop seeing the automation runs. A row of pills sits between the
+header and the grid, each kept in the address so a link shows the same
+calendar, with one **Clear**:
+
+| Filter | Narrows | Address |
+|--------|---------|---------|
+| **Kind**: Google Calendar, Personal, Task due dates, Automations | a whole layer; the same switch as the sidebar's toggles, which stay in step | `?off=` |
+| **Project**, several at once | task due dates and automation runs | `?project=` (Plan's slugs) |
+| **Status**: Not started, In progress, In review, Done | task due dates | `?status=` |
+| **Added by**: Anyone, Me, An agent | task due dates | `?origin=` |
+
+Events carry no project, status or author, so only Kind hides them. The
+header counts what the calendar shows: a layer switched off counts
+nothing, and the filters narrow tasks due and runs as they narrow the grid.
+The Project pill is the one Plan's board draws (`ProjectFacet` in the web
+kit).
 
 ## Open questions
 
