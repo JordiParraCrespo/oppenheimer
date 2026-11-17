@@ -71,3 +71,44 @@ describe('ErrorAlert with a resolved message', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 });
+
+describe('ErrorAlert offline', () => {
+  const offline = () => new TypeError('Failed to fetch');
+
+  it('says the server is unreachable once, however many reads failed', () => {
+    render(
+      <>
+        <ErrorAlert error={offline()} fallback="Could not load the bots" />
+        <ErrorAlert error={offline()} fallback="Could not load the sessions" />
+      </>,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getByRole('alert').textContent).toContain('errors.unreachable');
+  });
+
+  it('hands the sentence to the next alert when the first one goes', () => {
+    const { rerender } = render(
+      <>
+        <ErrorAlert error={offline()} fallback="Could not load the bots" />
+        <ErrorAlert error={offline()} fallback="Could not load the sessions" />
+      </>,
+    );
+    rerender(
+      <>
+        <ErrorAlert error={null} fallback="Could not load the bots" />
+        <ErrorAlert error={offline()} fallback="Could not load the sessions" />
+      </>,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+
+  it('still shows every failure the server answered', () => {
+    render(
+      <>
+        <ErrorAlert error={offline()} fallback="Could not load the bots" />
+        <ErrorAlert error={refused()} fallback="Could not delete" />
+      </>,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(2);
+  });
+});

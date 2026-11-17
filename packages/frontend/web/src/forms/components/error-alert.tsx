@@ -8,6 +8,7 @@ import {
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useUnreachableClaim } from '../hooks/use-unreachable-claim';
 
 /** Where the sentence comes from: a raw failure to resolve, or one already resolved. */
 type ErrorAlertSource =
@@ -39,6 +40,9 @@ type ErrorAlertSource =
  * `message` a form already resolved. It renders nothing without one, so a
  * caller writes `<ErrorAlert error={mutation.error} … />` with no guard.
  *
+ * Offline, every read on the page fails with the same "could not reach the
+ * server" sentence; only the first such alert draws it (`useUnreachableClaim`).
+ *
  * `title` names what failed when one alert speaks for several rows. The one
  * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
  * `reset`) or the caller's own (`action`, a terminal's Retry).
@@ -66,7 +70,10 @@ export function ErrorAlert({
       : source.error === null || source.error === undefined
         ? null
         : resolveError(source.error, source.fallback);
-  if (!resolved) return null;
+  const speaks = useUnreachableClaim(
+    Boolean(resolved && 'unreachable' in resolved && resolved.unreachable),
+  );
+  if (!resolved || !speaks) return null;
   const { message, correlationId } = resolved;
   const trailing =
     action ??
