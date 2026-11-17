@@ -29,7 +29,7 @@ A project is a saved scope with a name, zero or more repositories (each with a b
 
 ### Priority
 
-A task can have a priority: **Urgent**, **High**, **Medium** or **Low**, or none, which is where every task starts. Urgent shows as an orange square with an exclamation mark; High, Medium and Low as three bars with three, two or one of them lit. Set it in the task dialog's **Priority** row, or choose None to take it off.
+A task can have a priority: **Urgent**, **High**, **Medium** or **Low**, or none, which is where every task starts. Each level has its colour: Urgent is a red square with an exclamation mark; High (orange), Medium (blue) and Low (grey) are three bars with three, two or one of them lit. Set it in the task dialog's **Priority** row, or choose None to take it off.
 
 Priority never moves a card: a column keeps the order you dragged it into. **Add tasks** on TODO lists the most important first. A finished task no longer shows its priority.
 

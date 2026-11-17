@@ -235,9 +235,11 @@ ClickUp: both settle on four levels and an empty value, and so does Plan.
   priority is drawn on the card and nowhere reorders the board. Lists that
   rank what to pick up next sort by it, most important first and none last
   (`comparePriority`): today, TODO's Add tasks.
-- **The icon** is Linear's: Urgent a filled square in the warning ink with
-  the "!" cut out; High, Medium and Low three bars with three, two or one
-  lit; none three quiet dashes (`TaskPriorityIcon`). A done task does not
+- **The icon** is Linear's, coloured per level as ClickUp's flags are
+  (asked for on 2026-11-17): Urgent a filled square in danger red with
+  the "!" cut out; High (warning orange), Medium (info blue) and Low
+  (muted grey) three bars with three, two or one lit; none three quiet
+  dashes (`TaskPriorityIcon`). A done task does not
   show it.
 - **Who sets it.** The task dialog's Priority row; bots (`create_task`,
   `update_task`), `opp tasks add --priority` and the MCP `create_task`.

@@ -36,10 +36,11 @@ import { variedWidth } from '../internal/varied-width';
  *   when due within a day), the linked session, and Start session on hover.
  *   A `selected` card (picked to act on with others) takes the selected wash
  *   and a ring in the focus ink. An open task's priority leads its meta row.
- * - `TaskPriorityIcon`: a task's priority at icon size. Urgent is a filled
- *   square in the warning ink with the "!" cut out of it, so it reads on any
- *   surface; High, Medium and Low are three bars with three, two or one of
- *   them lit; none is three quiet dashes.
+ * - `TaskPriorityIcon`: a task's priority at icon size, each level in its
+ *   own ink: Urgent a filled square in danger red with the "!" cut out of
+ *   it, so it reads on any surface; High (warning orange), Medium (info
+ *   blue) and Low (muted) three bars with three, two or one of them lit;
+ *   none three quiet dashes.
  * - `TaskSelectionBar`: what the picked cards can do together, floating at
  *   the foot of the viewport — how many, then `children` (the actions).
  * - `TaskMarquee`: the rectangle a drag from the board's empty space draws
@@ -191,6 +192,12 @@ type TaskDueTone = 'default' | 'soon' | 'overdue';
 type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
 
 const LIT_BARS: Record<Exclude<TaskPriority, 'urgent'>, number> = { high: 3, medium: 2, low: 1 };
+const PRIORITY_INK: Record<TaskPriority, string> = {
+  urgent: 'text-danger',
+  high: 'text-warning',
+  medium: 'text-info',
+  low: 'text-fg-muted',
+};
 const BAR_X = [1.5, 6.5, 11.5] as const;
 const BAR_TOP = [9, 5.5, 2] as const;
 
@@ -214,7 +221,7 @@ function TaskPriorityIcon({
       fill="currentColor"
       className={cn(
         'size-3.5 shrink-0',
-        priority === 'urgent' ? 'text-warning' : priority ? 'text-fg-muted' : 'text-fg-subtle',
+        priority ? PRIORITY_INK[priority] : 'text-fg-subtle',
         className,
       )}
       {...a11y}
