@@ -12,8 +12,8 @@ import { IconButton } from './icon-button';
  * - `VoiceRecorderBar`: while dictating, the composer's foot gives way to
  *   the recorder: a waveform growing in from the right over a dashed
  *   midline, the elapsed time in mono, cancel and the blue arrow up that
- *   stops it, on a faint tint rather than a box of its own. Before the
- *   microphone answers it says so; after, "Transcribing…", in the same row.
+ *   stops it. Before the microphone answers it says so; after,
+ *   "Transcribing…", in the same row.
  * - `DictationButton`: the mic, a 30px square, on the danger surface while
  *   it records. Every field that takes dictation shows this one.
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
@@ -44,67 +44,64 @@ function VoiceRecorderBar({
   labels?: { waiting?: string; transcribing?: string; cancel?: string; stop?: string };
   className?: string;
 }) {
-  // One row in every state, so the box does not jump between waiting,
-  // listening and transcribing. Its height is the host's control row
-  // (`--composer-row`, which the composer's foot stands at too), 44px alone.
-  const recording = state === 'recording';
-  return (
-    <div
-      data-slot="voice-recorder-bar"
-      data-state={state}
-      role={recording ? undefined : 'status'}
-      className={cn(
-        'flex h-(--composer-row,2.75rem) items-center gap-2.5 rounded-lg bg-hover-surface pr-1.5 pl-3.5',
-        !recording && 'text-[13px] text-fg-muted',
-        className,
-      )}
-    >
-      {recording ? null : (
-        <span className="flex shrink-0 items-center gap-2">
+  if (state !== 'recording') {
+    return (
+      <div
+        data-slot="voice-recorder-bar"
+        data-state={state}
+        role="status"
+        className={cn('flex items-center gap-2.5 rounded-lg border border-border-subtle bg-card py-2 pr-2 pl-3.5 text-[13px] text-fg-muted', className)}
+      >
+        {/* The recording's row, its midline still drawn, so the bar does not
+            change shape between waiting, listening and transcribing. */}
+        <span className="flex h-7 shrink-0 items-center gap-2">
           <LoaderIcon aria-hidden className="size-3.5 motion-safe:animate-spin" />
           {state === 'waiting'
             ? (labels?.waiting ?? 'Waiting for microphone…')
             : (labels?.transcribing ?? 'Transcribing…')}
         </span>
-      )}
+        <span aria-hidden className="h-0 min-w-0 flex-1 border-t border-dashed border-border" />
+      </div>
+    );
+  }
+  return (
+    <div
+      data-slot="voice-recorder-bar"
+      data-state="recording"
+      className={cn('flex items-center gap-2.5 rounded-lg border border-border-subtle bg-card py-2 pr-2 pl-3.5', className)}
+    >
       <div aria-hidden className="relative flex h-7 min-w-0 flex-1 items-center overflow-hidden">
         <span className="absolute inset-x-0 top-1/2 border-t border-dashed border-border" />
-        {recording ? (
-          <div className="relative ml-auto flex h-full items-center gap-0.5">
-            {levels.map((level, i) => (
-              <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: a level's place is its time.
-                key={i}
-                className="w-0.5 rounded-[1px] bg-fg"
-                // biome-ignore lint/style/noInlineStyles: the bar's height is the level.
-                style={{ height: `${Math.max(8, Math.round(level * 100))}%` }}
-              />
-            ))}
-          </div>
-        ) : null}
+        <div className="relative ml-auto flex h-full items-center gap-0.5">
+          {levels.map((level, i) => (
+            <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: a level's place is its time.
+              key={i}
+              className="w-0.5 rounded-[1px] bg-fg"
+              // biome-ignore lint/style/noInlineStyles: the bar's height is the level.
+              style={{ height: `${Math.max(8, Math.round(level * 100))}%` }}
+            />
+          ))}
+        </div>
       </div>
-      {recording ? (
-        <>
-          {elapsed ? <span className="figures font-mono text-[12.5px] text-fg-muted">{elapsed}</span> : null}
-          <IconButton
-            aria-label={labels?.cancel ?? 'Cancel voice recording'}
-            size="sm"
-            onClick={onCancel}
-            className="bg-hover-surface text-fg hover:bg-control-hover hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <XIcon />
-          </IconButton>
-          <IconButton
-            aria-label={labels?.stop ?? 'Stop voice recording'}
-            variant="primary"
-            size="sm"
-            onClick={onStop}
-            className="focus-visible:ring-3 focus-visible:ring-ring"
-          >
-            <ArrowUpIcon aria-hidden strokeWidth={2.2} />
-          </IconButton>
-        </>
-      ) : null}
+      {elapsed ? <span className="figures font-mono text-[12.5px] text-fg-muted">{elapsed}</span> : null}
+      <IconButton
+        aria-label={labels?.cancel ?? 'Cancel voice recording'}
+        size="sm"
+        onClick={onCancel}
+        className="bg-hover-surface text-fg hover:bg-control-hover hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <XIcon />
+      </IconButton>
+      <IconButton
+        aria-label={labels?.stop ?? 'Stop voice recording'}
+        variant="primary"
+        size="sm"
+        onClick={onStop}
+        className="focus-visible:ring-3 focus-visible:ring-ring"
+      >
+        <ArrowUpIcon aria-hidden strokeWidth={2.2} />
+      </IconButton>
     </div>
   );
 }
