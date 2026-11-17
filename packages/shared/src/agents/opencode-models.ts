@@ -1,4 +1,5 @@
 import type { CodingAgentModel } from './catalog.js';
+import { CODEX_MODELS } from './codex-models.js';
 import { CLAUDE_LEVELS, CODEX_LEVELS, GROK_LEVELS, levels } from './effort-levels.js';
 
 // OpenCode's variants for Google's reasoning models, off models.dev; its
@@ -10,6 +11,18 @@ const OPENCODE_GOOGLE_LEVELS = ['low', 'medium', 'high'] as const;
 // alike, which OpenCode offers as its variants; Qwen 3.8 names its own three.
 const OPENCODE_LOW_HIGH_MAX_LEVELS = ['low', 'high', 'max'] as const;
 const OPENCODE_QWEN_LEVELS = ['low', 'medium', 'xhigh'] as const;
+
+// OpenAI's rows are Codex's picker under `openai/`, in its order, at OpenCode's
+// own variants for them: Codex's levels without `ultra`, `medium` unasked.
+const OPENCODE_OPENAI_MODELS: readonly CodingAgentModel[] = CODEX_MODELS.map(
+  ({ id, label, legacy }) =>
+    Object.freeze({
+      id: `openai/${id}`,
+      label,
+      effort: levels(CODEX_LEVELS, 'medium'),
+      ...(legacy ? { legacy } : {}),
+    }),
+);
 
 /**
  * OpenCode's `models` entry in `CODING_AGENTS`, kept beside the catalog
@@ -66,56 +79,7 @@ export const OPENCODE_MODELS: readonly CodingAgentModel[] = Object.freeze([
     label: 'Haiku 5.5',
     effort: levels(['none', ...CLAUDE_LEVELS], 'none'),
   }),
-  Object.freeze({
-    id: 'openai/gpt-6.2-sol',
-    label: 'GPT-6.2 Sol',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-6.2-astra',
-    label: 'GPT-6.2 Astra',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-6.1-sol',
-    label: 'GPT-6.1 Sol',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-6.1-terra',
-    label: 'GPT-6.1 Terra',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-6-astra',
-    label: 'GPT-6 Astra',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-6-sol',
-    label: 'GPT-6 Sol',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-6-luna',
-    label: 'GPT-6 Luna',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-5.6-sol',
-    label: 'GPT-5.6 Sol',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-5.6-terra',
-    label: 'GPT-5.6 Terra',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
-  Object.freeze({
-    id: 'openai/gpt-5.6-luna',
-    label: 'GPT-5.6 Luna',
-    effort: levels(CODEX_LEVELS, 'medium'),
-  }),
+  ...OPENCODE_OPENAI_MODELS,
   Object.freeze({
     id: 'xai/grok-4.7',
     label: 'Grok 4.7',

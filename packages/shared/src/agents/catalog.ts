@@ -21,10 +21,10 @@
  * does not load those scripts with the catalog.
  */
 
+import { CODEX_MODELS } from './codex-models.js';
 import {
   CLAUDE_4_6_LEVELS,
   CLAUDE_LEVELS,
-  CODEX_LEVELS,
   GROK_4_5_LEVELS,
   GROK_LEVELS,
   levels,
@@ -385,8 +385,6 @@ export interface CodingAgentDefinition {
   readonly input?: CodingAgentInput;
 }
 
-const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
-
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
  * console both read the same object.
@@ -554,63 +552,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // What codex's own picker lists, in its order, with the slugs `codex
-    // --model` takes and each model's levels and default as codex reports them;
-    // a seed, with the limit Claude Code's has: nothing probes which a host's
-    // CLI knows.
-    models: Object.freeze([
-      Object.freeze({
-        id: 'gpt-6.2-sol',
-        label: 'GPT-6.2 Sol',
-        default: true as const,
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-6.2-astra',
-        label: 'GPT-6.2 Astra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-6.1-sol',
-        label: 'GPT-6.1 Sol',
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-6.1-terra',
-        label: 'GPT-6.1 Terra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-6-astra',
-        label: 'GPT-6 Astra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-6-sol',
-        label: 'GPT-6 Sol',
-        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-6-luna',
-        label: 'GPT-6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-5.6-sol',
-        label: 'GPT-5.6 Sol',
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-5.6-terra',
-        label: 'GPT-5.6 Terra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-5.6-luna',
-        label: 'GPT-5.6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-    ]),
+    models: CODEX_MODELS,
     launch: Object.freeze({
       // A session is a terminal nobody is watching, so it cannot depend on
       // the state of a server shared with whatever else the host runs. Codex
