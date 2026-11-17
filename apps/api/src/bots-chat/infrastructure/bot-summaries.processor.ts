@@ -1,11 +1,13 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { BotCompletionError } from '@oppenheimer/backend-agents';
 import { LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { DelayedError, type Job } from 'bullmq';
 import { SummarizeBotConversationCommand } from '../commands/summarize-bot-conversation/summarize-bot-conversation.command';
 import { SUMMARIZE_BOT_CONVERSATION_JOB } from '../database/bot-conversation-summary.repository';
+import { isAccountFailure } from '../domain/bot-provider-hold.policy';
 import { summaryRetryAt } from '../domain/bot-summary.policy';
 
 /**
@@ -19,6 +21,16 @@ import { summaryRetryAt } from '../domain/bot-summary.policy';
  * retried on that schedule: the limit is the workspace key's, so this job alone
  * moves to delayed until the reset the provider named (`summaryRetryAt`),
  * spending no attempt, and the queue's other workspaces carry on.
+ *
+ * A provider that refused the account (credit spent, key or sign-in refused:
+ * `isAccountFailure`) ends the job without a retry or a report (2026-11-17,
+ * Sentry OPPENHEIMER-API-7: "Credit balance is too low" retried eight times
+ * per job and reported once each, for every turn that ended while the
+ * account was out). No retry brings the credit back, and the account is the
+ * owner's to fix, not ours. Nothing is lost: the summary is unchanged, and
+ * the next turn that ends past the threshold stages the fold again
+ * (`BotSummaryTriggerPolicy`), so the first one after the account is sorted
+ * catches up.
  */
 @Processor(QUEUE_NAMES.BOT_SUMMARIES)
 export class BotSummariesProcessor extends WorkerHost {
@@ -40,6 +52,14 @@ export class BotSummariesProcessor extends WorkerHost {
     try {
       await this.commandBus.execute(new SummarizeBotConversationCommand({ organizationId, botId }));
     } catch (error) {
+      if (error instanceof BotCompletionError && isAccountFailure(error.failure)) {
+        this.logger.warn({
+          message: 'A bot summary was refused for the account; left for the next turn',
+          botId,
+          failure: error.failure,
+        });
+        return;
+      }
       if (!(error instanceof LlmRateLimitError)) throw error;
       const retryAt = summaryRetryAt(error.resetAt, new Date());
       this.logger.warn({
