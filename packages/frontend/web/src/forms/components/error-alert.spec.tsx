@@ -102,6 +102,34 @@ describe('ErrorAlert offline', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
+  it('retries every quiet section from the one Try again it shows', () => {
+    const bots = vi.fn();
+    const sessions = vi.fn();
+    render(
+      <>
+        <ErrorAlert error={offline()} fallback="Could not load the bots" onRetry={bots} />
+        <ErrorAlert error={offline()} fallback="Could not load the sessions" onRetry={sessions} />
+      </>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(bots).toHaveBeenCalledOnce();
+    expect(sessions).toHaveBeenCalledOnce();
+  });
+
+  it('keeps an alert that carries its own action', () => {
+    render(
+      <>
+        <ErrorAlert error={offline()} fallback="Could not load the bots" />
+        <ErrorAlert
+          error={offline()}
+          fallback="Could not attach"
+          action={<button type="button">Reconnect</button>}
+        />
+      </>,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(2);
+  });
+
   it('still shows every failure the server answered', () => {
     render(
       <>

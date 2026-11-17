@@ -41,7 +41,9 @@ type ErrorAlertSource =
  * caller writes `<ErrorAlert error={mutation.error} … />` with no guard.
  *
  * Offline, every read on the page fails with the same "could not reach the
- * server" sentence; only the first such alert draws it (`useUnreachableClaim`).
+ * server" sentence; only the first such alert draws it, and its Try again
+ * retries for the rest (`useUnreachableClaim`). An alert with its own
+ * `action` always shows.
  *
  * `title` names what failed when one alert speaks for several rows. The one
  * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
@@ -50,12 +52,18 @@ type ErrorAlertSource =
 export function ErrorAlert({
   title,
   onDismiss,
+  onRetry,
   action,
   className,
   ...source
 }: ErrorAlertSource & {
   title?: ReactNode;
   onDismiss?: () => void;
+  /**
+   * Try again, in the action slot. Offline, the one alert that shows runs
+   * every hidden alert's too.
+   */
+  onRetry?: () => void;
   /** Takes the action slot instead of Dismiss. */
   action?: ReactNode;
   className?: string;
@@ -70,14 +78,21 @@ export function ErrorAlert({
       : source.error === null || source.error === undefined
         ? null
         : resolveError(source.error, source.fallback);
-  const speaks = useUnreachableClaim(
-    Boolean(resolved && 'unreachable' in resolved && resolved.unreachable),
+  // A caller's own action (a terminal's Retry) is not the pooled Try again, so
+  // that alert always shows.
+  const offline = useUnreachableClaim(
+    !action && Boolean(resolved && 'unreachable' in resolved && resolved.unreachable),
+    onRetry,
   );
-  if (!resolved || !speaks) return null;
+  if (!resolved || !offline.speaks) return null;
   const { message, correlationId } = resolved;
   const trailing =
     action ??
-    (onDismiss ? (
+    (offline.retry ? (
+      <Button variant="ghost" size="sm" onClick={offline.retry}>
+        {t('common.retry')}
+      </Button>
+    ) : onDismiss ? (
       <Button variant="ghost" size="sm" onClick={onDismiss}>
         {t('common.dismiss')}
       </Button>

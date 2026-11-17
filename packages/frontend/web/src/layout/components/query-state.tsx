@@ -1,9 +1,7 @@
-import { Button } from '@oppenheimer/design-system-web';
 import { useCaptureError } from '@oppenheimer/frontend-core/react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { createContext, type ReactNode, Suspense, use } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 import { useLoadingAnnouncement } from '../hooks/use-loading-announcement';
 
@@ -110,7 +108,6 @@ function QueryStateError(
     | { fallback: string; className?: string; children?: never }
     | { children: (error: unknown, retry: () => void) => ReactNode },
 ) {
-  const { t } = useTranslation();
   const rung = useRung('Error');
   if (rung.rung !== 'failed') return null;
   if ('fallback' in props)
@@ -119,11 +116,7 @@ function QueryStateError(
         error={rung.error}
         fallback={props.fallback}
         className={props.className}
-        action={
-          <Button variant="ghost" size="sm" onClick={rung.retry}>
-            {t('common.retry')}
-          </Button>
-        }
+        onRetry={rung.retry}
       />
     );
   return props.children(rung.error, rung.retry);
