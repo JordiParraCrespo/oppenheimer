@@ -274,12 +274,11 @@ describe('SessionEntity cloud links', () => {
     expect(session.teleportCommand).toBe('codex apply task_e_68a1b2c3d4');
   });
 
-  // A cloud thread's web address is not known: Codex itself, not a dead
-  // tasks/<thread> link; and `codex apply` takes only a legacy task, so a
-  // thread offers no command rather than one that fails.
-  it('opens Codex on chatgpt.com for a Codex cloud thread, and offers no apply', () => {
-    const session = cloudSession('codex', '019a2b3c-4d5e-thread');
-    expect(session.cloudUrl).toBe('https://chatgpt.com/codex');
+  it('opens the exact Codex cloud thread instead of dropping its id at the home page', () => {
+    const session = cloudSession('codex', '6afb6756-cc04-8191-94af-480f84c2705a');
+    expect(session.cloudUrl).toBe(
+      'https://chatgpt.com/local/6afb6756-cc04-8191-94af-480f84c2705a',
+    );
     expect(session.teleportCommand).toBeNull();
   });
 
