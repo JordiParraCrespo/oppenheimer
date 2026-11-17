@@ -14,8 +14,9 @@ there.
 > [!IMPORTANT]
 > Oppenheimer is under active development. The runner can already pair,
 > install itself, and manage worktree-backed tmux sessions on macOS, Debian,
-> and Ubuntu. The browser-to-runner relay is the next major slice, so sessions
-> are currently driven from the host CLI rather than the web console.
+> and Ubuntu. You can start sessions from the web console, which streams
+> the host terminal to your browser. The runner CLI also manages sessions
+> directly on the host.
 
 ## One control plane for every coding session
 
@@ -44,9 +45,8 @@ that sprawl into one durable workspace:
 5. Leave and return from any device without losing the session.
 
 The MVP is deliberately focused: your hosts, your repositories, and a
-persistent terminal. Claude Code comes first; Codex and other agents follow.
-VM isolation, previews, pull-request workflows, routines, and teams build on
-the same foundation later.
+persistent terminal. You can start a session with Claude Code, Codex, or
+[another supported agent](apps/docs/docs/guide/sessions.md).
 
 ## How it works
 
