@@ -185,7 +185,130 @@ Record<string, string> }`.
 - `apps/api/.dependency-cruiser.cjs` has no rule that names `bots-chat`:
   nothing holds the runtime apart from the areas it calls.
 
-<!-- SURVEY -->
+## 2. What the SDKs are
+
+Read on 2026-11-17 from each project's own documentation, registry entry
+and source; the address follows each claim. Three separate reads, by
+agents this session started, each asked to mark what it could not confirm
+from a primary source; those marks are kept ("not confirmed").
+
+### 2.1 Vercel: the AI SDK, the Workflow SDK and eve
+
+The owner remembered a Vercel SDK that splits things into "directives".
+Two of Vercel's products fit, and neither splits a prompt by that name:
+
+- **The Workflow SDK** (`workflow@5.5.0`; "Workflow DevKit" until this
+  year) has the two directives, `"use workflow"` and `"use step"`. A
+  workflow function is a deterministic orchestrator replayed from an event
+  log; a step function does the side effects, and its result is stored and
+  retried. They split orchestration from effects, not a prompt
+  (workflow-sdk.dev/docs/how-it-works/understanding-directives).
+- **eve** (`eve@1.0.1`, 2026-11-16) is the one that splits an agent into
+  pieces, as files: `agent/instructions.md`, `instructions/*.ts`,
+  `skills/`, `tools/` (the file's name is the tool's), `subagents/`,
+  `connections/`, `channels/`, `schedules/`
+  (eve.dev/docs/concepts/project-structure). It never calls them
+  directives.
+
+**The AI SDK is on version 7** (`ai@7.0.173`; 7.0.0 on 2026-06-25): ESM
+only, Node 22, three surfaces (Core, UI, Harnesses) over a provider
+specification, `LanguageModelV4` (vercel.com/blog/ai-sdk-7). What it has
+that bears on §1.3:
+
+| Piece | What it is | Bears on |
+| --- | --- | --- |
+| `tool({ inputSchema, execute, toModelOutput })` | a plain value; `execute` answers the result the application keeps, `toModelOutput` what the model reads | C: two channels, declared |
+| `contextSchema` and `toolsContext` (v7) | each tool declares the context it needs and sees no more | B: what a call runs with |
+| `toolApproval` (v7; replaces `needsApproval` on the tool) | a policy outside the tool that answers `approved`, `denied` or `user-approval`; the call does not block, it answers a request part and is called again with the response | B: the decision as its own step |
+| `prepareCall` and `prepareStep` | one runs once per request from typed call options, the other before every model call and can change the instructions, the messages and the active tools | A, and a run as data |
+| `activeTools`, `toolOrder`, `deferLoading` with `toolSearch()` | a filter that keeps the types, a pinned order so the cached prefix holds, definitions kept out of context until searched for | the 128 tools |
+| `wrapLanguageModel` middleware | a decorator around a model: `transformParams`, `wrapGenerate`, `wrapStream` | B, at the model's side |
+| `StopCondition` | the loop's exit as predicates that compose | a run as data |
+
+(ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling, /tool-search,
+/middleware; ai-sdk.dev/docs/agents/loop-control,
+/configuring-call-options.)
+
+eve's instructions are the closest thing read to §4's sections. Each
+piece declares a **role and a lifetime**: a system-role instruction is
+outside the history and sent on every call; a user-role one is appended
+once and again only when its content changes or compaction removed it; a
+skill shows its description until it is loaded; a dynamic one is resolved
+before each call with `ctx.memo(key, fn)` saying how long the answer
+holds (eve.dev/docs/instructions, eve.dev/docs/concepts/context-control).
+
+What its own documentation says it does not do: compaction in Core is the
+application's (`prepareStep` and `pruneMessages`); a subagent is a
+pattern, a tool that calls an agent, and approvals do not work inside
+one; durability is a second agent class (`WorkflowAgent`) with a
+different API; storing `UIMessage` and converting back has lost detail
+that a provider then refused (two entries in the 7.0 changelog); caching,
+context editing and provider tools do not carry across providers. Version
+6 to 7 took six months, with 173 patch releases since.
+
+### 2.2 The two SDKs the engines run on
+
+`@anthropic-ai/claude-agent-sdk` 0.3.326 and `@openai/agents` 0.22.0 (we
+pin `^0.3.300` and `^0.21.0`). The same ideas under two sets of names:
+
+| Idea | Claude Agent SDK | OpenAI Agents SDK |
+| --- | --- | --- |
+| The prompt | `systemPrompt`: a string, a preset with `append`, or `[static, SYSTEM_PROMPT_DYNAMIC_BOUNDARY, perRequest]`, two blocks each with a cache breakpoint | `instructions`: a string or a function of the run's context |
+| What changes mid-conversation | never the prompt (it is recorded at the session's start); a note in the conversation: a system reminder, a hook's `additionalContext` | `callModelInputFilter`, before every model call |
+| A tool | `tool()` in `createSdkMcpServer` | `tool({ … })` |
+| A group of tools | an MCP server (`mcp__server__tool`) | `toolNamespace()` |
+| What a tool is like | `annotations` (`readOnlyHint`, `destructiveHint`, …): hints, and `readOnlyHint` is what lets calls run in parallel | none found |
+| Offered or not | `tools`, `disallowedTools` | `isEnabled`: "does not replace authorization" |
+| Loaded late | tool search, on by default for SDK tools; `alwaysLoad` keeps one up front | `deferLoading` with `toolSearchTool()` |
+| Asking first | hooks, then deny rules, ask rules, the mode, allow rules, `canUseTool`; a hook may `defer`, ending the turn so the call resumes later | `needsApproval`, then `interruptions`, then a serialised `RunState` |
+| A gate around a call | `PreToolUse` and `PostToolUse` hooks, among 33 events; deny beats defer beats ask beats allow | tool input and output guardrails |
+| A child | `agents` and the `Agent` tool: a fresh context, its last message back | `agent.asTool()`; `handoff()` transfers the conversation instead |
+| Folding | automatic, with a `compact_boundary` event | a session decorator, or the input filter |
+
+(code.claude.com/docs/en/agent-sdk/modifying-system-prompts,
+/custom-tools, /permissions, /hooks, /tool-search;
+openai.github.io/openai-agents-js/guides/agents, /tools, /guardrails,
+/human-in-the-loop, /running-agents.)
+
+**What our adapters already do with them** (read in
+`packages/backend/agents/src`): the Claude engine is closed down as that
+SDK's own documentation says a server should be (`settingSources: []`,
+`strictMcpConfig: true`, `permissionMode: 'dontAsk'`, an explicit
+`allowedTools`), and the OpenAI engine folds through
+`callModelInputFilter`. Three things the read turned up that they do not
+use:
+
+- Every one of our tools is sent to Claude with `alwaysLoad: true`
+  (`claude-tool-server.ts`), so all 128 definitions are in context on
+  every turn and the SDK's tool search is off for them.
+- A tool's `readOnly` trait does not reach either SDK. On the Claude
+  engine that means our read-only tools run one at a time; with
+  `readOnlyHint` the SDK may run them side by side (its documentation;
+  not measured here).
+- The prompt crosses to Claude as one string, though the SDK takes a
+  stable part and a per-request part with a boundary between them.
+
+**What neither gives an application**, by their own documentation:
+tenancy (the Claude SDK reads the host's settings unless told not to),
+durable sessions and approvals (a `sessionStore` or a `Session` to
+implement; "only deserialize snapshots from trusted storage"),
+authorization, the approval's interface, rollback of a rejected call's
+effects, and any way to see or shape the assembled prompt beyond one
+string or one function.
+
+**How the two vendors build their own agents' prompts**, from what they
+publish: Claude Code's preset is a static body and dynamic sections with
+a cache boundary the model never sees; what changes (the project's
+instructions, the skill list, a file that changed) travels in the
+conversation as reminders; a tool carries its own guidance in its
+description (the commit instructions are part of the shell tool's)
+(code.claude.com/docs/en/agent-sdk/modifying-system-prompts). Codex keeps
+a base prompt per model as a Markdown file and templates beside them, and
+its tools are a tree of modules: a registry, a router, an orchestrator,
+approvals, sandboxing, handlers (github.com/openai/codex,
+`codex-rs/core`).
+
+<!-- SURVEY-3 -->
 
 ## 4. The proposal: name the four structures
 
