@@ -82,41 +82,47 @@ export function BotChatBody({
       </ToolCallsShownContext>
       {/* The scroller's gutter and measure, so the box's edges are the
           conversation's, on the page and beside a session alike. */}
-      <div className="px-4 pb-4 sm:px-8">
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
-          <BotApprovalCard botId={bot.id} name={bot.name} />
-          <BotQuestionCard botId={bot.id} />
-          <ErrorAlert
-            error={update.error}
-            fallback={t('bots.chat.saveFailed')}
-            onDismiss={() => update.reset()}
-          />
-          <BotComposer
-            key={bot.id}
-            dropsOn={dropsOn}
-            botId={bot.id}
-            name={bot.name}
-            provider={bot.provider}
-            model={bot.model}
-            tools={
-              <BotPermissionChip
-                value={bot.permission}
-                onValueChange={(next) => update.mutate({ id: bot.id, input: { permission: next } })}
-              />
-            }
-            engine={
-              <>
-                <BotUsage botId={bot.id} />
-                <BotEngine
-                  provider={bot.provider}
-                  model={bot.model}
-                  effort={bot.effort}
-                  onModelChange={(next) => update.mutate({ id: bot.id, input: next })}
-                  onEffortChange={(next) => update.mutate({ id: bot.id, input: { effort: next } })}
+      <div className="@container">
+        <div className="px-3 pb-3 @2xl:px-8 @2xl:pb-4">
+          <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
+            <BotApprovalCard botId={bot.id} name={bot.name} />
+            <BotQuestionCard botId={bot.id} />
+            <ErrorAlert
+              error={update.error}
+              fallback={t('bots.chat.saveFailed')}
+              onDismiss={() => update.reset()}
+            />
+            <BotComposer
+              key={bot.id}
+              dropsOn={dropsOn}
+              botId={bot.id}
+              name={bot.name}
+              provider={bot.provider}
+              model={bot.model}
+              tools={
+                <BotPermissionChip
+                  value={bot.permission}
+                  onValueChange={(next) =>
+                    update.mutate({ id: bot.id, input: { permission: next } })
+                  }
                 />
-              </>
-            }
-          />
+              }
+              engine={
+                <>
+                  <BotUsage botId={bot.id} />
+                  <BotEngine
+                    provider={bot.provider}
+                    model={bot.model}
+                    effort={bot.effort}
+                    onModelChange={(next) => update.mutate({ id: bot.id, input: next })}
+                    onEffortChange={(next) =>
+                      update.mutate({ id: bot.id, input: { effort: next } })
+                    }
+                  />
+                </>
+              }
+            />
+          </div>
         </div>
       </div>
     </>
