@@ -116,6 +116,23 @@ describe('ErrorAlert offline', () => {
     expect(sessions).toHaveBeenCalledOnce();
   });
 
+  it('keeps a dialog’s alert, which the page’s alert behind the modal cannot speak for', () => {
+    const page = vi.fn();
+    const dialog = vi.fn();
+    render(
+      <>
+        <ErrorAlert error={offline()} fallback="Could not load the bots" onRetry={page} />
+        <div role="dialog">
+          <ErrorAlert error={offline()} fallback="Could not load the event" onRetry={dialog} />
+        </div>
+      </>,
+    );
+    expect(screen.getAllByRole('alert')).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole('button', { name: 'common.retry' })[1]);
+    expect(dialog).toHaveBeenCalledOnce();
+    expect(page).not.toHaveBeenCalled();
+  });
+
   it('keeps an alert that carries its own action', () => {
     render(
       <>

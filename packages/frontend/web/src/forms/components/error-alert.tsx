@@ -6,7 +6,7 @@ import {
   Button,
 } from '@oppenheimer/design-system-web';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUnreachableClaim } from '../hooks/use-unreachable-claim';
 
@@ -43,7 +43,7 @@ type ErrorAlertSource =
  * Offline, every read on the page fails with the same "could not reach the
  * server" sentence; only the first such alert draws it, and its Try again
  * retries for the rest (`useUnreachableClaim`). An alert with its own
- * `action` always shows.
+ * `action`, or one in a dialog, always shows.
  *
  * `title` names what failed when one alert speaks for several rows. The one
  * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
@@ -80,9 +80,11 @@ export function ErrorAlert({
         : resolveError(source.error, source.fallback);
   // A caller's own action (a terminal's Retry) is not the pooled Try again, so
   // that alert always shows.
+  const node = useRef<HTMLDivElement>(null);
   const offline = useUnreachableClaim(
     !action && Boolean(resolved && 'unreachable' in resolved && resolved.unreachable),
     onRetry,
+    node,
   );
   if (!resolved || !offline.speaks) return null;
   const { message, correlationId } = resolved;
@@ -99,7 +101,7 @@ export function ErrorAlert({
     ) : null);
 
   return (
-    <Alert tone="danger" className={className}>
+    <Alert ref={node} tone="danger" className={className}>
       {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         {message}
