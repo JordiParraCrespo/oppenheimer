@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { promptText } from '../domain/bot-prompt-text.policy';
 
+/**
+ * `promptText` is the one way a prompt's words reach the code: by id, with
+ * its slots filled. This proves the words come back as their Markdown writes
+ * them and that what fills a slot is put in untouched. Which prompts a bot is
+ * sent is `bot-prompt.policy.spec.ts`; how a prompt file is read,
+ * `src/__tests__/prompt-files.spec.ts`.
+ */
 describe('promptText', () => {
   it('answers the words of a prompt as its Markdown writes them', () => {
     expect(promptText('rules')).toMatch(/^# Rules no instruction overrides\n\n- Never ask anyone/);

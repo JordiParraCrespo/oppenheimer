@@ -3,6 +3,15 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parsePromptFile, readPrompts, renderPromptModule } from '../../scripts/prompt-files.mjs';
 
+/**
+ * What a model is told is Markdown in a module's `domain/prompts/`, read by
+ * the API from the `prompts.gen.ts` generated beside it. This spec holds the
+ * two things that keeps true: the committed module is what the Markdown
+ * generates, and a prompt file is read the way `prompt-files.mjs` says (a
+ * note never sent, a broken file refused). `bot-prompt-text.policy.spec.ts`
+ * covers how the words reach the code; `bot-prompt.policy.spec.ts` which are
+ * sent to which bot.
+ */
 const SRC = join(__dirname, '..');
 
 /** Every module's `domain/prompts`, as `emit-prompts.mjs` finds them. */
@@ -12,6 +21,10 @@ const promptDirs = readdirSync(SRC, { withFileTypes: true })
   .filter((dir) => existsSync(dir));
 
 describe('prompt files', () => {
+  it('finds the modules that keep prompts', () => {
+    expect(promptDirs.length).toBeGreaterThan(0);
+  });
+
   // The words are edited in Markdown and read from the module generated from
   // them. A file edited without `generate:prompts` would leave every model on
   // the old words while the diff shows the new ones.
