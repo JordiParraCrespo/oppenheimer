@@ -21,6 +21,7 @@ const options: Record<SessionFacet, FilterOption[]> = {
   repository: offered('acme/app'),
   agent: offered('claude'),
   host: offered('h1'),
+  status: offered('needs-you', 'done'),
 };
 
 describe('useSessionFilters', () => {
@@ -91,6 +92,7 @@ describe('withinOptions', () => {
           repository: ['acme/app', 'acme/gone'],
           agent: ['claude'],
           host: ['h-gone'],
+          status: ['needs-you'],
           sort: 'oldest',
         },
         options,
@@ -100,6 +102,7 @@ describe('withinOptions', () => {
       repository: ['acme/app'],
       agent: ['claude'],
       host: [],
+      status: ['needs-you'],
       sort: 'oldest',
     });
   });

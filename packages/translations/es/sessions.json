@@ -390,6 +390,7 @@
     "repository": "Repositorio",
     "agent": "Agente",
     "host": "Equipo",
+    "status": "Estado",
     "sort": "Ordenar por",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
@@ -407,13 +408,19 @@
     "showAll": "Mostrar todos los proyectos",
     "pinnedOnly": "Solo fijadas",
     "showHidden": "Mostrar sesiones ocultas",
-    "newProject": "Nuevo proyecto…"
+    "newProject": "Nuevo proyecto…",
+    "allStatuses": "Todos los estados",
+    "statuses": {
+      "needs-you": "Necesita tu respuesta",
+      "done": "Listo para revisar"
+    }
   },
   "sort": {
     "custom": "Orden personalizado",
     "recent": "Última actividad",
     "oldest": "Más antiguas primero",
-    "name": "Nombre"
+    "name": "Nombre",
+    "attention": "Primero las que necesitan respuesta"
   },
   "share": {
     "title": "Compartir sesión",
