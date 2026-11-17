@@ -48,10 +48,10 @@ describe('googleItems', () => {
       [work, home],
     ).map(toEntry);
     expect(standup).toMatchObject({
-      accent: 'chart-1',
+      accent: 'chart-2',
       tip: 'standup · 09:00–10:00 · ana@work.example',
     });
-    expect(dentist).toMatchObject({ accent: 'chart-4' });
+    expect(dentist).toMatchObject({ accent: 'chart-1' });
   });
 
   it('leaves out the events of an account no longer listed', () => {
@@ -64,13 +64,15 @@ describe('googleItems', () => {
 });
 
 describe('accounts', () => {
-  it('gives each colour index its own accent', () => {
+  // The first accounts must not wear personal events' blue (`chart-1`) or
+  // tasks' violet (`chart-3`), or the sidebar's legend names one colour twice.
+  it('gives each colour index its own accent, the first three apart from events and tasks', () => {
     expect([0, 1, 2, 3, 4].map(accentOf)).toEqual([
-      'chart-1',
       'chart-2',
-      'chart-3',
       'chart-4',
       'chart-5',
+      'chart-1',
+      'chart-3',
     ]);
   });
 

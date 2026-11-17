@@ -1729,3 +1729,11 @@ earlier note:
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
   and then on the page: the chat greets with the bot's face, its name and
   one line, over the composer's one-row layout, in both places.
+- `versions/mvp/20-plan-calendar.md` §1 drew the calendar nearly
+  achromatic: busy events in ink on the control wash, free ones and
+  automation runs muted, only a Google account's ring in its colour. On
+  2026-11-17 the owner asked for colour, like Google Calendar's: each item
+  is a wash of its colour with a bar down its edge (personal events blue,
+  tasks violet, each Google account its own; automation runs stay grey),
+  and the first Google accounts moved off blue and violet to keep the
+  legend unambiguous.

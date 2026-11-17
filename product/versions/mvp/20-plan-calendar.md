@@ -37,6 +37,16 @@ computed in the console (17 "As built").
   (`PATCH /tasks/:id`).
 - **Automation run**: a bolt, time and name, muted; click goes to the
   automation. Not draggable.
+
+> Since 2026-11-17 every item wears a colour, so a day reads at a glance:
+> a wash of it with a bar down its left edge, its glyph in it too. A
+> Google event wears its account's colour, a personal event blue
+> (`chart-1`), a task violet (`chart-3`); an automation run stays in
+> subtle ink, its title muted. The first three accounts take teal, green
+> and amber, so they never share the events' or tasks' colour. Busy
+> events wash fuller than free ones, which sit behind a dashed edge; an
+> all-day event washes deepest. The sidebar's layer glyphs wear the same
+> colours, as the legend.
 - **Day cell**: click on empty space opens New event on that day.
 
 ## 2. Personal events
