@@ -35,7 +35,10 @@ What is measured and what is inferred:
    one of them leaves prompt assembly, the tool catalog and permissions to
    the application, which is where our tangle is. What they offer is
    vocabulary: sections with a stability, toolsets with an activation rule,
-   middleware around a call, a typed result, a run described as data.
+   middleware around a call, a typed result, a run described as data. The
+   "directives" the owner remembered are Vercel's Workflow SDK, which
+   splits orchestration from effects; the Vercel product that splits an
+   agent's prompt into pieces is eve, as files (§2.1).
 4. **The plan is to name those four structures as types** in a small
    kernel with no framework in it, then move code onto them one slice at a
    time, with the existing specs and the eight bot evals as the net. No
@@ -308,7 +311,139 @@ its tools are a tree of modules: a registry, a router, an orchestrator,
 approvals, sandboxing, handlers (github.com/openai/codex,
 `codex-rs/core`).
 
-<!-- SURVEY-3 -->
+### 2.3 Prompts as components, other frameworks, other harnesses
+
+**Libraries that make a prompt out of parts.**
+
+| Library | The idea | Standing on 2026-11-17 |
+| --- | --- | --- |
+| Priompt (Cursor's) | JSX; each part has a priority and the renderer drops the lowest until the prompt fits a token budget | no release since 2024-10; its README: "adding priorities to everything is sort of an anti-pattern", and overuse makes "hard-to-cache prompts" |
+| `@vscode/prompt-tsx` | the same in VS Code: `PromptElement`, `priority`, `flexGrow`, `TokenLimit`; what the open-sourced Copilot Chat agent is written in | alive, alpha after two and a half years |
+| BAML | a prompt is a typed function in its own language; the answer is parsed against the return type | alive; its own documentation now calls that language the legacy one |
+| DSPy | the prompt is generated from a typed signature and tuned by an optimizer | alive, Python; the opposite of owning the text |
+| POML, ell | markup; a decorated function | stalled |
+
+(github.com/anysphere/priompt, github.com/microsoft/vscode-prompt-tsx,
+docs.boundaryml.com.)
+
+Copilot Chat is the one worth reading for structure, apart from its JSX:
+budgets sit on the history and the tool calls only, never on
+instructions; a registry picks the prompt's classes per model family; and
+a message once rendered is stored and replayed frozen, "for prompt
+caching and to avoid being updated by any agent action below this point"
+(github.com/microsoft/vscode-copilot-chat,
+`src/extension/prompts/node/agent/`).
+
+**Frameworks.**
+
+| Framework | Its seam | In our terms |
+| --- | --- | --- |
+| Pydantic AI (Python; the reference design) | instructions are named functions of the run's context, "always sorted by how much they can change the prompt prefix": static first, then those that append a change to the history, then those that rewrite; toolsets are values that compose (`.filtered()`, `.approval_required()`, `.defer_loading()`) | sections with a stability; an area as a value |
+| Mastra | every field of an agent may be a function of the request; a pipeline of processors before and after each model call, which is also how its memory is built | middleware, at the model's side |
+| LangChain v1 over LangGraph | `createAgent` with middleware (`wrapModelCall`, `wrapToolCall`) around what is still a model node and a tool node; a graph, checkpoints and `interrupt()` underneath | middleware; the graph is more than a loop needs |
+| Effect AI | a tool is a declaration with no handler; handlers are supplied as a layer, and a missing one does not compile | a port and its adapter, enforced by types, at the price of the Effect runtime |
+| Cloudflare Agents | the harness (the loop) apart from the hosting (a Durable Object per agent) | where a turn runs, apart from how |
+
+(pydantic.dev/docs/ai, mastra.ai/docs/agents/processors,
+docs.langchain.com/oss/javascript/langchain/middleware,
+effect.website/docs/ai, developers.cloudflare.com/agents.)
+
+**Harnesses whose source can be read.** These are the closest to what we
+have, and all of them moved the same way.
+
+- **pi** (`earendil-works/pi`, 1.5). It began as one prompt string and
+  four tools; its system prompt is now an ordered record of named
+  sections, each in a tag of its own name. A tool brings its own text
+  (`promptSnippet`, `promptGuidelines`), shown only while the tool is
+  active. When a section changes, pi "diffs the resulting prompt sections
+  against what the model already has and appends one system message
+  patching only the changed sections"; replacing the prompt is "a cache
+  miss".
+- **OpenCode** (`anomalyco/opencode`, rewritten on Effect). One small base
+  prompt with a slot each active tool fills. Everything that changes is
+  an instruction source with a key, a `read` and two renderings,
+  `initial` and `changed(previous, now)`, so a change is told as a new
+  message and the first one keeps its bytes. Of tools: "tool filtering is
+  catalog visibility, not execution authorization"; permission is
+  asserted where the tool acts.
+- **Cline**. Until its rewrite the prompt was `components/` (a file per
+  section), `variants/<model family>/` and `tools/<tool>.ts`, composed by
+  a registry and snapshot-tested per variant. Its SDK now splits a
+  stateless loop (`agents`) from sessions, storage and compaction
+  (`core`), and keeps the transcript append-only with compaction beside
+  it.
+- **OpenHands**. An append-only event log; what the model is sent is a
+  view derived from it; compaction is a strategy (`CondenserBase`) that
+  writes an event of its own.
+- **Goose**. The whole prompt is one template that loops over the
+  extensions, each bringing its own instructions.
+- **Roo Code**. One function per section, joined by a builder that takes
+  sixteen positional parameters: the split without the common shape.
+
+(github.com/earendil-works/pi, `packages/coding-agent/src/core/system-prompt.ts`
+and `docs/extensions.md`; github.com/anomalyco/opencode,
+`packages/core/src/instructions` and `tool/AGENTS.md`;
+github.com/cline/cline, `sdk/ARCHITECTURE.md` and the v3.50.0 tag;
+docs.openhands.dev/sdk/arch. Roo Code's closure is from secondary sources
+only: not confirmed.)
+
+**What is written about the question itself**, as rules for code:
+
+- Keep the prefix stable, the context append-only, the serialisation
+  deterministic, and mark where the cache may break; do not add or remove
+  tools mid-conversation, mask them (Manus, 2025-07,
+  manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus).
+- Organise a prompt into distinct sections; return only what is worth its
+  tokens from a tool; a tool's description is something to version and
+  evaluate (Anthropic, "Effective context engineering for AI agents" and
+  "Writing tools for agents", 2025-09).
+- Own your prompts and your control flow; a tool is structured output
+  that triggers code you wrote; the loop is a reducer with its state kept
+  outside (12-factor agents, factors 2, 4, 8 and 12,
+  github.com/humanlayer/12-factor-agents).
+- "Every component in a harness encodes an assumption about what the
+  model can't do on its own": build each so it can be taken out
+  (Anthropic, "Harness design for long-running apps", 2026-03).
+
+## 3. What the reads add up to
+
+Inferred from §1 and §2. Fourteen patterns recur across what was read;
+this is where each stands here.
+
+| Pattern | Who has it | Here |
+| --- | --- | --- |
+| Named, ordered sections | pi, Cline, Pydantic AI, Copilot Chat, eve | **implicit** (§1.3 A) |
+| A tool brings its own guidance | pi, OpenCode, Goose, Claude Code | **missing**: the playbooks are in the prompt's file |
+| Stable first, and a change appended rather than rewritten | Pydantic AI, pi, OpenCode, Copilot Chat, the Claude SDK's boundary, Manus | **half**: the order is right and the moment is in the message, but a profile fact the bot remembers rewrites the prompt for the next turn |
+| A tool as one declared object with traits | all of them | have (`defineBotTool`) |
+| Offered apart from authorized | OpenCode, both vendor SDKs | have (the catalog's filter; the owner's roles read at the call) |
+| Approval as a policy outside the tool, resumable | AI SDK 7, OpenAI's `RunState`, Claude's `defer` | have, stored as a card; lives in wrapper 5 |
+| Middleware around a call | Mastra, LangChain v1, Claude's hooks, OpenAI's guardrails | **implicit** (§1.3 B) |
+| What the application keeps apart from what the model reads | AI SDK's `toModelOutput`; Claude's reminders | **missing** (§1.3 C) |
+| A stateless loop, its events folded outside | OpenHands, Cline, 12-factor | have (the port's stream, `TurnTranscript`) |
+| Compaction as a step that records an event | OpenHands, OpenCode, pi | have (`compacted`) |
+| A run described as data | AI SDK's `prepareCall`, OpenAI's `RunConfig`, Claude's `AgentDefinition` | **half**: one flat request; a completion told by its shape |
+| Areas as values that contribute | Pydantic AI's toolsets, eve's files, Goose's extensions | **half**: `BotToolArea` exists; thirty are wired by hand in one module |
+| A prompt variant per model family | Copilot Chat, Cline, Codex | barely (`engineCapabilities`); nothing has needed more |
+| A budget and priority per part | Priompt, prompt-tsx | not needed: history and memory are budgeted where they are read |
+
+Five are here whole and two have not been needed, which is why §0 says
+the core is sound. The seven in bold are §1.3's four structures and
+§1.4's flat request, seen from outside.
+
+**Why none of them should be the runtime.** Each framework's centre is
+the loop and the provider, which we have behind a port and which is not
+where our trouble is; what is tangled here (the prompt, the catalog, the
+permission layer, the modules) every one of them leaves to the
+application, by its own documentation. Adopting one would also cost what
+`versions/mvp/25-bots.md` §2 chose the vendors' SDKs for (Claude Code's
+loop and folding; a ChatGPT sign-in through the Codex backend), and the
+AI SDK in particular is ESM-only on Node 22 where the API compiles to
+CommonJS, with a major version every six months. The projects whose
+centre was a language or a runtime of their own for prompts are the ones
+that stalled or relabelled it (Priompt, POML, ell, BAML's first
+language). The ideas that lasted are plain: a list of named sections, a
+tool that carries its text, a pipeline, an event log.
 
 ## 4. The proposal: name the four structures
 
@@ -384,8 +519,11 @@ export function composePrompt<Context>(
   it off removes all three.
 - `PromptPlan` is a manifest for free: each section's tokens, so a pull
   request can show "`sessions.playbook` +180 tokens", a spec can snapshot
-  one section, and an eval's regression can be traced to the section that
-  changed.
+  one section, an eval's regression can be traced to the section that
+  changed, and a section can be left out of an eval's run to see whether
+  it still earns its tokens. Many of the prompt's paragraphs were added
+  after an incident, and nothing today can test whether one is still
+  needed.
 
 **A tool's result has its channels.**
 
@@ -493,7 +631,10 @@ turn, the child and the completion alike.
   return strings, as `TERMINAL_LINES` already is. A priority and a budget
   per section (what Priompt and prompt-tsx are for) is added only when a
   section has to shrink to fit, which none does today: the history and
-  memory are budgeted where they are read.
+  memory are budgeted where they are read, and Priompt's own README warns
+  that priorities on everything make a prompt hard to cache.
+- **Not a graph.** A turn is a loop the vendors' SDKs already run; what
+  surrounds it is a pipeline and a fold.
 - **Not a rewrite of the prose.** Slices 1 to 5 move text without
   changing a byte of it, and a spec holds that.
 - **Not one catalog for HTTP, `opp`, MCP and bots yet.** §1.4's four
@@ -510,17 +651,41 @@ before and after each slice that touches text the model reads.
 
 | # | Slice | Changes behaviour? | What it proves |
 | --- | --- | --- | --- |
-| 0 | **Pin what must not move.** A spec that snapshots the system prompt for six reference bots (no tools; sessions; sessions and commands; terminals; everything; a new bot), byte for byte, and one that snapshots the tool catalog (name, description, schema) | no | every later slice is checked against bytes, not substrings |
+| 0 | **Pin what must not move.** A spec that snapshots the system prompt for six reference bots (no tools; sessions; sessions and commands; terminals; everything; a new bot), byte for byte; one that snapshots the tool catalog (name, description, schema); and one that composes the same bot's prompt for two turns and asserts the same bytes | no | every later slice is checked against bytes, not substrings |
 | 1 | **The kernel's types, and the prompt on sections.** `agent-kernel` with `PromptSection` and `composePrompt`; `bot-prompt.policy.ts` becomes a list of sections; capabilities replace tool names; a prompt manifest (`pnpm bots:prompt`) prints each section's tokens | no (slice 0's snapshots are unchanged) | the section shape holds the prompt we have |
 | 2 | **Results with channels.** `ToolResult` with `notes` and `artifacts` through the port and both engines; the five data keys, the three append-and-strip pairs and `CARDED` go | no | a new artifact is one union member |
 | 3 | **The pipeline.** The six wrappers become `TOOL_PIPELINE`; the input is parsed once; `turn.ts` splits into its seven files | no | the order is written down and each step tested alone |
 | 4 | **`RunPlan`.** The port takes the plan; the turn, the child and the completion share one fold of usage; the credential is a union | no | one description of a run |
 | 5 | **Tools go home.** `contributeTools`; the areas move to their modules one pull request each, sessions first; sections and intros move with them; the boundary rule lands when the last one has | no | `bots-chat` imports no product area |
-| 6 | **What the structure makes cheap**, each its own proposal: cache breakpoints at the plan's stable boundary for an engine that takes them; tools offered by step rather than by turn; a section budget; the features of §4.2 in modules of their own; one description of a use case for its four doors | yes | only what the owner asks for |
+| 6 | **What the structure makes cheap**, each its own proposal, measured first (below) | yes | only what the owner asks for |
 
 Slices 1 to 3 do not depend on each other and can run side by side.
 Slice 5 is the long one (thirty areas) and the only one whose value
 arrives a piece at a time.
+
+Slice 6's candidates, from §2. Each is a guess until it is measured, and
+every turn already stores what it read from the provider's cache
+(`cacheReadTokens`), so each can be:
+
+- **A changed section is told, not rewritten.** A profile fact the bot
+  remembers changes the system prompt, so the next turn's whole history is
+  read uncached. pi, OpenCode and Pydantic AI append the change to the
+  conversation and leave the first bytes alone.
+- **The same tools from turn to turn.** A wake's turn and a person's turn
+  in one conversation are offered different tools (`notOn`,
+  `attendedOnly`), and the tool definitions come before the prompt in
+  what Anthropic's API caches. Manus's rule is to mask a tool, not remove it;
+  here that is offering it and refusing its call, which the pipeline's
+  `ownerRoles` step already does for a role.
+- **Fewer definitions up front.** All 128 are sent on every turn. Both
+  vendors' SDKs can hold an area's definitions back until they are
+  searched for; the areas of slice 5 are the unit to hold back.
+- **Read-only calls side by side**, by passing the trait to the Claude
+  SDK as `readOnlyHint`.
+- **Cache breakpoints at the plan's stable boundary**, for an engine that
+  takes them.
+- **The features of §4.2 in modules of their own**, and **one description
+  of a use case for its four doors**.
 
 ### What would make this the wrong plan
 
