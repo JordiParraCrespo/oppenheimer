@@ -260,6 +260,7 @@ export class BotToolboxFactory {
       (definition) =>
         toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off' &&
         !(origin && definition.notOn.includes(origin)) &&
+        (definition.onlyOn === null || (!!origin && definition.onlyOn.includes(origin))) &&
         !(origin && definition.attendedOnly && !isAttended(origin)),
     );
   }

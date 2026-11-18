@@ -118,6 +118,32 @@ describe('BotToolboxFactory', () => {
     }
   });
 
+  // What breaks this: a tool only the owner may use reached from a turn
+  // started by someone else's words (a routine, a wake, a channel's contact).
+  it('offers a tool kept to some turns only on those, and never on a turn with no origin', () => {
+    const owners = toolboxOf({
+      definitions: () => [
+        defineBotTool({
+          name: 'allow_chat',
+          scope: 'whatsapp:write',
+          description: 'Allows.',
+          input: z.object({}),
+          onlyOn: ['message', 'whatsapp'],
+          run: async () => 'allowed',
+        }),
+      ],
+    });
+    const offered = (origin?: BotTurnOrigin) =>
+      owners.catalog(null, { ...STANDING, origin }).map((listed) => listed.name);
+    for (const origin of ['message', 'whatsapp'] as const) {
+      expect(offered(origin)).toEqual(['allow_chat']);
+    }
+    for (const origin of ['telegram', 'routine', 'subscription', 'approval', 'goal'] as const) {
+      expect(offered(origin)).toEqual([]);
+    }
+    expect(offered()).toEqual([]);
+  });
+
   it('runs an approved call only under the scopes of the turn that asked', async () => {
     const signal = new AbortController().signal;
     const call = { tool: 'start_session', input: {} };

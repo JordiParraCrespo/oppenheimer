@@ -329,6 +329,23 @@
       "change": "Change",
       "otherNumber": "Use another number",
       "failed": "That did not work. Try again."
+    },
+    "allowed": {
+      "title": "Allowed chats",
+      "none": "Only you talk to your bots on this number. To let a group or another person talk to them, ask a bot in your own chat, for example “allow the family group, Juno answers there”.",
+      "some_one": "{{count}} group or person may talk to your bots on this number. Ask a bot in your own chat to allow another.",
+      "some_other": "{{count}} groups or people may talk to your bots on this number. Ask a bot in your own chat to allow another.",
+      "loadFailed": "Couldn’t load the chats this number allows.",
+      "group": "Group",
+      "person": "Person",
+      "allowedBy": "Allowed by {{bot}}",
+      "allowedByRemovedBot": "Allowed by a removed bot",
+      "allowedInSettings": "Allowed in Settings",
+      "botLabel": "The bot that answers in {{chat}}",
+      "defaultBot": "The number’s default bot",
+      "remove": "Remove",
+      "removeLabel": "Stop allowing {{chat}}",
+      "removeFailed": "Couldn’t remove that chat. Try again."
     }
   },
   "telegram": {

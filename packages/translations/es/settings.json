@@ -331,6 +331,23 @@
       "change": "Cambiar",
       "otherNumber": "Usar otro número",
       "failed": "No ha funcionado. Inténtalo de nuevo."
+    },
+    "allowed": {
+      "title": "Chats permitidos",
+      "none": "Solo tú hablas con tus bots en este número. Para que un grupo u otra persona hable con ellos, pídeselo a un bot en tu propio chat, por ejemplo «permite el grupo de la familia, responde Juno».",
+      "some_one": "{{count}} grupo o persona puede hablar con tus bots en este número. Pide a un bot en tu propio chat que permita otro.",
+      "some_other": "{{count}} grupos o personas pueden hablar con tus bots en este número. Pide a un bot en tu propio chat que permita otro.",
+      "loadFailed": "No se pudieron cargar los chats que permite este número.",
+      "group": "Grupo",
+      "person": "Persona",
+      "allowedBy": "Permitido por {{bot}}",
+      "allowedByRemovedBot": "Permitido por un bot eliminado",
+      "allowedInSettings": "Permitido en Ajustes",
+      "botLabel": "El bot que responde en {{chat}}",
+      "defaultBot": "El bot por defecto del número",
+      "remove": "Quitar",
+      "removeLabel": "Dejar de permitir {{chat}}",
+      "removeFailed": "No se pudo quitar ese chat. Inténtalo de nuevo."
     }
   },
   "telegram": {

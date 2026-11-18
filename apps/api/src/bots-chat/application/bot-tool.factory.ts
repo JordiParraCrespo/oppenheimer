@@ -225,6 +225,14 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   notOn?: readonly BotTurnOrigin[];
   /**
+   * The only turns offered the tool, by why they exist: a tool that acts for
+   * the owner on what only they may decide (`allow_whatsapp_chat`) is offered
+   * in their console chat and their own chat on a channel, and nowhere a
+   * turn could have started from someone else's words. A turn with no origin
+   * (a `delegate` child's) is not offered it.
+   */
+  onlyOn?: readonly BotTurnOrigin[];
+  /**
    * Offered only on a turn a person is waiting on (`BOT_ATTENDED_ORIGINS`):
    * a tool that needs someone to answer it, never on a routine's run, a
    * wake or a goal's continuation.
@@ -284,6 +292,8 @@ export interface BotToolDefinition {
   readonly sharesOutside: boolean;
   /** The turns not offered the tool (`BotToolSpec.notOn`). */
   readonly notOn: readonly BotTurnOrigin[];
+  /** The only turns offered the tool, null for any (`BotToolSpec.onlyOn`). */
+  readonly onlyOn: readonly BotTurnOrigin[] | null;
   /** Offered only on a turn a person is waiting on (`BotToolSpec.attendedOnly`). */
   readonly attendedOnly: boolean;
   /** The tool for one turn; an asking tool asks first under Approve for me. */
@@ -362,6 +372,7 @@ export function defineBotTool<Input extends z.ZodType>(
     scope: spec.scope,
     readOnly: spec.readOnly === true,
     notOn: spec.notOn ?? [],
+    onlyOn: spec.onlyOn ?? null,
     attendedOnly: spec.attendedOnly === true,
     traits,
     sharesOutside: spec.sharesOutside === true,

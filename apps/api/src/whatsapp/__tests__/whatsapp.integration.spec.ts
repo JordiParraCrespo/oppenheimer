@@ -5,14 +5,18 @@ import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { WhatsappAccountOrmEntity } from '../database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from '../database/whatsapp-account.repository';
+import { WhatsappChatGrantOrmEntity } from '../database/whatsapp-chat-grant.orm-entity';
+import { WhatsappChatGrantRepository } from '../database/whatsapp-chat-grant.repository';
 import { WhatsappMessageOrmEntity } from '../database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from '../database/whatsapp-message.repository';
 import type { WhatsappMessagesOwed } from '../database/whatsapp-message.repository.port';
 import { WhatsappOwnerWroteDomainEvent } from '../domain/events/whatsapp-owner-wrote.domain-event';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
+import { WhatsappChatGrantEntity } from '../domain/whatsapp-chat-grant.entity';
 import type { WhatsappMessageDraft } from '../domain/whatsapp-message.types';
 import { hashWhatsappOwnerCode } from '../domain/whatsapp-owner-code.policy';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';
+import { WhatsappChatGrantMapper } from '../whatsapp-chat-grant.mapper';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 
 /**
@@ -28,12 +32,14 @@ import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
  * it is delivered; a deleted bot's switches stop counting; the bots' answers
  * to the owner are not counted as sends; and entering a code is a write
  * conditional on the code it was checked against, with wrong tries counted
- * in the row.
+ * in the row. A number allows a chat once, and forgets what it allowed when
+ * it is unlinked.
  */
 describe('whatsapp (integration)', () => {
   let dataSource: DataSource;
   let accounts: WhatsappAccountRepository;
   let messages: WhatsappMessageRepository;
+  let grants: WhatsappChatGrantRepository;
   let organizationId: string;
   let ana: string;
   let ben: string;
@@ -52,7 +58,12 @@ describe('whatsapp (integration)', () => {
     dataSource = new DataSource({
       type: 'postgres',
       url: db.url,
-      entities: [WhatsappAccountOrmEntity, WhatsappMessageOrmEntity, OutboxMessageSchema],
+      entities: [
+        WhatsappAccountOrmEntity,
+        WhatsappMessageOrmEntity,
+        WhatsappChatGrantOrmEntity,
+        OutboxMessageSchema,
+      ],
       synchronize: false,
     });
     await dataSource.initialize();
@@ -64,6 +75,10 @@ describe('whatsapp (integration)', () => {
       dataSource.getRepository(WhatsappMessageOrmEntity),
       new WhatsappMessageMapper(),
       new OutboxService(dataSource),
+    );
+    grants = new WhatsappChatGrantRepository(
+      dataSource.getRepository(WhatsappChatGrantOrmEntity),
+      new WhatsappChatGrantMapper(),
     );
   }, 180000);
 
@@ -137,6 +152,29 @@ describe('whatsapp (integration)', () => {
     expect((await accounts.findOwnById(scopeOf(ben, true), mine.id)).isNone()).toBe(true);
     expect(await accounts.findAllOwn(scopeOf(ben, true))).toEqual([]);
     expect((await accounts.findByHostForSystem(hostId)).unwrap().id).toBe(mine.id);
+  });
+
+  // What breaks this: a chat allowed twice on one number (two bots answering
+  // it), or a number's grants outliving it.
+  it('allows a chat once per number, and forgets its grants when the number is unlinked', async () => {
+    const mine = number(ana);
+    await accounts.insert(mine);
+    const of = { organizationId, accountId: mine.id };
+    const family = () =>
+      WhatsappChatGrantEntity.allow({
+        ...of,
+        chatId: '120363000000000001@g.us',
+        chatKind: 'group',
+        chatName: 'Family',
+        botId: null,
+        grantedByBotId: null,
+      });
+    expect(await grants.insert(family())).toBe('inserted');
+    expect(await grants.insert(family())).toBe('taken');
+    expect(await grants.count(of)).toBe(1);
+
+    await accounts.delete(mine);
+    expect(await grants.count(of)).toBe(0);
   });
 
   it('holds one number per host', async () => {

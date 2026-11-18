@@ -1,4 +1,5 @@
 import type { WhatsappAccountEntity } from '../whatsapp/domain/whatsapp-account.entity';
+import type { WhatsappChatGrantEntity } from '../whatsapp/domain/whatsapp-chat-grant.entity';
 import type {
   WhatsappChat,
   WhatsappChatTarget,
@@ -76,4 +77,27 @@ export function describeWhatsappTarget(chat: WhatsappChatTarget): string {
   const name = chat.chatName ?? phoneOf(chat.chatId) ?? chat.chatId;
   if (chat.isNew) return `a new chat with ${name}`;
   return chat.chatKind === 'group' ? `the group "${name}"` : `${name}`;
+}
+
+/** One allowed chat, as the tools list it: who, which bot answers, and which bot allowed it. */
+export function describeWhatsappGrant(
+  grant: Pick<
+    WhatsappChatGrantEntity,
+    'chatId' | 'chatKind' | 'chatName' | 'botId' | 'grantedByBotId'
+  >,
+  botNames: ReadonlyMap<string, string>,
+): string {
+  const who = describeWhatsappTarget({
+    chatId: grant.chatId,
+    chatKind: grant.chatKind,
+    chatName: grant.chatName,
+    isNew: false,
+  });
+  const answers = grant.botId
+    ? `${botNames.get(grant.botId) ?? 'a bot of theirs'} answers`
+    : "the number's default bot answers";
+  const allowedBy = grant.grantedByBotId
+    ? `allowed by ${botNames.get(grant.grantedByBotId) ?? 'a bot'}`
+    : 'allowed in Settings';
+  return `${who} (chat id ${grant.chatId}): ${answers}; ${allowedBy}`;
 }
