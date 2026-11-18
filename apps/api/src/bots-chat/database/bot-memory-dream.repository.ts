@@ -33,13 +33,12 @@ type DreamRow = Pick<
 > & { outputFactIds?: string[] };
 
 /**
- * A bot's latest dream and the rewrite it stands for (`25-bots.md` §4.1,
- * "Dreaming"). Every write locks the bot's row first (`FOR NO KEY UPDATE`),
- * the lock a fact's insert takes to count against the cap, so a dream, its
- * undo and a `remember` never interleave. The facts a dream rewrites are the
- * bot's own that it wrote itself (`IDX_bot_memory_fact_bot`), at most
- * `BOT_MEMORY_FACTS_MAX`; the dream's row is read and written by its
- * primary key.
+ * A bot's latest dream and the rewrite it stands for. Every write locks the
+ * bot's row first (`FOR NO KEY UPDATE`), the lock a fact's insert takes to
+ * count against the cap, so a dream, its undo and a `remember` never
+ * interleave. The facts a dream rewrites are the bot's own that it wrote itself
+ * (`IDX_bot_memory_fact_bot`), at most `BOT_MEMORY_FACTS_MAX`; the dream's row
+ * is read and written by its primary key.
  */
 @Injectable()
 export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {

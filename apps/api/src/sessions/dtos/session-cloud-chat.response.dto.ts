@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CLOUD_REPLY_DELIVERIES, type CloudReplyDelivery } from '@oppenheimer/shared';
 
 /** `POST /v1/sessions/cloud-transcript`. */
 export class AppendedCloudTranscriptResponseDto {
@@ -23,9 +24,17 @@ export class CloudChatReplyResponseDto {
   @ApiPropertyOptional({
     nullable: true,
     type: Date,
-    description: 'When the session’s Stop hook took it to the agent; null while it waits.',
+    description: 'When it reached the agent, by either way; null while it waits.',
   })
   collectedAt!: Date | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    enum: CLOUD_REPLY_DELIVERIES,
+    description:
+      'How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits.',
+  })
+  deliveredVia!: CloudReplyDelivery | null;
 }
 
 /** `POST /v1/sessions/cloud-replies/take`. */

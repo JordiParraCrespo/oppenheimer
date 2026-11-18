@@ -18,13 +18,11 @@ import {
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 
 /**
- * Whose number a linked number answers
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1): the owner
- * names their own number, the linked number sends it a six-digit code, and
- * the code entered in Settings, in time and within five tries, confirms it.
- * Only the code's hash is kept, and a code entered against a replaced one
- * changes nothing. The conditional write itself is proven against Postgres
- * in `whatsapp.integration.spec.ts`.
+ * Whose number a linked number answers: the owner names their own number, the
+ * linked number sends it a six-digit code, and the code entered in Settings, in
+ * time and within five tries, confirms it. Only the code's hash is kept, and a
+ * code entered against a replaced one changes nothing. The conditional write
+ * itself is proven against Postgres in `whatsapp.integration.spec.ts`.
  */
 
 const ORG = '0b3e2a1c-1111-4c5d-8e6f-70819203b4c5';

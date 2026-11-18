@@ -41,9 +41,7 @@ export function LoadingAnnouncer({ children }: { children: ReactNode }) {
  * Under the app's `LoadingAnnouncer` it renders nothing and counts itself into
  * that one region; outside it (a page drawn before the app's root, a test) it
  * is its own polite status, unseen. The placeholder's bars are `aria-hidden`
- * (`Skeleton` is) and its root carries `aria-busy`
- * (`.agents/rules/frontend-ui.md`, "A placeholder has the shape of what
- * replaces it").
+ * (`Skeleton` is) and its root carries `aria-busy`.
  */
 export function LoadingStatus() {
   const { t } = useTranslation();

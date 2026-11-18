@@ -2,6 +2,8 @@ export const HOST_REPOSITORY = Symbol('HOST_REPOSITORY');
 export const HOST_PAIRING_TOKEN_REPOSITORY = Symbol('HOST_PAIRING_TOKEN_REPOSITORY');
 export const HOST_ASSERTION = Symbol('HOST_ASSERTION');
 export const HOST_ACCESS = Symbol('HOST_ACCESS');
+/** Which hosts share a claude.ai account (`HostClaudeAccountsPort`). */
+export const HOST_CLAUDE_ACCOUNTS = Symbol('HOST_CLAUDE_ACCOUNTS');
 export const HOST_PRESENCE = Symbol('HOST_PRESENCE');
 export const HOST_VITALS = Symbol('HOST_VITALS');
 export const HOST_KEY = Symbol('HOST_KEY');

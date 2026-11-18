@@ -1,13 +1,11 @@
 /**
  * The trigger catalog: every event an automation can start on, as data.
  *
- * This file is the single place a trigger exists
- * (`product/versions/mvp/16-automations-architecture.md` §Q6, §Q9, §Q13). The
- * API validates a trigger's config against it, the matcher reads its filter
- * field, the dispatcher reads its checkout rule, and the console builds the
- * editor's trigger menu from it. Adding an event — or a whole source, such as
- * Slack — is rows here plus the source's adapter in the API, with no migration
- * and no new UI.
+ * This file is the single place a trigger exists. The API validates a trigger's
+ * config against it, the matcher reads its filter field, the dispatcher reads
+ * its checkout rule, and the console builds the editor's trigger menu from it.
+ * Adding an event — or a whole source, such as Slack — is rows here plus the
+ * source's adapter in the API, with no migration and no new UI.
  *
  * Labels are the English copy the frames draw. The console translates them by
  * key (`automations.event.<type>`); the labels here are what the API's docs and
@@ -88,9 +86,9 @@ export const SCHEDULE_MAX_DAY_OF_MONTH = 28;
 /**
  * The GitHub events a trigger can fire on: the frames' eleven, then
  * `check_passed` and `review` (2026-11-02), which a session watching its pull
- * request is woken by too (`product/next-steps/agent-tools.md` §3). The ids
- * are also the canonical `ExternalEvent.type` the GitHub adapter normalizes a
- * delivery to — one vocabulary from the webhook to the editor.
+ * request is woken by too. The ids are also the canonical `ExternalEvent.type`
+ * the GitHub adapter normalizes a delivery to — one vocabulary from the webhook
+ * to the editor.
  */
 export const GITHUB_EVENT_TYPES = [
   'pr_opened',
@@ -109,7 +107,7 @@ export const GITHUB_EVENT_TYPES = [
 ] as const;
 export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 
-/** What a watched Gmail account delivers (`next-steps/mail.md` §5): a message arrived. */
+/** What a watched Gmail account delivers: a message arrived. */
 export const GMAIL_EVENT_TYPES = ['mail_received'] as const;
 export type GmailEventType = (typeof GMAIL_EVENT_TYPES)[number];
 
@@ -134,7 +132,7 @@ export const TRIGGER_FILTER_OPS = ['any', 'equals'] as const;
 export type TriggerFilterOp = (typeof TRIGGER_FILTER_OPS)[number];
 
 /**
- * Where a run's worktree starts, decided by what fired it (§Q13). The prompt can
+ * Where a run's worktree starts, decided by what fired it. The prompt can
  * still send the agent elsewhere with git.
  */
 export const RUN_CHECKOUT_RULES = [
@@ -164,8 +162,8 @@ export interface ExternalEventDefinition {
   /**
    * Whether the event carries text written by people who may be outside the
    * workspace — an issue body, a comment, a fork's pull request. Such a trigger
-   * caps the automation's permission at `auto` unless the owner confirms `full`
-   * (§Q11): untrusted text steering an agent with no guardrails on somebody's
+   * caps the automation's permission at `auto` unless the owner confirms
+   * `full`: untrusted text steering an agent with no guardrails on somebody's
    * own machine is the case that permission exists for.
    */
   readonly untrustedContent: boolean;
@@ -379,7 +377,7 @@ function satisfiesAny(
 // ---------------------------------------------------------------------------
 
 /**
- * What became of a firing before any session existed (§Q4). Once a run is
+ * What became of a firing before any session existed. Once a run is
  * `dispatched`, how it went is the session's turn to say, never this row's.
  */
 export const AUTOMATION_RUN_OUTCOMES = ['pending', 'skipped', 'expired', 'dispatched'] as const;
@@ -406,11 +404,15 @@ export const AUTOMATION_SKIP_REASONS = [
   /** The host cannot run the agent (never probed, or no headless mode). */
   'agent_unavailable',
   /**
-   * A bot's routine while its owner was away, from the spend guard
-   * (`26-bot-routines.md` §6), removed on 2026-11-10. Nothing records it now;
-   * it stays for the runs that did.
+   * A bot's routine while its owner was away, from the spend guard, removed on
+   * 2026-11-10. Nothing records it now; it stays for the runs that did.
    */
   'unattended',
+  /**
+   * A bot's heartbeat with nothing new in its chat since its last beat
+   * (`26-bot-routines.md` §6): no model turn is spent to say nothing.
+   */
+  'idle',
 ] as const;
 export type AutomationSkipReason = (typeof AUTOMATION_SKIP_REASONS)[number];
 
@@ -430,11 +432,10 @@ export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
 
 /**
  * Where a session runs, from New session, a task's Start session or an
- * automation's runs (`product/versions/mvp/24-session-places.md` §7,
- * `product/next-steps/cloud-agents.md`): a worktree on its `host`; Claude
- * Code's cloud, which the host's runner starts (`claude-cloud`); or a
- * vendor's cloud the control plane launches on the owner's key, with no host
- * (`cursor`). A vendor's place is its provider id in `CLOUD_AGENT_PROVIDERS`.
+ * automation's runs: a worktree on its `host`; Claude Code's cloud, which the
+ * host's runner starts (`claude-cloud`); or a vendor's cloud the control plane
+ * launches on the owner's key, with no host (`cursor`). A vendor's place is its
+ * provider id in `CLOUD_AGENT_PROVIDERS`.
  */
 export const AUTOMATION_PLACES = ['host', 'claude-cloud', 'cursor'] as const;
 export type AutomationPlace = (typeof AUTOMATION_PLACES)[number];
@@ -493,7 +494,7 @@ export function automationPlaceFits(value: {
   return !VENDOR_PLACES.some((place) => place === value.agent);
 }
 
-/** The permission levels an unattended run may take (§Q11). `ask` has nobody to ask. */
+/** The permission levels an unattended run may take. `ask` has nobody to ask. */
 export const AUTOMATION_PERMISSIONS = ['auto', 'full'] as const;
 export type AutomationPermission = (typeof AUTOMATION_PERMISSIONS)[number];
 
@@ -503,7 +504,7 @@ export type AutomationOverlapPolicy = (typeof AUTOMATION_OVERLAP_POLICIES)[numbe
 
 /**
  * What a run reads as, anywhere it is listed: one word derived on read from the
- * firing's outcome and, once dispatched, the session's turn (§Q4). The console
+ * firing's outcome and, once dispatched, the session's turn. The console
  * draws three glyphs, `running`, `completed` and `failed`, and folds the rest
  * into them; the API still reports each one honestly.
  */

@@ -4,9 +4,9 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Learn automatically: whether a fact the bot decides to keep is saved without
- * asking. It applies the moment it flips, so it is a `Switch`; the bot's own
- * remembering arrives with its tools (`25-bots.md`, slice 3).
+ * Learn automatically: whether a fact the bot decides to keep is saved
+ * without asking. It applies the moment it flips, so it is a `Switch`; the
+ * bot's own remembering arrives with its tools.
  */
 export function BotLearning({ botId }: { botId: string }) {
   const { t } = useTranslation();

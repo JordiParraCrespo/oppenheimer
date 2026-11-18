@@ -16,10 +16,9 @@ import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 
 /**
- * The one way a subscription wakes its bot, or ends (`27-bot-subscriptions.md`
- * §4), whatever woke it: a task's state, a terminal match, or an event on a
- * pull request it follows (§7). A wake is a
- * queued turn keyed by `wakeSourceKey`, so an event delivered twice queues
+ * The one way a subscription wakes its bot, or ends, whatever woke it: a task's
+ * state, a terminal match, or an event on a pull request it follows. A wake is
+ * a queued turn keyed by `wakeSourceKey`, so an event delivered twice queues
  * one; an end deletes the subscription and the terminal watch it named.
  */
 @Injectable()

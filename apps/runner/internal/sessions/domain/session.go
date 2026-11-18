@@ -142,10 +142,10 @@ type Session struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	// Place is where the session runs: a worktree this runner made, or a
-	// folder that was already on the host (24 §3).
+	// folder that was already on the host.
 	Place Place `json:"place"`
 	// AccountID and WorkspaceID are the work folder's two levels the
-	// session's folder and its stores sit under (24 §2): the control plane's
+	// session's folder and its stores sit under: the control plane's
 	// ids, or `local` for a session the CLI made. Empty for a folder session,
 	// which owns nothing in the work folder.
 	AccountID   string `json:"accountId,omitempty"`
@@ -185,7 +185,7 @@ type Session struct {
 	Created time.Time  `json:"created"`
 	Updated time.Time  `json:"updated"`
 	// LoginURL is the vendor login link the classifier saw, if any. The
-	// console turns it into a button; nothing else is ever linkified (F3).
+	// console turns it into a button; nothing else is ever linkified.
 	LoginURL string `json:"loginUrl,omitempty"`
 	// Program is the agent's own last word on what it is doing (OSC 7501),
 	// when it said one: why it is blocked, how far along it is, its message.
@@ -304,6 +304,17 @@ func (s Session) RepositoryOf(checkout Checkout) Repository {
 // TmuxName is the tmux session name: the id, prefixed.
 func (s Session) TmuxName() string { return Prefix + s.ID }
 
+// TakesSecond reports whether agent may run in another window of this
+// session without taking over the session's conversation, which is window
+// 0's. Any other kind of agent may: each keeps its own store. A second copy
+// of the session's own agent may only when the session is found by its
+// conversation's id: not when the agent is found by its folder
+// (Agent.NamesConversation), and not when the session continues a cloud
+// one, whose restart continues the newest conversation in the folder.
+func (s Session) TakesSecond(agent Agent) bool {
+	return agent != s.Agent || (agent.NamesConversation() && s.Launch.Teleport == "")
+}
+
 // Target addresses one window for tmux.
 func (s Session) Target(window int) string {
 	return fmt.Sprintf("%s:%d", s.TmuxName(), window)
@@ -350,7 +361,7 @@ func (s Session) WithState(state State, now time.Time) Session {
 }
 
 // ID generation: 12 random characters, lowercase base32 without padding, so a
-// session id is unguessable (F25) and still fits a tmux session name, a
+// session id is unguessable and still fits a tmux session name, a
 // branch name and a directory name without quoting.
 var idEncoding = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567").WithPadding(base32.NoPadding)
 

@@ -41,8 +41,7 @@ export type TaskAttachOutcome = 'attached' | 'session-not-found';
 /**
  * Reads take an {@link AccessScope}; writes take a task the caller already read
  * through one. A task's place in its column is the repository's to choose, in the
- * same transaction as the write, because it depends on its neighbours
- * (`product/versions/mvp/19-plan-tasks-and-goals.md` §2). Every write bumps the
+ * same transaction as the write, because it depends on its neighbours. Every write bumps the
  * task's version, logs the changes the task recorded to `plan_event` and stages
  * its events, in one transaction.
  */
@@ -55,6 +54,8 @@ export interface TaskRepositoryPort {
   insert(task: TaskEntity, placement: TaskPlacement): Promise<TaskInsertOutcome>;
   /** Write the fields a person edits: title, notes, due date and time, project, milestone, blocked. */
   saveFields(task: TaskEntity): Promise<TaskWriteOutcome>;
+  /** Write that its person took it up (`triagedAt`), and nothing else. */
+  saveTriage(task: TaskEntity): Promise<void>;
   /** Move the task to `placement`, setting its status and rank. */
   move(task: TaskEntity, placement: TaskPlacement): Promise<TaskMoveOutcome>;
   delete(task: TaskEntity): Promise<TaskWriteOutcome>;

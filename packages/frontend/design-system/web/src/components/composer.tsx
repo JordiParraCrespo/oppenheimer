@@ -178,7 +178,7 @@ function Composer({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown, fieldRef } = useComposerSend({
     value,
     busy,
     disabled,
@@ -187,8 +187,8 @@ function Composer({
     attachmentCount: attachments?.length,
     onSubmit,
     onStop,
-    // While a recording is open, a send waits for what is still being heard.
-    beforeSend: dictation?.recorder ? dictation.finish : undefined,
+    // While a recording is open, Enter ends it and sends nothing.
+    settle: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const box = (
@@ -217,6 +217,7 @@ function Composer({
         {...props}
       >
         <textarea
+          ref={fieldRef}
           data-slot="composer-input"
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
@@ -292,10 +293,9 @@ function Composer({
 }
 
 /**
- * ComposerPill — New session's prompt (`NewSessionComposer.dc.html`, the
- * 2026-10-25 export): one 28px-radius box holding a line that grows, with
- * Add files (+) at its start and the mic and the round send at its end, so
- * the box reads as a sentence to finish rather than a form to fill. It
+ * ComposerPill — New session's prompt: one 28px-radius box holding a line that
+ * grows, with Add files (+) at its start and the mic and the round send at its
+ * end, so the box reads as a sentence to finish rather than a form to fill. It
  * stands as tall as a session chat's `ChatComposer` (`inline`), 46px for one
  * line, so the box New session starts in is the box the session goes on in.
  * What the run will use is not inside it: the caller lays those choices on a
@@ -342,13 +342,13 @@ function ComposerPill({
   onRemoveAttachment?: (id: string) => void;
   /** Present: shows Add files at the line's start. */
   onAttach?: () => void;
-  /** Dictation: the mic before send, the recorder under the line, the notice under the box. */
+  /** Dictation: the mic before send, the recorder as the box in the line's place, the notice under the box. */
   dictation?: DictationSlot;
   /** The icon buttons' accessible names; any left out stay in English. */
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown, fieldRef } = useComposerSend({
     value,
     busy,
     disabled,
@@ -357,8 +357,8 @@ function ComposerPill({
     attachmentCount: attachments?.length,
     onSubmit,
     onStop,
-    // While a recording is open, a send waits for what is still being heard.
-    beforeSend: dictation?.recorder ? dictation.finish : undefined,
+    // While a recording is open, Enter ends it and sends nothing.
+    settle: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const box = (
@@ -367,6 +367,8 @@ function ComposerPill({
       data-disabled={disabled || undefined}
       className={cn(
         'flex flex-col rounded-xl border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
+        // The recorder bar is the box while it listens: one edge, not two.
+        dictation?.recorder && 'border-transparent bg-transparent',
         className,
       )}
       {...props}
@@ -377,37 +379,42 @@ function ComposerPill({
         onRemove={onRemoveAttachment}
         className="px-3 pt-3"
       />
-      <div className="flex items-end">
-        {onAttach ? (
-          <span className="flex shrink-0 items-center p-1.5 pr-0">
-            <IconButton
-              aria-label={label.attach}
-              title={label.attach}
-              size="sm"
-              onClick={onAttach}
-              className="size-8 text-fg-muted"
-            >
-              <PlusIcon className="size-4.25" />
-            </IconButton>
-          </span>
-        ) : null}
-        <textarea
-          data-slot="composer-input"
-          value={value}
-          onChange={(event) => onValueChange(event.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          rows={1}
-          className={cn(
-            'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-            onAttach ? 'pl-1' : 'pl-4.5',
-          )}
-        />
-        {/* While a recording is open its bar holds the controls, as it takes
-            `Composer`'s foot row. Enter, in the field or on the bar, ends the
-            recording and sends once what was said is in the draft. */}
-        {dictation?.recorder ? null : (
+      {/* While a recording is open the bar is the box, as in a session's
+          chat: it takes the line's place and its edge. Enter, in the field
+          or on the bar, ends the recording; the next one sends what was said. */}
+      {dictation?.recorder ? (
+        <ComposerRecorder data-slot="composer-recorder" className="w-full" onEnter={submit}>
+          {dictation.recorder}
+        </ComposerRecorder>
+      ) : (
+        <div className="flex items-end">
+          {onAttach ? (
+            <span className="flex shrink-0 items-center p-1.5 pr-0">
+              <IconButton
+                aria-label={label.attach}
+                title={label.attach}
+                size="sm"
+                onClick={onAttach}
+                className="size-8 text-fg-muted"
+              >
+                <PlusIcon className="size-4.25" />
+              </IconButton>
+            </span>
+          ) : null}
+          <textarea
+            ref={fieldRef}
+            data-slot="composer-input"
+            value={value}
+            onChange={(event) => onValueChange(event.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            rows={1}
+            className={cn(
+              'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
+              onAttach ? 'pl-1' : 'pl-4.5',
+            )}
+          />
           <span className="flex shrink-0 items-center gap-1 p-1.5">
             {dictation?.mic}
             <ComposerSendButton
@@ -422,13 +429,8 @@ function ComposerPill({
               <ComposerSendGlyph busy={busy} />
             </ComposerSendButton>
           </span>
-        )}
-      </div>
-      {dictation?.recorder ? (
-        <ComposerRecorder data-slot="composer-recorder" className="p-1.5" onEnter={submit}>
-          {dictation.recorder}
-        </ComposerRecorder>
-      ) : null}
+        </div>
+      )}
     </div>
   );
   return <ComposerNoticeFrame notice={dictation?.notice}>{box}</ComposerNoticeFrame>;

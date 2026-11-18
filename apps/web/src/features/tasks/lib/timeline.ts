@@ -2,10 +2,10 @@ import type { TimelineRow } from '@oppenheimer/design-system-web';
 import type { MilestoneEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
 
 /**
- * The Milestones view's timeline (`23-plan-milestones-stats-accounts.md` §1): a
- * row per project that has a milestone with a target date, its share of tasks
- * done, and those milestones in date order. A milestone with no date has no
- * place on a line of days; the cards under the timeline still show it.
+ * The Milestones view's timeline: a row per project that has a milestone with
+ * a target date, its share of tasks done, and those milestones in date order.
+ * A milestone with no date has no place on a line of days; the cards under
+ * the timeline still show it.
  */
 export function timelineRows(
   projects: readonly { id: string; name: string }[],

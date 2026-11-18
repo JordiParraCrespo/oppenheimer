@@ -132,6 +132,69 @@ and `xrp-mobile`, published and unusable. Decided:
   back when the CLI lists environments non-interactively, or reads the
   Settings ones.
 
+### On Codex's current cloud (2026-11-12)
+
+Issue 835: the `oppenheimer` environment exists in ChatGPT Settings → Codex
+Cloud, and a start from a host failed with `SESS_010`. `codex cloud exec`
+resolves `--env` only against the older environments, which ChatGPT now
+calls Codex Cloud (Legacy), and no released `codex` (0.167.2; the alpha
+0.170.0-alpha.2 neither) starts a task in the current ones
+(`research/cloud-agents.md` §7). The current environments run on another
+service, `ThreadService` at `codex-cloud-backend.chatgpt.com`, which
+Codex's own terminal speaks behind its Cloud preview. The owner asked for
+no legacy: launch Codex sessions on the cloud as it is now. Decided:
+
+- **The runner speaks that service.** A start is two calls: `Prewarm`, a
+  thread in the environment, and `AddUserMessage`, the task as its first
+  message. Status is `ListTurns`, the newest turn: running or none yet is
+  working, completed is done, failed or stopped is failed, once a minute
+  per unsettled thread. gRPC over HTTP/2 with the host's ChatGPT sign-in
+  (`$CODEX_HOME/auth.json`, the bearer and the account id), the fields
+  Codex's client sends and reads, by number
+  (`apps/runner/internal/sessions/adapters/cloud/codex.go`). `codex cloud`
+  is no longer run; the host's `codex` is needed only for `codex login`.
+- **Who signs in and who pays do not change.** It is the host's own
+  ChatGPT sign-in and the plan's Codex limits, as before; the control plane
+  never sees the token (F23). What changes is that the runner reads the
+  CLI's token to call the service, which "Environments the CLI cannot reach"
+  below ruled out and "Which Codex environment" then took for the legacy
+  list: the owner chose it again here, knowing the service is not
+  published.
+- **The sign-in is renewed by `codex`, not by us.** The access token lasts
+  days and only the CLI renews it. A host nobody types `codex` on would
+  outlive it, so the runner asks the host's own `codex app-server` to renew
+  it (`account/read` with `refreshToken`) when it is about to expire or
+  ChatGPT refuses it, and never calls the OAuth endpoint itself.
+- **Only an updated runner gets a start.** A runner names
+  `session.cloud.codex.threads`; one that still drives `codex cloud` names
+  `session.cloud.codex`, and the control plane sends it no Codex cloud
+  start, so a host not yet updated reads "This runner can't start it"
+  rather than starting a legacy task.
+- **The risk is the service's.** OpenAI has not published it and marks the
+  client behind it under development. A change on their side breaks starts
+  and status until the runner follows it; nothing here can see it coming.
+  It was built from source, not tried against a real account.
+- **Which environment.** None picked: Codex's default
+  (`asenvcfg_base`) with the repository checked out, which is what Codex's
+  own terminal does for the project it is opened in. Picked: an
+  environment id the person copies from ChatGPT Settings → Codex Cloud,
+  typed into the Environment pane. The service has no call that lists an
+  account's environments, so the pane lists none; the legacy list it used
+  to read (`codex.environments`, `GET /v1/hosts/:id/codex-environments`)
+  is gone with its codes (`SESSIONS_044`–`047`, `055`).
+- **The branch is said, not checked out.** The service checks the
+  repository's default branch out; the first message starts with "Start
+  from the `<branch>` branch."
+- **The link.** A thread opens in Codex's app at `codex://threads/<id>`;
+  since 2026-11-17 the console opens its web page at
+  `https://chatgpt.com/local/<id>`, preserving the thread the runner started.
+  Previously it linked only to the Codex home page, losing that thread.
+  An older session (`task_…`) keeps its legacy task link.
+- **Refusals.** `SESS_022` a host not signed in to ChatGPT (none, an API
+  key, expired, or refused); `SESS_010` an environment id the account does
+  not have; `SESS_011` ChatGPT asking the host to wait, which pauses the
+  account; `SESS_009` anything else, in the service's words.
+
 ### Which Codex environment (2026-10-31)
 
 A Codex task runs in one of the ChatGPT account's environments, and an
@@ -278,8 +341,8 @@ to Cursor.
 - **The console.** The place chip's **Cloud** section lists Cursor, or
   Connect when the person has no key. Picking it puts Cursor's models in
   the engine button (Auto is Cursor's own pick) and hides the permission
-  chip; files cannot be attached. Send opens Cursor in a tab and goes to
-  the session. The session's row carries Cursor's mark and opens Cursor;
+  chip; files cannot be attached. Send goes to the session and opens no
+  tab. The session's row carries Cursor's mark and opens Cursor;
   its page says the run's state and links there.
 - **Settings → Cloud agents** stays where the key is stored.
 
@@ -349,17 +412,59 @@ answer it there, the way claude.ai shows it. The research is
   from a host (`claude -p … --cloud <id>`) is the next step. Stop does
   nothing: no hook can interrupt a turn. A session started on claude.ai,
   not from the console, is refused until there is a way to adopt one.
+  *Changed 2026-11-11:* an idle session is woken from a host ("Waking an
+  idle session", below).
 - **Decided with the owner (2026-11-07).**
   1. A session started on claude.ai, not from the console, keeps no chat
      here: only sessions the console launched (`SESSIONS_053`). Not adopted.
   2. A reply to an idle session is sent from one of the person's hosts,
      signed in to the same claude.ai account (`claude -p … --cloud <id>`),
-     so it wakes the session. The next pull request.
+     so it wakes the session. Built 2026-11-11 ("Waking an idle session").
   3. The console gets a "turn on chat" panel on a cloud session: the key,
      the hooks to add to the repository, and the host to allow in the cloud
      environment. The next pull request.
   4. Stop and the Terminal/Chat switch are hidden on a cloud session's chat,
      where neither can do anything. The next pull request.
+
+### Waking an idle session (2026-11-11)
+
+Decision 2 above, built. Checked by hand first: from the pop-os host,
+`claude -p "…" --cloud session_01KpKLr6MbnpttWWRZjSBU6A --output-format json`
+answered `{"ok":true,…}` and the idle session ran the message.
+
+- **When.** Every reply is kept with a wake staged on the outbox for 15
+  seconds later (`CLOUD_REPLY_WAKE_AFTER_SECONDS`, the `cloud-reply-wakes`
+  queue). A Stop hook that is waiting looks every second, so one that is
+  there takes the reply well inside that; past it the session is idle, or
+  in a turn Claude Code queues the message behind, and the wake sends it.
+- **From where.** Only a host signed in to the claude.ai account the
+  session runs on, which is the account of the host that started it (its
+  `claudeAccount`, as its runner last reported it): that host first, then
+  the launcher's other hosts on the same account. The first online one
+  whose runner named `session.cloud.reply` in its hello gets `cloud.reply`
+  and runs `claude -p <reply> --cloud <id> --output-format json`, answering
+  `cloud.replied` on `"ok": true`. A reply has 45 seconds from when it
+  reaches the host, its wait behind an earlier one to the session included,
+  so the control plane (which waits 60) always hears how it went.
+- **Never twice.** The hook's take and the wake claim the same row by the
+  same `collectedAt IS NULL` update, which also records which way it went
+  (`session_cloud_reply."deliveredVia"`, `hook` or `host`). Whichever comes
+  first delivers it; the other finds nothing.
+- **When it does not go.** No such host online, or Claude Code refusing it
+  (`SESS_020`; `SESS_019` signed out), hands the reply back to the hook: the
+  console shows it waiting again, and the next turn takes it. A send Claude
+  Code did not confirm in time (`SESS_021`, or no answer from the runner)
+  may have reached the session, so it is kept as sent: a reply the agent
+  might get twice is worse than one the person types again. There is one
+  wake per reply; nothing retries a refused one.
+- **The text** is the hook's own, `CLOUD_REPLY_PREAMBLE` and the reply, so the
+  agent reads it the same either way and the console finds it in the
+  transcript as the person's message. Until then the chat says it was sent.
+- **Open.** The account is read off the starting host now, not recorded at
+  launch: a host signed in to another account since then would send to a
+  session its account does not have, which Claude Code refuses (`SESS_020`,
+  handed back). Recording the account on the session is the fix if that
+  turns out to happen.
 
 ## Follow-ups to a cloud agent (2026-11-05)
 

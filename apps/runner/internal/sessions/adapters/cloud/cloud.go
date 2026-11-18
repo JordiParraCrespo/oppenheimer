@@ -1,6 +1,5 @@
 // Package cloud starts a task in Claude Code's cloud with the person's own
-// `claude` CLI, the only legitimate driver of their claude.ai account
-// (product/research/cloud-agents.md §2, §5B).
+// `claude` CLI, the only legitimate driver of their claude.ai account.
 //
 // `claude --cloud <task>` creates a cloud session from the current
 // directory's GitHub repository and prints where it went:

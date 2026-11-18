@@ -2,6 +2,7 @@ import { IconButton, StatBar } from '@oppenheimer/design-system-web';
 import { X } from '@oppenheimer/design-system-web/icons';
 import {
   type ChatUsageLimit,
+  CopyTextButton,
   dateFormatter,
   formatTimeAway,
   formatTokens,
@@ -9,7 +10,6 @@ import {
 } from '@oppenheimer/frontend-web';
 import { type BotUsage, botModelOf } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
-import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import { botUsageTotals, modelShares, uncachedInput } from '@/features/bots/lib/bot-usage';
 
 /** A share at which a plan bar takes the warning tone, as the composer's meter does. */
@@ -26,13 +26,13 @@ const PURPOSE_KEYS = {
 } as const;
 
 /**
- * What a bot's chat has spent, as a small card in the chat (`25-bots.md`
- * §4.1, `/usage`; drawn after Claude Code's usage card): the plan's windows
- * on a sign-in, this chat's figures in a grid (time at work, turns, cache
- * hit rate, tokens, each model's share), and the breakdown of every token
- * into fresh input, output and cache reads and writes, the calls outside its
- * turns included and named under it. Copy puts it on the clipboard; Close
- * takes the card away. No money: nothing here knows a model's prices.
+ * What a bot's chat has spent, as a small card in the chat (`/usage`; drawn
+ * after Claude Code's usage card): the plan's windows on a sign-in, this
+ * chat's figures in a grid (time at work, turns, cache hit rate, tokens,
+ * each model's share), and the breakdown of every token into fresh input,
+ * output and cache reads and writes, the calls outside its turns included
+ * and named under it. Copy puts it on the clipboard; Close takes the card
+ * away. No money: nothing here knows a model's prices.
  */
 export function BotUsageReport({
   usage,

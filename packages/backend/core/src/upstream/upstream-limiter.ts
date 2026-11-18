@@ -37,9 +37,8 @@ export interface UpstreamLimiterOptions extends UpstreamPauseOptions, Concurrenc
 }
 
 /**
- * The one way an adapter calls a system we do not run
- * (`.agents/rules/integrations.md`). {@link exchange} does every step, in
- * order, so no adapter can skip one:
+ * The one way an adapter calls a system we do not run. {@link exchange} does
+ * every step, in order, so no adapter can skip one:
  *
  * 1. waits for a slot under the in-flight cap, or refuses at once when too
  *    many are waiting;

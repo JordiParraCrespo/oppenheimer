@@ -41,7 +41,7 @@ export class SendCloudReplyHttpController {
   @ApiOperation({
     summary: 'Reply to a Claude Code cloud session’s agent',
     description:
-      'Keeps `text` for the agent of a Claude Code cloud session this workspace launched. The Stop hook in that session collects it when the agent ends its turn, and the agent carries on with it. Shown in the session’s chat as waiting until then.',
+      'Keeps `text` for the agent of a Claude Code cloud session this workspace launched. The Stop hook in that session collects it when the agent ends its turn, and the agent carries on with it. If no hook has taken it 15 seconds later, a host signed in to the claude.ai account the session runs on sends it with `claude -p … --cloud`, which wakes an idle session. Shown in the session’s chat as waiting until either.',
   })
   @ApiCreatedResponse({ type: SentCloudReplyResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })

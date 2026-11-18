@@ -28,7 +28,7 @@ export interface FailureReason {
  */
 const HELP_LINKS: Readonly<Record<string, string>> = {
   // A Codex cloud environment the codex CLI cannot reach: the ones made in
-  // ChatGPT's Settings → Codex Cloud (product/next-steps/cloud-agents.md).
+  // ChatGPT's Settings → Codex Cloud.
   SESS_010: 'https://chatgpt.com/settings/codex-cloud',
 };
 
@@ -81,7 +81,7 @@ const LINE_JOIN = ' · ';
  * dropped. Then one line per line, `lastWords`' joins split back apart. Null
  * when no line has anything left on it.
  */
-function readableDetail(detail: string): string | null {
+export function readableDetail(detail: string): string | null {
   const text = detail
     .replace(TERMINAL, (sequence, csi: string | undefined) => {
       if (sequence === '\r') return '\n';

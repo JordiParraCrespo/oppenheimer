@@ -9,7 +9,7 @@ import { SendDueMailCommand } from '../send-due-mail.command';
 import { SendDueMailCommandHandler } from '../send-due-mail.command-handler';
 
 /**
- * The minute job's sends (`product/next-steps/mail.md` §3.4): each due send is
+ * The minute job's sends: each due send is
  * claimed before Gmail is asked, one another writer claimed or cancelled first
  * is skipped, the stored plan is what goes, a failure is recorded and the rest
  * still go, one past the account's daily cap is not sent, and a backlog of

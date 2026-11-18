@@ -1,11 +1,11 @@
 /**
- * When a bot dreams, what the dreamer is sent, and how its answer is read
- * (`25-bots.md` §4.1, "Dreaming"). What breaks this: a quiet bot paying for a
- * dream, or one with "Learn automatically" off having its memory rewritten
- * unasked; the person's own words or another bot's shared facts handed over
- * to be rewritten; an answer that drops most of the memory, invents a pile of
- * new facts or overfills it being used; a merged log fact losing its day.
- * The write itself, and its race with a save, are the integration suite's.
+ * When a bot dreams, what the dreamer is sent, and how its answer is read. What
+ * breaks this: a quiet bot paying for a dream, or one with "Learn
+ * automatically" off having its memory rewritten unasked; the person's own
+ * words or another bot's shared facts handed over to be rewritten; an answer
+ * that drops most of the memory, invents a pile of new facts or overfills it
+ * being used; a merged log fact losing its day. The write itself, and its race
+ * with a save, are the integration suite's.
  */
 import {
   BOT_DREAM_FACTS_MIN,

@@ -1708,7 +1708,7 @@ export type SessionResponseDto = {
      */
     folderPath?: string | null;
     /**
-     * A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a task id: chatgpt.com/codex/tasks/<id> opens it and `codex apply <id>` applies its diff to a checkout. Null for every other place, and before the start.
+     * A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a Codex cloud thread id, opened in Codex at codex://threads/<id> (an older session's task id, task_…, opens at chatgpt.com/codex/tasks/<id>). Null for every other place, and before the start.
      */
     cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;
@@ -1815,6 +1815,9 @@ export type CreateSessionRequest = {
     }>;
     folder?: string;
     cloud?: boolean;
+    /**
+     * Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.
+     */
     codexEnvironment?: string;
     teleport?: string;
     cwdGithubRepoId?: number;
@@ -2113,9 +2116,13 @@ export type CloudChatReplyResponseDto = {
     authorId?: string | null;
     createdAt: string;
     /**
-     * When the session’s Stop hook took it to the agent; null while it waits.
+     * When it reached the agent, by either way; null while it waits.
      */
     collectedAt?: string | null;
+    /**
+     * How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits.
+     */
+    deliveredVia?: 'hook' | 'host';
 };
 
 export type CloudChatResponseDto = {
@@ -2248,40 +2255,6 @@ export type HostFolderSearchResponseDto = {
     truncated: boolean;
 };
 
-export type HostCodexEnvironmentResponseDto = {
-    /**
-     * Its id, what `codex cloud exec --env` is given.
-     */
-    id: string;
-    /**
-     * The name its owner gave it on chatgpt.com/codex.
-     */
-    label?: string | null;
-    /**
-     * Pinned on chatgpt.com/codex.
-     */
-    pinned: boolean;
-    /**
-     * Linked to the repository the list was asked for.
-     */
-    repository: boolean;
-};
-
-export type HostCodexEnvironmentsResponseDto = {
-    /**
-     * Those linked to the repository first, then pinned, then by label.
-     */
-    environments: Array<HostCodexEnvironmentResponseDto>;
-    /**
-     * The environment a session started with none picked runs in: the one linked to the repository, else one labelled with its name. Null when none is.
-     */
-    recommended?: string | null;
-    /**
-     * `chatgpt`: every environment of the account. `tasks`: only those its recent tasks ran in, when the host could not ask ChatGPT.
-     */
-    source: 'chatgpt' | 'tasks';
-};
-
 export type SessionPortDto = {
     port: number;
     /**
@@ -2299,6 +2272,58 @@ export type SessionPortsResponseDto = {
      * The TCP ports the session’s own processes listen on, from 1024 up, in order.
      */
     ports: Array<SessionPortDto>;
+};
+
+export type SessionTerminalWindowDto = {
+    /**
+     * The tmux window index: what an attach ticket's `window` names.
+     */
+    index: number;
+    /**
+     * The window’s name on the host: a second agent’s window is named by its catalog id (`codex`).
+     */
+    name: string;
+    /**
+     * Window 0, the session’s agent, whose state the session shows; the rest are plain shells or a second agent.
+     */
+    agent: boolean;
+};
+
+export type SessionWindowsResponseDto = {
+    /**
+     * `listed`: `windows` is what the session holds now. `host_offline`: the host has no link. `not_supported`: its runner cannot list them.
+     */
+    state: 'listed' | 'host_offline' | 'not_supported';
+    /**
+     * The session’s tmux windows, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
+export type OpenSessionWindowRequest = {
+    model?: string;
+    permission?: 'ask' | 'auto' | 'full';
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    prompt?: string;
+};
+
+export type OpenedSessionWindowResponseDto = {
+    /**
+     * The window just opened.
+     */
+    window: SessionTerminalWindowDto;
+    /**
+     * The session’s tmux windows after it opened, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
+export type ClosedSessionWindowResponseDto = {
+    /**
+     * The session’s tmux windows left, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
 };
 
 export type CloudAgentProviderStatusDto = {
@@ -2713,7 +2738,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -2847,6 +2872,10 @@ export type TaskResponseDto = {
      * The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.
      */
     focusDate?: string | null;
+    /**
+     * How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.
+     */
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.
@@ -2857,6 +2886,14 @@ export type TaskResponseDto = {
      * Goes up on every write. Send it back as `expectedVersion` to write only if nobody else has.
      */
     version: number;
+    /**
+     * Who made it: `person` in the console, `agent` from a bot or a call on an API token or an OAuth grant (the MCP server, the CLI).
+     */
+    origin: 'person' | 'agent';
+    /**
+     * When its person took it up: made it, gave it a TODO day, started or linked a session on it, or dismissed it from the Inbox. Null while a task an agent made waits in the Inbox.
+     */
+    triagedAt?: string | null;
     /**
      * Oldest first.
      */
@@ -2874,6 +2911,7 @@ export type CreateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
 };
 
 export type UpdateTaskRequest = {
@@ -2884,6 +2922,7 @@ export type UpdateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     blockedReason?: string | null;
     expectedVersion?: number;
 };
@@ -2907,6 +2946,9 @@ export type StartTaskSessionRequest = {
         }>;
         folder?: string;
         cloud?: boolean;
+        /**
+         * Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.
+         */
         codexEnvironment?: string;
         teleport?: string;
         cwdGithubRepoId?: number;
@@ -4415,6 +4457,40 @@ export type BotPullRequestEventResponseDto = {
     event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
 };
 
+export type BotTaskEventResponseDto = {
+    kind: 'task';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    /**
+     * What the bot follows: the whole project, or one milestone of it.
+     */
+    scope: 'project' | 'milestone';
+    /**
+     * The project the task is filed under.
+     */
+    projectId: string;
+    milestoneId: string | null;
+    taskId: string;
+    /**
+     * The task's title at the change, cut to 200 characters.
+     */
+    title: string;
+    /**
+     * What Plan logged.
+     */
+    event: 'created' | 'deleted' | 'completed' | 'reopened' | 'status_changed' | 'rescheduled' | 'reassigned' | 'blocked' | 'unblocked' | 'session_linked';
+    /**
+     * The column it left, for a move, a completion or a reopening.
+     */
+    from: 'todo' | 'doing' | 'review' | 'done';
+    /**
+     * The column it is in after the change; null once deleted.
+     */
+    to: 'todo' | 'doing' | 'review' | 'done';
+};
+
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
@@ -4604,7 +4680,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -11315,6 +11391,38 @@ export type SetSessionVisibilityResponses = {
 
 export type SetSessionVisibilityResponse = SetSessionVisibilityResponses[keyof SetSessionVisibilityResponses];
 
+export type AcknowledgeSessionReportData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/report/acknowledge';
+};
+
+export type AcknowledgeSessionReportErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type AcknowledgeSessionReportError = AcknowledgeSessionReportErrors[keyof AcknowledgeSessionReportErrors];
+
+export type AcknowledgeSessionReportResponses = {
+    200: SessionResponseDto;
+};
+
+export type AcknowledgeSessionReportResponse = AcknowledgeSessionReportResponses[keyof AcknowledgeSessionReportResponses];
+
 export type MoveSessionData = {
     body: MoveSessionRequest;
     path: {
@@ -11455,63 +11563,6 @@ export type SearchHostFoldersResponses = {
 
 export type SearchHostFoldersResponse = SearchHostFoldersResponses[keyof SearchHostFoldersResponses];
 
-export type FindHostCodexEnvironmentsData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: {
-        /**
-         * The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.
-         */
-        repository?: string;
-    };
-    url: '/api/v1/hosts/{id}/codex-environments';
-};
-
-export type FindHostCodexEnvironmentsErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * HOSTS_001 — Host not found
-     */
-    404: ProblemDetailsDto;
-    /**
-     * SESSIONS_044 — Runner cannot list
-     */
-    409: ProblemDetailsDto;
-    /**
-     * SESSIONS_047 — ChatGPT asked to wait
-     */
-    429: ProblemDetailsDto;
-    /**
-     * SESSIONS_046 — Codex could not list
-     */
-    502: ProblemDetailsDto;
-    /**
-     * SESSIONS_045 — The host is offline
-     */
-    503: ProblemDetailsDto;
-    /**
-     * SESSIONS_031 — No answer in time
-     */
-    504: ProblemDetailsDto;
-};
-
-export type FindHostCodexEnvironmentsError = FindHostCodexEnvironmentsErrors[keyof FindHostCodexEnvironmentsErrors];
-
-export type FindHostCodexEnvironmentsResponses = {
-    200: HostCodexEnvironmentsResponseDto;
-};
-
-export type FindHostCodexEnvironmentsResponse = FindHostCodexEnvironmentsResponses[keyof FindHostCodexEnvironmentsResponses];
-
 export type FindSessionPortsData = {
     body?: never;
     path: {
@@ -11553,6 +11604,166 @@ export type FindSessionPortsResponses = {
 };
 
 export type FindSessionPortsResponse = FindSessionPortsResponses[keyof FindSessionPortsResponses];
+
+export type FindSessionWindowsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows';
+};
+
+export type FindSessionWindowsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindSessionWindowsError = FindSessionWindowsErrors[keyof FindSessionWindowsErrors];
+
+export type FindSessionWindowsResponses = {
+    200: SessionWindowsResponseDto;
+};
+
+export type FindSessionWindowsResponse = FindSessionWindowsResponses[keyof FindSessionWindowsResponses];
+
+export type OpenSessionWindowData = {
+    body?: OpenSessionWindowRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows';
+};
+
+export type OpenSessionWindowErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_060 — This host's runner cannot start a second agent in a session
+     *
+     * SESSIONS_059 — The host refused to change the session's terminals
+     *
+     * SESSIONS_056 — This host's runner cannot open or close a session's terminals
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type OpenSessionWindowError = OpenSessionWindowErrors[keyof OpenSessionWindowErrors];
+
+export type OpenSessionWindowResponses = {
+    201: OpenedSessionWindowResponseDto;
+};
+
+export type OpenSessionWindowResponse = OpenSessionWindowResponses[keyof OpenSessionWindowResponses];
+
+export type CloseSessionWindowData = {
+    body?: never;
+    path: {
+        id: string;
+        /**
+         * The tmux window index, from 1 up.
+         */
+        window: number;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows/{window}';
+};
+
+export type CloseSessionWindowErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_058 — The session has no such terminal
+     *
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_059 — The host refused to change the session's terminals
+     *
+     * SESSIONS_057 — The agent's window cannot be closed; close the session instead
+     *
+     * SESSIONS_056 — This host's runner cannot open or close a session's terminals
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type CloseSessionWindowError = CloseSessionWindowErrors[keyof CloseSessionWindowErrors];
+
+export type CloseSessionWindowResponses = {
+    200: ClosedSessionWindowResponseDto;
+};
+
+export type CloseSessionWindowResponse = CloseSessionWindowResponses[keyof CloseSessionWindowResponses];
 
 export type FindCloudAgentStatusData = {
     body?: never;
@@ -12679,6 +12890,38 @@ export type UpdateTaskResponses = {
 };
 
 export type UpdateTaskResponse = UpdateTaskResponses[keyof UpdateTaskResponses];
+
+export type TriageTaskData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/triage';
+};
+
+export type TriageTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type TriageTaskError = TriageTaskErrors[keyof TriageTaskErrors];
+
+export type TriageTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type TriageTaskResponse = TriageTaskResponses[keyof TriageTaskResponses];
 
 export type MoveTaskData = {
     body: MoveTaskRequest;

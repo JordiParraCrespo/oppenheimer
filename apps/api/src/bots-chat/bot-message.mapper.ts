@@ -9,12 +9,14 @@ import {
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
   BOT_LOOP_ACTIVITIES,
+  BOT_PLAN_WATCH_SCOPES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_PROGRESS_TASK_MAX,
   BOT_SUBAGENT_STATUSES,
+  BOT_TASK_WAKE_EVENTS,
   type BotAnsweredQuestion,
   type BotAttachment,
   type BotMailDraft,
@@ -24,6 +26,7 @@ import {
   type BotSubagentRun,
   botMailDraftSchema,
   PULL_REQUEST_WAKE_EVENTS,
+  TASK_STATUSES,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
@@ -46,6 +49,7 @@ import {
   BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotSessionEventResponseDto,
+  BotTaskEventResponseDto,
 } from './dtos/bot-message.response.dto';
 
 @Injectable()
@@ -305,6 +309,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotSessionEventResponseDto(), event);
     case 'pull_request':
       return Object.assign(new BotPullRequestEventResponseDto(), event);
+    case 'task':
+      return Object.assign(new BotTaskEventResponseDto(), event);
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
     case 'loop':
@@ -398,6 +404,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   if (raw.kind === 'pull_request') return pullRequestEventOf(raw);
+  if (raw.kind === 'task') return taskEventOf(raw);
   if (raw.kind === 'goal') {
     const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
     if (!activity || typeof raw.goalId !== 'string') return null;
@@ -458,6 +465,28 @@ function pullRequestEventOf(raw: Record<string, unknown>): BotMessageEvent | nul
     repository: String(raw.repository ?? ''),
     number,
     event,
+  };
+}
+
+/** A stored task event, narrowed once; one the mapper did not write reads as none. */
+function taskEventOf(raw: Record<string, unknown>): BotMessageEvent | null {
+  const event = BOT_TASK_WAKE_EVENTS.find((known) => known === raw.event);
+  const scope = BOT_PLAN_WATCH_SCOPES.find((known) => known === raw.scope);
+  const { subscriptionId, projectId, taskId } = raw;
+  if (!event || !scope || typeof subscriptionId !== 'string') return null;
+  if (typeof projectId !== 'string' || typeof taskId !== 'string') return null;
+  const status = (value: unknown) => TASK_STATUSES.find((known) => known === value) ?? null;
+  return {
+    kind: 'task',
+    subscriptionId,
+    scope,
+    projectId,
+    milestoneId: typeof raw.milestoneId === 'string' ? raw.milestoneId : null,
+    taskId,
+    title: String(raw.title ?? ''),
+    event,
+    from: status(raw.from),
+    to: status(raw.to),
   };
 }
 

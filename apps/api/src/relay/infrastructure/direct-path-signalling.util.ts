@@ -11,8 +11,7 @@ export interface DirectPathOffer {
 type BrowserSignal = Extract<AttachClientMessage, { type: 'direct.offer' | 'direct.path' }>;
 
 /**
- * One attachment's direct-path signalling
- * (`product/versions/mvp/22-direct-terminal-path.md`): the translation between
+ * One attachment's direct-path signalling: the translation between
  * the attach socket's `direct.*` vocabulary and the link's
  * `attachment.direct.*` / `attachment.path`, and the rule that a browser gets
  * one offer, and only when it was invited. Whether it is invited at all is the

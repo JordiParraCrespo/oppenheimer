@@ -57,11 +57,11 @@ const account = z
   );
 
 /**
- * Mail (`product/next-steps/mail.md` §3), the reads: the owner's own Gmail
- * accounts, searched in Gmail's query language, threads read in full, labels,
- * drafts, and attachments opened. Every tool works only the turn's owner's
- * accounts, and only reads: nothing is sent, changed or marked read.
- * Everything a sender wrote comes back inside `<email>`, marked as data.
+ * Mail, the reads: the owner's own Gmail accounts, searched in Gmail's query
+ * language, threads read in full, labels, drafts, and attachments opened. Every
+ * tool works only the turn's owner's accounts, and only reads: nothing is sent,
+ * changed or marked read. Everything a sender wrote comes back inside
+ * `<email>`, marked as data.
  */
 @Injectable()
 export class BotMailToolsFactory implements BotToolArea {

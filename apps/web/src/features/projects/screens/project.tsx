@@ -1,8 +1,7 @@
 import {
   Button,
+  EditorPageBack,
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderRow,
   SegmentedControl,
   SegmentedControlItem,
@@ -38,34 +37,34 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex flex-col gap-7">
-      <PageHeader>
-        <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
-          <Link to="/plan/projects">{t('projects.detail.back')}</Link>
-          <span>/</span>
-          <PageHeaderHere>{name}</PageHeaderHere>
-        </PageHeaderCrumbs>
-        <PageHeaderRow
-          size="display"
-          title={name ?? ''}
-          actions={
-            name ? (
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  dialogs.open({
-                    kind: 'project',
-                    projectId,
-                    onDeleted: () => navigate({ to: '/plan/projects' }),
-                  })
-                }
-              >
-                <Settings2 />
-                {t('projects.detail.settings')}
-              </Button>
-            ) : null
-          }
-        />
-      </PageHeader>
+      <div className="flex flex-col">
+        <EditorPageBack render={<Link to="/plan/projects" />}>
+          {t('projects.detail.back')}
+        </EditorPageBack>
+        <PageHeader>
+          <PageHeaderRow
+            size="display"
+            title={name ?? ''}
+            actions={
+              name ? (
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    dialogs.open({
+                      kind: 'project',
+                      projectId,
+                      onDeleted: () => navigate({ to: '/plan/projects' }),
+                    })
+                  }
+                >
+                  <Settings2 />
+                  {t('projects.detail.settings')}
+                </Button>
+              ) : null
+            }
+          />
+        </PageHeader>
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <SegmentedControl
           value={view}

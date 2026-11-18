@@ -40,7 +40,7 @@ const SUMMARY_MAX_CHARS = 16_000;
 
 /**
  * The prompt that folds the earlier part of a turn into a summary, from
- * OpenClaw's compaction prompt (`research/lessons-from-long-running-agents.md`):
+ * OpenClaw's compaction prompt:
  * the same headings every time, and an update of the last summary rather
  * than a new one, so nothing it held is dropped.
  */

@@ -1,6 +1,6 @@
 import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { approvalLineKey, runningApprovedCalls } from '../lib/approval-event';
+import { approvalLineKey, runningApprovedCalls, showsApprovalLine } from '../lib/approval-event';
 
 /** How the chat reads an approved call's two lines: the yes while it runs, then how it went. */
 
@@ -47,5 +47,28 @@ describe('approvalLineKey', () => {
     expect(line(undefined, 'denied')).toBe('denied');
     expect(line('finished')).toBe('finished');
     expect(line('finished', 'failed')).toBe('finishedFailed');
+  });
+});
+
+describe('showsApprovalLine', () => {
+  // What breaks this: every yes and every "Done" crowds the chat while the
+  // wrench is off, or a denial or a failure disappears with them.
+  it('hides a call that went through unless the tool calls are shown or it started a session', () => {
+    const line = (
+      outcome: string,
+      stage?: 'started' | 'finished',
+      sessionId: string | null = null,
+    ) => {
+      const { event } = approval('t', stage, outcome);
+      if (event?.kind !== 'approval') throw new Error('not an approval');
+      return { ...event, sessionId };
+    };
+    expect(showsApprovalLine(line('approved', 'started'), false)).toBe(false);
+    expect(showsApprovalLine(line('approved', 'finished'), false)).toBe(false);
+    expect(showsApprovalLine(line('approved', 'started'), true)).toBe(true);
+    expect(showsApprovalLine(line('approved', 'started', 's1'), false)).toBe(true);
+    expect(showsApprovalLine(line('denied'), false)).toBe(true);
+    expect(showsApprovalLine(line('stopped'), false)).toBe(true);
+    expect(showsApprovalLine(line('failed', 'finished'), false)).toBe(true);
   });
 });

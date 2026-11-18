@@ -27,10 +27,10 @@ const STORAGE_KEY = 'oppenheimer.new-session.draft';
 
 export interface NewSessionDraft {
   /**
-   * Where the session runs (`product/versions/mvp/24-session-places.md`): a
-   * new worktree of a project's repository, a folder already on the host, or
-   * the cloud — Claude Code's or Codex's, which the host starts, or a vendor's the
-   * console launches (`cloudProvider`).
+   * Where the session runs: a new worktree of a project's repository, a
+   * folder already on the host, or the cloud — Claude Code's or Codex's,
+   * which the host starts, or a vendor's the console launches
+   * (`cloudProvider`).
    */
   where: SessionPlace;
   /**
@@ -70,12 +70,12 @@ export interface NewSessionDraft {
    */
   efforts: EffortPicks;
   /**
-   * The Codex environment picked for a Codex cloud session in the place
+   * The Codex environment id picked for a Codex cloud session in the place
    * chip's Environments pane, with the host it was picked on: it applies only
    * while that host is the one picked (`toCreateInput`), since each host
-   * lists the environments of its own ChatGPT account. Changing host falls
-   * back to the host's pick without anything clearing it. Null is the host's
-   * pick, the environment linked to the repository.
+   * starts tasks on its own ChatGPT account. Changing host falls back to
+   * Default without anything clearing it. Null is Default: Codex's default
+   * environment, with the repository.
    */
   codexEnvironment: CodexEnvironmentPick | null;
 }

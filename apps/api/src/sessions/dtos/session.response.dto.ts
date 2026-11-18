@@ -89,7 +89,7 @@ export class SessionCheckoutResponseDto {
  *
  * It is on the read as well as the write because the console shows the engine
  * button on a session that already exists, and because a restart has to
- * reproduce the launch (`product/versions/mvp/03-control-plane.md`). What each
+ * reproduce the launch. What each
  * value means to a given CLI is catalog data in `@oppenheimer/shared`, not
  * something this API translates.
  */
@@ -244,7 +244,7 @@ export class SessionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      "A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a task id: chatgpt.com/codex/tasks/<id> opens it and `codex apply <id>` applies its diff to a checkout. Null for every other place, and before the start.",
+      "A cloud session's id at its vendor, once its host has started it. For Claude Code, a session id: claude.ai/code/<id> opens it and `claude --teleport <id>` brings it to a terminal. For Codex, a Codex cloud thread id, opened in Codex at codex://threads/<id> (an older session's task id, task_…, opens at chatgpt.com/codex/tasks/<id>). Null for every other place, and before the start.",
     nullable: true,
     type: String,
     example: 'session_014a8EH8DJs95X1iK8ZH9Y82',
@@ -477,6 +477,61 @@ export class SentSessionPromptResponseDto {
 
   @ApiProperty({ type: () => SessionResponseDto })
   session!: SessionResponseDto;
+}
+
+export class SessionTerminalWindowDto {
+  @ApiProperty({
+    example: 1,
+    description: "The tmux window index: what an attach ticket's `window` names.",
+  })
+  index!: number;
+
+  @ApiProperty({
+    example: 'zsh',
+    description:
+      'The window’s name on the host: a second agent’s window is named by its catalog id (`codex`).',
+  })
+  name!: string;
+
+  @ApiProperty({
+    description:
+      'Window 0, the session’s agent, whose state the session shows; the rest are plain shells or a second agent.',
+  })
+  agent!: boolean;
+}
+
+export class SessionWindowsResponseDto {
+  @ApiProperty({
+    enum: ['listed', 'host_offline', 'not_supported'],
+    description:
+      '`listed`: `windows` is what the session holds now. `host_offline`: the host has no link. `not_supported`: its runner cannot list them.',
+  })
+  state!: 'listed' | 'host_offline' | 'not_supported';
+
+  @ApiProperty({
+    type: [SessionTerminalWindowDto],
+    description: 'The session’s tmux windows, in index order.',
+  })
+  windows!: SessionTerminalWindowDto[];
+}
+
+export class OpenedSessionWindowResponseDto {
+  @ApiProperty({ type: () => SessionTerminalWindowDto, description: 'The window just opened.' })
+  window!: SessionTerminalWindowDto;
+
+  @ApiProperty({
+    type: [SessionTerminalWindowDto],
+    description: 'The session’s tmux windows after it opened, in index order.',
+  })
+  windows!: SessionTerminalWindowDto[];
+}
+
+export class ClosedSessionWindowResponseDto {
+  @ApiProperty({
+    type: [SessionTerminalWindowDto],
+    description: 'The session’s tmux windows left, in index order.',
+  })
+  windows!: SessionTerminalWindowDto[];
 }
 
 export class SessionPortDto {

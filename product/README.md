@@ -1065,6 +1065,16 @@ earlier note:
   "Which Codex environment"). To list them the host reads the Codex CLI's
   sign-in, which "Environments the CLI cannot reach", decided the same day,
   had ruled out; which holds is open, for the owner.
+- `next-steps/cloud-agents.md` started Codex cloud sessions with
+  `codex cloud exec`, which reaches only the environments ChatGPT now calls
+  Codex Cloud (Legacy). On 2026-11-12, for issue 835, the owner asked for no
+  legacy: the runner now starts and follows a thread on Codex's current
+  cloud service itself, with the host's ChatGPT sign-in, in Codex's default
+  environment with the repository or an environment id pasted from ChatGPT
+  Settings; the host no longer lists legacy environments
+  (`next-steps/cloud-agents.md`, "On Codex's current cloud"). It reads the
+  CLI's token to do so, which "Environments the CLI cannot reach" had ruled
+  out.
 - `next-steps/mail.md` §3.5 kept `trash_mail` asking every time, Full
   access included, with no Allow and no "always" on its card. On
   2026-11-02 the owner, cleaning a mailbox a batch of 25 at a time, asked
@@ -1150,6 +1160,11 @@ earlier note:
   event's metadata alone, never a re-read: the pull request is GitHub's, not
   ours to re-read on every event. A close without a merge makes no event
   yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/27-bot-subscriptions.md` §3 ended every subscription at
+  20 wakes. On 2026-11-14 a bot following a project or a milestone
+  (`watch_project`, `watch_milestone`) has no wake limit: it follows the
+  plan for as long as it is worked on. What bounds it instead is that a
+  change the bot made itself never wakes it (27 §7.2).
 - `versions/mvp/25-bots.md` treated text from tools as information, not
   instructions, and left every tool to the turn that reads it. On
   2026-11-03 a pull request watch made that text a stranger's comment
@@ -1434,12 +1449,33 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/19-plan-tasks-and-goals.md` gave a task no priority. On
+  2026-11-17 the owner asked for a few levels after looking at Linear and
+  ClickUp: a task has an optional priority, Urgent, High, Medium or Low,
+  drawn with Linear's icons (the "!" square for Urgent), that never
+  reorders a column (§9, "Priority").
+- `versions/mvp/29-inbox.md` gathered what needs the person from the
+  sessions, bots, pull requests, runs and reports, and a task an agent made
+  went straight onto the board with nothing to say so. On 2026-11-12 the
+  owner asked that such a task wait in the Inbox for him to triage: a task
+  now says who made it (`origin`) and when its person took it up
+  (`triagedAt`), and waits in the Inbox until he gives it a TODO day, starts
+  or links a session on it, or dismisses it (29, "Tasks an agent made").
 - `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
   day's tasks by their due date. On 2026-11-09 the owner asked for it to be
   what they mean to work on: a task has a focus date apart from its due
   date, To do lists what is put on the day and what is due on it, keeps
   unfinished work from earlier days until it is done, and opens a task's
   dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-09) listed every task on
+  To do's day the same way, whatever its agents were doing, and "To do"
+  named the view, the board's first column and the dialog's day field. On
+  2026-11-12 the owner asked for To do to know about agents: a task an
+  agent is working on moves to a "With agents" section under the list and
+  out of the counts, the others with sessions are marked (waiting on you,
+  failed, ready to review, agent stopped), a row's Move puts it on another
+  TODO day, and the names became TODO, Not started and TODO day, labels
+  only (§6, "Changed on 2026-11-12").
 - `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
@@ -1538,6 +1574,16 @@ earlier note:
   line, `POST /bots/:id/seen`); the migration resumes what it had paused.
   Routines run until paused; the run budget, the overlap guard and quiet
   turns bound the cost (26 §6, "Removed 2026-11-10").
+- `versions/mvp/26-bot-routines.md` §6 gave every bot with a job an hourly
+  Heartbeat (2026-11-06). On 2026-11-15 the owner found it eating their
+  tokens: a model turn an hour, all day, on each bot. No bot is given one by
+  default any more; the migration moved every default Heartbeat to twice a
+  day (09:00 and 18:00 in the zone its owner last wrote from, UTC when
+  unknown) and paused it, so the owner turns it on and changes its times
+  like any routine. A scheduled beat with nothing new in the bot's chat
+  since the last one (another routine's or a loop's turn does not count) is
+  skipped as `idle` without a model turn; Run now always runs (26 §6,
+  "Changed 2026-11-15").
 - `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
   the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
   screenshot into the terminal with Ctrl+V and Claude Code, reading the
@@ -1592,3 +1638,121 @@ earlier note:
   Triage Sentry errors" lines that found nothing, asked for less: the
   chat now hides tool calls by default, and while they are hidden a
   routine run that only ran tools is left out. The wrench shows both.
+- `next-steps/cloud-agents.md` ("The chat of a cloud session") had a reply
+  typed in a Claude Code cloud session's chat reach the agent only while
+  its Stop hook waited (up to two minutes); one typed later sat until a
+  next turn that never came. On 2026-11-11, as decision 2 there said, a
+  reply no hook takes within 15 seconds is sent from an online host signed
+  in to the session's claude.ai account (`claude -p … --cloud <id>`, the
+  link's `cloud.reply`), which wakes the session; the console shows it as
+  sent until the transcript has it.
+- Pages under a parent (a project, an automation, Add a host, a host's
+  Desktop) opened with a breadcrumb line above the title, some under a
+  Back pill as well. On 2026-11-12 the owner asked for no breadcrumbs
+  in the console: each such page keeps only the Back pill
+  (`EditorPageBack`), and `PageHeaderCrumbs` left the design system.
+- `versions/mvp/25-bots.md` §1 (2026-11-08) sent a bot to the next route
+  after a failed step, and had it "keep going until the request is done or
+  you are blocked, then stop". On 2026-11-12 the owner saw a bot's
+  half-hourly routine answer "the designated session is still closed" for
+  hours and asked for bots that stop at a blocker and think of a solution
+  that makes sense. A blocker is now the bot's to solve before it reports
+  it (a closed session is replaced by a new one with the same task), within
+  its permissions and instructions and never around a "no", and a routine's or a
+  loop's run is told so in the note that opens it. It is also told never
+  to report the same blocker twice, which a bot with no way round still
+  does (open).
+- `next-steps/cloud-agents.md` ("The console") had send in Cursor's cloud
+  open Cursor's agent page in a new tab, opened in the press so no popup
+  blocker refused it, and go to the session. On 2026-11-12 (issue #836) the
+  tab sat blank while Cursor answered and closed empty when Cursor refused
+  the launch. Send now opens no tab and goes to the session, as every start
+  does; the session's page ("Open in Cursor") and its row link to Cursor.
+- `versions/mvp/26-bot-routines.md` §6 ("Quiet turns", 2026-11-06) had a
+  quiet turn write no message because the bot was told to write nothing
+  after `nothing_to_report`. On 2026-11-12 a bot with a blocker it could
+  not get round, and its person already told, called it and wrote the
+  blocker again on every run. On 2026-11-13 the silence is kept in code: a
+  turn that ends on `nothing_to_report` keeps no message, whatever the
+  model wrote before or after the call.
+- `versions/mvp/25-bots.md` §4.1 had the built-in skills (`oppenheimer`,
+  `recap`) live in product code only, so Settings → Skills listed none of
+  them and a bot saying it "used the `oppenheimer` skill" pointed at
+  nothing the person could find. On 2026-11-12 the owner asked to see them:
+  the page lists them under the bot's own in a read-only "Built in" group,
+  with a view of the instructions and no edit or delete.
+- `versions/mvp/29-inbox.md` ("As built") headed the clear reading pane
+  "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
+  to be warmer: it reads "You're all caught up", centred under a small
+  drawing of an empty tray; the line under it is unchanged.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had
+  the owner link opened from the console with its code never shown. On
+  2026-11-15 the owner, with no Telegram app, opened it on Telegram Web,
+  which drops the `start` code, and had to type `/start <code>` by hand.
+  Under a link just made the console now also shows that message, with
+  Copy, and opens the bot's chat on Telegram Web.
+- `versions/mvp/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
+  did the work its first message asked for with its name and job
+  questions. On 2026-11-13 the owner found asking its name after the task
+  odd and the welcome too long: work is now just done, and the welcome is
+  a few warm sentences with no list. A name or job that matches one of the
+  owner's projects now says which project the bot is for.
+- `versions/mvp/25-bots.md` §1 (2026-11-08) had a bot whose own session
+  failed on a host it chose, for a reason that looked like the host's,
+  offer the task on another host and start it only on a yes, since only
+  the session's untrusted words said the host was at fault. On 2026-11-15
+  the owner saw a bot stop at "then I can retry" with other hosts online
+  and asked for bots that look for another way: the bot now starts its own
+  task on another capable host, its approval level deciding whether that
+  asks first, and never moves off a host the person named.
+- `versions/mvp/25-bots.md` §1 had a new bot never pick or suggest a name of
+  its own (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), say nothing about
+  its name after a first task (2026-11-13), and take the next of Juno,
+  Milo, Wren… in order, so every workspace's first bot was Juno. On
+  2026-11-15 the owner asked for the opposite on each: the welcome suggests
+  a name, a first task ends with one line that the bot has no name yet, and
+  new bots take a physicist's name at random. The failure rules of
+  2026-11-08 to 2026-11-15, a page of cases, became four lines in Claude
+  Code's manner, keeping the limits the incidents earned.
+- Note 00 §5 rejected Electron because state must live server-side, and
+  the desktop spike (`research/desktop-app-spike.md`, 2026-10-18) kept that
+  rule with Electron on the hosted console. On 2026-11-16 the owner chose
+  Electron over Tauri for the desktop, on the measurements in
+  `research/desktop-electron-vs-tauri.md`: on Linux Tauri saves download
+  size (2.3 vs 86 MiB) and costs memory, start-up time, Rust and a WebView
+  per platform. Tauri is reconsidered only if download size starts to
+  matter, and then measured on a Mac first. State still lives server-side.
+
+- `versions/mvp/30-session-previews.md` put the Browser and Simulator in a
+  preview pane of their own, as pill tabs. On 2026-11-16 the owner asked
+  for side chats, terminals and bots beside a session: that pane became the
+  side pane (`versions/mvp/32-side-pane.md`), where the previews are three
+  of the things the launcher opens, each a tab beside a shell, another
+  session or a bot's chat.
+- `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
+  a job over four tiles (next-step pills once it had instructions), over the
+  stacked composer. On 2026-11-16 the owner found it loud in the side pane
+  and then on the page: the chat greets with the bot's face, its name and
+  one line, over the composer's one-row layout, in both places.
+- `versions/mvp/20-plan-calendar.md` §1 drew the calendar nearly
+  achromatic: busy events in ink on the control wash, free ones and
+  automation runs muted, only a Google account's ring in its colour. On
+  2026-11-17 the owner asked for colour, like Google Calendar's: each item
+  is a wash of its colour with a bar down its edge (personal events blue,
+  tasks violet, each Google account its own; automation runs stay grey),
+  and the first Google accounts moved off blue and violet to keep the
+  legend unambiguous.
+- `versions/mvp/20-plan-calendar.md` counted every item of the view in the
+  header whatever layers were on. On 2026-11-17 the owner asked for filters
+  (kind, project, status, who added a task, §7) and the counts now follow
+  what the calendar shows: a hidden layer counts nothing.
+
+- On 2026-11-17, a runner-started Codex cloud session was confirmed complete
+  while its console link opened only the Codex home page. The console now
+  preserves the thread id at `https://chatgpt.com/local/<id>`
+  (`next-steps/cloud-agents.md`, "On Codex's current cloud").
+- `versions/mvp/05-screens.md` had GPT-6.1 Sol as Codex's default. On
+  2026-11-17 OpenAI released GPT-6.2 Sol and GPT-6.2 Astra, and the owner
+  asked for both in new sessions and in bots: they lead Codex's list,
+  GPT-6.2 Sol is the default, and OpenCode's `openai/` row gains both. The
+  OpenAI and ChatGPT bots read Codex's list, so they follow.

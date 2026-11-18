@@ -1,13 +1,19 @@
-import { ChatMarker, ChatUserMessage, TurnHeader } from '@oppenheimer/design-system-web';
+import {
+  ChatMarker,
+  ChatUserMessage,
+  MessageTrail,
+  TurnHeader,
+} from '@oppenheimer/design-system-web';
 import { Paperclip } from '@oppenheimer/design-system-web/icons';
 import type { ChatTurn as Turn } from '@oppenheimer/frontend-consumer';
-import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
+import { CopyTextButton, dateFormatter, useLocale } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  answerTextOf,
   blocksOf,
-  type ChatBlock,
   elapsedOf,
+  foldedBlocks,
   formatChatElapsed,
   modelName,
   shownImages,
@@ -16,38 +22,6 @@ import { ChatImages } from './chat-images';
 import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
 
-/**
- * What a folded turn keeps besides its answer: its cards and its pictures,
- * what was asked and answered among them, and what a slash command printed,
- * which is that command's whole answer. The words it said on the way there
- * fold with the work they narrated.
- */
-const SETTLED_KINDS = new Set<ChatBlock['kind']>([
-  'output',
-  'plan',
-  'question',
-  'changes',
-  'images',
-  'file',
-  'subagents',
-]);
-
-/**
- * What a folded turn shows: its cards, and its answer, the words it said
- * after its last piece of work, every one of them, since one message's text
- * blocks arrive as replies of their own. The cards it closes on do not end
- * the answer.
- */
-function foldedBlocks(blocks: ChatBlock[]): ChatBlock[] {
-  const answer = new Set<ChatBlock>();
-  for (let index = blocks.length - 1; index >= 0; index--) {
-    const block = blocks[index];
-    if (block.kind === 'reply') answer.add(block);
-    else if (!SETTLED_KINDS.has(block.kind)) break;
-  }
-  return blocks.filter((block) => answer.has(block) || SETTLED_KINDS.has(block.kind));
-}
-
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
 const ENTER = 'motion-safe:animate-appear';
 
@@ -55,11 +29,13 @@ const ENTER = 'motion-safe:animate-appear';
  * One turn of the chat view: what the person sent, as a card on the right,
  * the images pasted with it over the card, as tiles that open, then the
  * agent's turn under its header — working, with its clock running,
- * or how long it worked and on which model. Its thinking and its calls are in
+ * or how long it worked; when it ended and on which model are in the trail
+ * under its answer, beside Copy. Its thinking and its calls are in
  * muted ink, what it said is markdown, a plan and the files it changed are
  * cards. Codex's way with settled work: a turn is open while it works, and
  * once it settles it folds to its answer (its last words) and its cards, the
- * newest one too; the header opens it again.
+ * newest one too; the header opens it again. The prompt copies from under its
+ * card, on hover, and a settled answer from the trail beneath it.
  */
 export function ChatTurn({ turn }: { turn: Turn }) {
   const { t } = useTranslation();
@@ -74,17 +50,26 @@ export function ChatTurn({ turn }: { turn: Turn }) {
   // A file the host only named, an image without a preview or a document,
   // is a count beside the pictures.
   const named = (turn.prompt?.files ?? 0) - pictures.length;
+  const answer = live ? '' : answerTextOf(blocks);
+  // When the turn ended and on which model, quiet beside its Copy.
+  const trail = [turn.lastAt ? time.format(turn.lastAt) : null, modelName(turn.model)].filter(
+    (part): part is string => Boolean(part),
+  );
 
   return (
     <div className="flex flex-col gap-4">
       {turn.prompt ? (
         <ChatUserMessage
           // A session's chat stands on its terminal's ground, the card's own
-          // colour, so the turn takes the blue wash: a shape on it, and the
-          // person's words told from the agent's at a glance.
-          tone="accent"
+          // colour, so the turn takes the chat's grey wash, a code block's.
+          tone="wash"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
+          actions={
+            turn.prompt.text ? (
+              <CopyTextButton text={turn.prompt.text} label={t('sessions.chat.copyMessage')} />
+            ) : undefined
+          }
           attachments={
             pictures.length > 0 || named > 0 ? (
               <>
@@ -103,6 +88,8 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       ) : null}
       {blocks.length > 0 || live ? (
         <TurnHeader
+          // Room over it, so a turn reads as its own block under the prompt.
+          className="mt-4"
           state={live ? 'working' : 'done'}
           elapsed={
             live && turn.startedAt ? (
@@ -111,8 +98,6 @@ export function ChatTurn({ turn }: { turn: Turn }) {
               (elapsedOf(turn) ?? undefined)
             )
           }
-          model={modelName(turn.model) ?? undefined}
-          time={!live && turn.lastAt ? time.format(turn.lastAt) : undefined}
           open={shown}
           onToggle={live ? undefined : () => setOpen(!open)}
           labels={{
@@ -131,6 +116,12 @@ export function ChatTurn({ turn }: { turn: Turn }) {
           </div>
         );
       })}
+      {answer ? (
+        <MessageTrail
+          actions={<CopyTextButton text={answer} label={t('sessions.chat.copyReply')} />}
+          meta={trail.length > 0 ? trail.join(' · ') : undefined}
+        />
+      ) : null}
     </div>
   );
 }

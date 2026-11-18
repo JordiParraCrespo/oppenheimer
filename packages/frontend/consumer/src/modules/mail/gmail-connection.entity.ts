@@ -1,6 +1,6 @@
 /**
- * One of the reader's own Gmail accounts, connected for their bots
- * (`product/next-steps/mail.md` §1). Never its token.
+ * One of the reader's own Gmail accounts, connected for their bots. Never its
+ * token.
  */
 export class GmailConnectionEntity {
   constructor(

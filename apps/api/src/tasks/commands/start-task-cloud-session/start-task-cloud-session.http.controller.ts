@@ -15,14 +15,13 @@ import { Throttle } from '@nestjs/throttler';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
-import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
-import { userActor } from '../../domain/plan-change.types';
+import { PlanCaller, type PlanCallerOf } from '../../decorators/plan-caller.decorator';
 import type { TaskEntity } from '../../domain/task.entity';
 import { StartTaskSessionResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -52,7 +51,7 @@ export class StartTaskCloudSessionHttpController {
   @ApiOperation({
     summary: 'Start a cloud session from a task',
     description:
-      '`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.',
+      '`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Not started (`todo`) moves to the top of In progress if `seenStatus` is still its status, and the person (a browser session) takes up a task an agent made.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
@@ -83,7 +82,7 @@ export class StartTaskCloudSessionHttpController {
   @ApiProblemResponse({ status: 502, description: 'No answer', code: 'CLOUD_AGENTS_006' })
   async start(
     @CurrentAccessScope() scope: AccessScope,
-    @CurrentUser('id') userId: string,
+    @PlanCaller() caller: PlanCallerOf,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: StartTaskCloudSessionRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
@@ -94,8 +93,8 @@ export class StartTaskCloudSessionHttpController {
     >(
       new StartTaskSessionCommand({
         scope,
-        actor: userActor(userId),
-        userId,
+        ...caller,
+        userId: caller.actor.userId,
         taskId: id,
         input: body,
         idempotencyKey: idempotencyKey?.trim() || null,

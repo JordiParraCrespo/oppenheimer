@@ -8,10 +8,9 @@ import type { BotMemoryDreamRepositoryPort } from '../../database/bot-memory-dre
 import { RequestBotMemoryDreamCommand } from './request-bot-memory-dream.command';
 
 /**
- * Stages a dream of the bot's memory for the `bot-dreams` worker
- * (`25-bots.md` §4.1, "Dreaming"). It runs even with "Learn automatically"
- * off: the owner asked. The dream reads as pending until its job settles,
- * and the chat says when it is done.
+ * Stages a dream of the bot's memory for the `bot-dreams` worker. It runs even
+ * with "Learn automatically" off: the owner asked. The dream reads as pending
+ * until its job settles, and the chat says when it is done.
  */
 @CommandHandler(RequestBotMemoryDreamCommand)
 export class RequestBotMemoryDreamCommandHandler

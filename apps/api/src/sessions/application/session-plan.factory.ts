@@ -35,7 +35,7 @@ export class SessionPlanFactory {
   /**
    * The project the session is listed under: the one the caller named, or the
    * workspace's Unassigned project when it named none. A project is never derived
-   * from a repository (`product/versions/mvp/10-api-modules-and-data-model.md`).
+   * from a repository.
    */
   async resolveProject(
     scope: AccessScope,

@@ -44,6 +44,36 @@ func TestEachSessionKeepsItsOwnDevice(t *testing.T) {
 	}
 }
 
+// A reader moving a session onto another device frees the old one for other
+// sessions and never takes one another session holds.
+func TestChoosingMovesTheSessionOntoAFreeDevice(t *testing.T) {
+	pool := domain.NewPool([]domain.Device{{Serial: "a"}, {Serial: "b"}, {Serial: "c"}})
+	_, _ = pool.For("s1") // a
+	_, _ = pool.For("s2") // b
+	if _, err := pool.Choose("s1", "b"); !errors.Is(err, domain.ErrTaken) {
+		t.Fatalf("s1 took s2's device: %v", err)
+	}
+	if held, _ := pool.Held("s1"); held.Serial != "a" {
+		t.Fatalf("a refused pick moved s1 off its device, to %q", held.Serial)
+	}
+	if _, err := pool.Choose("s1", "z"); !errors.Is(err, domain.ErrNotOffered) {
+		t.Fatalf("s1 picked a device the host does not offer: %v", err)
+	}
+	if got, err := pool.Choose("s1", "c"); err != nil || got.Serial != "c" {
+		t.Fatalf("s1 could not move to a free device: %v %v", got, err)
+	}
+	free := map[string]bool{}
+	for _, c := range pool.Choices("s1") {
+		free[c.Serial] = c.Free
+	}
+	if !free["a"] || free["b"] || !free["c"] {
+		t.Fatalf("s1's choices = %v, want a and c free, b held", free)
+	}
+	if third, err := pool.For("s3"); err != nil || third.Serial != "a" {
+		t.Fatalf("the device s1 left was not handed on: %v %v", third, err)
+	}
+}
+
 func TestInputValidation(t *testing.T) {
 	for _, tc := range []struct {
 		in domain.Input

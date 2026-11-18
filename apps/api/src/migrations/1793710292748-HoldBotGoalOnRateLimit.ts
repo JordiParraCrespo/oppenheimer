@@ -1,11 +1,10 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A goal waiting out a system's rate limit (`product/versions/mvp/25-bots.md`
- * §4, "Rate limits"). A turn of a goal that ended on a limit holds the goal's
- * next decision until the limit ends (its outbox job is staged with
- * `availableAt`); the goal says so, so the chat's goal banner can read
- * "waiting for Gmail until 10:02" rather than look stalled.
+ * A goal waiting out a system's rate limit. A turn of a goal that ended on a
+ * limit holds the goal's next decision until the limit ends (its outbox job is
+ * staged with `availableAt`); the goal says so, so the chat's goal banner can
+ * read "waiting for Gmail until 10:02" rather than look stalled.
  *
  * - `waitingFor` is the system ("Gmail", "GitHub"), as the integration names
  *   itself; 64 characters is far past any of them. `waitingUntil` is when the

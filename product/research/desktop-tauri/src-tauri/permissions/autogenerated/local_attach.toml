@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-local-attach"
+description = "Enables the local_attach command without any pre-configured scope."
+commands.allow = ["local_attach"]
+
+[[permission]]
+identifier = "deny-local-attach"
+description = "Denies the local_attach command without any pre-configured scope."
+commands.deny = ["local_attach"]

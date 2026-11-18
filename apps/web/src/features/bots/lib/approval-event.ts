@@ -2,10 +2,10 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import type { BotApprovalEvent } from '@oppenheimer/shared/schemas/bot';
 
 /**
- * How the chat draws an approval (`25-bots.md` §5), in one place. An
- * approved call has two lines: the yes, which opens the turn where the bot
- * says it is on it (`started`), and how it went, which opens the turn that
- * reports it (`finished`).
+ * How the chat draws an approval, in one place. An approved call has two
+ * lines: the yes, which opens the turn where the bot says it is on it
+ * (`started`), and how it went, which opens the turn that reports it
+ * (`finished`).
  */
 
 /**
@@ -16,6 +16,16 @@ import type { BotApprovalEvent } from '@oppenheimer/shared/schemas/bot';
 export function approvalLineKey(event: BotApprovalEvent) {
   if (event.stage !== 'finished') return event.outcome;
   return event.outcome === 'failed' ? 'finishedFailed' : 'finished';
+}
+
+/**
+ * Whether an approval's line is drawn: a call that went through is only
+ * worth a line while the chat shows its tool calls (the wrench), unless it
+ * started a session, whose line carries Open session. A denial, a stop and a
+ * failure are always drawn: they changed what the bot did.
+ */
+export function showsApprovalLine(event: BotApprovalEvent, toolCallsShown: boolean): boolean {
+  return toolCallsShown || event.outcome !== 'approved' || Boolean(event.sessionId);
 }
 
 /** An approved call under way, as the chat draws it: what it does, and since when. */

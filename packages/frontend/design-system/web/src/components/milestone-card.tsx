@@ -12,8 +12,8 @@ import { cn } from '../lib/utils';
  * and while `selected` it takes the selected wash with the ring's border.
  * The toggle is the name, a button stretched over the card so the whole
  * card answers the pointer; the menu sits beside it, never inside it.
- * `MilestoneGrid` lays the cards out at 280px or more each; `MilestoneEmpty` stands in
- * for a project with no milestones, and is the way to add one.
+ * `MilestoneGrid` lays the cards out at 280px or more each; a project with no
+ * milestones is an illustrated `EmptyState` (`milestones`).
  */
 function MilestoneCard({
   name,
@@ -100,27 +100,4 @@ function MilestoneGrid({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** No milestones yet: a dashed card that says what a milestone is and adds one. */
-function MilestoneEmpty({
-  title,
-  className,
-  children,
-  ...props
-}: React.ComponentProps<'button'> & { title: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      data-slot="milestone-empty"
-      className={cn(
-        'flex flex-col items-start gap-1 rounded-lg border border-dashed border-border px-4.5 py-4 text-left text-sm text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring',
-        className,
-      )}
-      {...props}
-    >
-      <span className="text-body font-medium text-fg">{title}</span>
-      {children}
-    </button>
-  );
-}
-
-export { MilestoneCard, MilestoneEmpty, MilestoneGrid };
+export { MilestoneCard, MilestoneGrid };

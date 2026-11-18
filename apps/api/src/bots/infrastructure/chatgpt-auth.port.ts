@@ -30,9 +30,9 @@ export type ChatgptDevicePoll =
 export class ChatgptAuthRefusedError extends Error {}
 
 /**
- * Signing in to ChatGPT the way the Codex CLI does (`product/versions/mvp/25-bots.md`
- * §2): the device code flow, since the browser-redirect one only ever lands on
- * `localhost`, and the refresh of the tokens it yields.
+ * Signing in to ChatGPT the way the Codex CLI does: the device code flow,
+ * since the browser-redirect one only ever lands on `localhost`, and the
+ * refresh of the tokens it yields.
  */
 export interface ChatgptAuthPort {
   requestDeviceCode(): Promise<ChatgptDeviceCode>;

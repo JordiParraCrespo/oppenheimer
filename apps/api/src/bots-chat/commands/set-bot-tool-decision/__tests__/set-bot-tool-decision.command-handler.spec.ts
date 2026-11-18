@@ -8,7 +8,7 @@ import { SetBotToolDecisionCommand } from '../set-bot-tool-decision.command';
 import { SetBotToolDecisionCommandHandler } from '../set-bot-tool-decision.command-handler';
 
 /**
- * Setting one tool's Allow, Ask or Off (`25-bots.md` §5). What breaks this:
+ * Setting one tool's Allow, Ask or Off. What breaks this:
  * a setting stored for a tool the catalog does not have; merging made
  * standing through Settings; `default` stored as a row rather than clearing
  * one. The upsert itself is the integration suite's.

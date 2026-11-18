@@ -16,8 +16,7 @@ const ORGANIZATION_ID = z.string().uuid();
 
 /**
  * The `REQUEST_TENANT` adapter: the organization a route names through
- * `@OrganizationScoped`, otherwise the session's. The rule it implements is
- * `product/versions/mvp/08-auth.md`.
+ * `@OrganizationScoped`, otherwise the session's.
  */
 @Injectable()
 export class RequestTenantResolver implements RequestTenantPort {

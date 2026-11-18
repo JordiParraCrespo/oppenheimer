@@ -19,7 +19,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { userActor } from '../../domain/plan-change.types';
+import { PlanCaller, type PlanCallerOf } from '../../decorators/plan-caller.decorator';
 import type { TaskEntity } from '../../domain/task.entity';
 import { TaskResponseDto } from '../../dtos/task.response.dto';
 import { FindTaskQuery } from '../../queries/find-task/find-task.query';
@@ -47,7 +47,7 @@ export class CreateTaskHttpController {
   @ApiOperation({
     summary: 'Add a task to the board',
     description:
-      'At the end of its column (To do unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project.',
+      'At the end of its column (Not started, `todo`, unless `status` says otherwise). Without a project the task is filed under the workspace’s Unassigned project; a milestone brings its own project. Made on an API token or an OAuth grant (the MCP server, the CLI) it is an agent’s (`origin: agent`) and waits in its person’s Inbox until they take it up.',
   })
   @ApiResponse({ status: 201, type: TaskResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Milestone not found', code: 'TASKS_002' })
@@ -70,13 +70,14 @@ export class CreateTaskHttpController {
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
+    @PlanCaller() caller: PlanCallerOf,
     @Body() body: CreateTaskRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
   ): Promise<TaskResponseDto> {
     const taskId = await this.commandBus.execute<CreateTaskCommand, string>(
       new CreateTaskCommand({
         scope,
-        actor: userActor(userId),
+        ...caller,
         idempotencyKey: idempotencyKey?.trim().slice(0, IDEMPOTENCY_KEY_MAX) || null,
         userId,
         input: body,

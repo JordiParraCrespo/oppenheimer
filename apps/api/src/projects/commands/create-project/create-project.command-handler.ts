@@ -13,7 +13,7 @@ import { CreateProjectCommand } from './create-project.command';
 
 /**
  * Creates a project a person asked for: a name, the repositories it holds and the
- * defaults a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * defaults a new session is offered.
  * The only other project is the workspace's Unassigned, which it is given.
  *
  * The slug is derived from the name, once. The id is minted first so the fallback slug

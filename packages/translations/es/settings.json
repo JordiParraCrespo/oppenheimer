@@ -399,7 +399,13 @@
       "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar. Crea un enlace nuevo si ha caducado.",
       "failed": "No se ha guardado. Inténtalo de nuevo.",
       "making": "Creando el enlace…",
-      "newLink": "Nuevo enlace"
+      "newLink": "Nuevo enlace",
+      "openWeb": "Abrir Telegram Web",
+      "copy": "Copiar mensaje",
+      "copied": "Copiado",
+      "noApp": "¿No tienes la app de Telegram? Vincúlalo desde Telegram Web",
+      "stepOpen": "Abre el chat del bot en Telegram Web.",
+      "stepSend": "Envíale este mensaje. El código vale diez minutos."
     }
   },
   "agents": {

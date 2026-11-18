@@ -1,8 +1,7 @@
 /**
- * A ChatGPT sign-in in progress (`product/versions/mvp/25-bots.md` §2): the
- * device code ChatGPT handed out, the workspace it was started for and when it
- * lapses. The API keeps nothing while it waits; the console holds it, sealed,
- * and hands it back on every poll.
+ * A ChatGPT sign-in in progress: the device code ChatGPT handed out, the
+ * workspace it was started for and when it lapses. The API keeps nothing while
+ * it waits; the console holds it, sealed, and hands it back on every poll.
  */
 export interface ChatgptLoginFlow {
   deviceAuthId: string;

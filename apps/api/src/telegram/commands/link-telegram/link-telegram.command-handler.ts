@@ -17,14 +17,14 @@ import { TELEGRAM_ACCOUNT_REPOSITORY, TELEGRAM_DEVICE } from '../../telegram.di-
 import { LinkTelegramCommand } from './link-telegram.command';
 
 /**
- * Connects a Telegram bot on one of the caller's hosts (`telegram.md` §2):
- * hands the host's runner the bot's token, which it checks with Telegram,
- * keeps, and polls with. The host's `telegram.state` tells how it went; a
- * token the host refuses marks the account `revoked` with the host's reason,
- * so Settings offers to connect again. The caller's bot already on that host
- * takes the token too, keeping its row and its messages: that is how a
- * revoked token is replaced. A host holds one Telegram bot, so another
- * person's there refuses. The token is never stored or logged here.
+ * Connects a Telegram bot on one of the caller's hosts: hands the host's runner
+ * the bot's token, which it checks with Telegram, keeps, and polls with. The
+ * host's `telegram.state` tells how it went; a token the host refuses marks the
+ * account `revoked` with the host's reason, so Settings offers to connect
+ * again. The caller's bot already on that host takes the token too, keeping its
+ * row and its messages: that is how a revoked token is replaced. A host holds
+ * one Telegram bot, so another person's there refuses. The token is never
+ * stored or logged here.
  */
 @CommandHandler(LinkTelegramCommand)
 export class LinkTelegramCommandHandler

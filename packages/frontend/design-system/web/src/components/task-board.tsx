@@ -35,9 +35,16 @@ import { variedWidth } from '../internal/varied-width';
  *   the project and milestone, the due date in mono (red when overdue, full ink
  *   when due within a day), the linked session, and Start session on hover.
  *   A `selected` card (picked to act on with others) takes the selected wash
- *   and a ring in the focus ink.
+ *   and a ring in the focus ink. An open task's priority leads its meta row.
+ * - `TaskPriorityIcon`: a task's priority at icon size, each level in its
+ *   own ink: Urgent a filled square in danger red with the "!" cut out of
+ *   it, so it reads on any surface; High (warning orange), Medium (info
+ *   blue) and Low (muted) three bars with three, two or one of them lit;
+ *   none three quiet dashes.
  * - `TaskSelectionBar`: what the picked cards can do together, floating at
  *   the foot of the viewport — how many, then `children` (the actions).
+ * - `TaskMarquee`: the rectangle a drag from the board's empty space draws
+ *   to pick every card it touches, in viewport coordinates, on the focus ink.
  * - `TaskCardSkeleton`: a card's place before the tasks answer, on the
  *   card's own frame.
  */
@@ -46,7 +53,7 @@ type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 
 /**
  * A task's status on the run-state vocabulary, so a task reads with the
- * same dot as everything else: To do idle, In progress amber (`waiting`, as
+ * same dot as everything else: Not started idle, In progress amber (`waiting`, as
  * the 2026-10-13 frame draws it: work under way, not yet settled), In review
  * pending (the work is in, waiting on someone to look), and Done completed
  * (the check, since a done task is finished).
@@ -92,7 +99,7 @@ function TaskColumn({
   /** The card ids in this column, in order. */
   items: readonly string[];
   onAdd?: () => void;
-  /** The + button's name ("Add task to To do"). */
+  /** The + button's name ("Add task to Not started"). */
   addLabel?: string;
   /** Under the cards: `TaskColumnAdd`, or a `TaskComposer` while adding. */
   foot?: React.ReactNode;
@@ -182,6 +189,69 @@ function TaskColumnMore({
 
 type TaskDueTone = 'default' | 'soon' | 'overdue';
 
+type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
+
+const LIT_BARS: Record<Exclude<TaskPriority, 'urgent'>, number> = { high: 3, medium: 2, low: 1 };
+const PRIORITY_INK: Record<TaskPriority, string> = {
+  urgent: 'text-danger',
+  high: 'text-warning',
+  medium: 'text-info',
+  low: 'text-fg-muted',
+};
+const BAR_X = [1.5, 6.5, 11.5] as const;
+const BAR_TOP = [9, 5.5, 2] as const;
+
+/**
+ * A task's priority, 16 by 16 on its own grid and sized by the caller
+ * (`size-3.5` beside text). With a `label` it is an image that says it;
+ * without one it is decoration beside words that do.
+ */
+function TaskPriorityIcon({
+  priority,
+  label,
+  className,
+  ...props
+}: React.ComponentProps<'svg'> & { priority: TaskPriority | null; label?: string }) {
+  const a11y = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true };
+  return (
+    <svg
+      data-slot="task-priority-icon"
+      data-priority={priority ?? 'none'}
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className={cn(
+        'size-3.5 shrink-0',
+        priority ? PRIORITY_INK[priority] : 'text-fg-subtle',
+        className,
+      )}
+      {...a11y}
+      {...props}
+    >
+      {label ? <title>{label}</title> : null}
+      {priority === 'urgent' ? (
+        <path
+          fillRule="evenodd"
+          d="M4 1h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3ZM7 4h2v5.5H7Zm0 6.75h2v2H7Z"
+        />
+      ) : priority ? (
+        BAR_X.map((x, index) => (
+          <rect
+            key={x}
+            x={x}
+            y={BAR_TOP[index]}
+            width={3}
+            height={14 - BAR_TOP[index]}
+            rx={1}
+            opacity={index < LIT_BARS[priority] ? 1 : 0.3}
+          />
+        ))
+      ) : (
+        BAR_X.map((x) => <rect key={x} x={x} y={7.25} width={3} height={1.5} rx={0.75} />)
+      )}
+    </svg>
+  );
+}
+
 function TaskCard({
   title,
   notes,
@@ -192,6 +262,8 @@ function TaskCard({
   milestone,
   due,
   dueTone = 'default',
+  priority = null,
+  priorityLabel,
   session,
   onStart,
   startLabel = 'Start session',
@@ -210,6 +282,10 @@ function TaskCard({
   /** Mono, already formatted ("Oct 10", "Tomorrow", "Oct 7 · 14:00"). */
   due?: React.ReactNode;
   dueTone?: TaskDueTone;
+  /** Drawn while the task is open; null draws nothing. */
+  priority?: TaskPriority | null;
+  /** "Urgent priority": what the icon says to assistive technology. */
+  priorityLabel?: string;
   /** A `TaskSessionChip`. */
   session?: React.ReactNode;
   /** Shown on hover while the task has no session and is not done. */
@@ -219,7 +295,8 @@ function TaskCard({
   selected?: boolean;
 }) {
   const offerStart = Boolean(onStart) && !session && !done;
-  const hasMeta = Boolean(project || milestone || (due && !done));
+  const showPriority = priority !== null && !done;
+  const hasMeta = Boolean(showPriority || project || milestone || (due && !done));
   return (
     <div
       data-slot="task-card"
@@ -252,6 +329,7 @@ function TaskCard({
         {notes && !done ? <span className="line-clamp-2 text-xs leading-[1.45] text-fg-muted">{notes}</span> : null}
         {hasMeta ? (
           <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-fg-muted">
+            {showPriority ? <TaskPriorityIcon priority={priority} label={priorityLabel} /> : null}
             {project ? (
               <span className="inline-flex max-w-full min-w-0 items-center gap-[5px] truncate">
                 <FolderIcon className="size-3 shrink-0" aria-hidden />
@@ -465,5 +543,28 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSelectionBar, TaskSessionChip };
-export type { TaskDueTone, TaskStatus };
+/** The drag-to-pick rectangle, placed in viewport pixels; it never takes the pointer. */
+function TaskMarquee({
+  rect,
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  rect: { left: number; top: number; width: number; height: number };
+}) {
+  return (
+    <div
+      data-slot="task-marquee"
+      aria-hidden
+      className={cn(
+        'pointer-events-none fixed z-30 rounded-xs border border-ring bg-[color-mix(in_srgb,var(--ring)_14%,transparent)]',
+        className,
+      )}
+      style={{ ...style, left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+      {...props}
+    />
+  );
+}
+
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskMarquee, TaskPriorityIcon, TaskSelectionBar, TaskSessionChip };
+export type { TaskDueTone, TaskPriority, TaskStatus };

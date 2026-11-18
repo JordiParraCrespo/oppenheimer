@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { BOT_MESSAGE_REPOSITORY, BOT_STREAM } from '../bots-chat.di-tokens';
 import {
   type BotMessageRepositoryPort,
+  TurnGoneError,
   UnstorableStepsError,
 } from '../database/bot-message.repository.port';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
@@ -19,10 +20,13 @@ import {
  * one case per kind of write. Text as it streams is written to the stream,
  * which keeps it until its block settles; a retry wait is passed on;
  * what is stored (a new message, a line's steps, a steer placed where the
- * turn took it) is written, then announced as that message. A call's end
+ * turn took it) is written, then announced as that message; the words a
+ * quiet turn takes back are removed, and the turn's end is what tells the
+ * chat to read again. A call's end
  * whose content Postgres refuses (`UnstorableStepsError`) fails that call
- * alone (`failUnstoredCall`); any other failed write fails the turn as
- * `storage` (`TurnStorageError`).
+ * alone (`failUnstoredCall`); a turn deleted under it (`TurnGoneError`)
+ * ends it as it came; any other failed write fails the turn as `storage`
+ * (`TurnStorageError`).
  */
 @Injectable()
 export class TurnWriteFactory {
@@ -49,11 +53,7 @@ export class TurnWriteFactory {
     // The bot's stream is its console chat's; a channel's turn is stored only.
     if (!turn.inConsole) {
       if (write.kind === 'text' || write.kind === 'settled' || write.kind === 'retrying') return;
-      try {
-        return await this.store(turn, write);
-      } catch (error) {
-        throw new TurnStorageError(error);
-      }
+      return this.stored(turn, write);
     }
     switch (write.kind) {
       case 'text':
@@ -63,20 +63,30 @@ export class TurnWriteFactory {
       case 'retrying':
         return this.stream.publish(turn.botId, passedOnEvent(turn.id, write));
     }
-    try {
-      await this.store(turn, write);
-    } catch (error) {
-      throw new TurnStorageError(error);
-    }
+    await this.stored(turn, write);
+    if (write.kind === 'unsay') return;
     const messageId = storedMessageId(write);
     await this.stream.publish(turn.botId, { type: 'message', turnId: turn.id, messageId });
   }
 
+  private async stored(
+    turn: BotTurnEntity,
+    write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' | 'unsay' }>,
+  ): Promise<void> {
+    try {
+      await this.store(turn, write);
+    } catch (error) {
+      throw error instanceof TurnGoneError ? error : new TurnStorageError(error);
+    }
+  }
+
   private async store(
     turn: BotTurnEntity,
-    write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' }>,
+    write: Extract<TranscriptWrite, { kind: 'insert' | 'steps' | 'steer' | 'unsay' }>,
   ): Promise<void> {
     switch (write.kind) {
+      case 'unsay':
+        return this.messages.removeTurnWords(turn, write.messageIds);
       case 'insert':
         return this.messages.insert(write.message);
       case 'steer':

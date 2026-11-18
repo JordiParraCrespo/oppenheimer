@@ -11,7 +11,7 @@ import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { type BotToolContext, defineBotTool } from '../bot-tool.factory';
 
 /**
- * How an asking tool asks (`25-bots.md` §5): under Approve for me its call is
+ * How an asking tool asks: under Approve for me its call is
  * checked, then becomes a Needs input card and never runs; the model is told
  * to end its turn, or to wait when a card is already up. Full access runs it;
  * an approved call is carried out through `runApproved`, which never asks.

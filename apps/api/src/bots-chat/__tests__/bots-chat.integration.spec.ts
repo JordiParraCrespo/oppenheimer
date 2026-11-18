@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
+import type { PlanTaskEventKind } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
@@ -43,8 +44,9 @@ import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runne
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnChannelPolicy } from '../application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
+import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
-import { TurnTranscript } from '../application/turn-transcript.policy';
+import { failureKindOf, TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
@@ -72,6 +74,7 @@ import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
 import { BotLoopRepository } from '../database/bot-loop.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository, isDataException } from '../database/bot-message.repository';
+import { TurnGoneError } from '../database/bot-message.repository.port';
 import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
 import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
 import { BotQuestionRepository } from '../database/bot-question.repository';
@@ -114,14 +117,13 @@ import { FindBotTurnQuery } from '../queries/find-bot-turn/find-bot-turn.query';
 import { FindBotTurnQueryHandler } from '../queries/find-bot-turn/find-bot-turn.query-handler';
 
 /**
- * A bot's chat against a real Postgres (`product/versions/mvp/25-bots.md`
- * §2–3): one running turn per bot and the next staged when it ends, a send
- * racing the end of a turn, the failure a turn's column holds, the stored
- * conversation and history, Stop's conditional writes, the cascade from the
- * bot, and a turn's context read in its own workspace only; Needs input
- * cards: one waiting per bot, decided once however many decide at once, the
- * event that opens a decision's turn, the workspace's cards across bots and
- * the event each move stages, and the cascade; a conversation's
+ * A bot's chat against a real Postgres: one running turn per bot and the next
+ * staged when it ends, a send racing the end of a turn, the failure a turn's
+ * column holds, the stored conversation and history, Stop's conditional writes,
+ * the cascade from the bot, and a turn's context read in its own workspace
+ * only; Needs input cards: one waiting per bot, decided once however many
+ * decide at once, the event that opens a decision's turn, the workspace's cards
+ * across bots and the event each move stages, and the cascade; a conversation's
  * summary: one write of two racing ones wins, the cutoff never moves back,
  * and a turn's history and the summarizer's read start after it to the
  * microsecond; a bot's subscriptions to sessions: one per bot and session,
@@ -527,6 +529,129 @@ describe('bots chat (integration)', () => {
     });
     const other = await create('Unmetered');
     expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
+  });
+
+  // What breaks this: a heartbeat that reads its own turns, another routine's
+  // or a loop's as activity (so it never idles), misses another bot's ask (so
+  // it sleeps through it), reads another bot's turns, or takes a retried
+  // run's own queued turn for the beat before it.
+  it('reads a heartbeat’s last beat and the bot’s last activity', async () => {
+    const bot = await create('Heartbeat Bot');
+    const automationId = '6a1c4f9e-0000-4000-8000-0000000000b1';
+    const props = {
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    };
+    const at = async (turnId: string, iso: string) =>
+      dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [turnId, iso]);
+    const prefix = routinePrefix(automationId);
+    const view = (ownSourceKey = 'automation-run:none') =>
+      turns.findHeartbeatView(bot.organizationId, bot.id, prefix, ownSourceKey);
+
+    expect(await view()).toEqual({ lastBeatAt: null, lastActivityAt: null });
+
+    const message = sent(bot, 'Watch the release.');
+    await turns.enqueue(message.turn, message.message, null);
+    await at(message.turn.id, '2026-11-15T09:00:00Z');
+    const beat = routineTurn(props, {
+      automationId,
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b2',
+      name: 'Heartbeat',
+      instructions: 'Check in.',
+    });
+    await turns.enqueueOnce(beat.turn, beat.opening, null, null);
+    await at(beat.turn.id, '2026-11-15T10:00:00Z');
+    const other = routineTurn(props, {
+      automationId: '6a1c4f9e-0000-4000-8000-0000000000b3',
+      runId: '6a1c4f9e-0000-4000-8000-0000000000b4',
+      name: 'Sentry triage',
+      instructions: 'Look at Sentry.',
+    });
+    await turns.enqueueOnce(other.turn, other.opening, null, null);
+    await at(other.turn.id, '2026-11-15T10:30:00Z');
+
+    // Another bot of the owner's asks from a routine: activity, unlike that routine's own turn.
+    const askingBot = await create('Asking Bot');
+    const asking = routineTurn(
+      { ...props, botId: askingBot.id },
+      {
+        automationId: '6a1c4f9e-0000-4000-8000-0000000000b5',
+        runId: '6a1c4f9e-0000-4000-8000-0000000000b6',
+        name: 'Release check',
+        instructions: 'Ask the heartbeat bot.',
+      },
+    );
+    await turns.enqueueOnce(asking.turn, asking.opening, null, null);
+    const ask = BotTurnEntity.queueFromBot(asking.turn, {
+      botId: bot.id,
+      provider: 'glm',
+      model: 'glm-5.3',
+      effort: null,
+      replyRequested: false,
+    });
+    const asked = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: ask.id,
+      role: 'user',
+      content: 'From another bot.',
+      steps: [],
+      position: 0,
+    });
+    await turns.enqueue(ask, asked, null);
+    await at(ask.id, '2026-11-15T09:30:00Z');
+
+    expect(await view()).toEqual({
+      lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    // A retried dispatch of that beat's run finds its own turn queued: not a beat before it.
+    expect(await view(beat.turn.sourceKey ?? '')).toEqual({
+      lastBeatAt: null,
+      lastActivityAt: new Date('2026-11-15T09:30:00Z'),
+    });
+    const elsewhere = await create('Quiet Bot');
+    expect(
+      await turns.findHeartbeatView(elsewhere.organizationId, elsewhere.id, prefix, 'none'),
+    ).toEqual({
+      lastBeatAt: null,
+      lastActivityAt: null,
+    });
+  });
+
+  // What breaks this: a turn that never reached the provider (a held run,
+  // ending at once with no token) hiding the refusal before it, which
+  // would let every other routine run reach the provider again.
+  it('reads the last turn that reached the provider or failed, past the turns that never asked it', async () => {
+    const bot = await create('Spent');
+    async function ended(
+      content: string,
+      status: 'completed' | 'failed',
+      props: Parameters<BotTurnEntity['end']>[2] = {},
+    ) {
+      const { turn, message } = sent(bot, content);
+      await turns.enqueue(turn, message, null);
+      const running = (await turns.findForRun(turn.id)).unwrap();
+      running.start(new Date());
+      await turns.claim(running);
+      running.end(status, new Date(), props);
+      await turns.finish(running, null);
+      return turn.id;
+    }
+    expect(await turns.findLastOnProvider(bot.organizationId, bot.id, 'glm')).toBeNull();
+    const refused = await ended('One', 'failed', { error: 'Credit', failure: 'usage_limit' });
+    await ended('Held', 'completed');
+    expect(await turns.findLastOnProvider(bot.organizationId, bot.id, 'glm')).toMatchObject({
+      id: refused,
+      failure: 'usage_limit',
+    });
+    expect(await turns.findLastOnProvider(bot.organizationId, bot.id, 'anthropic')).toBeNull();
+    const answered = await ended('Two', 'completed', { inputTokens: 10, outputTokens: 2 });
+    expect((await turns.findLastOnProvider(bot.organizationId, bot.id, 'glm'))?.id).toBe(answered);
   });
 
   it('makes the end of a turn wait for the bot row a send holds', async () => {
@@ -1107,7 +1232,44 @@ describe('bots chat (integration)', () => {
     expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
   });
 
-  // Issue #728. What breaks this: a tool's words written as they came, so a
+  // What breaks this: a quiet turn's narration staying in the chat, or
+  // staying as the sidebar's line once the message is gone.
+  it('takes back the words of a turn that ended quiet, only that turn’s, and puts the sidebar line back', async () => {
+    const bot = await create('Glm Bot');
+    const first = sent(bot, 'Watch Sentry.');
+    await turns.enqueue(first.turn, first.message, null);
+    const word = (turnId: string, content: string, position: number) =>
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId,
+        role: 'assistant',
+        content,
+        steps: [],
+        position,
+      });
+    const kept = word(first.turn.id, 'On it.', 1);
+    await messages.insert(kept);
+    const second = sent(bot, 'Run the check.');
+    await turns.enqueue(second.turn, second.message, null);
+    const narration = word(second.turn.id, 'Still closed, and you know.', 1);
+    await messages.insert(narration);
+
+    // Another turn's id for the same message removes nothing.
+    await messages.removeTurnWords(first.turn, [narration.id]);
+    expect(await messages.findTurnTexts(organizationId, second.turn.id)).toHaveLength(1);
+
+    await messages.removeTurnWords(second.turn, [narration.id]);
+    expect(await messages.findTurnTexts(organizationId, second.turn.id)).toEqual([]);
+    expect(await messages.findTurnTexts(organizationId, first.turn.id)).toEqual(['On it.']);
+    const [{ lastMessagePreview }] = await dataSource.query(
+      `SELECT "lastMessagePreview" FROM bot WHERE id = $1`,
+      [bot.id],
+    );
+    expect(lastMessagePreview).toBe('Run the check.');
+  });
+
+  // What breaks this: a tool's words written as they came, so a
   // PDF's NUL byte (`unsupported Unicode escape sequence`) or a lone
   // surrogate half (`invalid input syntax for type json`) makes Postgres
   // refuse the line's jsonb steps, or the bot's text column, and the turn dies.
@@ -1146,6 +1308,32 @@ describe('bots chat (integration)', () => {
       isError: false,
     });
     expect(chat.at(-1)?.content).toBe('Total 120 �');
+  });
+
+  // Sentry OPPENHEIMER-API-6. What breaks this: the turn's row deleted under
+  // its worker (its bot deleted mid-turn, which cascades to bot_turn) read as
+  // a write Postgres refused, so the turn is reported as a `storage` failure
+  // of ours instead of ending quietly with the bot it belonged to.
+  it('tells a turn deleted with its bot from a write Postgres refused', async () => {
+    const bot = await create('Gone');
+    const turn = await runningTurn(bot);
+    const transcript = new TurnTranscript(turn);
+    const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
+    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
+    expect(await bots.delete(bot)).toBe('deleted');
+
+    let refused: unknown = null;
+    try {
+      for (const written of transcript.apply({ type: 'text.done', text: 'Done.' })) {
+        await write(written);
+      }
+    } catch (error) {
+      refused = error;
+    }
+
+    expect(refused).toBeInstanceOf(TurnGoneError);
+    expect(failureKindOf(refused)).not.toBe('storage');
+    expect(stream.publish).not.toHaveBeenCalled();
   });
 
   // What breaks this: a refusal of the statement (a broken constraint, a
@@ -1378,6 +1566,7 @@ describe('bots chat (integration)', () => {
         create: () => ({ review: async () => ({ effect: 'none' }) }),
       } as unknown as BotRuleReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
+      new BotTurnHoldPolicy(turns),
     );
   }
 
@@ -1837,7 +2026,7 @@ describe('bots chat (integration)', () => {
     expect(count).toBe(1);
   });
 
-  // Issue #728. What breaks this: an approved call's words stored as they
+  // What breaks this: an approved call's words stored as they
   // came, so a NUL makes Postgres refuse the result, the job retries, and
   // the guard that stops a retry (a stored result) never holds: the call
   // runs again.
@@ -2740,7 +2929,7 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
     });
 
-    // 27 §7. What breaks this: a second watch of one pull request holding two
+    // What breaks this: a second watch of one pull request holding two
     // rows (two wakes per event), a watch again resetting the wake limit, the
     // webhook's read finding another pull request's or another workspace's
     // bots, or a row that names a session and a pull request at once.
@@ -2823,7 +3012,7 @@ describe('bots chat (integration)', () => {
       ).toContain(`WHERE (("resourceKind")::text = 'pull_request'::text)`);
     });
 
-    // Codex on #638. What breaks this: two events on one pull request,
+    // What breaks this: two events on one pull request,
     // delivered together, both reading the count before either writes it,
     // so a watch wakes its bot past the limit.
     it('takes one wake per event, never past the limit, even for events delivered together', async () => {
@@ -2853,6 +3042,67 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(
         BOT_SUBSCRIPTION_WAKE_LIMIT,
       );
+    });
+
+    // What breaks this: a project's subscription refused by the table's
+    // checks, a change to a task not finding the bots that follow its
+    // project or milestone, watching again resetting the count, or a
+    // deleted milestone's subscriptions left behind.
+    it('stores a project or milestone watch, finds it by either place, and ends a milestone one', async () => {
+      const bot = await create('Plan watcher');
+      const project = randomUUID();
+      const milestone = randomUUID();
+      const plan = (
+        scope: 'project' | 'milestone',
+        resourceId: string,
+        taskEvents: PlanTaskEventKind[],
+      ) =>
+        BotSubscriptionEntity.subscribeToPlan({
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          scope,
+          resourceId,
+          taskEvents,
+          originTurnId: null,
+          purpose: null,
+          credentialScopes: null,
+          timeZone: null,
+        });
+      const onProject = await subscriptions.subscribe(plan('project', project, ['completed']));
+      const onMilestone = await subscriptions.subscribe(plan('milestone', milestone, ['blocked']));
+      expect(onProject.plan).toEqual({ scope: 'project', id: project, taskEvents: ['completed'] });
+      await subscriptions.countWake(onProject.id);
+
+      const again = await subscriptions.subscribe(plan('project', project, ['created', 'deleted']));
+      expect(again).toMatchObject({ id: onProject.id, wakes: 1 });
+      expect(again.taskEvents).toEqual(['created', 'deleted']);
+
+      expect(
+        (
+          await subscriptions.findIdsForPlan(bot.organizationId, {
+            projectIds: [project],
+            milestoneIds: [milestone],
+          })
+        ).sort(),
+      ).toEqual([onProject.id, onMilestone.id].sort());
+      expect(
+        await subscriptions.findIdsForPlan(bot.organizationId, {
+          projectIds: [randomUUID()],
+          milestoneIds: [],
+        }),
+      ).toEqual([]);
+
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET "taskEvents" = '[]'::jsonb WHERE id = $1`, [
+          onProject.id,
+        ]),
+      ).rejects.toThrow(/CHK_bot_subscription_subject/);
+
+      expect(await subscriptions.endForMilestone(bot.organizationId, milestone)).toBe(1);
+      expect(
+        await subscriptions.unsubscribePlan(bot.organizationId, bot.id, 'project', project),
+      ).toBe(true);
+      expect(await subscriptions.countForBot(bot.organizationId, bot.id)).toBe(0);
     });
 
     it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {

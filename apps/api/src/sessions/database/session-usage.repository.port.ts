@@ -36,7 +36,7 @@ export interface SessionUsageWeek {
 
 /**
  * The sessions module's published read of turn usage, for other modules
- * (23 §4: Plan's Stats reads tokens per model and agent cost through it).
+ * (Plan's Stats reads tokens per model and agent cost through it).
  *
  * A read port, not a `RepositoryPort`: it aggregates `session_turn` and never
  * hands out a turn, so nothing that holds it can write one. Bound to

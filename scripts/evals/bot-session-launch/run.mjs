@@ -2,16 +2,15 @@
 // Does a bot launch a session the way the person asked?
 //
 // A person tells a bot "start it on Opus 5.5 at high effort" and expects that
-// session, not the host's default (`product/versions/mvp/25-bots.md`,
-// `start_session`). Each case in `cases.json` is one such message. The runner
-// sends it to a real bot on a running API, exactly as the console's chat
-// does, and reads the Needs input card the bot's `start_session` call raises:
-// the card is the server's own reading of the launch (model resolved from the
-// catalog, effort, permission, base branch), so a case passes when the card
-// says what the person asked for, the call carries the fields the case names
-// and none it did not ask for. A case marked `refused` passes when no card
-// was raised and the bot's reply names what the agent offers instead.
-// Nothing is started: every card is answered `stop`.
+// session, not the host's default (`start_session`). Each case in `cases.json`
+// is one such message. The runner sends it to a real bot on a running API,
+// exactly as the console's chat does, and reads the Needs input card the bot's
+// `start_session` call raises: the card is the server's own reading of the
+// launch (model resolved from the catalog, effort, permission, base branch), so
+// a case passes when the card says what the person asked for, the call carries
+// the fields the case names and none it did not ask for. A case marked
+// `refused` passes when no card was raised and the bot's reply names what the
+// agent offers instead. Nothing is started: every card is answered `stop`.
 //
 //   node scripts/evals/bot-session-launch/run.mjs                 every case
 //   node scripts/evals/bot-session-launch/run.mjs --case <id>     one case

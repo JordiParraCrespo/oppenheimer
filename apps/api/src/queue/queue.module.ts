@@ -60,6 +60,12 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
     defaultJobOptions: DURABLE_JOB_OPTIONS,
     stagedOnOutbox: true,
   },
+  // A reply is claimed before it is sent, so a retry sends it once.
+  {
+    name: QUEUE_NAMES.CLOUD_REPLY_WAKES,
+    defaultJobOptions: DURABLE_JOB_OPTIONS,
+    stagedOnOutbox: true,
+  },
   // Scheduler-driven queues (the automation tick, the daily purges): the
   // root defaults from `app.module.ts`.
   { name: QUEUE_NAMES.HOST_RETENTION },

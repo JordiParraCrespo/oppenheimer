@@ -49,6 +49,9 @@ this note says what the real thing does instead.
   (Changed 2026-11-05: the board first had **Later** before To do; Jordi
   dropped it for **In review**, where finished work waits to be looked at
   before Done. Tasks in Later moved to the end of To do.)
+  (Changed 2026-11-12: the first column is labelled **Not started**, so
+  "To do" no longer names it as well as the TODO view; its value is still
+  `todo`. `20-plan-calendar.md` §6.)
 - **A card** shows: a done checkbox, the title, notes (two lines, hidden
   when done), the project (only under All projects), the goal (unless
   filtered to it), the due date as Today / Tomorrow / Yesterday / *Oct 7*

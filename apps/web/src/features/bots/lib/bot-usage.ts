@@ -1,10 +1,10 @@
 import type { BotTokenCounts, BotUsage } from '@oppenheimer/shared/schemas/bot';
 
 /**
- * What the `/usage` card reads off a bot's usage (`25-bots.md` §4.1): the
- * totals of its turns and of its calls outside them, the cache's share of
- * what was sent, and each model's share of what the turns spent. Cache reads
- * and writes are part of the input; what the card calls Input is the rest.
+ * What the `/usage` card reads off a bot's usage: the totals of its turns
+ * and of its calls outside them, the cache's share of what was sent, and
+ * each model's share of what the turns spent. Cache reads and writes are
+ * part of the input; what the card calls Input is the rest.
  */
 export interface BotUsageTotals extends BotTokenCounts {
   /** Every token, in and out, the turns and the calls outside them alike. */

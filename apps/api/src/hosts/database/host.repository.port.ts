@@ -5,8 +5,7 @@ import type { HostNetwork, HostVitals, StoredHostInventory } from '../domain/hos
 
 /**
  * How long after its last heartbeat a host still counts as attached: twice the
- * runner's 15-second heartbeat, so one missed beat is not an outage
- * (`product/versions/mvp/01-protocol.md`).
+ * runner's 15-second heartbeat, so one missed beat is not an outage.
  */
 export const HOST_ONLINE_WINDOW_SECONDS = 30;
 
@@ -94,6 +93,13 @@ export interface HostRepositoryPort {
    * the account is the system acting on the account's own machines.
    */
   findOwnedBySystem(ownerUserId: string): Promise<HostEntity[]>;
+  /**
+   * `hostId` and every host `ownerUserId` owns, paired only, with what their
+   * runners last reported (`capabilities` off the inventory, as the console
+   * reads them), and no access scope: the control plane acting for a session
+   * it launched, which started on `hostId`.
+   */
+  findPairedWithInventoryForMachine(hostId: string, ownerUserId: string): Promise<HostEntity[]>;
   /**
    * Writes a loaded host back, only if nobody has written it since it was
    * loaded; otherwise `VersionConflictException` and nothing is written,

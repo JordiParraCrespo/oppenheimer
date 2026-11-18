@@ -23,4 +23,4 @@ export * from './lib/format-day';
 export * from './lib/format-duration';
 export * from './lib/format-trigger';
 export { default as i18n, i18nReady } from './lib/i18n';
-export type { FailureHelp, FailureReason } from './lib/start-failure';
+export { type FailureHelp, type FailureReason, readableDetail } from './lib/start-failure';

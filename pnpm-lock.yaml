@@ -692,8 +692,8 @@ importers:
         specifier: ^1.32.1
         version: 1.32.1(zod@4.6.5)
       '@openai/agents':
-        specifier: ^0.20.0
-        version: 0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
+        specifier: ^0.21.0
+        version: 0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
       '@oppenheimer/backend-llm':
         specifier: workspace:*
         version: link:../llm
@@ -4557,26 +4557,26 @@ packages:
   '@novnc/novnc@1.7.0':
     resolution: {integrity: sha512-ucEJOx4T2avIRCleodk7YobZj5O2Ga2AeLfQ69A/yjG9HHba2+PDgwSkN3FttrmG+70ZGx21sElNFouK13RzyA==}
 
-  '@openai/agents-core@0.20.0':
-    resolution: {integrity: sha512-9nJJ3iyQTwO2kmrZJPMqnHI61g3xp2DgtpW4V0cgNtYot5jocDqAMN5+dkjtsBo64U3Wbl7rIAV0q5kvycoIIA==}
+  '@openai/agents-core@0.21.0':
+    resolution: {integrity: sha512-P2jJhc85xrKpe9GUOHAVfPHqK52my49fD1CI0LnfYEvBUwZxJXQI6lgSwby9nWhvQECveM9OvBUglAXuArsHXw==}
     peerDependencies:
       zod: ^4.0.0
     peerDependenciesMeta:
       zod:
         optional: true
 
-  '@openai/agents-openai@0.20.0':
-    resolution: {integrity: sha512-6jAwFlUvlRiN/OBwTZa8xUSwbXb5nxGtSUG6kKEW19Zo70kN+CLqaVLTHy8cQpnQiTEMPuAICAXklRx7kTfE9Q==}
+  '@openai/agents-openai@0.21.0':
+    resolution: {integrity: sha512-Y1u1ek6FwKx8j+T7gRYcm4kKyN0irqsyZm0XUDZ+g+8s15tu4EhNwNJ92zOHGx7Vjkr2RugWBxTeNspHjw/lQw==}
     peerDependencies:
       zod: ^4.0.0
 
-  '@openai/agents-realtime@0.20.0':
-    resolution: {integrity: sha512-KK3w9k9rkqv5mC25vykWTe/1IIcOMsqwJs9mB0aX9Z2Us487xGduZgqr+ENEzthjZbQvTi/+qUv/tfoZeN/p/w==}
+  '@openai/agents-realtime@0.21.0':
+    resolution: {integrity: sha512-nI0jGkSdivlXzS7HXAB1EVplaeSyoAvfM2ofHheJDJdshs3UQl3x405nmTflKWye+wQrqemK4uxL06NIhgvjHg==}
     peerDependencies:
       zod: ^4.0.0
 
-  '@openai/agents@0.20.0':
-    resolution: {integrity: sha512-k3fm1qJ5VjYvBI1juwZGDdhtpd7CZqJlt+6zIMcmzHD1mIQoW9HhXN8Wv9G9PpemWz9ykaxj6CIQkY8kMAuWjA==}
+  '@openai/agents@0.21.0':
+    resolution: {integrity: sha512-NpJ74/dGbpYZiRYF474pCaBpxqh4A8+WHbZmaEZVQpRqieZAVH+MV4fesR9MtRGUZfpW5B91zuHzIilQp2iSxQ==}
     peerDependencies:
       zod: ^4.0.0
 
@@ -6819,6 +6819,9 @@ packages:
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -17424,7 +17427,7 @@ snapshots:
 
   '@novnc/novnc@1.7.0(patch_hash=65yvh7dxum3rzfbz5h2ikwpzty)': {}
 
-  '@openai/agents-core@0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
+  '@openai/agents-core@0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       debug: 4.4.3
@@ -17440,9 +17443,9 @@ snapshots:
       - undici
       - ws
 
-  '@openai/agents-openai@0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
+  '@openai/agents-openai@0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
     dependencies:
-      '@openai/agents-core': 0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
+      '@openai/agents-core': 0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
       openai: 7.34.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
       zod: 4.6.5
     transitivePeerDependencies:
@@ -17453,10 +17456,10 @@ snapshots:
       - undici
       - ws
 
-  '@openai/agents-realtime@0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(zod@4.6.5)':
+  '@openai/agents-realtime@0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(zod@4.6.5)':
     dependencies:
-      '@openai/agents-core': 0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
-      '@types/ws': 8.18.1
+      '@openai/agents-core': 0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
+      '@types/ws': 8.18.2
       ws: 8.22.0
       zod: 4.6.5
     transitivePeerDependencies:
@@ -17468,11 +17471,11 @@ snapshots:
       - undici
       - utf-8-validate
 
-  '@openai/agents@0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
+  '@openai/agents@0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
     dependencies:
-      '@openai/agents-core': 0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
-      '@openai/agents-openai': 0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
-      '@openai/agents-realtime': 0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(zod@4.6.5)
+      '@openai/agents-core': 0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
+      '@openai/agents-openai': 0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
+      '@openai/agents-realtime': 0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(zod@4.6.5)
       openai: 7.34.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)
       zod: 4.6.5
     transitivePeerDependencies:
@@ -19383,6 +19386,10 @@ snapshots:
   '@types/unist@3.0.3': {}
 
   '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 22.20.1
+
+  '@types/ws@8.18.2':
     dependencies:
       '@types/node': 22.20.1
 

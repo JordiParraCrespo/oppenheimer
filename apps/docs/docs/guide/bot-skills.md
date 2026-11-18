@@ -16,6 +16,8 @@ Every bot also has one built-in skill, `oppenheimer`: before it answers a questi
 
 A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. When a session the bot follows finishes, its report ends with a recap of that session, unasked. A Claude Code session does the same when you ask it to recall or catch you up, and ends each task it finishes with one; a Codex session does not yet.
 
+Both are listed in **Settings → Skills** under **Built in**, below your bot's own skills. Open one with its view button to read the instructions the bot follows; built-in skills cannot be edited or deleted. A skill of the bot's own saved under a built-in's name before that name was reserved is listed with the bot's skills instead, and the bot uses that one.
+
 ## Built-in commands
 
 Built-in commands work for every bot:

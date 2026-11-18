@@ -35,8 +35,11 @@ declare global {
     harness: {
       host: { hold(): void; release(): void; print(text: string): void; echoes: number };
       renderer(): 'dom' | 'webgl';
+      faceReady(): boolean;
       watchCursors(): void;
       stopWatching(): number[];
+      watchBubbles(text: string): void;
+      stopWatchingBubbles(): { grid: number; bubble: number | null }[];
       screen(): { x: number; y: number; width: number; height: number };
     };
   }

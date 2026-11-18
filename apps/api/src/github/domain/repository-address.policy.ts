@@ -46,7 +46,7 @@ export interface AppAddressRefusal {
 /**
  * The address narrowed to the App, for what only the App can do (writes in
  * the caller's name, a session that clones), or the refusal for one read
- * through a token (§6.2), which the caller raises as `GITHUB_022`.
+ * through a token, which the caller raises as `GITHUB_022`.
  */
 export function appAddressOf<T extends RepositoryAddress>(
   address: T,

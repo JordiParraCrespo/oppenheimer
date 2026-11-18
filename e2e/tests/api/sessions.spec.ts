@@ -21,8 +21,8 @@ import {
  * Creating a session needs a **host** and a **connected GitHub installation**.
  * Both are set up here through the real routes — minting a pairing token and
  * redeeming it the way a runner does, and connecting an installation the GitHub
- * stub serves (`support/sessions.ts`, and `e2e/README.md` for why there is a
- * stub at all). The refusals need no setup and always run.
+ * stub serves (`support/sessions.ts`). The refusals need no setup and always
+ * run.
  */
 
 test.describe('Sessions', () => {

@@ -27,7 +27,11 @@ function setup(saveSteps: BotMessageRepositoryPort['saveSteps']) {
     model: 'claude-opus',
     effort: null,
   });
-  const messages: Pick<BotMessageRepositoryPort, 'insert' | 'saveSteps' | 'placeSteer'> = {
+  const messages: Pick<
+    BotMessageRepositoryPort,
+    'insert' | 'saveSteps' | 'placeSteer' | 'removeTurnWords'
+  > = {
+    removeTurnWords: vi.fn().mockResolvedValue(undefined),
     insert: vi.fn().mockResolvedValue(undefined),
     saveSteps: vi.fn(saveSteps),
     placeSteer: vi.fn().mockResolvedValue(undefined),
@@ -55,7 +59,7 @@ function setup(saveSteps: BotMessageRepositoryPort['saveSteps']) {
     output: 'Factura',
     isError: false,
   });
-  return { write, messages, stream, started, finished };
+  return { write, messages, stream, started, finished, turn };
 }
 
 async function writeAll(write: (w: TranscriptWrite) => Promise<void>, writes: TranscriptWrite[]) {
@@ -84,6 +88,17 @@ describe('TurnWriteFactory', () => {
       turnId: line.turnId,
       messageId: line.id,
     });
+  });
+
+  // What breaks this: a quiet turn's take-back announced as a message, so
+  // the chat is told to draw a message that is gone.
+  it('removes the words a quiet turn takes back, of that turn, and announces no message', async () => {
+    const { write, messages, stream, turn } = setup(async () => undefined);
+    const messageIds = [randomUUID()];
+    await write({ kind: 'unsay', messageIds });
+
+    expect(messages.removeTurnWords).toHaveBeenCalledWith(turn, messageIds);
+    expect(stream.publish).not.toHaveBeenCalled();
   });
 
   // What breaks this: a refused write read as `other`, which the chat draws

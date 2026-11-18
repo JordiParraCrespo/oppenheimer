@@ -62,7 +62,7 @@ export interface BotToolCallContext {
   /** The sender's IANA zone; times a tool writes are in it. */
   timeZone: string;
   /**
-   * The bot's approval preset (`25-bots.md` §5): `auto` (Approve for me)
+   * The bot's approval preset: `auto` (Approve for me)
    * runs what stays inside Oppenheimer and asks for what reaches outside it;
    * `full` runs everything.
    */
@@ -114,7 +114,7 @@ export interface BotSubagentRunner {
 export interface BotToolContext extends BotToolCallContext {
   approvals: BotApprovalRequesterPort;
   /**
-   * What the owner set for the bot's tools (`25-bots.md` §5), read when the
+   * What the owner set for the bot's tools, read when the
    * turn started: each tool's decision, the standing grants, the rules.
    */
   permissions: BotPermissions;
@@ -165,7 +165,7 @@ export interface BotToolResult {
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
 export interface BotToolSpec<Input extends z.ZodType> {
-  /** snake_case, from the catalog in `25-bots.md` §4. */
+  /** snake_case. */
   name: string;
   /**
    * The first sentence says what it does (the prompt's list shows it); then
@@ -394,7 +394,7 @@ export function defineBotTool<Input extends z.ZodType>(
 }
 
 /**
- * How an asking tool's call is decided, on the call itself (`25-bots.md` §5),
+ * How an asking tool's call is decided, on the call itself,
  * read once and normalized once:
  * - a call that `escalates` raises a card of its own offering only this call,
  *   whatever the preset, Settings, a standing grant or a rule would let run;

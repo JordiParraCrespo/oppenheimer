@@ -39,11 +39,10 @@ export interface SessionWatch {
 }
 
 /**
- * A bot starts following a session (`27-bot-subscriptions.md` §3), from
- * `start_session` or `watch_session`: the session read as the owner, so a
- * bot follows only what its owner may read, and the subscription stored
- * with the turn that made it, its scopes and its zone. A task the bot hands
- * off also gets its silent stall check (§4.1).
+ * A bot starts following a session, from `start_session` or `watch_session`:
+ * the session read as the owner, so a bot follows only what its owner may read,
+ * and the subscription stored with the turn that made it, its scopes and its
+ * zone. A task the bot hands off also gets its silent stall check.
  */
 @Injectable()
 export class BotSessionWatchResolver {
@@ -186,11 +185,11 @@ export class BotSessionWatchResolver {
   }
 
   /**
-   * Has the session's runner watch its terminal for `pattern` on behalf of
-   * this subscription (`27-bot-subscriptions.md` §2): the sessions module
-   * makes the watch and tells the host, and the subscription names it. A
-   * pattern it replaces is removed. Answers what the host could not take
-   * just now (`host_offline`, `not_supported`), which the tool says.
+   * Has the session's runner watch its terminal for `pattern` on behalf of this
+   * subscription: the sessions module makes the watch and tells the host, and
+   * the subscription names it. A pattern it replaces is removed. Answers what
+   * the host could not take just now (`host_offline`, `not_supported`), which
+   * the tool says.
    */
   async watchTerminal(
     context: BotToolCallContext,

@@ -8,7 +8,7 @@ import { OpenAiChatgptAuthAdapter } from '../infrastructure/openai-chatgpt-auth.
  * redeemed at `/oauth/token` with the verifier ChatGPT handed back, the
  * account comes from the access token's claims, a refused refresh is told
  * apart from an unreachable server, and a refusal for rate pauses every later
- * call (`.agents/rules/integrations.md`).
+ * call.
  */
 
 function json(status: number, body: unknown): Response {

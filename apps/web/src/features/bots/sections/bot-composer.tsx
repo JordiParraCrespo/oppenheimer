@@ -1,6 +1,7 @@
-import { ChatComposer, FieldError } from '@oppenheimer/design-system-web';
-import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
+import { ChatComposer, DropZone, FieldError } from '@oppenheimer/design-system-web';
+import { type BotWaitingMessage, isSendingBotTurn } from '@oppenheimer/frontend-consumer';
 import {
+  type SendBotMessageVariables,
   useBotActiveTurn,
   useBotGoal,
   useBotLoop,
@@ -10,13 +11,7 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import {
-  dictateInto,
-  dictationSlots,
-  ErrorAlert,
-  useDictation,
-  usePaneDrop,
-} from '@oppenheimer/frontend-web';
+import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
@@ -29,17 +24,25 @@ import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
+import { BotPaneDrop } from '@/features/bots/components/bot-pane-drop';
 import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useEscapeToStop } from '@/features/bots/hooks/use-escape-to-stop';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
-import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
-import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
+import {
+  botDraft,
+  fillBotDraft,
+  returnToBotDraft,
+  setBotDraft,
+} from '@/features/bots/lib/bot-drafts';
+import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
+import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
 /**
@@ -48,8 +51,10 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * Enter steers it (Codex's `turn/steer`): the turn takes the message at its
  * next tool call, and runs it after itself if it reaches none; Alt+Enter
  * queues it for after instead, and a message with images always waits,
- * since the running turn would not read them. Each message waiting shows
- * over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
+ * since the running turn would not read them. Escape stops the turn, as
+ * Stop does, unless another field or an open menu takes it; beside a
+ * session, only from inside the box (`useEscapeToStop`). Each message
+ * waiting shows over the box (`ChatQueuedRow`), a steer marked as one: Remove takes it
  * back, Edit takes it back into the field, and the first one's Send now
  * stops the turn under way so it runs next. A message that carried images is not taken back to edit: they were
  * sent once and the field cannot hold them again. A provider with no key in the workspace keeps
@@ -57,22 +62,24 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * the draft alone: the chips in `tools` and `engine` are elements its parent
  * made, so a keystroke renders the field and none of them. The draft is
  * kept per bot (`bot-drafts`), so it survives leaving the chat, and a
- * suggestion in the hello can fill it; the field takes focus on open and
+ * picked `/` command can fill it; the field takes focus on open and
  * after a fill. Enter sends, Shift+Enter starts a new line. The mic dictates
  * into the draft (`useDictation`), added to its end, to be read before it is
  * sent. A draft that is a `/` command being typed opens the menu of the
  * skills it can run over the box (`useSlashMenu`); picking one writes
- * `/<name> ` for its input to follow. With the menu shut, Up at the start of
+ * `/<name> ` for its input to follow, and a draft that starts with a command
+ * shows it marked, as the sent message will. With the menu shut, Up at the start of
  * the field brings back what you sent before and Down walks back to your
  * draft (`useSentHistory`); while it does, the box's caption says which
  * one ("History 1/2").
  *
- * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
- * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
- * the text, each uploaded at once (`useBotImages`). A message may be images
- * alone. A file it will not hold, or one the API refused, is said under the
- * field; while one uploads or failed, or the bot's model reads no images,
- * send is off and says why, and nothing written is lost.
+ * Images ride the message: the paperclip, a paste, or a drop holds them as
+ * tiles over the text, each uploaded at once (`useBotImages`). On the bot's
+ * own page a drop anywhere on the pane counts (`BotPaneDrop`); beside a
+ * session, only one on the box. A message may be images alone. A file it
+ * will not hold, or one the API refused, is said under the field; while one
+ * uploads or failed, or the bot's model reads no images, send is off and
+ * says why, and nothing written is lost.
  *
  * A long paste (over 1,000 characters or 10 lines) goes into the field as one
  * label, `[Pasted text #1 +1000 lines]`, the way Claude Code and Codex hold
@@ -91,6 +98,7 @@ export function BotComposer({
   model,
   tools,
   engine,
+  dropsOn = 'pane',
 }: {
   botId: string;
   name: string;
@@ -99,6 +107,8 @@ export function BotComposer({
   model: string | null;
   tools: ReactNode;
   engine: ReactNode;
+  /** Where a dropped image is taken: anywhere on the `pane`, or on the `box` alone. */
+  dropsOn?: 'pane' | 'box';
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -118,12 +128,13 @@ export function BotComposer({
   const modelLabel = botModelOf(provider, model)?.label ?? providerLabel;
   const images = useBotImages(botId, takesImages, modelLabel);
   const picker = useRef<HTMLInputElement>(null);
-  usePaneDrop(images.hold);
+  const box = useRef<HTMLDivElement>(null);
+  // The images each send took off the composer, to hold again if the API refuses it.
+  const heldFor = useRef(new WeakMap<SendBotMessageVariables, readonly HeldImage[]>());
   const send = useSendBotMessage({
-    onSuccess: (_turn, sent) => {
-      setBotDraft(sent.id, '');
-      pastes.clear();
-      images.clear();
+    onError: (_error, sent) => {
+      returnToBotDraft(sent.id, sent.content);
+      images.restore(heldFor.current.get(sent) ?? []);
     },
   });
   const cancel = useCancelBotTurn();
@@ -146,9 +157,7 @@ export function BotComposer({
   const message = (steer: boolean) => ({
     id: botId,
     content: pastes.content,
-    attachmentIds: images.images.flatMap((image) =>
-      image.attachmentId ? [image.attachmentId] : [],
-    ),
+    attachments: images.images.flatMap((image) => (image.attachment ? [image.attachment] : [])),
     steer: steer && images.images.length === 0,
   });
   const dictation = useDictation({
@@ -156,24 +165,37 @@ export function BotComposer({
     onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
   });
 
+  // A turn drawn for a send the API has not answered has no id there yet: Stop and Edit wait for it.
+  function stopTurn(turnId: string) {
+    if (!isSendingBotTurn(turnId)) cancel.mutate({ id: botId, turnId });
+  }
+
+  // On its own page the chat is the screen; beside a session, only its box is the bot's.
+  useEscapeToStop(field, dropsOn === 'box' ? box : null, active ? () => stopTurn(active.id) : null);
+
   // Edit: the waiting turn is called off, and its words come back into the field.
   function takeBack(message: BotWaitingMessage) {
+    if (isSendingBotTurn(message.turnId)) return;
     cancel.mutate(
       { id: botId, turnId: message.turnId },
       {
-        onSuccess: () => {
-          const current = botDraft(botId);
-          setBotDraft(botId, current ? `${message.text}\n${current}` : message.text);
-        },
+        onSuccess: () => returnToBotDraft(botId, message.text),
       },
     );
   }
 
   // A built-in the console runs itself (`/goal clear`) sends the bot nothing.
+  // A send leaves the field at once, drawn in the chat before the API answers;
+  // a refusal puts its words and images back, in front of anything written since.
   function submit(steer: boolean) {
     recall.reset();
     if (builtIn.runLocally(() => setBotDraft(botId, ''))) return;
-    send.mutate(message(steer));
+    const sent = message(steer);
+    heldFor.current.set(sent, images.images);
+    setBotDraft(botId, '');
+    pastes.clear();
+    images.clear();
+    send.mutate(sent);
   }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
@@ -230,7 +252,7 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div className="relative">
+      <div ref={box} className="relative">
         {slash.open ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
@@ -239,61 +261,68 @@ export function BotComposer({
             onPick={slash.pick}
           />
         ) : null}
-        <ChatComposer
-          onKeyDownCapture={onKeyDownCapture}
-          value={draft}
-          onValueChange={setDraft}
-          inputRef={field}
-          onSubmit={() => submit(running)}
-          onAltSubmit={running ? () => submit(false) : undefined}
-          onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
-          busy={
-            (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
-          }
-          caption={recall.at ? t('bots.chat.history', recall.at) : undefined}
-          sendBlockedReason={blocked}
-          allowEmpty={images.images.length > 0}
-          onAttach={() => picker.current?.click()}
-          onPaste={onPaste}
-          attachments={
-            images.images.length > 0
-              ? images.images.map((image) => (
-                  <BotComposerImage
-                    key={image.key}
-                    image={image}
-                    onRemove={() => images.remove(image.key)}
-                  />
-                ))
-              : undefined
-          }
-          placeholder={
-            running
-              ? t('bots.chat.placeholderRunning', { name })
-              : t('bots.chat.placeholder', { name })
-          }
-          tools={tools}
-          engine={engine}
-          above={
-            top ? (
-              <BotComposerTop
-                botId={botId}
-                top={top}
-                runningTurnId={active?.status === 'running' ? active.id : null}
-                noKey={noKey}
-                notice={builtIn.notice}
-                onAddKey={() => navigate({ to: '/settings/model-providers' })}
-                onCancel={(turnId) => cancel.mutate({ id: botId, turnId })}
-                onTakeBack={takeBack}
-              />
-            ) : undefined
-          }
-          dictation={dictationSlots(dictation)}
-          labels={{
-            send: t('bots.chat.send'),
-            stop: t('bots.chat.stop'),
-            attach: t('bots.chat.images.attach'),
-          }}
-        />
+        {dropsOn === 'pane' ? <BotPaneDrop onFiles={images.hold} /> : null}
+        <DropZone onFiles={images.hold} disabled={dropsOn === 'pane'}>
+          <ChatComposer
+            layout="inline"
+            onKeyDownCapture={onKeyDownCapture}
+            value={draft}
+            command={leadingCommand(draft) ?? undefined}
+            onValueChange={setDraft}
+            inputRef={field}
+            onSubmit={() => submit(running)}
+            onAltSubmit={running ? () => submit(false) : undefined}
+            onStop={() => active && stopTurn(active.id)}
+            busy={
+              (active !== null || send.isPending) &&
+              draft.trim() === '' &&
+              images.images.length === 0
+            }
+            caption={recall.at ? t('bots.chat.history', recall.at) : undefined}
+            sendBlockedReason={blocked}
+            allowEmpty={images.images.length > 0}
+            onAttach={() => picker.current?.click()}
+            onPaste={onPaste}
+            attachments={
+              images.images.length > 0
+                ? images.images.map((image) => (
+                    <BotComposerImage
+                      key={image.key}
+                      image={image}
+                      onRemove={() => images.remove(image.key)}
+                    />
+                  ))
+                : undefined
+            }
+            placeholder={
+              running
+                ? t('bots.chat.placeholderRunning', { name })
+                : t('bots.chat.placeholder', { name })
+            }
+            tools={tools}
+            engine={engine}
+            above={
+              top ? (
+                <BotComposerTop
+                  botId={botId}
+                  top={top}
+                  runningTurnId={active?.status === 'running' ? active.id : null}
+                  noKey={noKey}
+                  notice={builtIn.notice}
+                  onAddKey={() => navigate({ to: '/settings/model-providers' })}
+                  onCancel={stopTurn}
+                  onTakeBack={takeBack}
+                />
+              ) : undefined
+            }
+            dictation={dictationSlots(dictation)}
+            labels={{
+              send: t('bots.chat.send'),
+              stop: t('bots.chat.stop'),
+              attach: t('bots.chat.images.attach'),
+            }}
+          />
+        </DropZone>
       </div>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>

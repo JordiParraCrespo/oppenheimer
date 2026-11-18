@@ -17,12 +17,11 @@ import { LinkWhatsappCommand } from './link-whatsapp.command';
 const PAIRABLE = new Set(['pairing', 'logged_out', 'unlinked']);
 
 /**
- * Links a number on one of the caller's hosts (`whatsapp.md` §1): asks the
- * host's runner to pair a new device, whose QR codes come back as the host's
- * `whatsapp.state` reports. The caller's number already on that host is
- * paired again, keeping its row and its messages; one that is connected is
- * left as it is. A host holds one device, so another person's number there
- * refuses.
+ * Links a number on one of the caller's hosts: asks the host's runner to pair a
+ * new device, whose QR codes come back as the host's `whatsapp.state` reports.
+ * The caller's number already on that host is paired again, keeping its row and
+ * its messages; one that is connected is left as it is. A host holds one
+ * device, so another person's number there refuses.
  */
 @CommandHandler(LinkWhatsappCommand)
 export class LinkWhatsappCommandHandler

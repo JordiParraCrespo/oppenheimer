@@ -132,7 +132,12 @@ describe('toTurns', () => {
             ],
           },
         },
-        { type: 'tool_use', id: 'w', name: 'Write', input: { file_path: 'b.ts', content: '1\n2' } },
+        {
+          type: 'tool_use',
+          id: 'w',
+          name: 'Write',
+          input: { file_path: 'b.ts', content: '1\n2\n' },
+        },
         {
           type: 'tool_use',
           id: 'todo',
@@ -155,6 +160,13 @@ describe('toTurns', () => {
     expect(calls.map((call) => call.kind)).toEqual(['edit', 'write', 'todo', 'plan', 'mcp']);
     expect(calls[0]?.diff).toEqual({ additions: 4, deletions: 3 });
     expect(calls[1]?.diff).toEqual({ additions: 2, deletions: 0 });
+    // What breaks this: the chat's file viewer has nothing to show once a
+    // call keeps the counts and drops the text they were counted off.
+    expect(calls[0]?.edits).toEqual([
+      { before: 'a\nb', after: 'a\nb\nc' },
+      { before: 'x', after: 'y' },
+    ]);
+    expect(calls[1]?.edits).toEqual([{ before: '', after: '1\n2\n' }]);
     expect(calls[2]?.todos).toEqual([
       { text: 'Read', status: 'completed' },
       { text: 'Fix', status: 'in_progress' },

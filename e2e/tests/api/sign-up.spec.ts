@@ -48,7 +48,7 @@ test.describe('sign-up', () => {
   });
 
   /**
-   * The personal workspace (`product/versions/mvp/00-scope.md`): sign-up
+   * The personal workspace: sign-up
    * provisions one organization owned by the account and nothing else — no
    * "General" team, no second membership. The hook is best-effort and runs a
    * beat behind the response; onboarding (`e2e/tests/web/onboarding.spec.ts`)

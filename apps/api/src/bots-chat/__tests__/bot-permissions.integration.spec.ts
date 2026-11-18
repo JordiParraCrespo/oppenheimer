@@ -22,13 +22,12 @@ import { BotPermissionRuleEntity } from '../domain/bot-permission-rule.entity';
 import { BotToolPermissionEntity } from '../domain/bot-tool-permission.entity';
 
 /**
- * A bot's tool settings, grants and rules against a real Postgres
- * (`product/versions/mvp/25-bots.md` §5): one decision per tool however
- * often it is set (`NULLS NOT DISTINCT`), a decision and a grant side by
- * side, the grant and rule caps counted under the bot's lock so two racing
- * writes cannot pass them, deletes reaching only the caller's workspace and
- * only grants, and everything gone with the bot. How a setting decides a
- * call is the policy spec's.
+ * A bot's tool settings, grants and rules against a real Postgres: one decision
+ * per tool however often it is set (`NULLS NOT DISTINCT`), a decision and a
+ * grant side by side, the grant and rule caps counted under the bot's lock so
+ * two racing writes cannot pass them, deletes reaching only the caller's
+ * workspace and only grants, and everything gone with the bot. How a setting
+ * decides a call is the policy spec's.
  */
 describe('bot permissions (integration)', () => {
   let dataSource: DataSource;

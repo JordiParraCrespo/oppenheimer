@@ -5,6 +5,8 @@
   "copied": "Copied",
   "copy": "Copy",
   "copyCode": "Copy code",
+  "wrapLines": "Wrap lines",
+  "unwrapLines": "Unwrap lines",
   "loading": "Loading...",
   "or": "or",
   "relative": {
@@ -18,7 +20,6 @@
   },
   "dismiss": "Dismiss",
   "retry": "Try again",
-  "breadcrumb": "Breadcrumb",
   "dateField": {
     "none": "No date",
     "previousMonth": "Previous month",
@@ -145,5 +146,10 @@
     "hosts": "Search hosts",
     "groups": "Search groups",
     "noMatch": "Nothing matches “{{query}}”."
+  },
+  "projectFilter": {
+    "label": "Project",
+    "all": "All projects",
+    "none": "No project"
   }
 }

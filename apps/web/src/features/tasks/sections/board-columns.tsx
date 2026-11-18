@@ -7,6 +7,7 @@ import {
   TaskColumn,
   TaskColumnAdd,
   TaskColumnMore,
+  TaskMarquee,
   TaskSelectionBar,
   TaskSessionChip,
 } from '@oppenheimer/design-system-web';
@@ -29,13 +30,16 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ColumnComposer } from '../components/column-composer';
+import { MoveTasksMenu } from '../components/move-tasks-menu';
 import { DeleteTasksDialog } from '../dialogs/delete-tasks';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
+import { useBoardMarquee } from '../hooks/use-board-marquee';
+import { useBulkMove } from '../hooks/use-bulk-move';
 import { useCardSelection } from '../hooks/use-card-selection';
 import { useToday } from '../hooks/use-today';
 import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
-import { cardClickPick } from '../lib/card-selection';
+import { cardClickPick, droppedMoves, movesToColumn, OWNS_PRESS } from '../lib/card-selection';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -43,21 +47,23 @@ import { SESSION_STATUS } from '../lib/session-state';
 const board = getRouteApi('/_authenticated/plan/');
 
 /**
- * The four columns (`18-plan-product.md` §2) on the design system's board:
- * cards in board order, dragged within and across columns on the drag
- * layer, ticked to Done and back, added at a column's foot. A drop moves the
- * card at once and the server's answer settles it; a refused move puts it
- * back and says why above the columns. Done shows the past week's tasks and
- * folds the older ones under "Show older" (`?older=1` opens it), so the
- * column does not grow without end. It reads under Suspense, in the
- * screen's `QueryState`; a refetch that fails keeps the columns and says so
- * above them.
+ * The four columns on the design system's board: cards in board order,
+ * dragged within and across columns on the drag layer, ticked to Done and
+ * back, added at a column's foot. A drop moves the card at once and the
+ * server's answer settles it; a refused move puts it back and says why
+ * above the columns. Done shows the past week's tasks and folds the older
+ * ones under "Show older" (`?older=1` opens it), so the column does not
+ * grow without end. It reads under Suspense, in the screen's `QueryState`;
+ * a refetch that fails keeps the columns and says so above them.
  *
  * Cards can be picked to act on together (`useCardSelection`): ⌘/Ctrl-click
  * toggles one, Shift-click takes the run from the last one toggled, and while
- * any are picked a plain click toggles too. The picked cards' bar floats at
- * the foot of the page, with Delete (asked first) and the way out; Escape
- * leaves as well.
+ * any are picked a plain click toggles too, and a drag from the board's empty
+ * space draws a rectangle that picks every card it touches
+ * (`useBoardMarquee`). Dragging a picked card brings the others along under
+ * it. The picked cards' bar floats at the foot of the page, with Move to (a
+ * column, at its foot), Delete (asked first) and the way out; Escape leaves
+ * as well.
  */
 export function BoardColumns() {
   const { t } = useTranslation();
@@ -77,6 +83,7 @@ export function BoardColumns() {
   const sessions = new Map(read.sessions.map((row) => [row.id, row]));
   const hosts = new Map(read.hosts.map((row) => [row.id, row]));
   const move = useMoveTask();
+  const bulk = useBulkMove(move);
   const create = useCreateTask({ onSuccess: () => notifySuccess('taskAdded') });
   const [composing, setComposing] = useState<TaskStatus | null>(null);
   const rows = read.tasks;
@@ -85,14 +92,20 @@ export function BoardColumns() {
     cutoff: doneCutoffOf(today),
     showOlder: Boolean(showOlder),
   });
+  const order = TASK_STATUSES.flatMap((status) => columns[status].map((row) => row.id));
+  const selection = useCardSelection(order);
   const drag = useBoardDrag(
     Object.fromEntries(
       TASK_STATUSES.map((status) => [status, columns[status].map((row) => row.id)]),
     ),
-    (next) => move.mutate(next),
+    (next) => bulk.run(droppedMoves(next, selection.picked)),
   );
-  const selection = useCardSelection(TASK_STATUSES.flatMap((status) => drag.groups[status] ?? []));
   const [deleting, setDeleting] = useState<TaskEntity[] | null>(null);
+  const marquee = useBoardMarquee({
+    picked: selection.picked,
+    onPick: selection.keep,
+    onClear: selection.clear,
+  });
   const toggleOlder = () =>
     navigate({ search: (previous) => ({ ...previous, older: showOlder ? undefined : true }) });
 
@@ -128,10 +141,17 @@ export function BoardColumns() {
           move.mutate({ id: task.id, status: task.isDone ? 'todo' : 'done', afterTaskId: null })
         }
         selected={!lifted && selection.isPicked(task.id)}
+        data-task-id={lifted ? undefined : task.id}
         project={view.projectName ?? undefined}
         milestone={view.milestoneName ?? undefined}
         due={view.due ?? undefined}
         dueTone={view.dueTone}
+        priority={view.priority}
+        priorityLabel={
+          view.priority
+            ? t('tasks.card.priority', { level: t(`tasks.priority.${view.priority}`) })
+            : undefined
+        }
         startLabel={t('tasks.card.start')}
         onStart={
           lifted || task.sessions.length > 0
@@ -140,7 +160,7 @@ export function BoardColumns() {
         }
         onClick={(event) => {
           // The card's own controls (the check, Start, the session) are theirs.
-          if ((event.target as HTMLElement).closest('button, a, input, [role="checkbox"]')) return;
+          if ((event.target as HTMLElement).closest(OWNS_PRESS)) return;
           const how = cardClickPick(event, selection.selecting);
           if (how) {
             // Shift-click would otherwise select the text between the two cards.
@@ -171,12 +191,17 @@ export function BoardColumns() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" onPointerDown={marquee.onPointerDown}>
       <ErrorAlert error={read.error} fallback={t('tasks.board.loadFailed')} />
       <ErrorAlert
         error={move.error}
         fallback={t('tasks.board.moveFailed')}
         onDismiss={move.reset}
+      />
+      <ErrorAlert
+        error={bulk.error}
+        fallback={t('tasks.board.moveFailed')}
+        onDismiss={bulk.reset}
       />
       <ErrorAlert
         error={create.error}
@@ -255,11 +280,18 @@ export function BoardColumns() {
           })}
         </TaskBoard>
       </DragProvider>
+      {marquee.box ? <TaskMarquee rect={marquee.box} /> : null}
       {selection.selecting ? (
         <TaskSelectionBar
           aria-label={t('tasks.selection.label')}
           count={t('tasks.selection.count', { count: selection.picked.length })}
         >
+          <MoveTasksMenu
+            disabled={bulk.moving}
+            onPick={(status) =>
+              bulk.run(movesToColumn(selection.picked, status, drag.groups[status] ?? []))
+            }
+          />
           <IconButton
             size="sm"
             variant="quiet"

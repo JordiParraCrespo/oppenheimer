@@ -1,9 +1,9 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
-import { provisionedUser, signInAs } from '../../support/web';
+import { pickDialogProject, provisionedUser, signInAs } from '../../support/web';
 
 const STATUS = {
-  'To do': 'todo',
+  'Not started': 'todo',
   'In progress': 'doing',
   'In review': 'review',
   Done: 'done',
@@ -28,13 +28,12 @@ async function drag(page: Page, from: Locator, to: Locator) {
 }
 
 /**
- * Plan, in a browser, against the real control plane
- * (`product/versions/mvp/17-plan.md`): the rail's third list, a task's life on
- * the board — added from the dialog and inline, dragged across columns,
- * ticked done, filed under a milestone (made on the Milestones view, where it
- * lies on the timeline), deleted — and a session started from a card,
- * which moves it to In progress and links back from the session.
- * Only GitHub is faked; the host has no runner, so the session is queued.
+ * Plan, in a browser, against the real control plane: the rail's third list, a
+ * task's life on the board — added from the dialog and inline, dragged across
+ * columns, ticked done, filed under a milestone (made on the Milestones view,
+ * where it lies on the timeline), deleted — and a session started from a card,
+ * which moves it to In progress and links back from the session. Only GitHub is
+ * faked; the host has no runner, so the session is queued.
  */
 /** A row of Plan's sidebar head: Tasks, Milestones, Calendar. */
 function planNav(page: Page, name: string) {
@@ -49,7 +48,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
 
   await page.getByRole('link', { name: 'Plan', exact: true }).click();
   await expect(page).toHaveURL(/\/plan$/);
-  for (const name of ['To do', 'In progress', 'In review', 'Done'] as const) {
+  for (const name of ['Not started', 'In progress', 'In review', 'Done'] as const) {
     await expect(column(page, name)).toBeVisible();
   }
 
@@ -59,7 +58,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await dialog.getByLabel('Title').fill('Ship the wallet list');
   await dialog.getByRole('button', { name: 'Add task' }).click();
   await expect(dialog).toBeHidden();
-  await expect(column(page, 'To do').getByText('Ship the wallet list')).toBeVisible();
+  await expect(column(page, 'Not started').getByText('Ship the wallet list')).toBeVisible();
   await expect(page.getByText('1 open')).toBeVisible();
 
   // Inline: Enter adds and stays open for the next.
@@ -86,7 +85,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await card(page, 'Ship the wallet list')
     .getByRole('checkbox', { name: 'Mark as not done' })
     .click();
-  await expect(column(page, 'To do').getByText('Ship the wallet list')).toBeVisible();
+  await expect(column(page, 'Not started').getByText('Ship the wallet list')).toBeVisible();
 
   // A milestone, made on the Milestones view, and a task filed under it; the
   // board's milestone facet filters to it.
@@ -144,9 +143,9 @@ test('a session started from a card moves it to In progress and links back', asy
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New task' });
   await dialog.getByLabel('Title').fill('Fix the empty state');
-  await dialog.getByRole('button', { name: 'Wallet' }).click();
+  await pickDialogProject(page, dialog, 'Wallet');
   await dialog.getByRole('button', { name: 'Add task' }).click();
-  await expect(column(page, 'To do').getByText('Fix the empty state')).toBeVisible();
+  await expect(column(page, 'Not started').getByText('Fix the empty state')).toBeVisible();
 
   await card(page, 'Fix the empty state').hover();
   await card(page, 'Fix the empty state').getByRole('button', { name: 'Start session' }).click();
@@ -171,7 +170,7 @@ test('a session started from a card moves it to In progress and links back', asy
   await page.getByRole('button', { name: 'New task', exact: true }).click();
   const second = page.getByRole('dialog', { name: 'New task' });
   await second.getByLabel('Title').fill('Polish the wallet list');
-  await second.getByRole('button', { name: 'Wallet' }).click();
+  await pickDialogProject(page, second, 'Wallet');
   await second.getByRole('button', { name: 'Add task' }).click();
   await card(page, 'Polish the wallet list').click();
   const edit = page.getByRole('dialog', { name: 'Edit task' });
@@ -302,15 +301,13 @@ test('the calendar: a Google meeting joins from its dialog, an event without one
   await owner.api.dispose();
 });
 
-test('To do: a task added to today, ticked done, and the overdue switch', async ({ page }) => {
+test('TODO: a task added to today, ticked done, and the overdue switch', async ({ page }) => {
   const owner = await provisionedUser('plantodo');
   await signInAs(page, owner.user);
   await page.goto('/plan');
   await planNav(page, 'TODO').click();
   await expect(page).toHaveURL(/\/plan\/todo/);
-  await expect(
-    page.getByText('Nothing on this day yet. Add a task below, or pick some with Add tasks.'),
-  ).toBeVisible();
+  await expect(page.getByText('Nothing on this day yet', { exact: true })).toBeVisible();
 
   const add = page.getByRole('textbox', { name: 'Add a task for this day' });
   await add.fill('Pay the hosting invoice');
@@ -352,7 +349,7 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(page).toHaveURL(/overdue=off/);
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(row).toBeVisible();
-  // The title opens the task on To do itself, and saving it stays on the day.
+  // The title opens the task on TODO itself, and saving it stays on the day.
   await row.getByRole('button', { name: /^Pay the hosting invoice/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Edit task' });
   await expect(dialog).toBeVisible();
@@ -365,7 +362,7 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await owner.api.dispose();
 });
 
-test('To do: Add tasks puts a dated task on today and keeps its due date; it stays until done', async ({
+test('TODO: Add tasks puts a dated task on today and keeps its due date; it stays until done', async ({
   page,
 }) => {
   const owner = await provisionedUser('plantodofocus');
@@ -381,13 +378,13 @@ test('To do: Add tasks puts a dated task on today and keeps its due date; it sta
   const planned = await owner.api.post('/api/v1/tasks', {
     data: { title: 'Migrate the queue', focusDate: local(-2) },
   });
-  expect(planned.status(), 'creating a task put on To do two days ago').toBe(201);
+  expect(planned.status(), 'creating a task put on TODO two days ago').toBe(201);
 
   await signInAs(page, owner.user);
   await page.goto('/plan/todo');
   // Put on To do two days ago and not done: it is still here, saying since when.
   const carried = page.locator('[data-slot="todo-row"]', { hasText: 'Migrate the queue' });
-  await expect(carried).toContainText('on To do since');
+  await expect(carried).toContainText('on TODO since');
   // Due in four days, it is not on today until it is put there.
   const dated = page.locator('[data-slot="todo-row"]', { hasText: 'Draft the launch post' });
   await expect(dated).toHaveCount(0);
@@ -401,6 +398,14 @@ test('To do: Add tasks puts a dated task on today and keeps its due date; it sta
   await expect(dated).toBeVisible();
   await expect(dated).toContainText(/due /);
   await expect(dated).not.toContainText('due today');
+
+  // Move puts it on tomorrow instead: it leaves today and is on the next day.
+  await dated.getByRole('button', { name: 'Move Draft the launch post to another day' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Tomorrow' }).click();
+  await expect(dated).toHaveCount(0);
+  await page.getByRole('button', { name: 'Next day' }).click();
+  await expect(dated).toBeVisible();
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
 
   // Done, the carried task stays on today's list, ticked.
   await carried.getByRole('checkbox', { name: 'Mark as done' }).click();

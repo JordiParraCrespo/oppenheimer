@@ -9,8 +9,8 @@ import type { SessionWakesPort } from '../session-wakes.port';
 
 /**
  * A GitHub event on a pull request: wake the open sessions in its workspace
- * whose agent asked to be woken by that pull request (`pull.watched`,
- * `product/next-steps/agent-tools.md` §3). Each gets one wake, keyed by the
+ * whose agent asked to be woken by that pull request (`pull.watched`). Each
+ * gets one wake, keyed by the
  * stored event, so the outbox's redelivery wakes nobody twice. Our own app's
  * events wake nobody: they are what the sessions did.
  */

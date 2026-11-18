@@ -92,7 +92,7 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
       .execute();
   }
 
-  /** A batch picked through `IDX_telegram_message_account_sent`, deleted by `ctid` (`database-design.md`). */
+  /** A batch picked through `IDX_telegram_message_account_sent`, deleted by `ctid`. */
   async pruneBefore(account: TelegramAccountRef, before: Date, limit: number): Promise<number> {
     const [, affected]: [unknown, number] = await this.repository.query(
       `DELETE FROM telegram_message WHERE ctid = ANY (ARRAY(

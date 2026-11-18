@@ -371,8 +371,8 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityDeviceScreen,
 		link.CapabilityPortForward,
 		link.CapabilityDesktopStream,
-		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilitySessionTeleport,
-		link.CapabilityCodexEnvironments,
+		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudCodex,
+		link.CapabilitySessionCloudReply, link.CapabilitySessionTeleport,
 		link.CapabilitySessionWatch,
 		link.CapabilityWhatsapp,
 		link.CapabilityTelegram,
@@ -380,6 +380,8 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityTranscriptRead,
 		link.CapabilityHostExec,
 		link.CapabilityTerminalDrive,
+		link.CapabilitySessionWindowsList,
+		link.CapabilitySessionWindowAgent,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

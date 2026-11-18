@@ -49,9 +49,7 @@
     "actions": "Opciones del bot",
     "settings": "Configuración",
     "delete": "Eliminar bot",
-    "helloBlank": "{{name}} está listo. Dile qué trabajo hacer.",
-    "startFrom": "Prueba a pedir",
-    "hello": "{{name}} está listo. ¿En qué trabajamos?",
+    "hello": "Pregunta a {{name}} lo que quieras. Puede leer tus sesiones y actuar sobre ellas.",
     "placeholder": "Escribe a {{name}}",
     "history": "Historial {{position}}/{{total}}",
     "pasted": {
@@ -65,7 +63,7 @@
       "showLess": "Mostrar menos"
     },
     "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
+    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después, Esc lo detiene",
     "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
@@ -189,48 +187,6 @@
       "moreLines_other": "+{{count}} líneas",
       "fullLines": "Ver líneas completas"
     },
-    "suggest": {
-      "task": {
-        "research": {
-          "name": "Investigar un tema",
-          "prompt": "Busca en la web y dame un resumen breve, con fuentes, sobre "
-        },
-        "summarise": {
-          "name": "Resumir algo",
-          "prompt": "Resume esto en cinco viñetas:\n\n"
-        },
-        "draft": {
-          "name": "Redactar un mensaje",
-          "prompt": "Redacta un mensaje breve y cordial para "
-        },
-        "plan": {
-          "name": "Hacer un plan",
-          "prompt": "Haz un plan paso a paso para "
-        }
-      },
-      "job": {
-        "research": {
-          "name": "Asistente de investigación",
-          "description": "Encuentra y resume lo que le pido",
-          "prompt": "Sé mi asistente de investigación: cuando te dé un tema, busca en la web y dame un resumen breve con sus fuentes."
-        },
-        "writing": {
-          "name": "Compañero de escritura",
-          "description": "Pule mis borradores con mi propia voz",
-          "prompt": "Sé mi compañero de escritura: pule lo que escribo, propón una redacción más clara y mantén mi tono."
-        },
-        "planner": {
-          "name": "Planificador",
-          "description": "Convierte objetivos en próximos pasos",
-          "prompt": "Sé mi planificador: divide mis objetivos en pasos, lleva una lista de tareas y dime qué hacer a continuación."
-        },
-        "news": {
-          "name": "Resumen de noticias",
-          "description": "Lo último de lo que sigo",
-          "prompt": "Sé mi resumen de noticias: cuando te lo pida, busca en la web lo último sobre los temas que sigo y resúmelo en cinco viñetas."
-        }
-      }
-    },
     "model": "Modelo",
     "searchModels": "Buscar modelos…",
     "noModel": "Ningún modelo coincide con «{{query}}».",
@@ -316,6 +272,24 @@
         "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
         "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
       },
+      "task": {
+        "created": "«{{title}}» se añadió a {{to}}",
+        "status_changed": "«{{title}}» pasó de {{from}} a {{to}}",
+        "completed": "«{{title}}» está hecha",
+        "reopened": "«{{title}}» se reabrió en {{to}}",
+        "blocked": "«{{title}}» está bloqueada",
+        "unblocked": "«{{title}}» ya no está bloqueada",
+        "deleted": "«{{title}}» se eliminó",
+        "rescheduled": "«{{title}}» tiene una nueva fecha de entrega",
+        "reassigned": "«{{title}}» pasó a otro proyecto o hito",
+        "session_linked": "Se adjuntó una sesión a «{{title}}»",
+        "column": {
+          "todo": "Sin empezar",
+          "doing": "En curso",
+          "review": "En revisión",
+          "done": "Hecha"
+        }
+      },
       "goal": {
         "continued": "Objetivo · continuación {{step}} de {{limit}}",
         "continuedOpen": "Objetivo · continuación {{step}}",
@@ -352,8 +326,8 @@
       "unknown": "algo salió mal"
     },
     "openSession": "Abrir sesión",
-    "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
-    "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
+    "hideToolCalls": "Ocultar llamadas a herramientas, rutinas y cambios de tareas",
+    "showToolCalls": "Mostrar llamadas a herramientas, rutinas y cambios de tareas",
     "goal": {
       "title": "Objetivo: {{objective}}",
       "progress": "{{step}} de {{limit}} continuaciones",
@@ -627,6 +601,15 @@
       "onlyBot": "Solo la usa el bot",
       "loadFailed": "No se pudieron cargar las habilidades.",
       "deleteFailed": "No se pudo borrar la habilidad.",
+      "builtIn": {
+        "count_one": "Integradas · {{count}}",
+        "count_other": "Integradas · {{count}}",
+        "count_many": "Integradas · {{count}}",
+        "hint": "Oppenheimer se las da a todos los bots. Puedes leerlas, pero no cambiarlas ni borrarlas.",
+        "meta": "Integrada en Oppenheimer",
+        "view": "Ver {{name}}",
+        "readOnly": "Integrada en Oppenheimer, solo lectura"
+      },
       "dialog": {
         "newTitle": "Nueva habilidad",
         "editTitle": "Editar /{{name}}",

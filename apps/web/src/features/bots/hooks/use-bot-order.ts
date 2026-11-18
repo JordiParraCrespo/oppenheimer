@@ -10,12 +10,16 @@ import {
   botSections,
   groupIdOf,
   groupOrder,
+  groupPosition,
   inGroupOrder,
   inOrder,
   sectionOrder,
+  UNGROUPED,
+  ungroupedDropIn,
 } from '../lib/bot-groups';
 import { botDrop, PINNED_BOTS, splitPinnedBots } from '../lib/bot-pins';
 import type { BotPins } from './use-bot-pins';
+import type { UngroupedPlace } from './use-ungrouped-place';
 
 /** The `SortableGroup` the groups sit in; a group's bots sit in one named by its id. */
 export const GROUPS = 'groups';
@@ -24,8 +28,11 @@ export const GROUPS = 'groups';
  * The Employees sidebar's sections in the order the reader drags them into,
  * and the drag that changes it. A bot dropped somewhere new is saved there
  * (`groupId` and `position`, the API closing the others up around it), and
- * so is a group dragged above or below the others (its `position`; Ungrouped
- * stays last and does not move). Either is drawn where it was dropped while
+ * so is a group dragged above or below the others (its `position`). Ungrouped
+ * drags among the groups too, and its place (`ungrouped`, the group it is
+ * above) is kept on this device the moment it is dropped; a group dropped
+ * next to it moves that place with it, and a group write that fails puts the
+ * place back unless a later drop has moved it since. Either is drawn where it was dropped while
  * the write is in flight and until the list is read again after it lands,
  * and a write that fails puts it back and says so. While a drag is held the
  * sections are the ones the drag layer last published, and Ungrouped is
@@ -50,6 +57,7 @@ export function useBotOrder(
   term: string,
   pins: Pick<BotPins, 'pins' | 'setPinned' | 'placePins'>,
   hidden: readonly string[],
+  ungrouped: UngroupedPlace,
 ) {
   const [dragging, setDragging] = useState(false);
   // The groups the drag layer last published while a drag is held, then the
@@ -59,9 +67,15 @@ export function useBotOrder(
   const moveGroup = useMoveBotGroup();
   const split = splitPinnedBots(bots, pins.pins, term);
   const shownPins = term ? split.pinned : split.pinned.filter((bot) => !hidden.includes(bot.id));
-  const sections = botSections(split.rest, groups, term, { keepUngrouped: dragging, hidden });
+  const sections = botSections(split.rest, groups, term, {
+    keepUngrouped: dragging,
+    hidden,
+    ungroupedBefore: ungrouped.before,
+  });
   const byId = new Map(bots.map((bot) => [bot.id, bot]));
-  const byItemId = new Map(groups.map((group) => [sortableProjectId(group.id), group.id]));
+  const byItemId = new Map(
+    [...groups.map((group) => group.id), UNGROUPED].map((key) => [sortableProjectId(key), key]),
+  );
   const groupIdsOf = (value: SortableGroups) =>
     (value[GROUPS] ?? []).flatMap((itemId) => byItemId.get(itemId) ?? []);
   const pinnedIds = order?.[PINNED_BOTS];
@@ -71,12 +85,29 @@ export function useBotOrder(
     : sections;
 
   const onSettled = () => setOrder(null);
-  /** A group dropped among the others: `index` is its place among every group. */
-  const dropGroup = (itemId: string, index: number, next: SortableGroups) => {
+  /** A group, or Ungrouped, dropped among the others. */
+  const dropGroup = (itemId: string, next: SortableGroups) => {
     const id = byItemId.get(itemId);
     if (!id) return;
-    setOrder(next);
-    moveGroup.mutate({ id, position: index }, { onSettled });
+    const keys = groupIdsOf(next);
+    const drop = ungroupedDropIn(keys);
+    const previous = ungrouped.before;
+    const placed = drop.kind === 'before' ? drop.id : undefined;
+    if (drop.kind !== 'absent') ungrouped.setBefore(placed);
+    const writes = id !== UNGROUPED;
+    // Held while this drop's write, or an earlier one, is in flight: the order on screen is theirs.
+    if (writes || moveGroup.isPending || move.isPending) setOrder(next);
+    if (!writes) return;
+    moveGroup.mutate(
+      { id, position: groupPosition(keys, id) },
+      {
+        onError: () => {
+          if (drop.kind !== 'absent')
+            ungrouped.setBefore((current) => (current === placed ? previous : current));
+        },
+        onSettled,
+      },
+    );
   };
   /** A bot dropped on Pinned or in a group. */
   const dropBot = (moved: { id: string; from: string; to: string }, next: SortableGroups) => {
@@ -107,7 +138,7 @@ export function useBotOrder(
     // A drop settles here first and `onMove` then sets its order; a cancel only settles.
     (next, { settled }) => setOrder(settled ? null : next),
     (moved, next) => {
-      if (moved.from === GROUPS) dropGroup(moved.id, moved.index, next);
+      if (moved.from === GROUPS) dropGroup(moved.id, next);
       else dropBot(moved, next);
     },
   );

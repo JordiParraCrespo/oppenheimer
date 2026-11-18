@@ -13,7 +13,7 @@ export interface PersonalWorkspaceRecords {
 
 /**
  * Translates the personal-workspace aggregate into the rows it is stored as.
- * A pure function, as `AGENTS.md` asks of mappers, and because the seed wires
+ * A pure function, as every mapper is, and because the seed wires
  * this path by hand. No `toDomain`: nothing loads this aggregate, and a reverse
  * mapping with no reader drifts unnoticed.
  *

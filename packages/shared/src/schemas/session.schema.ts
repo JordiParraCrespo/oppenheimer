@@ -48,7 +48,7 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
  * How the agent is started: the composer's foot row, as one object.
  *
  * The route body, the log payload, `session.create` and the response all carry
- * this same shape, so it is named once (`product/versions/mvp/03-control-plane.md`).
+ * this same shape, so it is named once.
  *
  * `agent` is deliberately **not** in here. The agent is what the session is;
  * the launch is how it was started, and only the second is something a later
@@ -100,13 +100,12 @@ export const sessionCheckoutInputSchema = z.object({
 export type SessionCheckoutInputDto = z.infer<typeof sessionCheckoutInputSchema>;
 
 /**
- * Where a session runs (`product/versions/mvp/24-session-places.md`): a new
- * `worktree` the runner makes for each checkout, a `folder` already on the
- * host, where nothing is cloned or written and closing only ends the terminal,
- * or the `cloud`: a vendor's agent on a task of one repository, followed at
- * the vendor (`product/next-steps/cloud-agents.md`). Claude Code's cloud is
- * started by a host's runner (`claude --cloud`, `product/research/cloud-agents.md`
- * §5B); Cursor's by the control plane through its API, with no host at all.
+ * Where a session runs: a new `worktree` the runner makes for each checkout, a
+ * `folder` already on the host, where nothing is cloned or written and closing
+ * only ends the terminal, or the `cloud`: a vendor's agent on a task of one
+ * repository, followed at the vendor. Claude Code's cloud is started by a
+ * host's runner (`claude --cloud`); Cursor's by the control plane through its
+ * API, with no host at all.
  */
 export const SESSION_PLACES = ['worktree', 'folder', 'cloud'] as const;
 export type SessionPlace = (typeof SESSION_PLACES)[number];
@@ -145,13 +144,13 @@ const createSessionFields = z.object({
   /**
    * A worktree session's repositories, each a worktree of its own in the session's
    * folder, at most {@link MAX_SESSION_CHECKOUTS}; more is refused here before a
-   * row is written (00, 10). The first is where the agent starts unless
+   * row is written. The first is where the agent starts unless
    * `cwdGithubRepoId` names another. None with `folder`.
    */
   checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS).default([]),
   /**
    * A folder session: an absolute path to a folder already on the host. The
-   * agent starts there; nothing is cloned or written (24 §3). Exactly one of
+   * agent starts there; nothing is cloned or written. Exactly one of
    * `folder` and `checkouts` is given.
    */
   folder: hostPathSchema.optional(),
@@ -159,25 +158,28 @@ const createSessionFields = z.object({
    * A cloud session: the host starts the task in its agent's cloud from the
    * one checkout's repository and keeps nothing running — Claude Code's
    * (`claude --cloud`; the session lives on claude.ai/code) or Codex's
-   * (`codex cloud exec`; the task lives on chatgpt.com/codex, and the host
-   * reports where it stands). An agent of `HOST_CLOUD_AGENT_IDS` only, with a
-   * `prompt` (`product/research/cloud-agents.md` §5B).
+   * (a thread in Codex cloud, started with the host's ChatGPT sign-in, and the
+   * host reports where it stands). An agent of `HOST_CLOUD_AGENT_IDS` only, with a
+   * `prompt`.
    */
   cloud: z.boolean().optional(),
   /**
-   * A Codex cloud session's environment, by id or label, as the composer's
-   * picker chose it (`GET /hosts/:id/codex-environments`). Absent, the host
-   * starts the task in the environment linked to the repository. Only with
-   * `cloud` and the agent `codex`.
+   * A Codex cloud session's environment: an environment id from ChatGPT's
+   * Codex Cloud settings. Absent, the host starts the task in Codex's default
+   * environment with the repository. Only with `cloud` and the agent `codex`.
    */
-  codexEnvironment: codexEnvironmentSchema.optional(),
+  codexEnvironment: codexEnvironmentSchema
+    .optional()
+    .describe(
+      "Codex cloud only: an environment id from ChatGPT Settings → Codex Cloud. Omitted, the task starts in Codex's default environment with the repository.",
+    ),
   /**
    * Continue a cloud session on the host instead of starting a conversation:
    * the worktree session's agent is started with the cloud session's branch
    * and history (`claude --teleport <id>`). An agent with a teleport in the
    * catalog only (`canTeleport`), in a worktree of the one repository the
    * cloud session worked on, and with no first task: the conversation holds
-   * it (`product/next-steps/cloud-agents.md`, "Bring it here").
+   * it.
    */
   teleport: cloudSessionIdSchema.optional(),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
@@ -193,18 +195,17 @@ const createSessionFields = z.object({
    */
   prompt: promptSchema.optional(),
   /**
-   * Files attached to the first task (images, PDF, text), each uploaded beforehand with
-   * `POST /sessions/attachments` and named here by the id that returned
-   * (`product/versions/mvp/03-control-plane.md`). What becomes of them on the
-   * wire is `session.create`'s `images`; a cloud session's become a download
-   * link each in its task instead, since the host only starts it.
+   * Files attached to the first task (images, PDF, text), each uploaded
+   * beforehand with `POST /sessions/attachments` and named here by the id that
+   * returned. What becomes of them on the wire is `session.create`'s `images`;
+   * a cloud session's become a download link each in its task instead, since
+   * the host only starts it.
    */
   attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_FILES).optional(),
   /**
    * Start it hidden: the console's sidebar leaves it out until the person shows
    * hidden sessions, and it runs like any other. For a bot, a script or an
-   * agent that starts work the person need not watch
-   * (`product/next-steps/hidden-sessions.md`).
+   * agent that starts work the person need not watch.
    */
   hidden: z.boolean().optional(),
 });
@@ -249,8 +250,7 @@ export const createSessionSchema = createSessionFields
   /**
    * A cloud session is Claude Code or Codex, started from one repository with
    * a task. Its files never reach the host: the API keeps them and the task
-   * carries a link to each, which the cloud's agent downloads
-   * (`product/next-steps/cloud-agents.md`, "Files for a cloud session").
+   * carries a link to each, which the cloud's agent downloads.
    */
   .refine(
     (value) =>
@@ -461,7 +461,7 @@ export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
  * `POST /sessions/{id}/previews` — open one of the session's ports in the
- * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+ * console's Browser tab.
  */
 export const issueSessionPreviewSchema = z.object({
   /** A port the session's own processes listen on; never a system one. */
@@ -530,7 +530,7 @@ export type CloseSessionDto = z.infer<typeof closeSessionSchema>;
 /**
  * `POST /sessions/{id}/move`. Lists the session under another project. Nothing
  * moves on disk: a project is metadata, and a session's directory and branch
- * never name it (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * never name it.
  */
 export const moveSessionSchema = z.object({
   projectId: z.string().uuid(),
@@ -549,7 +549,7 @@ export type SessionSortDto = z.infer<typeof sessionSortSchema>;
  * because a group is computed on read and cannot be an index.
  *
  * `githubRepoId`, `agent` and `sort` are the frames' sidebar filters, and
- * provisional with the rest of how sessions are organized (05): `recent` is last
+ * provisional with the rest of how sessions are organized: `recent` is last
  * activity first and is the default, `oldest` is creation order, `name` is
  * alphabetical.
  *

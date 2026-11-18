@@ -7,14 +7,12 @@ import { useTranslation } from 'react-i18next';
 import { ReviewSessionsList } from './review-sessions-list';
 
 /**
- * The console's sidebar body on Pull requests
- * (`product/versions/mvp/design/version1/PullRequests.dc.html`): the
- * views, the queue, the review deck and analytics, the section's bots (`bots`, composed by
- * the route), then For review, the reader's review
- * sessions. The queue's count is every open pull
- * request in it, whatever the scope; while it is read a bar keeps its slot.
- * The repository is picked in the queue's
- * own toolbar, and which repositories are watched is set in Settings.
+ * The console's sidebar body on Pull requests: the views, the queue, the
+ * review deck and analytics, the section's bots (`bots`, composed by the
+ * route), then For review, the reader's review sessions. The queue's count
+ * is every open pull request in it, whatever the scope; while it is read a
+ * bar keeps its slot. The repository is picked in the queue's own toolbar,
+ * and which repositories are watched is set in Settings.
  */
 export function PullRequestsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();

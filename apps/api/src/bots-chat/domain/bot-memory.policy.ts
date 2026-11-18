@@ -41,8 +41,8 @@ export interface MemoryInMind {
 }
 
 /**
- * Which facts a turn keeps in mind (`25-bots.md` §4.1), the way Grok Bot
- * does (`research/lessons-from-grok-bot.md` §10): the newest `profile`
+ * Which facts a turn keeps in mind, the way Grok Bot
+ * does: the newest `profile`
  * facts and the newest `log` facts, each tier up to a budget of characters,
  * so a long memory costs the prompt the same as a short one and its oldest
  * entries fade to `recall` rather than filling the turn. A tier stops at the
@@ -96,7 +96,7 @@ export const MEMORY_CHOICE_RULE = [
 ].join(' ');
 
 /**
- * What `remember` tells the model (`25-bots.md` §4.1): save as it goes,
+ * What `remember` tells the model: save as it goes,
  * without asking or checking for duplicates, and how the two choices it
  * makes keep a fact. Kept beside the policy that reads the tiers, so the
  * words and the rule change together.

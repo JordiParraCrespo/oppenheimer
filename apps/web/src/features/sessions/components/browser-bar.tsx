@@ -4,9 +4,9 @@ import type { SessionPort } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The Browser tab's address bar (`SessionsConsole.dc.html`): which of the
- * session's ports the page is, as `localhost:<port>` with the command on it,
- * then Reload and Open in a new tab.
+ * The Browser tab's address bar: which of the session's ports the page is,
+ * as `localhost:<port>` with the command on it, then Reload and Open in a
+ * new tab.
  */
 export function BrowserBar({
   ports,

@@ -31,8 +31,8 @@ export interface BotToolStep {
   subagents: BotSubagentRun[] | null;
   /**
    * Why an asking call ran without a card, as the chat says it: "Always
-   * allowed for acme/docs" (a standing grant) or the owner's rule that let it
-   * (`25-bots.md` §5); null when it asked, or never had to.
+   * allowed for acme/docs" (a standing grant) or the owner's rule that let it;
+   * null when it asked, or never had to.
    */
   allowedBy: string | null;
   /** The draft a mail call saved, for the chat's card; null for any other call. */
@@ -58,7 +58,7 @@ export interface BotMessageProps {
   conversationId?: string;
   /**
    * The turn it belongs to; null only for an event that happened outside any
-   * turn, such as a routine changed on its tab (`26-bot-routines.md` §4).
+   * turn, such as a routine changed on its tab.
    */
   turnId: string | null;
   role: BotMessageRole;
@@ -71,13 +71,13 @@ export interface BotMessageProps {
   /** What an event says happened, for the chat; an event has one, nothing else does. */
   event?: BotMessageEvent | null;
   /**
-   * The images a message carries: yours, sent with it (`25-bots.md` §3.1),
-   * or the bot's, shown with `show_image` (§4.7); none on any other.
+   * The images a message carries: yours, sent with it,
+   * or the bot's, shown with `show_image`; none on any other.
    */
   attachments?: readonly BotAttachment[];
 }
 
-/** One thing the chat draws (`25-bots.md` §3). */
+/** One thing the chat draws. */
 export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   static create(create: CreateEntityProps<BotMessageProps>): BotMessageEntity {
     return new BotMessageEntity(create);

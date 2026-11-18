@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -48,6 +49,9 @@ type Terminals struct {
 	// FailPaste makes the next paste fail, standing in for a window that
 	// went away between the save and the paste.
 	FailPaste bool
+	// FailLaunch makes the next launch fail, standing in for an agent whose
+	// window tmux could not respawn.
+	FailLaunch bool
 }
 
 // Files is app.Files in memory.
@@ -129,17 +133,20 @@ func (t *Terminals) Create(_ context.Context, name, dir, command string, env map
 	return nil
 }
 
-// NewWindow implements app.Terminals.
-func (t *Terminals) NewWindow(_ context.Context, name, dir string) (int, error) {
+// NewWindow implements app.Terminals; an untitled window is named "shell".
+func (t *Terminals) NewWindow(_ context.Context, name, dir, title string) (int, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	session, ok := t.sessions[name]
 	if !ok {
 		return 0, domain.ErrTmuxCommand.WithDetail("no session %q", name)
 	}
+	if title == "" {
+		title = "shell"
+	}
 	index := session.next
 	session.next++
-	session.windows = append(session.windows, domain.Window{Index: index, Name: "shell"})
+	session.windows = append(session.windows, domain.Window{Index: index, Name: title})
 	session.dir = dir
 	return index, nil
 }
@@ -155,6 +162,11 @@ func (t *Terminals) KillWindow(_ context.Context, target string) error {
 	session, ok := t.sessions[name]
 	if !ok {
 		return domain.ErrTmuxCommand.WithDetail("no session %q", name)
+	}
+	// tmux refuses a window that is not there, so a caller that kills one
+	// already gone hears it here as it would on a host.
+	if !slices.ContainsFunc(session.windows, func(w domain.Window) bool { return w.Index == index }) {
+		return domain.ErrTmuxCommand.WithDetail("can't find window: %d", index)
 	}
 	kept := session.windows[:0]
 	for _, w := range session.windows {
@@ -273,6 +285,10 @@ type Launched struct {
 func (t *Terminals) Launch(_ context.Context, target, dir, command string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	if t.FailLaunch {
+		t.FailLaunch = false
+		return domain.ErrTmuxCommand.WithDetail("respawn-pane %q failed", target)
+	}
 	if t.Launches == nil {
 		t.Launches = map[string]Launched{}
 	}

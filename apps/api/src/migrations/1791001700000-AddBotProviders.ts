@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots, slice 2 (`product/versions/mvp/25-bots.md` §2): who answers a bot.
+ * Bots: who answers a bot.
  *
  * - `bot."provider"`: `anthropic`, `glm` or `openai`, which picks the engine a
  *   turn runs on. Every bot so far ran on Claude Code's models, so the default

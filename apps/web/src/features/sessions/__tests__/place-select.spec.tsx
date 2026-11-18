@@ -1,3 +1,4 @@
+import { ChipSelectItem, ChipSelectList } from '@oppenheimer/design-system-web';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaceSelect } from '../components/place-select';
@@ -122,21 +123,24 @@ describe('PlaceSelect', () => {
   /** Keys as in `ChipSelect`: the arrows walk the list under the search, Enter takes the row. */
   it('picks a host and a place from the keyboard', () => {
     const { onHostChange, onPlaceChange } = renderChip();
-    const search = screen.getByRole('textbox', { name: 'sessions.new.host.search' });
+    const search = screen.getByRole('combobox', { name: 'sessions.new.host.search' });
 
     fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
-    fireEvent.keyDown(search, { key: 'ArrowDown' });
-    fireEvent.keyDown(search, { key: 'Enter' });
+    // The host's pane opens on a search of its own, and the focus goes with it.
+    const paneSearch = document.activeElement as HTMLElement;
+    expect(paneSearch.getAttribute('role')).toBe('combobox');
+    fireEvent.keyDown(paneSearch, { key: 'ArrowDown' });
+    fireEvent.keyDown(paneSearch, { key: 'Enter' });
 
     expect(onHostChange).toHaveBeenCalledWith('host-2');
     expect(onPlaceChange).toHaveBeenCalledWith('folder');
   });
 
   /**
-   * Beside the hosts, the clouds (`NewSessionComposer.dc.html`): a vendor with
-   * the reader's key is picked outright, as the place; one without sends the
-   * reader to connect it rather than starting a session it would refuse.
+   * Beside the hosts, the clouds: a vendor with the reader's key is picked
+   * outright, as the place; one without sends the reader to connect it
+   * rather than starting a session it would refuse.
    */
   it('picks a connected cloud outright, and sends a vendor with no key to connect it', () => {
     const picked = renderChip();
@@ -183,7 +187,7 @@ describe('PlaceSelect', () => {
 
     for (const cannot of ['optimus', 'old-box']) {
       const row = screen.getByRole('option', { name: cannot });
-      expect(row).toHaveProperty('disabled', true);
+      expect(row.getAttribute('aria-disabled')).toBe('true');
       fireEvent.click(row);
     }
     expect(picked.onHostCloudChange).not.toHaveBeenCalled();
@@ -200,14 +204,14 @@ describe('PlaceSelect', () => {
     const none = renderChip(CLOUDS, { place: 'worktree', cloud: null }, null);
     openTab('clouds');
     const row = screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' });
-    expect(row).toHaveProperty('disabled', true);
+    expect(row.getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(row);
     expect(none.onHostCloudChange).not.toHaveBeenCalled();
   });
 
   /**
    * Codex's cloud is its own row beside Claude Code's: its pick names Codex,
-   * so the session starts with `codex cloud exec` and not `claude --cloud`.
+   * so the session starts in Codex cloud and not with `claude --cloud`.
    * With no host whose runner takes it, it is greyed out on its own while
    * Claude Code's stays open.
    */
@@ -222,11 +226,15 @@ describe('PlaceSelect', () => {
     renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], null);
     openTab('clouds');
     expect(
-      screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }),
-    ).toHaveProperty('disabled', true);
+      screen
+        .getByRole('option', { name: 'sessions.new.where.codexCloud.label' })
+        .getAttribute('aria-disabled'),
+    ).toBe('true');
     expect(
-      screen.getByRole('option', { name: 'sessions.new.where.claudeCloud.label' }),
-    ).toHaveProperty('disabled', false);
+      screen
+        .getByRole('option', { name: 'sessions.new.where.claudeCloud.label' })
+        .getAttribute('aria-disabled'),
+    ).not.toBe('true');
   });
 
   // Codex's cloud runs in one of the account's environments, as the frame
@@ -247,6 +255,29 @@ describe('PlaceSelect', () => {
 
     expect(picked.onHostCloudChange).toHaveBeenCalledWith('host-1', 'codex');
     expect(screen.getByRole('listbox', { name: 'environments' }).textContent).toBe('host-1');
+  });
+
+  /**
+   * The Environments pane's search can be an environment id to use as typed.
+   * Enter there is the pane's own, never the first row's: a regression lit
+   * Default as the id was typed, and Enter chose it in place of the id.
+   */
+  it('lights no environment as an id is typed, so Enter never trades it for Default', () => {
+    const useDefault = vi.fn();
+    const environments = () => (
+      <ChipSelectList aria-label="environments">
+        <ChipSelectItem onClick={useDefault}>Default</ChipSelectItem>
+      </ChipSelectList>
+    );
+    renderChip(CLOUDS, { place: 'worktree', cloud: null }, HOSTS[0], HOSTS[2], { environments });
+    openTab('clouds');
+    fireEvent.click(screen.getByRole('option', { name: 'sessions.new.where.codexCloud.label' }));
+    fireEvent.click(screen.getByRole('option', { name: 'mac-studio' }));
+
+    const search = screen.getByRole('combobox');
+    fireEvent.change(search, { target: { value: 'asenvcfg_123' } });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(useDefault).not.toHaveBeenCalled();
   });
 
   it('names the Codex environment picked on the host', () => {
@@ -285,7 +316,7 @@ describe('PlaceSelect', () => {
    */
   it('opens on the tab of the pick, and the arrows walk that tab only', () => {
     const { onCloudChange } = renderChip(CLOUDS, { place: 'cloud', cloud: 'cursor' });
-    const search = screen.getByRole('textbox', { name: 'sessions.new.where.searchClouds' });
+    const search = screen.getByRole('combobox', { name: 'sessions.new.where.searchClouds' });
     expect(screen.queryByRole('option', { name: 'mac-studio' })).toBeNull();
 
     // Past Claude Code's cloud and Codex's, to Cursor.
@@ -334,7 +365,7 @@ describe('PlaceSelect', () => {
 
   it('counts what each tab holds under the search', () => {
     renderChip();
-    fireEvent.change(screen.getByRole('textbox', { name: 'sessions.new.host.search' }), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'sessions.new.host.search' }), {
       target: { value: 'o' },
     });
 

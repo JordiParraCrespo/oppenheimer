@@ -39,4 +39,5 @@ export type {
 } from './bot-permissions.entity';
 export { BotsModule } from './bots.module';
 export { BotsRepository } from './bots.repository';
+export { type BotSending, isSendingBotTurn } from './sending';
 export type { BotStreamStatus } from './stream/bot-stream';

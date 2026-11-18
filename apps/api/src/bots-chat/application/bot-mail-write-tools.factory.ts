@@ -117,11 +117,11 @@ const plan = z
   .describe('Leave out: Oppenheimer fills it in with the message as it will go.');
 
 /**
- * Mail (`product/next-steps/mail.md` §3.3–3.4), the writes: drafts written
- * freely into the owner's Gmail, since a draft never sends; a draft deleted
- * after asking; and sending, which asks every time, whatever the bot's
- * preset. A send card stores the planned message (alias, recipients,
- * subject, body, threading, files) and a yes sends exactly that, once.
+ * Mail, the writes: drafts written freely into the owner's Gmail, since a draft
+ * never sends; a draft deleted after asking; and sending, which asks every
+ * time, whatever the bot's preset. A send card stores the planned message
+ * (alias, recipients, subject, body, threading, files) and a yes sends exactly
+ * that, once.
  */
 @Injectable()
 export class BotMailWriteToolsFactory implements BotToolArea {

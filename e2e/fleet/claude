@@ -7,6 +7,26 @@
 # cloud session: it wants a terminal, prints the three lines a runner reads,
 # and exits. Each start is a line in ~/claude-cloud.log — where it ran, that
 # checkout's origin and the task — for a test to read back.
+#
+# `claude -p --cloud <id> --output-format json -- <message>` sends a message
+# to a cloud session, as the runner does for a reply that wakes one; the real
+# CLI answers `{"ok":true,…}`. Each send is a line in ~/claude-cloud-replies.log
+# (the session's id and the message, its newlines as \n). A
+# ~/claude-cloud-refuse file makes it refuse instead, as the real one does for a
+# session its account does not have, and logs the refusal in
+# ~/claude-cloud-refused.log.
+if [ "$1" = "-p" ] && [ "$2" = "--cloud" ]; then
+  id="$3"
+  shift 6
+  if [ -e "$HOME/claude-cloud-refuse" ]; then
+    printf '%s\n' "$id" >> "$HOME/claude-cloud-refused.log"
+    printf '{"ok":false,"error":"Session %s not found"}\n' "$id"
+    exit 1
+  fi
+  printf '%s\t%s\n' "$id" "$(printf '%s' "$1" | awk 'BEGIN { ORS = "\\n" } { print }')" >> "$HOME/claude-cloud-replies.log"
+  printf '{"ok":true,"session_id":"%s"}\n' "$id"
+  exit 0
+fi
 if [ "$1" = "--cloud" ]; then
   [ -t 1 ] || { echo 'Error: --cloud requires an interactive terminal.' >&2; exit 1; }
   id="session_01e2e$(date +%s)$$"

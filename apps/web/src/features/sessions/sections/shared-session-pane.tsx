@@ -15,13 +15,13 @@ import { SharedRefusal } from './shared-refusal';
 import { SharedSessionTerminal } from './shared-session-terminal';
 
 /**
- * A session as a guest opens it (`ShareSession.dc.html`, kept to its
- * simplest): under the wordmark, one card — a bar with the session and its
- * state, what the share lets them do, until when, and Leave for someone who
- * can edit — and the terminal under it. Every refusal is its own answer: sign in, not
- * shared with you, or not shared at all. When the relay closes the
- * terminal (the owner narrowed, stopped or changed the share), the page asks
- * again, so the bar and the terminal's input follow the share as it now is.
+ * A session as a guest opens it (kept to its simplest): under the wordmark,
+ * one card — a bar with the session and its state, what the share lets them
+ * do, until when, and Leave for someone who can edit — and the terminal
+ * under it. Every refusal is its own answer: sign in, not shared with you,
+ * or not shared at all. When the relay closes the terminal (the owner
+ * narrowed, stopped or changed the share), the page asks again, so the bar
+ * and the terminal's input follow the share as it now is.
  *
  * Read under Suspense, in `SharedSessionScreen`'s `QueryState.Data`. A
  * refetch the share now refuses says the refusal in the page's place; any

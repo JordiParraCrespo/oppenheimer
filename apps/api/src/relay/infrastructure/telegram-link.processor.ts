@@ -29,7 +29,7 @@ interface LinkIntake {
 }
 
 /**
- * A host's Telegram bot on its link (`product/next-steps/telegram.md` §3):
+ * A host's Telegram bot on its link:
  * its state and the messages it received, handed to the `telegram` module. The
  * link is the host's authentication, so the host is the link's, never one a
  * frame names. Messages are acknowledged only once stored, so a link that

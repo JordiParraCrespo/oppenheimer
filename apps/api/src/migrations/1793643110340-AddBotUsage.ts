@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * What a bot spends, for `/usage` (`product/versions/mvp/25-bots.md` §4.1,
- * "Built-in commands"; from Claude Code's `/usage`).
+ * What a bot spends, for `/usage` (from Claude Code's `/usage`).
  *
  * - `bot_turn` gains `"cacheReadTokens"` and `"cacheWriteTokens"`: how much
  *   of `"inputTokens"` the provider read from its prompt cache, and wrote to

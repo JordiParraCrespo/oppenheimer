@@ -10,8 +10,8 @@ import { INBOX_MARK_REPOSITORY } from '../../inbox.di-tokens';
 import { PutInboxMarkCommand } from './put-inbox-mark.command';
 
 /**
- * Marks an occurrence for the caller, replacing what they had on it
- * (`product/versions/mvp/29-inbox.md` §3). Answers the occurrence's key: a
+ * Marks an occurrence for the caller, replacing what they had on it. Answers
+ * the occurrence's key: a
  * mark is read back by it, never by id.
  */
 @CommandHandler(PutInboxMarkCommand)

@@ -9,9 +9,9 @@ import { CODING_AGENT_IDS } from '../agents/catalog.js';
  * but it can and does build its own from the same numbers and tuples, and
  * `src/__tests__/cross-version-primitives.spec.ts` asserts the two agree.
  *
- * A schema in this folder states the constraint only, never a message: a
- * stated message defeats the translated error map (`.agents/rules/forms.md`).
- * `ipOrCidrSchema`'s refine is the one that still carries English.
+ * A schema in this folder states the constraint only, never a message: a stated
+ * message defeats the translated error map. `ipOrCidrSchema`'s refine is the
+ * one that still carries English.
  */
 
 /** Bounds shared with the wire. Change them here and the conformance spec follows. */
@@ -25,8 +25,8 @@ export const FIELD_BOUNDS = {
   /**
    * The first task somebody types into the composer.
    *
-   * **Bytes, not characters**, because the log measures bytes: `02-runner.md`
-   * §7 caps `prompt.first` at 2 KB, and every `work_session_event` payload at
+   * **Bytes, not characters**, because the log measures bytes: `prompt.first`
+   * is capped at 2 KB, and every `work_session_event` payload at
    * 8 KiB of serialized JSON. A character bound lets a prompt of four-byte
    * characters pass the route and commit the session, then have its
    * `prompt.first` entry rejected by the log, so nothing records the task.
@@ -34,7 +34,7 @@ export const FIELD_BOUNDS = {
   prompt: { min: 1, maxBytes: 2 * 1024 },
   /** An absolute path on a host: a folder session's folder, a folder picker's directory. */
   hostPath: { min: 1, max: 4096 },
-  /** A Codex cloud environment's id or label, as `codex cloud exec --env` takes it. */
+  /** A Codex cloud environment's id, as ChatGPT Settings → Codex Cloud shows it. */
   codexEnvironment: { min: 1, max: 128 },
 } as const;
 
@@ -78,8 +78,8 @@ export const displayNameSchema = z
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
 
 /**
- * A Codex cloud environment, by its id or its label (which the CLI matches
- * without regard to case): what a Codex cloud session is started in.
+ * A Codex cloud environment's id, as ChatGPT Settings → Codex Cloud shows it:
+ * what a Codex cloud session is started in.
  */
 export const codexEnvironmentSchema = z
   .string()
@@ -217,12 +217,11 @@ export const hostFactsSchema = z.object({
   cpus: z.number().int().min(1).optional(),
   runnerVersion: z.string(),
   /**
-   * The machine beyond what a session needs, for the host row and a rollout
-   * (`product/versions/mvp/15-host-metadata.md`). All optional: runners before
-   * them do not send them, and Go omits each one it could not read.
-   * `virtualization`, `cloudProvider` and `serviceManager` are the runner's
-   * words and stay open strings, so a newer runner's value is kept rather
-   * than refused.
+   * The machine beyond what a session needs, for the host row and a rollout.
+   * All optional: runners before them do not send them, and Go omits each one
+   * it could not read. `virtualization`, `cloudProvider` and `serviceManager`
+   * are the runner's words and stay open strings, so a newer runner's value is
+   * kept rather than refused.
    */
   osName: z.string().max(80).optional(),
   kernelVersion: z.string().max(64).optional(),

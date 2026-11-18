@@ -274,6 +274,12 @@ describe('SessionEntity cloud links', () => {
     expect(session.teleportCommand).toBe('codex apply task_e_68a1b2c3d4');
   });
 
+  it('opens the exact Codex cloud thread instead of dropping its id at the home page', () => {
+    const session = cloudSession('codex', '6afb6756-cc04-8191-94af-480f84c2705a');
+    expect(session.cloudUrl).toBe('https://chatgpt.com/local/6afb6756-cc04-8191-94af-480f84c2705a');
+    expect(session.teleportCommand).toBeNull();
+  });
+
   it('has neither before its host has started it', () => {
     const session = cloudSession('codex', null);
     expect(session.cloudUrl).toBeNull();

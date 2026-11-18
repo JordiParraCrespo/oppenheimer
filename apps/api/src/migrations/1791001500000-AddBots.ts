@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots, slice 1 (`product/versions/mvp/25-bots.md`): the bot, the sidebar
+ * Bots, first cut: the bot, the sidebar
  * groups it sits in, its two documents with their history, and what it
  * remembers. No runtime yet: turns, messages, proposals and approvals are the
  * later slices' tables.
@@ -44,7 +44,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * The owner role's rule for the new `Bot` subject is appended to the global
  * system row, and the role catalog's version bumped so cached abilities are
- * rebuilt (`rbac-roles.md`).
+ * rebuilt.
  */
 export class AddBots1791001500000 implements MigrationInterface {
   name = 'AddBots1791001500000';

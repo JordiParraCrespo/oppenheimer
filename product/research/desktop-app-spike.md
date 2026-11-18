@@ -103,3 +103,8 @@ would reach remote hosts only).
 3. macOS first?
 4. Electron rather than Tauri (the system WebView: WebKit on macOS, where
    none of this was tested)?
+   Measured on Linux on 2026-11-16 in
+   [desktop-electron-vs-tauri.md](desktop-electron-vs-tauri.md), with a
+   Tauri twin of this spike. **Decided 2026-11-16: Electron.** The owner
+   kept Electron on that note's recommendation; Tauri comes back only if
+   download size starts to matter, and then measured on a Mac first.

@@ -6,6 +6,15 @@ import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
 import type { CalendarAccent } from './month-calendar';
 
+/** A layer's glyph in the colour its entries wear. */
+const TONE_TEXT: Record<CalendarAccent, string> = {
+  'chart-1': 'text-chart-1',
+  'chart-2': 'text-chart-2',
+  'chart-3': 'text-chart-3',
+  'chart-4': 'text-chart-4',
+  'chart-5': 'text-chart-5',
+};
+
 /**
  * The calendar's sidebar: what it shows and where it comes from.
  *
@@ -19,6 +28,7 @@ import type { CalendarAccent } from './month-calendar';
  */
 function CalendarLayerItem({
   icon,
+  accent,
   checked,
   onCheckedChange,
   className,
@@ -26,6 +36,8 @@ function CalendarLayerItem({
   ...props
 }: Omit<React.ComponentProps<'label'>, 'onChange'> & {
   icon?: React.ReactNode;
+  /** The colour the calendar draws this source's entries in: the glyph wears it, as a legend. */
+  accent?: CalendarAccent;
   checked: boolean;
   onCheckedChange?: (checked: boolean) => void;
 }) {
@@ -41,7 +53,7 @@ function CalendarLayerItem({
       {...props}
     >
       {icon ? (
-        <span aria-hidden className="flex shrink-0 text-fg-subtle [&_svg]:size-3.5">
+        <span aria-hidden className={cn('flex shrink-0 [&_svg]:size-3.5', accent ? TONE_TEXT[accent] : 'text-fg-subtle')}>
           {icon}
         </span>
       ) : null}

@@ -1,7 +1,7 @@
 package cli
 
 // `terminal.drive`: a bot typing into a blank-terminal session and reading
-// its screen back (25 §4.2, "Driving a terminal"). The host's exec policy
+// its screen back. The host's exec policy
 // decides first: a shell runs anything, so only `full` lets a bot drive one.
 // Answered with `terminal.screen`, or `command.failed`.
 

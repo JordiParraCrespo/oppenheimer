@@ -2,7 +2,13 @@ import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { builtInCommandActionOf } from '../lib/built-in-command';
 import { skillRowModel } from '../lib/skill-row';
-import { matchingCommands, slashMenuItems, slashMenuRows, slashQuery } from '../lib/slash-menu';
+import {
+  leadingCommand,
+  matchingCommands,
+  slashMenuItems,
+  slashMenuRows,
+  slashQuery,
+} from '../lib/slash-menu';
 
 /**
  * What the `/` menu reads of the draft and how a skill's row reads. What breaks
@@ -150,5 +156,16 @@ describe('slashMenuRows', () => {
     const { builtIns, skills } = slashMenuRows('', undefined, key);
     expect(names(builtIns)).toEqual(['goal', 'usage', 'loop', 'schedule']);
     expect(skills).toEqual([]);
+  });
+});
+
+describe('leadingCommand', () => {
+  it('marks the command a message opens with, and not a slash elsewhere or a path', () => {
+    expect(leadingCommand('/ship fix the build')).toBe('/ship');
+    expect(leadingCommand('/usage')).toBe('/usage');
+    expect(leadingCommand('/goal\nship it')).toBe('/goal');
+    expect(leadingCommand('/')).toBeNull();
+    expect(leadingCommand('/etc/hosts is wrong')).toBeNull();
+    expect(leadingCommand('run /ship')).toBeNull();
   });
 });

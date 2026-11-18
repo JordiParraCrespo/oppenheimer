@@ -32,7 +32,7 @@ case "${1:-run}" in
     ;;
   kill-runner)
     # SIGKILL, the runner process only: no graceful shutdown, and tmux is its
-    # sibling and survives. That is "runner died", not "host rebooted" (02 §12).
+    # sibling and survives. That is "runner died", not "host rebooted".
     pkill -KILL -f '^runner run'
     exit 0
     ;;

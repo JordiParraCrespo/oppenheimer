@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 /**
- * A Claude Code cloud session's chat in the console
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): two
+ * A Claude Code cloud session's chat in the console: two
  * hooks in the session send its transcript here and collect the replies typed
  * in the console, and the console reads both.
  */
@@ -56,6 +55,23 @@ export const takeCloudReplySchema = z.object({
 });
 
 export type TakeCloudReplyDto = z.infer<typeof takeCloudReplySchema>;
+
+/**
+ * How long a reply waits for the session's Stop hook before a host sends it
+ * instead, in seconds. A hook that is waiting looks every second, so one that
+ * is there takes it well inside this; past it the session is idle, or in a turn
+ * Claude Code queues the message behind, and a host signed in to the session's
+ * claude.ai account sends it with `claude -p … --cloud <id>`, which wakes it.
+ */
+export const CLOUD_REPLY_WAKE_AFTER_SECONDS = 15;
+
+/**
+ * Which way a reply reached the agent: `hook`, collected by the session's Stop
+ * hook; `host`, sent from a host with `claude -p … --cloud <id>`.
+ */
+export const CLOUD_REPLY_DELIVERIES = ['hook', 'host'] as const;
+
+export type CloudReplyDelivery = (typeof CLOUD_REPLY_DELIVERIES)[number];
 
 /** `POST /sessions/{id}/cloud-replies`: what the person typed in the session's chat. */
 export const sendCloudReplySchema = z.object({

@@ -20,12 +20,11 @@ import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
 export type GoalContinuationProps = Parameters<typeof goalContinuationTurn>[0];
 
 /**
- * A bot's goal, as everything that ends, pauses, resumes or continues it
- * shares it (`25-bots.md` §4.1): an end or a pause is one write with its
- * line, and the continuations still waiting for that goal are cancelled with
- * it, whoever did it (the bot's `end_goal`, a goal set in its place, the
- * owner's Stop, a failed turn, the guards). A continuation runs as the bot's
- * owner.
+ * A bot's goal, as everything that ends, pauses, resumes or continues it shares
+ * it: an end or a pause is one write with its line, and the continuations still
+ * waiting for that goal are cancelled with it, whoever did it (the bot's
+ * `end_goal`, a goal set in its place, the owner's Stop, a failed turn, the
+ * guards). A continuation runs as the bot's owner.
  */
 @Injectable()
 export class BotGoalResolver {

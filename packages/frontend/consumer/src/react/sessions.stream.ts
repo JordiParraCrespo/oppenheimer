@@ -2,8 +2,8 @@ import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useCallback, useEffect, useRef } from 'react';
 import type {
   CloudChatFeed,
-  CloudChatReply,
   DeviceStream,
+  PendingCloudReply,
   SessionChat,
   SessionStream,
 } from '../modules/sessions';
@@ -57,7 +57,7 @@ export function useSharedSessionStream(slug: string): () => SessionStream {
 export function useCloudChatFeed(sessionId: string): (
   chat: SessionChat,
   callbacks: {
-    onWaiting: (waiting: readonly CloudChatReply[]) => void;
+    onPending: (pending: readonly PendingCloudReply[]) => void;
     onReplyFailed: (error: unknown) => void;
   },
 ) => Promise<CloudChatFeed> {

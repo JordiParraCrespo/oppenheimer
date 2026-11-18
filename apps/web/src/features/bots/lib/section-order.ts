@@ -9,13 +9,13 @@ export interface BotPlacement {
 /**
  * Where a bot dragged within a section's Bots heading goes in the Employees
  * order, which every list of bots draws (a section lists the bots placed in
- * it, in that order; `28-bots-in-sections.md`). `listed` is the section's
- * ids after the drop and `all` every bot in the Employees order. The bot goes
- * right after the one now above it, or right before the one now below it, so
- * it is drawn between the same two bots here and in Employees. A neighbour in
- * its own group is taken first, so it changes group only when neither is in
- * it, and then joins the one above (the one below at the top). `null` when
- * it has no neighbour, alone in the section.
+ * it, in that order). `listed` is the section's ids after the drop and `all`
+ * every bot in the Employees order. The bot goes right after the one now
+ * above it, or right before the one now below it, so it is drawn between the
+ * same two bots here and in Employees. A neighbour in its own group is taken
+ * first, so it changes group only when neither is in it, and then joins the
+ * one above (the one below at the top). `null` when it has no neighbour,
+ * alone in the section.
  */
 export function placementInSection(
   all: readonly BotEntity[],

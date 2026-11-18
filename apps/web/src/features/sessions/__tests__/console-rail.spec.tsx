@@ -14,9 +14,12 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
+const waiting = vi.hoisted(() => ({ any: false }));
+
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSessions: () => ({ data: 3 }),
   useTasks: () => ({ data: 2 }),
+  useAnyBotNeedsInput: () => waiting.any,
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -43,6 +46,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   cleanup();
   window.localStorage.clear();
+  waiting.any = false;
 });
 
 const description = (element: HTMLElement) =>
@@ -71,5 +75,22 @@ describe('ConsoleRail', () => {
     const read = description(sessions);
     expect(read).toContain('3');
     expect(read.some((text) => text.length > 1)).toBe(true);
+  });
+
+  it('puts the amber dot on Employees, and only there, while a bot waits on the reader', () => {
+    const { unmount } = render(<ConsoleRail />);
+    expect(screen.getByRole('link', { name: 'nav.employees' }).hasAttribute('data-attention')).toBe(
+      false,
+    );
+    unmount();
+
+    waiting.any = true;
+    render(<ConsoleRail />);
+    expect(screen.getByRole('link', { name: 'nav.employees' }).hasAttribute('data-attention')).toBe(
+      true,
+    );
+    expect(screen.getByRole('link', { name: 'nav.sessions' }).hasAttribute('data-attention')).toBe(
+      false,
+    );
   });
 });

@@ -1,9 +1,10 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
+import { readableDetail } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 
 /** What a row and the message say about an item, in the reader's language. */
 export interface InboxCopy {
-  /** Who it is from: the session, the bot, the pull request's author, the automation, a report's sender. */
+  /** Who it is from: the session, the bot, the pull request's author, the automation, a report's sender, an agent. */
   sender: string;
   /** The row's subject. */
   short: string;
@@ -133,9 +134,21 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
         short: t('inbox.run.short', values),
         source: t('inbox.from.run'),
         title: t('inbox.run.title', values),
+        // The host's words, without the escapes of the terminal they were read
+        // from: Claude Code writes a cursor move for every space.
         body:
-          run.turn?.failureDetail?.trim() ||
+          readableDetail(run.turn?.failureDetail ?? '') ??
           t(isAnswerableRun(run) ? 'inbox.run.body' : 'inbox.run.plainBody'),
+      };
+    }
+    case 'task': {
+      const { task } = item;
+      return {
+        sender: t('inbox.task.sender'),
+        short: t('inbox.task.short', { title: task.title }),
+        source: t('inbox.from.task'),
+        title: task.title,
+        body: task.notes.trim() || t('inbox.task.body'),
       };
     }
     case 'report': {

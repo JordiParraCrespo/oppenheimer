@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Oppenheimer's hook for a Claude Code cloud session: its chat in the
-// console, both ways (`product/next-steps/cloud-agents.md`, "The chat of a
-// cloud session"). One file, two hooks, in the repository's
+// console, both ways. One file, two hooks, in the repository's
 // `.claude/settings.json`:
 //
 //   SessionStart: node .claude/hooks/oppenheimer-cloud-chat.mjs session-start
@@ -11,7 +10,9 @@
 // file Claude Code names on the hook's stdin) and posts each complete line to
 // the API. `stop` collects a reply typed in the console when the agent ends a
 // turn and hands it back as the hook's block decision, so the agent carries
-// on with it.
+// on with it. A reply no Stop hook takes (the session is idle) is sent from
+// one of your hosts instead, which wakes the session; the streamer starts
+// again on the resume and carries on from where it stopped.
 //
 // Reads OPPENHEIMER_URL (the API's address) and OPPENHEIMER_CLOUD_KEY (a
 // token with cloud-chat:write, from the session's pane in the console), and

@@ -97,8 +97,8 @@ export type HostTimelineQueryDto = z.infer<typeof hostTimelineQuerySchema>;
 
 /**
  * `GET /hosts/{id}/folders`: one directory on the host for the folder picker,
- * listed by its runner (`product/versions/mvp/24-session-places.md` §4).
- * Absent `path` is the home directory of the user the runner runs as.
+ * listed by its runner. Absent `path` is the home directory of the user the
+ * runner runs as.
  */
 export const hostFoldersQuerySchema = z.object({
   path: hostPathSchema.optional(),
@@ -108,26 +108,10 @@ export type HostFoldersQuery = z.infer<typeof hostFoldersQuerySchema>;
 
 /**
  * `GET /hosts/{id}/folders/search`: the folders under the host's home whose
- * name holds `q`, found by its runner's bounded walk (`fs.find`, 24 §4).
+ * name holds `q`, found by its runner's bounded walk (`fs.find`).
  */
 export const hostFolderSearchQuerySchema = z.object({
   q: z.string().trim().min(2).max(255),
 });
 
 export type HostFolderSearchQuery = z.infer<typeof hostFolderSearchQuerySchema>;
-
-/**
- * `GET /hosts/{id}/codex-environments`: the Codex cloud environments the
- * host's ChatGPT account has, those linked to `repository` (`owner/name`)
- * marked, for the composer's picker (`product/next-steps/cloud-agents.md`).
- */
-export const hostCodexEnvironmentsQuerySchema = z.object({
-  /** Absent before a repository is picked: the list then marks none as linked. */
-  repository: z
-    .string()
-    .max(200)
-    .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/)
-    .optional(),
-});
-
-export type HostCodexEnvironmentsQuery = z.infer<typeof hostCodexEnvironmentsQuerySchema>;

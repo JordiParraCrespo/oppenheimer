@@ -6,9 +6,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * "Update the runner on optimus?": what the update does to the host before it
  * is sent. The runner restarts on the newest release on its channel; sessions
- * live in tmux and keep running, and open terminals reconnect
- * (`product/versions/mvp/09-runner-install-and-update.md` §5). A refusal — the
- * host went offline in between — stays in the dialog.
+ * live in tmux and keep running, and open terminals reconnect. A refusal —
+ * the host went offline in between — stays in the dialog.
  */
 export function UpdateRunnerDialog({ host, onClose }: { host: HostEntity; onClose: () => void }) {
   const { t } = useTranslation();

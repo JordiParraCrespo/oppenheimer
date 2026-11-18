@@ -2,10 +2,11 @@ import { BOT_LOOP_SELF_PACED_MAX_MINUTES } from '@oppenheimer/shared';
 import type { BotLoopEntity } from './bot-loop.entity';
 import { type LoopEnding, loopSourceKey } from './bot-loop.policy';
 import { BotMessageEntity } from './bot-message.entity';
+import { repeatedBlockerAsk } from './bot-recovery.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * What a loop says (`25-bots.md` §4.1, `/loop`): the words the bot reads when
+ * What a loop says (`/loop`): the words the bot reads when
  * a loop is set and at each run, and the turns and lines that carry them. The
  * decisions (when a run is due, whether the loop ends) are
  * `bot-loop.policy.ts`; this builds what they act on.
@@ -30,6 +31,7 @@ function loopRules(selfPaced: boolean): string[] {
     selfPaced
       ? `Before you finish, call schedule_loop with when to run next, 1 to ${BOT_LOOP_SELF_PACED_MAX_MINUTES} minutes from now: sooner while things are changing, later when they are quiet. If you do not, the loop ends.`
       : null,
+    repeatedBlockerAsk('call end_loop and say why in one line'),
     'When the loop has served its purpose (what it watches finished, or it cannot go on without the person), call end_loop and say why.',
   ].filter((line): line is string => line !== null);
 }

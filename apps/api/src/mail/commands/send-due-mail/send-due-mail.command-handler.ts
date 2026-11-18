@@ -18,7 +18,7 @@ const DUE_PER_BATCH = 50;
 const TICK_BUDGET_MS = 45_000;
 
 /**
- * Sends the scheduled mail that is due (`product/next-steps/mail.md` §3.4),
+ * Sends the scheduled mail that is due,
  * each as the plan it was approved with. Each is claimed with a conditional
  * write before Gmail is asked, so a cancel, another replica or the next tick
  * cannot send it twice; a claimed send that then fails is recorded as failed

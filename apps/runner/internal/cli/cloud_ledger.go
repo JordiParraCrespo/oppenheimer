@@ -26,7 +26,7 @@ const cloudLedgerCap = 500
 var cloudLedgerMu sync.Mutex
 
 // cloudStart is one remembered start: the cloud session `claude --cloud` or
-// the task `codex cloud exec` made for an Oppenheimer session, and when.
+// the Codex cloud thread made for an Oppenheimer session, and when.
 type cloudStart struct {
 	ID    string    `json:"id"`
 	URL   string    `json:"url"`

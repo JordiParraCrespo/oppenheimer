@@ -4,19 +4,18 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
 import { insertPendingBotApproval } from '../../support/db';
 
 /**
- * A bot's Needs input cards through the deployed API
- * (`product/versions/mvp/25-bots.md` §5): a bot with none lists none, and a
- * decision on a card that is not the bot's is `BOTS_015`. With a GLM key
- * (`GLM_API_KEY`, a real one), a bot on Approve for me asked to start a
+ * A bot's Needs input cards through the deployed API: a bot with none lists
+ * none, and a decision on a card that is not the bot's is `BOTS_015`. With a
+ * GLM key (`GLM_API_KEY`, a real one), a bot on Approve for me asked to start a
  * session raises a card instead of starting it; denying it with a note runs
  * nothing and gives the bot a turn opened by an event that says so, and a
  * second decision is `BOTS_016`. Approving one answers at once with the card
  * `approved` and no result: the call runs in a job, its answer lands on the
- * card (here a refusal, as the account has no host, so the card ends
- * failed), and the bot gets a turn opened by an event that says so. The live
- * half is skipped without the key. A seeded card offers the decisions its
- * call allows, refuses one it does not (`BOTS_030`), and a stop writes its
- * line outside any turn and gives the bot none.
+ * card (here a refusal, as the account has no host, so the card ends failed),
+ * and the bot gets a turn opened by an event that says so. The live half is
+ * skipped without the key. A seeded card offers the decisions its call allows,
+ * refuses one it does not (`BOTS_030`), and a stop writes its line outside any
+ * turn and gives the bot none.
  */
 
 interface Approval {

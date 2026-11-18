@@ -4,8 +4,8 @@
 // message asks for first?
 //
 // While a bot's INSTRUCTIONS.md is empty its prompt carries Getting started
-// (`gettingStarted` in `apps/api/src/bots-chat/domain/bot-prompt.policy.ts`,
-// `25-bots.md` §1): work the message asks for first, then the name and the
+// (`gettingStarted` in `apps/api/src/bots-chat/domain/bot-prompt.policy.ts`):
+// work the message asks for first, then the name and the
 // job; a list of what it can do from `AREA_INTROS`, only for areas whose
 // acting tools the turn offers; job examples from the same table. A change
 // to those, or to the default soul (`botSoulFor`), is what this eval is for.
@@ -34,6 +34,10 @@ import {
 } from '../../../apps/api/src/bots-chat/domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
+  composeTurnContext,
+  withTurnContext,
+} from '../../../apps/api/src/bots-chat/domain/bot-turn-context.policy';
+import {
   arg,
   type EvalTool,
   fromApi,
@@ -51,7 +55,21 @@ type BotToolGroup = import('@oppenheimer/shared').BotToolGroup;
 const QUESTIONS = {
   asksName: 'Does the reply ask the person what they would like to call the bot?',
   asksJob: 'Does the reply ask the person what job or task they want the bot to own?',
-  listsCapabilities: 'Does the reply list several things the bot can do for the person?',
+  listsCapabilities: 'Does the reply mention at least two things the bot can do for the person?',
+  short:
+    'Is the reply short: five sentences or fewer (count them; a question is a sentence), with no headings and no bulleted or numbered list?',
+  tailorsToZengue:
+    'Do the example jobs the reply suggests concern the Zengue Jewels project (or ask whether the bot is for it)?',
+  tailorsToXrpMobile: 'Does the reply suggest an example job about XRP Mobile?',
+  mentionsName:
+    'Does the reply say, in a line or two, that the bot has no name of its own yet and that the person can give it one?',
+  oneQuestion: 'Does the reply ask the person at most one question?',
+  saysNoName:
+    'Does the reply say the bot has no name (of its own) yet, or invite the person to give it one?',
+  greetsByTime:
+    'Does the reply greet with the time of day (good morning, good afternoon, good evening, buenos días, buenas tardes, buenas noches or similar)?',
+  suggestsName:
+    'Does the reply suggest one specific new name for the bot (not its current name, Juno) that the person can take or change?',
   promisesSessions:
     "Does the reply say the bot can start coding agents or sessions, or run commands, on the person's computers?",
   suggestsCodingAgents:
@@ -71,6 +89,10 @@ interface Case {
   toolset: string;
   message: string;
   instructions?: string;
+  /** What the general memory holds about the person. */
+  personFacts?: string[];
+  /** When the message is sent, as the turn context says, in Europe/Madrid. */
+  now?: string;
   want: Partial<Record<Question, boolean>>;
   wantCalls?: string[];
   wantGeneralMemory?: boolean;
@@ -102,9 +124,11 @@ function stubTools(tools: readonly StubTool[]): EvalTool[] {
       content:
         tool.name === 'list_hosts'
           ? 'No hosts paired yet.'
-          : tool.name === 'remember'
-            ? 'Saved.'
-            : 'Done.',
+          : tool.name === 'list_projects'
+            ? 'XRP Mobile (xrp-mobile); ZENGUE JEWELS (no repositories); Invoices (invoices); SEO (no repositories)'
+            : tool.name === 'remember'
+              ? 'Saved.'
+              : 'Done.',
     }),
   }));
 }
@@ -131,6 +155,7 @@ async function runOnce(via: Transport, data: Cases, item: Case) {
     soul: botSoulFor(data.bot.name),
     instructions: item.instructions ?? '',
     facts: [],
+    personFacts: item.personFacts ?? [],
     engineCapabilities: [],
     tools: stubs.map((stub, i) => ({
       name: stub.name,
@@ -138,7 +163,19 @@ async function runOnce(via: Transport, data: Cases, item: Case) {
       group: stub.group,
     })),
   });
-  const turn = await via.turn({ system, message: item.message, tools, maxTurns: 6 });
+  const context = composeTurnContext({
+    now: new Date(item.now ?? '2026-11-15T19:30:00Z'),
+    timeZone: 'Europe/Madrid',
+    homeHost: null,
+    hosts: [],
+    lastContext: null,
+  });
+  const turn = await via.turn({
+    system,
+    message: withTurnContext(context, item.message),
+    tools,
+    maxTurns: 6,
+  });
   const keys = Object.keys(item.want) as Question[];
   const grades = keys.length ? await grade(via, turn.answer, keys) : {};
   const misses: string[] = keys.filter((key) => grades[key] !== item.want[key]);

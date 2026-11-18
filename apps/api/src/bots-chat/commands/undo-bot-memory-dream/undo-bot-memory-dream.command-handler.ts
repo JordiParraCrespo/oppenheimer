@@ -18,7 +18,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { UndoBotMemoryDreamCommand } from './undo-bot-memory-dream.command';
 
 /**
- * Undoes the bot's latest dream (`25-bots.md` §4.1, "Dreaming"): the facts
+ * Undoes the bot's latest dream: the facts
  * it replaced come back as they were, the ones it wrote go, and what the bot
  * saved since stays. `BOTS_041` when there is no dream to undo, or it was
  * undone already. The chat says so, and the bot reads it.

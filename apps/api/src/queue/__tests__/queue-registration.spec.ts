@@ -110,6 +110,7 @@ describe('queue registration', () => {
           QUEUE_NAMES.BOT_DREAMS,
           QUEUE_NAMES.BOT_STALL_CHECKS,
           QUEUE_NAMES.SESSION_WAKES,
+          QUEUE_NAMES.CLOUD_REPLY_WAKES,
         ].sort(),
       );
       for (const [name, queue] of queues) {
@@ -126,6 +127,7 @@ describe('queue registration', () => {
       [QUEUE_NAMES.BOT_DREAMS, DURABLE_JOB_OPTIONS],
       [QUEUE_NAMES.BOT_STALL_CHECKS, DURABLE_JOB_OPTIONS],
       [QUEUE_NAMES.SESSION_WAKES, DURABLE_JOB_OPTIONS],
+      [QUEUE_NAMES.CLOUD_REPLY_WAKES, DURABLE_JOB_OPTIONS],
       // Scheduler-driven queues keep the root removal policy.
       [QUEUE_NAMES.HOST_RETENTION, DEFAULT_JOB_OPTIONS],
       [QUEUE_NAMES.AUTOMATION_SCHEDULES, DEFAULT_JOB_OPTIONS],

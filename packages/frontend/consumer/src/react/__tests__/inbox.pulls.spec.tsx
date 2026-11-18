@@ -41,6 +41,7 @@ function setup() {
       findReports: vi.fn().mockResolvedValue([]),
     },
     [TOKENS.ProjectsRepository]: { findAll: vi.fn().mockResolvedValue([]) },
+    [TOKENS.TasksRepository]: { findAll: vi.fn().mockResolvedValue([]) },
     [TOKENS.PullRequestsRepository]: { queue },
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

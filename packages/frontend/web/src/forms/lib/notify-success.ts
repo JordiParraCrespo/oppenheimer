@@ -15,10 +15,10 @@ export const translateToast = (key: ToastKey, values?: Record<string, string>) =
   translate(`toasts.${key}`, values);
 
 /**
- * Says that a write landed, when its result is not where the reader is
- * looking (`.agents/rules/frontend-ui.md`). It takes a `toasts.*` key rather
- * than a string, so a success cannot be worded anywhere else, and the same
- * for the label of the button that leads to the result.
+ * Says that a write landed, when its result is not where the reader is looking.
+ * It takes a `toasts.*` key rather than a string, so a success cannot be worded
+ * anywhere else, and the same for the label of the button that leads to the
+ * result.
  */
 export function notifySuccess(
   key: ToastKey,

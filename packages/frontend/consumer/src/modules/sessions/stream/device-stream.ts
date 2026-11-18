@@ -9,11 +9,23 @@ import {
   webSocketFactory,
 } from './attach-socket';
 
-/** Which device a session has, as its host names it. */
+/** One device the session's host offers: `free` when no other session holds it. */
+export interface DeviceChoice {
+  serial: string;
+  name: string;
+  platform: 'android' | 'ios';
+  free: boolean;
+}
+
+/**
+ * Which device a session has, as its host names it, and the host's devices it
+ * could move to (absent on a runner that cannot move it).
+ */
 export interface DeviceInfo {
   serial: string;
   name: string;
   platform: 'android' | 'ios';
+  devices?: DeviceChoice[];
 }
 
 /**
@@ -39,6 +51,17 @@ export interface DeviceStream {
   onDevice(listener: (device: DeviceInfo) => void): () => void;
   onStatus(listener: (status: DeviceStatus) => void): () => void;
   input(input: DeviceInput): void;
+  /**
+   * Move the session onto another of its host's devices, one `devices` lists
+   * as free. The screen switches in place; `onDevice` says which it has after.
+   */
+  select(serial: string): void;
+  /**
+   * Dial again now: the host looks at its devices afresh and restarts the
+   * screen. Works from any status, `unavailable` included, so a simulator
+   * booted since can be picked up.
+   */
+  refresh(): void;
   dispose(): void;
 }
 
@@ -76,6 +99,8 @@ export class AttachDeviceStream implements DeviceStream {
   private disposed = false;
   private attempt = 0;
   private cancelRetry: (() => void) | null = null;
+  /** Each dial's number: a dial a refresh overtook drops its socket unopened. */
+  private dial = 0;
 
   constructor(private readonly options: DeviceStreamOptions) {
     this.socketFactory = options.socketFactory ?? webSocketFactory;
@@ -104,6 +129,23 @@ export class AttachDeviceStream implements DeviceStream {
     this.tell({ type: 'device.input', ...input });
   }
 
+  select(serial: string): void {
+    this.tell({ type: 'device.select', serial });
+  }
+
+  refresh(): void {
+    if (this.disposed) return;
+    this.cancelRetry?.();
+    this.cancelRetry = null;
+    const socket = this.socket;
+    // Forgotten first, so its close is not taken for a drop to retry.
+    this.socket = null;
+    socket?.close(1000, 'refresh');
+    this.attempt = 0;
+    this.setStatus('connecting');
+    void this.connect();
+  }
+
   dispose(): void {
     this.disposed = true;
     this.cancelRetry?.();
@@ -114,14 +156,16 @@ export class AttachDeviceStream implements DeviceStream {
 
   private async connect(): Promise<void> {
     if (this.disposed) return;
+    this.dial += 1;
+    const dial = this.dial;
     let ticket: { ticket: string; url: string };
     try {
       ticket = await this.options.issueTicket();
     } catch {
-      this.retry();
+      if (dial === this.dial) this.retry();
       return;
     }
-    if (this.disposed) return;
+    if (this.disposed || dial !== this.dial) return;
     const socket = openAttachSocket(this.socketFactory, ticket, this.options.apiBaseUrl);
     this.socket = socket;
     socket.onmessage = (event) => {

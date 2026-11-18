@@ -267,8 +267,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
   }
 
   /**
-   * One batch through the BRIN index, touching only the rows it picked
-   * (`.agents/rules/database-design.md`, batched deletes).
+   * One batch through the BRIN index, touching only the rows it picked.
    */
   private async deleteBatch(table: string, cutoff: Date, batch: number): Promise<number> {
     const [, affected]: [unknown, number] = await this.dataSource.query(

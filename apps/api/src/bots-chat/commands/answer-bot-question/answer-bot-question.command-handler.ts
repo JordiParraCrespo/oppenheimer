@@ -5,9 +5,9 @@ import { BotQuestionDecisionResolver } from '../../application/bot-question-deci
 import { AnswerBotQuestionCommand } from './answer-bot-question.command';
 
 /**
- * The owner answers a bot's card of questions (`ask_user`, `25-bots.md`
- * §3.2): one answer per question, each fitting the options it has
- * (`BOTS_036` names what does not), and the bot gets a turn that reads them.
+ * The owner answers a bot's card of questions (`ask_user`): one answer per
+ * question, each fitting the options it has (`BOTS_036` names what does not),
+ * and the bot gets a turn that reads them.
  */
 @CommandHandler(AnswerBotQuestionCommand)
 export class AnswerBotQuestionCommandHandler

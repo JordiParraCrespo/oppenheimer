@@ -82,7 +82,7 @@ export const SessionErrors = {
    * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
    * no frame that adds one to a running session, so a later add is refused
    * before a row is written rather than recorded and never made. The code dates
-   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
+   * from the one-repository MVP; the create bound was raised on 2026-10-26.
    */
   TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
@@ -305,8 +305,7 @@ export const SessionErrors = {
   /**
    * Something only a session a host started has — a terminal, a checkout, a
    * restart, a share, a prompt — asked of a cloud session the control plane
-   * launched at its vendor (Cursor's), which is followed and answered there
-   * (`product/next-steps/cloud-agents.md`).
+   * launched at its vendor (Cursor's), which is followed and answered there.
    */
   VENDOR_SESSION: {
     code: 'SESSIONS_039',
@@ -341,41 +340,6 @@ export const SessionErrors = {
     code: 'SESSIONS_043',
     message: 'The session already has as many terminal watches as it can hold',
     httpStatus: 409,
-  },
-  /**
-   * The composer asked for a host's Codex environments, and its runner predates
-   * `codex.environments`: it would never answer. A Codex cloud session still
-   * starts there, in an environment guessed from the repository's name.
-   */
-  CODEX_ENVIRONMENTS_UNSUPPORTED_BY_RUNNER: {
-    code: 'SESSIONS_044',
-    message: "This host's runner cannot list Codex environments",
-    httpStatus: 409,
-  },
-  /** The composer asked a host that holds no link for its Codex environments. */
-  CODEX_ENVIRONMENTS_HOST_OFFLINE: {
-    code: 'SESSIONS_045',
-    message: 'The host is offline, so its Codex environments cannot be listed',
-    httpStatus: 503,
-  },
-  /**
-   * Codex on the host could not list its environments: no `codex` on it, or
-   * no ChatGPT sign-in. The runner's own words are the detail.
-   */
-  CODEX_ENVIRONMENTS_UNAVAILABLE: {
-    code: 'SESSIONS_046',
-    message: 'Codex on the host could not list its environments',
-    httpStatus: 502,
-  },
-  /**
-   * ChatGPT refused the host's read of its Codex environments for rate
-   * (`SESS_011`): the host asks nothing more of that account until the time
-   * it named, which the runner's words carry as the detail.
-   */
-  CODEX_ENVIRONMENTS_RATE_LIMITED: {
-    code: 'SESSIONS_047',
-    message: 'ChatGPT is limiting how often the host may list Codex environments',
-    httpStatus: 429,
   },
   /**
    * Continuing a cloud session on a host (`teleport`) whose live runner did
@@ -435,11 +399,53 @@ export const SessionErrors = {
   /**
    * A reply, or a read of the chat, for a session whose conversation does
    * not come here: only a Claude Code cloud session sends its transcript and
-   * collects replies (`product/next-steps/cloud-agents.md`).
+   * collects replies.
    */
   NO_CLOUD_CHAT: {
     code: 'SESSIONS_054',
     message: 'This session has no cloud chat',
+    httpStatus: 409,
+  },
+  /**
+   * The Terminal tab opened or closed a shell on a host whose live runner did
+   * not name `session.windows.list`: it would change the windows without
+   * saying which, so the tab could not attach to the one it asked for.
+   */
+  WINDOWS_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_056',
+    message: "This host's runner cannot open or close a session's terminals",
+    httpStatus: 409,
+  },
+  /** Window 0 is the agent: it ends with the session, never as a tab. */
+  WINDOW_IS_AGENT: {
+    code: 'SESSIONS_057',
+    message: "The agent's window cannot be closed; close the session instead",
+    httpStatus: 409,
+  },
+  /** The session has no window with that index on its host (`SESS_001`): it was closed already. */
+  WINDOW_NOT_FOUND: {
+    code: 'SESSIONS_058',
+    message: 'The session has no such terminal',
+    httpStatus: 404,
+  },
+  /**
+   * The host refused to open or close a terminal for any other reason (the
+   * session is not running there, tmux failed); the runner's own code is
+   * `upstreamCode`.
+   */
+  WINDOW_REFUSED: {
+    code: 'SESSIONS_059',
+    message: "The host refused to change the session's terminals",
+    httpStatus: 409,
+  },
+  /**
+   * An open that asks for a second coding agent, on a host whose live runner
+   * did not name `session.window.agent`: it would open a plain shell and
+   * ignore the agent, so it is refused before the host is asked.
+   */
+  WINDOW_AGENT_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_060',
+    message: "This host's runner cannot start a second agent in a session",
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

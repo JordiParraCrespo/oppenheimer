@@ -7,8 +7,7 @@ import { parseEnv, positiveInt } from './env';
  * is a BullMQ job scheduler that runs once a day however many replicas there are; the
  * schedules stay beside each processor, staggered so no two run at once.
  *
- * Defaulted, all of it, to what `product/versions/mvp/15-host-metadata.md` and the
- * automations and outbox notes decided, so nothing here can fail a boot.
+ * Defaulted, all of it, so nothing here can fail a boot.
  */
 const schema = z.object({
   /** An IP address is personal data: where a laptop has been is kept this long past its last use. */

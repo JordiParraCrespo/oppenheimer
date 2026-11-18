@@ -47,7 +47,7 @@ describe('CloudChatFeed', () => {
     ]);
     const feed = new CloudChatFeed(source, chat, {
       everyMs: 1000,
-      onWaiting: () => {},
+      onPending: () => {},
       onReplyFailed: () => {},
     });
 
@@ -65,7 +65,7 @@ describe('CloudChatFeed', () => {
     const { source, replies } = sourceOf([]);
     const feed = new CloudChatFeed(source, chat, {
       everyMs: 1000,
-      onWaiting: () => {},
+      onPending: () => {},
       onReplyFailed: () => {},
     });
     const stop = feed.start();
@@ -76,6 +76,52 @@ describe('CloudChatFeed', () => {
     // Breaks if the paste marks reach the agent, Escape is sent as text, or
     // a message goes as one reply per piece the chat typed.
     expect(replies).toEqual(['First line\nsecond line']);
+    stop();
+  });
+
+  it('shows a reply a host sent as sent until the transcript has it, and one the hook holds as waiting', async () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const at = new Date('2026-11-11T10:00:00Z');
+    const sent = {
+      id: 'r1',
+      text: 'Now tag the release',
+      createdAt: at,
+      collectedAt: at,
+      deliveredVia: 'host' as const,
+    };
+    const waiting = {
+      ...sent,
+      id: 'r2',
+      text: 'And the notes',
+      collectedAt: null,
+      deliveredVia: null,
+    };
+    const echo = line({
+      type: 'user',
+      uuid: 'u1',
+      message: {
+        role: 'user',
+        content: [{ type: 'text', text: `${CLOUD_REPLY_PREAMBLE}\n\nNow tag the release` }],
+      },
+    });
+    const { source } = sourceOf([
+      { lines: [], next: 0, replies: [sent, waiting] },
+      { lines: [echo], next: 1, replies: [sent, waiting] },
+    ]);
+    const pending: string[][] = [];
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 1000,
+      onPending: (now) => pending.push(now.map((reply) => `${reply.id}:${reply.state}`)),
+      onReplyFailed: () => {},
+    });
+
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(1000);
+    // Breaks if a host's reply vanishes before the session ran it, or stays
+    // once its words are back (a prompt's one text block, not only a string).
+    expect(pending).toEqual([['r1:sent', 'r2:waiting'], ['r2:waiting']]);
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['Now tag the release']);
     stop();
   });
 });

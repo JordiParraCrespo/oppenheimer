@@ -1,5 +1,4 @@
-import { RoutineTable, RoutineTableEmpty, RoutineTableHead } from '@oppenheimer/design-system-web';
-import { Zap } from '@oppenheimer/design-system-web/icons';
+import { EmptyState, RoutineTable, RoutineTableHead } from '@oppenheimer/design-system-web';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects, useSuspenseAutomations } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
@@ -14,11 +13,10 @@ import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
- * The overview's Automations view (`product/versions/mvp/13-automations.md`):
- * one row per automation in the workspace, oldest first as the API lists
- * them. A row opens the automation's page; its menu edits, runs, pauses,
- * duplicates or deletes it in place. What an action could not do stays on
- * screen above the table.
+ * The overview's Automations view: one row per automation in the workspace,
+ * oldest first as the API lists them. A row opens the automation's page;
+ * its menu edits, runs, pauses, duplicates or deletes it in place. What an
+ * action could not do stays on screen above the table.
  *
  * Delete asks first, like the automation's own page. The table owns which
  * row's confirm is open, because a row's menu unmounts when it closes.
@@ -56,12 +54,13 @@ export function AutomationsTable() {
       <ErrorAlert error={error} fallback={t('automations.page.loadFailed')} />
       {rows.length === 0 ? (
         <RoutineTable>
-          <RoutineTableEmpty>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
-              <Zap />
-            </span>
-            <span>{t('automations.page.empty')}</span>
-          </RoutineTableEmpty>
+          <EmptyState className="py-14">
+            <EmptyState.Header>
+              <EmptyState.Art name="automations" />
+              <EmptyState.Title>{t('automations.page.emptyTitle')}</EmptyState.Title>
+              <EmptyState.Description>{t('automations.page.empty')}</EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
         </RoutineTable>
       ) : (
         <RoutineTable>

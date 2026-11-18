@@ -19,7 +19,8 @@ const TYPING_BURST_MS = 250;
 
 /**
  * The session's device, live, for the preview pane: its status, which device
- * it is, the frame on screen, and the reader's input. The stream is built and
+ * it is and which others the host offers, the frame on screen, the reader's
+ * input, a pick of another device, and a refresh. The stream is built and
  * disposed by this hook's effect, which syncs with the device's socket.
  */
 export function useSessionDevice(sessionId: string) {
@@ -106,5 +107,8 @@ export function useSessionDevice(sessionId: string) {
     flushTyping();
   };
 
-  return { status, device, frame, send, type };
+  const select = (serial: string) => streamRef.current?.select(serial);
+  const refresh = () => streamRef.current?.refresh();
+
+  return { status, device, frame, send, type, select, refresh };
 }

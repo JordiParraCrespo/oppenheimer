@@ -19,9 +19,8 @@ import {
 } from '../lib/session-filters';
 
 /**
- * The sidebar's filter menu (`SessionsConsole.dc.html`): four facets (all but
- * the project built from the rows on screen), one order, and the chips for
- * what is hidden.
+ * The sidebar's filter menu: four facets (all but the project built from
+ * the rows on screen), one order, and the chips for what is hidden.
  */
 
 const session = (
@@ -33,6 +32,7 @@ const session = (
     repos: string[];
     createdAt: string;
     name: string;
+    state: SessionEntity['state'];
   }> = {},
 ) =>
   sessionEntity({
@@ -42,6 +42,7 @@ const session = (
     agent: (over.agent ?? 'claude-code') as SessionEntity['agent'],
     hostId: over.hostId ?? 'h1',
     createdAt: new Date(over.createdAt ?? '2026-01-01T00:00:00Z'),
+    ...(over.state ? { state: over.state } : {}),
     checkouts: (over.repos ?? ['acme/api']).map((repositoryFullName) =>
       sessionCheckout({ repositoryFullName }),
     ),
@@ -128,6 +129,33 @@ describe('applyFilters', () => {
     expect(ids(applyFilters(sessions, filters({ sort: 'name' })))).toEqual(['mid', 'old', 'new']);
   });
 
+  describe('by what needs the reader', () => {
+    const waiting = [
+      session('quiet-new', { createdAt: '2026-04-01T00:00:00Z' }),
+      session('review', { createdAt: '2026-03-01T00:00:00Z', state: 'ready-for-review' }),
+      session('asks-old', { createdAt: '2026-01-01T00:00:00Z', state: 'waiting-on-you' }),
+      session('asks-new', { createdAt: '2026-02-01T00:00:00Z', state: 'waiting-on-you' }),
+    ];
+
+    // Regression: a session waiting on input sinks under newer quiet ones.
+    it('puts needs input first, then ready for review, each newest first', () => {
+      expect(ids(applyFilters(waiting, filters({ sort: 'attention' })))).toEqual([
+        'asks-new',
+        'asks-old',
+        'review',
+        'quiet-new',
+      ]);
+    });
+
+    it('narrows to the sessions whose dot is amber, or blue', () => {
+      expect(ids(applyFilters(waiting, filters({ status: ['needs-you'] })))).toEqual([
+        'asks-new',
+        'asks-old',
+      ]);
+      expect(ids(applyFilters(waiting, filters({ status: ['done'] })))).toEqual(['review']);
+    });
+  });
+
   it('narrows by each facet, matching a repository on any checkout', () => {
     expect(ids(applyFilters(sessions, filters({ project: ['p2'] })))).toEqual(['new']);
     expect(ids(applyFilters(sessions, filters({ repository: ['acme/api'] })))).toEqual([
@@ -167,6 +195,7 @@ describe('activeFilters', () => {
       repository: [],
       agent: [],
       host: [{ value: 'h1', label: 'laptop' }],
+      status: [],
     };
 
     expect(
@@ -215,6 +244,7 @@ describe('picking', () => {
       ],
       agent: [],
       host: [],
+      status: [],
     };
     const several = (count: number) => `${count} picked`;
     expect(facetLabel(DEFAULT_FILTERS, 'project', options, several)).toBe('All projects');
@@ -235,6 +265,7 @@ describe('picking', () => {
       ],
       agent: [],
       host: [],
+      status: [],
     };
     const picked = filters({ repository: ['acme/api', 'acme/web'] });
     const chips = activeFilters(picked, options);

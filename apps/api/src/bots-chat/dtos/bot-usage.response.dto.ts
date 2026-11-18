@@ -44,7 +44,7 @@ export class BotUsageBackgroundResponseDto extends BotTokenCountsResponseDto {
   calls!: number;
 }
 
-/** `GET /bots/:id/usage`: what the bot's chat has spent (`25-bots.md` §4.1, `/usage`). */
+/** `GET /bots/:id/usage`: what the bot's chat has spent (`/usage`). */
 export class BotUsageResponseDto {
   @ApiProperty({
     format: 'date-time',

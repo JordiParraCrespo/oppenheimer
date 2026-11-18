@@ -17,7 +17,7 @@ import { TelegramLinkProcessor } from './infrastructure/telegram-link.processor'
 import { WhatsappLinkProcessor } from './infrastructure/whatsapp-link.processor';
 
 /**
- * Relay: the two sockets of `product/versions/mvp/01-protocol.md`.
+ * Relay: the two sockets between runners and browsers.
  * `GET /api/v1/relay/runner` is the multiplexed link a runner dials with its boot
  * assertion; `GET /api/v1/relay/attach` the unmultiplexed socket a browser opens with
  * an attach ticket. `links/` sits between them as the registry of reachable hosts,

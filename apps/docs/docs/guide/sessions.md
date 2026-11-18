@@ -65,7 +65,7 @@ The console shows window 0, the agent's window. Extra shell windows can be made 
 The preview toggle opens a pane beside the terminal:
 
 - **Browser** shows a dev server the session runs, through the host's runner: pick any port the session listens on from 1024 up; the tab opens on the likeliest one (5173, 3000…). The app sees `localhost`. It shows "Waiting for a dev server" until one starts, and needs the deployment to have a preview domain configured.
-- **Simulator** shows an iOS simulator or Android emulator the host offers to its sessions, which you can watch and tap. It appears only on hosts set up with devices.
+- **Simulator** shows an iOS simulator or Android emulator the host offers to its sessions, which you can watch and tap. When the host runs more than one, click the device's name to move the session onto another free one; **Refresh** looks for simulators booted since and restarts the screen. The agent is told about the new device in its session notes; one already in the middle of a task may keep using the old device until it rereads them or the session restarts. It appears only on hosts set up with devices.
 
 ## Sharing a session
 
@@ -89,12 +89,12 @@ A host reboot leaves sessions stopped, waiting for Restart. A session marked **k
 Under **Cloud** in the where-it-runs chip:
 
 - **Claude Code**: a host starts it with `claude --cloud`, under the Claude account that host is signed in to; it runs on claude.ai/code. Its state comes from the Oppenheimer Chrome extension while you are signed in to claude.ai. **Continue on a host** brings it back as a worktree session.
-- **Codex**: a host starts a Codex cloud task in a Codex environment (Auto, or picked in the Codex environment chip) and reports its status while online. `codex apply` brings its changes into a checkout.
+- **Codex**: a host starts a Codex cloud task and reports its status while online. In the Codex environment chip, **Default** runs it in Codex's default environment with the repository; to use another, paste its id from ChatGPT Settings → Codex Cloud. The host's `codex` must be signed in with ChatGPT (`codex login`).
 - **Cursor**: runs in Cursor's cloud on your own key, no host. Connect the key in **Settings → Cloud agents**.
 
 A cloud session needs a task and has no terminal here. Follow-ups go to the vendor, except Cursor's, which take one through Oppenheimer after the last run ends. Deleting one removes it from Oppenheimer only.
 
-**The chat of a Claude Code cloud session.** A Claude Code cloud session that Oppenheimer started can show its chat in the session's pane, and take your replies, once its repository carries Oppenheimer's two hooks: one sends the session's conversation to Oppenheimer, the other collects what you type. Setting the hooks up is not in the console yet. Until the first line arrives, the pane is the usual cloud pane with its claude.ai link. A reply is handed to the agent when its current turn ends; one typed after the session has gone idle waits for its next turn. Stop does nothing on a cloud session, and a session started on claude.ai rather than from Oppenheimer shows no chat here.
+**The chat of a Claude Code cloud session.** A Claude Code cloud session that Oppenheimer started can show its chat in the session's pane, and take your replies, once its repository carries Oppenheimer's two hooks: one sends the session's conversation to Oppenheimer, the other collects what you type. Setting the hooks up is not in the console yet. Until the first line arrives, the pane is the usual cloud pane with its claude.ai link. A reply is handed to the agent when its current turn ends. If the session is idle, so nothing takes the reply within 15 seconds, one of your online hosts signed in to the same Claude account as the host that started the session sends it with `claude -p … --cloud`, and the session wakes up and answers. The chat shows that reply as sent until the agent picks it up. With no such host online, the reply waits for the session's next turn. Stop does nothing on a cloud session, and a session started on claude.ai rather than from Oppenheimer shows no chat here.
 
 ## Child sessions and in-session tools
 

@@ -2,8 +2,7 @@ import type { SessionGroup } from '@oppenheimer/shared';
 import type { SessionFold } from './session-state.policy';
 
 /**
- * The **derived group**: what the sidebar dot shows
- * (`product/versions/mvp/03-control-plane.md`).
+ * The **derived group**: what the sidebar dot shows.
  *
  * A pure function of the **fold**, i.e. of the row: every input is a column the log
  * projects, so a listing renders a dot without walking a log and no caller can hand

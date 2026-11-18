@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
 /**
- * The Inbox (`product/versions/mvp/29-inbox.md`): one place for what needs
- * you. Its items are not stored, they are read from their sources; what is
- * stored is only what a person did to one occurrence of an item, a **mark**
- * (§3).
+ * The Inbox: one place for what needs you. Its items are not stored, they are
+ * read from their sources; what is stored is only what a person did to one
+ * occurrence of an item, a **mark**.
  *
  * - `done`: hidden, with a line in the log.
  * - `low`: deprioritized, sorted last and labelled *Low*.

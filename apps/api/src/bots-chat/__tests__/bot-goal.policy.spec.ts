@@ -1,6 +1,6 @@
 /**
- * What a turn's end means for a bot's goal (`25-bots.md` §4.1), and the
- * goal's own bounds, since goals have no limit of continuations (2026-11-09).
+ * What a turn's end means for a bot's goal, and the
+ * goal's own bounds, since goals have no limit of continuations.
  * What breaks this: a goal ending on the first failed or stopped turn instead
  * of pausing where the owner can resume it; a goal going on forever with
  * turns that do nothing, or past its budget; a claim that it is met ending
