@@ -128,6 +128,7 @@ export function SessionRow({
     onError: onWrite,
   });
   const age = compactAge(session.createdAt, now);
+  const attention = attentionFor(session) ?? (unread.unread ? 'unread' : undefined);
   const glyph = sessionGlyph(session);
   const status = rowStatus(session, t);
   const cloudUrl = session.cloud?.url ?? null;
@@ -168,7 +169,8 @@ export function SessionRow({
       status={status}
       title={statusHint}
       state={rowGlyphFor(session)}
-      attention={attentionFor(session) ?? (unread.unread ? 'unread' : undefined)}
+      attention={attention}
+      attentionLabel={attention === 'unread' ? t('sessions.sidebar.unreadLabel') : undefined}
       working={isWorking(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'vendor' ? <AgentMark agent={session.agent} /> : GLYPHS[glyph]}

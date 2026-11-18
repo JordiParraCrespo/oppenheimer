@@ -62,6 +62,7 @@ function SessionItem({
   status,
   state = 'idle',
   attention,
+  attentionLabel,
   working,
   active,
   icon,
@@ -93,6 +94,8 @@ function SessionItem({
    * It gives way to the ellipsis like the age.
    */
   attention?: 'needs-you' | 'done' | 'unread';
+  /** What a screen reader hears for the dot, in the reader's language; English by default. */
+  attentionLabel?: string;
   /** Whether the agent is at work: the name shimmers while it is. */
   working?: boolean;
   active?: boolean;
@@ -195,7 +198,7 @@ function SessionItem({
       )}
       {attention && !rename ? (
         <span
-          aria-label={ATTENTION_LABELS[attention]}
+          aria-label={attentionLabel ?? ATTENTION_LABELS[attention]}
           className={cn(
             'size-1.75 shrink-0 rounded-pill',
             attention === 'needs-you' ? 'bg-warning' : 'bg-primary',

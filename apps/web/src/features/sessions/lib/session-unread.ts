@@ -20,11 +20,22 @@ function withUnread(marks: readonly string[], id: string, unread: boolean): stri
  * of them is mounted.
  */
 const listeners = new Set<() => void>();
+const notify = () => {
+  for (const onChange of listeners) onChange();
+};
+// Another tab's write reaches this one only through the browser's storage event.
+const fromOtherTab = (event: StorageEvent) => {
+  if (event.key === SESSION_UNREAD_KEY || event.key === null) notify();
+};
 
 export const sessionUnread = {
   subscribe(onChange: () => void): () => void {
+    if (listeners.size === 0) window.addEventListener('storage', fromOtherTab);
     listeners.add(onChange);
-    return () => listeners.delete(onChange);
+    return () => {
+      listeners.delete(onChange);
+      if (listeners.size === 0) window.removeEventListener('storage', fromOtherTab);
+    };
   },
   has(id: string): boolean {
     return storedList(SESSION_UNREAD_KEY).includes(id);
@@ -41,6 +52,6 @@ export const sessionUnread = {
       // Private browsing or a full quota: no mark is kept, and none is drawn.
       return;
     }
-    for (const onChange of listeners) onChange();
+    notify();
   },
 };

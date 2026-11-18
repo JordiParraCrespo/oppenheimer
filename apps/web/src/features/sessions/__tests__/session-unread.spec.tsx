@@ -36,4 +36,13 @@ describe('session unread marks', () => {
     pane.rerender({ id: 's1' });
     expect(row.result.current.unread).toBe(false);
   });
+
+  it('redraws a row when another tab marks its session, so this tab acts on the mark as it is', () => {
+    const row = renderHook(() => useSessionUnread('s1'));
+    window.localStorage.setItem('oppenheimer.sidebar.unread', JSON.stringify(['s1']));
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: 'oppenheimer.sidebar.unread' }));
+    });
+    expect(row.result.current.unread).toBe(true);
+  });
 });
