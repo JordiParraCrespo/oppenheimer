@@ -12,6 +12,8 @@ import { ReadWhatsappChatQuery } from '../../../whatsapp/queries/read-whatsapp-c
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotToolContext } from '../bot-tool.factory';
+import { BotWhatsappAccountsResolver } from '../bot-whatsapp-accounts.resolver';
+import { BotWhatsappGrantToolsFactory } from '../bot-whatsapp-grant-tools.factory';
 import { BotWhatsappToolsFactory } from '../bot-whatsapp-tools.factory';
 
 /**
@@ -94,10 +96,13 @@ function setup() {
   const command = vi.fn(async (sent: unknown) =>
     sent instanceof AllowWhatsappChatCommand ? FAMILY.id : '3EB1',
   );
-  const tools = new BotWhatsappToolsFactory(
-    { execute: query } as unknown as QueryBus,
-    { execute: command } as unknown as CommandBus,
-  ).definitions();
+  const queryBus = { execute: query } as unknown as QueryBus;
+  const commandBus = { execute: command } as unknown as CommandBus;
+  const accounts = new BotWhatsappAccountsResolver(queryBus);
+  const tools = [
+    ...new BotWhatsappToolsFactory(queryBus, commandBus, accounts).definitions(),
+    ...new BotWhatsappGrantToolsFactory(queryBus, commandBus, accounts).definitions(),
+  ];
   const tool = (name: string) => {
     const found = tools.find((definition) => definition.name === name);
     if (!found) throw new Error(`no ${name}`);
@@ -142,10 +147,10 @@ describe('BotWhatsappToolsFactory', () => {
   it('offers allowing and revoking chats only in the owner’s console chat and their own WhatsApp chat', () => {
     const { tool } = setup();
     for (const name of ['allow_whatsapp_chat', 'revoke_whatsapp_chat']) {
-      expect(tool(name).onlyOn).toEqual(['message', 'whatsapp']);
+      expect(tool(name).ownerOnlyOn).toEqual(['message', 'whatsapp']);
       expect(tool(name).scope).toBe('whatsapp:write');
     }
-    expect(tool('list_whatsapp_allowed_chats').onlyOn).toBeNull();
+    expect(tool('list_whatsapp_allowed_chats').ownerOnlyOn).toBeNull();
   });
 
   it('allows a chat for the owner’s own bot named, recording the bot that allowed it', async () => {

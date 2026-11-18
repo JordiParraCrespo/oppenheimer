@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import type { AllowedBy } from '@/features/whatsapp/lib/allowed-by';
 
 /** The picker's value for "the number's default bot". */
 const DEFAULT_BOT = '';
@@ -22,19 +23,21 @@ export function WhatsappAllowedChatRow({
 }: {
   grant: WhatsappChatGrantEntity;
   bots: readonly BotEntity[];
-  /** The name of the bot that allowed it; null when allowed in Settings or that bot is gone. */
-  allowedBy: string | null;
+  /** Who allowed it (`allowedByOf`). */
+  allowedBy: AllowedBy;
 }) {
   const { t } = useTranslation();
   const answer = useAnswerWhatsappChatAs();
   const revoke = useRevokeWhatsappChat();
   const meta = [
     t(grant.isGroup ? 'settings.whatsapp.allowed.group' : 'settings.whatsapp.allowed.person'),
-    allowedBy
-      ? t('settings.whatsapp.allowed.allowedBy', { bot: allowedBy })
-      : grant.grantedByBotId
-        ? t('settings.whatsapp.allowed.allowedByRemovedBot')
-        : t('settings.whatsapp.allowed.allowedByYou'),
+    allowedBy.kind === 'bot'
+      ? t('settings.whatsapp.allowed.allowedBy', { bot: allowedBy.name })
+      : t(
+          allowedBy.kind === 'removedBot'
+            ? 'settings.whatsapp.allowed.allowedByRemovedBot'
+            : 'settings.whatsapp.allowed.allowedByYou',
+        ),
   ].join(' · ');
 
   return (

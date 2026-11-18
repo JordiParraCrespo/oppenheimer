@@ -16,7 +16,7 @@ wakes no bot yet.
   A bot's `allow_whatsapp_chat` and `revoke_whatsapp_chat`, offered only in
   the owner's console chat and their own WhatsApp chat, and
   `list_whatsapp_allowed_chats`. A bot that answers in an allowed chat is not
-  deleted (`BOTS_043`). A tool can be kept to some turns (`onlyOn`).
+  deleted (`BOTS_043`). A tool can be kept to the owner’s own turns (`ownerOnlyOn`).
 - `@oppenheimer/api-client`: `findWhatsappChatGrants`, `allowWhatsappChat`,
   `updateWhatsappChatGrant` and `revokeWhatsappChat`.
 - `@oppenheimer/web`: Settings → WhatsApp → Allowed chats, under a number

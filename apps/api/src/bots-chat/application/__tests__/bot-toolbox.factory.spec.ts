@@ -130,7 +130,7 @@ describe('BotToolboxFactory', () => {
           scope: 'whatsapp:write',
           description: 'Allows.',
           input: z.object({}),
-          onlyOn: ['message', 'whatsapp'],
+          ownerOnlyOn: ['message', 'whatsapp'],
           run: async () => 'allowed',
         }),
       ],

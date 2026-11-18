@@ -3,6 +3,7 @@ import type { BotEntity, WhatsappAccountEntity } from '@oppenheimer/frontend-con
 import { useSuspenseWhatsappChatGrants } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { allowedByOf } from '@/features/whatsapp/lib/allowed-by';
 import { WhatsappAllowedChatRow } from '@/features/whatsapp/sections/whatsapp-allowed-chat-row';
 
 /**
@@ -40,7 +41,7 @@ export function WhatsappAllowedChatsList({
           key={grant.id}
           grant={grant}
           bots={bots}
-          allowedBy={grant.grantedByBotId ? (botNames.get(grant.grantedByBotId) ?? null) : null}
+          allowedBy={allowedByOf(grant, botNames)}
         />
       ))}
     </>
