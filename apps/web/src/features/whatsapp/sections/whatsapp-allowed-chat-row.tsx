@@ -12,7 +12,7 @@ const DEFAULT_BOT = '';
 
 /**
  * One group or person a number allows: whether it is a group, who allowed it
- * (a bot, in the reader's own chat, or Settings), the bot that answers there,
+ * (a bot, in the reader's own chat, or the reader), the bot that answers there,
  * saved as it is picked, and Remove, which stops allowing it at once.
  */
 export function WhatsappAllowedChatRow({
@@ -34,7 +34,7 @@ export function WhatsappAllowedChatRow({
       ? t('settings.whatsapp.allowed.allowedBy', { bot: allowedBy })
       : grant.grantedByBotId
         ? t('settings.whatsapp.allowed.allowedByRemovedBot')
-        : t('settings.whatsapp.allowed.allowedInSettings'),
+        : t('settings.whatsapp.allowed.allowedByYou'),
   ].join(' · ');
 
   return (

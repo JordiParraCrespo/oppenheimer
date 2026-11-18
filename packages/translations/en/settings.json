@@ -340,7 +340,7 @@
       "person": "Person",
       "allowedBy": "Allowed by {{bot}}",
       "allowedByRemovedBot": "Allowed by a removed bot",
-      "allowedInSettings": "Allowed in Settings",
+      "allowedByYou": "Allowed by you",
       "botLabel": "The bot that answers in {{chat}}",
       "defaultBot": "The number’s default bot",
       "remove": "Remove",

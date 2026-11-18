@@ -342,7 +342,7 @@
       "person": "Persona",
       "allowedBy": "Permitido por {{bot}}",
       "allowedByRemovedBot": "Permitido por un bot eliminado",
-      "allowedInSettings": "Permitido en Ajustes",
+      "allowedByYou": "Permitido por ti",
       "botLabel": "El bot que responde en {{chat}}",
       "defaultBot": "El bot por defecto del número",
       "remove": "Quitar",
