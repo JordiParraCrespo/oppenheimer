@@ -54,6 +54,9 @@ type Reader struct {
 	// (OpenQuestion), asked from the poll loop.
 	mu        sync.Mutex
 	questions map[string]*questionWatch
+
+	// openCode is which OpenCode drives which conversation, for the chat.
+	openCode *openCodeOwners
 }
 
 var _ app.Transcripts = (*Reader)(nil)
@@ -101,7 +104,7 @@ func New(opts Options) *Reader {
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
-	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir}
+	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir, openCode: newOpenCodeOwners()}
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.
