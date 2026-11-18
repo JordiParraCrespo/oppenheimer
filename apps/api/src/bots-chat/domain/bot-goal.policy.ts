@@ -86,7 +86,12 @@ export type GoalDecision =
 
 /** How a goal ends, as its line says it. */
 export interface GoalEnding {
-  activity: Exclude<BotGoalActivity, 'continued' | 'paused' | 'resumed'>;
+  /**
+   * How a goal ends now. `impossible` is not one of them: a reviewer's
+   * "impossible" pauses the goal as blocked, for the person to decide. The
+   * shared list keeps it for the lines goals left before that.
+   */
+  activity: Exclude<BotGoalActivity, 'continued' | 'paused' | 'resumed' | 'impossible'>;
   reason: string | null;
 }
 
@@ -341,7 +346,6 @@ export function goalContinuationTurn(
 
 const END_WORDS: Record<GoalEnding['activity'], string> = {
   met: promptText('wake/goal.ended-met'),
-  impossible: promptText('wake/goal.ended-impossible'),
   cleared: promptText('wake/goal.ended-cleared'),
   exhausted: promptText('wake/goal.ended-exhausted'),
   stopped: promptText('wake/goal.ended-stopped'),

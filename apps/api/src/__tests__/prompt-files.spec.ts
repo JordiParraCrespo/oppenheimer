@@ -5,10 +5,10 @@ import { parsePromptFile, readPrompts, renderPromptModule } from '../../scripts/
 
 /**
  * What a model is told is Markdown in a module's `domain/prompts/`, read by
- * the API from the `prompts.gen.ts` generated beside it. This spec holds the
- * two things that keeps true: the committed module is what the Markdown
- * generates, and a prompt file is read the way `prompt-files.mjs` says (a
- * note never sent, a broken file refused). `bot-prompt-text.policy.spec.ts`
+ * the API from the `prompts.gen.ts` generated beside it. This spec holds
+ * what keeps that true: the committed module is what the Markdown generates,
+ * no prompt outgrows the ceiling or goes unread, and a prompt file is read
+ * the way `prompt-files.mjs` says (a note never sent, a broken file refused). `bot-prompt-text.policy.spec.ts`
  * covers how the words reach the code; `bot-prompt.policy.spec.ts` which are
  * sent to which bot.
  */
@@ -19,6 +19,19 @@ const promptDirs = readdirSync(SRC, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => join(SRC, entry.name, 'domain', 'prompts'))
   .filter((dir) => existsSync(dir));
+
+/** The text of every source file of a module, its specs and its generated prompts aside. */
+function moduleSources(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return entry.name === '__tests__' || entry.name === 'prompts' ? [] : moduleSources(path);
+    }
+    return entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts')
+      ? [readFileSync(path, 'utf8')]
+      : [];
+  });
+}
 
 /** The longest a single prompt may be, in characters: about 2,000 tokens. */
 const PROMPT_CEILING = 8_000;
@@ -44,6 +57,17 @@ describe('prompt files', () => {
       .filter((prompt) => prompt.text.length > PROMPT_CEILING)
       .map((prompt) => `${prompt.id} (${prompt.text.length})`);
     expect(over).toEqual([]);
+  });
+
+  // A prompt nothing reads is words someone will edit believing a model
+  // hears them. An id is always written out where it is read (the types ask
+  // for the literal), so a prompt no source file names is one nothing sends.
+  it.each(promptDirs)('%s: every prompt is read somewhere in its module', (dir) => {
+    const source = moduleSources(join(dir, '..', '..')).join('\n');
+    const unread = readPrompts(dir)
+      .map((prompt) => prompt.id)
+      .filter((id) => !source.includes(`'${id}'`));
+    expect(unread).toEqual([]);
   });
 
   it('reads a file with no marker as one prompt, named for the file', () => {
