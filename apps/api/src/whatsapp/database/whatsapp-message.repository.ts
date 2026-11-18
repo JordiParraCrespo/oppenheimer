@@ -88,6 +88,21 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
     return record ? this.mapper.toDomain(record) : null;
   }
 
+  async saveTranscript(account: WhatsappAccountRef, id: string, transcript: string): Promise<void> {
+    // Conditional, so a second delivery never overwrites what the first heard.
+    await this.repository
+      .createQueryBuilder()
+      .update(WhatsappMessageOrmEntity)
+      .set({ transcript })
+      .where('"id" = :id AND "organizationId" = :organizationId AND "accountId" = :accountId', {
+        id,
+        organizationId: account.organizationId,
+        accountId: account.accountId,
+      })
+      .andWhere('"transcript" IS NULL')
+      .execute();
+  }
+
   async findSwitchedBot(account: WhatsappAccountRef, chatId: string): Promise<string | null> {
     // IDX_whatsapp_message_switch, walked backward from the chat's last row.
     const rows: { switchesToBotId: string }[] = await this.repository.query(

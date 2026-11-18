@@ -19,18 +19,24 @@ import { ReplyOnWhatsappCommandHandler } from './commands/reply-on-whatsapp/repl
 import { RequestWhatsappOwnerCommandHandler } from './commands/request-whatsapp-owner/request-whatsapp-owner.command-handler';
 import { RequestWhatsappOwnerHttpController } from './commands/request-whatsapp-owner/request-whatsapp-owner.http.controller';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
+import { TranscribeWhatsappVoiceNoteCommandHandler } from './commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command-handler';
 import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
 import { UpdateWhatsappAccountHttpController } from './commands/update-whatsapp-account/update-whatsapp-account.http.controller';
 import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from './database/whatsapp-account.repository';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from './database/whatsapp-message.repository';
+import { OggOpusVoiceNoteDecoderAdapter } from './infrastructure/ogg-opus-voice-note-decoder.adapter';
 import { FindWhatsappAccountsHttpController } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.http.controller';
 import { FindWhatsappAccountsQueryHandler } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.query-handler';
 import { FindWhatsappChatsQueryHandler } from './queries/find-whatsapp-chats/find-whatsapp-chats.query-handler';
 import { ReadWhatsappChatQueryHandler } from './queries/read-whatsapp-chat/read-whatsapp-chat.query-handler';
 import { SearchWhatsappMessagesQueryHandler } from './queries/search-whatsapp-messages/search-whatsapp-messages.query-handler';
-import { WHATSAPP_ACCOUNT_REPOSITORY, WHATSAPP_MESSAGE_REPOSITORY } from './whatsapp.di-tokens';
+import {
+  VOICE_NOTE_DECODER,
+  WHATSAPP_ACCOUNT_REPOSITORY,
+  WHATSAPP_MESSAGE_REPOSITORY,
+} from './whatsapp.di-tokens';
 import { WhatsappResource } from './whatsapp.resource';
 import { WhatsappAccountMapper } from './whatsapp-account.mapper';
 import { WhatsappMessageMapper } from './whatsapp-message.mapper';
@@ -46,8 +52,9 @@ const httpControllers = [
 
 /**
  * The relay dispatches the host's reports (`RecordWhatsappState`,
- * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, and the end of
- * a WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`).
+ * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
+ * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), and a wake on
+ * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`).
  */
 const commandHandlers: Provider[] = [
   LinkWhatsappCommandHandler,
@@ -59,6 +66,7 @@ const commandHandlers: Provider[] = [
   RecordWhatsappStateCommandHandler,
   ReceiveWhatsappMessagesCommandHandler,
   SendWhatsappMessageCommandHandler,
+  TranscribeWhatsappVoiceNoteCommandHandler,
 ];
 
 /**
@@ -99,6 +107,7 @@ const queryHandlers: Provider[] = [
     WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },
+    { provide: VOICE_NOTE_DECODER, useClass: OggOpusVoiceNoteDecoderAdapter },
   ],
 })
 export class WhatsappModule {}

@@ -1,4 +1,5 @@
-import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { TranscribeWhatsappVoiceNoteCommand } from '../../../whatsapp/commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command';
 import { BotChannelWakeResolver } from '../../application/bot-channel-wake.resolver';
 import { whatsappTurn } from '../../domain/bot-whatsapp-turn.policy';
 import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
@@ -13,14 +14,29 @@ import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
  * `/new` starts a conversation at itself; `/stop` asks the conversation's
  * running turn to stop (`BotChannelWakeResolver`). The resolver wakes
  * only a bot the owner made, so a switch by name never reaches someone
- * else's bot.
+ * else's bot. A voice note is heard first, and the turn's words are what it
+ * says (or why it could not be heard), so the bot answers it as it would text.
  */
 @CommandHandler(WakeOnWhatsappCommand)
 export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhatsappCommand, void> {
-  constructor(private readonly channel: BotChannelWakeResolver) {}
+  constructor(
+    private readonly channel: BotChannelWakeResolver,
+    private readonly commands: CommandBus,
+  ) {}
 
   async execute(command: WakeOnWhatsappCommand): Promise<void> {
     const { organizationId, whatsappAccountId, chatId, messageRowId } = command;
+    const text =
+      command.command === 'message' && command.voiceNote
+        ? await this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
+            new TranscribeWhatsappVoiceNoteCommand({
+              organizationId,
+              accountId: whatsappAccountId,
+              messageRowId,
+              metadata: { correlationId: command.metadata.correlationId ?? undefined },
+            }),
+          )
+        : command.text;
     await this.channel.wake({
       chat: { kind: 'whatsapp', organizationId, botId: command.botId, whatsappAccountId, chatId },
       userId: command.userId,
@@ -33,7 +49,7 @@ export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhats
           conversationId,
           whatsappAccountId,
           messageRowId,
-          text: command.text,
+          text,
         }),
     });
   }

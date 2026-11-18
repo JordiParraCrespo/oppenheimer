@@ -84,7 +84,11 @@ row per message (chat, its kind and name, sender and name, whether it was
 you, the text or a media message's caption, the media's kind, the message it
 quotes, WhatsApp's time), your own messages from the phone included, and
 what bots sent through it, marked with the bot. Media itself stays on the
-phone: the bot is told "[image]" and the caption.
+phone: the bot is told "[image]" and the caption. A voice note is the one
+exception (*2026-11-18*): the row also keeps how long it runs and, once a bot
+needed it heard, its transcript; the runner keeps what fetching it takes (the
+media key and path, never the audio) for 48 hours and hands the audio over
+when asked (`whatsapp.media.get`, up to about two minutes of it).
 
 Kept for **90 days** and at most **50,000 per number** (the oldest go
 first), deleted by intake in batches as new messages arrive, and with the
@@ -154,7 +158,13 @@ A group of its own in Settings → Permissions, **WhatsApp**:
    "when anyone writes in the school group mentioning me". With slice 1's
    per-chat grant, that is a bot answering people on WhatsApp by itself.
 3. **Media**: images to the bot as images, voice notes transcribed through
-   voice's providers (`channels.md` §7.1).
+   voice's providers (`channels.md` §7.1). *Voice notes built 2026-11-18:*
+   the owner's voice note wakes their bot with its words, heard through the
+   workspace's dictation providers (its ChatGPT sign-in, else the
+   deployment's speech server) after the API decodes the Ogg/Opus in
+   process; a note the bot reads in a chat shows its words once heard.
+   Images, and voice replies (a `send_voice` tool over a text-to-speech
+   provider), are next.
 4. **WhatsApp as a channel** (`channels.md` §7.1): people write *to* a bot,
    with the owner-only rule and held strangers of `channels.md` §5, on the
    same device. *Designed 2026-11-09 in
@@ -181,3 +191,12 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   the repo's toolchain.
 - 2026-11-09: who answers on the number and who may talk is decided in
   [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md).
+- 2026-11-18: bots hear voice notes, the way OpenClaw does (transcribed
+  before the bot runs, so the bot only ever reads text). The audio is
+  fetched from the host on demand rather than sent with every message, so
+  a note no bot needs never leaves the phone's media servers, and it is
+  decoded in the API (WebAssembly, no `ffmpeg`) because every speech
+  provider behind voice takes WAV. Transcribed when the owner's note wakes
+  their bot, not at intake, which never waits on a host; a note read in
+  another chat is not transcribed by the read. Kept as text on the row so
+  it is heard once.

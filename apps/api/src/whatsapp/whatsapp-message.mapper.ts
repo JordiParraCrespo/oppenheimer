@@ -29,6 +29,8 @@ export class WhatsappMessageMapper {
       quotedId: inbound.quotedId ?? null,
       sentAt: new Date(inbound.sentAt),
       sentByBotId: null,
+      voiceSeconds: inbound.media === 'audio' ? (inbound.voiceSeconds ?? null) : null,
+      transcript: null,
       switchesToBotId: null,
       isReply: false,
     };
@@ -65,6 +67,8 @@ export class WhatsappMessageMapper {
       quotedId: props.quotedId ?? null,
       sentAt: sent.sentAt,
       sentByBotId: props.botId,
+      voiceSeconds: null,
+      transcript: null,
       switchesToBotId: null,
       isReply: (props.isReply ?? false) && props.botId !== null,
     };
@@ -102,6 +106,8 @@ export class WhatsappMessageMapper {
       quotedId: record.quotedId,
       sentAt: record.sentAt,
       sentByBotId: record.sentByBotId,
+      voiceSeconds: record.voiceSeconds,
+      transcript: record.transcript,
     };
   }
 }

@@ -1768,3 +1768,10 @@ earlier note:
   14–17 Nov). On 2026-11-17 a job the provider refused for the account
   (`usage_limit`, `credential`) ends without a retry or a report; the next
   turn past the threshold folds again once the account is sorted.
+- `next-steps/whatsapp.md` §3 kept a message's media on the phone, the bot
+  told only its kind ("[audio]"). On 2026-11-18 the owner asked for bots
+  that hear voice notes: the runner keeps each voice note's media key and
+  path for 48 hours and hands the audio over when asked
+  (`whatsapp.media.get`), and the API hears it through voice's providers
+  when the owner's voice note wakes their bot, keeping the transcript on the
+  row, never the audio. Images and the bot's own voice replies come next.

@@ -4,6 +4,7 @@ import type {
   WhatsappChatTarget,
   WhatsappMessage,
 } from '../whatsapp/domain/whatsapp-message.types';
+import { whatsappVoiceNoteText } from '../whatsapp/domain/whatsapp-voice-note.policy';
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
@@ -56,15 +57,34 @@ function senderOf(message: WhatsappMessage): string {
 
 /** One message on one line: when, who, what. */
 export function describeWhatsappMessage(message: WhatsappMessage, timeZone: string): string {
-  const media = message.media ? `[${message.media}] ` : '';
   const quoted = message.quotedId ? ` (replying to ${message.quotedId})` : '';
-  return `${formatToolTime(message.sentAt, timeZone)} · ${senderOf(message)}${quoted} · id ${message.externalId}: ${media}${message.text || '(no text)'}`;
+  return `${formatToolTime(message.sentAt, timeZone)} · ${senderOf(message)}${quoted} · id ${message.externalId}: ${contentOf(message)}`;
+}
+
+/**
+ * What a message says: its text after its media kind, or a voice note's
+ * words once a bot needed them heard. One nobody asked about yet stays
+ * untranscribed: a read never spends the workspace's speech budget.
+ */
+function contentOf(message: WhatsappMessage): string {
+  if (message.media === 'audio' && !message.text) {
+    const hearing =
+      message.transcript === null ? null : { heard: true as const, transcript: message.transcript };
+    return whatsappVoiceNoteText(message.voiceSeconds, hearing);
+  }
+  const media = message.media ? `[${message.media}] ` : '';
+  return `${media}${message.text || '(no text)'}`;
 }
 
 /** A chat in a list: its id, its name, its last message cut short. */
 export function describeWhatsappChat(chat: WhatsappChat, timeZone: string): string {
   const name = chat.chatName ?? phoneOf(chat.chatId) ?? chat.chatId;
-  const last = { ...chat.last, text: cut(chat.last.text, SNIPPET_MAX) };
+  const transcript = chat.last.transcript;
+  const last = {
+    ...chat.last,
+    text: cut(chat.last.text, SNIPPET_MAX),
+    transcript: transcript === null ? null : cut(transcript, SNIPPET_MAX),
+  };
   return [
     `${chat.chatKind === 'group' ? 'group' : 'chat'} "${name}" (chat id ${chat.chatId}, ${chat.messageCount} message(s) kept)`,
     `  last: ${describeWhatsappMessage(last, timeZone)}`,
