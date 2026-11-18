@@ -38,8 +38,8 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * own goes up as one call each: the delete and share dialogs, which must outlive the row,
  * and a failed write, which the sidebar shows because a menu closes on its pick
  * and the row has no room. Its pin is the sidebar's (`SessionPinsContext`),
- * which draws a pinned row under Pinned, and so is its unread mark
- * (`SessionUnreadContext`), a blue dot the reader set to come back to, which
+ * which draws a pinned row under Pinned. Its unread mark is the device's
+ * (`session-unread.ts`): a blue dot the reader set to come back to, which
  * opening the session takes off. It subscribes to one boolean for being
  * the open session, not the route, so a navigation re-renders only the two rows
  * whose highlight moved; `now` is its group's one-minute clock. The row drags, up
@@ -92,7 +92,7 @@ export function SessionRow({
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const pin = useSessionPin(session.id);
-  const unread = useSessionUnread(session.id, active);
+  const unread = useSessionUnread(session.id);
   const selection = useSessionSelected(session.id);
   const [draft, setDraft] = useState<string | null>(null);
   // The projects are read, not subscribed to: the move pane is the one thing
