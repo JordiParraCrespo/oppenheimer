@@ -29,7 +29,7 @@ export type WebImageResult =
   | { kind: 'failed'; reason: string };
 
 /**
- * Reads a public web page, or an image, for a bot (`25-bots.md` §4.7). The adapter, not
+ * Reads a public web page, or an image, for a bot. The adapter, not
  * its caller, owns the rule that only public addresses are reached: every
  * address a host name resolves to, and every redirect, is checked.
  */

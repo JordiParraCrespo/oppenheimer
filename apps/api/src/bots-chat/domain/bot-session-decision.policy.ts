@@ -2,7 +2,7 @@ import type { BotPermission, SessionDecision } from '@oppenheimer/shared';
 
 /**
  * What a bot may answer on its own when a session it follows is blocked
- * (`25-bots.md` §4.2, `answer_session`). A bot unblocks a session as a person
+ * (`answer_session`). A bot unblocks a session as a person
  * who delegated the work would: questions about how to do the task and
  * permissions for the steps it needs, each with its reason. Who decides is
  * the bot's preset: under Full access the bot does, destructive approvals

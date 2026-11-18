@@ -2,9 +2,11 @@ import { createHash } from 'node:crypto';
 import type { BotRoutineActivity } from '@oppenheimer/shared';
 import type { AutomationRunOutcome, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { BotMessageEntity } from './bot-message.entity';
+import { WORTH_SAYING } from './bot-notice.policy';
+import { repeatedBlockerAsk } from './bot-recovery.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
-/** What fired, as a routine's turn opens with it (`26-bot-routines.md` §4). */
+/** What fired, as a routine's turn opens with it. */
 export interface RoutineFiring {
   automationId: string;
   runId: string;
@@ -38,11 +40,11 @@ export const ROUTINE_ACTIONS = [
 export type RoutineAction = (typeof ROUTINE_ACTIONS)[number];
 
 /**
- * Whether the owner has to consent to the bot doing this to a routine
- * (`26-bot-routines.md` §4): only what spends nothing and can be undone runs
+ * Whether the owner has to consent to the bot doing this to a routine: only
+ * what spends nothing and can be undone runs
  * without a card, which is reading the list and pausing. A run the bot starts
  * is spend nobody clicked for, so `run_now` asks like a save does. The one
- * exception is the turn of the person's own `/schedule` (`25-bots.md` §4.1):
+ * exception is the turn of the person's own `/schedule`:
  * their command is the consent to the routine it asks for, so a `create` in
  * that turn runs; changing or deleting one still asks.
  */
@@ -66,6 +68,9 @@ export function scheduleSetPrompt(request: string): string {
   ].join('\n');
 }
 
+/** How a routine's run stays silent about a blocker the person already knows. */
+export const ROUTINE_QUIET = 'call nothing_to_report and write nothing';
+
 /** Every turn of one routine's runs begins with this. */
 export function routinePrefix(automationId: string): string {
   return `automation-run:${automationId}:`;
@@ -73,15 +78,16 @@ export function routinePrefix(automationId: string): string {
 
 /**
  * The words the bot reads when a routine fires: which one, how to come back
- * to the chat, then what it says to do. The chat shows no line for the run
- * (2026-11-10), so what the bot writes is all the person sees of it: it has
+ * to the chat, then what it says to do. The chat shows no line for the run, so
+ * what the bot writes is all the person sees of it: it has
  * to read as the bot dropping by, never as a job's output.
  */
 export function routineOpening(firing: RoutineFiring): string {
   return [
     `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
     'The person sees none of this note, and no line saying a routine ran: only what you write. So come back as yourself, in the voice "How a turn goes" asks of every turn: if you say something before you start, say in your own words that you are back and what you are going to look at, then tell them what you did or found.',
-    'If there is nothing worth saying, call nothing_to_report and write nothing.',
+    `${WORTH_SAYING} Otherwise call nothing_to_report and write nothing.`,
+    repeatedBlockerAsk(ROUTINE_QUIET),
     '',
     firing.instructions,
   ].join('\n');
@@ -227,8 +233,8 @@ export function routineActivityText(activity: RoutineActivity): string {
 }
 
 /**
- * A routine's activity as a line of its bot's chat (`26-bot-routines.md` §4,
- * "In the chat"): an event outside any turn, at the moment it happened,
+ * A routine's activity as a line of its bot's chat: an event outside any turn,
+ * at the moment it happened,
  * however late the outbox delivers it.
  */
 export function routineActivityLine(activity: RoutineActivity): BotMessageEntity {
@@ -258,11 +264,68 @@ export function routineActivityLine(activity: RoutineActivity): BotMessageEntity
   return line;
 }
 
+/** The tool that ends a turn nobody is waiting on with nothing to say. */
+export const QUIET_TOOL = 'nothing_to_report';
+
 /**
- * What `nothing_to_report` answers (`26-bot-routines.md` §6, "Quiet turns"):
+ * What `nothing_to_report` answers:
  * the turn ends here, with the call as its one activity line and no message,
  * so a heartbeat that found nothing is one collapsed line in the chat.
  */
 export function quietTurnAnswer(): string {
-  return 'Noted: nothing to report. End your turn now without writing anything.';
+  return 'Noted: nothing to report. End your turn now without writing anything: what you write after this is not kept.';
+}
+
+/**
+ * What a turn keeps of the bot's words, told what happens in order. From a
+ * `nothing_to_report` call that
+ * went through, what the bot writes is not kept, because a model told to
+ * write nothing still writes (2026-11-12: a routine's blocker, said again
+ * around the call on every run); a turn that ends quiet also takes back
+ * the words it kept before, so a quiet turn is its activity lines and no
+ * message. Another call ending after it lifts the silence: the bot went on
+ * to do something, and what it says about that is kept. So does a message
+ * the person steers in, which is theirs to have answered. `Word` is
+ * whatever the caller keeps of a block of text: the stored message, or the
+ * text itself.
+ */
+export class QuietTurn<Word> {
+  private quiet = false;
+  private kept: Word[] = [];
+
+  /** A call ended. */
+  finished(tool: string, isError: boolean): void {
+    this.quiet = tool === QUIET_TOOL && !isError;
+  }
+
+  /** The person wrote to the bot mid-turn. */
+  steered(): void {
+    this.quiet = false;
+  }
+
+  /** Whether what the bot writes now is dropped. */
+  get silent(): boolean {
+    return this.quiet;
+  }
+
+  /** The bot finished a block of text: `word()` is made and kept unless the turn is silent. */
+  said(word: () => Word): Word | null {
+    if (this.quiet) return null;
+    const made = word();
+    this.kept.push(made);
+    return made;
+  }
+
+  /** The turn ended: the words it takes back, which are all it kept when it ends quiet. */
+  ended(): Word[] {
+    if (!this.quiet) return [];
+    const back = this.kept;
+    this.kept = [];
+    return back;
+  }
+
+  /** The words the turn keeps so far. */
+  get words(): readonly Word[] {
+    return this.kept;
+  }
 }

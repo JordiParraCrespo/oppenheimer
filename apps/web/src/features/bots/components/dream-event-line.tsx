@@ -4,8 +4,8 @@ import type { BotDreamEvent } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A dream of the bot's memory (`25-bots.md` §4.1, "Dreaming"): "Tidied its
- * memory · 40 facts → 22", or that you undid it.
+ * A dream of the bot's memory: "Tidied its memory · 40 facts → 22", or that
+ * you undid it.
  */
 export function DreamEventLine({ event }: { event: BotDreamEvent }) {
   const { t } = useTranslation();

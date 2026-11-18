@@ -1,6 +1,5 @@
 /**
- * The browser's half of the direct terminal path
- * (`product/versions/mvp/22-direct-terminal-path.md`): one WebRTC data channel
+ * The browser's half of the direct terminal path: one WebRTC data channel
  * to the session's host, beside the attach socket, for one attachment.
  *
  * The attach socket stays the source of truth for everything but bytes: the

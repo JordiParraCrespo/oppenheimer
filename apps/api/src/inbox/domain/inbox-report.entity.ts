@@ -63,8 +63,7 @@ export interface PostInboxReportProps {
 }
 
 /**
- * A problem an agent sent to a workspace's Inbox, with its pictures
- * (`product/versions/mvp/29-inbox.md`, "Reports"). It waits on the person
+ * A problem an agent sent to a workspace's Inbox, with its pictures. It waits on the person
  * until they answer it, once; the sender reads the answer back.
  */
 export class InboxReportEntity extends AggregateRoot<InboxReportProps> {

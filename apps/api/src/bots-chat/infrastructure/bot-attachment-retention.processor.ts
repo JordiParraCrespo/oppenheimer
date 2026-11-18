@@ -13,7 +13,7 @@ import type { BotAttachmentFilesPort } from './bot-attachment-files.port';
 const SCHEDULER_ID = 'bot-attachment-retention-daily';
 
 /**
- * The daily sweep of chat images (`25-bots.md` §3.1) no message carries that
+ * The daily sweep of chat images no message carries that
  * are older than a day: uploads never sent, and images whose message was
  * cleared or whose bot or workspace was deleted. A file in storage outlives
  * any cascade, so the row waits for this: the file first, then the row, in

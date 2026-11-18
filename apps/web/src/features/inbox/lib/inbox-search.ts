@@ -2,7 +2,7 @@ import { searchFlag, searchText } from '@oppenheimer/frontend-web';
 import { z } from 'zod';
 
 /** The list's Type facet, in the frame's order; `all` is no key. */
-export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run', 'report'] as const;
+export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run', 'report', 'task'] as const;
 export type InboxTypeFilter = (typeof INBOX_TYPES)[number];
 
 /** The Type options the Inbox offers: Pull requests only while they are shown. */

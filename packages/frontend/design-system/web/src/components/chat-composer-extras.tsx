@@ -1,6 +1,6 @@
 'use client';
 
-import { LoaderIcon, MicIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, LoaderIcon, MicIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -11,8 +11,9 @@ import { IconButton } from './icon-button';
  *
  * - `VoiceRecorderBar`: while dictating, the composer's foot gives way to
  *   the recorder: a waveform growing in from the right over a dashed
- *   midline, the elapsed time in mono, cancel and the blue stop. Before the
- *   microphone answers it says so; after, "Transcribing…".
+ *   midline, the elapsed time in mono, cancel and the blue arrow up that
+ *   stops it. Before the microphone answers it says so; after,
+ *   "Transcribing…", in the same row.
  * - `DictationButton`: the mic, a 30px square, on the danger surface while
  *   it records. Every field that takes dictation shows this one.
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
@@ -51,13 +52,15 @@ function VoiceRecorderBar({
         role="status"
         className={cn('flex items-center gap-2.5 rounded-lg border border-border-subtle bg-card py-2 pr-2 pl-3.5 text-[13px] text-fg-muted', className)}
       >
-        <span className="flex flex-1 items-center gap-1.5">
+        {/* The recording's row, its midline still drawn, so the bar does not
+            change shape between waiting, listening and transcribing. */}
+        <span className="flex h-7 shrink-0 items-center gap-2">
           <LoaderIcon aria-hidden className="size-3.5 motion-safe:animate-spin" />
-          {state === 'waiting' ? (labels?.waiting ?? 'Waiting for microphone…') : null}
+          {state === 'waiting'
+            ? (labels?.waiting ?? 'Waiting for microphone…')
+            : (labels?.transcribing ?? 'Transcribing…')}
         </span>
-        {state === 'transcribing' ? (
-          <span className="font-mono text-[12px]">{labels?.transcribing ?? 'Transcribing…'}</span>
-        ) : null}
+        <span aria-hidden className="h-0 min-w-0 flex-1 border-t border-dashed border-border" />
       </div>
     );
   }
@@ -82,22 +85,23 @@ function VoiceRecorderBar({
         </div>
       </div>
       {elapsed ? <span className="figures font-mono text-[12.5px] text-fg-muted">{elapsed}</span> : null}
-      <button
-        type="button"
+      <IconButton
         aria-label={labels?.cancel ?? 'Cancel voice recording'}
+        size="sm"
         onClick={onCancel}
-        className="flex size-7 items-center justify-center rounded-pill bg-hover-surface text-fg outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring"
+        className="bg-hover-surface text-fg hover:bg-control-hover hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <XIcon className="size-3.5" />
-      </button>
-      <button
-        type="button"
+        <XIcon />
+      </IconButton>
+      <IconButton
         aria-label={labels?.stop ?? 'Stop voice recording'}
+        variant="primary"
+        size="sm"
         onClick={onStop}
-        className="flex size-7 items-center justify-center rounded-pill bg-primary text-primary-foreground outline-none transition-colors duration-fast hover:bg-primary-hover focus-visible:ring-3 focus-visible:ring-ring"
+        className="focus-visible:ring-3 focus-visible:ring-ring"
       >
-        <span aria-hidden className="size-2 rounded-[2px] bg-current" />
-      </button>
+        <ArrowUpIcon aria-hidden strokeWidth={2.2} />
+      </IconButton>
     </div>
   );
 }
@@ -149,7 +153,7 @@ interface DictationSlot {
   /**
    * Ends the recording and settles once what was said is in the field: true
    * when it landed (or there was nothing to hear), false when it failed. A
-   * composer's send while the recorder shows waits on it.
+   * composer's Enter while the recorder shows calls it, and sends nothing.
    */
   finish?: () => Promise<boolean>;
 }

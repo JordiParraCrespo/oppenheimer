@@ -2,7 +2,7 @@ import type { BotSubagentRun, BotSubagentStatus } from '@oppenheimer/shared';
 import { BOT_TOOL_OUTPUT_MAX, cut, fenceUntrusted } from './bot-tool-text.policy';
 
 /**
- * A bot's subagents (`25-bots.md` §4.7, `delegate`): children the turn runs
+ * A bot's subagents (`delegate`): children the turn runs
  * in parallel, each on one self-contained task, read-only, and answering
  * back into the same turn, where the bot writes the answer. These are their
  * limits, the prompt a child runs on, and how what they said reaches the

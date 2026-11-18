@@ -3,7 +3,8 @@
 Plan's second section is a month view that shows four **layers**, each
 with a toggle in the sidebar: **Google Calendar**, **Personal**, **Task
 due dates** and **Automations**. The header counts what the month holds:
-*n meetings · n tasks due · n automation runs*. The frames draw a month
+*n meetings · n tasks due · n automation runs* (since 2026-11-17, of what
+the layers and filters show, §7). The frames draw a month
 grid only (Monday first, today circled, "n more" past four items a day,
 compact times under 150 px a column).
 
@@ -37,6 +38,16 @@ computed in the console (17 "As built").
   (`PATCH /tasks/:id`).
 - **Automation run**: a bolt, time and name, muted; click goes to the
   automation. Not draggable.
+
+> Since 2026-11-17 every item wears a colour, so a day reads at a glance:
+> a wash of it with a bar down its left edge, its glyph in it too. A
+> Google event wears its account's colour, a personal event blue
+> (`chart-1`), a task violet (`chart-3`); an automation run stays in
+> subtle ink, its title muted. The first three accounts take teal, green
+> and amber, so they never share the events' or tasks' colour. Busy
+> events wash fuller than free ones, which sit behind a dashed edge; an
+> all-day event washes deepest. The sidebar's layer glyphs wear the same
+> colours, as the legend.
 - **Day cell**: click on empty space opens New event on that day.
 
 ## 2. Personal events
@@ -237,6 +248,48 @@ adds a task due that day from the dashed row under the list.
 > later: a way to take a task off today from its row, and the bots' plan
 > tools setting a focus date.
 
+> Changed on 2026-11-12: To do knows about agents, and "To do" names one
+> thing. The owner asked that a task an agent is working on stop sitting
+> on the list as if it waited on them, and that "To do" stop naming three
+> things.
+>
+> - **Names, labels only.** The sidebar view is **TODO** everywhere its
+>   copy names it ("on TODO since Mon"); the board's first column is
+>   **Not started** (Spanish "Sin empezar"); the task dialog's day field
+>   is **TODO day** ("Día en TODO"). The status value `todo` is unchanged
+>   in the API, the database, the CLI and MCP.
+> - **With agents.** A task on the day's list goes to a **With agents**
+>   section under the list when an agent is working on it, with its
+>   session's state, and stays there when it is due or overdue (its due
+>   label stays). Otherwise it stays on the list, with a mark saying why
+>   it needs the person. Most urgent first, for a task not done:
+>
+>   | Situation | Where | Mark |
+>   | --- | --- | --- |
+>   | a session waiting on the person | list | waiting on you |
+>   | otherwise, a session running or queued | With agents | the session's state |
+>   | otherwise, a session failed | list | failed |
+>   | otherwise, the task is In review | list | ready to review |
+>   | otherwise, sessions stopped (idle or finished) on a task In progress | list | agent stopped |
+>   | no sessions | list | none |
+>
+>   A session ending never means the task is finished: "ready to review"
+>   comes from the board's column alone, and nothing moves a task to In
+>   review on its own. A mark that comes from a session is that session's
+>   chip, which opens it; the strip's rows are not dragged. A session the
+>   console no longer lists (deleted elsewhere) is not read.
+> - **Counts.** What is with agents needs nothing from the person, so the
+>   header's "left" and the sidebar's count beside TODO leave it out; they
+>   show once the sessions are read, so they never drop after landing.
+> - **Move.** The "way to take a task off today from its row" left for
+>   later above: a calendar button on each open row opens a month with
+>   **Tomorrow** under it, and puts the task's TODO day on the day picked.
+>   A task due on the day shown, or overdue while Include overdue is on,
+>   gets no button: its deadline keeps it on the list whatever its TODO
+>   day, so moving it would change nothing on screen; its due date is
+>   changed in its dialog. (Decided by the agent that built it, for the
+>   owner to accept: the simplest honest answer.)
+
 A row's grip, six dots at its right end, drags it into the reader's own
 order for that day, kept on this device as Plan's sidebar order is (the
 frame keeps it in the browser too); a task the stored order does not
@@ -246,6 +299,26 @@ One departure from the frame, because the API has no field for it: a
 task gets no planned slot and length of its own (the frame keeps one
 per task in the browser) — its due time is its slot, and an hour its
 length. That is open question 4.
+
+## 7. Filters (2026-11-17)
+
+The owner asked to filter the calendar "by projects, kind of tasks and
+more", to stop seeing the automation runs. A row of pills sits between the
+header and the grid, each kept in the address so a link shows the same
+calendar, with one **Clear**:
+
+| Filter | Narrows | Address |
+|--------|---------|---------|
+| **Kind**: Google Calendar, Personal, Task due dates, Automations | a whole layer; the same switch as the sidebar's toggles, which stay in step | `?off=` |
+| **Project**, several at once | task due dates and automation runs | `?project=` (Plan's slugs) |
+| **Status**: Not started, In progress, In review, Done | task due dates | `?status=` |
+| **Added by**: Anyone, Me, An agent | task due dates | `?origin=` |
+
+Events carry no project, status or author, so only Kind hides them. The
+header counts what the calendar shows: a layer switched off counts
+nothing, and the filters narrow tasks due and runs as they narrow the grid.
+The Project pill is the one Plan's board draws (`ProjectFacet` in the web
+kit).
 
 ## Open questions
 

@@ -10,8 +10,9 @@ const TOOL_CALLS_KEY = 'oppenheimer.bots.toolCallsShown';
 const TOOL_CALLS_ID = 'chat';
 
 /**
- * Whether a bot's chat draws its tool calls and the routine runs that did
- * nothing else, and the toggle in the chat's bar that shows them. Hidden
+ * Whether a bot's chat draws its tool calls, the routine runs that did
+ * nothing else and the lines for a followed project's task updates, and the
+ * toggle in the chat's bar that shows them. Hidden
  * until the reader shows them. The reader's, so the API never hears of it.
  */
 export function useToolCallsShown() {

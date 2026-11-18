@@ -9,10 +9,9 @@ import { attach, pairedHosts } from '../../support/fleet';
 import { connectInstallation, createSession } from '../../support/sessions';
 
 /**
- * `opp`, the CLI an agent uses to hand work to another host (0.6,
- * `product/next-steps/0.6-mcp-cli-and-agent.md`), on real runners: an agent
- * in a session on one host runs `opp sessions run --host <other>`, and the
- * session starts on the other host through the control plane; `opp` then
+ * `opp`, the CLI an agent uses to hand work to another host, on real runners:
+ * an agent in a session on one host runs `opp sessions run --host <other>`, and
+ * the session starts on the other host through the control plane; `opp` then
  * prompts it, waits on it and closes it. The prompt goes through
  * `POST /sessions/{id}/prompt`, and the session's log says a person sent it,
  * whatever the words claim. Needs `apps/cli` built (`pnpm --filter

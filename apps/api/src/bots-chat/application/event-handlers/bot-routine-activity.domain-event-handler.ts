@@ -16,14 +16,13 @@ import {
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 
 /**
- * The one writer of a routine's activity in its bot's chat
- * (`26-bot-routines.md` §4, "In the chat"): whatever changed a routine (the
- * bot's tool, its Routines tab, a pause the dispatcher made) raised an event,
- * and each becomes one line, keyed by the event so a redelivery writes
- * nothing twice. A run that failed to start is told the same way, except
- * that runs a rate limit refused are one line a routine an hour. The line
- * belongs to no turn: it is placed in the chat by when it happened, the
- * event's own time, however late the outbox delivers it.
+ * The one writer of a routine's activity in its bot's chat: whatever changed a
+ * routine (the bot's tool, its Routines tab, a pause the dispatcher made)
+ * raised an event, and each becomes one line, keyed by the event so a
+ * redelivery writes nothing twice. A run that failed to start is told the same
+ * way, except that runs a rate limit refused are one line a routine an hour.
+ * The line belongs to no turn: it is placed in the chat by when it happened,
+ * the event's own time, however late the outbox delivers it.
  */
 @Injectable()
 export class BotRoutineActivityDomainEventHandler {

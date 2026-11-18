@@ -154,7 +154,7 @@ func (s *Service) Preflight(ctx context.Context) (domain.Facts, error) {
 // UpdateAgents runs the unattended updater of every agent CLI found on PATH,
 // one after another, and reports what each came to. An agent that is not
 // installed is skipped: installing one is the person's choice, keeping it
-// current is ours (`product/versions/mvp/02-runner.md` §10).
+// current is ours.
 //
 // Sessions already running keep the binary they started with; the next
 // session starts the new one. The versions are read afresh once the round is
@@ -270,7 +270,7 @@ func (s *Service) Install(ctx context.Context, name string) (domain.InstallResul
 }
 
 // ListFolders lists one directory's sub-directories for the folder picker
-// (`fs.list`, 24 §4): path, or the runner account's home when it is empty.
+// (`fs.list`): path, or the runner account's home when it is empty.
 // Hidden directories are left out, the rest sorted without regard to case and
 // capped at domain.MaxFolderEntries, and each one that is a git checkout
 // carries its branch.
@@ -310,8 +310,8 @@ func (s *Service) ListFolders(path string) (domain.FolderListing, error) {
 const findBudget = 400 * time.Millisecond
 
 // FindFolders searches the directories under path, or the runner account's
-// home when it is empty, for the ones whose name holds query (`fs.find`, 24
-// §4). The walk is breadth first and bounded: domain.MaxFindDepth levels,
+// home when it is empty, for the ones whose name holds query (`fs.find`).
+// The walk is breadth first and bounded: domain.MaxFindDepth levels,
 // domain.MaxFindReads directories read, findBudget of time, hidden
 // directories and dependency trees skipped, and a git checkout is found but
 // never walked into. A directory under path that cannot be read is passed

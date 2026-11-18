@@ -26,7 +26,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// ptyRead is the PTY read buffer, 02-runner §5's 32 KB: one read is one frame.
+// ptyRead is the PTY read buffer, 32 KB: one read is one frame.
 const ptyRead = 32 * 1024
 
 // attachmentInput bounds the keystroke frames one attachment can have waiting
@@ -49,7 +49,6 @@ const (
 	laneFsList        = "fs:list"
 	laneFsFind        = "fs:find"
 	lanePortList      = "port:list:"
-	laneCodexEnvs     = "codex:environments"
 	laneCloudReply    = "cloud:reply:"
 )
 
@@ -91,11 +90,10 @@ type linkHandler struct {
 	// bootToken mints the assertion a file pull carries.
 	bootToken func(ctx context.Context) (string, error)
 
-	// life is the daemon's context, not a link's. Session commands run on it
-	// (02-runner §4): a link that drops mid-clone must not take the clone
-	// with it, and a stop queued behind a create must not run on a socket
-	// that is already gone. Outcomes travel through the reporter, which
-	// resends them on the next link.
+	// life is the daemon's context, not a link's. Session commands run on it: a
+	// link that drops mid-clone must not take the clone with it, and a stop
+	// queued behind a create must not run on a socket that is already gone.
+	// Outcomes travel through the reporter, which resends them on the next link.
 	//
 	// It ends only when the daemon does, or when the host is unpaired
 	// (endLife): no command runs for a host that is no longer one.
@@ -122,8 +120,8 @@ type linkHandler struct {
 	// telegram is the host's Telegram bot (link_telegram.go); nil is a host
 	// that offers none, and its hello does not name the capability.
 	telegram *tgapp.Service
-	// cloudStarts holds the sessions whose cloud start (`claude --cloud`,
-	// `codex cloud exec`) is running or done (link_cloud.go), so a create sent
+	// cloudStarts holds the sessions whose cloud start (`claude --cloud`, a
+	// Codex cloud thread) is running or done (link_cloud.go), so a create sent
 	// again does not start a second.
 	cloudStarts sync.Map
 	// codexReporting holds, by session, the Codex status whose event waits on
@@ -270,7 +268,7 @@ var (
 )
 
 // unpaired is a person removing this host, and removing a host stops the
-// sessions on it (03, 14): the control plane has already recorded each one
+// sessions on it: the control plane has already recorded each one
 // stopped, and an agent left running would work where no console can see it.
 // Stopping keeps every checkout on disk — it is not a close — unless the
 // owner also asked for the machine to be cleaned up (wipe): then every
@@ -337,10 +335,11 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind,
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
-		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex, link.CapabilitySessionCloudReply,
-		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
+		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
+		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
 		link.CapabilityComputerUse, link.CapabilityBrowserUse,
+		link.CapabilitySessionWindowsList, link.CapabilitySessionWindowAgent,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -548,6 +547,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.lanes.run(m.SessionID, func() { h.app.Sessions.Unwatch(m.SessionID, m.WatchID) })
 		}
+	case link.TypeSessionWindowsList:
+		var m link.SessionWindowsList
+		if msg.Decode(&m) == nil {
+			// On the session's lane, so a listing sent right after an open
+			// sees the window it made.
+			h.lanes.run(m.SessionID, func() { h.windows(h.life, m.CommandID, m.SessionID, 0) })
+		}
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
 		if m, ok := decodeLifecycle(msg); ok {
 			h.lanes.run(m.SessionID, func() { h.lifecycle(h.life, m) })
@@ -606,16 +612,18 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// attachment, so a tap and the text after it land in order.
 			h.lanes.run(fmt.Sprintf("device:%d", m.AttachmentID), func() { h.deviceInput(m) })
 		}
+	case link.TypeDeviceSelect:
+		var m link.DeviceSelect
+		if msg.Decode(&m) == nil {
+			// Opening the new device's screen takes seconds: off the read
+			// loop, on the attachment's lane, so a pick lands after the input
+			// sent before it and two picks never overlap.
+			h.lanes.run(fmt.Sprintf("device:%d", m.AttachmentID), func() { h.deviceSelect(m) })
+		}
 	case link.TypeDeviceDetach:
 		var m link.DeviceDetach
 		if msg.Decode(&m) == nil {
 			h.dropScreen(m.AttachmentID)
-		}
-	case link.TypeCodexEnvironmentsList:
-		var m link.CodexEnvironmentsList
-		if msg.Decode(&m) == nil {
-			// Two round trips to ChatGPT: off the read loop, one at a time.
-			h.lanes.run(laneCodexEnvs, func() { h.listCodexEnvironments(h.life, m) })
 		}
 	case link.TypeCloudReply:
 		var m link.CloudReply
@@ -821,7 +829,7 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 
 // FirstPrompt is the session service's publisher for the first message
 // of a session launched with no task, read off the agent's transcript, which
-// the control plane names the session from (02-runner §7). The reporter keeps
+// the control plane names the session from. The reporter keeps
 // the event until the control plane acks it, so a link that is down only
 // delays it, and reported is called on that ack.
 func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, reported func()) bool {
@@ -833,7 +841,7 @@ func (h *linkHandler) FirstPrompt(session sessionsdomain.Session, text string, r
 }
 
 // DecisionChanged is the session service's publisher for what an agent waits
-// on the person for (29-inbox, slice 4): `agent.decision` with the decision,
+// on the person for: `agent.decision` with the decision,
 // or null once it cleared. A question too large for an event's payload is cut
 // down (descriptions first) until it fits; one that never does is reported as
 // none rather than as an event the control plane would refuse.
@@ -846,7 +854,7 @@ func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *
 
 // Notified is the session service's notifier: `agent.notified` with the
 // line an agent sent the person, which the control plane keeps on the
-// session for the Inbox (`product/next-steps/agent-tools.md` §2).
+// session for the Inbox.
 func (h *linkHandler) Notified(sessionID string, notice sessionsdomain.Notice) {
 	if h.reporter == nil {
 		return

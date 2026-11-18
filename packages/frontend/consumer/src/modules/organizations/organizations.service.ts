@@ -42,10 +42,10 @@ export class OrganizationsService {
   /**
    * Claim the personal workspace: give it the name and address its owner chose.
    *
-   * It lives here, not in the screen, because it encodes a decision from
-   * `product/versions/mvp/08-auth.md`: sign-up provisions exactly one workspace,
-   * so onboarding step 2 **names** that row. Creating is only the recovery path
-   * for an account whose sign-up hook did not run.
+   * It lives here, not in the screen, because it encodes a product decision:
+   * sign-up provisions exactly one workspace, so onboarding step 2 **names**
+   * that row. Creating is only the recovery path for an account whose sign-up
+   * hook did not run.
    *
    * The caller passes the workspace it read, so no list-order guess happens
    * here; a screen that has not finished reading passes `undefined` and must

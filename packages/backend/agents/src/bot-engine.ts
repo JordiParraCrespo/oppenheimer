@@ -117,7 +117,7 @@ export interface BotTurnRequest {
   /**
    * Model round trips before the turn ends with `max_steps`. Absent: no
    * limit, and the turn runs until the model answers without a tool call
-   * (`25-bots.md` §2, 2026-11-09). A run with a narrow job (a completion,
+   * (since 2026-11-09). A run with a narrow job (a completion,
    * a subagent) passes one.
    */
   maxSteps?: number;
@@ -359,9 +359,8 @@ export abstract class BotEngine {
 /**
  * The window a turn compacts against, whatever the model's own: a bot's turn
  * stays small enough to be quick and cheap on every call, and the summary
- * between turns keeps what matters (`25-bots.md` §2, "Compaction",
- * 2026-11-09; from Codex, Grok Bot and OpenClaw, which compact at 90%, 70%
- * and 75% of the model's window).
+ * between turns keeps what matters (since 2026-11-09; from Codex, Grok Bot and
+ * OpenClaw, which compact at 90%, 70% and 75% of the model's window).
  */
 export const BOT_COMPACTION_WINDOW = 128_000;
 

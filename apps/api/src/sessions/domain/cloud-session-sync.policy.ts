@@ -4,7 +4,7 @@ import { SESSION_EVENT_KINDS } from './session-state.policy';
 
 /**
  * When a read asks a cloud session's vendor about its run again, and what the
- * answer writes to the session's log (`product/next-steps/cloud-agents.md`).
+ * answer writes to the session's log.
  *
  * Cursor counts about 20 calls a minute per person. The console reads the
  * sessions list every fifteen seconds, so a list asks about at most

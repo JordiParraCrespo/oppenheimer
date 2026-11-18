@@ -1,6 +1,6 @@
-// Package botapi is the host's Telegram bot on Telegram's Bot API: four
-// HTTPS calls on net/http, with no library (product/next-steps/telegram.md),
-// and the store that keeps the bot's token and its outbox on disk.
+// Package botapi is the host's Telegram bot on Telegram's Bot API: four HTTPS
+// calls on net/http, with no library, and the store that keeps the bot's token
+// and its outbox on disk.
 package botapi
 
 import (

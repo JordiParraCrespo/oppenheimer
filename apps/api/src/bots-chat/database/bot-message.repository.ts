@@ -8,11 +8,19 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
-import { type BotMessageRepositoryPort, UnstorableStepsError } from './bot-message.repository.port';
+import {
+  type BotMessageRepositoryPort,
+  TurnGoneError,
+  UnstorableStepsError,
+} from './bot-message.repository.port';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 
 /** How much of a message the sidebar's line keeps. */
 const PREVIEW_MAX = 200;
+
+/** The sidebar's line of a message's words (`content`, an SQL expression): one line, cut. */
+const previewOf = (content: string) =>
+  `left(btrim(regexp_replace(${content}, '\\s+', ' ', 'g')), ${PREVIEW_MAX})`;
 
 @Injectable()
 export class BotMessageRepository
@@ -32,11 +40,15 @@ export class BotMessageRepository
   }
 
   async insert(message: BotMessageEntity): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
-      await insertMessageWithin(manager, this.mapper, message);
-      // The images a bot showed; yours are claimed by the send, by its own rule.
-      if (message.role === 'assistant') await claimShownWithin(manager, message);
-    });
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        await insertMessageWithin(manager, this.mapper, message);
+        // The images a bot showed; yours are claimed by the send, by its own rule.
+        if (message.role === 'assistant') await claimShownWithin(manager, message);
+      });
+    } catch (error) {
+      throw isTurnGone(error) ? new TurnGoneError(error) : error;
+    }
   }
 
   async insertOnce(message: BotMessageEntity): Promise<boolean> {
@@ -89,6 +101,33 @@ export class BotMessageRepository
         turnId: turn.id,
       })
       .execute();
+  }
+
+  async removeTurnWords(
+    turn: { organizationId: string; id: string; botId: string },
+    messageIds: readonly string[],
+  ): Promise<void> {
+    if (messageIds.length === 0) return;
+    await this.dataSource.transaction(async (manager) => {
+      // PK_bot_message; only the turn's own words.
+      await manager.query(
+        `DELETE FROM bot_message
+          WHERE "organizationId" = $1 AND "turnId" = $2 AND role = 'assistant' AND id = ANY($3::uuid[])`,
+        [turn.organizationId, turn.id, messageIds],
+      );
+      // The sidebar's line, as insertMessageWithin keeps it: the newest words left.
+      await manager.query(
+        `UPDATE bot SET ("lastMessageAt", "lastMessagePreview") = (
+           SELECT message."createdAt", ${previewOf('message.content')}
+             FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role IN ('user', 'assistant') AND message.content <> ''
+            ORDER BY message."createdAt" DESC, message.position DESC
+            LIMIT 1)
+          WHERE "organizationId" = $1 AND id = $2`,
+        [turn.organizationId, turn.botId],
+      );
+    });
   }
 
   async findConversation(
@@ -325,6 +364,13 @@ export function isDataException(error: unknown): boolean {
   return typeof driver.code === 'string' && driver.code.startsWith('22');
 }
 
+/** A message whose turn is gone (`23503` on `FK_bot_message_turn`). */
+function isTurnGone(error: unknown): boolean {
+  const own = error as { code?: unknown; constraint?: unknown };
+  const driver = (error as { driverError?: typeof own }).driverError ?? own;
+  return driver.code === '23503' && driver.constraint === 'FK_bot_message_turn';
+}
+
 /** What a message is written as, by every writer of `bot_message`, in this order. */
 const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId"`;
 const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11';
@@ -365,9 +411,9 @@ export async function insertMessageWithin(
   if (message.role === 'activity' || message.role === 'event') return;
   if (message.role === 'assistant' && !message.content) return;
   await manager.query(
-    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = left($3, ${PREVIEW_MAX})
+    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')}
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, record.content.replace(/\s+/g, ' ').trim()],
+    [message.organizationId, message.botId, record.content],
   );
 }
 

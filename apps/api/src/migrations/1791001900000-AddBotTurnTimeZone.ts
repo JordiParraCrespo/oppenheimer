@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots: the time zone a turn's message was sent from (`25-bots.md` §2).
+ * Bots: the time zone a turn's message was sent from.
  *
  * The console sends the browser's IANA zone with each message, and the turn
  * tells the bot the time there, so "tomorrow at 9" is the sender's 9. It is

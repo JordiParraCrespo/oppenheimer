@@ -118,7 +118,8 @@ session's app, the runner). On Linux the runner reads `/proc`; on macOS
 One attachment is one TCP connection, as the browser's own connection to
 the dev server would be.
 
-**The tab.** The design's: Browser and Simulator as pill tabs, the address
+**The tab.** The design's: Browser and Simulator as pill tabs (since
+2026-11-16 tabs of the side pane instead, `32-side-pane.md`), the address
 (`localhost:5173`) and the process on it, a picker of the session's ports,
 Reload, Open in a new tab. Waiting for the dev server is the tab's empty
 state, polled while the pane is open. Behind `session_browser_preview`.

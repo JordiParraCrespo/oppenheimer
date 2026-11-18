@@ -9,22 +9,31 @@ export interface SessionLine {
   others: number;
 }
 
+export interface TaskSession {
+  session: SessionEntity;
+  state: TaskSessionState;
+}
+
 /**
- * The card's session line: of the task's sessions the console can see, the one
- * that most needs the person. A link to a session the list no longer has
- * (deleted elsewhere) is not drawn.
+ * The task's sessions the console can see, each with its state. A link to a
+ * session the list no longer has (deleted elsewhere) is left out. Without
+ * the hosts, a session still starting reads as running rather than queued.
  */
-export function sessionLineOf(
+export function taskSessionsOf(
   task: TaskEntity,
   sessions: ReadonlyMap<string, SessionEntity>,
-  hosts: ReadonlyMap<string, HostEntity>,
-): SessionLine | null {
-  const known = task.sessions.flatMap((link) => {
+  hosts: ReadonlyMap<string, HostEntity> = new Map(),
+): TaskSession[] {
+  return task.sessions.flatMap((link) => {
     const session = sessions.get(link.sessionId);
     if (!session) return [];
     const host = session.hostId ? hosts.get(session.hostId) : undefined;
     return [{ session, state: sessionStateOf(session, host?.online) }];
   });
+}
+
+/** The line a list of a task's sessions shows: the one that most needs the person. */
+function sessionLineFrom(known: readonly TaskSession[]): SessionLine | null {
   const first = mostUrgent(known);
   if (!first) return null;
   return {
@@ -33,4 +42,13 @@ export function sessionLineOf(
     state: first.state,
     others: known.length - 1,
   };
+}
+
+/** The card's session line: of the task's sessions the console can see, the one that most needs the person. */
+export function sessionLineOf(
+  task: TaskEntity,
+  sessions: ReadonlyMap<string, SessionEntity>,
+  hosts: ReadonlyMap<string, HostEntity>,
+): SessionLine | null {
+  return sessionLineFrom(taskSessionsOf(task, sessions, hosts));
 }

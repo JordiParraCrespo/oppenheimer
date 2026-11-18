@@ -15,8 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
+import { useTodoCounts } from '../hooks/use-todo-counts';
 import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId, planViewShown } from '../lib/plan-nav-order';
-import { todayOpenCount } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
 /**
@@ -59,8 +59,8 @@ const VIEWS = {
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
- * you (while the `inbox` flag is on), Tasks with the open count, To do with
- * the open tasks due today or before, Milestones
+ * you (while the `inbox` flag is on), Tasks with the open count, TODO with
+ * what is left on today's list (what is with agents is not), Milestones
  * with how many there are, Calendar with today's events, and Projects with
  * how many the workspace holds. The calendar puts its layers and accounts
  * under it.
@@ -73,7 +73,7 @@ export function PlanNav() {
   const { t } = useTranslation();
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
   const today = useToday();
-  const { data: dueNow } = useTasks({ select: (rows) => todayOpenCount(rows, today) });
+  const dueNow = useTodoCounts(today, { today, overdue: true })?.left;
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
   const todayEvents = useTodayEventCount();
   const { data: projects } = useProjects({ select: (rows) => rows.length });

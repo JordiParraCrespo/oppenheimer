@@ -65,5 +65,6 @@ and writes every save to `reports/` (ignored by git).
 | 2026-11-08 | before (`about: "person"`) | claude-sonnet-5-5 | 75/100 (5 cases fail) | 25 |
 | 2026-11-08 | `MEMORY_CHOICE_RULE` | claude-sonnet-5-5 | 100/100 | 0 |
 | 2026-11-09 | the same, on the shared `../bot-turn.ts` | claude-sonnet-5-5 | 60/60 (3 runs a case) | 0 |
+| 2026-11-15 | a preference is a standing rule (profile) with its reason; memory is not a log; four preference cases must also be kept in the profile tier | claude-sonnet-5-5 | 57/60 before, 99/100 after (5 runs) | 1 |
 
 Five runs a case, through the Claude Code login.

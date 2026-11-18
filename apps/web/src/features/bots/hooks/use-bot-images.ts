@@ -40,7 +40,7 @@ export function useBotImages(botId: string, takesImages: boolean, model: string)
         key: crypto.randomUUID(),
         file,
         status: 'uploading',
-        attachmentId: null,
+        attachment: null,
         error: null,
       });
     }
@@ -50,7 +50,7 @@ export function useBotImages(botId: string, takesImages: boolean, model: string)
     for (const image of accepted) {
       upload
         .mutateAsync({ id: botId, file: image.file })
-        .then((stored) => update(image.key, { status: 'ready', attachmentId: stored.id }))
+        .then((stored) => update(image.key, { status: 'ready', attachment: stored }))
         .catch((error: unknown) => update(image.key, { status: 'failed', error }));
     }
   }
@@ -65,6 +65,11 @@ export function useBotImages(botId: string, takesImages: boolean, model: string)
     setImages([]);
   }
 
+  /** The images a refused send held, back in front of any picked since. */
+  function restore(sent: readonly HeldImage[]) {
+    setImages((current) => [...sent, ...current]);
+  }
+
   const failed = images.find((image) => image.status === 'failed');
   const problem =
     refused ??
@@ -77,5 +82,5 @@ export function useBotImages(botId: string, takesImages: boolean, model: string)
         )?.message ?? null)
       : null);
 
-  return { images, hold, remove, clear, problem };
+  return { images, hold, remove, clear, restore, problem };
 }

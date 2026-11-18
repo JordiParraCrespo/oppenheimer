@@ -2,20 +2,21 @@ import {
   BOT_IMAGE_MAX_BYTES,
   BOT_IMAGE_MIME_TYPES,
   BOT_MESSAGE_IMAGES_MAX,
+  type BotAttachment,
 } from '@oppenheimer/shared/schemas/bot';
 
 /** What the image picker offers: the four types a bot reads. */
 export const BOT_IMAGE_ACCEPT = BOT_IMAGE_MIME_TYPES.join(',');
 
-/** One image the composer holds for the next message (`25-bots.md` §3.1). */
+/** One image the composer holds for the next message. */
 export interface HeldImage {
   /** Its key in the composer, so two files with one name stay two tiles. */
   key: string;
   file: File;
   /** Uploading until the API stored it; failed when it refused it. */
   status: 'uploading' | 'ready' | 'failed';
-  /** The upload's id, once stored: what the message names. */
-  attachmentId: string | null;
+  /** The upload, once stored: what the message names. */
+  attachment: BotAttachment | null;
   /** Why the upload failed, for the line under the composer. */
   error: unknown;
 }

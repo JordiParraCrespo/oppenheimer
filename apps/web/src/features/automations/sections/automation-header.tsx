@@ -7,8 +7,6 @@ import {
   DropdownMenuTrigger,
   IconButton,
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
   PageHeaderRow,
@@ -19,7 +17,7 @@ import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
@@ -31,8 +29,7 @@ import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
- * How an automation's page opens (the frame's `op-ph`): Back and the crumbs,
- * the glyph and the name with Run now, Edit and the ellipsis (pause or
+ * How an automation's page opens (the frame's `op-ph`): under Back, the glyph and the name with Run now, Edit and the ellipsis (pause or
  * resume, duplicate, delete behind the same confirm as the table), then the
  * facts — status, the countdown to the next run, the trigger, agent · model ·
  * project — and, while paused, the band that says why with Resume.
@@ -55,11 +52,6 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
 
   return (
     <PageHeader>
-      <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
-        <Link to="/automations">{t('automations.detail.crumb')}</Link>
-        <span>/</span>
-        <PageHeaderHere>{automation.name}</PageHeaderHere>
-      </PageHeaderCrumbs>
       <PageHeaderRow
         icon={<TriggerGlyph scheduled={automation.isScheduled} size={17} />}
         title={automation.name}

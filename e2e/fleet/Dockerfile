@@ -1,6 +1,6 @@
 # A host for the fleet suite: one container is one machine a user owns, with
 # its own Unix account, home, tmux server and host key — the shape the product
-# assumes (one runner per host, product/versions/mvp/02-runner.md §1).
+# assumes (one runner per host).
 #
 # The runner is not built here. `support/fleet.ts` builds it once on the
 # machine running the suite and hands it in as the `runner` build context, so

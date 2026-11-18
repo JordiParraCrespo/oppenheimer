@@ -7,7 +7,7 @@ import type { HostCloudAgentId } from '@oppenheimer/shared/agents';
 export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
 
 /**
- * What a host row says beyond identity (`product/versions/mvp/15-host-metadata.md`):
+ * What a host row says beyond identity:
  * its status and running sessions, what the machine is, where it connects
  * from and how the link is doing. Every fact the runner has not reported is
  * `null`, never a placeholder.
@@ -54,12 +54,11 @@ const NO_DETAILS: HostDetails = {
 };
 
 /**
- * A host as the console needs it: a machine the user owns that runs sessions
- * (`product/versions/mvp/00-scope.md`), which appears once its runner connects.
+ * A host as the console needs it: a machine the user owns that runs sessions,
+ * which appears once its runner connects.
  *
- * `online` is a boolean because the API reports it so. The design note's
- * `pairing` state has no wire form: a host does not exist until its runner has
- * registered.
+ * `online` is a boolean because the API reports it so. There is no `pairing`
+ * state: a host does not exist until its runner has registered.
  */
 export class HostEntity {
   constructor(
@@ -133,34 +132,10 @@ export interface HostFolderEntry {
   branch: string | null;
 }
 
-/** One Codex cloud environment of the host's ChatGPT account. */
-export interface HostCodexEnvironment {
-  /** What `codex cloud exec --env` is given. */
-  id: string;
-  /** The name its owner gave it on chatgpt.com/codex; null when it has none. */
-  label: string | null;
-  pinned: boolean;
-  /** Linked to the repository the list was asked for. */
-  repository: boolean;
-}
-
 /**
- * The Codex cloud environments a host's ChatGPT account has, read by its
- * runner now (`GET /hosts/{id}/codex-environments`,
- * `product/next-steps/cloud-agents.md`): those linked to the repository first.
- */
-export interface HostCodexEnvironments {
-  environments: HostCodexEnvironment[];
-  /** Where a session started with none picked runs; null when none is linked. */
-  recommended: string | null;
-  /** `tasks`: only those the account's recent tasks ran in, when the host could not ask ChatGPT. */
-  source: 'chatgpt' | 'tasks';
-}
-
-/**
- * One directory of a host, listed by its runner now (`GET /hosts/{id}/folders`,
- * `product/versions/mvp/24-session-places.md` §4): folder names only, never
- * files, and nothing cached by the API.
+ * One directory of a host, listed by its runner now
+ * (`GET /hosts/{id}/folders`): folder names only, never files, and nothing
+ * cached by the API.
  */
 /**
  * The folder picker's search: the folders under the host's home whose name

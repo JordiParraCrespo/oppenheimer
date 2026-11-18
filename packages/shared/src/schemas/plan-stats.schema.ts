@@ -4,9 +4,8 @@ import { calendarDateSchema } from './task.schema.js';
 
 /**
  * `GET /plan/stats`: Plan's Stats, per week of a period and compared with the
- * period just before it (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
- * §4). Weeks start on Monday in the viewer's `timeZone`, so a task completed
- * late on Sunday in Tokyo counts in Tokyo's week.
+ * period just before it. Weeks start on Monday in the viewer's `timeZone`, so a
+ * task completed late on Sunday in Tokyo counts in Tokyo's week.
  */
 
 /** The longest period one read covers: a year and a week. */

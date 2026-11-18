@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
+import { ArrowUpIcon, PaperclipIcon, PlusIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import {
@@ -8,8 +8,10 @@ import {
   ComposerFrame,
   ComposerRecorder,
   ComposerSendButton,
+  assignRef,
   useComposerSend,
 } from '../internal/composer-send';
+import { CommandField } from '../internal/command-field';
 import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -23,6 +25,21 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
 };
 
 /**
+ * The send button's look, by layout and state. Inline, send is ink and rests
+ * on the wash until there is something to send, and Stop, the one control a
+ * reader reaches for while the agent works, takes the action blue. Stacked,
+ * send is the primary and Stop the ink.
+ */
+function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
+  if (layout === 'inline') {
+    return busy
+      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
+  }
+  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
+}
+
+/**
  * ChatComposer — a bot's composer (Bots): a card at the 28px radius with no
  * border until it takes focus (the plain border then, no ring), its text at
  * 15px growing from two lines to eight, then a foot row: `tools` (the
@@ -30,7 +47,9 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * the 34px send. While `busy` the send is the stop, a small square on the
  * ink. Enter sends, Shift+Enter makes a new line; `onAltSubmit` gives
  * Alt+Enter a second way to send (a bot's "queue it for after" while
- * Enter steers the turn under way), named for the caller to say.
+ * Enter steers the turn under way), named for the caller to say, and
+ * `onEmptyEnter` gives the caller Enter on a field with nothing to send (a
+ * session's chat sends the first message waiting in its queue).
  *
  * It shares the send rules and the send button with `Composer`, the prompt
  * box: `sendBlockedReason` keeps the draft writable and the send off, and
@@ -40,11 +59,12 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  *
  * `dictation` (`DictationSlot`) works as in `Composer`: the mic before send,
  * the recorder in the foot row's place while dictating, the notice under the
- * box.
+ * box. Enter while it records ends the recording and puts the caret after
+ * what was said; the next Enter sends it.
  *
  * Files ride a message in either layout: `onAttach` puts the paperclip
- * first, in the foot row before `tools` (`stacked`) or at the start of the
- * row before the field (`inline`); `attachments` are what the message
+ * first in the foot row before `tools` (`stacked`), or a round "+" at the
+ * start of the row before the field (`inline`); `attachments` are what the message
  * carries, in a row over the text: a bot's `ChatImage` tiles, a session's
  * `ComposerFile` chips. `allowEmpty` lets a message of files alone be sent.
  *
@@ -59,6 +79,7 @@ function ChatComposer({
   onSubmit,
   onStop,
   onAltSubmit,
+  onEmptyEnter,
   busy = false,
   disabled = false,
   sendBlockedReason,
@@ -74,6 +95,7 @@ function ChatComposer({
   dictation,
   labels,
   layout = 'stacked',
+  command,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
@@ -83,6 +105,8 @@ function ChatComposer({
   onStop?: () => void;
   /** Alt+Enter: a second way to send, under the same rules as Enter. */
   onAltSubmit?: (value: string) => void;
+  /** Enter with nothing to send: the caller's, in place of Stop. */
+  onEmptyEnter?: () => void;
   busy?: boolean;
   disabled?: boolean;
   /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
@@ -111,12 +135,20 @@ function ChatComposer({
    * holding `tools`, `engine` and send. `inline` (a session read as a chat):
    * one row, the field opening at one line with send at its end, and `tools`
    * and `engine` as a quiet line under the box, so it does not crowd the
-   * conversation above it.
+   * conversation above it. Its send is ink, not the blue: a round button
+   * that sits on the wash until there is something to send; while `busy`
+   * its stop takes the blue.
    */
   layout?: 'stacked' | 'inline';
+  /**
+   * The `/command` the text starts with, marked the way a sent message marks
+   * it (`ChatCommand`) while it is written. A prefix of `value`; anything
+   * else is ignored.
+   */
+  command?: string;
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown, fieldRef } = useComposerSend({
     value,
     busy,
     disabled,
@@ -125,26 +157,33 @@ function ChatComposer({
     onSubmit,
     onStop,
     onAltSubmit,
-    // While a recording is open, a send waits for what is still being heard.
-    beforeSend: dictation?.recorder ? dictation.finish : undefined,
+    onEmptyEnter,
+    // While a recording is open, Enter ends it and sends nothing.
+    settle: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const inline = layout === 'inline';
   const field = (
-    <textarea
-      ref={inputRef}
+    <CommandField
+      inputRef={(node) => {
+        fieldRef.current = node;
+        assignRef(inputRef, node);
+      }}
       data-slot="chat-composer-input"
       value={value}
+      command={command}
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={onKeyDown}
       placeholder={placeholder}
       disabled={disabled}
       rows={inline ? 1 : 2}
+      wrapperClassName={inline ? 'flex-1' : undefined}
       // Grows with what is written, from its opening lines (`min-h`, since
       // `field-sizing-content` overrides `rows`) to eight, then scrolls.
-      className={cn(
-        'field-sizing-content max-h-52 w-full resize-none bg-transparent text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-        inline ? cn('min-h-11 flex-1 py-2.5', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+      className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder"
+      box={cn(
+        'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
+        inline ? cn('min-h-11 py-2.5 pr-0', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
       )}
     />
   );
@@ -158,10 +197,7 @@ function ChatComposer({
         sendBlockedReason={sendBlockedReason}
         labels={label}
         onClick={submit}
-        className={cn(
-          inline ? 'ml-1 size-8' : 'ml-1 size-8.5',
-          busy && 'bg-fg text-background hover:bg-fg hover:text-background',
-        )}
+        className={sendButtonClass(layout, busy)}
       >
         {busy ? (
           <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
@@ -176,12 +212,12 @@ function ChatComposer({
       aria-label={label.attach}
       title={label.attach}
       size="sm"
-      shape="square"
+      shape={inline ? 'pill' : 'square'}
       onClick={onAttach}
       disabled={disabled}
-      className={inline ? 'size-8' : 'size-7.5'}
+      className={inline ? 'size-8 text-fg-muted hover:text-fg' : 'size-7.5'}
     >
-      <PaperclipIcon className="size-3.75" />
+      {inline ? <PlusIcon className="size-4" /> : <PaperclipIcon className="size-3.75" />}
     </IconButton>
   ) : null;
   // The live region stays mounted, empty without a caption: a screen reader
@@ -274,7 +310,7 @@ function ChatComposer({
         )}
       </div>
       {inline && (tools || engine) ? (
-        <div data-slot="chat-composer-meta" className="flex min-h-7 items-center gap-3 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
+        <div data-slot="chat-composer-meta" className="@container/composer-meta flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
           {tools}
           <span className="ml-auto flex items-center gap-2">{engine}</span>
         </div>

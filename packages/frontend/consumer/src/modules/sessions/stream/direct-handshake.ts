@@ -1,8 +1,7 @@
 /**
- * The browser's half of the host proof
- * (`product/versions/mvp/31-peer-to-peer-and-the-host-proof.md`), the first
- * exchange on every direct channel and the reason a control plane that
- * carries the signalling still cannot sit in the middle of it.
+ * The browser's half of the host proof, the first exchange on every direct
+ * channel and the reason a control plane that carries the signalling still
+ * cannot sit in the middle of it.
  *
  * DTLS encrypts the channel end to end, but the fingerprints that say whose
  * ends they are travel in SDP the control plane relays. So before a byte

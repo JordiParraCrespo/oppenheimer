@@ -7,22 +7,33 @@ import {
 } from '../domain/bot-naming.policy';
 
 /**
- * What a new bot is called and drawn on (`product/versions/mvp/25-bots.md`
- * §2): a name the workspace does not have yet, and the next colour. The
- * create handler's spec covers that it asks; this is the whole rule.
+ * What a new bot is called and drawn on: a name the workspace does not have
+ * yet, and the next colour. The create handler's spec covers that it asks;
+ * this is the whole rule.
  */
 describe('firstNameFor', () => {
-  it('gives the first name the workspace does not have, compared without case', () => {
-    expect(firstNameFor(['Release manager'])).toBe(BOT_FIRST_NAMES[0]);
-    expect(firstNameFor([` ${BOT_FIRST_NAMES[0].toUpperCase()} `])).toBe(BOT_FIRST_NAMES[1]);
+  const many = (taken: readonly string[]) => Array.from({ length: 200 }, () => firstNameFor(taken));
+
+  // What breaks this (2026-11-15): every workspace's first bot was Juno,
+  // because names were handed out in order.
+  it('gives a first name at random, so workspaces do not all start with the same one', () => {
+    const names = many(['Release manager']);
+    for (const name of names) expect(BOT_FIRST_NAMES).toContain(name);
+    expect(new Set(names).size).toBeGreaterThan(5);
   });
 
-  it("gives a deleted bot's name back before moving on down the list", () => {
-    expect(firstNameFor([BOT_FIRST_NAMES[1], BOT_FIRST_NAMES[2]])).toBe(BOT_FIRST_NAMES[0]);
+  it('never gives a name the workspace has, compared without case', () => {
+    const taken = [` ${BOT_FIRST_NAMES[0].toUpperCase()} `, BOT_FIRST_NAMES[1]];
+    const names = many(taken);
+    expect(names).not.toContain(BOT_FIRST_NAMES[0]);
+    expect(names).not.toContain(BOT_FIRST_NAMES[1]);
+    expect(many(BOT_FIRST_NAMES.slice(1))).toEqual(Array(200).fill(BOT_FIRST_NAMES[0]));
   });
 
   it('numbers a name once every first name is taken', () => {
-    expect(firstNameFor([...BOT_FIRST_NAMES])).toBe(`${BOT_FIRST_NAMES[0]} 2`);
+    const name = firstNameFor([...BOT_FIRST_NAMES]);
+    expect(name).toMatch(/ 2$/);
+    expect(BOT_FIRST_NAMES).toContain(name.slice(0, -2));
   });
 
   it('gives every first name its own initial, so avatars in a sidebar differ', () => {

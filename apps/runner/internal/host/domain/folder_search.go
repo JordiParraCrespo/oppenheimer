@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// The bounds of the folder picker's search (`fs.find`, 24 §4): how deep the
+// The bounds of the folder picker's search (`fs.find`): how deep the
 // walk goes under where it starts, how many directories it reads before it
 // stops and says so, and how many folders it names. The depth and the
 // results are the protocol's FS_FIND_MAX_DEPTH and FS_FIND_MAX_RESULTS.

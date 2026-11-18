@@ -5,9 +5,9 @@ export type AttachmentReading =
   | { kind: 'unreadable'; reason: string };
 
 /**
- * Reads an attachment's bytes as a bot can take them (`product/next-steps/mail.md`
- * §3.2): PDFs, Word, Excel and PowerPoint files, text, CSV and HTML as text;
- * images as images. Nothing is ever run, and archives are never unpacked.
+ * Reads an attachment's bytes as a bot can take them: PDFs, Word, Excel and
+ * PowerPoint files, text, CSV and HTML as text; images as images. Nothing is
+ * ever run, and archives are never unpacked.
  */
 export interface AttachmentReaderPort {
   read(file: { filename: string; mimeType: string; bytes: Buffer }): Promise<AttachmentReading>;

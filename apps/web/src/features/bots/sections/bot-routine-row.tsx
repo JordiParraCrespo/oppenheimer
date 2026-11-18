@@ -18,10 +18,10 @@ const ROUTINE_ICONS = {
 } as const;
 
 /**
- * One routine as a card (`26-bot-routines.md` §7): its switch, Run now, Edit
- * and Delete. Edit does not open a form: it writes "Edit your routine: …"
- * into the bot's chat and goes there, so the bot changes it with its own
- * tool and asks first, as the chat is where a routine is made.
+ * One routine as a card: its switch, Run now, Edit and Delete. Edit does
+ * not open a form: it writes "Edit your routine: …" into the bot's chat and
+ * goes there, so the bot changes it with its own tool and asks first, as
+ * the chat is where a routine is made.
  */
 export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotRoutineEntity }) {
   const { t } = useTranslation();

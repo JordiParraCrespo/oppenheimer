@@ -11,12 +11,12 @@ import { StartSessionSkeleton } from '../components/start-session-skeleton';
 import { StartSessionDraft } from '../sections/start-session-draft';
 
 /**
- * Start session for a task (`18-plan-product.md` §4), open while the address
- * says `?start=<task>` on the board or on To do; each screen reads its own
- * address and passes the task and how to close it. The session is New session's, filed under the task's
- * project and linked to it; the task moves to In progress unless it moved
- * since the click. The form reads what it needs under Suspense; this draws
- * the dialog, its placeholder and a first failure.
+ * Start session for a task, open while the address says `?start=<task>` on
+ * the board or on To do; each screen reads its own address and passes the
+ * task and how to close it. The session is New session's, filed under the
+ * task's project and linked to it; the task moves to In progress unless it
+ * moved since the click. The form reads what it needs under Suspense; this
+ * draws the dialog, its placeholder and a first failure.
  */
 export function StartSessionDialog({
   taskId,

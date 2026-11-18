@@ -18,10 +18,9 @@ import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
 /**
  * The App's one webhook endpoint, verified once, then split in two.
  * `installation` (suspend, unsuspend, uninstall) is this module's own; see
- * `github-webhook.util.ts`. Every other event goes to the inbound-events hub
- * (`product/versions/mvp/16-automations-architecture.md` §Q6), keyed by
- * GitHub's delivery id and normalized for automations: one endpoint and one
- * secret for the App, whatever consumes its events.
+ * `github-webhook.util.ts`. Every other event goes to the inbound-events hub,
+ * keyed by GitHub's delivery id and normalized for automations: one endpoint
+ * and one secret for the App, whatever consumes its events.
  */
 @CommandHandler(HandleGithubWebhookCommand)
 export class HandleGithubWebhookCommandHandler

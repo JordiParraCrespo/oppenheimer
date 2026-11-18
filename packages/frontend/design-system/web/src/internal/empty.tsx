@@ -5,7 +5,8 @@ import { cn } from '../lib/utils';
 
 /**
  * Empty — an empty state names the next action: a muted description and one
- * button, optionally under a title and a 44px icon disc. `compact` is the
+ * button, optionally under a title and a 44px icon disc or a drawing (the
+ * tiers are on `EmptyState`). `compact` is the
  * sidebar form ("No sessions yet. The one you start appears here with its live
  * state."): left-aligned, 12.5px, no disc.
  */
@@ -48,6 +49,7 @@ const emptyMediaVariants = cva(
       variant: {
         default: 'bg-transparent',
         icon: 'size-11 rounded-pill bg-control text-fg-subtle [&_svg:not([class*=size-])]:size-5',
+        illustration: '-mt-2 mb-2 motion-safe:animate-appear',
       },
     },
     defaultVariants: { variant: 'default' },

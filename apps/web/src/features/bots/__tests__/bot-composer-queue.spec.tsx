@@ -10,7 +10,9 @@ import { BotComposer } from '../sections/bot-composer';
  * loses its words; Send now offered on a message that is not next, or on one
  * whose images the field could not hold again; Enter that queues instead of
  * steering the turn under way, Alt+Enter that steers instead of queueing, a
- * steer shown as if it waited for after.
+ * steer shown as if it waited for after; Escape that does not stop the turn,
+ * or that stops it while a menu or dialog open over the chat wanted the key,
+ * or, beside a session, while the key was the session's.
  */
 
 vi.mock('react-i18next', () => ({
@@ -60,9 +62,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function composer() {
+function composer(dropsOn: 'pane' | 'box' = 'pane') {
   render(
     <BotComposer
+      dropsOn={dropsOn}
       botId="b1"
       name="Ada"
       provider="anthropic"
@@ -91,6 +94,7 @@ describe('BotComposer while the bot works', () => {
     fireEvent.change(field, { target: { value: 'Use Tokyo time' } });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.send).toHaveBeenLastCalledWith(expect.objectContaining({ steer: true }));
+    fireEvent.change(field, { target: { value: 'Use Tokyo time' } });
     fireEvent.keyDown(field, { key: 'Enter', altKey: true });
     expect(state.send).toHaveBeenLastCalledWith(
       expect.objectContaining({ content: 'Use Tokyo time', steer: false }),
@@ -138,5 +142,60 @@ describe('BotComposer while the bot works', () => {
     const remove = screen.getAllByRole('button', { name: 'common.chat.queue.remove' });
     fireEvent.click(remove[1] as HTMLElement);
     expect(state.cancel).toHaveBeenCalledWith({ id: 'b1', turnId: 'q2' });
+  });
+
+  it('stops the turn under way on Escape, from the field or anywhere in the chat', () => {
+    composer();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledWith({ id: 'b1', turnId: 'run' });
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves Escape to a menu or dialog open over the chat', () => {
+    composer();
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    document.body.append(menu);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    menu.remove();
+    fireEvent.keyDown(document.body, { key: 'Escape', ctrlKey: true });
+    expect(state.cancel).not.toHaveBeenCalled();
+  });
+
+  it('leaves Escape to the `/` menu, which closes on it', () => {
+    composer();
+    const field = screen.getByRole('textbox');
+    fireEvent.change(field, { target: { value: '/' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(state.cancel).not.toHaveBeenCalled();
+    // The menu shut, the next Escape is the composer's again.
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves Escape to an input method dismissing its candidates in the field', () => {
+    composer();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape', isComposing: true });
+    expect(state.cancel).not.toHaveBeenCalled();
+  });
+
+  it('beside a session, leaves Escape on the session to it and stops only from its own box', () => {
+    composer('box');
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(state.cancel).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'bots.chat.stop' }), { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledWith({ id: 'b1', turnId: 'run' });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(state.cancel).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves Escape to another field, such as the sidebar search clearing itself', () => {
+    composer();
+    const search = document.createElement('input');
+    document.body.append(search);
+    fireEvent.keyDown(search, { key: 'Escape' });
+    search.remove();
+    expect(state.cancel).not.toHaveBeenCalled();
   });
 });

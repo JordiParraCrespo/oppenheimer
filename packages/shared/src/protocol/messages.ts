@@ -1,7 +1,11 @@
 import { z } from 'zod/v4';
-import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import {
+  type HostCloudAgentId,
+  isHostCloudAgent,
+  SESSION_EFFORTS,
+  SESSION_PERMISSIONS,
+} from '../agents/catalog.js';
 import { cloudRepliedSchema, cloudReplySchema } from './cloud-reply.js';
-import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
   desktopCloseSchema,
   desktopControlSchema,
@@ -13,6 +17,7 @@ import {
   deviceDetachSchema,
   deviceInfoSchema,
   deviceInputSchema,
+  deviceSelectSchema,
 } from './devices.js';
 import { hintSchema } from './hint.js';
 import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
@@ -38,6 +43,8 @@ import {
   protocolRangeSchema,
   sessionIdSchema,
   sessionSnapshotSchema,
+  sessionWindowSchema,
+  windowAgentSchema,
   windowIndexSchema,
 } from './primitives.js';
 import {
@@ -69,9 +76,8 @@ import {
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
  * Schema emitted from it (`pnpm --filter @oppenheimer/shared build`)
- * and the Go structs generated from that. This settles open question 1 of
- * `product/versions/mvp/01-protocol.md`: Zod is what this repo already uses for
- * DTOs, so the wire is not a second schema language.
+ * and the Go structs generated from that. Zod because it is what this repo
+ * already uses for DTOs, so the wire is not a second schema language.
  *
  * Only **control messages** are here. PTY bytes travel as binary frames — one
  * frame per PTY read, a 4-byte big-endian attachment id and then the bytes, no
@@ -92,14 +98,13 @@ export const RUNNER_CAPABILITIES = [
   'repository.prepare',
   /**
    * Answers `attachment.direct.offer`: an attachment may move from the link to
-   * a WebRTC data channel with the browser (`product/versions/mvp/22-direct-terminal-path.md`).
-   * Named only by a runner that drops a read-only attachment's input itself.
+   * a WebRTC data channel with the browser. Named only by a runner that drops a
+   * read-only attachment's input itself.
    */
   'attachment.direct',
   /**
    * Proves itself on every direct channel before a byte crosses it: it signs
-   * both DTLS fingerprints and the browser's nonce with its host key
-   * (`product/versions/mvp/31-peer-to-peer-and-the-host-proof.md`). The relay
+   * both DTLS fingerprints and the browser's nonce with its host key. The relay
    * invites a direct path only to a runner naming this beside
    * `attachment.direct`, because the console refuses a channel that is not
    * proved.
@@ -107,8 +112,7 @@ export const RUNNER_CAPABILITIES = [
   'attachment.direct.proof',
   /**
    * Takes a `session.create` with a `folder` instead of checkouts: a session in
-   * a folder already on the host, nothing cloned and nothing written
-   * (`product/versions/mvp/24-session-places.md`).
+   * a folder already on the host, nothing cloned and nothing written.
    */
   'session.folder',
   /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
@@ -126,20 +130,19 @@ export const RUNNER_CAPABILITIES = [
    * Sends a Claude Code conversation tail first to an attachment whose
    * `session.attach` says `chatTail`: its `reset` carries the last turns and
    * `before`, the offset they start at, and `attachment.chat.older` is
-   * answered with the turns before an offset
-   * (`product/next-steps/0.7-terminal-and-chat.md`, "Tail first").
+   * answered with the turns before an offset.
    */
   'attachment.chat.older',
   /**
    * Answers `device.attach`: the session has a simulator or emulator of its
    * own on this host, whose screen streams as JPEG frames and which takes
-   * `device.input` (`product/research/device-streaming.md`).
+   * `device.input`.
    */
   'device.screen',
   /**
    * Answers `port.list` and `port.open`: the TCP ports a session's own
    * processes listen on, each reachable as an attachment of raw bytes, for the
-   * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+   * console's Browser tab.
    */
   'port.forward',
   /**
@@ -153,16 +156,22 @@ export const RUNNER_CAPABILITIES = [
   /**
    * Takes a `session.create` with `cloud`: the runner starts the task in
    * Claude Code's cloud (`claude --cloud`) from a checkout of the repository
-   * and reports the cloud session's id, instead of opening a terminal
-   * (`product/research/cloud-agents.md` §5B).
+   * and reports the cloud session's id, instead of opening a terminal.
    */
   'session.cloud',
   /**
-   * Takes a `session.create` with `cloud` for Codex: the runner starts the task
-   * in Codex cloud (`codex cloud exec`) on the checkout's base branch, reports
-   * the task's id, and from then on reads the task's status off
-   * `codex cloud list --json` and reports it as the session's
-   * (`product/next-steps/cloud-agents.md`).
+   * Takes a `session.create` with `cloud` for Codex: the runner starts a thread
+   * in Codex cloud with the host's ChatGPT sign-in, reports the thread's id,
+   * and from then on follows its newest turn and reports where it stands as the
+   * session's status. Named apart from `session.cloud.codex`, which a runner
+   * that drove `codex cloud exec` (legacy environments only) named, so the
+   * control plane never sends a Codex cloud start to one of those.
+   */
+  'session.cloud.codex.threads',
+  /**
+   * What a runner that drove `codex cloud exec` named for Codex cloud. Kept so
+   * its hello still reads as it was meant; the control plane sends it no Codex
+   * cloud start (`session.cloud.codex.threads`).
    */
   'session.cloud.codex',
   /**
@@ -178,54 +187,44 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.teleport',
   /**
-   * Answers `codex.environments.list` with `codex.environments`: the Codex
-   * cloud environments the host's ChatGPT account has, for the composer's
-   * picker, and takes `session.create`'s `codexEnvironment`. A runner without
-   * it guesses the environment from the repository's name.
-   */
-  'codex.environments',
-  /**
    * Takes `session.watch` and `session.unwatch`: it scans a live session's
    * screen for a pattern on every pass it already makes, and reports a match
-   * as a `terminal.matched` log entry carrying a count, never the text
-   * (`product/versions/mvp/27-bot-subscriptions.md`).
+   * as a `terminal.matched` log entry carrying a count, never the text.
    */
   'session.watch',
   /**
    * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
    * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
-   * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
+   * `whatsapp.messages`.
    */
   'whatsapp',
   /**
    * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
    * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
-   * `telegram.state` and `telegram.messages` (`product/next-steps/telegram.md`).
+   * `telegram.state` and `telegram.messages`.
    */
   'telegram',
   /**
    * Logs `file.shared` for each file an agent shares, and answers
    * `shared.preview.get` with `shared.preview`: the JPEG preview it kept of
-   * a shared image, for a bot to show (`product/next-steps/agent-tools.md` §7).
+   * a shared image, for a bot to show.
    */
   'shared.preview',
   /**
    * Answers `transcript.read` with `transcript.page`: a page of the session's
    * conversation, the chat view's entries, for a reader with no browser
-   * attached (a bot, the CLI, an MCP client; `product/next-steps/agent-tools.md` §8).
+   * attached (a bot, the CLI, an MCP client).
    */
   'transcript.read',
   /**
    * Answers `host.exec` with `host.exec.result`: one program run to completion
-   * for a bot, when this host's own exec policy lets it
-   * (`product/versions/mvp/25-bots.md` §4.2, "Commands on a host").
+   * for a bot, when this host's own exec policy lets it.
    */
   'host.exec',
   /**
    * Answers `terminal.drive` with `terminal.screen`: a bot types into a
    * blank-terminal session's window and reads its screen back, when this
-   * host's exec policy is `full` (`product/versions/mvp/25-bots.md` §4.2,
-   * "Driving a terminal").
+   * host's exec policy is `full`.
    */
   'terminal.drive',
   /**
@@ -241,6 +240,21 @@ export const RUNNER_CAPABILITIES = [
    * browser on` (`product/versions/mvp/25-bots.md` §4.2, "Using a browser").
    */
   'browser.use',
+  /**
+   * Answers `session.windows.list`, `session.window.open` and
+   * `session.window.close` with `session.windows`: the session's windows
+   * after the command, so the console's Terminal tab learns the index of the
+   * shell it opened. A runner without it opens and closes windows without a
+   * word back.
+   */
+  'session.windows.list',
+  /**
+   * Takes `agent` on `session.window.open`: the new window starts that coding
+   * agent in the session's worktree, beside the session's own in window 0. A
+   * runner without it would open a plain shell and ignore the field, so the
+   * control plane refuses the open before sending it.
+   */
+  'session.window.agent',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -251,7 +265,7 @@ export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
  */
 export const HOST_CLOUD_CAPABILITIES = {
   'claude-code': 'session.cloud',
-  codex: 'session.cloud.codex',
+  codex: 'session.cloud.codex.threads',
 } as const satisfies Record<HostCloudAgentId, RunnerCapability>;
 
 /**
@@ -419,10 +433,10 @@ export type EventsAckMessage = z.infer<typeof eventsAckSchema>;
  * Every path segment is an id or a unique-constrained column, so the runner
  * derives `<account>/<workspace>/sessions/<sessionSlug>/` without asking: the
  * account is the one it was paired with (`POST /hosts/register` answers it),
- * and the workspace travels here (24 §2). No project travels: a project is metadata, and nothing on a host is named after
- * it. `branch` is always the session's own — `oppenheimer/<session>`, or the
- * name its checkouts already recorded — created from each checkout's base and
- * never the base itself.
+ * and the workspace travels here. No project travels: a project is metadata,
+ * and nothing on a host is named after it. `branch` is always the session's own
+ * — `oppenheimer/<session>`, or the name its checkouts already recorded —
+ * created from each checkout's base and never the base itself.
  */
 export const sessionCreateSchema = z
   .object({
@@ -431,10 +445,10 @@ export const sessionCreateSchema = z
     sessionId: sessionIdSchema,
     organizationSlug: gitRefSchema,
     /**
-     * The workspace the session is in. The runner names the work folder's
-     * level under its account by it, `<account>/<workspace>/sessions/<sessionSlug>/`
-     * (24 §2): an id, because a path never changes after it is made and a slug
-     * can be edited. The account is not here: it is the pairing's.
+     * The workspace the session is in. The runner names the work folder's level
+     * under its account by it, `<account>/<workspace>/sessions/<sessionSlug>/`:
+     * an id, because a path never changes after it is made and a slug can be
+     * edited. The account is not here: it is the pairing's.
      */
     workspaceId: z.uuid(),
     sessionSlug: gitRefSchema,
@@ -444,22 +458,21 @@ export const sessionCreateSchema = z
      * somebody chose in the composer's foot row; structured rather than argv
      * (`launchOptionsSchema` says why).
      *
-     * The fold keeps them on the session so a restart reproduces the launch
-     * (`product/versions/mvp/01-protocol.md`).
+     * The fold keeps them on the session so a restart reproduces the launch.
      */
     launch: launchOptionsSchema,
     /**
      * The person's first task, if the composer supplied one.
      *
      * The runner appends it to the agent's **argv** as the catalog's
-     * `launch.prompt` says (`product/versions/mvp/02-runner.md` §5), rather than
-     * sending a `session.input` after `session.started`: input needs the agent
-     * up, a moment only the host can name.
+     * `launch.prompt` says, rather than sending a `session.input` after
+     * `session.started`: input needs the agent up, a moment only the host can
+     * name.
      *
      * Set, the control plane has already written `prompt.first` to the log and
      * the runner writes nothing; unset, the runner reports the first message off
      * the transcript instead. The field is what decides which, so the two
-     * writers never collide and never need a shared key (02 §7).
+     * writers never collide and never need a shared key.
      */
     prompt: promptTextSchema.optional(),
     /**
@@ -469,7 +482,7 @@ export const sessionCreateSchema = z
      * under its `imageId` and the runner pulls it once over HTTPS
      * (`GET /hosts/self/images/{imageId}`) before it starts the agent, saves it
      * outside the worktree, and appends its path to `prompt` so the agent reads
-     * it with the task (02 §7).
+     * it with the task.
      *
      * Present only with a `prompt`, each named once (the refine below), and
      * sent only to a runner whose `hello` named `session.create.images`: an
@@ -518,8 +531,8 @@ export const sessionCreateSchema = z
      * credential ask names a live checkout, and a cloud session leaves none on
      * the host), checks out its base in a scratch directory, runs
      * `claude --cloud` there with `prompt` and removes the scratch directory.
-     * For Codex it runs `codex cloud exec` on the checkout's base branch and
-     * needs no checkout, so the token goes unused. Either way it reports the
+     * For Codex it starts a thread in Codex cloud on the checkout's base
+     * branch and needs no checkout, so the token goes unused. Either way it reports the
      * cloud session's id on `session.started` (`agentSessionId`).
      *
      * Only with an agent of `HOST_CLOUD_AGENT_IDS`, one checkout and a prompt,
@@ -534,12 +547,10 @@ export const sessionCreateSchema = z
       })
       .optional(),
     /**
-     * A Codex cloud session's environment, as the person picked it: its id
-     * (or label), passed to `codex cloud exec --env`. Absent, the runner picks
-     * the environment linked to the repository (`codex.environments`'
-     * `recommended`) and then tries the repository's names as labels. Only on
-     * a Codex cloud session, and sent only to a runner whose `hello` named
-     * `codex.environments`.
+     * A Codex cloud session's environment: an environment id the person
+     * copied from ChatGPT's Codex Cloud settings. Absent, the runner starts the
+     * task in Codex's default environment with the repository. Only on a Codex
+     * cloud session.
      */
     codexEnvironment: codexEnvironmentRefSchema.optional(),
   })
@@ -630,7 +641,7 @@ export type SessionInputMessage = z.infer<typeof sessionInputSchema>;
  * The control plane parks the upload under this command id, and the runner
  * pulls it once over HTTPS with its own assertion
  * (`GET /hosts/self/images/{commandId}`), writes it outside the worktree, and
- * pastes its path into the window as a bracketed paste (02 §7).
+ * pastes its path into the window as a bracketed paste.
  *
  * Sent only to a runner whose `hello` said it can take one (`session.image`),
  * and a type beyond the images only to one that named `session.files`.
@@ -651,8 +662,7 @@ export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
  * The browser acks the bytes it has consumed, the control plane relays that
  * credit here, and the runner resumes the attachment's PTY reads. Without it a
  * pane that outruns its 256 KB window stalls for good; with it a runaway build
- * stalls its own pane, never the link
- * (`product/versions/mvp/01-protocol.md`, "Flow control and reconnect").
+ * stalls its own pane, never the link.
  *
  * The same shape on both hops (browser → control plane → runner). The credit is
  * a delta, never a running total: a lost frame then costs one window's worth of
@@ -679,17 +689,53 @@ export const sessionResizeSchema = z.object({
 
 export type SessionResizeMessage = z.infer<typeof sessionResizeSchema>;
 
-/** Open a new tmux window in the session. Tabs in the console are tmux windows. */
+/**
+ * Open a new tmux window in the session: a plain shell in its worktree, the
+ * console's Terminal tab. A runner that named `session.windows.list` answers
+ * with `session.windows`, `opened` the new window's index.
+ */
 export const sessionWindowOpenSchema = z.object({
   type: z.literal('session.window.open'),
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
   name: z.string().min(1).max(200).optional(),
+  /**
+   * A second coding agent to start in the new window, in the same worktree.
+   * Absent is a plain shell. Sent only to a runner whose hello named
+   * `session.window.agent`. Window 0 stays the session's agent, the one its
+   * state is read from.
+   */
+  agent: windowAgentSchema.optional(),
+  /**
+   * How that agent is started, as `session.create`'s launch carries it, and
+   * meaningful only with `agent`. Each one given wins; each one absent falls
+   * back to the session's own: its permission level always, its model and
+   * effort only when `agent` is the session's agent (a model names one CLI's).
+   * A runner from before these fields ignores them and takes that fallback.
+   * The bounds are `launchOptionsSchema`'s, spelled again rather than shared:
+   * a schema used twice is lifted into the JSON Schema's `$defs`, which would
+   * rename `session.create`'s launch fields for every generator.
+   */
+  model: z.string().min(1).max(128).optional(),
+  permission: z.enum(SESSION_PERMISSIONS).optional(),
+  /** As `launchOptionsSchema.effort`: a level the model does not offer is dropped. */
+  effort: z.enum(SESSION_EFFORTS).optional(),
+  /**
+   * The agent's first task, bounded as `session.create`'s, meaningful only
+   * with `agent`: the runner hands it to the CLI as its trailing positional,
+   * as it does window 0's, and never logs it. A runner from before this field
+   * ignores it and starts the agent with no task.
+   */
+  prompt: promptTextSchema.optional(),
 });
 
 export type SessionWindowOpenMessage = z.infer<typeof sessionWindowOpenSchema>;
 
-/** Close one tmux window. The session survives its windows. */
+/**
+ * Close one tmux window. The session survives its windows; window 0 is the
+ * agent and is refused. A runner that named `session.windows.list` answers
+ * with `session.windows`.
+ */
 export const sessionWindowCloseSchema = z.object({
   type: z.literal('session.window.close'),
   commandId: commandIdSchema,
@@ -698,6 +744,39 @@ export const sessionWindowCloseSchema = z.object({
 });
 
 export type SessionWindowCloseMessage = z.infer<typeof sessionWindowCloseSchema>;
+
+/**
+ * The session's windows, as tmux holds them now. Sent only to a runner whose
+ * hello named `session.windows.list`; answered by `session.windows` with the
+ * same `commandId`, or by `command.failed`.
+ */
+export const sessionWindowsListSchema = z.object({
+  type: z.literal('session.windows.list'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+});
+
+export type SessionWindowsListMessage = z.infer<typeof sessionWindowsListSchema>;
+
+/** How many windows one `session.windows` names at most. */
+export const SESSION_WINDOWS_MAX_ENTRIES = 64;
+
+/**
+ * A session's windows after a command, in index order: the answer a runner
+ * that named `session.windows.list` gives `session.windows.list`,
+ * `session.window.open` and `session.window.close` alike, under the command's
+ * `commandId`. A refusal is `command.failed`, as before. `opened` is the
+ * window an open made, which is also in `windows`.
+ */
+export const sessionWindowsSchema = z.object({
+  type: z.literal('session.windows'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  windows: z.array(sessionWindowSchema).max(SESSION_WINDOWS_MAX_ENTRIES),
+  opened: windowIndexSchema.optional(),
+});
+
+export type SessionWindowsMessage = z.infer<typeof sessionWindowsSchema>;
 
 /**
  * Close the session: push each checkout's branch, then remove the worktrees and
@@ -761,7 +840,7 @@ export type SessionUnwatchMessage = z.infer<typeof sessionUnwatchSchema>;
 
 /**
  * End the agent and the tmux session and leave every checkout on disk, which
- * is what makes Restart possible afterwards (02 §5: "Stop is not close").
+ * is what makes Restart possible afterwards: stop is not close.
  */
 export const sessionStopSchema = z.object({
   type: z.literal('session.stop'),
@@ -796,7 +875,7 @@ export type HostPreflightMessage = z.infer<typeof hostPreflightSchema>;
  * Get a repository ready for a session that has not been asked for yet: clone
  * it (or fetch its base) and build the spare worktree a create then claims, so
  * the create that follows waits on neither. The console sends it the moment a
- * person picks a host and a repository in New session (02 §5, 05).
+ * person picks a host and a repository in New session.
  *
  * Fire and forget: nothing is recorded and no session exists. The token the
  * clone needs travels **with** the command, minted for this repository alone
@@ -808,8 +887,8 @@ export const repositoryPrepareSchema = z.object({
   type: z.literal('repository.prepare'),
   commandId: commandIdSchema,
   /**
-   * Whose stores to warm: the work folder's `<account>/<workspace>/repos/`
-   * (24 §2), the account being the one the runner was paired with.
+   * Whose stores to warm: the work folder's `<account>/<workspace>/repos/`,
+   * the account being the one the runner was paired with.
    */
   workspaceId: z.uuid(),
   githubRepoId: githubRepoIdSchema,
@@ -823,7 +902,7 @@ export const repositoryPrepareSchema = z.object({
 export type RepositoryPrepareMessage = z.infer<typeof repositoryPrepareSchema>;
 
 /**
- * List one directory on the host, for the folder picker (24 §4). Absent `path`
+ * List one directory on the host, for the folder picker. Absent `path`
  * is the home directory of the user the runner runs as. Sent only to a runner
  * whose `hello` named `fs.list`; answered by `fs.listing` with the same
  * `commandId`, or by `command.failed` (`FS_001` not found, `FS_002` not a
@@ -892,8 +971,7 @@ export const HOST_EXEC_MAX_TIMEOUT_SECONDS = 600;
 export const HOST_EXEC_OUTPUT_MAX_BYTES = 32_768;
 
 /**
- * Run one program on the host for a bot, to completion
- * (`product/versions/mvp/25-bots.md` §4.2, "Commands on a host").
+ * Run one program on the host for a bot, to completion.
  *
  * `argv` is the program and its arguments, run directly, never through a
  * shell: a pipe or a `;` is an argument like any other, so the host's policy
@@ -987,14 +1065,13 @@ export const TERMINAL_WAIT_MAX_SECONDS = 60;
 export const TERMINAL_HISTORY_MAX_LINES = 500;
 
 /**
- * Type into a blank-terminal session (agent `shell`) and read its screen
- * back, for a bot (`product/versions/mvp/25-bots.md` §4.2, "Driving a
- * terminal"). In order: `text` is typed literally (never read as key names),
+ * Type into a blank-terminal session (agent `shell`) and read its screen back,
+ * for a bot. In order: `text` is typed literally (never read as key names),
  * then each of `keys` is pressed, then the runner waits: until `waitFor` (an
  * RE2 pattern) matches a line of the screen, or for `waitSeconds` when no
  * pattern is given, at most `TERMINAL_WAIT_MAX_SECONDS`; then it captures the
- * visible screen and `history` lines above it. A drive with no text and no
- * keys only reads.
+ * visible screen and `history` lines above it. A drive with no text and no keys
+ * only reads.
  *
  * The host decides: only a host whose exec policy is `full` takes it, since
  * a shell runs anything. Sent only to a runner whose `hello` named
@@ -1259,8 +1336,8 @@ export const browserPageSchema = z.object({
 export type BrowserPageMessage = z.infer<typeof browserPageSchema>;
 
 /**
- * Find folders under one directory by name, for the folder picker's search
- * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
+ * Find folders under one directory by name, for the folder picker's search:
+ * a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
  * hidden directories and dependency trees and never descends into a git
  * repository, so a repository is found and its insides are not. Absent `path`
  * is the home directory. Sent only to a runner whose `hello` named `fs.find`;
@@ -1343,7 +1420,7 @@ export type CredentialsTokenMessage = z.infer<typeof credentialsTokenSchema>;
 
 /**
  * The control plane's answer, with the token **sealed to the host's public key**
- * (F7) so it is never readable off the relay.
+ * so it is never readable off the relay.
  *
  * This is its own type rather than an optional field on the ask. An optional
  * `grant` as a direction flag means every handler branches on `grant == null`,
@@ -1379,7 +1456,7 @@ export type CredentialsRevokeMessage = z.infer<typeof credentialsRevokeSchema>;
  * The control plane's answer to `hello`, and the first thing the runner reads
  * after sending it. It carries the protocol version the two will speak and the
  * fingerprint of the control plane's signing key, which the runner compares
- * against the one it pinned at registration and refuses on mismatch (01 F6).
+ * against the one it pinned at registration and refuses on mismatch.
  * A runner below `min_supported` never receives this: it is refused with an
  * `update_required` hint instead.
  */
@@ -1511,10 +1588,9 @@ export type AttachmentPathMessage = z.infer<typeof attachmentPathSchema>;
 
 /**
  * Entries of a session's agent transcript, for the chat view beside the
- * terminal (`product/next-steps/0.7-terminal-and-chat.md`). The agent still
- * runs in tmux, unmodified, and the terminal is still its interface: this is a
- * second reading of the same conversation, from the file the CLI writes, not a
- * way of driving it.
+ * terminal. The agent still runs in tmux, unmodified, and the terminal is still
+ * its interface: this is a second reading of the same conversation, from the
+ * file the CLI writes, not a way of driving it.
  *
  * Each entry is one transcript line, compacted on the host and kept as the
  * JSON string it is, because the transcript's shape is the CLI's and changes
@@ -1594,6 +1670,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionResizeSchema,
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
+  sessionWindowsListSchema,
+  sessionWindowsSchema,
   sessionCloseSchema,
   sessionWatchSchema,
   sessionUnwatchSchema,
@@ -1626,6 +1704,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   deviceAttachSchema,
   deviceInfoSchema,
   deviceInputSchema,
+  deviceSelectSchema,
   deviceDetachSchema,
   portListSchema,
   portListingSchema,
@@ -1636,8 +1715,6 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   desktopOpenedSchema,
   desktopControlSchema,
   desktopCloseSchema,
-  codexEnvironmentsListSchema,
-  codexEnvironmentsSchema,
   cloudReplySchema,
   cloudRepliedSchema,
   whatsappLinkSchema,

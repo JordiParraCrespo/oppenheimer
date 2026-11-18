@@ -8,7 +8,7 @@ import { PERSIST_META } from './persist-meta';
 import { useQuery } from './query';
 
 /**
- * Each level is derived from the one above (`apps/docs/docs/architecture/query-keys.md`).
+ * Each level is derived from the one above.
  * `permissions` sits under `me` on purpose: whatever changes who the caller is
  * invalidates `me()`, and their permissions refetch with it.
  */

@@ -10,7 +10,7 @@ import {
   type CiFindingRelation,
 } from '@oppenheimer/shared';
 
-/** What one failing check on the head came to (`0.2-pull-requests.md`, "CI findings"). */
+/** What one failing check on the head came to. */
 export class CiFindingResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;

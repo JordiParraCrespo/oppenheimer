@@ -35,7 +35,7 @@ describe('hostStartsCloud', () => {
   it('offers Codex cloud only from a runner that named session.cloud.codex and has codex', () => {
     const codexReady = {
       ...ready,
-      liveCapabilities: ['session.cloud', 'session.cloud.codex'] as const,
+      liveCapabilities: ['session.cloud', 'session.cloud.codex.threads'] as const,
       installedTools: ['git', 'codex'],
     };
     expect(hostStartsCloud(codexReady, 'codex')).toBe(true);

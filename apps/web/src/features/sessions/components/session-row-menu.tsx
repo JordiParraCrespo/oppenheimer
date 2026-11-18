@@ -16,13 +16,13 @@ import { moveProjectOptions } from '../lib/session-groups';
 
 /**
  * A session row's ellipsis menu. Move slides the menu to a pane rather than a
- * submenu, like the account menu's Appearance
- * (`packages/frontend/design-system/AGENTS.md`); the section computes which
+ * submenu, like the account menu's Appearance; the section computes which
  * project the session is in, since it holds both lists; that one stays listed,
- * ticked and not choosable, so the pane says where the session is. No key hints: the
- * export draws R, M and D, but nothing listens for them yet, and a painted key
- * that does nothing is a claim. Select starts picking rows to act on
- * together with this one, the way a touch screen with no ⌘-click gets there.
+ * ticked and not choosable, so the pane says where the session is. No key
+ * hints: the export draws R, M and D, but nothing listens for them yet, and a
+ * painted key that does nothing is a claim. Select starts picking rows to act
+ * on together with this one, the way a touch screen with no ⌘-click gets
+ * there.
  */
 export function SessionRowMenu({
   open,

@@ -1,7 +1,6 @@
 /**
  * A project's slug: its stable handle, derived from the name once, at creation. A
- * project is metadata and nothing on a host is named after it
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). The slug is lower-case
+ * project is metadata and nothing on a host is named after it. The slug is lower-case
  * kebab so it can sit in a URL, unique in its workspace for ever (archiving keeps it),
  * and derived deterministically:
  *

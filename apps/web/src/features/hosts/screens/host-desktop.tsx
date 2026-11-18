@@ -1,8 +1,6 @@
 import {
   EditorPageBack,
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderRow,
 } from '@oppenheimer/design-system-web';
@@ -13,11 +11,10 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Settings → Hosts → a host's Desktop (`product/research/device-streaming.md`,
- * "A host's desktop"): the machine's own screen, live, inside the Settings
- * frame. The same viewer as the session pane's Desktop tab; here it has the
- * page's measure, and Full screen the whole window. The name is read off the
- * host list the page above already holds; until it lands the crumb says Desktop.
+ * Settings → Hosts → a host's Desktop: the machine's own screen, live,
+ * inside the Settings frame. The same viewer as the session pane's Desktop
+ * tab; here it has the page's measure, and Full screen the whole window. The
+ * name is read off the host list the page above already holds.
  */
 export function HostDesktopScreen({ hostId }: { hostId: string }) {
   const { t } = useTranslation();
@@ -33,11 +30,6 @@ export function HostDesktopScreen({ hostId }: { hostId: string }) {
       <EditorPageBack render={<Link {...back} />}>{t('hosts.desktop.back')}</EditorPageBack>
 
       <PageHeader>
-        <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
-          <Link {...back}>{t('hosts.add.crumbHosts')}</Link>
-          <span>/</span>
-          <PageHeaderHere>{label}</PageHeaderHere>
-        </PageHeaderCrumbs>
         <PageHeaderRow icon={<Monitor />} title={t('hosts.desktop.pageTitle')} />
         <PageHeaderMeta>
           <span>{t('hosts.desktop.pageLead', { name: label })}</span>

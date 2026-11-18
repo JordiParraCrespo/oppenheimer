@@ -9,7 +9,7 @@ import { FindInboxMarksQuery } from './find-inbox-marks.query';
 
 /**
  * The caller's marks in the workspace that still hold: a snooze whose end
- * has passed is left out, so its item is back (`29-inbox.md` §3).
+ * has passed is left out, so its item is back.
  */
 @QueryHandler(FindInboxMarksQuery)
 export class FindInboxMarksQueryHandler

@@ -3,9 +3,8 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * PageHeader — how every routine page opens: a breadcrumb line, then the
- * row with a round glyph, the title (an inline input while editing) and the
- * actions on the right, then a meta line of facts. A `note` band appears
+ * PageHeader — how every routine page opens: the row with a round glyph,
+ * the title (an inline input while editing) and the actions on the right, then a meta line of facts. A `note` band appears
  * only when the state needs explaining (paused), on the card surface with
  * one small action.
  *
@@ -24,39 +23,6 @@ function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
     <header
       data-slot="page-header"
       className={cn('mb-2 flex flex-col gap-2.5', className)}
-      {...props}
-    />
-  );
-}
-
-/**
- * The crumbs: buttons or links for the parents, a muted span for here. The
- * landmark's name is the caller's to translate, so it is required.
- */
-function PageHeaderCrumbs({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<'nav'> & { 'aria-label': string }) {
-  return (
-    <nav
-      data-slot="page-header-crumbs"
-      className={cn(
-        'flex min-h-5 flex-wrap items-center gap-1.5 text-[13px] text-fg-subtle [&_a]:text-fg-muted [&_a:hover]:text-fg [&_button]:text-fg-muted [&_button:hover]:text-fg',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </nav>
-  );
-}
-
-function PageHeaderHere({ className, ...props }: React.ComponentProps<'span'>) {
-  return (
-    <span
-      data-slot="page-header-here"
-      className={cn('max-w-[280px] truncate text-fg-subtle', className)}
       {...props}
     />
   );
@@ -224,8 +190,6 @@ function PageHeaderNote({
 export {
   PageHeader,
   PageHeaderStat,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
   PageHeaderRow,

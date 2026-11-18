@@ -42,6 +42,12 @@ export interface ResolvedErrorMessage {
   correlationId?: string;
   /** Field-level failures, keyed by field name, for form handling. */
   fieldErrors: Record<string, string>;
+  /**
+   * The request never got an answer, so `message` is the generic "could not
+   * reach the server" sentence: the same for every failure of the moment,
+   * which lets a page say it once however many reads failed.
+   */
+  unreachable: boolean;
 }
 
 /**
@@ -82,6 +88,7 @@ export function createErrorMessageResolver({ t, translateCode }: ErrorMessageRes
       code: problem?.code ?? (code || undefined),
       correlationId: appError.correlationId,
       fieldErrors: appError.fieldErrors,
+      unreachable: !reachedServer && translated === undefined,
     };
   };
 }

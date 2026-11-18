@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-local-close"
+description = "Enables the local_close command without any pre-configured scope."
+commands.allow = ["local_close"]
+
+[[permission]]
+identifier = "deny-local-close"
+description = "Denies the local_close command without any pre-configured scope."
+commands.deny = ["local_close"]

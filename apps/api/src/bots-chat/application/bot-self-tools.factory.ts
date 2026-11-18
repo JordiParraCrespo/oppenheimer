@@ -70,10 +70,10 @@ const NOTE_MAX = BOT_REVISION_NOTE_MAX - BOT_NOTE_PREFIX.length - 2;
 const RECALL_LIMIT_MAX = 25;
 
 /**
- * Itself (`25-bots.md` §4.1): what the bot reads and changes about who it
- * is and what it remembers. Every tool acts on the turn's bot and nothing
- * else: the bot's id is the context's, never an input, so a bot cannot
- * read or edit another bot through these.
+ * Itself: what the bot reads and changes about who it is and what it remembers.
+ * Every tool acts on the turn's bot and nothing else: the bot's id is the
+ * context's, never an input, so a bot cannot read or edit another bot through
+ * these.
  */
 @Injectable()
 export class BotSelfToolsFactory implements BotToolArea {
@@ -174,7 +174,6 @@ export class BotSelfToolsFactory implements BotToolArea {
               baseRevision: input.base_revision,
               note: input.note ? `${BOT_NOTE_PREFIX}: ${input.note}` : BOT_NOTE_PREFIX,
             },
-            credentialScopes: context.credentialScopes,
           }),
         );
         const saved = await this.queryBus.execute<FindBotDocumentQuery, BotDocumentEntity>(
@@ -368,10 +367,9 @@ export class BotSelfToolsFactory implements BotToolArea {
   }
 
   /**
-   * This chat's past messages, searched (`lessons-from-grok-bot.md` §9,
-   * row 5): a turn reads a token budget of history and a summary of the
-   * rest, so what fell out of both is found here, in the person's and the
-   * bot's own words.
+   * This chat's past messages, searched: a turn reads a token budget of history
+   * and a summary of the rest, so what fell out of both is found here, in the
+   * person's and the bot's own words.
    */
   private searchChat(): BotToolDefinition {
     return defineBotTool({

@@ -1,10 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A session can be hidden from the console's sidebar and shown again
- * (`product/next-steps/hidden-sessions.md`): a bot, a script or an agent
- * starts work the person need not watch, and the person shows it when they
- * want to.
+ * A session can be hidden from the console's sidebar and shown again: a bot, a
+ * script or an agent starts work the person need not watch, and the person
+ * shows it when they want to.
  *
  * `work_session.hidden` is a column of the fold, written only by it from
  * `session.visibility_set`, like `name` from `session.named`. A boolean with a

@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
-import { AppError } from '@oppenheimer/backend-core';
 import { BotDreamTriggerPolicy } from '../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
@@ -20,7 +19,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
- * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
+ * Runs one turn: claims it (one running turn per bot), reads
  * what it needs, runs the engine with its steering (unless what it read says
  * the turn takes none, or has nothing left to say, and so ends at once),
  * hands what the transcript writes to the turn's writer (`TurnWriteFactory`),
@@ -96,8 +95,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       this.failures.ended(turn);
     } catch (error) {
       turn.end('failed', new Date(), thrownFailure(error));
-      this.failures.thrown(turn, error);
-      if (!(error instanceof AppError)) {
+      if (this.failures.thrown(turn, error)) {
         const stack = error instanceof Error ? error.stack : String(error);
         this.logger.error({ message: 'A bot turn failed', turnId: turn.id }, stack);
       }

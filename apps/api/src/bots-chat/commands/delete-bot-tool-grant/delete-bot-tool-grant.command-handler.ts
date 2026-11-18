@@ -8,7 +8,7 @@ import { BOT_TOOL_PERMISSION_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotToolPermissionRepositoryPort } from '../../database/bot-tool-permission.repository.port';
 import { DeleteBotToolGrantCommand } from './delete-bot-tool-grant.command';
 
-/** Removes one of a bot's standing grants (`25-bots.md` §5): the next call on that thing asks again. One that is not this bot's, or is gone, is `BOTS_033`. */
+/** Removes one of a bot's standing grants: the next call on that thing asks again. One that is not this bot's, or is gone, is `BOTS_033`. */
 @CommandHandler(DeleteBotToolGrantCommand)
 export class DeleteBotToolGrantCommandHandler
   implements ICommandHandler<DeleteBotToolGrantCommand, string>

@@ -10,7 +10,8 @@ import { LinkTaskSessionCommand } from './link-task-session.command';
 /**
  * Links a session that already exists, under the same attach rule as Start: a task
  * not started moves to In progress if it is still where the person saw it. The
- * session's own workspace key refuses one from another workspace.
+ * session's own workspace key refuses one from another workspace. The person
+ * linking one takes up a task an agent made.
  */
 @CommandHandler(LinkTaskSessionCommand)
 export class LinkTaskSessionCommandHandler
@@ -26,7 +27,7 @@ export class LinkTaskSessionCommandHandler
     const task = requireFound(await this.tasks.findOneById(scope, taskId), TaskErrors.NOT_FOUND, {
       detail: `No task with id ${taskId}`,
     });
-    task.actingAs(command.actor);
+    task.actingAs(command.actor).triage(command.origin);
     const outcome = await this.tasks.attach(
       task,
       { sessionId, origin: 'linked', linkedByUserId: command.userId, linkedAt: new Date() },

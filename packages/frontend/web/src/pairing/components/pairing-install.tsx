@@ -24,10 +24,9 @@ export interface PairingCommands {
 
 /**
  * The instruction itself, outright: a `CodeBlock` panel with the Command /
- * Agent prompt tabs on its band, the installer's digest under the command
- * form when the deployment published one. Settings' Install step
- * (`design/version1/Settings.dc.html`); the onboarding step and the console's
- * dialog lead with the prompt instead (`PairingChrome`).
+ * Agent prompt tabs on its band, the installer's digest under the command form
+ * when the deployment published one. It is Settings' Install step; the onboarding
+ * step and the console's dialog lead with the prompt instead (`PairingChrome`).
  */
 export function PairingInstruction({ pairing }: { pairing: PairingCommands | null }) {
   const { t } = useTranslation();

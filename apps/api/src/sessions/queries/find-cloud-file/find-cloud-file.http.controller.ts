@@ -16,8 +16,7 @@ import { FindCloudFileQuery } from './find-cloud-file.query';
 
 /**
  * `GET /cloud-files/{token}` — a cloud session's agent downloading a file of
- * its first task (`product/next-steps/cloud-agents.md`, "Files for a cloud
- * session"). Public: the agent runs in the vendor's cloud with no credential
+ * its first task. Public: the agent runs in the vendor's cloud with no credential
  * of ours, so the link's token is what admits it. Left out of the OpenAPI
  * document, since no client of ours calls it.
  */

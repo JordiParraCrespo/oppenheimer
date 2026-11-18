@@ -7,7 +7,7 @@ const TABLES = [
 ] as const;
 
 /**
- * Bots on a ChatGPT subscription (`product/versions/mvp/25-bots.md` §2):
+ * Bots on a ChatGPT subscription:
  * `chatgpt` joins the providers a bot, a turn and a workspace credential may
  * name.
  *

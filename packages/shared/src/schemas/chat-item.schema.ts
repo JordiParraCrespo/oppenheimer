@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 /**
- * One chat item model for every conversation the console draws
- * (`product/next-steps/0.7-terminal-and-chat.md`): a bot's chat and a coding
- * agent's session transcript read into the same turns of typed items.
+ * One chat item model for every conversation the console draws: a bot's chat
+ * and a coding agent's session transcript read into the same turns of typed
+ * items.
  *
  * The shape is Codex's app-server protocol made small (thread → turn → item,
  * each item `in_progress` until its completed form, which is authoritative

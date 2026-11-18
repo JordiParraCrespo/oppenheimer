@@ -22,7 +22,7 @@ export interface BotTurnOpening {
   prompt: string;
   images: BotTurnImage[];
   /**
-   * The `/<name>` your message opens with, when it does (`25-bots.md` §4.1):
+   * The `/<name>` your message opens with, when it does:
    * only a person's message runs a skill, never an event's text.
    */
   command: BotSlashCommand | null;
@@ -31,11 +31,11 @@ export interface BotTurnOpening {
 }
 
 /**
- * The message that opened a turn, as the engine is sent it (`25-bots.md`
- * §3.1): `botTurnPrompt`'s words, and the images your message carried, read
- * from storage in the order you attached them. Only this turn's images are
- * sent; earlier ones stay in the chat, and the history says they were there.
- * An image that cannot be read fails the turn rather than answering without it.
+ * The message that opened a turn, as the engine is sent it: `botTurnPrompt`'s
+ * words, and the images your message carried, read from storage in the order
+ * you attached them. Only this turn's images are sent; earlier ones stay in the
+ * chat, and the history says they were there. An image that cannot be read
+ * fails the turn rather than answering without it.
  */
 @Injectable()
 export class BotTurnOpeningResolver {

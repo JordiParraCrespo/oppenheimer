@@ -10,7 +10,7 @@ import { LinkAttachments } from './link-attachments.util';
 
 /**
  * The bytes a runner may have queued for it before it is dropped as a slow
- * consumer. Bounded queues everywhere (`02-runner.md` §7): a link that cannot
+ * consumer. Bounded queues everywhere: a link that cannot
  * keep up is closed, never allowed to hold the process's memory.
  */
 export const LINK_MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
@@ -18,15 +18,14 @@ export const LINK_MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
 /**
  * The session commands whose refusal belongs in the session's log. An attach
  * is not one of them: its refusal belongs to the browser that asked, and the
- * attachment table already routes it there.
+ * attachment table already routes it there. Nor is a window command: the
+ * request that sent it waits for its answer, refusal included.
  */
 const SESSION_COMMANDS = new Set([
   'session.create',
   'session.stop',
   'session.restart',
   'session.close',
-  'session.window.open',
-  'session.window.close',
   // A pasted image's refusal (the pull, the bytes, the window, a stopped
   // pane) is the only word that the path never reached the prompt. The
   // command is small: its image is pulled over HTTPS, never sent here.

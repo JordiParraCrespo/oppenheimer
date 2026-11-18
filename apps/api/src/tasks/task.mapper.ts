@@ -21,12 +21,15 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     record.dueDate = entity.dueDate;
     record.dueTime = entity.dueTime;
     record.focusDate = entity.focusDate;
+    record.priority = entity.priority;
     record.completedAt = entity.completedAt;
     record.blockedReason = entity.blockedReason;
     record.blockedAt = entity.blockedAt;
     record.version = entity.version;
     record.idempotencyKey = entity.idempotencyKey;
     record.createdByUserId = entity.createdByUserId;
+    record.origin = entity.origin;
+    record.triagedAt = entity.triagedAt;
     return record;
   }
 
@@ -57,12 +60,15 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
         dueDate: record.dueDate ?? null,
         dueTime: record.dueTime ?? null,
         focusDate: record.focusDate ?? null,
+        priority: record.priority ?? null,
         completedAt: record.completedAt ?? null,
         blockedReason: record.blockedReason ?? null,
         blockedAt: record.blockedAt ?? null,
         version: record.version,
         idempotencyKey: record.idempotencyKey ?? null,
         createdByUserId: record.createdByUserId ?? null,
+        origin: record.origin,
+        triagedAt: record.triagedAt ?? null,
         sessions: [...links]
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
           .map((link) => ({
@@ -87,10 +93,13 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     dto.dueDate = entity.dueDate;
     dto.dueTime = entity.dueTime;
     dto.focusDate = entity.focusDate;
+    dto.priority = entity.priority;
     dto.completedAt = entity.completedAt?.toISOString() ?? null;
     dto.blockedReason = entity.blockedReason;
     dto.blockedAt = entity.blockedAt?.toISOString() ?? null;
     dto.version = entity.version;
+    dto.origin = entity.origin;
+    dto.triagedAt = entity.triagedAt?.toISOString() ?? null;
     dto.sessions = entity.sessions.map((link) => {
       const item = new TaskSessionLinkResponseDto();
       item.sessionId = link.sessionId;

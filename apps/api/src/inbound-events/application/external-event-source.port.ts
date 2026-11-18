@@ -2,8 +2,7 @@ import type { ExternalTriggerSource } from '@oppenheimer/shared/automations';
 import type { ExternalEvent, InboundDelivery } from '../domain/external-event.types';
 
 /**
- * The one port a provider implements to feed the hub
- * (`product/versions/mvp/16-automations-architecture.md` §Q6), contributed with
+ * The one port a provider implements to feed the hub, contributed with
  * `InboundEventsModule.contributeSources`.
  *
  * Signature verification is not here: the provider module's own endpoint owns its

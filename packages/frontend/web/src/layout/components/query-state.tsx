@@ -6,6 +6,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 import { useLoadingAnnouncement } from '../hooks/use-loading-announcement';
+import { useOfflineOnce } from '../hooks/use-offline-once';
 
 /**
  * The rung a read is on, decided by the root and read by every slot: still
@@ -46,8 +47,7 @@ const DATA: Rung = { rung: 'data' };
  * ```
  *
  * `Pending` draws the section's shape (its container, its labels, a bar per
- * line), not a slab: `.agents/rules/frontend-ui.md`, "A placeholder has the
- * shape of what replaces it".
+ * line), not a slab: a placeholder has the shape of what replaces it.
  *
  * TanStack's recipe: `react-error-boundary` inside `QueryErrorResetBoundary`.
  * The children draw three times — under `<Suspense>`, as its placeholder, and
@@ -105,15 +105,23 @@ function QueryStatePending({ children }: { children: ReactNode }) {
  * `children` to say it another way (a screen's `RouteError`, a 404 said as
  * "not found"), handed the same `retry` — only it resets the boundary, so
  * another way of saying the failure wires its own button to it.
+ * `offlineOnce` hands an offline failure to the enclosing `OfflineOnce`.
  */
 function QueryStateError(
   props:
-    | { fallback: string; className?: string; children?: never }
+    | { fallback: string; className?: string; offlineOnce?: boolean; children?: never }
     | { children: (error: unknown, retry: () => void) => ReactNode },
 ) {
   const { t } = useTranslation();
   const rung = useRung('Error');
+  const failed = rung.rung === 'failed';
+  const offlineOnce = 'fallback' in props && props.offlineOnce === true;
+  const shown = useOfflineOnce(
+    failed && offlineOnce ? rung.error : null,
+    failed ? rung.retry : undefined,
+  );
   if (rung.rung !== 'failed') return null;
+  if (offlineOnce && shown === null) return null;
   if ('fallback' in props)
     return (
       <ErrorAlert

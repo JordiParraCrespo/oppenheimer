@@ -32,7 +32,7 @@ export function useCardSelection(order: readonly string[]) {
     isPicked: (id: string) => picked.includes(id),
     pick: (id: string, how: CardPick) =>
       setSelection((current) => pickCard(current, id, how, order)),
-    /** Leaves exactly `ids` picked: what a bulk delete left to try again. */
+    /** Leaves exactly `ids` picked: what a marquee touched, or what a bulk delete left to try again. */
     keep: (ids: readonly string[]) =>
       setSelection(ids.length === 0 ? NO_CARD_SELECTION : { ids: [...ids], anchor: null }),
     clear: () => setSelection(NO_CARD_SELECTION),

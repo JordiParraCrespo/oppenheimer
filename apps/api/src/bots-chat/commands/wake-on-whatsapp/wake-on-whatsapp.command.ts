@@ -2,8 +2,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
  * The confirmed owner wrote to their linked number from their own, and
- * `botId` answers that chat at their message
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): a turn for
+ * `botId` answers that chat at their message: a turn for
  * it, a fresh conversation (`new`), or the running turn stopped (`stop`).
  * Dispatched once per stored message.
  */

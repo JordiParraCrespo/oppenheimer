@@ -4,10 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { BotUsageReport } from '@/features/bots/components/bot-usage-report';
 
 /**
- * The `/usage` card's figures (`25-bots.md` §4.1): what the chat spent, read
- * under Suspense, beside the plan's windows, read off the chat it already
- * holds. A refetch that fails keeps the figures it has and says so above
- * them.
+ * The `/usage` card's figures: what the chat spent, read under Suspense,
+ * beside the plan's windows, read off the chat it already holds. A refetch
+ * that fails keeps the figures it has and says so above them.
  */
 export function BotUsageSummary({ botId, onClose }: { botId: string; onClose: () => void }) {
   const { t } = useTranslation();

@@ -3,8 +3,7 @@ import type { BotPermissions } from './bot-tool-permission.policy';
 
 /**
  * The owner's plain-language rules, read by a reviewer before an asking
- * call (`25-bots.md` §5; from Grok Bot's approvals,
- * `research/lessons-from-grok-bot.md` §9 row 7). The reviewer is the bot's
+ * call (from Grok Bot's approvals). The reviewer is the bot's
  * own model, asked once per call, with no tools. It only says which rules
  * the call matches; what follows is decided here:
  *

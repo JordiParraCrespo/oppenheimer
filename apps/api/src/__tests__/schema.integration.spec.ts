@@ -84,7 +84,7 @@ describe('the migrated schema (integration)', () => {
   };
 
   // A zoneless value reaches a client with no offset and is read as local time,
-  // so every date would be out by the reader's offset (#61).
+  // so every date would be out by the reader's offset.
   it('stores every point in time as timestamptz', async () => {
     const zoneless = await dataSource.query(
       `SELECT table_name || '.' || column_name AS "column"
@@ -198,7 +198,7 @@ describe('the migrated schema (integration)', () => {
     await expectHotPathIndexes();
   });
 
-  // `.agents/rules/database-design.md`: every foreign key is backed by an index
+  // Every foreign key is backed by an index
   // whose leading columns are the key's columns, or the reason it is not is
   // written down. A partial index counts only when its predicate is
   // `IS NOT NULL`, which every lookup the key makes satisfies.

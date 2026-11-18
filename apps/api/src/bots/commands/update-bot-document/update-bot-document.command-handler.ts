@@ -38,7 +38,6 @@ export class UpdateBotDocumentCommandHandler
       baseRevision: input.baseRevision,
       actor: userActor(scope.userId),
       note: input.note,
-      credentialScopes: command.credentialScopes,
     });
     if (outcome === 'stale') {
       throw new AppError(BotErrors.DOCUMENT_CONFLICT, {

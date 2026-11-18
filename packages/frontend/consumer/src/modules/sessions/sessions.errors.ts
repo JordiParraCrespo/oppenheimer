@@ -114,4 +114,20 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_026',
     message: 'Failed to hide or show the session',
   },
+  WINDOWS_FAILED: {
+    code: 'SESSIONS_CLIENT_027',
+    message: "Failed to list the session's terminals",
+  },
+  WINDOW_OPEN_FAILED: {
+    code: 'SESSIONS_CLIENT_028',
+    message: 'Failed to open a terminal in the session',
+  },
+  WINDOW_CLOSE_FAILED: {
+    code: 'SESSIONS_CLIENT_029',
+    message: "Failed to close the session's terminal",
+  },
+  REPORT_ACKNOWLEDGE_FAILED: {
+    code: 'SESSIONS_CLIENT_030',
+    message: "Failed to mark the session's last turn as read",
+  },
 } as const satisfies Record<string, ErrorDefinition>;

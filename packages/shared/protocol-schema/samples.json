@@ -259,7 +259,26 @@
     "attachmentId": 9,
     "serial": "emulator-5554",
     "name": "Android emulator",
-    "platform": "android"
+    "platform": "android",
+    "devices": [
+      {
+        "serial": "emulator-5554",
+        "name": "Android emulator",
+        "platform": "android",
+        "free": true
+      },
+      {
+        "serial": "emulator-5556",
+        "name": "Pixel 7 API 35",
+        "platform": "android",
+        "free": false
+      }
+    ]
+  },
+  "device.select": {
+    "type": "device.select",
+    "attachmentId": 9,
+    "serial": "emulator-5556"
   },
   "device.input": {
     "type": "device.input",
@@ -326,30 +345,6 @@
   "desktop.close": {
     "type": "desktop.close",
     "attachmentId": 13
-  },
-  "codex.environments.list": {
-    "type": "codex.environments.list",
-    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
-    "repository": "jordi/oppenheimer"
-  },
-  "codex.environments": {
-    "type": "codex.environments",
-    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
-    "environments": [
-      {
-        "id": "e_6845a1b2c3d4",
-        "label": "Oppenheimer web",
-        "pinned": true,
-        "repository": true
-      },
-      {
-        "id": "e_6845f9e8d7c6",
-        "pinned": false,
-        "repository": false
-      }
-    ],
-    "recommended": "e_6845a1b2c3d4",
-    "source": "chatgpt"
   },
   "cloud.reply": {
     "type": "cloud.reply",
@@ -653,13 +648,39 @@
     "type": "session.window.open",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
-    "name": "tests"
+    "name": "tests",
+    "agent": "codex",
+    "model": "gpt-6.1-sol",
+    "permission": "auto",
+    "effort": "high",
+    "prompt": "Write the tests for the repo picker."
   },
   "session.window.close": {
     "type": "session.window.close",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
     "window": 1
+  },
+  "session.windows.list": {
+    "type": "session.windows.list",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40"
+  },
+  "session.windows": {
+    "type": "session.windows",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "windows": [
+      {
+        "index": 0,
+        "name": "agent"
+      },
+      {
+        "index": 1,
+        "name": "zsh"
+      }
+    ],
+    "opened": 1
   },
   "session.close": {
     "type": "session.close",

@@ -413,6 +413,90 @@ describe('TurnTranscript', () => {
     expect(unnamed.failure).toBe('other');
   });
 
+  // What breaks this: a routine's run that calls nothing_to_report and then
+  // says its blocker again (2026-11-12, every run for hours) putting that
+  // message in the chat, and counting as unread for the spend guard.
+  it('keeps and passes on nothing the bot writes after a nothing_to_report call that went through', () => {
+    const { writes } = run([
+      { type: 'tool.started', callId: 'q', name: 'nothing_to_report', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'q',
+        name: 'nothing_to_report',
+        output: 'Noted',
+        isError: false,
+      },
+      { type: 'text.delta', text: 'Still closed.' },
+      { type: 'text.done', text: 'Still closed.' },
+      { type: 'text.delta', text: 'Again.' },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(writes.filter((write) => write.kind === 'text')).toEqual([]);
+    expect(inserted(writes).map((message) => message.role)).toEqual(['activity']);
+  });
+
+  it('keeps what the bot says once it did something else, was steered, or the quiet call failed', () => {
+    const quiet = (isError: boolean): BotEngineEvent[] => [
+      { type: 'tool.started', callId: 'q', name: 'nothing_to_report', input: {} },
+      { type: 'tool.finished', callId: 'q', name: 'nothing_to_report', output: 'Noted', isError },
+    ];
+    const said: BotEngineEvent[] = [
+      { type: 'text.done', text: 'Started a new one.' },
+      { type: 'done', reason: 'completed' },
+    ];
+    const contents = (events: BotEngineEvent[]) =>
+      inserted(run(events).writes)
+        .filter((message) => message.role === 'assistant')
+        .map((message) => message.content);
+
+    expect(
+      contents([
+        ...quiet(false),
+        { type: 'tool.started', callId: 'b', name: 'start_session', input: {} },
+        { type: 'tool.finished', callId: 'b', name: 'start_session', output: 'ok', isError: false },
+        ...said,
+      ]),
+    ).toEqual(['Started a new one.']);
+    expect(
+      contents([
+        ...quiet(false),
+        { type: 'steered', steers: [{ id: randomUUID(), text: 'And?' }] },
+        ...said,
+      ]),
+    ).toEqual(['Started a new one.']);
+    expect(contents([...quiet(true), ...said])).toEqual(['Started a new one.']);
+  });
+
+  // What breaks this: the bot narrating the blocker before it calls
+  // nothing_to_report ("Still closed, and you already know"), which was the
+  // same line in the chat every half hour.
+  it('takes back the words a turn stored before it ended quiet, and none of a turn that went on', () => {
+    const before: BotEngineEvent[] = [
+      { type: 'text.done', text: 'Still closed, and you know.' },
+      { type: 'tool.started', callId: 'q', name: 'nothing_to_report', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'q',
+        name: 'nothing_to_report',
+        output: 'Noted',
+        isError: false,
+      },
+    ];
+    const quietEnd = run([...before, { type: 'done', reason: 'completed' }]).writes;
+    const said = inserted(quietEnd).filter((message) => message.role === 'assistant');
+    expect(quietEnd.filter((write) => write.kind === 'unsay')).toEqual([
+      { kind: 'unsay', messageIds: said.map((message) => message.id) },
+    ]);
+
+    const wentOn = run([
+      ...before,
+      { type: 'tool.started', callId: 'b', name: 'start_session', input: {} },
+      { type: 'tool.finished', callId: 'b', name: 'start_session', output: 'ok', isError: false },
+      { type: 'done', reason: 'completed' },
+    ]).writes;
+    expect(wentOn.filter((write) => write.kind === 'unsay')).toEqual([]);
+  });
+
   it('puts the images a show_image call stored after its line, as the bot’s, and opens a new line for the next call', () => {
     const image = { id: randomUUID(), mimeType: 'image/png', sizeBytes: 68, name: 'Revenue' };
     const { writes } = run([

@@ -12,7 +12,7 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
 
-// Directory names under the runner home: the layout note 02 §11 describes.
+// Directory names under the runner home.
 const (
 	DirBin   = "bin"
 	DirLog   = "log"
@@ -41,8 +41,8 @@ type Paths struct {
 	Home string
 	// UserHome is the account's home directory.
 	UserHome string
-	// Workspaces is the work folder, where stores and sessions' checkouts live
-	// (24 §2): ~/oppenheimer unless the user chose another directory at
+	// Workspaces is the work folder, where stores and sessions' checkouts live:
+	// ~/oppenheimer unless the user chose another directory at
 	// install (saved in config.json) or RUNNER_WORKSPACES says otherwise.
 	Workspaces string
 	// WorkspacesSource says which of those three decided Workspaces, for

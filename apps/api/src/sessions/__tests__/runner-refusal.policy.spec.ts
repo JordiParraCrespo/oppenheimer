@@ -39,11 +39,11 @@ describe('runnerTakesPlace', () => {
     expect(runnerTakesPlace(claude, ['session.cloud'])).toBe(true);
     // A runner from before Codex cloud names session.cloud alone, and would refuse it.
     expect(runnerTakesPlace(codex, ['session.cloud'])).toBe(false);
-    expect(runnerTakesPlace(codex, ['session.cloud', 'session.cloud.codex'])).toBe(true);
+    expect(runnerTakesPlace(codex, ['session.cloud', 'session.cloud.codex.threads'])).toBe(true);
     expect(
       runnerTakesPlace({ agent: 'opencode', place: 'cloud' }, [
         'session.cloud',
-        'session.cloud.codex',
+        'session.cloud.codex.threads',
       ]),
     ).toBe(false);
   });
@@ -89,10 +89,12 @@ describe('runnerRefusal', () => {
     expect(runnerRefusal(launch, online(['session.cloud']))).toBeNull();
   });
 
-  it('refuses a Codex cloud session on a live runner that did not name session.cloud.codex', () => {
+  it('refuses a Codex cloud session on a live runner that did not name session.cloud.codex.threads', () => {
     const launch = { agent: 'codex', place: 'cloud' as const };
     expect(runnerRefusal(launch, online(['session.cloud']))?.code).toBe('SESSIONS_037');
-    expect(runnerRefusal(launch, online(['session.cloud', 'session.cloud.codex']))).toBeNull();
+    expect(
+      runnerRefusal(launch, online(['session.cloud', 'session.cloud.codex.threads'])),
+    ).toBeNull();
   });
 
   it('does not ask an offline host about the place: the dispatch checks again at hello', () => {

@@ -19,7 +19,7 @@ export interface AgentHostSetup {
   /**
    * The argv, appended to `command`, that updates this CLI in place to its
    * latest release **without asking**: the runner runs it unattended, with no
-   * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
+   * terminal and nothing on stdin.
    *
    * `<method>` in the argv is the install method `updateMethods` tells from
    * the executable's path; when none matches, the runner leaves the CLI

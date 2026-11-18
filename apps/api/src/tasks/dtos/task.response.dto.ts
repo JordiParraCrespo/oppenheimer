@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TASK_STATUSES, type TaskStatus } from '@oppenheimer/shared';
+import { nullableEnum } from '@oppenheimer/backend-core';
+import {
+  TASK_ORIGINS,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  type TaskOrigin,
+  type TaskPriority,
+  type TaskStatus,
+} from '@oppenheimer/shared';
 
 /** A session on a task. The console reads the session itself from its own list. */
 export class TaskSessionLinkResponseDto {
@@ -67,6 +75,13 @@ export class TaskResponseDto {
   })
   focusDate!: string | null;
 
+  @ApiPropertyOptional({
+    ...nullableEnum(TASK_PRIORITIES),
+    description:
+      'How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.',
+  })
+  priority!: TaskPriority | null;
+
   @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
   completedAt!: string | null;
 
@@ -87,6 +102,23 @@ export class TaskResponseDto {
     example: 3,
   })
   version!: number;
+
+  @ApiProperty({
+    enum: TASK_ORIGINS,
+    description:
+      'Who made it: `person` in the console, `agent` from a bot or a call on an API token or an OAuth grant (the MCP server, the CLI).',
+    example: 'person',
+  })
+  origin!: TaskOrigin;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    format: 'date-time',
+    description:
+      'When its person took it up: made it, gave it a TODO day, started or linked a session on it, or dismissed it from the Inbox. Null while a task an agent made waits in the Inbox.',
+  })
+  triagedAt!: string | null;
 
   @ApiProperty({ type: [TaskSessionLinkResponseDto], description: 'Oldest first.' })
   sessions!: TaskSessionLinkResponseDto[];

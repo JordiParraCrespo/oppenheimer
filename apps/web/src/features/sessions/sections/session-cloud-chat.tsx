@@ -10,17 +10,15 @@ import { SessionCloudChatSetup } from './session-cloud-chat-setup';
 import { SessionCloudSummary } from './session-cloud-summary';
 
 /**
- * A Claude Code cloud session read as a chat
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): its
- * transcript as its SessionStart hook sends it, drawn by the chat a host
- * session uses, and a composer whose message waits for the session's Stop
- * hook, which hands it to the agent when its turn ends, or is sent from a
- * host signed in to the session's claude.ai account when no hook takes it,
- * which wakes an idle session; such a reply reads as sent until the
- * transcript shows it. Until a line has
- * come (no hooks in the repository, or nothing said yet) it is the cloud
- * session's own pane, which says where to follow it instead, with how to
- * turn the chat on under it.
+ * A Claude Code cloud session read as a chat: its transcript as its
+ * SessionStart hook sends it, drawn by the chat a host session uses, and a
+ * composer whose message waits for the session's Stop hook, which hands it
+ * to the agent when its turn ends, or is sent from a host signed in to the
+ * session's claude.ai account when no hook takes it, which wakes an idle
+ * session; such a reply reads as sent until the transcript shows it. Until
+ * a line has come (no hooks in the repository, or nothing said yet) it is
+ * the cloud session's own pane, which says where to follow it instead, with
+ * how to turn the chat on under it.
  */
 export function SessionCloudChat({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
@@ -38,8 +36,12 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
     );
   }
 
+  // On the chat's ground, as a host session's chat is (`session-pane.tsx`):
+  // the fade over the transcript while the reader is away from its end is
+  // painted in that colour, and on the pane's grey it drew a lighter band
+  // with a hard edge over the composer.
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col bg-chat-ground">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-3 text-sm text-fg-muted">
         <StatusDot state={dotFor(session)}>
           {t(`sessions.session.state.${stateWordFor(session)}`)}
@@ -66,7 +68,12 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
           onDismiss={dismissFailure}
         />
       ) : null}
-      <SessionChat chat={chat} agent="claude-code" readOnly={false} />
-    </>
+      {/* The chat fills its box (`size-full`); this one is the height the
+          lines above leave it, or it runs past the pane's foot and clips
+          the composer's footer. */}
+      <div className="min-h-0 flex-1">
+        <SessionChat chat={chat} agent="claude-code" readOnly={false} />
+      </div>
+    </div>
   );
 }

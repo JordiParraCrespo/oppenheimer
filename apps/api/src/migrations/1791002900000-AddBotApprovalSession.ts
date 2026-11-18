@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots: the session an approved call started (`25-bots.md` §5).
+ * Bots: the session an approved call started.
  *
  * An approved `start_session` answered only in words, and the chat had to
  * read the session's id back off them to link to it. The call now says

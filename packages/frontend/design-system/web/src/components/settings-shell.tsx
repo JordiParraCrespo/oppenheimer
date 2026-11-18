@@ -4,13 +4,13 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * SettingsShell — the Settings pages' frame and nothing in it
- * (`design/version1/Settings.dc.html`): the `SettingsNav` on the left, then a
- * main column on the recessed ground (grey under white cards) that scrolls on
- * its own, holding the measured content column. What goes in it is the page's.
- * Settings stacks its nav over the page on a phone (`flex-col md:flex-row`,
- * the nav a strip there); a shell whose first column is the console's rail
- * stays a row and stacks inside the column beside it.
+ * SettingsShell — the Settings pages' frame and nothing in it: the
+ * `SettingsNav` on the left, then a main column on the recessed ground (grey
+ * under white cards) that scrolls on its own, holding the measured content
+ * column. What goes in it is the page's. Settings stacks its nav over the page
+ * on a phone (`flex-col md:flex-row`, the nav a strip there); a shell whose
+ * first column is the console's rail stays a row and stacks inside the column
+ * beside it.
  *
  * ```tsx
  * <SettingsShell>

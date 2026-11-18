@@ -7,18 +7,19 @@ import type {
 import type { ProjectEntity } from '../projects/project.entity';
 import type { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import type { SessionEntity, SessionNotice } from '../sessions/session.entity';
+import type { TaskEntity } from '../tasks/task.entity';
 import type { InboxMarkEntity } from './inbox-mark.entity';
 import type { InboxReportEntity } from './inbox-report.entity';
 
 /**
- * The Inbox (`product/versions/mvp/29-inbox.md`): what needs you, composed
- * from six reads the API already serves. Nothing here is stored but the
- * marks and the reports; an item is there while its source says it needs
- * you. A `notice` is a line a session's agent sent you (`runner sessions
- * notify`), read off the same sessions as a waiting session is; a
- * `botNotice` is a bot's own line (its `notify` tool), each bot's latest; a
- * `report` is a problem an unattended agent sent with its pictures, there
- * until it is answered.
+ * The Inbox: what needs you, composed from six reads the API already serves.
+ * Nothing here is stored but the marks and the reports; an item is there while
+ * its source says it needs you. A `notice` is a line a session's agent sent you
+ * (`runner sessions notify`), read off the same sessions as a waiting session
+ * is; a `botNotice` is a bot's own line (its `notify` tool), each bot's latest;
+ * a `report` is a problem an unattended agent sent with its pictures, there
+ * until it is answered; a `task` is one an agent made, there until its person
+ * takes it up (a TODO day, a session, or Dismiss).
  */
 export type InboxItemKind =
   | 'session'
@@ -27,13 +28,14 @@ export type InboxItemKind =
   | 'approval'
   | 'pull'
   | 'run'
-  | 'report';
+  | 'report'
+  | 'task';
 
 /** Why a pull request is in the Inbox: a review asked of you, or yours, ready to merge. */
 export type InboxPullReason = 'requested' | 'ready';
 
 interface InboxItemBase {
-  /** The occurrence (§3): what a mark is keyed by, so a new wait comes back. */
+  /** The occurrence: what a mark is keyed by, so a new wait comes back. */
   key: string;
   /** When the wait began: the list's age and its order, newest first. */
   since: Date;
@@ -50,9 +52,10 @@ export type InboxItem =
   | (InboxItemBase & { kind: 'approval'; approval: WorkspaceBotApprovalEntity })
   | (InboxItemBase & { kind: 'pull'; pull: PullRequestEntity; reason: InboxPullReason })
   | (InboxItemBase & { kind: 'run'; run: AutomationRunEntity })
-  | (InboxItemBase & { kind: 'report'; report: InboxReportEntity });
+  | (InboxItemBase & { kind: 'report'; report: InboxReportEntity })
+  | (InboxItemBase & { kind: 'task'; task: TaskEntity });
 
-/** The six reads, as their hooks answer them. */
+/** The seven reads, as their hooks answer them. */
 export interface InboxSources {
   /** Every unresolved session; those `waiting-on-you` become items, and so does each one's notice. */
   sessions: readonly SessionEntity[];
@@ -68,6 +71,8 @@ export interface InboxSources {
   botNotices: readonly WorkspaceBotNoticeEntity[];
   /** The workspace's reports; those still open become items. */
   reports: readonly InboxReportEntity[];
+  /** The board's tasks; those an agent made that wait for their person become items. */
+  tasks: readonly TaskEntity[];
   projects: readonly ProjectEntity[];
 }
 
@@ -142,6 +147,11 @@ function runItemKey(run: { id: string }): string {
   return `run:${run.id}`;
 }
 
+/** A task by its id: it waits once, until its person takes it up. */
+function taskItemKey(task: { id: string }): string {
+  return `task:${task.id}`;
+}
+
 /** When a session's wait began, as near as its row says. */
 function sessionSince(session: SessionEntity): Date {
   if (session.lifecycle === 'open' && session.observedSince) return session.observedSince;
@@ -158,7 +168,7 @@ function compareInboxItems(a: InboxItem, b: InboxItem): number {
 
 /**
  * Every item the sources say needs you, before any mark: one per occurrence,
- * each with its projects (§1, Project).
+ * each with its projects.
  */
 function inboxItems(sources: InboxSources): InboxItem[] {
   const placed = new Set(
@@ -266,13 +276,24 @@ function inboxItems(sources: InboxSources): InboxItem[] {
       low: false,
     });
   }
+  for (const task of sources.tasks) {
+    if (!task.awaitsTriage) continue;
+    items.push({
+      kind: 'task',
+      task,
+      key: taskItemKey(task),
+      since: task.createdAt,
+      projectIds: projectOf(task.projectId),
+      low: false,
+    });
+  }
   // One row per occurrence, whichever read named it first.
   const seen = new Set<string>();
   return items.filter((item) => !seen.has(item.key) && seen.add(item.key));
 }
 
 /**
- * The Inbox after the caller's marks (§3): done and deleted hide, done
+ * The Inbox after the caller's marks: done and deleted hide, done
  * staying under Show done; a snooze hides until it ends and lists in
  * Snoozed; low sorts last. A mark whose occurrence no source names is
  * never read. `answered` are occurrences answered here whose source has not

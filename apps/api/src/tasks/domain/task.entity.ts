@@ -11,11 +11,15 @@ import {
   TASK_NOTES_MAX,
   TASK_STATUSES_BEFORE_WORK,
   TASK_TITLE_MAX,
+  type TaskOrigin,
+  type TaskPriority,
   type TaskStatus,
 } from '@oppenheimer/shared';
+import { TaskActivityLoggedDomainEvent } from './events/task-activity-logged.domain-event';
 import { TaskChangedDomainEvent } from './events/task-changed.domain-event';
 import { TaskSessionLinkedDomainEvent } from './events/task-session-linked.domain-event';
 import type { PlanActor, PlanChange, PlanWriteKind } from './plan-change.types';
+import { taskActivityOf } from './task-activity.policy';
 import { isRank } from './task-rank.policy';
 
 /** How a session came to be on a task: started from it, or linked afterwards. */
@@ -46,6 +50,8 @@ export interface TaskProps {
   dueTime: string | null;
   /** The day it is on To do from, until it is done; apart from when it is due. */
   focusDate: string | null;
+  /** How much it matters, or null for none; never moves it on the board. */
+  priority: TaskPriority | null;
   /** When it last moved to Done; cleared when it leaves. */
   completedAt: Date | null;
   /** Why it waits on a person, or null; Done clears it. */
@@ -56,6 +62,13 @@ export interface TaskProps {
   /** The `Idempotency-Key` of the create that made it. */
   idempotencyKey: string | null;
   createdByUserId: string | null;
+  /** Who made it: its person, or an agent working for them. */
+  origin: TaskOrigin;
+  /**
+   * When its person took it up; null while a task an agent made waits in the
+   * Inbox. A task the person made is taken up when it is made.
+   */
+  triagedAt: Date | null;
   /** The sessions on the task, oldest first. */
   sessions: TaskSessionLink[];
 }
@@ -70,8 +83,11 @@ export interface CreateTaskProps {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  priority?: TaskPriority | null;
   createdByUserId: string;
   actor: PlanActor;
+  /** Who made it, as the request came in: an agent's waits for its person. */
+  origin: TaskOrigin;
   idempotencyKey?: string | null;
 }
 
@@ -82,13 +98,14 @@ export interface TaskEdit {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  priority?: TaskPriority | null;
 }
 
 /**
- * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
+ * A task on Plan's board: work a person
  * asks for, in one of four columns, under a project and maybe one of its milestones. It
  * starts sessions or links existing ones, and attaching one is the only thing that
- * moves it on its own (§4).
+ * moves it on its own.
  */
 export class TaskEntity extends AggregateRoot<TaskProps> {
   private actor: PlanActor | null = null;
@@ -103,6 +120,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   }
 
   static createNew(props: CreateTaskProps): TaskEntity {
+    const now = new Date();
     const task = new TaskEntity({
       id: randomUUID(),
       props: {
@@ -116,12 +134,15 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         dueDate: props.dueDate ?? null,
         dueTime: props.dueDate ? (props.dueTime ?? null) : null,
         focusDate: props.focusDate ?? null,
+        priority: props.priority ?? null,
         completedAt: props.status === 'done' ? new Date() : null,
         blockedReason: null,
         blockedAt: null,
         version: 1,
         idempotencyKey: props.idempotencyKey ?? null,
         createdByUserId: props.createdByUserId,
+        origin: props.origin,
+        triagedAt: props.origin === 'person' ? now : null,
         sessions: [],
       },
     });
@@ -165,6 +186,28 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     this.changes = [];
   }
 
+  /**
+   * One event per change it logs, for whoever follows its project or
+   * milestone. Built from the log when the
+   * write stages it, so a placement retried after a rank race raises what
+   * it logs and nothing it replaced.
+   */
+  activityEvents(): TaskActivityLoggedDomainEvent[] {
+    return this.changes.map((change) => {
+      const activity = taskActivityOf(change, this.props.status);
+      return new TaskActivityLoggedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        projectId: change.projectId,
+        milestoneId: change.milestoneId,
+        title: this.props.title,
+        actor: change.actor,
+        ...activity,
+        reason: `A task was ${activity.kind.replace('_', ' ')}; owed to those following its project`,
+      });
+    });
+  }
+
   get organizationId(): string {
     return this.props.organizationId;
   }
@@ -195,6 +238,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get focusDate(): string | null {
     return this.props.focusDate;
   }
+  get priority(): TaskPriority | null {
+    return this.props.priority;
+  }
   get completedAt(): Date | null {
     return this.props.completedAt;
   }
@@ -213,6 +259,25 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get createdByUserId(): string | null {
     return this.props.createdByUserId;
   }
+  get origin(): TaskOrigin {
+    return this.props.origin;
+  }
+  get triagedAt(): Date | null {
+    return this.props.triagedAt;
+  }
+
+  /**
+   * Its person took up a task an agent made: gave it a TODO day, started or
+   * linked a session on it, or
+   * dismissed it from the Inbox. Only the person's own request counts; an
+   * agent's write leaves it waiting. Taken up once, it stays so.
+   */
+  triage(by: TaskOrigin, now = new Date()): void {
+    if (by !== 'person' || this.props.triagedAt !== null) return;
+    this.props.triagedAt = now;
+    this.setUpdatedAt(now);
+    this.touched('updated');
+  }
   /** A copy: links change through {@link attach} and the repository's unlink. */
   get sessions(): TaskSessionLink[] {
     return this.props.sessions.map((link) => ({ ...link }));
@@ -229,6 +294,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     }
     if (changes.dueTime !== undefined) this.props.dueTime = changes.dueTime;
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
+    if (changes.priority !== undefined) this.props.priority = changes.priority;
     this.setUpdatedAt(new Date());
     this.validate();
     if (due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime) {
@@ -402,6 +468,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
       throw new ArgumentInvalidException(
         `A blocked reason is at most ${TASK_BLOCKED_REASON_MAX} characters`,
       );
+    }
+    if (this.props.origin === 'person' && this.props.triagedAt === null) {
+      throw new ArgumentInvalidException('A task its person made is taken up when it is made');
     }
     if (this.props.rank && !isRank(this.props.rank)) {
       throw new ArgumentInvalidException('A task rank is a fractional key');

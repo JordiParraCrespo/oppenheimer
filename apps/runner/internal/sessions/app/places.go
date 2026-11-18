@@ -10,7 +10,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// Where a session runs (24 §3). A worktree session gets a folder of the
+// Where a session runs. A worktree session gets a folder of the
 // runner's own in the work folder, a store and a checkout cut on its own
 // branch; a folder session runs in a folder already on the host, which is the
 // person's and is never written, checked out, pushed or removed. Every step

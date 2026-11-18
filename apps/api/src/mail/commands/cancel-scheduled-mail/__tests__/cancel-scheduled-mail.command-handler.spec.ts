@@ -4,7 +4,7 @@ import { CancelScheduledMailCommand } from '../cancel-scheduled-mail.command';
 import { CancelScheduledMailCommandHandler } from '../cancel-scheduled-mail.command-handler';
 
 /**
- * Cancelling a scheduled send (`product/next-steps/mail.md` §3.4): one that
+ * Cancelling a scheduled send: one that
  * still waits is stopped; one that no longer waits is `MAIL_017`. The race
  * between a cancel and the minute job's claim is the integration suite's.
  */

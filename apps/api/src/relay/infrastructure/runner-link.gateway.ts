@@ -125,7 +125,7 @@ export class RunnerLinkGateway {
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
     if (!this.keyFingerprint) {
-      // F6 is "pin what registration returned". Without a signing key there is
+      // A runner pins what registration returned. Without a signing key there is
       // nothing to have returned, and advertising an empty pin would make the
       // runner's check either refuse everything or accept anything.
       refuseUpgrade(socket, 503, 'this control plane has no signing key configured');
@@ -412,7 +412,7 @@ export class RunnerLinkGateway {
       case 'fs.listing':
       case 'fs.found':
       case 'port.listing':
-      case 'codex.environments':
+      case 'session.windows':
       case 'cloud.replied':
       case 'whatsapp.sent':
       case 'telegram.sent':

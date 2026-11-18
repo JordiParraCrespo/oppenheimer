@@ -2,16 +2,16 @@
 /**
  * Write the runner's link vocabulary from the protocol's JSON Schema.
  *
- * `protocol-schema/protocol.schema.json` is the contract 01 names (open
- * question 1: "Zod is the source … the Go structs are generated from the
- * artifact — one source, two languages, no hand-written twin"). This reads the
- * artifact, not the Zod, so the artifact really is what the runner is built
- * against, and writes `apps/runner/internal/link/protocol.gen.go`: one struct per
- * message, the type names, and the link's constants from `x-constants`. It runs
- * in `pnpm --filter @oppenheimer/shared build`, right after the schema is
- * emitted, and the result is committed. `link-protocol.spec.ts` fails when the
- * committed file is stale, and the runner's `protocol_test.go` decodes every
- * TypeScript sample strictly into these structs.
+ * `protocol-schema/protocol.schema.json` is the contract: Zod is the source,
+ * the Go structs are generated from the artifact — one source, two languages,
+ * no hand-written twin. This reads the artifact, not the Zod, so the artifact
+ * really is what the runner is built against, and writes
+ * `apps/runner/internal/link/protocol.gen.go`: one struct per message, the type
+ * names, and the link's constants from `x-constants`. It runs in
+ * `pnpm --filter @oppenheimer/shared build`, right after the schema is emitted,
+ * and the result is committed. `link-protocol.spec.ts` fails when the committed
+ * file is stale, and the runner's `protocol_test.go` decodes every TypeScript
+ * sample strictly into these structs.
  *
  * Two things the schema cannot say are tables here, and the emitter fails
  * rather than guesses when either misses an entry:
@@ -22,8 +22,8 @@
  *   has one, so the generated names read like the code that uses them.
  *
  * `#/$defs/hostFacts` is not generated: it is the runner's own `Facts` struct,
- * which the schema follows (packages/shared/AGENTS.md), so it maps onto
- * `hostdomain.Facts` and `protocol_test.go` checks the two agree.
+ * which the schema follows, so it maps onto `hostdomain.Facts` and
+ * `protocol_test.go` checks the two agree.
  *
  * The output is gofmt-clean by construction (columns aligned the way gofmt
  * aligns them); `protocol_test.go` holds it to `format.Source`.
@@ -112,7 +112,6 @@ const NESTED_NAMES = {
   'events.append.events[]': 'Event',
   'session.create.launch': 'LaunchOptions',
   'session.create.checkouts[]': 'Checkout',
-  'sessionSnapshot.windows[]': 'Window',
   'port.listing.ports[]': 'ListedPort',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
 };
@@ -140,10 +139,10 @@ const CONSTANT_DOCS = {
   ],
   frameHeaderBytes: [
     'FrameHeader is the 4-byte big-endian attachment id every binary frame on',
-    'the link starts with (01-protocol, "Framing").',
+    'the link starts with.',
   ],
   creditWindowBytes: [
-    "CreditWindow is 01's 256 KB: the bytes an attachment may have in flight",
+    'CreditWindow is 256 KB: the bytes an attachment may have in flight',
     'before its PTY reads pause. A runaway build stalls its own pane, never the',
     'link.',
   ],

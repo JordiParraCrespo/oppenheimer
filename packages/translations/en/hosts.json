@@ -35,7 +35,6 @@
       "title": "Connect",
       "subtitle": "The runner registers itself with the hostname it reports."
     },
-    "crumbHosts": "Hosts",
     "done": "Done",
     "description": "Paste this prompt into the coding agent on the machine you want sessions on. It installs the runner and connects it. Nothing is exposed to the internet."
   },

@@ -4,7 +4,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * A call a system's rate limit stopped, in a browser against the real control
- * plane (`product/versions/mvp/25-bots.md` §4, "Rate limits"): the step the
+ * plane: the step the
  * API stored with its limit comes back through the conversation and the chat
  * draws it as a wait with its system and time, not as a failure. What breaks
  * this: the limit dropped between the stored step and the console (the

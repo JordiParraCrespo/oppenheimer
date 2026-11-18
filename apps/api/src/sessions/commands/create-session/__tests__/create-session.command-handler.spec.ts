@@ -603,7 +603,7 @@ describe('CreateSessionCommandHandler', () => {
 
   /**
    * The composer's foot row and its first task, which is what the create request
-   * grew for the New session screen (`product/versions/mvp/03-control-plane.md`).
+   * grew for the New session screen.
    *
    * The launch assertions are about the same rule from different sides: the launch
    * is *stated in the log*, because the columns that carry it are a projection of

@@ -3,8 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * Plan's calendar and its read-only Google Calendar layer
- * (`product/versions/mvp/20-plan-calendar.md` §4–5).
+ * Plan's calendar and its read-only Google Calendar layer.
  *
  * `tokenKey` is optional capability config: with it and the Google sign-in client
  * (`GOOGLE_CLIENT_ID`/`_SECRET`, the same client), the `google_calendar` capability

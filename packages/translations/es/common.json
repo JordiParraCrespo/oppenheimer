@@ -5,6 +5,8 @@
   "copied": "Copiado",
   "copy": "Copiar",
   "copyCode": "Copiar código",
+  "wrapLines": "Ajustar líneas",
+  "unwrapLines": "No ajustar líneas",
   "loading": "Cargando...",
   "or": "o",
   "relative": {
@@ -18,7 +20,6 @@
   },
   "dismiss": "Descartar",
   "retry": "Reintentar",
-  "breadcrumb": "Ruta de navegación",
   "dateField": {
     "none": "Sin fecha",
     "previousMonth": "Mes anterior",
@@ -147,5 +148,10 @@
     "hosts": "Buscar hosts",
     "groups": "Buscar grupos",
     "noMatch": "Nada coincide con «{{query}}»."
+  },
+  "projectFilter": {
+    "label": "Proyecto",
+    "all": "Todos los proyectos",
+    "none": "Sin proyecto"
   }
 }

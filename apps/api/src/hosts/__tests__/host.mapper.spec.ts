@@ -62,7 +62,7 @@ describe('HostMapper.toResponse', () => {
   it('offers Codex cloud from a host whose live runner takes it and has codex', () => {
     const view = {
       online: true,
-      liveCapabilities: ['session.cloud', 'session.cloud.codex'] as const,
+      liveCapabilities: ['session.cloud', 'session.cloud.codex.threads'] as const,
     };
     const withCodex = host(null, {
       tools: [

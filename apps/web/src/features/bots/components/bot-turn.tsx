@@ -1,6 +1,11 @@
 import { ChatUserMessage, IconButton, MessageTrail } from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
-import { dateFormatter, formatTimeAway, useLocale } from '@oppenheimer/frontend-web';
+import {
+  CopyTextButton,
+  dateFormatter,
+  formatTimeAway,
+  useLocale,
+} from '@oppenheimer/frontend-web';
 import {
   BOT_PROVIDER_CATALOG,
   type BotAttachment,
@@ -16,7 +21,6 @@ import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotSteerMessage } from '@/features/bots/components/bot-steer-message';
 import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
 import { BotTurnLive } from '@/features/bots/components/bot-turn-live';
-import { CopyTextButton } from '@/features/bots/components/copy-text-button';
 import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
 import {
   type ChatTurnBlock,
@@ -29,25 +33,24 @@ import {
 import { runningStep } from '@/features/bots/lib/tool-activity';
 
 /**
- * One turn of the chat, as the Bots frame draws it (`25-bots.md` §3): your
- * message as a bubble on the right, its time and copy on hover; then the
- * bot's answer unboxed across the column: a quiet trace line per tool call,
- * each opening to what it returned, and what it said, as markdown, the
- * words it is still writing with the write head after them. While it runs,
- * a live line says what it is doing, with its clock, and the subagents a
- * running `delegate` call has at work under it. Once it has ended, a
- * trail copies the answer, offers Retry on the newest turn, and says how
- * long it worked, its model and the tokens it took (Stopped first when
- * someone pressed Stop); a failure says why and what helps
- * (`BotTurnFailure`). The images your message carried
- * sit above its bubble, and the ones the bot showed (`show_image`) in its
- * answer where it showed them, both drawn by `images`, which reads them. A
- * message you steered in while it worked sits in the answer where the bot
- * took it (`BotSteerMessage`). Work the turn started that still runs after
- * it is the caller's to draw (`working`), in place of the live line; a turn
- * queued behind the one the bot is on draws neither (`current`), so the
- * chat shows one live line at a time; a turn that never reached its model has no
- * trail, and neither does one that only ran tools while the chat hides them.
+ * One turn of the chat: your message as a bubble on the right, its time and
+ * copy on hover; then the bot's answer unboxed across the column: a quiet
+ * trace line per tool call, each opening to what it returned, and what it
+ * said, as markdown, the words it is still writing with the write head after
+ * them. While it runs, a live line says what it is doing, with its clock,
+ * and the subagents a running `delegate` call has at work under it. Once it
+ * has ended, a trail copies the answer, offers Retry on the newest turn, and
+ * says how long it worked, its model and the tokens it took (Stopped first
+ * when someone pressed Stop); a failure says why and what helps
+ * (`BotTurnFailure`). The images your message carried sit above its bubble,
+ * and the ones the bot showed (`show_image`) in its answer where it showed
+ * them, both drawn by `images`, which reads them. A message you steered in
+ * while it worked sits in the answer where the bot took it
+ * (`BotSteerMessage`). Work the turn started that still runs after it is the
+ * caller's to draw (`working`), in place of the live line; a turn queued
+ * behind the one the bot is on draws neither (`current`), so the chat shows
+ * one live line at a time; a turn that never reached its model has no trail,
+ * and neither does one that only ran tools while the chat hides them.
  */
 export function BotTurn({
   block,

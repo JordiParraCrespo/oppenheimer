@@ -21,6 +21,7 @@ import { pollWhile } from './live-poll';
 import { useProjectListQuery } from './projects.queries';
 import { usePullRequestQueueQuery } from './pull-requests.queries';
 import { useSessionListPoll, useSessionListQuery } from './sessions.queries';
+import { useTaskListQuery } from './tasks.queries';
 
 /**
  * The failed runs the Inbox shows: the last day's (Decided 2), as many as the
@@ -65,12 +66,11 @@ function useAnsweredKeys(): ReadonlySet<string> {
 }
 
 /**
- * Whether the Inbox lists pull requests (a review asked of you, yours ready
- * to merge), kept on this device. Off unless the reader turns it on: the
- * agents open pull requests under the reader's account, so every one of
- * them would wait here as theirs to merge (`29-inbox.md`, "Pull requests
- * are opt-in"). Off, their two reads are not made at all. One value for the
- * page, so the list and every count agree the moment it flips.
+ * Whether the Inbox lists pull requests (a review asked of you, yours ready to
+ * merge), kept on this device. Off unless the reader turns it on: the agents
+ * open pull requests under the reader's account, so every one of them would
+ * wait here as theirs to merge. Off, their two reads are not made at all. One
+ * value for the page, so the list and every count agree the moment it flips.
  */
 const PULLS_KEY = 'oppenheimer.inbox.pulls';
 let pullsShown: boolean | undefined;
@@ -116,7 +116,7 @@ function useInboxMarksQuery() {
   return { queryKey: inboxKeys.marks(), queryFn: () => app.inbox.findMarks() };
 }
 
-/** The open reports (`29-inbox.md`, "Reports"); `inboxReport.changed` refetches them. */
+/** The open reports; `inboxReport.changed` refetches them. */
 function useInboxReportsQuery() {
   const app = useConsumerApp();
   return { queryKey: inboxKeys.reports(), queryFn: () => app.inbox.findReports() };
@@ -146,6 +146,7 @@ function useInboxQueries() {
     useInboxReportsQuery(),
     useProjectListQuery(),
     useInboxMarksQuery(),
+    useTaskListQuery(),
   ] as const;
 }
 
@@ -197,6 +198,7 @@ function sourcesOf(
   botNotices: Answer<3>,
   reports: Answer<4>,
   projects: Answer<5>,
+  tasks: Answer<7>,
   pulls: PullSources,
 ): InboxSources {
   return {
@@ -206,6 +208,7 @@ function sourcesOf(
     failedRuns: runs.items,
     botNotices,
     reports,
+    tasks,
     projects,
   };
 }
@@ -227,9 +230,10 @@ export function useSuspenseInbox(
   const [pullsShown] = useInboxPullsShown();
   useInboxPoll(pullsShown);
   const pullQueries = usePullQueries(pullsShown);
-  const [sessions, approvals, runs, botNotices, reports, projects, marks] = useSuspenseQueries({
-    queries: useInboxQueries(),
-  });
+  const [sessions, approvals, runs, botNotices, reports, projects, marks, tasks] =
+    useSuspenseQueries({
+      queries: useInboxQueries(),
+    });
   const pullResults = useSuspenseQueries({ queries: pullQueries });
   const [requested, mine] = pullResults.map((result) => result.data);
   const answered = useAnsweredKeys();
@@ -243,6 +247,7 @@ export function useSuspenseInbox(
           botNotices.data,
           reports.data,
           projects.data,
+          tasks.data,
           pullSources([requested, mine]),
         ),
         marks.data,
@@ -256,6 +261,7 @@ export function useSuspenseInbox(
       botNotices.data,
       reports.data,
       projects.data,
+      tasks.data,
       requested,
       mine,
       marks.data,
@@ -271,6 +277,7 @@ export function useSuspenseInbox(
     botNotices.error ??
     reports.error ??
     projects.error ??
+    tasks.error ??
     marks.error;
   return { ...view, projects: projects.data, answered, error };
 }
@@ -284,7 +291,7 @@ export function useInboxCount(now: number): number | undefined {
   const results = useQueries({ queries: useInboxQueries() });
   const pullResults = useQueries({ queries: usePullQueries(pullsShown) });
   const answered = useAnsweredKeys();
-  const [sessions, approvals, runs, botNotices, reports, projects, marks] = results;
+  const [sessions, approvals, runs, botNotices, reports, projects, marks, tasks] = results;
   if (
     !sessions?.data ||
     !approvals?.data ||
@@ -293,6 +300,7 @@ export function useInboxCount(now: number): number | undefined {
     !reports?.data ||
     !projects?.data ||
     !marks?.data ||
+    !tasks?.data ||
     pullResults.some((result) => !result.data)
   ) {
     return undefined;
@@ -305,6 +313,7 @@ export function useInboxCount(now: number): number | undefined {
       botNotices.data as Answer<3>,
       reports.data as Answer<4>,
       projects.data as Answer<5>,
+      tasks.data as Answer<7>,
       pullSources(pullResults.map((result) => result.data as PullAnswer)),
     ),
     marks.data as InboxMarkEntity[],
@@ -383,7 +392,7 @@ function restoreMarks(queryClient: ReturnType<typeof useQueryClient>, context?: 
 }
 
 /**
- * Marks one occurrence done, low, snoozed or deleted (§3). The list moves on
+ * Marks one occurrence done, low, snoozed or deleted. The list moves on
  * the click; the server's mark replaces the provisional one, and a refusal
  * puts the list back.
  */

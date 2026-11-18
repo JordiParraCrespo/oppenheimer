@@ -20,8 +20,9 @@ type Terminals interface {
 	// command (empty for a plain shell), carrying env.
 	Create(ctx context.Context, name, dir, command string, env map[string]string) error
 	// NewWindow opens another window in the same session and directory and
-	// returns its index.
-	NewWindow(ctx context.Context, name, dir string) (int, error)
+	// returns its index. title names the window and keeps it so; empty lets
+	// tmux name it after the program running in it.
+	NewWindow(ctx context.Context, name, dir, title string) (int, error)
 	// KillWindow closes one window.
 	KillWindow(ctx context.Context, target string) error
 	// Kill ends the whole tmux session.
@@ -122,7 +123,7 @@ type Worktrees interface {
 }
 
 // Places is the work folder's own bookkeeping and the folders a session runs
-// in (24 §2, §3): what is made, checked and removed around a session, as
+// in: what is made, checked and removed around a session, as
 // opposed to the git inside it.
 type Places interface {
 	// MakeSession makes a worktree session's folder (folder.Dir), with its marker
@@ -183,7 +184,7 @@ type Store interface {
 type Publisher interface {
 	SessionChanged(session domain.Session)
 	// FirstPrompt carries a session's first message, read off the agent's
-	// transcript, to the control plane as `prompt.first` (02-runner §7). It
+	// transcript, to the control plane as `prompt.first`. It
 	// reports whether it took the message, and calls reported once the
 	// control plane has it: only then is the session marked reported, so a
 	// message offered before the link exists, or lost with the process
@@ -231,7 +232,7 @@ type Listener interface {
 // ProgramStatus is the agent's own word on what it is doing (OSC 7501),
 // kept by the `pty` wrapper its window runs under. It outranks what the
 // screen classifier reads, which stays the fallback for an agent that says
-// nothing (`product/research/lessons-from-herdr.md`).
+// nothing.
 type ProgramStatus interface {
 	// Wrap is the words that put a session's agent under the wrapper,
 	// before its own command line; none leaves it unwrapped.
@@ -246,7 +247,7 @@ type ProgramStatus interface {
 // Transcripts reads what an agent's own transcript says, on this host. The
 // transcript is the CLI's. Two things leave the host from it: the first
 // message, at most domain.FirstPromptMaxBytes of it, and, while a browser is
-// attached to the session, its entries compacted for the chat view (0.7) —
+// attached to the session, its entries compacted for the chat view —
 // what the same browser's terminal already shows.
 type Transcripts interface {
 	// FirstPrompt is the first message a person sent the agent in the
@@ -273,9 +274,9 @@ type Transcripts interface {
 	// offset into it. ErrNoChat when the agent keeps no file this runner
 	// reads.
 	ReadPage(session domain.Session, req TranscriptPageRequest) (TranscriptPage, error)
-	// OpenQuestion is the agent's latest AskUserQuestion call that has no
-	// result in the transcript yet, as the decision it asks (29-inbox,
-	// slice 4); false when there is none, or no transcript to read.
+	// OpenQuestion is the agent's latest AskUserQuestion call that has no result
+	// in the transcript yet, as the decision it asks; false when there is none,
+	// or no transcript to read.
 	OpenQuestion(agent domain.Agent, conversation string) (domain.Decision, bool)
 	// Teleported is the conversation an agent opened in dir on or after
 	// since, by the name its CLI gave it: what a session that continues a

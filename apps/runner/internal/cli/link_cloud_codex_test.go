@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/cloud"
+	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // sentEvents is a link that takes every batch and keeps what it said; the
@@ -65,75 +67,60 @@ func (s *sentEvents) take() []sentEvent {
 	return out
 }
 
-// fakeCodexCloud is Codex cloud as the CLI answers it: the tasks it was
-// started with, their status as the test sets it, newest first, a page of
-// pageSize at a time.
+// fakeCodexCloud is Codex cloud as cloud.Codex answers it: the threads it
+// was started with, and their status as the test sets it. refuse holds, by
+// thread, what a status ask about it answers instead.
 type fakeCodexCloud struct {
-	mu       sync.Mutex
-	tasks    []cloud.CodexTask
-	pageSize int
-	lists    int
-	starts   []string
+	mu      sync.Mutex
+	threads []fakeThread
+	asks    []string
+	starts  []string
+	refuse  map[string]error
 }
+
+// fakeThread is one thread the fake started, and where it stands.
+type fakeThread struct{ ID, Status string }
 
 func (f *fakeCodexCloud) Start(_ context.Context, repository, branch, prompt, environment string) (cloud.Started, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	id := "task_e_" + string(rune('a'+len(f.starts)))
+	id := "thr_" + string(rune('a'+len(f.starts)))
 	if environment != "" {
 		repository += "[" + environment + "]"
 	}
 	f.starts = append(f.starts, repository+"@"+branch+": "+prompt)
-	f.tasks = append([]cloud.CodexTask{{ID: id, Status: cloud.CodexPending}}, f.tasks...)
-	return cloud.Started{ID: id, URL: "https://chatgpt.com/codex/tasks/" + id}, nil
+	f.threads = append(f.threads, fakeThread{ID: id, Status: cloud.CodexPending})
+	return cloud.Started{ID: id, URL: "codex://threads/" + id}, nil
 }
 
-func (f *fakeCodexCloud) List(_ context.Context, cursor string) (cloud.CodexPage, error) {
+func (f *fakeCodexCloud) Status(_ context.Context, threadID string) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.lists++
-	from := 0
-	if cursor != "" {
-		_ = json.Unmarshal([]byte(cursor), &from)
+	f.asks = append(f.asks, threadID)
+	if err := f.refuse[threadID]; err != nil {
+		return "", err
 	}
-	to := min(from+f.pageSize, len(f.tasks))
-	page := cloud.CodexPage{Tasks: append([]cloud.CodexTask(nil), f.tasks[from:to]...)}
-	if to < len(f.tasks) {
-		page.Cursor = string(must(json.Marshal(to)))
+	for _, thread := range f.threads {
+		if thread.ID == threadID {
+			return thread.Status, nil
+		}
 	}
-	return page, nil
-}
-
-func (f *fakeCodexCloud) Environments(_ context.Context, repository string) (cloud.CodexEnvironments, error) {
-	return cloud.CodexEnvironments{
-		Environments: []cloud.CodexEnvironment{
-			{ID: "e_linked", Label: "Wallet app", Pinned: true, Repository: repository == "acme-labs/xrp-mobile"},
-			{ID: "e_other"},
-		},
-		Recommended: "e_linked", Source: cloud.CodexSourceChatGPT,
-	}, nil
+	return cloud.CodexPending, nil
 }
 
 func (f *fakeCodexCloud) set(id, status string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	for i := range f.tasks {
-		if f.tasks[i].ID == id {
-			f.tasks[i].Status = status
+	for i := range f.threads {
+		if f.threads[i].ID == id {
+			f.threads[i].Status = status
 		}
 	}
 }
 
-func must[T any](v T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
 func newCodexCloudHarness(t *testing.T) (*linkHandler, *fakeCodexCloud, *sentEvents) {
 	t.Helper()
-	codex := &fakeCodexCloud{pageSize: 20}
+	codex := &fakeCodexCloud{}
 	sent := &sentEvents{}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := &linkHandler{
@@ -186,7 +173,7 @@ func TestACodexCloudCreateStartsTheTaskAndReportsItWorking(t *testing.T) {
 		t.Fatalf("starts = %q", codex.starts)
 	}
 	got := kinds(sent.take())
-	want := []string{"session.started:task_e_a", "agent.observed:working"}
+	want := []string{"session.started:thr_a", "agent.observed:working"}
 	if len(got) != 2 || got[0] != want[0] || got[1] != want[1] {
 		t.Fatalf("events = %q, want %q", got, want)
 	}
@@ -197,7 +184,7 @@ func TestACodexCloudCreateStartsTheTaskAndReportsItWorking(t *testing.T) {
 	if len(codex.starts) != 1 {
 		t.Fatalf("a create sent again started another task: %q", codex.starts)
 	}
-	if got := kinds(sent.take()); len(got) != 1 || got[0] != "session.started:task_e_a" {
+	if got := kinds(sent.take()); len(got) != 1 || got[0] != "session.started:thr_a" {
 		t.Fatalf("events = %q", got)
 	}
 }
@@ -218,8 +205,8 @@ func TestTheCodexCloudPollReportsEachTaskOnceWhenItMoves(t *testing.T) {
 		t.Fatalf("an unmoved task was reported: %+v", got)
 	}
 
-	codex.set("task_e_a", cloud.CodexReady)
-	codex.set("task_e_b", cloud.CodexError)
+	codex.set("thr_a", cloud.CodexReady)
+	codex.set("thr_b", cloud.CodexError)
 	if err := h.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -232,43 +219,77 @@ func TestTheCodexCloudPollReportsEachTaskOnceWhenItMoves(t *testing.T) {
 	}
 	sent.ackAll(h.reporter)
 
-	lists := codex.lists
+	asks := len(codex.asks)
 	if err := h.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if codex.lists != lists {
+	if len(codex.asks) != asks {
 		t.Fatalf("Codex was asked again with every task settled")
 	}
 }
 
-// A task behind other ones the account started elsewhere is found on a
-// later page.
-func TestTheCodexCloudPollPagesToATaskFurtherBack(t *testing.T) {
+// One thread Codex will not answer about (archived, deleted) is skipped: the
+// others are still read and reported, and the round says it missed one.
+func TestTheCodexCloudPollSkipsAThreadItCannotRead(t *testing.T) {
 	h, codex, sent := newCodexCloudHarness(t)
-	codex.pageSize = 1
 	h.createCloud(context.Background(), codexCreate("s-1"))
-	for range 3 {
-		_, _ = codex.Start(context.Background(), "acme-labs/web", "main", "elsewhere", "")
-	}
+	h.createCloud(context.Background(), codexCreate("s-2"))
 	sent.take()
+	sent.ackAll(h.reporter)
 
-	codex.set("task_e_a", cloud.CodexApplied)
-	if err := h.pollCodexCloud(context.Background()); err != nil {
-		t.Fatal(err)
+	codex.refuse = map[string]error{"thr_a": sessionsdomain.ErrCodexCloudStart.WithDetail("thread not found")}
+	codex.set("thr_b", cloud.CodexReady)
+	if err := h.pollCodexCloud(context.Background()); err == nil {
+		t.Fatal("a round that missed a thread reported no error")
 	}
 	if got := kinds(sent.take()); len(got) != 1 || got[0] != "agent.observed:done" {
-		t.Fatalf("events = %q", got)
+		t.Fatalf("events = %q, want the readable thread reported", got)
 	}
 }
 
-// With no Codex task to watch, the CLI is never run.
+// ChatGPT's "wait", or a refused sign-in, ends the round at once: every other
+// ask would meet it too.
+func TestTheCodexCloudPollStopsWhenChatGPTSaysWait(t *testing.T) {
+	h, codex, sent := newCodexCloudHarness(t)
+	h.createCloud(context.Background(), codexCreate("s-1"))
+	h.createCloud(context.Background(), codexCreate("s-2"))
+	sent.take()
+
+	wait := sessionsdomain.ErrCodexRateLimited.WithDetail("try again in 1m0s")
+	codex.refuse = map[string]error{"thr_a": wait, "thr_b": wait}
+	if err := h.pollCodexCloud(context.Background()); err == nil {
+		t.Fatal("a refused round reported no error")
+	}
+	if len(codex.asks) != 1 {
+		t.Fatalf("asks = %q, want one", codex.asks)
+	}
+}
+
+// A legacy task, left unsettled by a runner that drove `codex cloud`, is not
+// asked about: the current service does not know it, and asking every minute
+// would only be refused.
+func TestTheCodexCloudPollLeavesALegacyTaskAlone(t *testing.T) {
+	h, codex, _ := newCodexCloudHarness(t)
+	ledger := newCloudLedger(h.app.Paths.State())
+	if err := ledger.record("s-old", codexCloudAgent, cloud.Started{ID: "task_e_68a1"}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.pollCodexCloud(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(codex.asks) != 0 {
+		t.Fatalf("asks = %q, want none", codex.asks)
+	}
+}
+
+// With no Codex thread to watch, Codex is not asked.
 func TestTheCodexCloudPollAsksNothingWithNothingToWatch(t *testing.T) {
 	h, codex, _ := newCodexCloudHarness(t)
 	if err := h.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if codex.lists != 0 {
-		t.Fatalf("lists = %d, want 0", codex.lists)
+	if len(codex.asks) != 0 {
+		t.Fatalf("asks = %q, want none", codex.asks)
 	}
 }
 
@@ -282,7 +303,7 @@ func TestACodexStatusIsRememberedOnlyOnceTheControlPlaneTookIt(t *testing.T) {
 	sent.ackAll(h.reporter)
 	sent.take()
 
-	codex.set("task_e_a", cloud.CodexReady)
+	codex.set("thr_a", cloud.CodexReady)
 	for range 2 {
 		if err := h.pollCodexCloud(context.Background()); err != nil {
 			t.Fatal(err)
@@ -306,11 +327,11 @@ func TestACodexStatusIsRememberedOnlyOnceTheControlPlaneTookIt(t *testing.T) {
 
 	// Taken this time: the task is settled, and Codex is not asked again.
 	again.ackAll(restarted.reporter)
-	lists := codex.lists
+	asks := len(codex.asks)
 	if err := restarted.pollCodexCloud(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if codex.lists != lists {
+	if len(codex.asks) != asks {
 		t.Fatal("Codex was asked about a task whose finish the control plane took")
 	}
 }
@@ -319,10 +340,10 @@ func TestACodexStatusIsRememberedOnlyOnceTheControlPlaneTookIt(t *testing.T) {
 func TestACodexCloudCreateStartsInThePickedEnvironment(t *testing.T) {
 	h, codex, _ := newCodexCloudHarness(t)
 	create := codexCreate("s-1")
-	create.CodexEnvironment = "e_other"
+	create.CodexEnvironment = "asenvcfg_web"
 	h.createCloud(context.Background(), create)
 
-	if len(codex.starts) != 1 || codex.starts[0] != "acme-labs/xrp-mobile[e_other]@develop: Fix the wallet list" {
+	if len(codex.starts) != 1 || codex.starts[0] != "acme-labs/xrp-mobile[asenvcfg_web]@develop: Fix the wallet list" {
 		t.Fatalf("starts = %q", codex.starts)
 	}
 }
@@ -340,23 +361,3 @@ func (s *sentMessages) Send(message any) error {
 }
 
 func (s *sentMessages) SendFrame(context.Context, uint32, []byte) error { return nil }
-
-// `codex.environments.list` is answered with the account's environments under
-// the command's id, the linked one marked and recommended.
-func TestCodexEnvironmentsAreListedForTheComposer(t *testing.T) {
-	h, _, _ := newCodexCloudHarness(t)
-	client := &sentMessages{}
-	h.client = client
-	h.listCodexEnvironments(context.Background(), link.CodexEnvironmentsList{
-		Type: link.TypeCodexEnvironmentsList, CommandID: "c-1", Repository: "acme-labs/xrp-mobile",
-	})
-
-	if len(client.sent) != 1 {
-		t.Fatalf("sent = %+v", client.sent)
-	}
-	got, ok := client.sent[0].(link.CodexEnvironments)
-	if !ok || got.CommandID != "c-1" || got.Recommended != "e_linked" || got.Source != "chatgpt" ||
-		len(got.Environments) != 2 || !got.Environments[0].Repository || got.Environments[1].Repository {
-		t.Fatalf("answer = %+v", client.sent[0])
-	}
-}

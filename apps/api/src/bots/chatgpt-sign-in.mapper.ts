@@ -30,11 +30,10 @@ function stringsOf<K extends string>(
 }
 
 /**
- * The shapes a ChatGPT sign-in takes (`product/versions/mvp/25-bots.md` §2):
- * what its credential seals in place of a key, what a sign-in in progress
- * seals into its `flowId`, and what the console is answered. The general
- * credential mapper knows nothing of them; a credential row only ever holds
- * the sealed bytes.
+ * The shapes a ChatGPT sign-in takes: what its credential seals in place of a
+ * key, what a sign-in in progress seals into its `flowId`, and what the console
+ * is answered. The general credential mapper knows nothing of them; a
+ * credential row only ever holds the sealed bytes.
  */
 @Injectable()
 export class ChatgptSignInMapper {

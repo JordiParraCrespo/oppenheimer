@@ -23,7 +23,7 @@ var _ app.ControlPlane = (*Client)(nil)
 
 // Paths on the control plane. The API mounts every route under `/api/v1`, so
 // the `--url` flag stays the bare origin (`https://app.oppenheimer.dev`) and
-// the prefix lives here (01-protocol.md, 03-control-plane.md).
+// the prefix lives here.
 const (
 	registerPath = "/api/v1/hosts/register"
 	revokePath   = "/api/v1/hosts/self"

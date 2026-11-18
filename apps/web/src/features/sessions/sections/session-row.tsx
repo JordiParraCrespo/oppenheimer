@@ -16,7 +16,7 @@ import { SessionRowMenu } from '../components/session-row-menu';
 import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
 import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
-import { dotFor, isWorking } from '../lib/session-run-state';
+import { attentionFor, isWorking, rowGlyphFor } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
 
 /** The row's lead glyph; the branch is the row's own default, a vendor's mark the session's own. */
@@ -43,8 +43,8 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * or down its project or into another; the sidebar keeps where it lands.
  *
  * A cloud session's row leads with its vendor's mark and opens the vendor's
- * page for its agent in a tab of its own (`SessionsConsole.dc.html`), where it
- * is followed up and stopped; there is no terminal of ours to open or share.
+ * page for its agent in a tab of its own, where it is followed up and
+ * stopped; there is no terminal of ours to open or share.
  *
  * Its pick is the sidebar's selection (`SessionSelectionContext`): a click with
  * ⌘, Ctrl or Shift picks the row instead of opening it, and so does any click
@@ -163,7 +163,8 @@ export function SessionRow({
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       status={status}
       title={statusHint}
-      state={dotFor(session)}
+      state={rowGlyphFor(session)}
+      attention={attentionFor(session)}
       working={isWorking(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'vendor' ? <AgentMark agent={session.agent} /> : GLYPHS[glyph]}

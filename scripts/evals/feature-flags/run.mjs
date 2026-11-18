@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Does an agent that launches a feature behind a flag launch it on?
 //
-// Every boolean flag defaults to `true` (`.agents/rules/feature-flags.md`):
+// Every boolean flag defaults to `true`:
 // a feature ships on, and its flag is how it is turned off or narrowed. Each
 // task is a ticket that asks for a feature behind a new flag, worded the way
 // a person would ("not sure people want it", "still in beta", "roll it out

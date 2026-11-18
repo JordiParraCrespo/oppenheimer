@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * `session_share_link`: a link that opens one session's terminal to people
- * outside its workspace (`product/versions/mvp/21-session-share-links.md`).
+ * outside its workspace.
  *
  * Only the SHA-256 of a link's secret is stored, unique, since it is what a
  * holder's every request is looked up by. The session key is composite on

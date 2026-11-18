@@ -40,10 +40,10 @@ const (
 )
 
 // FrameHeader is the 4-byte big-endian attachment id every binary frame on
-// the link starts with (01-protocol, "Framing").
+// the link starts with.
 const FrameHeader = 4
 
-// CreditWindow is 01's 256 KB: the bytes an attachment may have in flight
+// CreditWindow is 256 KB: the bytes an attachment may have in flight
 // before its PTY reads pause. A runaway build stalls its own pane, never the
 // link.
 const CreditWindow = 262144
@@ -83,34 +83,36 @@ const ComputerScreenshotMaxBytes = 262144
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
-	CapabilitySessionImage          = "session.image"
-	CapabilitySessionCreateImages   = "session.create.images"
-	CapabilitySessionFiles          = "session.files"
-	CapabilityRepositoryPrepare     = "repository.prepare"
-	CapabilityAttachmentDirect      = "attachment.direct"
-	CapabilityAttachmentDirectProof = "attachment.direct.proof"
-	CapabilitySessionFolder         = "session.folder"
-	CapabilityFsList                = "fs.list"
-	CapabilityFsFind                = "fs.find"
-	CapabilityAttachmentChat        = "attachment.chat"
-	CapabilityAttachmentChatOlder   = "attachment.chat.older"
-	CapabilityDeviceScreen          = "device.screen"
-	CapabilityPortForward           = "port.forward"
-	CapabilityDesktopStream         = "desktop.stream"
-	CapabilitySessionCloud          = "session.cloud"
-	CapabilitySessionCloudCodex     = "session.cloud.codex"
-	CapabilitySessionCloudReply     = "session.cloud.reply"
-	CapabilitySessionTeleport       = "session.teleport"
-	CapabilityCodexEnvironments     = "codex.environments"
-	CapabilitySessionWatch          = "session.watch"
-	CapabilityWhatsapp              = "whatsapp"
-	CapabilityTelegram              = "telegram"
-	CapabilitySharedPreview         = "shared.preview"
-	CapabilityTranscriptRead        = "transcript.read"
-	CapabilityHostExec              = "host.exec"
-	CapabilityTerminalDrive         = "terminal.drive"
-	CapabilityComputerUse           = "computer.use"
-	CapabilityBrowserUse            = "browser.use"
+	CapabilitySessionImage             = "session.image"
+	CapabilitySessionCreateImages      = "session.create.images"
+	CapabilitySessionFiles             = "session.files"
+	CapabilityRepositoryPrepare        = "repository.prepare"
+	CapabilityAttachmentDirect         = "attachment.direct"
+	CapabilityAttachmentDirectProof    = "attachment.direct.proof"
+	CapabilitySessionFolder            = "session.folder"
+	CapabilityFsList                   = "fs.list"
+	CapabilityFsFind                   = "fs.find"
+	CapabilityAttachmentChat           = "attachment.chat"
+	CapabilityAttachmentChatOlder      = "attachment.chat.older"
+	CapabilityDeviceScreen             = "device.screen"
+	CapabilityPortForward              = "port.forward"
+	CapabilityDesktopStream            = "desktop.stream"
+	CapabilitySessionCloud             = "session.cloud"
+	CapabilitySessionCloudCodexThreads = "session.cloud.codex.threads"
+	CapabilitySessionCloudCodex        = "session.cloud.codex"
+	CapabilitySessionCloudReply        = "session.cloud.reply"
+	CapabilitySessionTeleport          = "session.teleport"
+	CapabilitySessionWatch             = "session.watch"
+	CapabilityWhatsapp                 = "whatsapp"
+	CapabilityTelegram                 = "telegram"
+	CapabilitySharedPreview            = "shared.preview"
+	CapabilityTranscriptRead           = "transcript.read"
+	CapabilityHostExec                 = "host.exec"
+	CapabilityTerminalDrive            = "terminal.drive"
+	CapabilityComputerUse              = "computer.use"
+	CapabilityBrowserUse               = "browser.use"
+	CapabilitySessionWindowsList       = "session.windows.list"
+	CapabilitySessionWindowAgent       = "session.window.agent"
 )
 
 // The `type` of every message on the link.
@@ -132,6 +134,8 @@ const (
 	TypeSessionResize           = "session.resize"
 	TypeSessionWindowOpen       = "session.window.open"
 	TypeSessionWindowClose      = "session.window.close"
+	TypeSessionWindowsList      = "session.windows.list"
+	TypeSessionWindows          = "session.windows"
 	TypeSessionClose            = "session.close"
 	TypeSessionWatch            = "session.watch"
 	TypeSessionUnwatch          = "session.unwatch"
@@ -164,6 +168,7 @@ const (
 	TypeDeviceAttach            = "device.attach"
 	TypeDeviceInfo              = "device.info"
 	TypeDeviceInput             = "device.input"
+	TypeDeviceSelect            = "device.select"
 	TypeDeviceDetach            = "device.detach"
 	TypePortList                = "port.list"
 	TypePortListing             = "port.listing"
@@ -174,8 +179,6 @@ const (
 	TypeDesktopOpened           = "desktop.opened"
 	TypeDesktopControl          = "desktop.control"
 	TypeDesktopClose            = "desktop.close"
-	TypeCodexEnvironmentsList   = "codex.environments.list"
-	TypeCodexEnvironments       = "codex.environments"
 	TypeCloudReply              = "cloud.reply"
 	TypeCloudReplied            = "cloud.replied"
 	TypeWhatsappLink            = "whatsapp.link"
@@ -217,6 +220,8 @@ var MessageTypes = []string{
 	TypeSessionResize,
 	TypeSessionWindowOpen,
 	TypeSessionWindowClose,
+	TypeSessionWindowsList,
+	TypeSessionWindows,
 	TypeSessionClose,
 	TypeSessionWatch,
 	TypeSessionUnwatch,
@@ -249,6 +254,7 @@ var MessageTypes = []string{
 	TypeDeviceAttach,
 	TypeDeviceInfo,
 	TypeDeviceInput,
+	TypeDeviceSelect,
 	TypeDeviceDetach,
 	TypePortList,
 	TypePortListing,
@@ -259,8 +265,6 @@ var MessageTypes = []string{
 	TypeDesktopOpened,
 	TypeDesktopControl,
 	TypeDesktopClose,
-	TypeCodexEnvironmentsList,
-	TypeCodexEnvironments,
 	TypeCloudReply,
 	TypeCloudReplied,
 	TypeWhatsappLink,
@@ -321,6 +325,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(SessionWindowOpen), true
 	case TypeSessionWindowClose:
 		return new(SessionWindowClose), true
+	case TypeSessionWindowsList:
+		return new(SessionWindowsList), true
+	case TypeSessionWindows:
+		return new(SessionWindows), true
 	case TypeSessionClose:
 		return new(SessionClose), true
 	case TypeSessionWatch:
@@ -385,6 +393,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DeviceInfo), true
 	case TypeDeviceInput:
 		return new(DeviceInput), true
+	case TypeDeviceSelect:
+		return new(DeviceSelect), true
 	case TypeDeviceDetach:
 		return new(DeviceDetach), true
 	case TypePortList:
@@ -405,10 +415,6 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DesktopControl), true
 	case TypeDesktopClose:
 		return new(DesktopClose), true
-	case TypeCodexEnvironmentsList:
-		return new(CodexEnvironmentsList), true
-	case TypeCodexEnvironments:
-		return new(CodexEnvironments), true
 	case TypeCloudReply:
 		return new(CloudReply), true
 	case TypeCloudReplied:
@@ -657,10 +663,15 @@ type SessionResize struct {
 
 // SessionWindowOpen is the `session.window.open` message.
 type SessionWindowOpen struct {
-	Type      string `json:"type"`
-	CommandID string `json:"commandId"`
-	SessionID string `json:"sessionId"`
-	Name      string `json:"name,omitempty"`
+	Type       string `json:"type"`
+	CommandID  string `json:"commandId"`
+	SessionID  string `json:"sessionId"`
+	Name       string `json:"name,omitempty"`
+	Agent      string `json:"agent,omitempty"`
+	Model      string `json:"model,omitempty"`
+	Permission string `json:"permission,omitempty"`
+	Effort     string `json:"effort,omitempty"`
+	Prompt     string `json:"prompt,omitempty"`
 }
 
 // SessionWindowClose is the `session.window.close` message.
@@ -669,6 +680,22 @@ type SessionWindowClose struct {
 	CommandID string `json:"commandId"`
 	SessionID string `json:"sessionId"`
 	Window    int    `json:"window"`
+}
+
+// SessionWindowsList is the `session.windows.list` message.
+type SessionWindowsList struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+}
+
+// SessionWindows is the `session.windows` message.
+type SessionWindows struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	SessionID string   `json:"sessionId"`
+	Windows   []Window `json:"windows"`
+	Opened    int      `json:"opened,omitempty"`
 }
 
 // SessionClose is the `session.close` message.
@@ -981,11 +1008,20 @@ type DeviceAttach struct {
 
 // DeviceInfo is the `device.info` message.
 type DeviceInfo struct {
-	Type         string `json:"type"`
-	AttachmentID uint32 `json:"attachmentId"`
-	Serial       string `json:"serial"`
-	Name         string `json:"name"`
-	Platform     string `json:"platform"`
+	Type         string              `json:"type"`
+	AttachmentID uint32              `json:"attachmentId"`
+	Serial       string              `json:"serial"`
+	Name         string              `json:"name"`
+	Platform     string              `json:"platform"`
+	Devices      []DeviceInfoDevices `json:"devices,omitempty"`
+}
+
+// DeviceInfoDevices is DeviceInfo.Devices.
+type DeviceInfoDevices struct {
+	Serial   string `json:"serial"`
+	Name     string `json:"name"`
+	Platform string `json:"platform"`
+	Free     bool   `json:"free"`
 }
 
 // DeviceInput is the `device.input` message.
@@ -1000,6 +1036,13 @@ type DeviceInput struct {
 	Text         string  `json:"text,omitempty"`
 	Key          string  `json:"key,omitempty"`
 	Button       string  `json:"button,omitempty"`
+}
+
+// DeviceSelect is the `device.select` message.
+type DeviceSelect struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Serial       string `json:"serial"`
 }
 
 // DeviceDetach is the `device.detach` message.
@@ -1076,30 +1119,6 @@ type DesktopControl struct {
 type DesktopClose struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
-}
-
-// CodexEnvironmentsList is the `codex.environments.list` message.
-type CodexEnvironmentsList struct {
-	Type       string `json:"type"`
-	CommandID  string `json:"commandId"`
-	Repository string `json:"repository,omitempty"`
-}
-
-// CodexEnvironments is the `codex.environments` message.
-type CodexEnvironments struct {
-	Type         string                          `json:"type"`
-	CommandID    string                          `json:"commandId"`
-	Environments []CodexEnvironmentsEnvironments `json:"environments"`
-	Recommended  string                          `json:"recommended,omitempty"`
-	Source       string                          `json:"source"`
-}
-
-// CodexEnvironmentsEnvironments is CodexEnvironments.Environments.
-type CodexEnvironmentsEnvironments struct {
-	ID         string `json:"id"`
-	Label      string `json:"label,omitempty"`
-	Pinned     bool   `json:"pinned"`
-	Repository bool   `json:"repository"`
 }
 
 // CloudReply is the `cloud.reply` message.
@@ -1310,7 +1329,7 @@ type SessionSnapshot struct {
 	LoginURL       *string  `json:"loginUrl"`
 }
 
-// Window is SessionSnapshot.Windows.
+// Window is `#/$defs/window`.
 type Window struct {
 	Index int    `json:"index"`
 	Name  string `json:"name,omitempty"`

@@ -4,7 +4,8 @@ import type { BotApprovalEvent } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OpenSessionButton } from '@/features/bots/components/open-session-button';
-import { approvalLineKey } from '@/features/bots/lib/approval-event';
+import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
+import { approvalLineKey, showsApprovalLine } from '@/features/bots/lib/approval-event';
 
 const ICONS: Record<BotApprovalEvent['outcome'], ReactNode> = {
   approved: <Check />,
@@ -20,10 +21,13 @@ const ICONS: Record<BotApprovalEvent['outcome'], ReactNode> = {
  * with a stop sign, an approved call that failed in red; one that started a
  * session carries Open session. An approved call has two lines: the yes
  * ("You approved: …") when it starts, and "Done: …" (or "It failed: …")
- * over the turn that reports it.
+ * over the turn that reports it. While the tool calls are hidden, a call
+ * that went through draws nothing (`showsApprovalLine`).
  */
 export function ApprovalEventLine({ event }: { event: BotApprovalEvent }) {
   const { t } = useTranslation();
+  const toolCallsShown = useToolCallsShownInChat();
+  if (!showsApprovalLine(event, toolCallsShown)) return null;
   const icon = ICONS[event.outcome];
 
   return (

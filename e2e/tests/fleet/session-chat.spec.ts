@@ -15,7 +15,7 @@ import { connectInstallation, createSession } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
 /**
- * A Claude Code session read as a chat (0.7), on a real runner: the host
+ * A Claude Code session read as a chat, on a real runner: the host
  * follows the conversation's transcript where Claude Code keeps it, the relay
  * hands its entries to the attached browser, and the console draws them as
  * turns — the history first, then each line the CLI appends. What the chat's
@@ -104,6 +104,60 @@ test('the console reads a Claude Code session as a chat, live, and types into it
   await page.keyboard.press('Enter');
   await toggle.getByRole('button', { name: 'Terminal' }).click();
   await expect.poll(() => screenText(page), { timeout: 15_000 }).toContain('chat-42');
+});
+
+test('a file a turn changed opens from its row in the chat, as what the turn wrote', async ({
+  page,
+}) => {
+  const up = await fetch(WEB_URL).then(
+    (response) => response.ok,
+    () => false,
+  );
+  test.skip(!up, `the console is not running on ${WEB_URL}`);
+
+  const { api, user } = await signedUpContext('fleetchatfile');
+  await turnOnForEveryone(api, 'session_chat_view');
+  const installationId = await connectInstallation(api);
+  const [box] = await pairedHosts(api, 1, 'chatfile');
+  const sessionId = await createSession(api, box.id, installationId);
+  appendTranscript(box.host, sessionId, [
+    entry('user', 'u1', 'Write the curation prompt'),
+    entry('assistant', 'a1', [
+      {
+        type: 'tool_use',
+        id: 'w1',
+        name: 'Write',
+        input: {
+          file_path: '/tmp/notes/curation-prompt.md',
+          content: '# Curation prompt\n\nKeep the findings a reviewer would act on.\n',
+        },
+      },
+    ]),
+    entry('user', 'r1', [{ type: 'tool_result', tool_use_id: 'w1', content: 'File created' }]),
+    entry('assistant', 'a2', [{ type: 'text', text: 'The prompt is written.' }]),
+  ]);
+
+  await signInAs(page, user);
+  await page.goto(`/sessions/${sessionId}`);
+  const toggle = page.getByRole('group', { name: 'How to read this session' });
+  await expect(toggle).toBeVisible({ timeout: 120_000 });
+  await toggle.getByRole('button', { name: 'Chat' }).click();
+  await expect(page.getByText('The prompt is written.')).toBeVisible();
+
+  await page
+    .locator('[data-slot="changed-file-row"]')
+    .getByRole('button', { name: /curation-prompt\.md/ })
+    .click();
+  const viewer = page.getByRole('dialog');
+  await expect(viewer.getByRole('heading', { name: /curation-prompt\.md/ })).toBeVisible();
+  await expect(viewer.getByText('/tmp/notes')).toBeVisible();
+  // The lines are the diff library's, inside its shadow root, which a text locator reaches.
+  await expect(viewer.getByText('Keep the findings a reviewer would act on.')).toBeVisible({
+    timeout: 15_000,
+  });
+
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
 });
 
 /** A one-pixel PNG: the host checks a file's bytes are the type it claims. */

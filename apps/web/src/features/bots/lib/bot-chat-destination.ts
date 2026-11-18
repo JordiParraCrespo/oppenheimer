@@ -1,10 +1,10 @@
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 
 /**
- * Each section's bot chat route (`28-bots-in-sections.md`): a chat opens
- * inside the section it was clicked in, beside that section's own list, so
- * the reader never leaves it. Listed rather than built from the section's
- * name, so a renamed or missing route is a compile error.
+ * Each section's bot chat route: a chat opens inside the section it was
+ * clicked in, beside that section's own list, so the reader never leaves
+ * it. Listed rather than built from the section's name, so a renamed or
+ * missing route is a compile error.
  */
 const SECTION_CHAT = {
   sessions: '/sessions/bots/$botId',

@@ -1,6 +1,6 @@
 /**
  * A system a bot's tool calls (Gmail, GitHub, a calendar) limiting our
- * requests (`25-bots.md` §4, "Rate limits"). Running into one is a normal part
+ * requests. Running into one is a normal part
  * of working through a mailbox or a repository, not a fault: the call did
  * nothing, the limit passes on its own at a time the system named, and the
  * only wrong move is to call again before then. So a limited call reads to the

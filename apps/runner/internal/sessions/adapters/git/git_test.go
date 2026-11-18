@@ -160,7 +160,7 @@ func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 	}
 }
 
-// A store is bare, so nobody's `git status` in it sees a checkout (24 §2), and
+// A store is bare, so nobody's `git status` in it sees a checkout, and
 // it records the GitHub id of the repository it caches: a repository renamed
 // on GitHub keeps its store, and its history, instead of being downloaded
 // again under the new name. Each workspace has stores of its own.

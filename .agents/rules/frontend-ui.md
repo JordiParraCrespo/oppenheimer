@@ -41,7 +41,7 @@ design-system module no Use column names, unless the module opens with
 | A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
 | A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
-| "Nothing here" / "still loading"      | `EmptyState`; a placeholder in the shape of what loads (below) | a centred paragraph, a grey slab of a guessed height |
+| "Nothing here" / "still loading"      | `EmptyState`, in one of its three tiers (its doc comment): **illustrated** (`EmptyState.Art`) for a screen's or pane's main region empty the first time or through, **icon** (`EmptyState.Media variant="icon"`) for any other state of a pane or a Settings section, **inline** (`compact`, or the container's own empty row) in a sidebar, row, picker or panel; a placeholder in the shape of what loads (below) | a centred paragraph, a hand-drawn icon disc, an SVG of the feature's own, a drawing in Settings or a sidebar, a grey slab of a guessed height |
 | Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
 | Lifecycle state | `Badge` with `active` / `paused` / `ended` / `draft` | `secondary`, `outline`, `destructive` |
 | Quiet metadata chip                   | `Badge variant="neutral"`     | `secondary`                                           |

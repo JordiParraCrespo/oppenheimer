@@ -10,12 +10,11 @@ import { BOT_SUBSCRIPTION_WAKE_LIMIT } from '../../domain/bot-subscription.polic
 import { WakeOnTerminalMatchCommand } from './wake-on-terminal-match.command';
 
 /**
- * A session's terminal printed what a bot watches it for
- * (`27-bot-subscriptions.md` §2). The match-specific part of a wake: the
- * report is checked against the count the bot was already woken for, so a
- * report delivered twice or a stale one wakes nothing; the rest is the one
- * wake path (`BotSessionWakeResolver`). Matches count toward the wake limit.
- * A watch nobody follows any more is removed.
+ * A session's terminal printed what a bot watches it for. The match-specific
+ * part of a wake: the report is checked against the count the bot was already
+ * woken for, so a report delivered twice or a stale one wakes nothing; the rest
+ * is the one wake path (`BotSessionWakeResolver`). Matches count toward the
+ * wake limit. A watch nobody follows any more is removed.
  */
 @CommandHandler(WakeOnTerminalMatchCommand)
 export class WakeOnTerminalMatchCommandHandler

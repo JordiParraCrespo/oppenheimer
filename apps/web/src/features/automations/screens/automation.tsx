@@ -1,4 +1,5 @@
 import { EditorPageBack, EmptyState } from '@oppenheimer/design-system-web';
+import { Compass } from '@oppenheimer/design-system-web/icons';
 import { AppError } from '@oppenheimer/frontend-core';
 import { QueryState, RouteError } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -10,12 +11,12 @@ import { useRunsFilters } from '../hooks/use-runs-filters';
 import { AutomationDetail } from '../sections/automation-detail';
 
 /**
- * An automation's page (`product/versions/mvp/13-automations.md`). The page
- * reads the automation under Suspense; the screen draws the rungs around it —
- * loading, failed, gone — and `AutomationDetail` draws it once it is there.
- * While it loads, the page's own parts stand in: Back, the header's shape and
- * the same run-history and runs placeholders the page's nested boundaries
- * draw, so those swap like for like when the automation lands.
+ * An automation's page. The page reads the automation under Suspense; the
+ * screen draws the rungs around it — loading, failed, gone — and
+ * `AutomationDetail` draws it once it is there. While it loads, the page's
+ * own parts stand in: Back, the header's shape and the same run-history and
+ * runs placeholders the page's nested boundaries draw, so those swap like for
+ * like when the automation lands.
  */
 export function AutomationScreen({ automationId }: { automationId: string }) {
   const { t } = useTranslation();
@@ -40,6 +41,9 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
           error instanceof AppError && error.status === 404 ? (
             <EmptyState>
               <EmptyState.Header>
+                <EmptyState.Media variant="icon">
+                  <Compass />
+                </EmptyState.Media>
                 <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
               </EmptyState.Header>
             </EmptyState>

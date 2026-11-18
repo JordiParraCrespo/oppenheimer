@@ -5,9 +5,8 @@ import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
 import type { RunningApprovedCall } from '@/features/bots/lib/approval-event';
 
 /**
- * An approved call while it runs (`25-bots.md` §5): "Running: Archive 25
- * threads…" with its clock, under the bot's "on it", until the turn that
- * reports it lands.
+ * An approved call while it runs: "Running: Archive 25 threads…" with its
+ * clock, under the bot's "on it", until the turn that reports it lands.
  */
 export function ApprovedCallLive({ call }: { call: RunningApprovedCall }) {
   const { t } = useTranslation();

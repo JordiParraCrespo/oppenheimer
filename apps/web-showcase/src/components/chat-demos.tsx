@@ -78,6 +78,7 @@ import {
 } from '@oppenheimer/design-system-web/chat-status';
 import {
   ChatAttachment,
+  ChatCommand,
   ChatMention,
   ChatReply,
   ChatTranscript,
@@ -151,9 +152,18 @@ const JSON_DEMO = JSON.stringify(
   2,
 );
 
-/** The chat sits on the pane's recessed ground in the product (grey in light, the canvas in dark), so its cards read as cards here too. */
+/**
+ * The chat on the pane's recessed ground, as a bot's chat sits in the
+ * product (grey in light, the canvas in dark), so its cards read as cards.
+ * That grey is the chat's own wash, so the wash takes the card here, as the
+ * console's bots chat sets it.
+ */
 function ChatSurface({ children }: { children: React.ReactNode }) {
-  return <div className="w-full rounded-lg border border-border-subtle bg-canvas-recessed p-6">{children}</div>;
+  return (
+    <div className="w-full rounded-lg border border-border-subtle bg-canvas-recessed p-6 [--chat-wash:var(--card)]">
+      {children}
+    </div>
+  );
 }
 
 const icon = (Icon: React.ComponentType<{ className?: string }>, label: string) => (
@@ -395,6 +405,13 @@ function ChatElementsBody() {
         onValueChange={() => {}}
         onSubmit={() => {}}
         caption="History 1/2"
+        placeholder="Message Release Bot"
+      />
+      <ChatComposer
+        value="/release Cut 0.6 from main once the tests pass"
+        command="/release"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
         placeholder="Message Release Bot"
       />
       <ChatComposer
@@ -1028,6 +1045,9 @@ function ChatComposerExtrasBody() {
         </ChatMention>{' '}
         to check it.
       </p>
+      <p className="m-0 max-w-184 text-body">
+        <ChatCommand>/release</ChatCommand> Cut 0.6 from main once the tests pass
+      </p>
     </div>
   );
 }
@@ -1182,7 +1202,7 @@ export function ChatSection() {
         id="chattranscript"
         title="Transcript"
         meta="chat-transcript.tsx"
-        desc="The chat's column: the person's turns are cards on the right at 82%, attachments above and the time and copy and edit under, the actions on hover; an @file is a ChatMention. Each agent turn opens on a TurnHeader, a 13px line on a hairline to the edge: working (breathing), worked with its model and time (folding the turn's work), stopped, interrupted, resumed. The answer is ChatReply, unboxed at 15px; MessageTrail carries copy, fork and retry with the tokens in mono. StreamingCaret is the write head."
+        desc="The chat's column: the person's turns are cards on the right at 82%, attachments above and the time and copy and edit under, the actions on hover; an @file is a ChatMention. Each agent turn opens on a TurnHeader, a 14px line over a hairline that spans the column: working (breathing), worked for its time with a chevron after it (folding the turn's work), and its model and time when given, stopped, interrupted, resumed. The answer is ChatReply, unboxed at 15px on 1.7, its inline code, fenced blocks and table headers on the chat's grey wash, a table framed as a card; MessageTrail carries copy, fork and retry, then the time or the tokens. StreamingCaret is the write head."
         code={`<ChatTranscript><ChatUserMessage time="09:12" actions={…}>…</ChatUserMessage><TurnHeader state="done" elapsed="1m 13s" model="Claude Sonnet 4.5" onToggle={fold} /><ChatReply>{markdown}</ChatReply><MessageTrail actions={…} meta="3.1k tokens" /></ChatTranscript>`}
       >
         <ChatTranscriptDemo />
@@ -1202,7 +1222,7 @@ export function ChatSection() {
         id="chatelements"
         title="AI elements"
         meta="chat-elements.tsx · json-tree.tsx · chat-composer.tsx · chat-image.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A fence that parses as JSON is a ChatJsonBlock on the same card: it opens on the code as written, Raw / Tree on its band, and Tree shows a JsonTree (json-tree.tsx), keys in the attribute yellow, objects and arrays folding with their size in mono, a muted note after a leaf such as a time in words, the path on hover; Copy keeps the text as written. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, the paperclip before the field, and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the chat's wash at the 10px radius: the language in small mono over the code, Copy at its end, and Wrap beside it when a line is wider than the block. A fence that parses as JSON is a ChatJsonBlock on the same wash: it opens on the code as written, Raw / Tree on its band, and Tree shows a JsonTree (json-tree.tsx), keys in the attribute yellow, objects and arrays folding with their size in mono, a muted note after a leaf such as a time in words, the path on hover; Copy keeps the text as written. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, a round + before the field and an ink send at its end (its stop in the action blue while the agent works), and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />
@@ -1252,7 +1272,7 @@ export function ChatSection() {
         id="chatcomposer"
         title="Composer extras"
         meta="chat-composer-extras.tsx"
-        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. DictationButton is the one mic every dictating field shows, red while it records. DictationFrame gives a plain field dictation: the mic in its bottom-right corner, the recorder or the last problem under it. Every host — this frame, Composer, ChatComposer, the comment drafts — takes the same DictationSlot (mic, recorder, notice). ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent."
+        desc="VoiceRecorderBar takes the composer's foot while dictating: a waveform growing from the right, the time, cancel and stop; before the microphone answers and while it transcribes, it says so. DictationButton is the one mic every dictating field shows, red while it records. DictationFrame gives a plain field dictation: the mic in its bottom-right corner, the recorder or the last problem under it. Every host — this frame, Composer, ChatComposer, the comment drafts — takes the same DictationSlot (mic, recorder, notice). ComposerContextMeter is how full the context is, a click compacting. ComposerMenu opens above the composer for / commands, @ mentions and the + menu: groups under eyebrows, 32px rows with a mono hint. ChatMention's token form names a skill or an agent; ChatCommand marks the /command a message starts with, and ChatCommandText draws text with it marked, in a sent message and in ChatComposer's field (`command`)."
         code={`<ComposerMenu><ComposerMenuGroup label="Built-in"><ComposerMenuItem icon={<LayersIcon />} description="Think first" hint="/plan" highlighted>Plan</ComposerMenuItem></ComposerMenuGroup></ComposerMenu>`}
       >
         <ChatComposerExtrasDemo />

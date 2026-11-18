@@ -68,10 +68,9 @@ const PROJECT_REASONS = new Set(['rateLimitExceeded', 'quotaExceeded', 'dailyLim
  * (`oauth.google.*`): the consent URL, the code exchange, access tokens from a
  * refresh token, revocation, and every other call the integration makes to
  * Google with them. Every call goes through the integration's
- * {@link UpstreamLimiter}, a refusal pausing whichever bucket Google named
- * (`.agents/rules/integrations.md`); its rate-limit problem passes through as
- * is, and anything else that kept Google from answering is the integration's
- * provider error.
+ * {@link UpstreamLimiter}, a refusal pausing whichever bucket Google named; its
+ * rate-limit problem passes through as is, and anything else that kept Google
+ * from answering is the integration's provider error.
  */
 export class GoogleOAuthClient {
   constructor(

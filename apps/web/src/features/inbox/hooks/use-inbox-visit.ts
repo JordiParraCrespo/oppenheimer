@@ -7,8 +7,8 @@ export function useInboxVisit(): InboxVisit {
 }
 
 /**
- * Forgets the visit when the reader leaves the Inbox (§5: Show done lasts
- * "until you leave"). Syncs with the visit store outside React.
+ * Forgets the visit when the reader leaves the Inbox (Show done lasts until
+ * you leave). Syncs with the visit store outside React.
  */
 export function useForgetVisitOnLeave(): void {
   useEffect(() => () => inboxVisit.clear(), []);

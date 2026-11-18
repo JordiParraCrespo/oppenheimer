@@ -10,10 +10,9 @@ export type WhatsappAccountStatus =
 export type WhatsappOwnerState = 'none' | 'codeSent' | 'confirmed';
 
 /**
- * One of the reader's own WhatsApp numbers, linked as a device on one of
- * their hosts for their bots (`product/next-steps/whatsapp.md` §1). Its keys
- * stay on the host; this is how the device stands and, while it pairs, the QR
- * code to scan.
+ * One of the reader's own WhatsApp numbers, linked as a device on one of their
+ * hosts for their bots. Its keys stay on the host; this is how the device
+ * stands and, while it pairs, the QR code to scan.
  */
 export class WhatsappAccountEntity {
   constructor(
@@ -33,8 +32,7 @@ export class WhatsappAccountEntity {
     public readonly linkedAt: string,
     /**
      * The reader's Oppenheimer bot that answers them on this number by
-     * default (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1);
-     * null while none does. "Name: …" in the chat switches to another.
+     * default; null while none does. "Name: …" in the chat switches to another.
      */
     public readonly answeringBotId: string | null = null,
     /** The reader's own number, confirmed by a code, as `+digits`: the only one answered here. */

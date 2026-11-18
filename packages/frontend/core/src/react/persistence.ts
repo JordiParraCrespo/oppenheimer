@@ -47,8 +47,7 @@ export interface QueryPersistConfig {
 /**
  * Only successful queries are persisted — restoring an error or a pending
  * fetch would replay a failure the user has already moved past. The feature
- * segment is the first entry of every key factory
- * (`apps/docs/docs/architecture/query-keys.md`), which is what makes a
+ * segment is the first entry of every key factory, which is what makes a
  * per-feature allow-list possible.
  *
  * A feature that is not listed may hold one read that is safe to keep:

@@ -18,6 +18,8 @@ export {
 } from './automations.queries';
 export {
   type DecideBotApprovalVariables,
+  useAnyBotNeedsInput,
+  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';
@@ -156,7 +158,6 @@ export {
 export { useHostDesktop } from './hosts.desktop';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
-  useHostCodexEnvironments,
   useHostFolderSearch,
   useHostFolders,
   useHostPresence,
@@ -272,18 +273,22 @@ export {
   type CloseSessionVariables,
   type CreateSessionVariables,
   type MoveSessionVariables,
+  type OpenSessionWindowVariables,
   type PutSessionShareVariables,
   type RenameSessionVariables,
   type SetSessionHiddenVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAcknowledgeSessionReport,
   useAnswerSessionDecision,
   useCloseSession,
+  useCloseSessionWindow,
   useCreateCloudChatKey,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
   useOpenSessionPreviewTab,
+  useOpenSessionWindow,
   usePasteSessionFile,
   usePrepareSession,
   usePutSessionShare,
@@ -294,6 +299,7 @@ export {
   useSessionShare,
   useSessionStartProgress,
   useSessions,
+  useSessionWindows,
   useSetSessionHidden,
   useSetSessionSharePeople,
   useStartCloudSession,
@@ -327,6 +333,7 @@ export {
   useLinkTaskSession,
   useMilestones,
   useMoveTask,
+  useMoveTasks,
   useSessionTasks,
   useStartTaskSession,
   useSuspensePlan,
@@ -334,6 +341,7 @@ export {
   useSuspenseStartSession,
   useSuspenseTaskBoard,
   useTasks,
+  useTriageTask,
   useUnlinkTaskSession,
   useUpdateMilestone,
   useUpdateTask,

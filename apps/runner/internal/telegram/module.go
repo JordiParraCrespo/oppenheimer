@@ -1,6 +1,5 @@
-// Package telegram wires the host's Telegram bot
-// (product/next-steps/telegram.md): one bot per host, its token in the
-// runner's state directory, the messages it receives handed to the control
+// Package telegram wires the host's Telegram bot: one bot per host, its token in
+// the runner's state directory, the messages it receives handed to the control
 // plane over the link.
 package telegram
 

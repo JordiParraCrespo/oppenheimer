@@ -23,7 +23,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from './send-bot-message.command';
 
 /**
- * A message to a bot (`25-bots.md` §2): a queued turn on the bot's provider,
+ * A message to a bot: a queued turn on the bot's provider,
  * model and effort as they are now, with your message (its words, its images
  * or both) as its first. It runs when the bot's turn before it ends, unless
  * it is a steer the running turn takes first (`BotSteerPolicy`): words alone

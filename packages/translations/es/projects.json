@@ -48,7 +48,8 @@
     "title": "Proyectos",
     "new": "Nuevo proyecto",
     "noRepositories": "Sin repositorios",
-    "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
+    "emptyTitle": "Aún no hay proyectos",
+    "empty": "Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
     "loadFailed": "No se pudieron cargar tus proyectos.",
     "status": {
       "needsInput": "Necesita tu respuesta",
@@ -63,6 +64,7 @@
     "needsInput": "Necesita tu respuesta",
     "inProgress": "En curso",
     "noMilestones": "Aún no hay hitos.",
+    "sessionWaiting": "Sesión esperando tu respuesta",
     "nothingNeedsInput": "Nada espera tu respuesta.",
     "nothingInProgress": "Nada en curso.",
     "gone": "Ese proyecto ya no está aquí.",
@@ -102,5 +104,28 @@
     "headlessOnly": "turnos sin terminal",
     "measuredHeadless": "Medido en los turnos sin terminal"
   },
-  "unassigned": "Sin asignar"
+  "unassigned": "Sin asignar",
+  "selection": {
+    "label": "Proyectos seleccionados",
+    "count_one": "{{count}} seleccionado",
+    "count_other": "{{count}} seleccionados",
+    "count_many": "{{count}} seleccionados",
+    "selectOne": "Seleccionar {{name}}",
+    "selectAll": "Seleccionar todos",
+    "selectNone": "No seleccionar ninguno",
+    "delete": "Eliminar seleccionados",
+    "clear": "Quitar selección"
+  },
+  "deleteProjects": {
+    "title_one": "¿Eliminar {{count}} proyecto?",
+    "title_other": "¿Eliminar {{count}} proyectos?",
+    "title_many": "¿Eliminar {{count}} proyectos?",
+    "description": "Sus sesiones se quedan donde están. Las automatizaciones que los usan se pausan.",
+    "confirm_one": "Eliminar proyecto",
+    "confirm_other": "Eliminar {{count}} proyectos",
+    "confirm_many": "Eliminar {{count}} proyectos",
+    "partial_one": "No se ha eliminado {{count}} proyecto",
+    "partial_other": "No se han eliminado {{count}} proyectos",
+    "partial_many": "No se han eliminado {{count}} proyectos"
+  }
 }

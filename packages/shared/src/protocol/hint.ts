@@ -3,11 +3,11 @@ import { z } from 'zod/v4';
 /**
  * Hints, split by the socket that carries them.
  *
- * `product/versions/mvp/01-protocol.md` closes the link's vocabulary at three
- * kinds, and says the two sockets share only the kinds they both need. The
- * attach socket needs a fourth — the host has no link right now — and that one
- * is meaningless on the link itself: a runner that is connected enough to send
- * a frame cannot coherently report itself offline.
+ * The link's vocabulary is closed at three kinds, and the two sockets share
+ * only the kinds they both need. The attach socket needs a fourth — the host
+ * has no link right now — and that one is meaningless on the link itself: a
+ * runner that is connected enough to send a frame cannot coherently report
+ * itself offline.
  */
 
 /** The link's closed vocabulary. */

@@ -1,11 +1,10 @@
 // Package config reads the runner's configuration from the environment.
 //
-// The rules match `.agents/rules/api-config.md`: one `.env` at the repo
-// root documents everything; real environment variables win; a required
-// secret missing fails boot; an optional capability missing disables the
-// capability and is reported, never sentinel-defaulted. The loading and
-// parsing machinery lives in packages/go/config; this file is only the
-// list of variables this service reads.
+// The rules: one `.env` at the repo root documents everything; real environment
+// variables win; a required secret missing fails boot; an optional capability
+// missing disables the capability and is reported, never sentinel-defaulted. The
+// loading and parsing machinery lives in packages/go/config; this file is only
+// the list of variables this service reads.
 package config
 
 import (

@@ -12,8 +12,8 @@ import { TelegramAnsweringRow } from '@/features/telegram/sections/telegram-answ
 
 /**
  * The reader's connected bots, one row each with who answers them there
- * under it, and Connect a bot up to three,
- * over a callout on what a bot hears in groups (privacy mode). With none yet,
+ * under it, and Connect another bot above them, up to three,
+ * under a callout on what a bot hears in groups (privacy mode). With none yet,
  * the card that says what connecting gives the bots; with no host paired,
  * Connect is off with that as its reason. Read under Suspense, in the
  * screen's `QueryState`; a refetch that fails keeps the rows and says so.
@@ -62,7 +62,8 @@ export function TelegramAccounts() {
           <EmptyState.Content>{connect}</EmptyState.Content>
         </EmptyState>
       ) : (
-        <>
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-end">{connect}</div>
           <SettingsGroup>
             {accounts.map((account) => (
               <Fragment key={account.id}>
@@ -71,8 +72,7 @@ export function TelegramAccounts() {
               </Fragment>
             ))}
           </SettingsGroup>
-          <div className="mt-4 flex justify-end">{connect}</div>
-        </>
+        </div>
       )}
       {connecting ? (
         <ConnectTelegramBotDialog hosts={choices} onClose={() => setConnecting(false)} />

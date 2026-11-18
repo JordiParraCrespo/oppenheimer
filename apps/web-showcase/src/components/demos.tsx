@@ -117,8 +117,6 @@ import {
 } from '@oppenheimer/design-system-web/inline-token';
 import {
   PageHeader,
-  PageHeaderCrumbs,
-  PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
   PageHeaderRow,
@@ -1511,11 +1509,6 @@ export function EditorPageDemo() {
         <EditorPageBody>
         <EditorPageBack href="#editorpage">Back</EditorPageBack>
         <PageHeader className="mb-7">
-          <PageHeaderCrumbs aria-label="Breadcrumb">
-            <button type="button">New session</button>
-            <span>/</span>
-            <PageHeaderHere>Add a host</PageHeaderHere>
-          </PageHeaderCrumbs>
           <PageHeaderRow
             icon={<ServerIcon />}
             title="Add a host"
@@ -1576,11 +1569,6 @@ export function PageHeaderDemo() {
   return (
     <div className="flex w-full flex-col gap-8">
       <PageHeader>
-        <PageHeaderCrumbs aria-label="Breadcrumb">
-          <button type="button">Routines</button>
-          <span>/</span>
-          <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
-        </PageHeaderCrumbs>
         <PageHeaderRow
           icon={<ClockIcon />}
           title="Nightly dependency audit"
@@ -1620,11 +1608,6 @@ export function PageHeaderDemo() {
         ) : null}
       </PageHeader>
       <PageHeader>
-        <PageHeaderCrumbs aria-label="Breadcrumb">
-          <button type="button">Routines</button>
-          <span>/</span>
-          <PageHeaderHere>New routine</PageHeaderHere>
-        </PageHeaderCrumbs>
         <PageHeaderRow
           icon={<ZapIcon />}
           title={<PageHeaderTitleInput placeholder="Name this routine" aria-label="Routine name" />}
@@ -2211,8 +2194,8 @@ export function HostCardsDemo() {
   );
   return (
     <div className="flex w-full max-w-170 flex-col gap-2.5">
-      <HostCard name="jordis-mac-studio" meta="macOS 15 · local · runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
-      <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
+      <HostCard name="jordis-mac-studio" meta="macOS 15 · local" runner="runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
+      <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west" runner="runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
       <FableHostCard action={action} />
     </div>
   );
@@ -2225,7 +2208,8 @@ function FableHostCard({ action }: { action: React.ReactNode }) {
   return (
     <HostCard
       name="fable"
-      meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8"
+      meta="Debian 12 · 16 vCPU · us-east"
+      runner="runner 0.13.8"
       status="offline"
       state="Offline"
       seen="last seen 2 days ago"

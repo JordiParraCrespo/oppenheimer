@@ -48,14 +48,19 @@ const usage = {
 };
 
 /** The SSE body of one streamed response whose output is `item`. */
-function streamOf(id: string, item: Record<string, unknown>, deltas: string[] = []): string {
+function streamOf(
+  id: string,
+  item: Record<string, unknown>,
+  deltas: string[] = [],
+  reported: Record<string, unknown> = usage,
+): string {
   const response = {
     id,
     object: 'response',
     status: 'completed',
     model: 'model-placeholder',
     output: [item],
-    usage,
+    usage: reported,
   };
   const events = [
     { type: 'response.created', response: { ...response, status: 'in_progress', output: [] } },
@@ -491,6 +496,63 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     TURN_MS,
   );
 
+  // What breaks this: an Agents SDK whose usage schema takes only numbers in
+  // `input_tokens_details`. ChatGPT's Codex backend now nests an object there
+  // (`cache_write_tokens_details`), and the SDK's own validation of the
+  // response threw, so every subscription turn failed after its answer had
+  // streamed (OPPENHEIMER-API-4, after #855).
+  it(
+    'completes a chatgpt turn whose usage nests an object in its input token details',
+    async () => {
+      const nested = {
+        ...usage,
+        input_tokens_details: {
+          cached_tokens: 4,
+          cache_write_tokens_details: { ephemeral_5m_input_tokens: 7 },
+        },
+      };
+      replies = [
+        streamOf(
+          'resp_n',
+          {
+            type: 'message',
+            id: 'msg_n',
+            role: 'assistant',
+            status: 'completed',
+            content: [{ type: 'output_text', text: 'Hello.', annotations: [] }],
+          },
+          ['Hello.'],
+          nested,
+        ),
+      ];
+      const events: BotEngineEvent[] = [];
+      for await (const event of new ChatgptBotEngine().run({
+        provider: 'chatgpt',
+        apiKey: KEY,
+        accountId: 'account-placeholder',
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'Hi',
+        tools: [],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events).toContainEqual({ type: 'text.done', text: 'Hello.' });
+      expect(events.find((event) => event.type === 'usage')).toMatchObject({
+        inputTokens: 11,
+        outputTokens: 3,
+        cacheReadTokens: 4,
+      });
+      expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+    },
+    TURN_MS,
+  );
+
   // What breaks this: reading a failure's kind only from the HTTP status.
   // A stream the provider opened with a 200 and then failed carries none, so
   // OpenAI's own outage ("An error occurred while processing your request")
@@ -535,6 +597,54 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         type: 'done',
         reason: 'failed',
         error: PROCESSING_ERROR,
+        failure: 'unavailable',
+      });
+    },
+    TURN_MS,
+  );
+
+  // What breaks this: knowing only the public API's `server_error`. ChatGPT's
+  // Codex backend says it is overloaded with a `response.failed` whose code is
+  // `server_is_overloaded` (the Codex CLI reads it the same way), so a
+  // subscription turn that met it read as `other` and was reported as ours to
+  // fix (OPPENHEIMER-API-4, after #818).
+  it(
+    'reads a chatgpt stream the backend failed as overloaded as the provider unavailable',
+    async () => {
+      const overloaded = 'The servers are overloaded right now (a placeholder of their words).';
+      replies = [
+        sse([
+          started,
+          {
+            type: 'response.failed',
+            response: {
+              ...failedResponse,
+              error: { code: 'server_is_overloaded', message: overloaded },
+            },
+          },
+        ]),
+      ];
+      const events: BotEngineEvent[] = [];
+      for await (const event of new ChatgptBotEngine().run({
+        provider: 'chatgpt',
+        apiKey: KEY,
+        accountId: 'account-placeholder',
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'Hi',
+        tools: [],
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      expect(events.at(-1)).toEqual({
+        type: 'done',
+        reason: 'failed',
+        error: overloaded,
         failure: 'unavailable',
       });
     },

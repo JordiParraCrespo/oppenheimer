@@ -124,7 +124,8 @@
   no-workspace redirect as the console. Hosts lists the machines as cards
   with Add host on the right, which opens the Add a host page inside
   Settings (`/settings/hosts/new`, the settings sidebar still beside it,
-  the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
+  the Hosts row unlit): Back (no breadcrumb, see the README's decisions
+  that changed), Done rather than
   Use this host, all back to the list. The console pairs in a dialog;
   Settings keeps its page, because its frame keeps Settings around it,
   and shows the Command / Agent prompt panel outright rather than behind
@@ -209,8 +210,8 @@
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
   | Claude Code | **Opus 5.5**, Fable 5.2, Sonnet 5.5, Haiku 5.5 (`claude-opus-5-5` and siblings), then under "More models" Fable 5.1, Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6 and Sonnet 4.6 (changed 2026-11-02; it was the newest four with Haiku 4.5. Changed 2026-11-09: Fable 5.2 took Fable 5.1's place, which moved under "More models") | yes | the model's levels: low to max, to max without extra high on the 4.6 pair; none for Haiku 4.5 |
-  | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
-  | OpenCode | Opus 5.5, Fable 5.2, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/`, then Fable 5.1 under "More models" (since 2026-11-09) | yes | the model's levels, OpenCode's variants per provider |
+  | Codex | **GPT-6.2 Sol**, GPT-6.2 Astra, GPT-6.1 Sol, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna (changed 2026-11-17: GPT-6.2 Sol and Astra came out, and GPT-6.2 Sol took the default from GPT-6.1 Sol) | yes | the model's levels |
+  | OpenCode | Opus 5.5, Fable 5.2, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's ten under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/`, then Fable 5.1 under "More models" (since 2026-11-09) | yes | the model's levels, OpenCode's variants per provider |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default), Grok 4.5 | yes | the model's levels: low to extra high, to high on 4.5 |
   | Blank terminal | none, picked outright | no | no |
 
@@ -350,7 +351,10 @@
   it. The device is the simulator or emulator the session's host gave it,
   the one its agent drives through Argent
   (`../research/device-streaming.md`); a host that offers none says so in
-  the pane. The Browser tab followed on 2026-10-27 (`30-session-previews.md`):
+  the pane. Since 2026-11-15 the device's name is a picker when the host
+  offers more than one: the reader moves the session onto a free one (one
+  another session holds is listed, greyed), and Refresh beside it looks at
+  the host's devices again and restarts the screen. The Browser tab followed on 2026-10-27 (`30-session-previews.md`):
   Browser and Simulator are the header's pill tabs, the last one chosen
   kept on the device; Browser opens on the session's likeliest dev server
   among the ports its processes listen on, with an address bar (a port

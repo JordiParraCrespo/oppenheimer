@@ -55,6 +55,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   four chips behave as one thing. It is built on Popover, not Base UI
   Select, for that reason; `RepositorySelect` reuses its parts for the
   multi-repo pane. A foot action with `href` is a new-tab link.
+- **A picker with a search is picked from the keyboard, one way.** Its
+  search, list and rows sit in a `ChipSelectCombobox` (Base UI Combobox,
+  inline in the popup): ↑ ↓ move the highlight while the focus stays in the
+  search, Enter clicks the highlighted row, and the field names it to a
+  screen reader. A pane never keeps a highlight index or a key handler of
+  its own; a row's `onClick` is the one place a choice is made, by pointer
+  or key. A pane that opens on a choice to make (`ChipSelect`, a host's
+  places) lights its first row with `autoHighlight="always"`; a pane that
+  changes under the search takes a `key`, so its highlight starts again.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
   Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's
@@ -167,7 +176,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   calendar source a `Checkbox` row, and a page that opens on its own name
   `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
   is given at its parent's width; `MonthCalendar` and `DatePicker` are the
-  two faces of one month grid.
+  two faces of one month grid. A calendar entry is the one place a data
+  tone is an identity outside a chart: it wears its calendar's or its
+  kind's (`internal/calendar-tone.ts`) as a wash and an edge, and an
+  automation run, which is not a commitment, stays in subtle ink.
 - **A gate is a status, not a new vocabulary.** Whether something may go
   ahead (checks, conflicts, a merge step) is a `StatusDot` gate state
   (`passing`, `blocked`, `waiting`), worded by the caller; a run's state
@@ -194,7 +206,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   custom properties. The theme is the app's: `DiffView` takes
   `colorScheme` from the caller and never reads the OS or the document.
 - **A file wears its type's mark.** `FileIcon` and the tree draw the same
-  published icon set (@pierre/trees, its `complete` set). Its hue comes
+  published icon set (@pierre/trees, its `complete` set), corrected and
+  widened in `internal/file-icon-set.ts`: markup (HTML, XML, templates) is
+  `</>` on the set's tile, where the set draws HTML as a CSS-like `#`; a
+  file that belongs to a mark the set has takes it (`go.mod` Go,
+  `Cargo.toml` Rust, a certificate the lock); a language the set has no
+  mark for wears its vendor's own, copied from Simple Icons
+  (`internal/file-icon-marks.json`: Java, Kotlin, PHP, Haskell…), a PDF a
+  red page, and one with no legible published mark the neutral code page,
+  never a redrawn logo. Its hue comes
   from one map, the `--file-icon-*` tokens in `globals.css`, which the
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.

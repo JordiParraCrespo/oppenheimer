@@ -32,7 +32,7 @@ export class WatchedRepositoriesResolver {
     ]);
     const watched = new Set(watches.map(addressKeyOf));
     // A repository watched through a token stays watched once an installation
-    // covers it: the App reads it first (§6.2), and the watch is still the person's.
+    // covers it: the App reads it first, and the watch is still the person's.
     return repositories.map((repository) => ({
       repository,
       watching:

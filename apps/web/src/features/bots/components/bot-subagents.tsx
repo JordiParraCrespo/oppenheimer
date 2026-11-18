@@ -5,10 +5,10 @@ import type { BotSubagentRun } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The subagents a `delegate` call ran (`25-bots.md` §4.7), under its line: a
- * line per child with its task, how it ended and how long it took, a child
- * that did not complete in red, each opening to what it answered (or why it
- * failed), then the tools it called and the tokens it spent on one line. They are the bot's
+ * The subagents a `delegate` call ran, under its line: a line per child with
+ * its task, how it ended and how long it took, a child that did not complete
+ * in red, each opening to what it answered (or why it failed), then the
+ * tools it called and the tokens it spent on one line. They are the bot's
  * helpers inside one turn, not bots or sessions: nothing here links away.
  */
 export function BotSubagents({ runs }: { runs: readonly BotSubagentRun[] }) {

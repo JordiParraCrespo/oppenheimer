@@ -121,7 +121,7 @@ export const auth = betterAuth({
   //
   // `session.cookieCache` is deliberately not enabled: a signed cookie cannot
   // be revoked, so a ban, a deletion or "sign out other devices" would wait out
-  // its `maxAge`. See `product/versions/mvp/08-auth.md`.
+  // its `maxAge`.
   secondaryStorage: betterAuthSecondaryStorage,
   trustedOrigins: [frontendUrl],
   // Brute-force protection on the auth surface, on everywhere but under test.

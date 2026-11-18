@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * The sessions GitHub App (`product/versions/mvp/03-control-plane.md`).
+ * The sessions GitHub App.
  *
  * Every value is optional capability config: without them the app boots,
  * `GET /installations` answers an empty list and every GitHub-backed route answers
@@ -15,7 +15,7 @@ import { parseEnv } from './env';
  */
 const schema = z.object({
   appId: z.string().optional(),
-  /** The App's PEM private key. Never in the database, never on a host (F20). */
+  /** The App's PEM private key. Never in the database, never on a host. */
   privateKey: z.string().optional(),
   webhookSecret: z.string().optional(),
   /** The App's OAuth pair, used once per install to prove the caller's claim. */

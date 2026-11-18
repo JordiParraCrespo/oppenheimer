@@ -1,5 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import type { TaskStatus } from '@oppenheimer/shared';
+import type { TaskOrigin, TaskPriority, TaskStatus } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -12,11 +12,11 @@ import {
 } from 'typeorm';
 
 /**
- * A task on Plan's board (`product/versions/mvp/19-plan-tasks-and-goals.md` §1).
+ * A task on Plan's board.
  *
  * `UQ_task_rank` is the board's order and its concurrency guard at once: two moves
  * into the same gap compute the same key, one loses on the constraint, and the move
- * reads its neighbours again (§2). `rank` is `COLLATE "C"` so the database sorts
+ * reads its neighbours again. `rank` is `COLLATE "C"` so the database sorts
  * the keys byte by byte, as the rank policy builds them.
  *
  * The milestone key is one composite foreign key, `(organizationId, milestoneId, projectId)`
@@ -38,6 +38,9 @@ import {
 @Check('CHK_task_due_time_has_date', `"dueTime" IS NULL OR "dueDate" IS NOT NULL`)
 @Check('CHK_task_version', `"version" >= 1`)
 @Check('CHK_task_blocked', `("blockedReason" IS NULL) = ("blockedAt" IS NULL)`)
+@Check('CHK_task_origin', `"origin" IN ('person', 'agent')`)
+@Check('CHK_task_triage', `"origin" = 'agent' OR "triagedAt" IS NOT NULL`)
+@Check('CHK_task_priority', `"priority" IN ('urgent', 'high', 'medium', 'low')`)
 @Index('UQ_task_idempotency_key', ['organizationId', 'idempotencyKey'], {
   unique: true,
   where: '"idempotencyKey" IS NOT NULL',
@@ -79,6 +82,9 @@ export class TaskOrmEntity {
   @Column({ type: 'date', nullable: true })
   focusDate!: string | null;
 
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  priority!: TaskPriority | null;
+
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   completedAt!: Date | null;
 
@@ -99,6 +105,14 @@ export class TaskOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
+
+  /** Who made it: the person, or an agent working for them. */
+  @Column({ type: 'varchar', length: 16, default: 'person' })
+  origin!: TaskOrigin;
+
+  /** When its person took it up; null while an agent's task waits in the Inbox. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  triagedAt!: Date | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

@@ -170,7 +170,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     _checkout: SessionCheckoutEntity,
     _spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
-    // There is no frame for this on the wire yet (`01-protocol.md` lists none),
+    // There is no frame for this on the wire yet,
     // so nothing is sent and the caller is told so rather than handed a delivery
     // that did not happen: the row is ahead of the host until the launch is re-sent.
     return this.withLink(session, () => NOT_SUPPORTED);
@@ -268,8 +268,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
 
 /**
  * The launch frame. A session runs in its checkouts, on its own branch, or in a
- * folder already on the host, with neither (`product/versions/mvp/24-session-places.md`):
- * the schema refuses a frame with both or with none.
+ * folder already on the host, with neither: the schema refuses a frame with
+ * both or with none.
  */
 function createMessage(
   session: WorkSessionEntity,
@@ -291,9 +291,8 @@ function createMessage(
     ...(spec.cloud
       ? { cloud: { sealed: spec.cloud.sealed, expiresAt: spec.cloud.expiresAt.toISOString() } }
       : {}),
-    // The environment the person picked for a Codex cloud session; absent, the
-    // host starts the task in the one linked to the repository. A runner older
-    // than `codex.environments` ignores the field and guesses from the name.
+    // The environment id the person picked for a Codex cloud session; absent,
+    // the host starts the task in Codex's default environment with the repository.
     ...(spec.cloud && agent === 'codex' && session.launch.environment
       ? { codexEnvironment: session.launch.environment }
       : {}),

@@ -13,8 +13,7 @@
 #
 # macOS archives carry the binary inside OppenheimerRunner.app, signed with a
 # Developer ID and notarized, because macOS keeps a permission for a signed
-# bundle's identity and loses it for a bare binary on every update
-# (product/versions/mvp/09-runner-install-and-update.md §2). That needs
+# bundle's identity and loses it for a bare binary on every update. That needs
 # rcodesign (or RCODESIGN=<path>) and:
 #
 #   MACOS_SIGN_P12           the Developer ID Application certificate, .p12
@@ -103,7 +102,9 @@ bundle() {
 	fi
 	"$RCODESIGN" sign --p12-file "$MACOS_SIGN_P12" --p12-password-file "$P12_PASSWORD_FILE" \
 		--code-signature-flags runtime "$app"
-	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --staple "$app"
+	# rcodesign gives up after 600 s, and Apple can hold a team's first
+	# submissions "In Progress" far longer (runner-v0.1.13 timed out twice).
+	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --max-wait-seconds 3600 --staple "$app"
 }
 OUT="$ROOT/dist/runner"
 KEYS_VAR="github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release.PublicKeys"

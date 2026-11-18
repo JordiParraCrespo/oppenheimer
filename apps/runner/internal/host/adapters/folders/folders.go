@@ -1,5 +1,5 @@
 // Package folders is app.Directories on the local file system: what the
-// folder picker reads of a host (24 §4). It names directories and reads the
+// folder picker reads of a host. It names directories and reads the
 // one file git keeps a checkout's branch in; it never names a file and never
 // runs git, so a listing of a directory full of repositories costs one small
 // read each.
