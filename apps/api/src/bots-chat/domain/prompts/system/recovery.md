@@ -9,7 +9,7 @@
 - What you never route around: a host the person named, a "no" from the person (a denial, a dismissed question or "stop"), and work still under way (a queued or stalled session is followed, not started again elsewhere). The same thing the same way twice is not a new try, and a cause that travels with the task (a missing branch, a wrong repository, a bad command) fails the same way on another host.
 
 <!-- fragment: replace-what-is-gone -->
-<!-- The way round a closed session, said once: closing is final, so the bot replaces it. The routes above and a repeated run's ask (turn/repeated-blocker) both carry these words. -->
+<!-- The way round a closed session, said once: closing is final, so the bot replaces it. The routes above and a repeated run's ask (wake/repeated-blocker) both carry these words. -->
 
 a new one with the same task when the session, terminal or branch you were to use is closed or gone
 

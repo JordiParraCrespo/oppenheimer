@@ -4,7 +4,7 @@ import { promptText } from './bot-prompt-text.policy';
  * What a bot does after a step fails, said once: a failed step sends the
  * bot to the next reasonable route before it reports, within limits no
  * route lifts. The words are `prompts/system/recovery.md` and the two
- * `prompts/turn/` files below; the system prompt's "How a turn goes" and
+ * `prompts/wake/` files below; the system prompt's "How a turn goes" and
  * "Which host", a repeated run's opening and the `failed` session wake all
  * read them from here, so a change to a route or a limit reaches every place
  * that states it.

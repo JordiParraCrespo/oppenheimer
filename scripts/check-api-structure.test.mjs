@@ -186,7 +186,7 @@ test('domain/prompts/ nests one level of folders, of prose alone', () => {
   const prompts = {
     ...CONFORMING,
     'widget/domain/prompts/system/rules.md': 'Never guess.',
-    'widget/domain/prompts/turn/failed-session.md': 'Read the session.',
+    'widget/domain/prompts/wake/failed-session.md': 'Read the session.',
     'widget/domain/prompts/prompts.gen.ts': 'export const PROMPT_TEXT = {};',
   };
   assert.deepEqual(check(prompts).outstanding, []);
