@@ -1,4 +1,5 @@
 import type { BotPermission, SessionDecision } from '@oppenheimer/shared';
+import { promptText } from './bot-prompt-text.policy';
 
 /**
  * What a bot may answer on its own when a session it follows is blocked
@@ -16,8 +17,7 @@ import type { BotPermission, SessionDecision } from '@oppenheimer/shared';
  * asks it to (the needs-input wake, `answer_session`). What escalates is
  * `answerNeedsPerson`'s; this only tells the bot.
  */
-export const SESSION_UNBLOCK_RULE =
-  "You may approve its permissions and answer its questions yourself, with care: you are a chef in this kitchen, not a waiter who carries every order back to the person. Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Think each answer through against the task before you send it, and say in a sentence what it asked and why you answered as you did. Whether the person approves first is your permissions' call, not yours: when they ask first, letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) goes to them on a card of its own even past what they allowed before; when they let you act, it is yours, so weigh it with extra care. Either way, call answer_session with the option you recommend.";
+export const SESSION_UNBLOCK_RULE = promptText('tools/sessions.session-unblock-rule');
 
 /**
  * What a permission dialog asks about when it names something that cannot

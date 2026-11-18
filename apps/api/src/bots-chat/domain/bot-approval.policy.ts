@@ -40,12 +40,12 @@ export function grantedLine(subjectLabel: string): string {
 
 /** What the model reads when its call became a card: nothing ran, and its turn should end. */
 export function askedForApproval(summary: string): string {
-  return `Not done yet: this needs the person's approval, so it is now waiting on an approval card in the chat ("${summary}"). Nothing has run. End your turn now: say in one sentence what you asked for and that you will carry on once they answer. Do not try to do it another way meanwhile.`;
+  return promptText('tools/approval.asked-for-approval', { summary });
 }
 
 /** What the model reads when an earlier card still waits: one at a time. */
 export function waitingForApproval(pendingSummary: string): string {
-  return `Not done: an earlier request of yours is still waiting for the person's approval ("${pendingSummary}"), and only one can wait at a time. End your turn now and say you are waiting for their answer.`;
+  return promptText('tools/approval.waiting-for-approval', { pendingSummary });
 }
 
 /** How far a yes reaches; null for a no. */

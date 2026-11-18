@@ -1,4 +1,5 @@
 import { findGuidePage, GUIDE_PAGES, GUIDE_ROUTE, type GuidePage } from '@oppenheimer/shared/guide';
+import { promptText } from './bot-prompt-text.policy';
 
 /** A page's address on the docs site, when the deployment says where the site is. */
 function pageAddress(page: GuidePage, docsUrl: string | null): string | null {
@@ -13,9 +14,11 @@ function pageAddress(page: GuidePage, docsUrl: string | null): string | null {
 export function guideIndexText(docsUrl: string | null): string {
   const lines = GUIDE_PAGES.map((page) => `- \`${page.id}\`: ${page.title}. ${page.description}`);
   const site = docsUrl ? ` It is published at ${docsUrl.replace(/\/+$/, '')}/${GUIDE_ROUTE}.` : '';
-  return `Oppenheimer's guide, ${GUIDE_PAGES.length} pages.${site} Read a page with \`read_oppenheimer_docs\` and its id.
-
-${lines.join('\n')}`;
+  return promptText('tools/guide.guide-index-text', {
+    guidePagesCount: String(GUIDE_PAGES.length),
+    site,
+    lines: lines.join('\n'),
+  });
 }
 
 /**

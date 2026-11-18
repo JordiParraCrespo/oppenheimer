@@ -6,8 +6,9 @@
  * A file is one prompt, or several fragments the code chooses among. A
  * folder, one level deep, says where its words are sent (`system/` for
  * sections of the system prompt, `turn/` for what a turn carries besides
- * its opening, `wake/` for what an event says to the bot), and is part of
- * the id:
+ * its opening, `wake/` for what an event says to the bot, `jobs/` for a
+ * model call that is not a bot's turn, `tools/` for what a tool tells the
+ * model), and is part of the id:
  *
  *   system/rules.md               one prompt, id `system/rules`
  *   system/what-you-can-do.md     with `<!-- fragment: plain-refusal -->`

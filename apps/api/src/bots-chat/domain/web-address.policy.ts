@@ -1,4 +1,5 @@
 import { BlockList, isIP } from 'node:net';
+import { promptText } from './bot-prompt-text.policy';
 
 /**
  * Which addresses a bot's `web_fetch` may reach: public
@@ -78,14 +79,15 @@ function embeddedIpv4(address: string): string | null {
 /** Why a URL is refused before anything is resolved, or null when it may be tried. */
 export function refuseUrl(url: URL): string | null {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return `Only http and https pages can be fetched, not ${url.protocol}`;
+    return promptText('tools/web.refuse-url-only-http-https', { protocol: String(url.protocol) });
   }
-  if (url.username || url.password) return 'A URL with a user name or password is refused.';
+  if (url.username || url.password) return promptText('tools/web.refuse-url-url-user-name');
   const host = url.hostname.replace(/^\[|\]$/g, '');
-  if (isIP(host) && !isPublicAddress(host)) return 'That address is not on the public internet.';
+  if (isIP(host) && !isPublicAddress(host))
+    return promptText('tools/web.refuse-url-address-public-internet');
   const lower = host.toLowerCase();
   if (lower === 'localhost' || lower.endsWith('.localhost') || lower.endsWith('.internal')) {
-    return 'That address is not on the public internet.';
+    return promptText('tools/web.refuse-url-address-public-internet');
   }
   return null;
 }

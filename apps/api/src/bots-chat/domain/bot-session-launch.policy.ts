@@ -6,6 +6,7 @@ import {
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
+import { promptText } from './bot-prompt-text.policy';
 
 /**
  * How a bot's session is launched: the composer's foot row (model, effort,
@@ -121,12 +122,20 @@ export function planBotSessionLaunch(
   let model: CodingAgentModel | null = null;
   if (input.model !== undefined) {
     if (definition.models.length === 0) {
-      return { refusal: `${definition.label} takes no model. Leave model out.` };
+      return {
+        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-takes-model-leave', {
+          label: definition.label,
+        }),
+      };
     }
     model = modelNamed(agent, input.model);
     if (!model) {
       return {
-        refusal: `${definition.label} has no model "${input.model}". Its models: ${modelChoices(agent)}. Ask the person which one if none is what they meant.`,
+        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-has-model-models', {
+          label: definition.label,
+          model: input.model,
+          modelChoices: modelChoices(agent),
+        }),
       };
     }
   }
@@ -134,16 +143,28 @@ export function planBotSessionLaunch(
     const offered = effortFor(agent, model?.id ?? null);
     const which = model?.label ?? `${definition.label}'s default model`;
     if (!offered) {
-      return { refusal: `${which} takes no effort level. Leave effort out.` };
+      return {
+        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-takes-effort-level', {
+          which,
+        }),
+      };
     }
     if (!offered.levels.includes(input.effort)) {
       return {
-        refusal: `${which} has no effort "${input.effort}". Its levels, faster to smarter: ${offered.levels.join(', ')}.`,
+        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-has-effort-levels', {
+          which,
+          effort: input.effort,
+          levels: offered.levels.join(', '),
+        }),
       };
     }
   }
   if (input.permission !== undefined && !definition.launch.permission) {
-    return { refusal: `${definition.label} has no approvals to set. Leave permission out.` };
+    return {
+      refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-has-approvals-set', {
+        label: definition.label,
+      }),
+    };
   }
   return {
     launch: {

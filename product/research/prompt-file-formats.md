@@ -249,7 +249,10 @@ opening (its context, the notes in its history, a slash command); a
 fourth folder, `wake/`, holds what opens a turn an event started (a
 session, a pull request, a task, an approval, another bot's message, a
 routine, a loop, a goal, a failed session, a repeated blocker, answered
-questions).
+questions). `jobs/` came as proposed, and a fifth, `tools/`, holds what a
+tool tells the model (§4.3): the tools' words live in the domain layer's
+`prompts/` like the rest, not beside each factory, so one generator, one
+typed module and one check cover them.
 
 Ids gain the folder (`system/rules`). `check-api-structure` admits one
 level under `prompts/`. **When:** with the next move, so #914 is not

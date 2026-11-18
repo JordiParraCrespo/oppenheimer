@@ -1,4 +1,5 @@
 import type { HistoryMessage } from './bot-history.policy';
+import { promptText } from './bot-prompt-text.policy';
 
 /**
  * What a turn is told of an earlier message's images: a
@@ -25,7 +26,10 @@ export function withEarlierImages(
 /** The sentence that stands for the images the bot showed the person here. */
 function shownNote(names: readonly string[]): string {
   const listed = names.map((name) => `"${name}"`).join(', ');
-  return `[Oppenheimer: here you showed the person ${names.length === 1 ? 'an image' : `${names.length} images`} with show_image: ${listed}.]`;
+  return promptText('turn/images.shown-note', {
+    namesCount: names.length === 1 ? 'an image' : `${names.length} images`,
+    listed,
+  });
 }
 
 /**
@@ -44,7 +48,7 @@ export const EARLIER_IMAGES_HEADROOM_TOKENS = 1_000;
 export function imagesNote(images: readonly { id?: string; name: string }[]): string {
   const count = images.length;
   const [what, them] = count === 1 ? ['an image', 'it'] : [`${count} images`, 'them'];
-  return `[Oppenheimer: this message came with ${what}${idsOf(images)}. Only a turn's own images are sent, so you cannot see ${them} now; if you need to look at ${them} again, ask the person to send ${them} again.]`;
+  return promptText('turn/images.images-note', { what, ids: idsOf(images), them });
 }
 
 /**
@@ -53,7 +57,7 @@ export function imagesNote(images: readonly { id?: string; name: string }[]): st
  */
 export function attachedImagesNote(images: readonly { id: string; name: string }[]): string {
   if (images.length === 0) return '';
-  return `[Oppenheimer: the images with this message${idsOf(images)}; to attach one to mail, give its id as chat_image.]`;
+  return promptText('turn/images.attached-images-note', { ids: idsOf(images) });
 }
 
 /** `: "a.png" (image id …), …`, or nothing when no image has an id. */
