@@ -9,7 +9,7 @@ import {
   TaskSessionChip,
   TodoRow,
 } from '@oppenheimer/design-system-web';
-import { CalendarMinus, ListFilter, Play } from '@oppenheimer/design-system-web/icons';
+import { ListFilter, Play, X } from '@oppenheimer/design-system-web/icons';
 import {
   useMoveTask,
   useSuspenseTaskBoard,
@@ -137,7 +137,7 @@ export function TodoList() {
           title={t('tasks.todo.removeTitle')}
           onClick={() => remove.mutate({ id: task.id, input: { focusDate: null, offTodo: true } })}
         >
-          <CalendarMinus />
+          <X />
         </IconButton>
         <IconButton
           {...dragIgnore}
