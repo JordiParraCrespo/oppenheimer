@@ -549,10 +549,6 @@ describe('BotHostToolsFactory', () => {
         .map(([each]) => each)
         .filter((each) => each instanceof FindSessionTranscriptQuery);
       expect(queries.at(-1)).toMatchObject({ from: 'start', cursor: undefined });
-
-      // Read on from a cursor, earlier turns are a given, not news.
-      const onward = await call('read_session_transcript', { session_id: work.id, cursor: 'n' });
-      expect(onward.content).not.toContain('Earlier turns');
     });
 
     it('marks a partial page and counts what was redacted', async () => {

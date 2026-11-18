@@ -129,22 +129,19 @@ describe('FindSessionTranscriptQueryHandler', () => {
   // The regression: a reader could only ever start at the latest turns, so a
   // long conversation's beginning was out of reach, and a tail page did not
   // say there was anything before it.
-  it('says a page of the latest turns has earlier ones, and reads from the first line on from=start', async () => {
+  it('says a page of the latest turns has earlier ones, and asks the host for the first line on from=start', async () => {
     outcome = { kind: 'page', page: page({ from: 4_096, next: 8_192 }) };
     await expect(read()).resolves.toMatchObject({ hasEarlier: true, restarted: false });
 
-    // The host answers the start the way it answers a cursor that no longer
-    // applies; that `restarted` is the read's own doing, not news.
-    outcome = { kind: 'page', page: page({ from: 0, next: 120, atEnd: false, restarted: true }) };
+    outcome = { kind: 'page', page: page({ from: 0, next: 120, atEnd: false }) };
     const first = await read({ from: 'start', limit: 30 });
     expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
       limit: 30,
-      conversation: 'start',
-      after: 0,
+      from: 'start',
     });
     expect(first).toMatchObject({ hasEarlier: false, restarted: false, atEnd: false });
 
-    // On from its cursor, a conversation that really was replaced still says so.
+    // On from its cursor, a conversation that really was replaced says so.
     outcome = { kind: 'page', page: page({ from: 0, next: 60, restarted: true }) };
     await expect(read({ cursor: first.nextCursor ?? undefined })).resolves.toMatchObject({
       restarted: true,

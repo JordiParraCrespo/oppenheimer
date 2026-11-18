@@ -112,12 +112,7 @@ export function printable(text: string | null): string {
  * one block per entry, then how complete the page is and the command that
  * reads on. The text is the agent's and its tools': printed, never run.
  */
-/** `fromCursor`: a page read on from another, which has earlier turns by definition. */
-export function describeTranscript(
-  id: string,
-  page: SessionTranscriptPage,
-  fromCursor = false,
-): string {
+export function describeTranscript(id: string, page: SessionTranscriptPage): string {
   if (page.status === 'unsupported' || page.status === 'unavailable') {
     const why = page.reason ? REASONS[page.reason] : 'it could not be read';
     const where = page.vendorUrl ? `\nRead it at ${printable(page.vendorUrl)}` : '';
@@ -136,7 +131,7 @@ export function describeTranscript(
     );
   }
   if (page.redactions) notes.push(`${page.redactions} secrets replaced with [redacted].`);
-  if (page.hasEarlier && !fromCursor) {
+  if (page.hasEarlier) {
     notes.push(
       `Earlier turns: opp sessions transcript ${id} --from-start (or --all for every turn)`,
     );

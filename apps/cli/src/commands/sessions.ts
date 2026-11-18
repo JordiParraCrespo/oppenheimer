@@ -150,7 +150,7 @@ function transcriptCommand(): Command {
         limit: options.limit,
         from: options.fromStart ? 'start' : undefined,
       });
-      render(context.json, page, () => describeTranscript(id, page, options.cursor !== undefined));
+      render(context.json, page, () => describeTranscript(id, page));
     });
 }
 

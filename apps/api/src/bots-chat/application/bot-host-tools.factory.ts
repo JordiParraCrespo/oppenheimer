@@ -388,12 +388,7 @@ export class BotHostToolsFactory implements BotToolArea {
             }),
           ),
         ]);
-        const content = describeTranscriptPage(
-          session,
-          page,
-          context.timeZone,
-          input.cursor !== undefined,
-        );
+        const content = describeTranscriptPage(session, page, context.timeZone);
         context.budget.spend(SESSION_READ_BUDGET_KEY, sessionReadCost(content));
         return content;
       },

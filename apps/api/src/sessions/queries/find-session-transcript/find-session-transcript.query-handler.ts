@@ -2,7 +2,6 @@ import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionTranscriptFrom, SessionTranscriptPage } from '@oppenheimer/shared';
-import { TRANSCRIPT_START_CONVERSATION } from '@oppenheimer/shared/protocol';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type {
   HostTranscriptRequest,
@@ -65,9 +64,7 @@ export class FindSessionTranscriptQueryHandler
           nextCursor: page.conversation
             ? encodeTranscriptCursor({ conversation: page.conversation, after: page.next })
             : null,
-          // A read from the start names no conversation the host has, so the
-          // host answers it as a cursor that no longer applied; it is not one.
-          restarted: (page.restarted ?? false) && !readsFromStart(request),
+          restarted: page.restarted ?? false,
         });
       }
       case 'host_offline':
@@ -92,9 +89,7 @@ function requestOf(
   from: SessionTranscriptFrom,
 ): HostTranscriptRequest {
   if (cursor === undefined) {
-    return from === 'start'
-      ? { limit, conversation: TRANSCRIPT_START_CONVERSATION, after: 0 }
-      : { limit };
+    return from === 'start' ? { limit, from } : { limit };
   }
   const decoded = decodeTranscriptCursor(cursor);
   if (!decoded) {
@@ -104,8 +99,4 @@ function requestOf(
     });
   }
   return { limit, ...decoded };
-}
-
-function readsFromStart(request: HostTranscriptRequest): boolean {
-  return 'conversation' in request && request.conversation === TRANSCRIPT_START_CONVERSATION;
 }

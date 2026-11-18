@@ -33,15 +33,18 @@ export const TRANSCRIPT_PAGE_MAX_BYTES = 256 * 1024;
  * where its file is, never the path; a fresh schema per use, like `forwardedPort`. A new conversation in the same session
  * (the agent cleared it, or the person started another) is a new name.
  */
-/** The conversation a read names to start at the first line of the current one. */
-export const TRANSCRIPT_START_CONVERSATION = 'start';
-
 const conversationId = () =>
   z
     .string()
     .min(1)
     .max(64)
     .regex(/^[A-Za-z0-9_-]+$/);
+
+/**
+ * Interim: the conversation a read names to start at the first line of the
+ * current one, until the wire has a field for it (see `transcriptReadSchema`).
+ */
+export const TRANSCRIPT_START_CONVERSATION = 'start';
 
 /**
  * Read a page of the session's conversation. Sent only to a runner whose
@@ -57,6 +60,15 @@ const conversationId = () =>
  * a line starts in that conversation, or a conversation that is no longer
  * the session's, is answered from the start of the current one with
  * `restarted`, so a stale cursor never reads a line from its middle.
+ *
+ * Reading from the start has no field of its own yet. Until it does, the
+ * control plane asks for it by naming `TRANSCRIPT_START_CONVERSATION`, which
+ * no conversation is called (a name is a hex digest): every runner that
+ * answers `transcript.read` reads the current conversation from its first
+ * line for it, with `restarted`, and the control plane drops that flag
+ * (`relay-session-transcript.adapter.ts`, the one place that does both). A
+ * real field retires the sentinel and the drop together, gated on a new
+ * capability, since the runners already out read only this.
  */
 export const transcriptReadSchema = z.object({
   type: z.literal('transcript.read'),

@@ -123,8 +123,9 @@ func TestACursorThatNoLongerAppliesStartsOver(t *testing.T) {
 		req  app.TranscriptPageRequest
 	}{
 		{name: "another conversation", req: app.TranscriptPageRequest{Conversation: "0123456789abcdef", After: offsetOf(lines, 4)}},
-		// The control plane's read from the start (TRANSCRIPT_START_CONVERSATION):
-		// no conversation is called that, so it is the current one from line 0.
+		// The control plane's interim read from the start
+		// (TRANSCRIPT_START_CONVERSATION): no conversation is called that, so
+		// it is the current one from line 0.
 		{name: "the control plane's start", req: app.TranscriptPageRequest{Conversation: "start"}},
 		{name: "the middle of a line", req: app.TranscriptPageRequest{Conversation: name, After: offsetOf(lines, 4) + 3}},
 		{name: "past the end", req: app.TranscriptPageRequest{Conversation: name, After: offsetOf(lines, len(lines)) + 10}},
