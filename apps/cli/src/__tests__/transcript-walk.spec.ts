@@ -78,7 +78,9 @@ describe('readWholeTranscript', () => {
     expect(whole.restarted).toBe(true);
   });
 
-  it('stops at a page it could not read, keeping what it had and saying why', async () => {
+  // The regression: a host that went offline mid-walk turned the whole
+  // answer `unavailable`, which prints no entries, so every turn read was lost.
+  it('stops at a page it could not read, keeping what it had printable and saying why', async () => {
     let calls = 0;
     const read: TranscriptPageReader = async () => {
       calls += 1;
@@ -86,9 +88,10 @@ describe('readWholeTranscript', () => {
         ? page({ entries: [entry('e0')], nextCursor: 'a' })
         : page({ status: 'unavailable', reason: 'host_offline' });
     };
-    const { whole } = await readWholeTranscript(read, 5, 0);
-    expect(whole).toMatchObject({ status: 'unavailable', reason: 'host_offline', atEnd: false });
+    const { whole, stoppedBy } = await readWholeTranscript(read, 5, 0);
+    expect(whole).toMatchObject({ status: 'complete', nextCursor: 'a', atEnd: false });
     expect(whole.entries.map((each) => each.id)).toEqual(['e0']);
+    expect(String(stoppedBy)).toContain('host offline');
   });
 
   // The regression: a walk past the endpoint's rate limit threw on the read
