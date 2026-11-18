@@ -1761,3 +1761,10 @@ earlier note:
   the owner asked to remove a task from TODO, and chose that removing one
   keeps it off every day, its due date included, until it gets a TODO day
   again or its due date changes (`task."offTodo"`).
+- `versions/mvp/25-bots.md` §2 had a summary job delay itself until the
+  reset on a refusal for "rate or quota", but a spent credit or a refused
+  key carries no reset, so it went to the queue's eight retries and each
+  job's last one was reported as an error (Sentry OPPENHEIMER-API-7,
+  14–17 Nov). On 2026-11-17 a job the provider refused for the account
+  (`usage_limit`, `credential`) ends without a retry or a report; the next
+  turn past the threshold folds again once the account is sorted.

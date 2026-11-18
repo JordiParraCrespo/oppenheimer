@@ -101,6 +101,11 @@ before the model reads it.
   (`.agents/rules/integrations.md`): the caller must not call the provider
   again with that key before `resetAt`, and a queued job is moved to delayed
   until then rather than retried on its own schedule.
+- Any other failure `complete` throws as `BotCompletionError`, with the
+  turn's reason as its message and `failure`, the kind the engine named
+  (null when it named none, as on a cancel), so a caller can tell the
+  provider refusing the account (`usage_limit`, `credential`), which no
+  retry fixes, from a fault worth reporting.
 - `maxSteps` caps model round trips when given: Claude Code's `maxTurns`,
   the Agents SDK's `maxTurns`; reaching it ends with `max_steps`. Absent,
   a turn has no limit (`25-bots.md` §2, 2026-11-09).
