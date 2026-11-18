@@ -303,6 +303,9 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		// A session whose agent serves its conversation (OpenCode) keeps the
 		// one its own process works in, which its chat shows.
 		a.Sessions.FindServedConversations(ctx)
+		// A Claude Code session keeps the conversation its agent says it is
+		// in, which `/clear` or `/resume` moves on from the one it launched.
+		a.Sessions.FindReportedConversations()
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()
