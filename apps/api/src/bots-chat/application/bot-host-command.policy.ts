@@ -41,7 +41,7 @@ export function describeHostCommand(outcome: HostExecOutcome, host: string): str
     case 'ran': {
       const { run } = outcome;
       const ended = run.timedOut
-        ? promptText('tools/host-command.describe-host-command-stopped-timeout-before')
+        ? promptText('tools/host-command.stopped-at-timeout')
         : run.exitCode === null
           ? 'Ended by a signal.'
           : `Exit code ${run.exitCode}.`;
@@ -51,14 +51,14 @@ export function describeHostCommand(outcome: HostExecOutcome, host: string): str
       return lines.join('\n\n');
     }
     case 'host_offline':
-      return promptText('tools/host-command.describe-host-command-offline-nothing-ran', { host });
+      return promptText('tools/host-command.host-offline', { host });
     case 'not_supported':
       return promptText('tools/host-command.describe-host-command-runner-too-old', { host });
     case 'timed_out':
       return promptText('tools/host-command.describe-host-command-did-answer-time', { host });
     case 'failed': {
       const meaning = REFUSALS[outcome.code];
-      return promptText('tools/host-command.describe-host-command-refused-nothing-ran', {
+      return promptText('tools/host-command.host-refused', {
         host,
         code: outcome.code,
         meaning: meaning ? `: ${meaning}` : '',

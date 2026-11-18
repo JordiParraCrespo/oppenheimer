@@ -177,13 +177,11 @@ export class BotProjectToolsFactory implements BotToolArea {
       normalize: async (input, context) => {
         const project = await this.project(context, input.project_id);
         if (project.isUnassigned) {
-          throw new BotToolRefusal(
-            promptText('tools/projects.archive-project-normalize-unassigned-project-where'),
-          );
+          throw new BotToolRefusal(promptText('tools/projects.archive-unassigned'));
         }
         if (project.isArchived) {
           throw new BotToolRefusal(
-            promptText('tools/projects.archive-project-normalize-project-already-archived', {
+            promptText('tools/projects.archive-already-archived', {
               name: project.name,
             }),
           );
@@ -194,7 +192,7 @@ export class BotProjectToolsFactory implements BotToolArea {
             (session) => `${session.id} "${session.name}" (${session.state})`,
           );
           throw new BotToolRefusal(
-            promptText('tools/projects.archive-project-normalize-project-still-has', {
+            promptText('tools/projects.archive-open-sessions', {
               name: project.name,
               listed: listed.join(', '),
             }),
@@ -232,7 +230,7 @@ export class BotProjectToolsFactory implements BotToolArea {
           RestoreProjectResult
         >(new RestoreProjectCommand({ scope: context.owner, projectId: input.project_id }));
         if (!restored) {
-          return promptText('tools/projects.restore-project-project-archived-nothing', {
+          return promptText('tools/projects.restore-not-archived', {
             id: project.id,
             name: project.name,
           });

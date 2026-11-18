@@ -44,11 +44,11 @@ It was stopped before it answered.
 
 It ended without writing an answer.
 
-<!-- fragment: resolve-provider-refusal-workspace-has-model -->
+<!-- fragment: no-provider-key -->
 
 The workspace has no model provider key, so no new bot could answer. Ask the person to add one in Settings → Model providers.
 
-<!-- fragment: resolve-provider-refusal-workspace-has-key -->
+<!-- fragment: no-key-for-provider -->
 
 The workspace has no {{label}} key, so a bot on {{label}} could not answer. Providers it can use: {{usable}}. Pick one of those, or ask the person to add a {{label}} key in Settings → Model providers.
 

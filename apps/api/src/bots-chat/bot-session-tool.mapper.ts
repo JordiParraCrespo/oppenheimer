@@ -61,12 +61,12 @@ export function planSession(
   const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
-      refusal: promptText('tools/sessions.plan-session-refusal-host-given-neither'),
+      refusal: promptText('tools/sessions.launch-no-host'),
     };
   }
   if (input.folder && input.base_branch) {
     return {
-      refusal: promptText('tools/sessions.plan-session-refusal-folder-session-runs'),
+      refusal: promptText('tools/sessions.launch-folder-takes-no-branch'),
     };
   }
   const picked = input.folder ? null : pickRepository(project as ProjectEntity, input.repository);
@@ -213,11 +213,11 @@ export function pickRepository(
     const names = repositories.map((repo) => repo.repositoryFullName).join(', ') || 'none';
     return {
       reason: name
-        ? promptText('tools/sessions.pick-repository-reason-project-has-repository', {
+        ? promptText('tools/sessions.project-lacks-repository', {
             name,
             names,
           })
-        : promptText('tools/sessions.pick-repository-reason-project-has-repository-2'),
+        : promptText('tools/sessions.project-has-no-repository'),
     };
   }
   return {
@@ -357,12 +357,12 @@ export function decisionAnswerSummary(
   if (!decision || decision.id !== input.decision_id) {
     return {
       refusal: decision
-        ? promptText('tools/sessions.decision-answer-summary-refusal-session-now-waits', {
+        ? promptText('tools/sessions.decision-changed', {
             id: session.id,
             id2: decision.id,
             decisionId: input.decision_id,
           })
-        : promptText('tools/sessions.decision-answer-summary-refusal-session-waits-decision', {
+        : promptText('tools/sessions.decision-none', {
             id: session.id,
           }),
     };
@@ -371,10 +371,9 @@ export function decisionAnswerSummary(
     const option = input.option === undefined ? undefined : decision.options[input.option];
     if (!option) {
       return {
-        refusal: promptText(
-          'tools/sessions.decision-answer-summary-refusal-permission-dialog-takes',
-          { optionsCount: String(decision.options.length - 1) },
-        ),
+        refusal: promptText('tools/sessions.decision-needs-option', {
+          optionsCount: String(decision.options.length - 1),
+        }),
       };
     }
     return { line: `Answer "${session.name}"'s dialog "${clip(decision.title)}": ${option.label}` };
@@ -382,7 +381,7 @@ export function decisionAnswerSummary(
   const answers = input.answers;
   if (!answers || answers.length !== decision.questions.length) {
     return {
-      refusal: promptText('tools/sessions.decision-answer-summary-refusal-decision-has-question', {
+      refusal: promptText('tools/sessions.decision-needs-answers', {
         questionsCount: String(decision.questions.length),
       }),
     };

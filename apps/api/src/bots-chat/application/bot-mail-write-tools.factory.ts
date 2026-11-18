@@ -289,7 +289,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
         await this.commandBus.execute(
           new CancelScheduledMailCommand({ scope: context.owner, sendId: input.id }),
         );
-        return promptText('tools/mail-write.cancel-scheduled-mail-scheduled-send-cancelled', {
+        return promptText('tools/mail-write.cancel-scheduled-mail-done', {
           id: input.id,
         });
       },

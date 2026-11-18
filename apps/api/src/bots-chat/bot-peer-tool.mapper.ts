@@ -120,12 +120,12 @@ export function resolveProvider(
   const label = BOT_PROVIDER_CATALOG[provider].label;
   if (keyed.length === 0) {
     return {
-      refusal: promptText('tools/peer-messages.resolve-provider-refusal-workspace-has-model'),
+      refusal: promptText('tools/peer-messages.no-provider-key'),
     };
   }
   const usable = keyed.map((id) => `${id} (${BOT_PROVIDER_CATALOG[id].label})`).join(', ');
   return {
-    refusal: promptText('tools/peer-messages.resolve-provider-refusal-workspace-has-key', {
+    refusal: promptText('tools/peer-messages.no-key-for-provider', {
       label,
       usable,
     }),

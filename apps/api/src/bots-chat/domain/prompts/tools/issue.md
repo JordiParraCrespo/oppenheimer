@@ -41,7 +41,7 @@ Opens a GitHub issue in one of the workspace's repositories, in the person's nam
 
 Posts a comment on a GitHub issue's conversation in the person's name. For a pull request use comment_on_pull_request.
 
-<!-- fragment: repository-name-installation-covers-repository -->
+<!-- fragment: installation-lacks-repository -->
 
 Installation {{installationId}} covers no repository {{githubRepoId}}. Use list_repositories for the ids.
 

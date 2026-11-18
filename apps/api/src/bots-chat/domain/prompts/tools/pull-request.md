@@ -48,7 +48,7 @@ What it rests on: a line of the log, a file and line, a run you compared.
 
 Records what the failing checks on a pull request came to, one finding per check you looked into: why it failed, whether this change caused it, whether it is a flake, what to do, how sure you are, and the evidence. It is kept on the pull request's head and shown with its checks, so the person reads a verdict rather than a chat; a second record of a check on the same commit replaces the first. Read the failing checks with get_pull_request first, and look at a check's log before you judge it. At most {{ciFindingsPerRecordMax}} checks per call. It writes nothing to GitHub.
 
-<!-- fragment: record-ci-findings-recorded-finding-person -->
+<!-- fragment: record-ci-findings-done -->
 
 Recorded {{findingsCount}} finding{{suffix}} on #{{number}} at {{headSha}}: {{checks}}. The person sees them with the pull request's checks; a push leaves them on the commit before.
 
@@ -72,11 +72,11 @@ With path: RIGHT is the new file.
 
 A line comment needs both path and line; leave both out to comment on the conversation.
 
-<!-- fragment: comment-on-pull-request-commented-pull-request -->
+<!-- fragment: comment-on-line-done -->
 
 Commented on {{path}}:{{line}} of pull request #{{number}}.
 
-<!-- fragment: comment-on-pull-request-commented-pull-request-2 -->
+<!-- fragment: comment-done -->
 
 Commented on pull request #{{number}}: {{htmlUrl}}
 
@@ -92,7 +92,7 @@ approve, request_changes, or comment (neither).
 
 Requesting changes or commenting needs a body or a line comment.
 
-<!-- fragment: review-pull-request-submitted-review-pull -->
+<!-- fragment: review-submitted -->
 
 Submitted the review ({{verdict}}) on pull request #{{number}}.
 
@@ -108,11 +108,11 @@ How to merge; squash unless the repository or the person wants another.
 
 The full head commit get_pull_request showed; the merge is refused if the head has moved since. The current head when omitted.
 
-<!-- fragment: merge-pull-request-normalize-pull-request-there -->
+<!-- fragment: merge-nothing-to-merge -->
 
 Pull request #{{number}} is {{state}}; there is nothing to merge.
 
-<!-- fragment: merge-pull-request-normalize-new-commits-were -->
+<!-- fragment: merge-new-commits -->
 
 New commits were pushed to #{{number}} since you read it (head is now {{headSha}}). Read it again with get_pull_request before merging.
 
@@ -132,11 +132,11 @@ Be woken when the review needs input, ends or fails (default true).
 
 You have no home host; ask the person which host (list_hosts) to review on.
 
-<!-- fragment: start-review-session-host-offline-session -->
+<!-- fragment: review-session-host-offline -->
 
 The host is offline: the session is queued and starts when it comes back.
 
-<!-- fragment: start-review-session-watching-read-later -->
+<!-- fragment: review-session-not-watched -->
 
 You are not watching it; read it later with get_session.
 

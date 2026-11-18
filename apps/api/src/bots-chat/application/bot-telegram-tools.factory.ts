@@ -264,7 +264,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
             botId: context.botId,
           }),
         );
-        return promptText('tools/telegram.send-telegram-message-sent-telegram-message', {
+        return promptText('tools/telegram.send-telegram-message-done', {
           describeTelegramTarget: describeTelegramTarget(planned),
           accountLabel: planned.accountLabel,
           id,

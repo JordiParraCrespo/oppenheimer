@@ -32,11 +32,11 @@ Refused: {{name}} ({{mediaType}}) is not an image the host kept a preview of, so
 
 Not shown: the session's host is offline, and {{name}} is only on it. Try again when it is back.
 
-<!-- fragment: refusal-of-shown-sessions-host-2 -->
+<!-- fragment: not-shown-runner-too-old -->
 
 Not shown: the session's host runs a runner too old to send a shared file's preview: {{runnerTooOldAdvice}}.
 
-<!-- fragment: refusal-of-shown-sessions-host-3 -->
+<!-- fragment: not-shown-timed-out -->
 
 Not shown: the session's host did not send {{name}} in time. Try again.
 

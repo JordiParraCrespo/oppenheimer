@@ -84,7 +84,7 @@ Cancels a scheduled send before it goes; it is never sent. Its id is in schedule
 
 The scheduled send (from schedule_mail or list_sent_mail).
 
-<!-- fragment: cancel-scheduled-mail-scheduled-send-cancelled -->
+<!-- fragment: cancel-scheduled-mail-done -->
 
 Scheduled send {{id}} cancelled; it will not go.
 

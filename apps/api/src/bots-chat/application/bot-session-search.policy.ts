@@ -45,7 +45,7 @@ export interface SessionSearchAnswer {
 export function describeSessionSearch(answer: SessionSearchAnswer): string {
   const { query, matches } = answer;
   if (matches.length === 0) {
-    return promptText('tools/sessions.describe-session-search-sessions-name-log', { query });
+    return promptText('tools/sessions.search-none', { query });
   }
   const words = searchWords(query);
   const lines = matches.flatMap((match) => [
@@ -56,7 +56,7 @@ export function describeSessionSearch(answer: SessionSearchAnswer): string {
     ),
   ]);
   return [
-    promptText('tools/sessions.describe-session-search-sessions-matching-best', {
+    promptText('tools/sessions.search-header', {
       query,
       matchesCount: String(matches.length),
     }),

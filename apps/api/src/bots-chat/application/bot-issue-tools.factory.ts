@@ -274,7 +274,7 @@ export class BotIssueToolsFactory implements BotToolArea {
     const found = repositories.find((candidate) => candidate.githubRepoId === input.github_repo_id);
     if (!found) {
       throw new BotToolRefusal(
-        promptText('tools/issue.repository-name-installation-covers-repository', {
+        promptText('tools/issue.installation-lacks-repository', {
           installationId: input.installation_id,
           githubRepoId: String(input.github_repo_id),
         }),

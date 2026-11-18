@@ -12,11 +12,11 @@ Lists the workspace's automations (a saved task a coding agent runs on a schedul
 
 Only automations of this project (an id from list_projects).
 
-<!-- fragment: list-automations-project-has-automations -->
+<!-- fragment: list-none-in-project -->
 
 That project has no automations.
 
-<!-- fragment: list-automations-workspace-has-automations -->
+<!-- fragment: list-none-in-workspace -->
 
 The workspace has no automations. The person makes one from Automations in the console.
 

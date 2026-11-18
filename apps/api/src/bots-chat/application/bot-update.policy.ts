@@ -70,7 +70,7 @@ export function planBotUpdate(
     if ('refused' in level) {
       const ceiling = BOT_PERMISSION_LABELS[level.ceiling];
       return {
-        refusal: promptText('tools/bots.plan-bot-update-refusal-run-under-cannot', { ceiling }),
+        refusal: promptText('tools/bots.update-looser-than-yours', { ceiling }),
       };
     }
     permission = level.permission;

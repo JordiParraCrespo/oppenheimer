@@ -31,12 +31,12 @@ export function describeTelegramAccount(
 ): string {
   const handle = account.username ? `@${account.username}` : 'not checked yet';
   const state = !hostOnline
-    ? promptText('tools/telegram.describe-telegram-account-host-offline-so')
+    ? promptText('tools/telegram.account-host-offline')
     : account.isConnected
       ? 'connected'
       : account.status === 'connecting'
         ? 'connecting'
-        : promptText('tools/telegram.describe-telegram-account-person-connects-again', {
+        : promptText('tools/telegram.account-needs-reconnect', {
             status: account.status,
           });
   return `"${account.label}" ${handle} (account id ${account.id}, ${state})`;

@@ -262,7 +262,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
             botId: context.botId,
           }),
         );
-        return promptText('tools/whatsapp.send-whatsapp-message-sent-whatsapp-from', {
+        return promptText('tools/whatsapp.send-whatsapp-message-done', {
           describeWhatsappTarget: describeWhatsappTarget(planned),
           accountLabel: planned.accountLabel,
           id,
