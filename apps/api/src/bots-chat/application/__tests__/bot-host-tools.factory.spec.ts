@@ -426,6 +426,7 @@ describe('BotHostToolsFactory', () => {
       entries: [],
       nextCursor: null,
       atEnd: true,
+      hasEarlier: false,
       restarted: false,
       dropped: 0,
       redactions: 0,
@@ -531,6 +532,27 @@ describe('BotHostToolsFactory', () => {
       expect(result.content).toContain("its vendor's cloud");
       expect(result.content).toContain('https://claude.ai/code/session_01Abc');
       expect(result.content).not.toContain('nothing new');
+    });
+
+    // The regression: a bot could only read a session's latest turns and on,
+    // and was never told its conversation started before them.
+    it('tells a read of the latest turns that earlier ones exist, and reads from the start on from "start"', async () => {
+      const { queryBus, call } = setup(answer(page({ hasEarlier: true, nextCursor: 'n' })));
+
+      const latest = await call('read_session_transcript', { session_id: work.id });
+      expect(latest.content).toContain(
+        'with from "start" reads the conversation from its first turn',
+      );
+
+      await call('read_session_transcript', { session_id: work.id, from: 'start' });
+      const queries = queryBus.execute.mock.calls
+        .map(([each]) => each)
+        .filter((each) => each instanceof FindSessionTranscriptQuery);
+      expect(queries.at(-1)).toMatchObject({ from: 'start', cursor: undefined });
+
+      // Read on from a cursor, earlier turns are a given, not news.
+      const onward = await call('read_session_transcript', { session_id: work.id, cursor: 'n' });
+      expect(onward.content).not.toContain('Earlier turns');
     });
 
     it('marks a partial page and counts what was redacted', async () => {

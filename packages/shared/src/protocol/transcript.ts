@@ -33,6 +33,9 @@ export const TRANSCRIPT_PAGE_MAX_BYTES = 256 * 1024;
  * where its file is, never the path; a fresh schema per use, like `forwardedPort`. A new conversation in the same session
  * (the agent cleared it, or the person started another) is a new name.
  */
+/** The conversation a read names to start at the first line of the current one. */
+export const TRANSCRIPT_START_CONVERSATION = 'start';
+
 const conversationId = () =>
   z
     .string()

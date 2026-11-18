@@ -44,11 +44,17 @@ function describeEntry(entry: SessionTranscriptEntry, timeZone: string): string 
   return `${at}${entry.role}: ${entry.parts.map(describePart).join('\n  ')}`;
 }
 
-/** The tool's answer for one page of a session's conversation. */
+/**
+ * The tool's answer for one page of a session's conversation. `fromCursor`
+ * is a read on from an earlier page, which has earlier entries by
+ * definition, so only a read of the latest turns is told that more came
+ * before it.
+ */
 export function describeTranscriptPage(
   session: { id: string; name: string },
   page: SessionTranscriptPage,
   timeZone: string,
+  fromCursor = false,
 ): string {
   const head = `Session ${session.id} "${session.name.replace(/[\r\n"]+/g, ' ')}"`;
   if (page.status === 'unsupported' || page.status === 'unavailable') {
@@ -74,6 +80,11 @@ export function describeTranscriptPage(
         'session_transcript',
         page.entries.map((entry) => describeEntry(entry, timeZone)).join('\n'),
       ),
+    );
+  }
+  if (page.hasEarlier && !fromCursor) {
+    lines.push(
+      'Earlier turns came before these: read_session_transcript with from "start" reads the conversation from its first turn.',
     );
   }
   if (page.status === 'partial') {

@@ -82,13 +82,14 @@ describe('FindSessionTranscriptQueryHandler', () => {
     );
   });
 
-  const read = (props: { cursor?: string; limit?: number } = {}) =>
+  const read = (props: { cursor?: string; limit?: number; from?: 'latest' | 'start' } = {}) =>
     handler.execute(
       new FindSessionTranscriptQuery({
         scope: SCOPE,
         sessionId: found?.id ?? '00000000-0000-4000-8000-000000000000',
         limit: props.limit ?? 50,
         cursor: props.cursor,
+        from: props.from,
       }),
     );
 
@@ -120,6 +121,36 @@ describe('FindSessionTranscriptQueryHandler', () => {
     await read({ cursor: first.nextCursor ?? undefined, limit: 20 });
     expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
       limit: 20,
+      conversation: 'c4b1e09a7f2d3e65',
+      after: 120,
+    });
+  });
+
+  // The regression: a reader could only ever start at the latest turns, so a
+  // long conversation's beginning was out of reach, and a tail page did not
+  // say there was anything before it.
+  it('says a page of the latest turns has earlier ones, and reads from the first line on from=start', async () => {
+    outcome = { kind: 'page', page: page({ from: 4_096, next: 8_192 }) };
+    await expect(read()).resolves.toMatchObject({ hasEarlier: true, restarted: false });
+
+    // The host answers the start the way it answers a cursor that no longer
+    // applies; that `restarted` is the read's own doing, not news.
+    outcome = { kind: 'page', page: page({ from: 0, next: 120, atEnd: false, restarted: true }) };
+    const first = await read({ from: 'start', limit: 30 });
+    expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
+      limit: 30,
+      conversation: 'start',
+      after: 0,
+    });
+    expect(first).toMatchObject({ hasEarlier: false, restarted: false, atEnd: false });
+
+    // On from its cursor, a conversation that really was replaced still says so.
+    outcome = { kind: 'page', page: page({ from: 0, next: 60, restarted: true }) };
+    await expect(read({ cursor: first.nextCursor ?? undefined })).resolves.toMatchObject({
+      restarted: true,
+    });
+    expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
+      limit: 50,
       conversation: 'c4b1e09a7f2d3e65',
       after: 120,
     });

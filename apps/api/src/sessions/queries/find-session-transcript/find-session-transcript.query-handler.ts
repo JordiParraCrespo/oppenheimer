@@ -1,7 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { SessionTranscriptPage } from '@oppenheimer/shared';
+import type { SessionTranscriptFrom, SessionTranscriptPage } from '@oppenheimer/shared';
+import { TRANSCRIPT_START_CONVERSATION } from '@oppenheimer/shared/protocol';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type {
   HostTranscriptRequest,
@@ -46,11 +47,8 @@ export class FindSessionTranscriptQueryHandler
         vendorUrl: session.vendorUrl,
       });
     }
-    const outcome = await this.transcripts.read(
-      session.hostId,
-      session.id,
-      requestOf(query.cursor, query.limit),
-    );
+    const request = requestOf(query.cursor, query.limit, query.from);
+    const outcome = await this.transcripts.read(session.hostId, session.id, request);
     switch (outcome.kind) {
       case 'page': {
         const { page } = outcome;
@@ -67,6 +65,9 @@ export class FindSessionTranscriptQueryHandler
           nextCursor: page.conversation
             ? encodeTranscriptCursor({ conversation: page.conversation, after: page.next })
             : null,
+          // A read from the start names no conversation the host has, so the
+          // host answers it as a cursor that no longer applied; it is not one.
+          restarted: (page.restarted ?? false) && !readsFromStart(request),
         });
       }
       case 'host_offline':
@@ -85,13 +86,26 @@ export class FindSessionTranscriptQueryHandler
 }
 
 /** The host's request for a cursor, or the refusal of one this API did not mint. */
-function requestOf(cursor: string | undefined, limit: number): HostTranscriptRequest {
-  if (cursor === undefined) return { limit };
+function requestOf(
+  cursor: string | undefined,
+  limit: number,
+  from: SessionTranscriptFrom,
+): HostTranscriptRequest {
+  if (cursor === undefined) {
+    return from === 'start'
+      ? { limit, conversation: TRANSCRIPT_START_CONVERSATION, after: 0 }
+      : { limit };
+  }
   const decoded = decodeTranscriptCursor(cursor);
   if (!decoded) {
     throw new AppError(SessionErrors.TRANSCRIPT_CURSOR_INVALID, {
-      detail: 'Read from the latest turns (no cursor) and continue from the nextCursor it gives.',
+      detail:
+        'Read without a cursor (from=start or from=latest) and continue from the nextCursor it gives.',
     });
   }
   return { limit, ...decoded };
+}
+
+function readsFromStart(request: HostTranscriptRequest): boolean {
+  return 'conversation' in request && request.conversation === TRANSCRIPT_START_CONVERSATION;
 }
