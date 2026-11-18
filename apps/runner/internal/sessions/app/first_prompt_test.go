@@ -45,7 +45,7 @@ func (t *typedTranscripts) Teleported(domain.Agent, string, time.Time) string { 
 
 func (t *typedTranscripts) ServedConversation(context.Context, domain.Session) string { return "" }
 
-func (t *typedTranscripts) ReportedConversation(domain.Session) string { return "" }
+func (t *typedTranscripts) CurrentConversation(domain.Session) string { return "" }
 
 func (t *typedTranscripts) typeInto(text string) {
 	t.mu.Lock()

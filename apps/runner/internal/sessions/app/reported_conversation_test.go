@@ -20,7 +20,7 @@ type reportedTranscripts struct {
 	now map[string]string
 }
 
-func (t *reportedTranscripts) ReportedConversation(session domain.Session) string {
+func (t *reportedTranscripts) CurrentConversation(session domain.Session) string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.now[session.ID]

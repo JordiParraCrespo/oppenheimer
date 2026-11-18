@@ -28,7 +28,7 @@ const readLimit = 32 << 20
 type claudeReader struct {
 	projects string
 	// statusDir is where the runner's status line keeps the conversation
-	// each session's agent is in now (ReportedConversation); empty reads
+	// each session's agent is in now (conversation); empty reads
 	// each session's launch conversation only.
 	statusDir string
 }
@@ -261,25 +261,28 @@ func classifiedText(text string) string {
 }
 
 // finder implements chatSource: the file of the conversation the session is
-// in now, by its name, asked at each check, so the chat moves with the
-// agent when it opens another (claudeConversation).
+// in now (conversation), asked at each check, so the chat moves with the
+// agent when it opens another.
 func (c claudeReader) finder(session domain.Session) (func() string, bool) {
 	if !conversationPattern.MatchString(session.Launch.Conversation) {
 		return nil, false
 	}
-	return func() string { return c.path(claudeConversation(c.statusDir, session)) }, true
+	return func() string { return c.path(c.conversation(session)) }, true
 }
 
-// claudeConversation is the conversation a Claude Code session is in now:
-// the one its agent last reported (ReportedConversation), ahead of the one
-// the session last kept, which lags it until the poll loop adopts the
-// report (app.Service.FindReportedConversations). A session still looking
-// for its teleported conversation has none.
-func claudeConversation(statusDir string, session domain.Session) string {
+// conversation is the one rule for which conversation a Claude Code session
+// is in now, read by its chat, its status and the session itself
+// (Reader.CurrentConversation): the one its window-0 agent last reported
+// (ReportedConversation), once Claude Code has written its transcript, and
+// otherwise the one the session holds. A conversation `/clear` just opened
+// has no transcript until the next message, and `claude --resume` refuses
+// an id with none, so until then the session stays where it was. A session
+// still looking for its teleported conversation has none.
+func (c claudeReader) conversation(session domain.Session) string {
 	if session.Launch.Conversation == "" {
 		return ""
 	}
-	if reported := ReportedConversation(statusDir, session.ID); reported != "" {
+	if reported := ReportedConversation(c.statusDir, session.ID); reported != "" && c.path(reported) != "" {
 		return reported
 	}
 	return session.Launch.Conversation

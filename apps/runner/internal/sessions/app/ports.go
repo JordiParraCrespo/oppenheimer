@@ -284,12 +284,13 @@ type Transcripts interface {
 	// conversation itself. "" while there is none yet, and for an agent whose
 	// transcripts this runner cannot read.
 	Teleported(agent domain.Agent, dir string, since time.Time) string
-	// ReportedConversation is the conversation the session's window-0 agent
-	// last said it is in, which is not the one it was launched in once the
-	// person clears or resumes another (Claude Code, through the runner's
-	// status line). "" while it has said none, and for an agent that never
-	// says.
-	ReportedConversation(session domain.Session) string
+	// CurrentConversation is the conversation the session's window-0 agent
+	// is in now, by the same rule its chat follows: the one it last said it
+	// is in, which is not the one it was launched in once the person clears
+	// or resumes another (Claude Code, through the runner's status line),
+	// once that one's transcript exists; otherwise the one the session
+	// holds. "" for an agent that never says.
+	CurrentConversation(session domain.Session) string
 	// ServedConversation is the conversation the session's agent, one that
 	// serves its conversation (domain.Agent.ServesConversation), was last
 	// heard working in: its process is listened to from the first ask until

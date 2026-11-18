@@ -62,9 +62,9 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		f.opens = cut.opensTurn
 	}
 	f.t = f.fresh()
-	if r.statusDir != "" && session.Agent == domain.AgentClaude {
+	if claude, ok := source.(claudeReader); ok && r.statusDir != "" {
 		f.statusDir = r.statusDir
-		f.conversation = func() string { return claudeConversation(r.statusDir, session) }
+		f.conversation = func() string { return claude.conversation(session) }
 	}
 	if r.filesDir != "" && conversationPattern.MatchString(session.ID) {
 		f.shared, f.sharedSeen = SharedDir(r.filesDir, session.ID), map[string]bool{}

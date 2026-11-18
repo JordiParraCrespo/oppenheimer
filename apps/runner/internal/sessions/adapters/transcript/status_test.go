@@ -170,15 +170,15 @@ func TestAReportedConversationCountsOnceItsTranscriptIsWritten(t *testing.T) {
 	if _, err := transcript.SaveStatus(statusDir, []byte(strings.Replace(payload(10), conversation, cleared, 1)), session); err != nil {
 		t.Fatal(err)
 	}
-	if got := reader.ReportedConversation(of); got != "" {
-		t.Fatalf("reported = %q before its transcript was written", got)
+	if got := reader.CurrentConversation(of); got != conversation {
+		t.Fatalf("current = %q before its transcript was written, want the one the session holds", got)
 	}
 	folder := filepath.Join(projects, "-w-sessions-bold-otter-3f9a7k-oppenheimer")
 	if err := os.WriteFile(filepath.Join(folder, cleared+".jsonl"), []byte(promptLine+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if got := reader.ReportedConversation(of); got != cleared {
-		t.Fatalf("reported = %q, want %q once its transcript is written", got, cleared)
+	if got := reader.CurrentConversation(of); got != cleared {
+		t.Fatalf("current = %q, want %q once its transcript is written", got, cleared)
 	}
 }
 

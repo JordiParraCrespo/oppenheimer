@@ -117,21 +117,15 @@ func (r *Reader) ServedConversation(ctx context.Context, session domain.Session)
 	return r.openCode.served(ctx, *session.Launch.Server)
 }
 
-// ReportedConversation implements app.Transcripts: Claude Code's, as the
-// runner's status line heard it (SaveStatus), once Claude Code has written
-// its transcript. A conversation `/clear` just opened has none until the
-// next message, and `claude --resume` refuses one with none, so a Restart
-// before then reopens the conversation the session already kept.
-func (r *Reader) ReportedConversation(session domain.Session) string {
-	reader, ok := r.agents[domain.AgentClaude]
+// CurrentConversation implements app.Transcripts: Claude Code's, by the
+// same rule its chat follows (claudeReader.conversation), so the session
+// keeps and resumes the conversation the chat shows.
+func (r *Reader) CurrentConversation(session domain.Session) string {
+	claude, ok := r.agents[domain.AgentClaude].(claudeReader)
 	if session.Agent != domain.AgentClaude || !ok {
 		return ""
 	}
-	reported := ReportedConversation(r.statusDir, session.ID)
-	if reported == "" || reader.path(reported) == "" {
-		return ""
-	}
-	return reported
+	return claude.conversation(session)
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.
