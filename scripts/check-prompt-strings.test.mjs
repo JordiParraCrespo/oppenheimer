@@ -61,6 +61,7 @@ test('a literal where no model reads it is not counted', () => {
       const words = promptText('tools/x.y', { name: 'a name with four words here' });
       outbox.stageJob(manager, { topic: 'checks', reason: 'bot handed a session task: check on how it goes' });
       class X { @ApiOperation({ summary: 'Lists the bots of a workspace, newest first' }) list() {} }
+      const tool = { summarize: (input) => \`Move \${input.count} messages to Trash in the inbox\` };
     `),
     [],
   );

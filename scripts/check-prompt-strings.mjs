@@ -10,8 +10,9 @@
  * least 28. Shorter text is a label or a piece of a record's format and
  * stays in the code. A literal is not counted where it cannot be a model's
  * words: an exception's message, a logger's, a query's, a decorator's, a
- * type, a key, a comparison, a domain event's or an outbox row's reason, and
- * the argument of `promptText` itself.
+ * type, a key, a comparison, a domain event's or an outbox row's reason, a
+ * tool's `summarize` (the line on the person's approval card), and the
+ * argument of `promptText` itself.
  *
  * The ledger is exact: an entry names a file and how the sentence starts (or
  * the whole file, when none of it is for a model), and an entry that matches
@@ -127,6 +128,26 @@ export const LEDGER = [
     why: "a storage error's message",
   },
   {
+    file: 'bots-chat/application/bot-cloud-session.policy.ts',
+    starts: 'Start a ',
+    why: "the line on the person's approval card for a cloud session",
+  },
+  {
+    file: 'bots-chat/bot-session-tool.mapper.ts',
+    starts: ', and hear back when it ends',
+    why: "part of the line on the person's approval card for a session",
+  },
+  {
+    file: 'bots-chat/bot-session-tool.mapper.ts',
+    starts: ', even with work never pushed',
+    why: "part of the line on the person's approval card for closing a session",
+  },
+  {
+    file: 'bots-chat/bot-session-tool.mapper.ts',
+    starts: 'Close the session "',
+    why: "the line on the person's approval card for closing a session",
+  },
+  {
     file: 'bots-chat/bot-subscription.mapper.ts',
     why: "at the mapper's 300-line cap: its answers move to prompt files when its answer builders move to the domain layer",
   },
@@ -205,6 +226,8 @@ function cannotBeWords(node, source) {
       const callee = parent.expression.getText(source).replace(/\s+/g, '');
       if (NOT_WORDS_CALLS.test(callee)) return true;
     }
+    // What a tool's `summarize` builds is the line on the person's approval card.
+    if (ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'summarize') return true;
     // An outbox row's reason is for whoever reads the table.
     if (ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'reason') {
       for (let outer = parent.parent; outer; outer = outer.parent) {
