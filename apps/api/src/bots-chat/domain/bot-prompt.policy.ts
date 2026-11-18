@@ -544,9 +544,13 @@ function eventPrompt(event: BotMessageEvent, content: string): string {
     case 'dream':
     case 'compaction':
       return eventNote(content);
+    // The mapper reads a kind it does not know as no event (`toEvent`), so none
+    // gets here; `never` is what makes a new kind a case the compiler asks for.
+    default:
+      throw new Error(
+        `An event of no known kind opened a turn: ${String((event satisfies never as { kind?: unknown }).kind)}`,
+      );
   }
-  // The mapper reads a kind it does not know as no event (`toEvent`), so none gets here.
-  throw new Error('An event of no known kind opened a turn');
 }
 
 /**
