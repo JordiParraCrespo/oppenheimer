@@ -120,7 +120,8 @@ describe('BotToolboxFactory', () => {
 
   // What breaks this: a tool only the owner may use reached from a turn
   // started by someone else's words (a routine, a wake, a channel's contact,
-  // another bot's message, which is a `message` turn in the `bots` lane).
+  // another bot's message, which is a `message` turn in the `bots` lane, or
+  // a message sent through an API token).
   it('offers a tool kept to some turns only on those in the owner’s lane, and never on a turn with no origin', () => {
     const owners = toolboxOf({
       definitions: () => [
@@ -145,6 +146,11 @@ describe('BotToolboxFactory', () => {
     expect(offered()).toEqual([]);
     expect(offered('message', 'bots')).toEqual([]);
     expect(offered('message', 'background')).toEqual([]);
+    expect(
+      owners
+        .catalog(['whatsapp:write'], { ...STANDING, origin: 'message', lane: 'owner' })
+        .map((listed) => listed.name),
+    ).toEqual([]);
     expect(owners.tools({ ...context, origin: 'message', lane: 'bots' }, null, EVERYTHING)).toEqual(
       [],
     );

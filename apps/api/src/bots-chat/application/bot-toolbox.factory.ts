@@ -262,7 +262,10 @@ export class BotToolboxFactory {
         toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off' &&
         !(origin && definition.notOn.includes(origin)) &&
         (definition.onlyOn === null ||
-          (!!origin && definition.onlyOn.includes(origin) && standing.lane === 'owner')) &&
+          (!!origin &&
+            definition.onlyOn.includes(origin) &&
+            standing.lane === 'owner' &&
+            granted === null)) &&
         !(origin && definition.attendedOnly && !isAttended(origin)),
     );
   }

@@ -237,8 +237,9 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * (`allow_whatsapp_chat`) is offered in their console chat and their own
    * chat on a channel, and nowhere a turn could have started from someone
    * else's words. Another bot's message queues a `message` turn in the `bots`
-   * lane, which is not offered it. A turn with no origin or lane (a
-   * `delegate` child's) is not offered it either.
+   * lane, which is not offered it, and neither is a turn sent through an API
+   * token or OAuth grant, whatever its scopes. A turn with no origin or lane
+   * (a `delegate` child's) is not offered it either.
    */
   onlyOn?: readonly BotTurnOrigin[];
   /**
