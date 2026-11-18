@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
+import { FIELD_BOUNDS, fitsPromptBound, SESSION_TRANSCRIPT_FROM } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import {
   agentTookWorkAfter,
@@ -194,7 +194,7 @@ export const sessionTools = [
         .describe('A page’s nextCursor; omit to start where `from` says'),
       limit: z.number().int().min(1).max(200).optional().describe('Entries per page, max 200'),
       from: z
-        .enum(['latest', 'start'])
+        .enum(SESSION_TRANSCRIPT_FROM)
         .optional()
         .describe('Without cursor: latest (default) for the last turns, start for the first'),
     }),
