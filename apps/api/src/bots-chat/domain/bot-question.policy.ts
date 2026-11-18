@@ -56,7 +56,7 @@ export function questionEvent(question: BotQuestionEntity, by: string): string {
     return [
       `${who} dismissed your questions: ${question.summary}`,
       question.note ? `Their note: ${question.note}` : null,
-      promptText('wake/questions.question-event-do-ask-them'),
+      promptText('wake/questions.dismissed-do-not-ask-again'),
     ]
       .filter(Boolean)
       .join('\n');
@@ -66,7 +66,7 @@ export function questionEvent(question: BotQuestionEntity, by: string): string {
     .join('\n');
   return [
     `${who} answered your questions.`,
-    promptText('wake/questions.question-event-their-answers-between'),
+    promptText('wake/questions.answers-are-data'),
     fenceUntrusted('answers', lines),
   ].join('\n');
 }

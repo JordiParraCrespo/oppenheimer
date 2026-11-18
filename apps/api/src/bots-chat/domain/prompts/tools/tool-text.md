@@ -4,7 +4,7 @@
 
 update_host_runner updates it; then try again
 
-<!-- fragment: fit-tool-output -->
+<!-- fragment: cut-from-the-middle -->
 
 {{head}}
 … {{elided}} characters cut from the middle. Ask for less (a filter, a smaller limit) to see them.

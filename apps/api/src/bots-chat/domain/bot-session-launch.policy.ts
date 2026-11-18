@@ -123,7 +123,7 @@ export function planBotSessionLaunch(
   if (input.model !== undefined) {
     if (definition.models.length === 0) {
       return {
-        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-takes-model-leave', {
+        refusal: promptText('tools/sessions.launch-no-models', {
           label: definition.label,
         }),
       };
@@ -131,7 +131,7 @@ export function planBotSessionLaunch(
     model = modelNamed(agent, input.model);
     if (!model) {
       return {
-        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-has-model-models', {
+        refusal: promptText('tools/sessions.launch-unknown-model', {
           label: definition.label,
           model: input.model,
           modelChoices: modelChoices(agent),
@@ -144,14 +144,14 @@ export function planBotSessionLaunch(
     const which = model?.label ?? `${definition.label}'s default model`;
     if (!offered) {
       return {
-        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-takes-effort-level', {
+        refusal: promptText('tools/sessions.launch-no-effort', {
           which,
         }),
       };
     }
     if (!offered.levels.includes(input.effort)) {
       return {
-        refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-has-effort-levels', {
+        refusal: promptText('tools/sessions.launch-unknown-effort', {
           which,
           effort: input.effort,
           levels: offered.levels.join(', '),
@@ -161,7 +161,7 @@ export function planBotSessionLaunch(
   }
   if (input.permission !== undefined && !definition.launch.permission) {
     return {
-      refusal: promptText('tools/sessions.plan-bot-session-launch-refusal-has-approvals-set', {
+      refusal: promptText('tools/sessions.launch-no-approvals', {
         label: definition.label,
       }),
     };

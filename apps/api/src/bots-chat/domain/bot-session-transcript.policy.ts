@@ -14,14 +14,14 @@ const PART_QUOTE_MAX = 1_500;
 
 /** Why there is nothing to read, in words the model can act on. */
 const REASON_PHRASES = {
-  cloud_vendor: promptText('tools/session-transcript.reason-phrases-cloud-vendor'),
-  agent_keeps_none: promptText('tools/session-transcript.reason-phrases-agent-keeps-none'),
-  runner_too_old: promptText('tools/session-transcript.reason-phrases-runner-too-old', {
+  cloud_vendor: promptText('tools/session-transcript.unreadable-cloud-vendor'),
+  agent_keeps_none: promptText('tools/session-transcript.unreadable-agent-keeps-none'),
+  runner_too_old: promptText('tools/session-transcript.unreadable-runner-too-old', {
     runnerTooOldAdvice: RUNNER_TOO_OLD_ADVICE,
   }),
   host_offline: 'its host is offline',
-  timed_out: promptText('tools/session-transcript.reason-phrases-timed-out'),
-  host_refused: promptText('tools/session-transcript.reason-phrases-host-refused'),
+  timed_out: promptText('tools/session-transcript.unreadable-timed-out'),
+  host_refused: promptText('tools/session-transcript.unreadable-host-refused'),
 } as const satisfies Record<NonNullable<SessionTranscriptPage['reason']>, string>;
 
 function describePart(part: SessionTranscriptEntry['parts'][number]): string {
@@ -58,25 +58,20 @@ export function describeTranscriptPage(
     const where = page.vendorUrl ? ` Read it at ${page.vendorUrl}.` : '';
     const again =
       page.status === 'unavailable'
-        ? ` ${promptText('tools/session-transcript.describe-transcript-page-try-again-later')}`
+        ? ` ${promptText('tools/session-transcript.page-try-again')}`
         : '';
-    return promptText(
-      'tools/session-transcript.describe-transcript-page-conversation-cannot-read',
-      { head, why, where, again },
-    );
+    return promptText('tools/session-transcript.page-unreadable', { head, why, where, again });
   }
   const lines = [
     page.entries.length
-      ? promptText(
-          'tools/session-transcript.describe-transcript-page-entries-conversation-oldest',
-          { head, entriesCount: String(page.entries.length) },
-        )
+      ? promptText('tools/session-transcript.page-header', {
+          head,
+          entriesCount: String(page.entries.length),
+        })
       : `${head}: nothing ${page.restarted ? 'in its current conversation' : 'new'} yet.`,
   ];
   if (page.restarted) {
-    lines.push(
-      promptText('tools/session-transcript.describe-transcript-page-conversation-started-over'),
-    );
+    lines.push(promptText('tools/session-transcript.page-started-over'));
   }
   if (page.entries.length) {
     lines.push(
@@ -88,25 +83,23 @@ export function describeTranscriptPage(
   }
   if (page.status === 'partial') {
     const left = page.dropped
-      ? ` ${promptText('tools/session-transcript.describe-transcript-page-entries-were-left', { dropped: String(page.dropped) })}`
+      ? ` ${promptText('tools/session-transcript.page-entries-dropped', { dropped: String(page.dropped) })}`
       : '';
-    lines.push(
-      promptText('tools/session-transcript.describe-transcript-page-page-partial-some', { left }),
-    );
+    lines.push(promptText('tools/session-transcript.page-partial', { left }));
   }
   if (page.redactions)
     lines.push(
-      promptText('tools/session-transcript.describe-transcript-page-secrets-were-replaced', {
+      promptText('tools/session-transcript.page-redacted', {
         redactions: String(page.redactions),
       }),
     );
   if (page.nextCursor) {
     lines.push(
       page.atEnd
-        ? promptText('tools/session-transcript.describe-transcript-page-all-so-far', {
+        ? promptText('tools/session-transcript.page-end', {
             nextCursor: page.nextCursor,
           })
-        : promptText('tools/session-transcript.describe-transcript-page-more-follows-read', {
+        : promptText('tools/session-transcript.page-more', {
             nextCursor: page.nextCursor,
           }),
     );
