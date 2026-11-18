@@ -29,6 +29,9 @@ import { todoStatusOf } from '../lib/todo-status';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
+/** Remove: off To do, its TODO day cleared; the server puts it back on a new TODO day or due date. */
+const REMOVE_FROM_TODO = { focusDate: null, offTodo: true } as const;
+
 /**
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
  * milestone, since when it has been carried and when it is due under the
@@ -63,6 +66,7 @@ export function TodoList() {
   const read = useSuspenseTaskBoard();
   const move = useMoveTask();
   const update = useUpdateTask();
+  // Its own mutation, so a failed Remove says so in its own words and a Move's alert stays its own.
   const remove = useUpdateTask();
   const projects = new Map(read.projects.map((row) => [row.id, row]));
   const milestones = new Map(read.milestones.map((row) => [row.id, row.name]));
@@ -135,7 +139,7 @@ export function TodoList() {
           size="sm"
           aria-label={t('tasks.todo.remove', { title: task.title })}
           title={t('tasks.todo.removeTitle')}
-          onClick={() => remove.mutate({ id: task.id, input: { focusDate: null, offTodo: true } })}
+          onClick={() => remove.mutate({ id: task.id, input: REMOVE_FROM_TODO })}
         >
           <X />
         </IconButton>

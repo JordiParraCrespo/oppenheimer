@@ -20,6 +20,7 @@ import { TaskChangedDomainEvent } from './events/task-changed.domain-event';
 import { TaskSessionLinkedDomainEvent } from './events/task-session-linked.domain-event';
 import type { PlanActor, PlanChange, PlanWriteKind } from './plan-change.types';
 import { taskActivityOf } from './task-activity.policy';
+import { offTodoAfterEdit } from './task-off-todo.policy';
 import { isRank } from './task-rank.policy';
 
 /** How a session came to be on a task: started from it, or linked afterwards. */
@@ -307,9 +308,13 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
     if (changes.priority !== undefined) this.props.priority = changes.priority;
     const rescheduled = due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime;
-    // Planned for a day again, or due on another day, it is back on To do; a new time alone is not.
-    if (changes.offTodo !== undefined) this.props.offTodo = changes.offTodo;
-    else if (changes.focusDate || due.dueDate !== this.props.dueDate) this.props.offTodo = false;
+    this.props.offTodo = offTodoAfterEdit({
+      current: this.props.offTodo,
+      offTodo: changes.offTodo,
+      focusDate: changes.focusDate,
+      dueDateBefore: due.dueDate,
+      dueDateAfter: this.props.dueDate,
+    });
     this.setUpdatedAt(new Date());
     this.validate();
     if (rescheduled) {
