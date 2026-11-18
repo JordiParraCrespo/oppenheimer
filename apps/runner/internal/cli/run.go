@@ -300,6 +300,9 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		// A session that continues a cloud one learns the name its agent gave
 		// the conversation, which its transcript is read by.
 		a.Sessions.FindTeleported()
+		// A session whose agent serves its conversation (OpenCode) keeps the
+		// one its own process works in, which its chat shows.
+		a.Sessions.FindServedConversations(ctx)
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()

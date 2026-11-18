@@ -417,6 +417,9 @@ func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer, 
 	if err != nil {
 		return nil
 	}
+	if previous != nil {
+		server.Conversation = previous.Conversation
+	}
 	return &server
 }
 
@@ -660,6 +663,43 @@ func (s *Service) FindTeleported() {
 				return cur, false
 			}
 			cur.Launch.Conversation = conversation
+			return cur, true
+		})
+	}
+}
+
+// FindServedConversations is the poll loop's step for a session whose agent
+// serves its conversation (OpenCode): the conversation its own process was
+// last heard working in is kept on the session, so its chat shows that one,
+// not another OpenCode's in the same folder, whenever it is opened, and after
+// the runner restarts.
+func (s *Service) FindServedConversations(ctx context.Context) {
+	if s.transcripts == nil {
+		return
+	}
+	s.mu.Lock()
+	var served []domain.Session
+	for _, session := range s.sessions {
+		if session.State.Live() && session.Agent.ServesConversation() && session.Launch.Server != nil {
+			served = append(served, session.Clone())
+		}
+	}
+	s.mu.Unlock()
+	for _, session := range served {
+		conversation := s.transcripts.ServedConversation(ctx, session)
+		if conversation == "" || conversation == session.Launch.Server.Conversation {
+			continue
+		}
+		password := session.Launch.Server.Password
+		s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+			// A restart since launched another process, which is asked anew.
+			if !known || cur.Launch.Server == nil || cur.Launch.Server.Password != password ||
+				cur.Launch.Server.Conversation == conversation {
+				return cur, false
+			}
+			server := *cur.Launch.Server
+			server.Conversation = conversation
+			cur.Launch.Server = &server
 			return cur, true
 		})
 	}
