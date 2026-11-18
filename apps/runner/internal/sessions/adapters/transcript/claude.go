@@ -27,6 +27,10 @@ const readLimit = 32 << 20
 // `<conversation>.jsonl`.
 type claudeReader struct {
 	projects string
+	// statusDir is where the runner's status line keeps the conversation
+	// each session's agent is in now (ReportedConversation); empty reads
+	// each session's launch conversation only.
+	statusDir string
 }
 
 func (c claudeReader) firstPrompt(conversation string) (string, error) {
@@ -256,13 +260,29 @@ func classifiedText(text string) string {
 	return text
 }
 
-// finder implements chatSource: the conversation's file, by its name.
+// finder implements chatSource: the file of the conversation the session is
+// in now, by its name, asked at each check, so the chat moves with the
+// agent when it opens another (claudeConversation).
 func (c claudeReader) finder(session domain.Session) (func() string, bool) {
-	conversation := session.Launch.Conversation
-	if !conversationPattern.MatchString(conversation) {
+	if !conversationPattern.MatchString(session.Launch.Conversation) {
 		return nil, false
 	}
-	return func() string { return c.path(conversation) }, true
+	return func() string { return c.path(claudeConversation(c.statusDir, session)) }, true
+}
+
+// claudeConversation is the conversation a Claude Code session is in now:
+// the one its agent last reported (ReportedConversation), ahead of the one
+// the session last kept, which lags it until the poll loop adopts the
+// report (app.Service.FindReportedConversations). A session still looking
+// for its teleported conversation has none.
+func claudeConversation(statusDir string, session domain.Session) string {
+	if session.Launch.Conversation == "" {
+		return ""
+	}
+	if reported := ReportedConversation(statusDir, session.ID); reported != "" {
+		return reported
+	}
+	return session.Launch.Conversation
 }
 
 // transcriber implements chatSource: each line of Claude Code's transcript

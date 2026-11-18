@@ -95,7 +95,7 @@ func New(opts Options) *Reader {
 	agents := map[domain.Agent]agentReader{}
 	chats := map[domain.Agent]chatSource{}
 	if opts.ClaudeProjects != "" {
-		claude := claudeReader{projects: opts.ClaudeProjects}
+		claude := claudeReader{projects: opts.ClaudeProjects, statusDir: opts.StatusDir}
 		agents[domain.AgentClaude] = claude
 		chats[domain.AgentClaude] = claude
 	}
@@ -115,6 +115,15 @@ func (r *Reader) ServedConversation(ctx context.Context, session domain.Session)
 		return ""
 	}
 	return r.openCode.served(ctx, *session.Launch.Server)
+}
+
+// ReportedConversation implements app.Transcripts: Claude Code's, as the
+// runner's status line heard it (SaveStatus).
+func (r *Reader) ReportedConversation(session domain.Session) string {
+	if session.Agent != domain.AgentClaude {
+		return ""
+	}
+	return ReportedConversation(r.statusDir, session.ID)
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.
