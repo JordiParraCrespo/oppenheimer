@@ -215,8 +215,8 @@ func followOpenCode(t *testing.T, server domain.AgentServer, sink *batches) {
 	attach(t, transcript.New(transcript.Options{}), server, sink)
 }
 
-// attach opens the chat on reader until the returned func, or the test, ends.
-func attach(t *testing.T, reader *transcript.Reader, server domain.AgentServer, sink *batches) func() {
+// attach opens the chat on reader until the test ends.
+func attach(t *testing.T, reader *transcript.Reader, server domain.AgentServer, sink *batches) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -224,10 +224,7 @@ func attach(t *testing.T, reader *transcript.Reader, server domain.AgentServer, 
 		defer close(done)
 		_ = reader.Follow(ctx, domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}, 64<<10, 256, nil, sink.emit)
 	}()
-	var once sync.Once
-	detach := func() { once.Do(func() { cancel(); <-done }) }
-	t.Cleanup(detach)
-	return detach
+	t.Cleanup(func() { cancel(); <-done })
 }
 
 // checked waits until the follower has checked the conversations twice

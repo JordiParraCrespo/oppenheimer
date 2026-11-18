@@ -172,7 +172,8 @@ func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) 
 	if !ok {
 		watch = &openCodeWatch{conversation: server.Conversation, heard: map[string]bool{}}
 		o.watches[server.Password] = watch
-		go o.listen(server, watch)
+		// It outlives this ask: it stops once nobody asks (listen).
+		go o.listen(context.WithoutCancel(ctx), server, watch)
 	}
 	watch.asked = time.Now()
 	heard := watch.heard
@@ -200,10 +201,10 @@ func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) 
 
 // listen reads server's event stream, reconnecting while OpenCode restarts,
 // until nobody has asked about it for o.idle.
-func (o *openCodeOwners) listen(server domain.AgentServer, watch *openCodeWatch) {
+func (o *openCodeOwners) listen(base context.Context, server domain.AgentServer, watch *openCodeWatch) {
 	api := newOpenCodeAPI(server)
 	for {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(base)
 		go func() {
 			_ = api.events(ctx, func(conversation string) {
 				if conversation == "" {
