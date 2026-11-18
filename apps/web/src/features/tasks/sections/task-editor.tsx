@@ -41,8 +41,11 @@ export function TaskEditor({
   const { tasks, projects, milestones, error } = useSuspensePlan();
   const task = taskId ? tasks.find((row) => row.id === taskId) : undefined;
   const [deleting, setDeleting] = useState(false);
-  // Sent only when changed: an unchanged `offTodo` left out lets the server's rule decide.
-  const [offTodo, setOffTodo] = useState(task?.offTodo ?? false);
+  // Only Remove from TODO pressed in this dialog, not a copy of the task's flag, which another
+  // writer may change while it is open: the row shows the live flag, and Save sends `offTodo`
+  // only when the reader pressed Remove. A day picked after it drops it, and the server's rule
+  // puts the task back on To do.
+  const [removed, setRemoved] = useState(false);
   const create = useCreateTask({
     onSuccess: () => {
       notifySuccess('taskAdded');
@@ -82,7 +85,7 @@ export function TaskEditor({
     if (task)
       update.mutate({
         id: task.id,
-        input: offTodo === task.offTodo ? input : { ...input, offTodo },
+        input: removed ? { ...input, offTodo: true } : input,
       });
     else create.mutate(input);
   };
@@ -103,7 +106,11 @@ export function TaskEditor({
         onSubmit={submit}
         onCancel={onClose}
         onDelete={task ? () => setDeleting(true) : undefined}
-        offTodo={task && !task.isDone ? { value: offTodo, onChange: setOffTodo } : undefined}
+        offTodo={
+          task && !task.isDone
+            ? { value: removed || task.offTodo, onChange: setRemoved }
+            : undefined
+        }
       />
       {deleting && task ? (
         <ConfirmDialog

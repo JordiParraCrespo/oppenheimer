@@ -8,8 +8,9 @@ import { TaskDateRow } from './task-date-row';
  * The TODO day row: the day the task goes on To do, apart from when it is
  * due. It stays on To do from that day until it is done. For a task that
  * exists, Remove from TODO beside it takes the task off To do altogether, its
- * due date included, as the TODO row's Remove does; the row then says so, and
- * picking a day puts it back. Both apply when the dialog is saved.
+ * due date included, as the TODO row's Remove does; the row then says so
+ * while no day is picked, and picking one puts it back. Both apply when the
+ * dialog is saved.
  */
 export function TaskFocusRow({
   control,
@@ -33,7 +34,7 @@ export function TaskFocusRow({
       }}
       today={today}
     >
-      {offTodo?.value ? (
+      {offTodo?.value && !date.field.value ? (
         <span className="text-sm text-fg-muted">{t('tasks.dialog.offTodo')}</span>
       ) : offTodo ? (
         <Button
