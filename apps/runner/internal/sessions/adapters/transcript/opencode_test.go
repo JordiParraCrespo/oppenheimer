@@ -200,6 +200,14 @@ func (oc *openCode) speaksOf(conversation string) {
 	}
 }
 
+// speaksOfTo says it on the nth event stream alone (0 the first opened), as
+// when the others dropped.
+func (oc *openCode) speaksOfTo(n int, conversation string) {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
+	oc.events[n] <- fmt.Sprintf(`{"type":"session.status","properties":{"sessionID":%q,"status":{"type":"busy"}}}`, conversation)
+}
+
 // listened waits until n event streams are open.
 func (oc *openCode) listened(t *testing.T, n int) {
 	t.Helper()
@@ -503,5 +511,38 @@ func TestTheChatFollowsItsOwnOpenCodeNotAnotherInTheSameFolder(t *testing.T) {
 	oc.checked(t)
 	if text := lastText(again); text != "connect to the raspberry pi" {
 		t.Fatalf("after a restart opened on %q, want the conversation the session kept", text)
+	}
+}
+
+// What the runner's own listener hears supersedes what an open chat heard
+// before: a chat whose stream dropped, while the runner's did not, still
+// moves on `/new`, and never claims the old conversation back. Regression:
+// the chat stuck on the conversation it once heard, saving it over the new
+// one.
+func TestTheRunnersListenerSupersedesWhatTheChatHeardBefore(t *testing.T) {
+	oc := newOpenCode(t)
+	oc.conversation("ses_mine", 1_700_000_100_000)
+	oc.say("ses_mine", userMessage("msg_1", "the first conversation"))
+	reader := transcript.New(transcript.Options{})
+	server := domain.AgentServer{Port: oc.port(t), Password: openCodePassword, Since: 1_700_000_000_000}
+	session := domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}
+
+	reader.ServedConversation(context.Background(), session)
+	oc.listened(t, 1)
+	sink := &batches{}
+	attach(t, reader, server, sink)
+	oc.listened(t, 2)
+	oc.speaksOf("ses_mine")
+	eventually(t, "the first conversation", func() bool { return lastText(sink) == "the first conversation" })
+
+	// `/new`, heard by the runner's listener alone.
+	oc.conversation("ses_next", 1_700_000_300_000)
+	oc.say("ses_next", userMessage("msg_2", "a fresh start"))
+	oc.speaksOfTo(0, "ses_next")
+	eventually(t, "the runner hearing it", func() bool { return reader.ServedConversation(context.Background(), session) == "ses_next" })
+	eventually(t, "the chat moving", func() bool { return lastText(sink) == "a fresh start" })
+	oc.checked(t)
+	if got := reader.ServedConversation(context.Background(), session); got != "ses_next" {
+		t.Fatalf("served = %q after the chat checked again, want the new conversation kept", got)
 	}
 }

@@ -375,9 +375,10 @@ type openCodeFollower struct {
 	kept   string
 
 	// heardMu guards heard: the conversations this OpenCode's event stream
-	// has named since the follower started.
+	// has named since the last check. named is the newest of them yet.
 	heardMu sync.Mutex
 	heard   map[string]bool
+	named   string
 
 	session string
 	// sent is how far each message and part has been sent.
@@ -588,10 +589,11 @@ func (f *openCodeFollower) noteChild(part openCodePart, input any) {
 // the root conversations in its directory touched since the session
 // launched, it is, in order:
 //
-//  1. the newest one this follower has heard its OpenCode name: the TUI is
-//     working in it, or `/new` just made it;
-//  2. the one its OpenCode was last heard working in, by the runner
-//     (openCodeOwners), or else the one the session kept from that;
+//  1. the most recently touched of what this follower's stream has named
+//     since the last check (the TUI is working in it, or `/new` just made
+//     it) and of the one the runner last heard its OpenCode work in
+//     (openCodeOwners), whose listener outlives a stream here that dropped;
+//  2. the one this follower last heard, or else the one the session kept;
 //  3. the one already shown, while no other OpenCode works in it;
 //  4. the newest one no other OpenCode works in.
 //
@@ -603,10 +605,8 @@ func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
 		return "", err
 	}
 	f.heardMu.Lock()
-	heard := make(map[string]bool, len(f.heard))
-	for id := range f.heard {
-		heard[id] = true
-	}
+	heard := f.heard
+	f.heard = map[string]bool{}
 	f.heardMu.Unlock()
 	server := f.api.server.Password
 	mine, others := "", func(string) bool { return false }
@@ -617,15 +617,16 @@ func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
 	listed := func(id string) bool {
 		return id != "" && newestOf(sessions, func(s openCodeSession) bool { return s.ID == id }) != ""
 	}
-	if named := newestOf(sessions, func(s openCodeSession) bool { return heard[s.ID] }); named != "" {
-		if f.owners != nil {
+	if named := newestOf(sessions, func(s openCodeSession) bool { return heard[s.ID] || s.ID == mine }); named != "" {
+		if f.owners != nil && named != mine {
 			f.owners.claim(server, named)
 		}
+		f.named = named
 		return named, nil
 	}
 	switch {
-	case listed(mine):
-		return mine, nil
+	case listed(f.named):
+		return f.named, nil
 	case listed(f.kept):
 		return f.kept, nil
 	case listed(f.session) && !others(f.session):
