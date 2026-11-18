@@ -1756,3 +1756,8 @@ earlier note:
   asked for both in new sessions and in bots: they lead Codex's list,
   GPT-6.2 Sol is the default, and OpenCode's `openai/` row gains both. The
   OpenAI and ChatGPT bots read Codex's list, so they follow.
+- `versions/mvp/20-plan-calendar.md` let a task leave TODO only by moving
+  its TODO day, which a due date today or overdue overrides. On 2026-11-18
+  the owner asked to remove a task from TODO, and chose that removing one
+  keeps it off every day, its due date included, until it gets a TODO day
+  again or its due date changes (`task."offTodo"`).
