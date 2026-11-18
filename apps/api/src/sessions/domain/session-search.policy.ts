@@ -8,8 +8,8 @@ import { SESSION_EVENT_KINDS } from './session-state.policy';
 import { TURN_EVENT_KINDS } from './session-turn.policy';
 
 /**
- * What a search across a workspace's sessions reads (`search_sessions`,
- * `product/versions/mvp/25-bots.md` §4.2): a session's name and the words of
+ * What a search across a workspace's sessions reads (`search_sessions`): a
+ * session's name and the words of
  * its log, never ids, hashes or keys, and never the agent's transcript,
  * which stays on the host. Pure; the search itself is the repository's.
  */

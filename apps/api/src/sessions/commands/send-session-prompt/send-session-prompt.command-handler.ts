@@ -13,8 +13,8 @@ import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SendSessionPromptCommand } from './send-session-prompt.command';
 
 /**
- * Types a follow-up prompt into a running session's agent for a bot (issue
- * #493), the keys the console's chat view types for a message, sent to
+ * Types a follow-up prompt into a running session's agent for a bot, the keys
+ * the console's chat view types for a message, sent to
  * window 0 as `session.input`. The claim and the keys are
  * `SessionPromptTyperResolver`'s; this command reads the session in the
  * caller's scope and turns what it came to into the errors the caller reads.

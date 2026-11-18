@@ -1,11 +1,11 @@
 /**
- * What one turn may still spend on its tools (`25-bots.md` §4.7): a count per
+ * What one turn may still spend on its tools: a count per
  * kind of call, kept on the turn's tool context so a limit is part of the turn
  * and not of the tool that checks it. One per turn; nothing outlives it.
  *
  * A kind is counted one of two ways, never both: in calls, with `take` (two
  * notices a turn), or in some amount the call returns, with `spend` and
- * `overspent` (the characters a turn reads off its sessions, §4.2), for a
+ * `overspent` (the characters a turn reads off its sessions), for a
  * limit that must bound volume rather than how often a tool is called.
  */
 export class BotTurnBudget {

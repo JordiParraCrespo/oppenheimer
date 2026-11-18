@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 // PreToolUse hook: a branch that changes what the console looks like is not
-// pushed, and its pull request is not opened or updated, without screenshots
-// of it. The pictures are the `local-stack` skill's "Show a visual change"
-// step (`pnpm screens`); this only checks that they are of the code as it is
-// now.
+// pushed, and its pull request is not opened or updated, without screenshots of
+// it. The pictures are taken with `pnpm screens`; this only checks that they
+// are of the code as it is now.
 //
-// It gates the moments the rule is about, and nothing else: a Bash call that
+// It gates those moments and nothing else: a Bash call that
 // runs `git push` or `gh pr create`/`gh pr edit` (however it is spelled; the
 // command is read with `git-guard.mjs`'s parser), and the GitHub MCP tools
 // that create or update a pull request. It checks the checkout each of those

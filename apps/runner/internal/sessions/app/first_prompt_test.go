@@ -43,6 +43,8 @@ func (t *typedTranscripts) OpenQuestion(domain.Agent, string) (domain.Decision, 
 
 func (t *typedTranscripts) Teleported(domain.Agent, string, time.Time) string { return "" }
 
+func (t *typedTranscripts) ServedConversation(context.Context, domain.Session) string { return "" }
+
 func (t *typedTranscripts) typeInto(text string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()

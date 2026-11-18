@@ -2,8 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * The last line a session's agent sent the person, folded from the log's
- * `agent.notified` entries (`product/next-steps/agent-tools.md` §2), for the
- * Inbox.
+ * `agent.notified` entries, for the Inbox.
  *
  * - One nullable `jsonb` value, like `agentReport`: read and written whole,
  *   parsed by its schema (`SessionNotice`) on the way in, bounded by the

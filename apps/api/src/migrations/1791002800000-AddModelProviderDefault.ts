@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots: the provider a new bot starts on (`25-bots.md` §2). The workspace
+ * Bots: the provider a new bot starts on. The workspace
  * marks one of its stored keys as the default; with none marked, the first
  * with a key in `BOT_PROVIDER_PREFERENCE`, else Anthropic. The mark lives on the key's row, so removing the key
  * removes it too.

@@ -1,5 +1,5 @@
 /**
- * A bot following a pull request (`27-bot-subscriptions.md` §7), as rules:
+ * A bot following a pull request, as rules:
  * what a pull request subscription may hold, when an event wakes the bot and
  * when it ends, the key that makes one event one turn, and what the bot is
  * told — the event's metadata only, never anyone's words. The handler's use
@@ -133,7 +133,7 @@ describe('a pull request wake', () => {
     );
   });
 
-  // The security rule (agent-tools.md §3): anyone who can comment on a public
+  // The security rule: anyone who can comment on a public
   // repository writes these fields; only what GitHub's vocabulary allows gets through.
   it('holds every field from the event to the characters GitHub allows, and quotes no body', () => {
     const text = pullRequestWakeText(

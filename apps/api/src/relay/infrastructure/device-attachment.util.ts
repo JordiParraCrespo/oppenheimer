@@ -2,9 +2,11 @@ import { randomUUID } from 'node:crypto';
 import type { Logger } from '@nestjs/common';
 import {
   ATTACH_CLOSE_CODES,
+  type AttachClientMessage,
   type AttachServerMessage,
   attachClientMessageSchema,
   type DeviceInfoMessage,
+  type ProtocolMessage,
 } from '@oppenheimer/shared/protocol';
 import type { WebSocket } from 'ws';
 import type {
@@ -34,7 +36,7 @@ const MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
  * `target: 'device'`): the runner's JPEG frames out as binary frames, the
  * browser's taps and keys in as `device.input`, its credit relayed as for a
  * terminal. The browser never names a device: the runner applies input to the
- * session's own (`product/research/device-streaming.md`).
+ * session's own.
  *
  * It shares the terminal's socket path, ticket and authorisation, and is
  * judged again on the same interval, so a revoked grant or a stopped session
@@ -103,6 +105,7 @@ export class DeviceAttachment implements AttachmentSink {
       serial: message.serial,
       name: message.name,
       platform: message.platform,
+      ...(message.devices ? { devices: message.devices } : {}),
     });
   }
 
@@ -143,15 +146,32 @@ export class DeviceAttachment implements AttachmentSink {
     }
     const message = attachClientMessageSchema.safeParse(parsed);
     if (!message.success) return;
-    if (message.data.type === 'credit') {
+    const forward = this.forward(message.data, this.attachmentId);
+    if (forward) this.link.send(forward);
+  }
+
+  /**
+   * What a browser message becomes on the link, if anything. Credit is relayed
+   * for every viewer; input and picks drive the device, so a read-only
+   * share's are dropped, here, once.
+   */
+  private forward(message: AttachClientMessage, attachmentId: number): ProtocolMessage | null {
+    if (message.type === 'credit') {
       // Held to a rate and clamped as a terminal's is: every screen on the host
       // shares its one link.
-      this.credits.push(clampCredit(message.data.bytes));
-      return;
+      this.credits.push(clampCredit(message.bytes));
+      return null;
     }
-    if (message.data.type === 'device.input' && !this.readOnly) {
-      const { type: _type, ...input } = message.data;
-      this.link.send({ type: 'device.input', attachmentId: this.attachmentId, ...input });
+    if (this.readOnly) return null;
+    switch (message.type) {
+      case 'device.input': {
+        const { type: _type, ...input } = message;
+        return { type: 'device.input', attachmentId, ...input };
+      }
+      case 'device.select':
+        return { type: 'device.select', attachmentId, serial: message.serial };
+      default:
+        return null;
     }
   }
 

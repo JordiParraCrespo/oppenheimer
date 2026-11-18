@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot answers its owner on WhatsApp, in a conversation of its own
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`, slice 3), as
- * `1794241820830-AnswerOnTelegram` did for Telegram.
+ * A bot answers its owner on WhatsApp, in a conversation of its own,
+ * as `1794241820830-AnswerOnTelegram` did for Telegram.
  *
  * Access patterns: a message stored is told the chat's last `/new` and last
  * switch to a bot by name at or before it, from those messages alone

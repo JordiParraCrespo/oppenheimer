@@ -6,6 +6,8 @@
     "copied": "Copiado",
     "copy": "Copiar",
     "copyCode": "Copiar código",
+    "wrapLines": "Ajustar líneas",
+    "unwrapLines": "No ajustar líneas",
     "loading": "Cargando...",
     "or": "o",
     "relative": {
@@ -156,6 +158,11 @@
       "pullRequests": "Revisa las pull requests que te necesitan.",
       "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
       "plan": "Tus tareas, hitos y calendario, desde aquí."
+    },
+    "projectFilter": {
+      "label": "Proyecto",
+      "all": "Todos los proyectos",
+      "none": "Sin proyecto"
     }
   },
   "validation": {
@@ -509,7 +516,12 @@
       "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
       "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
       "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo.",
-      "BOTS_043": "Este bot responde en un número de WhatsApp. Elige otro bot, o ninguno, en Ajustes → WhatsApp antes de eliminarlo."
+      "BOTS_043": "Este bot responde en un número de WhatsApp. Elige otro bot, o ninguno, en Ajustes → WhatsApp antes de eliminarlo.",
+      "SESSIONS_056": "El runner de este host no puede abrir ni cerrar terminales. Actualiza el runner del host.",
+      "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
+      "SESSIONS_058": "Esa terminal ya no está abierta.",
+      "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
+      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -703,7 +715,8 @@
       "title": "Proyectos",
       "new": "Nuevo proyecto",
       "noRepositories": "Sin repositorios",
-      "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
+      "emptyTitle": "Aún no hay proyectos",
+      "empty": "Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
       "loadFailed": "No se pudieron cargar tus proyectos.",
       "status": {
         "needsInput": "Necesita tu respuesta",
@@ -718,6 +731,7 @@
       "needsInput": "Necesita tu respuesta",
       "inProgress": "En curso",
       "noMilestones": "Aún no hay hitos.",
+      "sessionWaiting": "Sesión esperando tu respuesta",
       "nothingNeedsInput": "Nada espera tu respuesta.",
       "nothingInProgress": "Nada en curso.",
       "gone": "Ese proyecto ya no está aquí.",
@@ -757,7 +771,30 @@
       "headlessOnly": "turnos sin terminal",
       "measuredHeadless": "Medido en los turnos sin terminal"
     },
-    "unassigned": "Sin asignar"
+    "unassigned": "Sin asignar",
+    "selection": {
+      "label": "Proyectos seleccionados",
+      "count_one": "{{count}} seleccionado",
+      "count_other": "{{count}} seleccionados",
+      "count_many": "{{count}} seleccionados",
+      "selectOne": "Seleccionar {{name}}",
+      "selectAll": "Seleccionar todos",
+      "selectNone": "No seleccionar ninguno",
+      "delete": "Eliminar seleccionados",
+      "clear": "Quitar selección"
+    },
+    "deleteProjects": {
+      "title_one": "¿Eliminar {{count}} proyecto?",
+      "title_other": "¿Eliminar {{count}} proyectos?",
+      "title_many": "¿Eliminar {{count}} proyectos?",
+      "description": "Sus sesiones se quedan donde están. Las automatizaciones que los usan se pausan.",
+      "confirm_one": "Eliminar proyecto",
+      "confirm_other": "Eliminar {{count}} proyectos",
+      "confirm_many": "Eliminar {{count}} proyectos",
+      "partial_one": "No se ha eliminado {{count}} proyecto",
+      "partial_other": "No se han eliminado {{count}} proyectos",
+      "partial_many": "No se han eliminado {{count}} proyectos"
+    }
   },
   "sessions": {
     "provisioning": {
@@ -767,6 +804,8 @@
       "retry": "Reintentar",
       "retrying": "Reintentando",
       "retryFailed": "No se pudo volver a iniciar la sesión.",
+      "openTerminal": "Abrir un terminal en {{host}}",
+      "openTerminalTitle": "Un terminal en blanco en ~ de {{host}}, para arreglar lo que impidió el inicio (un inicio de sesión, una herramienta que falta) y volver a intentarlo",
       "working": "Trabajando…",
       "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
       "failed": "Error",
@@ -1084,6 +1123,9 @@
       "pinned": "Fijadas",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "markUnread": "Marcar como no leída",
+      "markRead": "Marcar como leída",
+      "unreadLabel": "No leída",
       "hide": "Ocultar",
       "show": "Mostrar",
       "hidden": "Oculta",
@@ -1149,6 +1191,7 @@
       "repository": "Repositorio",
       "agent": "Agente",
       "host": "Equipo",
+      "status": "Estado",
       "sort": "Ordenar por",
       "clear": "Quitar filtros",
       "remove": "Quitar filtro",
@@ -1166,13 +1209,19 @@
       "showAll": "Mostrar todos los proyectos",
       "pinnedOnly": "Solo fijadas",
       "showHidden": "Mostrar sesiones ocultas",
-      "newProject": "Nuevo proyecto…"
+      "newProject": "Nuevo proyecto…",
+      "allStatuses": "Todos los estados",
+      "statuses": {
+        "needs-you": "Necesita tu respuesta",
+        "done": "Listo para revisar"
+      }
     },
     "sort": {
       "custom": "Orden personalizado",
       "recent": "Última actividad",
       "oldest": "Más antiguas primero",
-      "name": "Nombre"
+      "name": "Nombre",
+      "attention": "Primero las que necesitan respuesta"
     },
     "share": {
       "title": "Compartir sesión",
@@ -1453,12 +1502,61 @@
         }
       }
     },
+    "side": {
+      "show": "Mostrar panel lateral",
+      "hide": "Ocultar panel lateral",
+      "label": "Panel lateral",
+      "tabs": "Abierto junto a esta sesión",
+      "new": "Abrir otra cosa",
+      "close": "Cerrar panel lateral",
+      "closeTab": "Cerrar {{name}}",
+      "launcher": {
+        "title": "Abrir junto a esta sesión",
+        "description": "Mantén esta sesión a la vista mientras trabajas en otra cosa.",
+        "terminal": "Terminal",
+        "terminalDetail": "Una shell en el worktree de esta sesión",
+        "session": "Sesión",
+        "sessionDetail": "Otra sesión, en cualquier host",
+        "bot": "Bot",
+        "botDetail": "Elige uno de tus bots y chatea",
+        "browserDetail": "El servidor de desarrollo de la sesión",
+        "simulatorDetail": "El dispositivo que maneja el agente de la sesión",
+        "desktopDetail": "La pantalla del propio host",
+        "back": "Atrás",
+        "sessions": "Elige una sesión",
+        "searchSessions": "Buscar sesiones",
+        "noSessions": "Todavía no hay otra sesión que abrir.",
+        "bots": "Elige un bot",
+        "searchBots": "Buscar bots",
+        "noBots": "Aún no hay bots. Crea uno en Empleados.",
+        "noMatch": "Nada coincide con «{{query}}».",
+        "agent": "Agente",
+        "agentDetail": "Otro agente en este worktree",
+        "agents": "Elige un agente",
+        "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
+        "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
+      },
+      "terminal": {
+        "name": "Terminal {{index}}",
+        "opening": "Abriendo una terminal…",
+        "openFailed": "La terminal no se abrió",
+        "closeFailed": "La terminal no se cerró",
+        "loadFailed": "No se pudieron leer las terminales de esta sesión",
+        "notSupported": "Este host no puede abrir más terminales",
+        "notSupportedDetail": "Actualiza su runner para abrir shells junto al agente.",
+        "gone": "Esta terminal se ha cerrado"
+      },
+      "openFull": "Abrir en su propia página",
+      "sessionLoadFailed": "No se pudo cargar esa sesión",
+      "agent": {
+        "name": "{{agent}} {{index}}",
+        "opening": "Iniciando {{agent}}…",
+        "openFailed": "El agente no se inició",
+        "start": "Iniciar {{agent}}"
+      }
+    },
     "preview": {
-      "show": "Mostrar vista previa",
-      "hide": "Ocultar vista previa",
-      "label": "Vista previa",
       "simulator": "Simulador",
-      "close": "Cerrar vista previa",
       "frame": "App ejecutándose en {{name}}",
       "title": "{{name}} ejecutándose en el host de esta sesión",
       "connecting": "Conectando con el dispositivo de la sesión…",
@@ -1486,7 +1584,16 @@
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
       "opening": "Abriendo localhost:{{port}}…",
-      "desktop": "Escritorio"
+      "desktop": "Escritorio",
+      "device": "Dispositivo",
+      "deviceSearch": "Buscar un dispositivo",
+      "deviceEmpty": "Ningún dispositivo",
+      "deviceTaken": "En uso por otra sesión",
+      "refreshDevice": "Actualizar dispositivos",
+      "platform": {
+        "ios": "Simulador de iOS",
+        "android": "Emulador de Android"
+      }
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
@@ -1613,9 +1720,7 @@
       "actions": "Opciones del bot",
       "settings": "Configuración",
       "delete": "Eliminar bot",
-      "helloBlank": "{{name}} está listo. Dile qué trabajo hacer.",
-      "startFrom": "Prueba a pedir",
-      "hello": "{{name}} está listo. ¿En qué trabajamos?",
+      "hello": "Pregunta a {{name}} lo que quieras. Puede leer tus sesiones y actuar sobre ellas.",
       "placeholder": "Escribe a {{name}}",
       "history": "Historial {{position}}/{{total}}",
       "pasted": {
@@ -1627,7 +1732,7 @@
         "showLess": "Mostrar menos"
       },
       "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-      "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
+      "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después, Esc lo detiene",
       "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",
       "stop": "Detener",
@@ -1751,48 +1856,6 @@
         "moreLines_other": "+{{count}} líneas",
         "fullLines": "Ver líneas completas"
       },
-      "suggest": {
-        "task": {
-          "research": {
-            "name": "Investigar un tema",
-            "prompt": "Busca en la web y dame un resumen breve, con fuentes, sobre "
-          },
-          "summarise": {
-            "name": "Resumir algo",
-            "prompt": "Resume esto en cinco viñetas:\n\n"
-          },
-          "draft": {
-            "name": "Redactar un mensaje",
-            "prompt": "Redacta un mensaje breve y cordial para "
-          },
-          "plan": {
-            "name": "Hacer un plan",
-            "prompt": "Haz un plan paso a paso para "
-          }
-        },
-        "job": {
-          "research": {
-            "name": "Asistente de investigación",
-            "description": "Encuentra y resume lo que le pido",
-            "prompt": "Sé mi asistente de investigación: cuando te dé un tema, busca en la web y dame un resumen breve con sus fuentes."
-          },
-          "writing": {
-            "name": "Compañero de escritura",
-            "description": "Pule mis borradores con mi propia voz",
-            "prompt": "Sé mi compañero de escritura: pule lo que escribo, propón una redacción más clara y mantén mi tono."
-          },
-          "planner": {
-            "name": "Planificador",
-            "description": "Convierte objetivos en próximos pasos",
-            "prompt": "Sé mi planificador: divide mis objetivos en pasos, lleva una lista de tareas y dime qué hacer a continuación."
-          },
-          "news": {
-            "name": "Resumen de noticias",
-            "description": "Lo último de lo que sigo",
-            "prompt": "Sé mi resumen de noticias: cuando te lo pida, busca en la web lo último sobre los temas que sigo y resúmelo en cinco viñetas."
-          }
-        }
-      },
       "model": "Modelo",
       "searchModels": "Buscar modelos…",
       "noModel": "Ningún modelo coincide con «{{query}}».",
@@ -1878,6 +1941,24 @@
           "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
           "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
         },
+        "task": {
+          "created": "«{{title}}» se añadió a {{to}}",
+          "status_changed": "«{{title}}» pasó de {{from}} a {{to}}",
+          "completed": "«{{title}}» está hecha",
+          "reopened": "«{{title}}» se reabrió en {{to}}",
+          "blocked": "«{{title}}» está bloqueada",
+          "unblocked": "«{{title}}» ya no está bloqueada",
+          "deleted": "«{{title}}» se eliminó",
+          "rescheduled": "«{{title}}» tiene una nueva fecha de entrega",
+          "reassigned": "«{{title}}» pasó a otro proyecto o hito",
+          "session_linked": "Se adjuntó una sesión a «{{title}}»",
+          "column": {
+            "todo": "Sin empezar",
+            "doing": "En curso",
+            "review": "En revisión",
+            "done": "Hecha"
+          }
+        },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
           "continuedOpen": "Objetivo · continuación {{step}}",
@@ -1914,8 +1995,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas y rutinas",
-      "showToolCalls": "Mostrar llamadas a herramientas y rutinas",
+      "hideToolCalls": "Ocultar llamadas a herramientas, rutinas y cambios de tareas",
+      "showToolCalls": "Mostrar llamadas a herramientas, rutinas y cambios de tareas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
@@ -2388,7 +2469,8 @@
         "runs": "Ejecuciones"
       },
       "new": "Nueva automatización",
-      "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+      "empty": "Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+      "emptyTitle": "Todavía no hay automatizaciones",
       "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
       "loadFailed": "No se han podido cargar las automatizaciones.",
       "actionFailed": "No se ha podido completar.",
@@ -2418,7 +2500,8 @@
       "missed": "Omitida: se perdió el turno",
       "not_launchable": "Omitida: la sesión no pudo iniciarse",
       "agent_unavailable": "Omitida: el agente no está en el host",
-      "unattended": "Omitida: el propietario de su bot no está"
+      "unattended": "Omitida: el propietario de su bot no está",
+      "idle": "Omitida: nada nuevo desde el último latido"
     },
     "pausedReason": {
       "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
@@ -2708,7 +2791,8 @@
       "routine": "Rutina de bot",
       "runsOn": "La ejecuta {{bot}}",
       "loadFailed": "No se pudieron cargar las rutinas de los bots.",
-      "empty": "Aún no hay rutinas de bots. Las rutinas de un bot se crean en su chat, con /schedule."
+      "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
+      "emptyTitle": "Aún no hay rutinas de bots"
     }
   },
   "pullRequests": {
@@ -3027,7 +3111,8 @@
       },
       "briefFailed": "No se pudo cargar el resumen.",
       "waiting": "esperando",
-      "pass": "Pasar",
+      "previous": "Anterior",
+      "next": "Siguiente",
       "open": "Revisar a fondo",
       "confirmMerge": "Pulsa otra vez para fusionar",
       "held": "Aún no se puede fusionar: {{reason}}.",
@@ -3086,7 +3171,8 @@
       "markDone": "Marcar como hecha",
       "markNotDone": "Marcar como no hecha",
       "start": "Iniciar sesión de trabajo",
-      "openSession": "Abrir la sesión {{name}}"
+      "openSession": "Abrir la sesión {{name}}",
+      "priority": "Prioridad: {{level}}"
     },
     "sessionState": {
       "waiting": "Necesita respuesta",
@@ -3136,6 +3222,7 @@
       "deleting": "Eliminando…"
     },
     "dialog": {
+      "offTodo": "Fuera de TODO hasta que tenga un día",
       "newTitle": "Nueva tarea",
       "editTitle": "Editar tarea",
       "titleLabel": "Título",
@@ -3144,6 +3231,7 @@
       "notesPlaceholder": "Añade notas",
       "status": "Estado",
       "project": "Proyecto",
+      "chooseProject": "Elige un proyecto",
       "milestone": "Hito",
       "none": "Ninguno",
       "due": "Vence",
@@ -3162,7 +3250,8 @@
       "loadFailed": "No se ha podido cargar el tablero.",
       "gone": "Esta tarea ya no existe.",
       "deleting": "Eliminando…",
-      "focus": "Día en TODO"
+      "focus": "Día en TODO",
+      "priority": "Prioridad"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -3232,7 +3321,8 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "empty": "Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "emptyTitle": "Aún no hay nada en este día",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
       "addLabel": "Añadir una tarea para este día",
@@ -3270,7 +3360,10 @@
       },
       "move": "Mover {{title}} a otro día",
       "moveTitle": "Mover a otro día",
-      "moveFailed": "No se pudo mover la tarea a otro día."
+      "moveFailed": "No se pudo mover la tarea a otro día.",
+      "remove": "Quitar {{title}} de TODO",
+      "removeTitle": "Quitar de TODO",
+      "removeFailed": "No se pudo quitar la tarea de TODO."
     },
     "selection": {
       "count_one": "{{count}} seleccionada",
@@ -3291,6 +3384,12 @@
       "partial_one": "{{count}} tarea no se ha eliminado",
       "partial_many": "{{count}} de tareas no se han eliminado",
       "partial_other": "{{count}} tareas no se han eliminado"
+    },
+    "priority": {
+      "urgent": "Urgente",
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
     }
   },
   "calendar": {
@@ -3302,6 +3401,20 @@
       "google": "Google Calendar",
       "tasks": "Fechas de tareas",
       "automations": "Automatizaciones"
+    },
+    "filters": {
+      "clear": "Limpiar",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "searchKinds": "Buscar tipos",
+      "status": "Estado",
+      "allStatuses": "Todos los estados",
+      "searchStatuses": "Buscar estados",
+      "origin": "Añadida por",
+      "anyOrigin": "Cualquiera",
+      "originPerson": "Yo",
+      "originAgent": "Un agente",
+      "projectsFailed": "No se pudieron cargar tus proyectos, así que el filtro de proyecto no muestra nada."
     },
     "header": {
       "previous": "Anterior",
@@ -4097,7 +4210,13 @@
         "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar. Crea un enlace nuevo si ha caducado.",
         "failed": "No se ha guardado. Inténtalo de nuevo.",
         "making": "Creando el enlace…",
-        "newLink": "Nuevo enlace"
+        "newLink": "Nuevo enlace",
+        "openWeb": "Abrir Telegram Web",
+        "copy": "Copiar mensaje",
+        "copied": "Copiado",
+        "noApp": "¿No tienes la app de Telegram? Vincúlalo desde Telegram Web",
+        "stepOpen": "Abre el chat del bot en Telegram Web.",
+        "stepSend": "Envíale este mensaje. El código vale diez minutos."
       }
     },
     "agents": {
@@ -4410,6 +4529,7 @@
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",
     "projectDeleted": "Se ha eliminado «{{name}}».",
+    "projectsDeleted": "{{n}} proyectos eliminados.",
     "hostRenamed": "Renombrado a «{{name}}».",
     "hostRemoved": "Se ha quitado «{{name}}».",
     "hostUpdateRequested": "Actualización solicitada para «{{name}}». Si hay un runner más nuevo, el host se reinicia con él.",

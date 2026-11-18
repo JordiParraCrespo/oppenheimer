@@ -38,6 +38,10 @@ const ICONS: Record<PermissionLevel, React.ReactNode> = {
  * me", an alert ring for "Full access"). Full access alone can change a machine
  * unattended, so it alone takes the warning tone, on the button and its row.
  *
+ * In a chat composer's foot row narrower than 28rem the button shows its
+ * glyph alone (the level stays in its title and for a screen reader), so
+ * the engine beside it keeps one line.
+ *
  * The levels are passed in so the call site translates them. Picking one
  * closes the menu: a decision made once on the way to sending a task, not a
  * setting somebody flips to compare.
@@ -70,8 +74,11 @@ function PermissionMenu({
             className={className}
           />
         }
+        title={current?.label}
       >
-        {current?.label}
+        {/* In a narrow chat (a bot beside a session) the button is its glyph
+            alone, the level in its title, so the engine keeps the row. */}
+        <span className="@max-md/composer-meta:sr-only">{current?.label}</span>
       </DropdownMenuTrigger>
       {/* One measurement this menu owns: 296px wide, not merely at least. Its
           rows wrap their second line rather than widening, and a fixed width

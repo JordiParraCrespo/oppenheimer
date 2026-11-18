@@ -18,7 +18,7 @@ export interface RepositoryToken {
  * connected installation and one repository, and gets either a credential for
  * exactly that repository or what GitHub currently calls it. There is nothing to
  * ask for "the repositories I may use", because the installation is the access
- * control and GitHub answers it (`product/versions/mvp/03-control-plane.md`).
+ * control and GitHub answers it.
  */
 export interface RepositoryAccessPort {
   /**

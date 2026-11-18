@@ -1,6 +1,6 @@
 package cli
 
-// `host.exec`: one program run for a bot (25 §4.2), through the host
+// `host.exec`: one program run for a bot, through the host
 // service, which reads this host's own policy first. Answered with
 // `host.exec.result`, or `command.failed` with an EXEC_* code.
 

@@ -19,9 +19,9 @@ import {
 } from '../lib/share-session';
 
 /**
- * Share session (`ShareSession.dc.html`): who, permission, for how long. It
- * fills the dialog's body and footer; each field watches what it needs of
- * the others, so a pick re-renders that field and not the form.
+ * Share session: who, permission, for how long. It fills the dialog's body
+ * and footer; each field watches what it needs of the others, so a pick
+ * re-renders that field and not the form.
  */
 export function ShareSessionForm({
   defaults,

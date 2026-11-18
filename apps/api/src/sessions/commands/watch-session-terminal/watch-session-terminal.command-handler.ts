@@ -17,8 +17,8 @@ import {
 } from './watch-session-terminal.command';
 
 /**
- * A pattern for a live session's runner to watch its screen for
- * (`27-bot-subscriptions.md` §2). The row is the desired state: it is
+ * A pattern for a live session's runner to watch its screen for. The row is
+ * the desired state: it is
  * written first, then sent to the host; an offline host gets it with the
  * next hello, and a runner without `session.watch` never does, which the
  * hints say. A pattern RE2 cannot take is `SESSIONS_042`; past

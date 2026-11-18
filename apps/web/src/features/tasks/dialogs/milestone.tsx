@@ -20,9 +20,9 @@ import { MilestoneForm, type MilestoneFormValues } from '../forms/milestone-form
 import { useToday } from '../hooks/use-today';
 
 /**
- * New milestone and Edit milestone. Moving a milestone to another project moves its tasks
- * with it; deleting one keeps its tasks and clears their milestone
- * (`18-plan-product.md` §3), which the confirmation says.
+ * New milestone and Edit milestone. Moving a milestone to another project
+ * moves its tasks with it; deleting one keeps its tasks and clears their
+ * milestone, which the confirmation says.
  */
 export function MilestoneDialog({
   milestoneId,

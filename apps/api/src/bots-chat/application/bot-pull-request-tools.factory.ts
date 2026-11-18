@@ -117,7 +117,7 @@ function toCiFinding({ root_cause, ...rest }: z.output<typeof ciFinding>): CiFin
 }
 
 /**
- * GitHub and pull requests, the writes (`25-bots.md` §4.4): comment, review,
+ * GitHub and pull requests, the writes: comment, review,
  * merge, and start a review session. Each reaches outside Oppenheimer, so
  * under Approve for me each asks first and its card names the pull request
  * by repository, number and title. Every write is made with the owner's own
@@ -147,9 +147,9 @@ export class BotPullRequestToolsFactory implements BotToolArea {
   }
 
   /**
-   * What the failing checks came to (`0.2-pull-requests.md`, "CI findings"):
-   * a record on the pull request's head, shown with its checks, rather than
-   * prose in a chat. It writes nothing to GitHub, so it does not ask.
+   * What the failing checks came to: a record on the pull request's head, shown
+   * with its checks, rather than prose in a chat. It writes nothing to GitHub,
+   * so it does not ask.
    */
   private recordCiFindings(): BotToolDefinition {
     return defineBotTool({

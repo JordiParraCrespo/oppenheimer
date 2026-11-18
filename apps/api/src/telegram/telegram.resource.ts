@@ -2,10 +2,9 @@ import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
  * Telegram is the bots a person made with @BotFather and connected on their
- * hosts, read and written by their Oppenheimer bots
- * (`product/next-steps/telegram.md`). The rows sit in a workspace like
- * WhatsApp's, and every read of one adds its owner, so nobody reads another
- * person's chats, a workspace admin included.
+ * hosts, read and written by their Oppenheimer bots. The rows sit in a
+ * workspace like WhatsApp's, and every read of one adds its owner, so nobody
+ * reads another person's chats, a workspace admin included.
  */
 export const TelegramResource = defineResource({
   subject: 'Telegram',

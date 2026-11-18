@@ -1,4 +1,5 @@
-import { DiffFileTree, type DiffLayout } from '@oppenheimer/design-system-web';
+import { DiffFileTree, type DiffLayout, EmptyState } from '@oppenheimer/design-system-web';
+import { FileDiff } from '@oppenheimer/design-system-web/icons';
 import type { LineCommentInput, PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import {
   useSuspensePullRequestFiles,
@@ -51,7 +52,14 @@ export function PullRequestChanges({
         className="mx-8 mt-4"
       />
       {rows.length === 0 ? (
-        <p className="m-0 px-8 pt-6 text-sm text-fg-muted">{t('pullRequests.changes.empty')}</p>
+        <EmptyState>
+          <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <FileDiff />
+            </EmptyState.Media>
+            <EmptyState.Description>{t('pullRequests.changes.empty')}</EmptyState.Description>
+          </EmptyState.Header>
+        </EmptyState>
       ) : (
         <div className="flex min-h-0 flex-1 bg-card">
           <div className="min-w-0 flex-1 overflow-y-auto">

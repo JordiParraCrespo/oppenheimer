@@ -1,5 +1,5 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { GitPullRequest, Settings } from '@oppenheimer/design-system-web/icons';
+import { Settings } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestQueueName } from '@oppenheimer/frontend-consumer';
 import { useWatchedRepositories } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
@@ -22,9 +22,7 @@ export function QueueEmpty({ queue }: { queue: PullRequestQueueName }) {
     <div className="rounded-xl bg-card py-6">
       <EmptyState>
         <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <GitPullRequest />
-          </EmptyState.Media>
+          <EmptyState.Art name="pullRequests" />
           <EmptyState.Title>
             {t(
               unwatched ? 'pullRequests.queue.emptyWatchingTitle' : 'pullRequests.queue.emptyTitle',

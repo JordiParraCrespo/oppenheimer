@@ -35,8 +35,7 @@ export interface ProvisionPersonalWorkspaceProps {
  * which is worse than none because onboarding only recovers the absent case;
  * so the repository writes all three in one transaction.
  *
- * One user per workspace is the MVP's model
- * (`product/versions/mvp/00-scope.md`); when teams arrive on the same tables,
+ * One user per workspace is the MVP's model; when teams arrive on the same tables,
  * this membership becomes the first of many and the boundary is worth
  * revisiting.
  */

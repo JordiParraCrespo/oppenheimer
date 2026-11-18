@@ -177,14 +177,4 @@ function RoutineTableRowSkeleton({ index = 0, className, ...props }: React.Compo
   );
 }
 
-function RoutineTableEmpty({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="routine-table-empty"
-      className={cn('flex items-center gap-3.5 px-3.5 py-[18px] text-[13.5px] text-pretty text-fg-muted', className)}
-      {...props}
-    />
-  );
-}
-
-export { RoutineTable, RoutineTableEmpty, RoutineTableHead, RoutineTableRow, RoutineTableRowSkeleton };
+export { RoutineTable, RoutineTableHead, RoutineTableRow, RoutineTableRowSkeleton };

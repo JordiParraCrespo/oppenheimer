@@ -4,11 +4,11 @@ import { DIRECT_CHANNEL_LABEL } from '../direct-path';
 import { AttachSessionStream, type StreamPath } from '../session-stream';
 
 /**
- * The direct path (`product/versions/mvp/22-direct-terminal-path.md`) against a
- * scripted socket and a scripted peer connection: what the stream promises the
- * terminal is the same bytes, in the same order, whichever path carried them,
- * and keystrokes reaching the host in the order they were typed; and that no
- * byte crosses a channel whose host has not proved itself (31).
+ * The direct path against a scripted socket and a scripted peer connection:
+ * what the stream promises the terminal is the same bytes, in the same order,
+ * whichever path carried them, and keystrokes reaching the host in the order
+ * they were typed; and that no byte crosses a channel whose host has not proved
+ * itself.
  */
 
 const OFFER_SDP = 'v=0\r\na=fingerprint:sha-256 0A:0B\r\n';

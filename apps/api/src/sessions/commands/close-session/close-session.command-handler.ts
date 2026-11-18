@@ -32,8 +32,7 @@ import { CloseSessionCommand } from './close-session.command';
  * A cloud session left nothing on a host, so its close is recorded whole here:
  * the request and `session.closed` together, with no host to wait for, online or
  * not. Claude Code's stays on claude.ai/code, where it is archived; a vendor's
- * agent stays at its vendor, its page and branch the person's to keep or delete
- * (`product/next-steps/cloud-agents.md`).
+ * agent stays at its vendor, its page and branch the person's to keep or delete.
  */
 @CommandHandler(CloseSessionCommand)
 export class CloseSessionCommandHandler

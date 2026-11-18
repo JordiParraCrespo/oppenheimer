@@ -20,9 +20,8 @@ import { PairingGate } from '../components/pairing-gate';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
- * Settings → Hosts → Add a host (`design/version1/Settings.dc.html`,
- * `product/versions/mvp/05-screens.md`), a page so the Settings frame stays
- * around it; the console pairs in a dialog instead (`hosts/dialogs/add-host.tsx`).
+ * Settings → Hosts → Add a host, a page so the Settings frame stays around
+ * it; the console pairs in a dialog instead (`hosts/dialogs/add-host.tsx`).
  * The Install and Connect steps tick done on the same event, because
  * installing is what connects. Both finish on a registered host
  * (`usePairing`'s rules). On a deployment that cannot pair, the steps give

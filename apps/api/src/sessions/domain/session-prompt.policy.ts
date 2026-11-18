@@ -3,7 +3,7 @@ import type { SessionTurnFold } from './session-turn.policy';
 
 /**
  * A follow-up prompt typed into a running session's agent by somebody other
- * than a person at its terminal (issue #493): whether the agent can take one
+ * than a person at its terminal: whether the agent can take one
  * now, and the keys that give it the words the way the console's chat view
  * does.
  */
@@ -11,7 +11,7 @@ import type { SessionTurnFold } from './session-turn.policy';
 /**
  * Who sent a prompt, as the API read it when it typed it: the bot whose turn
  * made the call and the turn itself; a wake the session's own agent asked
- * for (`product/next-steps/agent-tools.md` §3–4): what woke it and the wake's
+ * for: what woke it and the wake's
  * id; or the person whose credential called `POST /sessions/{id}/prompt` (the
  * `opp` CLI, an MCP client, a script). Recorded on the `prompt.sent` entry, so
  * the log says who spoke whatever the words claim.
@@ -78,8 +78,7 @@ export function promptRefusal(
 
 /**
  * Why a cloud session's agent at its vendor cannot take a next instruction
- * now, or null when it can (`product/next-steps/cloud-agents.md`, "Follow-ups
- * to a cloud agent"). A vendor takes one as a new run only while none runs,
+ * now, or null when it can. A vendor takes one as a new run only while none runs,
  * so a run still going is a wait; past that, the same rule as a terminal's:
  * an open session whose agent is not working, with no prompt still waiting
  * to be taken.

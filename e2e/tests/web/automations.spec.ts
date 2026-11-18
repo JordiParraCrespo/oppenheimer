@@ -7,8 +7,7 @@ const toast = (page: Page, text: string) =>
   page.locator('[data-sonner-toast]').filter({ hasText: text });
 
 /**
- * Automations, in a browser, against the real control plane
- * (`product/versions/mvp/13-automations.md`, the 2026-09-27 export).
+ * Automations, in a browser, against the real control plane.
  *
  * The rail's second list and its pages, then an automation's whole life as a
  * person drives it: made in the three-step editor, listed in the table and
@@ -55,7 +54,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
 
   await signInAs(page, owner.user);
   await page.goto('/automations');
-  await expect(page.getByText('No automations yet. An automation starts a session')).toBeVisible();
+  await expect(page.getByText('No automations yet', { exact: true })).toBeVisible();
 
   // Task: Next waits for both fields.
   await page.getByRole('button', { name: 'New automation', exact: true }).first().click();
@@ -196,7 +195,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete automation' }).click();
   await expect(toast(page, '“Nightly dependency audit” deleted.')).toBeVisible();
   await expect(page).toHaveURL(/\/automations$/);
-  await expect(page.getByText('No automations yet. An automation starts a session')).toBeVisible();
+  await expect(page.getByText('No automations yet', { exact: true })).toBeVisible();
   await page.goto('/automations/runs');
   await expect(page.getByRole('row').filter({ hasText: 'Deleted automation' })).toBeVisible();
 

@@ -98,7 +98,7 @@ export interface ProjectSettings {
 
 /**
  * Project aggregate root — a saved scope a person creates: the repositories its
- * sessions usually work on, and the host and agent a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * sessions usually work on, and the host and agent a new session is offered.
  *
  * A project is **metadata only**. Nothing on a host is named after it, so a
  * session can be listed under any project without anything moving, and renaming

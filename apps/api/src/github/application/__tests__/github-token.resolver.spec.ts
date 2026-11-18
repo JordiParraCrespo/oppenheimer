@@ -14,10 +14,10 @@ import type { UserTokenSealerPort } from '../../infrastructure/user-token-sealer
 import { GithubTokenResolver } from '../github-token.resolver';
 
 /**
- * A person's own tokens (§6.2): what is kept when one is added or checked,
- * and which one reads a repository. The choice itself is
- * `token-key.policy.spec.ts`; this proves the resolver feeds it the person's
- * own tokens and pins, and that a secret is opened only into a credential.
+ * A person's own tokens: what is kept when one is added or checked, and which
+ * one reads a repository. The choice itself is `token-key.policy.spec.ts`; this
+ * proves the resolver feeds it the person's own tokens and pins, and that a
+ * secret is opened only into a credential.
  */
 const NOW = new Date('2026-10-26T12:00:00Z');
 

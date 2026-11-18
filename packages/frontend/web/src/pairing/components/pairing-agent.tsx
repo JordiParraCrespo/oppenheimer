@@ -41,16 +41,15 @@ const STATE_INK: Record<ConnectionRowState, string> = {
 };
 
 /**
- * The way in (`design/version1/AddHost.dc.html`, the console's Add a host in
- * `SessionsConsole.dc.html`): the prompt a person pastes into the coding
- * agent already on the machine. A card whose band holds the fold's trigger,
- * "Agent prompt", and Copy prompt, the primary, on its right; the prompt
- * itself is the fold, closed by default, because copying it is the action
- * and reading it is for whoever wants to first.
+ * The way in: the prompt a person pastes into the coding agent already on the
+ * machine. A card whose band holds the fold's trigger, "Agent prompt", and Copy
+ * prompt, the primary, on its right; the prompt itself is the fold, closed by
+ * default, because copying it is the action and reading it is for whoever wants
+ * to first.
  *
  * Only the onboarding step caps the prompt and scrolls it. In the dialog it
  * runs uncapped, because `DialogBody` already scrolls and a dialog gets one
- * scrollbar (`.agents/rules/frontend-ui.md`).
+ * scrollbar.
  */
 export function PairingPrompt({
   pairing,

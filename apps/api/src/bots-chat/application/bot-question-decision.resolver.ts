@@ -26,12 +26,11 @@ export interface BotQuestionDecider {
 }
 
 /**
- * What answering and dismissing a card of questions share (`25-bots.md`
- * §3.2): the card is found in the caller's workspace and still pending, the
- * decision is a conditional write on `pending`, so a second click or one
- * racing a new message loses with `BOTS_037`, and the bot's next turn,
- * opened by what was decided, commits with it under the scopes both the
- * asking turn and the deciding credential cover.
+ * What answering and dismissing a card of questions share: the card is found in
+ * the caller's workspace and still pending, the decision is a conditional write
+ * on `pending`, so a second click or one racing a new message loses with
+ * `BOTS_037`, and the bot's next turn, opened by what was decided, commits with
+ * it under the scopes both the asking turn and the deciding credential cover.
  */
 @Injectable()
 export class BotQuestionDecisionResolver {

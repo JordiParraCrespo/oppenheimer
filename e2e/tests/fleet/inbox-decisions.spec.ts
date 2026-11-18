@@ -7,7 +7,7 @@ import { connectInstallation, createSession } from '../../support/sessions';
 import { linkLive, signInAs } from '../../support/web';
 
 /**
- * A session's decision answered from the Inbox (`29-inbox.md` slice 4), on a
+ * A session's decision answered from the Inbox, on a
  * real runner: the runner reads what the agent waits on (a permission dialog
  * off the screen, an `AskUserQuestion` call off the transcript), the API keeps
  * it on the session, the Inbox draws it as a card, and the answer is typed

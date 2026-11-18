@@ -16,7 +16,7 @@ import { DecideBotApprovalCommand } from '../decide-bot-approval.command';
 import { DecideBotApprovalCommandHandler } from '../decide-bot-approval.command-handler';
 
 /**
- * Answering a Needs input card (`25-bots.md` §5). A yes moves the card and
+ * Answering a Needs input card. A yes moves the card and
  * stages the job that runs the call in one write (the run itself is
  * `RunApprovedCallCommandHandler`'s spec), keeping the deciding credential's
  * scopes; a no runs nothing and queues, in the same write, a turn opened by

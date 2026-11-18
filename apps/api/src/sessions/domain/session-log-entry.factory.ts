@@ -174,6 +174,19 @@ export function visibilityEntry(commandId: string, hidden: boolean): NewSessionE
   };
 }
 
+/** The person read the report `hash` names: the session's blue dot clears. */
+export function reportAcknowledgedEntry(commandId: string, hash: string): NewSessionEvent {
+  return {
+    idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+      commandId,
+      SESSION_EVENT_KINDS.REPORT_ACKNOWLEDGED,
+    ),
+    source: 'api',
+    kind: SESSION_EVENT_KINDS.REPORT_ACKNOWLEDGED,
+    payload: { hash },
+  };
+}
+
 function hiddenEntry(commandId: string): NewSessionEvent {
   return visibilityEntry(commandId, true);
 }
@@ -192,7 +205,7 @@ export function cloudRunEntries(report: CloudRunReport, now: Date): NewSessionEv
  *
  * An absent level is `ask` — the one that asks before every action — and never
  * anything else: a default that escalated is the single mistake this field must
- * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
+ * not make. An agent with no
  * approvals records no level at all (`launchPermissionFor`), and an effort
  * the model does not offer is not recorded (`effortLevelFor`).
  */

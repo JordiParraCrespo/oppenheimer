@@ -19,7 +19,7 @@ export interface HostPrincipalIdentity {
 /**
  * Verifies the boot assertion a runner presents as an ordinary
  * `Authorization: Bearer`, on the `/hosts/self` routes and on the runner link's
- * WebSocket handshake (`product/versions/mvp/03-control-plane.md`).
+ * WebSocket handshake.
  *
  * **Identity only**: "which host signed this", with every accepted `jti` burned for
  * the token's remaining lifetime so an assertion cannot be replayed. What the host

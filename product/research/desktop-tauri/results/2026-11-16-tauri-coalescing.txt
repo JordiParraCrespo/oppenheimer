@@ -1,0 +1,19 @@
+{"shell":"tauri","loadMs":848,"signInMs":379,"idle":{"pssMB":498,"rssMB":670,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":4,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":358,"floodMBps":84,"floodMs":250,"hasSession":true,"afterBridge":{"pssMB":540,"rssMB":718,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":830,"signInMs":356,"idle":{"pssMB":497,"rssMB":669,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":293,"floodMBps":72.7,"floodMs":289,"hasSession":true,"afterBridge":{"pssMB":530,"rssMB":708,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":860,"signInMs":367,"idle":{"pssMB":497,"rssMB":669,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":204,"floodMBps":100.5,"floodMs":209,"hasSession":true,"afterBridge":{"pssMB":534,"rssMB":712,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":812,"signInMs":376,"idle":{"pssMB":499,"rssMB":671,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":165,"floodMBps":98.1,"floodMs":214,"hasSession":true,"afterBridge":{"pssMB":531,"rssMB":709,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":848,"signInMs":391,"idle":{"pssMB":494,"rssMB":666,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":161,"floodMBps":96.8,"floodMs":217,"hasSession":true,"afterBridge":{"pssMB":536,"rssMB":714,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+
+| Median of 5 runs | tauri |
+|---|---|
+| Spawn to console loaded (ms) | 848 |
+| Sign-in through the form (ms) | 376 |
+| Memory idle, PSS (MB) | 497 |
+| Memory idle, RSS (MB) | 669 |
+| Bridge attach (ms) | 2 |
+| Echo p50 (ms) | 1 |
+| Echo p95 (ms) | 2 |
+| 21 MB flood (ms) | 217 |
+| Flood throughput (MB/s) | 96.8 |
+| Echo p50 right after the flood (ms) | 1 |
+| Memory after the bench, PSS (MB) | 534 |

@@ -17,6 +17,8 @@ import { terminalWebglAllowed } from './terminal-webgl-policy';
  *   `FONT_WAIT_MS` has passed; WebGL attaches after, if the policy allows it.
  * - A face that arrives once WebGL is drawing rebuilds the renderer, which
  *   rasterizes afresh. The atlas is never cleared in place.
+ * - A face that arrives, on either renderer, has xterm measure its cells
+ *   again (`remeasure`).
  * - A constructor that throws, or a context the GPU takes back, leaves the
  *   terminal on the DOM renderer for the rest of its life.
  *
@@ -56,6 +58,7 @@ export function bindTerminalRenderer(
   };
 
   const attach = () => {
+    remeasure(term);
     try {
       const addon = env.createWebgl();
       addon.onContextLoss(() => {
@@ -86,6 +89,7 @@ export function bindTerminalRenderer(
       webgl.dispose();
       attach();
     } else {
+      remeasure(term);
       repaint();
     }
   };
@@ -125,6 +129,26 @@ function browserEnvironment(): RendererEnvironment {
     createWebgl: () => new WebglAddon(),
     fonts,
   };
+}
+
+/**
+ * Has xterm measure its character box again, on the faces the page has now.
+ *
+ * xterm measures the box once, when it opens, and again only for a change of
+ * `fontFamily` or `fontSize`; a face that loads after keeps the fallback's
+ * box. The WebGL renderer places every glyph by that box, while the
+ * typeahead's canvas measures the face it draws with
+ * (`typeahead-paint.ts`), so on a face taller or shorter than the fallback
+ * each guessed letter sat a few pixels off its echo and dropped into place
+ * when the echo landed. A different `fontFamily` string, set and set back,
+ * is the measurement's public trigger; the second set measures the same box
+ * and changes nothing. Run with WebGL detached, so the option change never
+ * reaches its atlas.
+ */
+function remeasure(term: Terminal): void {
+  const family = term.options.fontFamily ?? '';
+  term.options.fontFamily = `${family} `;
+  term.options.fontFamily = family;
 }
 
 /** `FontFace.family` comes back quoted in some browsers and bare in others. */

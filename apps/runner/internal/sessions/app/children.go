@@ -10,7 +10,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// Children is how agents run agents (`product/research/lessons-from-herdr.md`):
+// Children is how agents run agents:
 // an agent in a session starts helpers as sessions of their own, sends them
 // work, hears back from them and waits for them, through the runner on its
 // own host. A child is recorded with its parent; it tells its parent when it

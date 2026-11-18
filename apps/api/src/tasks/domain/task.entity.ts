@@ -12,11 +12,15 @@ import {
   TASK_STATUSES_BEFORE_WORK,
   TASK_TITLE_MAX,
   type TaskOrigin,
+  type TaskPriority,
   type TaskStatus,
 } from '@oppenheimer/shared';
+import { TaskActivityLoggedDomainEvent } from './events/task-activity-logged.domain-event';
 import { TaskChangedDomainEvent } from './events/task-changed.domain-event';
 import { TaskSessionLinkedDomainEvent } from './events/task-session-linked.domain-event';
 import type { PlanActor, PlanChange, PlanWriteKind } from './plan-change.types';
+import { taskActivityOf } from './task-activity.policy';
+import { offTodoAfterEdit } from './task-off-todo.policy';
 import { isRank } from './task-rank.policy';
 
 /** How a session came to be on a task: started from it, or linked afterwards. */
@@ -47,6 +51,13 @@ export interface TaskProps {
   dueTime: string | null;
   /** The day it is on To do from, until it is done; apart from when it is due. */
   focusDate: string | null;
+  /**
+   * Taken off To do by its person: off every day's list, its due date
+   * included, until it gets a TODO day again or its due date changes.
+   */
+  offTodo: boolean;
+  /** How much it matters, or null for none; never moves it on the board. */
+  priority: TaskPriority | null;
   /** When it last moved to Done; cleared when it leaves. */
   completedAt: Date | null;
   /** Why it waits on a person, or null; Done clears it. */
@@ -78,6 +89,7 @@ export interface CreateTaskProps {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  priority?: TaskPriority | null;
   createdByUserId: string;
   actor: PlanActor;
   /** Who made it, as the request came in: an agent's waits for its person. */
@@ -92,13 +104,16 @@ export interface TaskEdit {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  /** `true` takes it off To do; a new TODO day or due date puts it back. */
+  offTodo?: boolean;
+  priority?: TaskPriority | null;
 }
 
 /**
- * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
+ * A task on Plan's board: work a person
  * asks for, in one of four columns, under a project and maybe one of its milestones. It
  * starts sessions or links existing ones, and attaching one is the only thing that
- * moves it on its own (§4).
+ * moves it on its own.
  */
 export class TaskEntity extends AggregateRoot<TaskProps> {
   private actor: PlanActor | null = null;
@@ -127,6 +142,8 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         dueDate: props.dueDate ?? null,
         dueTime: props.dueDate ? (props.dueTime ?? null) : null,
         focusDate: props.focusDate ?? null,
+        offTodo: false,
+        priority: props.priority ?? null,
         completedAt: props.status === 'done' ? new Date() : null,
         blockedReason: null,
         blockedAt: null,
@@ -178,6 +195,28 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     this.changes = [];
   }
 
+  /**
+   * One event per change it logs, for whoever follows its project or
+   * milestone. Built from the log when the
+   * write stages it, so a placement retried after a rank race raises what
+   * it logs and nothing it replaced.
+   */
+  activityEvents(): TaskActivityLoggedDomainEvent[] {
+    return this.changes.map((change) => {
+      const activity = taskActivityOf(change, this.props.status);
+      return new TaskActivityLoggedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        projectId: change.projectId,
+        milestoneId: change.milestoneId,
+        title: this.props.title,
+        actor: change.actor,
+        ...activity,
+        reason: `A task was ${activity.kind.replace('_', ' ')}; owed to those following its project`,
+      });
+    });
+  }
+
   get organizationId(): string {
     return this.props.organizationId;
   }
@@ -208,6 +247,12 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get focusDate(): string | null {
     return this.props.focusDate;
   }
+  get offTodo(): boolean {
+    return this.props.offTodo;
+  }
+  get priority(): TaskPriority | null {
+    return this.props.priority;
+  }
   get completedAt(): Date | null {
     return this.props.completedAt;
   }
@@ -234,8 +279,8 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   }
 
   /**
-   * Its person took up a task an agent made (`29-inbox.md`, "Tasks an agent
-   * made"): gave it a TODO day, started or linked a session on it, or
+   * Its person took up a task an agent made: gave it a TODO day, started or
+   * linked a session on it, or
    * dismissed it from the Inbox. Only the person's own request counts; an
    * agent's write leaves it waiting. Taken up once, it stays so.
    */
@@ -261,9 +306,18 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     }
     if (changes.dueTime !== undefined) this.props.dueTime = changes.dueTime;
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
+    if (changes.priority !== undefined) this.props.priority = changes.priority;
+    const rescheduled = due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime;
+    this.props.offTodo = offTodoAfterEdit({
+      current: this.props.offTodo,
+      offTodo: changes.offTodo,
+      focusDate: changes.focusDate,
+      dueDateBefore: due.dueDate,
+      dueDateAfter: this.props.dueDate,
+    });
     this.setUpdatedAt(new Date());
     this.validate();
-    if (due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime) {
+    if (rescheduled) {
       this.record('rescheduled', {
         from: due,
         to: { dueDate: this.props.dueDate, dueTime: this.props.dueTime },

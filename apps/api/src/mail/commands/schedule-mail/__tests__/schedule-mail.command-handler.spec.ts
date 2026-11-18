@@ -9,7 +9,7 @@ import { ScheduleMailCommand } from '../schedule-mail.command';
 import { ScheduleMailCommandHandler } from '../schedule-mail.command-handler';
 
 /**
- * Scheduling (`product/next-steps/mail.md` §3.4): a yes keeps
+ * Scheduling: a yes keeps
  * the plan to send at its time, once per approval; a time already past when
  * the yes lands is refused (`MAIL_016`), as is a file from the chat, which
  * cannot wait (`MAIL_018`).

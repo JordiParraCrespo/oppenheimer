@@ -11,8 +11,7 @@ import {
 
 /**
  * A one-time `t.me/<bot>?start=<code>` link for one of the caller's Telegram
- * bots (`product/next-steps/answering-on-telegram-and-whatsapp.md` §2):
- * whoever opens it within ten minutes is recorded as the owner, the only
+ * bots: whoever opens it within ten minutes is recorded as the owner, the only
  * person the bot answers. A new link replaces the open one. The bot's
  * `@username` is the host's to report, so a bot not checked yet has no link.
  */

@@ -34,6 +34,13 @@ type SessionRename = {
   label?: string;
 };
 
+/** Each kind of dot: its colour, and what a screen reader hears when the caller names nothing. */
+const ATTENTION = {
+  'needs-you': { label: 'Needs input', className: 'bg-warning' },
+  done: { label: 'Done', className: 'bg-primary' },
+  unread: { label: 'Unread', className: 'bg-primary' },
+} as const;
+
 /**
  * SessionItem — the sidebar row for one orchestrated session. There will be
  * hundreds, so the row is a glyph and a name: the branch icon coloured by run
@@ -59,6 +66,8 @@ function SessionItem({
   age,
   status,
   state = 'idle',
+  attention,
+  attentionLabel,
   working,
   active,
   icon,
@@ -84,6 +93,14 @@ function SessionItem({
    */
   status?: React.ReactNode;
   state?: StatusState;
+  /**
+   * A 7px dot at the row's end, its name set at 600: amber for `needs-you`,
+   * blue for `done` and for `unread`, a row the reader marked to come back to.
+   * It gives way to the ellipsis like the age.
+   */
+  attention?: 'needs-you' | 'done' | 'unread';
+  /** What a screen reader hears for the dot, in the reader's language; English by default. */
+  attentionLabel?: string;
   /** Whether the agent is at work: the name shimmers while it is. */
   working?: boolean;
   active?: boolean;
@@ -114,6 +131,7 @@ function SessionItem({
     <ButtonPrimitive
       data-slot="session-item"
       data-state={state}
+      data-attention={attention}
       data-active={active || undefined}
       data-selected={selected || undefined}
       role={inRow ? undefined : 'listitem'}
@@ -176,13 +194,23 @@ function SessionItem({
       ) : (
         <span
           className={cn(
-            'min-w-0 flex-1 truncate text-operate tracking-[-0.009em] group-data-active/session:font-medium',
+            'min-w-0 flex-1 truncate text-operate tracking-[-0.009em] group-data-active/session:font-medium group-data-attention/session:font-semibold',
             working && 'motion-safe:animate-shimmer',
           )}
         >
           {name}
         </span>
       )}
+      {attention && !rename ? (
+        <span
+          aria-label={attentionLabel ?? ATTENTION[attention].label}
+          className={cn(
+            'size-1.75 shrink-0 rounded-pill',
+            ATTENTION[attention].className,
+            withAction && META_GIVES_WAY,
+          )}
+        />
+      ) : null}
       {status && !rename ? (
         <span
           className={cn(

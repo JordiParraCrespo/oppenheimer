@@ -33,11 +33,11 @@ interface AccountRead {
 }
 
 /**
- * Every Google account of the caller's for a range of days, read in parallel and
- * never stored (`23-plan-milestones-stats-accounts.md` §5); a meeting two accounts
- * hold is drawn once. A failing account marks only itself: a dropped or unsealable
- * grant marks its row revoked, anything else is `error`. Only a quota that stopped
- * every account answers `CALENDAR_010`, so the console waits as asked.
+ * Every Google account of the caller's for a range of days, read in parallel
+ * and never stored; a meeting two accounts hold is drawn once. A failing
+ * account marks only itself: a dropped or unsealable grant marks its row
+ * revoked, anything else is `error`. Only a quota that stopped every account
+ * answers `CALENDAR_010`, so the console waits as asked.
  */
 @QueryHandler(FindGoogleCalendarEventsQuery)
 export class FindGoogleCalendarEventsQueryHandler

@@ -3,7 +3,7 @@ import { loopSourceKey } from '../domain/bot-loop.policy';
 import { loopEndLine, loopRunTurn, loopSetPrompt } from '../domain/bot-loop-message.factory';
 
 /**
- * What a loop says (`25-bots.md` §4.1, `/loop`). What breaks this: a run
+ * What a loop says. What breaks this: a run
  * queued in the person's lane or under a key the loop cannot find again; the
  * line numbering runs from the first queued run rather than the message that
  * set the loop; a self-paced loop's bot never told that a run which does not

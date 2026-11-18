@@ -1,10 +1,9 @@
 /**
- * The checks of a task a bot handed a session (`27-bot-subscriptions.md`
- * §4.1, §4.2): the session read again as the owner; the bot woken once,
- * keyed by the task, when it is stuck short of every state that wakes it,
- * and once per check for a look at a task still running; the next check
- * staged while the task is live; and the subscription left as it was so the
- * task's end still wakes the bot. The decision table is
+ * The checks of a task a bot handed a session: the session read again as the
+ * owner; the bot woken once, keyed by the task, when it is stuck short of every
+ * state that wakes it, and once per check for a look at a task still running;
+ * the next check staged while the task is live; and the subscription left as it
+ * was so the task's end still wakes the bot. The decision table is
  * `bot-subscription.policy.spec.ts`.
  */
 import type { QueryBus } from '@nestjs/cqrs';
@@ -47,6 +46,7 @@ function subscription(): BotSubscriptionEntity {
       wakes: 0,
       terminalWatch: null,
       matches: 0,
+      taskEvents: null,
       version: 1,
     },
   });

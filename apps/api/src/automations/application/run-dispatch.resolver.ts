@@ -28,11 +28,10 @@ export type DispatchDecision =
     };
 
 /**
- * What the dispatcher does with a pending run (§Guards, at dispatch), in two
+ * What the dispatcher does with a pending run at dispatch, in two
  * steps: the guards every run shares — deleted, paused, stale, an owner who
- * can still act in the workspace — and then the run's target
- * (`26-bot-routines.md` §3), which runs the guards only it needs and says what
- * it would launch. A run a guard turns away never reaches its target.
+ * can still act in the workspace — and then the run's target, which runs the
+ * guards only it needs and says what it would launch. A run a guard turns away never reaches its target.
  */
 @Injectable()
 export class RunDispatchResolver {

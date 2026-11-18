@@ -429,9 +429,7 @@
           }
         },
         "prompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2048
+          "$ref": "#/$defs/promptText"
         },
         "images": {
           "maxItems": 5,
@@ -737,6 +735,46 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 200
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "codex",
+            "opencode",
+            "grok",
+            "pi",
+            "omp"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "permission": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "auto",
+            "full"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ]
+        },
+        "prompt": {
+          "$ref": "#/$defs/promptText"
         }
       },
       "required": [
@@ -767,6 +805,57 @@
         "commandId",
         "sessionId",
         "window"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.windows.list"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.windows"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "windows": {
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/window"
+          }
+        },
+        "opened": {
+          "$ref": "#/$defs/windowIndex"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "windows"
       ]
     },
     {
@@ -1654,6 +1743,41 @@
             "android",
             "ios"
           ]
+        },
+        "devices": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "serial": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "platform": {
+                "type": "string",
+                "enum": [
+                  "android",
+                  "ios"
+                ]
+              },
+              "free": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "serial",
+              "name",
+              "platform",
+              "free"
+            ]
+          }
         }
       },
       "required": [
@@ -1731,6 +1855,28 @@
         "type",
         "attachmentId",
         "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.select"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "serial": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "serial"
       ]
     },
     {
@@ -2852,19 +2998,7 @@
         "windows": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "index": {
-                "$ref": "#/$defs/windowIndex"
-              },
-              "name": {
-                "type": "string",
-                "maxLength": 200
-              }
-            },
-            "required": [
-              "index"
-            ]
+            "$ref": "#/$defs/window"
           }
         },
         "agentSessionId": {
@@ -2943,6 +3077,22 @@
       ],
       "id": "observedAgentState"
     },
+    "window": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "index"
+      ],
+      "id": "window"
+    },
     "windowIndex": {
       "type": "integer",
       "minimum": 0,
@@ -2973,6 +3123,12 @@
       "minLength": 1,
       "maxLength": 255,
       "id": "gitRef"
+    },
+    "promptText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "id": "promptText"
     },
     "hostPath": {
       "type": "string",
@@ -3046,7 +3202,9 @@
       "shared.preview",
       "transcript.read",
       "host.exec",
-      "terminal.drive"
+      "terminal.drive",
+      "session.windows.list",
+      "session.window.agent"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

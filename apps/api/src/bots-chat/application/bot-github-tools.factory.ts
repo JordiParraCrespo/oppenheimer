@@ -41,7 +41,7 @@ import {
 } from './bot-tool.factory';
 
 /**
- * GitHub and pull requests (`25-bots.md` §4.4), the reads: which repositories
+ * GitHub and pull requests, the reads: which repositories
  * the workspace's installations cover, the pull request queue, and one pull
  * request with its files and conversation. Commenting, reviewing, merging
  * and review sessions are `BotPullRequestToolsFactory`, issues

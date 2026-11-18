@@ -1,10 +1,11 @@
+import { EmptyState } from '@oppenheimer/design-system-web';
+import { Server } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseHosts } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { HostChip } from '../components/host-chip';
 import { HostLine } from '../components/host-line';
 import { HostsByPresence } from '../components/hosts-by-presence';
-import { HostsEmpty } from '../components/hosts-empty';
 
 /** The hosts as a strip of chips over the full list, each row with its runner and sessions. */
 export function HostStrip() {
@@ -15,7 +16,15 @@ export function HostStrip() {
     <>
       <ErrorAlert error={error} fallback={t('settings.hosts.failed')} />
       {rows.length === 0 ? (
-        <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />
+        <EmptyState>
+          <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <Server />
+            </EmptyState.Media>
+            <EmptyState.Title>{t('settings.hosts.empty')}</EmptyState.Title>
+            <EmptyState.Description>{t('settings.hosts.emptyHint')}</EmptyState.Description>
+          </EmptyState.Header>
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">

@@ -28,7 +28,7 @@ const catalog = new Set(
 
 /**
  * Routes any credential may call, and why that exposes nothing a scope should
- * guard (`scopes-and-credentials.md`: the caller's own identity or work, or
+ * guard (the caller's own identity or work, or
  * what an anonymous caller already gets).
  */
 const ANY_SCOPE: Record<string, string> = {

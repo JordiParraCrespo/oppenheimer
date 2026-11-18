@@ -4,7 +4,7 @@ import type { MailLabelChange } from '../../domain/mail-organize.policy';
 
 /**
  * Adds and takes off labels on threads and messages of the caller's Gmail:
- * marking, labelling and archiving are all this (`mail.md` §3.5).
+ * marking, labelling and archiving are all this.
  */
 export class OrganizeMailCommand extends CommandBase {
   readonly scope: AccessScope;

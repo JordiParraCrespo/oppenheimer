@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotUsageReport } from '../components/bot-usage-report';
 
 /**
- * The `/usage` card (`25-bots.md` §4.1). What breaks this: the Input line
- * counting the cache's tokens twice; the calls outside the turns left out of
- * the totals or not named; the plan's windows not drawn on a sign-in; an
- * empty chat drawing zeros as if it had run; Close doing nothing.
+ * The `/usage` card. What breaks this: the Input line counting the cache's
+ * tokens twice; the calls outside the turns left out of the totals or not
+ * named; the plan's windows not drawn on a sign-in; an empty chat drawing
+ * zeros as if it had run; Close doing nothing.
  */
 
 vi.mock('react-i18next', () => ({

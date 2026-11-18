@@ -9,7 +9,7 @@ import {
 } from './find-session-shared-preview.query';
 
 /**
- * A shared file's preview (`product/next-steps/agent-tools.md` §7). The
+ * A shared file's preview. The
  * session, in the caller's scope, names the file (the last twenty it keeps);
  * one it does not name, or one the runner kept no preview of, is never asked
  * of the host. The bytes live there, so the host is asked live, and a host

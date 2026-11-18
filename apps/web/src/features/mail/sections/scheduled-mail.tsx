@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { ScheduledMailRow } from '@/features/mail/sections/scheduled-mail-row';
 
 /**
- * The mail the reader's bots scheduled to send from their Gmail
- * (`product/next-steps/mail.md` §3.4), soonest first, each with Cancel until
- * it goes. Nothing is drawn while none waits. Read under Suspense, in the
- * screen's `QueryState`; a refetch that fails keeps the rows and says so.
+ * The mail the reader's bots scheduled to send from their Gmail, soonest
+ * first, each with Cancel until it goes. Nothing is drawn while none waits.
+ * Read under Suspense, in the screen's `QueryState`; a refetch that fails
+ * keeps the rows and says so.
  */
 export function ScheduledMail() {
   const { t } = useTranslation();

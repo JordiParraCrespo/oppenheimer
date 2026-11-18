@@ -10,7 +10,7 @@ import { TriageTaskCommand } from './triage-task.command';
 /**
  * Dismiss from the Inbox: the person takes up a task an agent made without
  * planning it or starting work on it, so it leaves the Inbox and stays on the
- * board as it is (`29-inbox.md`, "Tasks an agent made"). A task already taken
+ * board as it is. A task already taken
  * up, or a request an agent made, changes nothing.
  */
 @CommandHandler(TriageTaskCommand)

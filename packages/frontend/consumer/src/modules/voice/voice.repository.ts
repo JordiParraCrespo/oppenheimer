@@ -17,9 +17,9 @@ export interface VoiceTranscription {
 }
 
 /**
- * Dictation (`product/next-steps/voice.md`): one recorded clip, as a WAV,
- * to the API, which hears it on the workspace's ChatGPT sign-in or the
- * deployment's own speech server and tidies what it heard into writing.
+ * Dictation: one recorded clip, as a WAV, to the API, which hears it on the
+ * workspace's ChatGPT sign-in or the deployment's own speech server and tidies
+ * what it heard into writing.
  */
 @injectable()
 export class VoiceRepository {

@@ -16,8 +16,7 @@ const laneSharedPreview = "shared:preview"
 var _ sessionsapp.FileSharer = (*linkHandler)(nil)
 
 // FileShared is the session service's file sharer: `file.shared` with what a
-// file an agent shared is, never its path nor its bytes, so a bot can name it
-// (`product/next-steps/agent-tools.md` §7).
+// file an agent shared is, never its path nor its bytes, so a bot can name it.
 func (h *linkHandler) FileShared(sessionID string, file sessionsdomain.SharedFile) {
 	if h.reporter == nil {
 		return

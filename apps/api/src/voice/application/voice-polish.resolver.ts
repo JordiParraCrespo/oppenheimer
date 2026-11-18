@@ -10,7 +10,7 @@ import { POLISH_LLM } from '../voice.di-tokens';
 import type { PolishModel } from './speech-provider.port';
 
 /**
- * Tidies a transcript into writing (`product/next-steps/voice.md`, step 2).
+ * Tidies a transcript into writing, after the speech model has heard it.
  * Every clip is tidied, a short one too: "fix the login page" should come
  * back as "Fix the login page." the way it would have been typed.
  *

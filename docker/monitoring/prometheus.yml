@@ -1,6 +1,5 @@
 # Prometheus configuration for local development (docker-compose.monitoring.yml).
-# The dev server's scrape config is in deploy/dev/monitoring/README.md; the
-# rules are the same file.
+# The alerting rules it loads are the dev server's own.
 global:
   scrape_interval: 15s
   evaluation_interval: 15s

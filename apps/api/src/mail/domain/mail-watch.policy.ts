@@ -1,5 +1,5 @@
 /**
- * Which new mail a watching routine takes (`product/next-steps/mail.md` §5):
+ * Which new mail a watching routine takes:
  * its Gmail query, run by Gmail itself on recent mail, so a routine's
  * condition is written the way a search is.
  */

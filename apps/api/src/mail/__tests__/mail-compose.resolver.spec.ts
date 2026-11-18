@@ -10,12 +10,11 @@ import type {
 } from '../infrastructure/gmail-provider.port';
 
 /**
- * What a bot asks to write, planned and built (`product/next-steps/mail.md`
- * §3.4): the alias and its signature, a reply addressed and threaded from
- * the message it answers, a forward that carries the original's files, the
- * refusals (an alias the account lacks, too many recipients), and the RFC
- * 2822 message Gmail is handed, decoded back to prove what goes out. The
- * Gmail HTTP is the gateway's spec.
+ * What a bot asks to write, planned and built: the alias and its signature, a
+ * reply addressed and threaded from the message it answers, a forward that
+ * carries the original's files, the refusals (an alias the account lacks, too
+ * many recipients), and the RFC 2822 message Gmail is handed, decoded back to
+ * prove what goes out. The Gmail HTTP is the gateway's spec.
  */
 const CONNECTION = GmailConnectionEntity.connect({
   organizationId: 'org-1',

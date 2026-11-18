@@ -3,10 +3,10 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } fro
 
 /**
  * A person's GitHub user token, from the user authorization the App's install
- * flow already runs (`product/next-steps/0.2-pull-requests-api-plan.md` §3): what
- * lets the Pull requests area comment, review and merge in their name. One per
- * person, not per workspace — it is their GitHub identity, and every workspace
- * they are in reaches GitHub through its own installation anyway.
+ * flow already runs: what lets the Pull requests area comment, review and merge
+ * in their name. One per person, not per workspace — it is their GitHub
+ * identity, and every workspace they are in reaches GitHub through its own
+ * installation anyway.
  *
  * Both tokens are sealed with AES-256-GCM under `GITHUB_USER_TOKEN_KEY`. With
  * expiring user tokens the access token lasts eight hours and the refresh token

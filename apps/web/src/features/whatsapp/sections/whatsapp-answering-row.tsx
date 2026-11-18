@@ -8,10 +8,9 @@ import { useTranslation } from 'react-i18next';
 const NO_BOT = '';
 
 /**
- * The bot that answers the reader on one of their numbers by default
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1), or none,
- * saved as it is picked. "Name: …" in the chat switches to another of their
- * bots there; this is the one a chat starts with.
+ * The bot that answers the reader on one of their numbers by default, or
+ * none, saved as it is picked. "Name: …" in the chat switches to another of
+ * their bots there; this is the one a chat starts with.
  */
 export function WhatsappAnsweringRow({
   account,

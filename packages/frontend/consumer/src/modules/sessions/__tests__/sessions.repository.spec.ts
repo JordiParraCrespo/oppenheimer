@@ -9,6 +9,7 @@ vi.mock('@oppenheimer/api-client', () => ({
     findSessionEvents: vi.fn(),
     closeSession: vi.fn(),
     answerSessionDecision: vi.fn(),
+    openSessionWindow: vi.fn(),
   },
 }));
 
@@ -110,6 +111,67 @@ describe('SessionsRepository.close', () => {
   });
 });
 
+/**
+ * The open's body is what decides between a shell and a second agent: `shell`
+ * is the plain shell, which the API takes as no agent at all (it refuses
+ * `shell` as one), any other agent is sent by its catalog id with the launch
+ * choices made for it, and a shell never carries a model, an effort or a
+ * permission level.
+ */
+describe('SessionsRepository.openWindow', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const opened = ok({
+    window: { index: 1, name: 'codex', agent: false },
+    windows: [
+      { index: 0, name: 'claude', agent: true },
+      { index: 1, name: 'codex', agent: false },
+    ],
+  });
+  const sentBodies = () =>
+    vi.mocked(heyApiSdk.openSessionWindow).mock.calls.map(([options]) => options?.body);
+
+  it('sends the agent it names with the launch and first task chosen for it, and answers with its window', async () => {
+    vi.mocked(heyApiSdk.openSessionWindow).mockResolvedValue(opened);
+
+    const result = await new SessionsRepository().openWindow('s1', {
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'full',
+      prompt: 'Fix the picker',
+    });
+    await new SessionsRepository().openWindow('s1', { agent: 'codex', prompt: '   ' });
+
+    expect(sentBodies()).toEqual([
+      {
+        agent: 'codex',
+        model: 'gpt-6.1-terra',
+        effort: 'high',
+        permission: 'full',
+        prompt: 'Fix the picker',
+      },
+      { agent: 'codex' },
+    ]);
+    expect(result.window).toMatchObject({ index: 1, name: 'codex' });
+  });
+
+  it('sends nothing for a plain shell, named or not, whatever launch came with it', async () => {
+    vi.mocked(heyApiSdk.openSessionWindow).mockResolvedValue(opened);
+
+    await new SessionsRepository().openWindow('s1', {
+      agent: 'shell',
+      model: 'm',
+      permission: 'full',
+      prompt: 'ls',
+    });
+    await new SessionsRepository().openWindow('s1', { effort: 'high' });
+    await new SessionsRepository().openWindow('s1');
+
+    expect(sentBodies()).toEqual([{}, {}, {}]);
+  });
+});
+
 describe('SessionsRepository.findStartLog', () => {
   const stepEntry = (seq: number, step: string, status: string) => ({
     seq,
@@ -147,9 +209,9 @@ describe('SessionsRepository.findStartLog', () => {
 });
 
 /**
- * A session runs in its checkouts or in a folder, never both
- * (`product/versions/mvp/24-session-places.md`): the API refuses a body that
- * carries the two, so a folder create must not grow an empty `checkouts`.
+ * A session runs in its checkouts or in a folder, never both: the API refuses a
+ * body that carries the two, so a folder create must not grow an empty
+ * `checkouts`.
  */
 describe('toCreateSessionRequest', () => {
   it('sends a folder session with its folder and no checkouts', () => {
@@ -177,9 +239,9 @@ describe('toCreateSessionRequest', () => {
 });
 
 /**
- * A session's pending decision (`29-inbox.md` slice 4) reaches the console as
- * the API states it, with what the runner left out read as null, and an
- * answer goes to the decision route as the body the API takes.
+ * A session's pending decision reaches the console as the API states it, with
+ * what the runner left out read as null, and an answer goes to the decision
+ * route as the body the API takes.
  */
 describe('SessionsRepository decisions', () => {
   let repository: SessionsRepository;

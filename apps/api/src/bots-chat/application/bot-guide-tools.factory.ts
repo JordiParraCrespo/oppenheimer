@@ -5,12 +5,12 @@ import { guideIndexText, guidePageText } from '../domain/bot-guide.policy';
 import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
 /**
- * Oppenheimer's own guide (`25-bots.md` §4.1, "Oppenheimer's own guide"): the
- * pages the docs site publishes as "Using Oppenheimer", generated into
- * `@oppenheimer/shared/guide` from `apps/docs/docs/guide`, so a bot reads the
- * product as it is in the version this API runs, with no site to reach. The
- * built-in `oppenheimer` skill says when to read it. Listed under Itself in
- * Settings → Permissions: it reads nothing of the workspace.
+ * Oppenheimer's own guide: the pages the docs site publishes as "Using
+ * Oppenheimer", generated into `@oppenheimer/shared/guide` from
+ * `apps/docs/docs/guide`, so a bot reads the product as it is in the version
+ * this API runs, with no site to reach. The built-in `oppenheimer` skill says
+ * when to read it. Listed under Itself in Settings → Permissions: it reads
+ * nothing of the workspace.
  */
 @Injectable()
 export class BotGuideToolsFactory implements BotToolArea {

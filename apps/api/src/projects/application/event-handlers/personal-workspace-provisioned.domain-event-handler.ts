@@ -6,7 +6,7 @@ import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 
 /**
  * Gives a new workspace its Unassigned project, where a session that names no
- * project is listed (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * project is listed.
  *
  * The workspace is the organizations module's row; the project is here. The
  * write is idempotent, so the outbox redelivering the event writes nothing the

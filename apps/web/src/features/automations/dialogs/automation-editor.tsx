@@ -13,9 +13,9 @@ import { EditAutomation } from '../sections/edit-automation';
 import { NewAutomation } from '../sections/new-automation';
 
 /**
- * New automation and Edit automation (`product/versions/mvp/13-automations.md`):
- * a dialog over the console, opened from the sidebar's button, a project
- * header's plus, the overview's button, a row's Edit and a page's Edit.
+ * New automation and Edit automation: a dialog over the console, opened
+ * from the sidebar's button, a project header's plus, the overview's
+ * button, a row's Edit and a page's Edit.
  *
  * What the editor starts from — the automation being edited, or the projects
  * and hosts a new one is prefilled from — is read under Suspense, so the draft

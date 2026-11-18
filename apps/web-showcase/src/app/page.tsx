@@ -14,7 +14,7 @@ import {
 } from '@oppenheimer/design-system-web/card';
 import { Chip, FilterChip } from '@oppenheimer/design-system-web/chip';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
-import { EmptyState } from '@oppenheimer/design-system-web/empty-state';
+import { type EmptyArtName, EmptyState } from '@oppenheimer/design-system-web/empty-state';
 import {
   Field,
   FieldAction,
@@ -74,7 +74,7 @@ import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
-import { TaskBoardDemo, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
+import { TaskBoardDemo, TaskPriorityIcons, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
 import {
   AccountMenuDemo,
 
@@ -139,6 +139,17 @@ const PROVIDER_MARKS = [
   { id: 'glm', label: 'GLM' },
   { id: 'chatgpt', label: 'ChatGPT' },
 ] as const;
+
+const EMPTY_ARTS: EmptyArtName[] = [
+  'inbox',
+  'projects',
+  'pullRequests',
+  'done',
+  'automations',
+  'milestones',
+  'tasks',
+  'notFound',
+];
 
 export default function Page() {
   return (
@@ -709,9 +720,31 @@ export default function Page() {
         id="emptystate"
         title="EmptyState"
         meta="empty-state.tsx"
-        desc="An empty state names the next action. The full form has a title, a description and one button; compact is the left-aligned sidebar line."
-        code={`<EmptyState compact><EmptyState.Header><EmptyState.Description>No sessions yet…</EmptyState.Description></EmptyState.Header></EmptyState>`}
+        desc="An empty state names the next action, in one of three tiers by where it stands. Illustrated (EmptyState.Art): a screen's or a pane's main region, empty the first time or through; a title, a line on what will appear and how, one action. Icon: a state that is not a first run (closed, no match, not connected) or a Settings section. Inline: compact, the left-aligned line in a sidebar, a row or a picker."
+        code={`<EmptyState><EmptyState.Header><EmptyState.Art name="projects" /><EmptyState.Title>No projects yet</EmptyState.Title>…</EmptyState.Header></EmptyState>`}
       >
+        <Card className="w-full max-w-105">
+          <EmptyState>
+            <EmptyState.Header>
+              <EmptyState.Art name="projects" />
+              <EmptyState.Title>No projects yet</EmptyState.Title>
+              <EmptyState.Description>
+                A project groups your sessions and starts new ones with its repositories, host and agent.
+              </EmptyState.Description>
+            </EmptyState.Header>
+            <EmptyState.Content>
+              <Button>New project</Button>
+            </EmptyState.Content>
+          </EmptyState>
+        </Card>
+        <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
+          {EMPTY_ARTS.map((name) => (
+            <Card key={name} className="flex flex-col items-center gap-1 py-4">
+              <EmptyState.Art name={name} />
+              <span className="font-mono text-xs text-fg-subtle">{name}</span>
+            </Card>
+          ))}
+        </div>
         <Card className="w-full max-w-105">
           <EmptyState>
             <EmptyState.Header>
@@ -1335,6 +1368,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       >
         <div className="flex w-full flex-col gap-6">
           <TaskStatusDots />
+          <TaskPriorityIcons />
           <TaskBoardDemo />
           <TaskSelectionDemo />
         </div>
@@ -1559,8 +1593,8 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="hostcard"
         title="HostCard"
         meta="host-card.tsx"
-        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
-        code={`<HostCard name="fable" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
+        desc="One card per host. The runner version ends the meta line and is never cut; a narrow card truncates the other facts first. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
+        code={`<HostCard name="fable" meta="Debian 12 · 16 vCPU · us-east" runner="runner 0.13.8" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
   offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />

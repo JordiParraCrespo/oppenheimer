@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * The spend guard on a bot's routines (`26-bot-routines.md` §6): routines
+ * The spend guard on a bot's routines: routines
  * that keep running while their owner is away pause, and resume when the
  * owner is back in the bot's chat.
  *

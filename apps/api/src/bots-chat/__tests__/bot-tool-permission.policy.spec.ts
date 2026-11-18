@@ -10,7 +10,7 @@ import {
 } from '../domain/bot-tool-permission.policy';
 
 /**
- * How a bot's tool settings decide a call (`25-bots.md` §5). What breaks
+ * How a bot's tool settings decide a call. What breaks
  * this: a tool the owner turned Off still offered; a setting that does not
  * win over the preset; a grant for one repository covering another, or
  * another tool; a per-call tool (merging) made standing by any route.

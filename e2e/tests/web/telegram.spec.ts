@@ -4,7 +4,7 @@ import { query } from '../../support/db';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Settings → Telegram, in a browser (`product/next-steps/telegram.md` §2): the
+ * Settings → Telegram, in a browser: the
  * reader's own Telegram bots, each polled by the runner on one of their hosts.
  * Against the real control plane, a reader with none sees what connecting gives
  * their bots, and that a host comes first. The stack has no Telegram behind it,
@@ -155,7 +155,8 @@ async function answeringBotId(page: Page, accountId: string): Promise<string | n
 
 // Breaks if the picker writes nothing or the wrong bot's id, if No bot does
 // not clear it, or if the owner link is not the API's url, not offered first,
-// or cannot be replaced from the console once it has expired or been used.
+// cannot be replaced from the console once it has expired or been used, or if
+// the `/start <code>` message offered for Telegram Web is not that link's code.
 test('the bot picked to answer on Shop is saved, and the owner link is opened first and can be replaced', async ({
   page,
 }) => {
@@ -196,10 +197,23 @@ test('the bot picked to answer on Shop is saved, and the owner link is opened fi
     .evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim() ?? ''));
   expect(order.indexOf('Open the link')).toBeLessThan(order.indexOf('New link'));
 
+  // Without the app, Telegram Web drops the link's code: the same code is
+  // offered as the message to send, beside the bot's chat on Telegram Web.
+  const byHand = page.getByTestId('telegram-owner-link-by-hand');
+  await byHand.getByRole('button', { name: 'No Telegram app? Link it from Telegram Web' }).click();
+  const codeOf = (href: string | null) => new URL(href ?? '').searchParams.get('start');
+  await expect(byHand).toContainText(`/start ${codeOf(await open.getAttribute('href'))}`);
+  await expect(byHand.getByRole('link', { name: 'Open Telegram Web' })).toHaveAttribute(
+    'href',
+    'https://web.telegram.org/k/#@shop_helper_bot',
+  );
+  await expect(byHand.getByRole('button', { name: 'Copy message' })).toBeVisible();
+
   const first = await open.getAttribute('href');
   await newLink.click();
   await expect(open).not.toHaveAttribute('href', first ?? '');
   await expect(open).toHaveAttribute('href', /^https:\/\/t\.me\/shop_helper_bot\?start=/);
+  await expect(byHand).toContainText(`/start ${codeOf(await open.getAttribute('href'))}`);
   await owner.api.dispose();
 });
 

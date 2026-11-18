@@ -7,10 +7,9 @@ const CADENCE_KEYS = {
 } as const;
 
 /**
- * How often a loop runs, as the console words it (`25-bots.md` §4.1,
- * `/loop`): the largest whole unit its interval is in ("every 2 hours",
- * "every 90 minutes"), or the bot's own pace when it has none. The key and
- * the count to give `t`.
+ * How often a loop runs, as the console words it (`/loop`): the largest
+ * whole unit its interval is in ("every 2 hours", "every 90 minutes"), or
+ * the bot's own pace when it has none. The key and the count to give `t`.
  */
 export function loopCadenceOf(intervalMinutes: number | null): {
   key: (typeof CADENCE_KEYS)[keyof typeof CADENCE_KEYS];

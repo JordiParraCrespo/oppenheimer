@@ -18,10 +18,10 @@ const TOKEN_SUMS = `
   sum("cacheWriteTokens")::bigint AS "cacheWriteTokens"`;
 
 /**
- * What a bot spends (`25-bots.md` §4.1, `/usage`): its turns summed by model
- * (`IDX_bot_turn_bot`), only those that started, and its calls outside them
- * summed by purpose (`IDX_bot_model_call_bot`). Two grouped reads, each a
- * handful of rows whatever the chat's length.
+ * What a bot spends: its turns summed by model (`IDX_bot_turn_bot`), only those
+ * that started, and its calls outside them summed by purpose
+ * (`IDX_bot_model_call_bot`). Two grouped reads, each a handful of rows
+ * whatever the chat's length.
  */
 @Injectable()
 export class BotUsageRepository

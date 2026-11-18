@@ -15,7 +15,9 @@ import { PreviewFrame } from '../components/preview-frame';
 import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
+import { useReadOnOpen } from '../hooks/use-read-on-open';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
+import { useClearUnreadOnOpen } from '../hooks/use-session-unread';
 import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
 import type { PreviewTab } from '../lib/preview-open';
@@ -28,11 +30,11 @@ import { SessionProvisioning } from './session-provisioning';
 import { SessionShareButton } from './session-share-button';
 
 /**
- * The preview pane loads when first opened: the session pane is the console's
+ * The side pane loads when first opened: the session pane is the console's
  * first load, and most readers never open the pane.
  */
-const SessionPreview = lazy(() =>
-  import('./session-preview').then((module) => ({ default: module.SessionPreview })),
+const SessionSidePane = lazy(() =>
+  import('./session-side-pane').then((module) => ({ default: module.SessionSidePane })),
 );
 
 /**
@@ -55,6 +57,7 @@ export function SessionPane({
   closed,
   bar,
   terminal,
+  side,
 }: {
   sessionId: string;
   /**
@@ -69,14 +72,21 @@ export function SessionPane({
   /** Present: the pane draws the session's bar, led by `back` ("Back to task"). */
   bar?: { back?: ReactNode };
   /**
+   * What the side pane draws for another session and for a bot's chat, from
+   * the screen: the first is this pane, which cannot import itself, the second
+   * the bots feature's. Absent, there is no side pane (a session opened in
+   * another's side pane has none of its own).
+   */
+  side?: { session: (sessionId: string) => ReactNode; bot?: (botId: string) => ReactNode };
+  /**
    * What to draw instead of the session's own stopped pane.
    *
    * A run opened from the automations list is the same terminal and a
-   * different thing to say about it: 16 §Resume calls a run's end "the turn
-   * ended, the session did not", and the way back in is **Open in terminal**,
-   * not Restart, with no New session under it. The route composes the two —
-   * the terminal is this feature's, the run's vocabulary is the automations
-   * feature's, and neither imports the other.
+   * different thing to say about it: a run's turn ended and its session did
+   * not, and the way back in is **Open in terminal**, not Restart, with no
+   * New session under it. The route composes the two — the terminal is this
+   * feature's, the run's vocabulary is the automations feature's, and
+   * neither imports the other.
    */
   closed?: (session: {
     name: string;
@@ -87,11 +97,11 @@ export function SessionPane({
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<SessionView>(DEFAULT_SESSION_VIEW);
-  // The preview pane beside the terminal: its toggle is in the bar, the pane
-  // in the row under it, so the one state both read lives here.
-  // Which of the pane's views this console and deployment can show: the
-  // Browser needs a preview domain, the Simulator only its flag, the Desktop
-  // its flag and a host (a cloud session has none).
+  // The side pane beside the terminal: its toggle is in the bar, the pane in
+  // the row under it, so the one state both read lives here.
+  // Which previews this console and deployment can show in it: the Browser
+  // needs a preview domain, the Simulator only its flag, the Desktop its flag
+  // and a host (a cloud session has none).
   const { data: deployment } = useDeploymentCapabilities();
   const browserOffered =
     useFeatureFlag('session_browser_preview') && Boolean(deployment?.session_previews);
@@ -103,12 +113,15 @@ export function SessionPane({
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
   const { data: session, error } = useSuspenseSession(sessionId);
+  // Opening a session reads what its last turn left: its blue dot goes.
+  useReadOnOpen(session);
+  useClearUnreadOnOpen(sessionId);
   const previewTabs: PreviewTab[] = [
     ...(browserOffered ? (['browser'] as const) : []),
     ...(simulatorOffered ? (['simulator'] as const) : []),
     ...(desktopFlag && session.hostId ? (['desktop'] as const) : []),
   ];
-  const previewOffered = previewTabs.length > 0 && Boolean(bar);
+  const sideOffered = Boolean(bar && side);
   const reading: PaneReading = {
     chat,
     view,
@@ -144,7 +157,7 @@ export function SessionPane({
             back={bar.back}
             tabs={session.isLive ? viewToggle : null}
             preview={
-              session.isLive && previewOffered ? (
+              session.isLive && sideOffered ? (
                 <PreviewToggle open={preview.open} onToggle={() => preview.toggle(!preview.open)} />
               ) : null
             }
@@ -268,21 +281,24 @@ export function SessionPane({
        the bar's, and the chat scrolls the whole pane at the grid's measure. */
     <>
       {head}
-      {/* The terminal's column, and beside it the preview pane when it is
-          open (`SessionsConsole.dc.html`): a row, so the terminal keeps the
-          width the pane leaves it. */}
+      {/* The terminal's column, and beside it the side pane when it is open
+          (`SessionsConsole.dc.html`): a row, so the terminal keeps the width
+          the pane leaves it. */}
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-term-bg">
           {terminal(session, reading, statusItems)}
         </div>
-        {previewOffered ? (
+        {sideOffered && side ? (
           <PreviewFrame phase={preview.phase} onTransitionEnd={preview.onTransitionEnd}>
             <Suspense fallback={null}>
-              <SessionPreview
+              <SessionSidePane
                 sessionId={session.id}
+                sessionEngine={{ agent: session.agent, ...session.launch }}
                 hostId={session.hostId}
-                offered={previewTabs}
+                previews={previewTabs}
                 onClose={() => preview.toggle(false)}
+                session={side.session}
+                bot={side.bot}
               />
             </Suspense>
           </PreviewFrame>

@@ -14,7 +14,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { DeliverBotAnswerCommand } from './deliver-bot-answer.command';
 
 /**
- * An ask's answer goes back (`25-bots.md` §4.6): when the asked turn ends,
+ * An ask's answer goes back: when the asked turn ends,
  * its last text, or what happened to it, opens a queued turn of the bot that
  * asked, in its `bots` lane. The asker never holds a turn open waiting: it
  * ended its own, and picks the answer up as a new one. The answer is queued

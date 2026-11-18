@@ -63,7 +63,7 @@ export function attachmentName(raw: string): string {
 }
 
 /**
- * An image uploaded to a bot's chat (`25-bots.md` §3.1): picked in the
+ * An image uploaded to a bot's chat: picked in the
  * composer, then carried by the one message it is sent with.
  */
 export class BotAttachmentEntity extends AggregateRoot<BotAttachmentProps> {

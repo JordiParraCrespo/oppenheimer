@@ -1,19 +1,18 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot hears back from the work it delegated
- * (`product/versions/mvp/27-bot-subscriptions.md`, issue #445).
+ * A bot hears back from the work it delegated.
  *
  * - `bot_subscription`: this bot follows this resource (a session today)
  *   for this reason, since this turn of its own. A wake is not stored here:
  *   it is a queued `bot_turn` whose `"sourceKey"` names the subscription,
  *   the task and its state, so the turn queue stays the one durable record
- *   of a wake (26 §1) and `UQ_bot_turn_source` makes a wake delivered twice
+ *   of a wake and `UQ_bot_turn_source` makes a wake delivered twice
  *   one turn. `"lastTurn"`/`"lastState"` are the newest wake recorded, a
  *   fast filter for a late event; `"wakes"` counts them against the limit.
  * - `"resourceId"` has no foreign key: it is polymorphic over
  *   `"resourceKind"` (a session now; an automation run or a pull request
- *   later, 27 §7), and the wake re-reads the resource as the owner, so one
+ *   later), and the wake re-reads the resource as the owner, so one
  *   that is gone ends the subscription there. Sessions are tombstoned,
  *   never deleted, except with their workspace, which cascades here too.
  * - `"originTurnId"` is the bot's turn that subscribed, the correlation a

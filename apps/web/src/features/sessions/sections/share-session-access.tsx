@@ -25,10 +25,10 @@ import { initialsOf, shareTimeLeft, shareUrl } from '../lib/share-session';
 const CLOCK_MS = 60_000;
 
 /**
- * Sharing (`ShareSession.dc.html`): the link to copy, who has access and for
- * how long, and the way to take it back. × on a person takes them off the
- * list, and on the last one, or on the link, stops sharing: the dialog then
- * opens on Share session again. Stop sharing ends it and closes the dialog.
+ * Sharing: the link to copy, who has access and for how long, and the way
+ * to take it back. × on a person takes them off the list, and on the last
+ * one, or on the link, stops sharing: the dialog then opens on Share
+ * session again. Stop sharing ends it and closes the dialog.
  */
 export function ShareSessionAccess({
   sessionId,

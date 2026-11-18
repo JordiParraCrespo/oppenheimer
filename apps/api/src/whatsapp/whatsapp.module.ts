@@ -74,11 +74,11 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * WhatsApp (`product/next-steps/whatsapp.md`): a number the person owns,
- * joined as a linked device by the runner on one of their hosts (OpenClaw's
- * route, the WhatsApp Web multi-device protocol), and the messages it sees,
- * kept for their bots. The socket and the keys are the host's; this module
- * reaches them over the runner link (`WHATSAPP_DEVICE`, bound by `links/`).
+ * WhatsApp: a number the person owns, joined as a linked device by the runner
+ * on one of their hosts (OpenClaw's route, the WhatsApp Web multi-device
+ * protocol), and the messages it sees, kept for their bots. The socket and the
+ * keys are the host's; this module reaches them over the runner link
+ * (`WHATSAPP_DEVICE`, bound by `links/`).
  */
 @Module({
   imports: [

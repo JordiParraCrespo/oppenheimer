@@ -27,9 +27,9 @@ const PULL_REQUEST_ICONS = {
 } as const;
 
 /**
- * A pull request the bot follows that woke it (`27-bot-subscriptions.md`
- * §7): "Pull request #128 of acme/app: checks failed", in red when a check
- * failed. Drawn from what GitHub's metadata said, never anyone's words.
+ * A pull request the bot follows that woke it: "Pull request #128 of
+ * acme/app: checks failed", in red when a check failed. Drawn from what
+ * GitHub's metadata said, never anyone's words.
  */
 export function PullRequestEventLine({ event }: { event: BotPullRequestEvent }) {
   const { t } = useTranslation();

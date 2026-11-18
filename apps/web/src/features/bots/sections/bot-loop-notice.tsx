@@ -7,10 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { loopCadenceOf } from '@/features/bots/lib/loop-cadence';
 
 /**
- * The loop the bot runs (`25-bots.md` §4.1, `/loop`), fused onto the
- * composer's top edge: its prompt, how often it runs, when the next run is
- * due (or that a self-paced run has not said yet), and Stop. A Stop that
- * fails says so in the notice itself, where the button was pressed.
+ * The loop the bot runs (`/loop`), fused onto the composer's top edge: its
+ * prompt, how often it runs, when the next run is due (or that a self-paced
+ * run has not said yet), and Stop. A Stop that fails says so in the notice
+ * itself, where the button was pressed.
  */
 export function BotLoopNotice({ botId, loop }: { botId: string; loop: BotLoop }) {
   const { t } = useTranslation();

@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot's latest line to the person (`notify`,
- * `product/next-steps/agent-tools.md` §5): one row per bot, which a new
+ * A bot's latest line to the person (`notify`): one row per bot, which a new
  * notice overwrites under a new id, so the Inbox's mark on the last notice
  * (keyed by its id) never hides the next. `createdAt` is the bot's first
  * notice; `updatedAt` is when the current one came.

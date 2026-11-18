@@ -1,9 +1,8 @@
 /**
- * A bot's tool-less call and what it spent (`25-bots.md` §4.1, `/usage`).
- * What breaks this: a goal review or a summary spending on the owner's key
- * without it reaching `/usage`; a call whose provider said nothing recorded
- * as one that spent nothing; a record that fails taking the call's answer
- * down with it.
+ * A bot's tool-less call and what it spent. What breaks this: a goal review or
+ * a summary spending on the owner's key without it reaching `/usage`; a call
+ * whose provider said nothing recorded as one that spent nothing; a record that
+ * fails taking the call's answer down with it.
  */
 import { type BotTurnRequest, FakeBotEngine } from '@oppenheimer/backend-agents';
 import type { BotUsageRepositoryPort } from '../../database/bot-usage.repository.port';

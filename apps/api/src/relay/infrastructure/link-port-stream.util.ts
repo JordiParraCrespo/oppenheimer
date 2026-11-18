@@ -47,10 +47,9 @@ export class PortClosedError extends Error {
 
 /**
  * One TCP connection through a host's runner, as an attachment: a port a
- * session listens on (`product/versions/mvp/30-session-previews.md`), opened
- * with `port.open`, or the host's desktop, opened with `desktop.open` and
- * signed in to by the runner. Then the connection's bytes as binary frames
- * both ways.
+ * session listens on, opened with `port.open`, or the host's desktop, opened
+ * with `desktop.open` and signed in to by the runner. Then the connection's
+ * bytes as binary frames both ways.
  * Each direction is under the link's credit window (the contract is in
  * `@oppenheimer/shared/protocol`'s `ports.ts`): this side sends while the
  * runner has credited room (`CreditWindow`), and credits the runner for what

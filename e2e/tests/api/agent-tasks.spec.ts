@@ -29,10 +29,9 @@ interface TaskRow {
 }
 
 /**
- * A task an agent made waits in the Inbox until its person takes it up
- * (`product/versions/mvp/29-inbox.md`, "Tasks an agent made"), on the real
- * API: who made it is read off the credential, and only the person's own
- * request takes it up.
+ * A task an agent made waits in the Inbox until its person takes it up, on
+ * the real API: who made it is read off the credential, and only the person's
+ * own request takes it up.
  */
 test.describe('Tasks an agent made', () => {
   test('wait for the person, who takes them up with a TODO day or a dismissal; the agent cannot', async () => {

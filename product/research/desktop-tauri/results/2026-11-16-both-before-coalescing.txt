@@ -1,0 +1,24 @@
+{"shell":"electron","loadMs":675,"signInMs":378,"idle":{"pssMB":354,"rssMB":660,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":5.7,"echoP50":0.6,"echoP95":1.4,"floodMs":297,"floodMBps":70.8,"floodChunks":1344,"afterFloodEchoP50":0.5,"afterBridge":{"pssMB":351,"rssMB":656,"processes":{"electron":6}}}
+{"shell":"tauri","loadMs":878,"signInMs":515,"idle":{"pssMB":492,"rssMB":664,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":1344,"floodMBps":30,"floodMs":700,"hasSession":true,"afterBridge":{"pssMB":528,"rssMB":707,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":877,"signInMs":594,"idle":{"pssMB":492,"rssMB":664,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":1344,"floodMBps":29.9,"floodMs":702,"hasSession":true,"afterBridge":{"pssMB":527,"rssMB":705,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"electron","loadMs":629,"signInMs":371,"idle":{"pssMB":353,"rssMB":658,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":5.2,"echoP50":0.5,"echoP95":1.2,"floodMs":370,"floodMBps":56.7,"floodChunks":1344,"afterFloodEchoP50":1.2,"afterBridge":{"pssMB":360,"rssMB":665,"processes":{"electron":6}}}
+{"shell":"electron","loadMs":571,"signInMs":338,"idle":{"pssMB":353,"rssMB":656,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":4.5,"echoP50":0.7,"echoP95":1.2,"floodMs":289,"floodMBps":72.8,"floodChunks":1344,"afterFloodEchoP50":0.4,"afterBridge":{"pssMB":364,"rssMB":668,"processes":{"electron":6}}}
+{"shell":"tauri","loadMs":890,"signInMs":427,"idle":{"pssMB":495,"rssMB":668,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":1344,"floodMBps":34.9,"floodMs":601,"hasSession":true,"afterBridge":{"pssMB":542,"rssMB":720,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":922,"signInMs":441,"idle":{"pssMB":493,"rssMB":665,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoP50":1,"echoP95":3,"floodChunks":1344,"floodMBps":28,"floodMs":750,"hasSession":true,"afterBridge":{"pssMB":533,"rssMB":711,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"electron","loadMs":553,"signInMs":333,"idle":{"pssMB":352,"rssMB":655,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":3.9,"echoP50":0.4,"echoP95":0.9,"floodMs":272,"floodMBps":77.1,"floodChunks":1344,"afterFloodEchoP50":0.3,"afterBridge":{"pssMB":360,"rssMB":663,"processes":{"electron":6}}}
+{"shell":"electron","loadMs":502,"signInMs":326,"idle":{"pssMB":353,"rssMB":656,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":4.9,"echoP50":0.4,"echoP95":1,"floodMs":365,"floodMBps":57.6,"floodChunks":1344,"afterFloodEchoP50":0.7,"afterBridge":{"pssMB":358,"rssMB":661,"processes":{"electron":6}}}
+{"shell":"tauri","loadMs":890,"signInMs":337,"idle":{"pssMB":499,"rssMB":671,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":2,"bridge":true,"echoP50":1,"echoP95":2,"floodChunks":1344,"floodMBps":35.9,"floodMs":585,"hasSession":true,"afterBridge":{"pssMB":543,"rssMB":722,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+
+| Median of 5 runs | electron | tauri |
+|---|---|---|
+| Spawn to console loaded (ms) | 571 | 890 |
+| Sign-in through the form (ms) | 338 | 441 |
+| Memory idle, PSS (MB) | 353 | 493 |
+| Memory idle, RSS (MB) | 656 | 665 |
+| Bridge attach (ms) | 4.9 | 2 |
+| Echo p50 (ms) | 0.5 | 1 |
+| Echo p95 (ms) | 1.2 | 2 |
+| 21 MB flood (ms) | 297 | 700 |
+| Flood throughput (MB/s) | 70.8 | 30 |
+| Echo p50 right after the flood (ms) | 0.5 | 1 |
+| Memory after the bench, PSS (MB) | 360 | 533 |

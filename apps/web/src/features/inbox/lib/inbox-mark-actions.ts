@@ -37,14 +37,13 @@ interface InboxMarkAction {
 const taskOf = (item: InboxItem): string | null => (item.kind === 'task' ? item.task.id : null);
 
 /**
- * What the Inbox can do to items (§3), one entry each, the same for one row
- * (its menu, the pane's toolbar, E and L) as for a selection (the bulk bar).
- * Mark as done also keeps the items under Show done for this visit; Delete
- * takes them out of it (Decided 4). Deprioritize restores priority instead
- * when every item is already low. Delete also takes up a task an agent made,
- * as Dismiss does; Mark as done does not, so a task marked done stays under
- * Show done for the visit like every other item (the mark is the person's,
- * on every device).
+ * What the Inbox can do to items, one entry each, the same for one row (its
+ * menu, the pane's toolbar, E and L) as for a selection (the bulk bar). Mark
+ * as done also keeps the items under Show done for this visit; Delete takes
+ * them out of it. Deprioritize restores priority instead when every item is
+ * already low. Delete also takes up a task an agent made, as Dismiss does;
+ * Mark as done does not, so a task marked done stays under Show done for the
+ * visit like every other item (the mark is the person's, on every device).
  */
 export const INBOX_MARK_ACTIONS: Record<InboxMarkActionName, InboxMarkAction> = {
   done: { write: () => ({ mark: 'done' }), visit: (key) => inboxVisit.done(key) },

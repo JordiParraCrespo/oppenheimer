@@ -14,13 +14,12 @@ import { WhatsappOwnerNumberForm } from '@/features/whatsapp/forms/whatsapp-owne
 import { type OwnerStep, ownerStep } from '@/features/whatsapp/lib/owner-row';
 
 /**
- * The reader's own number on one of theirs
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1): the only
- * number answered there. They name it, this number sends it a six-digit
- * code, and they enter the code here, so a mistyped number never becomes
- * theirs. Once confirmed the row shows it, with Change; a new number keeps
- * the old one answered until its own code is entered. Sending needs the
- * host online; entering the code does not.
+ * The reader's own number on one of theirs: the only number answered there.
+ * They name it, this number sends it a six-digit code, and they enter the
+ * code here, so a mistyped number never becomes theirs. Once confirmed the
+ * row shows it, with Change; a new number keeps the old one answered until
+ * its own code is entered. Sending needs the host online; entering the code
+ * does not.
  */
 export function WhatsappOwnerRow({ account }: { account: WhatsappAccountEntity }) {
   const { t } = useTranslation();

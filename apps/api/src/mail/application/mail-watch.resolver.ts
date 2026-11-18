@@ -20,8 +20,8 @@ export interface MailWatchRead {
 }
 
 /**
- * Reads what arrived in one watched Gmail account since its mark
- * (`product/next-steps/mail.md` §5): `users.history.list` from the stored
+ * Reads what arrived in one watched Gmail account since its mark:
+ * `users.history.list` from the stored
  * `historyId`, each watched query run as a Gmail search crossed with what
  * arrived, and the envelopes of what some trigger takes. An account read for
  * the first time, or whose history Gmail no longer keeps, starts from now

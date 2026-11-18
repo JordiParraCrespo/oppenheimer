@@ -16,19 +16,21 @@ import { moveProjectOptions } from '../lib/session-groups';
 
 /**
  * A session row's ellipsis menu. Move slides the menu to a pane rather than a
- * submenu, like the account menu's Appearance
- * (`packages/frontend/design-system/AGENTS.md`); the section computes which
+ * submenu, like the account menu's Appearance; the section computes which
  * project the session is in, since it holds both lists; that one stays listed,
- * ticked and not choosable, so the pane says where the session is. No key hints: the
- * export draws R, M and D, but nothing listens for them yet, and a painted key
- * that does nothing is a claim. Select starts picking rows to act on
- * together with this one, the way a touch screen with no ⌘-click gets there.
+ * ticked and not choosable, so the pane says where the session is. No key
+ * hints: the export draws R, M and D, but nothing listens for them yet, and a
+ * painted key that does nothing is a claim. Select starts picking rows to act
+ * on together with this one, the way a touch screen with no ⌘-click gets
+ * there.
  */
 export function SessionRowMenu({
   open,
   onOpenChange,
   pinned,
   onPinChange,
+  unread,
+  onUnreadChange,
   hidden,
   onHiddenChange,
   onSelect,
@@ -43,6 +45,9 @@ export function SessionRowMenu({
   onOpenChange: (open: boolean) => void;
   pinned: boolean;
   onPinChange: (pinned: boolean) => void;
+  /** Whether the reader marked the session to come back to. */
+  unread: boolean;
+  onUnreadChange: (unread: boolean) => void;
   hidden: boolean;
   onHiddenChange: (hidden: boolean) => void;
   onSelect: () => void;
@@ -76,6 +81,9 @@ export function SessionRowMenu({
           <>
             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
               {pinned ? t('sessions.sidebar.unpin') : t('sessions.sidebar.pin')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onUnreadChange(!unread)}>
+              {unread ? t('sessions.sidebar.markRead') : t('sessions.sidebar.markUnread')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>

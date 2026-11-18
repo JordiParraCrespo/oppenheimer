@@ -9,10 +9,10 @@ import { useConsoleDialog } from '@/lib/console';
  * shared as — "Shared · can write · 2", "Shared · view only · link". Either
  * opens the Share dialog.
  *
- * It closes the session's bar on the right (`SessionsConsole.dc.html`, a
- * quiet pill), or, where the screen has no bar of its own to put it in (a
- * pull request's review session), the terminal's status line, as a word in
- * the line's own ink (`place="status"`).
+ * It closes the session's bar on the right (a quiet pill), or, where the
+ * screen has no bar of its own to put it in (a pull request's review
+ * session), the terminal's status line, as a word in the line's own ink
+ * (`place="status"`).
  */
 export function SessionShareButton({
   sessionId,

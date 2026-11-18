@@ -33,9 +33,8 @@ export interface WhatsappAccountProps {
   /** Why it is logged out or unlinked, in the runner's words. */
   statusReason: string | null;
   /**
-   * The Oppenheimer bot that answers the owner here by default
-   * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1); null
-   * while none does. A switch by name ("Shop: …") overrides it per chat.
+   * The Oppenheimer bot that answers the owner here by default; null while
+   * none does. A switch by name ("Shop: …") overrides it per chat.
    */
   answeringBotId: string | null;
   /** The owner's own number, as its JID, once the code sent to it was entered. */
@@ -62,10 +61,10 @@ export interface WhatsappDeviceReport {
 }
 
 /**
- * A number the person owns, joined as a WhatsApp linked device by the runner
- * on one of their hosts (`product/next-steps/whatsapp.md`). The keys stay on
- * the host; this is what the control plane knows of it: where it lives, what
- * it is called, and how the host last said it stands.
+ * A number the person owns, joined as a WhatsApp linked device by the runner on
+ * one of their hosts. The keys stay on the host; this is what the control plane
+ * knows of it: where it lives, what it is called, and how the host last said it
+ * stands.
  */
 export class WhatsappAccountEntity extends AggregateRoot<WhatsappAccountProps> {
   /** A report of another paired number forgot the owner: the next save writes that. */

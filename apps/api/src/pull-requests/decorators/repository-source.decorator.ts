@@ -8,7 +8,7 @@ import {
 import { ApiParam } from '@nestjs/swagger';
 import type { RepositorySource } from '../../github/domain/repository-address.types';
 
-/** The path segment that names a repository read through the caller's own tokens (§6.2). */
+/** The path segment that names a repository read through the caller's own tokens. */
 export const TOKENS_SOURCE = 'tokens';
 
 /**

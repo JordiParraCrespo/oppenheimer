@@ -4,10 +4,10 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
- * "Back to task" at the head of a session's bar (`18-plan-product.md` §4, the
- * frame's `taskTitle` before a slash): the title of the task the session is
- * on, opening Plan on it. With several, the task the session was started
- * from, else the one it was linked to last. Nothing for a session on no task.
+ * "Back to task" at the head of a session's bar, before a slash: the title of
+ * the task the session is on, opening Plan on it. With several, the task the
+ * session was started from, else the one it was linked to last. Nothing for a
+ * session on no task.
  */
 export function SessionTaskLink({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();

@@ -14,7 +14,7 @@ import { CreateBotMemoryFactCommand } from './create-bot-memory-fact.command';
 /**
  * A fact added by hand in Settings → Memory while the bot has room for one,
  * or saved by the bot through `remember`, which makes room by letting its
- * oldest `log` fact go (`25-bots.md` §4.1).
+ * oldest `log` fact go.
  */
 @CommandHandler(CreateBotMemoryFactCommand)
 export class CreateBotMemoryFactCommandHandler

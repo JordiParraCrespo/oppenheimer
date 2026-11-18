@@ -4,7 +4,7 @@ import type { SessionSearchCriteria } from '../../database/work-session.reposito
 
 /**
  * The caller's sessions, searched for words in their names and logs, on any
- * host (`search_sessions`, `product/versions/mvp/25-bots.md` §4.2).
+ * host (`search_sessions`).
  */
 export class SearchSessionsQuery extends QueryBase {
   readonly scope: AccessScope;

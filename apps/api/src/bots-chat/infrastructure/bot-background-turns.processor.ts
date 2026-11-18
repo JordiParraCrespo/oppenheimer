@@ -13,7 +13,7 @@ const BACKGROUND_TURNS_PER_PROCESS = 8;
  * The `bot-background-turns` worker: the turns nobody waits on (a goal's
  * continuation, a loop's run, a routine's), apart from the `bot-turns`
  * worker that runs the turns a person or another bot sent. A turn has no
- * time limit (`25-bots.md` §2), so a goal's turn may hold its slot for hours;
+ * time limit, so a goal's turn may hold its slot for hours;
  * on its own queue it never holds one a message waits on. The run is the
  * same command either way.
  */

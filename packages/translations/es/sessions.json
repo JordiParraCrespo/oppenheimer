@@ -6,6 +6,8 @@
     "retry": "Reintentar",
     "retrying": "Reintentando",
     "retryFailed": "No se pudo volver a iniciar la sesión.",
+    "openTerminal": "Abrir un terminal en {{host}}",
+    "openTerminalTitle": "Un terminal en blanco en ~ de {{host}}, para arreglar lo que impidió el inicio (un inicio de sesión, una herramienta que falta) y volver a intentarlo",
     "working": "Trabajando…",
     "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
@@ -323,6 +325,9 @@
     "pinned": "Fijadas",
     "pin": "Fijar",
     "unpin": "Desfijar",
+    "markUnread": "Marcar como no leída",
+    "markRead": "Marcar como leída",
+    "unreadLabel": "No leída",
     "hide": "Ocultar",
     "show": "Mostrar",
     "hidden": "Oculta",
@@ -388,6 +393,7 @@
     "repository": "Repositorio",
     "agent": "Agente",
     "host": "Equipo",
+    "status": "Estado",
     "sort": "Ordenar por",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
@@ -405,13 +411,19 @@
     "showAll": "Mostrar todos los proyectos",
     "pinnedOnly": "Solo fijadas",
     "showHidden": "Mostrar sesiones ocultas",
-    "newProject": "Nuevo proyecto…"
+    "newProject": "Nuevo proyecto…",
+    "allStatuses": "Todos los estados",
+    "statuses": {
+      "needs-you": "Necesita tu respuesta",
+      "done": "Listo para revisar"
+    }
   },
   "sort": {
     "custom": "Orden personalizado",
     "recent": "Última actividad",
     "oldest": "Más antiguas primero",
-    "name": "Nombre"
+    "name": "Nombre",
+    "attention": "Primero las que necesitan respuesta"
   },
   "share": {
     "title": "Compartir sesión",
@@ -692,12 +704,61 @@
       }
     }
   },
+  "side": {
+    "show": "Mostrar panel lateral",
+    "hide": "Ocultar panel lateral",
+    "label": "Panel lateral",
+    "tabs": "Abierto junto a esta sesión",
+    "new": "Abrir otra cosa",
+    "close": "Cerrar panel lateral",
+    "closeTab": "Cerrar {{name}}",
+    "launcher": {
+      "title": "Abrir junto a esta sesión",
+      "description": "Mantén esta sesión a la vista mientras trabajas en otra cosa.",
+      "terminal": "Terminal",
+      "terminalDetail": "Una shell en el worktree de esta sesión",
+      "session": "Sesión",
+      "sessionDetail": "Otra sesión, en cualquier host",
+      "bot": "Bot",
+      "botDetail": "Elige uno de tus bots y chatea",
+      "browserDetail": "El servidor de desarrollo de la sesión",
+      "simulatorDetail": "El dispositivo que maneja el agente de la sesión",
+      "desktopDetail": "La pantalla del propio host",
+      "back": "Atrás",
+      "sessions": "Elige una sesión",
+      "searchSessions": "Buscar sesiones",
+      "noSessions": "Todavía no hay otra sesión que abrir.",
+      "bots": "Elige un bot",
+      "searchBots": "Buscar bots",
+      "noBots": "Aún no hay bots. Crea uno en Empleados.",
+      "noMatch": "Nada coincide con «{{query}}».",
+      "agent": "Agente",
+      "agentDetail": "Otro agente en este worktree",
+      "agents": "Elige un agente",
+      "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
+      "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
+    },
+    "terminal": {
+      "name": "Terminal {{index}}",
+      "opening": "Abriendo una terminal…",
+      "openFailed": "La terminal no se abrió",
+      "closeFailed": "La terminal no se cerró",
+      "loadFailed": "No se pudieron leer las terminales de esta sesión",
+      "notSupported": "Este host no puede abrir más terminales",
+      "notSupportedDetail": "Actualiza su runner para abrir shells junto al agente.",
+      "gone": "Esta terminal se ha cerrado"
+    },
+    "openFull": "Abrir en su propia página",
+    "sessionLoadFailed": "No se pudo cargar esa sesión",
+    "agent": {
+      "name": "{{agent}} {{index}}",
+      "opening": "Iniciando {{agent}}…",
+      "openFailed": "El agente no se inició",
+      "start": "Iniciar {{agent}}"
+    }
+  },
   "preview": {
-    "show": "Mostrar vista previa",
-    "hide": "Ocultar vista previa",
-    "label": "Vista previa",
     "simulator": "Simulador",
-    "close": "Cerrar vista previa",
     "frame": "App ejecutándose en {{name}}",
     "title": "{{name}} ejecutándose en el host de esta sesión",
     "connecting": "Conectando con el dispositivo de la sesión…",
@@ -725,7 +786,16 @@
     "portsFailed": "No se pudieron listar los puertos de la sesión",
     "previewFailed": "No se pudo abrir la vista previa",
     "opening": "Abriendo localhost:{{port}}…",
-    "desktop": "Escritorio"
+    "desktop": "Escritorio",
+    "device": "Dispositivo",
+    "deviceSearch": "Buscar un dispositivo",
+    "deviceEmpty": "Ningún dispositivo",
+    "deviceTaken": "En uso por otra sesión",
+    "refreshDevice": "Actualizar dispositivos",
+    "platform": {
+      "ios": "Simulador de iOS",
+      "android": "Emulador de Android"
+    }
   },
   "cloud": {
     "eyebrow": "Nube de Claude Code",

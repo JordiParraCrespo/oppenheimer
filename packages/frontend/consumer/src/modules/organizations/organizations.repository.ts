@@ -20,7 +20,7 @@ function toEntity(organization: OrganizationResponseDto): OrganizationEntity {
 }
 
 /**
- * The personal workspace, and only that (`product/versions/mvp/08-auth.md`).
+ * The personal workspace, and only that.
  * The API still serves the starter's members and invitations endpoints; the
  * console does not call them, so they have no repository method or hook — a
  * roster is the teams slice's to add.

@@ -14,16 +14,15 @@ import { SectionBotsList } from './section-bots-list';
 import { SectionBotsMenu } from './section-bots-menu';
 
 /**
- * The Bots heading a console section's sidebar carries beside its own list
- * (`product/versions/mvp/28-bots-in-sections.md`, drawn on every console frame
- * of the 2026-10-25 export): the bots placed in `section`, and a plus whose
- * menu makes one there or picks which of the others it lists. The heading
- * owns that menu's open state, since the empty line opens it too, and every
- * write to where a bot shows (the menu's checks, a row's Hide), so one alert
- * under the heading says when one fails. `saving` holds the placements in
- * flight, by bot, until each settles. The heading needs no read and stays in
- * every state; the rows are read under Suspense. The label folds the rows
- * away (`useFoldedBots`), and a fold leaves the plus and its alerts.
+ * The Bots heading a console section's sidebar carries beside its own list:
+ * the bots placed in `section`, and a plus whose menu makes one there or
+ * picks which of the others it lists. The heading owns that menu's open
+ * state, since the empty line opens it too, and every write to where a bot
+ * shows (the menu's checks, a row's Hide), so one alert under the heading
+ * says when one fails. `saving` holds the placements in flight, by bot,
+ * until each settles. The heading needs no read and stays in every state;
+ * the rows are read under Suspense. The label folds the rows away
+ * (`useFoldedBots`), and a fold leaves the plus and its alerts.
  */
 export function SectionBots({ section }: { section: BotSection }) {
   const { t } = useTranslation();
@@ -81,7 +80,7 @@ export function SectionBots({ section }: { section: BotSection }) {
           <QueryState.Pending>
             <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />
           </QueryState.Pending>
-          <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />
+          <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" offlineOnce />
           <QueryState.Data>
             <SectionBotsList
               section={section}

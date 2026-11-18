@@ -3,10 +3,9 @@ import type { WhatsappMediaKind } from '@oppenheimer/shared/protocol';
 import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
- * One message a linked number saw or sent (`product/next-steps/whatsapp.md`
- * §3), kept so the owner's bots can read the chat: WhatsApp has no API to ask
- * a linked device's history of. Kept for `WHATSAPP_RETENTION_DAYS`, and goes
- * with its account.
+ * One message a linked number saw or sent, kept so the owner's bots can read
+ * the chat: WhatsApp has no API to ask a linked device's history of. Kept for
+ * `WHATSAPP_RETENTION_DAYS`, and goes with its account.
  */
 @Entity('whatsapp_message')
 @Index('UQ_whatsapp_message_external', ['organizationId', 'accountId', 'chatId', 'externalId'], {

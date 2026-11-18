@@ -12,11 +12,11 @@ const KEYS: Record<string, 'enter' | 'backspace' | 'escape' | 'tab'> = {
 };
 
 /**
- * A session's device in a phone's frame (`SessionsConsole.dc.html`, the
- * preview pane's Simulator): the bezel, the screen's live frame, and the
- * reader's hand on it. A click taps, a drag swipes, and typing with the
- * screen focused types into the device. Points go out as fractions of the
- * screen, so nothing here knows the device's resolution.
+ * A session's device in a phone's frame (the preview pane's Simulator): the
+ * bezel, the screen's live frame, and the reader's hand on it. A click
+ * taps, a drag swipes, and typing with the screen focused types into the
+ * device. Points go out as fractions of the screen, so nothing here knows
+ * the device's resolution.
  */
 export function DeviceFrame({
   label,

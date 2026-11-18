@@ -66,12 +66,11 @@ function useAnsweredKeys(): ReadonlySet<string> {
 }
 
 /**
- * Whether the Inbox lists pull requests (a review asked of you, yours ready
- * to merge), kept on this device. Off unless the reader turns it on: the
- * agents open pull requests under the reader's account, so every one of
- * them would wait here as theirs to merge (`29-inbox.md`, "Pull requests
- * are opt-in"). Off, their two reads are not made at all. One value for the
- * page, so the list and every count agree the moment it flips.
+ * Whether the Inbox lists pull requests (a review asked of you, yours ready to
+ * merge), kept on this device. Off unless the reader turns it on: the agents
+ * open pull requests under the reader's account, so every one of them would
+ * wait here as theirs to merge. Off, their two reads are not made at all. One
+ * value for the page, so the list and every count agree the moment it flips.
  */
 const PULLS_KEY = 'oppenheimer.inbox.pulls';
 let pullsShown: boolean | undefined;
@@ -117,7 +116,7 @@ function useInboxMarksQuery() {
   return { queryKey: inboxKeys.marks(), queryFn: () => app.inbox.findMarks() };
 }
 
-/** The open reports (`29-inbox.md`, "Reports"); `inboxReport.changed` refetches them. */
+/** The open reports; `inboxReport.changed` refetches them. */
 function useInboxReportsQuery() {
   const app = useConsumerApp();
   return { queryKey: inboxKeys.reports(), queryFn: () => app.inbox.findReports() };
@@ -393,7 +392,7 @@ function restoreMarks(queryClient: ReturnType<typeof useQueryClient>, context?: 
 }
 
 /**
- * Marks one occurrence done, low, snoozed or deleted (§3). The list moves on
+ * Marks one occurrence done, low, snoozed or deleted. The list moves on
  * the click; the server's mark replaces the provisional one, and a refusal
  * puts the list back.
  */

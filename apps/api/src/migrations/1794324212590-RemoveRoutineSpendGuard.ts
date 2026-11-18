@@ -2,10 +2,9 @@ import { nextScheduleOccurrence, type ScheduleRule } from '@oppenheimer/shared/a
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * The spend guard on a bot's routines is gone (`26-bot-routines.md` §6,
- * "Removed 2026-11-10"): routines run on their schedule whether or not their
- * owner reads them, as OpenClaw's heartbeat does. The run budget and the
- * overlap guard still hold the cost.
+ * The spend guard on a bot's routines is gone: routines run on their schedule
+ * whether or not their owner reads them, as OpenClaw's heartbeat does. The run
+ * budget and the overlap guard still hold the cost.
  *
  * - Every live routine paused as `unattended` resumes, as the owner's return
  *   resumed it: each schedule trigger's `nextFireAt` is its next slot after

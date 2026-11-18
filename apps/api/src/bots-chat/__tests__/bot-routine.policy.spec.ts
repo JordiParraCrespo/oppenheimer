@@ -1,9 +1,9 @@
 /**
- * What a bot's chat says about its routines outside any turn
- * (`26-bot-routines.md` §4, "In the chat"): which run outcomes are failures
- * worth a line, the line itself, and which failures share one line. The listener that writes it is
- * `bot-routine-activity.domain-event-handler.spec.ts`; the column and its
- * check are the integration suite's.
+ * What a bot's chat says about its routines outside any turn: which run
+ * outcomes are failures worth a line, the line itself, and which failures share
+ * one line. The listener that writes it is
+ * `bot-routine-activity.domain-event-handler.spec.ts`; the column and its check
+ * are the integration suite's.
  */
 import { AUTOMATION_SKIP_REASONS } from '@oppenheimer/shared/automations';
 import {

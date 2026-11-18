@@ -5,12 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SectionBotsList } from '../sections/section-bots-list';
 
 /**
- * A section's Bots heading (`28-bots-in-sections.md`): a row opens the bot's
- * chat inside that section, so the reader never leaves it, and the heading
- * says how one gets here before the first bot. A row's ellipsis hands its
- * Hide to the heading, which owns every placement write, and asks before its
- * Delete removes the bot for good. Which bots a section lists is the product
- * package's `useSuspenseSectionBots`, mocked here.
+ * A section's Bots heading: a row opens the bot's chat inside that section,
+ * so the reader never leaves it, and the heading says how one gets here
+ * before the first bot. A row's ellipsis hands its Hide to the heading,
+ * which owns every placement write, and asks before its Delete removes the
+ * bot for good. Which bots a section lists is the product package's
+ * `useSuspenseSectionBots`, mocked here.
  */
 
 vi.mock('react-i18next', () => ({
@@ -25,6 +25,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useDeleteBot: () => ({ mutate: vi.fn(), isPending: false, error: null }),
   useUpdateBot: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
   useBotsSnapshot: () => () => listed.bots,
+  useBotNeedsInput: () => false,
 }));
 
 vi.mock('@tanstack/react-router', () => ({

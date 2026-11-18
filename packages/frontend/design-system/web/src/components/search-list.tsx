@@ -4,9 +4,14 @@
 import { SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { ComboboxField } from '../internal/combobox-field';
 import { cn } from '../lib/utils';
-import { ChipSelectItem, ChipSelectList, type ChipSelectOption } from './chip-select';
-import { Input } from './input';
+import {
+  ChipSelectCombobox,
+  ChipSelectItem,
+  ChipSelectList,
+  type ChipSelectOption,
+} from './chip-select';
 
 /** A row of a `SearchList`: a `ChipSelectOption` whose value may be `null` (Ungrouped, No project). */
 type SearchListOption<V extends string | null = string> = Omit<ChipSelectOption, 'value'> & {
@@ -32,9 +37,8 @@ function matches(option: SearchListOption<string | null>, term: string) {
  * a pane of a row's menu. Its rows are not menu items, so a menu around it
  * neither moves focus to the row under the pointer nor reads the typed text
  * as typeahead; the field keeps every key but Escape and Tab to itself. The
- * arrows move the highlight, scrolling it into view, and Enter picks it; the
- * field is a combobox whose active descendant is the highlighted row, so a
- * screen reader hears which one Enter will pick.
+ * keys are `ChipSelectCombobox`'s: the arrows move the highlight, scrolling it
+ * into view, Enter picks it, and a screen reader hears which one it will pick.
  *
  * `value` is the one value picked (`null` when nothing is: a Move to… pane),
  * or the set checked. `onPick` hands back the
@@ -73,98 +77,59 @@ function SearchList<V extends string | null>({
   className?: string;
   'aria-label'?: string;
 }) {
-  const id = React.useId();
   const [query, setQuery] = React.useState('');
-  const [active, setActive] = React.useState(0);
   const term = query.trim().toLowerCase();
   const visible = options.filter((option) => matches(option, term));
   const set = Array.isArray(value) ? (value as readonly V[]) : null;
   const isSelected = (option: SearchListOption<V>) =>
     set ? set.includes(option.value) : option.value === value;
-  const optionId = (index: number) => `${id}-option-${index}`;
-  const pick = (option: SearchListOption<V> | undefined) => {
-    if (option && !option.disabled) onPick(option, set ? !isSelected(option) : true);
+  const pick = (option: SearchListOption<V>) => {
+    if (!option.disabled) onPick(option, set ? !isSelected(option) : true);
   };
-  // The field keeps focus, so the list follows the arrow keys on its own.
-  const move = (step: number) => {
-    const next = Math.min(Math.max(active + step, 0), visible.length - 1);
-    setActive(next);
-    document.getElementById(optionId(next))?.scrollIntoView({ block: 'nearest' });
-  };
-
-  function onKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'Escape' || event.key === 'Tab') return;
-    // A menu around the list would read the rest as its own navigation.
-    event.stopPropagation();
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      move(1);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      move(-1);
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      pick(visible[active]);
-    }
-  }
 
   return (
     <div data-slot="search-list" className={cn('flex min-w-0 flex-col', className)}>
-      <div className="px-1 pt-1">
-        <Input
-          size="md"
-          quiet
-          // biome-ignore lint/a11y/noAutofocus: the search is the reason the list opened
-          autoFocus
-          leading={<SearchIcon className="size-3.5" />}
-          value={query}
-          placeholder={searchPlaceholder}
-          aria-label={searchPlaceholder}
-          role="combobox"
-          aria-expanded
-          aria-autocomplete="list"
-          aria-controls={`${id}-list`}
-          aria-activedescendant={visible[active] ? optionId(active) : undefined}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
-        />
-      </div>
-      <ChipSelectList
-        density="menu"
-        id={`${id}-list`}
-        role="listbox"
-        aria-label={ariaLabel}
-        aria-multiselectable={set ? true : undefined}
-        rows={rows}
-        total={options.length}
-        empty={visible.length === 0}
-        emptyText={emptyText(query.trim())}
-        className="p-1"
-      >
-        {visible.map((option, index) => (
-          <ChipSelectItem
-            key={option.value ?? ''}
-            id={optionId(index)}
-            tabIndex={-1}
-            density="menu"
-            selected={isSelected(option)}
-            highlighted={index === active}
-            leading={option.leading}
-            description={option.description}
-            mono={option.mono}
-            count={option.count}
-            data-disabled={option.disabled || undefined}
-            aria-disabled={option.disabled || undefined}
-            onMouseEnter={() => setActive(index)}
-            onClick={() => pick(option)}
-          >
-            {option.label}
-          </ChipSelectItem>
-        ))}
-      </ChipSelectList>
+      <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
+        <div className="px-1 pt-1">
+          <ComboboxField
+            quiet
+            leading={<SearchIcon className="size-3.5" />}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+            onKeyDown={(event) => {
+              // A menu around the list would read the rest as its own navigation.
+              if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation();
+            }}
+          />
+        </div>
+        <ChipSelectList
+          density="menu"
+          aria-label={ariaLabel}
+          aria-multiselectable={set ? true : undefined}
+          rows={rows}
+          total={options.length}
+          empty={visible.length === 0}
+          emptyText={emptyText(query.trim())}
+          className="p-1"
+        >
+          {visible.map((option) => (
+            <ChipSelectItem
+              key={option.value ?? ''}
+              density="menu"
+              selected={isSelected(option)}
+              leading={option.leading}
+              description={option.description}
+              mono={option.mono}
+              count={option.count}
+              disabled={option.disabled}
+              data-disabled={option.disabled || undefined}
+              onClick={() => pick(option)}
+            >
+              {option.label}
+            </ChipSelectItem>
+          ))}
+        </ChipSelectList>
+      </ChipSelectCombobox>
     </div>
   );
 }
