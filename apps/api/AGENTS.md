@@ -70,7 +70,8 @@ asks) is Markdown in the module's `domain/prompts/`, never a string in
 a `*.policy.ts`. A folder, one level deep, says where the words are sent:
 `system/` for sections of the system prompt, `turn/` for what a turn
 carries besides its opening (its context, the notes in its history, a
-slash command), `wake/` for what opens a turn an event started (a session,
+slash command), `wake/` for what an event says to the bot: what opens the
+turn it starts and the lines it leaves in the chat outside one (a session,
 a pull request, a task, an approval, another bot, a routine, a loop, a
 goal); it is part of the id (`system/rules`). A file is
 one prompt, or several fragments under
