@@ -9,7 +9,7 @@ import {
   TaskSessionChip,
   TodoRow,
 } from '@oppenheimer/design-system-web';
-import { ListFilter, Play } from '@oppenheimer/design-system-web/icons';
+import { CalendarMinus, ListFilter, Play } from '@oppenheimer/design-system-web/icons';
 import {
   useMoveTask,
   useSuspenseTaskBoard,
@@ -40,6 +40,9 @@ const todo = getRouteApi('/_authenticated/plan/todo');
  * (`useTodoOrder`). Its Move button puts it on another TODO day, Tomorrow
  * or one picked on a month, unless its deadline holds it on the day shown
  * (`heldByDeadline`), where moving its TODO day would change nothing on screen.
+ * Its Remove button takes it off To do altogether: off every day, its due
+ * date included, until Add tasks puts it on a day again or its due date
+ * changes (`offTodo`).
  *
  * A task an agent is working on (a session running or queued, none waiting
  * on the person) leaves the list for the "With agents" strip under it, its
@@ -60,6 +63,7 @@ export function TodoList() {
   const read = useSuspenseTaskBoard();
   const move = useMoveTask();
   const update = useUpdateTask();
+  const remove = useUpdateTask();
   const projects = new Map(read.projects.map((row) => [row.id, row]));
   const milestones = new Map(read.milestones.map((row) => [row.id, row.name]));
   const sessions = new Map(read.sessions.map((row) => [row.id, row]));
@@ -129,6 +133,16 @@ export function TodoList() {
           {...dragIgnore}
           type="button"
           size="sm"
+          aria-label={t('tasks.todo.remove', { title: task.title })}
+          title={t('tasks.todo.removeTitle')}
+          onClick={() => remove.mutate({ id: task.id, input: { focusDate: null, offTodo: true } })}
+        >
+          <CalendarMinus />
+        </IconButton>
+        <IconButton
+          {...dragIgnore}
+          type="button"
+          size="sm"
           aria-label={t('tasks.todo.startSession', { title: task.title })}
           title={t('tasks.dialog.startSession')}
           onClick={() => navigate({ search: (previous) => ({ ...previous, start: task.id }) })}
@@ -174,6 +188,11 @@ export function TodoList() {
         error={update.error}
         fallback={t('tasks.todo.moveFailed')}
         onDismiss={update.reset}
+      />
+      <ErrorAlert
+        error={remove.error}
+        fallback={t('tasks.todo.removeFailed')}
+        onDismiss={remove.reset}
       />
       {listed.length === 0 && withAgents.length === 0 ? (
         <EmptyState className="rounded-lg bg-card">

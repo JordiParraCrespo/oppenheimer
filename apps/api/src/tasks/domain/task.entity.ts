@@ -50,6 +50,11 @@ export interface TaskProps {
   dueTime: string | null;
   /** The day it is on To do from, until it is done; apart from when it is due. */
   focusDate: string | null;
+  /**
+   * Taken off To do by its person: off every day's list, its due date
+   * included, until it gets a TODO day again or its due date changes.
+   */
+  offTodo: boolean;
   /** How much it matters, or null for none; never moves it on the board. */
   priority: TaskPriority | null;
   /** When it last moved to Done; cleared when it leaves. */
@@ -98,6 +103,8 @@ export interface TaskEdit {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  /** `true` takes it off To do; a new TODO day or due date puts it back. */
+  offTodo?: boolean;
   priority?: TaskPriority | null;
 }
 
@@ -134,6 +141,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         dueDate: props.dueDate ?? null,
         dueTime: props.dueDate ? (props.dueTime ?? null) : null,
         focusDate: props.focusDate ?? null,
+        offTodo: false,
         priority: props.priority ?? null,
         completedAt: props.status === 'done' ? new Date() : null,
         blockedReason: null,
@@ -238,6 +246,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get focusDate(): string | null {
     return this.props.focusDate;
   }
+  get offTodo(): boolean {
+    return this.props.offTodo;
+  }
   get priority(): TaskPriority | null {
     return this.props.priority;
   }
@@ -295,9 +306,13 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     if (changes.dueTime !== undefined) this.props.dueTime = changes.dueTime;
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
     if (changes.priority !== undefined) this.props.priority = changes.priority;
+    const rescheduled = due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime;
+    // Planned for a day again, or due on another, it is back on To do.
+    if (changes.offTodo !== undefined) this.props.offTodo = changes.offTodo;
+    else if (changes.focusDate || rescheduled) this.props.offTodo = false;
     this.setUpdatedAt(new Date());
     this.validate();
-    if (due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime) {
+    if (rescheduled) {
       this.record('rescheduled', {
         from: due,
         to: { dueDate: this.props.dueDate, dueTime: this.props.dueTime },

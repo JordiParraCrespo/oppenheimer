@@ -2873,6 +2873,10 @@ export type TaskResponseDto = {
      */
     focusDate?: string | null;
     /**
+     * Taken off To do by its person: on no day’s list, whatever its due date, until it gets a TODO day again or its due date changes.
+     */
+    offTodo: boolean;
+    /**
      * How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.
      */
     priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
@@ -2922,6 +2926,7 @@ export type UpdateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    offTodo?: boolean;
     priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     blockedReason?: string | null;
     expectedVersion?: number;

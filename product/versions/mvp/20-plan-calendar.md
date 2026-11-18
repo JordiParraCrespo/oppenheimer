@@ -290,6 +290,19 @@ adds a task due that day from the dashed row under the list.
 >   changed in its dialog. (Decided by the agent that built it, for the
 >   owner to accept: the simplest honest answer.)
 
+> Changed on 2026-11-18: **Remove from TODO.** The owner asked to take a
+> task off TODO from its row, and most of the rows they wanted gone were
+> overdue, which Move cannot lift. Each open row has a Remove button
+> beside Move. It clears the task's TODO day and sets `task."offTodo"`, a
+> boolean the API's update takes. While it is set, the task is on no
+> day's list, whatever its TODO day or due date, Include overdue
+> included, and it counts nowhere. It comes back by itself when it gets a
+> TODO day again (Add tasks, the task dialog, Move) or its due date
+> changes; the server clears the flag on that write. The owner chose this
+> over offering Remove only where the TODO day alone keeps a task on the
+> list, and over clearing the due date. Remove is not logged, as a TODO
+> day is not.
+
 A row's grip, six dots at its right end, drags it into the reader's own
 order for that day, kept on this device as Plan's sidebar order is (the
 frame keeps it in the browser too); a task the stored order does not

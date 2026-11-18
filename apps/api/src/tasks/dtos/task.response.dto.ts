@@ -75,6 +75,14 @@ export class TaskResponseDto {
   })
   focusDate!: string | null;
 
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Taken off To do by its person: on no day’s list, whatever its due date, until it gets a TODO day again or its due date changes.',
+    example: false,
+  })
+  offTodo!: boolean;
+
   @ApiPropertyOptional({
     ...nullableEnum(TASK_PRIORITIES),
     description:
