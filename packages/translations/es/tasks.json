@@ -97,6 +97,7 @@
     "deleting": "Eliminando…"
   },
   "dialog": {
+    "offTodo": "Fuera de TODO hasta que tenga un día",
     "newTitle": "Nueva tarea",
     "editTitle": "Editar tarea",
     "titleLabel": "Título",

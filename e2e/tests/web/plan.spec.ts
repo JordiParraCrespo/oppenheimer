@@ -415,7 +415,7 @@ test('TODO: Add tasks puts a dated task on today and keeps its due date; it stay
   await owner.api.dispose();
 });
 
-test('TODO: Remove takes an overdue task off every day until Add tasks puts it back', async ({
+test('TODO: Remove takes an overdue task off every day until Add tasks puts it back, from its row or its dialog', async ({
   page,
 }) => {
   const owner = await provisionedUser('plantodoremove');
@@ -450,6 +450,15 @@ test('TODO: Remove takes an overdue task off every day until Add tasks puts it b
   await picker.getByRole('button', { name: /^Add to / }).click();
   await expect(picker).toBeHidden();
   await expect(row).toContainText('overdue since');
+
+  // The task dialog removes it too, once saved; picking a day there would undo it.
+  await row.getByRole('button', { name: /^Chase the late invoice/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Edit task' });
+  await dialog.getByRole('button', { name: 'Remove from TODO' }).click();
+  await expect(dialog.getByText('Off TODO until it gets a day')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(row).toHaveCount(0);
   await owner.api.dispose();
 });
 

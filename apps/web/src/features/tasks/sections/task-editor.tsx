@@ -41,6 +41,8 @@ export function TaskEditor({
   const { tasks, projects, milestones, error } = useSuspensePlan();
   const task = taskId ? tasks.find((row) => row.id === taskId) : undefined;
   const [deleting, setDeleting] = useState(false);
+  // Sent only when changed: an unchanged `offTodo` left out lets the server's rule decide.
+  const [offTodo, setOffTodo] = useState(task?.offTodo ?? false);
   const create = useCreateTask({
     onSuccess: () => {
       notifySuccess('taskAdded');
@@ -77,7 +79,11 @@ export function TaskEditor({
   const failure = create.error ?? update.error;
   const submit = (next: TaskFormOutput) => {
     const input = { ...next, notes: next.notes?.trim() ?? '' };
-    if (task) update.mutate({ id: task.id, input });
+    if (task)
+      update.mutate({
+        id: task.id,
+        input: offTodo === task.offTodo ? input : { ...input, offTodo },
+      });
     else create.mutate(input);
   };
 
@@ -97,6 +103,7 @@ export function TaskEditor({
         onSubmit={submit}
         onCancel={onClose}
         onDelete={task ? () => setDeleting(true) : undefined}
+        offTodo={task && !task.isDone ? { value: offTodo, onChange: setOffTodo } : undefined}
       />
       {deleting && task ? (
         <ConfirmDialog

@@ -301,7 +301,9 @@ adds a task due that day from the dashed row under the list.
 > changes; the server clears the flag on that write. The owner chose this
 > over offering Remove only where the TODO day alone keeps a task on the
 > list, and over clearing the due date. Remove is not logged, as a TODO
-> day is not.
+> day is not. The task dialog has the same Remove from TODO beside its
+> TODO day, which applies on Save; the row then reads "Off TODO until it
+> gets a day", and picking a day there undoes it.
 
 A row's grip, six dots at its right end, drags it into the reader's own
 order for that day, kept on this device as Plan's sidebar order is (the

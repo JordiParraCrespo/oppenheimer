@@ -96,6 +96,7 @@
     "deleting": "Deleting…"
   },
   "dialog": {
+    "offTodo": "Off TODO until it gets a day",
     "newTitle": "New task",
     "editTitle": "Edit task",
     "titleLabel": "Title",
