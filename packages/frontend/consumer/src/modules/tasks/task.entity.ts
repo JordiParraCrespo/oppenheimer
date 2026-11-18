@@ -1,4 +1,9 @@
-import type { TaskOrigin, TaskStatus } from '@oppenheimer/shared/schemas/task';
+import {
+  TASK_PRIORITIES,
+  type TaskOrigin,
+  type TaskPriority,
+  type TaskStatus,
+} from '@oppenheimer/shared/schemas/task';
 
 /** A session on a task: started from it, or linked afterwards. */
 export interface TaskSessionLink {
@@ -8,10 +13,10 @@ export interface TaskSessionLink {
 }
 
 /**
- * A task on Plan's board (`product/versions/mvp/18-plan-product.md`): work a person
- * asks for, in one of four columns, under a project and maybe one of its milestones.
- * Due dates are calendar days (`YYYY-MM-DD`) read in the viewer's timezone, so the
- * caller says what today is.
+ * A task on Plan's board: work a person asks for, in one of four columns, under
+ * a project and maybe one of its milestones. Due dates are calendar days
+ * (`YYYY-MM-DD`) read in the viewer's timezone, so the caller says what today
+ * is.
  */
 export class TaskEntity {
   constructor(
@@ -39,11 +44,15 @@ export class TaskEntity {
     public readonly origin: TaskOrigin = 'person',
     /** When its person took it up; null while a task an agent made waits in the Inbox. */
     public readonly triagedAt: Date | null = null,
+    /** How much it matters, or null for none. Never moves it on the board. */
+    public readonly priority: TaskPriority | null = null,
+    /** Taken off To do by its person, its due date included, until planned or rescheduled. */
+    public readonly offTodo = false,
   ) {}
 
   /**
    * A task an agent made that its person has not taken up yet: it waits in
-   * Plan's Inbox (`product/versions/mvp/29-inbox.md`, "Tasks an agent made").
+   * Plan's Inbox.
    * A done one is no longer waiting on anyone.
    */
   get awaitsTriage(): boolean {
@@ -73,6 +82,18 @@ export class TaskEntity {
 /** The board's order: byte order of the rank, as the API sorts it. */
 export function compareRank(a: TaskEntity, b: TaskEntity): number {
   return a.rank < b.rank ? -1 : a.rank > b.rank ? 1 : 0;
+}
+
+/**
+ * Most important first, a task with no priority last; ties keep the order
+ * they came in. For lists sorted by priority, never the board's columns.
+ */
+export function comparePriority(a: TaskEntity, b: TaskEntity): number {
+  return priorityOrder(a.priority) - priorityOrder(b.priority);
+}
+
+function priorityOrder(priority: TaskPriority | null): number {
+  return priority === null ? TASK_PRIORITIES.length : TASK_PRIORITIES.indexOf(priority);
 }
 
 /** A milestone over a project's tasks, with how far it is. */
@@ -108,6 +129,10 @@ export interface TaskInput {
   dueTime?: string | null;
   /** The day it is on To do from; `null` takes it off. */
   focusDate?: string | null;
+  /** `true` takes it off To do; a new TODO day or due date puts it back. */
+  offTodo?: boolean;
+  /** `null` takes the priority off. */
+  priority?: TaskPriority | null;
   /** Marks the task blocked and says why; `null` unblocks it. */
   blockedReason?: string | null;
 }

@@ -1,5 +1,6 @@
 import {
   BotAvatar,
+  ChipSelectCombobox,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
@@ -24,10 +25,11 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 const LOADING_ROWS = ['w-28', 'w-36', 'w-24'];
 
 /**
- * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
- * a search over every bot, each with a check for whether this section lists
- * it, and a foot that says what the check means, with New bot in the link
- * blue (the one way to make a bot from here) and the way to Employees, where bots are grouped, ordered and deleted. A check flips the bot's placement at once and the popup stays
+ * The plus on a section's Bots heading: a search over every bot, each with
+ * a check for whether this section lists it, and a foot that says what the
+ * check means, with New bot in the link blue (the one way to make a bot
+ * from here) and the way to Employees, where bots are grouped, ordered and
+ * deleted. A check flips the bot's placement at once and the popup stays
  * open for the next. The bots read arrives whole, as Employees' own search
  * has it, so the search filters it here, on the name and the description.
  *
@@ -56,7 +58,6 @@ export function SectionBotsMenu({
   const { t } = useTranslation();
   const bots = useBots();
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
   const where = t(SECTION_NAMES[section]);
   const term = query.trim().toLowerCase();
   const visible = (bots.data ?? []).filter(
@@ -67,26 +68,11 @@ export function SectionBotsMenu({
     if (!saving.has(bot.id)) onPlace(bot, !shows(bot));
   };
 
-  function onKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setActive((index) => Math.min(index + 1, visible.length - 1));
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setActive((index) => Math.max(index - 1, 0));
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      const bot = visible[active];
-      if (bot) toggle(bot);
-    }
-  }
-
   return (
     <Popover
       open={open}
       onOpenChange={(next) => {
         onOpenChange(next);
-        setActive(0);
         if (!next) setQuery('');
       }}
     >
@@ -105,71 +91,66 @@ export function SectionBotsMenu({
       {/* The popup's own padding is the one inset: the boxed search and the
           footer stand on the rows' grid inside it, so they line up with the rows. */}
       <ChipSelectPopup density="menu" align="end" width={272}>
-        <ChipSelectSearch
-          density="menu"
-          variant="boxed"
-          leadingSize="avatar"
-          value={query}
-          placeholder={t('bots.sidebar.search')}
-          aria-label={t('bots.sidebar.search')}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
-        />
-        {bots.isPending ? <LoadingStatus /> : null}
-        <ChipSelectList
-          density="menu"
-          role="listbox"
-          aria-multiselectable
-          aria-label={t('bots.section.manage', { section: where })}
-          rows={8}
-          total={bots.data?.length ?? LOADING_ROWS.length}
-          aria-busy={bots.isPending || undefined}
-          empty={!bots.isPending && (bots.isError || visible.length === 0)}
-          emptyText={
-            bots.isError
-              ? t('bots.sidebar.loadFailed')
-              : term
-                ? t('bots.sidebar.noMatch', { query: query.trim() })
-                : t('bots.sidebar.emptyTitle')
-          }
-        >
-          {bots.isPending
-            ? LOADING_ROWS.map((width) => (
-                <ChipSelectItem
-                  key={width}
-                  density="menu"
-                  aria-hidden
-                  disabled
-                  tabIndex={-1}
-                  leading={<Skeleton shape="pill" className="size-5" />}
-                  leadingSize="avatar"
-                >
-                  <span className="flex h-5 items-center">
-                    <Skeleton shape="sm" className={`h-3 ${width}`} />
-                  </span>
-                </ChipSelectItem>
-              ))
-            : null}
-          {visible.map((bot, index) => (
-            <ChipSelectItem
-              key={bot.id}
-              density="menu"
-              selected={shows(bot)}
-              highlighted={index === active}
-              leading={<BotAvatar option={{ initials: bot.initials }} size={20} face={bot.face} />}
-              leadingSize="avatar"
-              data-disabled={saving.has(bot.id) || undefined}
-              aria-disabled={saving.has(bot.id) || undefined}
-              onMouseEnter={() => setActive(index)}
-              onClick={() => toggle(bot)}
-            >
-              {bot.name}
-            </ChipSelectItem>
-          ))}
-        </ChipSelectList>
+        <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
+          <ChipSelectSearch
+            density="menu"
+            variant="boxed"
+            leadingSize="avatar"
+            placeholder={t('bots.sidebar.search')}
+            aria-label={t('bots.sidebar.search')}
+          />
+          {bots.isPending ? <LoadingStatus /> : null}
+          <ChipSelectList
+            density="menu"
+            aria-multiselectable
+            aria-label={t('bots.section.manage', { section: where })}
+            rows={8}
+            total={bots.data?.length ?? LOADING_ROWS.length}
+            aria-busy={bots.isPending || undefined}
+            empty={!bots.isPending && (bots.isError || visible.length === 0)}
+            emptyText={
+              bots.isError
+                ? t('bots.sidebar.loadFailed')
+                : term
+                  ? t('bots.sidebar.noMatch', { query: query.trim() })
+                  : t('bots.sidebar.emptyTitle')
+            }
+          >
+            {bots.isPending
+              ? LOADING_ROWS.map((width) => (
+                  <ChipSelectItem
+                    key={width}
+                    density="menu"
+                    aria-hidden
+                    disabled
+                    tabIndex={-1}
+                    leading={<Skeleton shape="pill" className="size-5" />}
+                    leadingSize="avatar"
+                  >
+                    <span className="flex h-5 items-center">
+                      <Skeleton shape="sm" className={`h-3 ${width}`} />
+                    </span>
+                  </ChipSelectItem>
+                ))
+              : null}
+            {visible.map((bot) => (
+              <ChipSelectItem
+                key={bot.id}
+                density="menu"
+                selected={shows(bot)}
+                leading={
+                  <BotAvatar option={{ initials: bot.initials }} size={20} face={bot.face} />
+                }
+                leadingSize="avatar"
+                data-disabled={saving.has(bot.id) || undefined}
+                aria-disabled={saving.has(bot.id) || undefined}
+                onClick={() => toggle(bot)}
+              >
+                {bot.name}
+              </ChipSelectItem>
+            ))}
+          </ChipSelectList>
+        </ChipSelectCombobox>
         <div className="mt-1 flex flex-col gap-2 border-t border-border-subtle px-2.5 pt-2.5 pb-1.5 text-xs text-fg-subtle">
           <p>{t('bots.section.checkedHint', { section: where })}</p>
           <div className="flex items-center gap-4">

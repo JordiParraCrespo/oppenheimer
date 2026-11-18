@@ -1953,6 +1953,10 @@ export type SessionTranscriptPageResponseDto = {
      */
     atEnd: boolean;
     /**
+     * The conversation has entries before this page: read with `from=start` and follow `nextCursor` to have all of it.
+     */
+    hasEarlier: boolean;
+    /**
      * The cursor no longer applied, so the page starts the current conversation over.
      */
     restarted: boolean;
@@ -2272,6 +2276,58 @@ export type SessionPortsResponseDto = {
      * The TCP ports the session’s own processes listen on, from 1024 up, in order.
      */
     ports: Array<SessionPortDto>;
+};
+
+export type SessionTerminalWindowDto = {
+    /**
+     * The tmux window index: what an attach ticket's `window` names.
+     */
+    index: number;
+    /**
+     * The window’s name on the host: a second agent’s window is named by its catalog id (`codex`).
+     */
+    name: string;
+    /**
+     * Window 0, the session’s agent, whose state the session shows; the rest are plain shells or a second agent.
+     */
+    agent: boolean;
+};
+
+export type SessionWindowsResponseDto = {
+    /**
+     * `listed`: `windows` is what the session holds now. `host_offline`: the host has no link. `not_supported`: its runner cannot list them.
+     */
+    state: 'listed' | 'host_offline' | 'not_supported';
+    /**
+     * The session’s tmux windows, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
+export type OpenSessionWindowRequest = {
+    model?: string;
+    permission?: 'ask' | 'auto' | 'full';
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    prompt?: string;
+};
+
+export type OpenedSessionWindowResponseDto = {
+    /**
+     * The window just opened.
+     */
+    window: SessionTerminalWindowDto;
+    /**
+     * The session’s tmux windows after it opened, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
+};
+
+export type ClosedSessionWindowResponseDto = {
+    /**
+     * The session’s tmux windows left, in index order.
+     */
+    windows: Array<SessionTerminalWindowDto>;
 };
 
 export type CloudAgentProviderStatusDto = {
@@ -2686,7 +2742,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -2820,6 +2876,14 @@ export type TaskResponseDto = {
      * The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.
      */
     focusDate?: string | null;
+    /**
+     * Taken off To do by its person: on no day’s list, whatever its due date, until it gets a TODO day again or its due date changes.
+     */
+    offTodo: boolean;
+    /**
+     * How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.
+     */
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.
@@ -2855,6 +2919,7 @@ export type CreateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
 };
 
 export type UpdateTaskRequest = {
@@ -2865,6 +2930,8 @@ export type UpdateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    offTodo?: boolean;
+    priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     blockedReason?: string | null;
     expectedVersion?: number;
 };
@@ -4399,6 +4466,40 @@ export type BotPullRequestEventResponseDto = {
     event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
 };
 
+export type BotTaskEventResponseDto = {
+    kind: 'task';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    /**
+     * What the bot follows: the whole project, or one milestone of it.
+     */
+    scope: 'project' | 'milestone';
+    /**
+     * The project the task is filed under.
+     */
+    projectId: string;
+    milestoneId: string | null;
+    taskId: string;
+    /**
+     * The task's title at the change, cut to 200 characters.
+     */
+    title: string;
+    /**
+     * What Plan logged.
+     */
+    event: 'created' | 'deleted' | 'completed' | 'reopened' | 'status_changed' | 'rescheduled' | 'reassigned' | 'blocked' | 'unblocked' | 'session_linked';
+    /**
+     * The column it left, for a move, a completion or a reopening.
+     */
+    from: 'todo' | 'doing' | 'review' | 'done';
+    /**
+     * The column it is in after the change; null once deleted.
+     */
+    to: 'todo' | 'doing' | 'review' | 'done';
+};
+
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
@@ -4588,7 +4689,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -10285,6 +10386,10 @@ export type FindSessionTranscriptData = {
     };
     query?: {
         /**
+         * Without `cursor`: `latest` (default) or `start`. Ignored beside `cursor`.
+         */
+        from?: 'latest' | 'start';
+        /**
          * Entries per page
          */
         limit?: number;
@@ -11299,6 +11404,38 @@ export type SetSessionVisibilityResponses = {
 
 export type SetSessionVisibilityResponse = SetSessionVisibilityResponses[keyof SetSessionVisibilityResponses];
 
+export type AcknowledgeSessionReportData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/report/acknowledge';
+};
+
+export type AcknowledgeSessionReportErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type AcknowledgeSessionReportError = AcknowledgeSessionReportErrors[keyof AcknowledgeSessionReportErrors];
+
+export type AcknowledgeSessionReportResponses = {
+    200: SessionResponseDto;
+};
+
+export type AcknowledgeSessionReportResponse = AcknowledgeSessionReportResponses[keyof AcknowledgeSessionReportResponses];
+
 export type MoveSessionData = {
     body: MoveSessionRequest;
     path: {
@@ -11480,6 +11617,166 @@ export type FindSessionPortsResponses = {
 };
 
 export type FindSessionPortsResponse = FindSessionPortsResponses[keyof FindSessionPortsResponses];
+
+export type FindSessionWindowsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows';
+};
+
+export type FindSessionWindowsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindSessionWindowsError = FindSessionWindowsErrors[keyof FindSessionWindowsErrors];
+
+export type FindSessionWindowsResponses = {
+    200: SessionWindowsResponseDto;
+};
+
+export type FindSessionWindowsResponse = FindSessionWindowsResponses[keyof FindSessionWindowsResponses];
+
+export type OpenSessionWindowData = {
+    body?: OpenSessionWindowRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows';
+};
+
+export type OpenSessionWindowErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_060 — This host's runner cannot start a second agent in a session
+     *
+     * SESSIONS_059 — The host refused to change the session's terminals
+     *
+     * SESSIONS_056 — This host's runner cannot open or close a session's terminals
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type OpenSessionWindowError = OpenSessionWindowErrors[keyof OpenSessionWindowErrors];
+
+export type OpenSessionWindowResponses = {
+    201: OpenedSessionWindowResponseDto;
+};
+
+export type OpenSessionWindowResponse = OpenSessionWindowResponses[keyof OpenSessionWindowResponses];
+
+export type CloseSessionWindowData = {
+    body?: never;
+    path: {
+        id: string;
+        /**
+         * The tmux window index, from 1 up.
+         */
+        window: number;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/windows/{window}';
+};
+
+export type CloseSessionWindowErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_058 — The session has no such terminal
+     *
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_059 — The host refused to change the session's terminals
+     *
+     * SESSIONS_057 — The agent's window cannot be closed; close the session instead
+     *
+     * SESSIONS_056 — This host's runner cannot open or close a session's terminals
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type CloseSessionWindowError = CloseSessionWindowErrors[keyof CloseSessionWindowErrors];
+
+export type CloseSessionWindowResponses = {
+    200: ClosedSessionWindowResponseDto;
+};
+
+export type CloseSessionWindowResponse = CloseSessionWindowResponses[keyof CloseSessionWindowResponses];
 
 export type FindCloudAgentStatusData = {
     body?: never;

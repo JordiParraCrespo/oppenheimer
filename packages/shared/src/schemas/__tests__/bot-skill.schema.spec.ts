@@ -79,7 +79,7 @@ describe('botGoalCommandOf', () => {
 });
 
 /**
- * `/loop` (`25-bots.md` §4.1). What breaks this: an interval read as words of
+ * `/loop`. What breaks this: an interval read as words of
  * the prompt (or the reverse), a part minute rounded down to no interval, an
  * out-of-range interval set as a loop, or `/loop stop` sent as a loop that
  * runs "stop".
@@ -129,8 +129,8 @@ describe('botLoopCommandOf', () => {
 });
 
 /**
- * `/schedule` (`25-bots.md` §4.1). What breaks this: a bare `/schedule`
- * sent to the bot, spending a turn on nothing, or a request's words lost.
+ * `/schedule`. What breaks this: a bare `/schedule` sent to the bot, spending a
+ * turn on nothing, or a request's words lost.
  */
 describe('botScheduleCommandOf', () => {
   const schedule = (message: string) => botScheduleCommandOf(parseBotSlashCommand(message));

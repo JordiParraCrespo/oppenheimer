@@ -15,7 +15,7 @@ import { linkLive, provisionedUser, signInAs } from '../../support/web';
  *   session and the attach ticket all go through the real API.
  * - **The relay's attach socket**, in the one test about what the terminal
  *   draws, is answered in the browser (`page.routeWebSocket`) with a recorded
- *   transcript in the `01-protocol.md` wire format, because the console always
+ *   transcript in the runner link's wire format, because the console always
  *   builds the real `AttachSessionStream`.
  *
  * The same screen on a real runner, through the real relay, is
@@ -168,6 +168,50 @@ test.describe('Session screen', () => {
     await owner.api.dispose();
   });
 
+  test('the side pane opens a bot and another session beside the session, and keeps them', async ({
+    page,
+  }) => {
+    // The host never links (a paired row with no runner), so it lists no
+    // shells and the launcher offers no Terminal; a bot and another session
+    // need no host of this session's (32-side-pane.md).
+    const owner = await provisionedUser('sessionside');
+    const hostId = await pairHost(owner.api, 'Quiet box');
+    const installationId = await connectInstallation(owner.api);
+    const sessionId = await createSession(owner.api, hostId, installationId);
+    const otherId = await createSession(owner.api, hostId, installationId);
+    await markOpen(sessionId);
+    await owner.api.patch(`/api/v1/sessions/${otherId}`, { data: { name: 'Other work' } });
+    await owner.api.put('/api/v1/model-providers/glm', { data: { apiKey: 'e2e-placeholder' } });
+    await owner.api.post('/api/v1/bots', { data: { name: 'Side Bot', provider: 'glm' } });
+
+    await signInAs(page, owner.user);
+    await page.goto(`/sessions/${sessionId}`);
+    await page.getByRole('button', { name: 'Show side pane' }).click();
+    const pane = page.getByRole('complementary', { name: 'Side pane' });
+    await expect(pane.getByText('Open beside this session')).toBeVisible();
+    await expect(pane.getByRole('option', { name: /^Terminal/ })).toHaveCount(0);
+    await expect(pane.getByRole('option', { name: /^Agent/ })).toHaveCount(0);
+
+    await pane.getByRole('option', { name: /^Bot/ }).click();
+    await pane.getByRole('option', { name: /Side Bot/ }).click();
+    await expect(pane.getByRole('tab', { name: 'Side Bot' })).toBeVisible();
+    await expect(pane.getByPlaceholder('Message Side Bot')).toBeVisible();
+
+    await pane.getByRole('button', { name: 'Open something else' }).click();
+    await pane.getByRole('option', { name: /^Session/ }).click();
+    await pane.getByRole('option', { name: /Other work/ }).click();
+    await expect(pane.getByRole('tab', { name: 'Other work' })).toBeVisible();
+
+    // Both tabs come back on this device; closing the shown one shows the other.
+    await page.reload();
+    await expect(pane.getByRole('tab', { name: 'Side Bot' })).toBeVisible();
+    await pane.getByRole('button', { name: 'Close Other work' }).click();
+    await expect(pane.getByRole('tab', { name: 'Other work' })).toHaveCount(0);
+    await expect(pane.getByPlaceholder('Message Side Bot')).toBeVisible();
+
+    await owner.api.dispose();
+  });
+
   test('an id that does not exist is a not-found page with the way to a new session', async ({
     page,
   }) => {
@@ -185,10 +229,10 @@ test.describe('Session screen', () => {
     await owner.api.dispose();
   });
 
-  test("the preview pane's Browser tab says when the session's host is away", async ({ page }) => {
+  test("the side pane's Browser tab says when the session's host is away", async ({ page }) => {
     // Pairing here is a row with no runner, so the host never links: the
     // ports read answers that it is offline, and the tab says so rather than
-    // waiting for a dev server (30-session-previews.md).
+    // waiting for a dev server.
     const owner = await provisionedUser('sessionbrowser');
     const hostId = await pairHost(owner.api, 'Quiet box');
     const installationId = await connectInstallation(owner.api);
@@ -197,9 +241,9 @@ test.describe('Session screen', () => {
 
     await signInAs(page, owner.user);
     await page.goto(`/sessions/${sessionId}`);
-    await page.getByRole('button', { name: 'Show preview' }).click();
-    const pane = page.getByRole('complementary', { name: 'Preview' });
-    await pane.getByRole('button', { name: 'Browser' }).click();
+    await page.getByRole('button', { name: 'Show side pane' }).click();
+    const pane = page.getByRole('complementary', { name: 'Side pane' });
+    await pane.getByRole('option', { name: /^Browser/ }).click();
     await expect(pane.getByText('The host is offline')).toBeVisible();
     await expect(pane.getByText('The preview comes back when the host reconnects.')).toBeVisible();
   });

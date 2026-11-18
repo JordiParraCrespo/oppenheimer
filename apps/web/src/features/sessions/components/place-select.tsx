@@ -2,6 +2,7 @@ import {
   AgentMark,
   ChipSelectActionRow,
   ChipSelectBack,
+  ChipSelectCombobox,
   ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
@@ -20,7 +21,7 @@ import { ChevronRight } from '@oppenheimer/design-system-web/icons';
 import type { CodingAgentId, HostCloudAgentId } from '@oppenheimer/shared/agents';
 import type { CloudAgentProviderId } from '@oppenheimer/shared/schemas/cloud-agent';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -60,23 +61,21 @@ type Tab = 'hosts' | 'cloud';
 /**
  * The first chip of New session: where the session runs, read as one — a
  * host and where on it ("mac-studio · New worktree"), or a vendor's cloud
- * ("Cursor · Cloud") — as `NewSessionComposer.dc.html` draws it. The pane
- * is two tabs under the search, each with its count: Hosts, each with its
- * presence dot and summary, and Cloud, the vendors the console launches a
- * cloud session at, each with whose key it is (the frame's third tab, saved
- * environments, is not built). It opens on the tab of what is picked. A host opens its Start in pane, and picking
- * a place there picks the host with it
- * (`product/versions/mvp/24-session-places.md` §3). Claude Code's cloud and
- * Codex's are a place on a host: that host starts the task in the cloud with
- * its own `claude` or `codex` (`product/research/cloud-agents.md` §5B). The
- * place is offered twice: in each host's pane, where it takes the engine
- * picked (`engineForPlace`), and as a row per agent first under Cloud
- * (`hostClouds`), which names the host the section above chose for it and
- * opens a Start from pane of every host as the section above judged it, the
- * ones that cannot start it disabled with the reason; with no host to start
- * from it is greyed out (§7). A connected vendor is picked outright,
- * and one with no key yet goes to connect it. Add host… is the foot. Props
- * in, choices out: the section above fetches.
+ * ("Cursor · Cloud"). The pane is two tabs under the search, each with its
+ * count: Hosts, each with its presence dot and summary, and Cloud, the
+ * vendors the console launches a cloud session at, each with whose key it is
+ * (a third tab, saved environments, is not built). It opens on the tab of
+ * what is picked. A host opens its Start in pane, and picking a place there
+ * picks the host with it. Claude Code's cloud and Codex's are a place on a
+ * host: that host starts the task in the cloud with its own `claude` or
+ * `codex`. The place is offered twice: in each host's pane, where it takes
+ * the engine picked (`engineForPlace`), and as a row per agent first under
+ * Cloud (`hostClouds`), which names the host the section above chose for it
+ * and opens a Start from pane of every host as the section above judged it,
+ * the ones that cannot start it disabled with the reason; with no host to
+ * start from it is greyed out. A connected vendor is picked outright, and
+ * one with no key yet goes to connect it. Add host… is the foot. Props in,
+ * choices out: the section above fetches.
  *
  * Codex's cloud runs in one of the ChatGPT account's environments, so a host
  * picked in its Start from pane opens that host's Environments pane, as the
@@ -146,7 +145,6 @@ export function PlaceSelect({
   const [pane, setPane] = useState<Pane>(ROOT);
   const [tab, setTab] = useState<Tab>('hosts');
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
 
   const host = hosts.find((candidate) => candidate.value === hostId) ?? null;
   const atVendor = cloud !== null;
@@ -230,7 +228,6 @@ export function PlaceSelect({
   function show(next: { pane?: Pane; query?: string }) {
     if (next.pane) setPane(next.pane);
     setQuery(next.query ?? '');
-    setActive(0);
   }
 
   function onOpenChange(next: boolean) {
@@ -241,7 +238,6 @@ export function PlaceSelect({
 
   function pickTab(next: Tab) {
     setTab(next);
-    setActive(0);
   }
 
   /** A place on a host, from its pane. */
@@ -301,30 +297,14 @@ export function PlaceSelect({
     if (picked) show({ pane: { kind: 'host', host: picked } });
   }
 
-  function onKeyDown(event: KeyboardEvent) {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setActive((index) => Math.min(index + 1, rows.length - 1));
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setActive((index) => Math.max(index - 1, 0));
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      const row = rows[active];
-      if (row) choose(row);
-    }
-  }
-
-  /** One row of the list, at its place in the one index the arrows walk. */
-  function row(option: ChipSelectOption, index: number) {
-    const pointer = { highlighted: index === active, onMouseEnter: () => setActive(index) };
+  /** One row of the list; the combobox around them walks them with the arrows. */
+  function row(option: ChipSelectOption) {
     switch (pane.kind) {
       case 'host':
         return (
           <ChipSelectItem
             key={option.value}
             selected={!atVendor && pane.host.value === hostId && option.value === place}
-            {...pointer}
             aria-label={option.label}
             leading={option.leading}
             description={option.description}
@@ -345,22 +325,18 @@ export function PlaceSelect({
               cloudAgent === pane.cloud.agent &&
               from.value === hostId
             }
-            {...pointer}
             onClick={() => choose(from)}
           />
         ) : null;
       }
       case 'root':
-        return rootRow(option, pointer);
+        return rootRow(option);
       case 'environments':
         return null;
     }
   }
 
-  function rootRow(
-    option: ChipSelectOption,
-    pointer: { highlighted: boolean; onMouseEnter: () => void },
-  ) {
+  function rootRow(option: ChipSelectOption) {
     const hostCloud = hostClouds.find(
       (candidate) => hostCloudRowValue(candidate.agent) === option.value,
     );
@@ -371,7 +347,6 @@ export function PlaceSelect({
           agent={hostCloud.agent}
           host={hostCloud.host}
           selected={!atVendor && place === 'cloud' && cloudAgent === hostCloud.agent}
-          {...pointer}
           onClick={() => choose(option)}
         />
       );
@@ -383,7 +358,6 @@ export function PlaceSelect({
       <ChipSelectItem
         key={option.value}
         selected={chosen}
-        {...pointer}
         aria-label={option.label}
         leading={
           vendor ? (
@@ -486,34 +460,37 @@ export function PlaceSelect({
         }
       />
       <ChipSelectPopup width={320} maxHeight={420}>
-        <ChipSelectSearch
-          value={query}
-          placeholder={list.search}
-          aria-label={list.search}
-          onChange={(event) => show({ query: event.target.value })}
-          onKeyDown={onKeyDown}
-        />
-        {paneHead()}
-        {pane.kind === 'environments' && environments ? (
-          environments({
-            hostId: pane.host.value,
-            query,
-            close: () => onOpenChange(false),
-          })
-        ) : (
-          <ChipSelectList
-            role="listbox"
-            aria-label={t(
-              pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
-            )}
-            loading={list.loading}
-            loadingText={t('sessions.new.host.loading')}
-            empty={rows.length === 0}
-            emptyText={list.empty}
-          >
-            {rows.map(row)}
-          </ChipSelectList>
-        )}
+        <ChipSelectCombobox
+          // A pane or tab of its own starts its highlight on its own first row.
+          resetOn={pane.kind === 'root' ? `root-${tab}` : pane.kind}
+          query={query}
+          onQueryChange={(next) => show({ query: next })}
+          // The environments pane's search can be an id to use as typed, which
+          // Enter would trade for the first row if one were lit.
+          autoHighlight={pane.kind === 'environments' ? false : 'always'}
+        >
+          <ChipSelectSearch placeholder={list.search} aria-label={list.search} />
+          {paneHead()}
+          {pane.kind === 'environments' && environments ? (
+            environments({
+              hostId: pane.host.value,
+              query,
+              close: () => onOpenChange(false),
+            })
+          ) : (
+            <ChipSelectList
+              aria-label={t(
+                pane.kind === 'host' ? 'sessions.new.where.label' : 'sessions.new.host.label',
+              )}
+              loading={list.loading}
+              loadingText={t('sessions.new.host.loading')}
+              empty={rows.length === 0}
+              emptyText={list.empty}
+            >
+              {rows.map(row)}
+            </ChipSelectList>
+          )}
+        </ChipSelectCombobox>
         <ChipSelectActionRow
           action={{ label: t('sessions.new.host.add'), onSelect: onAddHost }}
           onClose={() => onOpenChange(false)}

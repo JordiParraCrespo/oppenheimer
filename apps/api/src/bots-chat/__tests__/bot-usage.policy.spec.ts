@@ -1,8 +1,8 @@
 /**
- * How a bot's usage is put together from its rows (`25-bots.md` §4.1,
- * `/usage`). What breaks this: a `bigint` sum read as a string and
- * concatenated, or a negative or missing count shown; `since` taken from a
- * later model's first turn; the models in the order the database answered.
+ * How a bot's usage (`/usage`) is put together from its rows. What breaks
+ * this: a `bigint` sum read as a string and concatenated, or a negative or
+ * missing count shown; `since` taken from a later model's first turn; the
+ * models in the order the database answered.
  */
 import { botUsageOf, tokenCount } from '../domain/bot-usage.policy';
 

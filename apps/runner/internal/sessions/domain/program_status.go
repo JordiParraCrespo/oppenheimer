@@ -12,8 +12,7 @@ import (
 // terminal, instead of the terminal guessing from the screen. Claude Code
 // speaks it from 2.1.295, once the terminal answers its `OSC 7501 ; ?` probe.
 // tmux answers no such probe, so the runner's `pty` wrapper sits between the
-// agent and its pane to answer it and to keep what the agent reports
-// (`product/research/lessons-from-herdr.md`).
+// agent and its pane to answer it and to keep what the agent reports.
 
 // ProgramStatusQuery is the payload of the probe a program sends to ask
 // whether the terminal speaks the protocol.

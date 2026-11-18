@@ -5,8 +5,7 @@
 // `pnpm arch`; this is the in-loop subset.
 //
 // - The packages are found, not listed: every directory with a
-//   `.dependency-cruiser.cjs` (apps/api/ARCHITECTURE.md,
-//   packages/frontend/ARCHITECTURE.md). One is cruised when its `src/`, its
+//   `.dependency-cruiser.cjs`. One is cruised when its `src/`, its
 //   config, or the shared rules in `packages/tsconfig/depcruise` its config
 //   loads have uncommitted changes.
 // - depcruise runs directly, not through turbo, whose `^build` costs minutes

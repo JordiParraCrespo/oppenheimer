@@ -3,8 +3,7 @@ import { HOST_CLOUD_CAPABILITIES, type RunnerCapability } from '@oppenheimer/sha
 
 /**
  * Whether a host can start a cloud session of `agent` now — Claude Code's
- * (`product/versions/mvp/24-session-places.md` §7) or Codex's
- * (`product/next-steps/cloud-agents.md`): it is online, its runner's live link
+ * or Codex's: it is online, its runner's live link
  * named the capability for that agent's cloud, and the agent's CLI is on it.
  * `null` is "not known here": the host is online but this process holds no
  * link for it, so the create is not refused on that account and the dispatch

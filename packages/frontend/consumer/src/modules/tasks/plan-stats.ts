@@ -14,10 +14,10 @@ export interface PlanStatsTotals {
 }
 
 /**
- * Plan's statistics over a range (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
- * §4), for the workspace or one project: weekly series, the headline totals,
- * and the same totals for the period of the same length before it.
- * `tokensMeasured` is `none` until some session reports its usage.
+ * Plan's statistics over a range, for the workspace or one project: weekly
+ * series, the headline totals, and the same totals for the period of the same
+ * length before it. `tokensMeasured` is `none` until some session reports its
+ * usage.
  */
 export interface PlanStats {
   /** The Monday that opens each week, `YYYY-MM-DD`, in the order of every series. */

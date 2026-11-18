@@ -8,7 +8,7 @@ import { loopRunEnd, selfPacedRunAt } from '../../domain/bot-loop.policy';
 import { FinishBotLoopRunCommand } from './finish-bot-loop-run.command';
 
 /**
- * A run of a loop ended (`25-bots.md` §4.1, `/loop`): `loopRunEnd` says
+ * A run of a loop ended: `loopRunEnd` says
  * whether the loop ends, with its line, or a self-paced run that failed in
  * passing is tried again a minute on. A fixed loop's next run was staged
  * when this one was queued, so going on needs nothing here. A loop ended,

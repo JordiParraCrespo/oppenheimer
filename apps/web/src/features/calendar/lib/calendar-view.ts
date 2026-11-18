@@ -65,12 +65,11 @@ interface Moved {
 }
 
 /**
- * The write a drop on Day or Week makes (`20-plan-calendar.md`, Day and
- * Week): onto a half hour, a personal event keeps its length and starts
- * there (an all-day one becomes an hour), a task is due there at that time;
- * onto All day, an event changes day only and a task drops its time. Google's
- * events and automation runs never move; a drop where it already is writes
- * nothing.
+ * The write a drop on Day or Week makes: onto a half hour, a personal event
+ * keeps its length and starts there (an all-day one becomes an hour), a
+ * task is due there at that time; onto All day, an event changes day only
+ * and a task drops its time. Google's events and automation runs never
+ * move; a drop where it already is writes nothing.
  */
 export function agendaMove(
   item: Moved,

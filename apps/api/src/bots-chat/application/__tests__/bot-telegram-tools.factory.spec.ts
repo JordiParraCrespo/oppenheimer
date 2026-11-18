@@ -10,12 +10,12 @@ import { BotTelegramToolsFactory } from '../bot-telegram-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
- * The Telegram tools as the model sees them (`product/next-steps/telegram.md`
- * §5): a Telegram bot named by its name, id or @username, or the only one; what people wrote
- * fenced as data, so a message cannot close the fence; and a send that asks,
- * names its chat as the subject a grant can cover, and goes from the chat the
- * card resolved. The queries and the send are the module's, reached through
- * the bus; their rules are its specs.
+ * The Telegram tools as the model sees them: a Telegram bot named by its name,
+ * id or @username, or the only one; what people wrote fenced as data, so a
+ * message cannot close the fence; and a send that asks, names its chat as the
+ * subject a grant can cover, and goes from the chat the card resolved. The
+ * queries and the send are the module's, reached through the bus; their rules
+ * are its specs.
  */
 const context = (): BotToolContext => ({
   owner: emptyScope('owner-1', 'org-1'),

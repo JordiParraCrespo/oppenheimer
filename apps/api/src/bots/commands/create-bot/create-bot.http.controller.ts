@@ -4,9 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
-import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import type { ScopeContext } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -38,7 +36,7 @@ export class CreateBotHttpController {
   @ApiOperation({
     summary: 'Create a bot',
     description:
-      'A blank bot: the next free first name ("Juno", "Milo"…) unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.',
+      'A blank bot: a free first name, picked at random among physicists ("Feynman", "Curie"…), unless named, a given name numbered when the workspace has it, last in its group, with a soul that says its name and empty instructions.',
   })
   @ApiResponse({ status: 201, type: BotResponseDto })
   @ApiProblemResponse({
@@ -51,14 +49,9 @@ export class CreateBotHttpController {
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @Body() body: CreateBotRequest,
-    @CurrentScope() credential: ScopeContext | null,
   ): Promise<BotResponseDto> {
     const botId = await this.commandBus.execute<CreateBotCommand, string>(
-      new CreateBotCommand({
-        scope,
-        input: body,
-        credentialScopes: credential ? credential.scopes : null,
-      }),
+      new CreateBotCommand({ scope, input: body }),
     );
     const bot = await this.queryBus.execute<FindBotQuery, BotEntity>(
       new FindBotQuery({ scope, botId }),

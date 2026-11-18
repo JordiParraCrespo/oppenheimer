@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * WhatsApp (`product/next-steps/whatsapp.md`): a number a person owns, joined
+ * WhatsApp: a number a person owns, joined
  * as a linked device by the runner on one of their hosts, the way OpenClaw
  * joins one, and the messages it sees, kept so their bots can read the chats.
  *

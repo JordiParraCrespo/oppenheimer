@@ -20,11 +20,11 @@ export interface SpeechGrant<A = unknown> {
 }
 
 /**
- * One way to hear a workspace's dictation (`product/next-steps/voice.md`).
- * Adding a provider is a class implementing this, its id in
- * `VOICE_PROVIDERS` (`@oppenheimer/shared`), and its place in
- * `SpeechProviderRegistry`'s list in `voice.module.ts`; the resolver, the
- * fallback, the status the console reads and the polish need nothing else.
+ * One way to hear a workspace's dictation. Adding a provider is a class
+ * implementing this, its id in `VOICE_PROVIDERS` (`@oppenheimer/shared`), and
+ * its place in `SpeechProviderRegistry`'s list in `voice.module.ts`; the
+ * resolver, the fallback, the status the console reads and the polish need
+ * nothing else.
  *
  * - `availableFor` is cheap (a row read, a config read) and never calls the
  *   provider: the console asks it on every visit to decide whether to show

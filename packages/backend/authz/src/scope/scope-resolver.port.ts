@@ -6,7 +6,7 @@ export const SCOPE_RESOLVER = Symbol('SCOPE_RESOLVER');
 export interface ResolveScopeInput {
   userId: string;
   organizationId: string | null;
-  /** Q0 — the platform tier short-circuits scoping entirely. */
+  /** The platform tier short-circuits scoping entirely. */
   isPlatformAdmin: boolean;
   /** A `manage all` holder within the organization. */
   hasFullAccess: boolean;

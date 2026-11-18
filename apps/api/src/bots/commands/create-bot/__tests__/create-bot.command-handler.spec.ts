@@ -16,18 +16,19 @@ import type { BotEntity } from '../../../domain/bot.entity';
 import { BotEntity as Bot } from '../../../domain/bot.entity';
 import type { BotDocumentEntity } from '../../../domain/bot-document.entity';
 import { BotGroupEntity } from '../../../domain/bot-group.entity';
+import { BOT_FIRST_NAMES } from '../../../domain/bot-naming.policy';
 import type { ModelProviderCredentialEntity } from '../../../domain/model-provider-credential.entity';
 import { defaultBotProvider } from '../../../domain/model-provider-default.policy';
 import { CreateBotCommand } from '../create-bot.command';
 import { CreateBotCommandHandler } from '../create-bot.command-handler';
 
 /**
- * New bot (`product/versions/mvp/25-bots.md` §2): a numbered default name, a
- * soul that says it, empty instructions, both at revision 1, and every id it
- * names checked as the caller before anything is written. A bot creating one
- * (`create_bot`, §4.6) also sets its engine, its level and both documents,
- * marks it as its own, is held to its own level, and creates once per key.
- * The write itself, and two racing creations, are the integration spec's.
+ * New bot: a numbered default name, a soul that says it, empty instructions,
+ * both at revision 1, and every id it names checked as the caller before
+ * anything is written. A bot creating one (`create_bot`) also sets its engine,
+ * its level and both documents, marks it as its own, is held to its own level,
+ * and creates once per key. The write itself, and two racing creations, are the
+ * integration spec's.
  */
 const userId = randomUUID();
 const organizationId = randomUUID();
@@ -106,11 +107,13 @@ describe('CreateBotCommandHandler', () => {
   });
 
   it('gives a blank bot a first name the workspace does not have yet, on the next colour', async () => {
-    const { handler, written } = setup(['Juno', 'Release manager']);
+    const { handler, written } = setup([...BOT_FIRST_NAMES.slice(1), 'Release manager']);
     await handler.execute(new CreateBotCommand({ scope: scope(), input: {} }));
     const { bot } = written();
-    expect(bot.name).toBe('Milo');
-    expect(bot.avatarColor).toBe(BOT_AVATAR_COLORS[2]);
+    expect(bot.name).toBe(BOT_FIRST_NAMES[0]);
+    expect(bot.avatarColor).toBe(
+      BOT_AVATAR_COLORS[BOT_FIRST_NAMES.length % BOT_AVATAR_COLORS.length],
+    );
     expect(bot.createdByUserId).toBe(userId);
   });
 

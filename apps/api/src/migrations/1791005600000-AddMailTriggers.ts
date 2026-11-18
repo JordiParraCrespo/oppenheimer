@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Waking on new mail (`product/next-steps/mail.md` §5): Gmail becomes a
+ * Waking on new mail: Gmail becomes a
  * trigger source. A routine's mail trigger watches one connected account
  * (subject kind `gmail_connection`), and the new mail our poll finds arrives
  * through the inbound-events hub like GitHub's deliveries, deduplicated there

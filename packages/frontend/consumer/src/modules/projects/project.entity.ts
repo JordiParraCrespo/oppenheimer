@@ -16,8 +16,7 @@ export interface ProjectRepository {
 
 /**
  * A project: the body of work a session is listed under, and what New session
- * is prefilled with when it is picked
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * is prefilled with when it is picked.
  *
  * It is metadata: a session's directory and branch never name it, so a session
  * moves between projects freely. `slug` is a stable handle that never changes;

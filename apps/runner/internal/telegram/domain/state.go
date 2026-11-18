@@ -1,6 +1,6 @@
 // Package domain is the host's Telegram bot's rules: how it stands, which
 // updates it hands the control plane and in what shape, and how fast it may
-// send (product/next-steps/telegram.md). It knows nothing of HTTP.
+// send. It knows nothing of HTTP.
 package domain
 
 // State is how the bot stands, as `telegram.state` names it.

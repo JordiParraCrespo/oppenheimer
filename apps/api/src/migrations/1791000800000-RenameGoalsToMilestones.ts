@@ -1,11 +1,11 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Plan's goals are milestones (`product/versions/mvp/23-plan-milestones-stats-accounts.md`
- * §2): the table, the task's column, and every constraint and index named
- * after them. Renames are catalog changes only, no rewrite and no long lock.
- * The task's composite foreign key keeps its `ON DELETE SET NULL` column list
- * through the column rename, since Postgres holds it by attribute number.
+ * Plan's goals are milestones: the table, the task's column, and every
+ * constraint and index named after them. Renames are catalog changes only, no
+ * rewrite and no long lock. The task's composite foreign key keeps its `ON
+ * DELETE SET NULL` column list through the column rename, since Postgres holds
+ * it by attribute number.
  */
 export class RenameGoalsToMilestones1791000800000 implements MigrationInterface {
   name = 'RenameGoalsToMilestones1791000800000';

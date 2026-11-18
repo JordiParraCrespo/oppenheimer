@@ -37,8 +37,8 @@ import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/sha
  * The fold: `(fold, event) → fold`.
  *
  * `work_session_event` is append-only and the truth per session; the columns on
- * `work_session` are a **projection** of it, never a second truth
- * (`product/versions/mvp/03-control-plane.md`). Everything here is pure, so a replay
+ * `work_session` are a **projection** of it, never a second truth. Everything
+ * here is pure, so a replay
  * of any log rebuilds exactly the row the appends produced.
  *
  * Every input the console needs is folded here, lifecycle or not: the agent's last
@@ -146,7 +146,7 @@ export const SESSION_EVENT_KINDS = {
   /**
    * What a blocked agent waits on the person for: an `AskUserQuestion` call or a
    * permission dialog, read on the host. Payload `{ decision }`, null once it
-   * cleared (`SessionDecision`, `29-inbox.md` slice 4).
+   * cleared (`SessionDecision`).
    */
   AGENT_DECISION: AGENT_DECISION_EVENT_KIND,
   /**
@@ -190,9 +190,12 @@ export const SESSION_EVENT_KINDS = {
    * `SESSION_SHARED_FILES_MAX` for bots to list and show.
    */
   FILE_SHARED: FILE_SHARED_EVENT_KIND,
-  /** The agent left a report. Payload `{ hash }` — never the report itself. */
+  /**
+   * The agent left a report. Payload `{ hash }` — never the report itself. A
+   * turn that ends publishes one of its own off `agent.observed` (`turn:<seq>`).
+   */
   REPORT_PUBLISHED: 'report.published',
-  /** Somebody read that report. Payload `{ hash }`. */
+  /** Somebody read that report (the console opened the session). Payload `{ hash }`. */
   REPORT_ACKNOWLEDGED: 'report.acknowledged',
 } as const;
 
@@ -201,7 +204,7 @@ export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[keyof typeof SESSION
 /**
  * How the agent was started, as the fold keeps it: a column so a restart can
  * relaunch the session as it was launched and the console can show the engine
- * button, neither walking a log (`product/versions/mvp/03-control-plane.md`).
+ * button, neither walking a log.
  *
  * `permission` is null exactly when the agent has no approvals (the blank terminal);
  * any other session was launched at some level, and an absent choice meant `ask`
@@ -648,6 +651,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
         next.observedSince = next.observedSince ?? event.occurredAt;
         return next;
       }
+      next.reportHash = turnEndReport(next.lastObservedState, state, event.seq) ?? next.reportHash;
       // The first report of a state records the transition but claims no duration
       // yet — one report cannot be evidence of having been stuck.
       next.lastObservedState = state;
@@ -699,6 +703,9 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       ].slice(-SESSION_SHARED_FILES_MAX);
       return next;
     }
+    // No writer today: a turn's end is the only report, and `agent.observed`
+    // derives it ({@link turnEndReport}). Kept for a report the agent leaves
+    // itself, which would replace the turn's by the same comparison.
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:
       next.reportHash = stringField(event.payload, 'hash') ?? next.reportHash;
       return next;
@@ -708,6 +715,25 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     default:
       return next;
   }
+}
+
+/**
+ * The report an observation publishes, or null: a turn that ends leaves one
+ * for the reader, and the session is `ready-for-review` until it is read. A
+ * turn ends when the agent was `working` or `blocked` and is now at its prompt
+ * (`idle`, or `done`, the manifest's own end); from nothing or `unknown` it is
+ * the agent loading. The entry's place in the log (`seq`) is the report's
+ * identity, so a replay derives the same one and the next turn's end is a new
+ * report however the last one was read.
+ */
+function turnEndReport(
+  previous: AgentObservedState | null,
+  state: AgentObservedState,
+  seq: number,
+): string | null {
+  const wasAtWork = previous === 'working' || previous === 'blocked';
+  const atPrompt = state === 'idle' || state === 'done';
+  return wasAtWork && atPrompt ? `turn:${seq}` : null;
 }
 
 /** `initial` exists so a fold can resume from a stored row. */

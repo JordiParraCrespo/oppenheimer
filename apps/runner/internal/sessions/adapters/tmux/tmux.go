@@ -169,9 +169,17 @@ func (s *Server) Create(ctx context.Context, name, dir, command string, env map[
 	return err
 }
 
-// NewWindow opens a tab: a plain shell in the same worktree.
-func (s *Server) NewWindow(ctx context.Context, name, dir string) (int, error) {
-	out, err := s.command(ctx, "new-window", "-t", name+":", "-c", dir, "-P", "-F", "#{window_index}")
+// NewWindow opens a tab: a plain shell in the same worktree. In the
+// background (-d): without it tmux makes it the session's current window, and
+// every client watching the agent's switches to the shell. A title (-n) names
+// the window for good: tmux renames a window it named itself after whatever
+// runs in it, and one named here keeps saying which agent it holds.
+func (s *Server) NewWindow(ctx context.Context, name, dir, title string) (int, error) {
+	args := []string{"new-window", "-d", "-t", name + ":", "-c", dir, "-P", "-F", "#{window_index}"}
+	if title != "" {
+		args = append(args, "-n", title)
+	}
+	out, err := s.command(ctx, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -191,6 +199,13 @@ func (s *Server) KillWindow(ctx context.Context, target string) error {
 // Kill ends a session. A session that is already gone is not an error: the
 // caller wanted it gone.
 func (s *Server) Kill(ctx context.Context, name string) error {
+	// A shell tab watched through a view (see viewOf) holds one of the
+	// session's windows too: ended first, or its shell would outlive it.
+	if views, err := s.views(ctx, name); err == nil {
+		for _, view := range views {
+			_, _ = s.run(ctx, "kill-session", "-t", view) //nolint:errcheck // gone already is fine
+		}
+	}
 	out, err := s.run(ctx, "kill-session", "-t", name)
 	if err == nil || noServer(out) || strings.Contains(out, "can't find session") {
 		return nil
@@ -211,11 +226,51 @@ func (s *Server) List(ctx context.Context) ([]string, error) {
 	var names []string
 	scanner := bufio.NewScanner(strings.NewReader(out))
 	for scanner.Scan() {
-		if name := strings.TrimSpace(scanner.Text()); name != "" {
+		if name := strings.TrimSpace(scanner.Text()); name != "" && !strings.Contains(name, viewMark) {
 			names = append(names, name)
 		}
 	}
 	return names, nil
+}
+
+// viewMark names a view: a tmux session that holds one of a runner
+// session's windows for one browser watching it, so it is not a session of
+// its own.
+const viewMark = "~view~"
+
+// viewOf is the client command that watches window `window` of session
+// `name` without moving or resizing anyone else. tmux keeps one current
+// window per session, so a second client attaching to `name:1` would switch
+// every client of `name`, the agent's terminal included, to the shell; and a
+// session grouped with `name` shares all its windows, so under `window-size
+// latest` a small side-pane client would shrink the agent's window too. A
+// view holds the shell window alone, linked in (the window lives on in
+// `name`), its own first window dropped; it goes away with its client
+// (destroy-unattached).
+func viewOf(name, window string) []string {
+	view := name + viewMark + strconv.FormatInt(time.Now().UnixNano(), 36)
+	return []string{
+		"new-session", "-s", view, "sleep", "60",
+		";", "set-option", "-t", view, "destroy-unattached", "on",
+		";", "link-window", "-s", name + ":" + window, "-t", view + ":" + window,
+		";", "kill-window", "-t", view + ":0",
+		";", "select-window", "-t", view + ":" + window,
+	}
+}
+
+// views names the views watching session `name` right now.
+func (s *Server) views(ctx context.Context, name string) ([]string, error) {
+	out, err := s.run(ctx, "list-sessions", "-F", "#{session_name}")
+	if err != nil {
+		return nil, err
+	}
+	var views []string
+	for line := range strings.SplitSeq(out, "\n") {
+		if view := strings.TrimSpace(line); strings.HasPrefix(view, name+viewMark) {
+			views = append(views, view)
+		}
+	}
+	return views, nil
 }
 
 // Has reports whether one session exists.
@@ -278,7 +333,8 @@ func parsePanes(out string) []app.Pane {
 	var panes []app.Pane
 	for _, line := range strings.Split(out, "\n") {
 		fields := strings.SplitN(line, "\t", 5)
-		if len(fields) != 5 || fields[0] == "" {
+		// A view lists its session's panes again under its own name.
+		if len(fields) != 5 || fields[0] == "" || strings.Contains(fields[0], viewMark) {
 			continue
 		}
 		window, werr := strconv.Atoi(fields[1])
@@ -349,13 +405,21 @@ func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (
 // on a fresh screen: no line is typed for it, and neither the shell's prompt
 // nor its scrollback survives. The command runs with the session's
 // environment, under the runner's PATH rather than a login shell's.
+//
+// A failure names the window, never the command: the command line carries
+// the first task, which is the person's and never goes into a log or a
+// `command.failed` detail.
 func (s *Server) Launch(ctx context.Context, target, dir, command string) error {
 	args := []string{"respawn-pane", "-k", "-t", target, "-c", dir}
 	if command != "" {
 		args = append(args, command)
 	}
-	_, err := s.command(ctx, args...)
-	return err
+	out, err := s.run(ctx, args...)
+	if err != nil {
+		return domain.ErrTmuxCommand.WithDetail(
+			"tmux respawn-pane -t %s: %s", target, firstLine(out, err)).WithCause(err)
+	}
+	return nil
 }
 
 // Paste puts text into a window through a tmux buffer. `-p` makes it a
@@ -389,6 +453,8 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 	rest := []string{"attach-session", "-t", target}
 	if readOnly {
 		rest = append(rest, "-f", "read-only,ignore-size")
+	} else if name, window, ok := strings.Cut(target, ":"); ok && window != "0" {
+		rest = viewOf(name, window)
 	}
 	cmd := exec.CommandContext(ctx, s.binary, s.args(rest...)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")

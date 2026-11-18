@@ -10,12 +10,11 @@ import type { BotToolContext } from '../bot-tool.factory';
 import { BotWhatsappToolsFactory } from '../bot-whatsapp-tools.factory';
 
 /**
- * The WhatsApp tools as the model sees them (`product/next-steps/whatsapp.md`
- * §4): a number named by its name or id, or the only one; what people wrote
- * fenced as data, so a message cannot close the fence; and a send that asks,
- * names its chat as the subject a grant can cover, and goes from the chat the
- * card resolved. The queries and the send are the module's, reached through
- * the bus; their rules are its specs.
+ * The WhatsApp tools as the model sees them: a number named by its name or id,
+ * or the only one; what people wrote fenced as data, so a message cannot close
+ * the fence; and a send that asks, names its chat as the subject a grant can
+ * cover, and goes from the chat the card resolved. The queries and the send are
+ * the module's, reached through the bus; their rules are its specs.
  */
 const context = (): BotToolContext => ({
   owner: emptyScope('owner-1', 'org-1'),

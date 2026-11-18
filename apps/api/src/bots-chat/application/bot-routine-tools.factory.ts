@@ -107,11 +107,11 @@ const input = routineInput
 type RoutineCall = z.output<typeof input>;
 
 /**
- * A bot's own routines (`26-bot-routines.md` §4), as Grok Bot has them: one
- * tool, made and changed in chat. Which calls ask the owner first is
- * `routineCallAsks`: everything but listing and pausing, and a create in
- * the turn of the person's own `/schedule`. Every action
- * answers the whole list again, so the bot never acts on a stale picture.
+ * A bot's own routines, as Grok Bot has them: one tool, made and changed in
+ * chat. Which calls ask the owner first is `routineCallAsks`: everything but
+ * listing and pausing, and a create in the turn of the person's own
+ * `/schedule`. Every action answers the whole list again, so the bot never acts
+ * on a stale picture.
  */
 @Injectable()
 export class BotRoutineToolsFactory implements BotToolArea {

@@ -1,9 +1,9 @@
 /**
- * What the goal reviewer is sent and how its answer is read (`25-bots.md`
- * §4.1). What breaks this: an answer with prose around its JSON, or a
- * verdict it was never offered, read as one; a malformed answer throwing
- * where it should be no verdict (the goal goes on within its limit); a long
- * conversation sent whole, or cut so the newest turn is lost.
+ * What the goal reviewer is sent and how its answer is read. What breaks this:
+ * an answer with prose around its JSON, or a verdict it was never offered, read
+ * as one; a malformed answer throwing where it should be no verdict (the goal
+ * goes on within its limit); a long conversation sent whole, or cut so the
+ * newest turn is lost.
  */
 import {
   BOT_GOAL_REASON_MAX,

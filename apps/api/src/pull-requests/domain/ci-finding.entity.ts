@@ -37,8 +37,7 @@ export interface CiFindingProps {
 }
 
 /**
- * What one failing check on a pull request's head came to
- * (`0.2-pull-requests.md`, "CI findings"): its cause, whether the change
+ * What one failing check on a pull request's head came to: its cause, whether the change
  * caused it, whether it is a flake, what to do, and how sure, with the
  * evidence. Its invariants are structural (named, on a positive number,
  * resting on evidence); the closed sets and the lengths are the shared

@@ -9,13 +9,13 @@ import { goalBannerLine } from '@/features/bots/lib/goal-banner';
 const ICONS = { running: <Target />, waiting: <Clock />, paused: <CirclePause /> } as const;
 
 /**
- * The goal the bot keeps working toward (`25-bots.md` §4.1), fused onto the
- * composer's top edge: what it is, how many continuation turns it has taken
- * and what its budget spent, and Stop. While a rate limit holds its next
- * turn, a clock and "waiting for Gmail until 10:02" stand in for the count,
- * so the goal does not look stalled. Once it paused, why, with Resume first
- * and Stop beside it. A Stop or a Resume that fails says so in the notice
- * itself, where the button was pressed.
+ * The goal the bot keeps working toward, fused onto the composer's top
+ * edge: what it is, how many continuation turns it has taken and what its
+ * budget spent, and Stop. While a rate limit holds its next turn, a clock
+ * and "waiting for Gmail until 10:02" stand in for the count, so the goal
+ * does not look stalled. Once it paused, why, with Resume first and Stop
+ * beside it. A Stop or a Resume that fails says so in the notice itself,
+ * where the button was pressed.
  */
 export function BotGoalNotice({ botId, goal }: { botId: string; goal: BotGoal }) {
   const { t } = useTranslation();

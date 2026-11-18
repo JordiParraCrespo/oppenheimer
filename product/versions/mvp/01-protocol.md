@@ -110,6 +110,39 @@ runner does with it and point back.
   `session.started` in its log, an attachment says so with its first
   frame. **`attachment.closed`** is the runner freeing an id whose PTY
   ended on its own.
+- **`session.windows` answers the window commands** (since 2026-11-16, 32):
+  a runner whose `hello` names `session.windows.list` answers
+  `session.windows.list`, `window.open` and `window.close` with the
+  session's windows as tmux holds them after the command (`{ index, name }`
+  each, the snapshot's shape), under the command's id, and `opened` names
+  the window an open made. That index is what the console's Terminal tab
+  mints its attach ticket for, so without it a shell could be opened but
+  never shown. Refusals stay `command.failed` (window 0 is the agent's and
+  is `SESS_002`, a window the host does not hold `SESS_001`). The control
+  plane waits for the answer like a folder listing and stores nothing: the
+  host is the record of a session's windows. A runner without the
+  capability is not sent window commands at all.
+- **`session.window.open` may name a second agent** (since 2026-11-16):
+  an optional `agent`, any catalog coding-agent id but `shell`, starts that
+  agent in the new window, in the session's worktree. Structured like
+  `session.create`'s launch, never argv: the open may carry the `model`,
+  `effort` and `permission` picked for that agent (the launch's own fields
+  and bounds, meaningful only with `agent`), and each one it leaves out is
+  the session's: its permission level always, its model and effort only when
+  it is the session's own agent (a model names one CLI's). An effort the
+  model does not offer is dropped, as at create. An optional `prompt`, the
+  agent's first task with `session.create`'s bounds (`promptText`, 2 KB of
+  UTF-8), rides as the CLI's trailing positional as window 0's does, and is
+  never logged; there are no first-task files, no conversation id and no
+  agent server. Those four fields came after the capability and need none: a
+  runner from before them ignores them, launches with the session's fallback
+  and starts the agent with no task. It names the window by the catalog id
+  (`codex`), so listings say what runs there, and a launch that fails takes
+  its window with it (`command.failed`). Window 0 stays the session's agent,
+  the only one its state is read from. Only a runner whose `hello` names
+  **`session.window.agent`** is sent the field: an older one would open a
+  plain shell and ignore it, so the control plane refuses such an open
+  (`SESSIONS_060`) before asking the host.
 - **`session.started` means the session has a terminal, not that its agent
   is up.** The host builds the tmux session *before* it clones, so the pane
   is there about thirty milliseconds in and the clone, the worktree and the

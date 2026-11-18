@@ -9,7 +9,7 @@ import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
  * Whether a goal's condition holds, asked after each turn of it
- * (`25-bots.md` §4.1; from Claude Code's `/goal`, whose evaluator is a
+ * (from Claude Code's `/goal`, whose evaluator is a
  * second model rather than the one doing the work). The reviewer is the
  * bot's own model, asked once per ended turn, with no tools: it reads the
  * condition and what the goal's turns showed, and says one of three things,

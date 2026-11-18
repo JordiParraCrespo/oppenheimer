@@ -1,11 +1,10 @@
 /**
- * A session a bot follows moved, and the bot is woken at most once for it
- * (`27-bot-subscriptions.md` §4): the session read again as the owner, a
- * turn queued under a key the same news always gives, the wake recorded
- * after it, and a subscription that has nothing left to follow, or whose
- * owner can no longer read the session, ended without a wake. The decision
- * table is `bot-subscription.policy.spec.ts`; that a duplicate key queues one
- * turn in Postgres is the integration suite's.
+ * A session a bot follows moved, and the bot is woken at most once for it: the
+ * session read again as the owner, a turn queued under a key the same news
+ * always gives, the wake recorded after it, and a subscription that has nothing
+ * left to follow, or whose owner can no longer read the session, ended without
+ * a wake. The decision table is `bot-subscription.policy.spec.ts`; that a
+ * duplicate key queues one turn in Postgres is the integration suite's.
  */
 import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';

@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * What a failing check on a pull request came to, as a record
- * (`product/next-steps/0.2-pull-requests.md`, "CI findings"; from Grok Bot's
- * CI investigation, `research/lessons-from-grok-bot.md` §9 row 14).
+ * What a failing check on a pull request came to, as a record (from Grok
+ * Bot's CI investigation).
  *
  * A pull request has no row: it is GitHub's, named by its repository's id and
  * its number. A finding is about one check on one head commit, so a push

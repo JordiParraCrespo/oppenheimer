@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * An error code is a four-part contract (see `.agents/rules/nestjs-architecture.md`):
+ * An error code is a four-part contract:
  * the catalog entry, an `@ApiProblemResponse` on the endpoint, a row in
  * `errors.md`, and a message in every locale.
  *

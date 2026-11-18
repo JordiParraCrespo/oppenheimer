@@ -5,8 +5,7 @@ import { sameWhatsappNumber } from './whatsapp-number.policy';
 export type WhatsappOwnerCommand = 'message' | 'new' | 'stop' | 'help';
 
 /**
- * What a message a linked number received comes to
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §2):
+ * What a message a linked number received comes to:
  *
  * - `owner`: the confirmed owner wrote from their own number. `switchName`
  *   is the name a "Name: …" message starts with, still to be matched against

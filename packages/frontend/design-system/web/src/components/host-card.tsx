@@ -26,10 +26,11 @@ type HostCardOffline = {
 /**
  * HostCard — one card per host on the Settings page: a status dot on the
  * left (green running, grey idle, a hollow grey ring when offline), the
- * mono name and a meta line (OS, size, region, runner version), the state
+ * mono name and a meta line (OS, size, region), the runner version at its
+ * end, which the line never cuts: a narrow card truncates the other facts
+ * first, because the version is what tells a stale runner apart. The state
  * and last-seen on the right in mono, and an ellipsis for the host's menu
- * (Rename, Remove host). Measured against
- * `design/version1/Components.dc.html` ("Host card").
+ * (Rename, Remove host).
  *
  * `offline` opens the host's detail under a hairline, in the name's column:
  * the note, the commands as `CommandRow`s, and the action with its answer.
@@ -39,6 +40,7 @@ type HostCardOffline = {
 function HostCard({
   name,
   meta,
+  runner,
   status,
   state,
   seen,
@@ -50,6 +52,8 @@ function HostCard({
 }: React.ComponentProps<'div'> & {
   name: React.ReactNode;
   meta?: React.ReactNode;
+  /** "runner 0.14.2": ends the meta line, and is never truncated. */
+  runner?: React.ReactNode;
   status: HostCardStatus;
   /** "Running · 2 sessions", "Idle", "Offline". */
   state: React.ReactNode;
@@ -80,7 +84,21 @@ function HostCard({
       <div className="flex items-center gap-3.5 py-4.5">
         <div className="flex min-w-0 flex-1 flex-col gap-0.75">
           {rename ?? <span className="truncate font-mono text-operate text-fg">{name}</span>}
-          {meta ? <span className="truncate text-[12.5px] text-fg-muted">{meta}</span> : null}
+          {meta || runner ? (
+            <span className="flex min-w-0 gap-1 text-[12.5px] whitespace-pre text-fg-muted">
+              {meta ? (
+                <span className="truncate">
+                  {meta}
+                  {runner ? ' ·' : null}
+                </span>
+              ) : null}
+              {runner ? (
+                <span data-slot="host-card-runner" className="shrink-0">
+                  {runner}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
         </div>
         <div className="flex min-w-30 shrink-0 flex-col items-end gap-0.75 text-right">
           <span className="text-[13px] text-fg">{state}</span>

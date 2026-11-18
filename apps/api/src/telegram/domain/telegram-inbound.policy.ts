@@ -1,8 +1,7 @@
 import type { TelegramMessageDraft } from './telegram-message.types';
 
 /**
- * What a message to a Telegram bot comes to
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §2):
+ * What a message to a Telegram bot comes to:
  *
  * - `link`: `/start <code>` in a direct chat; the account decides whether the
  *   code records its sender as the owner (`TelegramAccountEntity.claimOwner`).
@@ -12,8 +11,8 @@ import type { TelegramMessageDraft } from './telegram-message.types';
  *   writing while no bot answers here.
  * - `stranger`: anyone else in a direct chat; held, with at most one fixed
  *   line a day (`TELEGRAM_STRANGER_LINE`).
- * - `ignore`: the bot's own messages, and every group message: groups are off
- *   until slice 2 lets the owner allow one.
+ * - `ignore`: the bot's own messages, and every group message: groups are off,
+ *   and the owner cannot allow one yet.
  */
 export type TelegramInboundAction =
   | { kind: 'link'; code: string }

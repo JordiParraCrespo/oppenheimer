@@ -23,8 +23,7 @@ export type {
 
 /**
  * The source of a repository read through the person's own GitHub tokens: the
- * API answers its installation as null and takes this segment in its place
- * (`product/next-steps/0.2-pull-requests.md` §6.2).
+ * API answers its installation as null and takes this segment in its place.
  */
 const TOKENS_SOURCE = 'tokens';
 
@@ -36,7 +35,7 @@ export function sourceOf(installationId: string | null): string {
 /**
  * A pull request is GitHub's: the console names one by the installation that
  * reaches it (or {@link TOKENS_SOURCE}), the repository and its number, and
- * keeps nothing of it (`product/next-steps/0.2-pull-requests-api-plan.md`).
+ * keeps nothing of it.
  */
 export interface PullRequestAddress {
   installationId: string;
@@ -167,9 +166,9 @@ export class PullRequestEntity {
 
 export interface PullRequestQueue {
   items: PullRequestEntity[];
-  /** Watched repositories this read could not fully answer (#244). */
+  /** Watched repositories this read could not fully answer. */
   unreadable: UnreadableRepository[];
-  /** Some rows still have parts nobody has read; the next read fills more (#247). */
+  /** Some rows still have parts nobody has read; the next read fills more. */
   filling: boolean;
   /** Every open pull request (`all`) and each scope's share of them. */
   scopes: Record<PullRequestQueueName, number>;
@@ -200,8 +199,7 @@ export interface PullRequestFailingCheck {
 }
 
 /**
- * What one failing check on the head came to, as a bot recorded it
- * (`0.2-pull-requests.md`, "CI findings").
+ * What one failing check on the head came to, as a bot recorded it.
  */
 export interface CiFinding {
   id: string;

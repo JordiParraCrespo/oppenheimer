@@ -20,10 +20,10 @@ const LOOP_ICONS = {
 } as const;
 
 /**
- * A bot's loop (`25-bots.md` §4.1, `/loop`): "Loop · run 3 · check the
- * deploy" where a run opens a turn, or how the loop ended when the bot did
- * not end it: you stopped it, its 3 days ran out, a run of it failed or was
- * stopped, or a self-paced run did not say when to run next.
+ * A bot's loop (`/loop`): "Loop · run 3 · check the deploy" where a run
+ * opens a turn, or how the loop ended when the bot did not end it: you
+ * stopped it, its 3 days ran out, a run of it failed or was stopped, or a
+ * self-paced run did not say when to run next.
  */
 export function LoopEventLine({ event }: { event: BotLoopEvent }) {
   const { t } = useTranslation();

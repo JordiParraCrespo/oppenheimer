@@ -1,8 +1,7 @@
 import { z } from 'zod/v4';
 
 /**
- * What a runner logs when a headless agent process for a turn exits
- * (`product/versions/mvp/16-automations-architecture.md` §Q4, 23 §4).
+ * What a runner logs when a headless agent process for a turn exits.
  *
  * Like `session.step`, this is an **event payload**, not a link message: it
  * rides `events.append` as a `kind` and a JSON-string `payload`, and the control

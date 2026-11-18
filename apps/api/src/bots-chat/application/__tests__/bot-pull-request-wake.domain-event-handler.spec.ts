@@ -1,10 +1,9 @@
 /**
- * A stored GitHub event on a pull request reaches the bots that follow it
- * (`27-bot-subscriptions.md` §7): one wake per subscription to that
- * repository and number in the event's workspace, carrying the stored event's
- * id and its metadata; our own app's events, events with no pull request and
- * events that wake nobody are dropped before any read. What each wake does is
- * `wake-on-pull-request.command-handler.spec.ts`.
+ * A stored GitHub event on a pull request reaches the bots that follow it: one
+ * wake per subscription to that repository and number in the event's workspace,
+ * carrying the stored event's id and its metadata; our own app's events, events
+ * with no pull request and events that wake nobody are dropped before any read.
+ * What each wake does is `wake-on-pull-request.command-handler.spec.ts`.
  */
 import type { CommandBus } from '@nestjs/cqrs';
 import { WakeOnPullRequestCommand } from '../../commands/wake-on-pull-request/wake-on-pull-request.command';

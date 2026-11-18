@@ -14,7 +14,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { DreamBotMemoryCommand } from './dream-bot-memory.command';
 
 /**
- * A bot's dream (`25-bots.md` §4.1, "Dreaming"): what `BotDreamResolver`
+ * A bot's dream: what `BotDreamResolver`
  * says to write replaces the facts it read, in one write that is refused
  * when any of them changed meanwhile (the bot saved, the owner edited): the
  * dream read a memory that is gone, and the next one reads it again. A dream

@@ -15,6 +15,7 @@ import {
   useDeleteTask,
   useMilestones,
   useMoveTask,
+  useMoveTasks,
   useSessionTasks,
   useStartTaskSession,
   useTasks,
@@ -219,6 +220,138 @@ describe('useMoveTask', () => {
     );
 
     await waitFor(() => expect(findMilestones).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('useMoveTasks', () => {
+  const picked = [
+    { id: 'b', status: 'doing' as const, afterTaskId: 'x' },
+    { id: 'a', status: 'doing' as const, afterTaskId: 'b' },
+    { id: 'c', status: 'doing' as const, afterTaskId: 'a' },
+  ];
+  const doingOf = (rows: TaskEntity[] | undefined) =>
+    (rows ?? [])
+      .filter((row) => row.status === 'doing')
+      .sort((left, right) => (left.rank < right.rank ? -1 : left.rank > right.rank ? 1 : 0))
+      .map((row) => row.id);
+
+  function board(service: TasksFake) {
+    const { wrapper, queryClient } = setup({
+      findAll: vi
+        .fn()
+        .mockResolvedValueOnce([
+          task('a'),
+          task('b'),
+          task('c'),
+          task('x', { status: 'doing' }),
+          task('y', { status: 'doing' }),
+        ])
+        .mockReturnValue(new Promise(() => {})),
+      findMilestones: vi.fn().mockResolvedValue([]),
+      ...service,
+    });
+    const rendered = renderHook(() => ({ tasks: useTasks(), moveAll: useMoveTasks() }), {
+      wrapper,
+    });
+    const rows = () => queryClient.getQueryData<TaskEntity[]>(tasksKeys.list());
+    return { ...rendered, rows, queryClient };
+  }
+
+  it('lands every picked card on the drop and keeps their order while each answer comes back', async () => {
+    const answers = {
+      a: deferred<TaskEntity>(),
+      b: deferred<TaskEntity>(),
+      c: deferred<TaskEntity>(),
+    };
+    const move = vi.fn((id: string) => answers[id as keyof typeof answers].promise);
+    const { result, rows } = board({ move });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+
+    act(() => result.current.moveAll.run(picked));
+    expect(doingOf(rows())).toEqual(['x', 'b', 'a', 'c', 'y']);
+
+    // The server's key for b sorts after x and before y, above the provisional keys under x.
+    await act(async () => answers.b.resolve(task('b', { status: 'doing', rank: 'xm' })));
+    await waitFor(() => expect(move).toHaveBeenCalledTimes(2));
+    expect(doingOf(rows())).toEqual(['x', 'b', 'a', 'c', 'y']);
+
+    await act(async () => answers.a.resolve(task('a', { status: 'doing', rank: 'xn' })));
+    await waitFor(() => expect(move).toHaveBeenCalledTimes(3));
+    expect(doingOf(rows())).toEqual(['x', 'b', 'a', 'c', 'y']);
+  });
+
+  it('keeps the waiting cards in the run when a board read lands between two answers', async () => {
+    const answers = {
+      a: deferred<TaskEntity>(),
+      b: deferred<TaskEntity>(),
+      c: deferred<TaskEntity>(),
+    };
+    const move = vi.fn((id: string) => answers[id as keyof typeof answers].promise);
+    // The server after b's move only: a and c are still in To do there.
+    const afterB = [
+      task('a'),
+      task('b', { status: 'doing', rank: 'xm' }),
+      task('c'),
+      task('x', { status: 'doing' }),
+      task('y', { status: 'doing' }),
+    ];
+    const { result, rows, queryClient } = board({ move });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+    act(() => result.current.moveAll.run(picked));
+
+    await act(async () => answers.b.resolve(afterB[1] as TaskEntity));
+    await waitFor(() => expect(move).toHaveBeenCalledTimes(2));
+    await act(() =>
+      queryClient.fetchQuery({ queryKey: tasksKeys.list(), queryFn: async () => afterB }),
+    );
+
+    expect(doingOf(rows())).toEqual(['x', 'b', 'a', 'c', 'y']);
+  });
+
+  it('refreshes milestone progress for cards that turn Done in a run', async () => {
+    const findMilestones = vi.fn().mockResolvedValue([]);
+    const { wrapper } = setup({
+      findAll: vi
+        .fn()
+        .mockResolvedValue([task('a', { milestoneId: 'm' }), task('b', { milestoneId: 'm' })]),
+      findMilestones,
+      move: vi.fn((id: string) => Promise.resolve(task(id, { status: 'done', milestoneId: 'm' }))),
+    });
+    const { result } = renderHook(
+      () => ({ tasks: useTasks(), milestones: useMilestones(), moveAll: useMoveTasks() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.milestones.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+    const reads = findMilestones.mock.calls.length;
+
+    act(() =>
+      result.current.moveAll.run([
+        { id: 'a', status: 'done', afterTaskId: null },
+        { id: 'b', status: 'done', afterTaskId: 'a' },
+      ]),
+    );
+
+    await waitFor(() => expect(result.current.moveAll.isPending).toBe(false));
+    await waitFor(() => expect(findMilestones.mock.calls.length).toBeGreaterThan(reads));
+  });
+
+  it('puts back every card it had not moved when a move is refused', async () => {
+    const move = vi.fn((id: string) =>
+      id === 'b'
+        ? Promise.resolve(task('b', { status: 'doing', rank: 'xm' }))
+        : Promise.reject(new Error('refused')),
+    );
+    const { result, rows } = board({ move });
+    await waitFor(() => expect(result.current.tasks.isSuccess).toBe(true));
+
+    act(() => result.current.moveAll.run(picked));
+
+    await waitFor(() => expect(result.current.moveAll.error?.message).toBe('refused'));
+    expect(move).toHaveBeenCalledTimes(2);
+    expect(doingOf(rows())).toEqual(['x', 'b', 'y']);
+    expect(columnOf(rows(), 'a')).toBe('todo');
+    expect(columnOf(rows(), 'c')).toBe('todo');
   });
 });
 

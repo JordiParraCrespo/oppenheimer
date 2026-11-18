@@ -14,7 +14,7 @@ import { FindSessionTranscriptQuery } from '../find-session-transcript.query';
 import { FindSessionTranscriptQueryHandler } from '../find-session-transcript.query-handler';
 
 /**
- * A reader's page of a session's conversation (`agent-tools.md` §8): the
+ * A reader's page of a session's conversation: the
  * session is read in the caller's scope before anything is asked of a host,
  * a cloud session's host is never asked (its conversation is at the vendor),
  * what comes back has its secrets taken out, its cursor continues where the
@@ -82,13 +82,14 @@ describe('FindSessionTranscriptQueryHandler', () => {
     );
   });
 
-  const read = (props: { cursor?: string; limit?: number } = {}) =>
+  const read = (props: { cursor?: string; limit?: number; from?: 'latest' | 'start' } = {}) =>
     handler.execute(
       new FindSessionTranscriptQuery({
         scope: SCOPE,
         sessionId: found?.id ?? '00000000-0000-4000-8000-000000000000',
         limit: props.limit ?? 50,
         cursor: props.cursor,
+        from: props.from,
       }),
     );
 
@@ -120,6 +121,33 @@ describe('FindSessionTranscriptQueryHandler', () => {
     await read({ cursor: first.nextCursor ?? undefined, limit: 20 });
     expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
       limit: 20,
+      conversation: 'c4b1e09a7f2d3e65',
+      after: 120,
+    });
+  });
+
+  // The regression: a reader could only ever start at the latest turns, so a
+  // long conversation's beginning was out of reach, and a tail page did not
+  // say there was anything before it.
+  it('says a page of the latest turns has earlier ones, and asks the host for the first line on from=start', async () => {
+    outcome = { kind: 'page', page: page({ from: 4_096, next: 8_192 }) };
+    await expect(read()).resolves.toMatchObject({ hasEarlier: true, restarted: false });
+
+    outcome = { kind: 'page', page: page({ from: 0, next: 120, atEnd: false }) };
+    const first = await read({ from: 'start', limit: 30 });
+    expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
+      limit: 30,
+      from: 'start',
+    });
+    expect(first).toMatchObject({ hasEarlier: false, restarted: false, atEnd: false });
+
+    // On from its cursor, a conversation that really was replaced says so.
+    outcome = { kind: 'page', page: page({ from: 0, next: 60, restarted: true }) };
+    await expect(read({ cursor: first.nextCursor ?? undefined })).resolves.toMatchObject({
+      restarted: true,
+    });
+    expect(transcripts.read).toHaveBeenLastCalledWith('host-1', found?.id, {
+      limit: 50,
       conversation: 'c4b1e09a7f2d3e65',
       after: 120,
     });

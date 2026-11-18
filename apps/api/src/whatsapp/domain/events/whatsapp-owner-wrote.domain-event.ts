@@ -1,12 +1,11 @@
 import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 
 /**
- * The confirmed owner of a linked number wrote to it from their own number,
- * and an Oppenheimer bot answers that chat
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): raised once
- * per stored message, in the transaction that stored it. `command` is what
- * the message asks: a turn (`message`), a fresh conversation (`new`), or the
- * running turn to stop (`stop`). The aggregate is the WhatsApp account.
+ * The confirmed owner of a linked number wrote to it from their own number, and
+ * an Oppenheimer bot answers that chat: raised once per stored message, in the
+ * transaction that stored it. `command` is what the message asks: a turn
+ * (`message`), a fresh conversation (`new`), or the running turn to stop
+ * (`stop`). The aggregate is the WhatsApp account.
  */
 export class WhatsappOwnerWroteDomainEvent extends DomainEvent {
   readonly organizationId: string;

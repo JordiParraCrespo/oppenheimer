@@ -2,7 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { IssueAddress } from '../../application/issue-access.port';
 
-/** No controller: a bot's `get_issue` tool dispatches it (`25-bots.md` §4.4). */
+/** No controller: a bot's `get_issue` tool dispatches it. */
 export class FindIssueQuery extends QueryBase {
   readonly scope: AccessScope;
   readonly address: IssueAddress;

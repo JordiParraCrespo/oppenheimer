@@ -94,7 +94,7 @@ export function providerResetOf(
 }
 
 /**
- * Turns a turn's engine events into the chat's messages (`25-bots.md` §3):
+ * Turns a turn's engine events into the chat's messages:
  * each finished block of text is a message, and each run of tool calls
  * between two of them is one activity line whose steps fill in as the calls
  * finish. The images a `show_image` call stored are a message of the bot's

@@ -8,6 +8,20 @@
     "tasks": "Fechas de tareas",
     "automations": "Automatizaciones"
   },
+  "filters": {
+    "clear": "Limpiar",
+    "kind": "Tipo",
+    "allKinds": "Todos los tipos",
+    "searchKinds": "Buscar tipos",
+    "status": "Estado",
+    "allStatuses": "Todos los estados",
+    "searchStatuses": "Buscar estados",
+    "origin": "Añadida por",
+    "anyOrigin": "Cualquiera",
+    "originPerson": "Yo",
+    "originAgent": "Un agente",
+    "projectsFailed": "No se pudieron cargar tus proyectos, así que el filtro de proyecto no muestra nada."
+  },
   "header": {
     "previous": "Anterior",
     "next": "Siguiente",

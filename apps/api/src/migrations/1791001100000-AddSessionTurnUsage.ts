@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * The model and token usage of a turn, for Plan's Stats
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §4, decided 3).
+ * The model and token usage of a turn, for Plan's Stats.
  *
  * `session_turn` kept `costUsd` and nothing about what produced it. A headless
  * turn's `turn.ended` now carries the model and the token counts Claude Code
@@ -37,8 +36,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * turn and later updates of the row stay HOT.
  *
  * Plain `CREATE INDEX` and `ADD COLUMN` without defaults: migrations run at
- * boot in one transaction and no deployment holds turns anyone needs yet
- * (`database-design.md`, "While nothing is deployed"). Existing turns keep
+ * boot in one transaction and no deployment holds turns anyone needs yet.
+ * Existing turns keep
  * null, which is the truth: nobody measured them.
  */
 export class AddSessionTurnUsage1791001100000 implements MigrationInterface {

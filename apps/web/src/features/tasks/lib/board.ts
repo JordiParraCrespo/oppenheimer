@@ -52,7 +52,7 @@ export function columnOf(tasks: readonly TaskEntity[], status: TaskStatus, filte
 
 /**
  * How many days a finished task stays in Done before the column folds it
- * under "Show older" (`18-plan-product.md` §2): Linear's "past week".
+ * under "Show older": Linear's "past week".
  */
 const DONE_RECENT_DAYS = 7;
 

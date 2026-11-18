@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { DEVICE_CHOICES_MAX, deviceChoiceSchema } from './devices.js';
 import { attachTicketHintSchema } from './hint.js';
 import {
   CHAT_BATCH_MAX_ENTRIES,
@@ -10,9 +11,9 @@ import {
 
 /**
  * The browser attach socket's control vocabulary — the second of the two
- * sockets `product/versions/mvp/01-protocol.md` decides, and deliberately not
- * the runner link's: one socket per attachment, so no attachment id travels in
- * a frame, and a PTY read reaches the terminal as a bare binary frame.
+ * sockets, and deliberately not the runner link's: one socket per attachment,
+ * so no attachment id travels in a frame, and a PTY read reaches the terminal
+ * as a bare binary frame.
  *
  * Binary frames: control plane → browser is PTY output, browser → control plane
  * is keystrokes. Text frames are the JSON below, and nothing else.
@@ -82,6 +83,15 @@ export const attachDeviceInputSchema = z.object({
 export type AttachDeviceInput = Omit<z.infer<typeof attachDeviceInputSchema>, 'type'>;
 
 /**
+ * Move the session onto another of its host's devices, one the last `device`
+ * listed as free. Relayed as `device.select`; a read-only share's is dropped.
+ */
+export const attachDeviceSelectSchema = z.object({
+  type: z.literal('device.select'),
+  serial: z.string().min(1).max(200),
+});
+
+/**
  * The turns of the chat before `before`, the offset the console holds its
  * conversation from (`chat`'s `before`): the reader scrolled to its top.
  * Relayed as `attachment.chat.older`; answered with `chat` batches marked
@@ -109,6 +119,7 @@ export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachDirectOfferSchema,
   attachDirectPathSchema,
   attachDeviceInputSchema,
+  attachDeviceSelectSchema,
   attachChatOlderSchema,
   attachDesktopControlSchema,
 ]);
@@ -195,14 +206,17 @@ export const attachChatSchema = z.object({
 
 /**
  * On a device attachment, which device the session has: the runner's
- * `device.info`. JPEG frames of its screen follow as binary frames, each one
- * whole image, and the browser credits each one's bytes once it is drawn.
+ * `device.info`, again after each `device.select`. JPEG frames of its screen
+ * follow as binary frames, each one whole image, and the browser credits each
+ * one's bytes once it is drawn. `devices` is what the reader may pick from;
+ * absent, the host cannot move the session.
  */
 export const attachDeviceSchema = z.object({
   type: z.literal('device'),
   serial: z.string().min(1).max(200),
   name: z.string().min(1).max(200),
   platform: z.enum(['android', 'ios']),
+  devices: z.array(deviceChoiceSchema).max(DEVICE_CHOICES_MAX).optional(),
 });
 
 /**

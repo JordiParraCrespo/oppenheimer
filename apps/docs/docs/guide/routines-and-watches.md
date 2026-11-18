@@ -1,6 +1,6 @@
 ---
 title: Routines and watches
-description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its hourly heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
+description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
 sidebar_position: 6
 ---
 
@@ -24,7 +24,7 @@ Triggers a routine can have:
 
 A routine is skipped and paused when it cannot run, with the reason in the chat: the bot's provider has no key, its owner lost access, or an hourly run limit was hit (10 runs an hour per routine, 100 per workspace by default). A run due while the last one is still running is skipped.
 
-**The heartbeat.** Once a bot has a job (its `INSTRUCTIONS.md` is written), it is given one routine of its own, **Heartbeat**: hourly, at a minute past the hour that differs from bot to bot, so your bots do not all wake at once. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. It is an ordinary routine: pause, edit or delete it on the Routines tab or in chat. A bot that already had a job before heartbeats existed has none until you ask for one.
+**The heartbeat.** A bot can have one routine of its own named **Heartbeat**. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. No bot is given one by default: ask the bot for one in chat. A Heartbeat a bot already had was moved to twice a day, 09:00 and 18:00 in your time zone, and paused; turn it back on from the Routines tab, and change its times there or in chat like any routine. A beat with nothing new in the bot's chat since the last one (another routine or a loop does not count) is skipped without calling the model, so a quiet bot spends nothing. Run now always runs it. Events (a pull request it watches, new mail, a session it follows) still wake the bot at any hour.
 
 **Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message. A routine's quiet run shows nothing at all, unless the chat is set to show tool calls.
 
@@ -64,7 +64,9 @@ A watch can also wake on a line the terminal prints that matches a pattern; the 
 
 **Pull requests.** `watch_pull_request` follows an open pull request on a repository you can read. A check failing or passing, a review, a comment or the merge wakes the bot with the event's facts (kind, number, check name, reviewer's login), never anyone's words; the bot reads the pull request itself. The merge ends the watch. A pull request closed without merging does not end it yet.
 
-Ask a bot "what are you watching?" and it lists its watches. There is no list of them in the bot's settings yet; every wake is a line in the chat.
+**Projects and milestones.** `watch_project` follows every task of a project, and `watch_milestone` the tasks under one milestone. By default a task being added, moving column, being done or reopened, blocked or unblocked, or deleted wakes the bot; ask it to follow other changes too (a new due date, a task moved to another project, a session attached). The bot is told which task, what changed and whether you did it, never the task's notes, and its own changes never wake it. It follows until it unwatches, with no limit on wakes. "Tell me when anything on Web is blocked" is enough. The chat draws a line for each task update only while the wrench (show tool calls) is on; with it off you see only what the bot says about them, and a wake it had nothing to say to leaves no trace.
+
+Ask a bot "what are you watching?" and it lists its watches. There is no list of them in the bot's settings yet; every wake is a line in the chat, except a project's or milestone's task updates, which show only with the wrench on.
 
 ## Everything that wakes a bot
 

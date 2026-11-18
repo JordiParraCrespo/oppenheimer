@@ -1,5 +1,5 @@
 /**
- * `BotChainPolicy` (`25-bots.md` §4.6): how far bots talking to bots may go
+ * `BotChainPolicy`: how far bots talking to bots may go
  * because of one message of yours. A chain starts at that message; every turn
  * a bot queues on another bot because of it joins the chain one bot deeper.
  * The numbers live here and nowhere else.

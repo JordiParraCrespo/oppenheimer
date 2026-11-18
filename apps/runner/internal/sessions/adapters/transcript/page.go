@@ -13,8 +13,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// A conversation read one page at a time on request (`transcript.read`,
-// `product/next-steps/agent-tools.md` §8), for a reader with no browser
+// A conversation read one page at a time on request (`transcript.read`),
+// for a reader with no browser
 // attached: a bot, the `opp` CLI, an MCP client. The entries are the ones
 // Follow sends the chat view; a page is addressed by the conversation's name
 // and a byte offset where one of its lines starts, which the control plane
@@ -26,8 +26,11 @@ import (
 // bounds, and the whole conversation from its start otherwise. With the
 // conversation a page was read from, the lines after req.After. A cursor
 // for another conversation, past the file's end or not where a line starts
-// (the CLI replaced the file) is read from the start, Restarted. Only whole
-// lines are read: one the CLI is still writing waits for the next page.
+// (the CLI replaced the file) is read from the start, Restarted. The control
+// plane relies on that to read from the start until the link has a field for
+// it: it names a conversation no file is called (TRANSCRIPT_START_CONVERSATION)
+// and drops the Restarted that comes back. Only whole lines are read: one the
+// CLI is still writing waits for the next page.
 func (r *Reader) ReadPage(session domain.Session, req app.TranscriptPageRequest) (app.TranscriptPage, error) {
 	if session.Agent.ServesConversation() {
 		return app.TranscriptPage{}, app.ErrNoChat

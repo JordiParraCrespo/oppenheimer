@@ -1,9 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots that message bots (`product/versions/mvp/25-bots.md` §4.6,
- * `message_bot` and `ask_bot`): a turn another bot's tool call queued, its
- * lane, the chain it belongs to, and the answer an ask owes.
+ * Bots that message bots (`message_bot` and `ask_bot`): a turn another bot's
+ * tool call queued, its lane, the chain it belongs to, and the answer an ask
+ * owes.
  *
  * - `bot_turn."lane"`: `owner` (yours, and an approval's report), `bots`
  *   (sent by another bot, or the answer to an ask), `background`. The next

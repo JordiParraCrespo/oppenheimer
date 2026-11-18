@@ -190,9 +190,9 @@ export interface BotConversation {
   turns: BotTurn[];
 }
 
-export type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+export type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
 
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 export interface Task {
   id: string;
@@ -201,6 +201,7 @@ export interface Task {
   title: string;
   notes: string;
   dueDate?: string | null;
+  priority?: TaskPriority | null;
   version: number;
   sessions: unknown[];
   createdAt: string;

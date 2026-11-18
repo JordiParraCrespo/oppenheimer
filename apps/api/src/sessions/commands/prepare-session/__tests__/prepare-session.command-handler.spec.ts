@@ -9,8 +9,7 @@ import { PrepareSessionCommandHandler } from '../prepare-session.command-handler
 
 /**
  * Whose stores a prepare warms: the runner keeps them under the account it is
- * paired with and the workspace the session will be in
- * (`product/versions/mvp/24-session-places.md` §2), so both ride the frame —
+ * paired with and the workspace the session will be in, so both ride the frame —
  * the host's owner, not the caller, who may be using a host shared with them.
  */
 

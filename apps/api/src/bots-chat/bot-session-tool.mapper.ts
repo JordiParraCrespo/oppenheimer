@@ -19,8 +19,8 @@ import type { SessionWaitView } from './domain/bot-session-wait.policy';
 import { cut } from './domain/bot-tool-text.policy';
 
 /**
- * How `start_session`'s input becomes a session to create (`25-bots.md`
- * §4.2): the host (the one named, the project's default, the bot's home
+ * How `start_session`'s input becomes a session to create: the host (the one
+ * named, the project's default, the bot's home
  * host), the repository (the one named, or the project's default) or a folder,
  * the branch it starts from, how the agent is launched (model, effort,
  * permission: everything the composer's foot row offers), and the body the sessions' own schema accepts; or, when one is missing or
@@ -43,7 +43,7 @@ export interface StartSessionInput {
   name?: string;
   /** Start it hidden from the console's sidebar; shown when omitted. */
   hidden?: boolean;
-  /** Subscribe the bot to it (`27-bot-subscriptions.md` §3); true when omitted. */
+  /** Subscribe the bot to it; true when omitted. */
   watch?: boolean;
 }
 

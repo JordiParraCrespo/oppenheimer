@@ -3,9 +3,9 @@ import { commandIdSchema, sessionIdSchema } from './primitives.js';
 
 /**
  * The files an agent shared from its session on the link
- * (`runner sessions send-file`, `product/next-steps/agent-tools.md` §7): the
- * messages behind the `shared.preview` capability. Part of
- * `protocolMessageSchema`, which is where every kind is listed.
+ * (`runner sessions send-file`): the messages behind the `shared.preview`
+ * capability. Part of `protocolMessageSchema`, which is where every kind is
+ * listed.
  *
  * The control plane knows a shared file by the `file.shared` event the runner
  * logged (its id, name, type, size, caption, whether it has a preview); the

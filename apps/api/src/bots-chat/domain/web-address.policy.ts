@@ -1,7 +1,7 @@
 import { BlockList, isIP } from 'node:net';
 
 /**
- * Which addresses a bot's `web_fetch` may reach (`25-bots.md` §4.7): public
+ * Which addresses a bot's `web_fetch` may reach: public
  * unicast ones only. The fetch runs on the control plane, so anything else
  * (loopback, the private networks, link-local and the cloud metadata
  * service, carrier-grade NAT, documentation, multicast, reserved) is the

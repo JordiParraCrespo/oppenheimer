@@ -19,3 +19,8 @@ machine without a display.
 `handoff.mjs <session-id> home|abroad|back` is one leg of starting a session
 at home and continuing it elsewhere (`abroad` runs with no bridge and a
 fresh profile, under `netsim exec … abroad --` to put it far away).
+
+`OPPENHEIMER_BENCH=<script>` runs a bench script in the console once it has
+loaded, and prints what it reports. The script and its harness are
+[`../desktop-tauri/bench/`](../desktop-tauri/README.md), which compares this
+shell with its Tauri twin.

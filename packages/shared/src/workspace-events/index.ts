@@ -1,6 +1,6 @@
 /**
  * The workspace event stream's vocabulary: what `GET /v1/events` sends the
- * console, one Server-Sent Event per change (`product/versions/mvp/03-control-plane.md`).
+ * console, one Server-Sent Event per change.
  *
  * An event says **that** something changed, never what it now is. The console
  * answers one by re-reading the endpoint it already reads for that thing, so

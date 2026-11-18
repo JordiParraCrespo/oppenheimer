@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Plan's calendar (`product/versions/mvp/20-plan-calendar.md`): `calendar_event`,
+ * Plan's calendar: `calendar_event`,
  * the workspace's own events, and `calendar_connection`, a person's read-only
  * Google Calendar grant.
  *

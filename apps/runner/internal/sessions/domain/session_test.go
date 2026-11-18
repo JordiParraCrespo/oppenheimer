@@ -96,7 +96,7 @@ func TestOnlyLiveStatesExpectATmuxSession(t *testing.T) {
 	}
 }
 
-// The work folder is named by ids that never change (24 §2): an agent keys its
+// The work folder is named by ids that never change: an agent keys its
 // own history on its working directory, so a path that moved when a slug was
 // edited would strand every conversation the session had. A store is bare and
 // named `<owner>--<repo>.git` beside the sessions, and its spare beside it.
@@ -185,5 +185,26 @@ func TestCheckoutForPicksTheRepositoryByPath(t *testing.T) {
 	}
 	if two.Cwd() != "/w/s" {
 		t.Fatalf("a session of two runs in %q, want its folder", two.Cwd())
+	}
+}
+
+// The control plane names sessions by UUID; the host's own ids never pass.
+func TestOnlyTheControlPlanesIDsAreKnownToIt(t *testing.T) {
+	if !domain.KnownToControlPlane("2ec946ef-7204-46ce-a722-6fa5904b371e") {
+		t.Fatal("a UUID was refused")
+	}
+	for _, id := range []string{"jwfw2k2oosi5", "", "2ec946ef72044 6cea7226fa5904b371e", "2ec946ef-7204-46ce-a722-6fa5904b371e\n"} {
+		if domain.KnownToControlPlane(id) {
+			t.Fatalf("%q passed for the control plane's", id)
+		}
+	}
+	for i := 0; i < 100; i++ {
+		id, err := domain.NewID()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if domain.KnownToControlPlane(id) {
+			t.Fatalf("host-minted %q passed for the control plane's", id)
+		}
 	}
 }

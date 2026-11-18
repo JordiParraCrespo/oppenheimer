@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The preview pane's Desktop: the session's host's own screen, the one its
- * agent works on, through the screen-sharing server the host's owner shared
- * (`product/research/device-streaming.md`, "A host's desktop"). The same
- * viewer as the host's Desktop in Settings; Full screen gives it the room the
- * pane does not. Its socket is open while this tab is shown.
+ * agent works on, through the screen-sharing server the host's owner
+ * shared. The same viewer as the host's Desktop in Settings; Full screen
+ * gives it the room the pane does not. Its socket is open while this tab is
+ * shown.
  */
 export function SessionDesktop({ hostId }: { hostId: string }) {
   const { t } = useTranslation();

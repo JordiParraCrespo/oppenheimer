@@ -25,11 +25,10 @@ say otherwise. Read the entries your feature uses.
 The reference is Settings → Hosts.
 
 ```
-sections/host-list.tsx       useHosts() — draws the rows, the empty card and the failure
+sections/host-list.tsx       useHosts() — draws the rows, the EmptyState and the failure
 sections/host-row.tsx        one host; owns what its menu opens (rename, remove)
 components/host-actions-menu.tsx   the menu: props and callbacks only
 dialogs/remove-host.tsx      useRemoveHost({ onSuccess: onClose }); props: { host, onClose }
-components/hosts-empty.tsx   the design's empty card
 lib/host-card.ts             entity → the card's status and meta parts
 ```
 

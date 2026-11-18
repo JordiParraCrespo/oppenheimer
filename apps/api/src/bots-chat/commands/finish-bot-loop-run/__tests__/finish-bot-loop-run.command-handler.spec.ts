@@ -1,5 +1,5 @@
 /**
- * A run of a loop ended (`25-bots.md` §4.1, `/loop`). What breaks this: a
+ * A run of a loop ended. What breaks this: a
  * loop going on after its run was stopped or failed for good; a self-paced
  * loop going on with nobody saying when, or ending over a passing failure;
  * another turn's end touching the loop; an end applied to a loop that moved

@@ -11,9 +11,8 @@ import {
 import { splitTelegramText } from '../domain/telegram-text.policy';
 
 /**
- * Who a Telegram bot answers (`product/next-steps/answering-on-telegram-and-whatsapp.md`
- * §2): only the owner the one-time `start` link recorded, in their own
- * direct chat; nobody else's message reaches a bot.
+ * Who a Telegram bot answers: only the owner the one-time `start` link
+ * recorded, in their own direct chat; nobody else's message reaches a bot.
  */
 
 const OWNER = '111';

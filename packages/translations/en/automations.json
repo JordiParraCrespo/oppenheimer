@@ -21,7 +21,8 @@
       "runs": "Runs"
     },
     "new": "New automation",
-    "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
+    "empty": "An automation starts a session on a schedule or when something happens on GitHub.",
+    "emptyTitle": "No automations yet",
     "runsEmpty": "No runs yet. Each run appears here with the session it started.",
     "loadFailed": "Automations could not be loaded.",
     "actionFailed": "That did not go through.",
@@ -51,7 +52,8 @@
     "missed": "Skipped: the slot was missed",
     "not_launchable": "Skipped: the session could not start",
     "agent_unavailable": "Skipped: the agent is not on the host",
-    "unattended": "Skipped: its bot’s owner is away"
+    "unattended": "Skipped: its bot’s owner is away",
+    "idle": "Skipped: nothing new since the last heartbeat"
   },
   "pausedReason": {
     "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -339,7 +341,8 @@
     "routine": "Bot routine",
     "runsOn": "Runs on {{bot}}",
     "loadFailed": "Bot routines could not be loaded.",
-    "empty": "No bot routines yet. A bot's routines are made in its chat, with /schedule."
+    "empty": "A bot's routines are made in its chat, with /schedule.",
+    "emptyTitle": "No bot routines yet"
   },
   "mobile": {
     "empty": "No automations yet. Make one in the console on your computer.",

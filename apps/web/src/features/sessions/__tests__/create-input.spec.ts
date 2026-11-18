@@ -3,10 +3,9 @@ import type { NewSessionDraft } from '../lib/new-session-draft';
 import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-options';
 
 /**
- * What New session posts for each place (`product/versions/mvp/24-session-places.md`):
- * a folder and no checkouts, or a checkout per repository and no folder —
- * never both, and
- * nothing while the draft names no place.
+ * What New session posts for each place: a folder and no checkouts, or a
+ * checkout per repository and no folder — never both, and nothing while the
+ * draft names no place.
  */
 const draft: NewSessionDraft = {
   where: 'worktree',

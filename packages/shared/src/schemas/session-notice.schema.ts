@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 /**
- * A line an agent sent the person from its session (`runner sessions notify`,
- * `product/next-steps/agent-tools.md` §2): logged by the runner as
- * `agent.notified { id, text }`, kept on the session as its latest notice
- * with when it came, and shown in the Inbox until the person marks it done.
- * The id is the runner's, so a mark on one notice never hides the next.
+ * A line an agent sent the person from its session (`runner sessions notify`):
+ * logged by the runner as `agent.notified { id, text }`, kept on the session as
+ * its latest notice with when it came, and shown in the Inbox until the person
+ * marks it done. The id is the runner's, so a mark on one notice never hides
+ * the next.
  */
 
 /** The event kind a notice is logged as. */

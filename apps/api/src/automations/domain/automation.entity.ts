@@ -26,7 +26,7 @@ export interface AutomationProps {
   organizationId: string;
   /** What its runs start, and what only that kind has; fixed for the automation's life. */
   target: AutomationTarget;
-  /** Whose runs these are: every run acts as this person (§Q5). */
+  /** Whose runs these are: every run acts as this person. */
   ownerUserId: string;
   name: string;
   /** In the editor's order. Replaced whole on a save. */
@@ -55,7 +55,7 @@ export interface CreateAutomationProps {
   now: Date;
 }
 
-/** A bot routine as its bot saves it (`26-bot-routines.md` §4): a prompt and when. */
+/** A bot routine as its bot saves it: a prompt and when. */
 export interface CreateRoutineProps {
   organizationId: string;
   ownerUserId: string;
@@ -100,7 +100,7 @@ const REVISION_FIELDS = [
 
 /**
  * Automation aggregate root — a saved prompt, where it runs, and the triggers
- * that start it (`product/versions/mvp/16-automations-architecture.md`).
+ * that start it.
  *
  * Two parts with different lifecycles: the **root** (name, project, owner,
  * pause, triggers, limits) is edited in place, and the **revision** (what a run
@@ -161,7 +161,7 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     return entity;
   }
 
-  /** A routine its bot saved (`26-bot-routines.md` §3): no project, no host. */
+  /** A routine its bot saved: no project, no host. */
   static createRoutine(props: CreateRoutineProps): AutomationEntity {
     const entity = new AutomationEntity({
       id: randomUUID(),

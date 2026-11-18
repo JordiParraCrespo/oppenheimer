@@ -1,10 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * How much room a bot's turn left (`product/versions/mvp/25-bots.md` §3,
- * the context meter): what the model's context held at the turn's last
- * answer, against its window, and a subscription's usage windows as that
- * answer said them.
+ * How much room a bot's turn left (the context meter): what the model's context
+ * held at the turn's last answer, against its window, and a subscription's
+ * usage windows as that answer said them.
  *
  * - `"contextTokens"`: what the last model call was sent, cached or not. It
  *   is not `"inputTokens"`, which sums every call the turn made. Null on a

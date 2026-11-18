@@ -1,8 +1,8 @@
 export {
   type CaptureEventVariables,
-  /** @public The documented way to capture a product event (`apps/docs/docs/architecture/analytics.md`). */
+  /** @public The way to capture a product event. */
   useCaptureEvent,
-  /** @public The documented way to capture a "was shown" event (`apps/docs/docs/architecture/analytics.md`). */
+  /** @public The way to capture a "was shown" event. */
   useCaptureOnMount,
   usePageView,
 } from './analytics.queries';
@@ -22,11 +22,11 @@ export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
 export { useCaptureError, useReportError } from './error-reporting.hooks';
 export {
   type FeatureFlagReadOptions,
-  /** @public The flags rule's client read (`.agents/rules/feature-flags.md`). */
+  /** @public Whether a boolean flag is on, read on the client. */
   useFeatureFlag,
-  /** @public The flags rule's read that waits for the answer (`.agents/rules/feature-flags.md`). */
+  /** @public The flags with their loading state, for a render that waits for the answer. */
   useFeatureFlags,
-  /** @public The flags rule's read of a variant flag (`.agents/rules/feature-flags.md`). */
+  /** @public A flag's value, the read for a variant flag. */
   useFeatureFlagValue,
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';

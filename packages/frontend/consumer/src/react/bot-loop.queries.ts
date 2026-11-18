@@ -7,9 +7,8 @@ import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
 /**
- * A bot's loop (`product/versions/mvp/25-bots.md` §4.1, `/loop`): the prompt
- * it runs again and again, and the owner's Stop. The chat reads it again
- * whenever its stream moves.
+ * A bot's loop (`/loop`): the prompt it runs again and again, and the owner's
+ * Stop. The chat reads it again whenever its stream moves.
  */
 
 /**

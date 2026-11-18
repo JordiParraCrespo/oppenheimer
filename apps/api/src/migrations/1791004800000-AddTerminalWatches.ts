@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Watches on what a session's terminal prints (`product/versions/mvp/27-bot-subscriptions.md`
- * §2; from Grok Bot's shell-output notifications,
- * `research/lessons-from-grok-bot.md` §9 row 8).
+ * Watches on what a session's terminal prints (from Grok Bot's shell-output
+ * notifications).
  *
  * - `session_terminal_watch`: one pattern a session's runner scans its screen
  *   for. The sessions module owns it because it is what the runner is told:

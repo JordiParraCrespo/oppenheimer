@@ -1,8 +1,7 @@
 package domain
 
 // PullWatchedKind is the event kind a session's watch on a pull request (or
-// its end) is logged as (`runner sessions watch-pr`,
-// `product/next-steps/agent-tools.md` §3).
+// its end) is logged as (`runner sessions watch-pr`).
 const PullWatchedKind = "pull.watched"
 
 // PullWatch is one pull request a session's agent asked to be woken by, or

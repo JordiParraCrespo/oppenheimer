@@ -13,7 +13,7 @@ import type { PeerFactory } from './direct-path';
 import { PathSwitch, type RelayPath } from './path-switch';
 
 /**
- * Which way a terminal's bytes travel: the relay or a direct channel (22),
+ * Which way a terminal's bytes travel: the relay or a direct channel,
  * which the attach socket decides, or, where the shell reaches this machine's
  * runner, its local socket, which `LocalFirstSessionStream` decides.
  */
@@ -22,10 +22,10 @@ export type StreamPath = RelayPath | 'local';
 /**
  * The contract between the console and whatever is feeding a terminal.
  *
- * `product/versions/mvp/01-protocol.md` decides the wire: PTY bytes as binary
- * WebSocket frames, control messages as JSON on the same socket, the browser
- * acking consumed bytes. This interface is that shape with the socket left
- * out, so the screen holds a stream and never a socket.
+ * The wire: PTY bytes as binary WebSocket frames, control messages as JSON on
+ * the same socket, the browser acking consumed bytes. This interface is that
+ * shape with the socket left out, so the screen holds a stream and never a
+ * socket.
  */
 
 /**
@@ -145,7 +145,7 @@ const FINAL_CLOSE_CODES = new Map<number, StreamEnd>([
  * How a failed ticket mint ends. A problem status the API named is a fact about
  * the session or the person and is final; anything else — the API unreachable,
  * a 5xx, a hung request — is the ladder's. `host_offline` is never said here:
- * only the attach socket may say it (01), and a mint that failed has no socket.
+ * only the attach socket may say it, and a mint that failed has no socket.
  */
 function endOfMintFailure(error: unknown): StreamEnd | null {
   const status = (error as { status?: unknown } | null)?.status;
@@ -199,7 +199,7 @@ export class AttachSessionStream implements SessionStream {
   private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
   private closedReason: StreamEnd | null = null;
-  /** Which way the bytes go: the relay, or a direct channel (22). */
+  /** Which way the bytes go: the relay, or a direct channel. */
   private readonly paths: PathSwitch;
 
   constructor(private readonly options: SessionStreamOptions) {

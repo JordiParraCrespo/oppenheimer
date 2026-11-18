@@ -2,8 +2,7 @@ import type { GithubTokenKind } from '@oppenheimer/shared';
 import type { GithubRepository } from './github-app.port';
 
 /**
- * What GitHub says about a person's own token
- * (`product/next-steps/0.2-pull-requests.md` §6.2): whose it is, when it
+ * What GitHub says about a person's own token: whose it is, when it
  * expires, and what it opens. A live credential goes in and never comes out.
  */
 export interface GithubTokenInspection {

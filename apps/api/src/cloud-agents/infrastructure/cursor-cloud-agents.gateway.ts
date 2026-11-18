@@ -30,7 +30,7 @@ const REPOSITORIES_TTL_SECONDS = 10 * 60;
  * Cursor's Cloud Agents API, v1 (`https://cursor.com/docs/cloud-agent/api/endpoints`),
  * on a person's own key as Basic auth (the key as user, no password).
  *
- * The budget (`.agents/rules/integrations.md`):
+ * The rate-limit budget:
  *
  * - **What is counted.** Calls per person: a user key's calls count against
  *   its Cursor user, so the bucket is `user:<id>` (from `GET /v1/me`, kept on

@@ -27,6 +27,8 @@ interface Case {
   dpr: number;
   mode: 'caret' | 'inverse';
   face: string;
+  /** The face arrives once the terminal is open. */
+  late?: boolean;
 }
 
 const CASES: Case[] = [];
@@ -35,6 +37,13 @@ for (const face of FACES) {
     for (const dpr of [1, 1.25, 1.5, 2]) CASES.push({ renderer: 'dom', dpr, mode, face });
     CASES.push({ renderer: 'webgl', dpr: 1, mode, face });
   }
+}
+// A face that loads after the terminal opened, with metrics unlike the
+// fallback's. xterm measured its cells on the fallback, and the guess was
+// drawn on the face's: each letter typed sat two pixels high (five at 2x)
+// and dropped into place when its echo landed.
+for (const renderer of ['dom', 'webgl'] as const) {
+  CASES.push({ renderer, dpr: 1, mode: 'caret', face: 'FreeMono', late: true });
 }
 
 /** Pixels allowed to differ by more than `CHANNEL` between the two frames: anti-aliasing, never a glyph. */
@@ -54,7 +63,7 @@ test.afterAll(async () => {
 });
 
 for (const c of CASES) {
-  const name = `${c.renderer} ${c.dpr}x, ${c.mode}, ${c.face || 'default face'}`;
+  const name = `${c.renderer} ${c.dpr}x, ${c.mode}, ${c.face || 'default face'}${c.late ? ' loaded late' : ''}`;
 
   test(`a predicted key does not move when its echo lands (${name})`, async ({ browser }) => {
     await typeAhead(browser, c, async (page) => {
@@ -66,7 +75,7 @@ for (const c of CASES) {
 // Deleting is the same at every ratio and face; what matters is where the
 // prompt ends. Five Backspaces after three letters: the last two are the
 // host's to refuse, and a guess that deleted the prompt sprang back.
-for (const c of CASES.filter((c) => c.dpr === 1 && c.face === '')) {
+for (const c of CASES.filter((c) => c.dpr === 1 && c.face === '' && !c.late)) {
   test(`deleting past the prompt does not bounce (${c.renderer}, ${c.mode})`, async ({
     browser,
   }) => {
@@ -135,10 +144,16 @@ async function open(browser: Browser, c: Case, busy = false) {
     });
   }
   const page = await context.newPage();
-  const query = new URLSearchParams({ mode: c.mode, face: c.face, spin: busy ? '1' : '' });
+  const query = new URLSearchParams({
+    mode: c.mode,
+    face: c.face,
+    late: c.late ? '1' : '',
+    spin: busy ? '1' : '',
+  });
   await page.goto(`${served.origin}/?${query}`);
   await page.waitForFunction(() => 'harness' in window);
   await expect.poll(() => page.evaluate(() => window.harness.renderer())).toBe(c.renderer);
+  await expect.poll(() => page.evaluate(() => window.harness.faceReady())).toBe(true);
   await page.locator('#terminal').click();
   return { context, page };
 }

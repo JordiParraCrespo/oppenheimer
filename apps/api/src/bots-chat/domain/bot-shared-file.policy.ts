@@ -2,8 +2,7 @@ import type { SessionSharedFile } from '@oppenheimer/shared';
 import { cut, fenceUntrusted } from './bot-tool-text.policy';
 
 /**
- * The files a session's agent shared (`runner sessions send-file`,
- * `product/next-steps/agent-tools.md` §7) as a bot reads them: each by its
+ * The files a session's agent shared (`runner sessions send-file`) as a bot reads them: each by its
  * name, type, size, caption and id, the way `get_session` and `read_session`
  * list them and `show_session_file` names one. The agent wrote the name and
  * the caption, so they are data and go inside the fence. Pure.

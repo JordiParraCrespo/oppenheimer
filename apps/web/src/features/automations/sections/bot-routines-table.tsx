@@ -1,5 +1,4 @@
-import { RoutineTable, RoutineTableEmpty, RoutineTableHead } from '@oppenheimer/design-system-web';
-import { Bot } from '@oppenheimer/design-system-web/icons';
+import { EmptyState, RoutineTable, RoutineTableHead } from '@oppenheimer/design-system-web';
 import { triggerListText } from '@oppenheimer/frontend-consumer';
 import { useBots, useSuspenseAllBotRoutines } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
@@ -9,11 +8,10 @@ import { BotRoutineTableRow } from '../components/bot-routine-table-row';
 import { botRoutineColumns } from '../lib/automation-view';
 
 /**
- * The workspace's bot routines, the overview's Bot routines tab
- * (`26-bot-routines.md` §7): a bot's own work, kept apart from the sessions
- * the automations start, with the bot that runs each. A row opens that bot's
- * Routines tab. With none, the empty row says where they are made: a bot's
- * chat, not here.
+ * The workspace's bot routines, the overview's Bot routines tab: a bot's
+ * own work, kept apart from the sessions the automations start, with the
+ * bot that runs each. A row opens that bot's Routines tab. With none, the
+ * empty state says where they are made: a bot's chat, not here.
  *
  * Read under Suspense: the screen's `QueryState` draws the placeholder and a
  * first failure. A refetch that fails keeps the rows and says so above them.
@@ -31,12 +29,13 @@ export function BotRoutinesTable() {
       <ErrorAlert error={error} fallback={t('automations.routines.loadFailed')} />
       <RoutineTable>
         {routines.length === 0 ? (
-          <RoutineTableEmpty>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
-              <Bot />
-            </span>
-            <span>{t('automations.routines.empty')}</span>
-          </RoutineTableEmpty>
+          <EmptyState className="py-14">
+            <EmptyState.Header>
+              <EmptyState.Art name="automations" />
+              <EmptyState.Title>{t('automations.routines.emptyTitle')}</EmptyState.Title>
+              <EmptyState.Description>{t('automations.routines.empty')}</EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
         ) : (
           <>
             <RoutineTableHead columns={botRoutineColumns(t)} />

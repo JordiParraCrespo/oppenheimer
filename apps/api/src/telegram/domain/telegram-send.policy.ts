@@ -7,7 +7,7 @@ export type TelegramSendRefusal = 'not_connected' | 'limit_reached' | null;
 /**
  * Whether a bot may send through a Telegram bot now: only while the host is
  * polling it, and only under the day's share (`TELEGRAM_SENDS_PER_DAY`). The
- * host paces sends to Telegram's own limits on top (`telegram.md` §3).
+ * host paces sends to Telegram's own limits on top.
  */
 export function telegramSendRefusal(
   status: TelegramAccountStatus,

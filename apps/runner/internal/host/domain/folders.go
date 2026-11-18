@@ -21,7 +21,7 @@ type FolderEntry struct {
 }
 
 // FolderListing is one directory's sub-directories, for the folder a person
-// picks a folder session's folder in (24 §4): names only, never files and
+// picks a folder session's folder in: names only, never files and
 // never what is in them.
 type FolderListing struct {
 	// Path is the directory listed, absolute and cleaned.

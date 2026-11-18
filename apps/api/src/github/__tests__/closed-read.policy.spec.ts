@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { planClosedReads } from '../domain/closed-read.policy';
 
-/** #247: what one Analytics read takes in full, and when it may say it saw everything. */
+/** What one Analytics read takes in full, and when it may say it saw everything. */
 const SINCE = new Date('2026-09-01T00:00:00Z');
 const pull = (n: number, day: number) => ({
   n,

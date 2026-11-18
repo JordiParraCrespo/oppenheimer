@@ -20,7 +20,7 @@ type Sender interface {
 
 // maxPendingBatches bounds what the reporter holds while the link is gone for
 // long. The runner keeps no durable outbox and the next hello's snapshot
-// reconciles (02-runner §4), so past the cap the oldest batch is dropped — and
+// reconciles, so past the cap the oldest batch is dropped — and
 // the log says which, never silently.
 const maxPendingBatches = 4096
 
@@ -34,7 +34,7 @@ const maxPendingBatches = 4096
 const ackTimeout = time.Minute
 
 // Reporter batches a session's events and keeps every batch until an ack
-// accounts for each of its keys (01, "events.append and events.ack"). Keys
+// accounts for each of its keys. Keys
 // are `<runId>:<n>`: `runId` is minted at process start and `n` is this
 // process's own counter, so a replay after a lost ack is de-duplicated by the
 // control plane and no key depends on anything the link assigned.
@@ -56,6 +56,17 @@ type Reporter struct {
 	// limit is how many batches may await an ack; past it Append drops the
 	// oldest. maxPendingBatches in production.
 	limit int
+	// carries says whether a session's events belong on the link; nil is
+	// every session. Set once, before the first Append.
+	carries func(sessionID string) bool
+}
+
+// OnlyFor keeps the events of every session carries refuses off the link.
+// A host-only session's events would name an id the control plane cannot
+// parse: it drops the frame without an ack, and the batch is resent every
+// minute for as long as the process lives. Call it before the first Append.
+func (r *Reporter) OnlyFor(carries func(sessionID string) bool) {
+	r.carries = carries
 }
 
 // pendingBatch is a batch awaiting its ack. queued says the link that is up
@@ -99,6 +110,14 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 // this process loses — dropped past the pending cap, or held when the process
 // ends — so whatever the sender marks done in it survives only a delivery.
 func (r *Reporter) AppendSettled(sessionID, kind string, payload any, settled func()) {
+	if r.carries != nil && !r.carries(sessionID) {
+		// Nothing will ever account for it, so it is settled now: a sender
+		// waiting on it would otherwise wait for good.
+		if settled != nil {
+			settled()
+		}
+		return
+	}
 	body, err := encodePayload(payload)
 	if err != nil {
 		r.logger.Warn("event payload could not be encoded", slog.String("kind", kind), slog.Any("error", err))

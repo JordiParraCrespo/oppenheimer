@@ -14,14 +14,13 @@ import { BotGoalResolver } from './bot-goal.resolver';
 import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
 /**
- * A goal the bot keeps working toward (`25-bots.md` §4.1; from Codex's and
- * Grok Bot's goals): a continuation turn at a time, with no limit, until it
- * says the goal is met and the reviewer agrees, or the owner stops it. It
- * pauses rather than ends when it is blocked, fails or stops making
- * progress, and the owner resumes it. Neither tool asks: every continuation
- * is a line in the chat, the guards pause what goes wrong, an optional
- * budget bounds the spend, and the owner stops it from there. A continuation
- * cannot set a goal, so a goal never renews itself.
+ * A goal the bot keeps working toward (from Codex's and Grok Bot's goals): a
+ * continuation turn at a time, with no limit, until it says the goal is met and
+ * the reviewer agrees, or the owner stops it. It pauses rather than ends when
+ * it is blocked, fails or stops making progress, and the owner resumes it.
+ * Neither tool asks: every continuation is a line in the chat, the guards pause
+ * what goes wrong, an optional budget bounds the spend, and the owner stops it
+ * from there. A continuation cannot set a goal, so a goal never renews itself.
  */
 @Injectable()
 export class BotGoalToolsFactory implements BotToolArea {

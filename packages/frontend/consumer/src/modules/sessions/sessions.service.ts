@@ -8,12 +8,16 @@ import type { SessionChat } from './chat/session-chat';
 import type {
   AttachTicket,
   CreateSessionInput,
+  OpenedSessionWindow,
+  OpenSessionWindowInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
   SessionPorts,
   SessionPreview,
   SessionShare,
+  SessionWindow,
+  SessionWindows,
   SharedSession,
   StartCloudSessionInput,
 } from './session.entity';
@@ -70,6 +74,10 @@ export class SessionsService {
 
   setHidden(id: string, hidden: boolean): Promise<SessionEntity> {
     return this.repository.setHidden(id, hidden);
+  }
+
+  acknowledgeReport(id: string): Promise<SessionEntity> {
+    return this.repository.acknowledgeReport(id);
   }
 
   move(id: string, projectId: string): Promise<SessionEntity> {
@@ -130,6 +138,25 @@ export class SessionsService {
   /** The ports the session's processes listen on, for its Browser tab. */
   findPorts(id: string): Promise<SessionPorts> {
     return this.repository.findPorts(id);
+  }
+
+  /** The session's terminal windows, for its Terminal tab: window 0 the agent, the rest shells. */
+  listWindows(id: string): Promise<SessionWindows> {
+    return this.repository.listWindows(id);
+  }
+
+  /**
+   * Opens a plain shell in the session's worktree, or with `agent` a second
+   * coding agent there, started as `input` says; stream it with
+   * `openStream(id, window.index)`.
+   */
+  openWindow(id: string, input?: OpenSessionWindowInput): Promise<OpenedSessionWindow> {
+    return this.repository.openWindow(id, input);
+  }
+
+  /** Closes one of the session's shells, and answers with the windows left. */
+  closeWindow(id: string, window: number): Promise<SessionWindow[]> {
+    return this.repository.closeWindow(id, window);
   }
 
   /** Where one of the session's ports opens, framed by the Browser tab or in a tab of its own. */
@@ -196,10 +223,10 @@ export class SessionsService {
 
   /**
    * One window's terminal, live: the attach socket, its reconnect ladder, a
-   * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is
-   * opened until this is called, and `dispose()` closes it; the platform only
-   * renders what it delivers. `direct` says whether to take a direct path when
-   * the relay offers one (22); it is asked at each offer.
+   * fresh ticket per dial and the byte credit. Nothing is opened until this is
+   * called, and `dispose()` closes it; the platform only renders what it
+   * delivers. `direct` says whether to take a direct path when the relay offers
+   * one; it is asked at each offer.
    */
   openStream(id: string, window = 0, options: { direct?: () => boolean } = {}): SessionStream {
     const remote = () =>

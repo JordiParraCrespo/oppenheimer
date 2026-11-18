@@ -137,8 +137,7 @@ type Facts struct {
 	RunnerVersion string `json:"runnerVersion"`
 
 	// The machine beyond what a session needs: what the console shows on a
-	// host row and what a rollout counts
-	// (product/versions/mvp/15-host-metadata.md). Every field is omitted when
+	// host row and what a rollout counts. Every field is omitted when
 	// the prober could not read it, for the reason CPUs is.
 	Machine
 	// DiskTotalBytes is the size of the workspace filesystem, beside

@@ -5,7 +5,7 @@ import { WakeOnTelegramCommand } from './wake-on-telegram.command';
 
 /**
  * The owner's message to their Telegram bot, for the Oppenheimer bot that
- * answers there (`product/next-steps/answering-on-telegram-and-whatsapp.md`):
+ * answers there:
  * a turn in the chat's conversation that holds the message, the one that
  * starts at the owner's last `/new` before it (fixed when the message was
  * stored, so deliveries in any order agree), keyed by the message so a

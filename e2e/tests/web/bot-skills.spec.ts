@@ -2,12 +2,11 @@ import { expect, type Page, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * A bot's skills in a browser, against the real control plane
- * (`product/versions/mvp/25-bots.md` §4.1): a skill added on its Settings tab
- * is on the server, edits and deletes there, and its command is offered by
- * the chat's `/` menu, which writes it into the composer for its input. What
- * a turn does with a command is the API's integration spec, since a real
- * model is not run here.
+ * A bot's skills in a browser, against the real control plane: a skill added on
+ * its Settings tab is on the server, edits and deletes there, and its command
+ * is offered by the chat's `/` menu, which writes it into the composer for its
+ * input. What a turn does with a command is the API's integration spec, since a
+ * real model is not run here.
  */
 test("a bot's skill from its Skills tab to the chat's / menu", async ({ page }) => {
   const owner = await provisionedUser('botskills');

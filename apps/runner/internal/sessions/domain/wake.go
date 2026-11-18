@@ -3,8 +3,7 @@ package domain
 import "time"
 
 // WakeRequestedKind is the event kind a wake an agent set for itself is
-// logged as (`runner sessions wake-in`, `product/next-steps/agent-tools.md`
-// §4).
+// logged as (`runner sessions wake-in`).
 const WakeRequestedKind = "wake.requested"
 
 const (

@@ -42,9 +42,9 @@ export interface BotToolRateLimit {
 }
 
 /**
- * One line of a bot's chat (`product/versions/mvp/25-bots.md` §3): your
- * message, the bot's text, an activity line holding a run of tool calls, or
- * an event: what Oppenheimer told the bot for you (an approval decided).
+ * One line of a bot's chat: your message, the bot's text, an activity line
+ * holding a run of tool calls, or an event: what Oppenheimer told the bot for
+ * you (an approval decided).
  */
 export class BotMessageEntity {
   constructor(
@@ -263,13 +263,13 @@ export class BotConversationEntity {
 }
 
 /**
- * A Needs input card (`product/versions/mvp/25-bots.md` §5): one call the bot
- * asked to make, waiting for you, or what you decided about it.
+ * A Needs input card: one call the bot asked to make, waiting for you, or what
+ * you decided about it.
  */
 /**
- * What a Needs input card shows past its line (`25-bots.md` §5): the call as
- * it will run, the thing it acts on, whether it sends something out of
- * Oppenheimer, why a rule paused it, and the ways a yes may reach.
+ * What a Needs input card shows past its line: the call as it will run, the
+ * thing it acts on, whether it sends something out of Oppenheimer, why a rule
+ * paused it, and the ways a yes may reach.
  */
 export interface BotApprovalDetails {
   input: Readonly<Record<string, unknown>>;
@@ -314,8 +314,8 @@ export class BotApprovalEntity {
     /** What the card shows beyond its line, and how far a yes may reach. */
     public readonly details: BotApprovalDetails = NO_APPROVAL_DETAILS,
     /**
-     * The message a send card sends on a yes, exactly (`product/next-steps/mail.md`
-     * §3.4); `null` for every other card.
+     * The message a send card sends on a yes, exactly; `null` for every other
+     * card.
      */
     public readonly mail: MailPlan | null = null,
   ) {}
@@ -326,8 +326,7 @@ export class BotApprovalEntity {
 }
 
 /**
- * A card of questions a bot stopped on (`ask_user`,
- * `product/versions/mvp/25-bots.md` §3.2): answered or dismissed, never
+ * A card of questions a bot stopped on (`ask_user`): answered or dismissed, never
  * approved, and nothing runs on it. A card of its own beside approvals; a
  * bot has one card up at a time of either kind.
  */
@@ -345,8 +344,8 @@ export class BotQuestionCardEntity {
 
 /**
  * A Needs input card as the workspace's list across its bots reads it (the
- * Inbox, `product/versions/mvp/29-inbox.md` §1): the card, the bot that
- * asked, and the call's input, where a session it concerns may be named.
+ * Inbox): the card, the bot that asked, and the call's input, where a session
+ * it concerns may be named.
  */
 export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
   constructor(
@@ -383,10 +382,9 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
 }
 
 /**
- * A bot's latest line to the person (its `notify` tool,
- * `product/next-steps/agent-tools.md` §5), as the workspace's list across its
- * bots reads it (the Inbox). Each notice has an id of its own, so a mark on
- * one never hides the next.
+ * A bot's latest line to the person (its `notify` tool), as the workspace's
+ * list across its bots reads it (the Inbox). Each notice has an id of its own,
+ * so a mark on one never hides the next.
  */
 export class WorkspaceBotNoticeEntity {
   constructor(

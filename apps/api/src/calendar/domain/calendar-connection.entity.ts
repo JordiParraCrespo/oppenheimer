@@ -33,8 +33,7 @@ export interface CalendarGrantProps {
 }
 
 /**
- * One of a person's Google accounts, read-only (`product/versions/mvp/20-plan-calendar.md`
- * §4, several per person since `23-plan-milestones-stats-accounts.md` §5). A grant
+ * One of a person's Google accounts, read-only; a person may hold several. A grant
  * of their own, separate from Google sign-in; nothing of the calendar is stored,
  * only what it takes to read it.
  */

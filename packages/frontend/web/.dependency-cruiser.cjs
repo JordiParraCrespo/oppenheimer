@@ -1,4 +1,4 @@
-/** Architecture fitness rules — see packages/frontend/web/ARCHITECTURE.md. Run with: pnpm --filter @oppenheimer/frontend-web arch */
+/** Architecture fitness rules. Run with: pnpm --filter @oppenheimer/frontend-web arch */
 module.exports = require('@oppenheimer/tsconfig/depcruise/frontend-kit.cjs')({
   leaves: [
     'platform',

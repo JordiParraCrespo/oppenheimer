@@ -15,7 +15,7 @@
  *    frontend app, `packages/frontend` and each platform kit an
  *    ARCHITECTURE.md, and every AGENTS.md points at a rule file
  *
- * See .agents/rules/frontend-architecture.md. Run: pnpm check:structure
+ * Run: pnpm check:structure
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -117,8 +117,7 @@ const kitBasenames = (kit) => {
  *
  * What a component *costs* is not checked here: a line cap per kind pushes
  * people to shard files rather than name the jobs. The `*-render.spec.tsx`
- * files, with the React Compiler off, are the check for cost
- * (.agents/rules/frontend-architecture.md).
+ * files, with the React Compiler off, are the check for cost.
  *
  * The scan is deliberately narrow: it reads named imports from a product
  * package's React entrypoint and a single local JSX consumer, so a default

@@ -26,7 +26,7 @@ export class BotGoalPausedResponseDto {
   at!: string;
 }
 
-/** The goal a bot set itself, open now (`25-bots.md` §4.1). */
+/** The goal a bot set itself, open now. */
 export class BotGoalResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;

@@ -1,9 +1,9 @@
-import {
-  type BotDocumentRevisionEntity,
-  type BotEntity,
-  type BotGroupEntity,
-  botGroupSections,
+import type {
+  BotDocumentRevisionEntity,
+  BotEntity,
+  BotGroupEntity,
 } from '@oppenheimer/frontend-consumer';
+import { botGroupSections } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
@@ -14,7 +14,15 @@ import {
   keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
-import { firstBot, groupOrder, inGroupOrder, inOrder, sectionOrder } from '../lib/bot-groups';
+import {
+  firstBot,
+  groupOrder,
+  groupPosition,
+  inGroupOrder,
+  inOrder,
+  sectionOrder,
+  ungroupedDropIn,
+} from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
@@ -84,11 +92,29 @@ describe('botGroupSections', () => {
     ]);
   });
 
-  it('draws the groups in the order a group drag put them, Ungrouped still last', () => {
+  it('draws the sections in the order a group drag put them, Ungrouped among them', () => {
     const sections = botGroupSections(bots, groups, '');
-    expect(groupOrder(sections)).toEqual(['engineering', 'research']);
-    const dropped = inGroupOrder(sections, ['research', 'engineering']);
-    expect(dropped.map((section) => section.id)).toEqual(['research', 'engineering', null]);
+    expect(groupOrder(sections)).toEqual(['engineering', 'research', 'ungrouped']);
+    const dropped = inGroupOrder(sections, ['ungrouped', 'research', 'engineering']);
+    expect(dropped.map((section) => section.id)).toEqual([null, 'research', 'engineering']);
+  });
+
+  it('draws Ungrouped above the group the reader dropped it on, and last once that group is gone', () => {
+    const above = botGroupSections(bots, groups, '', { ungroupedBefore: 'research' });
+    expect(above.map((section) => section.id)).toEqual(['engineering', null, 'research']);
+    const gone = botGroupSections(bots, groups, '', { ungroupedBefore: 'deleted' });
+    expect(gone.map((section) => section.id)).toEqual(['engineering', 'research', null]);
+  });
+
+  it('reads where a drop left Ungrouped, and a group’s place among the groups alone', () => {
+    expect(ungroupedDropIn(['engineering', 'ungrouped', 'research'])).toEqual({
+      kind: 'before',
+      id: 'research',
+    });
+    expect(ungroupedDropIn(['engineering', 'research', 'ungrouped'])).toEqual({ kind: 'last' });
+    // Ungrouped not drawn: the drop says nothing of its place, which stays as stored.
+    expect(ungroupedDropIn(['engineering', 'research'])).toEqual({ kind: 'absent' });
+    expect(groupPosition(['ungrouped', 'research', 'engineering'], 'engineering')).toBe(1);
   });
 
   it('leaves a hidden bot out of its group, but a search still finds it', () => {
@@ -218,6 +244,7 @@ describe('firstBot', () => {
     const bots = [bot('loose', null, 0), bot('b', 'first', 1), bot('a', 'first', 0)];
     expect(firstBot(bots, groups, [])?.id).toBe('a');
     expect(firstBot([bot('loose', null, 0)], groups, [])?.id).toBe('loose');
+    expect(firstBot(bots, groups, [], 'first')?.id).toBe('loose');
   });
 
   it('is the top pinned bot when one is pinned, since Pinned is drawn above the groups', () => {

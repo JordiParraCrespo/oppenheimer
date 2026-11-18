@@ -9,9 +9,9 @@ import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 
 /**
- * The bar over a bot's settings (`design/version1/BotSettings.dc.html`): back
- * to its chat, its face and name, Open chat, and the ellipsis with Delete bot.
- * It follows the bot, so a rename on Profile shows here as it saves.
+ * The bar over a bot's settings: back to its chat, its face and name, Open
+ * chat, and the ellipsis with Delete bot. It follows the bot, so a rename on
+ * Profile shows here as it saves.
  */
 export function BotSettingsTopBar({ botId }: { botId: string }) {
   const { t } = useTranslation();

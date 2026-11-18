@@ -31,8 +31,7 @@ export type TypedPrompt =
 
 /**
  * Types a follow-up prompt into a running session's agent for somebody other
- * than a person at its terminal: a bot (issue #493) or a wake
- * (`product/next-steps/agent-tools.md` §3). The prompt is claimed first, as
+ * than a person at its terminal: a bot or a wake. The prompt is claimed first, as
  * `prompt.sent` appended only while the agent still waits at its prompt and
  * no other prompt is waiting to be taken, with the sender as the API read
  * it: the log, not the words, says who spoke, and of two prompts sent at once

@@ -5,10 +5,9 @@ import { TelegramOwnerWroteDomainEvent } from '../../../telegram/domain/events/t
 import { WakeOnTelegramCommand } from '../../commands/wake-on-telegram/wake-on-telegram.command';
 
 /**
- * Where the owner's message to their Telegram bot reaches the Oppenheimer
- * bot that answers there
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): one wake per
- * stored message, which the wake keys, so a delivery twice queues one turn.
+ * Where the owner's message to their Telegram bot reaches the Oppenheimer bot
+ * that answers there: one wake per stored message, which the wake keys, so a
+ * delivery twice queues one turn.
  */
 @Injectable()
 export class BotTelegramWakeDomainEventHandler {

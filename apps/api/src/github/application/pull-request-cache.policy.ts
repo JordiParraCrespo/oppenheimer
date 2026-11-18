@@ -11,11 +11,11 @@ import type { WorkspaceRepository } from './pull-request-access.port';
 
 /** A repository's open list: short, so a merge or a new push shows on the next look. */
 export const OPEN_TTL_SECONDS = 30;
-/** A snapshot GitHub answered only in part is kept briefly, so the next read asks again (#244). */
+/** A snapshot GitHub answered only in part is kept briefly, so the next read asks again. */
 const PARTIAL_TTL_SECONDS = 15;
 /**
  * A part GitHub refused with "slow down" is kept far longer than one it simply
- * failed (#247). A secondary rate limit lasts minutes, so asking again fifteen
+ * failed. A secondary rate limit lasts minutes, so asking again fifteen
  * seconds later earns another refusal and nothing else: the gap caches itself
  * out of existence and re-creates itself on every view.
  */
@@ -23,7 +23,7 @@ const RATE_LIMITED_TTL_SECONDS = 5 * 60;
 
 /**
  * Whose answers a read may share: the installation, or the one token of a
- * person's that made it (§6.2). Never another's: two tokens of one GitHub
+ * person's that made it. Never another's: two tokens of one GitHub
  * account share a budget, not what they can see.
  */
 function cacheScopeOf(credential: GithubCredential): string {
@@ -53,7 +53,7 @@ export function listingKey(
 
 /**
  * A snapshot's cache key, under the credential's cache scope: what GitHub
- * answers one installation, or one token (§6.2), is never served to a read
+ * answers one installation, or one token, is never served to a read
  * made with another. `withChecks` is part of it because a read that left
  * the checks out must not be found by one that needs them: storing both under
  * one key meant opening a closed pull request within the six-hour window

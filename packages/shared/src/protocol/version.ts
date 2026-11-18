@@ -14,7 +14,5 @@
  *   window is N-2; while only version 1 exists, the floor is this constant;
  * - it is also the `$id` path segment of the emitted JSON Schema, so an artifact
  *   and the code that produced it cannot be mistaken for different versions.
- *
- * See `product/versions/mvp/01-protocol.md`, "Hello, heartbeat and hints".
  */
 export const PROTOCOL_VERSION = 1;

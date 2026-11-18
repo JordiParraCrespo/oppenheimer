@@ -5,7 +5,7 @@ import { SessionTerminalMatchedDomainEvent } from '../../domain/events/session-t
 import { SESSION_TERMINAL_WATCH_REPOSITORY } from '../../sessions.di-tokens';
 
 /**
- * Keeps a terminal watch's newest count (`27-bot-subscriptions.md` §2), so
+ * Keeps a terminal watch's newest count, so
  * the watch sent again after a runner restart counts on from it. Recording
  * never lowers the count, so a redelivered or late report is harmless.
  */

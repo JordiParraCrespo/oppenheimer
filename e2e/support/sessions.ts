@@ -214,8 +214,7 @@ let projectCounter = 0;
 /**
  * `POST /projects` holding the stub's `xrp-mobile` as its one default repository,
  * for a spec about projects or moving between them. A session that names none is
- * listed in the workspace's Unassigned project
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * listed in the workspace's Unassigned project.
  */
 export async function createProject(
   api: APIRequestContext,

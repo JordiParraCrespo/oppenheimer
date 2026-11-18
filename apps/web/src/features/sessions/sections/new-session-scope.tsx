@@ -7,14 +7,13 @@ import { NewSessionPlace } from './new-session-place';
 import { NewSessionRepositories } from './new-session-repositories';
 
 /**
- * Where the session runs, on the row under New session's box
- * (`NewSessionComposer.dc.html`), in the order the place reads
- * (`product/versions/mvp/24-session-places.md` §5): the host and where on it
- * first, as one chip, then for a new worktree Repository and Branch, for a
- * folder on the host Folder, and for the cloud Repository and Branch again:
- * the vendor's agent starts from that branch of that repository. Codex's
- * cloud environment is picked in the place chip, as the frame does. The project is not here: it sits over the box,
- * since picking one fills these in (`NewSessionForm`).
+ * Where the session runs, on the row under New session's box, in the order
+ * the place reads: the host and where on it first, as one chip, then for a
+ * new worktree Repository and Branch, for a folder on the host Folder, and
+ * for the cloud Repository and Branch again: the vendor's agent starts from
+ * that branch of that repository. Codex's cloud environment is picked in the
+ * place chip, as the frame does. The project is not here: it sits over the
+ * box, since picking one fills these in (`NewSessionForm`).
  *
  * It reads only `where`, so a pick of anything else leaves it still; the
  * place chip sits outside the swapped list, so it keeps its state when the

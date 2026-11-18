@@ -1,9 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A goal a bot sets itself keeps it going (`product/versions/mvp/25-bots.md`
- * §4.1; from Grok Bot's goals, `research/lessons-from-grok-bot.md` §9 row
- * 10).
+ * A goal a bot sets itself keeps it going (from Grok Bot's goals).
  *
  * - `bot_goal`: one row per bot at most (`UQ_bot_goal_bot`), the goal open
  *   now. A continuation is not stored here: it is a queued `bot_turn` whose

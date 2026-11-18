@@ -581,6 +581,11 @@ are never reissued.
 | `SESSIONS_052` <a id="sessions_052" /> | Only a session whose start failed can be tried again | 409 |
 | `SESSIONS_053` <a id="sessions_053" /> | No cloud session of this workspace has that id | 404 |
 | `SESSIONS_054` <a id="sessions_054" /> | This session has no cloud chat | 409 |
+| `SESSIONS_056` <a id="sessions_056" /> | This host's runner cannot open or close a session's terminals | 409 |
+| `SESSIONS_057` <a id="sessions_057" /> | The agent's window cannot be closed; close the session instead | 409 |
+| `SESSIONS_058` <a id="sessions_058" /> | The session has no such terminal | 404 |
+| `SESSIONS_059` <a id="sessions_059" /> | The host refused to change the session's terminals | 409 |
+| `SESSIONS_060` <a id="sessions_060" /> | This host's runner cannot start a second agent in a session | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -649,6 +654,18 @@ These are retired since 2026-11-12 and not reused: `SESSIONS_044` <a id="session
 `SESSIONS_045` <a id="sessions_045" />, `SESSIONS_046` <a id="sessions_046" />,
 `SESSIONS_047` <a id="sessions_047" /> and `SESSIONS_055` <a id="sessions_055" />, the composer's
 listing of a host's Codex environments, which no longer exists.
+
+`SESSIONS_056`–`SESSIONS_059` belong to a session's terminals, the plain shells the
+session pane's Terminal tab opens in its worktree (tmux windows 1 and up; window 0 is
+the agent). `056` is an open or a close on a host whose live runner did not name
+`session.windows.list`: it would change the windows without saying which. `057` is
+closing window 0, refused before the host is asked. `058` is a window the host does not
+hold (the runner's `SESS_001`), and `059` any other refusal, with the runner's code as
+`upstreamCode`. A host with no link is `SESSIONS_016` and one that does not answer
+`SESSIONS_031`; reading the windows answers both of the first two as a `state` instead.
+`SESSIONS_060` is an open that asks for a second coding agent in the new window on a host
+whose live runner did not name `session.window.agent`: that runner would open a plain shell
+and ignore the agent, so the open is refused before the host is asked.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its

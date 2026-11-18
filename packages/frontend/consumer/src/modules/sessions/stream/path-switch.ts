@@ -4,7 +4,7 @@ import type { DirectPath, PeerFactory } from './direct-path';
 
 /**
  * Which way the terminal's bytes travel: through the relay, or on a direct
- * channel to the host (`product/versions/mvp/22-direct-terminal-path.md`).
+ * channel to the host.
  */
 export type RelayPath = 'relay' | 'direct';
 

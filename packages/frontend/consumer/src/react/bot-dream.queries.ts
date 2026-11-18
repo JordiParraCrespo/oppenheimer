@@ -9,8 +9,7 @@ import { usePollWhile } from './live-poll';
 import { mutation } from './mutation';
 
 /**
- * A bot's dreams of its memory (`product/versions/mvp/25-bots.md` §4.1,
- * "Dreaming"): its latest, "Tidy now", and Undo.
+ * A bot's dreams of its memory: its latest, "Tidy now", and Undo.
  */
 
 /**

@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Settings → WhatsApp, in a browser (`product/next-steps/whatsapp.md` §1): the
+ * Settings → WhatsApp, in a browser: the
  * reader's own numbers, each a WhatsApp linked device on one of their hosts.
  * Against the real control plane, a reader with none sees what linking gives
  * their bots, and that a host comes first. The stack has no phone behind it,
@@ -99,8 +99,7 @@ test('a pairing number shows its code, a logged-out one offers Pair again, and o
 });
 
 /**
- * Who answers on a connected number, in a browser
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1): the bot
+ * Who answers on a connected number, in a browser: the bot
  * that answers by default, and the reader's own number, confirmed by a code
  * it receives and the reader enters here. The stack has no phone, so the
  * number's list and its writes answer here in the API's shapes; the bots are

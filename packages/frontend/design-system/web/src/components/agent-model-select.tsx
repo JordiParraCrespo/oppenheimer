@@ -12,10 +12,10 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { AgentMark } from './agent-mark';
-import { ChipSelectItem, ChipSelectList, ChipSelectPopup } from './chip-select';
+import { ComboboxField } from '../internal/combobox-field';
+import { ChipSelectCombobox, ChipSelectItem, ChipSelectList, ChipSelectPopup } from './chip-select';
 import { ComposerToolButton } from './composer';
 import { EffortSlider, type EffortStop } from './effort-slider';
-import { Input } from './input';
 import { Popover, PopoverTrigger } from './popover';
 
 /** `legacy`: an earlier generation, kept behind the agent's "More models" row. */
@@ -475,23 +475,19 @@ function AgentModelSelect<V extends string = string>({
           }
           aria-label={ariaLabel}
         />
+        <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
         <div className="px-1.5 pt-1.5">
-          <Input
+          <ComboboxField
             size="sm"
-            // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
-            autoFocus
             leading={<SearchIcon className="size-3" />}
             // Focus is where the popup opens; the halo would light up every opening.
             className="has-focus-visible:ring-0"
-            value={query}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            onChange={(event) => setQuery(event.target.value)}
           />
         </div>
         <ChipSelectList
           density="engine"
-          role="listbox"
           aria-label={ariaLabel}
           rows={VISIBLE_ROWS}
           total={total}
@@ -521,6 +517,7 @@ function AgentModelSelect<V extends string = string>({
           ) : null}
           {more?.map(renderRow)}
         </ChipSelectList>
+        </ChipSelectCombobox>
         {effort ? <AgentModelEffortFoot effort={effort} labels={label} /> : null}
       </ChipSelectPopup>
     </Popover>

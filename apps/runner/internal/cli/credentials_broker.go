@@ -25,10 +25,10 @@ const tokenRefreshMargin = 5 * time.Minute
 
 // credentialBroker answers the credential helper: one installation token per
 // session and checkout, asked of the control plane on the link when git first
-// needs it and held in memory until it expires or is revoked (02-runner §8;
-// F21). A token is minted for one repository, so a session over several asks
-// once for each, and the helper says which by the path git hands it. Nothing
-// is written to disk and nothing is logged.
+// needs it and held in memory until it expires or is revoked. A token is minted
+// for one repository, so a session over several asks once for each, and the
+// helper says which by the path git hands it. Nothing is written to disk and
+// nothing is logged.
 type credentialBroker struct {
 	client   sender
 	unseal   func(sealed []byte) ([]byte, error)

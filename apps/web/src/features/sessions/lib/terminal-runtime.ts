@@ -147,7 +147,7 @@ export function mountSessionTerminal(
   });
   const send = echo.send;
 
-  // The console's keys (05), decided before xterm encodes them.
+  // The console's keys, decided before xterm encodes them.
   term.attachCustomKeyEventHandler((event) => {
     const verdict = classifyKey(event, {
       hasSelection: term.hasSelection(),
@@ -241,7 +241,7 @@ export function mountSessionTerminal(
   });
 
   // The grid refits on every frame of a drag; the PTY hears the size once
-  // the drag settles (02 §5).
+  // the drag settles.
   const ptySize = createResizeCoalescer((cols, rows) => stream.resize(cols, rows));
   const refit = () => {
     // fit() throws if the pane has no layout yet (a hidden tab, the frame
@@ -366,7 +366,7 @@ export function mountSessionTerminal(
 }
 
 /**
- * The console's own copy (05): nothing selected copies nothing, and a copy
+ * The console's own copy: nothing selected copies nothing, and a copy
  * the browser refuses (no clipboard API outside a secure context, a denied
  * permission) is a no-op rather than an error.
  */

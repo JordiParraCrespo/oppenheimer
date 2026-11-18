@@ -10,7 +10,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotLoopCommand } from './run-bot-loop.command';
 
 /**
- * A loop's run came due (`25-bots.md` §4.1, `/loop`): load, decide
+ * A loop's run came due: load, decide
  * (`loopRunDecision`), act. A job that is no longer the loop's next run (it
  * was queued, moved, or the loop ended or was replaced) does nothing; an
  * expired loop ends with its line; a loop whose owner can no longer act in

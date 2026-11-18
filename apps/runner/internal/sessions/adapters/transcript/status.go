@@ -15,7 +15,7 @@ import (
 // the context is, and how much of the plan's 5-hour and weekly limits the
 // account has used. The transcript has neither, and these are the CLI's own
 // numbers, read from it on this host: no credential is read and nothing is
-// asked of Anthropic (`product/next-steps/0.7-terminal-and-chat.md`).
+// asked of Anthropic.
 const StatusEntryType = "oppenheimer.status"
 
 // statusPayloadMax bounds what is read of one status line payload; the CLI's

@@ -2,7 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
- * A bot's `message_bot` or `ask_bot` call (`25-bots.md` §4.6): queue a turn
+ * A bot's `message_bot` or `ask_bot` call: queue a turn
  * on another bot of the owner's, opened by the message. Dispatched by the
  * tool alone; the sender is the turn that made the call, never a name the
  * call gives.

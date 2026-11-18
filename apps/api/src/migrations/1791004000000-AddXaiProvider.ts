@@ -7,7 +7,7 @@ const TABLES = [
 ] as const;
 
 /**
- * Bots on Grok (`product/versions/mvp/25-bots.md` §2): `xai` joins the
+ * Bots on Grok: `xai` joins the
  * providers a bot, a turn and a workspace credential may name. Its credential
  * is an xAI API key, a row like OpenAI's or GLM's, sealed under
  * `BOTS_PROVIDER_KEY`; no column is added.

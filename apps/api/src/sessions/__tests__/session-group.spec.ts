@@ -162,6 +162,50 @@ describe('the rest of the vocabulary', () => {
   });
 });
 
+/**
+ * The sidebar's blue dot: a turn that ends is ready for review until somebody opens
+ * the session. Nothing wrote a report before, so no session ever turned blue.
+ */
+describe('a turn that ends', () => {
+  const ackOf = (fold: SessionFold) =>
+    entry(SESSION_EVENT_KINDS.REPORT_ACKNOWLEDGED, { hash: fold.reportHash }, secondsAgo(4));
+
+  it('is ready for review once the agent goes from working to its prompt', () => {
+    for (const end of ['idle', 'done']) {
+      const fold = running(observed('working', secondsAgo(30)), observed(end, secondsAgo(5)));
+      expect(sessionGroup(fold, NOW)).toBe('ready-for-review');
+    }
+  });
+
+  it('is ready for review after a question the agent asked was answered and it finished', () => {
+    const fold = running(observed('blocked', secondsAgo(30)), observed('done', secondsAgo(5)));
+    expect(sessionGroup(fold, NOW)).toBe('ready-for-review');
+  });
+
+  it('is not one when the agent merely loads to its prompt', () => {
+    expect(sessionGroup(running(observed('idle', secondsAgo(5))), NOW)).toBe('idle');
+    const loading = running(observed('unknown', secondsAgo(30)), observed('idle', secondsAgo(5)));
+    expect(sessionGroup(loading, NOW)).toBe('idle');
+  });
+
+  it('stays read across the heartbeats that repeat its end', () => {
+    const ended = [observed('working', secondsAgo(30)), observed('done', secondsAgo(6))];
+    const read = running(...ended, ackOf(running(...ended)), observed('done', secondsAgo(2)));
+    expect(sessionGroup(read, NOW)).toBe('idle');
+  });
+
+  it('is ready for review again when the next turn ends, after the last was read', () => {
+    const first = [observed('working', secondsAgo(60)), observed('done', secondsAgo(50))];
+    const fold = running(
+      ...first,
+      ackOf(running(...first)),
+      observed('working', secondsAgo(20)),
+      observed('idle', secondsAgo(3)),
+    );
+    expect(sessionGroup(fold, NOW)).toBe('ready-for-review');
+  });
+});
+
 describe('precedence', () => {
   it('lets a thirty-second block outrank a report nobody has read', () => {
     // A correctness rule: what needs you now beats what is merely finished.

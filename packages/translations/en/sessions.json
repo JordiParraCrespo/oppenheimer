@@ -6,6 +6,8 @@
     "retry": "Try again",
     "retrying": "Trying again",
     "retryFailed": "The session could not be started again.",
+    "openTerminal": "Open a terminal on {{host}}",
+    "openTerminalTitle": "A blank terminal in ~ on {{host}}, to fix what stopped the start (a sign-in, a missing tool), then try again",
     "working": "Working…",
     "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
     "failed": "Failed",
@@ -323,6 +325,9 @@
     "pinned": "Pinned",
     "pin": "Pin",
     "unpin": "Unpin",
+    "markUnread": "Mark as unread",
+    "markRead": "Mark as read",
+    "unreadLabel": "Unread",
     "hide": "Hide",
     "show": "Show",
     "hidden": "Hidden",
@@ -386,6 +391,7 @@
     "repository": "Repository",
     "agent": "Agent",
     "host": "Host",
+    "status": "Status",
     "sort": "Sort by",
     "clear": "Clear filters",
     "remove": "Clear filter",
@@ -402,13 +408,19 @@
     "showAll": "Show all projects",
     "pinnedOnly": "Pinned only",
     "showHidden": "Show hidden sessions",
-    "newProject": "New project…"
+    "newProject": "New project…",
+    "allStatuses": "All statuses",
+    "statuses": {
+      "needs-you": "Needs input",
+      "done": "Ready for review"
+    }
   },
   "sort": {
     "custom": "Custom order",
     "recent": "Last activity",
     "oldest": "Oldest first",
-    "name": "Name"
+    "name": "Name",
+    "attention": "Needs input first"
   },
   "share": {
     "title": "Share session",
@@ -687,12 +699,61 @@
       }
     }
   },
+  "side": {
+    "show": "Show side pane",
+    "hide": "Hide side pane",
+    "label": "Side pane",
+    "tabs": "Open beside this session",
+    "new": "Open something else",
+    "close": "Close side pane",
+    "closeTab": "Close {{name}}",
+    "launcher": {
+      "title": "Open beside this session",
+      "description": "Keep this session in view while you work on something else.",
+      "terminal": "Terminal",
+      "terminalDetail": "A shell in this session's worktree",
+      "session": "Session",
+      "sessionDetail": "Another session, on any host",
+      "bot": "Bot",
+      "botDetail": "Pick one of your bots and chat",
+      "browserDetail": "The session's dev server",
+      "simulatorDetail": "The device the session's agent drives",
+      "desktopDetail": "The host's own screen",
+      "back": "Back",
+      "sessions": "Pick a session",
+      "searchSessions": "Search sessions",
+      "noSessions": "No other session to open yet.",
+      "bots": "Pick a bot",
+      "searchBots": "Search bots",
+      "noBots": "No bot yet. Create one under Employees.",
+      "noMatch": "Nothing matches “{{query}}”.",
+      "agent": "Agent",
+      "agentDetail": "Another agent in this worktree",
+      "agents": "Pick an agent",
+      "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
+      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
+    },
+    "terminal": {
+      "name": "Terminal {{index}}",
+      "opening": "Opening a terminal…",
+      "openFailed": "The terminal didn't open",
+      "closeFailed": "The terminal didn't close",
+      "loadFailed": "Couldn't read this session's terminals",
+      "notSupported": "This host can't open more terminals",
+      "notSupportedDetail": "Update its runner to open shells beside the agent.",
+      "gone": "This terminal has closed"
+    },
+    "openFull": "Open on its own page",
+    "sessionLoadFailed": "Couldn't load that session",
+    "agent": {
+      "name": "{{agent}} {{index}}",
+      "opening": "Starting {{agent}}…",
+      "openFailed": "The agent didn't start",
+      "start": "Start {{agent}}"
+    }
+  },
   "preview": {
-    "show": "Show preview",
-    "hide": "Hide preview",
-    "label": "Preview",
     "simulator": "Simulator",
-    "close": "Close preview",
     "frame": "App running on {{name}}",
     "title": "{{name}} running on this session's host",
     "connecting": "Connecting to the session's device…",
@@ -720,7 +781,16 @@
     "portsFailed": "Couldn't list the session's ports",
     "previewFailed": "Couldn't open the preview",
     "opening": "Opening localhost:{{port}}…",
-    "desktop": "Desktop"
+    "desktop": "Desktop",
+    "device": "Device",
+    "deviceSearch": "Find a device",
+    "deviceEmpty": "No device",
+    "deviceTaken": "In use by another session",
+    "refreshDevice": "Refresh devices",
+    "platform": {
+      "ios": "iOS simulator",
+      "android": "Android emulator"
+    }
   },
   "cloud": {
     "eyebrow": "Claude Code cloud",
