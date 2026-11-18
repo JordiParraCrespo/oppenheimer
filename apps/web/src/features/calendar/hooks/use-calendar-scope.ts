@@ -12,7 +12,9 @@ const calendar = getRouteApi('/_authenticated/plan/calendar');
  * exists), the statuses shown and who added a task.
  */
 export function useCalendarScope(): CalendarScope & { slugs: string[] } {
-  const { project, status, origin } = calendar.useSearch();
+  const project = calendar.useSearch({ select: (search) => search.project });
+  const status = calendar.useSearch({ select: (search) => search.status });
+  const origin = calendar.useSearch({ select: (search) => search.origin });
   const slugs = projectSlugsOf(project);
   const { data: projectIds } = useProjects({ select: (rows) => projectIdsOfSlugs(slugs, rows) });
   return {
