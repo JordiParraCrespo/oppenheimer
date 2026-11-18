@@ -1,4 +1,4 @@
-import { storedList } from '@oppenheimer/frontend-web';
+import { storedList, withListedFirst } from '@oppenheimer/frontend-web';
 
 /**
  * The sessions the reader marked unread to come back to later, kept on this
@@ -7,12 +7,6 @@ import { storedList } from '@oppenheimer/frontend-web';
  * session takes it off.
  */
 const SESSION_UNREAD_KEY = 'oppenheimer.sidebar.unread';
-
-/** `marks` with `id` marked unread, or read. */
-function withUnread(marks: readonly string[], id: string, unread: boolean): string[] {
-  const rest = marks.filter((markedId) => markedId !== id);
-  return unread ? [id, ...rest] : rest;
-}
 
 /**
  * One store per page over the device's marks, so the session pane that takes
@@ -46,7 +40,7 @@ export const sessionUnread = {
     try {
       window.localStorage.setItem(
         SESSION_UNREAD_KEY,
-        JSON.stringify(withUnread(current, id, unread)),
+        JSON.stringify(withListedFirst(current, id, unread)),
       );
     } catch {
       // Private browsing or a full quota: no mark is kept, and none is drawn.

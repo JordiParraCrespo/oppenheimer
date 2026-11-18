@@ -1,6 +1,7 @@
 ---
 "@oppenheimer/web": minor
 "@oppenheimer/design-system-web": minor
+"@oppenheimer/frontend-web": minor
 "@oppenheimer/translations": minor
 ---
 

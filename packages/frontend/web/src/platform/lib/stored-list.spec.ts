@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { rememberList, storedList, withFold } from './stored-list';
+import { rememberList, storedList, withFold, withListedFirst } from './stored-list';
 
 /**
  * What the sidebar keeps on this device (pins, folds) reads back as written,
@@ -24,6 +24,13 @@ describe('storedList', () => {
   ])('reads %s as what it can make of it', (_, raw, expected) => {
     if (raw !== null) window.localStorage.setItem(KEY, raw);
     expect(storedList(KEY)).toEqual(expected);
+  });
+});
+
+describe('withListedFirst', () => {
+  it('moves an id added again to the top rather than listing it twice', () => {
+    expect(withListedFirst(['a', 'b'], 'b', true)).toEqual(['b', 'a']);
+    expect(withListedFirst(['a', 'b'], 'a', false)).toEqual(['b']);
   });
 });
 

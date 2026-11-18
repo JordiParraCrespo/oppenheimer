@@ -17,7 +17,7 @@ import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
 import { useSessionUnread } from '../hooks/use-session-unread';
 import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
-import { attentionFor, isWorking, rowGlyphFor } from '../lib/session-run-state';
+import { isWorking, rowAttentionFor, rowGlyphFor } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
 
 /** The row's lead glyph; the branch is the row's own default, a vendor's mark the session's own. */
@@ -128,7 +128,7 @@ export function SessionRow({
     onError: onWrite,
   });
   const age = compactAge(session.createdAt, now);
-  const attention = attentionFor(session) ?? (unread.unread ? 'unread' : undefined);
+  const attention = rowAttentionFor(session, unread.unread);
   const glyph = sessionGlyph(session);
   const status = rowStatus(session, t);
   const cloudUrl = session.cloud?.url ?? null;

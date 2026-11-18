@@ -34,7 +34,12 @@ type SessionRename = {
   label?: string;
 };
 
-const ATTENTION_LABELS = { 'needs-you': 'Needs input', done: 'Done', unread: 'Unread' } as const;
+/** Each kind of dot: its colour, and what a screen reader hears when the caller names nothing. */
+const ATTENTION = {
+  'needs-you': { label: 'Needs input', className: 'bg-warning' },
+  done: { label: 'Done', className: 'bg-primary' },
+  unread: { label: 'Unread', className: 'bg-primary' },
+} as const;
 
 /**
  * SessionItem — the sidebar row for one orchestrated session. There will be
@@ -198,10 +203,10 @@ function SessionItem({
       )}
       {attention && !rename ? (
         <span
-          aria-label={attentionLabel ?? ATTENTION_LABELS[attention]}
+          aria-label={attentionLabel ?? ATTENTION[attention].label}
           className={cn(
             'size-1.75 shrink-0 rounded-pill',
-            attention === 'needs-you' ? 'bg-warning' : 'bg-primary',
+            ATTENTION[attention].className,
             withAction && META_GIVES_WAY,
           )}
         />
