@@ -7,8 +7,7 @@ import { type CiFindingInput, RecordCiFindingsCommand } from '../record-ci-findi
 import { RecordCiFindingsCommandHandler } from '../record-ci-findings.command-handler';
 
 /**
- * Filing what failing checks came to (`0.2-pull-requests.md`, "CI
- * findings"): read as the caller, filed on the head GitHub shows now, and
+ * Filing what failing checks came to: read as the caller, filed on the head GitHub shows now, and
  * only for a check failing there. A finding about a passing check, or with
  * the checks unreadable, is refused and nothing is written. The upsert that
  * replaces a second look is the integration suite's.

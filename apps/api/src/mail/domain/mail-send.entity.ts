@@ -41,8 +41,8 @@ export type MailSendClaim = Omit<
 >;
 
 /**
- * One message a bot sent, is sending or will send, from a person's Gmail
- * (`product/next-steps/mail.md` §3.4): claimed before Gmail is asked, so a
+ * One message a bot sent, is sending or will send, from a person's Gmail:
+ * claimed before Gmail is asked, so a
  * retried job never sends twice, and the record of what went out. The body
  * is not kept: Gmail's Sent folder has it.
  */

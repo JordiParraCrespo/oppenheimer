@@ -47,11 +47,11 @@ function queueWith<Set>(setter: BuiltInSetter<Set>): QueueWith {
 }
 
 /**
- * A sent message's turn, queued with what its built-in sets (`25-bots.md`
- * §4.1, "Built-in commands"): `/goal <condition>` sets the bot's goal and
- * `/loop …` its loop, in the transaction that queues the turn, so the turn
- * never runs, or ends, without it. The first setter whose command the
- * message is queues it; any other message is queued as it is.
+ * A sent message's turn, queued with what its built-in sets: `/goal
+ * <condition>` sets the bot's goal and `/loop …` its loop, in the transaction
+ * that queues the turn, so the turn never runs, or ends, without it. The first
+ * setter whose command the message is queues it; any other message is queued as
+ * it is.
  */
 @Injectable()
 export class BotSentTurnResolver {

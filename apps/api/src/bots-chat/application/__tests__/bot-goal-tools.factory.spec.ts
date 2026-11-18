@@ -1,5 +1,5 @@
 /**
- * The bot's goal tools (`25-bots.md` §4.1). What breaks this: a continuation
+ * The bot's goal tools. What breaks this: a continuation
  * offered `set_goal`, which would let a goal renew itself forever; a goal
  * that forgets the setting turn's reach, so its continuations reach further
  * than the message that led to them; a goal's own turn ending it on its

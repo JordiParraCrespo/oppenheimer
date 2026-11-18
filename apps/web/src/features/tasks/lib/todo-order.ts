@@ -2,10 +2,9 @@ import { addDays } from '@oppenheimer/frontend-web';
 
 /**
  * The order a reader dragged a day's To do into, kept on this device as
- * Plan's sidebar order is (`20-plan-calendar.md` §6): a list of task ids per
- * day. A day nobody reordered keeps the list's own order; a task the stored
- * order does not name (added or due since) keeps its place after the ones it
- * does.
+ * Plan's sidebar order is: a list of task ids per day. A day nobody
+ * reordered keeps the list's own order; a task the stored order does not
+ * name (added or due since) keeps its place after the ones it does.
  */
 export const TODO_ORDER_KEY = 'oppenheimer.plan.todo.order';
 

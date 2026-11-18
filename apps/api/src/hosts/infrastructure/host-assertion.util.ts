@@ -73,7 +73,7 @@ export function decodeHostAssertion(assertion: string): DecodedHostAssertion | n
 }
 
 /**
- * Takes a list for key rotation (09 §3): during its window a host holds two
+ * Takes a list for key rotation: during its window a host holds two
  * valid keys, and a boot that arrives on either is the same host.
  */
 export function assertionIsSignedBy(

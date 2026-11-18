@@ -141,7 +141,7 @@ export async function setUserRole(userId: string, role: string): Promise<void> {
 }
 
 /**
- * A bot's routine written straight into the tables (`26-bot-routines.md`):
+ * A bot's routine written straight into the tables:
  * a bot makes its routines through its own tool, in a turn of a real model,
  * so a spec about the Routines tab seeds one instead. A daily schedule at
  * 09:00 UTC, on. One statement, so the deferred revision key holds.
@@ -180,9 +180,9 @@ export async function insertBotRoutine(
 }
 
 /**
- * A routine that wakes on new mail in one Gmail account (`next-steps/mail.md`
- * §5), seeded as `insertBotRoutine` seeds a schedule: a bot makes one through
- * its own tool and a real model. The account need not exist for the card.
+ * A routine that wakes on new mail in one Gmail account, seeded as
+ * `insertBotRoutine` seeds a schedule: a bot makes one through its own tool and
+ * a real model. The account need not exist for the card.
  */
 export async function insertBotMailRoutine(
   botId: string,
@@ -232,10 +232,10 @@ export async function routinePausedAt(routineId: string): Promise<Date | null> {
 }
 
 /**
- * A bot's pending approval written straight into the tables (`25-bots.md`
- * §5): a bot raises one in a turn of a real model, so a spec about the Inbox
- * seeds the turn it stopped and the card it asks, with the call's stored
- * input when the card draws from it (a send card's message). One statement.
+ * A bot's pending approval written straight into the tables: a bot raises one
+ * in a turn of a real model, so a spec about the Inbox seeds the turn it
+ * stopped and the card it asks, with the call's stored input when the card
+ * draws from it (a send card's message). One statement.
  */
 export async function insertPendingBotApproval(
   botId: string,
@@ -265,10 +265,9 @@ export async function insertPendingBotApproval(
 }
 
 /**
- * A bot's turn that made tool calls, written straight into the tables
- * (`25-bots.md` §3): a finished turn and its activity line holding `steps`,
- * so a spec about what the chat draws under a call (a saved draft's card)
- * needs no model. One statement.
+ * A bot's turn that made tool calls, written straight into the tables: a
+ * finished turn and its activity line holding `steps`, so a spec about what the
+ * chat draws under a call (a saved draft's card) needs no model. One statement.
  */
 export async function insertBotActivity(
   botId: string,
@@ -294,7 +293,7 @@ export async function insertBotActivity(
 }
 
 /**
- * A goal waiting out a system's rate limit (`25-bots.md` §4, "Rate limits"),
+ * A goal waiting out a system's rate limit,
  * written straight into `bot_goal` on a finished turn of the bot: the stack
  * runs no model to set one and no Gmail to limit it, and what holds the
  * goal is the API's integration spec.
@@ -325,7 +324,7 @@ export async function insertWaitingBotGoal(
 }
 
 /**
- * A send a bot scheduled from its owner's Gmail (`next-steps/mail.md` §3.4),
+ * A send a bot scheduled from its owner's Gmail,
  * written straight into `mail_send` in the bot's workspace: the stack has no
  * Gmail to approve one against, and the list and its Cancel are the API's.
  */

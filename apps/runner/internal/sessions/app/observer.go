@@ -2,15 +2,14 @@ package app
 
 import "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 
-// observer owns one question: what is the agent in a session doing? Two
-// sources answer it. The agent's own report (OSC 7501, kept by the `pty`
-// wrapper behind ProgramStatus) outranks the screen classifier while the
-// agent holds one: it is the agent saying what it does, where the classifier
-// guesses from its screen. The screen keeps two things: a vendor login,
-// which no report describes and which is the one link the console offers
-// (F3), and every agent that says nothing, or has cleared what it said
-// (`product/research/lessons-from-herdr.md`). The refresh loop asks it and
-// writes what it answers; a further source is a change here, not there.
+// observer owns one question: what is the agent in a session doing? Two sources
+// answer it. The agent's own report (OSC 7501, kept by the `pty` wrapper behind
+// ProgramStatus) outranks the screen classifier while the agent holds one: it is
+// the agent saying what it does, where the classifier guesses from its screen.
+// The screen keeps two things: a vendor login, which no report describes and
+// which is the one link the console offers, and every agent that says nothing,
+// or has cleared what it said. The refresh loop asks it and writes what it
+// answers; a further source is a change here, not there.
 type observer struct {
 	classifier Classifier
 	// program is nil on a runner that wraps no agent: the screen alone.

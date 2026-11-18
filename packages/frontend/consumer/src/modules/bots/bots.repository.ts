@@ -29,9 +29,11 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
+  BOT_PLAN_WATCH_SCOPES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
+  BOT_TASK_WAKE_EVENTS,
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
@@ -238,7 +240,7 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask, or a session or a pull request the bot follows waking it. An outcome or a state
+ * to an ask, or a session, a pull request or a project's task the bot follows waking it. An outcome or a state
  * this client does not know reads as no event, and the chat falls back to
  * the message's first line.
  */
@@ -320,6 +322,24 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             repository: dto.repository,
             number: dto.number,
             event,
+          }
+        : null;
+    }
+    case 'task': {
+      const event = BOT_TASK_WAKE_EVENTS.find((candidate) => candidate === dto.event);
+      const scope = BOT_PLAN_WATCH_SCOPES.find((candidate) => candidate === dto.scope);
+      return event && scope
+        ? {
+            kind: 'task',
+            subscriptionId: dto.subscriptionId,
+            scope,
+            projectId: dto.projectId,
+            milestoneId: dto.milestoneId,
+            taskId: dto.taskId,
+            title: dto.title,
+            event,
+            from: dto.from,
+            to: dto.to,
           }
         : null;
     }
@@ -490,9 +510,9 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
 }
 
 /**
- * The workspace's bots, their sidebar groups, their two documents and what
- * they remember (`product/versions/mvp/25-bots.md`, slice 1). Every call is
- * the API's; nothing here holds a rule of its own, so there is no service.
+ * The workspace's bots, their sidebar groups, their two documents and what they
+ * remember. Every call is the API's; nothing here holds a rule of its own, so
+ * there is no service.
  */
 @injectable()
 export class BotsRepository {
@@ -740,7 +760,7 @@ export class BotsRepository {
   }
 
   /**
-   * A blank bot: the next free first name ("Juno", "Milo"…), ungrouped, on
+   * A blank bot: a free first name (a physicist's, at random: "Feynman", "Curie"…), ungrouped, on
    * the workspace's default provider, shown in `sections` beside Employees.
    */
   create(sections?: BotSection[]): Promise<BotEntity> {
@@ -839,7 +859,7 @@ export class BotsRepository {
     });
   }
 
-  /** A bot's routines, oldest first (`26-bot-routines.md` §7). */
+  /** A bot's routines, oldest first. */
   findRoutines(id: string): Promise<BotRoutineEntity[]> {
     return callApi(BotsErrors.FETCH_ROUTINES_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.findBotRoutines({ path: { id } }));

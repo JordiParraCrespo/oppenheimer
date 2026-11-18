@@ -8,10 +8,10 @@ import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
 
 /**
- * A bot's routines (`26-bot-routines.md` §7): the Routines tab's list and
- * what it does to one. The list hangs under the bot's detail key, so
- * deleting the bot drops it, and every write here settles the same way:
- * the list is read again, which carries each routine's next run from now.
+ * A bot's routines: the Routines tab's list and what it does to one. The list
+ * hangs under the bot's detail key, so deleting the bot drops it, and every
+ * write here settles the same way: the list is read again, which carries each
+ * routine's next run from now.
  */
 
 /** A bot's routines, oldest first, under a Suspense `QueryState`, polling while one runs. */

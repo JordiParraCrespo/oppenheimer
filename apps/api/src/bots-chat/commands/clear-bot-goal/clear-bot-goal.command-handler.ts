@@ -8,7 +8,7 @@ import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.p
 import { ClearBotGoalCommand } from './clear-bot-goal.command';
 
 /**
- * Stop a bot's goal from its chat (`25-bots.md` §4.1): the goal ends with a
+ * Stop a bot's goal from its chat: the goal ends with a
  * line saying the owner stopped it, and a continuation still waiting is
  * cancelled with it (`BotGoalResolver`). A running one finishes its turn;
  * with the goal gone, its end queues nothing. No goal is no error.

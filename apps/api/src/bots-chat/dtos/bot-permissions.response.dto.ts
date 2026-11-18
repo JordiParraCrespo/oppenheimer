@@ -76,7 +76,7 @@ export class BotPermissionRuleDto {
   createdAt!: string;
 }
 
-/** What a bot may do, tool by tool, and the rules over it (`25-bots.md` §5). */
+/** What a bot may do, tool by tool, and the rules over it. */
 export class BotPermissionsResponseDto {
   @ApiProperty({
     enum: BOT_PERMISSIONS,

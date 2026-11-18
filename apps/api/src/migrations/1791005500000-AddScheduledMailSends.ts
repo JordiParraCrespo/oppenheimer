@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Scheduled sends (`product/next-steps/mail.md` §3.4): a `mail_send` row that
+ * Scheduled sends: a `mail_send` row that
  * waits for its time. `scheduledFor` is when it goes and `plan` the message it
  * goes out as, approved when it was scheduled and cleared once it is sent or
  * fails. A cancelled one is kept as the record of what was stopped.

@@ -10,7 +10,7 @@ import type {
 } from './bot-approval-requester.port';
 
 /**
- * Raises Needs input cards (`25-bots.md` §5): an asking tool's call, stored
+ * Raises Needs input cards: an asking tool's call, stored
  * as a pending approval and announced on the bot's stream so an open chat
  * shows it at once. A bot has one card waiting at most, an approval or
  * questions: while one waits, a second call is told to wait, and the

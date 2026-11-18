@@ -14,8 +14,7 @@ export interface ProvisioningContext {
   failure: string | null;
   /**
    * A folder session's folder, as shown: nothing is cloned and no branch is
-   * made, so the start is the host, opening the folder, and the agent
-   * (`product/versions/mvp/24-session-places.md` §3).
+   * made, so the start is the host, opening the folder, and the agent.
    */
   folder?: string | null;
   /** The blank terminal: its last step starts a shell, not an agent. */

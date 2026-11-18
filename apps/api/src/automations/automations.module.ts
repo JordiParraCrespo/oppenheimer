@@ -147,7 +147,7 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Automations (`product/versions/mvp/16-automations-architecture.md`): saved
+ * Automations: saved
  * prompts, their triggers, the scheduler, the matcher over the inbound-events
  * hub, the guards, and the dispatcher that starts each run as a session of
  * its owner. Execution is the sessions module's; this module records why a run
@@ -209,8 +209,7 @@ const queryHandlers: Provider[] = [
 })
 export class AutomationsModule {
   /**
-   * The providers a module adds to carry out runs of its own kind
-   * (`26-bot-routines.md` §3):
+   * The providers a module adds to carry out runs of its own kind:
    *
    * ```ts
    * providers: [...AutomationsModule.contributeRunTargets([BotRoutineTarget])]

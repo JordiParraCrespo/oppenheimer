@@ -12,7 +12,7 @@ export const WAKE_RETRY_MS = 60_000;
 export const WAKE_MAX_ATTEMPTS = 240;
 
 /**
- * Types a wake into its session (`product/next-steps/agent-tools.md` §3–4):
+ * Types a wake into its session:
  * the line, as a prompt from `{ kind: 'wake' }`, once the agent is at its
  * prompt. An agent at work or waiting on the person is asked again a minute
  * later, for four hours; so is a host that is offline. A session that is no

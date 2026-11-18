@@ -1,0 +1,25 @@
+{"shell":"electron","loadMs":2934,"signInMs":337,"idle":{"pssMB":338,"rssMB":618,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":6.1,"echoMeanUs":463,"echoP50":0.4,"echoP95":1,"floodMs":329,"floodMBps":63.8,"floodChunks":1344,"afterFloodEchoP50":0.7,"afterBridge":{"pssMB":351,"rssMB":632,"processes":{"electron":6}}}
+{"shell":"tauri","loadMs":2546,"signInMs":518,"idle":{"pssMB":488,"rssMB":653,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoMeanUs":1170,"echoP50":1,"echoP95":2,"floodChunks":255,"floodMBps":81.7,"floodMs":257,"hasSession":true,"afterBridge":{"pssMB":528,"rssMB":699,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":839,"signInMs":486,"idle":{"pssMB":490,"rssMB":659,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoMeanUs":1087,"echoP50":1,"echoP95":2,"floodChunks":163,"floodMBps":100.5,"floodMs":209,"hasSession":true,"afterBridge":{"pssMB":524,"rssMB":699,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"electron","loadMs":480,"signInMs":316,"idle":{"pssMB":344,"rssMB":636,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":4.6,"echoMeanUs":532,"echoP50":0.5,"echoP95":1,"floodMs":266,"floodMBps":79,"floodChunks":1344,"afterFloodEchoP50":0.3,"afterBridge":{"pssMB":350,"rssMB":642,"processes":{"electron":6}}}
+{"shell":"electron","loadMs":551,"signInMs":283,"idle":{"pssMB":344,"rssMB":635,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":3.7,"echoMeanUs":455,"echoP50":0.4,"echoP95":1,"floodMs":312,"floodMBps":67.4,"floodChunks":1344,"afterFloodEchoP50":0.5,"afterBridge":{"pssMB":351,"rssMB":642,"processes":{"electron":6}}}
+{"shell":"tauri","loadMs":825,"signInMs":370,"idle":{"pssMB":494,"rssMB":663,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoMeanUs":1250,"echoP50":1,"echoP95":2,"floodChunks":170,"floodMBps":71.4,"floodMs":294,"hasSession":true,"afterBridge":{"pssMB":514,"rssMB":689,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"tauri","loadMs":848,"signInMs":430,"idle":{"pssMB":491,"rssMB":660,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoMeanUs":1127,"echoP50":1,"echoP95":2,"floodChunks":135,"floodMBps":99.5,"floodMs":211,"hasSession":true,"afterBridge":{"pssMB":530,"rssMB":705,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+{"shell":"electron","loadMs":485,"signInMs":300,"idle":{"pssMB":343,"rssMB":635,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":4.3,"echoMeanUs":561,"echoP50":0.4,"echoP95":1.3,"floodMs":250,"floodMBps":84,"floodChunks":1344,"afterFloodEchoP50":0.4,"afterBridge":{"pssMB":355,"rssMB":647,"processes":{"electron":6}}}
+{"shell":"electron","loadMs":524,"signInMs":311,"idle":{"pssMB":345,"rssMB":636,"processes":{"electron":6}},"bridge":true,"hasSession":true,"attachMs":4.7,"echoMeanUs":679,"echoP50":0.6,"echoP95":1.2,"floodMs":320,"floodMBps":65.7,"floodChunks":1344,"afterFloodEchoP50":0.4,"afterBridge":{"pssMB":342,"rssMB":634,"processes":{"electron":6}}}
+{"shell":"tauri","loadMs":862,"signInMs":438,"idle":{"pssMB":493,"rssMB":662,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}},"afterFloodEchoP50":1,"attachMs":3,"bridge":true,"echoMeanUs":1110,"echoP50":1,"echoP95":2,"floodChunks":139,"floodMBps":101.9,"floodMs":206,"hasSession":true,"afterBridge":{"pssMB":531,"rssMB":707,"processes":{"oppenheimer-des":1,"WebKitWebProces":1,"WebKitNetworkPr":1}}}
+
+| Median of 5 runs | electron | tauri |
+|---|---|---|
+| Spawn to console loaded (ms) | 524 | 848 |
+| Sign-in through the form (ms) | 311 | 438 |
+| Memory idle, PSS (MB) | 344 | 491 |
+| Memory idle, RSS (MB) | 635 | 660 |
+| Bridge attach (ms) | 4.6 | 3 |
+| Echo, mean of 300 round trips (µs) | 532 | 1127 |
+| Echo p50 (ms; WebKit clamps to 1 ms) | 0.4 | 1 |
+| Echo p95 (ms) | 1 | 2 |
+| 21 MB flood (ms) | 312 | 211 |
+| Flood throughput (MB/s) | 67.4 | 99.5 |
+| Echo p50 right after the flood (ms) | 0.4 | 1 |
+| Memory after the bench, PSS (MB) | 351 | 528 |

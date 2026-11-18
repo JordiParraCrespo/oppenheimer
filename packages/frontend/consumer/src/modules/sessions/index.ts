@@ -31,6 +31,8 @@ export {
   type CreateSessionCheckout,
   type CreateSessionInput,
   cloudProviderLabel,
+  type OpenedSessionWindow,
+  type OpenSessionWindowInput,
   type PrepareSessionInput,
   type SessionAgent,
   type SessionAttachment,
@@ -46,6 +48,8 @@ export {
   type SessionPreview,
   type SessionShare,
   type SessionState,
+  type SessionWindow,
+  type SessionWindows,
   type SharedSession,
   type StartCloudSessionInput,
   sessionAgentLabel,
@@ -62,6 +66,7 @@ export type {
 export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
 export type {
+  DeviceChoice,
   DeviceInfo,
   DeviceInput,
   DeviceStatus,

@@ -39,7 +39,7 @@ describe('HostRetentionProcessor', () => {
     const days = (cutoff: Date) => Math.round((before - cutoff.getTime()) / 86_400_000);
     expect(days(networkCutoff)).toBe(retention.hostNetworkDays);
     expect(days(timelineCutoff)).toBe(retention.hostTimelineDays);
-    // The product's numbers (15-host-metadata.md), as a deployment that sets nothing gets them.
+    // The defaults, as a deployment that sets nothing gets them.
     expect([retention.hostNetworkDays, retention.hostTimelineDays]).toEqual([90, 180]);
   });
 

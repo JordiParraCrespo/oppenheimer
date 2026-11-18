@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Telegram (`product/next-steps/telegram.md`): a bot the person made with
+ * Telegram: a bot the person made with
  * @BotFather, polled by a runner on one of their hosts, the way OpenClaw does
  * it. Their Oppenheimer bots read its chats and write in them.
  */
@@ -67,8 +67,7 @@ export type TelegramAccount = z.infer<typeof telegramAccountSchema>;
 
 /**
  * `PATCH /telegram/accounts/:id`: which of the caller's Oppenheimer bots
- * answers them on this Telegram bot; null for none
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1).
+ * answers them on this Telegram bot; null for none.
  */
 export const updateTelegramAccountSchema = z.object({
   answeringBotId: z.string().uuid().nullable(),

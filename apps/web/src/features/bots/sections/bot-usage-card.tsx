@@ -7,11 +7,11 @@ import { closeUsageCard } from '@/features/bots/lib/usage-cards';
 import { BotUsageSummary } from './bot-usage-summary';
 
 /**
- * `/usage` (`25-bots.md` §4.1, "Built-in commands"), in the chat below its
- * last message, as Claude Code draws it: the command as you sent it, and the
- * small card that answers it. The bot is sent nothing, and both stay until
- * the card is closed. The figures read under Suspense; this draws the card,
- * their placeholder and a first failure.
+ * `/usage`, in the chat below its last message, as Claude Code draws it:
+ * the command as you sent it, and the small card that answers it. The bot
+ * is sent nothing, and both stay until the card is closed. The figures read
+ * under Suspense; this draws the card, their placeholder and a first
+ * failure.
  */
 export function BotUsageCard({ botId }: { botId: string }) {
   const { t } = useTranslation();

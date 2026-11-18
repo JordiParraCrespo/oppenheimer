@@ -123,6 +123,21 @@ ipcMain.on('local:resize', (event, handle, cols, rows) =>
 );
 ipcMain.on('local:close', (event, handle) => owned(event, handle)?.ws.close());
 
+// The Tauri comparison's bench (`../desktop-tauri/bench/run.mjs`), wired only
+// when it runs: print when the console has loaded, run the bench script in
+// it, and print what it reports. The harness ends the process.
+function wireBench(win, script) {
+  const fs = require('node:fs');
+  win.webContents.on('did-finish-load', () => {
+    console.log(`LOADED ${Math.round(performance.now())} ms ${win.webContents.getURL()}`);
+    win.webContents.executeJavaScript(fs.readFileSync(script, 'utf8'));
+  });
+  win.webContents.on('console-message', (event, _level, legacyMessage) => {
+    const message = event.message ?? legacyMessage;
+    if (typeof message === 'string' && message.startsWith('BENCH ')) console.log(message);
+  });
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
@@ -149,6 +164,7 @@ function createWindow() {
       shell.openExternal(url);
     }
   });
+  if (process.env.OPPENHEIMER_BENCH) wireBench(win, process.env.OPPENHEIMER_BENCH);
   win.loadURL(CONSOLE_URL);
   return win;
 }

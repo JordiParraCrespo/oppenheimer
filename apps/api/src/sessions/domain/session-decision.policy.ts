@@ -3,8 +3,8 @@ import { permissionKeys, questionKeys } from '@oppenheimer/shared/sessions';
 
 /**
  * Whether an answer fits the decision a session waits on, and the keys that
- * give it to the agent the way a person would at its terminal
- * (`29-inbox.md` slice 4). The keys are the console's own encoding
+ * give it to the agent the way a person would at its terminal. The keys are
+ * the console's own encoding
  * (`questionKeys` in `@oppenheimer/shared/sessions`), so an answer from the
  * Inbox and one from the chat view land on the same option.
  *

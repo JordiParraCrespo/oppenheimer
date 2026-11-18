@@ -5,14 +5,19 @@ import type {
 } from '@oppenheimer/frontend-consumer';
 
 /**
- * A person's Google accounts on the calendar (`23-plan-milestones-stats-accounts.md`
- * §5): each wears a colour by its `colorIndex`, and each is a toggle under the
- * Google layer that is this viewer's alone, kept on this device.
+ * A person's Google accounts on the calendar: each wears a colour by its
+ * `colorIndex`, and each is a toggle under the Google layer that is this
+ * viewer's alone, kept on this device.
  */
 
-const ACCENTS: readonly CalendarAccent[] = ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'];
+/**
+ * The first accounts take the tones no kind of entry wears (personal events
+ * are `chart-1`, tasks `chart-3`), so one or two accounts never share a
+ * colour with another layer; only a fourth and fifth do.
+ */
+const ACCENTS: readonly CalendarAccent[] = ['chart-2', 'chart-4', 'chart-5', 'chart-1', 'chart-3'];
 
-/** The colour an account's events wear: the categorical order, by the index the API gave it. */
+/** The colour an account's events wear, by the index the API gave it. */
 export function accentOf(colorIndex: number): CalendarAccent {
   return ACCENTS[colorIndex] ?? ACCENTS[0];
 }

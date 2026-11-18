@@ -7,8 +7,7 @@ import {
 } from '../../inbound-events/domain/external-event.types';
 
 /**
- * GitHub webhook deliveries → the trigger catalog's events
- * (`product/versions/mvp/16-automations-architecture.md` §Q6).
+ * GitHub webhook deliveries → the trigger catalog's events.
  *
  * Pure: a delivery always normalizes the same way, which is what makes the
  * hub's re-processing safe. Each mapping below is the frames' description of

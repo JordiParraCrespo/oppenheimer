@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 /**
  * A session's conversation, as its agent wrote it, read a page at a time
- * (`GET /v1/sessions/{id}/transcript`, `product/next-steps/agent-tools.md`
- * §8). The session's log (`/events`) says what happened to it; this says what
- * the agent and the person said and did in it: messages, tool calls and their
- * results, as the console's chat view draws them.
+ * (`GET /v1/sessions/{id}/transcript`). The session's log (`/events`) says
+ * what happened to it; this says what the agent and the person said and did in
+ * it: messages, tool calls and their results, as the console's chat view draws
+ * them.
  *
  * Nothing of it is kept by the control plane. A page is read off the session's
  * host when it is asked for, so it is only there while the host is online,
@@ -75,8 +75,15 @@ export const SESSION_TRANSCRIPT_PART_KINDS = [
 ] as const;
 export type SessionTranscriptPartKind = (typeof SESSION_TRANSCRIPT_PART_KINDS)[number];
 
+/**
+ * Where a read without a cursor starts: the conversation's latest turns, or
+ * its first line, so a reader can walk the whole of it forward.
+ */
+export const SESSION_TRANSCRIPT_FROM = ['latest', 'start'] as const;
+export type SessionTranscriptFrom = (typeof SESSION_TRANSCRIPT_FROM)[number];
+
 export const listSessionTranscriptQuerySchema = z.object({
-  /** Where the last page ended (`nextCursor`); omit for the conversation's latest turns. */
+  /** Where the last page ended (`nextCursor`); omit to start where `from` says. */
   cursor: z.string().min(1).max(SESSION_TRANSCRIPT_CURSOR_MAX).optional(),
   limit: z.coerce
     .number()
@@ -84,6 +91,8 @@ export const listSessionTranscriptQuerySchema = z.object({
     .min(1)
     .max(SESSION_TRANSCRIPT_PAGE_MAX)
     .default(SESSION_TRANSCRIPT_PAGE_DEFAULT),
+  /** Without `cursor`: `latest` (the default) for the last turns, `start` for the first. Ignored beside `cursor`. */
+  from: z.enum(SESSION_TRANSCRIPT_FROM).default('latest'),
 });
 export type ListSessionTranscriptQueryDto = z.infer<typeof listSessionTranscriptQuerySchema>;
 
@@ -121,6 +130,12 @@ export const sessionTranscriptPageSchema = z.object({
   nextCursor: z.string().nullable(),
   /** Nothing follows yet: the agent has written no more than this. */
   atEnd: z.boolean(),
+  /**
+   * The conversation has entries before this page (a page of the latest
+   * turns, or one read on from a cursor): read with `from=start` and follow
+   * `nextCursor` to have all of it.
+   */
+  hasEarlier: z.boolean(),
   /** The cursor no longer applied (a new conversation), so the page starts the current one over. */
   restarted: z.boolean(),
   /** Entries in the range left out for size. */

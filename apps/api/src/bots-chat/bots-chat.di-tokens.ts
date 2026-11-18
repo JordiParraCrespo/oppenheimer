@@ -16,16 +16,16 @@ export const BOT_CONVERSATION_REPOSITORY = Symbol('BOT_CONVERSATION_REPOSITORY')
 export const BOT_ATTACHMENT_REPOSITORY = Symbol('BOT_ATTACHMENT_REPOSITORY');
 /** A chat image's bytes, in the deployment's storage. */
 export const BOT_ATTACHMENT_FILES = Symbol('BOT_ATTACHMENT_FILES');
-/** What sessions each bot follows (`27-bot-subscriptions.md`). */
+/** What sessions each bot follows. */
 export const BOT_SUBSCRIPTION_REPOSITORY = Symbol('BOT_SUBSCRIPTION_REPOSITORY');
-/** Where a bot's hand-off is owed its stall check (`27-bot-subscriptions.md` §4.1). */
+/** Where a bot's hand-off is owed its stall check. */
 export const BOT_STALL_CHECKS = Symbol('BOT_STALL_CHECKS');
 export const BOT_GOAL_REPOSITORY = Symbol('BOT_GOAL_REPOSITORY');
 export const BOT_LOOP_REPOSITORY = Symbol('BOT_LOOP_REPOSITORY');
 export const BOT_USAGE_REPOSITORY = Symbol('BOT_USAGE_REPOSITORY');
-/** A bot's tool settings and standing grants (`25-bots.md` §5). */
+/** A bot's tool settings and standing grants. */
 export const BOT_TOOL_PERMISSION_REPOSITORY = Symbol('BOT_TOOL_PERMISSION_REPOSITORY');
-/** A bot's plain-language permission rules (`25-bots.md` §5). */
+/** A bot's plain-language permission rules. */
 export const BOT_PERMISSION_RULE_REPOSITORY = Symbol('BOT_PERMISSION_RULE_REPOSITORY');
 /** Each bot's latest dream of its memory, and what undoing it puts back. */
 export const BOT_MEMORY_DREAM_REPOSITORY = Symbol('BOT_MEMORY_DREAM_REPOSITORY');

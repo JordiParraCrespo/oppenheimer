@@ -15,11 +15,11 @@ import type {
 export type IssueAddress = RepositoryAddress & { number: number };
 
 /**
- * The door a workspace's GitHub issues are reached through (`25-bots.md`
- * §4.4). Reads go through the workspace's installations, scoped like every
- * other repository read and never mirrored; writes through the caller's own
- * GitHub user token, so what GitHub records is what that person did. With no
- * user token a write is `GITHUB_012`.
+ * The door a workspace's GitHub issues are reached through. Reads go through
+ * the workspace's installations, scoped like every other repository read and
+ * never mirrored; writes through the caller's own GitHub user token, so what
+ * GitHub records is what that person did. With no user token a write is
+ * `GITHUB_012`.
  */
 export interface IssueAccessPort {
   /** One repository's issues, newest updated first, at most `limit`; pull requests left out. */

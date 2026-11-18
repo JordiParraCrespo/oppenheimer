@@ -10,9 +10,8 @@ import type {
 } from '@oppenheimer/shared/automations';
 
 /**
- * What a run of an automation becomes once its guards let it through
- * (`26-bot-routines.md` §3): a session on a host, or a turn of a bot (a
- * routine), each carried out by its own `AutomationRunTarget`.
+ * What a run of an automation becomes once its guards let it through: a
+ * session on a host, or a turn of a bot (a routine), each carried out by its own `AutomationRunTarget`.
  */
 export const AUTOMATION_RUN_TARGET_KINDS = ['session', 'bot'] as const;
 export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[number];
@@ -20,7 +19,7 @@ export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[numbe
 /**
  * What a launched run became, as the run records it. A target that starts
  * something other than a session adds its arm here, beside the column the run
- * stores it in (`26-bot-routines.md` §3); the dispatcher passes it through
+ * stores it in; the dispatcher passes it through
  * without reading it, so nothing that dispatches changes.
  */
 export type RunDispatchRef =
@@ -79,9 +78,8 @@ export interface SessionRevisionProps extends RevisionCommon {
 export type AutomationRevisionProps = SessionRevisionProps | BotRevisionProps;
 
 /**
- * What an automation's runs start, with what only that kind has
- * (`26-bot-routines.md` §3). Fixed for the automation's life: a session
- * automation is in a project and its revision says where and how a session
+ * What an automation's runs start, with what only that kind has. Fixed for
+ * the automation's life: a session automation is in a project and its revision says where and how a session
  * runs; a routine wakes its bot, within the scopes of the credential that
  * last saved what it runs. Callers narrow on `kind`, so the session-only
  * surface does not exist on a routine.
@@ -106,7 +104,7 @@ export interface GithubTriggerConfig {
 }
 
 /**
- * A Gmail trigger's config (`next-steps/mail.md` §5): the connected account it
+ * A Gmail trigger's config: the connected account it
  * watches, and the Gmail query a new message must match, as a filter on the
  * queries the poll found it matching (`any` for every new message).
  */

@@ -5,7 +5,14 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
-import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import {
+  ChipSelectCombobox,
+  ChipSelectEmpty,
+  ChipSelectItem,
+  ChipSelectList,
+  ChipSelectPopup,
+  ChipSelectSearch,
+} from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 type RepositoryRowBranch = { value: string; label?: string; description?: string };
@@ -30,12 +37,11 @@ const defaultBranchEmptyText = (query: string): React.ReactNode => `No branch na
 const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
 
 /**
- * RepositoryRowList — "Cloned by default", inside the project dialog's
- * Defaults fold (`design/version1/SessionsConsole.dc.html`, `op-prepo`): a
- * 14px card with one 40px row per repository the project holds — a checkbox
- * (ticked, it is cloned into every new session of the project), the name in
- * the picker's 13px type, and a 168px base-branch pill opening the scope
- * chips' searchable pane. Which repositories are in the project is
+ * RepositoryRowList — "Cloned by default", inside the project dialog's Defaults
+ * fold: a 14px card with one 40px row per repository the project holds — a
+ * checkbox (ticked, it is cloned into every new session of the project), the
+ * name in the picker's 13px type, and a 168px base-branch pill opening the
+ * scope chips' searchable pane. Which repositories are in the project is
  * `RepositoryAddField`'s to decide.
  *
  * A form control, not a menu: the caller owns `value`, one row per repository
@@ -177,13 +183,12 @@ function RepositoryRow({
             <ChevronDownIcon className="size-3 shrink-0" aria-hidden />
           </PopoverTrigger>
           <ChipSelectPopup width={260} side="bottom" align="start">
+            <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
             <ChipSelectSearch
-              value={query}
               placeholder={branchSearchPlaceholder}
               aria-label={branchSearchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
             />
-            <div role="listbox" aria-label={branchLabel} className="max-h-[220px] overflow-y-auto">
+            <ChipSelectList aria-label={branchLabel} className="max-h-[220px]">
               {branches.length > 0 ? (
                 branches.map((branch) => (
                   <ChipSelectItem
@@ -203,7 +208,8 @@ function RepositoryRow({
               ) : (
                 <ChipSelectEmpty className="text-left text-fg-subtle">{branchEmptyText(query)}</ChipSelectEmpty>
               )}
-            </div>
+            </ChipSelectList>
+            </ChipSelectCombobox>
           </ChipSelectPopup>
         </Popover>
       </div>

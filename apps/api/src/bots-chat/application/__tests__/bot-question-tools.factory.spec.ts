@@ -1,5 +1,5 @@
 /**
- * `ask_user` (`25-bots.md` §3.2). What breaks this: questions stored as an
+ * `ask_user`. What breaks this: questions stored as an
  * approval, which a yes would try to run; a second card raised while one
  * waits, of either kind, leaving the person two things to answer; the tool
  * offered on a turn nobody is waiting on.

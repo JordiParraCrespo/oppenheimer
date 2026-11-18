@@ -24,8 +24,11 @@ what this eval is for.
 ## The cases
 
 `cases.json` holds Oppie twice (free to start sessions, and told to use only
-the Sentry watch session), the routine and 6 cases. Each case is one run of
-the routine:
+the Sentry watch session), the routine and 10 cases. Each case is one run of
+the routine, or (the `failed-*` cases, 2026-11-15) the wake of a session the
+bot started that failed, with the real `failed` wake text and ask, or
+(`cloud-not-signed-in`) a person's ask for a cloud session, answered by
+production's `cloudStartAnswer`:
 
 | Case | The run | A right run |
 | --- | --- | --- |
@@ -35,6 +38,10 @@ the routine:
 | `told-only-that-session` | closed, and the instructions say never to start another without asking | starts none, tells the person |
 | `told-only-that-session-already-said` | the same, and the person was already told | starts none, and the chat keeps no words of the run |
 | `named-host-offline` | the routine names a host, which is offline, and another is online | starts nothing on the other host |
+| `failed-not-signed-in` | the wake of a session the bot started on its home host, failed because Claude Code there is not signed in; another host is online | starts the task on the other host |
+| `failed-named-host` | the same failure, on a host the person named | starts nothing elsewhere, says what failed and asks |
+| `failed-task-itself` | the session failed on a missing branch | starts nothing, tells the person |
+| `cloud-not-signed-in` | the person asks for a Claude Code cloud session; `start_cloud_session` fails from the home host (claude not signed in) and works from any other | starts it from another host |
 
 Add a case whenever a bot stops at a blocker it could have solved, or
 solves one in a way that made no sense.
@@ -89,6 +96,10 @@ Then it prints the totals and writes every run to `reports/` (ignored by git).
 | 2026-11-12 | `main` before (routes for a failed step only) | claude-sonnet-5-5 | 12/15 on the first five cases (`closed-said-so-for-hours` fails 0/3) | 3 | 0 | 0 |
 | 2026-11-12 | the blocker rule, in the prompt and in the run's opening | claude-sonnet-5-5 | 25/30 at 5 runs (the open case 0/5) | 0 | 0 | 5 |
 | 2026-11-13 | the same wording; a quiet turn keeps no words | claude-sonnet-5-5 | 30/30 at 5 runs | 0 | 0 | 0 |
+| 2026-11-15 | `main` before, with the three `failed-*` cases | claude-sonnet-5-5 | `failed-not-signed-in` 0/3 (reported the failure); `failed-named-host` 3/3; `failed-task-itself` 3/3 | 3 | 0 | 0 |
+| 2026-11-15 | step back to what the step was for; the `failed` wake starts the task on another capable host; a route must change the cause | claude-sonnet-5-5 | 27/27 at 3 runs | 0 | 0 | 0 |
+| 2026-11-15 | the same, after review: the cloud bullet tries another host, a failed session is no longer a reason to stop and ask, the wake's session marked as the bot's; `cloud-not-signed-in` added (3/3 on `main` before too: the tool's own failure answer moved it) | claude-sonnet-5-5 | 29/30 at 3 runs | 0 | 0 | 1 |
+| 2026-11-15 | the prompt rewrite: four-line failure rules; the `failed` wake checks the chat for a named host and speaks in the person's terms | claude-sonnet-5-5 | 29/30 at 3 runs, then the three `failed-*` cases 15/15 at 5 runs (one run had read a named host as its own choice before the chat check) | 0 | 1 then 0 | 0 |
 
 On the old wording a first run already started a new session; it was the
 chat full of the bot's own "still closed" that made every later run write

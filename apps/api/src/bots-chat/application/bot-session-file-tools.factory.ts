@@ -21,13 +21,13 @@ import {
 } from './bot-tool.factory';
 
 /**
- * A file a session's agent shared, shown to the person under the bot's reply
- * (`product/next-steps/agent-tools.md` §7): `show_session_file`. The bytes
- * live on the host, so the sessions module asks the runner for the JPEG
- * preview it kept when the file was shared, and the preview is stored as the
- * chat's own image, as `show_image` stores one from the web, and counts
- * against the same images per turn. Only an image with a preview can be
- * shown; for any other file the tool says so, and the file stays on the host.
+ * A file a session's agent shared, shown to the person under the bot's reply:
+ * `show_session_file`. The bytes live on the host, so the sessions module asks
+ * the runner for the JPEG preview it kept when the file was shared, and the
+ * preview is stored as the chat's own image, as `show_image` stores one from
+ * the web, and counts against the same images per turn. Only an image with a
+ * preview can be shown; for any other file the tool says so, and the file stays
+ * on the host.
  */
 @Injectable()
 export class BotSessionFileToolsFactory implements BotToolArea {

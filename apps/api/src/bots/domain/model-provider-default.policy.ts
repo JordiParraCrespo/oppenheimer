@@ -3,9 +3,9 @@ import { providerForNewBot } from './bot-creation.policy';
 import type { ModelProviderCredentialEntity } from './model-provider-credential.entity';
 
 /**
- * The provider a new bot starts on (`product/versions/mvp/25-bots.md` §2): the
- * key the workspace marked as its default; with none marked,
- * `providerForNewBot` over the providers it has keys for.
+ * The provider a new bot starts on: the key the workspace marked as its
+ * default; with none marked, `providerForNewBot` over the providers it has keys
+ * for.
  */
 export function defaultBotProvider(
   credentials: readonly ModelProviderCredentialEntity[],

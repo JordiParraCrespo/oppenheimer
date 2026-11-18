@@ -7,9 +7,9 @@ import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 
 /**
- * A bot's goal (`product/versions/mvp/25-bots.md` §4.1): what it keeps
- * working toward, a continuation turn at a time, the owner's Stop, and their
- * Resume once it paused. The chat reads it again whenever its stream moves.
+ * A bot's goal: what it keeps working toward, a continuation turn at a time,
+ * the owner's Stop, and their Resume once it paused. The chat reads it again
+ * whenever its stream moves.
  */
 
 /**

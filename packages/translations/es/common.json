@@ -5,6 +5,8 @@
   "copied": "Copiado",
   "copy": "Copiar",
   "copyCode": "Copiar código",
+  "wrapLines": "Ajustar líneas",
+  "unwrapLines": "No ajustar líneas",
   "loading": "Cargando...",
   "or": "o",
   "relative": {
@@ -153,5 +155,10 @@
     "pullRequests": "Revisa las pull requests que te necesitan.",
     "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
     "plan": "Tus tareas, hitos y calendario, desde aquí."
+  },
+  "projectFilter": {
+    "label": "Proyecto",
+    "all": "Todos los proyectos",
+    "none": "Sin proyecto"
   }
 }

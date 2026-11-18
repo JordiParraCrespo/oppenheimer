@@ -2,9 +2,9 @@ import { Wordmark } from '@oppenheimer/design-system-web';
 import type { ReactNode } from 'react';
 
 /**
- * The whole page of a shared session (`ShareSession.dc.html`): no console
- * around it, since the session is not the guest's — the wordmark on its own
- * row, and under it one card, 760px at most, that the session fills.
+ * The whole page of a shared session: no console around it, since the
+ * session is not the guest's — the wordmark on its own row, and under it
+ * one card, 760px at most, that the session fills.
  */
 export function SharedFrame({ children }: { children: ReactNode }) {
   return (

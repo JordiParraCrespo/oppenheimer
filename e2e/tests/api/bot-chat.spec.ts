@@ -2,12 +2,11 @@ import { expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
 
 /**
- * A bot's chat through the deployed API (`product/versions/mvp/25-bots.md`
- * §2): a message to a bot whose provider has no key is refused; with a GLM key
- * (`GLM_API_KEY`, a real one, so the turn calls z.ai) a message becomes a
- * turn the worker runs, and the bot's answer is in the conversation, which
- * exports whole, one message per line, and clears (refused while the turn works). The live half is
- * skipped without the key.
+ * A bot's chat through the deployed API: a message to a bot whose provider has
+ * no key is refused; with a GLM key (`GLM_API_KEY`, a real one, so the turn
+ * calls z.ai) a message becomes a turn the worker runs, and the bot's answer is
+ * in the conversation, which exports whole, one message per line, and clears
+ * (refused while the turn works). The live half is skipped without the key.
  */
 
 interface Conversation {

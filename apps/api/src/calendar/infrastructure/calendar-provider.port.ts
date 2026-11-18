@@ -52,7 +52,7 @@ export class CalendarProviderError extends Error {}
 
 /**
  * A calendar provider, read-only: Google today, Outlook or iCloud as a second
- * adapter (`product/versions/mvp/20-plan-calendar.md` §5).
+ * adapter.
  *
  * Any call may throw the provider's rate-limit problem (`CALENDAR_010`, an
  * `AppError`) when its quota stopped it; callers let it through as is.
@@ -79,5 +79,5 @@ export interface CalendarProviderPort {
   revoke(grant: CalendarReadGrant): Promise<void>;
 }
 
-/** The scope the calendar asks for: read-only, as decided (`17-plan.md`). */
+/** The scope the calendar asks for: read-only. */
 export const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';

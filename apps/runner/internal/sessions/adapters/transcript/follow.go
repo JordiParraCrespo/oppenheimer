@@ -40,7 +40,7 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		if session.Launch.Server == nil {
 			return app.ErrNoChat
 		}
-		followOpenCode(ctx, *session.Launch.Server, entryMax, batchMax, emit)
+		followOpenCode(ctx, r.openCode, *session.Launch.Server, entryMax, batchMax, emit)
 		return nil
 	}
 	source, ok := r.chats[session.Agent]

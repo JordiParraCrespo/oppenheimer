@@ -71,6 +71,7 @@ const task = (props: Partial<TaskProps> & { id?: string } = {}) =>
       notes: '',
       dueDate: null,
       dueTime: null,
+      priority: null,
       completedAt: null,
       blockedReason: null,
       blockedAt: null,
@@ -111,7 +112,7 @@ describe('BotPlanToolsFactory', () => {
   it('lists the owner’s tasks in a column, with their versions, and says how many were left out', async () => {
     const { queryBus, call } = setup({
       query: () => [
-        task({ status: 'doing', blockedReason: 'Needs the copy approved' }),
+        task({ status: 'doing', priority: 'urgent', blockedReason: 'Needs the copy approved' }),
         task({ id: OTHER_TASK_ID, status: 'doing', dueDate: '2026-10-20', dueTime: '09:30' }),
         task({ id: MILESTONE_ID, status: 'done' }),
       ],
@@ -124,7 +125,7 @@ describe('BotPlanToolsFactory', () => {
     expect(query.scope).toBe(owner);
     expect(query.filter).toMatchObject({ projectId: PROJECT_ID });
     expect(result.content).toContain(
-      `${TASK_ID} "Write the release notes" [In progress; v3; project ${PROJECT_ID}; milestone none; no due date; blocked: Needs the copy approved]`,
+      `${TASK_ID} "Write the release notes" [In progress; v3; project ${PROJECT_ID}; milestone none; no due date; priority urgent; blocked: Needs the copy approved]`,
     );
     expect(result.content).not.toContain(OTHER_TASK_ID);
     expect(result.content).toContain('(1 of 2 shown.');
@@ -146,6 +147,7 @@ describe('BotPlanToolsFactory', () => {
       project_id: PROJECT_ID,
       milestone_id: MILESTONE_ID,
       due_date: '2026-10-20',
+      priority: 'low',
     });
 
     const command = commandBus.execute.mock.calls[0][0] as CreateTaskCommand;
@@ -160,6 +162,7 @@ describe('BotPlanToolsFactory', () => {
         projectId: PROJECT_ID,
         milestoneId: MILESTONE_ID,
         dueDate: '2026-10-20',
+        priority: 'low',
       },
     });
     const readBack = queryBus.execute.mock.calls[0][0] as FindTaskQuery;
@@ -179,7 +182,7 @@ describe('BotPlanToolsFactory', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
-  it('edits only the fields passed, unblocking with null, conditioned on the version the bot read', async () => {
+  it('edits only the fields passed, setting a priority and unblocking with null, conditioned on the version the bot read', async () => {
     const { commandBus, call } = setup({
       command: () => TASK_ID,
       query: () => task({ version: 4, title: 'Release notes v2' }),
@@ -189,6 +192,7 @@ describe('BotPlanToolsFactory', () => {
       task_id: TASK_ID,
       expected_version: 3,
       title: 'Release notes v2',
+      priority: 'high',
       blocked_reason: null,
     });
 
@@ -199,6 +203,7 @@ describe('BotPlanToolsFactory', () => {
     expect(command.taskId).toBe(TASK_ID);
     expect(command.changes).toEqual({
       title: 'Release notes v2',
+      priority: 'high',
       blockedReason: null,
       expectedVersion: 3,
       notes: undefined,

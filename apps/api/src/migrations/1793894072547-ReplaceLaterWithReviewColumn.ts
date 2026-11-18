@@ -5,7 +5,7 @@ const DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 /**
  * Plan's board drops the Later column and gains In review, between In progress
- * and Done (`product/versions/mvp/18-plan-product.md`, "Columns").
+ * and Done.
  *
  * - Every task in Later moves to the end of To do, keeping its order. A rank is
  *   a fractional key that sorts byte by byte (`task-rank.policy.ts`), so the
@@ -22,7 +22,7 @@ const DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
  *   old check back. It does not put the moved tasks back in Later: nothing
  *   marks which To do tasks came from there, and a marker column kept only
  *   for a rollback is not worth its weight. A deliberate exception to
- *   `down()` restoring what a backfill moved (`database-design.md`).
+ *   `down()` restoring what a backfill moved.
  */
 export class ReplaceLaterWithReviewColumn1793894072547 implements MigrationInterface {
   name = 'ReplaceLaterWithReviewColumn1793894072547';

@@ -2,8 +2,7 @@ import type { TaskStatus } from '../schemas/task.schema.js';
 
 /**
  * Where each project stands, from its tasks and milestones: the facts a
- * project's overview draws and an agent answers from
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §3). One pure
+ * project's overview draws and an agent answers from. One pure
  * function so the console and the API cannot compute them two ways.
  *
  * `today` is the viewer's calendar day, `YYYY-MM-DD`, always passed in: what

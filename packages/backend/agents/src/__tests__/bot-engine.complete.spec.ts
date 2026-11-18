@@ -9,7 +9,12 @@
  */
 import { LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { describe, expect, it } from 'vitest';
-import { type BotCompletionRequest, type BotTurnRequest, isCompletionRequest } from '../bot-engine';
+import {
+  BotCompletionError,
+  type BotCompletionRequest,
+  type BotTurnRequest,
+  isCompletionRequest,
+} from '../bot-engine';
 import { FakeBotEngine } from '../fake-bot-engine';
 
 const KEY = 'sk-fake-secret-0123456789';
@@ -69,6 +74,23 @@ describe('BotEngine.complete', () => {
       code: 'rate_limited',
       provider: 'glm',
     });
+  });
+
+  // What breaks this: a summary job retrying a spent credit eight times and
+  // reporting it as our error (Sentry OPPENHEIMER-API-7), because the
+  // rejection dropped the kind of failure the engine named.
+  it.each([
+    ['usage_limit', 'Credit balance is too low'],
+    ['credential', 'Invalid API key'],
+    ['unavailable', 'API Error: overloaded'],
+  ] as const)('rejects a %s failure with the kind the engine named', async (kind, error) => {
+    const engine = new FakeBotEngine(() => [
+      { type: 'done', reason: 'failed', error, failure: kind },
+    ]);
+    const failure = await engine.complete(request()).catch((thrown: unknown) => thrown);
+    expect(failure).toBeInstanceOf(BotCompletionError);
+    expect(failure).not.toBeInstanceOf(LlmRateLimitError);
+    expect(failure).toMatchObject({ message: error, failure: kind });
   });
 
   it('rejects when aborted', async () => {

@@ -1,10 +1,9 @@
 /**
- * The tools a bot follows pull requests with (`27-bot-subscriptions.md` §7):
- * a watch is stored only for a repository the owner's usable installations
- * let them read, read as the owner, for an open pull request, with the turn,
- * scopes and zone that asked; the per-bot limit is shared with sessions; and
- * unwatch touches only the bot's own subscription. The upsert and its unique
- * index are the integration suite's.
+ * The tools a bot follows pull requests with: a watch is stored only for a
+ * repository the owner's usable installations let them read, read as the owner,
+ * for an open pull request, with the turn, scopes and zone that asked; the
+ * per-bot limit is shared with sessions; and unwatch touches only the bot's own
+ * subscription. The upsert and its unique index are the integration suite's.
  */
 import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';

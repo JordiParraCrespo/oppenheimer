@@ -16,7 +16,7 @@ import { ProvisionPersonalWorkspaceCommand } from './provision-personal-workspac
  * Creates the personal workspace a new account lives in: one organization with
  * the account as its single owner, plus the org-scoped `owner` application role
  * that opens it. No team, no roster, no invitation: the MVP is one user per
- * workspace (`product/versions/mvp/00-scope.md`).
+ * workspace.
  *
  * Answers the new organization's id, or `null` when the account already
  * belonged to one. That is a success for every caller: sign-up and the seed

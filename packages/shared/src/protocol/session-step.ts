@@ -2,7 +2,7 @@ import { z } from 'zod/v4';
 
 /**
  * What a runner logs while it starts a session, and what the console reads back
- * off the session's log to draw the provisioning steps (01, 05).
+ * off the session's log to draw the provisioning steps.
  *
  * These are **event payloads**, not link messages: they ride `events.append` as
  * a `kind` and a JSON-string `payload`, and the control plane keeps them without

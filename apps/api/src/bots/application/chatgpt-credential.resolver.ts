@@ -34,10 +34,9 @@ function credentialOf({ accessToken, accountId }: ChatgptTokens): TurnCredential
 }
 
 /**
- * A workspace's ChatGPT sign-in (`product/versions/mvp/25-bots.md` §2): stored
- * as a model provider credential whose sealed secret is the sign-in's tokens
- * rather than a key, and refreshed by the worker when a turn finds the access
- * token about to lapse.
+ * A workspace's ChatGPT sign-in: stored as a model provider credential whose
+ * sealed secret is the sign-in's tokens rather than a key, and refreshed by the
+ * worker when a turn finds the access token about to lapse.
  *
  * ChatGPT rotates the refresh token on every use, so one refresh runs per
  * workspace at a time. Turns on this replica that need it while it runs wait

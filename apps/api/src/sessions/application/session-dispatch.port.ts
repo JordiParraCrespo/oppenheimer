@@ -21,8 +21,7 @@ export interface SessionDispatchOutcome {
 /**
  * What the host is told to make. Every path segment is an id or a
  * unique-constrained column, so the runner derives
- * `<account>/<workspaceId>/sessions/<sessionSlug>/` without asking
- * (`product/versions/mvp/24-session-places.md` §2) — the account being the one
+ * `<account>/<workspaceId>/sessions/<sessionSlug>/` without asking — the account being the one
  * it was paired with — and only the names it cannot read off the session
  * travel here.
  */
@@ -41,7 +40,7 @@ export interface SessionLaunchSpec {
    *
    * It travels here rather than on the session because it is **not** a column:
    * a prompt is the person's own sentence, and the log and the host are the two
-   * places it belongs (`product/versions/mvp/03-control-plane.md`). An
+   * places it belongs. An
    * implementation reads the launch options off the session itself, which are
    * folded.
    */
@@ -79,10 +78,10 @@ export interface SessionCloseSpec {
 
 /**
  * A repository a host is to get ready before any session asks for it: its mirror
- * cloned or fetched and a spare worktree made at `baseBranch` (02 §5).
+ * cloned or fetched and a spare worktree made at `baseBranch`.
  */
 export interface SessionPrepareSpec {
-  /** Whose stores to warm: the caller's workspace, under the host's account (24 §2). */
+  /** Whose stores to warm: the caller's workspace, under the host's account. */
   workspaceId: string;
   githubRepoId: number;
   repositoryFullName: string;

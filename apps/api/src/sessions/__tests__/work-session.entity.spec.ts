@@ -382,7 +382,7 @@ describe('a notice its agent sent', () => {
   const notified = (work: WorkSessionEntity) =>
     work.domainEvents.filter((event) => event instanceof SessionAgentNotifiedDomainEvent);
 
-  // Bots that follow the session hear it by this event (agent-tools.md §9).
+  // Bots that follow the session hear it by this event.
   it('is announced once, by the id the entry carried and never its words', () => {
     const work = session();
     work.recordEvent(entry(SESSION_EVENT_KINDS.STARTED));

@@ -1,5 +1,5 @@
 /**
- * Which facts a turn keeps in mind (`25-bots.md` §4.1). What breaks this: a
+ * Which facts a turn keeps in mind. What breaks this: a
  * `log` fact left out of every prompt, so a bot that saves as it goes never
  * sees what it saved; the log or the profile growing the prompt with every
  * fact kept, where each stops at its budget of characters; the oldest facts

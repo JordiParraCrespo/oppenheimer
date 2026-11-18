@@ -1,8 +1,8 @@
 import { PERMISSION_GROUPS, type Scope } from '@oppenheimer/shared';
 
 /**
- * A bot acts as its owner, so it does nothing its owner's roles do not allow
- * (`25-bots.md` §4): a tool whose scope the owner could not grant a token is
+ * A bot acts as its owner, so it does nothing its owner's roles do not allow: a
+ * tool whose scope the owner could not grant a token is
  * refused before it runs or raises a card. The tool stays offered, so the
  * bot can say what is missing instead of not knowing the tool exists. Pure.
  */

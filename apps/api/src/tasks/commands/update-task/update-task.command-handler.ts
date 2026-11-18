@@ -38,6 +38,8 @@ export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskComma
       dueDate: changes.dueDate,
       dueTime: changes.dueTime,
       focusDate: changes.focusDate,
+      offTodo: changes.offTodo,
+      priority: changes.priority,
     });
     // Giving it a TODO day takes up a task an agent made.
     if (changes.focusDate) task.triage(origin);

@@ -5,7 +5,7 @@ import { TelegramRunner, telegramUserId } from '../../support/telegram-runner';
 
 /**
  * A bot answers its owner on Telegram, over the deployed API and a runner
- * link (`product/next-steps/answering-on-telegram-and-whatsapp.md`). The host
+ * link. The host
  * is `support/telegram-runner.ts`, which plays the runner and Telegram both:
  * every line the owner or a stranger would see is a `telegram.send` frame it
  * records, so these tests read what reached the phone, not a row.

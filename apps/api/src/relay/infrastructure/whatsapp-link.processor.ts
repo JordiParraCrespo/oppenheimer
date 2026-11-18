@@ -29,7 +29,7 @@ interface LinkIntake {
 }
 
 /**
- * A host's WhatsApp device on its link (`product/next-steps/whatsapp.md` §2):
+ * A host's WhatsApp device on its link:
  * its state and the messages it saw, handed to the `whatsapp` module. The
  * link is the host's authentication, so the host is the link's, never one a
  * frame names. Messages are acknowledged only once stored, so a link that

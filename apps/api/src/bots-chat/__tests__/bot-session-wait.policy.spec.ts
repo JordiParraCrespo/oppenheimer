@@ -1,7 +1,7 @@
 import { sessionWaitAnswer, sessionWaitOutcome } from '../domain/bot-session-wait.policy';
 
 /**
- * When a bot's in-turn wait on a session is over (`25-bots.md` §4.2). What
+ * When a bot's in-turn wait on a session is over. What
  * breaks this: a wait that keeps going after the task asked for input or
  * ended, or one that stops on a task still running; an answer that reads as
  * done when the time simply ran out.

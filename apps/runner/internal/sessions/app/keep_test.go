@@ -12,8 +12,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// A kept session comes back on its own after a reboot; nothing else does
-// (`product/research/lessons-from-herdr.md`).
+// A kept session comes back on its own after a reboot; nothing else does.
 
 // savedMap is the session map as the runner left it before the host went down.
 type savedMap struct{ sessions []domain.Session }

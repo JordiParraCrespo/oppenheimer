@@ -4,10 +4,10 @@ import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.
 /**
  * The in-process registry: one map from host id to its live link.
  *
- * In-process is the MVP's decision (`03-control-plane.md`, open question 4):
- * the relay and the API are one process, so the host a session runs on is
- * either on this map or offline. When the relay splits into its own process the
- * map becomes a Redis lookup and this file is where that change lands.
+ * In-process is the MVP's decision: the relay and the API are one process, so
+ * the host a session runs on is either on this map or offline. When the relay
+ * splits into its own process the map becomes a Redis lookup and this file is
+ * where that change lands.
  */
 @Injectable()
 export class InProcessLinkRegistry implements LinkRegistryPort {

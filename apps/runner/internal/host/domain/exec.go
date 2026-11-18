@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// ExecMode is how much a host lets bots run on it (`host.exec`, 25 §4.2). It
+// ExecMode is how much a host lets bots run on it (`host.exec`). It
 // is the host's own setting, kept in a file the control plane never reads or
 // writes, so a compromised control plane can still run nothing the person
 // did not allow here.

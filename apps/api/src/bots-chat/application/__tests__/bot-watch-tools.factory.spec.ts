@@ -1,10 +1,9 @@
 /**
- * The tools a bot follows sessions with (`27-bot-subscriptions.md` §3): a
- * watch stored for the turn that asked, with its scopes and zone, as the
- * owner may read the session; none of them asks; unwatch and list touch
- * only the bot's own subscriptions; and a task the bot hands off owed its
- * stall check (§4.1). The upsert itself is the integration
- * suite's.
+ * The tools a bot follows sessions with: a watch stored for the turn that
+ * asked, with its scopes and zone, as the owner may read the session; none of
+ * them asks; unwatch and list touch only the bot's own subscriptions; and a
+ * task the bot hands off owed its stall check. The upsert itself is the
+ * integration suite's.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';

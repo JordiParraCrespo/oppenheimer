@@ -35,7 +35,7 @@ export class FindPullRequestAnalyticsQueryHandler
     const now = new Date();
     const window = analyticsWindow(range, now);
     // A period over no repository is a period of nothing, and our own rows say
-    // so before GitHub is asked anything (#247).
+    // so before GitHub is asked anything.
     if (!(await this.watched.anyWatched(scope))) {
       return this.mapper.toAnalytics({
         range,
@@ -56,7 +56,7 @@ export class FindPullRequestAnalyticsQueryHandler
       this.directory.viewerLogin(scope),
     ]);
     // The closed reads are capped, newest first, so a page view costs the window
-    // and not the installation (#247). The counts and the day chart are the
+    // and not the installation. The counts and the day chart are the
     // listings', which every pull request has; the medians, the lane mix and
     // the waiting breakdown are what was read, and deepen over the next few
     // reads as more parts land in the cache.

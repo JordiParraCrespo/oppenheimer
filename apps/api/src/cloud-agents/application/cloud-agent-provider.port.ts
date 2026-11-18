@@ -45,8 +45,7 @@ export interface CloudAgentModel {
 }
 
 /**
- * One vendor that runs coding agents in its cloud
- * (`product/next-steps/cloud-agents.md`). Adding a vendor is a class
+ * One vendor that runs coding agents in its cloud. Adding a vendor is a class
  * implementing this, its id in `CLOUD_AGENT_PROVIDERS` (`@oppenheimer/shared`),
  * and its place in `CloudAgentProviderRegistry`'s list in `cloud-agents.module.ts`;
  * the routes, the status the console reads and the console need nothing else.
@@ -62,8 +61,7 @@ export interface CloudAgentModel {
  *
  * A follow-up is a new run on the same agent, sent only while none runs
  * (`send_to_session`, `POST /sessions/{id}/prompt`); stopping one is done at
- * the vendor, whose page a cloud session's row opens
- * (`product/next-steps/cloud-agents.md`).
+ * the vendor, whose page a cloud session's row opens.
  */
 export interface CloudAgentProvider<G = unknown> {
   readonly id: CloudAgentProviderId;

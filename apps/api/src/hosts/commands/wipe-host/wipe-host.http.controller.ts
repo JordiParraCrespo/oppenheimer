@@ -21,8 +21,8 @@ import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope
 import { UnpairHostCommand } from '../unpair-host/unpair-host.command';
 
 /**
- * Remove host with "Also delete everything on this machine" ticked
- * (`product/versions/mvp/14-hosts-settings.md`): the unpair, plus every session on
+ * Remove host with "Also delete everything on this machine" ticked:
+ * the unpair, plus every session on
  * the host closed and its worktree deleted without a push. A route of its own rather
  * than a flag on `DELETE /hosts/{id}`, because it closes sessions: it needs what
  * closing a session needs as well as what removing a host does, so a credential

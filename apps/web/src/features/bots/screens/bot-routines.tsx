@@ -5,10 +5,9 @@ import { BotRoutinesSkeleton } from '@/features/bots/components/bot-routines-ske
 import { BotRoutines } from '@/features/bots/sections/bot-routines';
 
 /**
- * `/bots/$botId/settings/routines` (`26-bot-routines.md` §7): what the bot
- * does on its own, on a schedule or when something happens. The chat is
- * where a routine is made and changed; this page turns one on or off, runs
- * it now or deletes it.
+ * `/bots/$botId/settings/routines`: what the bot does on its own, on a
+ * schedule or when something happens. The chat is where a routine is made
+ * and changed; this page turns one on or off, runs it now or deletes it.
  */
 export function BotRoutinesScreen({ botId }: { botId: string }) {
   const { t } = useTranslation();

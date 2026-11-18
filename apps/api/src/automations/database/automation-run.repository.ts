@@ -52,7 +52,7 @@ const LIVE_WHERE = `(ws."stoppedAt" IS NULL AND (turn."state" IN ${LIVE_TURN}
   OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open'))))`;
 
 /**
- * A run's status, derived once, here (§Q4): the firing's own outcome until it
+ * A run's status, derived once, here: the firing's own outcome until it
  * is dispatched, then the session's first turn — and, for a session whose turn
  * has not been folded yet, the session's lifecycle. A bot routine's run is its
  * bot turn's status, which names the same five states.

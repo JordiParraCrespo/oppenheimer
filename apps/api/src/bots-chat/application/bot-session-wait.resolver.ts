@@ -12,7 +12,7 @@ import { cloudLinkOf } from './bot-cloud-session.policy';
 import type { BotToolCallContext } from './bot-tool.factory';
 
 /**
- * A bot's bounded wait on a session inside its turn (`25-bots.md` §4.2): it
+ * A bot's bounded wait on a session inside its turn: it
  * reads the session as the owner every few seconds until its task settles,
  * the session is closed or the deadline passes, and answers in words. A turn
  * that is stopped stops its wait with it. The rules are

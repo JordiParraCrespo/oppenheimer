@@ -6,12 +6,11 @@ import { PairingGate } from '../components/pairing-gate';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
- * Onboarding: pair the first host (`design/version1/AddHost.dc.html`, the
- * 2026-10-13 export): the agent prompt first, the command behind "Install
- * manually instead", the Connection list under them. This step owns the
- * header and the wait: Continue waits for the runner to come online
- * (`usePairing`'s rules). The column is the kit's `PairingChrome`, shared
- * with the console's Add a host dialog.
+ * Onboarding's step that pairs the first host: the agent prompt first, the
+ * command behind "Install manually instead", the Connection list under
+ * them. This step owns the header and the wait: Continue waits for the
+ * runner to come online (`usePairing`'s rules). The column is the kit's
+ * `PairingChrome`, shared with the console's Add a host dialog.
  *
  * Skip for now sits beside Continue in every state, the answer about pairing
  * still on its way included. Where this deployment cannot pair, it is the

@@ -6,8 +6,8 @@ import { connectInstallation, createSession } from '../../support/sessions';
 /**
  * A file an agent shares (`runner sessions send-file`), on a real runner: the
  * runner tells the control plane the file's metadata as `file.shared`, so a
- * bot driving the session can see it (`product/next-steps/agent-tools.md`
- * §7), and never where it is on the host nor its bytes.
+ * bot driving the session can see it, and never where it is on the host nor its
+ * bytes.
  */
 test.describe.configure({ timeout: 180_000 });
 

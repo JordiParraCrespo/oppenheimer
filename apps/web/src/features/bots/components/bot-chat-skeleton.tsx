@@ -17,7 +17,7 @@ const chip = (width: string) => (
  * A bot's chat before the bot answers, laid out as `BotChat` draws it: the
  * `PageBar` with the face and name as bars and the actions menu in its slot,
  * the transcript's ghost in the scrolling pane at its padding, and the
- * composer's own frame at its height, the box off and its chips as bars, so
+ * composer's own frame in its one-row layout, the box off and its chips as bars, so
  * nothing moves when the bot lands but the bars turning into words.
  */
 export function BotChatSkeleton() {
@@ -41,28 +41,31 @@ export function BotChatSkeleton() {
       <div className="min-h-0 flex-1 overflow-hidden px-4 pt-6 pb-10 sm:px-8">
         <BotTranscriptSkeleton />
       </div>
-      <div className="px-4 pb-4 sm:px-8">
-        <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
-          <ChatComposer
-            inert
-            disabled
-            value=""
-            onValueChange={noop}
-            onSubmit={noop}
-            onAttach={noop}
-            tools={chip('w-24')}
-            engine={
-              <>
-                {chip('w-20')}
-                {chip('w-14')}
-              </>
-            }
-            labels={{
-              send: t('bots.chat.send'),
-              stop: t('bots.chat.stop'),
-              attach: t('bots.chat.images.attach'),
-            }}
-          />
+      <div className="@container">
+        <div className="px-3 pb-3 @2xl:px-8 @2xl:pb-4">
+          <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
+            <ChatComposer
+              layout="inline"
+              inert
+              disabled
+              value=""
+              onValueChange={noop}
+              onSubmit={noop}
+              onAttach={noop}
+              tools={chip('w-24')}
+              engine={
+                <>
+                  {chip('w-20')}
+                  {chip('w-14')}
+                </>
+              }
+              labels={{
+                send: t('bots.chat.send'),
+                stop: t('bots.chat.stop'),
+                attach: t('bots.chat.images.attach'),
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

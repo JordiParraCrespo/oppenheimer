@@ -5,8 +5,8 @@ import {
 } from '../../github/domain/github-pull-event.policy';
 
 /**
- * What a GitHub event on a pull request a session watches says to its agent
- * (`product/next-steps/agent-tools.md` §3): one line, made only of what the
+ * What a GitHub event on a pull request a session watches says to its agent:
+ * one line, made only of what the
  * event's metadata states — its kind, the pull request's number, a check's
  * conclusion, a review's state and who acted. Never a comment's or a
  * review's words: anyone who can comment on a public repository could write
@@ -76,8 +76,8 @@ export function githubWakeText(
 }
 
 /**
- * The line a wake the agent set for itself types back into its session
- * (`product/next-steps/agent-tools.md` §4): its own words, framed as the
+ * The line a wake the agent set for itself types back into its session: its
+ * own words, framed as the
  * host's so it reads them as a reminder and not as the person speaking. A
  * frame's end inside the words is taken out, so the words cannot close it.
  */

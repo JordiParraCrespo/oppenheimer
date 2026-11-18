@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 
 /**
- * The head of a session's wait (`SessionsConsole.dc.html`, `op-provision`):
- * an eyebrow, the wait as a title, and a muted lead line. "Starting your
- * session" opens with it, and so does the chat while its history arrives.
+ * The head of a session's wait: an eyebrow, the wait as a title, and a
+ * muted lead line. "Starting your session" opens with it, and so does the
+ * chat while its history arrives.
  */
 export function SessionStatusHead({
   eyebrow,

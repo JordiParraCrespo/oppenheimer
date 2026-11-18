@@ -1,7 +1,7 @@
 package cli
 
 // `fs.list` and `fs.find`: the folder picker's directories and its search by
-// name (24 §4), read through the host context and answered with `fs.listing`
+// name, read through the host context and answered with `fs.listing`
 // or `fs.found`, or `command.failed` with an FS_* code.
 
 import (

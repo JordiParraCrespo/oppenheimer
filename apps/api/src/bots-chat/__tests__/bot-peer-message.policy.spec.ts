@@ -11,7 +11,7 @@ import {
 import { botTurnPrompt } from '../domain/bot-prompt.policy';
 
 /**
- * Messages between bots as rules (`25-bots.md` §4.6): which credentials stop
+ * Messages between bots as rules: which credentials stop
  * a message, how the receiving bot reads one (from the recorded sender, as a
  * colleague's information, inside an envelope its words cannot close, now and
  * in its history), and what an ask's answer carries back. The handler that

@@ -2,12 +2,11 @@ import { PULL_REQUEST_WAKE_EVENTS, type PullRequestWakeEvent } from '@oppenheime
 
 /**
  * What a GitHub event on a pull request says to whoever it wakes, a session's
- * agent (`product/next-steps/agent-tools.md` §3) or a bot
- * (`27-bot-subscriptions.md` §7): made only of what the event's metadata
- * states, its kind, a check's conclusion and name, a review's state and who
- * acted, each held to the characters GitHub allows. Never a comment's or a
- * review's words: anyone who can comment on a public repository could write
- * them. Whoever is woken reads them itself, with its own tools. Pure.
+ * agent or a bot: made only of what the event's metadata states, its kind, a
+ * check's conclusion and name, a review's state and who acted, each held to the
+ * characters GitHub allows. Never a comment's or a review's words: anyone who
+ * can comment on a public repository could write them. Whoever is woken reads
+ * them itself, with its own tools. Pure.
  */
 
 export function isPullRequestWakeEvent(type: string): type is PullRequestWakeEvent {

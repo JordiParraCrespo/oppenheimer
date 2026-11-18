@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Place is where a session runs (24 §3).
+// Place is where a session runs.
 type Place string
 
 // Places. The blank terminal is an agent (AgentShell), not a place: it runs
@@ -33,7 +33,7 @@ const LocalID = "local"
 
 // Tenant is the account and the workspace something in the work folder belongs
 // to: the two levels above `repos.noindex/` and `sessions.noindex/`, each
-// named by an id that never changes (24 §2).
+// named by an id that never changes.
 type Tenant struct {
 	Account   string
 	Workspace string
@@ -106,7 +106,7 @@ func ValidateName(name string) error {
 }
 
 // Layout is the work folder: where stores and sessions live on a host, and
-// the only place that decides it (24 §2).
+// the only place that decides it.
 //
 //	<root>/layout.json                                   {"version": 3}
 //	<root>/<account>/.oppenheimer/meta.json              {"kind":"account"}
@@ -121,7 +121,7 @@ func ValidateName(name string) error {
 // the same way). A worktree is a whole checkout, `node_modules` included,
 // rewritten whenever an agent installs something; indexed, `mdworker_shared`
 // outspends the agents on a macOS host. `.metadata_never_index` at the root
-// does not keep Spotlight out (MVP decision log, 2026-10-01), so the name has
+// does not keep Spotlight out, so the name has
 // to. Elsewhere the suffix is only a name.
 type Layout struct{ Root string }
 

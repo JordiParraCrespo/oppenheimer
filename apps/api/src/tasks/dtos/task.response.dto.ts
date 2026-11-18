@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TASK_ORIGINS, TASK_STATUSES, type TaskOrigin, type TaskStatus } from '@oppenheimer/shared';
+import { nullableEnum } from '@oppenheimer/backend-core';
+import {
+  TASK_ORIGINS,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  type TaskOrigin,
+  type TaskPriority,
+  type TaskStatus,
+} from '@oppenheimer/shared';
 
 /** A session on a task. The console reads the session itself from its own list. */
 export class TaskSessionLinkResponseDto {
@@ -66,6 +74,21 @@ export class TaskResponseDto {
     example: '2026-10-06',
   })
   focusDate!: string | null;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Taken off To do by its person: on no day’s list, whatever its due date, until it gets a TODO day again or its due date changes.',
+    example: false,
+  })
+  offTodo!: boolean;
+
+  @ApiPropertyOptional({
+    ...nullableEnum(TASK_PRIORITIES),
+    description:
+      'How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.',
+  })
+  priority!: TaskPriority | null;
 
   @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
   completedAt!: string | null;

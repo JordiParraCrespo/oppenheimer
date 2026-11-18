@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Sessions a bot starts (`25-bots.md` §4.2): `work_session.origin` admits
+ * Sessions a bot starts: `work_session.origin` admits
  * `bot`. A bot acts as its owner, so the session is the owner's and its first
  * turn is theirs (`session_turn.origin` stays `person`); the origin is what
  * lets the console and a later audit tell the owner's own sessions from the

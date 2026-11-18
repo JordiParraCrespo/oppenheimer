@@ -187,9 +187,9 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Bots (`product/versions/mvp/25-bots.md`): who a bot is, the sidebar groups,
- * its soul and instructions with their history, what it remembers, and the
- * workspace's model provider keys it runs on.
+ * Bots: who a bot is, the sidebar groups, its soul and instructions with their
+ * history, what it remembers, and the workspace's model provider keys it runs
+ * on.
  */
 @Module({
   imports: [

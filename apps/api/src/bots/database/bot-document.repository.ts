@@ -84,7 +84,7 @@ export class BotDocumentRepository
     if (!revision) return 'saved';
     let outcome: BotDocumentWriteOutcome;
     try {
-      // The events (a first job) are staged only when the write won.
+      // The document's events are staged only when the write won.
       outcome = await this.outbox.transaction(async (manager) => {
         const won = await this.writeOverExpected(manager, document, revision);
         if (won === 'saved') await this.outbox.stageEvents(manager, document.domainEvents);

@@ -2,8 +2,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * A bot turn whose transcript Postgres refused to store fails with its own
- * kind, `storage` (`product/versions/mvp/25-bots.md` §2), so the chat says the
- * failure was ours instead of "<provider> could not finish this turn" (#728).
+ * kind, `storage`, so the chat says the failure was ours instead of
+ * "<provider> could not finish this turn".
  *
  * - `CHK_bot_turn_failure` gains `storage`. Rows already written keep the
  *   kinds they had: a turn that died on a refused write before this is `other`.

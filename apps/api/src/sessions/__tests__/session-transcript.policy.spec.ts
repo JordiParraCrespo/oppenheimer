@@ -11,8 +11,8 @@ import {
 } from '../domain/session-transcript.policy';
 
 /**
- * What a transcript page owes its reader before it leaves the API
- * (`product/next-steps/agent-tools.md` §8): no secret a tool printed, a cursor
+ * What a transcript page owes its reader before it leaves the API: no secret
+ * a tool printed, a cursor
  * nobody can forge into a read of another conversation's middle, and a status
  * that never calls a cut page complete.
  */

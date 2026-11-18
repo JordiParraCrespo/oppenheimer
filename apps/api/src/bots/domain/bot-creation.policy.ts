@@ -37,11 +37,11 @@ function stricterPermission(a: BotPermission, b: BotPermission): BotPermission {
 }
 
 /**
- * The level of a bot another bot creates (`25-bots.md` §4.6: "no looser
- * permissions than its own"). The one asked for, when it is no looser than
- * the creator's; none asked for is the creator's, or the console's default
- * when that is stricter. A looser one is refused, naming the ceiling, so the
- * caller says why rather than quietly getting less than it asked for.
+ * The level of a bot another bot creates ("no looser permissions than its
+ * own"). The one asked for, when it is no looser than the creator's; none asked
+ * for is the creator's, or the console's default when that is stricter. A
+ * looser one is refused, naming the ceiling, so the caller says why rather than
+ * quietly getting less than it asked for.
  */
 export function permissionForBotMadeBy(
   creator: BotPermission,

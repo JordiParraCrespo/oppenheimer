@@ -332,7 +332,12 @@
     "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
     "BOTS_041": "This bot has no tidy of its memory to undo.",
     "BOTS_042": "This bot answers on a Telegram bot. Choose another bot, or none, under Settings → Telegram before you delete it.",
-    "BOTS_043": "This bot answers on a WhatsApp number. Choose another bot, or none, under Settings → WhatsApp before you delete it."
+    "BOTS_043": "This bot answers on a WhatsApp number. Choose another bot, or none, under Settings → WhatsApp before you delete it.",
+    "SESSIONS_056": "This host's runner can't open or close terminals. Update the runner on the host.",
+    "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
+    "SESSIONS_058": "That terminal is no longer open.",
+    "SESSIONS_059": "The host refused to change the session's terminals.",
+    "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
   },
   "notFound": {
     "title": "That page does not exist",

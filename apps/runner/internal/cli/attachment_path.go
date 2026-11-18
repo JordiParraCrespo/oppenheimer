@@ -6,7 +6,7 @@ import (
 )
 
 // The path an attachment's bytes take: the link, or a direct data channel to
-// its browser (product/versions/mvp/22). attachmentPath owns every rule about
+// its browser. attachmentPath owns every rule about
 // it, under one lock, so the link handler only hands it bytes and events:
 //
 //	onLink ──offer──▶ negotiating ──opened──▶ onChannel

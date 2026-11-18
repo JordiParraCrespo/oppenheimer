@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * A person's own GitHub tokens, for the repositories the App will never be
- * installed on (`product/next-steps/0.2-pull-requests.md` §6.2).
+ * installed on.
  *
  * - `github_token`: one row per token a person added, with the label they
  *   gave it. The secret is sealed with AES-256-GCM under

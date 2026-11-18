@@ -1,7 +1,7 @@
 import { htmlToText } from './gmail-message.util';
 
 /**
- * A message's body as it goes out (`product/next-steps/mail.md` §3.4): what
+ * A message's body as it goes out: what
  * the bot wrote, in light markdown, as plain text and as simple HTML, with
  * the answered or forwarded message quoted below it and the alias's Gmail
  * signature after, the way Gmail itself lays a reply out.

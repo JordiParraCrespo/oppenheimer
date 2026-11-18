@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
+import { ArrowUpIcon, PaperclipIcon, PlusIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import {
@@ -23,6 +23,21 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
   stop: 'Stop',
   attach: 'Add images',
 };
+
+/**
+ * The send button's look, by layout and state. Inline, send is ink and rests
+ * on the wash until there is something to send, and Stop, the one control a
+ * reader reaches for while the agent works, takes the action blue. Stacked,
+ * send is the primary and Stop the ink.
+ */
+function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
+  if (layout === 'inline') {
+    return busy
+      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
+  }
+  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
+}
 
 /**
  * ChatComposer — a bot's composer (Bots): a card at the 28px radius with no
@@ -48,8 +63,8 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
  * what was said; the next Enter sends it.
  *
  * Files ride a message in either layout: `onAttach` puts the paperclip
- * first, in the foot row before `tools` (`stacked`) or at the start of the
- * row before the field (`inline`); `attachments` are what the message
+ * first in the foot row before `tools` (`stacked`), or a round "+" at the
+ * start of the row before the field (`inline`); `attachments` are what the message
  * carries, in a row over the text: a bot's `ChatImage` tiles, a session's
  * `ComposerFile` chips. `allowEmpty` lets a message of files alone be sent.
  *
@@ -120,7 +135,9 @@ function ChatComposer({
    * holding `tools`, `engine` and send. `inline` (a session read as a chat):
    * one row, the field opening at one line with send at its end, and `tools`
    * and `engine` as a quiet line under the box, so it does not crowd the
-   * conversation above it.
+   * conversation above it. Its send is ink, not the blue: a round button
+   * that sits on the wash until there is something to send; while `busy`
+   * its stop takes the blue.
    */
   layout?: 'stacked' | 'inline';
   /**
@@ -180,10 +197,7 @@ function ChatComposer({
         sendBlockedReason={sendBlockedReason}
         labels={label}
         onClick={submit}
-        className={cn(
-          inline ? 'ml-1 size-8' : 'ml-1 size-8.5',
-          busy && 'bg-fg text-background hover:bg-fg hover:text-background',
-        )}
+        className={sendButtonClass(layout, busy)}
       >
         {busy ? (
           <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
@@ -198,12 +212,12 @@ function ChatComposer({
       aria-label={label.attach}
       title={label.attach}
       size="sm"
-      shape="square"
+      shape={inline ? 'pill' : 'square'}
       onClick={onAttach}
       disabled={disabled}
-      className={inline ? 'size-8' : 'size-7.5'}
+      className={inline ? 'size-8 text-fg-muted hover:text-fg' : 'size-7.5'}
     >
-      <PaperclipIcon className="size-3.75" />
+      {inline ? <PlusIcon className="size-4" /> : <PaperclipIcon className="size-3.75" />}
     </IconButton>
   ) : null;
   // The live region stays mounted, empty without a caption: a screen reader
@@ -296,7 +310,7 @@ function ChatComposer({
         )}
       </div>
       {inline && (tools || engine) ? (
-        <div data-slot="chat-composer-meta" className="flex min-h-7 items-center gap-3 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
+        <div data-slot="chat-composer-meta" className="@container/composer-meta flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
           {tools}
           <span className="ml-auto flex items-center gap-2">{engine}</span>
         </div>

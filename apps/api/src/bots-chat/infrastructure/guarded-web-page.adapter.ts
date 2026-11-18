@@ -27,7 +27,7 @@ const TEXT_TYPES = /^(text\/|application\/(json|xml|xhtml\+xml|[\w.+-]+\+(json|x
  * proxy, a fixed user agent; 15 s and 2 MB at most for a page, and for an
  * image the size its caller takes.
  *
- * Budget (`integrations.md`): the web is not one system with one limit, so
+ * Budget: the web is not one system with one limit, so
  * the bound is ours: `web_fetch` allows a turn ten calls, `show_image` eight
  * images, and a turn at most one call at a time.
  */

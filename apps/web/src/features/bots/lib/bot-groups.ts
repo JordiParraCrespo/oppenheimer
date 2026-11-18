@@ -7,19 +7,24 @@ import {
 
 /**
  * The bot the sidebar draws first: the top pinned one (`pins`, in pin order),
- * else in its groups' order then Ungrouped; undefined with none.
+ * else in the sections' order, Ungrouped where `ungroupedBefore` puts it;
+ * undefined with none.
  */
 export function firstBot(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
   pins: readonly string[],
+  ungroupedBefore?: string,
 ): BotEntity | undefined {
   const pinned = pins.flatMap((id) => bots.find((bot) => bot.id === id) ?? [])[0];
-  return pinned ?? botGroupSections(bots, groups, '').flatMap((section) => section.bots)[0];
+  return (
+    pinned ??
+    botGroupSections(bots, groups, '', { ungroupedBefore }).flatMap((section) => section.bots)[0]
+  );
 }
 
 /** The key a section is dragged and folded by; Ungrouped has no id of its own. */
-const UNGROUPED = 'ungrouped';
+export const UNGROUPED = 'ungrouped';
 
 export function sectionKey(section: BotGroupSection): string {
   return section.id ?? UNGROUPED;
@@ -37,9 +42,28 @@ export function sectionOrder(sections: readonly BotGroupSection[]): Record<strin
   );
 }
 
-/** The groups' ids in the order the sections draw them; Ungrouped is not one. */
+/** The sections' keys in the order they are drawn, Ungrouped's among the groups'. */
 export function groupOrder(sections: readonly BotGroupSection[]): string[] {
-  return sections.flatMap((section) => (section.id === null ? [] : [section.id]));
+  return sections.map(sectionKey);
+}
+
+/**
+ * Where a drop among the groups leaves Ungrouped, from the sections' keys
+ * after it: above a group, last, or not drawn (the drop says nothing of its
+ * place).
+ */
+export type UngroupedDrop = { kind: 'before'; id: string } | { kind: 'last' } | { kind: 'absent' };
+
+export function ungroupedDropIn(keys: readonly string[]): UngroupedDrop {
+  const at = keys.indexOf(UNGROUPED);
+  if (at === -1) return { kind: 'absent' };
+  const below = keys[at + 1];
+  return below === undefined ? { kind: 'last' } : { kind: 'before', id: below };
+}
+
+/** A group's place among the groups alone, as the API's `position` counts it. */
+export function groupPosition(keys: readonly string[], id: string): number {
+  return keys.filter((key) => key !== UNGROUPED).indexOf(id);
 }
 
 /**
@@ -69,21 +93,25 @@ export function inOrder(
 }
 
 /**
- * The sections with the groups in `groups`' order (a group drag held, or its
- * write in flight), Ungrouped last as always. A group `groups` does not name
- * (made since) is drawn after the ones it does, in the order it had.
+ * The sections in the order of `keys` (a group drag held, or its write in
+ * flight), Ungrouped's key among them. A section `keys` does not name (a
+ * group made since, or Ungrouped drawn only now) keeps the place it had.
  */
 export function inGroupOrder(
   sections: readonly BotGroupSection[],
-  groups: readonly string[],
+  keys: readonly string[],
 ): BotGroupSection[] {
-  const rank = (section: BotGroupSection) => {
-    const at = section.id === null ? -1 : groups.indexOf(section.id);
-    return at === -1 ? groups.length : at;
-  };
-  const grouped = sections.filter((section) => section.group !== null);
-  const ungrouped = sections.filter((section) => section.group === null);
-  return [...grouped.sort((a, b) => rank(a) - rank(b)), ...ungrouped];
+  // The named sections' slots, in the order they are drawn, take the named sections in `keys`' order.
+  const isNamed = (section: BotGroupSection) => keys.includes(sectionKey(section));
+  const ordered = sections
+    .filter(isNamed)
+    .sort((a, b) => keys.indexOf(sectionKey(a)) - keys.indexOf(sectionKey(b)));
+  const slots = sections.flatMap((section, at) => (isNamed(section) ? [at] : []));
+  const drawn = [...sections];
+  slots.forEach((at, nth) => {
+    drawn[at] = ordered[nth] as BotGroupSection;
+  });
+  return drawn;
 }
 
 /**

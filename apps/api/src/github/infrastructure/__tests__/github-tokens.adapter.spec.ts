@@ -5,7 +5,7 @@ import { GithubPullsAdapter } from '../github-pulls.adapter';
 import { GithubTokensAdapter } from '../github-tokens.adapter';
 
 /**
- * Asking GitHub about a person's own token (§6.2), against a `fetch` double.
+ * Asking GitHub about a person's own token, against a `fetch` double.
  * What is easy to get quietly wrong: a refusal read as GitHub failing (so the
  * person is told to retry a mistyped token), the expiry header misread (so an
  * expired token keeps being chosen), and the secret leaking into a URL or a

@@ -98,7 +98,7 @@ func TestWindowsAreTheSessionsTabs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	index, err := s.NewWindow(ctx, "opp-tabs", dir)
+	index, err := s.NewWindow(ctx, "opp-tabs", dir, "")
 	if err != nil {
 		t.Fatalf("new-window: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestTheEnvironmentIsInheritedByEveryWindow(t *testing.T) {
 	if err := s.Create(ctx, "opp-env", dir, "", env); err != nil {
 		t.Fatal(err)
 	}
-	index, err := s.NewWindow(ctx, "opp-env", dir)
+	index, err := s.NewWindow(ctx, "opp-env", dir, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -434,5 +434,153 @@ func TestLaunchReplacesTheShellWithTheProgramInPlace(t *testing.T) {
 	}
 	if all := screen + string(history); strings.Contains(all, "typed-before-the-launch") || strings.Contains(all, "sleep 30") {
 		t.Fatalf("the pane still holds what came before the program, or how it was started:\n%s", all)
+	}
+}
+
+// Watching a shell window must not move or resize anyone watching the
+// agent's. tmux keeps one current window per session, so attaching a second
+// client to `name:1` switched the first client, the agent's terminal, to the
+// shell too; and a view grouped with the session shrank the agent's window to
+// the side pane's size. A view keeps each client on its own window, and leaves no session the
+// runner would list or count as an orphan; killing the session ends it.
+func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-view", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir(), ""); err != nil {
+		t.Fatal(err)
+	}
+	agent, err := s.Attach(ctx, "opp-view:0", app.Size{Cols: 120, Rows: 40}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer agent.Close()
+	go io.Copy(io.Discard, agent) //nolint:errcheck // drains the client
+	shell, err := s.Attach(ctx, "opp-view:1", app.Size{Cols: 50, Rows: 20}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go io.Copy(io.Discard, shell) //nolint:errcheck // drains the client
+
+	clients := func() string {
+		out, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "list-clients", "-F", "#{session_name}:#{window_index}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for strings.Count(clients(), "\n") < 1 && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+	}
+	got := clients()
+	if !strings.Contains(got, "opp-view:0") || !strings.Contains(got, "~view~") {
+		t.Fatalf("clients = %q, want the agent's on opp-view:0 and the shell's on a view", got)
+	}
+	for line := range strings.SplitSeq(got, "\n") {
+		if strings.HasPrefix(line, "opp-view:") && line != "opp-view:0" {
+			t.Fatalf("the agent's client moved to %q", line)
+		}
+	}
+	// The side pane's small client sizes the shell's window, never the agent's,
+	// even once the console resizes it after attaching.
+	if err := shell.Resize(app.Size{Cols: 48, Rows: 18}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(300 * time.Millisecond)
+	size, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "display-message", "-p", "-t", "opp-view:0", "#{window_width}x#{window_height}").Output()
+	if got := strings.TrimSpace(string(size)); got != "120x40" {
+		t.Fatalf("the agent's window is %s with a small shell client beside it, want 120x40", got)
+	}
+	if names, _ := s.List(ctx); len(names) != 1 || names[0] != "opp-view" {
+		t.Fatalf("list = %v, want the session alone", names)
+	}
+
+	if err := s.Kill(ctx, "opp-view"); err != nil {
+		t.Fatal(err)
+	}
+	out, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "list-sessions").CombinedOutput()
+	if strings.Contains(string(out), "opp-view") {
+		t.Fatalf("sessions left after kill: %s", out)
+	}
+	_ = shell.Close()
+}
+
+// Opening a shell must not take the agent's terminal with it: without -d,
+// tmux made the new window the session's current one, and the agent's
+// client showed the shell while the side pane's tab was open.
+func TestOpeningAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-bg", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	agent, err := s.Attach(ctx, "opp-bg:0", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer agent.Close()
+	go io.Copy(io.Discard, agent) //nolint:errcheck // drains the client
+	current := func() string {
+		out, _ := exec.Command("tmux", "-L", "opp-test-"+t.Name(), "list-clients", "-F", "#{window_index}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for current() == "" && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	if _, err := s.NewWindow(ctx, "opp-bg", t.TempDir(), ""); err != nil {
+		t.Fatal(err)
+	}
+	if got := current(); got != "0" {
+		t.Fatalf("the agent's client is on window %q after a shell opened, want 0", got)
+	}
+}
+
+// A window opened with a title keeps it once a program runs in it: tmux
+// renames a window it named itself after the program, and the tab would
+// then say `node` where the agent it holds is codex.
+func TestATitledWindowKeepsItsNameWhileAProgramRuns(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := s.Create(ctx, "opp-titled", dir, "", nil); err != nil {
+		t.Fatal(err)
+	}
+	index, err := s.NewWindow(ctx, "opp-titled", dir, "codex")
+	if err != nil {
+		t.Fatalf("new-window: %v", err)
+	}
+	if err := s.Launch(ctx, "opp-titled:"+itoa(index), dir, "sleep 30"); err != nil {
+		t.Fatalf("launch: %v", err)
+	}
+
+	windows, err := s.Windows(ctx, "opp-titled")
+	if err != nil || len(windows) != 2 {
+		t.Fatalf("windows = %v, err = %v", windows, err)
+	}
+	if windows[1].Name != "codex" || windows[1].Agent {
+		t.Fatalf("the titled window is %+v, want codex and not the session's agent", windows[1])
+	}
+}
+
+// A launch that fails says which window, never what was launched: the
+// command line carries the person's first task, and this error is logged and
+// sent back as `command.failed`'s detail.
+func TestAFailedLaunchKeepsTheCommandOutOfItsError(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := s.Create(ctx, "opp-secret", dir, "", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	err := s.Launch(ctx, "opp-secret:9", dir, "codex 'the private first task'")
+
+	if err == nil {
+		t.Fatal("a launch into a window that does not exist succeeded")
+	}
+	if strings.Contains(err.Error(), "private first task") || !strings.Contains(err.Error(), "opp-secret:9") {
+		t.Fatalf("err = %v, want the window named and the command left out", err)
 	}
 }

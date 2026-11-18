@@ -17,10 +17,9 @@ import { TelegramReplyResolver } from './telegram-reply.resolver';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * What new messages to a Telegram bot come to, and are answered with besides
- * a bot's turn (`product/next-steps/answering-on-telegram-and-whatsapp.md`
- * §2): a `start` link's code records its sender as the owner and says so; a
- * stranger, or a code that records nobody, gets one fixed line a day and
+ * What new messages to a Telegram bot come to, and are answered with besides a
+ * bot's turn: a `start` link's code records its sender as the owner and says
+ * so; a stranger, or a code that records nobody, gets one fixed line a day and
  * nothing else; the owner's `/help`, `/new` and `/stop` get theirs.
  */
 @Injectable()

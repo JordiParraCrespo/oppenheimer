@@ -10,25 +10,28 @@ import { AutomationRunEntity } from '../../../automations/domain/automation-run.
 import { triggerFromInput } from '../../../automations/domain/trigger-config.policy';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
+import { BotTurnHoldPolicy } from '../../application/bot-turn-hold.policy';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import type { HeartbeatView } from '../../domain/bot-heartbeat.policy';
 import { BotRoutineTarget } from '../bot-routine-target.adapter';
 import type { BotStreamPort } from '../bot-stream.port';
 
 /**
- * A bot routine's run (`26-bot-routines.md` §4): one queued turn of its bot,
- * on the bot's model as it is now, as the owner, within the routine's scopes.
- * What breaks this: a run with no usable provider queuing a turn that fails,
- * a busy routine queuing a second turn, a retried dispatch queuing twice, or
- * a refusal read as a fault the queue retries forever.
+ * A bot routine's run: one queued turn of its bot, on the bot's model as it is
+ * now, as the owner, within the routine's scopes. What breaks this: a run with
+ * no usable provider queuing a turn that fails, a busy routine queuing a second
+ * turn, a retried dispatch queuing twice, or a refusal read as a fault the
+ * queue retries forever, or a heartbeat with nothing
+ * new spending a model turn.
  */
-const now = new Date();
+const now = new Date('2026-11-15T11:00:00Z');
 
-function routine() {
+function routine(name = 'Morning PR digest') {
   return AutomationEntity.createRoutine({
     organizationId: 'org-1',
     ownerUserId: 'owner-1',
     botId: 'bot-1',
-    name: 'Morning PR digest',
+    name,
     prompt: 'List the open pull requests.',
     triggers: [
       triggerFromInput(
@@ -43,9 +46,16 @@ function routine() {
 }
 
 function setup(
-  options: { model?: boolean; outcome?: 'staged' | 'existing' | 'busy' | 'missing' } = {},
+  options: {
+    model?: boolean;
+    outcome?: 'staged' | 'existing' | 'busy' | 'missing';
+    name?: string;
+    heartbeat?: HeartbeatView;
+    /** How the bot's last turn on its provider failed, a minute ago; none by default. */
+    lastFailure?: 'usage_limit' | 'rate_limit';
+  } = {},
 ) {
-  const automation = routine();
+  const automation = routine(options.name);
   const run = AutomationRunEntity.fire(
     {
       organizationId: 'org-1',
@@ -77,9 +87,26 @@ function setup(
     outcome: options.outcome ?? 'staged',
     turnId: options.outcome === 'existing' ? 'turn-first' : turn.id,
   }));
-  const turns = { enqueueOnce } as unknown as BotTurnRepositoryPort;
+  const findHeartbeatView = vi.fn(
+    async (): Promise<HeartbeatView> =>
+      options.heartbeat ?? { lastBeatAt: null, lastActivityAt: null },
+  );
+  const last = options.lastFailure
+    ? { status: 'failed', failure: options.lastFailure, endedAt: new Date(now.getTime() - 60_000) }
+    : null;
+  const findLastOnProvider = vi.fn(async () => last);
+  const turns = {
+    enqueueOnce,
+    findHeartbeatView,
+    findLastOnProvider,
+  } as unknown as BotTurnRepositoryPort;
   const publish = vi.fn(async () => undefined);
-  const target = new BotRoutineTarget(access, turns, { publish } as unknown as BotStreamPort);
+  const target = new BotRoutineTarget(
+    access,
+    turns,
+    { publish } as unknown as BotStreamPort,
+    new BotTurnHoldPolicy(turns),
+  );
   const context: RunTargetContext = {
     run,
     automation,
@@ -88,7 +115,7 @@ function setup(
     event: null,
     now,
   };
-  return { target, context, enqueueOnce, publish, run };
+  return { target, context, enqueueOnce, findHeartbeatView, publish, run };
 }
 
 describe('BotRoutineTarget', () => {
@@ -131,6 +158,21 @@ describe('BotRoutineTarget', () => {
     expect(enqueueOnce).not.toHaveBeenCalled();
   });
 
+  // What breaks this: a routine queuing a turn into a provider that just said
+  // the account is out of credit, each run a failure card in the chat and,
+  // once held at the turn instead, a run that reads as completed.
+  it('skips a run, without pausing, while its provider just refused the account, and queues nothing', async () => {
+    const { target, context, enqueueOnce } = setup({ lastFailure: 'usage_limit' });
+    await expect(target.decide(context)).resolves.toEqual({
+      kind: 'skip',
+      reason: 'not_launchable',
+      pause: null,
+    });
+    expect(enqueueOnce).not.toHaveBeenCalled();
+    const passing = setup({ lastFailure: 'rate_limit' });
+    expect((await passing.target.decide(passing.context)).kind).toBe('launch');
+  });
+
   it('skips a run while the routine’s last turn still waits or runs, asked under the queue’s lock', async () => {
     const { target, context, enqueueOnce, publish } = setup({ outcome: 'busy' });
     const decision = await target.decide(context);
@@ -163,5 +205,44 @@ describe('BotRoutineTarget', () => {
       pause: 'bot_provider_missing',
     });
     expect(target.refusalOf(new Error('database down'))).toBeNull();
+  });
+
+  it('skips a heartbeat with nothing new since its last beat, and queues nothing', async () => {
+    const { target, context, enqueueOnce, findHeartbeatView } = setup({
+      name: 'Heartbeat',
+      heartbeat: {
+        lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+        lastActivityAt: new Date('2026-11-15T09:00:00Z'),
+      },
+    });
+    await expect(target.decide(context)).resolves.toEqual({
+      kind: 'skip',
+      reason: 'idle',
+      pause: null,
+    });
+    expect(findHeartbeatView).toHaveBeenCalledWith(
+      'org-1',
+      'bot-1',
+      `automation-run:${context.automation.id}:`,
+      `automation-run:${context.automation.id}:${context.run.id}`,
+    );
+    expect(enqueueOnce).not.toHaveBeenCalled();
+  });
+
+  it('launches a heartbeat when something happened since its last beat', async () => {
+    const { target, context } = setup({
+      name: 'Heartbeat',
+      heartbeat: {
+        lastBeatAt: new Date('2026-11-15T10:00:00Z'),
+        lastActivityAt: new Date('2026-11-15T10:30:00Z'),
+      },
+    });
+    await expect(target.decide(context)).resolves.toMatchObject({ kind: 'launch' });
+  });
+
+  it('never asks whether any other routine is idle', async () => {
+    const { target, context, findHeartbeatView } = setup();
+    await expect(target.decide(context)).resolves.toMatchObject({ kind: 'launch' });
+    expect(findHeartbeatView).not.toHaveBeenCalled();
   });
 });

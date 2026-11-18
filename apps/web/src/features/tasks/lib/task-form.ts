@@ -30,6 +30,7 @@ export function newTaskValues(
     dueDate: null,
     dueTime: null,
     focusDate: null,
+    priority: null,
   };
 }
 
@@ -43,6 +44,7 @@ export function taskValues(task: TaskEntity): TaskFormValues {
     dueDate: task.dueDate,
     dueTime: task.dueTime,
     focusDate: task.focusDate,
+    priority: task.priority,
   };
 }
 

@@ -1,10 +1,9 @@
 /**
- * When a session a bot follows wakes it, and what the wake says
- * (`27-bot-subscriptions.md` §2, §4): the decision over the task as it
- * stands, the key that makes a wake delivered twice one turn, and the
- * session's words fenced as data; and the stall check a few minutes after a
- * hand-off (§4.1) and the regular looks at a task still running that follow
- * it (§4.2), one decision over the task as it stands.
+ * When a session a bot follows wakes it, and what the wake says: the decision
+ * over the task as it stands, the key that makes a wake delivered twice one
+ * turn, and the session's words fenced as data; and the stall check a few
+ * minutes after a hand-off and the regular looks at a task still running that
+ * follow it, one decision over the task as it stands.
  * The handlers that act on the decisions are
  * `wake-subscribed-bot.command-handler.spec.ts` and
  * `check-stalled-session.command-handler.spec.ts`; the table's constraints

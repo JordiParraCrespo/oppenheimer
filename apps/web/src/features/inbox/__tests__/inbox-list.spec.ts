@@ -6,10 +6,10 @@ import { inboxSearchSchema, offeredType, typesFor } from '../lib/inbox-search';
 import type { InboxVisit } from '../lib/inbox-visit';
 
 /**
- * What the Inbox's list shows and the pane takes its item from
- * (`29-inbox.md` §5): Later sends an item to the end for this visit, Show done lists only
- * what was marked done on this visit, and the facets count an item under
- * every project that holds it.
+ * What the Inbox's list shows and the pane takes its item from: Later sends
+ * an item to the end for this visit, Show done lists only what was marked
+ * done on this visit, and the facets count an item under every project that
+ * holds it.
  */
 
 const item = (key: string, kind: InboxItem['kind'], projectIds: string[] = []) =>
@@ -112,9 +112,9 @@ describe('the Bots facet', () => {
 });
 
 /**
- * Pull requests are opt-in (`29-inbox.md`): while they are hidden, Type does
- * not offer them, and a link narrowed to them would list nothing under a
- * Type the menu cannot show, so it reads as All.
+ * Pull requests are opt-in: while they are hidden, Type does not offer
+ * them, and a link narrowed to them would list nothing under a Type the
+ * menu cannot show, so it reads as All.
  */
 describe('the Type facet while pull requests are hidden', () => {
   it('offers Pull requests only while they are shown', () => {

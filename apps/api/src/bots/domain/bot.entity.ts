@@ -52,7 +52,7 @@ export interface BotProps {
   model: string | null;
   effort: SessionEffort | null;
   permission: BotPermission;
-  /** Whether what it decides to remember is saved without asking (slice 3). */
+  /** Whether what it decides to remember is saved without asking. */
   learnAutomatically: boolean;
   /** The console sections it shows in beside Employees, each once; none when absent. */
   sections?: readonly BotSection[];
@@ -113,10 +113,9 @@ export type BotEditedField =
   | 'sections';
 
 /**
- * A bot (`product/versions/mvp/25-bots.md` §1): who it is, where it sits in the
- * sidebar, where it runs and how it is started. Its documents and its memory
- * are aggregates of their own, so editing what it remembers never rewrites
- * who it is.
+ * A bot: who it is, where it sits in the sidebar, where it runs and how it is
+ * started. Its documents and its memory are aggregates of their own, so editing
+ * what it remembers never rewrites who it is.
  */
 export class BotEntity extends AggregateRoot<BotProps> {
   private pendingPlacement: Placement | null = null;

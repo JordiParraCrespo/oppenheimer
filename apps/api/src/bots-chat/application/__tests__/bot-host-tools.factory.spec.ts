@@ -426,6 +426,7 @@ describe('BotHostToolsFactory', () => {
       entries: [],
       nextCursor: null,
       atEnd: true,
+      hasEarlier: false,
       restarted: false,
       dropped: 0,
       redactions: 0,
@@ -531,6 +532,23 @@ describe('BotHostToolsFactory', () => {
       expect(result.content).toContain("its vendor's cloud");
       expect(result.content).toContain('https://claude.ai/code/session_01Abc');
       expect(result.content).not.toContain('nothing new');
+    });
+
+    // The regression: a bot could only read a session's latest turns and on,
+    // and was never told its conversation started before them.
+    it('tells a read of the latest turns that earlier ones exist, and reads from the start on from "start"', async () => {
+      const { queryBus, call } = setup(answer(page({ hasEarlier: true, nextCursor: 'n' })));
+
+      const latest = await call('read_session_transcript', { session_id: work.id });
+      expect(latest.content).toContain(
+        'with from "start" reads the conversation from its first turn',
+      );
+
+      await call('read_session_transcript', { session_id: work.id, from: 'start' });
+      const queries = queryBus.execute.mock.calls
+        .map(([each]) => each)
+        .filter((each) => each instanceof FindSessionTranscriptQuery);
+      expect(queries.at(-1)).toMatchObject({ from: 'start', cursor: undefined });
     });
 
     it('marks a partial page and counts what was redacted', async () => {
@@ -665,9 +683,9 @@ describe('BotHostToolsFactory', () => {
    * The regression: a broad turn (a recap) reads `read_session` and
    * `read_session_transcript` across dozens of large sessions, the pages pile
    * into the bot's own context faster than autocompaction sheds them, and the
-   * provider refuses the whole turn. The two share one per-turn budget,
-   * counted in the characters they return, so a turn that has read its fill is
-   * made to answer rather than overflow (`25-bots.md` §4.2).
+   * provider refuses the whole turn. The two share one per-turn budget, counted
+   * in the characters they return, so a turn that has read its fill is made to
+   * answer rather than overflow.
    */
   describe('the per-turn session-read budget', () => {
     const work = finished();

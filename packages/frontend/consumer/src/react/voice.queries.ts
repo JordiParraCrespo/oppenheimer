@@ -58,13 +58,12 @@ export interface VoiceDictation {
 }
 
 /**
- * Dictation for a screen (`product/next-steps/voice.md`): on while
- * `voice_dictation` is and some speech provider can hear this workspace
- * (`GET /voice/status`, narrowed to a boolean so a refetch re-renders only
- * when the answer flips), and one transcription per recording. `vocabulary`
- * is read when a recording is sent: the names the screen shows, for the
- * tidy to spell as written. Every field on the screen shares the answer;
- * each says for itself what happened to its own recording.
+ * Dictation for a screen: on while `voice_dictation` is and some speech
+ * provider can hear this workspace (`GET /voice/status`, narrowed to a boolean
+ * so a refetch re-renders only when the answer flips), and one transcription
+ * per recording. `vocabulary` is read when a recording is sent: the names the
+ * screen shows, for the tidy to spell as written. Every field on the screen
+ * shares the answer; each says for itself what happened to its own recording.
  */
 export function useVoiceDictation(vocabulary?: () => readonly string[]): VoiceDictation {
   const enabled = useFeatureFlag('voice_dictation');

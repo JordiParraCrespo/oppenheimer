@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { RoutineNextRun } from './routine-next-run';
 
 /**
- * One bot routine on the overview (`26-bot-routines.md` §7): its name over
- * the bot that runs it, its trigger in words, its next run and its status.
- * It opens the bot's Routines tab, where it is switched, run and deleted;
- * the chat is where it is changed, so there is no menu here.
+ * One bot routine on the overview: its name over the bot that runs it, its
+ * trigger in words, its next run and its status. It opens the bot's
+ * Routines tab, where it is switched, run and deleted; the chat is where it
+ * is changed, so there is no menu here.
  */
 export function BotRoutineTableRow({
   routine,

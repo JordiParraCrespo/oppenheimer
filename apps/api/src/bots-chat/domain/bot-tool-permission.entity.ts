@@ -34,7 +34,7 @@ export interface BotToolPermissionProps {
 }
 
 /**
- * The owner's setting for one of a bot's tools (`25-bots.md` §5), where it
+ * The owner's setting for one of a bot's tools, where it
  * differs from the catalog: the tool's decision (Allow, Ask, Off), or a
  * standing grant that lets every call of the tool on one thing run without
  * asking ("Always allow merges in acme/xrp-mobile").
