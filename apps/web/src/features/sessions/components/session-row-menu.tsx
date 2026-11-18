@@ -29,6 +29,8 @@ export function SessionRowMenu({
   onOpenChange,
   pinned,
   onPinChange,
+  unread,
+  onUnreadChange,
   hidden,
   onHiddenChange,
   onSelect,
@@ -43,6 +45,9 @@ export function SessionRowMenu({
   onOpenChange: (open: boolean) => void;
   pinned: boolean;
   onPinChange: (pinned: boolean) => void;
+  /** Whether the reader marked the session to come back to. */
+  unread: boolean;
+  onUnreadChange: (unread: boolean) => void;
   hidden: boolean;
   onHiddenChange: (hidden: boolean) => void;
   onSelect: () => void;
@@ -76,6 +81,9 @@ export function SessionRowMenu({
           <>
             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
               {pinned ? t('sessions.sidebar.unpin') : t('sessions.sidebar.pin')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onUnreadChange(!unread)}>
+              {unread ? t('sessions.sidebar.markRead') : t('sessions.sidebar.markUnread')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
