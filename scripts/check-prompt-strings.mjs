@@ -21,6 +21,7 @@
  * nothing fails too, so the ledger cannot outlive what it excuses.
  *
  * Run: pnpm check:prompt-strings
+ *      pnpm check:prompt-strings --excused   what it passes over, and where each sits
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -194,7 +195,9 @@ function wordsOf(node) {
   return node.text;
 }
 
-const SQL = /^\s*(SELECT|UPDATE|INSERT|DELETE|WITH|CREATE|ALTER|DROP)\b|\bFROM\s+"|\bWHERE\s+"/;
+// A statement, not a sentence that opens with a word SQL also has ("UPDATE: the session ended…").
+const SQL =
+  /^\s*(SELECT\s|UPDATE\s+\S+\s+SET\b|INSERT\s+INTO\b|DELETE\s+FROM\b|WITH\s+\S+\s+AS\b|(CREATE|ALTER|DROP)\s+[A-Z]+\b)|\bFROM\s+"|\bWHERE\s+"/;
 
 function isSentence(node) {
   const text = wordsOf(node).trim();
@@ -205,88 +208,143 @@ function isSentence(node) {
 
 const NOT_WORDS_CALLS = /(logger\.|console\.|\.query$|^promptText$)/;
 const NOT_WORDS_NEW = /(Exception$|^Error$|^AppError$|^RegExp$|^Logger$|DomainEvent$)/;
+const COMPARISONS = new Set([
+  ts.SyntaxKind.EqualsEqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsEqualsToken,
+  ts.SyntaxKind.EqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsToken,
+]);
 
 const isFunction = (node) =>
   ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isFunctionDeclaration(node);
 
-/**
- * Whether the literal sits where a model's words are not written. A call or a
- * constructor excuses only what is handed to it directly: a sentence inside a
- * callback passed to it is counted like any other.
- */
-function cannotBeWords(node, source) {
-  let direct = true;
-  for (let parent = node.parent, child = node; parent; child = parent, parent = parent.parent) {
-    if (ts.isDecorator(parent) || ts.isTypeNode(parent) || ts.isTaggedTemplateExpression(parent)) {
-      return true;
-    }
-    if (ts.isImportDeclaration(parent) || ts.isExportDeclaration(parent)) return true;
-    if (ts.isCaseClause(parent) && parent.expression === child) return true;
-    if (ts.isPropertyAssignment(parent) && parent.name === child) return true;
-    if (ts.isElementAccessExpression(parent) && parent.argumentExpression === child) return true;
+/** Whether the node is inside what is handed to the outbox. */
+function isStaged(node, source) {
+  for (let outer = node.parent; outer; outer = outer.parent) {
     if (
-      ts.isBinaryExpression(parent) &&
-      [
-        ts.SyntaxKind.EqualsEqualsEqualsToken,
-        ts.SyntaxKind.ExclamationEqualsEqualsToken,
-        ts.SyntaxKind.EqualsEqualsToken,
-        ts.SyntaxKind.ExclamationEqualsToken,
-      ].includes(parent.operatorToken.kind)
+      ts.isCallExpression(outer) &&
+      /(stageJob|stageEvents)$/.test(outer.expression.getText(source))
     ) {
       return true;
     }
-    if (ts.isNewExpression(parent)) {
-      const made = parent.expression.getText(source);
-      // A tool's refusal is read by the model, wherever it is thrown.
-      if (/BotToolRefusal$/.test(made)) return false;
-      if (direct && NOT_WORDS_NEW.test(made)) return true;
-    }
-    if (direct && ts.isCallExpression(parent) && parent.expression !== child) {
-      const callee = parent.expression.getText(source).replace(/\s+/g, '');
-      if (NOT_WORDS_CALLS.test(callee)) return true;
-    }
-    // What a tool's `summarize` returns is the line on the person's approval card.
-    if (ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'summarize') return true;
-    // An outbox row's reason is for whoever reads the table.
-    if (ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'reason') {
-      for (let outer = parent.parent; outer; outer = outer.parent) {
-        if (
-          ts.isCallExpression(outer) &&
-          /(stageJob|stageEvents)$/.test(outer.expression.getText(source))
-        ) {
-          return true;
-        }
-      }
-    }
-    if (isFunction(parent)) direct = false;
   }
   return false;
 }
 
-/** Every sentence a file writes as a literal: its line and how it starts. */
-export function sentencesIn(text, name = 'file.ts') {
+/**
+ * The places a model's words are not written, each with its name: a new
+ * place is a row. `is` is asked of every node around a literal, the nearest
+ * first, with the node below it on the way to the literal. A `direct` place
+ * holds only what is handed to it: a sentence inside a callback passed to a
+ * logger is counted like any other.
+ */
+const NOT_WORDS = [
+  { name: 'a decorator', is: (parent) => ts.isDecorator(parent) },
+  { name: 'a type', is: (parent) => ts.isTypeNode(parent) },
+  { name: 'a tagged template', is: (parent) => ts.isTaggedTemplateExpression(parent) },
+  {
+    name: 'an import or an export',
+    is: (parent) => ts.isImportDeclaration(parent) || ts.isExportDeclaration(parent),
+  },
+  {
+    name: 'a case',
+    is: (parent, child) => ts.isCaseClause(parent) && parent.expression === child,
+  },
+  {
+    name: 'a key',
+    is: (parent, child) =>
+      (ts.isPropertyAssignment(parent) && parent.name === child) ||
+      (ts.isElementAccessExpression(parent) && parent.argumentExpression === child),
+  },
+  {
+    name: 'a comparison',
+    is: (parent) => ts.isBinaryExpression(parent) && COMPARISONS.has(parent.operatorToken.kind),
+  },
+  {
+    name: "an exception's message, a pattern or a domain event",
+    direct: true,
+    is: (parent, _child, source) =>
+      ts.isNewExpression(parent) && NOT_WORDS_NEW.test(parent.expression.getText(source)),
+  },
+  {
+    name: "a log line, a query or a prompt's id",
+    direct: true,
+    is: (parent, child, source) =>
+      ts.isCallExpression(parent) &&
+      parent.expression !== child &&
+      NOT_WORDS_CALLS.test(parent.expression.getText(source).replace(/\s+/g, '')),
+  },
+  {
+    name: "the line on the person's approval card",
+    is: (parent, _child, source) =>
+      ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'summarize',
+  },
+  {
+    name: "an outbox row's reason",
+    is: (parent, _child, source) =>
+      ts.isPropertyAssignment(parent) &&
+      parent.name.getText(source) === 'reason' &&
+      isStaged(parent, source),
+  },
+];
+
+/** A tool's refusal is read by the model, wherever it is thrown. */
+const isRefusal = (node, source) =>
+  ts.isNewExpression(node) && /BotToolRefusal$/.test(node.expression.getText(source));
+
+/**
+ * The place the literal sits in, when it is one where a model's words are
+ * not written (`NOT_WORDS`); null when a model may read it.
+ */
+function placeOf(node, source) {
+  let direct = true;
+  for (let parent = node.parent, child = node; parent; child = parent, parent = parent.parent) {
+    if (isRefusal(parent, source)) return null;
+    const place = NOT_WORDS.find(
+      (candidate) => (direct || !candidate.direct) && candidate.is(parent, child, source),
+    );
+    if (place) return place.name;
+    if (isFunction(parent)) direct = false;
+  }
+  return null;
+}
+
+/** Every sentence-like literal of a file, with the place that excuses it or null. */
+function literalsIn(text, name) {
   const source = ts.createSourceFile(name, text, ts.ScriptTarget.Latest, true);
   const found = [];
-  const add = (node) => {
+  const add = (node, place) => {
     const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
-    found.push({ line: line + 1, text: wordsOf(node).trim() });
+    found.push({ line: line + 1, text: wordsOf(node).trim(), place });
   };
   (function visit(node) {
     const joined = joinedList(node);
-    if (joined && isSentence(node) && !cannotBeWords(node, source)) {
+    if (joined && isSentence(node) && placeOf(node, source) === null) {
       // The lines are one text: only what fills them is looked at further.
       for (const element of joined.elements) {
         if (ts.isTemplateExpression(element)) {
           for (const span of element.templateSpans) visit(span.expression);
         }
       }
-      add(node);
+      add(node, null);
       return;
     }
     ts.forEachChild(node, visit);
-    if (isLiteral(node) && isSentence(node) && !cannotBeWords(node, source)) add(node);
+    if (isLiteral(node) && isSentence(node)) add(node, placeOf(node, source));
   })(source);
   return found.sort((a, b) => a.line - b.line);
+}
+
+/** The sentences of a file a model may read, each with its line. */
+export function sentencesIn(text, name = 'file.ts') {
+  return literalsIn(text, name)
+    .filter((literal) => literal.place === null)
+    .map(({ line, text: words }) => ({ line, text: words }));
+}
+
+/** The sentences of a file the check passes over, each with its line and the place that excuses it. */
+export function excusedIn(text, name = 'file.ts') {
+  return literalsIn(text, name).filter((literal) => literal.place !== null);
 }
 
 function filesOf(dir, out = []) {
@@ -339,6 +397,16 @@ function main() {
       text: readFileSync(path, 'utf8'),
     })),
   );
+  if (process.argv.includes('--excused')) {
+    for (const { file, text } of files) {
+      for (const { line, place, text: words } of excusedIn(text, file)) {
+        console.log(
+          `apps/api/src/${file}:${line}: ${place}: "${words.replace(/\s+/g, ' ').slice(0, 70)}…"`,
+        );
+      }
+    }
+    return;
+  }
   const { outstanding, stale } = check(files);
   if (!outstanding.length && !stale.length) {
     console.log(

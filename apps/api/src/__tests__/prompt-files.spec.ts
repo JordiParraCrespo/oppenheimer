@@ -62,6 +62,8 @@ describe('prompt files', () => {
   // A prompt nothing reads is words someone will edit believing a model
   // hears them. An id is always written out where it is read (the types ask
   // for the literal), so a prompt no source file names is one nothing sends.
+  // An id built at run time (a template cast to a prompt's id) would read as
+  // unread here: write the ids out, in a table when a value chooses one.
   it.each(promptDirs)('%s: every prompt is read somewhere in its module', (dir) => {
     const source = moduleSources(join(dir, '..', '..')).join('\n');
     const unread = readPrompts(dir)
