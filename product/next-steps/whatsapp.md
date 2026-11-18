@@ -196,7 +196,8 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   fetched from the host on demand rather than sent with every message, so
   a note no bot needs never leaves the phone's media servers, and it is
   decoded in the API (WebAssembly, no `ffmpeg`) because every speech
-  provider behind voice takes WAV. Transcribed when the owner's note wakes
-  their bot, not at intake, which never waits on a host; a note read in
-  another chat is not transcribed by the read. Kept as text on the row so
-  it is heard once.
+  provider behind voice takes WAV. The wake queues the note's turn at once,
+  in order with the owner's other messages, and the turn hears the note when
+  it starts: never at intake or in the outbox listener, which must not wait
+  minutes on a host and a speech provider. A note read in another chat is
+  not transcribed by the read. Kept as text on the row so it is heard once.

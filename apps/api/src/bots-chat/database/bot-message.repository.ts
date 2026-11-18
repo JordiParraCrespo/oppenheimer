@@ -66,6 +66,18 @@ export class BotMessageRepository
     return stored.length === 1;
   }
 
+  async saveContent(message: BotMessageEntity): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .update(BotMessageOrmEntity)
+      .set({ content: message.content })
+      .where('id = :id AND "organizationId" = :organizationId', {
+        id: message.id,
+        organizationId: message.organizationId,
+      })
+      .execute();
+  }
+
   async saveSteps(message: BotMessageEntity): Promise<void> {
     // The mapper's steps, so they are what an insert writes: cleaned for Postgres.
     const { steps } = this.mapper.toPersistence(message);

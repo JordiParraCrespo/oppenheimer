@@ -16,6 +16,7 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { botTurnPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
+import { BotWhatsappVoiceNoteResolver } from './bot-whatsapp-voice-note.resolver';
 
 /** What a turn is asked: the words, and the images that came with them. */
 export interface BotTurnOpening {
@@ -35,7 +36,8 @@ export interface BotTurnOpening {
  * words, and the images your message carried, read from storage in the order
  * you attached them. Only this turn's images are sent; earlier ones stay in the
  * chat, and the history says they were there. An image that cannot be read
- * fails the turn rather than answering without it.
+ * fails the turn rather than answering without it. A WhatsApp voice note is
+ * heard first, so its words are what the turn is asked.
  */
 @Injectable()
 export class BotTurnOpeningResolver {
@@ -44,10 +46,12 @@ export class BotTurnOpeningResolver {
     @Inject(BOT_ATTACHMENT_REPOSITORY) private readonly attachments: BotAttachmentRepositoryPort,
     @Inject(BOT_ATTACHMENT_FILES) private readonly files: BotAttachmentFilesPort,
     private readonly mapper: BotAttachmentMapper,
+    private readonly voiceNotes: BotWhatsappVoiceNoteResolver,
   ) {}
 
   async resolve(turn: BotTurnEntity): Promise<BotTurnOpening> {
     const opening = await this.messages.findOpening(turn.organizationId, turn.id);
+    await this.voiceNotes.hear(turn, opening);
     const command = opening?.role === 'user' ? parseBotSlashCommand(opening.content) : null;
     if (!opening?.attachments.length) {
       return { prompt: botTurnPrompt(opening), images: [], command, message: opening };

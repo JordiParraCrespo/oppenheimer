@@ -320,6 +320,7 @@ describe('whatsapp (integration)', () => {
           startsHere: place.startsAt === stored.seq,
           command: 'message',
           text: stored.text,
+          voiceNote: false,
         }),
     });
 

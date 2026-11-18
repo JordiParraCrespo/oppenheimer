@@ -150,7 +150,7 @@ describe('TranscribeWhatsappVoiceNoteCommandHandler', () => {
       '34600999888@s.whatsapp.net',
       '3EB0V',
     );
-    const sent = commandBus.execute.mock.calls[0]?.[0] as TranscribeVoiceCommand;
+    const [sent] = (commandBus.execute.mock.calls[0] ?? []) as unknown as [TranscribeVoiceCommand];
     expect(sent).toBeInstanceOf(TranscribeVoiceCommand);
     expect(sent.organizationId).toBe(ORG);
     expect(isPcmWav(sent.audio ?? Buffer.alloc(0))).toBe(true);

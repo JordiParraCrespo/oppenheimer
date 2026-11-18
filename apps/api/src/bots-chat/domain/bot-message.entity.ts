@@ -101,6 +101,15 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   get turnId(): string | null {
     return this.props.turnId;
   }
+
+  /**
+   * A voice note's words, once its turn heard them: what the message says
+   * from then on, in the chat and in every later turn's history.
+   */
+  heard(words: string): void {
+    this.props.content = words;
+    this.validate();
+  }
   get role(): BotMessageRole {
     return this.props.role;
   }

@@ -1773,5 +1773,5 @@ earlier note:
   that hear voice notes: the runner keeps each voice note's media key and
   path for 48 hours and hands the audio over when asked
   (`whatsapp.media.get`), and the API hears it through voice's providers
-  when the owner's voice note wakes their bot, keeping the transcript on the
-  row, never the audio. Images and the bot's own voice replies come next.
+  when the turn the owner's voice note queued starts, keeping the transcript
+  on the row, never the audio. Images and the bot's own voice replies come next.

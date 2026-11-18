@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { CommandBus } from '@nestjs/cqrs';
 import { BotAttachmentMapper } from '../../bot-attachment.mapper';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
@@ -8,6 +9,7 @@ import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
+import { BotWhatsappVoiceNoteResolver } from '../bot-whatsapp-voice-note.resolver';
 
 /**
  * What a turn is asked: the opening message's words, and the images your
@@ -71,6 +73,15 @@ function setup(message: BotMessageEntity, stored: BotAttachmentEntity[], unreada
     attachments as unknown as BotAttachmentRepositoryPort,
     files,
     new BotAttachmentMapper(),
+    // None of these turns is a WhatsApp voice note: it hears nothing.
+    new BotWhatsappVoiceNoteResolver(
+      messages as unknown as BotMessageRepositoryPort,
+      {
+        execute: async () => {
+          throw new Error('a turn that is not a voice note hears nothing');
+        },
+      } as unknown as CommandBus,
+    ),
   );
   return { resolver, attachments, files };
 }

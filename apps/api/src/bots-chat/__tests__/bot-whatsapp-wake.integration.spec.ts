@@ -13,7 +13,6 @@ import { BotDocumentRevisionOrmEntity } from '../../bots/database/bot-document-r
 import { BotEntity } from '../../bots/domain/bot.entity';
 import { userActor } from '../../bots/domain/bot.types';
 import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
-import { TranscribeWhatsappVoiceNoteCommand } from '../../whatsapp/commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BotWhatsappWakeDomainEventHandler } from '../application/event-handlers/bot-whatsapp-wake.domain-event-handler';
@@ -32,7 +31,7 @@ import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
-import { whatsappSourceKey } from '../domain/bot-whatsapp-turn.policy';
+import { WHATSAPP_VOICE_NOTE_OPENING, whatsappSourceKey } from '../domain/bot-whatsapp-turn.policy';
 
 /**
  * The confirmed owner's messages to their linked number, as the outbox
@@ -41,9 +40,10 @@ import { whatsappSourceKey } from '../domain/bot-whatsapp-turn.policy';
  * delivered; a switch by name opening the named bot's conversation at the
  * switch, and a switch back opening the first bot's afresh; `/new` and
  * `/stop` acting on that chat's conversation alone; a voice note's turn
- * opening with what it says; and nothing for a bot the number's owner did not
- * make. The schema is the migrations'. Hearing the note is
- * `transcribe-whatsapp-voice-note.command-handler.spec.ts`.
+ * queued at once with the marker its run replaces with the note's words; and
+ * nothing for a bot the number's owner did not make. The schema is the
+ * migrations'. Hearing the note when the turn runs is
+ * `bot-whatsapp-voice-note.resolver.spec.ts`.
  */
 describe('waking a bot on WhatsApp (integration)', () => {
   let dataSource: DataSource;
@@ -89,22 +89,17 @@ describe('waking a bot on WhatsApp (integration)', () => {
       new BotGoalMapper(),
       new BotLoopMapper(),
     );
-    // The real bot lookup; a wake never reads a credential. A voice note is
-    // heard by the whatsapp module, stubbed here with the line it answers.
-    const commands = {
-      execute: (command: WakeOnWhatsappCommand | TranscribeWhatsappVoiceNoteCommand) =>
-        command instanceof TranscribeWhatsappVoiceNoteCommand
-          ? Promise.resolve('[voice note, 0:04] Book a table for two')
-          : wakeOn.execute(command),
-    } as unknown as CommandBus;
+    // The real bot lookup; a wake never reads a credential.
     const wakeOn = new WakeOnWhatsappCommandHandler(
       new BotChannelWakeResolver(
         new BotConversationRepository(dataSource, new BotConversationMapper()),
         turns,
         new BotModelAccessResolver(bots, {} as TurnCredentialsPort),
       ),
-      commands,
     );
+    const commands = {
+      execute: (command: WakeOnWhatsappCommand) => wakeOn.execute(command),
+    } as unknown as CommandBus;
     events = new BotWhatsappWakeDomainEventHandler(commands);
   }, 180000);
 
@@ -255,8 +250,9 @@ describe('waking a bot on WhatsApp (integration)', () => {
     expect(inConsole).toEqual([{ count: 0 }]);
   });
 
-  // What breaks this: the bot woken on the owner's voice note with "[audio]", or with nothing.
-  it('opens a voice note’s turn with what the note says', async () => {
+  // What breaks this: the bot woken on the owner's voice note with "[audio]", or the
+  // outbox held while the note is heard (which lets a later text overtake it).
+  it('queues a voice note’s turn at once, opened by the marker its run replaces', async () => {
     await wrote('11', { text: '', voiceNote: true });
 
     const [turn] = await whatsappTurns();
@@ -264,9 +260,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
       `SELECT content FROM bot_message WHERE "conversationId" = $1`,
       [turn?.conversationId],
     );
-    expect(opening.map((message) => message.content)).toEqual([
-      '[voice note, 0:04] Book a table for two',
-    ]);
+    expect(opening.map((message) => message.content)).toEqual([WHATSAPP_VOICE_NOTE_OPENING]);
   });
 
   // What breaks this: "Shop: …" answered by Shop inside Juno's history (or
