@@ -38,10 +38,10 @@ export function describeWhatsappAccount(
 ): string {
   const number = phoneOf(account.phone) ?? 'not paired yet';
   const state = !hostOnline
-    ? promptText('tools/whatsapp.describe-whatsapp-account-host-offline-so')
+    ? promptText('tools/whatsapp.account-host-offline')
     : account.isConnected
       ? 'connected'
-      : promptText('tools/whatsapp.describe-whatsapp-account-person-pairs-again', {
+      : promptText('tools/whatsapp.account-needs-pairing', {
           replace: account.status.replace('_', ' '),
         });
   return `"${account.label}" ${number} (account id ${account.id}, ${state})`;

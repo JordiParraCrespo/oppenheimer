@@ -142,41 +142,40 @@ export class BotSelfToolsFactory implements BotToolArea {
 
   private editDocument(name: BotDocumentName): BotToolDefinition {
     const file = DOCUMENT_FILES[name];
-    const what = name === 'soul' ? 'your persona and tone' : promptText('tools/self.edit-document');
+    const what =
+      name === 'soul' ? 'your persona and tone' : promptText('tools/self.what-instructions-are');
     return defineBotTool({
       name: name === 'soul' ? 'edit_soul' : 'edit_instructions',
       scope: 'bots:write',
       setupStep:
-        name === 'instructions' ? promptText('tools/self.edit-document-setup-step') : undefined,
-      description: promptText('tools/self.name-soul-edit-soul-edit-instructions-3', {
+        name === 'instructions'
+          ? promptText('tools/self.write-instructions-setup-step')
+          : undefined,
+      description: promptText('tools/self.edit-document', {
         file,
         what,
         documentMax: String(BOT_DOCUMENT_MAX),
         name:
           name === 'soul'
-            ? promptText('tools/self.name-soul-edit-soul-edit-instructions')
-            : promptText('tools/self.name-soul-edit-soul-edit-instructions-2'),
+            ? promptText('tools/self.rules-go-in-instructions')
+            : promptText('tools/self.persona-goes-in-soul'),
       }),
       input: z.strictObject({
         content: z
           .string()
           .max(BOT_DOCUMENT_MAX)
-          .describe(
-            promptText('tools/self.name-soul-edit-soul-edit-instructions-content', { file }),
-          ),
+          .describe(promptText('tools/self.edit-document-content', { file })),
         base_revision: z
           .number()
           .int()
           .min(1)
-          .describe(
-            promptText('tools/self.name-soul-edit-soul-edit-instructions-base-revision', { file }),
-          ),
+          .describe(promptText('tools/self.edit-document-base-revision', { file })),
         note: z
           .string()
           .trim()
           .max(NOTE_MAX)
           .optional()
-          .describe(promptText('tools/self.name-soul-edit-soul-edit-instructions-note')),
+          .describe(promptText('tools/self.edit-document-note')),
       }),
       run: async (input, context) => {
         await this.commandBus.execute(
@@ -195,12 +194,12 @@ export class BotSelfToolsFactory implements BotToolArea {
           new FindBotDocumentQuery({ scope: context.owner, botId: context.botId, name }),
         );
         if (saved.revision === input.base_revision) {
-          return promptText('tools/self.name-soul-edit-soul-edit-instructions-unchanged-text-wha', {
+          return promptText('tools/self.edit-document-unchanged', {
             file,
             revision: String(saved.revision),
           });
         }
-        return promptText('tools/self.name-soul-edit-soul-edit-instructions-saved-revision-cha', {
+        return promptText('tools/self.edit-document-saved', {
           file,
           revision: String(saved.revision),
           contentCount: String(saved.content.length),
@@ -226,9 +225,7 @@ export class BotSelfToolsFactory implements BotToolArea {
             .trim()
             .max(BOT_DESCRIPTION_MAX)
             .optional()
-            .describe(
-              promptText('tools/self.z-string-trim-min-1-max-bot-name-max-optional-describe-y'),
-            ),
+            .describe(promptText('tools/self.update-profile-description')),
           sections: z
             .array(z.enum(BOT_SECTIONS))
             .max(BOT_SECTIONS.length)
@@ -477,7 +474,7 @@ function describeDocument(document: BotDocumentEntity, max: number | null): stri
   const content = document.content;
   const cut = max !== null && content.length > max;
   return [
-    promptText('tools/self.describe-document-revision-characters-last', {
+    promptText('tools/self.document-header', {
       file,
       revision: String(document.revision),
       contentCount: String(content.length),

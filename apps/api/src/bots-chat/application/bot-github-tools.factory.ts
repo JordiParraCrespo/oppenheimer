@@ -90,7 +90,7 @@ export class BotGithubToolsFactory implements BotToolArea {
           ? installations.filter((installation) => installation.id === input.installation_id)
           : installations;
         if (chosen.length === 0) {
-          return promptText('tools/github.list-repositories-connected-installation-has', {
+          return promptText('tools/github.repositories-no-such-installation', {
             installationId: String(input.installation_id),
           });
         }
@@ -101,7 +101,7 @@ export class BotGithubToolsFactory implements BotToolArea {
         const notes = chosen
           .filter((installation) => !installation.isUsable)
           .map((installation) =>
-            promptText('tools/github.list-repositories-installation-suspended-uninstalled', {
+            promptText('tools/github.repositories-installation-suspended', {
               id: installation.id,
               accountLogin: installation.accountLogin,
             }),
@@ -124,7 +124,7 @@ export class BotGithubToolsFactory implements BotToolArea {
             }
           } catch (error) {
             notes.push(
-              promptText('tools/github.list-repositories-installation-could-listed', {
+              promptText('tools/github.repositories-installation-unlisted', {
                 id: installation.id,
                 accountLogin: installation.accountLogin,
                 describeToolFailure: describeToolFailure(error),
@@ -137,7 +137,7 @@ export class BotGithubToolsFactory implements BotToolArea {
           'Repositories',
           shown,
           needle
-            ? promptText('tools/github.list-repositories-repositorys-name-contains', {
+            ? promptText('tools/github.repositories-none-match', {
                 nameContains: String(input.name_contains),
               })
             : 'No repositories.',
@@ -191,7 +191,7 @@ export class BotGithubToolsFactory implements BotToolArea {
             untrustedNote: UNTRUSTED_NOTE,
           }),
           shown.map(describePullRequestRow),
-          promptText('tools/github.list-pull-requests-open-pull-requests-2', {
+          promptText('tools/github.pull-requests-none-in-queue', {
             queue: input.queue,
             githubRepoId: input.github_repo_id ? ' for that repository' : '',
           }),

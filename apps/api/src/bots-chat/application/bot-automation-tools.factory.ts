@@ -78,8 +78,8 @@ export class BotAutomationToolsFactory implements BotToolArea {
             describeAutomation(automation, listing.digests.get(automation.id), context),
           ),
           input.project_id
-            ? promptText('tools/automation.list-automations-project-has-automations')
-            : promptText('tools/automation.list-automations-workspace-has-automations'),
+            ? promptText('tools/automation.list-none-in-project')
+            : promptText('tools/automation.list-none-in-workspace'),
           {
             shown: shown.length,
             total: listing.automations.length,

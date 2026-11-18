@@ -24,7 +24,7 @@ Sent to {{botName}} ({{botId}}). It will read it after the person's own messages
 
 Creates a new bot for the person, marked as created by you: its name, what it is for, its soul (persona and tone) and instructions (its job and rules), and what runs it. The provider and model default to yours; only a provider the workspace has a key for is accepted. Its permission defaults to Approve for me and is never looser than yours. It can go in an existing group (by name or id from the sidebar); you cannot create groups. Use list_bots first so you do not make a second bot for the same job.
 
-<!-- fragment: z-string-trim-min-1-max-bot-name-max-describe-the-new-bo -->
+<!-- fragment: bot-description -->
 
 What it is for, in a sentence.
 
@@ -130,7 +130,7 @@ Name at least one thing to change: name, description, avatar_color, provider, mo
 
 A name goes to one bot at a time: call update_bot once per bot to rename.
 
-<!-- fragment: plan-bot-update-refusal-run-under-cannot -->
+<!-- fragment: update-looser-than-yours -->
 
 You run under {{ceiling}}, and you cannot give a bot looser permissions than yours. Ask the person to raise it in that bot's settings.
 

@@ -245,7 +245,7 @@ export class BotToolboxFactory {
     }
     if (granted !== null && !expandScopes(granted).has(definition.scope)) {
       return {
-        content: promptText('tools/toolbox.run-approved-content-run-credential-does', {
+        content: promptText('tools/toolbox.approved-not-covered-by-credential', {
           scope: definition.scope,
         }),
         isError: true,

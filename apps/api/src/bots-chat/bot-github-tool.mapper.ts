@@ -172,7 +172,7 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
     ? pull.reviewers.map((reviewer) => `${reviewer.login} ${reviewer.state}`).join(', ')
     : 'none';
   const lines = [
-    promptText('tools/github.describe-pull-request-pull-request-installation', {
+    promptText('tools/github.pull-request-header', {
       number: String(pull.number),
       repository: pull.repository,
       installationId: pull.installationId,
@@ -183,7 +183,7 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
     `- author: ${pull.author}${pull.authorKind === 'session' ? ' (a session)' : ''}`,
     `- branches: ${pull.headRef} into ${pull.baseRef}${pull.fromFork ? ' (from a fork)' : ''}; head ${pull.headSha}`,
     `- size: ${pull.changedFiles} files, +${pull.additions} -${pull.deletions}; lane ${pull.lane}`,
-    promptText('tools/github.describe-pull-request-checks-passed-failed', {
+    promptText('tools/github.pull-request-checks', {
       state: checks.state,
       passed: String(checks.passed),
       failed: String(checks.failed),
@@ -272,7 +272,7 @@ export function describeConversation(
   const notes: string[] = [];
   if (activity.status === 'rejected') {
     notes.push(
-      promptText('tools/github.describe-conversation-conversation-could-read', {
+      promptText('tools/github.conversation-unread', {
         describeToolFailure: describeToolFailure(activity.reason),
       }),
     );
@@ -280,7 +280,7 @@ export function describeConversation(
     const latest = activity.value.slice(-ACTIVITY_SHOWN);
     if (activity.value.length > latest.length) {
       notes.push(
-        promptText('tools/github.describe-conversation-latest-conversation-entries', {
+        promptText('tools/github.conversation-latest-shown', {
           latestCount: String(latest.length),
           valueCount: String(activity.value.length),
         }),
@@ -290,7 +290,7 @@ export function describeConversation(
   }
   if (comments.status === 'rejected') {
     notes.push(
-      promptText('tools/github.describe-conversation-line-comments-could', {
+      promptText('tools/github.line-comments-unread', {
         describeToolFailure: describeToolFailure(comments.reason),
       }),
     );
@@ -298,7 +298,7 @@ export function describeConversation(
     const latest = comments.value.slice(-LINE_COMMENTS_SHOWN);
     if (comments.value.length > latest.length) {
       notes.push(
-        promptText('tools/github.describe-conversation-latest-line-comments', {
+        promptText('tools/github.line-comments-latest-shown', {
           latestCount: String(latest.length),
           valueCount: String(comments.value.length),
         }),
@@ -312,13 +312,13 @@ export function describeConversation(
   }
   const block = entries.length
     ? [
-        promptText('tools/github.describe-conversation-conversation-line-comments', {
+        promptText('tools/github.conversation-and-line-comments', {
           untrustedNote: UNTRUSTED_NOTE,
           untrusted: untrusted(entries.join('\n')),
         }),
       ]
     : activity.status === 'fulfilled' && comments.status === 'fulfilled'
-      ? [promptText('tools/github.describe-conversation-conversation-comments-reviews')]
+      ? [promptText('tools/github.conversation-empty')]
       : [];
   return [...block, ...notes];
 }
@@ -406,7 +406,7 @@ export function describeIssueComments(
 ): string[] {
   if (comments.status === 'rejected') {
     return [
-      promptText('tools/github.describe-issue-comments-comments-could-read', {
+      promptText('tools/github.issue-comments-unread', {
         describeToolFailure: describeToolFailure(comments.reason),
       }),
     ];
@@ -420,7 +420,7 @@ export function describeIssueComments(
   const more =
     comments.value.length > latest.length
       ? [
-          promptText('tools/github.describe-issue-comments-latest-comments-shown', {
+          promptText('tools/github.issue-comments-latest-shown', {
             latestCount: String(latest.length),
             valueCount: String(comments.value.length),
           }),

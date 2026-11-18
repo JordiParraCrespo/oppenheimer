@@ -161,9 +161,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           .trim()
           .max(BOT_DESCRIPTION_MAX)
           .optional()
-          .describe(
-            promptText('tools/bots.z-string-trim-min-1-max-bot-name-max-describe-the-new-bo'),
-          ),
+          .describe(promptText('tools/bots.bot-description')),
         soul: z
           .string()
           .max(BOT_DOCUMENT_MAX)
@@ -275,9 +273,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           .trim()
           .max(BOT_DESCRIPTION_MAX)
           .optional()
-          .describe(
-            promptText('tools/bots.z-string-trim-min-1-max-bot-name-max-describe-the-new-bo'),
-          ),
+          .describe(promptText('tools/bots.bot-description')),
         avatar_color: z
           .enum(BOT_AVATAR_COLORS)
           .optional()

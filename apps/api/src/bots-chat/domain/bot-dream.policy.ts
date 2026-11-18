@@ -119,7 +119,7 @@ export const BOT_DREAM_READ_MAX = 400;
  * check them against. Run with the bot's own provider, model and key, and
  * no tools.
  */
-export const BOT_DREAMER_PROMPT = promptText('jobs/dream.dreamer-prompt', {
+export const BOT_DREAMER_PROMPT = promptText('jobs/dream.system', {
   memoryFactMax: String(BOT_MEMORY_FACT_MAX),
   memoryChoiceRule: MEMORY_CHOICE_RULE,
   dreamNewMax: String(BOT_DREAM_NEW_MAX),
@@ -329,12 +329,12 @@ function dreamText(dream: {
   note: string | null;
 }): string {
   if (dream.activity === 'undone') {
-    return promptText('wake/dream.dream-text-person-undid-tidy', {
+    return promptText('wake/dream.undone', {
       factsBefore: String(dream.factsBefore),
     });
   }
   const note = dream.note ? ` ${dream.note}` : '';
-  return promptText('wake/dream.dream-text-oppenheimer-tidied-memory', {
+  return promptText('wake/dream.tidied', {
     factsBefore: String(dream.factsBefore),
     factsAfter: String(dream.factsAfter),
     note,

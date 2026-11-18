@@ -145,7 +145,7 @@ export function planCloudSession(
       return {
         refusal: invalidBodyRefusal(
           parsed.error.issues,
-          promptText('tools/sessions.plan-cloud-session-refusal-check-task-name'),
+          promptText('tools/sessions.cloud-check-task-name-model'),
         ),
       };
     }
@@ -155,7 +155,7 @@ export function planCloudSession(
   const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
-      refusal: promptText('tools/sessions.plan-cloud-session-refusal-host-given-neither', {
+      refusal: promptText('tools/sessions.cloud-no-host', {
         label: CLOUD_RULES[agent].label,
         cli: cliOf(agent),
       }),
@@ -173,7 +173,7 @@ export function planCloudSession(
     return {
       refusal: invalidBodyRefusal(
         parsed.error.issues,
-        promptText('tools/sessions.plan-cloud-session-refusal-check-task-name-2'),
+        promptText('tools/sessions.cloud-check-task-name-environment'),
       ),
     };
   }
@@ -260,7 +260,7 @@ export function cloudStartAnswer(
       rule.start === 'host'
         ? promptText('tools/sessions.cloud-start-answer-follow-ups-answers', { site: rule.site })
         : promptText('tools/sessions.cloud-start-answer-send-session-gives');
-    return promptText('tools/sessions.cloud-start-answer-started-cloud-session', {
+    return promptText('tools/sessions.cloud-started', {
       label: rule.label,
       sessionId,
       from,
@@ -282,7 +282,7 @@ export function cloudStartAnswer(
       hint,
     });
   }
-  return promptText('tools/sessions.cloud-start-answer-session-starting-cloud', {
+  return promptText('tools/sessions.cloud-starting', {
     sessionId,
     label: rule.label,
     from,

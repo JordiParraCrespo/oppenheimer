@@ -45,14 +45,12 @@ const askUserInput = z.object({
                 .string()
                 .max(BOT_QUESTION_OPTION_DESCRIPTION_MAX)
                 .optional()
-                .describe(
-                  promptText('tools/questions.ask-user-questions-options-what-picking-means'),
-                ),
+                .describe(promptText('tools/questions.option-description')),
             }),
           )
           .min(BOT_QUESTION_OPTIONS_MIN)
           .max(BOT_QUESTION_OPTIONS_MAX)
-          .describe(promptText('tools/questions.ask-user-questions-options-likely-answers-person')),
+          .describe(promptText('tools/questions.options')),
       }),
     )
     .min(1)

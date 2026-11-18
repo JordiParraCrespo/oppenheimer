@@ -14,7 +14,7 @@ function pageAddress(page: GuidePage, docsUrl: string | null): string | null {
 export function guideIndexText(docsUrl: string | null): string {
   const lines = GUIDE_PAGES.map((page) => `- \`${page.id}\`: ${page.title}. ${page.description}`);
   const site = docsUrl ? ` It is published at ${docsUrl.replace(/\/+$/, '')}/${GUIDE_ROUTE}.` : '';
-  return promptText('tools/guide.guide-index-text', {
+  return promptText('tools/guide.index', {
     guidePagesCount: String(GUIDE_PAGES.length),
     site,
     lines: lines.join('\n'),

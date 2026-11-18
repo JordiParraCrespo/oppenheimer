@@ -12,43 +12,43 @@ Show only this document, in full, rather than both cut short.
 
 - memory: {{factsCount}} of {{memoryFactsMax}} facts (use recall)
 
-<!-- fragment: edit-document -->
+<!-- fragment: what-instructions-are -->
 
 your job and rules: what you do, for whom, and how
 
-<!-- fragment: edit-document-setup-step -->
+<!-- fragment: write-instructions-setup-step -->
 
 Write INSTRUCTIONS.md with `edit_instructions` (read its revision with `get_self` first): short sections "Job", "How I work", "Never without asking" and "How I report", rules rather than prose, under 200 words, in the person's language.
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-3 -->
+<!-- fragment: edit-document -->
 
 Rewrites your {{file}} ({{what}}) with the whole new text, saved as a new revision the person can read and revert. Read it with get_self first and pass its revision as base_revision: if it changed since, nothing is saved and you read it again. At most {{documentMax}} characters. {{name}}
 
-<!-- fragment: name-soul-edit-soul-edit-instructions -->
+<!-- fragment: rules-go-in-instructions -->
 
 Your job and rules go in edit_instructions.
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-2 -->
+<!-- fragment: persona-goes-in-soul -->
 
 Your persona and tone go in edit_soul.
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-content -->
+<!-- fragment: edit-document-content -->
 
 The whole new {{file}}, in Markdown; it replaces the current text.
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-base-revision -->
+<!-- fragment: edit-document-base-revision -->
 
 The revision get_self showed for {{file}}.
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-note -->
+<!-- fragment: edit-document-note -->
 
 Why you changed it, in a few words; shown in its history.
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-unchanged-text-wha -->
+<!-- fragment: edit-document-unchanged -->
 
 {{file}} is unchanged: the text is what it already was, so no revision was made (still revision {{revision}}).
 
-<!-- fragment: name-soul-edit-soul-edit-instructions-saved-revision-cha -->
+<!-- fragment: edit-document-saved -->
 
 {{file}} saved as revision {{revision}} ({{contentCount}} characters). The person can see and revert it in Settings → Instructions.
 
@@ -60,7 +60,7 @@ With `update_profile`, save the name they chose and set your description to the 
 
 Changes your own name, description (what you are for, as the sidebar and other bots see it) and/or the console sections you show in beside Employees. Name 1 to {{nameMax}} characters, description at most {{descriptionMax}}. Not a revision: the person sees it in the chat and changes it back in Settings → Profile. Persona and job go in edit_soul and edit_instructions.
 
-<!-- fragment: z-string-trim-min-1-max-bot-name-max-optional-describe-y -->
+<!-- fragment: update-profile-description -->
 
 One or two sentences on what you are for.
 
@@ -140,7 +140,7 @@ off (ask before remembering)
 
 - home host: {{homeHostId}} (list_hosts names it)
 
-<!-- fragment: describe-document-revision-characters-last -->
+<!-- fragment: document-header -->
 
 {{file}} (revision {{revision}}, {{contentCount}} characters, last saved by {{updatedBy}}):
 

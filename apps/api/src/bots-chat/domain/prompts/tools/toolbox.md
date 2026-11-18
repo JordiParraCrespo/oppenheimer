@@ -20,6 +20,6 @@ Not run: {{tool}} is no longer a tool.
 
 Not run: {{tool}} is turned off for this bot.
 
-<!-- fragment: run-approved-content-run-credential-does -->
+<!-- fragment: approved-not-covered-by-credential -->
 
 Not run: your credential does not cover {{scope}}.

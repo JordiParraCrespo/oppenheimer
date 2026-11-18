@@ -134,11 +134,11 @@ function refusalOf(read: Exclude<SessionSharedPreviewRead, { kind: 'preview' }>,
         name: read.file.name,
       });
     case 'not_supported':
-      return promptText('tools/session-file.refusal-of-shown-sessions-host-2', {
+      return promptText('tools/session-file.not-shown-runner-too-old', {
         runnerTooOldAdvice: RUNNER_TOO_OLD_ADVICE,
       });
     case 'timed_out':
-      return promptText('tools/session-file.refusal-of-shown-sessions-host-3', {
+      return promptText('tools/session-file.not-shown-timed-out', {
         name: read.file.name,
       });
     case 'gone':

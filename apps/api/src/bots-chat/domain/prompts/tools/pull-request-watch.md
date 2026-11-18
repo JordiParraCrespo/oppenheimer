@@ -32,14 +32,14 @@ Pull request #{{number}} of {{fullName}} is {{state}}: there is nothing left to 
 
 You already follow {{subscriptionsPerBot}} sessions and pull requests. Unwatch one you no longer need (list_watches shows them) first.
 
-<!-- fragment: find-repository-github-connected-workspace -->
+<!-- fragment: github-not-connected -->
 
 GitHub is not connected to this workspace, or its installations are suspended: there is no pull request you can follow.
 
-<!-- fragment: find-repository-installation-could-listed -->
+<!-- fragment: installations-unlisted -->
 
 ({{unlisted}} installation{{suffix}} could not be listed just now; try again later)
 
-<!-- fragment: find-repository-repository-one-workspaces -->
+<!-- fragment: repository-not-readable -->
 
 Repository {{handle}} is not one the workspace's GitHub installations let its owner read{{why}}. list_repositories shows the ones you can follow.

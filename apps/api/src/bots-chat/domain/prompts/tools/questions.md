@@ -20,11 +20,11 @@ The question, ending in "?".
 
 True when several options may be picked; one otherwise.
 
-<!-- fragment: ask-user-questions-options-what-picking-means -->
+<!-- fragment: option-description -->
 
 What picking it means, when the label does not say.
 
-<!-- fragment: ask-user-questions-options-likely-answers-person -->
+<!-- fragment: options -->
 
 The likely answers. The person may always answer in their own words instead.
 

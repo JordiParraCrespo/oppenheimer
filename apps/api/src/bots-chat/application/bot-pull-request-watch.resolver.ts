@@ -145,9 +145,7 @@ export class BotPullRequestWatchResolver {
     >(new FindInstallationsQuery({ scope: owner }));
     const usable = installations.filter((installation) => installation.isUsable);
     if (usable.length === 0) {
-      throw new BotToolRefusal(
-        promptText('tools/pull-request-watch.find-repository-github-connected-workspace'),
-      );
+      throw new BotToolRefusal(promptText('tools/pull-request-watch.github-not-connected'));
     }
     let unlisted = 0;
     for (const installation of usable) {
@@ -165,10 +163,10 @@ export class BotPullRequestWatchResolver {
       if (repository) return { installationId: installation.id, repository };
     }
     const why = unlisted
-      ? ` ${promptText('tools/pull-request-watch.find-repository-installation-could-listed', { unlisted: String(unlisted), suffix: unlisted === 1 ? '' : 's' })}`
+      ? ` ${promptText('tools/pull-request-watch.installations-unlisted', { unlisted: String(unlisted), suffix: unlisted === 1 ? '' : 's' })}`
       : '';
     throw new BotToolRefusal(
-      promptText('tools/pull-request-watch.find-repository-repository-one-workspaces', {
+      promptText('tools/pull-request-watch.repository-not-readable', {
         handle: String(handle),
         why,
       }),

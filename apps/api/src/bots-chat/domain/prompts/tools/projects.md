@@ -52,15 +52,15 @@ nothing to change: pass at least one field
 
 Archives a project: nothing new can be started or listed in it, its automations are paused, and its tasks and closed sessions stay where they are. restore_project brings it back with its name and slug, but its automations stay paused until the person resumes them. It is refused while the project has sessions that are not closed; move them (move_session) or close them first. Projects are never deleted: archiving is what the console calls deleting. Always asks the person first.
 
-<!-- fragment: archive-project-normalize-unassigned-project-where -->
+<!-- fragment: archive-unassigned -->
 
 The Unassigned project is where work with no project goes; it cannot be archived.
 
-<!-- fragment: archive-project-normalize-project-already-archived -->
+<!-- fragment: archive-already-archived -->
 
 Project "{{name}}" is already archived.
 
-<!-- fragment: archive-project-normalize-project-still-has -->
+<!-- fragment: archive-open-sessions -->
 
 Project "{{name}}" still has sessions that are not closed: {{listed}}. Nothing was archived. Ask the person whether to move them to another project (move_session) or close them first.
 
@@ -76,7 +76,7 @@ Restores an archived project (list_projects with include_archived shows them): w
 
 An archived project id from list_projects with include_archived.
 
-<!-- fragment: restore-project-project-archived-nothing -->
+<!-- fragment: restore-not-archived -->
 
 Project {{id}} "{{name}}" is not archived. Nothing changed.
 

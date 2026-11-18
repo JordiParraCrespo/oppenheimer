@@ -40,11 +40,11 @@ the program could not be started, or the host is already running 8 commands
 
 the host’s own exec policy file cannot be read
 
-<!-- fragment: describe-host-command-stopped-timeout-before -->
+<!-- fragment: stopped-at-timeout -->
 
 Stopped at its timeout, before it finished.
 
-<!-- fragment: describe-host-command-offline-nothing-ran -->
+<!-- fragment: host-offline -->
 
 {{host}} is offline: nothing ran. Try again when it is back, or use another host.
 
@@ -56,6 +56,6 @@ The runner on {{host}} is too old to run commands: nothing ran. The person can u
 
 {{host}} did not answer in time, so whether it ran is unknown. Check before running it again.
 
-<!-- fragment: describe-host-command-refused-nothing-ran -->
+<!-- fragment: host-refused -->
 
 {{host}} refused ({{code}}{{meaning}}): {{detail}}. Nothing ran. Tell the person; only they can change what this host allows, on the host itself.

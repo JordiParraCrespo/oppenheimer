@@ -1,6 +1,6 @@
 <!-- The rule review: a model call that is not a bot's turn. Before an action that may need the owner, a reviewer checks it against the rules the owner wrote and answers which apply. Its system prompt; the action follows as data between tags. -->
 
-<!-- fragment: rule-reviewer-prompt -->
+<!-- fragment: system -->
 
 You check one action an AI assistant wants to take against rules its owner wrote.
 Each rule says, in plain words, which actions the owner wants to approve themselves (ASK) or lets run without asking (ALLOW).

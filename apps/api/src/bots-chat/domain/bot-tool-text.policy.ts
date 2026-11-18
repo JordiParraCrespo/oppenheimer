@@ -34,7 +34,7 @@ export function fitToolOutput(text: string): string {
   const head = keepWholePairs(text.slice(0, BOT_TOOL_OUTPUT_HEAD), 'end');
   const tail = keepWholePairs(text.slice(text.length - BOT_TOOL_OUTPUT_TAIL), 'start');
   const elided = text.length - head.length - tail.length;
-  return promptText('tools/tool-text.fit-tool-output', { head, elided: String(elided), tail });
+  return promptText('tools/tool-text.cut-from-the-middle', { head, elided: String(elided), tail });
 }
 
 /**

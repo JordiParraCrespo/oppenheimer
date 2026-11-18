@@ -26,7 +26,7 @@ export function withEarlierImages(
 /** The sentence that stands for the images the bot showed the person here. */
 function shownNote(names: readonly string[]): string {
   const listed = names.map((name) => `"${name}"`).join(', ');
-  return promptText('turn/images.shown-note', {
+  return promptText('turn/images.shown', {
     namesCount: names.length === 1 ? 'an image' : `${names.length} images`,
     listed,
   });
@@ -48,7 +48,7 @@ export const EARLIER_IMAGES_HEADROOM_TOKENS = 1_000;
 export function imagesNote(images: readonly { id?: string; name: string }[]): string {
   const count = images.length;
   const [what, them] = count === 1 ? ['an image', 'it'] : [`${count} images`, 'them'];
-  return promptText('turn/images.images-note', { what, ids: idsOf(images), them });
+  return promptText('turn/images.came-with', { what, ids: idsOf(images), them });
 }
 
 /**
@@ -57,7 +57,7 @@ export function imagesNote(images: readonly { id?: string; name: string }[]): st
  */
 export function attachedImagesNote(images: readonly { id: string; name: string }[]): string {
   if (images.length === 0) return '';
-  return promptText('turn/images.attached-images-note', { ids: idsOf(images) });
+  return promptText('turn/images.attached', { ids: idsOf(images) });
 }
 
 /** `: "a.png" (image id …), …`, or nothing when no image has an id. */

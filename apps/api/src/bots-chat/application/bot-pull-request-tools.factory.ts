@@ -163,7 +163,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           }),
         );
         const checks = input.findings.map((finding) => finding.check).join(', ');
-        return promptText('tools/pull-request.record-ci-findings-recorded-finding-person', {
+        return promptText('tools/pull-request.record-ci-findings-done', {
           findingsCount: String(input.findings.length),
           suffix: input.findings.length === 1 ? '' : 's',
           number: String(input.number),
@@ -228,7 +228,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
               comment: { path: input.path, line: input.line, side: input.side, body: input.body },
             }),
           );
-          return promptText('tools/pull-request.comment-on-pull-request-commented-pull-request', {
+          return promptText('tools/pull-request.comment-on-line-done', {
             path: input.path,
             line: String(input.line),
             number: String(input.number),
@@ -244,7 +244,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             body: input.body,
           }),
         );
-        return promptText('tools/pull-request.comment-on-pull-request-commented-pull-request-2', {
+        return promptText('tools/pull-request.comment-done', {
           number: String(input.number),
           htmlUrl: posted.htmlUrl,
         });
@@ -295,7 +295,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             review: { verdict: input.verdict, body: input.body, comments: input.comments },
           }),
         );
-        return promptText('tools/pull-request.review-pull-request-submitted-review-pull', {
+        return promptText('tools/pull-request.review-submitted', {
           verdict: input.verdict,
           number: String(input.number),
         });
@@ -328,7 +328,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
         const pull = await this.pull(context, input);
         if (pull.state !== 'open') {
           throw new BotToolRefusal(
-            promptText('tools/pull-request.merge-pull-request-normalize-pull-request-there', {
+            promptText('tools/pull-request.merge-nothing-to-merge', {
               number: String(input.number),
               state: pull.state,
             }),
@@ -336,7 +336,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
         }
         if (input.head_sha && pull.headSha !== input.head_sha) {
           throw new BotToolRefusal(
-            promptText('tools/pull-request.merge-pull-request-normalize-new-commits-were', {
+            promptText('tools/pull-request.merge-new-commits', {
               number: String(input.number),
               headSha: pull.headSha.slice(0, 7),
             }),
@@ -408,11 +408,11 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ` ${promptText('tools/pull-request.start-review-session-host-offline-session')}`
+          ? ` ${promptText('tools/pull-request.review-session-host-offline')}`
           : '';
         const watched =
           input.watch === false
-            ? promptText('tools/pull-request.start-review-session-watching-read-later')
+            ? promptText('tools/pull-request.review-session-not-watched')
             : await this.watches.follow(context, result.sessionId, 'first_task');
         return {
           content: promptText('tools/pull-request.start-review-session-content', {
