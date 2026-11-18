@@ -812,6 +812,7 @@ export type PromptId =
   | "tools/watch.unwatch-session-were-following-session"
   | "tools/watch.list-watches"
   | "tools/watch.list-watches-follow-sessions-pull"
+  | "tools/watch.list-watches-session-line"
   | "tools/watch.list-watches-pull-request-line"
   | "tools/watch.wait-for-session"
   | "tools/watch.wait-for-session-session-id"
@@ -1370,6 +1371,7 @@ export interface PromptSlots {
   "tools/watch.watch-session-pattern-host-offline": { watching: string };
   "tools/watch.unwatch-session-longer-follow-session": { sessionId: string };
   "tools/watch.unwatch-session-were-following-session": { sessionId: string };
+  "tools/watch.list-watches-session-line": { sessionId: string; parts: string; purpose: string };
   "tools/watch.list-watches-pull-request-line": { number: string; repository: string; githubRepoId: string; parts: string; purpose: string };
   "tools/watch.wait-for-session": { sessionWaitMaxSeconds: string; sessionWaitsPerTurn: string };
   "tools/watch.wait-for-session-have-waited-times": { sessionWaitsPerTurn: string };
@@ -2292,6 +2294,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "tools/watch.unwatch-session-were-following-session": "You were not following session {{sessionId}}.",
   "tools/watch.list-watches": "Lists the sessions, pull requests, projects and milestones you follow: each one, why, until when or on which changes, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request, a task with get_task.",
   "tools/watch.list-watches-follow-sessions-pull": "You follow no sessions, pull requests, projects or milestones.",
+  "tools/watch.list-watches-session-line": "session {{sessionId}} [{{parts}}]{{purpose}}",
   "tools/watch.list-watches-pull-request-line": "pull request #{{number}} of {{repository}} (repository id {{githubRepoId}}) [{{parts}}]{{purpose}}",
   "tools/watch.wait-for-session": "Waits inside this turn, up to {{sessionWaitMaxSeconds}} seconds, until a session's current task needs input, finishes, fails or is stopped, or the session is closed; answers at once if it already has. Use it for a short task you want to report on in this reply; for anything longer, watch_session wakes you when it ends. At most {{sessionWaitsPerTurn}} waits a turn, and the turn's own 4-minute limit counts: never wait on work you cannot report before it.",
   "tools/watch.wait-for-session-session-id": "The session to wait on (from list_sessions).",

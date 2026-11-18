@@ -50,34 +50,34 @@ export function describePatternWatch(pattern: string, hints: readonly string[]):
 export function describeWatch(subscription: BotSubscriptionEntity, timeZone: string): string {
   const plan = subscription.plan;
   if (plan) return describePlanWatch(subscription, plan, timeZone);
+  const woke = `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`;
+  const since = `since ${formatToolTime(subscription.createdAt, timeZone)}`;
   const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
   const pull = subscription.pullRequest;
   if (pull) {
-    const parts = [
-      'until merged',
-      `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`,
-      `since ${formatToolTime(subscription.createdAt, timeZone)}`,
-    ];
     return promptText('tools/watch.list-watches-pull-request-line', {
       number: String(pull.number),
       repository: pull.repository,
       githubRepoId: pull.githubRepoId,
-      parts: parts.join('; '),
+      parts: ['until merged', woke, since].join('; '),
       purpose,
     });
   }
-  const until =
-    subscription.until === 'task' ? `task #${subscription.watchedTurn}` : 'until closed';
+  // What the line says of a session, in order; a part with nothing to say is left out.
   const parts = [
-    until,
-    `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`,
+    subscription.until === 'task' ? `task #${subscription.watchedTurn}` : 'until closed',
+    woke,
     subscription.lastState
       ? `last: task #${subscription.lastTurn} ${subscription.lastState}`
       : null,
     subscription.terminalWatch
       ? `pattern “${subscription.terminalWatch.pattern}”, ${subscription.matches} matching line${subscription.matches === 1 ? '' : 's'}`
       : null,
-    `since ${formatToolTime(subscription.createdAt, timeZone)}`,
+    since,
   ].filter(Boolean);
-  return `session ${subscription.resourceId} [${parts.join('; ')}]${purpose}`;
+  return promptText('tools/watch.list-watches-session-line', {
+    sessionId: String(subscription.resourceId),
+    parts: parts.join('; '),
+    purpose,
+  });
 }

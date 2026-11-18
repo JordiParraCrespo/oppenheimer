@@ -92,6 +92,10 @@ Lists the sessions, pull requests, projects and milestones you follow: each one,
 
 You follow no sessions, pull requests, projects or milestones.
 
+<!-- fragment: list-watches-session-line -->
+
+session {{sessionId}} [{{parts}}]{{purpose}}
+
 <!-- fragment: list-watches-pull-request-line -->
 
 pull request #{{number}} of {{repository}} (repository id {{githubRepoId}}) [{{parts}}]{{purpose}}
