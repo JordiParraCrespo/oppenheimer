@@ -18,7 +18,8 @@ import { neutraliseTags } from './bot-tool-text.policy';
  *
  * - `met`: the condition holds, and the goal ends;
  * - `not_met`: it does not hold yet, and the next continuation is told why;
- * - `impossible`: it cannot hold without the person, and the goal ends.
+ * - `impossible`: it cannot hold without the person, and the goal pauses as
+ *   blocked until they resume it.
  *
  * It judges only what the transcript shows, never what it would have to
  * check itself, so a goal turn says how it checked. An answer that cannot be

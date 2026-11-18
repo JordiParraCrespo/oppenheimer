@@ -48,7 +48,7 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/infrastructure/bot-routine-target.adapter.ts',
-    starts: 'Routine ',
+    starts: 'Routine   still has a turn queued',
     why: "why a run was skipped, kept on the run's row for whoever reads it",
   },
   {
@@ -142,7 +142,7 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/application/bot-cloud-session.policy.ts',
-    starts: 'Start a ',
+    starts: 'Start a   cloud session',
     why: "the line on the person's approval card for a cloud session",
   },
   {
@@ -159,36 +159,6 @@ export const LEDGER = [
     file: 'bots-chat/bot-session-tool.mapper.ts',
     starts: 'Close the session "',
     why: "the line on the person's approval card for closing a session",
-  },
-  {
-    file: 'bots-chat/bot-subscription.mapper.ts',
-    starts: 'every task, until the session is closed',
-    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
-  },
-  {
-    file: 'bots-chat/bot-subscription.mapper.ts',
-    starts: 'You follow session',
-    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
-  },
-  {
-    file: 'bots-chat/bot-subscription.mapper.ts',
-    starts: 'You are also woken when its terminal',
-    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
-  },
-  {
-    file: 'bots-chat/bot-subscription.mapper.ts',
-    starts: 'Its host runs a runner too old',
-    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
-  },
-  {
-    file: 'bots-chat/bot-subscription.mapper.ts',
-    starts: 'Its host is offline; the watch starts',
-    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
-  },
-  {
-    file: 'bots-chat/bot-subscription.mapper.ts',
-    starts: 'pull request #',
-    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
   },
 ];
 
