@@ -157,6 +157,31 @@ func TestTheChatMovesToTheConversationTheAgentReportsMovingTo(t *testing.T) {
 	eventually(t, "the new conversation and its status", func() bool { return kinds() == "assistant,status 55.25" })
 }
 
+// A conversation `/clear` just opened has no transcript until the next
+// message, and `claude --resume` refuses an id with none: the session keeps
+// the one it holds until the agent writes the new one, or a Restart in
+// between would kill window 0 on "No conversation found".
+func TestAReportedConversationCountsOnceItsTranscriptIsWritten(t *testing.T) {
+	const session, cleared = "6d0e4a1b-2c3d-4e5f-8a9b-0c1d2e3f4a5b", "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+	statusDir := t.TempDir()
+	projects := write(t, promptLine)
+	reader := transcript.New(transcript.Options{ClaudeProjects: projects, StatusDir: statusDir})
+	of := domain.Session{ID: session, Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}}
+	if _, err := transcript.SaveStatus(statusDir, []byte(strings.Replace(payload(10), conversation, cleared, 1)), session); err != nil {
+		t.Fatal(err)
+	}
+	if got := reader.ReportedConversation(of); got != "" {
+		t.Fatalf("reported = %q before its transcript was written", got)
+	}
+	folder := filepath.Join(projects, "-w-sessions-bold-otter-3f9a7k-oppenheimer")
+	if err := os.WriteFile(filepath.Join(folder, cleared+".jsonl"), []byte(promptLine+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := reader.ReportedConversation(of); got != cleared {
+		t.Fatalf("reported = %q, want %q once its transcript is written", got, cleared)
+	}
+}
+
 // Only the status line of a session's window-0 agent names the session; any
 // other Claude Code's figures are kept and say nothing of which conversation
 // a session is in, and a session that is no name is never a path.

@@ -118,12 +118,20 @@ func (r *Reader) ServedConversation(ctx context.Context, session domain.Session)
 }
 
 // ReportedConversation implements app.Transcripts: Claude Code's, as the
-// runner's status line heard it (SaveStatus).
+// runner's status line heard it (SaveStatus), once Claude Code has written
+// its transcript. A conversation `/clear` just opened has none until the
+// next message, and `claude --resume` refuses one with none, so a Restart
+// before then reopens the conversation the session already kept.
 func (r *Reader) ReportedConversation(session domain.Session) string {
-	if session.Agent != domain.AgentClaude {
+	reader, ok := r.agents[domain.AgentClaude]
+	if session.Agent != domain.AgentClaude || !ok {
 		return ""
 	}
-	return ReportedConversation(r.statusDir, session.ID)
+	reported := ReportedConversation(r.statusDir, session.ID)
+	if reported == "" || reader.path(reported) == "" {
+		return ""
+	}
+	return reported
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.
