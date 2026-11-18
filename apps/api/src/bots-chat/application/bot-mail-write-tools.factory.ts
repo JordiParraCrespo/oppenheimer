@@ -197,11 +197,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       }),
       summarize: async (input, context) => {
         const planned = await this.draftPlan(input, context);
-        return promptText('tools/mail-write.delete-draft-summarize', {
-          subject: planned.subject,
-          to: planned.to.join(', ') || 'nobody',
-          accountEmail: planned.accountEmail,
-        });
+        return `Delete the draft "${planned.subject}" to ${planned.to.join(', ') || 'nobody'} from ${planned.accountEmail}`;
       },
       run: async (input, context) => {
         const connection = await this.accounts.one(context.owner, input.account);

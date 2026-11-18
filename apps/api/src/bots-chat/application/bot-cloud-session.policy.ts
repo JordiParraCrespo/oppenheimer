@@ -228,19 +228,9 @@ export function cloudSessionSummary(
   const task = clippedTask(input.task);
   if (isLaunchedCloud(agent)) {
     const model = input.model ? `, model ${input.model}` : '';
-    return promptText('tools/sessions.cloud-session-summary-start-cloud-session', {
-      label,
-      where,
-      model,
-      task,
-    });
+    return `Start a ${label} cloud session${where}, on your ${label} key${model}: ${task}`;
   }
-  return promptText('tools/sessions.cloud-session-summary-start-cloud-session-2', {
-    label,
-    hostName: hostName ?? 'no host yet',
-    where,
-    task,
-  });
+  return `Start a ${label} cloud session from ${hostName ?? 'no host yet'}${where}: ${task}`;
 }
 
 /**

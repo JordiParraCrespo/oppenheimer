@@ -388,10 +388,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       },
       summarize: async (input, context) => {
         const host = input.host_id ? await this.hostName(context, input.host_id) : 'your home host';
-        return promptText('tools/pull-request.start-review-session-summarize', {
-          value: await this.target(context, input),
-          host,
-        });
+        return `Start a review session for ${await this.target(context, input)} on ${host}`;
       },
       run: async (input, context) => {
         const hostId = input.host_id ?? context.homeHostId;

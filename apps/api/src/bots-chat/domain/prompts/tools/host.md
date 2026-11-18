@@ -24,10 +24,6 @@ Asks a connected host's runner to install the newest signed release now, as the 
 
 The host to update (from list_hosts).
 
-<!-- fragment: update-host-runner-summarize -->
-
-Update the runner on {{value}} to the newest release
-
 <!-- fragment: update-host-runner-asked-runner-update -->
 
 Asked the runner on {{name}} ({{hostId}}) to update. It restarts on the new release and reconnects, usually within a minute; check with list_hosts that its runner version changed before retrying what needed it.

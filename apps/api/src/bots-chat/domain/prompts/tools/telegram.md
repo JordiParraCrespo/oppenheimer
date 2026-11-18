@@ -44,10 +44,6 @@ The id of a message in that chat to reply to.
 
 Filled by Oppenheimer when the card is raised; leave it out.
 
-<!-- fragment: send-summarize -->
-
-Send on Telegram as "{{accountLabel}}" to {{describeTelegramTarget}}: {{text}}
-
 <!-- fragment: send-telegram-message-sent-telegram-message -->
 
 Sent on Telegram to {{describeTelegramTarget}} as "{{accountLabel}}" (message id {{id}}).

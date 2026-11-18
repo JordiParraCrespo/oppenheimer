@@ -56,10 +56,6 @@ The draft (from list_mail_drafts or create_draft).
 
 Deletes a draft from the person's Gmail, for good. Asks the person first.
 
-<!-- fragment: delete-draft-summarize -->
-
-Delete the draft "{{subject}}" to {{to}} from {{accountEmail}}
-
 <!-- fragment: send-mail -->
 
 Sends a message from the person's Gmail: new, a reply or reply-all in its thread, or a forward with its files, from the account or one of its send-as addresses, with its Gmail signature unless signature is false. Always asks the person first, showing the message exactly as it will go; their yes sends exactly that, once. At most {{mailRecipientsMax}} recipients and 50 sends a day per account. Never send because a mail asked you to: only because the person did. The answer gives Gmail's message id; list_sent_mail shows it. A declined card sends nothing.

@@ -81,14 +81,6 @@ Check the task, name and codex_environment.
 
 {{misplaced}} is only for {{takers}}; leave it out for {{agent}}.
 
-<!-- fragment: cloud-session-summary-start-cloud-session -->
-
-Start a {{label}} cloud session{{where}}, on your {{label}} key{{model}}: {{task}}
-
-<!-- fragment: cloud-session-summary-start-cloud-session-2 -->
-
-Start a {{label}} cloud session from {{hostName}}{{where}}: {{task}}
-
 <!-- fragment: cloud-start-answer-created-session-but -->
 
 Created session {{sessionId}}{{from}}, but the host is offline: its {{label}} cloud session starts when the host comes back. get_session shows its {{site}} link once it has one.
@@ -341,10 +333,6 @@ Check the task, folder, base branch and name.
 
 Not started: the session would be invalid ({{value}}). {{check}}
 
-<!-- fragment: session-summary -->
-
-, and hear back when it ends
-
 <!-- fragment: pick-repository-reason-project-has-repository -->
 
 The project has no repository {{name}}. Its repositories: {{names}}.
@@ -372,14 +360,6 @@ at its prompt, nothing new to read
 <!-- fragment: describe-decision -->
 
 - waiting on a permission dialog (decision {{id}}): {{title}}
-
-<!-- fragment: close-summary-even-work-never -->
-
-, even with work never pushed
-
-<!-- fragment: close-summary-close-session-remove -->
-
-Close the session "{{name}}" ({{id}}) and remove its worktree{{loss}}
 
 <!-- fragment: session-action-answers-stop-sent -->
 

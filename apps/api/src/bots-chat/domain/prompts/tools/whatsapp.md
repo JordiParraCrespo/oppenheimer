@@ -40,10 +40,6 @@ Sends a WhatsApp text message from the person's linked number, as them, to one c
 
 Filled by Oppenheimer when the card is raised; leave it out.
 
-<!-- fragment: send-summarize -->
-
-Send on WhatsApp from "{{accountLabel}}" to {{describeWhatsappTarget}}: {{text}}
-
 <!-- fragment: send-whatsapp-message-sent-whatsapp-from -->
 
 Sent on WhatsApp to {{describeWhatsappTarget}} from "{{accountLabel}}" (message id {{id}}).
