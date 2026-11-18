@@ -12,6 +12,17 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
+// servedTranscripts answers the conversation each OpenCode process, by its
+// password, was heard working in.
+type servedTranscripts struct {
+	typedTranscripts
+	working map[string]string
+}
+
+func (t *servedTranscripts) ServedConversation(session domain.Session) string {
+	return t.working[session.Launch.Server.Password]
+}
+
 // An OpenCode session is launched serving its conversation on a port the
 // runner found, and keeps where (and since when) on the session, so the chat
 // can reach it after the runner restarts; a restart serves it on a fresh
@@ -21,10 +32,17 @@ import (
 // chat that cannot find OpenCode once the runner restarted, a restart that
 // binds a port another process took meanwhile, a restart that forgets which
 // conversations are the session's, or a password any account can read.
+//
+// The conversation its process is heard working in is kept on the session
+// too, and through a restart, so the chat shows it rather than another
+// OpenCode's in the same folder after the runner restarts. Regression: a
+// chat opened on an idle session showing the conversation another OpenCode
+// in its folder touched last.
 func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 	h := newFakeHarness(t)
 	ports := []int{41001, 41002}
 	now := time.UnixMilli(1_700_000_000_000)
+	transcripts := &servedTranscripts{typedTranscripts: typedTranscripts{typed: map[string]string{}}, working: map[string]string{}}
 	svc, err := app.New(app.Options{
 		Terminals: h.terminals, Worktrees: h.worktrees, Classifier: manifest.New(manifest.Options{}),
 		Store: &memoryStore{}, Publisher: h.events, Files: h.files,
@@ -34,7 +52,8 @@ func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 			ports = ports[1:]
 			return port, nil
 		},
-		Now: func() time.Time { return now },
+		Now:         func() time.Time { return now },
+		Transcripts: transcripts,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -59,6 +78,12 @@ func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 		t.Fatalf("terminal env = %v, want the password there", env)
 	}
 
+	transcripts.working[first.Password] = "ses_mine"
+	svc.FindServedConversations()
+	if kept, _ := svc.Get(session.ID); kept.Launch.Server.Conversation != "ses_mine" {
+		t.Fatalf("kept conversation = %q, want the one its OpenCode works in", kept.Launch.Server.Conversation)
+	}
+
 	if err := h.terminals.Kill(context.Background(), session.TmuxName()); err != nil {
 		t.Fatal(err)
 	}
@@ -68,8 +93,8 @@ func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 	}
 	restarted, _ := svc.Get(session.ID)
 	again := restarted.Launch.Server
-	if again == nil || again.Port != 41002 || again.Password == first.Password || again.Since != first.Since {
-		t.Fatalf("server after restart = %+v, want port 41002, a new password, the first launch's since", again)
+	if again == nil || again.Port != 41002 || again.Password == first.Password || again.Since != first.Since || again.Conversation != "ses_mine" {
+		t.Fatalf("server after restart = %+v, want port 41002, a new password, the first launch's since and conversation", again)
 	}
 	if env := h.terminals.Env(session.TmuxName()); env["OPENCODE_SERVER_PASSWORD"] != again.Password {
 		t.Fatalf("terminal env after restart = %v, want the new password", env)

@@ -62,19 +62,11 @@ const interruptedText = "[Request interrupted by user]"
 // is asked again every openCodeRetryEvery, and each new connection starts the
 // history over.
 func followOpenCode(ctx context.Context, owners *openCodeOwners, server domain.AgentServer, entryMax, batchMax int, emit func(app.ChatBatch) error) {
-	api := openCodeAPI{base: "http://127.0.0.1:" + strconv.Itoa(server.Port), server: server, http: &http.Client{}}
-	// OpenCode names a conversation's directory as the process found it, its
-	// links resolved.
-	directory := server.Directory
-	if directory != "" {
-		directory = filepath.Clean(directory)
-		if resolved, err := filepath.EvalSymlinks(directory); err == nil {
-			directory = resolved
-		}
-	}
+	api := newOpenCodeAPI(server)
+	directory := openCodeDirectory(server.Directory)
 	for {
 		f := newOpenCodeFollower(api, server.Since, directory, entryMax, batchMax, emit)
-		f.owners = owners
+		f.owners, f.kept = owners, server.Conversation
 		_ = f.run(ctx)
 		select {
 		case <-ctx.Done():
@@ -84,46 +76,198 @@ func followOpenCode(ctx context.Context, owners *openCodeOwners, server domain.A
 	}
 }
 
-// openCodeOwners is the conversation each OpenCode process the runner
-// launched was last heard driving on its own event stream, by its API's
-// password, which is its launch's own. It outlives a browser's attachment, so
-// a session whose OpenCode sits idle when the chat is opened again still
-// shows its conversation, and another session's conversation in the same
-// folder is never taken for its own. It lives as long as the runner.
-type openCodeOwners struct {
-	mu       sync.Mutex
-	byServer map[string]string
+func newOpenCodeAPI(server domain.AgentServer) openCodeAPI {
+	return openCodeAPI{base: "http://127.0.0.1:" + strconv.Itoa(server.Port), server: server, http: &http.Client{}}
 }
+
+// openCodeDirectory is directory as OpenCode names a conversation's: as the
+// process found it, its links resolved.
+func openCodeDirectory(directory string) string {
+	if directory == "" {
+		return ""
+	}
+	directory = filepath.Clean(directory)
+	if resolved, err := filepath.EvalSymlinks(directory); err == nil {
+		directory = resolved
+	}
+	return directory
+}
+
+// openCodeRoots is the root conversations OpenCode has in directory touched
+// since since. OpenCode is asked for the directory's alone, and each answer
+// is checked against it too, for a version that lists the whole repository's.
+func openCodeRoots(ctx context.Context, api openCodeAPI, since int64, directory string) ([]openCodeSession, error) {
+	query := url.Values{"roots": {"true"}}
+	if directory != "" {
+		query.Set("directory", directory)
+	}
+	var sessions []openCodeSession
+	if err := api.get(ctx, "/session", query, &sessions); err != nil {
+		return nil, err
+	}
+	roots := sessions[:0]
+	for _, s := range sessions {
+		if s.ParentID != "" || s.Time.Updated < since || !openCodeIDPattern.MatchString(s.ID) {
+			continue
+		}
+		if directory != "" && s.Directory != "" && filepath.Clean(s.Directory) != directory {
+			continue
+		}
+		roots = append(roots, s)
+	}
+	return roots, nil
+}
+
+// newestOf is the id of the most recently touched of sessions that keep
+// holds for, or "".
+func newestOf(sessions []openCodeSession, keep func(openCodeSession) bool) string {
+	var newest openCodeSession
+	for _, s := range sessions {
+		if keep(s) && (newest.ID == "" || s.Time.Updated > newest.Time.Updated) {
+			newest = s
+		}
+	}
+	return newest.ID
+}
+
+// openCodeOwners is the conversation each OpenCode process the runner
+// launched was last heard working in, by its API's password, which is its
+// launch's own. Each one's event stream is listened to from the first time
+// the poll loop asks about it (ServedConversation) until it has not asked for
+// openCodeWatchIdle: the session stopped, closed or was launched again under
+// another password, whose process is listened to instead. So a session whose
+// OpenCode sits idle when the chat is opened still shows its conversation,
+// and another session's conversation in the same folder is never taken for
+// its own.
+type openCodeOwners struct {
+	mu      sync.Mutex
+	watches map[string]*openCodeWatch
+	// idle is openCodeWatchIdle, shorter in tests.
+	idle time.Duration
+}
+
+// openCodeWatch is one OpenCode process listened to.
+type openCodeWatch struct {
+	// conversation is the one it was last heard working in.
+	conversation string
+	// heard is what its event stream has named since the last resolve.
+	heard map[string]bool
+	asked time.Time
+}
+
+// openCodeWatchIdle is how long a process is listened to after the poll loop
+// last asked about it: a few of its ticks.
+const openCodeWatchIdle = time.Minute
 
 func newOpenCodeOwners() *openCodeOwners {
-	return &openCodeOwners{byServer: map[string]string{}}
+	return &openCodeOwners{watches: map[string]*openCodeWatch{}, idle: openCodeWatchIdle}
 }
 
-// claim says server is driving conversation: no other server is anymore.
+// served is the conversation server's process was last heard working in,
+// listening to it from now if nobody was. A process not heard from yet is
+// taken to be in the one the session kept (server.Conversation).
+func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) string {
+	o.mu.Lock()
+	watch, ok := o.watches[server.Password]
+	if !ok {
+		watch = &openCodeWatch{conversation: server.Conversation, heard: map[string]bool{}}
+		o.watches[server.Password] = watch
+		go o.listen(server, watch)
+	}
+	watch.asked = time.Now()
+	heard := watch.heard
+	watch.heard = map[string]bool{}
+	o.mu.Unlock()
+	if len(heard) == 0 {
+		return o.mine(server.Password)
+	}
+	api := newOpenCodeAPI(server)
+	sessions, err := openCodeRoots(ctx, api, server.Since, openCodeDirectory(server.Directory))
+	if err != nil {
+		// Asked again on the next tick.
+		o.mu.Lock()
+		for id := range heard {
+			watch.heard[id] = true
+		}
+		o.mu.Unlock()
+		return o.mine(server.Password)
+	}
+	if named := newestOf(sessions, func(s openCodeSession) bool { return heard[s.ID] }); named != "" {
+		o.claim(server.Password, named)
+	}
+	return o.mine(server.Password)
+}
+
+// listen reads server's event stream, reconnecting while OpenCode restarts,
+// until nobody has asked about it for o.idle.
+func (o *openCodeOwners) listen(server domain.AgentServer, watch *openCodeWatch) {
+	api := newOpenCodeAPI(server)
+	for {
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			_ = api.events(ctx, func(conversation string) {
+				if conversation == "" {
+					return
+				}
+				o.mu.Lock()
+				watch.heard[conversation] = true
+				o.mu.Unlock()
+			})
+			cancel()
+		}()
+		for alive := true; alive; {
+			select {
+			case <-ctx.Done():
+				alive = false
+			case <-time.After(o.idle / 4):
+			}
+			o.mu.Lock()
+			stale := time.Since(watch.asked) > o.idle
+			if stale {
+				delete(o.watches, server.Password)
+			}
+			o.mu.Unlock()
+			if stale {
+				cancel()
+				return
+			}
+		}
+		cancel()
+		time.Sleep(openCodeRetryEvery)
+	}
+}
+
+// claim says server is working in conversation: no other server is anymore.
 func (o *openCodeOwners) claim(server, conversation string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	for other, held := range o.byServer {
-		if held == conversation {
-			delete(o.byServer, other)
+	for other, watch := range o.watches {
+		if other != server && watch.conversation == conversation {
+			watch.conversation = ""
 		}
 	}
-	o.byServer[server] = conversation
+	if watch, ok := o.watches[server]; ok {
+		watch.conversation = conversation
+	}
 }
 
-// mine is the conversation server was last heard driving, or "".
+// mine is the conversation server was last heard working in, or "".
 func (o *openCodeOwners) mine(server string) string {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	return o.byServer[server]
+	if watch, ok := o.watches[server]; ok {
+		return watch.conversation
+	}
+	return ""
 }
 
-// others reports whether a server other than server drives conversation.
+// others reports whether a server other than server is working in
+// conversation.
 func (o *openCodeOwners) others(server, conversation string) bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	for other, held := range o.byServer {
-		if held == conversation && other != server {
+	for other, watch := range o.watches {
+		if other != server && watch.conversation == conversation {
 			return true
 		}
 	}
@@ -214,9 +358,11 @@ type openCodeFollower struct {
 	directory string
 	entryMax  int
 	out       *follower
-	// owners is the runner's record of which OpenCode drives which
-	// conversation; nil keeps none (a subagent's read).
+	// owners is the runner's record of which OpenCode works in which
+	// conversation; nil keeps none (a subagent's read). kept is the one the
+	// session kept (domain.AgentServer.Conversation).
 	owners *openCodeOwners
+	kept   string
 
 	// heardMu guards heard: the conversations this OpenCode's event stream
 	// has named since the follower started.
@@ -432,23 +578,18 @@ func (f *openCodeFollower) noteChild(part openCodePart, input any) {
 // the root conversations in its directory touched since the session
 // launched, it is, in order:
 //
-//  1. the newest one this OpenCode's event stream has named: the TUI is
+//  1. the newest one this follower has heard its OpenCode name: the TUI is
 //     working in it, or `/new` just made it;
-//  2. the one it was last heard driving, at an earlier attachment;
-//  3. the one already shown, while no other OpenCode drives it;
-//  4. the newest one no other OpenCode drives.
+//  2. the one its OpenCode was last heard working in, by the runner
+//     (openCodeOwners), or else the one the session kept from that;
+//  3. the one already shown, while no other OpenCode works in it;
+//  4. the newest one no other OpenCode works in.
 //
 // So the conversation of another OpenCode in the same folder, newer as it
-// may be, never replaces the session's own once that is known. OpenCode is
-// asked for the directory's alone, and each answer is checked against it too,
-// for a version that lists the whole repository's.
+// may be, never replaces the session's own once that is known.
 func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
-	query := url.Values{"roots": {"true"}}
-	if f.directory != "" {
-		query.Set("directory", f.directory)
-	}
-	var sessions []openCodeSession
-	if err := f.api.get(ctx, "/session", query, &sessions); err != nil {
+	sessions, err := openCodeRoots(ctx, f.api, f.since, f.directory)
+	if err != nil {
 		return "", err
 	}
 	f.heardMu.Lock()
@@ -463,36 +604,24 @@ func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
 		mine = f.owners.mine(server)
 		others = func(id string) bool { return f.owners.others(server, id) }
 	}
-	var named, newest openCodeSession
-	held, shown := false, false
-	for _, s := range sessions {
-		if s.ParentID != "" || s.Time.Updated < f.since || !openCodeIDPattern.MatchString(s.ID) {
-			continue
+	listed := func(id string) bool {
+		return id != "" && newestOf(sessions, func(s openCodeSession) bool { return s.ID == id }) != ""
+	}
+	if named := newestOf(sessions, func(s openCodeSession) bool { return heard[s.ID] }); named != "" {
+		if f.owners != nil {
+			f.owners.claim(server, named)
 		}
-		if f.directory != "" && s.Directory != "" && filepath.Clean(s.Directory) != f.directory {
-			continue
-		}
-		if heard[s.ID] && (named.ID == "" || s.Time.Updated > named.Time.Updated) {
-			named = s
-		}
-		held = held || (mine != "" && s.ID == mine)
-		shown = shown || (f.session != "" && s.ID == f.session)
-		if !others(s.ID) && (newest.ID == "" || s.Time.Updated > newest.Time.Updated) {
-			newest = s
-		}
+		return named, nil
 	}
 	switch {
-	case named.ID != "":
-		if f.owners != nil {
-			f.owners.claim(server, named.ID)
-		}
-		return named.ID, nil
-	case held:
+	case listed(mine):
 		return mine, nil
-	case shown && !others(f.session):
+	case listed(f.kept):
+		return f.kept, nil
+	case listed(f.session) && !others(f.session):
 		return f.session, nil
 	}
-	return newest.ID, nil
+	return newestOf(sessions, func(s openCodeSession) bool { return !others(s.ID) }), nil
 }
 
 // messages is the conversation's messages, oldest first: its last few once

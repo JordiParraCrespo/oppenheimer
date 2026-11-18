@@ -284,6 +284,12 @@ type Transcripts interface {
 	// conversation itself. "" while there is none yet, and for an agent whose
 	// transcripts this runner cannot read.
 	Teleported(agent domain.Agent, dir string, since time.Time) string
+	// ServedConversation is the conversation the session's agent, one that
+	// serves its conversation (domain.Agent.ServesConversation), was last
+	// heard working in: its process is listened to from the first ask until
+	// it is no longer asked about. "" while it has said nothing, and for any
+	// other agent.
+	ServedConversation(session domain.Session) string
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the

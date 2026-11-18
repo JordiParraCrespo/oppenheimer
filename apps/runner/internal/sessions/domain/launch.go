@@ -82,6 +82,13 @@ type AgentServer struct {
 	// repository, so the worktrees of one repository share it, and only the
 	// directory tells this session's conversations from another's.
 	Directory string `json:"directory,omitempty"`
+	// Conversation is the agent's conversation the session's own process was
+	// last heard working in, or "" until it is. OpenCode does not take a name
+	// for the one it starts, and another OpenCode in the same folder writes to
+	// the same store, so this, not the newest one there, is the session's. It
+	// is saved, so the chat still finds it after the runner restarts, and kept
+	// across a launch, like Since.
+	Conversation string `json:"conversation,omitempty"`
 }
 
 // AgentServerUser is the user name the agent's API takes with the password.
