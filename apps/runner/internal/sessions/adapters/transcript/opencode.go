@@ -164,16 +164,16 @@ func newOpenCodeOwners() *openCodeOwners {
 }
 
 // served is the conversation server's process was last heard working in,
-// listening to it from now if nobody was. A process not heard from yet is
-// taken to be in the one the session kept (server.Conversation).
+// listening to it from now if nobody was, until nobody asks or ctx ends. A
+// process not heard from yet is taken to be in the one the session kept
+// (server.Conversation).
 func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) string {
 	o.mu.Lock()
 	watch, ok := o.watches[server.Password]
 	if !ok {
 		watch = &openCodeWatch{conversation: server.Conversation, heard: map[string]bool{}}
 		o.watches[server.Password] = watch
-		// It outlives this ask: it stops once nobody asks (listen).
-		go o.listen(context.WithoutCancel(ctx), server, watch)
+		go o.listen(ctx, server, watch)
 	}
 	watch.asked = time.Now()
 	heard := watch.heard
@@ -183,6 +183,8 @@ func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) 
 		return o.mine(server.Password)
 	}
 	api := newOpenCodeAPI(server)
+	ctx, cancel := context.WithTimeout(ctx, openCodeTimeout)
+	defer cancel()
 	sessions, err := openCodeRoots(ctx, api, server.Since, openCodeDirectory(server.Directory))
 	if err != nil {
 		// Asked again on the next tick.
@@ -200,7 +202,7 @@ func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) 
 }
 
 // listen reads server's event stream, reconnecting while OpenCode restarts,
-// until nobody has asked about it for o.idle.
+// until nobody has asked about it for o.idle or base ends.
 func (o *openCodeOwners) listen(base context.Context, server domain.AgentServer, watch *openCodeWatch) {
 	api := newOpenCodeAPI(server)
 	for {
@@ -234,7 +236,14 @@ func (o *openCodeOwners) listen(base context.Context, server domain.AgentServer,
 			}
 		}
 		cancel()
-		time.Sleep(openCodeRetryEvery)
+		select {
+		case <-base.Done():
+			o.mu.Lock()
+			delete(o.watches, server.Password)
+			o.mu.Unlock()
+			return
+		case <-time.After(openCodeRetryEvery):
+		}
 	}
 }
 

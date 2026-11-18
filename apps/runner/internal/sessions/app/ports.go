@@ -287,9 +287,9 @@ type Transcripts interface {
 	// ServedConversation is the conversation the session's agent, one that
 	// serves its conversation (domain.Agent.ServesConversation), was last
 	// heard working in: its process is listened to from the first ask until
-	// it is no longer asked about. "" while it has said nothing, and for any
-	// other agent.
-	ServedConversation(session domain.Session) string
+	// it is no longer asked about, or ctx ends. "" while it has said nothing,
+	// and for any other agent.
+	ServedConversation(ctx context.Context, session domain.Session) string
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the

@@ -19,7 +19,7 @@ type servedTranscripts struct {
 	working map[string]string
 }
 
-func (t *servedTranscripts) ServedConversation(session domain.Session) string {
+func (t *servedTranscripts) ServedConversation(_ context.Context, session domain.Session) string {
 	return t.working[session.Launch.Server.Password]
 }
 
@@ -35,9 +35,10 @@ func (t *servedTranscripts) ServedConversation(session domain.Session) string {
 //
 // The conversation its process is heard working in is kept on the session
 // too, and through a restart, so the chat shows it rather than another
-// OpenCode's in the same folder after the runner restarts. Regression: a
-// chat opened on an idle session showing the conversation another OpenCode
-// in its folder touched last.
+// OpenCode's in the same folder after the runner restarts, and a restart
+// reopens it by its id. Regression: a chat opened on an idle session showing
+// the conversation another OpenCode in its folder touched last, or a restart
+// whose terminal opens that one while the chat shows the kept one.
 func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 	h := newFakeHarness(t)
 	ports := []int{41001, 41002}
@@ -79,7 +80,7 @@ func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 	}
 
 	transcripts.working[first.Password] = "ses_mine"
-	svc.FindServedConversations()
+	svc.FindServedConversations(context.Background())
 	if kept, _ := svc.Get(session.ID); kept.Launch.Server.Conversation != "ses_mine" {
 		t.Fatalf("kept conversation = %q, want the one its OpenCode works in", kept.Launch.Server.Conversation)
 	}
@@ -95,6 +96,11 @@ func TestAnOpenCodeSessionKeepsWhereItsConversationIsServed(t *testing.T) {
 	again := restarted.Launch.Server
 	if again == nil || again.Port != 41002 || again.Password == first.Password || again.Since != first.Since || again.Conversation != "ses_mine" {
 		t.Fatalf("server after restart = %+v, want port 41002, a new password, the first launch's since and conversation", again)
+	}
+	// OpenCode's own `--continue` may open another OpenCode's conversation
+	// in a shared folder, so the kept one is reopened by its id.
+	if command := h.terminals.CommandOf(session.TmuxName()); !strings.Contains(command, "--session ses_mine") || strings.Contains(command, "--continue") {
+		t.Fatalf("restarted %q, want the kept conversation reopened by its id", command)
 	}
 	if env := h.terminals.Env(session.TmuxName()); env["OPENCODE_SERVER_PASSWORD"] != again.Password {
 		t.Fatalf("terminal env after restart = %v, want the new password", env)

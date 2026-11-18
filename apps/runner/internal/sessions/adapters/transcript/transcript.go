@@ -110,12 +110,10 @@ func New(opts Options) *Reader {
 
 // ServedConversation implements app.Transcripts: OpenCode's, through its
 // own event stream (openCodeOwners).
-func (r *Reader) ServedConversation(session domain.Session) string {
+func (r *Reader) ServedConversation(ctx context.Context, session domain.Session) string {
 	if !session.Agent.ServesConversation() || session.Launch.Server == nil {
 		return ""
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), openCodeTimeout)
-	defer cancel()
 	return r.openCode.served(ctx, *session.Launch.Server)
 }
 

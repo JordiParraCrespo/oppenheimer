@@ -170,6 +170,10 @@ type launchMap struct {
 	// The resume form is a subcommand, so it leads the argv instead of
 	// following it.
 	conversationResumeLeads bool
+	// conversationReopen reopens, on a restart, the conversation the runner
+	// heard the agent's process work in (AgentServer.Conversation), for an
+	// agent whose resume names none.
+	conversationReopen []string
 	// How a cloud session is continued here, `<teleport>` its id, and how
 	// the conversation that left is reopened. Neither names a conversation.
 	teleportStart  []string
@@ -262,6 +266,12 @@ func (l Launch) conversation(m launchMap) conversationArgs {
 	// started in, and a session's worktree is its own and never reused, so
 	// that is this session's conversation. Only a resume that asks for an id
 	// needs one.
+	//
+	// Except in a folder shared with another of the same agent (a direct
+	// session's): there "the last one" may be the other's, so a conversation
+	// the runner heard this session's agent work in is reopened by its id.
+	case l.Resume && m.conversationReopen != nil && l.Server != nil && l.Server.Conversation != "":
+		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Server.Conversation)}
 	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
 		return conversationArgs{
 			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),

@@ -470,12 +470,12 @@ func TestTheChatFollowsItsOwnOpenCodeNotAnotherInTheSameFolder(t *testing.T) {
 
 	// The poll loop asks about the session while its OpenCode works, with
 	// no chat open.
-	if got := reader.ServedConversation(session); got != "" {
+	if got := reader.ServedConversation(context.Background(), session); got != "" {
 		t.Fatalf("served = %q before OpenCode said anything", got)
 	}
 	oc.listened(t, 1)
 	oc.speaksOf("ses_mine")
-	eventually(t, "the conversation its OpenCode works in", func() bool { return reader.ServedConversation(session) == "ses_mine" })
+	eventually(t, "the conversation its OpenCode works in", func() bool { return reader.ServedConversation(context.Background(), session) == "ses_mine" })
 
 	// Another OpenCode in the folder starts a conversation, newer than ours;
 	// ours sits idle, and the chat is opened.

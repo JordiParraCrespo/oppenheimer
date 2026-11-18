@@ -9,4 +9,6 @@ conversation had been touched last, often the other one's, while the terminal
 showed the session's own. The runner now listens to each live session's
 OpenCode on its own event stream, chat open or not, keeps the conversation it
 works in on the session (through a restart of the runner or the session), and
-still follows `/new`.
+still follows `/new`. A Restart reopens that conversation by its id
+(`--session`) rather than OpenCode's own "last one", which in a shared folder
+may be the other's.

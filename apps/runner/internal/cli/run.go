@@ -302,7 +302,7 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		a.Sessions.FindTeleported()
 		// A session whose agent serves its conversation (OpenCode) keeps the
 		// one its own process works in, which its chat shows.
-		a.Sessions.FindServedConversations()
+		a.Sessions.FindServedConversations(ctx)
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()

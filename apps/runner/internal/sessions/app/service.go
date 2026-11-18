@@ -673,7 +673,7 @@ func (s *Service) FindTeleported() {
 // last heard working in is kept on the session, so its chat shows that one,
 // not another OpenCode's in the same folder, whenever it is opened, and after
 // the runner restarts.
-func (s *Service) FindServedConversations() {
+func (s *Service) FindServedConversations(ctx context.Context) {
 	if s.transcripts == nil {
 		return
 	}
@@ -686,7 +686,7 @@ func (s *Service) FindServedConversations() {
 	}
 	s.mu.Unlock()
 	for _, session := range served {
-		conversation := s.transcripts.ServedConversation(session)
+		conversation := s.transcripts.ServedConversation(ctx, session)
 		if conversation == "" || conversation == session.Launch.Server.Conversation {
 			continue
 		}
