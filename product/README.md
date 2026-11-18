@@ -1746,3 +1746,8 @@ earlier note:
   header whatever layers were on. On 2026-11-17 the owner asked for filters
   (kind, project, status, who added a task, §7) and the counts now follow
   what the calendar shows: a hidden layer counts nothing.
+- `versions/mvp/25-bots.md` §8 put a bot's prompt files in two folders,
+  `system/` and `turn/`, with the wakes in `turn/`. On 2026-11-18 the owner
+  asked to expand that with sibling folders: what opens a turn an event
+  started is `wake/` now, and `turn/` keeps what goes with a turn the
+  person started (`research/prompt-file-formats.md` §4.1).

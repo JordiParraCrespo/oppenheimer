@@ -19,7 +19,7 @@ const replaceWhatIsGone = (): string => promptText('system/recovery.replace-what
  * that turn does once the person has been told.
  */
 export function repeatedBlockerAsk(quiet: string): string {
-  return promptText('turn/repeated-blocker', { replaceWhatIsGone: replaceWhatIsGone(), quiet });
+  return promptText('wake/repeated-blocker', { replaceWhatIsGone: replaceWhatIsGone(), quiet });
 }
 
 /** The bullets "How a turn goes" carries about failures. */
@@ -35,10 +35,10 @@ export function hostCases(): string {
 /** What the `failed` wake asks, step by step, as one paragraph. */
 export function failedWakeAsk(): string {
   return [
-    promptText('turn/failed-session.read-it'),
-    promptText('turn/failed-session.the-host-was-at-fault'),
-    promptText('turn/failed-session.the-person-named-the-host'),
-    promptText('turn/failed-session.the-task-was-at-fault'),
-    promptText('turn/failed-session.closing-it'),
+    promptText('wake/failed-session.read-it'),
+    promptText('wake/failed-session.the-host-was-at-fault'),
+    promptText('wake/failed-session.the-person-named-the-host'),
+    promptText('wake/failed-session.the-task-was-at-fault'),
+    promptText('wake/failed-session.closing-it'),
   ].join(' ');
 }

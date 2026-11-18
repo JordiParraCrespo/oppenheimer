@@ -243,6 +243,13 @@ domain/prompts/
   jobs/       prompts for a model call that is not a bot's turn (dream, goal review)
 ```
 
+2026-11-18: the owner chose to expand this with sibling folders rather
+than a second level. `turn/` keeps what goes with a turn the person
+started (its context, a slash command); a fourth folder, `wake/`, holds
+what opens a turn an event started (a session, a pull request, a task, an
+approval, another bot's message, a failed session, a repeated blocker,
+answered questions).
+
 Ids gain the folder (`system/rules`). `check-api-structure` admits one
 level under `prompts/`. **When:** with the next move, so #914 is not
 touched.
