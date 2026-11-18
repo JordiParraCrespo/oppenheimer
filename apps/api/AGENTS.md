@@ -68,10 +68,11 @@ are one class each, a static method per shape the plugin returns.
 Text written for a model to read (a system prompt's sections, what a wake
 asks) is Markdown in the module's `domain/prompts/`, never a string in
 a `*.policy.ts`. A folder, one level deep, says where the words are sent:
-`system/` for sections of the system prompt, `turn/` for what goes with a
-turn the person started (its context, a slash command), `wake/` for a turn
-an event opened (a session, a pull request, a task, an approval, another
-bot); it is part of the id (`system/rules`). A file is
+`system/` for sections of the system prompt, `turn/` for what a turn
+carries besides its opening (its context, the notes in its history, a
+slash command), `wake/` for what opens a turn an event started (a session,
+a pull request, a task, an approval, another bot, a routine, a loop, a
+goal); it is part of the id (`system/rules`). A file is
 one prompt, or several fragments under
 `<!-- fragment: name -->` markers when the code chooses among them;
 `{{name}}` is a slot the code fills; any other HTML comment is a note for

@@ -1756,13 +1756,15 @@ picked, and "Use its own face" goes back to the id's).
   (`AREA_INTROS` now names them by id), again byte for byte; on
   2026-11-18 the wakes of a session, a pull request, a task, an approval
   and another bot's message, the line that opens each and what its turn is
-  asked. A folder says where the words are sent: `system/`, `turn/` for a
-  turn the person started, and `wake/` for a turn an event opened (the
-  owner chose sibling folders over a second level, 2026-11-18). No prompt
-  is longer than a ceiling a spec holds (`research/prompt-file-formats.md`
-  §4.1 and §4.5). What a tool answers, the history's notes, a routine's,
-  a loop's and a goal's openings, the jobs that are not a bot's turn
-  (dream, goal review) and the tools' descriptions are still strings
+  asked; then the notes the history puts above what was not the person's
+  words, and what a routine, a loop and a goal open with and say when they
+  pause or end. A folder says where the words are sent: `system/`, `turn/`
+  for what a turn carries besides its opening, and `wake/` for what opens
+  a turn an event started (the owner chose sibling folders over a second
+  level, 2026-11-18). No prompt is longer than a ceiling a spec holds
+  (`research/prompt-file-formats.md` §4.1 and §4.5). What a tool answers,
+  the jobs that are not a bot's turn (dream, goal review, the summary) and
+  the tools' descriptions are still strings
   (`research/agent-stack-architecture.md` §5).
 - **Revisions and activity:** `bot_document_revision` covers the two
   documents, `SOUL.md` and `INSTRUCTIONS.md`, and only those: they are

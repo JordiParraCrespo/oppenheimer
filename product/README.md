@@ -1749,5 +1749,5 @@ earlier note:
 - `versions/mvp/25-bots.md` §8 put a bot's prompt files in two folders,
   `system/` and `turn/`, with the wakes in `turn/`. On 2026-11-18 the owner
   asked to expand that with sibling folders: what opens a turn an event
-  started is `wake/` now, and `turn/` keeps what goes with a turn the
-  person started (`research/prompt-file-formats.md` §4.1).
+  started is `wake/` now, and `turn/` keeps what a turn carries besides
+  its opening (`research/prompt-file-formats.md` §4.1).
