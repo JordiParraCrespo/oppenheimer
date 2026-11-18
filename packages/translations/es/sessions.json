@@ -325,6 +325,8 @@
     "pinned": "Fijadas",
     "pin": "Fijar",
     "unpin": "Desfijar",
+    "markUnread": "Marcar como no leída",
+    "markRead": "Marcar como leída",
     "hide": "Ocultar",
     "show": "Mostrar",
     "hidden": "Oculta",

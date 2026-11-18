@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
 import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
+import { useSessionUnread } from '../hooks/use-session-unread';
 import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
 import { attentionFor, isWorking, rowGlyphFor } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
@@ -37,7 +38,9 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * own goes up as one call each: the delete and share dialogs, which must outlive the row,
  * and a failed write, which the sidebar shows because a menu closes on its pick
  * and the row has no room. Its pin is the sidebar's (`SessionPinsContext`),
- * which draws a pinned row under Pinned. It subscribes to one boolean for being
+ * which draws a pinned row under Pinned, and so is its unread mark
+ * (`SessionUnreadContext`), a blue dot the reader set to come back to, which
+ * opening the session takes off. It subscribes to one boolean for being
  * the open session, not the route, so a navigation re-renders only the two rows
  * whose highlight moved; `now` is its group's one-minute clock. The row drags, up
  * or down its project or into another; the sidebar keeps where it lands.
@@ -89,6 +92,7 @@ export function SessionRow({
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const pin = useSessionPin(session.id);
+  const unread = useSessionUnread(session.id, active);
   const selection = useSessionSelected(session.id);
   const [draft, setDraft] = useState<string | null>(null);
   // The projects are read, not subscribed to: the move pane is the one thing
@@ -164,7 +168,7 @@ export function SessionRow({
       status={status}
       title={statusHint}
       state={rowGlyphFor(session)}
-      attention={attentionFor(session)}
+      attention={attentionFor(session) ?? (unread.unread ? 'unread' : undefined)}
       working={isWorking(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'vendor' ? <AgentMark agent={session.agent} /> : GLYPHS[glyph]}
@@ -205,6 +209,8 @@ export function SessionRow({
             onOpenChange={setMenuOpen}
             pinned={pin.pinned}
             onPinChange={pin.setPinned}
+            unread={unread.unread}
+            onUnreadChange={unread.setUnread}
             hidden={session.hidden}
             onHiddenChange={(hidden) => visibility.mutate({ id: session.id, hidden })}
             onSelect={() => selection.pick('toggle')}

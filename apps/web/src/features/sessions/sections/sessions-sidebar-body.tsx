@@ -24,6 +24,7 @@ import {
   useSelecting,
   useSessionSelectionStore,
 } from '../hooks/use-session-selection';
+import { SessionUnreadContext, useSessionUnreadMarks } from '../hooks/use-session-unread';
 import { useShowHidden } from '../hooks/use-show-hidden';
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { listedProjects } from '../lib/hidden-projects';
@@ -140,6 +141,7 @@ export function SessionsSidebarBody() {
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
   const pins = useSessionPins();
+  const unread = useSessionUnreadMarks();
   const { pinned, rest } = splitPinned(visible, pins.pins);
   const picked = filters.project[0] ?? null;
   const listing = listedProjects(projects, rest, hidden, picked);
@@ -187,130 +189,132 @@ export function SessionsSidebarBody() {
     <SessionSelectionContext value={selection}>
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
-        <SessionsSidebarHead
-          sessionCount={count}
-          filters={filters}
-          options={options}
-          dirty={dirty}
-          visibility={{
-            hidden,
-            hiddenCount: listing.hiddenCount,
-            onShownChange: setShown,
-            onShowAll: showAll,
-            pinnedOnly,
-            onPinnedOnlyChange: setPinnedOnly,
-            showHidden,
-            onShowHiddenChange: setShowHidden,
-            hiddenSessionCount: hiddenSessions.hiddenCount,
-          }}
-          chips={activeFilters(filters, options)}
-          onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
-          onFiltersClear={() =>
-            setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
-          }
-          onFacetClear={(chip) => setFilters((current) => withoutChip(current, chip))}
-          onNewProject={() => dialogs.open({ kind: 'project' })}
-          query={query}
-          onQueryChange={setQuery}
-          open={list.open}
-          onOpenChange={list.setOpen}
-          selectionBar={
-            selecting ? (
-              <SessionsSelectionBar
-                sessions={visible}
-                projects={projects}
-                onDelete={setDeletingMany}
-                onWrite={setFailure}
-              />
-            ) : undefined
-          }
-        />
+        <SessionUnreadContext value={unread}>
+          <SessionsSidebarHead
+            sessionCount={count}
+            filters={filters}
+            options={options}
+            dirty={dirty}
+            visibility={{
+              hidden,
+              hiddenCount: listing.hiddenCount,
+              onShownChange: setShown,
+              onShowAll: showAll,
+              pinnedOnly,
+              onPinnedOnlyChange: setPinnedOnly,
+              showHidden,
+              onShowHiddenChange: setShowHidden,
+              hiddenSessionCount: hiddenSessions.hiddenCount,
+            }}
+            chips={activeFilters(filters, options)}
+            onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+            onFiltersClear={() =>
+              setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
+            }
+            onFacetClear={(chip) => setFilters((current) => withoutChip(current, chip))}
+            onNewProject={() => dialogs.open({ kind: 'project' })}
+            query={query}
+            onQueryChange={setQuery}
+            open={list.open}
+            onOpenChange={list.setOpen}
+            selectionBar={
+              selecting ? (
+                <SessionsSelectionBar
+                  sessions={visible}
+                  projects={projects}
+                  onDelete={setDeletingMany}
+                  onWrite={setFailure}
+                />
+              ) : undefined
+            }
+          />
 
-        <ErrorAlert
-          error={loadError}
-          fallback={t('sessions.sidebar.loadFailed')}
-          className="mx-3 mb-2"
-        />
+          <ErrorAlert
+            error={loadError}
+            fallback={t('sessions.sidebar.loadFailed')}
+            className="mx-3 mb-2"
+          />
 
-        <ErrorAlert
-          error={failure}
-          fallback={t('sessions.sidebar.writeFailed')}
-          onDismiss={() => setFailure(null)}
-          className="mx-3 mb-2"
-        />
+          <ErrorAlert
+            error={failure}
+            fallback={t('sessions.sidebar.writeFailed')}
+            onDismiss={() => setFailure(null)}
+            className="mx-3 mb-2"
+          />
 
-        {list.open ? (
-          <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-            {/* No project at all: the way to one is Plan's Projects view and the
+          {list.open ? (
+            <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
+              {/* No project at all: the way to one is Plan's Projects view and the
             chip on New session, and the row says so rather than arguing with
             the pane. */}
-            {empty !== null ? (
-              <div className="px-3 pt-2">
-                <EmptyState compact>
-                  <EmptyState.Header>
-                    <EmptyState.Description>{empty}</EmptyState.Description>
-                  </EmptyState.Header>
-                </EmptyState>
-              </div>
-            ) : (
-              <DragProvider
-                {...handlers}
-                labels={dragLabels}
-                overlay={(active) => <SidebarDragCopy item={active} />}
-              >
-                {pinnedRows.length > 0 || carrying ? (
-                  <PinnedGroup
-                    sessions={pinnedRows}
-                    onShare={(target) =>
-                      dialogs.open({ kind: 'share-session', sessionId: target.id })
-                    }
-                    onDelete={setDeleting}
-                    onWrite={setFailure}
-                  />
-                ) : null}
-                <SortableGroup
-                  id={PROJECTS_GROUP}
-                  items={shown.flatMap(({ project }) =>
-                    project ? [sortableProjectId(project.id)] : [],
-                  )}
-                  accepts={['project']}
+              {empty !== null ? (
+                <div className="px-3 pt-2">
+                  <EmptyState compact>
+                    <EmptyState.Header>
+                      <EmptyState.Description>{empty}</EmptyState.Description>
+                    </EmptyState.Header>
+                  </EmptyState>
+                </div>
+              ) : (
+                <DragProvider
+                  {...handlers}
+                  labels={dragLabels}
+                  overlay={(active) => <SidebarDragCopy item={active} />}
                 >
-                  {shown.map(({ project, sessions: members }) => {
-                    const key = project?.id ?? 'unfiled';
-                    return (
-                      <ProjectGroup
-                        key={key}
-                        project={project}
-                        sessions={members}
-                        open={!closed.includes(key)}
-                        onOpenChange={(next) => setOpen(key, next)}
-                        narrowed={narrowed}
-                        query={query}
-                        onNewSessionHere={(target) =>
-                          navigate({ to: '/sessions/new', search: { project: target.id } })
-                        }
-                        onShare={(target) =>
-                          dialogs.open({ kind: 'share-session', sessionId: target.id })
-                        }
-                        onDelete={setDeleting}
-                        onWrite={setFailure}
-                      />
-                    );
-                  })}
-                </SortableGroup>
-              </DragProvider>
-            )}
-          </div>
-        ) : null}
+                  {pinnedRows.length > 0 || carrying ? (
+                    <PinnedGroup
+                      sessions={pinnedRows}
+                      onShare={(target) =>
+                        dialogs.open({ kind: 'share-session', sessionId: target.id })
+                      }
+                      onDelete={setDeleting}
+                      onWrite={setFailure}
+                    />
+                  ) : null}
+                  <SortableGroup
+                    id={PROJECTS_GROUP}
+                    items={shown.flatMap(({ project }) =>
+                      project ? [sortableProjectId(project.id)] : [],
+                    )}
+                    accepts={['project']}
+                  >
+                    {shown.map(({ project, sessions: members }) => {
+                      const key = project?.id ?? 'unfiled';
+                      return (
+                        <ProjectGroup
+                          key={key}
+                          project={project}
+                          sessions={members}
+                          open={!closed.includes(key)}
+                          onOpenChange={(next) => setOpen(key, next)}
+                          narrowed={narrowed}
+                          query={query}
+                          onNewSessionHere={(target) =>
+                            navigate({ to: '/sessions/new', search: { project: target.id } })
+                          }
+                          onShare={(target) =>
+                            dialogs.open({ kind: 'share-session', sessionId: target.id })
+                          }
+                          onDelete={setDeleting}
+                          onWrite={setFailure}
+                        />
+                      );
+                    })}
+                  </SortableGroup>
+                </DragProvider>
+              )}
+            </div>
+          ) : null}
 
-        <Suspense fallback={null}>
-          {deleting ? (
-            <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
-          ) : null}
-          {deletingMany ? (
-            <DeleteSessionsDialog sessions={deletingMany} onClose={() => setDeletingMany(null)} />
-          ) : null}
-        </Suspense>
+          <Suspense fallback={null}>
+            {deleting ? (
+              <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
+            ) : null}
+            {deletingMany ? (
+              <DeleteSessionsDialog sessions={deletingMany} onClose={() => setDeletingMany(null)} />
+            ) : null}
+          </Suspense>
+        </SessionUnreadContext>
       </SessionPinsContext>
     </SessionSelectionContext>
   );

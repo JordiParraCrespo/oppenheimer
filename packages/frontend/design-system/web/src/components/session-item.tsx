@@ -54,6 +54,8 @@ type SessionRename = {
  * wash for a picked row, so the list reads as a set of checkboxes without
  * moving a name.
  */
+const ATTENTION_LABELS = { 'needs-you': 'Needs input', done: 'Done', unread: 'Unread' } as const;
+
 function SessionItem({
   name,
   age,
@@ -87,9 +89,10 @@ function SessionItem({
   state?: StatusState;
   /**
    * A 7px dot at the row's end, its name set at 600: amber for `needs-you`,
-   * blue for `done`. It gives way to the ellipsis like the age.
+   * blue for `done` and for `unread`, a row the reader marked to come back to.
+   * It gives way to the ellipsis like the age.
    */
-  attention?: 'needs-you' | 'done';
+  attention?: 'needs-you' | 'done' | 'unread';
   /** Whether the agent is at work: the name shimmers while it is. */
   working?: boolean;
   active?: boolean;
@@ -192,7 +195,7 @@ function SessionItem({
       )}
       {attention && !rename ? (
         <span
-          aria-label={attention === 'needs-you' ? 'Needs input' : 'Done'}
+          aria-label={ATTENTION_LABELS[attention]}
           className={cn(
             'size-1.75 shrink-0 rounded-pill',
             attention === 'needs-you' ? 'bg-warning' : 'bg-primary',
