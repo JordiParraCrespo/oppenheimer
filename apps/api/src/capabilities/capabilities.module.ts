@@ -35,8 +35,7 @@ export function hasGithubApp(configService: ConfigService): boolean {
  * Resolves this deployment's optional capabilities from config, once at boot.
  *
  * A capability is on only when everything it needs is actually present — a
- * missing optional key removes a feature, it never throws (see
- * `.agents/rules/api-config.md`). Required settings (database,
+ * missing optional key removes a feature, it never throws. Required settings (database,
  * `BETTER_AUTH_SECRET`) are the opposite and are not listed here: they fail
  * boot loudly in their config schemas.
  */

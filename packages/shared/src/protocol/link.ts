@@ -62,8 +62,7 @@ export const RUNNER_LINK_REFUSALS = Object.freeze({
 
 /**
  * The 4-byte big-endian attachment id every binary frame on the link starts
- * with (`product/versions/mvp/01-protocol.md`, "Framing"). No JSON, no base64,
- * and nothing else in the header.
+ * with. No JSON, no base64, and nothing else in the header.
  */
 export const LINK_FRAME_HEADER_BYTES = 4;
 

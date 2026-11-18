@@ -1,6 +1,5 @@
 /**
- * A pull request's brief: what the review deck leads a card with
- * (`product/next-steps/0.2-pull-requests.md`, "The review deck"). One
+ * A pull request's brief: what the review deck leads a card with. One
  * sentence of what it changes, a few points, where to look first, and the
  * pictures its author put in the description.
  *

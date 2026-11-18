@@ -1,10 +1,9 @@
 import { createHash } from 'node:crypto';
 
 /**
- * A turn has no step limit (`25-bots.md` §2, 2026-11-09), so what stops a
+ * A turn has no step limit (since 2026-11-09), so what stops a
  * model that goes round in circles is this guard, on every turn, from
- * OpenClaw's tool-loop detection and its stop on repeated failures
- * (`research/lessons-from-long-running-agents.md`):
+ * OpenClaw's tool-loop detection and its stop on repeated failures:
  *
  * - the same call (tool and input) that failed with the same error
  *   `FAILURE_STREAK` times in a row is not run again;

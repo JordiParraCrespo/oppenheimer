@@ -1,22 +1,21 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Plan's board: `goal`, `task` and `task_session`
- * (`product/versions/mvp/19-plan-tasks-and-goals.md` §1), and the owner role's
- * two new subjects, `Task` and `Calendar`.
+ * Plan's board: `goal`, `task` and `task_session`, and the owner role's two
+ * new subjects, `Task` and `Calendar`.
  *
  * Every key carries the workspace, and every parent reference is composite on
- * it, so no table needs a foreign key of its own to \`organization\`
- * (\`database-design.md\`). A task's goal key is one composite foreign key
- * to the goal's `(organizationId, id, projectId)`: `ON DELETE SET NULL ("goalId")`
- * (Postgres 15+) nulls only the goal when a goal is deleted, and `ON UPDATE
- * CASCADE` carries a goal's move to another project onto its tasks. Tasks and
- * goals go with their project, and links with their task or their session, so
- * erasing a workspace's projects and sessions leaves nothing of Plan behind.
+ * it, so no table needs a foreign key of its own to \`organization\`. A task's
+ * goal key is one composite foreign key to the goal's `(organizationId, id,
+ * projectId)`: `ON DELETE SET NULL ("goalId")` (Postgres 15+) nulls only the
+ * goal when a goal is deleted, and `ON UPDATE CASCADE` carries a goal's move to
+ * another project onto its tasks. Tasks and goals go with their project, and
+ * links with their task or their session, so erasing a workspace's projects and
+ * sessions leaves nothing of Plan behind.
  *
  * The owner role is a global system row seeded from `SYSTEM_ROLE_PERMISSIONS`;
  * the two rules are appended here as that catalog now has them, and the catalog
- * version is bumped so every cached ability is rebuilt (`rbac-roles.md`).
+ * version is bumped so every cached ability is rebuilt.
  */
 export class AddPlanTasks1791000200000 implements MigrationInterface {
   name = 'AddPlanTasks1791000200000';

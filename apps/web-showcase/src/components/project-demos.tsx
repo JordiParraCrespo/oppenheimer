@@ -1,5 +1,6 @@
 'use client';
 
+import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { ProjectCard, ProjectCardGrid, ProjectCardSkeleton } from '@oppenheimer/design-system-web/project-card';
 import {
   ProjectMilestoneRow,
@@ -27,6 +28,23 @@ export function ProjectCardsDemo() {
         />
         <ProjectCard name="Client sites" meta="flama-ai · adri-rodriguez-sites" status={<StatusDot density="compact" state="idle" />} />
         <ProjectCardSkeleton />
+      </ProjectCardGrid>
+      <ProjectCardGrid>
+        <ProjectCard
+          name="XRP Mobile"
+          meta="xrp-mobile"
+          status={<StatusDot density="compact" state="idle" />}
+          selecting
+          selected
+          select={<Checkbox checked aria-label="Select XRP Mobile" />}
+        />
+        <ProjectCard
+          name="Atlas"
+          meta="atlas · flama-ai"
+          status={<StatusDot density="compact" state="idle" />}
+          selecting
+          select={<Checkbox checked={false} aria-label="Select Atlas" />}
+        />
       </ProjectCardGrid>
       <ProjectOverview>
         <ProjectOverviewColumn>

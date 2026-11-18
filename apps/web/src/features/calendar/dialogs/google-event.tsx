@@ -24,10 +24,10 @@ import { accentOf } from '../lib/google-accounts';
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 
 /**
- * A Google event, read-only (`23-plan-milestones-stats-accounts.md` §5): open
- * while the address says `?google=`. When it is, which account it came from,
- * in that account's colour, a way to join it when it is a video meeting, and
- * a way to open it in Google Calendar, where it can be changed.
+ * A Google event, read-only: open while the address says `?google=`. When it
+ * is, which account it came from, in that account's colour, a way to join it
+ * when it is a video meeting, and a way to open it in Google Calendar, where
+ * it can be changed.
  */
 export function GoogleEventDialog() {
   const { t } = useTranslation();

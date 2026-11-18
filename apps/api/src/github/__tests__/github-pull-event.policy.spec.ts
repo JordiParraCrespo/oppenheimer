@@ -1,9 +1,8 @@
 import { followedPullEvent, isRepositoryInsider } from '../domain/github-pull-event.policy';
 
 /**
- * Which stored GitHub events move a pull request someone follows
- * (`agent-tools.md` §3 for a session, `27-bot-subscriptions.md` §7 for a
- * bot): both wake handlers ask this one rule, so a regression here wakes a
+ * Which stored GitHub events move a pull request someone follows, a session
+ * or a bot: both wake handlers ask this one rule, so a regression here wakes a
  * follower on our own app's push, on an issue, or on a subject that is no
  * repository id.
  */

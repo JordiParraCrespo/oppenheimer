@@ -16,12 +16,12 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { BotQuestionDecisionResolver } from '../bot-question-decision.resolver';
 
 /**
- * Answering or dismissing a bot's card of questions (`25-bots.md` §3.2).
- * Either decision moves the card and queues, in the same write, the bot's
- * turn opened by what was decided, under what both the asking turn's and the
- * decider's scopes cover. Answers that do not fit are `BOTS_036` and write
- * nothing; a card already decided, or one that loses the conditional write
- * to a new message, is `BOTS_037` and announces nothing.
+ * Answering or dismissing a bot's card of questions. Either decision moves the
+ * card and queues, in the same write, the bot's turn opened by what was
+ * decided, under what both the asking turn's and the decider's scopes cover.
+ * Answers that do not fit are `BOTS_036` and write nothing; a card already
+ * decided, or one that loses the conditional write to a new message, is
+ * `BOTS_037` and announces nothing.
  */
 const scope: AccessScope = {
   userId: randomUUID(),

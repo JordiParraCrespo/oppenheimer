@@ -10,10 +10,9 @@ import { SESSION_STATUS } from '../lib/session-state';
 import { LinkSessionPicker } from './link-session-picker';
 
 /**
- * The task dialog's Sessions row (`18-plan-product.md` §4): each linked
- * session with its state and age, opening it, × to unlink; then Start session
- * and Link existing. Both of those attach, and attaching is what moves a task
- * out of To do.
+ * The task dialog's Sessions row: each linked session with its state and age,
+ * opening it, × to unlink; then Start session and Link existing. Both of
+ * those attach, and attaching is what moves a task out of To do.
  */
 export function TaskSessionsRow({
   task,

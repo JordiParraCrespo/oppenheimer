@@ -11,13 +11,12 @@ import { VoiceTranscriptionMapper } from '../../voice-transcription.mapper';
 import { TranscribeVoiceCommand } from './transcribe-voice.command';
 
 /**
- * One dictation (`product/next-steps/voice.md`): the clip is judged by its
- * bytes, heard by the workspace's ChatGPT sign-in or the deployment's own
- * speech server, then tidied into writing. The vocabulary goes to both: to
- * the speech model as names to expect, where it fixes a name at the source,
- * and to the polish, which spells what got through. Nothing is kept: the audio and the
- * transcript live for this request, and what the person sends afterwards is
- * whatever they keep of it.
+ * One dictation: the clip is judged by its bytes, heard by the workspace's
+ * ChatGPT sign-in or the deployment's own speech server, then tidied into
+ * writing. The vocabulary goes to both: to the speech model as names to expect,
+ * where it fixes a name at the source, and to the polish, which spells what got
+ * through. Nothing is kept: the audio and the transcript live for this request,
+ * and what the person sends afterwards is whatever they keep of it.
  *
  * It answers the transcript rather than an id, like the session attachment
  * upload: the result is about this request, not an aggregate to read back.

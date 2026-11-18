@@ -8,18 +8,17 @@ import {
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Add host, in a browser, against the real control plane
- * (`product/versions/mvp/05-screens.md`). The install command the dialog prints
- * carries a live token, so the spec takes it off the screen, redeems it
- * anonymously the way the installer does, and watches the Connection list
- * resolve.
+ * Add host, in a browser, against the real control plane. The install command
+ * the dialog prints carries a live token, so the spec takes it off the screen,
+ * redeems it anonymously the way the installer does, and watches the Connection
+ * list resolve.
  *
  * The regenerate leg proves the dialog watches **its** token rather than the
  * host list: a runner spending the *old* one after a regenerate must leave the
  * Connection list on "Waiting for the agent to run the install", or Use this host would
  * arm under a command the reader has already thrown away.
  *
- * Needs the stack up with the API on the GitHub stub (`e2e/README.md`) and a
+ * Needs the stack up with the API on the GitHub stub and a
  * runner release configured, or minting answers `HOSTS_004`.
  */
 test('pairs a machine from the console and selects it for the next session', async ({ page }) => {

@@ -41,14 +41,14 @@ func (c Channel) Valid() bool { return c == ChannelStable || c == ChannelBeta }
 type Identity struct {
 	HostID string `json:"hostId"`
 	// AccountID is the Oppenheimer account this host is paired with, as the
-	// registration answered it. The work folder's top level is named by it
-	// (24 §2), so no command has to say whose the work is. Empty for an
+	// registration answered it. The work folder's top level is named by it,
+	// so no command has to say whose the work is. Empty for an
 	// identity written before registration answered it.
 	AccountID string `json:"accountId,omitempty"`
 	Name      string `json:"name"`
 	// ControlPlaneURL is the only origin this runner will speak to.
 	ControlPlaneURL string `json:"controlPlaneUrl"`
-	// Fingerprint pins the control plane's public key (F6).
+	// Fingerprint pins the control plane's public key.
 	Fingerprint string `json:"fingerprint"`
 	// PublicKey is this host's own key, base64, kept for display and for
 	// proving to a user that a rotation actually happened.

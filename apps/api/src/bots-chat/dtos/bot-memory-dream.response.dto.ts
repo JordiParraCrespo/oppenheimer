@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { BotMemoryDream } from '@oppenheimer/shared';
 
-/** A bot's latest dream (`25-bots.md` §4.1, "Dreaming"). */
+/** A bot's latest dream. */
 export class BotMemoryDreamResponseDto implements BotMemoryDream {
   @ApiProperty({ format: 'uuid' })
   id!: string;

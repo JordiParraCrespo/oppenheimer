@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Mail sends (`product/next-steps/mail.md` §3.4): `mail_send`, one row per
+ * Mail sends: `mail_send`, one row per
  * message a bot sent from a person's Gmail.
  *
  * A row is claimed before Gmail is asked, under the approval it carries out,

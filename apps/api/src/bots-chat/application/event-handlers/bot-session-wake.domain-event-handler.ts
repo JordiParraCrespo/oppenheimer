@@ -13,12 +13,11 @@ import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscript
 import { wakeStateOf } from '../../domain/bot-subscription.policy';
 
 /**
- * Where a session's news reaches the bots that follow it
- * (`27-bot-subscriptions.md` §1). The outbox delivers each event at least
- * once, so this only asks: each subscription's wake reads the session again
- * and is keyed so that asking twice queues one turn. A task that moved to a
- * state that wakes nobody (`queued`, `in_progress`) is not looked at; a
- * session closed is, so the subscriptions that follow it end.
+ * Where a session's news reaches the bots that follow it. The outbox delivers
+ * each event at least once, so this only asks: each subscription's wake reads
+ * the session again and is keyed so that asking twice queues one turn. A task
+ * that moved to a state that wakes nobody (`queued`, `in_progress`) is not
+ * looked at; a session closed is, so the subscriptions that follow it end.
  */
 @Injectable()
 export class BotSessionWakeDomainEventHandler {

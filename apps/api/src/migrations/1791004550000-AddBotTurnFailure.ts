@@ -1,10 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * What kind of failure a failed bot turn was (`product/versions/mvp/25-bots.md`
- * §2, `BOT_TURN_FAILURES`), so the chat can say whether sending the message
- * again can help: a rate limit or an unreachable provider passes, a refused
- * key or a spent quota does not.
+ * What kind of failure a failed bot turn was (`BOT_TURN_FAILURES`), so the chat
+ * can say whether sending the message again can help: a rate limit or an
+ * unreachable provider passes, a refused key or a spent quota does not.
  *
  * - `bot_turn."failure"`: nullable, set only on a failed turn. `"error"`
  *   keeps the words; this keeps the kind. A `varchar` with a `CHECK` rather

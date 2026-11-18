@@ -5,11 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SectionBotsMenu } from '../sections/section-bots-menu';
 
 /**
- * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
- * every bot is listed with whether this section shows it, so a bot already
- * made is placed here without leaving the page; the search narrows the list;
- * and New bot still makes one.
- * The bots read is the product package's `useBots`, mocked here.
+ * The plus on a section's Bots heading: every bot is listed with whether
+ * this section shows it, so a bot already made is placed here without
+ * leaving the page; the search narrows the list; and New bot still makes
+ * one. The bots read is the product package's `useBots`, mocked here.
  */
 
 vi.mock('react-i18next', () => ({
@@ -113,7 +112,7 @@ describe('SectionBotsMenu', () => {
       bot('b2', 'Planning Bot', ['plan'], 'Keeps the roadmap'),
     ];
     renderMenu();
-    fireEvent.change(await screen.findByRole('textbox', { name: 'bots.sidebar.search' }), {
+    fireEvent.change(await screen.findByRole('combobox', { name: 'bots.sidebar.search' }), {
       target: { value: 'roadmap' },
     });
     expect(screen.getByRole('option', { name: /Planning Bot/ })).toBeTruthy();
@@ -123,7 +122,7 @@ describe('SectionBotsMenu', () => {
   it('says so when the search matches no bot', async () => {
     read.bots = [bot('b1', 'Release Bot', ['pulls'])];
     renderMenu();
-    fireEvent.change(await screen.findByRole('textbox', { name: 'bots.sidebar.search' }), {
+    fireEvent.change(await screen.findByRole('combobox', { name: 'bots.sidebar.search' }), {
       target: { value: 'zzz' },
     });
     expect(screen.getByText('bots.sidebar.noMatch')).toBeTruthy();
@@ -135,7 +134,7 @@ describe('SectionBotsMenu', () => {
     const planner = bot('b2', 'Planning Bot', ['plan']);
     read.bots = [release, planner];
     const { onPlace } = renderMenu();
-    const search = await screen.findByRole('textbox', { name: 'bots.sidebar.search' });
+    const search = await screen.findByRole('combobox', { name: 'bots.sidebar.search' });
     fireEvent.change(search, { target: { value: 'plan' } });
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(onPlace).toHaveBeenCalledWith(planner, true);

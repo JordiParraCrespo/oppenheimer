@@ -24,7 +24,7 @@ export interface SessionRecord {
  *
  * `Mapper` is implemented for the settings aggregate — the one this module owns
  * — and the other two get their own methods, which is what the interface's
- * three methods leave room for (see ARCHITECTURE.md, "Mapper").
+ * three methods leave room for.
  */
 @Injectable()
 export class ProfileMapper

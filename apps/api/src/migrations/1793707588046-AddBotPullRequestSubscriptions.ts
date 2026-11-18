@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot follows a pull request on GitHub and is woken by what happens to it
- * (`product/versions/mvp/27-bot-subscriptions.md` §7, "As built"), beside
- * the sessions it follows.
+ * A bot follows a pull request on GitHub and is woken by what happens to it,
+ * beside the sessions it follows.
  *
  * - `"resourceKind"` gains `pull_request`. A pull request is not ours and
  *   has no uuid here, so `"resourceId"` becomes nullable: a session's id for

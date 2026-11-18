@@ -34,8 +34,8 @@ function completionCacheKey(call: Pick<BotCompletionFor, 'botId' | 'purpose'>): 
  * Its requests carry the bot's key for the purpose (`completionCacheKey`),
  * so the provider sends them to the server that holds the purpose's prompt.
  *
- * What the call spent is recorded against the bot (`25-bots.md` §4.1,
- * `/usage`), when the provider said. The record is best-effort: one that
+ * What the call spent is recorded against the bot (what `/usage` reads),
+ * when the provider said. The record is best-effort: one that
  * fails is logged, and the call's answer stands.
  */
 @Injectable()

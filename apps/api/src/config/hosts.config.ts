@@ -9,10 +9,10 @@ const SPKI_PREFIX_BYTES = 12;
 
 /**
  * The public fingerprint of the control plane's Ed25519 signing key: SHA-256 of the
- * raw public key, hex, the value a runner pins at registration (F6). Derived at parse
+ * raw public key, hex, the value a runner pins at registration. Derived at parse
  * time so the private key never leaves this factory. An unparsable or non-Ed25519
  * value yields `undefined`, so a malformed key reports as "not configured" rather than
- * through a sentinel (`.agents/rules/api-config.md`).
+ * through a sentinel.
  */
 function fingerprintOf(base64PrivateKey: string | undefined): string | undefined {
   if (!base64PrivateKey) return undefined;
@@ -35,7 +35,7 @@ function fingerprintOf(base64PrivateKey: string | undefined): string | undefined
  * problem and nothing else changes (`hosts` in `capabilities.module.ts`).
  *
  * `controlPlaneUrl` always has a value: the runner signs its boot assertion with this
- * origin as the JWT audience (`product/versions/mvp/01-protocol.md`), and a verifier
+ * origin as the JWT audience, and a verifier
  * with nothing to compare against would accept a token minted for someone else. It
  * defaults to `apiPublicUrl`; `CONTROL_PLANE_URL` overrides it when runners reach the
  * API on a different name than browsers do.
@@ -49,7 +49,7 @@ const schema = z
      * DER — one line, no PEM header:
      * `openssl genpkey -algorithm ed25519 -outform DER | base64 -w0`.
      * Only its public fingerprint leaves the process: a runner pins it at
-     * registration (F6) and refuses to speak to anything else afterwards.
+     * registration and refuses to speak to anything else afterwards.
      */
     signingKey: z.string().optional(),
     releaseBaseUrl: z.string().url().optional(),
@@ -58,7 +58,7 @@ const schema = z
     /**
      * SHA-256 of the installer at `installUrl`, hex, as `scripts/runner/release.sh`
      * prints it. Shown beside the install command so the careful path —
-     * download, read, check, run — needs no second source of truth (09 §1).
+     * download, read, check, run — needs no second source of truth.
      * Anything that is not a 64-character hex digest counts as unset.
      */
     installSha256: z

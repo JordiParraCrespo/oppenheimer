@@ -17,8 +17,7 @@ import type { InboxReportFilesPort } from '../../infrastructure/inbox-report-fil
 import { type PostedInboxReportFile, PostInboxReportCommand } from './post-inbox-report.command';
 
 /**
- * An agent sends a report to the workspace's Inbox
- * (`product/versions/mvp/29-inbox.md`, "Reports"). Every picture is judged
+ * An agent sends a report to the workspace's Inbox. Every picture is judged
  * before any is stored, and by its bytes, never by the type it was sent as,
  * through the table a session's files are judged by. The files are written
  * first, so a report never names a picture that is not there; when the row

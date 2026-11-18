@@ -10,7 +10,7 @@ import type { BotPermissionRuleEntity } from './bot-permission-rule.entity';
 import type { BotToolPermissionEntity, BotToolSubject } from './bot-tool-permission.entity';
 
 /**
- * What a bot's owner set for its tools (`25-bots.md` §5), read once per
+ * What a bot's owner set for its tools, read once per
  * turn: each tool's decision where one was set, the standing grants for
  * single things, and the plain-language rules.
  */
@@ -62,7 +62,7 @@ export function defaultDecision(tool: BotToolTraits, preset: BotPermission): 'al
 }
 
 /**
- * Where a tool stands before any call (`25-bots.md` §5): the owner's
+ * Where a tool stands before any call: the owner's
  * decision for it, else the catalog's under the preset. `off` takes the tool
  * away. A per-call tool set to Allow by hand (a row written before it was
  * per call) still asks: nothing makes it standing.

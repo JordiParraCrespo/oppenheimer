@@ -7,8 +7,7 @@ import type {
 } from '../infrastructure/github-pulls.port';
 
 /*
- * What the Pull requests area and GitHub trade
- * (`product/next-steps/0.2-pull-requests-api-plan.md`): the addresses,
+ * What the Pull requests area and GitHub trade: the addresses,
  * repositories and snapshots shared by the four ports beside this file —
  * the directory, the listings, one pull request's reads, and the writes.
  */
@@ -29,7 +28,7 @@ export interface RepositoryFacts {
 
 /**
  * One repository the caller can read: one a workspace's installation covers,
- * or one only their own GitHub tokens open (§6.2), whichever token reads it.
+ * or one only their own GitHub tokens open, whichever token reads it.
  */
 export type WorkspaceRepository = RepositoryAddress & RepositoryFacts;
 
@@ -41,12 +40,12 @@ export type InstallationPullRequestAddress = InstallationAddress & { number: num
 
 /**
  * One part of a pull request as GitHub answered it: the value, or the refusal
- * GitHub gave instead. An unread part is never an empty one (#244), so there
+ * GitHub gave instead. An unread part is never an empty one, so there
  * are two states and no third.
  *
  * A part a read could not afford is not represented here. It was tried once:
- * a `{ value: null, refusal: null }` "not yet" reuses the empty shape #244
- * forbids, and because the type is not a discriminant every
+ * a `{ value: null, refusal: null }` "not yet" reuses the empty shape ruled
+ * out above, and because the type is not a discriminant every
  * `value ?? []` / `value?.state ?? 'unavailable'` in the mapper compiled and
  * silently read it as "nobody reviewed" and "checks unavailable". A pull
  * request this read cannot fill is left out of the read instead — see
@@ -116,7 +115,7 @@ export interface RepositoryPulls<TSnapshot = PullRequestSnapshot> {
   /**
    * How many of this repository's pull requests the read had no budget left to
    * fill. They are deliberately not rows: a row whose parts nobody read would
-   * have to show a lane, a checks state and a blocker nobody read (#244), and
+   * have to show a lane, a checks state and a blocker nobody read, and
    * it would jump as later polls filled it. The view leaves them out, says it
    * is still filling, and the next read brings them in.
    */

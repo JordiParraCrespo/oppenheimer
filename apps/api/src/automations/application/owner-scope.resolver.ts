@@ -8,7 +8,7 @@ import type { WorkspaceLookupPort } from '../../organizations/application/worksp
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 
 /**
- * The scope a run acts in (§Q5): the automation's owner, in the automation's
+ * The scope a run acts in: the automation's owner, in the automation's
  * workspace, resolved fresh at every dispatch — never cached, never a bot. A
  * run is exactly as capable as its owner is *now*: an owner who left the
  * workspace, or lost the host, gets nothing started in their name.

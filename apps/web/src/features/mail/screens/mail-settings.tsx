@@ -6,9 +6,9 @@ import { GmailAccounts } from '@/features/mail/sections/gmail-accounts';
 import { ScheduledMail } from '@/features/mail/sections/scheduled-mail';
 
 /**
- * Settings → Mail (`product/next-steps/mail.md` §1): the reader's own Gmail
- * accounts, which their bots search, read and write from, and the mail those
- * bots scheduled, which waits here until it goes (§3.4).
+ * Settings → Mail: the reader's own Gmail accounts, which their bots
+ * search, read and write from, and the mail those bots scheduled, which
+ * waits here until it goes.
  */
 export function MailSettingsScreen() {
   const { t } = useTranslation();

@@ -11,42 +11,6 @@ import { z } from 'zod';
 export const planScopeSearchSchema = z.object({ project: searchText });
 export type PlanScopeSearch = z.infer<typeof planScopeSearchSchema>;
 
-/** `?project=unassigned` names the workspace's Unassigned project, which has no slug of its own to show. */
-export const UNASSIGNED_SLUG = 'unassigned';
-
-/** The slugs `?project=` lists, each once, in the order they were picked. */
-export function projectSlugsOf(param: string | undefined): string[] {
-  return [
-    ...new Set(
-      (param ?? '')
-        .split(',')
-        .map((slug) => slug.trim())
-        .filter(Boolean),
-    ),
-  ];
-}
-
-/** `?project=` for a set of slugs; none is no key, so the view is All projects. */
-export function projectParamOf(slugs: readonly string[]): string | undefined {
-  return slugs.length ? slugs.join(',') : undefined;
-}
-
-/**
- * The ids of the projects a set of slugs names, `undefined` for no slugs (All
- * projects). A slug no project has names nothing, so a stale link narrows to
- * the projects that still exist, and to an empty set, which shows nothing,
- * when none does: it never widens to All projects.
- */
-export function projectIdsOfSlugs(
-  slugs: readonly string[],
-  projects: readonly { id: string; slug: string; isUnassigned: boolean }[],
-): string[] | undefined {
-  if (slugs.length === 0) return undefined;
-  return projects
-    .filter((row) => slugs.includes(row.isUnassigned ? UNASSIGNED_SLUG : row.slug))
-    .map((row) => row.id);
-}
-
 /** How many tasks each Plan filter option holds: all of them, and per project and milestone. */
 export interface PlanCounts {
   all: number;

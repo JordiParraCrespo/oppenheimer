@@ -173,24 +173,30 @@ describe('NewSessionComposer', () => {
   it('ends the recording on Enter without sending, and sends on the Enter after it', async () => {
     // What breaks this: Enter mid-recording sending what was said before it
     // was read (it once did, as soon as the transcription landed).
-    dictation.phase = 'recording';
     const { finish, settle } = holdFinish();
     const onSubmit = vi.fn();
-    render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
+    const { container, rerender } = render(
+      <NewSessionComposer voice={VOICE} onSubmit={onSubmit} />,
+    );
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Fix the wallet' } });
 
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
-    fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
-    fireEvent.keyDown(textarea, { key: 'Enter' });
+    // While it records the recorder holds the line, and Enter on it ends it.
+    dictation.phase = 'recording';
+    rerender(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
+    const recorder = container.querySelector('[data-slot="composer-recorder"]') as HTMLElement;
+    fireEvent.keyDown(recorder, { key: 'Enter' });
 
     expect(finish).toHaveBeenCalledTimes(1);
 
     // The transcription lands, then the finish settles.
     dictation.phase = null;
     act(() => dictation.onText?.('list.'));
+    rerender(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
     await act(async () => settle.landed(true));
 
     expect(onSubmit).not.toHaveBeenCalled();
     // The caret is after what was said, so the next Enter is the send.
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
     expect(document.activeElement).toBe(textarea);
     expect(textarea.selectionStart).toBe('Fix the wallet list.'.length);
 

@@ -26,12 +26,11 @@ import {
 } from './bot-tool.factory';
 
 /**
- * Following sessions (`27-bot-subscriptions.md` §3): watch one, stop
- * watching it, list what is watched, or wait on one inside the turn, a
- * bounded `wait_for_session`. None asks: a watch only wakes the bot
- * when a session a person or an approved call started moves, it is bounded
- * by its task or the wake limit, and it can be undone. `start_session`
- * subscribes on its own.
+ * Following sessions: watch one, stop watching it, list what is watched, or
+ * wait on one inside the turn, a bounded `wait_for_session`. None asks: a watch
+ * only wakes the bot when a session a person or an approved call started moves,
+ * it is bounded by its task or the wake limit, and it can be undone.
+ * `start_session` subscribes on its own.
  */
 @Injectable()
 export class BotWatchToolsFactory implements BotToolArea {
@@ -150,7 +149,7 @@ export class BotWatchToolsFactory implements BotToolArea {
       scope: 'sessions:read',
       readOnly: true,
       description:
-        'Lists the sessions and pull requests you follow: each one, why, until when, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request.',
+        'Lists the sessions, pull requests, projects and milestones you follow: each one, why, until when or on which changes, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request, a task with get_task.',
       input: z.object({}),
       run: async (_input, context) => {
         const watched = await this.subscriptions.findForBot(
@@ -158,7 +157,8 @@ export class BotWatchToolsFactory implements BotToolArea {
           context.botId,
           BOT_SUBSCRIPTIONS_PER_BOT,
         );
-        if (!watched.length) return 'You follow no sessions and no pull requests.';
+        if (!watched.length)
+          return 'You follow no sessions, pull requests, projects or milestones.';
         return watched
           .map((subscription) => this.mapper.toListLine(subscription, context.timeZone))
           .join('\n');

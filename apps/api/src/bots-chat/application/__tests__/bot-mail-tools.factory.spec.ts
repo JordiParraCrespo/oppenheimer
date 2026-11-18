@@ -16,12 +16,12 @@ import { BotMailToolsFactory, MAIL_ATTACHMENTS_PER_TURN } from '../bot-mail-tool
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
- * The mail tools as the model sees them (`product/next-steps/mail.md` §3): an
- * account named by its name, address or id, every account searched when none
- * is named with one failing account said rather than hiding the others, what a
- * sender wrote fenced as data so a subject cannot close the fence, and a turn
- * that stops opening attachments at its limit. Gmail itself is the gateway's
- * spec; the queries are the owner's, reached through the bus.
+ * The mail tools as the model sees them: an account named by its name, address
+ * or id, every account searched when none is named with one failing account
+ * said rather than hiding the others, what a sender wrote fenced as data so a
+ * subject cannot close the fence, and a turn that stops opening attachments at
+ * its limit. Gmail itself is the gateway's spec; the queries are the owner's,
+ * reached through the bus.
  */
 const context = (): BotToolContext => ({
   owner: emptyScope('owner-1', 'org-1'),

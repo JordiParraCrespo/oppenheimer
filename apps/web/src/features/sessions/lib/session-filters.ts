@@ -1,22 +1,23 @@
 import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
+import { attentionFor } from './session-run-state';
 
 /** The value every facet starts on, and the one that means "do not narrow". */
 export const ALL = 'all';
 
 /**
  * How the list is ordered, in the order the menu lists them: the reader's
- * own, dragged into place (`sidebar-order.ts`), then the artboard's three.
+ * own, dragged into place (`sidebar-order.ts`), the artboard's three, then
+ * what needs the reader first (the row's amber dot, then its blue one).
  */
-export const SESSION_SORTS = ['custom', 'recent', 'oldest', 'name'] as const;
+export const SESSION_SORTS = ['custom', 'recent', 'oldest', 'name', 'attention'] as const;
 export type SessionSort = (typeof SESSION_SORTS)[number];
 
 /**
- * What the sidebar's filter menu holds
- * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): four
- * facets that narrow the list and one order that does not. Every facet is a
- * set of picked values, empty for "do not narrow"; a session shows when it
- * matches any value of every non-empty facet. Which facets take more than
- * one value is `MULTI_FACETS`, the one place that decides it.
+ * What the sidebar's filter menu holds: five facets that narrow the list
+ * and one order that does not. Every facet is a set of picked values, empty
+ * for "do not narrow"; a session shows when it matches any value of every
+ * non-empty facet. Which facets take more than one value is `MULTI_FACETS`,
+ * the one place that decides it.
  */
 export type SessionFilters = Record<SessionFacet, readonly string[]> & { sort: SessionSort };
 
@@ -25,6 +26,7 @@ export const DEFAULT_FILTERS: SessionFilters = {
   repository: [],
   agent: [],
   host: [],
+  status: [],
   sort: 'custom',
 };
 
@@ -34,7 +36,7 @@ export interface FilterOption {
 }
 
 /** The facets, in the order the menu and the chips show them. */
-export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
+export const FACETS = ['project', 'repository', 'agent', 'host', 'status'] as const;
 export type SessionFacet = (typeof FACETS)[number];
 
 /**
@@ -177,6 +179,30 @@ export function hostOptions(
 }
 
 /**
+ * What the Status facet narrows to: the row's dot ({@link attentionFor}),
+ * amber while the session waits on the reader, blue once it is ready for
+ * review. A fixed list, not built from the rows: "nothing needs you" is an
+ * answer worth reading, not a pick to drop.
+ */
+export const SESSION_STATUSES = ['needs-you', 'done'] as const;
+
+export function statusOptions(
+  allLabel: string,
+  label: (status: (typeof SESSION_STATUSES)[number]) => string,
+): FilterOption[] {
+  return [
+    { value: ALL, label: allLabel },
+    ...SESSION_STATUSES.map((status) => ({ value: status, label: label(status) })),
+  ];
+}
+
+/** Needs you, then ready for review, then the rest: the Needs you first order's tiers. */
+function attentionRank(session: SessionEntity): number {
+  const attention = attentionFor(session);
+  return attention === 'needs-you' ? 0 : attention === 'done' ? 1 : 2;
+}
+
+/**
  * The values a session offers each facet. Repository is every checkout, not
  * the one the agent is launched in.
  */
@@ -186,6 +212,7 @@ function facetValues(session: SessionEntity): Record<SessionFacet, readonly stri
     repository: session.checkouts.map((checkout) => checkout.repositoryFullName),
     agent: [session.agent],
     host: [runsOn(session)],
+    status: [attentionFor(session) ?? 'none'],
   };
 }
 
@@ -202,6 +229,10 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
     })
     .sort((a, b) => {
       if (filters.sort === 'name') return a.name.localeCompare(b.name);
+      if (filters.sort === 'attention') {
+        const tier = attentionRank(a) - attentionRank(b);
+        if (tier !== 0) return tier;
+      }
       // Custom starts from the newest; what the reader placed is put in place after.
       const delta = a.createdAt.getTime() - b.createdAt.getTime();
       return filters.sort === 'oldest' ? delta : -delta;

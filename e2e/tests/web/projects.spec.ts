@@ -4,7 +4,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * Projects are managed in Plan's Projects view, against the real control
- * plane (`product/versions/mvp/18-plan-product.md` §1): reached from Plan's
+ * plane: reached from Plan's
  * sidebar, a project is a card with its repositories that opens its page,
  * where it is renamed and deleted from its settings; a delete goes back to
  * the cards. The Sessions sidebar no longer makes or edits one. Only GitHub

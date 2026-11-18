@@ -42,11 +42,11 @@ export interface Dictation {
 }
 
 /**
- * One field's dictation (`product/next-steps/voice.md`): the recorder, the
- * trip to `voice.transcribe` when it stops, and the text handed to `onText`
- * for the field to add to what it holds. It keeps its own "transcribing" and
- * its own last problem, so a screen's one `VoiceInput` serves every field on
- * it and each field says only what happened to it.
+ * One field's dictation: the recorder, the trip to `voice.transcribe` when it
+ * stops, and the text handed to `onText` for the field to add to what it holds.
+ * It keeps its own "transcribing" and its own last problem, so a screen's one
+ * `VoiceInput` serves every field on it and each field says only what happened
+ * to it.
  */
 export function useDictation({
   voice,

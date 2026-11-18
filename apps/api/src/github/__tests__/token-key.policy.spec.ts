@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chooseToken, isUsable, type TokenCandidate } from '../domain/token-key.policy';
 
 /**
- * Which of a person's tokens reads a repository the App is not on (§6.2). A
+ * Which of a person's tokens reads a repository the App is not on. A
  * wrong pick reads with a token that may not see the repository's checks, or
  * one the person meant to keep for another organisation, and nothing fails.
  */

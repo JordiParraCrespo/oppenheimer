@@ -10,17 +10,15 @@ import { SessionCloudChatSetup } from './session-cloud-chat-setup';
 import { SessionCloudSummary } from './session-cloud-summary';
 
 /**
- * A Claude Code cloud session read as a chat
- * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): its
- * transcript as its SessionStart hook sends it, drawn by the chat a host
- * session uses, and a composer whose message waits for the session's Stop
- * hook, which hands it to the agent when its turn ends, or is sent from a
- * host signed in to the session's claude.ai account when no hook takes it,
- * which wakes an idle session; such a reply reads as sent until the
- * transcript shows it. Until a line has
- * come (no hooks in the repository, or nothing said yet) it is the cloud
- * session's own pane, which says where to follow it instead, with how to
- * turn the chat on under it.
+ * A Claude Code cloud session read as a chat: its transcript as its
+ * SessionStart hook sends it, drawn by the chat a host session uses, and a
+ * composer whose message waits for the session's Stop hook, which hands it
+ * to the agent when its turn ends, or is sent from a host signed in to the
+ * session's claude.ai account when no hook takes it, which wakes an idle
+ * session; such a reply reads as sent until the transcript shows it. Until
+ * a line has come (no hooks in the repository, or nothing said yet) it is
+ * the cloud session's own pane, which says where to follow it instead, with
+ * how to turn the chat on under it.
  */
 export function SessionCloudChat({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();

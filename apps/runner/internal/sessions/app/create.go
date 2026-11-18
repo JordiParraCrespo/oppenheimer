@@ -16,7 +16,7 @@ type CreateInput struct {
 	// link, so an attach that names it finds it; the CLI leaves it empty and
 	// one is minted.
 	ID string
-	// Folder, set, makes a folder session (24 §3): the agent starts in this
+	// Folder, set, makes a folder session: the agent starts in this
 	// folder, which must already be a directory on the host, and nothing is
 	// cloned, cut or written. Repo, Remote, the branches, the checkout and
 	// Tenant are then left empty.
@@ -47,7 +47,7 @@ type CreateInput struct {
 	Name     string
 	Agent    domain.Agent
 	// Launch is the model, permission, effort and first task, as argv, from
-	// the catalog (02-runner §5). Zero for a CLI-created session.
+	// the catalog. Zero for a CLI-created session.
 	Launch domain.Launch
 	// CheckoutID and GithubRepoID are the control plane's names for the
 	// repository, kept for the credential helper.

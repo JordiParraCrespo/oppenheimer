@@ -30,12 +30,11 @@ import { useShell } from '../hooks/use-shell';
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 
 /**
- * The account row at the foot of the sidebar, and the menu it opens, both from
- * `product/versions/mvp/design/version1/SessionsConsole.dc.html`: a 32px
+ * The account row at the foot of the sidebar, and the menu it opens: a 32px
  * `.op-navitem` of 22px accent avatar, name and a 14px chevron (no role line:
  * the role under your own name is a fact you know) over a 250px
  * `.op-accountmenu` of e-mail, appearance, language and "Log out". The middle
- * rows carry the export's 15px moon and globe, and "Log out" the 15px door in
+ * rows carry a 15px moon and globe, and "Log out" the 15px door in
  * the one tone the menu may colour.
  *
  * Appearance and language open sideways, so the menu stays a few rows tall

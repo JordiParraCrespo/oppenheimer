@@ -41,7 +41,7 @@ describe('composeTurnContext', () => {
   });
 
   // ICU's own `longOffset` spells a zero offset "GMT" on some Node builds,
-  // which once read differently on CI than on a laptop (#347).
+  // which once read differently on CI than on a laptop.
   it('spells every offset GMT±HH:MM, a zero one and a half-hour one included', () => {
     const now = new Date('2026-10-15T09:00:00Z');
     expect(formatNow(now, 'UTC')).toContain('(UTC, GMT+00:00)');
@@ -112,9 +112,9 @@ describe('withTurnContext', () => {
 });
 
 /**
- * How full the context was when the last turn ended (`lessons-from-grok-bot.md`
- * §9, row 2): the meter shows it to the person, and the model is told too,
- * so it reads narrowly when room is short instead of finding out by a cut.
+ * How full the context was when the last turn ended: the meter shows it to the
+ * person, and the model is told too, so it reads narrowly when room is short
+ * instead of finding out by a cut.
  */
 describe('composeTurnContext: the room left', () => {
   const base: TurnContextInput = {

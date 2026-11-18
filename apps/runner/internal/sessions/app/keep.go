@@ -8,10 +8,9 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// A kept session comes back after a reboot on its own
-// (`product/research/lessons-from-herdr.md`). Without it, a reboot leaves
-// every session stopped and waits for someone to press Restart; with it, the
-// runner restarts the session once it is up again, which reopens the agent's
+// A kept session comes back after a reboot on its own. Without it, a reboot
+// leaves every session stopped and waits for someone to press Restart; with it,
+// the runner restarts the session once it is up again, which reopens the agent's
 // conversation in the same checkout and never runs the first task twice
 // (Restart). Only a reboot does this: a session whose agent exited, or that
 // somebody stopped or closed, stays as it was left.

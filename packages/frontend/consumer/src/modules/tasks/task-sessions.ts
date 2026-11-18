@@ -3,10 +3,10 @@ import type { SessionEntity } from '../sessions';
 import type { TaskEntity } from './task.entity';
 
 /**
- * How a card's session line reads a session, in the frames' order of urgency
- * (`Tasks.dc.html`): one that needs the person first, then one at work, a failed
- * one, one idle, one finished. Queued is the console's label for a session still
- * starting on a host that is offline (`19-plan-tasks-and-goals.md` §7).
+ * How a card's session line reads a session, in order of urgency: one that needs
+ * the person first, then one at work, a failed one, one idle, one finished.
+ * Queued is the console's label for a session still starting on a host that is
+ * offline.
  */
 export type TaskSessionState = 'waiting' | 'queued' | 'running' | 'failed' | 'idle' | 'completed';
 

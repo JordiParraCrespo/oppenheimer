@@ -23,11 +23,10 @@ import { monthDay } from '../lib/time';
 import { RunsFacets } from './runs-facets';
 
 /**
- * The runs (`product/versions/mvp/13-automations.md`): the Runs tab across
- * the workspace, or one automation's on its page. Status pills with counts,
- * the facets on the right, a page of ten and the pager. A run opens the
- * session it started in the run view, with the automations list kept beside
- * it.
+ * The runs: the Runs tab across the workspace, or one automation's on its
+ * page. Status pills with counts, the facets on the right, a page of ten
+ * and the pager. A run opens the session it started in the run view, with
+ * the automations list kept beside it.
  *
  * Read under Suspense, in the `QueryState` of the screen or page that shows
  * it. The filter is read deferred: a new filter renders the next page in the

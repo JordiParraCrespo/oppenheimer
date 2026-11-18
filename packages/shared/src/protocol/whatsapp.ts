@@ -2,14 +2,13 @@ import { z } from 'zod/v4';
 import { commandIdSchema } from './primitives.js';
 
 /**
- * WhatsApp on the link (`product/next-steps/whatsapp.md`): the messages behind
- * the `whatsapp` capability. A runner that names it holds one WhatsApp linked
- * device — OpenClaw's route, the WhatsApp Web multi-device protocol, a number
- * the owner has — and its keys never leave the host. The control plane asks
- * it to pair, unpair and send; the runner tells it how the device stands and
- * hands it each message that arrives, which the control plane keeps so the
- * owner's bots can read the chats. Part of `protocolMessageSchema`, which is
- * where every kind is listed.
+ * WhatsApp on the link: the messages behind the `whatsapp` capability. A runner
+ * that names it holds one WhatsApp linked device — OpenClaw's route, the
+ * WhatsApp Web multi-device protocol, a number the owner has — and its keys
+ * never leave the host. The control plane asks it to pair, unpair and send; the
+ * runner tells it how the device stands and hands it each message that arrives,
+ * which the control plane keeps so the owner's bots can read the chats. Part of
+ * `protocolMessageSchema`, which is where every kind is listed.
  */
 
 /** How many messages one `whatsapp.messages` carries at most. */
@@ -165,7 +164,7 @@ export const whatsappSendSchema = z.object({
   /**
    * The message this one answers, shown quoted above it: its WhatsApp id
    * and who wrote it. Optional, so a runner from before it sends the text
-   * unquoted (`01-protocol.md`, "the link only grows").
+   * unquoted: the link only grows.
    */
   replyTo: z
     .object({

@@ -4,7 +4,7 @@ import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { CircleCheckIcon, XIcon, ZapIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { TONE_BG } from '../internal/data-tone';
+import { KIND_TONE, TONE_WASH, toneClass } from '../internal/calendar-tone';
 import { dateFormat, dateOf, type IsoDate, type MonthDay } from '../internal/month';
 import { DayNumber, MonthGrid } from '../internal/month-grid';
 import { cn } from '../lib/utils';
@@ -38,14 +38,6 @@ type CalendarEntryKind = 'event' | 'task' | 'automation';
  */
 type CalendarAccent = 'chart-1' | 'chart-2' | 'chart-3' | 'chart-4' | 'chart-5';
 
-const ACCENT_BORDER: Record<CalendarAccent, string> = {
-  'chart-1': 'border-chart-1',
-  'chart-2': 'border-chart-2',
-  'chart-3': 'border-chart-3',
-  'chart-4': 'border-chart-4',
-  'chart-5': 'border-chart-5',
-};
-
 interface CalendarEntryData {
   id: string;
   date: IsoDate;
@@ -61,7 +53,7 @@ interface CalendarEntryData {
   draggable?: boolean;
   /** The native tooltip ("Design review · 15:00–16:00"). */
   tip?: string;
-  /** The calendar an event came from: its ring, or a dot on an all-day bar, wears it. */
+  /** The calendar an entry came from (a Google account): its colour, in place of its kind's. */
   accent?: CalendarAccent;
 }
 
@@ -75,10 +67,12 @@ function entryOrder(entry: CalendarEntryData): number {
 }
 
 /**
- * One entry, as the calendar draws it: a ring for a timed event, a check for
- * a task, a bolt for an automation run; the time in mono; the title. An
- * all-day event is a filled bar. `full` keeps the time even where a cramped
- * day would drop it (the day popover).
+ * One entry, as the calendar draws it: a chip washed in its colour
+ * (`internal/calendar-tone`) with a bar of it down the left edge, a check
+ * for a task and a bolt for an automation run in the same colour, the time
+ * in mono, the title. An all-day event washes deeper; a free event lighter,
+ * its title muted; a done task fades and strikes through. `full` keeps the
+ * time even where a cramped day would drop it (the day popover).
  */
 function CalendarEntry({
   entry,
@@ -92,7 +86,7 @@ function CalendarEntry({
   /** The copy that follows the pointer: a day's width, on the card. */
   lifted?: boolean;
 }) {
-  const muted = entry.kind === 'automation' || entry.done || (entry.kind === 'event' && !entry.busy);
+  const free = entry.kind === 'event' && !entry.busy && !entry.allDay;
   return (
     <button
       type="button"
@@ -100,40 +94,36 @@ function CalendarEntry({
       data-kind={entry.kind}
       title={entry.tip ?? entry.title}
       className={cn(
-        'flex h-6 w-full min-w-0 items-center gap-1.5 rounded-xs px-1.5 text-left text-xs outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring',
-        entry.allDay && 'bg-control',
-        muted ? 'text-fg-muted' : 'text-fg',
-        full && 'h-[26px] px-2',
-        lifted && 'w-44 bg-card',
+        'relative flex h-6 w-full min-w-0 items-center gap-1.5 overflow-hidden rounded-xs pr-1.5 pl-2.5 text-left text-xs text-fg outline-none transition-[background-color] duration-instant ease-standard focus-visible:outline-2 focus-visible:outline-ring',
+        toneClass(entry),
+        free ? TONE_WASH.free : entry.allDay ? TONE_WASH.strong : TONE_WASH.soft,
+        entry.done && 'opacity-60',
+        full && 'h-[26px] pr-2',
+        lifted && 'w-44 shadow-popover',
         className,
       )}
       {...props}
     >
-      {entry.kind === 'event' && !entry.allDay ? (
-        <span
-          aria-hidden
-          className={cn(
-            'size-2 shrink-0 rounded-pill border-[1.5px]',
-            entry.accent ? ACCENT_BORDER[entry.accent] : entry.busy ? 'border-fg-muted' : 'border-fg-subtle',
-          )}
-        />
-      ) : null}
-      {entry.kind === 'event' && entry.allDay && entry.accent ? (
-        <span aria-hidden className={cn('size-1.5 shrink-0 rounded-pill', TONE_BG[entry.accent])} />
-      ) : null}
+      <span
+        aria-hidden
+        className={cn('absolute inset-y-1 left-1 w-[3px] rounded-pill', free ? 'bg-(--tone)/45' : 'bg-(--tone)')}
+      />
       {entry.kind === 'task' ? (
-        <CircleCheckIcon
-          aria-hidden
-          className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-fg-subtle')}
-        />
+        <CircleCheckIcon aria-hidden className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-(--tone)')} />
       ) : null}
-      {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-fg-subtle" /> : null}
+      {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-(--tone)" /> : null}
       {entry.time ? (
-        <span className={cn('figures shrink-0 text-micro text-fg-subtle', !full && '@max-[110px]/day:hidden')}>
+        <span className={cn('figures shrink-0 text-micro text-fg-muted', !full && '@max-[110px]/day:hidden')}>
           {entry.time}
         </span>
       ) : null}
-      <span className={cn('min-w-0 flex-1 truncate', muted ? 'font-normal' : 'font-medium', entry.done && 'line-through')}>
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate',
+          free || entry.done || entry.kind === 'automation' ? 'font-normal text-fg-muted' : 'font-medium',
+          entry.done && 'line-through',
+        )}
+      >
         {entry.title}
       </span>
     </button>
@@ -336,5 +326,14 @@ function MonthCalendar({
   );
 }
 
-export { CalendarEntry, MonthCalendar };
+/**
+ * The colour an event and a task wear when they name no calendar, for a
+ * legend's swatch; an automation run has none (it stays in subtle ink).
+ */
+const CALENDAR_KIND_ACCENT = {
+  event: KIND_TONE.event as CalendarAccent,
+  task: KIND_TONE.task as CalendarAccent,
+};
+
+export { CALENDAR_KIND_ACCENT, CalendarEntry, MonthCalendar };
 export type { CalendarAccent, CalendarEntryData, CalendarEntryKind };

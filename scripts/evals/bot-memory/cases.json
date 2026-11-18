@@ -54,14 +54,16 @@
       "bot": "reviewer",
       "message": "Your messages are way too long. In general I want short answers from all of you, two or three lines max.",
       "expect": "general",
-      "why": "A preference stated for all work, from all bots."
+      "why": "A preference stated for all work, from all bots.",
+      "tier": "profile"
     },
     {
       "id": "no-weekends",
       "bot": "xrp",
       "message": "Please don't message me on weekends unless something is on fire. That goes for anything, not just this project.",
       "expect": "general",
-      "why": "A working preference stated for all work."
+      "why": "A working preference stated for all work.",
+      "tier": "profile"
     },
     {
       "id": "cloud-sessions",
@@ -103,14 +105,16 @@
       "bot": "reviewer",
       "message": "Turn off Oppenheimer's built-in 'ready to merge' notifications for me, don't filter them, just off. Leave the automerge routine as it is.",
       "expect": "yours",
-      "why": "A setting only the PR work touches; screenshot case 2."
+      "why": "A setting only the PR work touches; screenshot case 2.",
+      "tier": "profile"
     },
     {
       "id": "squash",
       "bot": "reviewer",
       "message": "When you get my OK, merge with squash, never a merge commit.",
       "expect": "yours",
-      "why": "How this bot's kind of work is done, even though it is a preference."
+      "why": "How this bot's kind of work is done, even though it is a preference.",
+      "tier": "profile"
     },
     {
       "id": "repo-ci",
@@ -152,7 +156,8 @@
       "bot": "facturas",
       "message": "I hate when invoices are renamed, keep the original file names always.",
       "expect": "yours",
-      "why": "A strong preference, but only invoice work touches it."
+      "why": "A strong preference, but only invoice work touches it.",
+      "tier": "profile"
     },
     {
       "id": "email-signature",

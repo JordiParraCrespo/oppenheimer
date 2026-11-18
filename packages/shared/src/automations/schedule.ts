@@ -3,11 +3,11 @@ import type { ScheduleFrequency } from './catalog.js';
 /**
  * A schedule rule and the arithmetic that turns it into instants.
  *
- * A schedule is a **wall-clock rule plus an IANA timezone**, never a UTC time
- * (`product/versions/mvp/16-automations-architecture.md` §Q8, §Time): "daily at
- * 09:00 in Madrid" is 07:00 UTC in summer and 08:00 in winter, and storing
- * either would drift by an hour twice a year. The API stores the rule and the
- * next instant it fires (`nextFireAt`, UTC); this file computes that instant.
+ * A schedule is a **wall-clock rule plus an IANA timezone**, never a UTC time:
+ * "daily at 09:00 in Madrid" is 07:00 UTC in summer and 08:00 in winter, and
+ * storing either would drift by an hour twice a year. The API stores the rule
+ * and the next instant it fires (`nextFireAt`, UTC); this file computes that
+ * instant.
  *
  * It lives in the shared package, and uses only `Intl`, so the console's "Next
  * run · in 2d 3h" and the API's scheduler compute the same answer from the same

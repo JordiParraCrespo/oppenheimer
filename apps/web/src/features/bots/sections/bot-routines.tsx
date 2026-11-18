@@ -1,4 +1,5 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
+import { Repeat } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseBotRoutines } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -20,6 +21,9 @@ export function BotRoutines({ botId }: { botId: string }) {
       {routines.length === 0 ? (
         <EmptyState>
           <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <Repeat />
+            </EmptyState.Media>
             <EmptyState.Description>{t('bots.settings.routines.empty')}</EmptyState.Description>
           </EmptyState.Header>
           <EmptyState.Content>

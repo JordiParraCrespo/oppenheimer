@@ -10,12 +10,11 @@ export interface GoalBannerLine {
 }
 
 /**
- * The goal banner's line beside the goal (`25-bots.md` §4.1): how many
- * continuations it has taken (of its limit, for a goal set with one) and
- * what its budget has spent; while a rate limit holds its next turn, which
- * system it waits for and until when; once it paused, why. In the reader's
- * locale. A new state of the goal is one more case here, not a branch in
- * the banner.
+ * The goal banner's line beside the goal: how many continuations it has
+ * taken (of its limit, for a goal set with one) and what its budget has
+ * spent; while a rate limit holds its next turn, which system it waits for
+ * and until when; once it paused, why. In the reader's locale. A new state
+ * of the goal is one more case here, not a branch in the banner.
  */
 export function goalBannerLine(goal: BotGoal, t: TFunction, locale: string): GoalBannerLine {
   if (goal.paused) {

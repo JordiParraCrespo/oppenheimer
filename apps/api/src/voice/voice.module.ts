@@ -17,11 +17,11 @@ import { FindVoiceStatusQueryHandler } from './queries/find-voice-status/find-vo
 import { CHATGPT_SPEECH, KEYED_SPEECH, POLISH_LLM, VOICE_POLISH_ENGINE } from './voice.di-tokens';
 
 /**
- * Dictation (`product/next-steps/voice.md`): a recording in, the text it
- * says out. It owns no table and keeps nothing. Who hears a recording is
- * `SpeechProviderRegistry`: an ordered list of `SpeechProvider`s, today the
- * workspace's ChatGPT sign-in (the bots module's, read through its
- * `TURN_CREDENTIALS`) and the deployment's own speech server (`VOICE_STT_*`).
+ * Dictation: a recording in, the text it says out. It owns no table and keeps
+ * nothing. Who hears a recording is `SpeechProviderRegistry`: an ordered list
+ * of `SpeechProvider`s, today the workspace's ChatGPT sign-in (the bots
+ * module's, read through its `TURN_CREDENTIALS`) and the deployment's own
+ * speech server (`VOICE_STT_*`).
  */
 @Module({
   imports: [CqrsModule, BotsModule],

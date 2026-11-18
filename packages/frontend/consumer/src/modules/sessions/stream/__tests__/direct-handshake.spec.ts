@@ -10,7 +10,7 @@ import {
 } from '../direct-handshake';
 
 /**
- * The browser's half of the host proof (31) against real Ed25519 keys. The
+ * The browser's half of the host proof against real Ed25519 keys. The
  * transcript and the fingerprint list are pinned to the same strings the
  * runner's `handshake_test.go` pins: a drift on either side is every direct
  * path refused. The handshake on a channel is `direct-path.spec.ts`.

@@ -15,6 +15,7 @@ export type {
   PlanStatsTotals,
 } from './plan-stats';
 export {
+  comparePriority,
   compareRank,
   type MilestoneEntity,
   type MilestoneInput,

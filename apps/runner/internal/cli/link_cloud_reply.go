@@ -23,7 +23,7 @@ type CloudReplier interface {
 
 // cloudReply answers `cloud.reply`: a reply typed in the console's chat of a
 // cloud session the Stop hook did not take, sent with the host's own claude.ai
-// sign-in (product/next-steps/cloud-agents.md, "The chat of a cloud session").
+// sign-in.
 // One that waited its whole budget behind another is refused unsent, which
 // hands it back to the session's Stop hook.
 func (h *linkHandler) cloudReply(ctx context.Context, m link.CloudReply, received time.Time) {

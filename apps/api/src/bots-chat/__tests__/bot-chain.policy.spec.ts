@@ -1,7 +1,7 @@
 import { BOT_CHAIN_LIMITS, checkBotChain } from '../domain/bot-chain.policy';
 
 /**
- * `BotChainPolicy`'s whole decision table (`25-bots.md` §4.6): the four
+ * `BotChainPolicy`'s whole decision table: the four
  * refusals at their edges, and the call that passes them all. The chain's
  * state is read under its lock by the repository (the integration spec);
  * here it is given.

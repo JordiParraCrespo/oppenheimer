@@ -15,17 +15,16 @@ import { ApprovalNoteForm } from '@/features/bots/forms/approval-note-form';
 import { useApprovalShortcuts } from '@/features/bots/hooks/use-approval-shortcuts';
 
 /**
- * The Needs input card (`25-bots.md` §5; the AI Elements export's
- * Confirmation): the one call the bot waits on, in words, above the composer,
- * with the decisions the API offers for it, in its order, each with its key:
- * Approve runs it once, as you; Always allow for … and Always allow leave the
- * yes standing for what it acts on, or for the tool, where the card offers
- * them (never for a merge). Deny opens a note for what to do instead, and the
- * bot carries on from it; Deny and stop ends the turn with no turn back.
- * The card goes the moment any tab decides it (the stream's
- * `approval_resolved`), and the bot reports back in the chat. It draws
- * nothing while there is no card, or while the card is being read: the chat
- * is whole without it.
+ * The Needs input card (after AI Elements' Confirmation): the one call the
+ * bot waits on, in words, above the composer, with the decisions the API
+ * offers for it, in its order, each with its key: Approve runs it once, as
+ * you; Always allow for … and Always allow leave the yes standing for what it
+ * acts on, or for the tool, where the card offers them (never for a merge).
+ * Deny opens a note for what to do instead, and the bot carries on from it;
+ * Deny and stop ends the turn with no turn back. The card goes the moment any
+ * tab decides it (the stream's `approval_resolved`), and the bot reports back
+ * in the chat. It draws nothing while there is no card, or while the card is
+ * being read: the chat is whole without it.
  */
 export function BotApprovalCard({ botId, name }: { botId: string; name: string }) {
   const { t } = useTranslation();

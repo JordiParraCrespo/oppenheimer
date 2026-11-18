@@ -23,18 +23,18 @@ import {
 } from '../bot-session-tool.mapper';
 
 /**
- * `start_cloud_session` (`25-bots.md` §4.2), decided in one place: which
- * cloud a call names, whether its fields fit that cloud, the body of the
- * command that starts it, and how the bot is told what came of it. Pure, so
- * the tool only dispatches; a new cloud is a row in `CLOUD_RULES`.
+ * `start_cloud_session`, decided in one place: which cloud a call names,
+ * whether its fields fit that cloud, the body of the command that starts it,
+ * and how the bot is told what came of it. Pure, so the tool only dispatches; a
+ * new cloud is a row in `CLOUD_RULES`.
  */
 
 /**
- * The clouds a bot can start a session in: Claude Code's and Codex's, which
- * a host starts with its signed-in CLI (`HOST_CLOUD_AGENT_IDS`), and each
- * vendor the control plane launches on the owner's own key with no host
+ * The clouds a bot can start a session in: Claude Code's and Codex's, which a
+ * host starts with its signed-in CLI (`HOST_CLOUD_AGENT_IDS`), and each vendor
+ * the control plane launches on the owner's own key with no host
  * (`CLOUD_AGENT_PROVIDERS`). The same places New session, a task and an
- * automation offer (`product/next-steps/cloud-agents.md`).
+ * automation offer.
  */
 export const CLOUD_SESSION_AGENTS = [...HOST_CLOUD_AGENT_IDS, ...CLOUD_AGENT_PROVIDERS] as const;
 export type CloudSessionAgent = (typeof CLOUD_SESSION_AGENTS)[number];
@@ -249,7 +249,7 @@ export function cloudStartAnswer(
   if (session.state === 'failed' || session.isResolved) {
     const hint =
       rule.start === 'host'
-        ? `; most often the host's ${rule.cli} is not installed or not signed in`
+        ? `; most often the host's ${rule.cli} is not installed or not signed in, so try another online host that has ${rule.cli} (list_hosts shows it installed; whether it is signed in shows only when it starts)`
         : '';
     return `Session ${sessionId}${from} could not start its ${rule.label} cloud session (it is ${session.state}). read_session says why${hint}.`;
   }

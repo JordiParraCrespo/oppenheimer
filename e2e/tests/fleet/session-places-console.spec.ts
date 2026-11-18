@@ -6,11 +6,10 @@ import { waitForLifecycle } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
 /**
- * Where a session runs, from the console to a real runner
- * (`product/versions/mvp/24-session-places.md`): New session's Where chip and
- * folder picker start a session in a folder the host already has, Settings'
- * Open terminal starts a blank terminal in the home directory, and the
- * sidebar and the delete dialog say what each one is. Needs the console on
+ * Where a session runs, from the console to a real runner: New session's Where
+ * chip and folder picker start a session in a folder the host already has,
+ * Settings' Open terminal starts a blank terminal in the home directory, and
+ * the sidebar and the delete dialog say what each one is. Needs the console on
  * `WEB_URL`.
  */
 test.describe.configure({ timeout: 240_000 });
@@ -55,7 +54,7 @@ test('a folder session from the picker, and a blank terminal from Settings', asy
   ).toBeVisible();
 
   // A path that is not there cannot be used.
-  const input = page.getByRole('textbox', { name: 'Folder path' });
+  const input = page.getByRole('combobox', { name: 'Folder path' });
   await input.fill('~/code/nowhere/');
   await expect(page.getByText('Pick an existing folder. Nothing is created.')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Use/ })).toBeDisabled();

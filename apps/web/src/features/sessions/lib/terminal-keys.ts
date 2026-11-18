@@ -1,5 +1,5 @@
 /**
- * The console's keymap (05), decided before xterm encodes the key: the chords
+ * The console's keymap, decided before xterm encodes the key: the chords
  * the console answers are rows of `CHORDS`, and every other key is the
  * program's.
  */

@@ -42,7 +42,7 @@ function subagentCacheKey(turn: BotSubagentTurn, index: number): string {
 }
 
 /**
- * Runs `delegate`'s children (`25-bots.md` §4.7) on the engine the turn runs
+ * Runs `delegate`'s children on the engine the turn runs
  * on: each a turn of its own with no history, its task as the message, the
  * subagent prompt, and only the tools it is handed (the parent's read-only
  * ones, already behind the owner's permissions). At most

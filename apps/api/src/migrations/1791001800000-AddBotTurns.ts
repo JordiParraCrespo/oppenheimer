@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bots, slice 2 (`product/versions/mvp/25-bots.md` §2–3): the chat.
+ * Bots: the chat.
  *
  * - `bot_turn`: one message of yours and what the bot did with it. Queued
  *   until the bot's turn before it ends, then running on one worker, then

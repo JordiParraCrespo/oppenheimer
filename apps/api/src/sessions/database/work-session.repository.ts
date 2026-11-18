@@ -381,7 +381,7 @@ export class WorkSessionRepository
     const words = `websearch_to_tsquery('simple', $${at + 1})`;
     const eventWords = `work_session_event_search_vector(e."kind", e."payload")`;
 
-    // Q1 through IDX_work_session_event_search, Q2 through
+    // Log entries through IDX_work_session_event_search, names through
     // IDX_work_session_name_search (`AddSessionSearch`); each repeats its
     // index's expression and predicate exactly. Every hit is ranked within its
     // session, each session is kept for its best hit, and only the best

@@ -315,8 +315,7 @@ describe('the close the fold keeps owed', () => {
 
 /**
  * The launch options: the property that matters is the one every other column
- * here has, that the log alone rebuilds them
- * (`product/versions/mvp/03-control-plane.md`).
+ * here has, that the log alone rebuilds them.
  */
 describe('the launch the fold projects', () => {
   it('takes the launch from the request that stated it', () => {
@@ -450,7 +449,7 @@ describe('launchPermissionFor', () => {
 });
 
 /**
- * What the agent waits on the person for (`29-inbox.md` slice 4). The Inbox shows
+ * What the agent waits on the person for. The Inbox shows
  * it and answers it, so a decision the agent no longer waits on must never stay:
  * an answer typed into it would land on whatever the agent asks next.
  */

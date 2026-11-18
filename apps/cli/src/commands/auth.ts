@@ -138,7 +138,7 @@ async function mintToken(input: {
 
 /**
  * The organization the signed-in session works in: the account's personal
- * workspace (`product/versions/mvp/08-auth.md`), which sign-up makes active.
+ * workspace, which sign-up makes active.
  */
 async function activeWorkspaceOf(session: ApiClient): Promise<string | undefined> {
   const current = await session.get<{ session?: { activeOrganizationId?: string | null } } | null>(

@@ -9,9 +9,9 @@ import type { BotApprovalDetails } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 
 /**
- * What a Needs input card says past its line (`25-bots.md` §5): why a rule
- * paused the call, that it sends something out of Oppenheimer, and the call
- * exactly as it will run, folded.
+ * What a Needs input card says past its line: why a rule paused the call,
+ * that it sends something out of Oppenheimer, and the call exactly as it
+ * will run, folded.
  */
 export function ApprovalRequestDetails({ details }: { details: BotApprovalDetails }) {
   const { t } = useTranslation();

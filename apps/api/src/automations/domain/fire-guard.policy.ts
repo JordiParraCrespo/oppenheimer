@@ -2,7 +2,7 @@ import type { AutomationSkipReason } from '@oppenheimer/shared/automations';
 import type { AutomationLimits } from './automation-limits.policy';
 
 /**
- * The guards (§Guards): small pure rules, each answering allow, skip with a
+ * The guards: small pure rules, each answering allow, skip with a
  * reason, or defer. Two moments ask them — cheap ones when a trigger fires,
  * the ones that read the world at dispatch — and a new guard is a function here
  * plus one line where its moment runs the chain.

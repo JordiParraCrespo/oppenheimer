@@ -1,6 +1,6 @@
 /**
  * What the speech model is told before it hears a clip, and what it is not
- * believed about after (`product/next-steps/voice.md`, step 1).
+ * believed about after.
  */
 
 /**

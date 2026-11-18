@@ -1,7 +1,7 @@
 package direct
 
-// The host proof (product/versions/mvp/31-peer-to-peer-and-the-host-proof.md):
-// the first exchange on every data channel, before a PTY byte crosses it.
+// The host proof: the first exchange on every data channel, before a PTY byte
+// crosses it.
 //
 // DTLS already encrypts the channel end to end, but each end learns the other
 // end's certificate fingerprint from SDP the control plane carried. A control

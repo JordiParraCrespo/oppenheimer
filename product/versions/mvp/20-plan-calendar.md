@@ -3,7 +3,8 @@
 Plan's second section is a month view that shows four **layers**, each
 with a toggle in the sidebar: **Google Calendar**, **Personal**, **Task
 due dates** and **Automations**. The header counts what the month holds:
-*n meetings · n tasks due · n automation runs*. The frames draw a month
+*n meetings · n tasks due · n automation runs* (since 2026-11-17, of what
+the layers and filters show, §7). The frames draw a month
 grid only (Monday first, today circled, "n more" past four items a day,
 compact times under 150 px a column).
 
@@ -37,6 +38,16 @@ computed in the console (17 "As built").
   (`PATCH /tasks/:id`).
 - **Automation run**: a bolt, time and name, muted; click goes to the
   automation. Not draggable.
+
+> Since 2026-11-17 every item wears a colour, so a day reads at a glance:
+> a wash of it with a bar down its left edge, its glyph in it too. A
+> Google event wears its account's colour, a personal event blue
+> (`chart-1`), a task violet (`chart-3`); an automation run stays in
+> subtle ink, its title muted. The first three accounts take teal, green
+> and amber, so they never share the events' or tasks' colour. Busy
+> events wash fuller than free ones, which sit behind a dashed edge; an
+> all-day event washes deepest. The sidebar's layer glyphs wear the same
+> colours, as the legend.
 - **Day cell**: click on empty space opens New event on that day.
 
 ## 2. Personal events
@@ -279,6 +290,21 @@ adds a task due that day from the dashed row under the list.
 >   changed in its dialog. (Decided by the agent that built it, for the
 >   owner to accept: the simplest honest answer.)
 
+> Changed on 2026-11-18: **Remove from TODO.** The owner asked to take a
+> task off TODO from its row, and most of the rows they wanted gone were
+> overdue, which Move cannot lift. Each open row has a Remove button
+> beside Move. It clears the task's TODO day and sets `task."offTodo"`, a
+> boolean the API's update takes. While it is set, the task is on no
+> day's list, whatever its TODO day or due date, Include overdue
+> included, and it counts nowhere. It comes back by itself when it gets a
+> TODO day again (Add tasks, the task dialog, Move) or its due date
+> changes; the server clears the flag on that write. The owner chose this
+> over offering Remove only where the TODO day alone keeps a task on the
+> list, and over clearing the due date. Remove is not logged, as a TODO
+> day is not. The task dialog has the same Remove from TODO beside its
+> TODO day, which applies on Save; the row then reads "Off TODO until it
+> gets a day", and picking a day there undoes it.
+
 A row's grip, six dots at its right end, drags it into the reader's own
 order for that day, kept on this device as Plan's sidebar order is (the
 frame keeps it in the browser too); a task the stored order does not
@@ -288,6 +314,26 @@ One departure from the frame, because the API has no field for it: a
 task gets no planned slot and length of its own (the frame keeps one
 per task in the browser) — its due time is its slot, and an hour its
 length. That is open question 4.
+
+## 7. Filters (2026-11-17)
+
+The owner asked to filter the calendar "by projects, kind of tasks and
+more", to stop seeing the automation runs. A row of pills sits between the
+header and the grid, each kept in the address so a link shows the same
+calendar, with one **Clear**:
+
+| Filter | Narrows | Address |
+|--------|---------|---------|
+| **Kind**: Google Calendar, Personal, Task due dates, Automations | a whole layer; the same switch as the sidebar's toggles, which stay in step | `?off=` |
+| **Project**, several at once | task due dates and automation runs | `?project=` (Plan's slugs) |
+| **Status**: Not started, In progress, In review, Done | task due dates | `?status=` |
+| **Added by**: Anyone, Me, An agent | task due dates | `?origin=` |
+
+Events carry no project, status or author, so only Kind hides them. The
+header counts what the calendar shows: a layer switched off counts
+nothing, and the filters narrow tasks due and runs as they narrow the grid.
+The Project pill is the one Plan's board draws (`ProjectFacet` in the web
+kit).
 
 ## Open questions
 

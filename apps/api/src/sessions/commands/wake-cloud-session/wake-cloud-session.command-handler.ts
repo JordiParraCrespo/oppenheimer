@@ -26,8 +26,7 @@ export type WakeCloudSessionResult =
 
 /**
  * Sends a reply the Stop hook did not take from a host, so it wakes an idle
- * Claude Code cloud session (`product/next-steps/cloud-agents.md`, "The chat
- * of a cloud session", decision 2). Runs once per reply, when its wake comes
+ * Claude Code cloud session. Runs once per reply, when its wake comes
  * due.
  *
  * - **Which host.** Only one signed in to the claude.ai account the session

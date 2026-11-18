@@ -23,8 +23,8 @@ export interface BotPermissionRuleProps {
 }
 
 /**
- * A plain-language rule a reviewer reads before an asking call
- * (`25-bots.md` §5). It decides nothing by itself: the reviewer matches a
+ * A plain-language rule a reviewer reads before an asking call. It decides
+ * nothing by itself: the reviewer matches a
  * call against every rule of the bot, and an `ask` rule that matches wins.
  */
 export class BotPermissionRuleEntity extends AggregateRoot<BotPermissionRuleProps> {

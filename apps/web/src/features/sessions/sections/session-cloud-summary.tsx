@@ -14,20 +14,20 @@ const DeleteSessionDialog = lazy(() =>
 );
 
 /**
- * What a cloud session's pane says about it, without the frame around it (`SessionCloud`):
- * a session in Claude Code's or Codex's cloud, once its host has started it
- * (`product/research/cloud-agents.md` §5B). There is no terminal here: the
- * session lives at its vendor (claude.ai/code, chatgpt.com/codex), so the
- * pane says what it is doing, opens it there, and hands over the command that
- * brings its work into a terminal (`claude --teleport`, `codex apply`). A
- * Claude Code one can also be continued on one of your hosts from here, a
- * worktree session that runs that command for you, and then the command is
- * the way to do it yourself (`SessionCloudContinue`). Its
- * address is written out as a link too, to open or open in another window,
- * with a button that copies it. Its state is what the Oppenheimer extension
- * saw on claude.ai for Claude Code, and what the host that started it read
- * off `codex cloud list` for Codex: the one witness each has. Delete takes it
- * out of Oppenheimer at once; it stays at its vendor.
+ * What a cloud session's pane says about it, without the frame around it
+ * (`SessionCloud`): a session in Claude Code's or Codex's cloud, once its
+ * host has started it. There is no terminal here: the session lives at its
+ * vendor (claude.ai/code, chatgpt.com/codex), so the pane says what it is
+ * doing, opens it there, and hands over the command that brings its work into
+ * a terminal (`claude --teleport`, `codex apply`). A Claude Code one can also
+ * be continued on one of your hosts from here, a worktree session that runs
+ * that command for you, and then the command is the way to do it yourself
+ * (`SessionCloudContinue`). Its address is written out as a link too, to open
+ * or open in another window, with a button that copies it. Its state is what
+ * the Oppenheimer extension saw on claude.ai for Claude Code, and what the
+ * host that started it read off `codex cloud list` for Codex: the one witness
+ * each has. Delete takes it out of Oppenheimer at once; it stays at its
+ * vendor.
  */
 export function SessionCloudSummary({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();

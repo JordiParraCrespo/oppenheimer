@@ -9,11 +9,11 @@ import { LatencyReadout } from './latency-readout';
 import { SessionShareButton } from './session-share-button';
 
 /**
- * A session's bar (`SessionsConsole.dc.html`, the 2026-10-25 export): the
- * sidebar toggle, the task it came from when there is one, the session's
- * name and its state on a dot, then the view switch and Share on the right.
- * It is the page's bar, not a band inside the terminal, so the terminal under
- * it runs to the pane's edges and its own status line keeps only the link.
+ * A session's bar: the sidebar toggle, the task it came from when there is
+ * one, the session's name and its state on a dot, then the view switch and
+ * Share on the right. It is the page's bar, not a band inside the terminal,
+ * so the terminal under it runs to the pane's edges and its own status line
+ * keeps only the link.
  *
  * When the agent itself said what it is doing (OSC 7501), its word follows
  * the state: why it waits, and its own message.

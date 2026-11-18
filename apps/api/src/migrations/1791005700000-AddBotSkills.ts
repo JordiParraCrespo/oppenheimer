@@ -1,9 +1,8 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A bot's skills (`product/versions/mvp/25-bots.md` §4.1; from OpenClaw's
- * `SKILL.md` and Grok Bot's saved skills,
- * `research/lessons-from-openclaw-and-grok-bot-skills.md`): one row per skill,
+ * A bot's skills (from OpenClaw's `SKILL.md` and Grok Bot's saved skills):
+ * one row per skill,
  * a short name that is also its slash command, a description every turn's
  * prompt lists, and the body the bot reads when it uses it. Capped per bot by
  * the API (`BOT_SKILLS_MAX`), counted under a lock on the bot's row, as its

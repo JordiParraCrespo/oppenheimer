@@ -41,6 +41,11 @@ export function TaskEditor({
   const { tasks, projects, milestones, error } = useSuspensePlan();
   const task = taskId ? tasks.find((row) => row.id === taskId) : undefined;
   const [deleting, setDeleting] = useState(false);
+  // Only Remove from TODO pressed in this dialog, not a copy of the task's flag, which another
+  // writer may change while it is open: the row shows the live flag, and Save sends `offTodo`
+  // only when the reader pressed Remove. A day picked after it drops it, and the server's rule
+  // puts the task back on To do.
+  const [removed, setRemoved] = useState(false);
   const create = useCreateTask({
     onSuccess: () => {
       notifySuccess('taskAdded');
@@ -77,7 +82,11 @@ export function TaskEditor({
   const failure = create.error ?? update.error;
   const submit = (next: TaskFormOutput) => {
     const input = { ...next, notes: next.notes?.trim() ?? '' };
-    if (task) update.mutate({ id: task.id, input });
+    if (task)
+      update.mutate({
+        id: task.id,
+        input: removed ? { ...input, offTodo: true } : input,
+      });
     else create.mutate(input);
   };
 
@@ -97,6 +106,11 @@ export function TaskEditor({
         onSubmit={submit}
         onCancel={onClose}
         onDelete={task ? () => setDeleting(true) : undefined}
+        offTodo={
+          task && !task.isDone
+            ? { value: removed || task.offTodo, onChange: setRemoved }
+            : undefined
+        }
       />
       {deleting && task ? (
         <ConfirmDialog

@@ -6,10 +6,10 @@ import { WatchRepositorySearch } from '../sections/watch-repository-search';
 import { WatchedRepositories } from '../sections/watched-repositories';
 
 /**
- * Settings → Watched repositories (`design/version1/Settings.dc.html`): the
- * one place the queue's Watching scope is set. The title and its line, Watch
- * repositories on the right — a search over every repository the
- * installations reach — then a row per watched one, read under Suspense.
+ * Settings → Watched repositories: the one place the queue's Watching scope
+ * is set. The title and its line, Watch repositories on the right — a
+ * search over every repository the installations reach — then a row per
+ * watched one, read under Suspense.
  */
 export function WatchedRepositoriesSettingsScreen() {
   const { t } = useTranslation();

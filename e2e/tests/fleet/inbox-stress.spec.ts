@@ -32,7 +32,7 @@ import {
 import { signInAs } from '../../support/web';
 
 /**
- * The Inbox under load, on real runners (`29-inbox.md`, "Stress test"): one
+ * The Inbox under load, on real runners: one
  * account with three local hosts, thirty sessions in every scenario the Inbox
  * reads — permission dialogs of several shapes, questions from one choice to
  * four with words of their own, blocked with nothing to read, working, idle,

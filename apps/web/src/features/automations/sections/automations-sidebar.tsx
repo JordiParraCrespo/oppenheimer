@@ -7,10 +7,9 @@ import { AutomationsSidebarSkeleton } from '../components/automations-sidebar-sk
 import { AutomationsSidebarList } from './automations-sidebar-list';
 
 /**
- * The console's sidebar body on its automations list
- * (`product/versions/mvp/13-automations.md`): New automation, which needs no
- * read and stays in every state, the section's bots (`bots`, composed by the
- * route), and the list under it, read under Suspense.
+ * The console's sidebar body on its automations list: New automation, which
+ * needs no read and stays in every state, the section's bots (`bots`,
+ * composed by the route), and the list under it, read under Suspense.
  */
 export function AutomationsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();

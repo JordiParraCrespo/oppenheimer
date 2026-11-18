@@ -193,7 +193,7 @@ func New(version string) (*App, error) {
 		Layout:           layout,
 		CredentialHelper: credentialHelper(),
 		// A create takes a worktree checked out ahead of it and leaves
-		// the next one behind (02-runner §5).
+		// the next one behind.
 		Spares: true,
 	})
 	devices, err := hostDevices(false)
@@ -303,7 +303,7 @@ func New(version string) (*App, error) {
 // sessionEnv is a session's tmux environment. A worktree session's git asks
 // the runner's credential helper for the session's own token; a folder
 // session's folder is the person's, so its git keeps the person's own
-// credentials and is told nothing (24 §3).
+// credentials and is told nothing.
 func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
 	env := map[string]string{
 		"OPPENHEIMER_SESSION": session.ID,
@@ -477,12 +477,12 @@ func utf8Locale(current string) string {
 	return "C.UTF-8"
 }
 
-// shellCredentialHelper is git configuration, as environment, that points
-// the git in a session's shell at the runner's helper for GitHub (02-runner
-// §8). The store is blobless, so a `git log -p` or `blame` there fetches
-// contents the checkout never needed, and needs the session's token as much
-// as a push does. Configuration from the environment is read after every
-// file, so a helper the person set up is still asked first.
+// shellCredentialHelper is git configuration, as environment, that points the
+// git in a session's shell at the runner's helper for GitHub. The store is
+// blobless, so a `git log -p` or `blame` there fetches contents the checkout
+// never needed, and needs the session's token as much as a push does.
+// Configuration from the environment is read after every file, so a helper the
+// person set up is still asked first.
 //
 // The helper is the service's `current` link, not this binary: a session
 // outlives an update, and the version it was created under may be gone.

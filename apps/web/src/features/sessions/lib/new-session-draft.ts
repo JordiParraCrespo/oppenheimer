@@ -27,10 +27,10 @@ const STORAGE_KEY = 'oppenheimer.new-session.draft';
 
 export interface NewSessionDraft {
   /**
-   * Where the session runs (`product/versions/mvp/24-session-places.md`): a
-   * new worktree of a project's repository, a folder already on the host, or
-   * the cloud — Claude Code's or Codex's, which the host starts, or a vendor's the
-   * console launches (`cloudProvider`).
+   * Where the session runs: a new worktree of a project's repository, a
+   * folder already on the host, or the cloud — Claude Code's or Codex's,
+   * which the host starts, or a vendor's the console launches
+   * (`cloudProvider`).
    */
   where: SessionPlace;
   /**

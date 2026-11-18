@@ -11,7 +11,7 @@ import { SendMailCommand } from '../send-mail.command';
 import { SendMailCommandHandler } from '../send-mail.command-handler';
 
 /**
- * An approved send goes out once (`product/next-steps/mail.md` §3.4): claimed
+ * An approved send goes out once: claimed
  * under the approval before Gmail is asked, so a retry answers the same send
  * or refuses one that may have gone (`MAIL_015`); the day's cap, counted in
  * the claim's own locked step, refuses before Gmail is asked (`MAIL_011`); a

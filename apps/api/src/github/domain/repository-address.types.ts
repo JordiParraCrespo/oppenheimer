@@ -1,6 +1,6 @@
 /**
  * How a repository is reached, said by its kind rather than by an empty
- * field (`product/next-steps/0.2-pull-requests.md` §6.2):
+ * field:
  *
  * - `installation`: an installation of the workspace's GitHub App covers it;
  * - `tokens`: only the caller's own GitHub tokens open it, whichever one reads it.

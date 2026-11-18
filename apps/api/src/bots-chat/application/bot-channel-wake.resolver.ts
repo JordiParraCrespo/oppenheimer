@@ -31,11 +31,10 @@ export interface BotChannelWake {
 
 /**
  * What the owner's message on a channel does to the chat's conversation with
- * its bot (`product/next-steps/answering-on-telegram-and-whatsapp.md`), the
- * same on every channel: it lands in the conversation that holds it (made
- * now when it starts there); `/new` is only that start; `/stop` asks the
- * conversation's running turn to stop; anything else is a turn, keyed by the
- * message so a delivery twice is one turn. A bot that is gone, or that the
+ * its bot, the same on every channel: it lands in the conversation that holds
+ * it (made now when it starts there); `/new` is only that start; `/stop` asks
+ * the conversation's running turn to stop; anything else is a turn, keyed by
+ * the message so a delivery twice is one turn. A bot that is gone, or that the
  * owner did not make, is woken by nothing, so a channel never reaches someone
  * else's bot. The chat, and the turn's key and words, are the channel's.
  */

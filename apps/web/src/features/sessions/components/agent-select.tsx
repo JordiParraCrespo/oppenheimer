@@ -4,15 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { type EffortChoice, toEffortStops } from '../lib/session-options';
 
 /**
- * The composer's engine button: the agent, its model and how hard it thinks,
- * as one button so the foot row stays one line
- * (`product/versions/mvp/design/version1/NewSessionComposer.dc.html`). Its
- * popup has a tab per agent and one of Favourites, the models the reader
- * starred, from any agent; picking a model picks its agent, so the pair is
- * always valid. An agent with no listed models, the plain terminal, is one
- * row. The list is the shared catalog's (`lib/session-options.ts`). Whether
- * this host has the agent on `PATH` is a hint, never a gate, so no row is
- * disabled.
+ * The composer's engine button: the agent, its model and how hard it
+ * thinks, as one button so the foot row stays one line. Its popup has a tab
+ * per agent and one of Favourites, the models the reader starred, from any
+ * agent; picking a model picks its agent, so the pair is always valid. An
+ * agent with no listed models, the plain terminal, is one row. The list is
+ * the shared catalog's (`lib/session-options.ts`). Whether this host has
+ * the agent on `PATH` is a hint, never a gate, so no row is disabled.
  *
  * `effort` is the draft's choice for the current model (`effortChoiceFor`);
  * a model with no notion of effort passes null, and the popup has no

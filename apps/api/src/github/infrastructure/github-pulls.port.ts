@@ -157,7 +157,7 @@ export interface GithubOpenPullRequest {
  * One part of that read: the value, GitHub's refusal, or `past_page` when
  * the part ran longer than the read's page. That one is not a refusal: the
  * caller reads the pull request the long way rather than show part of a list
- * as all of it (#244).
+ * as all of it.
  */
 export type GithubPart<T> =
   | { value: T; refusal: null }
@@ -194,7 +194,7 @@ export interface GithubCredential {
    * GitHub account share a budget but not necessarily what they can see.
    */
   cacheScope?: string;
-  /** Called when GitHub answers `401`, so a refused credential stops being chosen (§6.2). */
+  /** Called when GitHub answers `401`, so a refused credential stops being chosen. */
   onUnauthorized?: () => Promise<void>;
 }
 

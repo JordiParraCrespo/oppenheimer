@@ -5,6 +5,8 @@
   "copied": "Copiado",
   "copy": "Copiar",
   "copyCode": "Copiar código",
+  "wrapLines": "Ajustar líneas",
+  "unwrapLines": "No ajustar líneas",
   "loading": "Cargando...",
   "or": "o",
   "relative": {
@@ -151,5 +153,10 @@
   "comingToMobile": {
     "title": "Próximamente en el móvil",
     "pullRequests": "Revisa las pull requests que te necesitan."
+  },
+  "projectFilter": {
+    "label": "Proyecto",
+    "all": "Todos los proyectos",
+    "none": "Sin proyecto"
   }
 }

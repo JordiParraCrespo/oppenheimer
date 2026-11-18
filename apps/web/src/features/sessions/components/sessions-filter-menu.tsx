@@ -154,6 +154,25 @@ export function SessionsFilterMenu({
           searchPlaceholder={t('common.search.hosts')}
           onPick={pick('host')}
         />
+        {/* What needs the reader: the row's amber and blue dots. */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            {t('sessions.filters.status')}
+            <DropdownMenuValue>{labelFor('status')}</DropdownMenuValue>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={filters.status[0] ?? ALL}
+              onValueChange={(status) => pick('status')(status as string, true)}
+            >
+              {options.status.map((option) => (
+                <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         <DropdownMenuSeparator />
 

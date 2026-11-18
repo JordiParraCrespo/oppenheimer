@@ -2,17 +2,16 @@ import { z } from 'zod';
 import { createSessionSchema, startCloudSessionSchema } from './session.schema.js';
 
 /**
- * Plan's board (`product/versions/mvp/17-plan.md`): a **task** is work a person
- * asks for, filed under a project and optionally under one of that project's
- * **milestones**, in one of four columns. A task starts sessions or links existing
- * ones; the session is where the work happens.
+ * Plan's board: a **task** is work a person asks for, filed under a project and
+ * optionally under one of that project's **milestones**, in one of four
+ * columns. A task starts sessions or links existing ones; the session is where
+ * the work happens.
  *
  * Dates are wall-clock: a due date is a calendar day and a due time a time of
  * day, both read in the viewer's own timezone. Nothing fires on them, so no
- * timezone is stored (`product/versions/mvp/18-plan-product.md`). A focus
- * date is the day the person means to work on it, apart from when it is due:
- * To do lists it that day and every later one until it is done
- * (`product/versions/mvp/20-plan-calendar.md` §6).
+ * timezone is stored. A focus date is the day the person means to work on it,
+ * apart from when it is due: To do lists it that day and every later one until
+ * it is done.
  */
 
 /** The board's columns, in the order the board draws them. */
@@ -22,15 +21,24 @@ export type TaskStatus = z.infer<typeof taskStatusSchema>;
 
 /**
  * The statuses attaching a session moves to In progress: work not started yet.
- * In progress and Done stay as they are (`product/versions/mvp/19-plan-tasks-and-goals.md` §5).
+ * In progress and Done stay as they are.
  */
 export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['todo'];
 
 /**
+ * How much a task matters, most first: the order a list sorted by priority
+ * draws them in, and the order of the picker. A task with none (`null`, the
+ * default) sorts after Low. Priority never moves a card on the board: its
+ * place in a column is the person's own order.
+ */
+export const TASK_PRIORITIES = ['urgent', 'high', 'medium', 'low'] as const;
+export const taskPrioritySchema = z.enum(TASK_PRIORITIES);
+export type TaskPriority = z.infer<typeof taskPrioritySchema>;
+
+/**
  * Who made a task: its person, or an agent working for them (a bot, or a call
  * on an API token or an OAuth grant). An agent's task waits in Plan's Inbox
- * until the person triages it (`product/versions/mvp/29-inbox.md`, "Tasks an
- * agent made").
+ * until the person triages it.
  */
 export const TASK_ORIGINS = ['person', 'agent'] as const;
 export type TaskOrigin = (typeof TASK_ORIGINS)[number];
@@ -46,8 +54,7 @@ export const IDEMPOTENCY_KEY_MAX = 128;
 /**
  * The version a writer read. With it a write is refused (`TASKS_008`) when
  * someone else wrote first; without it the write lands, and still bumps the
- * version, so a writer that did send one sees it changed
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §7).
+ * version, so a writer that did send one sees it changed.
  */
 export const expectedVersionSchema = z.number().int().min(1);
 
@@ -94,6 +101,7 @@ export const createTaskSchema = z
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
     focusDate: calendarDateSchema.nullable().optional(),
+    priority: taskPrioritySchema.nullable().optional(),
   })
   .refine(dueTimeHasDate, { path: ['dueTime'] });
 
@@ -115,6 +123,13 @@ export const updateTaskSchema = z
     dueTime: timeOfDaySchema.nullable().optional(),
     /** The day it is on To do from; `null` takes it off. */
     focusDate: calendarDateSchema.nullable().optional(),
+    /**
+     * `true` takes it off To do, its due date included, until it gets a TODO
+     * day again or its due date changes, which put it back on their own.
+     */
+    offTodo: z.boolean().optional(),
+    /** `null` takes the priority off. */
+    priority: taskPrioritySchema.nullable().optional(),
     /** Marks the task blocked and says why; `null` unblocks it. Done unblocks it too. */
     blockedReason: blockedReasonSchema.nullable().optional(),
     expectedVersion: expectedVersionSchema.optional(),
@@ -213,8 +228,7 @@ export const listMilestonesQuerySchema = z.object({
 export type ListMilestonesQueryDto = z.infer<typeof listMilestonesQuerySchema>;
 
 /**
- * What Plan's event log records, and nothing else
- * (`product/versions/mvp/23-plan-milestones-stats-accounts.md` §4). A reorder
+ * What Plan's event log records, and nothing else. A reorder
  * within a column and edits to a title, notes or a milestone's description
  * write nothing; a new kind needs a reader first.
  */

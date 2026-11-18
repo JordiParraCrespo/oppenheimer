@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
 /**
- * Sharing a session opens its terminal to people outside its workspace
- * (`product/versions/mvp/21-session-share-links.md`). A session has at most
- * one share, at one stable address, `/s/<slug>`.
+ * Sharing a session opens its terminal to people outside its workspace. A
+ * session has at most one share, at one stable address, `/s/<slug>`.
  *
  * Three choices make a share: **who** may open it, **what** they may do, and
  * **for how long**.

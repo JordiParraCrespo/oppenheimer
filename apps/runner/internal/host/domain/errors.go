@@ -22,12 +22,12 @@ var (
 	// ErrRunnerDown is a command that needs the running daemon (a session's
 	// `runner sessions run|send|wait|report`) finding no one on its socket.
 	ErrRunnerDown = problem.New("HOST_012", http.StatusServiceUnavailable, "The runner is not running on this host")
-	// The folder picker's listing (`fs.list`, 24 §4). The codes are the
+	// The folder picker's listing (`fs.list`). The codes are the
 	// protocol's, named in packages/shared's fsListSchema.
 	ErrFolderNotFound   = problem.New("FS_001", http.StatusNotFound, "The folder does not exist")
 	ErrFolderNotDir     = problem.New("FS_002", http.StatusBadRequest, "The path is not a directory")
 	ErrFolderUnreadable = problem.New("FS_003", http.StatusForbidden, "The folder cannot be read")
-	// A bot's command on the host (`host.exec`, 25 §4.2). The codes are the
+	// A bot's command on the host (`host.exec`). The codes are the
 	// protocol's, named in packages/shared's hostExecSchema.
 	ErrExecDisabled   = problem.New("EXEC_001", http.StatusForbidden, "Running commands is off on this host")
 	ErrExecRefused    = problem.New("EXEC_002", http.StatusForbidden, "This host does not allow that program")

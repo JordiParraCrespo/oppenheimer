@@ -16,7 +16,7 @@ import {
 } from './bot-tool.factory';
 
 /**
- * Work (`25-bots.md` §4.7): `delegate`, the bot's own subagents. It splits a
+ * Work: `delegate`, the bot's own subagents. It splits a
  * job into independent tasks, each run by a child inside this turn with the
  * turn's read-only tools, and reads back what each found, to answer the
  * person itself. A child is offered no `delegate`, so delegation is one

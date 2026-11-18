@@ -332,7 +332,7 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** The send gate (05): a host still in the workspace and one repository the body can carry. */
+  /** The send gate: a host still in the workspace and one repository the body can carry. */
   describe('the send gate', () => {
     function composer() {
       return {
@@ -380,9 +380,8 @@ describe('NewSessionForm', () => {
   });
 
   /**
-   * Where the session runs decides which chips the band holds
-   * (`product/versions/mvp/24-session-places.md` §5): a pick redraws the band,
-   * not the composer, which waits for a folder.
+   * Where the session runs decides which chips the band holds: a pick
+   * redraws the band, not the composer, which waits for a folder.
    */
   describe('a folder on the host', () => {
     beforeEach(() => {

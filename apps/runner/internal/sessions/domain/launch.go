@@ -12,7 +12,7 @@ import (
 )
 
 // Launch is how a session's agent was started: the structured choices
-// `session.create` carries (01-protocol), kept on the session so a restart
+// `session.create` carries, kept on the session so a restart
 // reproduces the launch without asking anyone.
 type Launch struct {
 	Model      string `json:"model,omitempty"`
@@ -46,13 +46,13 @@ type Launch struct {
 	// Conversation, which every transcript reader reads it by.
 	TeleportSince time.Time `json:"teleportSince,omitzero"`
 	// Prompt is the first task, appended as the trailing positional so it is
-	// in the process's arguments before it starts (02-runner §5). It is kept
+	// in the process's arguments before it starts. It is kept
 	// for restart only and never logged.
 	Prompt string `json:"prompt,omitempty"`
 	// Server is the agent's own local API, for an agent that keeps its
 	// conversation behind one rather than in a file (OpenCode, whose TUI
 	// serves it on a loopback port when it is given one). The chat view
-	// follows the conversation through it (0.7). It is saved, so a runner
+	// follows the conversation through it. It is saved, so a runner
 	// that restarted while the agent ran can still reach it, and chosen
 	// again at each launch, since the port may be another process's by then.
 	Server *AgentServer `json:"server,omitempty"`
@@ -82,6 +82,13 @@ type AgentServer struct {
 	// repository, so the worktrees of one repository share it, and only the
 	// directory tells this session's conversations from another's.
 	Directory string `json:"directory,omitempty"`
+	// Conversation is the agent's conversation the session's own process was
+	// last heard working in, or "" until it is. OpenCode does not take a name
+	// for the one it starts, and another OpenCode in the same folder writes to
+	// the same store, so this, not the newest one there, is the session's. It
+	// is saved, so the chat still finds it after the runner restarts, and kept
+	// across a launch, like Since.
+	Conversation string `json:"conversation,omitempty"`
 }
 
 // AgentServerUser is the user name the agent's API takes with the password.
@@ -91,6 +98,16 @@ const AgentServerUser = "opencode"
 // local API the runner opens for it at launch.
 func (a Agent) ServesConversation() bool {
 	return a == AgentOpenCode
+}
+
+// NamesConversation reports whether this agent's CLI takes the id of the
+// conversation it starts (Claude Code's `--session-id`). One that does not
+// is found by its folder: its transcript is the newest in the session's
+// directory, and a restart resumes "the last" there. Two of those in one
+// worktree cannot be told apart, so a second one would take the session's
+// conversation over.
+func (a Agent) NamesConversation() bool {
+	return len(launchCatalog[a.CatalogID()].conversationCreate) > 0
 }
 
 // NewAgentServer mints a password for an agent's API on port, for the
@@ -153,6 +170,10 @@ type launchMap struct {
 	// The resume form is a subcommand, so it leads the argv instead of
 	// following it.
 	conversationResumeLeads bool
+	// conversationReopen reopens, on a restart, the conversation the runner
+	// heard the agent's process work in (AgentServer.Conversation), for an
+	// agent whose resume names none.
+	conversationReopen []string
 	// How a cloud session is continued here, `<teleport>` its id, and how
 	// the conversation that left is reopened. Neither names a conversation.
 	teleportStart  []string
@@ -245,6 +266,12 @@ func (l Launch) conversation(m launchMap) conversationArgs {
 	// started in, and a session's worktree is its own and never reused, so
 	// that is this session's conversation. Only a resume that asks for an id
 	// needs one.
+	//
+	// Except in a folder shared with another of the same agent (a direct
+	// session's): there "the last one" may be the other's, so a conversation
+	// the runner heard this session's agent work in is reopened by its id.
+	case l.Resume && m.conversationReopen != nil && l.Server != nil && l.Server.Conversation != "":
+		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Server.Conversation)}
 	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
 		return conversationArgs{
 			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),

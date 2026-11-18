@@ -210,7 +210,7 @@ test.describe('web auth UI', () => {
     // What marks first-run finished is a *claimed address*, not the existence
     // of a row: sign-up provisions one for everybody, so its presence would
     // send every new account straight past the step it was sent here for
-    // (`08-auth.md`). Claim it the way the step would.
+    // Claim it the way the step would.
     const account = await findUserByEmail(user.email);
     await query(
       `UPDATE "organization" SET "slug" = $2

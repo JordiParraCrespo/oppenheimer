@@ -169,7 +169,7 @@ export class GmailProviderError extends Error {}
 export class GmailNotFoundError extends Error {}
 
 /**
- * Gmail, through the person's own grant (`product/next-steps/mail.md` §2).
+ * Gmail, through the person's own grant.
  * Nothing it returns is stored by the port.
  *
  * Every call may throw Gmail's rate-limit problem (`MAIL_008`, an `AppError`)
@@ -275,7 +275,7 @@ export interface GmailProviderPort {
 }
 
 /**
- * The scope mail asks for: everything §3 needs except deleting mail for good
- * (`product/next-steps/mail.md` §1). Read, drafts, send, labels and trash.
+ * The scope mail asks for: everything a bot does with mail except deleting
+ * mail for good. Read, drafts, send, labels and trash.
  */
 export const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.modify';

@@ -191,23 +191,21 @@ describe('Session cache (integration)', () => {
         method: 'POST',
         body: { name: 'cost', scopes: ['tokens:read'] },
       });
-      const { id: tokenId, token: apiToken } = minted.body as { id: string; token: string };
+      const apiToken = (minted.body as { token: string }).token;
       const credential = () =>
         call('/api/v1/me/credential', { token: apiToken }).then((r) => expect(r.status).toBe(200));
       await credential();
-      // The first use stamps `lastUsedAt` after the response, fire-and-forget.
-      // Measuring before it lands would see a token never used and catch the
-      // second request stamping it, which is what a busy machine did.
-      await vi.waitFor(
-        async () => {
-          const [row] = await dataSource.query(
-            'SELECT "lastUsedAt" FROM "api_token" WHERE "id" = $1',
-            [tokenId],
+      // That first use stamps `lastUsedAt` without awaiting it: wait for the
+      // stamp to land, or the measured use below races it and stamps again.
+      await expect
+        .poll(async () => {
+          const rows: { stamped: boolean }[] = await dataSource.query(
+            `SELECT "lastUsedAt" IS NOT NULL AS "stamped" FROM "api_token" WHERE "userId" = $1`,
+            [owner.id],
           );
-          expect(row?.lastUsedAt).toBeTruthy();
-        },
-        { timeout: 5_000 },
-      );
+          return rows.every((row) => row.stamped);
+        })
+        .toBe(true);
 
       const cookie = await queriesDuring(() => me({ cookie: owner.cookie }));
       const bearer = await queriesDuring(() => me({ token: owner.sessionToken }));

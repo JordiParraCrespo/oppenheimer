@@ -1,5 +1,5 @@
 import { SessionEntity, TaskEntity, taskSessionsOf } from '@oppenheimer/frontend-consumer';
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import {
   type AddFilter,
@@ -24,8 +24,10 @@ function task(
     dueDate: string | null;
     dueTime: string | null;
     focusDate: string | null;
+    priority: TaskPriority | null;
     completedAt: string;
     sessionIds: string[];
+    offTodo: boolean;
   }> = {},
 ) {
   return new TaskEntity(
@@ -49,6 +51,10 @@ function task(
     null,
     1,
     overrides.focusDate ?? null,
+    'person',
+    null,
+    overrides.priority ?? null,
+    overrides.offTodo ?? false,
   );
 }
 
@@ -201,6 +207,23 @@ describe("To do's day", () => {
     );
   });
 
+  it('leaves a task taken off To do off every day, its due date and TODO day included, and offers it to Add', () => {
+    const rows = [
+      task('kept', { dueDate: DAY }),
+      task('due', { dueDate: DAY, offTodo: true }),
+      task('overdue', { dueDate: '2026-11-02', offTodo: true }),
+      task('planned', { focusDate: '2026-11-05', offTodo: true }),
+    ];
+    const entries = todoEntries(rows, DAY, { today: DAY, overdue: true });
+    expect(entries.map((entry) => entry.task.id)).toEqual(['kept']);
+    expect(todoCounts(rows, DAY, { today: DAY, overdue: true }, new Map())).toEqual({
+      left: 1,
+      done: 0,
+    });
+    const onDay = new Set(entries.map((entry) => entry.task.id));
+    expect(addableTasks(rows, onDay).map((row) => row.id)).toEqual(['due', 'overdue', 'planned']);
+  });
+
   it('offers the open tasks not already on the day, dated or not, in the projects in scope', () => {
     const rows = [
       task('a'),
@@ -212,6 +235,17 @@ describe("To do's day", () => {
     expect(
       addableTasks(rows, new Set(), { projectIds: ['p-2'], statuses: [] }).map((row) => row.id),
     ).toEqual(['d']);
+  });
+
+  it('offers the most important first, a task with no priority last, keeping the board order within a level', () => {
+    const rows = [
+      task('a'),
+      task('b', { priority: 'low' }),
+      task('c', { priority: 'urgent' }),
+      task('d', { priority: 'high' }),
+      task('e', { priority: 'urgent' }),
+    ];
+    expect(addableTasks(rows, new Set()).map((row) => row.id)).toEqual(['c', 'e', 'd', 'b', 'a']);
   });
 
   it('narrows to the projects and columns picked, both at once', () => {
@@ -288,9 +322,9 @@ const SESSIONS = new Map(
 const HOSTS = new Map();
 
 /**
- * TODO's "With agents" strip (`20-plan-calendar.md` §6, "Changed on 2026-11-12"): a task an agent is
- * working on leaves the list; one whose agents need the person stays on it
- * with a mark, most urgent first.
+ * TODO's "With agents" strip: a task an agent is working on leaves the
+ * list; one whose agents need the person stays on it with a mark, most
+ * urgent first.
  */
 describe("TODO's agents", () => {
   const placeOf = (row: TaskEntity) => {

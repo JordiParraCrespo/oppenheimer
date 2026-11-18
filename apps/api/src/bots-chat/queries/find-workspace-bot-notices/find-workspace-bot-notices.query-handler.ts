@@ -10,8 +10,7 @@ import {
 
 /**
  * The workspace's bots' latest notices, newest first, at most
- * {@link WORKSPACE_BOT_NOTICES_MAX}: the Inbox's lines from bots
- * (`product/next-steps/agent-tools.md` §5), read through the caller's
+ * {@link WORKSPACE_BOT_NOTICES_MAX}: the Inbox's lines from bots, read through the caller's
  * scope with each bot's name.
  */
 @QueryHandler(FindWorkspaceBotNoticesQuery)

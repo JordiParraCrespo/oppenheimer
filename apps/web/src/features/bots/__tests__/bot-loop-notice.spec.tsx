@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotLoopNotice } from '../sections/bot-loop-notice';
 
 /**
- * The loop over a bot's composer (`25-bots.md` §4.1, `/loop`). What breaks
- * this: Stop ending another bot's loop, a self-paced loop drawn as if a run
- * were due, or a Stop that failed going unsaid.
+ * The loop over a bot's composer (`/loop`). What breaks this: Stop ending
+ * another bot's loop, a self-paced loop drawn as if a run were due, or a
+ * Stop that failed going unsaid.
  */
 
 vi.mock('react-i18next', () => ({

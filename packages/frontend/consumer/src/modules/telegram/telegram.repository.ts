@@ -22,10 +22,10 @@ function toAccount(data: TelegramAccountResponseDto): TelegramAccountEntity {
 }
 
 /**
- * The reader's own Telegram bots (`product/next-steps/telegram.md`): connected
- * on one of their hosts by pasting the token @BotFather gave, given a new
- * token, and disconnected. The token goes to the host and is never read back;
- * what their bots read and send there never passes through the console.
+ * The reader's own Telegram bots: connected on one of their hosts by pasting
+ * the token @BotFather gave, given a new token, and disconnected. The token
+ * goes to the host and is never read back; what their bots read and send there
+ * never passes through the console.
  */
 @injectable()
 export class TelegramRepository {

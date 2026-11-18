@@ -141,8 +141,8 @@ export function turnTrail(
 }
 
 /**
- * A routine's run with nothing to show while the chat hides its tool calls:
- * the routine opened it (an opening the chat draws no line for), it
+ * A routine's run, or a task wake, with nothing to show while the chat hides
+ * its tool calls: an event the chat draws no line for opened it, it
  * completed, and all it did was run tools that left nothing the reader sees
  * in full (a session to open, a draft). The chat leaves it out, so a routine
  * that checks every half hour and finds nothing leaves no gap. A run that
@@ -169,15 +169,39 @@ function stepShowsWithToolsHidden(step: BotToolStep): boolean {
 }
 
 /**
- * The blocks the chat draws: all of them but a quiet routine run while the
- * tool calls are hidden. The day and model markers are read between these,
+ * The kinds of event the chat draws only while its tool calls are shown: a
+ * task on a project or milestone the bot follows changing is the bot's own
+ * plumbing, read by the bot rather than the reader. Hidden, its turn is
+ * opened unseen, as a routine's run is, so a wake the bot answered with
+ * nothing to say leaves no gap and one it replied to reads as the bot
+ * writing to you.
+ */
+const TOOL_EVENT_KINDS = ['task'] as const satisfies readonly BotMessageEvent['kind'][];
+
+function isToolEvent(message: BotMessageEntity): boolean {
+  const kind = message.event?.kind;
+  return kind !== undefined && (TOOL_EVENT_KINDS as readonly string[]).includes(kind);
+}
+
+/** The block as it reads while tool calls are hidden: without the lines only they show. */
+function withoutToolEvents(block: ChatTurnBlock): ChatTurnBlock {
+  if (!block.asked.some(isToolEvent)) return block;
+  const asked = block.asked.filter((message) => !isToolEvent(message));
+  return { ...block, asked, openedUnseen: block.openedUnseen || asked.length === 0 };
+}
+
+/**
+ * The blocks the chat draws. While the tool calls are hidden, without the
+ * events only they show (`TOOL_EVENT_KINDS`), and without a quiet run, a
+ * routine's or a wake's. The day and model markers are read between these,
  * so a change that happened on a hidden run shows on the next drawn turn.
  */
 export function visibleTurns(
   blocks: readonly ChatTurnBlock[],
   toolCallsShown: boolean,
 ): ChatTurnBlock[] {
-  return blocks.filter((block) => !isQuietRoutineRun(block, toolCallsShown));
+  if (toolCallsShown) return [...blocks];
+  return blocks.map(withoutToolEvents).filter((block) => !isQuietRoutineRun(block, false));
 }
 
 /** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */

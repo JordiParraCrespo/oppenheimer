@@ -2,9 +2,9 @@ import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
  * WhatsApp is the numbers a person linked as devices on their hosts, read and
- * written by their bots (`product/next-steps/whatsapp.md`). The rows sit in a
- * workspace like mail's, and every read of one adds its owner, so nobody
- * reads another person's chats, a workspace admin included.
+ * written by their bots. The rows sit in a workspace like mail's, and every
+ * read of one adds its owner, so nobody reads another person's chats, a
+ * workspace admin included.
  */
 export const WhatsappResource = defineResource({
   subject: 'Whatsapp',

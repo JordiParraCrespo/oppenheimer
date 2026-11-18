@@ -7,17 +7,16 @@ import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group
 import { ClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { InboxClearArt } from '../internal/inbox-clear-art';
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
+import { EmptyState } from './empty-state';
 import { Skeleton } from './skeleton';
 import { variedWidth } from '../internal/varied-width';
 
 /**
- * The Inbox (`product/versions/mvp/design/version1/Inbox.dc.html`), laid out
- * as a mail client inside Plan: a list column of what needs you, one row per
- * item, and a reading pane with the item in hand as a message, its answers
- * under it and a toolbar over it.
+ * The Inbox, laid out as a mail client inside Plan: a list column of what needs
+ * you, one row per item, and a reading pane with the item in hand as a message,
+ * its answers under it and a toolbar over it.
  */
 function InboxList({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="inbox-list" role="list" className={cn('flex flex-col', className)} {...props} />;
@@ -565,8 +564,9 @@ function InboxQuestionOption({
 }
 
 /**
- * InboxClear — nothing needs you, centred in the reading pane: the empty
- * tray, a heading, and what is still going on under it.
+ * InboxClear — nothing needs you, centred in the reading pane: the illustrated
+ * `EmptyState` with the empty tray, a heading, and what is still going on
+ * under it.
  */
 function InboxClear({
   title,
@@ -578,19 +578,13 @@ function InboxClear({
   className?: string;
 }) {
   return (
-    <div
-      data-slot="inbox-clear"
-      className={cn(
-        'flex flex-1 flex-col items-center justify-center px-10 pb-12 text-center motion-safe:animate-appear max-sm:px-4',
-        className,
-      )}
-    >
-      <InboxClearArt className="mb-4" />
-      <span className="text-[21px] font-semibold tracking-[-0.016em] text-balance">{title}</span>
-      {children ? (
-        <span className="mt-1.5 max-w-90 text-[14px] leading-normal text-balance text-fg-muted">{children}</span>
-      ) : null}
-    </div>
+    <EmptyState data-slot="inbox-clear" className={cn('pb-12', className)}>
+      <EmptyState.Header>
+        <EmptyState.Art name="inbox" />
+        <EmptyState.Title>{title}</EmptyState.Title>
+        {children ? <EmptyState.Description>{children}</EmptyState.Description> : null}
+      </EmptyState.Header>
+    </EmptyState>
   );
 }
 

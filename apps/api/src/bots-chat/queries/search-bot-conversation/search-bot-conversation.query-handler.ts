@@ -6,8 +6,8 @@ import type { BotMessageEntity } from '../../domain/bot-message.entity';
 import { SearchBotConversationQuery } from './search-bot-conversation.query';
 
 /**
- * A bot's conversation, searched for words (`search_chat`, `25-bots.md`
- * §4.1): the person's and the bot's messages that match, best first, read in
+ * A bot's conversation, searched for words (`search_chat`): the person's and
+ * the bot's messages that match, best first, read in
  * the caller's scope, so a bot finds only its own chats in its own workspace.
  */
 @QueryHandler(SearchBotConversationQuery)

@@ -8,14 +8,14 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * listener on the organization being created) the workspace could never be
  * deleted: Better Auth's delete removed the organization row and Postgres
  * refused. Every other table an organization owns cascades, and a project is
- * metadata (`product/versions/mvp/10-api-modules-and-data-model.md`); its own
+ * metadata; its own
  * children (tasks, milestones, automations, repositories) already cascade
  * from it. Work is still kept: `work_session` stays `RESTRICT` against both
  * the organization and the project, so a workspace with sessions in it is
  * still refused, as before.
  *
  * Swapping the action needs the constraint dropped and added again; nothing
- * is deployed, so it is done in place (`database-design.md`).
+ * is deployed, so it is done in place.
  */
 export class CascadeProjectsWithOrganization1791001600000 implements MigrationInterface {
   name = 'CascadeProjectsWithOrganization1791001600000';

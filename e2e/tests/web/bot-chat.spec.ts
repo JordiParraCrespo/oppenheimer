@@ -2,11 +2,10 @@ import { expect, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * A bot's chat in a browser, against the real control plane and a real model
- * (`product/versions/mvp/25-bots.md` §3): a message sent from the composer
- * becomes a turn that works and then shows how it went, the bot's answer
- * beneath it, and the box is Send again. The model is GLM, through
- * `GLM_API_KEY`; without it the spec is skipped.
+ * A bot's chat in a browser, against the real control plane and a real model: a
+ * message sent from the composer becomes a turn that works and then shows how
+ * it went, the bot's answer beneath it, and the box is Send again. The model is
+ * GLM, through `GLM_API_KEY`; without it the spec is skipped.
  */
 
 test.describe.configure({ timeout: 180_000 });
@@ -25,7 +24,7 @@ test('a GLM bot answers in its chat', async ({ page }) => {
 
   await page.goto(`/bots/${bot.id}`);
   await expect(
-    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+    page.getByText('Ask Fruit Bot anything. It can read your sessions and act on them.'),
   ).toBeVisible();
   const box = page.getByPlaceholder('Message Fruit Bot');
   await box.fill('Reply with exactly the word: pineapple');
@@ -62,6 +61,6 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await expect(page.getByText('No messages yet.')).toBeVisible();
   await page.goto(`/bots/${bot.id}`);
   await expect(
-    page.getByRole('heading', { name: 'Fruit Bot is ready. Tell it what job to do.' }),
+    page.getByText('Ask Fruit Bot anything. It can read your sessions and act on them.'),
   ).toBeVisible();
 });

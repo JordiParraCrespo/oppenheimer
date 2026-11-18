@@ -5,6 +5,8 @@
   "copied": "Copied",
   "copy": "Copy",
   "copyCode": "Copy code",
+  "wrapLines": "Wrap lines",
+  "unwrapLines": "Unwrap lines",
   "loading": "Loading...",
   "or": "or",
   "relative": {
@@ -149,5 +151,10 @@
   "comingToMobile": {
     "title": "Coming to mobile",
     "pullRequests": "Review the pull requests that need you."
+  },
+  "projectFilter": {
+    "label": "Project",
+    "all": "All projects",
+    "none": "No project"
   }
 }

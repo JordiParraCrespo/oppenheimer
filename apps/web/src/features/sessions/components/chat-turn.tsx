@@ -29,7 +29,8 @@ const ENTER = 'motion-safe:animate-appear';
  * One turn of the chat view: what the person sent, as a card on the right,
  * the images pasted with it over the card, as tiles that open, then the
  * agent's turn under its header — working, with its clock running,
- * or how long it worked and on which model. Its thinking and its calls are in
+ * or how long it worked; when it ended and on which model are in the trail
+ * under its answer, beside Copy. Its thinking and its calls are in
  * muted ink, what it said is markdown, a plan and the files it changed are
  * cards. Codex's way with settled work: a turn is open while it works, and
  * once it settles it folds to its answer (its last words) and its cards, the
@@ -50,15 +51,18 @@ export function ChatTurn({ turn }: { turn: Turn }) {
   // is a count beside the pictures.
   const named = (turn.prompt?.files ?? 0) - pictures.length;
   const answer = live ? '' : answerTextOf(blocks);
+  // When the turn ended and on which model, quiet beside its Copy.
+  const trail = [turn.lastAt ? time.format(turn.lastAt) : null, modelName(turn.model)].filter(
+    (part): part is string => Boolean(part),
+  );
 
   return (
     <div className="flex flex-col gap-4">
       {turn.prompt ? (
         <ChatUserMessage
           // A session's chat stands on its terminal's ground, the card's own
-          // colour, so the turn takes the blue wash: a shape on it, and the
-          // person's words told from the agent's at a glance.
-          tone="accent"
+          // colour, so the turn takes the chat's grey wash, a code block's.
+          tone="wash"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
           actions={
@@ -84,6 +88,8 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       ) : null}
       {blocks.length > 0 || live ? (
         <TurnHeader
+          // Room over it, so a turn reads as its own block under the prompt.
+          className="mt-4"
           state={live ? 'working' : 'done'}
           elapsed={
             live && turn.startedAt ? (
@@ -92,8 +98,6 @@ export function ChatTurn({ turn }: { turn: Turn }) {
               (elapsedOf(turn) ?? undefined)
             )
           }
-          model={modelName(turn.model) ?? undefined}
-          time={!live && turn.lastAt ? time.format(turn.lastAt) : undefined}
           open={shown}
           onToggle={live ? undefined : () => setOpen(!open)}
           labels={{
@@ -115,6 +119,7 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       {answer ? (
         <MessageTrail
           actions={<CopyTextButton text={answer} label={t('sessions.chat.copyReply')} />}
+          meta={trail.length > 0 ? trail.join(' · ') : undefined}
         />
       ) : null}
     </div>

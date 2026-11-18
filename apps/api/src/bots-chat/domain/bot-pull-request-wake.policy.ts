@@ -11,7 +11,7 @@ import { BOT_SUBSCRIPTION_WAKE_LIMIT } from './bot-subscription.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * A bot following a pull request (`27-bot-subscriptions.md` §7, as built),
+ * A bot following a pull request,
  * as rules: whether a GitHub event wakes it, what the wake is keyed on, and
  * what the bot reads. Unlike a session's, a pull request's wake is not a
  * fresh read: GitHub is not ours to re-read as the owner on every event, so

@@ -137,3 +137,13 @@ export async function pickProjectAndRepository(page: Page, editor: Locator) {
   await page.keyboard.press('Escape');
   await expect(editor.getByRole('button', { name: 'Repositories' })).toContainText('xrp-mobile');
 }
+
+/**
+ * A task's or a milestone's project, from its dialog's Project select: open
+ * it, search for the name, and pick the option that is exactly it.
+ */
+export async function pickDialogProject(page: Page, dialog: Locator, name: string) {
+  await dialog.getByRole('button', { name: 'Project', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Search projects' }).fill(name);
+  await page.getByRole('option', { name, exact: true }).click();
+}

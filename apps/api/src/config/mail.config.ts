@@ -3,8 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * Mail: a person's own Gmail accounts, worked by their bots
- * (`product/next-steps/mail.md`).
+ * Mail: a person's own Gmail accounts, worked by their bots.
  *
  * `tokenKey` is optional capability config: with it and the Google sign-in
  * client (`GOOGLE_CLIENT_ID`/`_SECRET`, the same client), the `gmail`

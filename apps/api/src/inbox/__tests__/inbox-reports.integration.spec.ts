@@ -8,8 +8,8 @@ import { InboxReportEntity, type PostInboxReportProps } from '../domain/inbox-re
 import { InboxReportMapper } from '../inbox-report.mapper';
 
 /**
- * A workspace's Inbox reports against a real Postgres (`29-inbox.md`,
- * "Reports"): a report read back whole with its pictures, the list by
+ * A workspace's Inbox reports against a real Postgres: a report read back
+ * whole with its pictures, the list by
  * workspace and status with the newest first, one answer however many race,
  * the event each write stages, the table's own rules, and what a deleted
  * account and a deleted workspace leave. The schema is the migrations'.

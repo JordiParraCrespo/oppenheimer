@@ -4,6 +4,7 @@ import {
   InboxMessageActions,
   InboxMessageBody,
   InboxMessageFacts,
+  TaskPriorityIcon,
 } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { useTriageTask, useUpdateTask } from '@oppenheimer/frontend-consumer/react';
@@ -16,12 +17,11 @@ import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
 import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
- * A task an agent made (`29-inbox.md`, "Tasks an agent made"), in the pane:
- * its notes and when it is due, then what the person does with it. **Put on
- * today** gives it today as its TODO day, **Start session** opens Start
- * session for it on the board, and **Dismiss** keeps it on the board as it
- * is; each takes it up, and it leaves the Inbox. Open task opens it on the
- * board to read or edit first.
+ * A task an agent made, in the pane: its notes, its priority and when it is due, then
+ * what the person does with it. **Put on today** gives it today as its TODO
+ * day, **Start session** opens Start session for it on the board, and
+ * **Dismiss** keeps it on the board as it is; each takes it up, and it
+ * leaves the Inbox. Open task opens it on the board to read or edit first.
  */
 export function InboxTaskCard({
   item,
@@ -53,6 +53,12 @@ export function InboxTaskCard({
       <InboxMessageBody className="whitespace-pre-wrap break-words">{copy.body}</InboxMessageBody>
       <InboxMessageFacts>
         <span>{t(`tasks.columns.${task.status}`)}</span>
+        {task.priority ? (
+          <span className="inline-flex items-center gap-1">
+            <TaskPriorityIcon priority={task.priority} />
+            {t('tasks.card.priority', { level: t(`tasks.priority.${task.priority}`) })}
+          </span>
+        ) : null}
         {task.dueDate ? (
           <span>{t('inbox.task.due', { date: formatCalendarDay(task.dueDate, locale) })}</span>
         ) : null}

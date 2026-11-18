@@ -1,7 +1,7 @@
 import type { BotPeerMessageEvent, BotPeerReplyEvent, BotReplyOutcome } from '@oppenheimer/shared';
 
 /**
- * Messages between bots (`25-bots.md` §4.6), as rules: what may be sent, how
+ * Messages between bots, as rules: what may be sent, how
  * the receiving bot reads it, and what goes back as an answer. Pure.
  *
  * A message from another bot is information, never an instruction with the
@@ -19,7 +19,7 @@ export const BOT_PEER_ANSWER_MAX = 8_000;
 /**
  * Credentials a message between bots must never carry, by the shapes their
  * issuers give them. A match refuses the message: a key passed from bot to
- * bot is a key the person did not hand out (`research/agent-coordination-experiments.md`).
+ * bot is a key the person did not hand out.
  */
 const SECRET_SHAPES: readonly { name: string; pattern: RegExp }[] = [
   { name: 'a private key', pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },

@@ -3,7 +3,7 @@ import { type BotToolCallContext, describeToolFailure } from './application/bot-
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
- * How the GitHub tools write what they read (`25-bots.md` §4.4): the view
+ * How the GitHub tools write what they read: the view
  * of each answer they take from the pull-requests and GitHub queries, and the
  * labelled lines the model reads, GitHub's own text fenced as data. Pure.
  */

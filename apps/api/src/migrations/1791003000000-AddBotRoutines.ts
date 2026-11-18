@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Bot routines (`product/versions/mvp/26-bot-routines.md` §3–§4): an
+ * Bot routines: an
  * automation whose run is a turn of a bot rather than a session on a host.
  *
  * - `automation."runTarget"`: `session` or `bot`, what its runs start. It
@@ -17,7 +17,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   session automation still needs one (`CHK_automation_session_project`).
  * - `automation."credentialScopes"`: the scopes of the credential that
  *   saved a routine; null for a browser session. Its turns get no more
- *   than those, as a message's turn does (25 §2). Read whole.
+ *   than those, as a message's turn does. Read whole.
  * - `automation_revision` session fields nullable: a bot routine's revision
  *   is its prompt, and it runs on the bot's provider, model and effort as
  *   they are at the run. `CHK_automation_revision_session` keeps host and

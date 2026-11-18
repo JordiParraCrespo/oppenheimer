@@ -8,11 +8,11 @@ import { WakeOnPullRequestCommand } from '../../commands/wake-on-pull-request/wa
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 
 /**
- * Where a GitHub event on a pull request reaches the bots that follow it
- * (`27-bot-subscriptions.md` §7): the subscriptions to that repository and
- * number in the event's workspace, each woken once per stored event. Our own
- * app's events wake nobody: they are what Oppenheimer did. The event carries
- * no comment's words, and none are read here.
+ * Where a GitHub event on a pull request reaches the bots that follow it: the
+ * subscriptions to that repository and number in the event's workspace, each
+ * woken once per stored event. Our own app's events wake nobody: they are what
+ * Oppenheimer did. The event carries no comment's words, and none are read
+ * here.
  */
 @Injectable()
 export class BotPullRequestWakeDomainEventHandler {

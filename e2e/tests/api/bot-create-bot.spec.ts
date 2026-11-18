@@ -2,12 +2,11 @@ import { expect, test } from '@playwright/test';
 import { signedUpContext } from '../../support/auth';
 
 /**
- * A bot creating a bot through the deployed API (`product/versions/mvp/25-bots.md`
- * §4.6, `create_bot`), with a real GLM key (`GLM_API_KEY`; skipped without
- * it). Under Full access the bot creates exactly one bot when asked: the
- * person's, marked as created by it, on its provider and model, under
- * Approve for me. Under Approve for me the call waits on a card naming the
- * bot, and approving it creates exactly that one bot.
+ * A bot creating a bot through the deployed API (`create_bot`), with a real GLM
+ * key (`GLM_API_KEY`; skipped without it). Under Full access the bot creates
+ * exactly one bot when asked: the person's, marked as created by it, on its
+ * provider and model, under Approve for me. Under Approve for me the call waits
+ * on a card naming the bot, and approving it creates exactly that one bot.
  */
 
 interface Bot {

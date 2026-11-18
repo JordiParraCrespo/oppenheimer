@@ -125,7 +125,7 @@ export class RunnerLinkGateway {
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
     if (!this.keyFingerprint) {
-      // F6 is "pin what registration returned". Without a signing key there is
+      // A runner pins what registration returned. Without a signing key there is
       // nothing to have returned, and advertising an empty pin would make the
       // runner's check either refuse everything or accept anything.
       refuseUpgrade(socket, 503, 'this control plane has no signing key configured');
@@ -184,7 +184,16 @@ export class RunnerLinkGateway {
       }
       const hello = helloSchema.safeParse(parseJson(data as Buffer));
       if (!hello.success) {
-        this.logger.warn({ message: 'hello rejected', hostId, issues: hello.error.issues.length });
+        // Where and why, never the values: a count alone left a host offline
+        // with nothing to say which field of which session was refused.
+        this.logger.warn({
+          message: 'hello rejected',
+          hostId,
+          issues: hello.error.issues.length,
+          problems: hello.error.issues
+            .slice(0, 10)
+            .map((issue) => `${issue.path.join('.')}: ${issue.code}`),
+        });
         ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_EXPECTED, 'hello expected');
         return;
       }
@@ -361,7 +370,13 @@ export class RunnerLinkGateway {
   private async onControl(link: SocketRunnerLink, data: Buffer): Promise<void> {
     const parsed = protocolMessageSchema.safeParse(parseJson(data));
     if (!parsed.success) {
-      this.logger.warn({ message: 'unparseable control frame from runner', hostId: link.hostId });
+      this.logger.warn({
+        message: 'unparseable control frame from runner',
+        hostId: link.hostId,
+        problems: parsed.error.issues
+          .slice(0, 10)
+          .map((issue) => `${issue.path.join('.')}: ${issue.code}`),
+      });
       return;
     }
     const message = parsed.data;
@@ -412,6 +427,7 @@ export class RunnerLinkGateway {
       case 'fs.listing':
       case 'fs.found':
       case 'port.listing':
+      case 'session.windows':
       case 'cloud.replied':
       case 'whatsapp.sent':
       case 'telegram.sent':

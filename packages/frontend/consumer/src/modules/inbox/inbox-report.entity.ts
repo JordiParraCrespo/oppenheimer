@@ -3,9 +3,8 @@ import type { InboxReportImage, InboxReportStatus } from '@oppenheimer/shared/sc
 export type { InboxReportImage };
 
 /**
- * A problem an unattended agent sent, with its pictures
- * (`product/versions/mvp/29-inbox.md`, "Reports"): the one Inbox item the API
- * stores, answered from its card and gone from the Inbox once it is.
+ * A problem an unattended agent sent, with its pictures: the one Inbox item the
+ * API stores, answered from its card and gone from the Inbox once it is.
  */
 export class InboxReportEntity {
   constructor(

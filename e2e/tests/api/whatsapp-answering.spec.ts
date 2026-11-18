@@ -10,7 +10,7 @@ import {
 
 /**
  * A bot answers its owner on WhatsApp, over the deployed API and a runner
- * link (`product/next-steps/answering-on-telegram-and-whatsapp.md`, slice 3).
+ * link.
  * The host is `support/whatsapp-runner.ts`, which plays the runner and
  * WhatsApp both: every line the owner would see is a `whatsapp.send` frame it
  * records, so these tests read what reached the phone, not a row.

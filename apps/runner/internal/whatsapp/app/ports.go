@@ -1,6 +1,6 @@
 // Package app holds the host's WhatsApp linked device: pairing it, keeping it
 // connected, handing the control plane every message that arrives and sending
-// what the control plane asks (product/next-steps/whatsapp.md).
+// what the control plane asks.
 package app
 
 import (

@@ -2,8 +2,8 @@ import type { BotEntity, BotGroupEntity } from './bot.entity';
 
 /**
  * One section of the Employees list, on the web and the phone: a group and
- * its bots, or the Ungrouped section (`group: null`) after every group, as
- * the design draws it.
+ * its bots, or the Ungrouped section (`group: null`), drawn last unless the
+ * reader dragged it somewhere else among the groups.
  */
 export interface BotGroupSection {
   /** The group's id; `null` for Ungrouped. */
@@ -16,7 +16,9 @@ export interface BotGroupSection {
 
 /**
  * The Employees list's sections for a settled search: the groups in their order,
- * each with its bots by position, then Ungrouped. While a search narrows the
+ * each with its bots by position, and Ungrouped above the group
+ * `ungroupedBefore` names, or last when it names none or a group that is
+ * gone. While a search narrows the
  * list a section with no match is left out; without one, every group stays
  * (an empty group is still somewhere to move a bot), and Ungrouped is drawn
  * only when it holds a bot, or with `keepUngrouped` (a drag held, for which
@@ -32,7 +34,8 @@ export function botGroupSections(
   {
     keepUngrouped = false,
     hidden = [],
-  }: { keepUngrouped?: boolean; hidden?: readonly string[] } = {},
+    ungroupedBefore,
+  }: { keepUngrouped?: boolean; hidden?: readonly string[]; ungroupedBefore?: string } = {},
 ): BotGroupSection[] {
   const term = query.trim().toLowerCase();
   const matches = (bot: BotEntity) =>
@@ -61,7 +64,13 @@ export function botGroupSections(
   const ungrouped = bots
     .filter((bot) => (bot.groupId === null || !known.has(bot.groupId)) && matches(bot))
     .sort(byPosition);
-  sections.push({ id: null, group: null, bots: ungrouped, hiddenCount: hiddenIn(null) });
+  const at = sections.findIndex((section) => section.id === ungroupedBefore);
+  sections.splice(at === -1 ? sections.length : at, 0, {
+    id: null,
+    group: null,
+    bots: ungrouped,
+    hiddenCount: hiddenIn(null),
+  });
 
   return sections.filter((section) =>
     term || (section.group === null && !keepUngrouped) ? section.bots.length > 0 : true,
