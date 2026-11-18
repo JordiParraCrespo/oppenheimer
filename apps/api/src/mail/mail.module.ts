@@ -110,7 +110,7 @@ const queryHandlers: Provider[] = [
 ];
 
 /**
- * Mail (`product/next-steps/mail.md`): a person's own Gmail accounts, up to
+ * Mail: a person's own Gmail accounts, up to
  * five, connected with a grant of their own and worked by their bots. Nothing
  * of a mailbox is stored: every read goes to Gmail when a bot asks.
  */

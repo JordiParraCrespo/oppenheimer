@@ -1,6 +1,6 @@
 /**
  * A session's agent sends a line (`runner sessions notify`) and the bots that
- * follow it hear it (`product/next-steps/agent-tools.md` §9). What breaks
+ * follow it hear it. What breaks
  * this: a notice delivered twice queuing two turns or counting twice against
  * the wake limit; the words of an event quoted instead of what the session
  * holds, so a stale event speaks for a newer notice; a notice read across
@@ -82,6 +82,7 @@ function subscription(overrides: Partial<BotSubscriptionProps> = {}): BotSubscri
       wakes: 0,
       terminalWatch: null,
       matches: 0,
+      taskEvents: null,
       version: 1,
       ...overrides,
     },

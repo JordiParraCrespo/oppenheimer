@@ -4,7 +4,7 @@ import { pairedHosts, waitForHost } from '../../support/fleet';
 import { connectInstallation, createSession, waitForLifecycle } from '../../support/sessions';
 
 /**
- * A session in Claude Code's cloud (`product/research/cloud-agents.md` §5B),
+ * A session in Claude Code's cloud,
  * on a real runner with a `claude` that answers `--cloud` as the real one
  * does (`e2e/fleet/claude`): the host fetches the repository with the
  * create's own token, runs `claude --cloud` in a checkout of it, reports the

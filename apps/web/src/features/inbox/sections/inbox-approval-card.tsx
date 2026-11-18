@@ -20,9 +20,8 @@ import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 /**
  * A bot's approval in the pane: what it wants to run (the tool, and its call's
  * input in mono, as the session card shows a command, or a send card's message
- * as it will go), and Approve or Deny through the bot's own decision endpoint
- * (`25-bots.md` §5). Answering brings the next item; the bot's chat is a
- * link away.
+ * as it will go), and Approve or Deny through the bot's own decision endpoint.
+ * Answering brings the next item; the bot's chat is a link away.
  */
 export function InboxApprovalCard({
   item,

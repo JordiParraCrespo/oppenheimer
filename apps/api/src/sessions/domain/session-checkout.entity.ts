@@ -49,7 +49,7 @@ export interface CreateSessionCheckoutProps {
  * A checkout is also **where a repository is remembered**: GitHub owns the list and
  * the runner the disk, so there is no repository table. It carries GitHub's id, the
  * installation that mints its token and a display name inline, as Better Auth's
- * `account` carries its provider's ids (`product/versions/mvp/03-control-plane.md`).
+ * `account` carries its provider's ids.
  *
  * `mode` is recorded rather than guessed because cleanup differs: a worktree needs
  * `git worktree remove` and a prune, a clone a directory removal, and reading it back

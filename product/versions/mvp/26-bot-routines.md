@@ -276,6 +276,34 @@ followed session) are unchanged and still wake the bot at once; the
 heartbeat is what makes it act between them. Bots that already had a job
 before this get no heartbeat until asked.
 
+**Changed 2026-11-15** (asked by the owner: "the heartbeat is eating my
+tokens", then "better it only wakes up two times a day, and can be
+customized"). An hourly model turn on every bot with a job, around the
+clock, spent tokens to say `nothing_to_report`. So:
+
+- **No heartbeat by default.** The listener on `BotJobSetDomainEvent` is
+  gone, and so is the event, which nothing else read. A bot gets a
+  heartbeat only when its owner asks it for one in chat.
+- **Twice a day.** Migration `PauseDefaultBotHeartbeats` moved every
+  heartbeat still on its one hourly trigger to two daily triggers, 09:00 and
+  18:00, in the zone its owner last wrote to the bot from (their own
+  message, never another bot's ask; UTC when they never wrote with one),
+  and paused every running one with `pausedReason = 'user'`. The owner
+  turns it back on from the Routines tab and changes its times there or in
+  chat, like any routine; a heartbeat whose triggers the owner had changed
+  kept them. Its times are its waking hours: there is no rule on top.
+- **Idle beats are skipped.** A scheduled beat runs on its first beat and
+  when the bot had a turn since the last one that was neither a routine's
+  nor a loop's (a message, an approval, an answer, another bot's ask, a
+  wake, a goal); otherwise the run is skipped as `idle`, before any model
+  turn, and silently (it is not a failure; the routine's runs show it).
+  Another schedule does not count, or two would keep each other awake. The
+  owner's Run now, and a run an event trigger the owner added fired, always
+  run. The rule is `routineIsIdle` (`bot-heartbeat.policy.ts`), which
+  recognises the heartbeat by its name; `BotRoutineTarget` asks it for
+  every routine run and only returns its answer. Which origins are not news
+  is one list there, `HEARTBEAT_QUIET_ORIGINS`, that the query reads.
+
 - **Quiet turns.** A routine turn with nothing to say calls
   `nothing_to_report` instead of writing a message; the chat draws one
   collapsed activity line. **Built 2026-11-06**: the tool is offered on
@@ -506,3 +534,7 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   the opposite of what a routine is for; OpenClaw has none. Routines run
   until paused; the run budget, the overlap guard and quiet turns bound the
   cost (§6, "Removed 2026-11-10").
+- 2026-11-15, asked by the owner: **no heartbeat by default, and twice a
+  day.** Existing ones moved to 09:00 and 18:00 in the owner's zone and
+  paused; a beat with nothing new in the chat since the last one spends no
+  model turn (§6, "Changed 2026-11-15").

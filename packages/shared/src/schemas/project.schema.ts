@@ -8,12 +8,11 @@ import {
 } from './primitives.js';
 
 /**
- * A project is a **saved scope a person creates**: the repositories its sessions
- * usually work on, the base each one branches from, which of them are offered by
- * default, and the host and agent a new session starts with
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). Every workspace also
- * has one Unassigned project, where a session that names none is listed; it
- * cannot be renamed or archived. The defaults are offered, never
+ * A project is a **saved scope a person creates**: the repositories its
+ * sessions usually work on, the base each one branches from, which of them are
+ * offered by default, and the host and agent a new session starts with. Every
+ * workspace also has one Unassigned project, where a session that names none is
+ * listed; it cannot be renamed or archived. The defaults are offered, never
  * applied: a session chooses its own repositories, and they need not be in its
  * project at all.
  *

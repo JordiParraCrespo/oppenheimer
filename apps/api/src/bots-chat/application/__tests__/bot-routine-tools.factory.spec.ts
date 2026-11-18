@@ -12,15 +12,13 @@ import { BotRoutineToolsFactory } from '../bot-routine-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
- * `update_routine` (`26-bot-routines.md` §4), as Grok Bot's one routine tool:
- * what it asks for and what it runs as it comes. What breaks this: a pause or
- * a list raising a card the owner has to click, a save or a run the bot
- * starts going ahead without one,
- * a routine saved with a broader credential than the turn's, another bot's
- * routine touched, or a mail trigger's card storing an account name that
- * could later mean another account; a /schedule's own routine asking again
- * for what the person just asked for, or that consent reaching past its
- * create.
+ * `update_routine`, as Grok Bot's one routine tool: what it asks for and what
+ * it runs as it comes. What breaks this: a pause or a list raising a card the
+ * owner has to click, a save or a run the bot starts going ahead without one, a
+ * routine saved with a broader credential than the turn's, another bot's
+ * routine touched, or a mail trigger's card storing an account name that could
+ * later mean another account; a /schedule's own routine asking again for what
+ * the person just asked for, or that consent reaching past its create.
  */
 const ROUTINE = '0d9f6a4e-0000-4000-8000-000000000001';
 

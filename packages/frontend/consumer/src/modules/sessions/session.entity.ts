@@ -16,8 +16,12 @@ import {
 import type { SessionAgentId, SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { SessionAgentReport } from '@oppenheimer/shared/schemas/session-agent-report';
 import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
+import type {
+  OpenedSessionWindowResponse,
+  SessionTerminalWindow,
+  SessionWindowsResponse,
+} from '@oppenheimer/shared/schemas/session-window';
 
-/** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
 /** What a session runs: a host's coding agent, or a vendor's in the cloud (`cursor`). */
 export type SessionAgent = SessionAgentId;
 
@@ -53,8 +57,7 @@ export interface SessionCloudRun {
  * It is organised by what needs you rather than by what the process is doing,
  * which is why it is not the lifecycle below: a session that failed, one whose
  * agent has been blocked for thirty seconds and one whose launch has sat unready
- * for a minute are all `waiting-on-you`, however differently they got there
- * (`product/versions/mvp/03-control-plane.md`).
+ * for a minute are all `waiting-on-you`, however differently they got there.
  */
 export type SessionGroup =
   | 'working'
@@ -145,6 +148,38 @@ export interface SessionPorts {
   ports: SessionPort[];
 }
 
+/**
+ * One of a session's terminal windows (tmux windows on its host): window 0
+ * is the agent, 1 and up the plain shells its Terminal tab opened. `index` is
+ * what an attach ticket's `window` names.
+ */
+export type SessionWindow = SessionTerminalWindow;
+
+/**
+ * What the session's host said about its windows: the windows, or why it
+ * said nothing (no link now, or a runner too old to list them).
+ */
+export type SessionWindows = SessionWindowsResponse;
+
+/** A shell just opened in the session, and every window after it. */
+export type OpenedSessionWindow = OpenedSessionWindowResponse;
+
+/**
+ * What to open in a session's worktree: no agent (or `shell`) for a plain
+ * shell, or a coding agent beside the session's own, started with the
+ * `model`, `effort` and `permission` picked for it. Each one left out is the
+ * session's own: its permission level always, its model and effort only when
+ * the agent is the session's.
+ */
+export interface OpenSessionWindowInput {
+  agent?: CodingAgentId;
+  model?: string;
+  effort?: SessionEffort;
+  permission?: SessionPermission;
+  /** The agent's first task, which it starts on; left out, it starts with none. */
+  prompt?: string;
+}
+
 /** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
 export interface SessionPreview {
   url: string;
@@ -228,8 +263,7 @@ export type SessionEntityProps = Pick<
 /**
  * A session as the console needs it: a terminal, an agent, and where it runs
  * on a host — a set of checkouts the runner made (`worktree`), or a folder
- * already there that nothing is written into (`folder`,
- * `product/versions/mvp/24-session-places.md`).
+ * already there that nothing is written into (`folder`).
  *
  * Two state words, because the API has two and they answer different questions:
  * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
@@ -275,7 +309,7 @@ export class SessionEntity {
   readonly stateSeq: number = 0;
   /**
    * What the agent waits on you to decide, as the host read it: a question it
-   * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
+   * asked or a permission dialog; null when nothing is.
    */
   readonly decision: SessionDecision | null = null;
   /**
@@ -327,8 +361,7 @@ export class SessionEntity {
 
   /**
    * The cloud session's page at its vendor, once it has one: claude.ai/code
-   * for Claude Code's; for Codex, an older session's task page, or Codex on
-   * chatgpt.com for a cloud thread, whose web address is not known.
+   * for Claude Code's; for Codex, its legacy task page or current cloud thread.
    */
   get cloudUrl(): string | null {
     if (!this.cloudSessionId) return null;
@@ -336,7 +369,7 @@ export class SessionEntity {
     if (this.agent !== 'codex') return `https://claude.ai/code/${id}`;
     return this.cloudSessionId.startsWith('task_')
       ? `https://chatgpt.com/codex/tasks/${id}`
-      : 'https://chatgpt.com/codex';
+      : `https://chatgpt.com/local/${id}`;
   }
 
   /**

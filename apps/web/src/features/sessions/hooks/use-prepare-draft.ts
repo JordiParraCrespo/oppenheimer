@@ -9,7 +9,7 @@ import type { NewSessionDraftForm } from './use-new-session-form';
  * picked — or as the screen opens, when a project's defaults fill them in:
  * the host clones or fetches it and makes a spare worktree while the prompt
  * is being written, so pressing send starts from a checkout that already
- * exists (`product/versions/mvp/02-runner.md` §5).
+ * exists.
  *
  * Each host, repository and branch is asked for once per visit. It reads the
  * draft through `subscribe`, so no pick re-renders the form for it, and a

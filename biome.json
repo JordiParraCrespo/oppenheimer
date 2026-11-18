@@ -63,6 +63,8 @@
       "!**/playwright-report",
       "!**/blob-report",
       "!**/test-results",
+      "!**/src-tauri/target",
+      "!**/src-tauri/gen",
       "!.stack",
       "!.ci-local",
       "!.screenshots",

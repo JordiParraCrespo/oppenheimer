@@ -3,7 +3,7 @@
 //
 // A bot can list the sessions of the moment and read one by id; since
 // 2026-11-09 it can also search every session, closed ones and other hosts
-// included, for the words of its name and log (`25-bots.md` §4.2). That only
+// included, for the words of its name and log. That only
 // helps if the model searches for a question about the past instead of
 // paging the list or saying it does not know, lists for a question about
 // now, queries with a few words (every word must match), and reads the hits

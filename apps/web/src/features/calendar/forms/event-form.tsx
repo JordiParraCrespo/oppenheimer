@@ -29,9 +29,9 @@ import type { input } from 'zod';
 export type EventFormValues = input<typeof createCalendarEventSchema>;
 
 /**
- * A personal event (`20-plan-calendar.md` §2): a title, a day, all day or from
- * a start to an end on it, and notes, which can be dictated. An end that is
- * not after the start is refused on the end field.
+ * A personal event: a title, a day, all day or from a start to an end on
+ * it, and notes, which can be dictated. An end that is not after the start
+ * is refused on the end field.
  */
 export function EventForm({
   values,

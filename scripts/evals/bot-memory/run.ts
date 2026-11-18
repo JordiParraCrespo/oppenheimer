@@ -61,6 +61,8 @@ interface Case {
   bot: string;
   message: string;
   expect: Memory;
+  /** Set when the fact must also be kept in mind every turn: a standing preference or rule. */
+  tier?: 'profile';
   why: string;
 }
 
@@ -164,8 +166,9 @@ async function ask(via: Transport, bot: Bot, general: string[], message: string)
  * bot's own memory is right when it is saved and nothing reaches the general
  * one. A value the tool refuses is never right.
  */
-function rightRun(saves: Save[], expect: Memory): boolean {
+function rightRun(saves: Save[], expect: Memory, tier?: 'profile'): boolean {
   if (saves.some((save) => save.memory === 'invalid')) return false;
+  if (tier && !saves.some((save) => save.tier === tier)) return false;
   if (expect === 'general') return saves.some((save) => save.memory === 'general');
   return saves.length > 0 && saves.every((save) => save.memory === 'yours');
 }
@@ -192,7 +195,7 @@ async function main(): Promise<void> {
   });
   const results = chosen.map((c, i) => {
     const saves = answers.slice(i * runs, (i + 1) * runs);
-    const right = saves.filter((s) => rightRun(s, c.expect)).length;
+    const right = saves.filter((s) => rightRun(s, c.expect, c.tier)).length;
     return { ...c, saves, right, passed: right * 2 > runs };
   });
 

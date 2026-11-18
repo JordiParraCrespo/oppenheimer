@@ -77,7 +77,9 @@ the agent calls again while the work goes on. `send_to_session` answers the
 `after_seq` (or `0` after `start_session`) waits on that work, rather than
 taking the idle state from before the prompt for its outcome.
 `read_session_transcript` reads what the session's agent said and did, a page
-at a time off its host (`nextCursor` reads on), with secrets replaced and a
+at a time off its host (`nextCursor` reads on; `from: "start"` begins at its
+first turn, so following `nextCursor` from there until `atEnd` reads all of
+it, and `hasEarlier` says a page has turns before it), with secrets replaced and a
 `status` that says when a page is partial or the conversation cannot be read
 here: a cloud session's is at its vendor. A Cursor cloud session takes
 `send_to_session` as a new run once its last run ended; a Claude Code or Codex

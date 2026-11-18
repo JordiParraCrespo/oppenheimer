@@ -4,7 +4,7 @@ import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { decideApproval } from '../bot-approval-decision.policy';
 
 /**
- * What each decision on a Needs input card owes (`25-bots.md` §5), as one
+ * What each decision on a Needs input card owes, as one
  * pure step the handler writes: a yes stages the call, and leaves a
  * permission standing only when it reaches past this call; a no queues the
  * turn the bot carries on from; a stop writes its line, queues no turn, and

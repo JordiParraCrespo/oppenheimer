@@ -1,5 +1,5 @@
 /**
- * Which closed pull requests one Analytics read takes in full (#247). Every
+ * Which closed pull requests one Analytics read takes in full. Every
  * repository's newest page is listed, since nothing short of listing proves a
  * repository closed nothing in the window; then the newest `limit` across all
  * of them are kept, so one busy repository cannot spend the ceiling. The read

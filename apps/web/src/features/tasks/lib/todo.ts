@@ -1,4 +1,9 @@
-import { compareRank, type SessionEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
+import {
+  comparePriority,
+  compareRank,
+  type SessionEntity,
+  type TaskEntity,
+} from '@oppenheimer/frontend-consumer';
 import { searchText, todayIn } from '@oppenheimer/frontend-web';
 import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
@@ -62,18 +67,19 @@ function isOverdueOn(task: TaskEntity, day: string, today: string): boolean {
 }
 
 /**
- * The day's list (`product/versions/mvp/20-plan-calendar.md` §6). To do is
- * what the reader means to work on, so first come the tasks put on that day
- * (their focus date) and those due on it, timed ones first in time order and
- * the rest in the board's order. Then, on today or a later day, what was put
- * on an earlier day than the one shown and is not done yet, oldest first: it
- * stays until it is done, which is how work that takes days stays on the
- * list, and today's comes along when tomorrow is planned. Then, when
- * `overdue` is on, what was due before today and is not done. A task carried
- * or overdue that is ticked done stays on the day it was done, so finishing
- * it does not make it vanish. A past day lists its own and what was finished
- * on it. `projectIds` narrows it as the board's Project filter does
- * (`undefined` is every project).
+ * The day's list. To do is what the reader means to work on, so first come
+ * the tasks put on that day (their focus date) and those due on it, timed
+ * ones first in time order and the rest in the board's order. Then, on today
+ * or a later day, what was put on an earlier day than the one shown and is
+ * not done yet, oldest first: it stays until it is done, which is how work
+ * that takes days stays on the list, and today's comes along when tomorrow
+ * is planned. Then, when `overdue` is on, what was due before today and is
+ * not done. A task carried or overdue that is ticked done stays on the day
+ * it was done, so finishing it does not make it vanish. A past day lists its
+ * own and what was finished on it. `projectIds` narrows it as the board's
+ * Project filter does (`undefined` is every project). A task its person took
+ * off To do (`offTodo`) is on no day, whatever its dates, until it gets a TODO
+ * day again or its due date changes.
  */
 export function todoEntries(
   tasks: readonly TaskEntity[],
@@ -81,7 +87,7 @@ export function todoEntries(
   options: TodoOptions,
 ): TodoEntry[] {
   const inScope = (task: TaskEntity) =>
-    !options.projectIds || options.projectIds.includes(task.projectId);
+    !task.offTodo && (!options.projectIds || options.projectIds.includes(task.projectId));
   const listed = new Set<string>();
   const take = (rows: TaskEntity[], reason: TodoReason): TodoEntry[] =>
     rows.flatMap((task) => {
@@ -188,8 +194,9 @@ export const NO_ADD_FILTER: AddFilter = { projectIds: [], statuses: [] };
 
 /**
  * What Add tasks offers for a day: the open tasks not already on its list,
- * in the projects and columns the filter picks (every one when unset), in
- * the board's order. Adding one puts it on that day; its due date stays.
+ * in the projects and columns the filter picks (every one when unset), most
+ * important first and in the board's order within a priority. Adding one puts
+ * it on that day; its due date stays.
  */
 export function addableTasks(
   tasks: readonly TaskEntity[],
@@ -201,7 +208,7 @@ export function addableTasks(
       (task) =>
         !task.isDone && !onDay.has(task.id) && inProjects(task, filter) && inStatuses(task, filter),
     )
-    .sort(compareRank);
+    .sort((a, b) => comparePriority(a, b) || compareRank(a, b));
 }
 
 const inProjects = (task: TaskEntity, filter: AddFilter) =>
@@ -237,7 +244,7 @@ export function picksInView(picked: readonly string[], shown: readonly TaskEntit
 /**
  * Whether a task on the day's list is there because of its deadline: due on
  * the day shown, or overdue while Include overdue is on. Moving its TODO day
- * does not take it off, so the row offers no Move (§6, "Changed on 2026-11-12").
+ * does not take it off, so the row offers no Move.
  */
 export function heldByDeadline(task: TaskEntity, day: string, options: TodoOptions): boolean {
   if (task.isDone || !task.dueDate) return false;
@@ -259,15 +266,15 @@ export type TodoPlace =
 const LIST_UNMARKED: TodoPlace = { lane: 'list', mark: null, session: null };
 
 /**
- * Where a task goes on To do, from its sessions' states, most urgent first
- * (`product/versions/mvp/20-plan-calendar.md` §6, "Changed on 2026-11-12"): one waiting
- * on the person keeps it on the list as "waiting on you"; otherwise one
- * running or queued puts it in the strip, whatever its due date; otherwise a
- * failed one marks it "failed"; otherwise the board's In review column marks
- * it "ready to review"; otherwise sessions that stopped (idle or finished)
- * on a task still In progress mark it "agent stopped". A session ending
- * never means the task is finished: ready to review comes from the column
- * alone. A done task, or one with no sessions, is on the list unmarked.
+ * Where a task goes on To do, from its sessions' states, most urgent first:
+ * one waiting on the person keeps it on the list as "waiting on you";
+ * otherwise one running or queued puts it in the strip, whatever its due
+ * date; otherwise a failed one marks it "failed"; otherwise the board's In
+ * review column marks it "ready to review"; otherwise sessions that stopped
+ * (idle or finished) on a task still In progress mark it "agent stopped". A
+ * session ending never means the task is finished: ready to review comes
+ * from the column alone. A done task, or one with no sessions, is on the
+ * list unmarked.
  */
 export function todoPlaceOf(task: TaskEntity, sessions: readonly TaskSession[]): TodoPlace {
   if (task.isDone) return LIST_UNMARKED;

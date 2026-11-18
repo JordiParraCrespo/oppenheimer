@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * The sidebar's New session button. It is the view's one primary action only
  * while a session is open; on New session itself the composer's send is, so
- * the button steps back to secondary there (`product/versions/mvp/05-screens.md`).
- * Its own section, so a navigation redraws this button and not the list.
+ * the button steps back to secondary there. Its own section, so a navigation
+ * redraws this button and not the list.
  */
 export function NewSessionButton() {
   const { t } = useTranslation();

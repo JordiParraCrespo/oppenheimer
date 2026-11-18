@@ -11,8 +11,8 @@ import {
 } from 'typeorm';
 
 /**
- * A milestone over one project's tasks (`product/versions/mvp/19-plan-tasks-and-goals.md`
- * §1). `UQ_milestone_organization_id_project` exists only as the target of the tasks'
+ * A milestone over one project's tasks. `UQ_milestone_organization_id_project` exists
+ * only as the target of the tasks'
  * milestone key, which is what keeps a task's milestone in the task's project.
  */
 @Entity('milestone')

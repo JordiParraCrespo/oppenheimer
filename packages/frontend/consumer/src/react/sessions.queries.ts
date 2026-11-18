@@ -18,12 +18,16 @@ import {
 } from '@tanstack/react-query';
 import type {
   CreateSessionInput,
+  OpenedSessionWindow,
+  OpenSessionWindowInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
   SessionPorts,
   SessionPreview,
   SessionShare,
+  SessionWindow,
+  SessionWindows,
   SharedSession,
   StartCloudSessionInput,
 } from '../modules/sessions/session.entity';
@@ -483,6 +487,16 @@ export function useSetSessionHidden(
   return useSessionPatch(({ sessions }, { id, hidden }) => sessions.setHidden(id, hidden), options);
 }
 
+/**
+ * Mark what the session's last turn left as read, as opening it does: its
+ * group falls from `ready-for-review` to `idle` and the sidebar's blue dot goes.
+ */
+export function useAcknowledgeSessionReport(
+  options?: UseMutationOptions<SessionEntity, Error, string>,
+) {
+  return useSessionPatch(({ sessions }, id) => sessions.acknowledgeReport(id), options);
+}
+
 export function useMoveSession(
   options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
 ) {
@@ -747,6 +761,67 @@ export function useSuspenseSessionPorts(sessionId: string) {
     ...poll,
   });
 }
+
+/**
+ * The session's terminal windows, for its Terminal tab: window 0 the agent,
+ * 1 and up the plain shells opened in its worktree. Asked of the host on
+ * mount and again while it is on screen (`sessionWindows` in `LIVE_POLL`),
+ * so another device's shells and a host back online show; kept in step by
+ * {@link useOpenSessionWindow} and
+ * {@link useCloseSessionWindow} from their answers. An offline host, or a
+ * runner too old to list, is the answer's `state`, not a failure.
+ */
+export function useSessionWindows(sessionId: string | undefined) {
+  const app = useConsumerApp();
+  const queryKey = sessionsKeys.windows(sessionId);
+  const poll = usePollWhile<SessionWindows>('sessionWindows', queryKey, sessionId !== undefined);
+  return useQuery<SessionWindows, Error>({
+    queryKey,
+    queryFn: sessionId ? () => app.sessions.listWindows(sessionId) : skipToken,
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...poll,
+  });
+}
+
+/**
+ * Opens a window in a session: no `agent` (or `shell`) for a plain shell, or
+ * a coding agent beside the session's own in window 0, started with the
+ * `model`, `effort` and `permission` picked for it, each left out the
+ * session's own, and on the first `prompt` typed for it. A runner too old to start one refuses with `SESSIONS_060`.
+ */
+export interface OpenSessionWindowVariables extends OpenSessionWindowInput {
+  sessionId: string;
+}
+
+/** Opens a shell, or a second agent, in a session; its answer is written to the session's windows. */
+export const useOpenSessionWindow = mutation<OpenedSessionWindow, OpenSessionWindowVariables>({
+  run: (app, { sessionId, ...input }) => app.sessions.openWindow(sessionId, input),
+  update: (queryClient, opened, { sessionId }) => {
+    queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
+      state: 'listed',
+      windows: opened.windows,
+    });
+  },
+});
+
+export interface CloseSessionWindowVariables {
+  sessionId: string;
+  /** The tmux window to close, from 1 up; window 0 is the agent and is refused. */
+  window: number;
+}
+
+/** Closes one of a session's shells; the windows left are written to the session's windows. */
+export const useCloseSessionWindow = mutation<SessionWindow[], CloseSessionWindowVariables>({
+  run: (app, { sessionId, window }) => app.sessions.closeWindow(sessionId, window),
+  update: (queryClient, windows, { sessionId }) => {
+    queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
+      state: 'listed',
+      windows,
+    });
+  },
+});
 
 /**
  * Where the Browser tab frames one of the session's ports. A query, though

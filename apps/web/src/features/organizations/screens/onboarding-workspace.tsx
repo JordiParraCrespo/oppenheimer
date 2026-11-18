@@ -57,15 +57,15 @@ export function OnboardingWorkspaceScreen({
   // revisit could not re-submit it even if the field let them try.
   const claimedAddress = existing && !isProvisionalSlug(existing.slug) ? existing.slug : null;
 
-  // The first-run gate (`08-auth.md`): an account whose address is already
-  // claimed belongs in the console, not in the step that names one. The test
-  // is the claimed address, not a workspace's existence — sign-up provisions
-  // one for everybody. Only a *settled, successful* read decides: an
-  // unanswered query says nothing, and guessing would bounce a reader out on a
-  // network blip. And it is decided once, on arrival, because submitting this
-  // step claims the address and writes it into the cache before navigating on
-  // to GitHub — a gate that kept reading would send the newcomer to the
-  // console, past the rest of the walk.
+  // The first-run gate: an account whose address is already claimed belongs
+  // in the console, not in the step that names one. The test is the claimed
+  // address, not a workspace's existence — sign-up provisions one for
+  // everybody. Only a *settled, successful* read decides: an unanswered query
+  // says nothing, and guessing would bounce a reader out on a network blip.
+  // And it is decided once, on arrival, because submitting this step claims
+  // the address and writes it into the cache before navigating on to GitHub —
+  // a gate that kept reading would send the newcomer to the console, past the
+  // rest of the walk.
   const [claimedOnArrival, setClaimedOnArrival] = useState<boolean | null>(null);
   if (claimedOnArrival === null && workspacesRead) setClaimedOnArrival(claimedAddress !== null);
 

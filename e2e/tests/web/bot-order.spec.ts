@@ -2,11 +2,11 @@ import { expect, type Page, test } from '@playwright/test';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * The bots' one order, in a browser, against the real control plane
- * (`product/versions/mvp/28-bots-in-sections.md`): a section's Bots heading
- * lists its bots in the Employees order, groups first, and a bot dragged
- * there from the keyboard (Space, an arrow, Space) is saved as its place in
- * Employees, which a reload, every other heading and the bots read then draw.
+ * The bots' one order, in a browser, against the real control plane: a
+ * section's Bots heading lists its bots in the Employees order, groups first,
+ * and a bot dragged there from the keyboard (Space, an arrow, Space) is saved
+ * as its place in Employees, which a reload, every other heading and the bots
+ * read then draw.
  */
 
 const BOTS = ['Ada', 'Bea', 'Cy'];

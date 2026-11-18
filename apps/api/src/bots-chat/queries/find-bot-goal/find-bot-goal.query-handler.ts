@@ -7,7 +7,7 @@ import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.p
 import type { BotGoalEntity } from '../../domain/bot-goal.entity';
 import { FindBotGoalQuery } from './find-bot-goal.query';
 
-/** A bot's goal, open now, or none (`25-bots.md` §4.1). A bot in another workspace is `BOTS_001`. */
+/** A bot's goal, open now, or none. A bot in another workspace is `BOTS_001`. */
 @QueryHandler(FindBotGoalQuery)
 export class FindBotGoalQueryHandler
   implements IQueryHandler<FindBotGoalQuery, BotGoalEntity | null>

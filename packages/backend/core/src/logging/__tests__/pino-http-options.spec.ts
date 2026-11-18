@@ -109,7 +109,11 @@ describe('buildPinoHttpOptions', () => {
 
   // The file is what Alloy ships to Loki: a line that never reaches it, or
   // reaches it pretty-printed, is a log nobody (and no agent) can query.
-  it('also writes JSON lines to the file it is given, with the safety serializers applied', async () => {
+  // The transport runs in a worker thread that loads pino-pretty and the file
+  // target before it writes; under a busy CI that start alone can pass 5s.
+  it('also writes JSON lines to the file it is given, with the safety serializers applied', {
+    timeout: 30_000,
+  }, async () => {
     const dir = await mkdtemp(join(tmpdir(), 'pino-file-'));
     const file = join(dir, 'nested', 'api.log');
     const options = buildPinoHttpOptions({ pretty: true, file });
@@ -124,7 +128,7 @@ describe('buildPinoHttpOptions', () => {
     await vi.waitFor(
       async () => expect(await readFile(file, 'utf8').catch(() => '')).not.toBe(''),
       {
-        timeout: 5_000,
+        timeout: 25_000,
       },
     );
 

@@ -25,10 +25,9 @@ export interface PlanParts {
 }
 
 /**
- * The shapes a message takes on its way out (`product/next-steps/mail.md`
- * §3.3–3.4), pure: a plan from what the resolver fetched and checked, a plan
- * from a saved draft, and the outgoing message a plan is built into. Fetching
- * and refusing are the resolver's.
+ * The shapes a message takes on its way out, pure: a plan from what the
+ * resolver fetched and checked, a plan from a saved draft, and the outgoing
+ * message a plan is built into. Fetching and refusing are the resolver's.
  */
 export class MailPlanMapper {
   static toPlan(parts: PlanParts): MailPlan {

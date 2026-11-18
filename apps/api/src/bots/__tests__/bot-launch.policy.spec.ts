@@ -1,9 +1,9 @@
 import { type BotEngine, type BotEngineEdit, resolveBotEngine } from '../domain/bot-launch.policy';
 
 /**
- * A bot's provider, model and effort after an edit (`product/versions/mvp/25-bots.md`
- * §1): always a tuple the catalog offers. The entity's spec covers that an
- * edit applies it; this is the whole rule.
+ * A bot's provider, model and effort after an edit: always a tuple the
+ * catalog offers. The entity's spec covers that an edit applies it; this is
+ * the whole rule.
  */
 const opusHigh: BotEngine = { provider: 'anthropic', model: 'claude-opus-5-5', effort: 'high' };
 const defaults: BotEngine = { provider: 'anthropic', model: null, effort: null };

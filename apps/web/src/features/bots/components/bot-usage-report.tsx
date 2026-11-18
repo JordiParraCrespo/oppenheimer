@@ -26,13 +26,13 @@ const PURPOSE_KEYS = {
 } as const;
 
 /**
- * What a bot's chat has spent, as a small card in the chat (`25-bots.md`
- * §4.1, `/usage`; drawn after Claude Code's usage card): the plan's windows
- * on a sign-in, this chat's figures in a grid (time at work, turns, cache
- * hit rate, tokens, each model's share), and the breakdown of every token
- * into fresh input, output and cache reads and writes, the calls outside its
- * turns included and named under it. Copy puts it on the clipboard; Close
- * takes the card away. No money: nothing here knows a model's prices.
+ * What a bot's chat has spent, as a small card in the chat (`/usage`; drawn
+ * after Claude Code's usage card): the plan's windows on a sign-in, this
+ * chat's figures in a grid (time at work, turns, cache hit rate, tokens,
+ * each model's share), and the breakdown of every token into fresh input,
+ * output and cache reads and writes, the calls outside its turns included
+ * and named under it. Copy puts it on the clipboard; Close takes the card
+ * away. No money: nothing here knows a model's prices.
  */
 export function BotUsageReport({
   usage,

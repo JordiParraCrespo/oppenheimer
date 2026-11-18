@@ -37,11 +37,7 @@ export function MilestonesScreen() {
         </QueryState.Pending>
         <QueryState.Error fallback={t('tasks.milestones.loadFailed')} />
         <QueryState.Data>
-          <MilestonesTimeline
-            controls={timeline}
-            onEdit={(id) => setEditing(id)}
-            onNew={() => setEditing('new')}
-          />
+          <MilestonesTimeline controls={timeline} onEdit={(id) => setEditing(id)} />
         </QueryState.Data>
       </QueryState>
       {editing ? (

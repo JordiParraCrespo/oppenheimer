@@ -1,9 +1,11 @@
 import {
   type CreateSessionRequest,
   heyApiSdk,
+  type OpenSessionWindowRequest,
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
   type SessionShareResponseDto,
+  type SessionTerminalWindowDto,
   type StartCloudSessionRequest,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
@@ -20,6 +22,8 @@ import type { CloudChatPage } from './chat/cloud-chat-feed';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type OpenedSessionWindow,
+  type OpenSessionWindowInput,
   type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
@@ -27,6 +31,8 @@ import {
   type SessionPorts,
   type SessionPreview,
   type SessionShare,
+  type SessionWindow,
+  type SessionWindows,
   type SharedSession,
   type StartCloudSessionInput,
 } from './session.entity';
@@ -179,6 +185,29 @@ export function toStartCloudSessionRequest(
     prompt: input.prompt,
     ...(input.projectId ? { projectId: input.projectId } : {}),
     ...(input.model ? { model: input.model } : {}),
+  };
+}
+
+/**
+ * The open's body: nothing for a plain shell (`shell` included, which the API
+ * refuses as an agent), and for an agent its id with each launch choice that
+ * was made and its first task. A choice left out is the session's own, which the host fills in.
+ */
+function toOpenSessionWindowRequest({
+  agent,
+  model,
+  effort,
+  permission,
+  prompt,
+}: OpenSessionWindowInput): OpenSessionWindowRequest {
+  if (agent === undefined || agent === 'shell') return {};
+  return {
+    agent,
+    ...(model ? { model } : {}),
+    ...(effort ? { effort } : {}),
+    ...(permission ? { permission } : {}),
+    // A task of only whitespace is no task: the API would refuse it.
+    ...(prompt?.trim() ? { prompt } : {}),
   };
 }
 
@@ -348,6 +377,14 @@ export class SessionsRepository {
     });
   }
 
+  /** What the agent's last turn left, read: the session is no longer ready for review. */
+  acknowledgeReport(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.REPORT_ACKNOWLEDGE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.acknowledgeSessionReport({ path: { id } }));
+      return toEntity(data);
+    });
+  }
+
   /** To a project that holds the session's repository; nothing on the host moves. */
   move(id: string, projectId: string): Promise<SessionEntity> {
     return callApi(SessionsErrors.MOVE_FAILED, async (api) => {
@@ -490,6 +527,36 @@ export class SessionsRepository {
     });
   }
 
+  /** The session's terminal windows, as its host lists them now. */
+  listWindows(id: string): Promise<SessionWindows> {
+    return callApi(SessionsErrors.WINDOWS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findSessionWindows({ path: { id } }));
+      return { state: data.state, windows: data.windows.map(toWindow) };
+    });
+  }
+
+  /**
+   * Opens a window in the session's worktree, a plain shell or with `agent`
+   * that coding agent started in it: the window it made, and every window
+   * after. `shell` is the plain shell, sent as no agent at all, and how an
+   * agent starts is sent only with one.
+   */
+  openWindow(id: string, input: OpenSessionWindowInput = {}): Promise<OpenedSessionWindow> {
+    return callApi(SessionsErrors.WINDOW_OPEN_FAILED, async (api) => {
+      const body = toOpenSessionWindowRequest(input);
+      const data = await api.body(heyApiSdk.openSessionWindow({ path: { id }, body }));
+      return { window: toWindow(data.window), windows: data.windows.map(toWindow) };
+    });
+  }
+
+  /** Closes one of the session's shells: the windows left. Window 0, the agent, is refused. */
+  closeWindow(id: string, window: number): Promise<SessionWindow[]> {
+    return callApi(SessionsErrors.WINDOW_CLOSE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.closeSessionWindow({ path: { id, window } }));
+      return data.windows.map(toWindow);
+    });
+  }
+
   /**
    * Where one of the session's ports opens: framed by the Browser tab
    * (`embed`) or in a tab of its own. Never cached: the ticket is single use.
@@ -584,4 +651,9 @@ export class SessionsRepository {
       await api.result(heyApiSdk.pasteSessionImage({ path: { id }, body: { file: file, window } }));
     });
   }
+}
+
+/** A window off the wire, copied so the generated DTO type stays at this boundary. */
+function toWindow(window: SessionTerminalWindowDto): SessionWindow {
+  return { index: window.index, name: window.name, agent: window.agent };
 }

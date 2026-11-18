@@ -3,9 +3,8 @@ import type { SessionStream, StreamEnd, StreamPath, StreamStatus } from './sessi
 /**
  * Terminals on this machine, reached without the network: the runner's local
  * socket, through whatever shell the console runs in. The desktop app supplies
- * one (`product/research/desktop-app-spike.md`); a browser supplies none, and
- * the platform binds it at composition (`localTerminalsModule`), so nothing
- * here knows which shell it is.
+ * one; a browser supplies none, and the platform binds it at composition
+ * (`localTerminalsModule`), so nothing here knows which shell it is.
  */
 export interface LocalTerminals {
   /** Whether the runner on this machine holds the session. */

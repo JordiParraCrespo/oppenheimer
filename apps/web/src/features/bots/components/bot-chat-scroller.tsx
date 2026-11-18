@@ -20,8 +20,10 @@ export function BotChatScroller({ children }: { children: ReactNode }) {
   const room = useRef<HTMLDivElement>(null);
   return (
     <ChatScroll value={{ scroller, room, hold }}>
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-4 pt-6 pb-10 sm:px-8">
+      {/* The gutter follows the chat's own width, as the box's does: narrow
+          beside a session, the page's 32px on its own. */}
+      <div className="@container relative flex min-h-0 flex-1 flex-col">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-3 pt-6 pb-10 @2xl:px-8">
           <div ref={content}>{children}</div>
           <div ref={room} aria-hidden />
         </div>

@@ -1,8 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * `/loop`, a prompt a bot runs again and again (`product/versions/mvp/25-bots.md`
- * §4.1, "Built-in commands"; from Claude Code's `/loop`).
+ * `/loop`, a prompt a bot runs again and again (from Claude Code's `/loop`).
  *
  * - `bot_loop`: one row per bot at most (`UQ_bot_loop_bot`), the loop open
  *   now. A run is not stored here: it is a queued `bot_turn` of origin

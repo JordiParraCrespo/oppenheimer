@@ -11,10 +11,9 @@ import {
 } from 'typeorm';
 
 /**
- * One message a bot sent from a person's Gmail (`product/next-steps/mail.md`
- * §3.4): claimed before Gmail is asked, keyed by the approval it carries out,
- * so a retried job never sends twice; and the record of what went out. The
- * body is never kept.
+ * One message a bot sent from a person's Gmail: claimed before Gmail is asked,
+ * keyed by the approval it carries out, so a retried job never sends twice; and
+ * the record of what went out. The body is never kept.
  */
 @Entity('mail_send')
 @Index('UQ_mail_send_approval', ['approvalId'], { unique: true })

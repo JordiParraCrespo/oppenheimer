@@ -44,6 +44,7 @@ export class SessionTranscriptMapper {
       status: SessionTranscriptStatus;
       redactions: number;
       nextCursor: string | null;
+      restarted: boolean;
     },
   ): SessionTranscriptPage {
     return {
@@ -54,7 +55,8 @@ export class SessionTranscriptMapper {
       entries: read.entries,
       nextCursor: read.nextCursor,
       atEnd: page.atEnd,
-      restarted: page.restarted ?? false,
+      hasEarlier: page.from > 0,
+      restarted: read.restarted,
       dropped: page.dropped ?? 0,
       redactions: read.redactions,
     };
@@ -74,6 +76,7 @@ export class SessionTranscriptMapper {
       entries: [],
       nextCursor: null,
       atEnd: false,
+      hasEarlier: false,
       restarted: false,
       dropped: 0,
       redactions: 0,

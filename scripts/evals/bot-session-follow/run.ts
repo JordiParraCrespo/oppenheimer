@@ -6,7 +6,7 @@
 // that session, which it had not started. Since then the prompt tells a bot
 // to say it will come back to a session only when something will wake it,
 // and to `watch_session` any other before its turn ends, with
-// `check_in_minutes` for a time it names (`27-bot-subscriptions.md` §4.2).
+// `check_in_minutes` for a time it names.
 //
 // Each case in `cases.json` is one message from the person about a session
 // the bot did not start, running or already done. The runner builds the

@@ -12,16 +12,35 @@ const FRAME =
   'flex min-w-0 flex-col rounded-lg border border-border-subtle bg-card px-4.5 pt-4.5 pb-5';
 
 /**
+ * When a card's checkbox shows: on hover, on focus within, or while the grid
+ * is selecting. Hidden, it takes no press, so a tap on a phone (no hover)
+ * opens the project rather than checking it.
+ */
+const SELECT_SHOWN =
+  'pointer-events-none opacity-0 group-hover/project:pointer-events-auto group-hover/project:opacity-100 group-focus-within/project:opacity-100 group-data-selecting/project:pointer-events-auto group-data-selecting/project:opacity-100';
+/** The folder tile gives way to the checkbox wherever it shows. */
+const SELECT_TAKES_TILE =
+  'group-hover/project:invisible group-focus-within/project:invisible group-data-selecting/project:invisible';
+
+/**
  * ProjectCard — one project on Plan's Projects: a folder tile, the name at
  * 17px semibold, its repositories on a mono line under it, and its status
  * (a compact `StatusDot`) at the top right. The whole card is the way into
  * the project, so it renders a button by default and takes `render` for a
- * link. Measured against `design/version1/Tasks.dc.html` (Projects, View).
+ * link.
+ *
+ * `select` is its checkbox (a `Checkbox`), beside the card rather than in it
+ * so a control never nests in the link: it takes the folder tile's place on
+ * hover or focus, and on every card while the grid is `selecting`. A
+ * `selected` card takes the selected wash and the primary border.
  */
 function ProjectCard({
   name,
   meta,
   status,
+  select,
+  selected,
+  selecting,
   render,
   className,
   ...props
@@ -32,8 +51,13 @@ function ProjectCard({
     meta?: React.ReactNode;
     /** A compact `StatusDot`: Needs input, Running, Idle. */
     status?: React.ReactNode;
+    /** The card's checkbox, a small `Checkbox`, over the folder tile. */
+    select?: React.ReactNode;
+    selected?: boolean;
+    /** Something in the grid is selected: every card shows its checkbox. */
+    selecting?: boolean;
   }) {
-  return useRender({
+  const card = useRender({
     defaultTagName: 'button',
     render,
     props: mergeProps<'button'>(
@@ -42,11 +66,17 @@ function ProjectCard({
         className: cn(
           FRAME,
           'w-full text-left text-fg no-underline outline-none transition-colors duration-fast ease-standard hover:bg-card-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring',
+          selected && 'border-primary bg-selected-surface hover:bg-selected-surface',
           className,
         ),
         children: (
           <span data-slot="project-card" className="flex w-full items-start gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-hover-surface text-fg-muted">
+            <span
+              className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-sm bg-hover-surface text-fg-muted',
+                select !== undefined && SELECT_TAKES_TILE,
+              )}
+            >
               <FolderIcon className="size-3.75" aria-hidden />
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.75">
@@ -60,6 +90,25 @@ function ProjectCard({
       props,
     ),
   });
+
+  if (select === undefined) return card;
+  return (
+    <div
+      data-slot="project-card-row"
+      data-selecting={selecting || undefined}
+      className="group/project relative min-w-0"
+    >
+      {card}
+      <span
+        className={cn(
+          'absolute top-4.5 left-4.5 flex size-8 items-center justify-center transition-opacity duration-fast',
+          SELECT_SHOWN,
+        )}
+      >
+        {select}
+      </span>
+    </div>
+  );
 }
 
 /** The cards at 300px or more each, as many to a row as fit. */

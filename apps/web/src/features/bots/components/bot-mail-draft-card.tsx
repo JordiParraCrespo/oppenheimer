@@ -5,9 +5,9 @@ import type { BotMailDraft } from '@oppenheimer/shared/schemas/mail';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A draft the bot saved in your Gmail (`product/next-steps/mail.md` §3.3),
- * under the call that saved it: the message as written, that nothing was
- * sent, and Open in Gmail, where you edit it or send it yourself.
+ * A draft the bot saved in your Gmail, under the call that saved it: the
+ * message as written, that nothing was sent, and Open in Gmail, where you
+ * edit it or send it yourself.
  */
 export function BotMailDraftCard({ draft }: { draft: BotMailDraft }) {
   const { t } = useTranslation();

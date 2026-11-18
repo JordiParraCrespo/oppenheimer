@@ -9,8 +9,7 @@ import { SESSION_TERMINAL } from '../../sessions.di-tokens';
 import { DriveSessionTerminalCommand } from './drive-session-terminal.command';
 
 /**
- * A bot driving a blank terminal (`product/versions/mvp/25-bots.md` §4.2,
- * "Driving a terminal"). The session is read first, in the caller's scope,
+ * A bot driving a blank terminal. The session is read first, in the caller's scope,
  * and that read is the authorization: one outside it is not found. Only a
  * blank terminal on a host is driven; whether the host lets a bot drive one
  * is the host's own policy, so its refusal comes back as an outcome the bot

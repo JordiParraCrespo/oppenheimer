@@ -1,8 +1,7 @@
 /**
- * Which key reads a repository the App is not installed on
- * (`product/next-steps/0.2-pull-requests.md` §6.2). The App comes first, and
- * the caller only asks this for a repository no installation covers. Among the
- * person's tokens that open it and GitHub still accepts:
+ * Which key reads a repository the App is not installed on. The App comes
+ * first, and the caller only asks this for a repository no installation covers.
+ * Among the person's tokens that open it and GitHub still accepts:
  *
  * 1. the token they pinned to the repository;
  * 2. otherwise the narrowest, the one that opens the fewest repositories;

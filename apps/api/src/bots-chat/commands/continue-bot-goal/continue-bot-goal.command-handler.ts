@@ -23,7 +23,7 @@ import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 
 /**
- * A turn of a goal ended (`25-bots.md` §4.1): count what it spent and
+ * A turn of a goal ended: count what it spent and
  * whether it called a tool, once per turn (`countTurnSpend`), whatever the
  * goal went through since; then, read again, leave a goal paused or one whose
  * end was already decided (`isDecidedTurn`: this job run twice, or the owner

@@ -23,12 +23,12 @@ export interface PullRequestWatch {
 }
 
 /**
- * A bot starts or stops following a pull request (`27-bot-subscriptions.md`
- * §7). The repository must be one the owner can read: it is looked for among
- * the repositories the workspace's usable installations cover, read as the
- * owner, as `list_repositories` reads them, and the pull request is then read
- * as the owner too, so a number that is an issue, or a pull request already
- * merged or closed, is refused before anything is stored.
+ * A bot starts or stops following a pull request. The repository must be one
+ * the owner can read: it is looked for among the repositories the workspace's
+ * usable installations cover, read as the owner, as `list_repositories` reads
+ * them, and the pull request is then read as the owner too, so a number that is
+ * an issue, or a pull request already merged or closed, is refused before
+ * anything is stored.
  */
 @Injectable()
 export class BotPullRequestWatchResolver {

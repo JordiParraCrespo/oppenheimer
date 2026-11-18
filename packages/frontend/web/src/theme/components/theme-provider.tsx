@@ -34,8 +34,7 @@ export function hasStoredTheme(): boolean {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // "Match system" is the default the frames decided
-  // (`product/versions/mvp/05-screens.md`): the brand is drawn light, but a
+  // "Match system" is the default: the brand is drawn light, but a
   // machine that is already dark should not be argued with on first run.
   const [theme, setThemeState] = useState<ThemePreference>(() => readStoredTheme() ?? 'system');
   const resolvedTheme = useAppliedTheme(theme);

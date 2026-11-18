@@ -20,8 +20,8 @@ export interface PersonalWorkspaceRepositoryPort {
    * the transaction lets two racing provisions both write, which is certain the
    * first time the seed runs against a live API. The test is membership, not
    * ownership, deliberately: an account that belongs somewhere is left alone.
-   * `product/versions/mvp/08-auth.md` records that the teams slice decides
-   * whether an invitee also gets a workspace of their own.
+   * Whether an invitee also gets a workspace of their own is the teams
+   * slice's to decide.
    */
   provision(workspace: PersonalWorkspaceEntity): Promise<boolean>;
 

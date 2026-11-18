@@ -4,7 +4,7 @@ package cloud
 // thread in one of the account's environments, started and followed with the
 // host's own ChatGPT sign-in, the one `codex login` keeps. It is the service
 // Codex's own client speaks (openai/codex, codex-rs/cloud-client, read at
-// c0cc9fc on 2026-11-12; product/research/cloud-agents.md §7):
+// c0cc9fc on 2026-11-12):
 //
 //	ThreadService/Prewarm         a thread, in an environment
 //	ThreadService/AddUserMessage  the task, as its first message

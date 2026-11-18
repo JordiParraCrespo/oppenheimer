@@ -16,9 +16,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// The two paths and the credential are the wire (01-protocol.md,
-// 03-control-plane.md). They are pinned here because a typo in either is a 404
-// or a 401 nobody sees until a real host pairs.
+// The two paths and the credential are the wire. They are pinned here because a
+// typo in either is a 404 or a 401 nobody sees until a real host pairs.
 
 type recorded struct {
 	method string

@@ -1,5 +1,5 @@
 /**
- * How `search_chat` shows a hit (`25-bots.md` §4.1): a window of the
+ * How `search_chat` shows a hit: a window of the
  * message around the first word of the search it contains, cut on both
  * sides with the cut said, so a long message costs a line and not a page.
  */

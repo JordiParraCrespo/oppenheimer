@@ -16,8 +16,8 @@ export interface BotNoticeProps {
 }
 
 /**
- * A line a bot sent the person (`notify`, `product/next-steps/agent-tools.md`
- * §5). A bot keeps one, its latest: a new notice takes the place of the last
+ * A line a bot sent the person (`notify`). A bot keeps one, its latest: a new
+ * notice takes the place of the last
  * under an id of its own, so the Inbox's mark on the last never hides it.
  */
 export class BotNoticeEntity extends AggregateRoot<BotNoticeProps> {

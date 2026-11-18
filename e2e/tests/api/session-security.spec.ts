@@ -47,7 +47,7 @@ test.describe('session security', () => {
   // Through the API rather than a `DELETE` on the table: sessions are cached in
   // Redis in front of the `session` table, and it is the application's own
   // deletion that takes the cached copies with the rows. A row removed behind
-  // its back would leave the copy answering (`apps/api/AGENTS.md`).
+  // its back would leave the copy answering.
   test('a session belonging to a deleted user stops working', async () => {
     const { api, user, userId } = await signedUpContext('deleted');
     const elsewhere = await newContext();

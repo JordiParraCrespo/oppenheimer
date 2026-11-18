@@ -11,7 +11,7 @@ import { BotToolPermissionEntity } from '../../domain/bot-tool-permission.entity
 import { SetBotToolDecisionCommand } from './set-bot-tool-decision.command';
 
 /**
- * Settings → Permissions, one tool (`25-bots.md` §5): Allow, Ask or Off, or
+ * Settings → Permissions, one tool: Allow, Ask or Off, or
  * `default` to follow the preset again. A tool the catalog does not have is
  * `BOTS_029`; Allow for a tool decided call by call is `BOTS_030`. The next
  * turn reads it; a card already waiting runs or not as decided then.

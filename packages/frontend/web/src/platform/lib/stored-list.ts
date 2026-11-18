@@ -24,6 +24,12 @@ export function rememberList(key: string, list: readonly string[]) {
   }
 }
 
+/** `list` with `id` on top (the latest first), or taken out: an id is listed once however often it is added. */
+export function withListedFirst(list: readonly string[], id: string, listed: boolean): string[] {
+  const rest = list.filter((listedId) => listedId !== id);
+  return listed ? [id, ...rest] : rest;
+}
+
 /** `folded` with `key` folded, or opened: a fold is one entry however often it is made. */
 export function withFold(folded: readonly string[], key: string, open: boolean): string[] {
   const rest = folded.filter((foldedKey) => foldedKey !== key);

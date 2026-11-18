@@ -2,9 +2,9 @@ import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
- * The token a person chose to read one repository with, over the narrowest
- * (`product/next-steps/0.2-pull-requests.md` §6.2). Tied to the token by
- * `("userId", "tokenId")`, so it can only name the person's own; gone with it.
+ * The token a person chose to read one repository with, over the narrowest.
+ * Tied to the token by `("userId", "tokenId")`, so it can only name the
+ * person's own; gone with it.
  */
 @Entity('github_token_pin')
 @Index('IDX_github_token_pin_token', ['userId', 'tokenId'])

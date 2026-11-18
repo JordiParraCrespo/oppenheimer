@@ -28,7 +28,7 @@ export function keyHintOf(apiKey: string): string {
 }
 
 /**
- * A person's own key for one cloud agent vendor (`product/next-steps/cloud-agents.md`):
+ * A person's own key for one cloud agent vendor:
  * what their cloud agents are launched and followed with. One per person,
  * workspace and vendor; a second replaces the first.
  */

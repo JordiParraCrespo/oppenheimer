@@ -6,8 +6,8 @@ import {
 } from '@oppenheimer/shared/schemas/bot-skill';
 
 /**
- * What a built-in command in the draft asks of the composer (`25-bots.md`
- * §4.1, "Built-in commands"), before anything is sent:
+ * What a built-in command in the draft asks of the composer, before
+ * anything is sent:
  *
  * - `notice`: the draft cannot be sent as it is; send stays off and the
  *   notice on the box's top edge says why (`/goal` with no condition, a

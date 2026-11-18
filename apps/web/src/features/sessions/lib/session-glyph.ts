@@ -1,12 +1,10 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 
 /**
- * The mark a session's sidebar row leads with
- * (`product/versions/mvp/24-session-places.md` §5): a terminal for the blank
- * terminal wherever it runs, a folder for a folder session, a cloud for one in
- * Claude Code's cloud, the vendor's mark for one launched at its vendor
- * (`SessionsConsole.dc.html`), and the branch for a worktree, which is what
- * the row has always drawn.
+ * The mark a session's sidebar row leads with: a terminal for the blank
+ * terminal wherever it runs, a folder for a folder session, a cloud for one
+ * in Claude Code's cloud, the vendor's mark for one launched at its vendor,
+ * and the branch for a worktree, which is what the row has always drawn.
  */
 export type SessionGlyph = 'terminal' | 'folder' | 'cloud' | 'vendor' | 'branch';
 

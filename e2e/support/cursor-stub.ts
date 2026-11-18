@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 /**
  * A stand-in for Cursor's Cloud Agents API (`api.cursor.com/v1`), the cloud
- * agents module's first provider (`product/next-steps/cloud-agents.md`).
+ * agents module's first provider.
  *
  * It serves the calls the API makes, in Cursor's own shapes: who a key is,
  * the models, the repositories, and an agent whose run plays out on its own

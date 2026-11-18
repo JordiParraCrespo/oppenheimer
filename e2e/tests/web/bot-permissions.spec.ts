@@ -3,7 +3,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * A bot's Settings → Permissions in a browser, against the real control
- * plane (`product/versions/mvp/25-bots.md` §5): the tools folded under their
+ * plane: the tools folded under their
  * groups, a group opened and folded by hand, a tool found by a search kept in
  * the address, each standing where the preset puts it; one set Off, found
  * under the Decision dropdown's Set by you and handed back to the preset,

@@ -14,13 +14,12 @@ import { onlyFields, PROJECT_FILLED, type ProjectFilled } from '../lib/new-sessi
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
- * The project chip, over New session's box because picking a project
- * prefills the host, the repository and the agent
- * (`product/versions/mvp/05-screens.md`); for a folder session it is
- * optional and only files the session (24). The hosts are read only at pick
- * time, so a host refetch does not re-render it; it subscribes only to whether
- * that list has answered, because a pick before then would drop the project's
- * default host as if it were gone.
+ * The project chip, over New session's box because picking a project prefills
+ * the host, the repository and the agent; for a folder session it is optional
+ * and only files the session. The hosts are read only at pick time, so a host
+ * refetch does not re-render it; it subscribes only to whether that list has
+ * answered, because a pick before then would drop the project's default host
+ * as if it were gone.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();

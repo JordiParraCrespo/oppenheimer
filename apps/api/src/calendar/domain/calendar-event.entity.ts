@@ -26,9 +26,9 @@ export type CalendarEventEdit = Partial<
 >;
 
 /**
- * A personal event on Plan's calendar (`product/versions/mvp/20-plan-calendar.md`
- * §2): the workspace's own, beside the read-only Google layer. One day, all day or
- * from a start to an end on it; no recurrence.
+ * A personal event on Plan's calendar: the workspace's own, beside the
+ * read-only Google layer. One day, all day or from a start to an end on it; no
+ * recurrence.
  */
 export class CalendarEventEntity extends AggregateRoot<CalendarEventProps> {
   static create(create: CreateEntityProps<CalendarEventProps>): CalendarEventEntity {

@@ -7,7 +7,9 @@ import { cn } from '../lib/utils';
 import { BrandGlyph } from './brand-glyph';
 import {
   ChipSelectActionRow,
+  ChipSelectCombobox,
   ChipSelectEmpty,
+  ChipSelectList,
   ChipSelectItem,
   ChipSelectPopup,
   ChipSelectSearch,
@@ -27,9 +29,8 @@ const defaultEmptyText = (query: string): React.ReactNode =>
   query ? `No repository matches “${query}”` : 'Every repository is added';
 
 /**
- * RepositoryAddField — the project dialog's Repositories field
- * (`design/version1/SessionsConsole.dc.html`): a field reading "Add a
- * repository…" that opens the scope chips' pane (search, one row per
+ * RepositoryAddField — the project dialog's Repositories field: a field reading
+ * "Add a repository…" that opens the scope chips' pane (search, one row per
  * repository the App can see and the project lacks, the GitHub mark before its
  * name in the rows' own type, as the repository chip's), over a 14px card with
  * one row per added repository and an X to take it out. What each repository
@@ -110,13 +111,12 @@ function RepositoryAddField({
           {placeholder}
         </PopoverTrigger>
         <ChipSelectPopup width={320} side="bottom" align="start">
+          <ChipSelectCombobox query={query} onQueryChange={setQuery}>
           <ChipSelectSearch
-            value={query}
             placeholder={placeholder}
             aria-label={placeholder}
-            onChange={(event) => setQuery(event.target.value)}
           />
-          <div role="listbox" aria-label={placeholder} className="max-h-[220px] overflow-y-auto">
+          <ChipSelectList aria-label={placeholder} className="max-h-[220px]">
             {options.length > 0 ? (
               options.map((repo) => (
                 <ChipSelectItem
@@ -134,7 +134,8 @@ function RepositoryAddField({
             ) : (
               <ChipSelectEmpty>{emptyText(query)}</ChipSelectEmpty>
             )}
-          </div>
+          </ChipSelectList>
+          </ChipSelectCombobox>
           {onManage ? (
             <ChipSelectActionRow
               action={{

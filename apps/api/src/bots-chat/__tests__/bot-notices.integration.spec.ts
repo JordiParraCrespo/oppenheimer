@@ -18,7 +18,7 @@ import { BotNoticeRepository } from '../database/bot-notice.repository';
 import { BotNoticeEntity } from '../domain/bot-notice.entity';
 
 /**
- * A bot's notices against a real Postgres (`agent-tools.md` §5): one row per
+ * A bot's notices against a real Postgres: one row per
  * bot, each new notice taking it under a new id (the Inbox keys an item by
  * that id, so a mark on the last never hides the next), its event staged with
  * it, the workspace read newest first and only the caller's workspace's, and

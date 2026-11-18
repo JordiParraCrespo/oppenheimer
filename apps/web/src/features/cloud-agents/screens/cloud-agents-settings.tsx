@@ -5,8 +5,8 @@ import { CloudAgentProvidersSkeleton } from '../components/cloud-agent-providers
 import { CloudAgentProviders } from '../sections/cloud-agent-providers';
 
 /**
- * Settings → Cloud agents (`product/next-steps/cloud-agents.md`): one row per
- * vendor a cloud agent can run on, connected with the reader's own key.
+ * Settings → Cloud agents: one row per vendor a cloud agent can run on,
+ * connected with the reader's own key.
  */
 export function CloudAgentsSettingsScreen() {
   const { t } = useTranslation();

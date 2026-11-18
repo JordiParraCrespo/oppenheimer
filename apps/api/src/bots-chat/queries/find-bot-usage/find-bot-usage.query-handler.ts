@@ -8,7 +8,7 @@ import type { BotUsageRepositoryPort } from '../../database/bot-usage.repository
 import { FindBotUsageQuery } from './find-bot-usage.query';
 
 /**
- * What a bot's chat has spent (`25-bots.md` §4.1, `/usage`): its turns by
+ * What a bot's chat has spent (`/usage`): its turns by
  * model and its calls outside them by purpose. A bot in another workspace is
  * `BOTS_001`.
  */

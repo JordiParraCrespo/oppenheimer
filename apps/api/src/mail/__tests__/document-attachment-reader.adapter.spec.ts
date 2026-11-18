@@ -2,7 +2,7 @@ import { strToU8, zipSync } from 'fflate';
 import { DocumentAttachmentReaderAdapter } from '../infrastructure/document-attachment-reader.adapter';
 
 /**
- * What a bot can take from an attachment (`product/next-steps/mail.md` §3.2):
+ * What a bot can take from an attachment:
  * the files people mail each other (an invoice PDF, a spreadsheet, a Word
  * document) read as text from real bytes built here, images handed back as
  * images, and anything else named and left closed, never run or unpacked.
@@ -56,7 +56,7 @@ describe('DocumentAttachmentReaderAdapter', () => {
     expect(reading.kind === 'text' && reading.text).toContain('Total due: 1,250.00 EUR');
   });
 
-  // Issue #728: invoice PDFs map glyphs to U+0000 in their fonts' ToUnicode,
+  // Invoice PDFs map glyphs to U+0000 in their fonts' ToUnicode,
   // and text that keeps those NULs cannot be stored as the bot's tool result.
   it('reads a PDF whose font maps a glyph to NUL without the NUL', async () => {
     const toUnicode = [

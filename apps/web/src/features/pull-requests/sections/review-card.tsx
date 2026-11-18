@@ -21,7 +21,7 @@ export function ReviewCard({
   depth,
 }: {
   pull: PullRequestEntity;
-  /** Where the pull request is reviewed in depth: its changes. */
+  /** Where the pull request is reviewed in depth: its page, on the description. */
   depth: Pick<LinkProps, 'to' | 'params' | 'search' | 'state'>;
 }) {
   const { t } = useTranslation();

@@ -10,7 +10,7 @@ import {
   sessionAgentLabel,
 } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useDragLabels, useOfflineOnce } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +41,7 @@ import {
   isFiltered,
   projectOptions,
   repositoryOptions,
+  statusOptions,
   withoutChip,
 } from '../lib/session-filters';
 import { sidebarList } from '../lib/session-groups';
@@ -62,13 +63,13 @@ const DeleteSessionsDialog = lazy(() =>
 
 /**
  * The console's sidebar below New session, in `SessionsSidebar`'s
- * `QueryState.Data`: the sessions grouped by project
- * (`product/versions/mvp/05-screens.md`). It reads the sessions, the projects
- * in API order and the hosts a facet names under Suspense, side by side, and
- * holds only the state siblings share: the filters and settled search, the
- * folded groups, the row whose delete is up (its dialog outlives the row) and
- * the last failed write (a menu closes on its pick, so it shows above the
- * list). A refetch that fails keeps the groups and says so above them.
+ * `QueryState.Data`: the sessions grouped by project. It reads the sessions,
+ * the projects in API order and the hosts a facet names under Suspense, side
+ * by side, and holds only the state siblings share: the filters and settled
+ * search, the folded groups, the row whose delete is up (its dialog outlives
+ * the row) and the last failed write (a menu closes on its pick, so it shows
+ * above the list). A refetch that fails keeps the groups and says so above
+ * them.
  *
  * Filters and search are state, not URL: the console's URL is the open
  * session, and a filter must not change which one that is. The filters and
@@ -104,6 +105,7 @@ export function SessionsSidebarBody() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { sessions: all, projects, hosts: everyHost, error } = useSuspenseSessionsSidebar();
+  const loadError = useOfflineOnce(error);
   const hosts = everyHost.map((host) => ({ id: host.id, name: host.name }));
   const [query, setQuery] = useState('');
   const { folded: closed, setOpen } = useFoldedGroups();
@@ -130,6 +132,9 @@ export function SessionsSidebarBody() {
     // An agent's name is the vendor's product name, the catalog's own.
     agent: agentOptions(all, t('sessions.filters.allAgents'), sessionAgentLabel),
     host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
+    status: statusOptions(t('sessions.filters.allStatuses'), (status) =>
+      t(`sessions.filters.statuses.${status}`),
+    ),
   };
   const [filters, setFilters] = useSessionFilters(options);
   const hiddenSessions = listedSessions(all, showHidden);
@@ -226,7 +231,7 @@ export function SessionsSidebarBody() {
         />
 
         <ErrorAlert
-          error={error}
+          error={loadError}
           fallback={t('sessions.sidebar.loadFailed')}
           className="mx-3 mb-2"
         />

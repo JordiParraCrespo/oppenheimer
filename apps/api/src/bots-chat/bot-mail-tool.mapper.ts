@@ -18,7 +18,7 @@ import { rateLimitedPartwayLine } from './domain/bot-rate-limit.policy';
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
- * How a bot's mail tools (`product/next-steps/mail.md` §3) write Gmail for
+ * How a bot's mail tools write Gmail for
  * the model: one line per message with every id inline, and everything a
  * stranger can write (senders, subjects, snippets, bodies, file names)
  * inside `<email>`, marked as data.

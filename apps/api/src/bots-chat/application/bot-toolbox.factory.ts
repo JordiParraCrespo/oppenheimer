@@ -29,6 +29,7 @@ import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotNoticeToolsFactory } from './bot-notice-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
+import { BotPlanWatchToolsFactory } from './bot-plan-watch-tools.factory';
 import { BotProjectToolsFactory } from './bot-project-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotPullRequestWatchToolsFactory } from './bot-pull-request-watch-tools.factory';
@@ -54,7 +55,7 @@ import { BotWebToolsFactory } from './bot-web-tools.factory';
 import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 
 /**
- * Every tool a bot's turn is offered (`25-bots.md` §4), area by area. A tool
+ * Every tool a bot's turn is offered, area by area. A tool
  * is offered only here: the prompt's list of what the bot can do is read
  * from the same definitions, so the two never disagree.
  */
@@ -92,6 +93,7 @@ export class BotToolboxFactory {
     loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
     notices: BotNoticeToolsFactory,
+    planWatches: BotPlanWatchToolsFactory,
   ) {
     this.areas = [
       self,
@@ -108,6 +110,7 @@ export class BotToolboxFactory {
       sessionFiles,
       watches,
       plan,
+      planWatches,
       projects,
       github,
       pullRequests,
@@ -169,7 +172,7 @@ export class BotToolboxFactory {
   }
 
   /**
-   * What a `delegate` child is offered (`25-bots.md` §4.7): the same tools
+   * What a `delegate` child is offered: the same tools
    * as its turn, behind the same scopes and the same owner's roles, keeping
    * only those that read. None asks and none is `delegate`, so a child can
    * neither raise a card nor start a child of its own.
@@ -206,7 +209,7 @@ export class BotToolboxFactory {
   }
 
   /**
-   * Carries out what the owner approved (`25-bots.md` §5): the stored input,
+   * Carries out what the owner approved: the stored input,
    * validated when the card was raised, straight to the tool's run. Only if
    * `granted` (what the asking turn's and the deciding credential's scopes
    * both cover; null for none narrower than the owner) covers the tool's
@@ -270,12 +273,11 @@ export class BotToolboxFactory {
 }
 
 /**
- * The turn's tools, each call counted toward the skill reminder
- * (`25-bots.md` §4.1, 2026-11-09): the one result it is due on carries it
- * after its words, and the chat takes it back off (`withoutSkillNudge`).
- * Every result of such a turn has the reminder's tag neutralised, so only
- * Oppenheimer's own line can carry it (`carrySkillNudge`). One
- * count for the turn's own tools only: a `delegate` child's are bound apart
+ * The turn's tools, each call counted toward the skill reminder: the one result
+ * it is due on carries it after its words, and the chat takes it back off
+ * (`withoutSkillNudge`). Every result of such a turn has the reminder's tag
+ * neutralised, so only Oppenheimer's own line can carry it (`carrySkillNudge`).
+ * One count for the turn's own tools only: a `delegate` child's are bound apart
  * (`readOnlyTools`) and never reminded.
  */
 function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngineTool[] {
@@ -289,7 +291,7 @@ function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngi
   }));
 }
 
-/** Where a bot's tools stand: its preset and what its owner set (`25-bots.md` §5). */
+/** Where a bot's tools stand: its preset and what its owner set. */
 export interface BotStanding {
   preset: BotPermission;
   permissions: BotPermissions;

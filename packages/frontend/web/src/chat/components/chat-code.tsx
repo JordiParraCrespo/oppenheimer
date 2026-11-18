@@ -5,13 +5,18 @@ import { useJsonView } from '../hooks/use-json-view';
 
 /**
  * A fenced block in an agent's reply, for `Markdown`'s `code` slot: its
- * language over the code, coloured, numbered, with Copy. A block that holds
+ * language over the code, coloured, with Wrap and Copy. A block that holds
  * JSON opens the same, Raw / Tree on its band; its tree follows each ISO time
  * with the same instant in words.
  */
 export function ChatCode({ code, language }: MarkdownCodeBlock) {
   const { t } = useTranslation();
-  const labels = { copy: t('common.copyCode'), copied: t('common.copied') };
+  const labels = {
+    copy: t('common.copyCode'),
+    copied: t('common.copied'),
+    wrap: t('common.wrapLines'),
+    unwrap: t('common.unwrapLines'),
+  };
   const json = useJsonView(code, language);
   if (!json) {
     return (

@@ -68,7 +68,7 @@ export function canFollowSkill(skill: BotSkillView, offeredTools: readonly strin
 }
 
 /**
- * The skills section of the system prompt (`25-bots.md` §4.1), OpenClaw's
+ * The skills section of the system prompt, OpenClaw's
  * `<available_skills>`: each skill the bot may use unasked, by name and
  * description, never its body, so a skill costs its one line every turn and
  * the rest only when it is used (`use_skill`). Sorted by name, so the prompt
@@ -99,7 +99,7 @@ export function skillsPromptSection(
  * When to save a skill unasked, and the one reminder Oppenheimer adds to
  * that: announced here, in bytes that never change, so the model reads the
  * tagged line after a tool's result as Oppenheimer's and not as the tool
- * steering it (2026-11-10). That the person says the work recurs is the
+ * steering it. That the person says the work recurs is the
  * reason to save; "a few steps" no longer vetoes a checklist of six calls
  * with a dead end in it, only a lookup.
  */
@@ -171,7 +171,7 @@ ${prompt}`;
 }
 
 /**
- * The turn's message, as the person's words become it (`25-bots.md` §4.1):
+ * The turn's message, as the person's words become it:
  * a built-in command's directive (`/goal <condition>`, `/loop …`,
  * `/schedule <request>`), the skill their
  * `/<name>` runs before them, a note when the command names no skill they

@@ -2,8 +2,7 @@ import { TURN_MODEL_MAX_LENGTH } from '@oppenheimer/shared/protocol';
 import { SESSION_EVENT_KINDS, type SessionLogEntry } from './session-state.policy';
 
 /**
- * A session's turns, folded from its log
- * (`product/versions/mvp/16-automations-architecture.md` §Q4).
+ * A session's turns, folded from its log.
  *
  * A turn is one prompt given to the agent and what became of it; the states are
  * OpenAI's run states (session = thread, turn = run). An automation's run is the
@@ -49,7 +48,7 @@ export type TurnDrive = (typeof TURN_DRIVES)[number];
 /**
  * Who asked for a session: a person at the console, an automation's run, a
  * person reviewing a pull request from its Chat tab (`review`), or a bot
- * acting for its owner (`bot`, `25-bots.md` §4.2).
+ * acting for its owner (`bot`).
  */
 export const SESSION_ORIGINS = ['person', 'automation', 'review', 'bot'] as const;
 export type SessionOrigin = (typeof SESSION_ORIGINS)[number];
@@ -100,7 +99,7 @@ export interface SessionTurnFold {
   permissionDenials: number;
   outputRef: string | null;
   /**
-   * The model and token usage the agent reported for the turn (23 §4). Null is
+   * The model and token usage the agent reported for the turn. Null is
    * "not measured": an interactive turn reports nothing, and an agent that does
    * not print usage leaves them null too. Never zero for unknown.
    */

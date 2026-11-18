@@ -7,7 +7,7 @@ import type {
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
- * How a bot's Telegram tools (`product/next-steps/telegram.md` §5) write a
+ * How a bot's Telegram tools write a
  * Telegram bot's chats for the model: one line per chat or message with its
  * ids inline, and everything another person can write (names, usernames,
  * texts) inside `<telegram>`, marked as data.

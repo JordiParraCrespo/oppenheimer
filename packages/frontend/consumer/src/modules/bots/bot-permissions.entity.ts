@@ -6,7 +6,7 @@ import {
   type BotToolGroup,
 } from '@oppenheimer/shared/schemas/bot';
 
-/** One tool as Settings → Permissions lists it (`25-bots.md` §5). */
+/** One tool as Settings → Permissions lists it. */
 export interface BotToolSetting {
   name: string;
   group: BotToolGroup;

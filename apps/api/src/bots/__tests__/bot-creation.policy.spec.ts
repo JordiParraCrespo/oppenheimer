@@ -2,10 +2,10 @@ import { BOT_PERMISSIONS, type BotPermission } from '@oppenheimer/shared';
 import { permissionForBotMadeBy } from '../domain/bot-creation.policy';
 
 /**
- * "No looser permissions than its own" (`25-bots.md` §4.6): the whole
- * decision table of the level a bot gets when another bot creates it. A
- * regression here hands a bot under Approve for me a way to mint a Full
- * access one that runs its asking tools without the person.
+ * "No looser permissions than its own": the whole decision table of the level a
+ * bot gets when another bot creates it. A regression here hands a bot under
+ * Approve for me a way to mint a Full access one that runs its asking tools
+ * without the person.
  */
 describe('permissionForBotMadeBy', () => {
   it.each<[BotPermission, BotPermission | undefined, BotPermission]>([

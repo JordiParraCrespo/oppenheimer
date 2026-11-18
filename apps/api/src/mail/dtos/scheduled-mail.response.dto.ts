@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** A message a bot will send from the caller's Gmail at a time, still waiting (`mail.md` §3.4). */
+/** A message a bot will send from the caller's Gmail at a time, still waiting. */
 export class ScheduledMailResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;

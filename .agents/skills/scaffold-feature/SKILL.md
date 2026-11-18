@@ -183,7 +183,8 @@ from step 1.
     placeholder has the shape of what replaces it"), or nothing until the
     first answer when the frame draws nothing there. `pnpm check:structure`
     fails a slot that is only a slab;
-  - empty: `EmptyState`, or the design's own empty card (`HostsEmpty`);
+  - empty: `EmptyState`, in the tier its doc comment names for where it
+    stands (illustrated, icon or inline);
   - **failed:** an `Alert variant="destructive"` with the `useErrorMessage()`
     sentence and a retry where one helps, rendered *instead of* the list.
     Never the empty state: "no hosts yet" after a failed request tells the

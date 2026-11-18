@@ -3,6 +3,7 @@ import {
   FacetSelect,
   PullRequestTable,
   PullRequestTableHead,
+  RunsListEmpty,
   RunsListFoot,
 } from '@oppenheimer/design-system-web';
 import { GitBranch } from '@oppenheimer/design-system-web/icons';
@@ -183,11 +184,11 @@ export function QueueTable() {
           />
         ))}
         {rows.length === 0 ? (
-          <p className="m-0 px-3 py-3.5 text-sm text-fg-muted">
+          <RunsListEmpty>
             {query.trim()
               ? t('pullRequests.queue.noMatch', { query: query.trim() })
               : t('pullRequests.queue.noFilterMatch')}
-          </p>
+          </RunsListEmpty>
         ) : null}
         <RunsListFoot
           range={t('pullRequests.queue.range', {

@@ -1,5 +1,4 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { Compass } from '@oppenheimer/design-system-web/icons';
 import { isRequestFailure } from '@oppenheimer/frontend-core';
 import { useErrorMessage, useReportError } from '@oppenheimer/frontend-core/react';
 import { useRouter } from '@tanstack/react-router';
@@ -22,9 +21,7 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
   return (
     <EmptyState className="my-auto">
       <EmptyState.Header>
-        <EmptyState.Media variant="icon">
-          <Compass />
-        </EmptyState.Media>
+        <EmptyState.Art name="notFound" />
         <EmptyState.Title>{t('errors.notFound.title')}</EmptyState.Title>
         <EmptyState.Description>{t('errors.notFound.description')}</EmptyState.Description>
       </EmptyState.Header>

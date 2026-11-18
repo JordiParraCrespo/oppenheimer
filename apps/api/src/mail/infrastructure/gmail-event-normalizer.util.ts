@@ -57,7 +57,7 @@ export function toGmailDelivery(
 export const GMAIL_DELIVERY_EVENT = 'mail_received';
 
 /**
- * A poll's delivery as catalog events (`next-steps/mail.md` §5): one
+ * A poll's delivery as catalog events: one
  * `mail_received` per message, unique per account and message so a message
  * read twice is one event. Who wrote it, the subject and the snippet are the
  * sender's, so they are the event's untrusted context, never its attributes;

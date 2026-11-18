@@ -9,12 +9,12 @@ import {
 } from '../infrastructure/relay-session-transcript.adapter';
 
 /**
- * A reader's ask for a page of a session's conversation
- * (`product/next-steps/agent-tools.md` §8): a `transcript.read` the protocol
- * accepts, carrying the cursor's conversation and offset as they were, settled
- * by the reply that names its command from that host only, by the runner's
- * refusal, or by nothing in time; and never sent to a runner that cannot
- * answer it. The runner's half is `apps/runner/internal/cli/link_transcript_test.go`.
+ * A reader's ask for a page of a session's conversation: a `transcript.read`
+ * the protocol accepts, carrying the cursor's conversation and offset as they
+ * were, settled by the reply that names its command from that host only, by the
+ * runner's refusal, or by nothing in time; and never sent to a runner that
+ * cannot answer it. The runner's half is
+ * `apps/runner/internal/cli/link_transcript_test.go`.
  */
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
@@ -86,6 +86,48 @@ describe('RelaySessionTranscriptAdapter', () => {
     const message = sent(link);
     expect(message.conversation).toBeUndefined();
     expect(message.after).toBeUndefined();
+  });
+
+  // Until the wire has a field for it, the start is asked for as a
+  // conversation no runner has, which every runner out there answers from
+  // the first line with `restarted`; that flag is this read's doing, not a
+  // conversation replaced, and must not reach the reader.
+  it('asks for the start as the interim sentinel, and drops the restarted it causes', async () => {
+    const { adapter, link, replies } = harness(true);
+
+    const pending = adapter.read(HOST, SESSION, { limit: 30, from: 'start' });
+    const message = sent(link);
+    expect(message).toMatchObject({ limit: 30, conversation: 'start', after: 0 });
+    replies.settle(HOST, {
+      type: 'transcript.page',
+      commandId: message.commandId,
+      ...PAGE,
+      from: 0,
+      restarted: true,
+    });
+
+    await expect(pending).resolves.toEqual({
+      kind: 'page',
+      page: { ...PAGE, from: 0, restarted: false },
+    });
+  });
+
+  it('passes on a restarted the runner sends for a cursor that no longer applies', async () => {
+    const { adapter, link, replies } = harness(true);
+
+    const pending = adapter.read(HOST, SESSION, {
+      limit: 30,
+      conversation: 'c4b1e09a7f2d3e65',
+      after: 100,
+    });
+    replies.settle(HOST, {
+      type: 'transcript.page',
+      commandId: sent(link).commandId,
+      ...PAGE,
+      restarted: true,
+    });
+
+    await expect(pending).resolves.toMatchObject({ page: { restarted: true } });
   });
 
   it('answers with the runner’s refusal and its code', async () => {

@@ -13,6 +13,8 @@ export const SESSION_DISPATCH = Symbol('SESSION_DISPATCH');
 export const HOST_FOLDERS = Symbol('HOST_FOLDERS');
 /** The Browser tab's listing of a session's ports; bound by `links/` like `HOST_FOLDERS`. */
 export const SESSION_PORTS = Symbol('SESSION_PORTS');
+/** The Terminal tab's listing, opening and closing of a session's shells; bound by `links/` like `SESSION_PORTS`. */
+export const SESSION_WINDOWS = Symbol('SESSION_WINDOWS');
 /** A shared file's preview, asked of the session's host; bound by `links/` like `SESSION_PORTS`. */
 export const SESSION_SHARED_FILES = Symbol('SESSION_SHARED_FILES');
 /** A page of a session's conversation, asked of the session's host; bound by `links/` like `SESSION_SHARED_FILES`. */

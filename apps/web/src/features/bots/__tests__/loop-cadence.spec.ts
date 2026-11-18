@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { loopCadenceOf } from '../lib/loop-cadence';
 
 /**
- * How the console words a loop's interval (`25-bots.md` §4.1, `/loop`). What
- * breaks this: "every 120 minutes" where the person typed 2h, or a
- * self-paced loop drawn as running every 0 minutes.
+ * How the console words a loop's interval (`/loop`). What breaks this:
+ * "every 120 minutes" where the person typed 2h, or a self-paced loop drawn
+ * as running every 0 minutes.
  */
 describe('loopCadenceOf', () => {
   it('words an interval in the largest whole unit it is in', () => {

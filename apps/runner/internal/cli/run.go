@@ -91,7 +91,7 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	}
 
 	// The work folder says which layout it is on before anything is made in
-	// it (24 §2).
+	// it.
 	if a.WorkFolder != nil {
 		if err := a.WorkFolder.Init(); err != nil {
 			logger.Warn("could not prepare the work folder",
@@ -300,6 +300,9 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		// A session that continues a cloud one learns the name its agent gave
 		// the conversation, which its transcript is read by.
 		a.Sessions.FindTeleported()
+		// A session whose agent serves its conversation (OpenCode) keeps the
+		// one its own process works in, which its chat shows.
+		a.Sessions.FindServedConversations(ctx)
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()

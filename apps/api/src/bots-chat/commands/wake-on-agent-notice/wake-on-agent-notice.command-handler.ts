@@ -15,7 +15,7 @@ import { WakeOnAgentNoticeCommand } from './wake-on-agent-notice.command';
 
 /**
  * A session a bot follows had its agent send a line (`runner sessions
- * notify`, `product/next-steps/agent-tools.md` §9): the agent's way of
+ * notify`): the agent's way of
  * speaking to whoever follows its work, which a bot hears as a wake. The
  * session is read again as the bot's owner, and the notice it holds now is
  * the one quoted, never words carried on the event: one the session no longer

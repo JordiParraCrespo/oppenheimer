@@ -8,8 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The project chip of New session: the body of work the session belongs to,
- * over the composer because picking it prefills the rest
- * (`product/versions/mvp/05-screens.md`, `NewSessionComposer.dc.html`).
+ * over the composer because picking it prefills the rest.
  *
  * Props in, choice out — the list is read by the section above. What this
  * file owns is the chip's copy and its foot row, **New project…**, which

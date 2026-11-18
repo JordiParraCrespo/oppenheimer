@@ -39,11 +39,11 @@ import { refusalText } from '../lib/session-files';
  * (`ComposerChoices`): where it runs and what it may touch on the left, who
  * drives it on the right.
  *
- * `voice` is dictation (`product/next-steps/voice.md`, the kit's
- * `useDictation`): while anyone can hear the workspace the mic is on, the
- * recording takes the composer's foot, and what is heard is added to the end
- * of the draft, to be read before it is sent. A refused microphone or a
- * failed transcription is said under the field, like a refused file.
+ * `voice` is dictation (the kit's `useDictation`): while anyone can hear
+ * the workspace the mic is on, the recording takes the composer's foot, and
+ * what is heard is added to the end of the draft, to be read before it is
+ * sent. A refused microphone or a failed transcription is said under the
+ * field, like a refused file.
  */
 export function NewSessionComposer({
   onSubmit,

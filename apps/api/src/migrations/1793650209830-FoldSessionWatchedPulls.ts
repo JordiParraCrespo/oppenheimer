@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * The pull requests a session's agent asked to be woken by, folded from the
- * log's `pull.watched` entries (`product/next-steps/agent-tools.md` §3).
+ * log's `pull.watched` entries.
  *
  * - `jsonb`, not null, `[]` for none: the fold writes the whole list, at most
  *   ten entries, each `{ githubRepoId, number }`.

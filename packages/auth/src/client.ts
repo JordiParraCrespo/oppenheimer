@@ -10,7 +10,7 @@ import { userAdditionalFields } from './user-fields';
  *
  * A factory rather than a shared array so each client gets fresh plugin
  * instances. The return type is deliberately inferred — and this entry ships
- * as TypeScript source (see the package README) — so Better Auth's type
+ * as TypeScript source — so Better Auth's type
  * inference flows through to each app's `createAuthClient` call.
  */
 export function sharedClientPlugins() {

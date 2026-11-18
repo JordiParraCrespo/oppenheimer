@@ -46,9 +46,9 @@ const readRateRefusal: RefusalReader = (errorBody) => {
  * authorization code and its PKCE verifier to redeem at `/oauth/token`.
  * Refreshing is `/oauth/token` again, and rotates the refresh token.
  *
- * Every call goes through one {@link UpstreamLimiter} (`.agents/rules/integrations.md`):
- * OpenAI counts the client, so there is one bucket, and a refusal for rate
- * pauses it on every replica and answers `BOTS_019`.
+ * Every call goes through one {@link UpstreamLimiter}: OpenAI counts the
+ * client, so there is one bucket, and a refusal for rate pauses it on every
+ * replica and answers `BOTS_019`.
  */
 @Injectable()
 export class OpenAiChatgptAuthAdapter implements ChatgptAuthPort {

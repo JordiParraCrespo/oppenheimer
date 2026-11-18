@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** The loop a bot runs, open now (`25-bots.md` §4.1, `/loop`). */
+/** The loop a bot runs, open now (`/loop`). */
 export class BotLoopResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;

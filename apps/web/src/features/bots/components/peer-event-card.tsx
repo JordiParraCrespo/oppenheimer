@@ -13,9 +13,9 @@ function leadKey(event: BotPeerMessageEvent | BotPeerReplyEvent) {
 }
 
 /**
- * Another bot's message, or its answer to one this bot asked
- * (`25-bots.md` §4.6), as a `BotExchange` card naming the bot Oppenheimer
- * recorded as the sender, with what it said.
+ * Another bot's message, or its answer to one this bot asked, as a
+ * `BotExchange` card naming the bot Oppenheimer recorded as the sender,
+ * with what it said.
  */
 export function PeerEventCard({
   event,

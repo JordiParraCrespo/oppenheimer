@@ -92,6 +92,7 @@ describe('createErrorMessageResolver', () => {
 
     expect(resolved.message).toBe('Could not reach the server.');
     expect(resolved.code).toBeUndefined();
+    expect(resolved.unreachable).toBe(true);
   });
 
   it('surfaces the correlation id and field errors for the screen', () => {
@@ -104,6 +105,7 @@ describe('createErrorMessageResolver', () => {
       }),
     );
 
+    expect(resolved.unreachable).toBe(false);
     expect(resolved.correlationId).toBe('2b4f');
     expect(resolved.fieldErrors).toEqual({ email: 'Invalid email' });
   });

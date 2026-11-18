@@ -1,11 +1,11 @@
-import { TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
+import { TASK_PRIORITIES, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import { Command, Option } from 'commander';
-import type { Task, TaskStatus } from '../lib/api-types';
+import type { Task, TaskPriority, TaskStatus } from '../lib/api-types';
 import { contextFor } from '../lib/context';
 import { formatDate, render, style, table } from '../lib/output';
 import { resolveProject } from '../lib/resolve';
 
-/** Plan's tasks (`product/versions/mvp/17-plan.md`). */
+/** Plan's tasks. */
 export function tasksCommand(): Command {
   const tasks = new Command('tasks').description('Plan: the task board');
 
@@ -33,6 +33,7 @@ export function tasksCommand(): Command {
               { header: 'STATUS', value: (task) => task.status },
               { header: 'TITLE', value: (task) => task.title },
               { header: 'DUE', value: (task) => task.dueDate ?? '—' },
+              { header: 'PRIORITY', value: (task) => task.priority ?? '—' },
               { header: 'SESSIONS', value: (task) => String(task.sessions.length) },
               { header: 'CREATED', value: (task) => formatDate(task.createdAt) },
             ],
@@ -50,12 +51,14 @@ export function tasksCommand(): Command {
       .option('--notes <notes>', 'Notes')
       .addOption(new Option('--status <status>', 'Column').choices(TASK_STATUSES).default('todo'))
       .option('--due <YYYY-MM-DD>', 'Due date')
+      .addOption(new Option('--priority <priority>', 'Priority').choices(TASK_PRIORITIES))
       .action(async function (this: Command, words: string[]) {
         const options = this.opts<{
           project?: string;
           notes?: string;
           status: TaskStatus;
           due?: string;
+          priority?: TaskPriority;
         }>();
         const context = contextFor(this);
         const projectId = options.project
@@ -68,6 +71,7 @@ export function tasksCommand(): Command {
             status: options.status,
             projectId,
             dueDate: options.due,
+            priority: options.priority,
           },
         });
         render(

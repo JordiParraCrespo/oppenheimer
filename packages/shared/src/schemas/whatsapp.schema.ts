@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 /**
- * WhatsApp (`product/next-steps/whatsapp.md`): a number the person owns,
- * joined as a linked device by a runner on one of their hosts, the way
- * OpenClaw does it. Their bots read its chats and write in them.
+ * WhatsApp: a number the person owns, joined as a linked device by a runner on
+ * one of their hosts, the way OpenClaw does it. Their bots read its chats and
+ * write in them.
  */
 
 /** What a person calls a linked number: "Spare", "Shop". */
@@ -73,8 +73,7 @@ export type WhatsappAccount = z.infer<typeof whatsappAccountSchema>;
 
 /**
  * `PATCH /whatsapp/accounts/:id`: which of the caller's Oppenheimer bots
- * answers them on this number by default; null for none
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1).
+ * answers them on this number by default; null for none.
  */
 export const updateWhatsappAccountSchema = z.object({
   answeringBotId: z.string().uuid().nullable(),

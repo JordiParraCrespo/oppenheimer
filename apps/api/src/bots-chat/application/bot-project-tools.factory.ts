@@ -65,17 +65,17 @@ const allowSameNameInput = z
   );
 
 /**
- * Projects, the writes (`25-bots.md` §4.3): make one, change its name,
- * repositories and defaults, archive or restore it, and list an existing
- * session under another. Each dispatches the projects' or sessions' own command in the
- * owner's scope, through the same request schemas the console's routes
- * validate with, so a bot meets the rules a person does: the Unassigned
- * project keeps its name, repositories come from a connected installation, an
- * archived project takes nothing new, a project another workspace owns is not
- * found. Making, changing, restoring and moving stay inside Oppenheimer and
- * can be put back, so they run under Approve for me; archiving stops work
- * from being started and pauses automations that a restore leaves paused, so
- * it asks every time, under every preset.
+ * Projects, the writes: make one, change its name, repositories and defaults,
+ * archive or restore it, and list an existing session under another. Each
+ * dispatches the projects' or sessions' own command in the owner's scope,
+ * through the same request schemas the console's routes validate with, so a bot
+ * meets the rules a person does: the Unassigned project keeps its name,
+ * repositories come from a connected installation, an archived project takes
+ * nothing new, a project another workspace owns is not found. Making, changing,
+ * restoring and moving stay inside Oppenheimer and can be put back, so they run
+ * under Approve for me; archiving stops work from being started and pauses
+ * automations that a restore leaves paused, so it asks every time, under every
+ * preset.
  */
 @Injectable()
 export class BotProjectToolsFactory implements BotToolArea {

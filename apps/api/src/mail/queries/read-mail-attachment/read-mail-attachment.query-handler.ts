@@ -7,7 +7,7 @@ import { type MailAttachmentRead, ReadMailAttachmentQuery } from './read-mail-at
 
 /**
  * Fetches an attachment's bytes when, and only when, a bot asks for that one,
- * and reads them (`product/next-steps/mail.md` §3.2). Nothing is kept here.
+ * and reads them. Nothing is kept here.
  */
 @QueryHandler(ReadMailAttachmentQuery)
 export class ReadMailAttachmentQueryHandler

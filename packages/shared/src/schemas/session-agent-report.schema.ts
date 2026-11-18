@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 /**
- * The agent's own word on what it is doing, as it reported it through OSC
- * 7501, the Program Status Protocol (`product/research/lessons-from-herdr.md`).
- * The runner runs the agent under its `pty` wrapper, which answers the agent's
- * probe and keeps its reports, and sends the latest one as the `program`
- * object of an `agent.observed` entry beside the state it settled on.
+ * The agent's own word on what it is doing, as it reported it through OSC 7501,
+ * the Program Status Protocol. The runner runs the agent under its `pty`
+ * wrapper, which answers the agent's probe and keeps its reports, and sends the
+ * latest one as the `program` object of an `agent.observed` entry beside the
+ * state it settled on.
  *
  * It is the agent saying it, never a guess from the screen: an observation
  * read off the screen carries none, and the fold clears it. `error` is kept

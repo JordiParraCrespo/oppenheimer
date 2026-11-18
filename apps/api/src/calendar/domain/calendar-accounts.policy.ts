@@ -1,6 +1,6 @@
 import { GOOGLE_CALENDAR_ACCOUNTS_MAX } from '@oppenheimer/shared';
 
-/** Whether a person holding `held` accounts may connect one more (five at most, `23-…` §5). */
+/** Whether a person holding `held` accounts may connect one more (five at most). */
 export function canConnectAnotherAccount(held: number): boolean {
   return held < GOOGLE_CALENDAR_ACCOUNTS_MAX;
 }

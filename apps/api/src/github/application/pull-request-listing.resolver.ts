@@ -32,7 +32,7 @@ const CLOSED_SNAPSHOT_TTL_SECONDS = 6 * 3600;
  * GitHub's own pace spreads over a second or so, and they are what a reader
  * waits for: at twelve, a queue of thirteen took eleven seconds to answer
  * rows it already had. At five it answers in about two and is whole within a
- * few polls, which is the trade the reader wants (#247).
+ * few polls, which is the trade the reader wants.
  */
 const SNAPSHOT_BUDGET = 5;
 /** GitHub's page: Analytics lists one per repository, the newest closed. */
@@ -175,7 +175,7 @@ export class PullRequestListingResolver implements PullRequestListingPort {
     // figure counts and what the day chart draws are read from these, so a
     // pull request whose parts this view had no budget to fill is still
     // counted — the numbers are whole from the first read, and only the
-    // medians and the lane mix deepen as later reads fill more (#247).
+    // medians and the lane mix deepen as later reads fill more.
     const counted = plan.picks.flat();
     return { pulls, counted, complete: plan.complete };
   }
@@ -211,9 +211,9 @@ export class PullRequestListingResolver implements PullRequestListingPort {
    * filled costs no GitHub request and must not draw on the budget. What is
    * left is reserved in a single synchronous call, in listing order, and only
    * those are read. The rest are `deferred`: not rows, so nothing shows a
-   * lane, a checks state or a blocker nobody read (#244), and not read either
+   * lane, a checks state or a blocker nobody read, and not read either
    * — paying a detail request per unfilled row on every `pullRequestsFilling`
-   * tick was the fan-out this is here to stop (#247).
+   * tick was the fan-out this is here to stop.
    */
   private async readMany<TSnapshot extends PullRequestRead, TPull extends GithubPullRequestSummary>(
     repository: WorkspaceRepository,

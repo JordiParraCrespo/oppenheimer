@@ -3,9 +3,10 @@ import type { TranscriptPageMessage } from '@oppenheimer/shared/protocol';
 /** One page as its runner read it (`transcript.page` without its envelope). */
 export type HostTranscriptPage = Omit<TranscriptPageMessage, 'type' | 'commandId'>;
 
-/** Where to read from: the conversation's tail, or on from a page already read. */
+/** Where to read from: the conversation's tail, its first line, or on from a page already read. */
 export type HostTranscriptRequest =
   | { limit: number }
+  | { limit: number; from: 'start' }
   | { limit: number; conversation: string; after: number };
 
 /**
@@ -24,8 +25,7 @@ export type SessionTranscriptOutcome =
 
 /**
  * What the module that owns the runner link implements so a reader with no
- * browser attached can read a session's conversation
- * (`product/next-steps/agent-tools.md` §8). The conversation lives on the
+ * browser attached can read a session's conversation. The conversation lives on the
  * host; like `SessionSharedFilesPort` it waits for the runner's answer, and
  * nothing is cached.
  */

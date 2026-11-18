@@ -3,9 +3,9 @@ import type { BotPermission } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 
 /**
- * How far a bot's turns go without asking. Two levels until approvals arrive
- * (`product/versions/mvp/25-bots.md`, slice 4): a headless turn with no prompt
- * tool would refuse every tool, so Ask for approval is not offered yet.
+ * How far a bot's turns go without asking. Two levels until approvals
+ * arrive: a headless turn with no prompt tool would refuse every tool, so
+ * Ask for approval is not offered yet.
  */
 export function BotPermissionChip({
   value,

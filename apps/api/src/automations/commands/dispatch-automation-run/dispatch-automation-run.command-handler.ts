@@ -13,7 +13,7 @@ import { DispatchAutomationRunCommand } from './dispatch-automation-run.command'
 
 /**
  * Dispatch: the guards decide, and a run that passes is launched by its
- * automation's target **as the owner** (§Q5, `26-bot-routines.md` §3) — a
+ * automation's target **as the owner** — a
  * session today. The target's launch is idempotent on the run's id, so a job
  * the queue runs twice — or a crash between the launch and the write below —
  * finds what it launched instead of launching a second.

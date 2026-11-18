@@ -7,7 +7,7 @@ import { tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
 import { AbilityFactory } from '../../roles/application/ability.factory';
 import { ACCESS_SCOPE_KEY } from '../decorators/current-access-scope.decorator';
 
-/** Instance-level roles that short-circuit scoping (Q0). */
+/** Instance-level roles that short-circuit scoping. */
 const PLATFORM_ROLES: readonly string[] = [ROLES.SUPERADMIN, ROLES.ADMIN];
 
 /**

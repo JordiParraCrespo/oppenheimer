@@ -25,9 +25,9 @@ function session(lifecycle: SessionEntity['lifecycle'], state: SessionEntity['st
 }
 
 /**
- * Queued is the console's word, not a session state the API stores
- * (`19-plan-tasks-and-goals.md` §7): a session still starting on a host that is
- * offline. The card shows whichever of a task's sessions most needs the person.
+ * Queued is the console's word, not a session state the API stores: a session
+ * still starting on a host that is offline. The card shows whichever of a
+ * task's sessions most needs the person.
  */
 describe('a card’s session line', () => {
   it('calls a session starting on an offline host Queued, and one on a live host Running', () => {

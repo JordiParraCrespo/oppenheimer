@@ -3,7 +3,7 @@
 import { PencilIcon, PlayIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { useClampedOverflow } from '../internal/use-clamped-overflow';
+import { useBoxOverflow } from '../internal/use-box-overflow';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 import { Switch } from './switch';
@@ -170,12 +170,12 @@ function RoutineCard({
 
 /**
  * The prompt, three lines until opened. Show more appears only when the text
- * runs past them (`useClampedOverflow`), so a short prompt has no toggle. The
+ * runs past them (`useBoxOverflow`), so a short prompt has no toggle. The
  * card keys it on the text, so a prompt that changes in place starts closed.
  */
 function RoutinePrompt({ more, less, children }: { more: string; less: string; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
-  const { ref, overflows } = useClampedOverflow<HTMLSpanElement>(open, children);
+  const { ref, overflows } = useBoxOverflow<HTMLSpanElement>('y', open, children);
 
   return (
     <div className="flex flex-col items-start gap-1">

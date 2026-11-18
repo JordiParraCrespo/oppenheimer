@@ -19,7 +19,7 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
- * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
+ * Runs one turn: claims it (one running turn per bot), reads
  * what it needs, runs the engine with its steering (unless what it read says
  * the turn takes none, or has nothing left to say, and so ends at once),
  * hands what the transcript writes to the turn's writer (`TurnWriteFactory`),

@@ -30,8 +30,7 @@ export class HostRecentFolderResponseDto {
 }
 
 /**
- * One directory on a host for the folder picker
- * (`product/versions/mvp/24-session-places.md` §4): its sub-directories as the
+ * One directory on a host for the folder picker: its sub-directories as the
  * runner listed them just now — names only, never files, hidden ones left out —
  * and the caller's recent folders on the host, from the API's own rows.
  */

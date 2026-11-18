@@ -13,11 +13,10 @@ import { ShareSessionSkeleton } from '../components/share-session-skeleton';
 import { ShareSessionPanes } from '../sections/share-session-panes';
 
 /**
- * Share a session (`ShareSession.dc.html`, and the Share dialog of
- * `SessionsConsole (pages).dc.html`), from the terminal's status line or a
- * session row's menu. The panes read the session and its share under
- * Suspense; this draws the dialog, its placeholder and a first failure, and
- * owns the write, so Close waits while a share is being saved.
+ * Share a session, from the terminal's status line or a session row's menu.
+ * The panes read the session and its share under Suspense; this draws the
+ * dialog, its placeholder and a first failure, and owns the write, so Close
+ * waits while a share is being saved.
  */
 export function ShareSessionDialog({
   sessionId,

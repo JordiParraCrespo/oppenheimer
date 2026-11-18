@@ -6,7 +6,7 @@ import { repeatedBlockerAsk } from './bot-recovery.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
- * What a loop says (`25-bots.md` §4.1, `/loop`): the words the bot reads when
+ * What a loop says (`/loop`): the words the bot reads when
  * a loop is set and at each run, and the turns and lines that carry them. The
  * decisions (when a run is due, whether the loop ends) are
  * `bot-loop.policy.ts`; this builds what they act on.

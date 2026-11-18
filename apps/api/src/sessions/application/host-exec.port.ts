@@ -22,8 +22,7 @@ export type HostExecOutcome =
 
 /**
  * What the module that owns the runner link implements so a bot can run a
- * program on a host (`product/versions/mvp/25-bots.md` §4.2, "Commands on a
- * host"). Like `HostFoldersPort` it waits for the runner's answer, for as long
+ * program on a host. Like `HostFoldersPort` it waits for the runner's answer, for as long
  * as the run may take; whether the program may run at all is the host's own
  * policy, which nothing here sees.
  */

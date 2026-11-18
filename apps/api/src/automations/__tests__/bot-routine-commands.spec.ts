@@ -11,8 +11,8 @@ import { AutomationEntity } from '../domain/automation.entity';
 import { triggerFromInput } from '../domain/trigger-config.policy';
 
 /**
- * Run now and Delete for a bot (its Routines tab, `26-bot-routines.md` §7,
- * and its own tool) name the bot, and act only on that bot's routine, through
+ * Run now and Delete for a bot (its Routines tab and its own tool) name the
+ * bot, and act only on that bot's routine, through
  * the one `BotRoutineResolver` that Save uses too. What breaks this:
  * one bot's tab running or deleting another bot's routine by its id, or a
  * session automation's. Neither answers anything but not found, and neither

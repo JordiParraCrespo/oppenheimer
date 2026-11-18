@@ -2,11 +2,10 @@ import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 
 /**
  * The owner of a Telegram bot wrote to it in their direct chat, and an
- * Oppenheimer bot answers there
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): raised once
- * per stored message, in the transaction that stored it. `command` is what
- * the message asks: a turn (`message`), a fresh conversation (`new`), or the
- * running turn to stop (`stop`). The aggregate is the Telegram account.
+ * Oppenheimer bot answers there: raised once per stored message, in the
+ * transaction that stored it. `command` is what the message asks: a turn
+ * (`message`), a fresh conversation (`new`), or the running turn to stop
+ * (`stop`). The aggregate is the Telegram account.
  */
 export class TelegramOwnerWroteDomainEvent extends DomainEvent {
   readonly organizationId: string;

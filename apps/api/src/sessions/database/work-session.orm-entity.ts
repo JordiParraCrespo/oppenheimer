@@ -32,8 +32,8 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * `hostId` is the one reference whose scope a handler guards instead: a host belongs
  * to a person, with no workspace column, and a grant is a row, so no composite key can
  * reference it (its plain foreign key only proves the host exists). Create loads the
- * host through the own-or-grant-scoped repository and refuses on a miss
- * (`product/versions/mvp/03-control-plane.md`). A cloud session has none, and only a
+ * host through the own-or-grant-scoped repository and refuses on a miss. A cloud
+ * session has none, and only a
  * cloud session (`CHK_work_session_cloud_host`): its vendor's half is
  * `session_cloud_run`.
  */
@@ -115,7 +115,7 @@ export class WorkSessionOrmEntity {
   agent!: string;
 
   /**
-   * Where the session runs (`product/versions/mvp/24-session-places.md`): a
+   * Where the session runs: a
    * `worktree` the runner made per checkout, a `folder` already on the host, or
    * `cloud`, a vendor's agent. Immutable, like `agent`.
    */
@@ -178,9 +178,9 @@ export class WorkSessionOrmEntity {
   /**
    * The model, permission level and effort the composer's foot row launched with.
    * Three columns, not one JSON value, because each is a closed union, which a
-   * `varchar` column is for (`.agents/rules/typeorm.md`). They are folded from
+   * `varchar` column is for. They are folded from
    * `session.requested`, and exist because a restart must reproduce the launch and
-   * the console shows it (`product/versions/mvp/03-control-plane.md`).
+   * the console shows it.
    */
   @Column({ type: 'varchar', nullable: true })
   launchModel!: string | null;

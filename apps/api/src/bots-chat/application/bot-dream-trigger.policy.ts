@@ -8,11 +8,11 @@ import { shouldDream } from '../domain/bot-dream.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /**
- * After a turn ends (`25-bots.md` §4.1, "Dreaming"): whether the bot has
- * written enough to its memory since its last dream to dream again, and if
- * so a job that does. The job decides again on what it reads, so a job staged
- * twice dreams once. The turn has ended when this runs, so a failure here is
- * logged and nothing more: the next turn's end asks again.
+ * After a turn ends: whether the bot has written enough to its memory since its
+ * last dream to dream again, and if so a job that does. The job decides again
+ * on what it reads, so a job staged twice dreams once. The turn has ended when
+ * this runs, so a failure here is logged and nothing more: the next turn's end
+ * asks again.
  */
 @Injectable()
 export class BotDreamTriggerPolicy {

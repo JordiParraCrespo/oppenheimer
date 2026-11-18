@@ -13,7 +13,7 @@ import { BotToolboxFactory } from './bot-toolbox.factory';
 const APPROVED_CALL_TIMEOUT_MS = 60_000;
 
 /**
- * What an approved call answers (`25-bots.md` §5): the stored tool, run with
+ * What an approved call answers: the stored tool, run with
  * the stored input as the bot's owner, whose scope is resolved now, not when
  * the card was raised; an owner who left the workspace runs nothing.
  * `granted` is what both the asking turn's and the deciding credential's

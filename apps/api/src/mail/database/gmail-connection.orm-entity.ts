@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 /**
- * A person's Gmail grant (`product/next-steps/mail.md` §1), one per Google
+ * A person's Gmail grant, one per Google
  * account, up to five per person per workspace, keyed by Google's `sub`. The
  * refresh token is sealed with AES-256-GCM under `MAIL_TOKEN_KEY`; access
  * tokens are minted per call and never stored, and no mail is kept.
