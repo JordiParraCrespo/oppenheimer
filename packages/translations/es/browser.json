@@ -3307,7 +3307,7 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "empty": "Añade una tarea arriba o elige algunas con Añadir tareas.",
       "emptyTitle": "Aún no hay nada en este día",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
