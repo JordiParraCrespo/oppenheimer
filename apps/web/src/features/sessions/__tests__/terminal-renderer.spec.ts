@@ -6,12 +6,26 @@ import { bindTerminalRenderer, type RendererEnvironment } from '../lib/terminal-
 /**
  * Wiping xterm's WebGL glyph atlas while output streams draws letters as
  * blocks (xterm.js #4480). The regressions guarded here are WebGL attaching
- * before the terminal's faces load, and a face that arrives later wiping
- * the atlas in place instead of rebuilding the renderer.
+ * before the terminal's faces load, a face that arrives later wiping
+ * the atlas in place instead of rebuilding the renderer, and xterm keeping
+ * the box it measured on the fallback face once the real one has loaded.
  */
 
 function fakeTerminal() {
+  // Each value `fontFamily` is set to: a change is what has xterm measure.
+  const familyWrites: string[] = [];
+  let family = 'mono';
   const term = {
+    familyWrites,
+    options: {
+      get fontFamily() {
+        return family;
+      },
+      set fontFamily(value: string) {
+        familyWrites.push(value);
+        family = value;
+      },
+    },
     rows: 24,
     loadAddon: vi.fn(),
     refresh: vi.fn(),
@@ -97,6 +111,23 @@ describe('bindTerminalRenderer', () => {
     expect(h.term.clearTextureAtlas).not.toHaveBeenCalled();
     expect(h.addons[0]?.dispose).toHaveBeenCalledTimes(1);
     expect(h.term.loadAddon).toHaveBeenCalledTimes(2);
+  });
+
+  // Measured on the fallback, the WebGL grid set each letter a few pixels
+  // off the typeahead's guess, which measures the face it draws with.
+  it('has xterm measure its cells again when a face arrives, on either renderer', async () => {
+    const h = harness();
+    await h.fontsReady();
+    h.term.familyWrites.length = 0;
+
+    h.faceLoaded('"SF Mono"');
+    expect(h.term.familyWrites).toEqual(['mono ', 'mono']);
+    expect(h.term.options.fontFamily).toBe('mono');
+
+    h.addons[1]?.loseContext();
+    h.term.familyWrites.length = 0;
+    h.faceLoaded('"SF Mono"');
+    expect(h.term.familyWrites).toEqual(['mono ', 'mono']);
   });
 
   it('ignores a face the terminal does not draw with', async () => {

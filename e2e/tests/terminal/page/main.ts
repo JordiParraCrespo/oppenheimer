@@ -125,14 +125,20 @@ const params = new URLSearchParams(location.search);
 const mode = (params.get('mode') ?? 'caret') as Mode;
 
 // An installed face served under a name the terminal's stack asks for first
-// (`TERMINAL_FONT`), so its metrics are the ones measured.
+// (`TERMINAL_FONT`), so its metrics are the ones measured. With `late`, it
+// arrives once the terminal is open, as a web font or a slow local face does.
 const face = params.get('face');
-if (face) {
+const late = params.get('late') === '1';
+let faceReady = !face;
+const loadFace = async () => {
+  if (!face) return;
   const style = document.createElement('style');
   style.textContent = `@font-face { font-family: "SF Mono"; src: local("${face}"); }`;
   document.head.appendChild(style);
   await document.fonts.load('13px "SF Mono"');
-}
+  faceReady = true;
+};
+if (!late) await loadFace();
 
 const host = new FakeHost(mode);
 const container = document.getElementById('terminal') as HTMLElement;
@@ -143,6 +149,7 @@ mountSessionTerminal(container, host, {
 });
 host.start();
 if (params.get('spin')) host.spin();
+if (late) setTimeout(() => void loadFace(), 300);
 
 let watching = false;
 let frames: number[] = [];
@@ -154,6 +161,8 @@ const harness = {
   host,
   /** Which renderer draws: the WebGL addon leaves no DOM rows behind. */
   renderer: () => (container.querySelector('.xterm-rows') ? 'dom' : 'webgl'),
+  /** Whether the case's face has loaded, late or not. */
+  faceReady: () => faceReady,
   /**
    * Starts counting the cursors on screen in every painted frame: the
    * terminal's own (the DOM renderer's cursor element, unless a typeahead

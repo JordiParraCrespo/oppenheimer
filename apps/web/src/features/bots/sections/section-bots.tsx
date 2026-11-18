@@ -80,7 +80,7 @@ export function SectionBots({ section }: { section: BotSection }) {
           <QueryState.Pending>
             <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />
           </QueryState.Pending>
-          <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />
+          <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" offlineOnce />
           <QueryState.Data>
             <SectionBotsList
               section={section}

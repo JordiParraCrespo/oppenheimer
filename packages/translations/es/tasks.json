@@ -97,6 +97,7 @@
     "deleting": "Eliminando…"
   },
   "dialog": {
+    "offTodo": "Fuera de TODO hasta que tenga un día",
     "newTitle": "Nueva tarea",
     "editTitle": "Editar tarea",
     "titleLabel": "Título",
@@ -234,7 +235,10 @@
     },
     "move": "Mover {{title}} a otro día",
     "moveTitle": "Mover a otro día",
-    "moveFailed": "No se pudo mover la tarea a otro día."
+    "moveFailed": "No se pudo mover la tarea a otro día.",
+    "remove": "Quitar {{title}} de TODO",
+    "removeTitle": "Quitar de TODO",
+    "removeFailed": "No se pudo quitar la tarea de TODO."
   },
   "selection": {
     "count_one": "{{count}} seleccionada",

@@ -12,6 +12,7 @@
 package transcript
 
 import (
+	"context"
 	"log/slog"
 	"regexp"
 	"sync"
@@ -54,6 +55,9 @@ type Reader struct {
 	// (OpenQuestion), asked from the poll loop.
 	mu        sync.Mutex
 	questions map[string]*questionWatch
+
+	// openCode is which OpenCode works in which conversation, for the chat.
+	openCode *openCodeOwners
 }
 
 var _ app.Transcripts = (*Reader)(nil)
@@ -101,7 +105,16 @@ func New(opts Options) *Reader {
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
-	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir}
+	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir, openCode: newOpenCodeOwners()}
+}
+
+// ServedConversation implements app.Transcripts: OpenCode's, through its
+// own event stream (openCodeOwners).
+func (r *Reader) ServedConversation(ctx context.Context, session domain.Session) string {
+	if !session.Agent.ServesConversation() || session.Launch.Server == nil {
+		return ""
+	}
+	return r.openCode.served(ctx, *session.Launch.Server)
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.
