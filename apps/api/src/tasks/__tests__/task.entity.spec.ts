@@ -141,6 +141,7 @@ describe('TaskEntity: taken off To do', () => {
 
     task.edit({ focusDate: null, offTodo: true });
     task.edit({ dueDate: '2026-11-15' });
+    task.edit({ dueDate: '2026-11-15', dueTime: '11:00' });
     expect(task.offTodo).toBe(true);
     task.edit({ dueDate: '2026-11-20' });
     expect(task.offTodo).toBe(false);

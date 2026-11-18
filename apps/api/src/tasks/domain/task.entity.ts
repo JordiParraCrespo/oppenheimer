@@ -307,9 +307,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
     if (changes.priority !== undefined) this.props.priority = changes.priority;
     const rescheduled = due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime;
-    // Planned for a day again, or due on another, it is back on To do.
+    // Planned for a day again, or due on another day, it is back on To do; a new time alone is not.
     if (changes.offTodo !== undefined) this.props.offTodo = changes.offTodo;
-    else if (changes.focusDate || rescheduled) this.props.offTodo = false;
+    else if (changes.focusDate || due.dueDate !== this.props.dueDate) this.props.offTodo = false;
     this.setUpdatedAt(new Date());
     this.validate();
     if (rescheduled) {
