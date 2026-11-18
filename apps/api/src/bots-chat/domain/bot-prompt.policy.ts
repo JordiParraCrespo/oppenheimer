@@ -160,13 +160,13 @@ function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
  */
 interface AreaIntro {
   /** What the bot can do there, in the greeting's list. */
-  does: string;
+  does: PlainPromptId;
   /** The tools that do it: the area is offered when the turn has any of them. */
   doneBy: readonly string[];
   /** What the person may still have to connect for it, named in the offer to help. */
-  connects?: string;
+  connects?: PlainPromptId;
   /** A job this area makes possible, among the examples Getting started offers. */
-  example?: string;
+  example?: PlainPromptId;
 }
 
 /**
@@ -176,48 +176,52 @@ interface AreaIntro {
  */
 const AREA_INTROS: readonly AreaIntro[] = [
   {
-    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once and report back',
+    does: 'system/getting-started-areas.hosts-does',
     doneBy: ['start_session', 'start_cloud_session'],
-    connects: 'a computer',
-    example: 'running coding agents on a host to fix bugs',
+    connects: 'system/getting-started-areas.hosts-connects',
+    example: 'system/getting-started-areas.hosts-example',
   },
-  { does: 'run commands on their computers', doneBy: ['run_command'] },
+  { does: 'system/getting-started-areas.commands-does', doneBy: ['run_command'] },
   {
-    does: 'keep their plan, projects and tasks up to date',
+    does: 'system/getting-started-areas.plan-does',
     doneBy: ['create_task', 'update_task'],
-    example: "keeping a project's plan up to date",
+    example: 'system/getting-started-areas.plan-example',
   },
   {
-    does: 'read, sort and answer their email in Gmail',
+    does: 'system/getting-started-areas.gmail-does',
     doneBy: ['send_mail', 'send_draft'],
-    connects: 'Gmail',
-    example: 'keeping their inbox sorted and answered',
+    connects: 'system/getting-started-areas.gmail-connects',
+    example: 'system/getting-started-areas.gmail-example',
   },
   {
-    does: 'talk with them and others on WhatsApp',
+    does: 'system/getting-started-areas.whatsapp-does',
     doneBy: ['send_whatsapp_message'],
-    connects: 'WhatsApp',
+    connects: 'system/getting-started-areas.whatsapp-connects',
   },
-  { does: 'talk with them on Telegram', doneBy: ['send_telegram_message'], connects: 'Telegram' },
   {
-    does: 'review, comment on and follow pull requests and issues on GitHub',
+    does: 'system/getting-started-areas.telegram-does',
+    doneBy: ['send_telegram_message'],
+    connects: 'system/getting-started-areas.telegram-connects',
+  },
+  {
+    does: 'system/getting-started-areas.github-does',
     doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
-    connects: 'GitHub',
-    example: 'reviewing pull requests',
+    connects: 'system/getting-started-areas.github-connects',
+    example: 'system/getting-started-areas.github-example',
   },
   {
-    does: 'run automations and routines on a schedule or when something happens',
+    does: 'system/getting-started-areas.routines-does',
     doneBy: ['update_routine'],
-    example: 'a morning report on a schedule',
+    example: 'system/getting-started-areas.routines-example',
   },
   {
-    does: 'work with their other bots, create new ones and change their settings',
+    does: 'system/getting-started-areas.bots-does',
     doneBy: ['message_bot', 'create_bot', 'update_bot'],
   },
   {
-    does: 'read pages on the web and research a topic',
+    does: 'system/getting-started-areas.web-does',
     doneBy: ['web_fetch'],
-    example: 'researching a topic',
+    example: 'system/getting-started-areas.web-example',
   },
 ];
 
@@ -235,7 +239,9 @@ const MAX_JOB_EXAMPLES = 2;
  * One that can act nowhere suggests answering questions.
  */
 function jobExamples(tools: readonly BotPromptTool[]): string[] {
-  const examples = offeredAreas(tools).flatMap((area) => (area.example ? [area.example] : []));
+  const examples = offeredAreas(tools).flatMap((area) =>
+    area.example ? [promptText(area.example)] : [],
+  );
   return examples.length
     ? examples.slice(0, MAX_JOB_EXAMPLES)
     : [promptText('system/getting-started.answering-questions')];
@@ -261,7 +267,7 @@ function helpAreas(tools: readonly BotPromptTool[]): string {
   const areas = offeredAreas(tools);
   return areas.length
     ? promptText('system/getting-started.help-areas', {
-        areas: areas.map((area) => area.does).join('; '),
+        areas: areas.map((area) => promptText(area.does)).join('; '),
       })
     : promptText('system/getting-started.answering-questions');
 }
@@ -281,7 +287,9 @@ function projectHint(tools: readonly BotPromptTool[]): string[] {
  * rather than in the welcome, which it made twice as long (2026-11-13).
  */
 function connectOffer(tools: readonly BotPromptTool[]): string {
-  const connects = offeredAreas(tools).flatMap((area) => (area.connects ? [area.connects] : []));
+  const connects = offeredAreas(tools).flatMap((area) =>
+    area.connects ? [promptText(area.connects)] : [],
+  );
   return connects.length
     ? ` ${promptText('system/getting-started.connect-offer', { services: connects.join(', ') })}`
     : '';

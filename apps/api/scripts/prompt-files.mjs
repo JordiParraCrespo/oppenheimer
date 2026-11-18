@@ -86,25 +86,30 @@ function markdownIn(dir) {
 }
 
 /**
- * Every prompt of the Markdown files in `dir` and in its folders, one level
- * deep: the files of `dir` first, then each folder's, by name, and by order
- * within a file.
+ * Where each Markdown file under `dir` is and the folder it sits in, if any:
+ * the files of `dir` first, then each folder's, by name.
  */
-export function readPrompts(dir) {
+function promptFilesIn(dir) {
   const folders = readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
-  const prompts = [
-    ...markdownIn(dir).flatMap((name) =>
-      parsePromptFile(name, readFileSync(join(dir, name), 'utf8')),
-    ),
-    ...folders.flatMap((folder) =>
-      markdownIn(join(dir, folder)).flatMap((name) =>
-        parsePromptFile(name, readFileSync(join(dir, folder, name), 'utf8'), folder),
-      ),
-    ),
-  ];
+  return [undefined, ...folders].flatMap((folder) => {
+    const at = folder === undefined ? dir : join(dir, folder);
+    return markdownIn(at).map((name) => ({ name, folder, path: join(at, name) }));
+  });
+}
+
+/**
+ * Every prompt of the Markdown files in `dir` and in its folders, one level
+ * deep: the files of `dir` first, then each folder's, by name, and by order
+ * within a file. That order is the generated module's, and nothing else's:
+ * the code reads a prompt by id.
+ */
+export function readPrompts(dir) {
+  const prompts = promptFilesIn(dir).flatMap(({ name, folder, path }) =>
+    parsePromptFile(name, readFileSync(path, 'utf8'), folder),
+  );
   const seen = new Set();
   for (const { id } of prompts) {
     if (seen.has(id)) throw new Error(`${id}: two prompts with one id.`);

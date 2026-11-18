@@ -1752,7 +1752,8 @@ picked, and "Use its own face" goes back to the id's).
   is read from disk when a turn runs. The system prompt moved first, byte
   for byte; then, the same day, the recovery rules, the skills section, the
   turn context and what opens a turn on a slash command, a failed session
-  or a repeated blocker, again byte for byte. A folder says where the
+  or a repeated blocker, and the phrases Getting started is built from
+  (`AREA_INTROS` now names them by id), again byte for byte. A folder says where the
   words are sent, `system/` or `turn/`, and no prompt is longer than a
   ceiling a spec holds (`research/prompt-file-formats.md` §4.1 and §4.5).
   The other wakes, the jobs that are not a bot's turn (dream, goal review)
