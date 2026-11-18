@@ -34,6 +34,8 @@ type SessionRename = {
   label?: string;
 };
 
+const ATTENTION_LABELS = { 'needs-you': 'Needs input', done: 'Done', unread: 'Unread' } as const;
+
 /**
  * SessionItem — the sidebar row for one orchestrated session. There will be
  * hundreds, so the row is a glyph and a name: the branch icon coloured by run
@@ -54,8 +56,6 @@ type SessionRename = {
  * wash for a picked row, so the list reads as a set of checkboxes without
  * moving a name.
  */
-const ATTENTION_LABELS = { 'needs-you': 'Needs input', done: 'Done', unread: 'Unread' } as const;
-
 function SessionItem({
   name,
   age,
