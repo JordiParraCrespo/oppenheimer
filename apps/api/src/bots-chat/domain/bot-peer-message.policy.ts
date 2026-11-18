@@ -46,17 +46,17 @@ export function secretIn(text: string): string | null {
 
 /** What the sending bot is told when nothing was sent, by reason, in words it can act on. */
 export const PEER_REFUSALS = {
-  notRunning: promptText('tools/peer-messages.peer-refusals-not-running'),
-  noAccount: promptText('tools/peer-messages.peer-refusals-no-account'),
-  chainGone: promptText('tools/peer-messages.peer-refusals-chain-gone'),
+  notRunning: promptText('tools/peer-messages.refused-turn-not-running'),
+  noAccount: promptText('tools/peer-messages.refused-no-account'),
+  chainGone: promptText('tools/peer-messages.refused-chain-gone'),
   deleted: (name: string) => `${name} was deleted.`,
   noKey: (name: string, provider: string) =>
-    promptText('tools/peer-messages.peer-refusals-no-key', { name, provider }),
+    promptText('tools/peer-messages.refused-no-key', { name, provider }),
 } as const;
 
 /** The tool's answer when a message holds a credential: nothing was sent, and why. */
 export function secretRefusal(kind: string): string {
-  return promptText('tools/peer-messages.secret-refusal', { kind });
+  return promptText('tools/peer-messages.refused-secret', { kind });
 }
 
 /**
@@ -125,16 +125,12 @@ export function peerAnswerOf(
   if (turn.status === 'cancelled') {
     return {
       outcome: 'cancelled',
-      content: last
-        ? fit(last)
-        : promptText('tools/peer-messages.peer-answer-of-content-stopped-before-answered'),
+      content: last ? fit(last) : promptText('tools/peer-messages.answer-stopped'),
     };
   }
   return {
     outcome: 'answered',
-    content: last
-      ? fit(last)
-      : promptText('tools/peer-messages.peer-answer-of-content-ended-without-writing'),
+    content: last ? fit(last) : promptText('tools/peer-messages.answer-empty'),
   };
 }
 

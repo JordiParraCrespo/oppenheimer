@@ -110,7 +110,7 @@ export function skillBlock(skill: Pick<BotSkillView, 'name' | 'body'>): string {
 
 /** The line `use_skill` opens with. */
 export function describeSkillUse(skill: Pick<BotSkillView, 'name' | 'description'>): string {
-  return promptText('tools/skills.describe-skill-use', {
+  return promptText('tools/skills.used', {
     name: skill.name,
     description: skill.description,
   });

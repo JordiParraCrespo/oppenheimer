@@ -42,11 +42,11 @@ export function checkBotChain(
   limits: BotChainLimits = BOT_CHAIN_LIMITS,
 ): BotChainVerdict {
   if (targetBotId === asker.botId) {
-    return refuse(promptText('tools/peer-messages.check-bot-chain-cannot-message-yourself'));
+    return refuse(promptText('tools/peer-messages.chain-self'));
   }
   if (asker.chainDepth + 1 > limits.maxDepth) {
     return refuse(
-      promptText('tools/peer-messages.check-bot-chain-request-has-already', {
+      promptText('tools/peer-messages.chain-too-deep', {
         chainDepth: String(asker.chainDepth + 1),
         maxDepth: String(limits.maxDepth),
       }),
@@ -54,14 +54,14 @@ export function checkBotChain(
   }
   if (state.asks >= limits.turnBudget) {
     return refuse(
-      promptText('tools/peer-messages.check-bot-chain-bots-have-already', {
+      promptText('tools/peer-messages.chain-too-many', {
         asks: String(state.asks),
         turnBudget: String(limits.turnBudget),
       }),
     );
   }
   if (state.bots.includes(targetBotId)) {
-    return refuse(promptText('tools/peer-messages.check-bot-chain-bot-already-working'));
+    return refuse(promptText('tools/peer-messages.chain-circle'));
   }
   return { allowed: true };
 }

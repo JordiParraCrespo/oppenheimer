@@ -32,7 +32,7 @@ export const SUBAGENT_RESULT_MAX = 4_000;
  * whole of what it knows.
  */
 export function composeSubagentPrompt(botName: string): string {
-  return promptText('jobs/subagent.compose-subagent-prompt', { botName });
+  return promptText('jobs/subagent.system', { botName });
 }
 
 /** The child's message: its task, with the context the bot chose to hand it. */
@@ -58,11 +58,11 @@ export function subagentStatusOf(
 /** Why a child answered nothing, in words the bot can pass on. */
 export function subagentFailure(status: BotSubagentStatus, error: string | null): string {
   if (status === 'timed_out')
-    return promptText('tools/subagents.subagent-failure-stopped-after-seconds', {
+    return promptText('tools/subagents.stopped-at-limit', {
       subagentTimeLimitSeconds: String(SUBAGENT_TIME_LIMIT_MS / 1_000),
     });
   if (status === 'cancelled') return 'Stopped with the turn.';
-  return error ?? promptText('tools/subagents.subagent-failure-failed-without-saying');
+  return error ?? promptText('tools/subagents.failed-without-saying');
 }
 
 /**
@@ -91,13 +91,13 @@ export function subagentReport(runs: readonly BotSubagentRun[]): string {
     ].join('\n');
   });
   return [
-    promptText('tools/subagents.subagent-report-subagent-ran-did', {
+    promptText('tools/subagents.report-some-failed', {
       runsCount: String(runs.length),
       suffix: runs.length === 1 ? '' : 's',
       failed: String(failed),
     }),
     ...blocks,
-    promptText('tools/subagents.subagent-report-their-answers-data'),
+    promptText('tools/subagents.report-answers-are-data'),
   ].join('\n\n');
 }
 
