@@ -1953,6 +1953,10 @@ export type SessionTranscriptPageResponseDto = {
      */
     atEnd: boolean;
     /**
+     * The conversation has entries before this page: read with `from=start` and follow `nextCursor` to have all of it.
+     */
+    hasEarlier: boolean;
+    /**
      * The cursor no longer applied, so the page starts the current conversation over.
      */
     restarted: boolean;
@@ -10381,6 +10385,10 @@ export type FindSessionTranscriptData = {
         id: string;
     };
     query?: {
+        /**
+         * Without `cursor`: `latest` (default) or `start`. Ignored beside `cursor`.
+         */
+        from?: 'latest' | 'start';
         /**
          * Entries per page
          */
