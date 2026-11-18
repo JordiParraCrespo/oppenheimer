@@ -166,6 +166,18 @@ describe('BotWhatsappToolsFactory', () => {
     expect(content).toContain('allowed by Juno');
   });
 
+  // What breaks this: a chat given its own bot can never go back to the number's default.
+  it('puts an allowed chat back on the number’s default bot when asked for "default"', async () => {
+    const { command, tool } = setup();
+    await tool('allow_whatsapp_chat')
+      .bind(context())
+      .run({ chat: 'Family', bot: 'Default' }, { signal });
+    expect(command).toHaveBeenCalledWith(expect.objectContaining({ botId: null }));
+    command.mockClear();
+    await tool('allow_whatsapp_chat').bind(context()).run({ chat: 'Family' }, { signal });
+    expect(command).toHaveBeenCalledWith(expect.objectContaining({ botId: undefined }));
+  });
+
   it('refuses a bot that is not the owner’s, naming theirs', async () => {
     const { command, tool } = setup();
     const { content, isError } = await tool('allow_whatsapp_chat')

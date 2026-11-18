@@ -79,6 +79,13 @@ export function describeWhatsappTarget(chat: WhatsappChatTarget): string {
   return chat.chatKind === 'group' ? `the group "${name}"` : `${name}`;
 }
 
+/** An allowed chat as a chat the number has, for the lines that name it. */
+export function whatsappTargetOfGrant(
+  grant: Pick<WhatsappChatGrantEntity, 'chatId' | 'chatKind' | 'chatName'>,
+): WhatsappChatTarget {
+  return { chatId: grant.chatId, chatKind: grant.chatKind, chatName: grant.chatName, isNew: false };
+}
+
 /** One allowed chat, as the tools list it: who, which bot answers, and which bot allowed it. */
 export function describeWhatsappGrant(
   grant: Pick<
@@ -87,12 +94,7 @@ export function describeWhatsappGrant(
   >,
   botNames: ReadonlyMap<string, string>,
 ): string {
-  const who = describeWhatsappTarget({
-    chatId: grant.chatId,
-    chatKind: grant.chatKind,
-    chatName: grant.chatName,
-    isNew: false,
-  });
+  const who = describeWhatsappTarget(whatsappTargetOfGrant(grant));
   const answers = grant.botId
     ? `${botNames.get(grant.botId) ?? 'a bot of theirs'} answers`
     : "the number's default bot answers";
