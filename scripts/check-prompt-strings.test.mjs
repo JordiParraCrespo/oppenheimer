@@ -56,14 +56,50 @@ test('a literal where no model reads it is not counted', () => {
       throw new ArgumentInvalidException('A loop runs every 1 minute to 1 day, no more');
       throw new Error('This should never happen in a running turn at all');
       this.logger.warn('Could not keep a bot turn in the stream this time');
-      await manager.query('SELECT "id" FROM "bot_turn" WHERE "status" = $1', [status]);
+      await manager.query('select the turns that are still running for this bot', [status]);
       if (reason === 'the turn ended without saying why it did') stop();
-      const words = promptText('tools/x.y', { name: 'a name with four words here' });
+      const words = promptText('tools/x.y', { name: 'a name with more than four words in it here' });
       outbox.stageJob(manager, { topic: 'checks', reason: 'bot handed a session task: check on how it goes' });
       class X { @ApiOperation({ summary: 'Lists the bots of a workspace, newest first' }) list() {} }
       const tool = { summarize: (input) => \`Move \${input.count} messages to Trash in the inbox\` };
     `),
     [],
+  );
+});
+
+test('four words and 28 characters make a sentence; one fewer of either does not', () => {
+  assert.deepEqual(
+    starts(`
+      const a = 'Tell them what you did now.';
+      const b = 'Tell them what you did nowx.';
+      const c = 'Internationalisation happened yesterday.';
+    `),
+    ['Tell them what you did n'],
+  );
+});
+
+test('a call excuses what is handed to it, not a sentence inside a callback', () => {
+  assert.deepEqual(
+    starts(`
+      this.logger.warn({ message: 'Could not keep a bot turn in the stream this time' });
+      await manager.query(sql, names.map((name) => 'The session is late: check on it and tell the person.'));
+      this.logger.debug(() => say('The session is late: look at it and say so to them.'));
+    `),
+    ['The session is late: che', 'The session is late: loo'],
+  );
+});
+
+test("a tool's card line is not counted, but a refusal thrown while building it is", () => {
+  assert.deepEqual(
+    starts(`
+      const tool = {
+        summarize: (input) => {
+          if (!input.host) throw new BotToolRefusal('No host named and you have no home host: ask which.');
+          return \`Start a session on \${input.host} for the task they asked about\`;
+        },
+      };
+    `),
+    ['No host named and you ha'],
   );
 });
 

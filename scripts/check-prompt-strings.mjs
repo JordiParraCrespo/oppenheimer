@@ -8,11 +8,13 @@
  * A sentence is a literal (a string, a template, or a list of them joined by
  * a literal) whose own words number at least four and its characters at
  * least 28. Shorter text is a label or a piece of a record's format and
- * stays in the code. A literal is not counted where it cannot be a model's
- * words: an exception's message, a logger's, a query's, a decorator's, a
- * type, a key, a comparison, a domain event's or an outbox row's reason, a
- * tool's `summarize` (the line on the person's approval card), and the
- * argument of `promptText` itself.
+ * stays in the code. A literal is not counted where a model's words are not
+ * written: an exception's message (it is the API's, for its clients, even
+ * when a failed tool passes it on; what a tool says to refuse is a
+ * `BotToolRefusal`, which is counted), a logger's, a query's, a decorator's,
+ * a type, a key, a comparison, a domain event's or an outbox row's reason,
+ * what a tool's `summarize` returns (the line on the person's approval
+ * card), and the argument of `promptText` itself.
  *
  * The ledger is exact: an entry names a file and how the sentence starts (or
  * the whole file, when none of it is for a model), and an entry that matches
@@ -61,7 +63,7 @@ export const LEDGER = [
   {
     file: 'bots-chat/domain/bot-approval.entity.ts',
     starts: 'expired: the owner wrote',
-    why: "an approval's stored result, drawn by the chat",
+    why: "the reason on an approval's domain event, for whoever reads the outbox",
   },
   {
     file: 'bots-chat/domain/bot-goal.entity.ts',
@@ -85,12 +87,23 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/domain/bot-session-activity.policy.ts',
-    why: "one phrase per kind of a session's activity entry: three run long, the rest are labels, and the table stays whole",
+    starts: 'that follow-up never reached the host',
+    why: "one phrase of a table with one per kind of a session's activity entry; the others are short labels, and the table stays whole",
+  },
+  {
+    file: 'bots-chat/domain/bot-session-activity.policy.ts',
+    starts: 'the pending decision was answered',
+    why: "one phrase of a table with one per kind of a session's activity entry; the others are short labels, and the table stays whole",
+  },
+  {
+    file: 'bots-chat/domain/bot-session-activity.policy.ts',
+    starts: 'the agent no longer waits on a decision',
+    why: "one phrase of a table with one per kind of a session's activity entry; the others are short labels, and the table stays whole",
   },
   {
     file: 'bots-chat/domain/bot-session-wait.policy.ts',
     starts: 'had its task expire',
-    why: 'one of five short phrases for how a task ended; the table stays whole',
+    why: 'one phrase of a table of short ones for how a task ended; the table stays whole',
   },
   {
     file: 'bots-chat/application/bot-session-search.policy.ts',
@@ -149,7 +162,33 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/bot-subscription.mapper.ts',
-    why: "at the mapper's 300-line cap: its answers move to prompt files when its answer builders move to the domain layer",
+    starts: 'every task, until the session is closed',
+    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
+  },
+  {
+    file: 'bots-chat/bot-subscription.mapper.ts',
+    starts: 'You follow session',
+    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
+  },
+  {
+    file: 'bots-chat/bot-subscription.mapper.ts',
+    starts: 'You are also woken when its terminal',
+    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
+  },
+  {
+    file: 'bots-chat/bot-subscription.mapper.ts',
+    starts: 'Its host runs a runner too old',
+    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
+  },
+  {
+    file: 'bots-chat/bot-subscription.mapper.ts',
+    starts: 'Its host is offline; the watch starts',
+    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
+  },
+  {
+    file: 'bots-chat/bot-subscription.mapper.ts',
+    starts: 'pull request #',
+    why: "a watch tool's answer, still here because the mapper is at its 300-line cap: it moves to prompt files with the mapper's answer builders",
   },
 ];
 
@@ -194,12 +233,19 @@ function isSentence(node) {
   return words.length >= MIN_WORDS && /[a-z]{2,} [a-z]{2,}/i.test(text);
 }
 
-const NOT_WORDS_CALLS =
-  /(logger\.|console\.|\.query$|createQueryBuilder|\.where$|\.andWhere$|\.orWhere$|\.orderBy$|\.addOrderBy$|\.select$|\.addSelect$|\.leftJoin|\.innerJoin|\.groupBy$|\.having$|\.set$|\.update$|\.from$|\.into$|\.startsWith$|\.endsWith$|\.includes$|\.indexOf$|\.replace$|\.replaceAll$|\.split$|\.match$|\.test$|\.join$|\.padEnd$|\.padStart$|^require$|^Symbol$|^createHash$|^uuidV5$|\.emit$|\.on$|^Inject$|^SetMetadata$|\.getOrThrow$|\.get$|^promptText$|addEvent$)/;
+const NOT_WORDS_CALLS = /(logger\.|console\.|\.query$|^promptText$)/;
 const NOT_WORDS_NEW = /(Exception$|^Error$|^AppError$|^RegExp$|^Logger$|DomainEvent$)/;
 
-/** Whether the literal sits where a model's words cannot be. */
+const isFunction = (node) =>
+  ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isFunctionDeclaration(node);
+
+/**
+ * Whether the literal sits where a model's words are not written. A call or a
+ * constructor excuses only what is handed to it directly: a sentence inside a
+ * callback passed to it is counted like any other.
+ */
 function cannotBeWords(node, source) {
+  let direct = true;
   for (let parent = node.parent, child = node; parent; child = parent, parent = parent.parent) {
     if (ts.isDecorator(parent) || ts.isTypeNode(parent) || ts.isTaggedTemplateExpression(parent)) {
       return true;
@@ -219,14 +265,17 @@ function cannotBeWords(node, source) {
     ) {
       return true;
     }
-    if (ts.isNewExpression(parent) && NOT_WORDS_NEW.test(parent.expression.getText(source))) {
-      return true;
+    if (ts.isNewExpression(parent)) {
+      const made = parent.expression.getText(source);
+      // A tool's refusal is read by the model, wherever it is thrown.
+      if (/BotToolRefusal$/.test(made)) return false;
+      if (direct && NOT_WORDS_NEW.test(made)) return true;
     }
-    if (ts.isCallExpression(parent) && parent.expression !== child) {
+    if (direct && ts.isCallExpression(parent) && parent.expression !== child) {
       const callee = parent.expression.getText(source).replace(/\s+/g, '');
       if (NOT_WORDS_CALLS.test(callee)) return true;
     }
-    // What a tool's `summarize` builds is the line on the person's approval card.
+    // What a tool's `summarize` returns is the line on the person's approval card.
     if (ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'summarize') return true;
     // An outbox row's reason is for whoever reads the table.
     if (ts.isPropertyAssignment(parent) && parent.name.getText(source) === 'reason') {
@@ -239,6 +288,7 @@ function cannotBeWords(node, source) {
         }
       }
     }
+    if (isFunction(parent)) direct = false;
   }
   return false;
 }
@@ -322,7 +372,7 @@ function main() {
   const { outstanding, stale } = check(files);
   if (!outstanding.length && !stale.length) {
     console.log(
-      `Prompt strings: ${files.length} files of ${modules.join(', ')} hold no sentence for a model, with ${LEDGER.length} ledgered exceptions.`,
+      `Prompt strings: ${files.length} files of ${modules.join(', ')} hold no sentence outside the ledger's ${LEDGER.length} entries.`,
     );
     return;
   }
