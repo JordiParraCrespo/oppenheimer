@@ -4,6 +4,7 @@ import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { ComboboxScope, enterWithNothingLit } from '../internal/combobox-scope';
 import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
@@ -71,8 +72,7 @@ function matches(option: ChipSelectOption, term: string) {
 
 /* ── Parts ───────────────────────────────────────────────────────────────── */
 
-/** Whether the parts are inside a `ChipSelectCombobox`, so they draw as its parts. */
-const ComboboxScope = React.createContext(false);
+
 
 /**
  * The keyboard and the screen reader for one pane: wrap the search, the list
@@ -93,23 +93,32 @@ function ChipSelectCombobox({
   query,
   onQueryChange,
   autoHighlight = true,
-  loading = false,
+  resetOn,
+  onEnterUnlit,
   children,
 }: {
   query: string;
   onQueryChange: (query: string) => void;
   autoHighlight?: boolean | 'always';
   /**
-   * The rows are still being read. The combobox takes its rows as they mount
-   * rather than from a list it is handed, so it lights the first one only
-   * when it mounts itself: it starts again once they land.
+   * Changes when the pane shows other rows (another tab, a folder opened),
+   * so the highlight starts again on them. Base UI keeps its highlight in a
+   * store it offers no reset for, so this remounts the pane: never pass what
+   * changes as the reader types, or the caret moves under them.
    */
-  loading?: boolean;
+  resetOn?: React.Key;
+  /** Enter with nothing lit, in a pane that does not take its first row. */
+  onEnterUnlit?: () => void;
   children: React.ReactNode;
 }) {
+  const [list, setList] = React.useState<HTMLElement | null>(null);
+  const scope = React.useMemo(
+    () => ({ registerList: setList, list, firstOnEnter: autoHighlight === 'always', onEnterUnlit }),
+    [list, autoHighlight, onEnterUnlit],
+  );
   return (
     <ComboboxPrimitive.Root
-      key={loading ? 'loading' : 'ready'}
+      key={resetOn}
       inline
       open
       filter={null}
@@ -120,7 +129,7 @@ function ChipSelectCombobox({
       // Root's types narrow `'always'` away; the core it hands its props to takes it.
       autoHighlight={autoHighlight as boolean}
     >
-      <ComboboxScope.Provider value>{children}</ComboboxScope.Provider>
+      <ComboboxScope.Provider value={scope}>{children}</ComboboxScope.Provider>
     </ComboboxPrimitive.Root>
   );
 }
@@ -253,15 +262,22 @@ function ChipSelectSearch({
   density = 'chip',
   variant = 'row',
   leadingSize = 'mark',
+  icon,
+  trailing,
   className,
   ...props
 }: Omit<React.ComponentProps<'input'>, 'type'> & {
   density?: ChipSelectDensity;
   variant?: 'row' | 'boxed';
   leadingSize?: ChipSelectLeadingSize;
+  /** In place of the magnifier, for a field that takes something else (a path). */
+  icon?: React.ReactNode;
+  /** A quiet note at the row's end, after the text (the host's home). */
+  trailing?: React.ReactNode;
 }) {
   const boxed = variant === 'boxed';
   const combobox = React.useContext(ComboboxScope);
+  const { onKeyDown, ...inputProps } = props;
   const inputClasses = cn(
     'min-w-0 flex-1 bg-transparent p-0 text-fg outline-none placeholder:text-field-placeholder',
     boxed ? 'text-[13px]' : 'text-[12.5px]',
@@ -279,17 +295,23 @@ function ChipSelectSearch({
     >
       {boxed ? (
         <ChipSelectLeading size={leadingSize}>
-          <SearchIcon className="size-3.5" />
+          {icon ?? <SearchIcon className="size-3.5" />}
         </ChipSelectLeading>
       ) : (
-        <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
+        <span className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-3.5">
+          {icon ?? <SearchIcon />}
+        </span>
       )}
       {combobox ? (
         <ComboboxPrimitive.Input
           // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
           autoFocus
           className={inputClasses}
-          {...withoutValue(props)}
+          {...withoutValue(inputProps)}
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+            if (!event.defaultPrevented) enterWithNothingLit(combobox, event);
+          }}
         />
       ) : (
         <input
@@ -300,6 +322,7 @@ function ChipSelectSearch({
           {...props}
         />
       )}
+      {trailing}
     </div>
   );
 }
@@ -626,7 +649,7 @@ function ChipSelectList({
       ? undefined
       : Math.min(rows, Math.max(1, total)) * LIST_ROW[density] + 2;
 
-  const combobox = React.useContext(ComboboxScope);
+  const registerList = React.useContext(ComboboxScope)?.registerList;
   const listProps = {
     'data-slot': 'chip-select-list',
     className: cn(
@@ -645,9 +668,10 @@ function ChipSelectList({
   ) : (
     children
   );
-  if (combobox) {
+  if (registerList) {
     return (
       <ComboboxPrimitive.List
+        ref={registerList}
         {...listProps}
         {...props}
         onKeyDown={(event) => {
@@ -883,7 +907,6 @@ function ChipSelect({
             onQueryChange?.(next);
           }}
           autoHighlight="always"
-          loading={loading}
         >
           <ChipSelectSearch placeholder={searchPlaceholder} aria-label={searchPlaceholder} />
           <ChipSelectList

@@ -178,7 +178,7 @@ test('a session started from a card moves it to In progress and links back', asy
   const pane = page.getByRole('listbox', { name: 'Search sessions' });
   await expect(pane.getByText('In Wallet')).toBeVisible();
   await expect(pane.getByRole('option')).toHaveCount(1);
-  await page.getByRole('textbox', { name: 'Search sessions' }).press('Enter');
+  await page.getByRole('combobox', { name: 'Search sessions' }).press('Enter');
   await expect(pane).toBeHidden();
   await expect(edit.getByRole('button', { name: /^Unlink / })).toHaveCount(1);
   await edit.press('Escape');
