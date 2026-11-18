@@ -3,7 +3,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * The chats a linked WhatsApp number allows besides its owner's: a group or
  * another person, and the bot that answers there. Only the owner allows
- * them: through the API, or by asking a bot in their own chat.
+ * them: signed in to the console, or by asking a bot in their own chat.
  *
  * Access patterns: Settings and a bot's tools list a number's allowed chats,
  * oldest first (`IDX_whatsapp_chat_grant_account`); allowing a chat finds it

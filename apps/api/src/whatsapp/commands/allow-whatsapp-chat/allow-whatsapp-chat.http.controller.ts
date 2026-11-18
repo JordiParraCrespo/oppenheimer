@@ -14,7 +14,6 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
-import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -42,7 +41,9 @@ export class AllowWhatsappChatHttpController {
   @Post('accounts/:id/grants')
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Whatsapp' })
-  @RequireScopes('whatsapp:write')
+  // Session-only: who may talk to the owner's bots is the owner's to decide,
+  // in the console or by asking a bot in their own chat, so no API token or
+  // OAuth grant may allow a chat, whatever its scopes.
   @ApiOperation({
     summary: 'Allow a chat on a WhatsApp number',
     description:

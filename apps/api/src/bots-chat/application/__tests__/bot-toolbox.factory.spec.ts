@@ -1,5 +1,5 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
-import type { BotTurnOrigin, Scope } from '@oppenheimer/shared';
+import type { BotTurnLane, BotTurnOrigin, Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import {
   BOT_SKILL_NUDGE_AFTER_STEPS,
@@ -119,8 +119,9 @@ describe('BotToolboxFactory', () => {
   });
 
   // What breaks this: a tool only the owner may use reached from a turn
-  // started by someone else's words (a routine, a wake, a channel's contact).
-  it('offers a tool kept to some turns only on those, and never on a turn with no origin', () => {
+  // started by someone else's words (a routine, a wake, a channel's contact,
+  // another bot's message, which is a `message` turn in the `bots` lane).
+  it('offers a tool kept to some turns only on those in the owner’s lane, and never on a turn with no origin', () => {
     const owners = toolboxOf({
       definitions: () => [
         defineBotTool({
@@ -133,8 +134,8 @@ describe('BotToolboxFactory', () => {
         }),
       ],
     });
-    const offered = (origin?: BotTurnOrigin) =>
-      owners.catalog(null, { ...STANDING, origin }).map((listed) => listed.name);
+    const offered = (origin?: BotTurnOrigin, lane: BotTurnLane = 'owner') =>
+      owners.catalog(null, { ...STANDING, origin, lane }).map((listed) => listed.name);
     for (const origin of ['message', 'whatsapp'] as const) {
       expect(offered(origin)).toEqual(['allow_chat']);
     }
@@ -142,6 +143,11 @@ describe('BotToolboxFactory', () => {
       expect(offered(origin)).toEqual([]);
     }
     expect(offered()).toEqual([]);
+    expect(offered('message', 'bots')).toEqual([]);
+    expect(offered('message', 'background')).toEqual([]);
+    expect(owners.tools({ ...context, origin: 'message', lane: 'bots' }, null, EVERYTHING)).toEqual(
+      [],
+    );
   });
 
   it('runs an approved call only under the scopes of the turn that asked', async () => {

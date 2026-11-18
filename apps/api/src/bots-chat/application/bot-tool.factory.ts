@@ -8,6 +8,7 @@ import type {
   BotPermission,
   BotSubagentRun,
   BotToolGroup,
+  BotTurnLane,
   BotTurnOrigin,
   Scope,
 } from '@oppenheimer/shared';
@@ -71,6 +72,12 @@ export interface BotToolCallContext {
   budget: BotTurnBudget;
   /** Why the turn exists; a tool offered only to some turns reads it (`notOn`). */
   origin?: BotTurnOrigin;
+  /**
+   * Whose words the turn answers: `owner` for the person's own, `bots` for
+   * another bot's, `background` for nobody's. A tool kept to some turns
+   * (`onlyOn`) is offered only in the owner's lane.
+   */
+  lane?: BotTurnLane;
   /**
    * The slash command the person's message ran, when the turn opens with
    * one (`/schedule`): a tool may read it as the person's own ask
@@ -225,11 +232,13 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   notOn?: readonly BotTurnOrigin[];
   /**
-   * The only turns offered the tool, by why they exist: a tool that acts for
-   * the owner on what only they may decide (`allow_whatsapp_chat`) is offered
-   * in their console chat and their own chat on a channel, and nowhere a
-   * turn could have started from someone else's words. A turn with no origin
-   * (a `delegate` child's) is not offered it.
+   * The only turns offered the tool, by why they exist, and only in the
+   * owner's lane: a tool that acts for the owner on what only they may decide
+   * (`allow_whatsapp_chat`) is offered in their console chat and their own
+   * chat on a channel, and nowhere a turn could have started from someone
+   * else's words. Another bot's message queues a `message` turn in the `bots`
+   * lane, which is not offered it. A turn with no origin or lane (a
+   * `delegate` child's) is not offered it either.
    */
   onlyOn?: readonly BotTurnOrigin[];
   /**
@@ -292,7 +301,7 @@ export interface BotToolDefinition {
   readonly sharesOutside: boolean;
   /** The turns not offered the tool (`BotToolSpec.notOn`). */
   readonly notOn: readonly BotTurnOrigin[];
-  /** The only turns offered the tool, null for any (`BotToolSpec.onlyOn`). */
+  /** The only turns offered the tool, in the owner's lane; null for any (`BotToolSpec.onlyOn`). */
   readonly onlyOn: readonly BotTurnOrigin[] | null;
   /** Offered only on a turn a person is waiting on (`BotToolSpec.attendedOnly`). */
   readonly attendedOnly: boolean;

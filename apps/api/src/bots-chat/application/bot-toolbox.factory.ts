@@ -3,6 +3,7 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import {
   BOT_ATTENDED_ORIGINS,
   type BotPermission,
+  type BotTurnLane,
   type BotTurnOrigin,
   expandScopes,
   type Scope,
@@ -260,7 +261,8 @@ export class BotToolboxFactory {
       (definition) =>
         toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off' &&
         !(origin && definition.notOn.includes(origin)) &&
-        (definition.onlyOn === null || (!!origin && definition.onlyOn.includes(origin))) &&
+        (definition.onlyOn === null ||
+          (!!origin && definition.onlyOn.includes(origin) && standing.lane === 'owner')) &&
         !(origin && definition.attendedOnly && !isAttended(origin)),
     );
   }
@@ -296,12 +298,19 @@ function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngi
 export interface BotStanding {
   preset: BotPermission;
   permissions: BotPermissions;
-  /** Why the turn exists, for the tools offered only to some turns (`notOn`, `attendedOnly`). */
+  /** Why the turn exists, for the tools offered only to some turns (`notOn`, `onlyOn`, `attendedOnly`). */
   origin?: BotTurnOrigin;
+  /** Whose words the turn answers; `onlyOn` tools are offered only in the owner's. */
+  lane?: BotTurnLane;
 }
 
 function standingOf(context: BotToolContext): BotStanding {
-  return { preset: context.permission, permissions: context.permissions, origin: context.origin };
+  return {
+    preset: context.permission,
+    permissions: context.permissions,
+    origin: context.origin,
+    lane: context.lane,
+  };
 }
 
 /** Whether a person is waiting on a turn of this origin (`BOT_ATTENDED_ORIGINS`). */
