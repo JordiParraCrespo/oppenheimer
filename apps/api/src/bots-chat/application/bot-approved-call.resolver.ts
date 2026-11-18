@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Scope } from '@oppenheimer/shared';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
@@ -38,7 +39,7 @@ export class BotApprovedCallResolver {
     const owner = await this.owners.resolve(bot.organizationId, bot.createdByUserId);
     if (!owner) {
       return {
-        content: "Not run: the bot's owner can no longer act in this workspace.",
+        content: promptText('tools/toolbox.resolve-content'),
         isError: true,
       };
     }

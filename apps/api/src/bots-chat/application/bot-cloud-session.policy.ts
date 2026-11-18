@@ -21,6 +21,7 @@ import {
   repositoryOf,
   sessionHostId,
 } from '../bot-session-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 
 /**
  * `start_cloud_session`, decided in one place: which cloud a call names,
@@ -142,7 +143,10 @@ export function planCloudSession(
     });
     if (!parsed.success) {
       return {
-        refusal: invalidBodyRefusal(parsed.error.issues, 'Check the task, name and model.'),
+        refusal: invalidBodyRefusal(
+          parsed.error.issues,
+          promptText('tools/sessions.plan-cloud-session-refusal-check-task-name'),
+        ),
       };
     }
     return { kind: 'launched', agent, body: parsed.data };
@@ -151,7 +155,10 @@ export function planCloudSession(
   const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
-      refusal: `No host given, and neither the project nor you have a default one. A ${CLOUD_RULES[agent].label} cloud session is started by a host whose ${cliOf(agent)} is signed in: ask which one to use (list_hosts).`,
+      refusal: promptText('tools/sessions.plan-cloud-session-refusal-host-given-neither', {
+        label: CLOUD_RULES[agent].label,
+        cli: cliOf(agent),
+      }),
     };
   }
   const parsed = createSessionSchema.safeParse({
@@ -166,7 +173,7 @@ export function planCloudSession(
     return {
       refusal: invalidBodyRefusal(
         parsed.error.issues,
-        'Check the task, name and codex_environment.',
+        promptText('tools/sessions.plan-cloud-session-refusal-check-task-name-2'),
       ),
     };
   }
@@ -187,7 +194,11 @@ export function cloudFieldRefusal(input: StartCloudSessionInput): string | null 
   const takers = CLOUD_SESSION_AGENTS.filter((each) =>
     CLOUD_RULES[each].fields.includes(misplaced),
   );
-  return `${misplaced} is only for ${takers.join(' and ')}; leave it out for ${agent}.`;
+  return promptText('tools/sessions.cloud-field-refusal', {
+    misplaced,
+    takers: takers.join(' and '),
+    agent,
+  });
 }
 
 /** The host a call's card names: the one that would start it, none for a launched cloud. */
@@ -217,9 +228,19 @@ export function cloudSessionSummary(
   const task = clippedTask(input.task);
   if (isLaunchedCloud(agent)) {
     const model = input.model ? `, model ${input.model}` : '';
-    return `Start a ${label} cloud session${where}, on your ${label} key${model}: ${task}`;
+    return promptText('tools/sessions.cloud-session-summary-start-cloud-session', {
+      label,
+      where,
+      model,
+      task,
+    });
   }
-  return `Start a ${label} cloud session from ${hostName ?? 'no host yet'}${where}: ${task}`;
+  return promptText('tools/sessions.cloud-session-summary-start-cloud-session-2', {
+    label,
+    hostName: hostName ?? 'no host yet',
+    where,
+    task,
+  });
 }
 
 /**
@@ -236,24 +257,47 @@ export function cloudStartAnswer(
   const from =
     plan.kind === 'host' ? ` from host ${plan.hostId}` : ` on the owner's ${rule.label} key`;
   if (!session) {
-    return `Created session ${sessionId}${from}, but the host is offline: its ${rule.label} cloud session starts when the host comes back. get_session shows its ${rule.site} link once it has one.`;
+    return promptText('tools/sessions.cloud-start-answer-created-session-but', {
+      sessionId,
+      from,
+      label: rule.label,
+      site: rule.site,
+    });
   }
   const link = cloudLinkOf(session);
   if (link) {
     const followUps =
       rule.start === 'host'
-        ? `Follow-ups and answers happen at ${rule.site}, not with send_to_session.`
-        : 'send_to_session gives it a next instruction once its run ends.';
-    return `Started ${rule.label} cloud session ${sessionId}${from}: ${link} It runs at ${rule.site} on its own; give the person that link, and follow it there or with get_session. ${followUps}`;
+        ? promptText('tools/sessions.cloud-start-answer-follow-ups-answers', { site: rule.site })
+        : promptText('tools/sessions.cloud-start-answer-send-session-gives');
+    return promptText('tools/sessions.cloud-start-answer-started-cloud-session', {
+      label: rule.label,
+      sessionId,
+      from,
+      link,
+      site: rule.site,
+      followUps,
+    });
   }
   if (session.state === 'failed' || session.isResolved) {
     const hint =
       rule.start === 'host'
-        ? `; most often the host's ${rule.cli} is not installed or not signed in, so try another online host that has ${rule.cli} (list_hosts shows it installed; whether it is signed in shows only when it starts)`
+        ? promptText('tools/sessions.cloud-start-answer-most-often-hosts', { cli: rule.cli })
         : '';
-    return `Session ${sessionId}${from} could not start its ${rule.label} cloud session (it is ${session.state}). read_session says why${hint}.`;
+    return promptText('tools/sessions.cloud-start-answer-session-could-start', {
+      sessionId,
+      from,
+      label: rule.label,
+      state: session.state,
+      hint,
+    });
   }
-  return `Session ${sessionId} is starting its ${rule.label} cloud session${from}, which has not named it yet. get_session shows its ${rule.site} link once it has one.`;
+  return promptText('tools/sessions.cloud-start-answer-session-starting-cloud', {
+    sessionId,
+    label: rule.label,
+    from,
+    site: rule.site,
+  });
 }
 
 /**

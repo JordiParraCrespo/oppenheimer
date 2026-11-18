@@ -19,6 +19,7 @@ import {
   grantedLine,
   waitingForApproval,
 } from '../domain/bot-approval.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   type BotRateLimit,
   RATE_LIMIT_DATA_KEY,
@@ -624,7 +625,7 @@ export function describeToolFailure(error: unknown, now: Date = new Date()): str
     return `${error.code}: ${error.title}.${error.detail ? ` ${error.detail}` : ''}`;
   }
   if (error instanceof ExceptionBase) return `${error.code}: ${error.message}`;
-  return 'The tool failed unexpectedly. Say so; do not retry it in this turn.';
+  return promptText('tools/toolbox.describe-tool-failure');
 }
 
 /**

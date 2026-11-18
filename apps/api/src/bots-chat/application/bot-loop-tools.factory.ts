@@ -6,6 +6,7 @@ import type { BotLoopRepositoryPort } from '../database/bot-loop.repository.port
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import { mayActOnLoop, selfPacedRunAt } from '../domain/bot-loop.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotLoopResolver } from './bot-loop.resolver';
 import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
@@ -49,24 +50,28 @@ export class BotLoopToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'schedule_loop',
       scope: 'bots:write',
-      description: `Sets when your self-paced loop (set with /loop and no interval) runs next: 1 to ${BOT_LOOP_SELF_PACED_MAX_MINUTES} minutes from now. Sooner while what you watch is changing, later when it is quiet. Call it once per run; if a run does not call it, the loop ends. A loop on a fixed interval keeps its own time.`,
+      description: promptText('tools/loop.schedule-loop', {
+        loopSelfPacedMaxMinutes: String(BOT_LOOP_SELF_PACED_MAX_MINUTES),
+      }),
       input: z.object({
         minutes: z
           .number()
           .int()
           .min(1)
           .max(BOT_LOOP_SELF_PACED_MAX_MINUTES)
-          .describe('How many minutes from now the next run is due.'),
+          .describe(promptText('tools/loop.schedule-loop-minutes')),
       }),
       run: async (input, context) => {
         const loop = await this.loopFor(context);
-        if (!loop) return 'You have no loop to schedule.';
+        if (!loop) return promptText('tools/loop.schedule-loop-have-loop-schedule');
         if (!loop.selfPaced) {
-          return `Your loop runs every ${loop.intervalMinutes} minutes on its own; there is nothing to schedule.`;
+          return promptText('tools/loop.schedule-loop-loop-runs-every', {
+            intervalMinutes: String(loop.intervalMinutes),
+          });
         }
         const at = selfPacedRunAt(loop, input.minutes, new Date());
         if (!(await this.loops.schedule(loop, at, null))) {
-          return 'Your loop ended or moved on before it could be scheduled.';
+          return promptText('tools/loop.schedule-loop-loop-ended-moved');
         }
         return `Your loop runs next at ${at.toISOString()}.`;
       },
@@ -77,8 +82,7 @@ export class BotLoopToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'end_loop',
       scope: 'bots:write',
-      description:
-        'Ends your loop (set with /loop): it has served its purpose, what it watches finished, or it cannot go on without the person. No more runs come. Say why in your reply.',
+      description: promptText('tools/loop.end-loop'),
       input: z.object({}),
       run: async (_input, context) => {
         const loop = await this.loopFor(context);

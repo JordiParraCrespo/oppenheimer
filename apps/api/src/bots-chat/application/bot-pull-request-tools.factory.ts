@@ -28,6 +28,7 @@ import { SubmitPullRequestReviewCommand } from '../../pull-requests/commands/sub
 import { FindPullRequestQuery } from '../../pull-requests/queries/find-pull-request/find-pull-request.query';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import { describeTarget, type PullRequestDetailView } from '../bot-github-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import type { BotToolSubject } from '../domain/bot-tool-permission.entity';
 import { cut } from '../domain/bot-tool-text.policy';
@@ -43,22 +44,22 @@ import {
 
 /** The three ids every pull request tool takes, as list_pull_requests gives them. */
 const address = {
-  installation_id: z.uuid().describe('The installation id from list_pull_requests.'),
+  installation_id: z.uuid().describe(promptText('tools/pull-request.address-installation-id')),
   github_repo_id: z
     .number()
     .int()
     .positive()
-    .describe('The repository id from list_pull_requests or list_repositories.'),
+    .describe(promptText('tools/pull-request.address-github-repo-id')),
   number: z.number().int().positive().describe('The pull request number.'),
 };
 
 const lineComment = z.object({
-  path: z.string().min(1).max(4096).describe('The file, as get_pull_request lists it.'),
+  path: z.string().min(1).max(4096).describe(promptText('tools/pull-request.line-comment-path')),
   line: z.number().int().positive().describe('The line in the diff.'),
   side: z
     .enum(['LEFT', 'RIGHT'])
     .default('RIGHT')
-    .describe('RIGHT (default) is the new file, LEFT the old.'),
+    .describe(promptText('tools/pull-request.line-comment-side')),
   body: z.string().trim().min(1).max(REVIEW_COMMENT_MAX),
 });
 
@@ -71,40 +72,30 @@ const ciFinding = z.object({
     .trim()
     .min(1)
     .max(CI_FINDING_CHECK_MAX)
-    .describe('The failing check, exactly as get_pull_request names it.'),
+    .describe(promptText('tools/pull-request.ci-finding-check')),
   root_cause: z
     .string()
     .trim()
     .min(1)
     .max(CI_FINDING_ROOT_CAUSE_MAX)
-    .describe('Why it failed, in a sentence or two: the error, where, and what made it.'),
+    .describe(promptText('tools/pull-request.ci-finding-root-cause')),
   relation: z
     .enum(CI_FINDING_RELATIONS)
-    .describe(
-      '"this_change": the pull request caused it. "unrelated": it fails without it (the base, the runner, another change). "unclear": you could not tell.',
-    ),
-  flake: z
-    .enum(CI_FINDING_FLAKE)
-    .describe(
-      '"flake": it passes on a re-run of the same commit. "real": it fails the same way each time. "unsure": not re-run or not known.',
-    ),
-  action: z
-    .enum(CI_FINDING_ACTIONS)
-    .describe(
-      '"fix_here": change this pull request. "rerun": run it again. "fix_elsewhere": the fix belongs in another change. "ask": the person must decide.',
-    ),
+    .describe(promptText('tools/pull-request.ci-finding-relation')),
+  flake: z.enum(CI_FINDING_FLAKE).describe(promptText('tools/pull-request.ci-finding-flake')),
+  action: z.enum(CI_FINDING_ACTIONS).describe(promptText('tools/pull-request.ci-finding-action')),
   next: z
     .string()
     .trim()
     .min(1)
     .max(CI_FINDING_NEXT_MAX)
-    .describe('The action in words: what exactly to change, re-run or ask.'),
+    .describe(promptText('tools/pull-request.ci-finding-next')),
   confidence: z.enum(CI_FINDING_CONFIDENCE),
   evidence: z
     .array(z.string().trim().min(1).max(CI_FINDING_EVIDENCE_ITEM_MAX))
     .min(1)
     .max(CI_FINDING_EVIDENCE_MAX)
-    .describe('What it rests on: a line of the log, a file and line, a run you compared.'),
+    .describe(promptText('tools/pull-request.ci-finding-evidence')),
 });
 
 /**
@@ -155,7 +146,9 @@ export class BotPullRequestToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'record_ci_findings',
       scope: 'pulls:write',
-      description: `Records what the failing checks on a pull request came to, one finding per check you looked into: why it failed, whether this change caused it, whether it is a flake, what to do, how sure you are, and the evidence. It is kept on the pull request's head and shown with its checks, so the person reads a verdict rather than a chat; a second record of a check on the same commit replaces the first. Read the failing checks with get_pull_request first, and look at a check's log before you judge it. At most ${CI_FINDINGS_PER_RECORD_MAX} checks per call. It writes nothing to GitHub.`,
+      description: promptText('tools/pull-request.record-ci-findings', {
+        ciFindingsPerRecordMax: String(CI_FINDINGS_PER_RECORD_MAX),
+      }),
       input: z.strictObject({
         ...address,
         findings: z.array(ciFinding).min(1).max(CI_FINDINGS_PER_RECORD_MAX),
@@ -170,7 +163,13 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           }),
         );
         const checks = input.findings.map((finding) => finding.check).join(', ');
-        return `Recorded ${input.findings.length} finding${input.findings.length === 1 ? '' : 's'} on #${input.number} at ${headSha.slice(0, 7)}: ${checks}. The person sees them with the pull request's checks; a push leaves them on the commit before.`;
+        return promptText('tools/pull-request.record-ci-findings-recorded-finding-person', {
+          findingsCount: String(input.findings.length),
+          suffix: input.findings.length === 1 ? '' : 's',
+          number: String(input.number),
+          headSha: headSha.slice(0, 7),
+          checks,
+        });
       },
     });
   }
@@ -182,8 +181,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       sharesOutside: true,
       subject: (input, context) => this.repositorySubject(context, input),
-      description:
-        "Posts a comment on a pull request in the person's name: on its conversation, or on one line of its diff when path and line are given. Use review_pull_request to approve or ask for changes instead.",
+      description: promptText('tools/pull-request.comment-on-pull-request'),
       input: z
         .object({
           ...address,
@@ -198,19 +196,23 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             .min(1)
             .max(4096)
             .optional()
-            .describe('Only for a line comment: the file, as get_pull_request lists it.'),
-          line: z.number().int().positive().optional().describe('With path: the line in the diff.'),
+            .describe(promptText('tools/pull-request.comment-on-pull-request-path')),
+          line: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(promptText('tools/pull-request.comment-on-pull-request-line')),
           side: z
             .enum(['LEFT', 'RIGHT'])
             .default('RIGHT')
-            .describe('With path: RIGHT is the new file.'),
+            .describe(promptText('tools/pull-request.comment-on-pull-request-side')),
         })
         // In the schema, so a half line comment is refused in either mode and
         // never posted on the conversation instead.
         .refine((value) => (value.path === undefined) === (value.line === undefined), {
           path: ['line'],
-          message:
-            'A line comment needs both path and line; leave both out to comment on the conversation.',
+          message: promptText('tools/pull-request.comment-on-pull-request-message'),
         }),
       summarize: async (input, context) => {
         const where = input.path ? ` on ${input.path}:${input.line}` : '';
@@ -226,7 +228,11 @@ export class BotPullRequestToolsFactory implements BotToolArea {
               comment: { path: input.path, line: input.line, side: input.side, body: input.body },
             }),
           );
-          return `Commented on ${input.path}:${input.line} of pull request #${input.number}.`;
+          return promptText('tools/pull-request.comment-on-pull-request-commented-pull-request', {
+            path: input.path,
+            line: String(input.line),
+            number: String(input.number),
+          });
         }
         const posted = await this.commandBus.execute<
           AddPullRequestConversationCommentCommand,
@@ -238,7 +244,10 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             body: input.body,
           }),
         );
-        return `Commented on pull request #${input.number}: ${posted.htmlUrl}`;
+        return promptText('tools/pull-request.comment-on-pull-request-commented-pull-request-2', {
+          number: String(input.number),
+          htmlUrl: posted.htmlUrl,
+        });
       },
     });
   }
@@ -250,14 +259,13 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       sharesOutside: true,
       subject: (input, context) => this.repositorySubject(context, input),
-      description:
-        "Submits a review in the person's name: approve, request changes, or comment, with an optional summary and up to 50 line comments. Approving does not merge; use merge_pull_request for that. Requesting changes or commenting needs a body or a line comment.",
+      description: promptText('tools/pull-request.review-pull-request'),
       input: z
         .object({
           ...address,
           verdict: z
             .enum(['approve', 'request_changes', 'comment'])
-            .describe('approve, request_changes, or comment (neither).'),
+            .describe(promptText('tools/pull-request.review-pull-request-verdict')),
           body: z.string().trim().max(REVIEW_COMMENT_MAX).optional().describe('The summary.'),
           comments: z.array(lineComment).max(50).default([]),
         })
@@ -266,7 +274,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             value.verdict === 'approve' || Boolean(value.body) || value.comments.length > 0,
           {
             path: ['body'],
-            message: 'Requesting changes or commenting needs a body or a line comment.',
+            message: promptText('tools/pull-request.review-pull-request-message'),
           },
         ),
       summarize: async (input, context) => {
@@ -287,7 +295,10 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             review: { verdict: input.verdict, body: input.body, comments: input.comments },
           }),
         );
-        return `Submitted the review (${input.verdict}) on pull request #${input.number}.`;
+        return promptText('tools/pull-request.review-pull-request-submitted-review-pull', {
+          verdict: input.verdict,
+          number: String(input.number),
+        });
       },
     });
   }
@@ -299,33 +310,36 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       // Every merge is its own decision: no Allow, no standing grant.
       perCallOnly: true,
-      description:
-        "Merges an open pull request in the person's name, squash by default, at the head commit get_pull_request showed: if anything was pushed since, nothing merges and you should read it again. GitHub's branch rules decide; when they hold it (checks, a required review, a conflict), the answer says so and nothing is forced. Only an answer that says it merged is a merge; get_pull_request confirms its state.",
+      description: promptText('tools/pull-request.merge-pull-request'),
       input: z.object({
         ...address,
         method: z
           .enum(MERGE_METHODS)
           .default('squash')
-          .describe('How to merge; squash unless the repository or the person wants another.'),
+          .describe(promptText('tools/pull-request.merge-pull-request-method')),
         head_sha: z
           .string()
           .regex(/^[0-9a-f]{40}$/)
           .optional()
-          .describe(
-            'The full head commit get_pull_request showed; the merge is refused if the head has moved since. The current head when omitted.',
-          ),
+          .describe(promptText('tools/pull-request.merge-pull-request-head-sha')),
       }),
       // The card is pinned to the head it was raised on, so a yes merges what the card showed.
       normalize: async (input, context) => {
         const pull = await this.pull(context, input);
         if (pull.state !== 'open') {
           throw new BotToolRefusal(
-            `Pull request #${input.number} is ${pull.state}; there is nothing to merge.`,
+            promptText('tools/pull-request.merge-pull-request-normalize-pull-request-there', {
+              number: String(input.number),
+              state: pull.state,
+            }),
           );
         }
         if (input.head_sha && pull.headSha !== input.head_sha) {
           throw new BotToolRefusal(
-            `New commits were pushed to #${input.number} since you read it (head is now ${pull.headSha.slice(0, 7)}). Read it again with get_pull_request before merging.`,
+            promptText('tools/pull-request.merge-pull-request-normalize-new-commits-were', {
+              number: String(input.number),
+              headSha: pull.headSha.slice(0, 7),
+            }),
           );
         }
         return { ...input, head_sha: pull.headSha };
@@ -353,35 +367,36 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       name: 'start_review_session',
       scope: 'sessions:write',
       asks: true,
-      description:
-        "Starts a review session for a pull request: a worktree of its head branch on a host, with Claude Code reviewing it. It returns at once with the session's id; if the host is offline the answer says it is queued. You are subscribed to it unless watch is false, so end your turn rather than check on it. The host defaults to your home host (not the project's default: a pull request names no project). A pull request from a fork cannot be reviewed this way.",
+      description: promptText('tools/pull-request.start-review-session'),
       input: z.object({
         ...address,
-        host_id: z.uuid().optional().describe('The host to run on (from list_hosts).'),
+        host_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('tools/pull-request.start-review-session-host-id')),
         watch: z
           .boolean()
           .optional()
-          .describe('Be woken when the review needs input, ends or fails (default true).'),
+          .describe(promptText('tools/pull-request.start-review-session-watch')),
       }),
       normalize: (input, context) => {
         const hostId = input.host_id ?? context.homeHostId;
         if (!hostId) {
-          throw new BotToolRefusal(
-            'You have no home host; ask the person which host (list_hosts) to review on.',
-          );
+          throw new BotToolRefusal(promptText('tools/pull-request.start-review-session-normalize'));
         }
         return { ...input, host_id: hostId };
       },
       summarize: async (input, context) => {
         const host = input.host_id ? await this.hostName(context, input.host_id) : 'your home host';
-        return `Start a review session for ${await this.target(context, input)} on ${host}`;
+        return promptText('tools/pull-request.start-review-session-summarize', {
+          value: await this.target(context, input),
+          host,
+        });
       },
       run: async (input, context) => {
         const hostId = input.host_id ?? context.homeHostId;
         if (!hostId) {
-          throw new BotToolRefusal(
-            'You have no home host; ask the person which host (list_hosts) to review on.',
-          );
+          throw new BotToolRefusal(promptText('tools/pull-request.start-review-session-normalize'));
         }
         const result = await this.commandBus.execute<
           StartReviewSessionCommand,
@@ -396,14 +411,20 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ' The host is offline: the session is queued and starts when it comes back.'
+          ? ` ${promptText('tools/pull-request.start-review-session-host-offline-session')}`
           : '';
         const watched =
           input.watch === false
-            ? 'You are not watching it; read it later with get_session.'
+            ? promptText('tools/pull-request.start-review-session-watching-read-later')
             : await this.watches.follow(context, result.sessionId, 'first_task');
         return {
-          content: `Started review session ${result.sessionId} for pull request #${input.number} on host ${hostId}.${offline} ${watched}`,
+          content: promptText('tools/pull-request.start-review-session-content', {
+            sessionId: result.sessionId,
+            number: String(input.number),
+            hostId,
+            offline,
+            watched,
+          }),
           sessionId: result.sessionId,
         };
       },

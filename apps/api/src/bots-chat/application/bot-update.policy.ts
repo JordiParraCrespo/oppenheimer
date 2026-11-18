@@ -18,6 +18,7 @@ import {
   toUpdateBotBody,
   type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 
 export type { UpdateBotsInput };
 
@@ -49,12 +50,11 @@ export function planBotUpdate(
 ): BotUpdatePlan | { refusal: string } {
   if (!hasUpdate(input)) {
     return {
-      refusal:
-        'Name at least one thing to change: name, description, avatar_color, provider, model, effort, permission, group or learn_automatically.',
+      refusal: promptText('tools/bots.plan-bot-update-refusal-name-least-one'),
     };
   }
   if (input.name !== undefined && bots.length > 1) {
-    return { refusal: 'A name goes to one bot at a time: call update_bot once per bot to rename.' };
+    return { refusal: promptText('tools/bots.plan-bot-update-refusal-name-goes-one') };
   }
   if (input.provider !== undefined) {
     const provider = resolveProvider(
@@ -70,7 +70,7 @@ export function planBotUpdate(
     if ('refused' in level) {
       const ceiling = BOT_PERMISSION_LABELS[level.ceiling];
       return {
-        refusal: `You run under ${ceiling}, and you cannot give a bot looser permissions than yours. Ask the person to raise it in that bot's settings.`,
+        refusal: promptText('tools/bots.plan-bot-update-refusal-run-under-cannot', { ceiling }),
       };
     }
     permission = level.permission;
@@ -129,9 +129,14 @@ function engineUpdateFor(
     if (effort === null) {
       const levels = botModelOf(provider, model)?.effort?.levels ?? [];
       return {
-        refusal: `For "${bot.name}": ${engineLabelOf(provider, model)} does not take effort "${input.effort}". ${
-          levels.length ? `It takes: ${levels.join(', ')}.` : 'It takes no effort level.'
-        } Leave effort out for its default.`,
+        refusal: promptText('tools/bots.engine-update-for-refusal', {
+          name: bot.name,
+          engineLabel: engineLabelOf(provider, model),
+          effort: input.effort,
+          levelsCount: levels.length
+            ? `It takes: ${levels.join(', ')}.`
+            : 'It takes no effort level.',
+        }),
       };
     }
   }
@@ -197,9 +202,16 @@ export function botsUpdatedAnswer(
   const lines = bots.length
     ? [
         `Updated ${bots.length === 1 ? '1 bot' : `${bots.length} bots`}:`,
-        ...bots.map(
-          (bot) =>
-            `- ${bot.id} "${bot.name}": runs on ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'}, effort ${bot.effort ?? 'default'}); permission ${BOT_PERMISSION_LABELS[bot.permission]}`,
+        ...bots.map((bot) =>
+          promptText('tools/bots.bots-updated-answer', {
+            id: bot.id,
+            name: bot.name,
+            engineLabel: engineLabelOf(bot.provider, bot.model),
+            provider: bot.provider,
+            model: bot.model ?? 'default',
+            effort: bot.effort ?? 'default',
+            permission: BOT_PERMISSION_LABELS[bot.permission],
+          }),
         ),
       ]
     : [];

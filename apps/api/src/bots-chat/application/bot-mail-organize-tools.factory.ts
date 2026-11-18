@@ -20,6 +20,7 @@ import {
   organizeAnswer,
   targetCount,
 } from '../bot-mail-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
 import {
   type BotToolAnswer,
@@ -35,22 +36,20 @@ const account = z
   .trim()
   .min(1)
   .max(320)
-  .describe(
-    'Which Gmail account: its account id, its address, or its name, as list_gmail_accounts gives them.',
-  );
+  .describe(promptText('tools/mail-organize.account'));
 const ids = (what: string) =>
   z
     .array(z.string().trim().min(1).max(100))
     .max(MAIL_ORGANIZE_MAX)
     .default([])
     .describe(
-      `${what} ids, as search_mail and read_mail_thread give them; at most ${MAIL_ORGANIZE_MAX}.`,
+      promptText('tools/mail-organize.ids', { what, mailOrganizeMax: String(MAIL_ORGANIZE_MAX) }),
     );
 const labelNames = z
   .array(z.string().trim().min(1).max(225))
   .max(20)
   .default([])
-  .describe('Labels by name or id, as list_mail_labels gives them.');
+  .describe(promptText('tools/mail-organize.label-names'));
 
 /** Threads and messages to change: at least one, at most `MAIL_ORGANIZE_MAX` together. */
 const targets = z.object({ account, thread_ids: ids('Thread'), message_ids: ids('Message') });
@@ -61,7 +60,7 @@ type Targets = { account: string; thread_ids: string[]; message_ids?: string[] }
 const resolvedNames = z
   .record(z.string(), z.string())
   .optional()
-  .describe('Leave out: Oppenheimer fills it in.');
+  .describe(promptText('tools/mail-organize.resolved-names'));
 
 /**
  * Labels a bot may not put on mail itself: Trash and Spam move it out of
@@ -107,11 +106,19 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'mark_mail',
       asks: true,
       scope: 'mail:write',
-      description: `Marks threads or messages of the person's Gmail read or unread, starred or not, important or not. Give only the marks to change. Searching and reading never mark anything; only this does. At most ${MAIL_ORGANIZE_MAX} at once.`,
+      description: promptText('tools/mail-organize.mark-mail', {
+        mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
+      }),
       input: targets.extend({
-        read: z.boolean().optional().describe('true marks read, false unread.'),
-        starred: z.boolean().optional().describe('true stars, false takes the star off.'),
-        important: z.boolean().optional().describe('true marks important, false not important.'),
+        read: z.boolean().optional().describe(promptText('tools/mail-organize.mark-mail-read')),
+        starred: z
+          .boolean()
+          .optional()
+          .describe(promptText('tools/mail-organize.mark-mail-starred')),
+        important: z
+          .boolean()
+          .optional()
+          .describe(promptText('tools/mail-organize.mark-mail-important')),
       }),
       normalize: (call, context) => {
         assertChanges(markChange(call));
@@ -132,10 +139,12 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'label_mail',
       asks: true,
       scope: 'mail:write',
-      description: `Puts labels on threads or messages of the person's Gmail, or takes them off. Name each label as list_mail_labels gives it; create_label makes a new one. To trash mail, use trash_mail. At most ${MAIL_ORGANIZE_MAX} threads or messages at once.`,
+      description: promptText('tools/mail-organize.label-mail', {
+        mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
+      }),
       input: targets.extend({
-        add: labelNames.describe('Labels to put on, by name or id.'),
-        remove: labelNames.describe('Labels to take off, by name or id.'),
+        add: labelNames.describe(promptText('tools/mail-organize.label-mail-add')),
+        remove: labelNames.describe(promptText('tools/mail-organize.label-mail-remove')),
         names: resolvedNames,
       }),
       // The card stores the labels' ids, so a yes changes the labels it named even if one is renamed.
@@ -169,7 +178,9 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'archive_mail',
       asks: true,
       scope: 'mail:write',
-      description: `Takes threads out of the person's Gmail inbox; they stay in All Mail with their labels, and come back on a reply. At most ${MAIL_ORGANIZE_MAX} threads at once.`,
+      description: promptText('tools/mail-organize.archive-mail', {
+        mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
+      }),
       input: threadsOnly,
       normalize: (call, context) => this.frozen(call, context),
       summarize: async (call, context) =>
@@ -184,11 +195,16 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'trash_mail',
       asks: 'always',
       scope: 'mail:write',
-      description: `Moves threads of the person's Gmail to Trash, which Gmail empties after 30 days; untrash_mail brings them back until then. Asks the person first, unless they have allowed it for you. Nothing is ever deleted for good. At most ${MAIL_ORGANIZE_MAX} threads at once.`,
+      description: promptText('tools/mail-organize.trash-mail', {
+        mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
+      }),
       input: threadsOnly,
       normalize: (call, context) => this.frozen(call, context),
       summarize: async (call, context) =>
-        `Move ${targetCount(call)} to Trash in ${describeAccount(await this.connection(call, context))} (Gmail empties Trash after 30 days)`,
+        promptText('tools/mail-organize.trash-mail-summarize', {
+          targetCount: targetCount(call),
+          describeAccount: describeAccount(await this.connection(call, context)),
+        }),
       run: async (call, context) =>
         organized('Moved to Trash', await this.trash(call, true, context)),
     });
@@ -198,7 +214,9 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'untrash_mail',
       scope: 'mail:write',
-      description: `Brings threads of the person's Gmail back out of Trash, where they were before. At most ${MAIL_ORGANIZE_MAX} threads at once.`,
+      description: promptText('tools/mail-organize.untrash-mail', {
+        mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
+      }),
       input: threadsOnly,
       run: async (call, context) =>
         organized('Brought back from Trash', await this.trash(call, false, context)),
@@ -210,8 +228,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'create_label',
       asks: true,
       scope: 'mail:write',
-      description:
-        'Creates a label in the person\'s Gmail, shown in its label list. Use "Parent/Child" to nest it. label_mail then puts it on mail.',
+      description: promptText('tools/mail-organize.create-label'),
       input: z.object({ account, name: z.string().trim().min(1).max(225) }),
       normalize: async (call, context) => ({
         ...call,
@@ -262,7 +279,9 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
     const change = labelChangeOf(labels, call.add, call.remove);
     if (change.missing.length) {
       throw new BotToolRefusal(
-        `No label ${change.missing.map((name) => `"${name}"`).join(', ')} in this account. list_mail_labels gives them; create_label makes a new one.`,
+        promptText('tools/mail-organize.label-change', {
+          missing: change.missing.map((name) => `"${name}"`).join(', '),
+        }),
       );
     }
     return changeOf(change);
@@ -327,9 +346,7 @@ function organized(done: string, outcome: GmailBulkOutcome): BotToolAnswer {
 /** A label change that changes nothing is refused, before a card or a call. */
 function assertChanges(change: MailLabelChange): void {
   if (change.add.length + change.remove.length === 0) {
-    throw new BotToolRefusal(
-      'Say what to change: which marks, or which labels to put on or take off.',
-    );
+    throw new BotToolRefusal(promptText('tools/mail-organize.assert-changes'));
   }
 }
 
@@ -342,18 +359,22 @@ function changeOf<Change extends MailLabelChange>(change: Change): Change {
 /** Trash and its kin are refused by name or id, before any label is looked up. */
 function assertNotReserved(added: readonly string[]): void {
   if (added.some((label) => RESERVED_ADD.has(label.trim().toUpperCase()))) {
-    throw new BotToolRefusal(
-      'Trash, Spam, Drafts and Sent are not labels a bot puts on mail. Use trash_mail to trash it.',
-    );
+    throw new BotToolRefusal(promptText('tools/mail-organize.assert-not-reserved'));
   }
 }
 
 function assertTargets(call: Targets): void {
   const count = call.thread_ids.length + (call.message_ids?.length ?? 0);
-  if (count === 0) throw new BotToolRefusal('Name the threads or messages to change.');
+  if (count === 0)
+    throw new BotToolRefusal(
+      promptText('tools/mail-organize.assert-targets-name-threads-messages'),
+    );
   if (count > MAIL_ORGANIZE_MAX) {
     throw new BotToolRefusal(
-      `${count} at once; one call changes at most ${MAIL_ORGANIZE_MAX}. Split them over several calls.`,
+      promptText('tools/mail-organize.assert-targets-once-one-call', {
+        count: String(count),
+        mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
+      }),
     );
   }
 }

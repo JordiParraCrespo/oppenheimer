@@ -18,6 +18,7 @@ import type {
 import { FindAutomationQuery } from '../../automations/queries/find-automation/find-automation.query';
 import { FindAutomationRunsQuery } from '../../automations/queries/find-automation-runs/find-automation-runs.query';
 import { FindAutomationsQuery } from '../../automations/queries/find-automations/find-automations.query';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { cut, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
@@ -33,8 +34,7 @@ const AUTOMATIONS_LIMIT_MAX = 50;
 const RUNS_LIMIT_MAX = 25;
 const PROMPT_MAX = 1_500;
 
-const TEST_RESULTS_NOTE =
-  "A run's status says whether its session finished, not whether tests passed: test results are not known unless the session's result says so (read it with get_session).";
+const TEST_RESULTS_NOTE = promptText('tools/automation.test-results-note');
 
 /**
  * Automations, the reads: the workspace's automations,
@@ -57,12 +57,14 @@ export class BotAutomationToolsFactory implements BotToolArea {
       name: 'list_automations',
       readOnly: true,
       scope: 'automations:read',
-      description: `Lists the workspace's automations (a saved task a coding agent runs on a schedule, on a GitHub event, or by hand), each with its triggers, whether it is paused or running, and its last run. Filter by project; at most ${AUTOMATIONS_LIMIT_MAX} per call. Use get_automation for one automation's settings and prompt, and run_history for its runs.`,
+      description: promptText('tools/automation.list-automations', {
+        automationsLimitMax: String(AUTOMATIONS_LIMIT_MAX),
+      }),
       input: z.object({
         project_id: z
           .uuid()
           .optional()
-          .describe('Only automations of this project (an id from list_projects).'),
+          .describe(promptText('tools/automation.list-automations-project-id')),
         limit: z.number().int().min(1).max(AUTOMATIONS_LIMIT_MAX).default(25),
       }),
       run: async (input, context) => {
@@ -76,12 +78,12 @@ export class BotAutomationToolsFactory implements BotToolArea {
             describeAutomation(automation, listing.digests.get(automation.id), context),
           ),
           input.project_id
-            ? 'That project has no automations.'
-            : 'The workspace has no automations. The person makes one from Automations in the console.',
+            ? promptText('tools/automation.list-automations-project-has-automations')
+            : promptText('tools/automation.list-automations-workspace-has-automations'),
           {
             shown: shown.length,
             total: listing.automations.length,
-            hint: 'Filter by project_id, or raise limit.',
+            hint: promptText('tools/automation.list-automations-hint'),
           },
         );
       },
@@ -93,9 +95,13 @@ export class BotAutomationToolsFactory implements BotToolArea {
       name: 'get_automation',
       readOnly: true,
       scope: 'automations:read',
-      description: `Reads one automation: its triggers and when each fires next, the host, agent, model and permission its runs use, the repositories it works in, its limits, its prompt, and a digest of its last ${RUN_HISTORY_DAYS} days of runs. Use run_history for the runs themselves.`,
+      description: promptText('tools/automation.get-automation', {
+        runHistoryDays: String(RUN_HISTORY_DAYS),
+      }),
       input: z.object({
-        automation_id: z.uuid().describe('An automation id from list_automations.'),
+        automation_id: z
+          .uuid()
+          .describe(promptText('tools/automation.get-automation-automation-id')),
       }),
       run: async (input, context) => {
         const { automation, digest } = await this.queryBus.execute<
@@ -113,14 +119,16 @@ export class BotAutomationToolsFactory implements BotToolArea {
           `- state: ${describeState(automation)}`,
           `- project: ${target.projectId}`,
           `- runs ${describePlace(revision)}; agent ${revision.agent}${revision.model ? `, model ${revision.model}` : ''}; permission ${revision.permission}${revision.effort ? `; effort ${revision.effort}` : ''}`,
-          `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : 'none (it runs in no checkout)'}`,
+          `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : promptText('tools/automation.get-automation-none-runs-checkout')}`,
           `- revision: ${revision.number}, saved ${formatToolTime(revision.createdAt, context.timeZone)}`,
-          `- when another run is still live: ${automation.overlap ?? 'the workspace default'}`,
+          promptText('tools/automation.get-automation-when-another-run', {
+            overlap: automation.overlap ?? 'the workspace default',
+          }),
           `- hourly cap: ${automation.maxRunsPerHour === null ? "the workspace's" : `${automation.maxRunsPerHour} runs`}`,
           'Triggers:',
           ...(automation.triggers.length
             ? automation.triggers.map((trigger) => `  - ${describeTrigger(trigger, context)}`)
-            : ['  - none: it runs only when someone runs it by hand']),
+            : [`  ${promptText('tools/automation.get-automation-none-runs-only')}`]),
           `Prompt:\n${cut(revision.prompt, PROMPT_MAX)}`,
           describeDigest(digest, context),
         ];
@@ -134,21 +142,27 @@ export class BotAutomationToolsFactory implements BotToolArea {
       name: 'run_history',
       readOnly: true,
       scope: 'automations:read',
-      description: `Lists automation runs, newest first: each run's cause, status, when it fired, and the session it started. Filter by automation, project, status or window (24h, 7d, 30d); at most ${RUNS_LIMIT_MAX} per call. Runs that never became a session (skipped, expired) are left out unless asked for by status. A run's status is not its test results; read the session with get_session for what the agent reported.`,
+      description: promptText('tools/automation.run-history', {
+        runsLimitMax: String(RUNS_LIMIT_MAX),
+      }),
       input: z.object({
         automation_id: z
           .uuid()
           .optional()
-          .describe('Only runs of this automation (an id from list_automations).'),
-        project_id: z.uuid().optional().describe("Only runs of this project's automations."),
+          .describe(promptText('tools/automation.run-history-automation-id')),
+        project_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('tools/automation.run-history-project-id')),
         status: z
           .array(z.enum(AUTOMATION_RUN_STATUSES))
           .min(1)
           .optional()
-          .describe(
-            'Only these statuses. Default: queued, running, completed, failed and cancelled.',
-          ),
-        window: z.enum(RUN_WINDOWS).default('7d').describe('How far back: 24h, 7d or 30d.'),
+          .describe(promptText('tools/automation.run-history-status')),
+        window: z
+          .enum(RUN_WINDOWS)
+          .default('7d')
+          .describe(promptText('tools/automation.run-history-window')),
         limit: z.number().int().min(1).max(RUNS_LIMIT_MAX).default(10),
       }),
       run: async (input, context) => {
@@ -168,18 +182,23 @@ export class BotAutomationToolsFactory implements BotToolArea {
         const listing = formatToolList(
           `Runs, last ${input.window}`,
           page.items.map((run) => describeRun(run, context)),
-          `No runs in the last ${input.window} match. That says nothing ran, not that anything is wrong.`,
+          promptText('tools/automation.run-history-runs-last-match', { window: input.window }),
           {
             shown: page.items.length,
             total: page.total,
-            hint: 'Narrow by automation_id, status or window, or raise limit.',
+            hint: promptText('tools/automation.run-history-hint'),
           },
         );
         if (page.items.length === 0) return listing;
         const { counts } = page;
         return [
           listing,
-          `In this window: ${counts.completed} completed, ${counts.failed} failed, ${counts.running} running, of ${counts.all}.`,
+          promptText('tools/automation.run-history-window-completed-failed', {
+            completed: String(counts.completed),
+            failed: String(counts.failed),
+            running: String(counts.running),
+            all: String(counts.all),
+          }),
           TEST_RESULTS_NOTE,
         ].join('\n');
       },
@@ -236,7 +255,12 @@ export function describeTrigger(
   }
   if (trigger.source === 'gmail') {
     const query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
-    return `gmail mail_received in account ${trigger.config.connectionId}${query ? ` matching "${query}"` : ' (every new message in the inbox)'}`;
+    return promptText('tools/automation.describe-trigger-gmail-mail-received', {
+      connectionId: trigger.config.connectionId,
+      query: query
+        ? ` matching "${query}"`
+        : ` ${promptText('tools/automation.describe-trigger-every-new-message')}`,
+    });
   }
   const filter =
     trigger.config.filter.op === 'equals'
@@ -250,10 +274,16 @@ function describeDigest(
   context: BotToolCallContext,
 ): string {
   if (!digest || digest.runCount === 0) {
-    return `Runs: none in the last ${RUN_HISTORY_DAYS} days.`;
+    return promptText('tools/automation.describe-digest-runs-none-last', {
+      runHistoryDays: String(RUN_HISTORY_DAYS),
+    });
   }
   return [
-    `Runs: ${digest.runCount} in the last ${RUN_HISTORY_DAYS} days${digest.running ? ', one live now' : ''}. Latest:`,
+    promptText('tools/automation.describe-digest-runs-last-days', {
+      runCount: String(digest.runCount),
+      runHistoryDays: String(RUN_HISTORY_DAYS),
+      running: digest.running ? ', one live now' : '',
+    }),
     ...digest.lastRuns.map((run) => `  - ${describeRun(run, context)}`),
   ].join('\n');
 }
@@ -277,7 +307,9 @@ function describeRun(run: RunReadModel, context: BotToolCallContext): string {
 function describePlace(revision: { place: string; hostId: string | null }): string {
   if (revision.place === 'host') return `on: host ${revision.hostId}`;
   if (revision.place === 'claude-cloud') {
-    return `in: Claude Code's cloud, started from host ${revision.hostId}`;
+    return promptText('tools/automation.describe-place-claude-codes-cloud', {
+      hostId: String(revision.hostId),
+    });
   }
-  return `in: ${revision.place}'s cloud, on the owner's key`;
+  return promptText('tools/automation.describe-place-s-cloud-owners', { place: revision.place });
 }

@@ -20,6 +20,7 @@ import {
   terminalCommandIdOf,
   toTerminalDriveRequest,
 } from '../bot-terminal-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BOT_SESSION_PERMISSION } from '../domain/bot-session-launch.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { BotHostTargetResolver } from './bot-host-target.resolver';
@@ -32,7 +33,7 @@ import {
   defineBotTool,
 } from './bot-tool.factory';
 
-const sessionId = z.uuid().describe('The terminal session (from open_terminal or list_sessions).');
+const sessionId = z.uuid().describe(promptText('tools/terminal.session-id'));
 
 const waitFields = {
   wait_for: z
@@ -40,9 +41,7 @@ const waitFields = {
     .min(1)
     .max(TERMINAL_WATCH_PATTERN_MAX)
     .optional()
-    .describe(
-      'A regular expression (RE2) to wait for on a line of the screen, such as your prompt coming back (`\\$ $`) or `password:`. Without it the call waits wait_seconds.',
-    ),
+    .describe(promptText('tools/terminal.wait-fields-wait-for')),
   wait_seconds: z
     .number()
     .int()
@@ -50,7 +49,10 @@ const waitFields = {
     .max(TERMINAL_WAIT_MAX_SECONDS)
     .optional()
     .describe(
-      `How long to wait, at most, before reading the screen; ${DEFAULT_TERMINAL_WAIT_SECONDS} when omitted, at most ${TERMINAL_WAIT_MAX_SECONDS}.`,
+      promptText('tools/terminal.wait-fields-wait-seconds', {
+        defaultTerminalWaitSeconds: String(DEFAULT_TERMINAL_WAIT_SECONDS),
+        terminalWaitMaxSeconds: String(TERMINAL_WAIT_MAX_SECONDS),
+      }),
     ),
   history: z
     .number()
@@ -58,7 +60,7 @@ const waitFields = {
     .min(0)
     .max(TERMINAL_HISTORY_MAX_LINES)
     .optional()
-    .describe('How many lines above the visible screen to read too.'),
+    .describe(promptText('tools/terminal.wait-fields-history')),
 };
 
 /**
@@ -88,21 +90,20 @@ export class BotTerminalToolsFactory implements BotToolArea {
       name: 'open_terminal',
       scope: 'sessions:write',
       asks: true,
-      description:
-        "Opens a blank terminal (a plain shell, no coding agent) on one of the person's hosts, in a folder already there, and returns its session id for type_in_terminal and read_terminal. Use it for interactive work a single run_command cannot do: an ssh login, a program that asks questions, a REPL, a job you watch. The person sees it in the console like any session and can take over. The host must allow it (its exec mode is full). The host defaults to your home host.",
+      description: promptText('tools/terminal.open-terminal'),
       input: z.object({
         folder: z
           .string()
           .regex(/^\/[^\0]*$/)
           .max(1_024)
-          .describe(
-            'An absolute folder on the host to start in: your own folder there (the cwd run_command reports), or one from list_folders.',
-          ),
-        host_id: z
-          .uuid()
+          .describe(promptText('tools/terminal.open-terminal-folder')),
+        host_id: z.uuid().optional().describe(promptText('tools/terminal.open-terminal-host-id')),
+        name: z
+          .string()
+          .min(1)
+          .max(80)
           .optional()
-          .describe('The host (from list_hosts); your home host when omitted.'),
-        name: z.string().min(1).max(80).optional().describe('A short name for the terminal.'),
+          .describe(promptText('tools/terminal.open-terminal-name')),
       }),
       normalize: async (input, context) => ({
         ...input,
@@ -134,10 +135,15 @@ export class BotTerminalToolsFactory implements BotToolArea {
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ' The host is offline: it opens when the host comes back.'
+          ? ` ${promptText('tools/terminal.open-terminal-host-offline-opens')}`
           : '';
         return {
-          content: `Opened terminal ${result.sessionId} on host ${hostId} in ${input.folder}.${offline} Wait for its prompt (wait_for) before you rely on it.`,
+          content: promptText('tools/terminal.open-terminal-content', {
+            sessionId: result.sessionId,
+            hostId,
+            folder: input.folder,
+            offline,
+          }),
           sessionId: result.sessionId,
         };
       },
@@ -154,7 +160,7 @@ export class BotTerminalToolsFactory implements BotToolArea {
         key: input.session_id,
         label: `terminal ${input.session_id}`,
       }),
-      description: `Types into a terminal from open_terminal, as a person would, then waits and returns the screen. text is typed literally (a command line, an answer); keys are pressed after it by name: Enter to run it, C-c to interrupt, C-d to end input, Tab, Escape, arrows. So a command is text plus keys ["Enter"]. Wait for something that shows the command finished (wait_for your prompt, or a program's question) rather than a fixed time. Never type a password or secret: when a program asks for one, tell the person and let them type it in the console.`,
+      description: promptText('tools/terminal.type-in-terminal'),
       input: z.object({
         session_id: sessionId,
         text: z.string().max(TERMINAL_TEXT_MAX).optional().describe('Text to type, literally.'),
@@ -162,15 +168,13 @@ export class BotTerminalToolsFactory implements BotToolArea {
           .array(z.enum(TERMINAL_KEYS))
           .max(32)
           .optional()
-          .describe('Keys to press after the text, in order, e.g. ["Enter"].'),
+          .describe(promptText('tools/terminal.type-in-terminal-keys')),
         ...waitFields,
       }),
       summarize: (input) => terminalTypeSummary(input.session_id, input.text, input.keys),
       run: async (input, context) => {
         if (!input.text && !input.keys?.length) {
-          throw new BotToolRefusal(
-            'Nothing to type: give text, keys or both. To only look, use read_terminal.',
-          );
+          throw new BotToolRefusal(promptText('tools/terminal.type-in-terminal-nothing-type-give'));
         }
         return describeTerminal(await this.drive(context, input), input.session_id);
       },
@@ -182,8 +186,7 @@ export class BotTerminalToolsFactory implements BotToolArea {
       name: 'read_terminal',
       scope: 'sessions:read',
       readOnly: true,
-      description:
-        'Reads the screen of a terminal from open_terminal, optionally after waiting for a pattern to show (a job finishing, a prompt coming back). It types nothing.',
+      description: promptText('tools/terminal.read-terminal'),
       input: z.object({ session_id: sessionId, ...waitFields }),
       run: async (input, context) =>
         describeTerminal(await this.drive(context, input), input.session_id),

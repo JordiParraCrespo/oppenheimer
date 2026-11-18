@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { HostExecOutcome } from '../../sessions/application/host-exec.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
 
 /**
@@ -8,11 +9,11 @@ import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
  * wrong fix).
  */
 const REFUSALS: Readonly<Record<string, string>> = {
-  EXEC_001: 'running commands is switched off on this host',
-  EXEC_002: 'this program is not on the host’s allowlist',
-  EXEC_003: 'the folder to run in is missing or unusable',
-  EXEC_004: 'the program could not be started, or the host is already running 8 commands',
-  EXEC_005: 'the host’s own exec policy file cannot be read',
+  EXEC_001: promptText('tools/host-command.refusals-exec-001'),
+  EXEC_002: promptText('tools/host-command.refusals-exec-002'),
+  EXEC_003: promptText('tools/host-command.refusals-exec-003'),
+  EXEC_004: promptText('tools/host-command.refusals-exec-004'),
+  EXEC_005: promptText('tools/host-command.refusals-exec-005'),
 };
 
 /** How much of the command line a Needs input card shows. */
@@ -40,7 +41,7 @@ export function describeHostCommand(outcome: HostExecOutcome, host: string): str
     case 'ran': {
       const { run } = outcome;
       const ended = run.timedOut
-        ? 'Stopped at its timeout, before it finished.'
+        ? promptText('tools/host-command.describe-host-command-stopped-timeout-before')
         : run.exitCode === null
           ? 'Ended by a signal.'
           : `Exit code ${run.exitCode}.`;
@@ -50,14 +51,19 @@ export function describeHostCommand(outcome: HostExecOutcome, host: string): str
       return lines.join('\n\n');
     }
     case 'host_offline':
-      return `${host} is offline: nothing ran. Try again when it is back, or use another host.`;
+      return promptText('tools/host-command.describe-host-command-offline-nothing-ran', { host });
     case 'not_supported':
-      return `The runner on ${host} is too old to run commands: nothing ran. The person can update it from the host's page.`;
+      return promptText('tools/host-command.describe-host-command-runner-too-old', { host });
     case 'timed_out':
-      return `${host} did not answer in time, so whether it ran is unknown. Check before running it again.`;
+      return promptText('tools/host-command.describe-host-command-did-answer-time', { host });
     case 'failed': {
       const meaning = REFUSALS[outcome.code];
-      return `${host} refused (${outcome.code}${meaning ? `: ${meaning}` : ''}): ${outcome.detail ?? 'no reason given'}. Nothing ran. Tell the person; only they can change what this host allows, on the host itself.`;
+      return promptText('tools/host-command.describe-host-command-refused-nothing-ran', {
+        host,
+        code: outcome.code,
+        meaning: meaning ? `: ${meaning}` : '',
+        detail: outcome.detail ?? 'no reason given',
+      });
     }
   }
 }

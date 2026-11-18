@@ -9,6 +9,7 @@ import {
 } from '@oppenheimer/shared';
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   BotSkillNudge,
   carrySkillNudge,
@@ -227,14 +228,26 @@ export class BotToolboxFactory {
   ): Promise<BotToolResult> {
     const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
     if (!definition)
-      return { content: `Not run: ${call.tool} is no longer a tool.`, isError: true };
+      return {
+        content: promptText('tools/toolbox.run-approved-content-run-longer-tool', {
+          tool: call.tool,
+        }),
+        isError: true,
+      };
     // Turned Off while the card waited: the owner's latest word stands.
     if (toolDecision(standing.permissions, definition.traits, standing.preset) === 'off') {
-      return { content: `Not run: ${call.tool} is turned off for this bot.`, isError: true };
+      return {
+        content: promptText('tools/toolbox.run-approved-content-run-turned-off', {
+          tool: call.tool,
+        }),
+        isError: true,
+      };
     }
     if (granted !== null && !expandScopes(granted).has(definition.scope)) {
       return {
-        content: `Not run: your credential does not cover ${definition.scope}.`,
+        content: promptText('tools/toolbox.run-approved-content-run-credential-does', {
+          scope: definition.scope,
+        }),
         isError: true,
       };
     }

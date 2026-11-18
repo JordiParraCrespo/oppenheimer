@@ -4,6 +4,7 @@ import { z } from 'zod/v4';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   BOT_SESSION_WAIT_MAX_SECONDS,
   BOT_SESSION_WAITS_PER_TURN,
@@ -53,36 +54,35 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_session',
       scope: 'sessions:read',
-      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. While the task you follow runs you are also woken every few minutes for a look at how it is going, and check_in_minutes adds a look at a time you choose. Sessions you start with start_session, prompt with send_to_session or unblock with answer_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. With pattern (a regular expression, matched line by line), you are also woken when its terminal prints a new line matching it, such as "FAIL|Error" or "Tests: \\d+ passed": you are told it matched and how often, never the line, so read the session to see why. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch, matches included, and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions and pull requests.`,
+      description: promptText('tools/watch.watch-session', {
+        subscriptionWakeLimit: String(BOT_SUBSCRIPTION_WAKE_LIMIT),
+        subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
+      }),
       input: z.object({
-        session_id: z.uuid().describe('The session to follow (from list_sessions).'),
+        session_id: z.uuid().describe(promptText('tools/watch.watch-session-session-id')),
         until: z
           .enum(['task', 'closed'])
           .optional()
-          .describe('"task" (default): its current or next task; "closed": every task.'),
+          .describe(promptText('tools/watch.watch-session-until')),
         purpose: z
           .string()
           .min(1)
           .max(BOT_SUBSCRIPTION_PURPOSE_MAX)
           .optional()
-          .describe('Why you follow it, in a line; you are reminded of it when it wakes you.'),
+          .describe(promptText('tools/watch.watch-session-purpose')),
         pattern: z
           .string()
           .min(1)
           .max(TERMINAL_WATCH_PATTERN_MAX)
           .optional()
-          .describe(
-            'A regular expression (RE2: no lookaround or backreferences) to be woken by when a new line of the terminal matches it.',
-          ),
+          .describe(promptText('tools/watch.watch-session-pattern')),
         check_in_minutes: z
           .number()
           .int()
           .min(BOT_CHECK_IN_MINUTES.min)
           .max(BOT_CHECK_IN_MINUTES.max)
           .optional()
-          .describe(
-            'Also look at its running task once, this many minutes from now, even if nothing has happened: for when you told the person you would check back at a time.',
-          ),
+          .describe(promptText('tools/watch.watch-session-check-in-minutes')),
       }),
       run: async (input, context) => {
         const { subscription, session } = await this.watches.watch(context, input.session_id, {
@@ -116,10 +116,9 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'unwatch_session',
       scope: 'sessions:read',
-      description:
-        'Stops following a session: it will no longer wake you. The session itself keeps running.',
+      description: promptText('tools/watch.unwatch-session'),
       input: z.object({
-        session_id: z.uuid().describe('A session you watch (from list_watches).'),
+        session_id: z.uuid().describe(promptText('tools/watch.unwatch-session-session-id')),
       }),
       run: async (input, context) => {
         // Its terminal watch goes too, if it had one: nobody else is woken by it.
@@ -137,8 +136,12 @@ export class BotWatchToolsFactory implements BotToolArea {
           input.session_id,
         );
         return removed
-          ? `You no longer follow session ${input.session_id}.`
-          : `You were not following session ${input.session_id}.`;
+          ? promptText('tools/watch.unwatch-session-longer-follow-session', {
+              sessionId: input.session_id,
+            })
+          : promptText('tools/watch.unwatch-session-were-following-session', {
+              sessionId: input.session_id,
+            });
       },
     });
   }
@@ -148,8 +151,7 @@ export class BotWatchToolsFactory implements BotToolArea {
       name: 'list_watches',
       scope: 'sessions:read',
       readOnly: true,
-      description:
-        'Lists the sessions, pull requests, projects and milestones you follow: each one, why, until when or on which changes, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request, a task with get_task.',
+      description: promptText('tools/watch.list-watches'),
       input: z.object({}),
       run: async (_input, context) => {
         const watched = await this.subscriptions.findForBot(
@@ -157,8 +159,7 @@ export class BotWatchToolsFactory implements BotToolArea {
           context.botId,
           BOT_SUBSCRIPTIONS_PER_BOT,
         );
-        if (!watched.length)
-          return 'You follow no sessions, pull requests, projects or milestones.';
+        if (!watched.length) return promptText('tools/watch.list-watches-follow-sessions-pull');
         return watched
           .map((subscription) => this.mapper.toListLine(subscription, context.timeZone))
           .join('\n');
@@ -170,9 +171,12 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'wait_for_session',
       scope: 'sessions:read',
-      description: `Waits inside this turn, up to ${BOT_SESSION_WAIT_MAX_SECONDS} seconds, until a session's current task needs input, finishes, fails or is stopped, or the session is closed; answers at once if it already has. Use it for a short task you want to report on in this reply; for anything longer, watch_session wakes you when it ends. At most ${BOT_SESSION_WAITS_PER_TURN} waits a turn, and the turn's own 4-minute limit counts: never wait on work you cannot report before it.`,
+      description: promptText('tools/watch.wait-for-session', {
+        sessionWaitMaxSeconds: String(BOT_SESSION_WAIT_MAX_SECONDS),
+        sessionWaitsPerTurn: String(BOT_SESSION_WAITS_PER_TURN),
+      }),
       input: z.object({
-        session_id: z.uuid().describe('The session to wait on (from list_sessions).'),
+        session_id: z.uuid().describe(promptText('tools/watch.wait-for-session-session-id')),
         seconds: z
           .number()
           .int()
@@ -184,7 +188,9 @@ export class BotWatchToolsFactory implements BotToolArea {
       run: async (input, context, signal) => {
         if (!context.budget.take('wait_for_session', BOT_SESSION_WAITS_PER_TURN)) {
           throw new BotToolRefusal(
-            `You have waited ${BOT_SESSION_WAITS_PER_TURN} times this turn. Watch the session with watch_session and end your turn; it wakes you when the task ends.`,
+            promptText('tools/watch.wait-for-session-have-waited-times', {
+              sessionWaitsPerTurn: String(BOT_SESSION_WAITS_PER_TURN),
+            }),
           );
         }
         return this.waits.wait(context, input.session_id, input.seconds, signal);
