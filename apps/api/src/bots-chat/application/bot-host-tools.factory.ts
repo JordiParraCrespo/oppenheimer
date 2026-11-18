@@ -164,9 +164,7 @@ export class BotHostToolsFactory implements BotToolArea {
         host_id: z.uuid().describe(promptText('tools/host.update-host-runner-host-id')),
       }),
       summarize: async (input, context) =>
-        promptText('tools/host.update-host-runner-summarize', {
-          value: await this.hostName(context, input.host_id),
-        }),
+        `Update the runner on ${await this.hostName(context, input.host_id)} to the newest release`,
       run: async (input, context) => {
         await this.commandBus.execute(
           new UpdateHostRunnerCommand({ scope: context.owner, hostId: input.host_id }),

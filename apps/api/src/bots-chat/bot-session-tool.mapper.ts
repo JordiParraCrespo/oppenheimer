@@ -162,7 +162,7 @@ export function sessionSummary(
         ? ` in project ${input.project_id}`
         : '';
   const from = input.base_branch && !input.folder ? ` from ${input.base_branch}` : '';
-  const hearBack = input.watch === false ? '' : promptText('tools/sessions.session-summary');
+  const hearBack = input.watch === false ? '' : ', and hear back when it ends';
   const hidden = input.hidden ? ', hidden from your sidebar' : '';
   return `Start ${CODING_AGENTS[agent].label}${how} on ${hostName ?? 'no host yet'}${where}${from}${hidden}${hearBack}: ${clippedTask(input.task)}`;
 }
@@ -289,12 +289,8 @@ export function closeSummary(
   session: Pick<NamedSession, 'id' | 'name'>,
   acceptUnpushedWork: boolean,
 ): string {
-  const loss = acceptUnpushedWork ? promptText('tools/sessions.close-summary-even-work-never') : '';
-  return promptText('tools/sessions.close-summary-close-session-remove', {
-    name: session.name,
-    id: session.id,
-    loss,
-  });
+  const loss = acceptUnpushedWork ? ', even with work never pushed' : '';
+  return `Close the session "${session.name}" (${session.id}) and remove its worktree${loss}`;
 }
 
 /** What a stop or a close asked, and whether it is already done or waits on the host. */

@@ -132,10 +132,6 @@ Be woken when the review needs input, ends or fails (default true).
 
 You have no home host; ask the person which host (list_hosts) to review on.
 
-<!-- fragment: start-review-session-summarize -->
-
-Start a review session for {{value}} on {{host}}
-
 <!-- fragment: start-review-session-host-offline-session -->
 
 The host is offline: the session is queued and starts when it comes back.

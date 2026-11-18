@@ -52,10 +52,6 @@ Takes threads out of the person's Gmail inbox; they stay in All Mail with their 
 
 Moves threads of the person's Gmail to Trash, which Gmail empties after 30 days; untrash_mail brings them back until then. Asks the person first, unless they have allowed it for you. Nothing is ever deleted for good. At most {{mailOrganizeMax}} threads at once.
 
-<!-- fragment: trash-mail-summarize -->
-
-Move {{targetCount}} to Trash in {{describeAccount}} (Gmail empties Trash after 30 days)
-
 <!-- fragment: untrash-mail -->
 
 Brings threads of the person's Gmail back out of Trash, where they were before. At most {{mailOrganizeMax}} threads at once.

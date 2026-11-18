@@ -64,10 +64,6 @@ Project "{{name}}" is already archived.
 
 Project "{{name}}" still has sessions that are not closed: {{listed}}. Nothing was archived. Ask the person whether to move them to another project (move_session) or close them first.
 
-<!-- fragment: archive-project-summarize -->
-
-Archive the project "{{name}}" ({{slug}}). Nothing new can go in it and its automations are paused; a restore brings it back, but not its automations
-
 <!-- fragment: archive-project-archived-project-tasks -->
 
 Archived project {{id}} "{{name}}". Its tasks and past sessions stay listed under it; list_projects shows it only with include_archived.

@@ -201,10 +201,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       input: threadsOnly,
       normalize: (call, context) => this.frozen(call, context),
       summarize: async (call, context) =>
-        promptText('tools/mail-organize.trash-mail-summarize', {
-          targetCount: targetCount(call),
-          describeAccount: describeAccount(await this.connection(call, context)),
-        }),
+        `Move ${targetCount(call)} to Trash in ${describeAccount(await this.connection(call, context))} (Gmail empties Trash after 30 days)`,
       run: async (call, context) =>
         organized('Moved to Trash', await this.trash(call, true, context)),
     });

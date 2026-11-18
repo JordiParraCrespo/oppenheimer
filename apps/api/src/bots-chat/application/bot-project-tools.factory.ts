@@ -204,10 +204,7 @@ export class BotProjectToolsFactory implements BotToolArea {
       },
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id);
-        return promptText('tools/projects.archive-project-summarize', {
-          name: project.name,
-          slug: project.slug,
-        });
+        return `Archive the project "${project.name}" (${project.slug}). Nothing new can go in it and its automations are paused; a restore brings it back, but not its automations`;
       },
       run: async (input, context) => {
         const project = await this.commandBus.execute<ArchiveProjectCommand, ProjectEntity>(

@@ -239,11 +239,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       },
       summarize: (input) => {
         const planned = plannedOf(input.planned);
-        return promptText('tools/whatsapp.send-summarize', {
-          accountLabel: planned.accountLabel,
-          describeWhatsappTarget: describeWhatsappTarget(planned),
-          text: input.text,
-        });
+        return `Send on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}: ${input.text}`;
       },
       run: async (input, context) => {
         // Only a card's stored call carries a plan Oppenheimer made. A call
