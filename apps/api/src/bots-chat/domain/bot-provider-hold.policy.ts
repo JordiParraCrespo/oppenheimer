@@ -22,6 +22,11 @@ export const BOT_PROVIDER_HOLD_MS = 60 * 60 * 1000;
 /** The failures of the account rather than of the turn: retrying does not help until it is fixed. */
 const ACCOUNT_FAILURES: readonly BotTurnFailure[] = ['usage_limit', 'credential'];
 
+/** Whether a failure is the account's (spent, or its key or sign-in refused) rather than the call's. */
+export function isAccountFailure(failure: BotTurnFailure | null | undefined): boolean {
+  return !!failure && ACCOUNT_FAILURES.includes(failure);
+}
+
 /**
  * The turns that run with nobody waiting and nothing else to stop them: a
  * goal pauses and a loop stops on the failure on their own, and a bot's ask
@@ -45,6 +50,6 @@ export function heldByProvider(
 ): boolean {
   if (!holdableOrigin(turn.origin)) return false;
   if (!last || last.status !== 'failed' || !last.endedAt) return false;
-  if (!last.failure || !ACCOUNT_FAILURES.includes(last.failure)) return false;
+  if (!isAccountFailure(last.failure)) return false;
   return now.getTime() - last.endedAt.getTime() < BOT_PROVIDER_HOLD_MS;
 }

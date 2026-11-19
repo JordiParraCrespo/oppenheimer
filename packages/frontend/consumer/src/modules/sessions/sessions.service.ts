@@ -76,6 +76,10 @@ export class SessionsService {
     return this.repository.setHidden(id, hidden);
   }
 
+  acknowledgeReport(id: string): Promise<SessionEntity> {
+    return this.repository.acknowledgeReport(id);
+  }
+
   move(id: string, projectId: string): Promise<SessionEntity> {
     return this.repository.move(id, projectId);
   }

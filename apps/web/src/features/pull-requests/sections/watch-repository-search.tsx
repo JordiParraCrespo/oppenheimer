@@ -1,7 +1,9 @@
 import {
   Button,
+  ChipSelectCombobox,
   ChipSelectEmpty,
   ChipSelectItem,
+  ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
   Popover,
@@ -59,43 +61,40 @@ export function WatchRepositorySearch() {
         {t('pullRequests.watch.add')}
       </PopoverTrigger>
       <ChipSelectPopup width={320} maxHeight={320} side="bottom" align="start">
-        <ChipSelectSearch
-          value={query}
-          placeholder={label}
-          aria-label={label}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <div role="listbox" aria-label={label} aria-multiselectable>
-          {options.length ? (
-            options.map((repository) => {
-              const key = keyOf(repository);
-              const watching = picks.get(key) ?? repository.watching;
-              return (
-                <ChipSelectItem
-                  key={key}
-                  mono
-                  density="menu"
-                  selected={watching}
-                  description={repository.isPrivate ? t('pullRequests.watch.private') : undefined}
-                  onClick={() => {
-                    setPicks((current) => new Map(current).set(key, !watching));
-                    watch.mutate({ repository, watching: !watching });
-                  }}
-                >
-                  {repository.fullName}
-                </ChipSelectItem>
-              );
-            })
-          ) : (
-            <ChipSelectEmpty live={isPending}>
-              {isPending
-                ? t('pullRequests.watch.loading')
-                : term
-                  ? t('pullRequests.watch.noMatch', { query: query.trim() })
-                  : t('pullRequests.watch.none')}
-            </ChipSelectEmpty>
-          )}
-        </div>
+        <ChipSelectCombobox query={query} onQueryChange={setQuery}>
+          <ChipSelectSearch placeholder={label} aria-label={label} />
+          <ChipSelectList aria-label={label} aria-multiselectable>
+            {options.length ? (
+              options.map((repository) => {
+                const key = keyOf(repository);
+                const watching = picks.get(key) ?? repository.watching;
+                return (
+                  <ChipSelectItem
+                    key={key}
+                    mono
+                    density="menu"
+                    selected={watching}
+                    description={repository.isPrivate ? t('pullRequests.watch.private') : undefined}
+                    onClick={() => {
+                      setPicks((current) => new Map(current).set(key, !watching));
+                      watch.mutate({ repository, watching: !watching });
+                    }}
+                  >
+                    {repository.fullName}
+                  </ChipSelectItem>
+                );
+              })
+            ) : (
+              <ChipSelectEmpty live={isPending}>
+                {isPending
+                  ? t('pullRequests.watch.loading')
+                  : term
+                    ? t('pullRequests.watch.noMatch', { query: query.trim() })
+                    : t('pullRequests.watch.none')}
+              </ChipSelectEmpty>
+            )}
+          </ChipSelectList>
+        </ChipSelectCombobox>
       </ChipSelectPopup>
     </Popover>
   );

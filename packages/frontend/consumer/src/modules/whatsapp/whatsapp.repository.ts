@@ -1,8 +1,13 @@
-import { heyApiSdk, type WhatsappAccountResponseDto } from '@oppenheimer/api-client';
+import {
+  heyApiSdk,
+  type WhatsappAccountResponseDto,
+  type WhatsappChatGrantResponseDto,
+} from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { WhatsappErrors } from './whatsapp.errors';
 import { WhatsappAccountEntity } from './whatsapp-account.entity';
+import { WhatsappChatGrantEntity } from './whatsapp-chat-grant.entity';
 
 function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
   return new WhatsappAccountEntity(
@@ -21,6 +26,19 @@ function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
     data.ownerNumber ?? null,
     data.ownerPendingNumber ?? null,
     data.ownerCodeExpiresAt ? new Date(data.ownerCodeExpiresAt) : null,
+  );
+}
+
+function toGrant(data: WhatsappChatGrantResponseDto): WhatsappChatGrantEntity {
+  return new WhatsappChatGrantEntity(
+    data.id,
+    data.accountId,
+    data.chatId,
+    data.chatKind,
+    data.chatName ?? null,
+    data.botId ?? null,
+    data.grantedByBotId ?? null,
+    new Date(data.grantedAt),
   );
 }
 
@@ -82,6 +100,35 @@ export class WhatsappRepository {
     return callApi(WhatsappErrors.OWNER_CONFIRM_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.confirmWhatsappOwner({ path: { id }, body: { code } }));
       return toAccount(data);
+    });
+  }
+
+  /** The chats a number allows besides the reader's own, the oldest first. */
+  findGrants(accountId: string): Promise<WhatsappChatGrantEntity[]> {
+    return callApi(WhatsappErrors.FETCH_GRANTS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWhatsappChatGrants({ path: { id: accountId } }));
+      return data.map(toGrant);
+    });
+  }
+
+  /** Which of the reader's bots answers in an allowed chat; null for the number's default. */
+  answerChatAs(
+    accountId: string,
+    grantId: string,
+    botId: string | null,
+  ): Promise<WhatsappChatGrantEntity> {
+    return callApi(WhatsappErrors.GRANT_UPDATE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateWhatsappChatGrant({ path: { id: accountId, grantId }, body: { botId } }),
+      );
+      return toGrant(data);
+    });
+  }
+
+  /** The chat no longer talks to the reader's bots on this number. */
+  revokeGrant(accountId: string, grantId: string): Promise<void> {
+    return callApi(WhatsappErrors.GRANT_REVOKE_FAILED, async (api) => {
+      await api.result(heyApiSdk.revokeWhatsappChat({ path: { id: accountId, grantId } }));
     });
   }
 

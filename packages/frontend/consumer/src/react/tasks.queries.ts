@@ -372,6 +372,7 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
     task.origin,
     task.triagedAt,
     task.priority,
+    task.offTodo,
   );
 }
 

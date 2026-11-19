@@ -44,6 +44,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
   onDelete,
+  offTodo,
 }: {
   values: TaskFormValues;
   projects: readonly { id: string; name: string }[];
@@ -58,6 +59,8 @@ export function TaskForm({
   onSubmit: (values: TaskFormOutput) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  /** For a task that exists: the TODO day row's Remove from TODO. */
+  offTodo?: { value: boolean; onChange: (off: boolean) => void };
 }) {
   const { t } = useTranslation();
   const { register, control, handleSubmit, setValue, getValues, formState } = useForm<
@@ -151,7 +154,7 @@ export function TaskForm({
         />
         <TaskMilestoneRow control={control} milestones={milestones} />
         {sessions}
-        <TaskFocusRow control={control} today={today} />
+        <TaskFocusRow control={control} today={today} offTodo={offTodo} />
         <TaskDueRow control={control} today={today} />
       </div>
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />

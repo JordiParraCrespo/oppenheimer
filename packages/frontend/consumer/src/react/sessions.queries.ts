@@ -487,6 +487,16 @@ export function useSetSessionHidden(
   return useSessionPatch(({ sessions }, { id, hidden }) => sessions.setHidden(id, hidden), options);
 }
 
+/**
+ * Mark what the session's last turn left as read, as opening it does: its
+ * group falls from `ready-for-review` to `idle` and the sidebar's blue dot goes.
+ */
+export function useAcknowledgeSessionReport(
+  options?: UseMutationOptions<SessionEntity, Error, string>,
+) {
+  return useSessionPatch(({ sessions }, id) => sessions.acknowledgeReport(id), options);
+}
+
 export function useMoveSession(
   options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
 ) {
