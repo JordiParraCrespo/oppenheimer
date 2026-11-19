@@ -232,7 +232,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 			return err
 		}
 		launch.Server = session.Launch.Server
-		launch.StatusLine = s.statusLine
+		launch.StatusLine = s.statusLine(session.ID)
 		launch.Wrap = s.observer.wrap(session.ID)
 		s.trustFolder(session.Agent, session.Cwd())
 		defer s.holdLaunch(ctx, session.Agent)()

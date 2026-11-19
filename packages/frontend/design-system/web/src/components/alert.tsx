@@ -19,7 +19,7 @@ import { cn } from "../lib/utils";
 type AlertTone = "neutral" | "info" | "success" | "warning" | "danger";
 
 const alertVariants = cva(
-  "grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 rounded-md px-3 py-2.5 text-left text-sm has-data-[slot=alert-action]:grid-cols-[auto_1fr_auto]",
+  "grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 rounded-md px-3 py-2.5 text-left text-sm has-data-[slot=alert-action]:grid-cols-[auto_1fr_auto] in-data-[slot=sidebar]:has-data-[slot=alert-action]:grid-cols-[auto_1fr]",
   {
     variants: {
       tone: {
@@ -111,13 +111,18 @@ function AlertDescription({
   );
 }
 
-/** A failure's one action (Dismiss, Retry). A note never takes one. */
+/**
+ * A failure's one action (Dismiss, Retry). A note never takes one. Beside
+ * the sentence, except in a sidebar, where the column is too narrow to share:
+ * there the sentence takes the width and the action sits under it.
+ */
 function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-action"
       className={cn(
         "col-start-3 row-span-2 row-start-1 -my-1 self-start",
+        "in-data-[slot=sidebar]:col-start-2 in-data-[slot=sidebar]:row-span-1 in-data-[slot=sidebar]:row-start-auto in-data-[slot=sidebar]:my-0 in-data-[slot=sidebar]:-ml-(--control-pad-sm) in-data-[slot=sidebar]:justify-self-start",
         className,
       )}
       {...props}

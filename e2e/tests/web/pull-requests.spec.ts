@@ -370,7 +370,7 @@ test.describe('Pull requests when GitHub answers in part', () => {
 async function watch(page: Page, names: string[]) {
   await page.getByRole('button', { name: 'Watch repositories' }).click();
   for (const name of names) {
-    await page.getByRole('textbox', { name: 'Search repositories' }).fill(name);
+    await page.getByRole('combobox', { name: 'Search repositories' }).fill(name);
     await page.getByRole('option', { name }).click();
   }
   await page.keyboard.press('Escape');

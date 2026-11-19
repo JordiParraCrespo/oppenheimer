@@ -8,12 +8,6 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
  */
 export const SESSION_PINS_KEY = 'oppenheimer.sidebar.pins';
 
-/** `pins` with `id` pinned on top, or taken out. */
-export function withPin(pins: readonly string[], id: string, pinned: boolean): string[] {
-  const rest = pins.filter((pinnedId) => pinnedId !== id);
-  return pinned ? [id, ...rest] : rest;
-}
-
 /**
  * The pinned sessions, in pin order, and the rest as they came. A pin whose
  * session is not in `sessions` (filtered out, or deleted) draws nothing.

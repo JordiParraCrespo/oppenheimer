@@ -65,9 +65,14 @@ func (a openCodeAPI) get(ctx context.Context, path string, query url.Values, out
 }
 
 // events reads OpenCode's event stream until it ends, calling changed for
-// each event about a session or a message. Only the head of an event's data
-// is read (eventType): a part's event carries the whole part.
-func (a openCodeAPI) events(ctx context.Context, changed func()) error {
+// each event about a session or a message with the conversation it names
+// ("" when its head does not say). Only the head of an event's data is read
+// (eventOf): a part's event carries the whole part.
+//
+// The stream is this OpenCode process's own: another OpenCode writing to the
+// same store, in the same folder, says nothing on it. That is how the chat
+// tells the session's conversation from another's (openCodeFollower.conversation).
+func (a openCodeAPI) events(ctx context.Context, changed func(conversation string)) error {
 	req, err := a.request(ctx, "/event", nil)
 	if err != nil {
 		return err
@@ -93,39 +98,81 @@ func (a openCodeAPI) events(ctx context.Context, changed func()) error {
 		if !head || !bytes.HasPrefix(line, []byte("data:")) {
 			continue
 		}
-		kind := eventType(bytes.TrimSpace(line[len("data:"):]))
+		kind, conversation := eventOf(bytes.TrimSpace(line[len("data:"):]))
 		if strings.HasPrefix(kind, "message.") || strings.HasPrefix(kind, "session.") {
-			changed()
+			changed(conversation)
 		}
 	}
 }
 
-// eventType is the `type` of an event's data, read off its head by a JSON
-// tokenizer rather than matched as text, so spacing and the order of the keys
-// before it do not matter. The data of a part's event can be megabytes and
-// only its head is at hand: a type that is not in it reads as none, and the
-// follower's slower poll still sees the change.
-func eventType(data []byte) string {
+// eventOf is the `type` of an event's data and the conversation it is about,
+// read off its head by a JSON tokenizer rather than matched as text, so
+// spacing and the order of the keys do not matter. The conversation is
+// `properties.sessionID`, or that of the message or part it carries, or, for
+// an event about a conversation itself, its `info.id`. The data of a part's
+// event can be megabytes and only its head is at hand: what is not in it
+// reads as none, and the follower's slower poll still sees the change.
+func eventOf(data []byte) (kind, conversation string) {
+	type frame struct {
+		object, wantKey bool
+		key             string
+	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	if open, err := decoder.Token(); err != nil || open != json.Delim('{') {
-		return ""
+		return "", ""
 	}
-	for decoder.More() {
-		key, err := decoder.Token()
+	var infoID string
+	frames := []frame{{object: true, wantKey: true}}
+	for len(frames) > 0 {
+		token, err := decoder.Token()
 		if err != nil {
-			return ""
+			break
 		}
-		if key == "type" {
-			var kind string
-			if decoder.Decode(&kind) != nil {
-				return ""
+		top := &frames[len(frames)-1]
+		if delim, ok := token.(json.Delim); ok {
+			switch delim {
+			case '{', '[':
+				frames = append(frames, frame{object: delim == '{', wantKey: true})
+			default:
+				frames = frames[:len(frames)-1]
+				if n := len(frames); n > 0 && frames[n-1].object {
+					frames[n-1].wantKey = true
+				}
 			}
-			return kind
+			continue
 		}
-		var skipped json.RawMessage
-		if decoder.Decode(&skipped) != nil {
-			return ""
+		if top.object && top.wantKey {
+			top.key, _ = token.(string)
+			top.wantKey = false
+			continue
+		}
+		if top.object {
+			top.wantKey = true
+		}
+		value, ok := token.(string)
+		if !ok {
+			continue
+		}
+		path := make([]string, len(frames))
+		for i, f := range frames {
+			path[i] = "[]"
+			if f.object {
+				path[i] = f.key
+			}
+		}
+		switch strings.Join(path, ".") {
+		case "type":
+			kind = value
+		case "properties.sessionID", "properties.info.sessionID", "properties.part.sessionID":
+			if conversation == "" {
+				conversation = value
+			}
+		case "properties.info.id":
+			infoID = value
 		}
 	}
-	return ""
+	if conversation == "" && strings.HasPrefix(kind, "session.") {
+		conversation = infoID
+	}
+	return kind, conversation
 }
