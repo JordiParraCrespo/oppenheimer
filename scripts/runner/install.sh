@@ -96,9 +96,14 @@ die() {
 # banner — the fedora beside the name, once, at the top. Only on a terminal.
 banner() {
 	[ -n "$B" ] || return 0
-	printf '\n  %s  ▗▆▄▆▖  %s   %sOppenheimer Runner%s\n' "$B" "$R" "$B" "$R"
-	printf '  %s ▐█████▌ %s   %sinstalling the host agent on this machine%s\n' "$B" "$R" "$D" "$R"
-	printf '  %s▝▀▀▀▀▀▀▀▘%s\n\n' "$B" "$R"
+	printf '\n'
+	printf '  %s    ▗▇▇▆▇▇▖    %s\n' "$B" "$R"
+	printf '  %s    ███████    %s\n' "$B" "$R"
+	printf '  %s   ▐███████▌   %s   %sOppenheimer Runner%s\n' "$B" "$R" "$B" "$R"
+	printf '  %s   █████████   %s   %sinstalling the host agent on this machine%s\n' "$B" "$R" "$D" "$R"
+	printf '  %s▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖%s\n' "$B" "$R"
+	printf '  %s ▀▜█████████▛▀ %s\n' "$B" "$R"
+	printf '\n'
 }
 
 # A terminal to ask on. Under `curl | sh` stdin is this script, so questions go

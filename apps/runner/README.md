@@ -78,7 +78,7 @@ mark and colours wherever a person meets it.
   `OppenheimerRunner.app` (`packaging/macos/AppIcon.svg`, packed into
   `AppIcon.icns` by `node scripts/runner/app-icon.mjs`), which Login Items,
   Privacy & Security and every permission prompt show. On a terminal it is
-  three rows of block characters beside the name, at the top of
+  the same hat in six rows of block characters beside the name, at the top of
   `runner help`, `runner status` and the installer.
 - **Colour is rationed** the way the design system rations it
   (`packages/frontend/design-system/web`): one blue for what to type or open

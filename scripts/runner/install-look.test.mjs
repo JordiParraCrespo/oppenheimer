@@ -11,10 +11,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 test('the installer draws the same fedora as the runner', () => {
   const look = readFileSync(join(ROOT, 'apps/runner/internal/cli/look.go'), 'utf8');
-  const declared = look.match(/var mark = \[3\]string\{(.*)\}/);
-  assert.ok(declared, 'look.go no longer declares `var mark = [3]string{...}`');
+  const declared = look.match(/var mark = \[\d+\]string\{([\s\S]*?)\n\}/);
+  assert.ok(declared, 'look.go no longer declares `var mark = [N]string{...}`');
   const mark = [...declared[1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
-  assert.equal(mark.length, 3);
+  assert.ok(mark.length > 0);
 
   const installer = readFileSync(join(ROOT, 'scripts/runner/install.sh'), 'utf8');
   const banner = installer.slice(

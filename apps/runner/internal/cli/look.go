@@ -116,21 +116,37 @@ func (l Look) Label(kind, word string) string {
 	}
 }
 
-// mark is the fedora from the console's favicon in block characters: the
-// pinched crown, the crown, the brim. It stands beside the product's name.
-var mark = [3]string{"  ▗▆▄▆▖  ", " ▐█████▌ ", "▝▀▀▀▀▀▀▀▘"}
+// mark is the logo's fedora (apps/runner/packaging/macos/AppIcon.svg) in
+// block characters, drawn to its proportions: the crown's rounded top with
+// its shallow dent (eighth blocks), the crown tapering out to its base (half
+// blocks), the gap above the brim, and the brim's lens. It stands beside the
+// product's name.
+var mark = [6]string{
+	"    ▗▇▇▆▇▇▖    ",
+	"    ███████    ",
+	"   ▐███████▌   ",
+	"   █████████   ",
+	"▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖",
+	" ▀▜█████████▛▀ ",
+}
 
-// Banner draws the mark beside the product's name, title after it, and
-// subtitle under it. It draws nothing when plain: a banner in a log or a pipe
-// is noise.
+// Banner draws the mark with the product's name, title after it, and
+// subtitle under it, beside the mark's middle rows. It draws nothing when
+// plain: a banner in a log or a pipe is noise.
 func (l Look) Banner(w io.Writer, title, subtitle string) {
 	if !l.color {
 		return
 	}
+	beside := [len(mark)]string{2: l.Bold("Oppenheimer Runner") + title, 3: l.Dim(subtitle)}
 	var b strings.Builder
 	b.WriteString("\n")
-	b.WriteString("  " + l.Bold(mark[0]) + "   " + l.Bold("Oppenheimer Runner") + title + "\n")
-	b.WriteString("  " + l.Bold(mark[1]) + "   " + l.Dim(subtitle) + "\n")
-	b.WriteString("  " + l.Bold(mark[2]) + "\n\n")
+	for i, row := range mark {
+		line := "  " + l.Bold(row)
+		if beside[i] != "" {
+			line += "   " + beside[i]
+		}
+		b.WriteString(strings.TrimRight(line, " ") + "\n")
+	}
+	b.WriteString("\n")
 	_, _ = io.WriteString(w, b.String())
 }

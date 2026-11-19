@@ -45,7 +45,7 @@ func TestForcedLookDrawsTheConsoleVocabulary(t *testing.T) {
 	}
 	var out bytes.Buffer
 	look.Banner(&out, "", "subtitle")
-	if !strings.Contains(out.String(), "Oppenheimer Runner") || !strings.Contains(out.String(), "▗▆▄▆▖") {
+	if !strings.Contains(out.String(), "Oppenheimer Runner") || !strings.Contains(out.String(), "▗▇▇▆▇▇▖") {
 		t.Fatalf("banner = %q", out.String())
 	}
 }
