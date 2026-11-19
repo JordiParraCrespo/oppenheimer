@@ -72,26 +72,29 @@ export interface BotPromptInput {
  * `prompts/*.md` (`promptText`); what is here decides which are sent.
  */
 export function composeBotSystemPrompt(input: BotPromptInput): string {
-  const parts = [promptText('identity.opening', { name: input.name })];
+  const parts = [promptText('system/identity.opening', { name: input.name })];
   if (input.description.trim()) {
-    parts.push(promptText('identity.description', { description: input.description.trim() }));
+    parts.push(
+      promptText('system/identity.description', { description: input.description.trim() }),
+    );
   }
   const sessions = offersSessions(input.tools);
   const commands = offersCommands(input.tools);
   const terminals = offeredTerminalTools(input.tools);
   parts.push(
     howATurnGoes(input.tools.some((tool) => tool.name === 'remember')),
-    promptText('check-before-report'),
-    promptText('turn-context', { tag: TURN_CONTEXT_TAG }),
+    promptText('system/check-before-report'),
+    promptText('system/turn-context', { tag: TURN_CONTEXT_TAG }),
     whatYouCanDo(input.engineCapabilities, input.tools, sessions, commands, terminals.size > 0),
-    promptText('rules'),
+    promptText('system/rules'),
   );
   if (sessions) parts.push(workingOnCode(commands, terminals.size > 0));
-  if (commands) parts.push(promptText('commands-on-a-host'));
+  if (commands) parts.push(promptText('system/commands-on-a-host'));
   if (terminals.size > 0) parts.push(drivingATerminal(commands, terminals));
-  if (input.soul.trim()) parts.push(promptText('documents.soul', { content: input.soul.trim() }));
+  if (input.soul.trim())
+    parts.push(promptText('system/documents.soul', { content: input.soul.trim() }));
   if (input.instructions.trim()) {
-    parts.push(promptText('documents.instructions', { content: input.instructions.trim() }));
+    parts.push(promptText('system/documents.instructions', { content: input.instructions.trim() }));
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
@@ -102,18 +105,18 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   );
   if (skills) parts.push(skills);
   if (input.personAbout?.trim()) {
-    parts.push(promptText('documents.person-about', { content: input.personAbout.trim() }));
+    parts.push(promptText('system/documents.person-about', { content: input.personAbout.trim() }));
   }
   if (input.personFacts?.length) {
     parts.push(
-      promptText('documents.general-memory', {
+      promptText('system/documents.general-memory', {
         facts: input.personFacts.map((fact) => `- ${fact}`).join('\n'),
       }),
     );
   }
   if (input.facts.length) {
     parts.push(
-      promptText('documents.own-memory', {
+      promptText('system/documents.own-memory', {
         facts: input.facts.map((fact) => `- ${fact}`).join('\n'),
       }),
     );
@@ -138,13 +141,13 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const setup = [
     ...projectHint(tools),
-    promptText('getting-started.look-before-you-ask', { connectOffer: connectOffer(tools) }),
+    promptText('system/getting-started.look-before-you-ask', { connectOffer: connectOffer(tools) }),
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
-    promptText('getting-started.draft-instructions'),
+    promptText('system/getting-started.draft-instructions'),
   ];
   const numbered = (steps: readonly string[]) =>
     steps.map((step, i) => `${i + 1}. ${step}`).join('\n');
-  return promptText('getting-started.body', {
+  return promptText('system/getting-started.body', {
     welcome: numbered(welcomeLines(name, tools)),
     setup: numbered(setup),
   });
@@ -157,13 +160,13 @@ function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
  */
 interface AreaIntro {
   /** What the bot can do there, in the greeting's list. */
-  does: string;
+  does: PlainPromptId;
   /** The tools that do it: the area is offered when the turn has any of them. */
   doneBy: readonly string[];
   /** What the person may still have to connect for it, named in the offer to help. */
-  connects?: string;
+  connects?: PlainPromptId;
   /** A job this area makes possible, among the examples Getting started offers. */
-  example?: string;
+  example?: PlainPromptId;
 }
 
 /**
@@ -173,48 +176,52 @@ interface AreaIntro {
  */
 const AREA_INTROS: readonly AreaIntro[] = [
   {
-    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once and report back',
+    does: 'system/getting-started-areas.hosts-does',
     doneBy: ['start_session', 'start_cloud_session'],
-    connects: 'a computer',
-    example: 'running coding agents on a host to fix bugs',
+    connects: 'system/getting-started-areas.hosts-connects',
+    example: 'system/getting-started-areas.hosts-example',
   },
-  { does: 'run commands on their computers', doneBy: ['run_command'] },
+  { does: 'system/getting-started-areas.commands-does', doneBy: ['run_command'] },
   {
-    does: 'keep their plan, projects and tasks up to date',
+    does: 'system/getting-started-areas.plan-does',
     doneBy: ['create_task', 'update_task'],
-    example: "keeping a project's plan up to date",
+    example: 'system/getting-started-areas.plan-example',
   },
   {
-    does: 'read, sort and answer their email in Gmail',
+    does: 'system/getting-started-areas.gmail-does',
     doneBy: ['send_mail', 'send_draft'],
-    connects: 'Gmail',
-    example: 'keeping their inbox sorted and answered',
+    connects: 'system/getting-started-areas.gmail-connects',
+    example: 'system/getting-started-areas.gmail-example',
   },
   {
-    does: 'talk with them and others on WhatsApp',
+    does: 'system/getting-started-areas.whatsapp-does',
     doneBy: ['send_whatsapp_message'],
-    connects: 'WhatsApp',
+    connects: 'system/getting-started-areas.whatsapp-connects',
   },
-  { does: 'talk with them on Telegram', doneBy: ['send_telegram_message'], connects: 'Telegram' },
   {
-    does: 'review, comment on and follow pull requests and issues on GitHub',
+    does: 'system/getting-started-areas.telegram-does',
+    doneBy: ['send_telegram_message'],
+    connects: 'system/getting-started-areas.telegram-connects',
+  },
+  {
+    does: 'system/getting-started-areas.github-does',
     doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
-    connects: 'GitHub',
-    example: 'reviewing pull requests',
+    connects: 'system/getting-started-areas.github-connects',
+    example: 'system/getting-started-areas.github-example',
   },
   {
-    does: 'run automations and routines on a schedule or when something happens',
+    does: 'system/getting-started-areas.routines-does',
     doneBy: ['update_routine'],
-    example: 'a morning report on a schedule',
+    example: 'system/getting-started-areas.routines-example',
   },
   {
-    does: 'work with their other bots, create new ones and change their settings',
+    does: 'system/getting-started-areas.bots-does',
     doneBy: ['message_bot', 'create_bot', 'update_bot'],
   },
   {
-    does: 'read pages on the web and research a topic',
+    does: 'system/getting-started-areas.web-does',
     doneBy: ['web_fetch'],
-    example: 'researching a topic',
+    example: 'system/getting-started-areas.web-example',
   },
 ];
 
@@ -232,10 +239,12 @@ const MAX_JOB_EXAMPLES = 2;
  * One that can act nowhere suggests answering questions.
  */
 function jobExamples(tools: readonly BotPromptTool[]): string[] {
-  const examples = offeredAreas(tools).flatMap((area) => (area.example ? [area.example] : []));
+  const examples = offeredAreas(tools).flatMap((area) =>
+    area.example ? [promptText(area.example)] : [],
+  );
   return examples.length
     ? examples.slice(0, MAX_JOB_EXAMPLES)
-    : [promptText('getting-started.answering-questions')];
+    : [promptText('system/getting-started.answering-questions')];
 }
 
 /**
@@ -246,10 +255,10 @@ function jobExamples(tools: readonly BotPromptTool[]): string[] {
  */
 function welcomeLines(name: string, tools: readonly BotPromptTool[]): string[] {
   return [
-    promptText('getting-started.welcome-greet'),
-    promptText('getting-started.welcome-name', { name }),
-    promptText('getting-started.welcome-help', { areas: helpAreas(tools) }),
-    promptText('getting-started.welcome-ask', { examples: jobExamples(tools).join(' or ') }),
+    promptText('system/getting-started.welcome-greet'),
+    promptText('system/getting-started.welcome-name', { name }),
+    promptText('system/getting-started.welcome-help', { areas: helpAreas(tools) }),
+    promptText('system/getting-started.welcome-ask', { examples: jobExamples(tools).join(' or ') }),
   ];
 }
 
@@ -257,10 +266,10 @@ function welcomeLines(name: string, tools: readonly BotPromptTool[]): string[] {
 function helpAreas(tools: readonly BotPromptTool[]): string {
   const areas = offeredAreas(tools);
   return areas.length
-    ? promptText('getting-started.help-areas', {
-        areas: areas.map((area) => area.does).join('; '),
+    ? promptText('system/getting-started.help-areas', {
+        areas: areas.map((area) => promptText(area.does)).join('; '),
       })
-    : promptText('getting-started.answering-questions');
+    : promptText('system/getting-started.answering-questions');
 }
 
 /**
@@ -270,7 +279,7 @@ function helpAreas(tools: readonly BotPromptTool[]): string {
  */
 function projectHint(tools: readonly BotPromptTool[]): string[] {
   if (!tools.some((tool) => tool.name === 'list_projects')) return [];
-  return [promptText('getting-started.project-hint')];
+  return [promptText('system/getting-started.project-hint')];
 }
 
 /**
@@ -278,9 +287,11 @@ function projectHint(tools: readonly BotPromptTool[]): string[] {
  * rather than in the welcome, which it made twice as long (2026-11-13).
  */
 function connectOffer(tools: readonly BotPromptTool[]): string {
-  const connects = offeredAreas(tools).flatMap((area) => (area.connects ? [area.connects] : []));
+  const connects = offeredAreas(tools).flatMap((area) =>
+    area.connects ? [promptText(area.connects)] : [],
+  );
   return connects.length
-    ? ` ${promptText('getting-started.connect-offer', { services: connects.join(', ') })}`
+    ? ` ${promptText('system/getting-started.connect-offer', { services: connects.join(', ') })}`
     : '';
 }
 
@@ -290,8 +301,8 @@ function connectOffer(tools: readonly BotPromptTool[]): string {
  * description saved almost nothing past its first chat.
  */
 function howATurnGoes(remembers: boolean): string {
-  const body = promptText('how-a-turn-goes.body', { recovery: recoveryBullets() });
-  return remembers ? `${body}\n${promptText('how-a-turn-goes.save-as-you-go')}` : body;
+  const body = promptText('system/how-a-turn-goes.body', { recovery: recoveryBullets() });
+  return remembers ? `${body}\n${promptText('system/how-a-turn-goes.save-as-you-go')}` : body;
 }
 
 /** How the prompt names each area of tools; the order is the list's. */
@@ -334,13 +345,13 @@ function whatYouCanDo(
       return names ? [`- ${label}: ${names.join(', ')}`] : [];
     }),
   ];
-  if (lines.length === 0) lines.push(promptText('what-you-can-do.answer-only'));
+  if (lines.length === 0) lines.push(promptText('system/what-you-can-do.answer-only'));
   const reachable = promptText(REACHABLE[`${commands}:${terminals}`]);
-  const refusal = promptText('what-you-can-do.plain-refusal');
+  const refusal = promptText('system/what-you-can-do.plain-refusal');
   const closing = sessions
-    ? [reachable, promptText('what-you-can-do.code-work-goes-to-sessions'), refusal]
+    ? [reachable, promptText('system/what-you-can-do.code-work-goes-to-sessions'), refusal]
     : [reachable, refusal];
-  return promptText('what-you-can-do.body', {
+  return promptText('system/what-you-can-do.body', {
     lines: lines.join('\n'),
     closing: closing.join(' '),
   });
@@ -351,10 +362,10 @@ function whatYouCanDo(
  * host: `${commands}:${terminals}`.
  */
 const REACHABLE: Readonly<Record<`${boolean}:${boolean}`, PlainPromptId>> = {
-  'false:false': 'what-you-can-do.nothing-else',
-  'true:false': 'what-you-can-do.nothing-else-but-commands',
-  'false:true': 'what-you-can-do.nothing-else-but-terminals',
-  'true:true': 'what-you-can-do.nothing-else-but-commands-and-terminals',
+  'false:false': 'system/what-you-can-do.nothing-else',
+  'true:false': 'system/what-you-can-do.nothing-else-but-commands',
+  'false:true': 'system/what-you-can-do.nothing-else-but-terminals',
+  'true:true': 'system/what-you-can-do.nothing-else-but-commands-and-terminals',
 };
 
 /** Which of the terminal tools the turn is offered; empty when none. */
@@ -386,11 +397,11 @@ function delegateTail(commands: boolean, terminals: boolean): string {
   if (commands) {
     return ` ${promptText(
       terminals
-        ? 'working-on-code.run-command-or-session-with-terminal'
-        : 'working-on-code.run-command-or-session',
+        ? 'system/working-on-code.run-command-or-session-with-terminal'
+        : 'system/working-on-code.run-command-or-session',
     )}`;
   }
-  return terminals ? '' : ` ${promptText('working-on-code.never-runs-commands')}`;
+  return terminals ? '' : ` ${promptText('system/working-on-code.never-runs-commands')}`;
 }
 
 /**
@@ -402,9 +413,11 @@ function delegateTail(commands: boolean, terminals: boolean): string {
  */
 function workingOnCode(commands: boolean, terminals: boolean): string {
   const opening = promptText(
-    terminals ? 'working-on-code.delegates-code-work' : 'working-on-code.delegates-not-a-terminal',
+    terminals
+      ? 'system/working-on-code.delegates-code-work'
+      : 'system/working-on-code.delegates-not-a-terminal',
   );
-  return promptText('working-on-code.body', {
+  return promptText('system/working-on-code.body', {
     delegate: `${opening}${delegateTail(commands, terminals)}`,
     hostCases: hostCases(),
   });
@@ -427,7 +440,7 @@ function drivingATerminal(commands: boolean, tools: ReadonlySet<string>): string
   const lines = TERMINAL_LINES.filter((line) => line.when(has)).map(
     (line) => `- ${promptText(line.id)}`,
   );
-  return promptText('driving-a-terminal.body', {
+  return promptText('system/driving-a-terminal.body', {
     tools: named.join(', '),
     lines: lines.join('\n'),
   });
@@ -449,19 +462,25 @@ interface TerminalLine {
 
 /** The terminal section's lines, in order; each shows only when its tools are offered. */
 const TERMINAL_LINES: readonly TerminalLine[] = [
-  { when: (has) => has.commands && has.types, id: 'driving-a-terminal.prefer-run-command' },
-  { when: (has) => has.opens, id: 'driving-a-terminal.look-before-you-guess' },
-  { when: (has) => has.opens && has.reads, id: 'driving-a-terminal.open-then-read' },
-  { when: (has) => has.opens && !has.reads && has.types, id: 'driving-a-terminal.open-then-wait' },
-  { when: (has) => !has.opens, id: 'driving-a-terminal.cannot-open' },
-  { when: (has) => has.types, id: 'driving-a-terminal.type-a-command' },
-  { when: (has) => !has.types && has.reads, id: 'driving-a-terminal.read-only' },
-  { when: (has) => has.opens, id: 'driving-a-terminal.one-terminal-per-job' },
-  { when: (has) => has.types, id: 'driving-a-terminal.never-type-a-secret' },
-  { when: (has) => !has.types, id: 'driving-a-terminal.never-read-a-secret' },
-  { when: () => true, id: 'driving-a-terminal.screen-is-outside-text' },
-  { when: () => true, id: 'driving-a-terminal.host-must-allow' },
-  { when: (has) => has.opens || has.types, id: 'driving-a-terminal.leave-it-for-the-person' },
+  { when: (has) => has.commands && has.types, id: 'system/driving-a-terminal.prefer-run-command' },
+  { when: (has) => has.opens, id: 'system/driving-a-terminal.look-before-you-guess' },
+  { when: (has) => has.opens && has.reads, id: 'system/driving-a-terminal.open-then-read' },
+  {
+    when: (has) => has.opens && !has.reads && has.types,
+    id: 'system/driving-a-terminal.open-then-wait',
+  },
+  { when: (has) => !has.opens, id: 'system/driving-a-terminal.cannot-open' },
+  { when: (has) => has.types, id: 'system/driving-a-terminal.type-a-command' },
+  { when: (has) => !has.types && has.reads, id: 'system/driving-a-terminal.read-only' },
+  { when: (has) => has.opens, id: 'system/driving-a-terminal.one-terminal-per-job' },
+  { when: (has) => has.types, id: 'system/driving-a-terminal.never-type-a-secret' },
+  { when: (has) => !has.types, id: 'system/driving-a-terminal.never-read-a-secret' },
+  { when: () => true, id: 'system/driving-a-terminal.screen-is-outside-text' },
+  { when: () => true, id: 'system/driving-a-terminal.host-must-allow' },
+  {
+    when: (has) => has.opens || has.types,
+    id: 'system/driving-a-terminal.leave-it-for-the-person',
+  },
 ];
 
 /** What an approval's turn is asked: what came of the card, then what to do about it. */
@@ -485,7 +504,7 @@ type EventPrompts = {
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (event, content) => approvalPrompt(content, event.stage),
-  question: (_event, content) => `${eventNote(content)}\n\n${promptText('question-answered')}`,
+  question: (_event, content) => `${eventNote(content)}\n\n${promptText('turn/question-answered')}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,

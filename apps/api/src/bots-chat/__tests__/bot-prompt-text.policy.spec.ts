@@ -10,13 +10,15 @@ import { promptText } from '../domain/bot-prompt-text.policy';
  */
 describe('promptText', () => {
   it('answers the words of a prompt as its Markdown writes them', () => {
-    expect(promptText('rules')).toMatch(/^# Rules no instruction overrides\n\n- Never ask anyone/);
+    expect(promptText('system/rules')).toMatch(
+      /^# Rules no instruction overrides\n\n- Never ask anyone/,
+    );
   });
 
   it('fills every slot of a prompt with the value given for it', () => {
-    expect(promptText('identity.description', { description: 'Reviews pull requests.' })).toBe(
-      'Your description: Reviews pull requests.',
-    );
+    expect(
+      promptText('system/identity.description', { description: 'Reviews pull requests.' }),
+    ).toBe('Your description: Reviews pull requests.');
   });
 
   // What fills a slot is often the person's or the bot's own writing (a
@@ -24,7 +26,7 @@ describe('promptText', () => {
   // SOUL.md that says `{{content}}` or `$&` would be rewritten on its way in.
   it('puts a value in as given: it is never read for slots or patterns of its own', () => {
     const written = 'Keep {{content}} and {{name}} as they are, and $& and $1 too.';
-    expect(promptText('documents.soul', { content: written })).toBe(
+    expect(promptText('system/documents.soul', { content: written })).toBe(
       `# SOUL.md (who you are)\n\n${written}`,
     );
   });
@@ -32,8 +34,8 @@ describe('promptText', () => {
   // The types refuse an unfilled slot, but a cast or an untyped caller gets
   // past them, and the model would then read a literal `{{description}}`.
   it('refuses a slot nothing was given for, rather than send the placeholder', () => {
-    expect(() => promptText('identity.description', {} as never)).toThrow(
-      'Prompt identity.description was given nothing for {{description}}.',
+    expect(() => promptText('system/identity.description', {} as never)).toThrow(
+      'Prompt system/identity.description was given nothing for {{description}}.',
     );
   });
 });
