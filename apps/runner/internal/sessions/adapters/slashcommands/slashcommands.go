@@ -50,6 +50,12 @@ func (Reader) InFolder(dir string, max int) []domain.SlashCommand {
 	if err != nil {
 		return nil
 	}
+	root, err := os.OpenRoot(inside)
+	if err != nil {
+		return nil
+	}
+	defer func() { _ = root.Close() }()
+	in := folder{inside: inside, root: root}
 	seen := map[string]bool{}
 	var out []domain.SlashCommand
 	add := func(list []domain.SlashCommand) {
@@ -64,8 +70,8 @@ func (Reader) InFolder(dir string, max int) []domain.SlashCommand {
 			out = append(out, command)
 		}
 	}
-	add(collect(filepath.Join(dir, ".claude", "skills"), inside, skillSource, max))
-	add(collect(filepath.Join(dir, ".claude", "commands"), inside, commandSource, max))
+	add(collect(filepath.Join(dir, ".claude", "skills"), in, skillSource, max))
+	add(collect(filepath.Join(dir, ".claude", "commands"), in, commandSource, max))
 	return out
 }
 
@@ -73,34 +79,49 @@ func (Reader) InFolder(dir string, max int) []domain.SlashCommand {
 // unless its source lets the front matter name it.
 type candidate struct{ path, name string }
 
+// folder is the session's folder resolved, and opened as a root no read can
+// leave.
+type folder struct {
+	inside string
+	root   *os.Root
+}
+
 // source is how one kind of file reads as a command: whether the front
-// matter's `name` wins over the file's, and whether a body's first line
-// stands in for a missing description.
+// matter's `name` wins over the file's, whether a body's first line stands
+// in for a missing description, and which file names, once every link is
+// resolved, may hold one.
 type source struct {
 	kind            domain.SlashCommandKind
 	namedByHeader   bool
 	describedByBody bool
 	candidatesUnder func(root string) []candidate
+	holds           func(base string) bool
 }
 
 var (
 	// skillSource is `<dir>/SKILL.md`, through a symlinked folder.
-	skillSource = source{kind: domain.SlashCommandSkill, namedByHeader: true, candidatesUnder: skillFiles}
+	skillSource = source{
+		kind: domain.SlashCommandSkill, namedByHeader: true, candidatesUnder: skillFiles,
+		holds: func(base string) bool { return base == "SKILL.md" },
+	}
 	// commandSource is each `.md` under the folder, a subfolder's name joined
 	// to the file's with `:`.
-	commandSource = source{kind: domain.SlashCommandCommand, describedByBody: true, candidatesUnder: commandFiles}
+	commandSource = source{
+		kind: domain.SlashCommandCommand, describedByBody: true, candidatesUnder: commandFiles,
+		holds: func(base string) bool { return strings.HasSuffix(base, ".md") },
+	}
 )
 
 // collect reads the commands a source finds under root, at most max, by
 // name, leaving out one whose front matter says `user-invocable: false` and
-// one whose file does not resolve inside the folder inside.
-func collect(root, inside string, from source, max int) []domain.SlashCommand {
+// one whose file does not resolve to a file of the source's inside the folder.
+func collect(root string, in folder, from source, max int) []domain.SlashCommand {
 	var out []domain.SlashCommand
 	for _, found := range from.candidatesUnder(root) {
 		if len(out) >= max {
 			break
 		}
-		head, ok := readHead(found.path, inside)
+		head, ok := readHead(in, found.path, from.holds)
 		if !ok {
 			continue
 		}
@@ -195,25 +216,24 @@ func clip(text string) string {
 	return text
 }
 
-// readHead reads the start of a regular file whose real path, through any
-// symlink, is inside the folder inside (itself resolved). Anything else is
-// refused before it is opened: a link out of the folder could hand a host's
-// key to whoever reads the chat, and opening a FIFO blocks until a writer
-// comes, which would hold the chat's first batch back for good. The real
-// path is opened without following a link, so one swapped in after the
-// check is refused too.
-func readHead(path, inside string) (string, bool) {
+// readHead reads the start of path, a file under the session's folder, when
+// it resolves, through any symlink, to a regular file inside the folder whose
+// name its source holds. A link out of the folder could hand a host's key to
+// whoever reads the chat, and one to another file in it (`.env`) its first
+// line, so neither is read. The file is opened through the folder's root,
+// which no link swapped in after the check can leave, and without blocking,
+// since opening a FIFO waits for a writer and would hold the chat's first
+// batch back for good.
+func readHead(in folder, path string, holds func(base string) bool) (string, bool) {
 	real, err := filepath.EvalSymlinks(path)
-	if err != nil {
+	if err != nil || !holds(filepath.Base(real)) {
 		return "", false
 	}
-	if rel, err := filepath.Rel(inside, real); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+	rel, err := filepath.Rel(in.inside, real)
+	if err != nil || !filepath.IsLocal(rel) {
 		return "", false
 	}
-	if info, err := os.Lstat(real); err != nil || !info.Mode().IsRegular() {
-		return "", false
-	}
-	file, err := os.OpenFile(real, os.O_RDONLY|syscall.O_NOFOLLOW, 0) //nolint:gosec // resolved and held inside the session's folder above
+	file, err := in.root.OpenFile(rel, os.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return "", false
 	}

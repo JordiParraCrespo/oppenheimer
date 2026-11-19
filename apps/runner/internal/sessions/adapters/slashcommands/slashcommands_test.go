@@ -112,7 +112,8 @@ func TestAPipeInTheProjectDoesNotHoldTheListBack(t *testing.T) {
 
 // A project can commit a symlink, and the description of what it points at
 // leaves the host: a link out of the session's folder (a host key, a log) is
-// never read, even through a linked folder, while one that stays inside it
+// never read, even through a linked folder, and neither is one to a file in
+// it that is not a command (`.env`), while a linked folder that stays inside
 // (`.claude/skills -> ../.agents/skills`) still is.
 func TestALinkOutOfTheSessionsFolderIsNeverRead(t *testing.T) {
 	outside := t.TempDir()
@@ -128,6 +129,11 @@ func TestALinkOutOfTheSessionsFolderIsNeverRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := os.Symlink(filepath.Join(outside, "skill"), filepath.Join(dir, ".claude", "skills")); err != nil {
+		t.Fatal(err)
+	}
+	// Inside the folder, but not a command: a checkout's own secrets.
+	write(t, filepath.Join(dir, ".env"), "SECRET-ENV-LINE\n")
+	if err := os.Symlink(filepath.Join("..", "..", ".env"), filepath.Join(commands, "env.md")); err != nil {
 		t.Fatal(err)
 	}
 
