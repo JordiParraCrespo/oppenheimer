@@ -109,3 +109,35 @@ func TestAPipeInTheProjectDoesNotHoldTheListBack(t *testing.T) {
 		t.Fatal("reading the commands blocked on a pipe")
 	}
 }
+
+// A project can commit a symlink, and the description of what it points at
+// leaves the host: a link out of the session's folder (a host key, a log) is
+// never read, even through a linked folder, while one that stays inside it
+// (`.claude/skills -> ../.agents/skills`) still is.
+func TestALinkOutOfTheSessionsFolderIsNeverRead(t *testing.T) {
+	outside := t.TempDir()
+	write(t, filepath.Join(outside, "host.key"), "SECRET-KEY-LINE\n")
+	write(t, filepath.Join(outside, "skill", "SKILL.md"), "---\ndescription: SECRET-SKILL\n---\n")
+	dir := t.TempDir()
+	commands := filepath.Join(dir, ".claude", "commands")
+	write(t, filepath.Join(commands, "ok.md"), "Fine\n")
+	if err := os.Symlink(filepath.Join(outside, "host.key"), filepath.Join(commands, "leak.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(commands, "away")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(outside, "skill"), filepath.Join(dir, ".claude", "skills")); err != nil {
+		t.Fatal(err)
+	}
+
+	got := Reader{}.InFolder(dir, 10)
+	for _, command := range got {
+		if strings.Contains(command.Description, "SECRET") {
+			t.Fatalf("read through a link out of the folder: %+v", command)
+		}
+	}
+	if len(got) != 1 || got[0].Name != "ok" {
+		t.Fatalf("got %+v, want the command inside the folder alone", got)
+	}
+}

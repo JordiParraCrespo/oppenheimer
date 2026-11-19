@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"syscall"
 	"unicode/utf16"
 
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -43,6 +44,12 @@ func (Reader) InFolder(dir string, max int) []domain.SlashCommand {
 	if dir == "" || max <= 0 {
 		return nil
 	}
+	// Every file read must resolve inside the folder: a project can commit a
+	// symlink, and what one points at would leave the host as a description.
+	inside, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		return nil
+	}
 	seen := map[string]bool{}
 	var out []domain.SlashCommand
 	add := func(list []domain.SlashCommand) {
@@ -57,8 +64,8 @@ func (Reader) InFolder(dir string, max int) []domain.SlashCommand {
 			out = append(out, command)
 		}
 	}
-	add(collect(filepath.Join(dir, ".claude", "skills"), skillSource, max))
-	add(collect(filepath.Join(dir, ".claude", "commands"), commandSource, max))
+	add(collect(filepath.Join(dir, ".claude", "skills"), inside, skillSource, max))
+	add(collect(filepath.Join(dir, ".claude", "commands"), inside, commandSource, max))
 	return out
 }
 
@@ -85,14 +92,15 @@ var (
 )
 
 // collect reads the commands a source finds under root, at most max, by
-// name, leaving out one whose front matter says `user-invocable: false`.
-func collect(root string, from source, max int) []domain.SlashCommand {
+// name, leaving out one whose front matter says `user-invocable: false` and
+// one whose file does not resolve inside the folder inside.
+func collect(root, inside string, from source, max int) []domain.SlashCommand {
 	var out []domain.SlashCommand
 	for _, found := range from.candidatesUnder(root) {
 		if len(out) >= max {
 			break
 		}
-		head, ok := readHead(found.path)
+		head, ok := readHead(found.path, inside)
 		if !ok {
 			continue
 		}
@@ -187,14 +195,25 @@ func clip(text string) string {
 	return text
 }
 
-// readHead reads the start of a regular file, through any symlink. Anything
-// else is refused before it is opened: opening a FIFO blocks until a writer
-// comes, which would hold the chat's first batch back for good.
-func readHead(path string) (string, bool) {
-	if info, err := os.Stat(path); err != nil || !info.Mode().IsRegular() {
+// readHead reads the start of a regular file whose real path, through any
+// symlink, is inside the folder inside (itself resolved). Anything else is
+// refused before it is opened: a link out of the folder could hand a host's
+// key to whoever reads the chat, and opening a FIFO blocks until a writer
+// comes, which would hold the chat's first batch back for good. The real
+// path is opened without following a link, so one swapped in after the
+// check is refused too.
+func readHead(path, inside string) (string, bool) {
+	real, err := filepath.EvalSymlinks(path)
+	if err != nil {
 		return "", false
 	}
-	file, err := os.Open(path) //nolint:gosec // a path under the session's own .claude folder, by design
+	if rel, err := filepath.Rel(inside, real); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return "", false
+	}
+	if info, err := os.Lstat(real); err != nil || !info.Mode().IsRegular() {
+		return "", false
+	}
+	file, err := os.OpenFile(real, os.O_RDONLY|syscall.O_NOFOLLOW, 0) //nolint:gosec // resolved and held inside the session's folder above
 	if err != nil {
 		return "", false
 	}
