@@ -1,5 +1,6 @@
 import type { WhatsappMessageDraft } from './whatsapp-message.types';
 import { sameWhatsappNumber } from './whatsapp-number.policy';
+import { isWhatsappVoiceNote } from './whatsapp-voice-note.policy';
 
 /** What the owner's message asks of the chat's bot. `help` is answered with a fixed line. */
 export type WhatsappOwnerCommand = 'message' | 'new' | 'stop' | 'help';
@@ -88,7 +89,7 @@ export function whatsappInboundAction(
   ) {
     return { kind: 'ignore' };
   }
-  if (message.media === 'audio' && !message.text.trim()) {
+  if (isWhatsappVoiceNote(message)) {
     return { kind: 'owner', command: 'message', text: '', switchName: null, voiceNote: true };
   }
   const text = message.text.trim() || (message.media ? `[${message.media}]` : '');

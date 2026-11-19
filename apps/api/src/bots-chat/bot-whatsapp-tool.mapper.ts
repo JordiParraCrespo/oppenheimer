@@ -4,7 +4,10 @@ import type {
   WhatsappChatTarget,
   WhatsappMessage,
 } from '../whatsapp/domain/whatsapp-message.types';
-import { whatsappVoiceNoteText } from '../whatsapp/domain/whatsapp-voice-note.policy';
+import {
+  isWhatsappVoiceNote,
+  whatsappVoiceNoteText,
+} from '../whatsapp/domain/whatsapp-voice-note.policy';
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
@@ -67,7 +70,7 @@ export function describeWhatsappMessage(message: WhatsappMessage, timeZone: stri
  * untranscribed: a read never spends the workspace's speech budget.
  */
 function contentOf(message: WhatsappMessage): string {
-  if (message.media === 'audio' && !message.text) {
+  if (isWhatsappVoiceNote(message)) {
     const hearing =
       message.transcript === null ? null : { heard: true as const, transcript: message.transcript };
     return whatsappVoiceNoteText(message.voiceSeconds, hearing);

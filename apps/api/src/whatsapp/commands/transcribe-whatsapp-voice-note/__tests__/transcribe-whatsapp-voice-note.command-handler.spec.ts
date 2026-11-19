@@ -195,12 +195,23 @@ describe('TranscribeWhatsappVoiceNoteCommandHandler', () => {
     expect(messages.saveTranscript).not.toHaveBeenCalled();
   });
 
-  // What breaks this: the owner typing "[voice note]" and their words being replaced.
-  it('answers nothing for a row that is not a voice note, and asks the host nothing', async () => {
-    const { run, device } = setup({ message: voiceNote({ media: null, text: '[voice note]' }) });
+  it('answers that a row which is no longer a voice note is not kept, and asks the host nothing', async () => {
+    const { run, device } = setup({ message: voiceNote({ media: null, text: 'hi' }) });
 
-    await expect(run()).resolves.toBeNull();
+    await expect(run()).resolves.toBe(
+      '[voice note, could not be transcribed: it is no longer kept]',
+    );
     expect(device.voiceNote).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a cut-off download failing the turn instead of a line the bot passes on.
+  it('answers why when what the host handed over is cut off before its first Ogg page ends', async () => {
+    const { run, commandBus } = setup({
+      device: { kind: 'fetched', data: Buffer.from('OggS'), mimetype: 'audio/ogg; codecs=opus' },
+    });
+
+    await expect(run()).resolves.toMatch(/could not be transcribed: .*audio\/ogg/);
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('answers why when what the host handed over is not Ogg/Opus', async () => {

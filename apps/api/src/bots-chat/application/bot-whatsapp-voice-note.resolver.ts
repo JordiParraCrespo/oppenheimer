@@ -1,41 +1,31 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { TranscribeWhatsappVoiceNoteCommand } from '../../whatsapp/commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command';
-import { BOT_MESSAGE_REPOSITORY } from '../bots-chat.di-tokens';
-import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
-import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
-import { WHATSAPP_VOICE_NOTE_OPENING, whatsappMessageOf } from '../domain/bot-whatsapp-turn.policy';
+import { whatsappMessageOf } from '../domain/bot-whatsapp-turn.policy';
+import type { BotOpeningMediaReaderPort } from './bot-opening-media-reader.port';
 
 /**
- * Hears the owner's WhatsApp voice note when its turn starts, on the turn's
- * worker: the whatsapp module fetches it from the host and transcribes it,
- * and its words (or why it could not be heard) replace the turn's opening
- * marker, kept so the chat and every later turn read them too. Anything else
- * (a text the owner typed that only looks like the marker included) is left
- * as it is.
+ * The owner's WhatsApp voice note, read when its turn starts: the whatsapp
+ * module fetches it from the host and transcribes it, and answers its words or
+ * why they could not be heard. The note is the message the turn's key names.
  */
 @Injectable()
-export class BotWhatsappVoiceNoteResolver {
-  constructor(
-    @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
-    private readonly commands: CommandBus,
-  ) {}
+export class BotWhatsappVoiceNoteResolver implements BotOpeningMediaReaderPort {
+  readonly kind = 'whatsapp_voice_note';
 
-  async hear(turn: BotTurnEntity, opening: BotMessageEntity | null): Promise<void> {
-    if (turn.origin !== 'whatsapp' || opening?.role !== 'user') return;
-    if (opening.content !== WHATSAPP_VOICE_NOTE_OPENING) return;
+  constructor(private readonly commands: CommandBus) {}
+
+  async read(turn: BotTurnEntity): Promise<string> {
     const source = whatsappMessageOf(turn.sourceKey);
-    if (!source) return;
-    const words = await this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string | null>(
+    if (!source)
+      return '[voice note, could not be transcribed: the turn names no WhatsApp message]';
+    return this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
       new TranscribeWhatsappVoiceNoteCommand({
         organizationId: turn.organizationId,
         accountId: source.whatsappAccountId,
         messageRowId: source.messageRowId,
       }),
     );
-    if (words === null) return;
-    opening.heard(words);
-    await this.messages.saveContent(opening);
   }
 }

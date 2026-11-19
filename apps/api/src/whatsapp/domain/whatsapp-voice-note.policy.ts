@@ -1,3 +1,17 @@
+import type { WhatsappMediaKind } from '@oppenheimer/shared/protocol';
+
+/**
+ * Whether a message is a voice note with no caption: one whose words are what
+ * it says, to be heard, rather than a caption to read. The one definition the
+ * owner's wake, the hearing and a bot's reads of a chat share.
+ */
+export function isWhatsappVoiceNote(message: {
+  media: WhatsappMediaKind | null;
+  text: string;
+}): boolean {
+  return message.media === 'audio' && !message.text.trim();
+}
+
 /**
  * Whether a bot heard a voice note: its transcript, or why not, in words the
  * bot can pass on ("I could not hear your voice note: …").

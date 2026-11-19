@@ -24,7 +24,9 @@ const SAMPLE_RATE = 16_000;
 /**
  * Voice notes decoded in process, in WebAssembly: no `ffmpeg` on the API's
  * machine, nothing written to disk. Opus always decodes at 48 kHz; the first
- * channel is kept (a voice note is mono) and averaged down to 16 kHz.
+ * channel is kept (a voice note is mono) and averaged down to 16 kHz. A note
+ * that is not whole Ogg/Opus is null; anything else the decoder throws is
+ * left to fail the turn.
  */
 @Injectable()
 export class OggOpusVoiceNoteDecoderAdapter implements VoiceNoteDecoderPort {
@@ -34,12 +36,15 @@ export class OggOpusVoiceNoteDecoderAdapter implements VoiceNoteDecoderPort {
     const decoder = new OggOpusDecoder();
     try {
       await decoder.ready;
-      const decoded = await decoder.decodeFile(new Uint8Array(note));
-      const samples = decoded.channelData[0];
-      if (!samples?.length) return null;
+      const decoded = await decoder.decodeFile(new Uint8Array(note)).catch((error: unknown) => {
+        // Its Ogg parser reads past the end of a cut-off file; any other throw is a bug.
+        if (error instanceof RangeError) return null;
+        throw error;
+      });
+      // Damaged pages decode to no samples rather than throwing.
+      const samples = decoded?.channelData[0];
+      if (!decoded || !samples?.length) return null;
       return wav(resample(samples, decoded.sampleRate, SAMPLE_RATE), SAMPLE_RATE);
-    } catch {
-      return null;
     } finally {
       decoder.free();
     }

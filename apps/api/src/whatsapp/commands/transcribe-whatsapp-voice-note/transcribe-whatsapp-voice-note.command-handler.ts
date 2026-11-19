@@ -7,6 +7,7 @@ import type { WhatsappDevicePort } from '../../application/whatsapp-device.port'
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
 import type { WhatsappMessageRepositoryPort } from '../../database/whatsapp-message.repository.port';
 import {
+  isWhatsappVoiceNote,
   type WhatsappVoiceNoteHearing,
   whatsappVoiceNoteMissReason,
   whatsappVoiceNoteText,
@@ -26,14 +27,14 @@ import { TranscribeWhatsappVoiceNoteCommand } from './transcribe-whatsapp-voice-
  * (`TranscribeVoiceCommand`: its ChatGPT sign-in, else the deployment's speech
  * server, then the polish). The transcript is kept on the row, so a note is
  * heard once however often it is asked about; the audio is kept nowhere.
- * Answers the note as the bot reads it (`whatsappVoiceNoteText`), or null for a
- * row that is not a voice note (a text that only looks like the marker). Every
- * way hearing can fail is an answer, never a throw, so the turn runs all the
- * same and the bot can say it could not hear it.
+ * Answers the note as the bot reads it (`whatsappVoiceNoteText`). Every way
+ * hearing it can fail is an answer, so the turn runs all the same and the bot
+ * can say it could not hear it; what is not a way it fails (a bug) throws, and
+ * fails the turn.
  */
 @CommandHandler(TranscribeWhatsappVoiceNoteCommand)
 export class TranscribeWhatsappVoiceNoteCommandHandler
-  implements ICommandHandler<TranscribeWhatsappVoiceNoteCommand, string | null>
+  implements ICommandHandler<TranscribeWhatsappVoiceNoteCommand, string>
 {
   private readonly logger = new Logger(TranscribeWhatsappVoiceNoteCommandHandler.name);
 
@@ -47,7 +48,7 @@ export class TranscribeWhatsappVoiceNoteCommandHandler
     private readonly commandBus: CommandBus,
   ) {}
 
-  async execute(command: TranscribeWhatsappVoiceNoteCommand): Promise<string | null> {
+  async execute(command: TranscribeWhatsappVoiceNoteCommand): Promise<string> {
     const found = await this.accounts.findByIdForSystem(command.organizationId, command.accountId);
     if (found.isNone()) {
       return whatsappVoiceNoteText(null, {
@@ -58,10 +59,9 @@ export class TranscribeWhatsappVoiceNoteCommandHandler
     const account = found.unwrap();
     const ref = { organizationId: account.organizationId, accountId: account.id };
     const message = await this.messages.findById(ref, command.messageRowId);
-    if (!message) {
+    if (!message || !isWhatsappVoiceNote(message)) {
       return whatsappVoiceNoteText(null, { heard: false, reason: 'it is no longer kept' });
     }
-    if (message.media !== 'audio' || message.text) return null;
     const seconds = message.voiceSeconds;
     if (message.transcript !== null) {
       return whatsappVoiceNoteText(seconds, { heard: true, transcript: message.transcript });

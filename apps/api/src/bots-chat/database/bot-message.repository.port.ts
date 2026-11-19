@@ -45,7 +45,7 @@ export interface BotMessageRepositoryPort {
    * when Postgres refuses what they hold; any other failure as it came.
    */
   saveSteps(message: BotMessageEntity): Promise<void>;
-  /** Writes what a message says now (`BotMessageEntity.heard`). */
+  /** Writes what a message says now and what it still has to read (`BotMessageEntity.read`). */
   saveContent(message: BotMessageEntity): Promise<void>;
   /**
    * A steer the running turn took (`BotTurnRepositoryPort.takeSteers`), put

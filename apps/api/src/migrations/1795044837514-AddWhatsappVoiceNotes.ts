@@ -10,7 +10,11 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   (`TranscribeWhatsappVoiceNoteCommand`) and read back by every later read,
  *   so a note is transcribed once. Null until then. `text` stays the caption
  *   WhatsApp sent, which is empty for a voice note: the two never mix.
- * - No index: both are read with the row they sit on, never searched by.
+ * - `bot_message."pendingMedia"`: what a turn's opening message still has to
+ *   read when the turn starts (`{"kind":"whatsapp_voice_note"}`), cleared once
+ *   read. `jsonb` like the row's `event`, so the next kind (an image) adds a
+ *   value, not a column.
+ * - No index: all three are read with the row they sit on, never searched by.
  * - Instant to add: nullable columns with no default write no row.
  */
 export class AddWhatsappVoiceNotes1795044837514 implements MigrationInterface {
@@ -23,9 +27,13 @@ export class AddWhatsappVoiceNotes1795044837514 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "whatsapp_message" ADD COLUMN IF NOT EXISTS "transcript" text`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "bot_message" ADD COLUMN IF NOT EXISTS "pendingMedia" jsonb`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "bot_message" DROP COLUMN IF EXISTS "pendingMedia"`);
     await queryRunner.query(`ALTER TABLE "whatsapp_message" DROP COLUMN IF EXISTS "transcript"`);
     await queryRunner.query(`ALTER TABLE "whatsapp_message" DROP COLUMN IF EXISTS "voiceSeconds"`);
   }

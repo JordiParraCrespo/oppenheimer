@@ -12,13 +12,16 @@ export interface BotWhatsappMessage {
   messageRowId: string;
   /** What the owner wrote, without a switch's "Name:" prefix. */
   text: string;
+  /** An uncaptioned voice note: `text` is ignored, and the turn reads the note when it starts. */
+  voiceNote: boolean;
 }
 
 /**
- * The words a turn on the owner's uncaptioned voice note opens with, until the
- * turn hears it (`BotWhatsappVoiceNoteResolver`) and writes what it says in
- * their place. Queued with this rather than heard first, so the turn takes its
- * place among the owner's messages at once, in the order they were sent.
+ * What a turn on the owner's uncaptioned voice note shows until the turn
+ * reads the note, which its opening's `pendingMedia` says it must: never
+ * matched on, so the owner typing it changes nothing. Queued with this rather
+ * than heard first, so the turn takes its place among the owner's messages
+ * at once, in the order they were sent.
  */
 export const WHATSAPP_VOICE_NOTE_OPENING = '[voice note]';
 
@@ -58,6 +61,7 @@ export function whatsappTurn(
     origin: 'whatsapp',
     sourceKey: whatsappSourceKey(message),
     conversationId: message.conversationId,
-    text: message.text,
+    text: message.voiceNote ? WHATSAPP_VOICE_NOTE_OPENING : message.text,
+    pendingMedia: message.voiceNote ? { kind: 'whatsapp_voice_note' } : null,
   });
 }

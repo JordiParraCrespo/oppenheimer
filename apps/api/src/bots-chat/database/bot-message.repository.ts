@@ -67,11 +67,13 @@ export class BotMessageRepository
   }
 
   async saveContent(message: BotMessageEntity): Promise<void> {
+    // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
+    const { content, pendingMedia } = this.mapper.toPersistence(message);
     await this.repository
       .createQueryBuilder()
       .update(BotMessageOrmEntity)
-      // The mapper's content, so it is what an insert writes: cleaned for Postgres.
-      .set({ content: this.mapper.toPersistence(message).content })
+      .set({ content, pendingMedia: () => ':pendingMedia::jsonb' })
+      .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
       .where('id = :id AND "organizationId" = :organizationId', {
         id: message.id,
         organizationId: message.organizationId,

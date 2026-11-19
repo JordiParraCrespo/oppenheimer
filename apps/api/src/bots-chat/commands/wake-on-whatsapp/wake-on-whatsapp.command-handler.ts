@@ -1,6 +1,6 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { BotChannelWakeResolver } from '../../application/bot-channel-wake.resolver';
-import { WHATSAPP_VOICE_NOTE_OPENING, whatsappTurn } from '../../domain/bot-whatsapp-turn.policy';
+import { whatsappTurn } from '../../domain/bot-whatsapp-turn.policy';
 import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
 
 /**
@@ -13,10 +13,10 @@ import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
  * `/new` starts a conversation at itself; `/stop` asks the conversation's
  * running turn to stop (`BotChannelWakeResolver`). The resolver wakes
  * only a bot the owner made, so a switch by name never reaches someone
- * else's bot. A voice note's turn opens with `WHATSAPP_VOICE_NOTE_OPENING`
- * and hears the note when it runs: hearing one takes up to minutes, which an
- * outbox listener must not spend, and the turn keeps its place among the
- * owner's messages meanwhile.
+ * else's bot. A voice note's turn is queued with the note pending and reads
+ * it when it runs: hearing one takes up to minutes, which an outbox listener
+ * must not spend, and the turn keeps its place among the owner's messages
+ * meanwhile.
  */
 @CommandHandler(WakeOnWhatsappCommand)
 export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhatsappCommand, void> {
@@ -24,10 +24,6 @@ export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhats
 
   async execute(command: WakeOnWhatsappCommand): Promise<void> {
     const { organizationId, whatsappAccountId, chatId, messageRowId } = command;
-    const text =
-      command.command === 'message' && command.voiceNote
-        ? WHATSAPP_VOICE_NOTE_OPENING
-        : command.text;
     await this.channel.wake({
       chat: { kind: 'whatsapp', organizationId, botId: command.botId, whatsappAccountId, chatId },
       userId: command.userId,
@@ -40,7 +36,8 @@ export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhats
           conversationId,
           whatsappAccountId,
           messageRowId,
-          text,
+          text: command.text,
+          voiceNote: command.command === 'message' && command.voiceNote,
         }),
     });
   }
