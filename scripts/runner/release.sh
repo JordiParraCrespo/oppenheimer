@@ -146,12 +146,14 @@ standalone() {
 # outside the bundle can never satisfy and macOS kills it for.
 check_darwin_archive() {
 	local archive="$1" dir="$2" member tmp info
-	member="$(tar -tvzf "$archive" | awk '$1 ~ /^-/ { n = $NF; sub(/.*\//, "", n); if (n == "runner") { print $NF; exit } }')"
+	# Both reads take the whole listing: a reader that stops early can leave
+	# tar on SIGPIPE, which pipefail turns into a silent exit.
+	member="$(tar -tvzf "$archive" | awk '!found && $1 ~ /^-/ { n = $NF; sub(/.*\//, "", n); if (n == "runner") { print $NF; found = 1 } }')"
 	if [ "$member" != "$dir/runner" ]; then
 		echo "error: a runner up to 0.1.12 would install ${member:-nothing} from $archive, not the standalone $dir/runner" >&2
 		exit 1
 	fi
-	tar -tzf "$archive" | grep -qx "$dir/$BUNDLE/Contents/MacOS/runner" ||
+	[ -n "$(tar -tzf "$archive" | grep -x "$dir/$BUNDLE/Contents/MacOS/runner")" ] ||
 		{ echo "error: $archive has no $BUNDLE/Contents/MacOS/runner" >&2; exit 1; }
 	[ "${MACOS_UNSIGNED:-}" != 1 ] || return 0
 	tmp="$(mktemp -d)"
