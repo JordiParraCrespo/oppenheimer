@@ -882,8 +882,9 @@ export class SessionChat {
     if (!type || (empty && !withFiles)) return;
     if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
     setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
-    // A source that cannot stop the turn says itself what waits with it.
-    if (!empty && this.state.interruptible) this.startSending(message);
+    // A source that cannot stop the turn says itself what waits with it, and
+    // one taken into the turn under way opens no prompt to replace it.
+    if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);
   }
 
   /** Draws a message just typed until its prompt is in the transcript, or `SENDING_FOR_MS`. */
@@ -909,12 +910,14 @@ export class SessionChat {
     const left = state.sending.filter((held) => {
       const from = this.sendingFrom.get(held.id);
       const start = from?.after ? state.turns.findIndex((turn) => turn.id === from.after) + 1 : 0;
-      const words = held.text.trim();
+      const words = unspaced(held.text);
       const prompt = state.turns
         .slice(start)
         .find(
           (turn) =>
-            turn.prompt !== null && !taken.has(turn.prompt.id) && turn.prompt.text.includes(words),
+            turn.prompt !== null &&
+            !taken.has(turn.prompt.id) &&
+            unspaced(turn.prompt.text).includes(words),
         )?.prompt;
       if (!prompt) return true;
       taken.add(prompt.id);
@@ -965,6 +968,15 @@ export class SessionChat {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   };
+}
+
+/**
+ * A message's words with no spacing, to know it in its prompt: the
+ * transcript writes some the way the CLI read them, not as typed (`!ls`
+ * comes back as `! ls`, a command's arguments with one space).
+ */
+function unspaced(text: string): string {
+  return text.replace(/\s+/g, '');
 }
 
 type Loose = Record<string, unknown>;

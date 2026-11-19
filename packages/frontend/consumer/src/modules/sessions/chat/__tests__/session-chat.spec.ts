@@ -943,6 +943,31 @@ describe('a message on its way', () => {
     vi.useRealTimers();
   });
 
+  // `!ls` comes back as `! ls`: matched as typed, its card stayed under its turn.
+  it('knows a message in its prompt however the transcript spaces it', () => {
+    const chat = new SessionChat();
+    chat.connect(() => {});
+    chat.post('!ls');
+    chat.apply({
+      reset: true,
+      entries: [JSON.stringify(user('u1', '<bash-input>ls</bash-input>'))],
+    });
+    expect(chat.snapshot().sending).toEqual([]);
+  });
+
+  // The agent takes it at its next call, with no prompt of its own to replace the card.
+  it('shows nothing on its way for a message sent into the turn under way', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.connect(() => {});
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Fix it'))] });
+    chat.post('Also the docs');
+    const [queued] = chat.snapshot().queued;
+    chat.sendQueued(queued?.id ?? '');
+    expect(chat.snapshot().sending).toEqual([]);
+    vi.useRealTimers();
+  });
+
   it('leaves a source that cannot stop the turn to say what waits with it', () => {
     const chat = new SessionChat();
     chat.connect(() => {}, undefined, { interruptible: false });

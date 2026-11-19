@@ -13,15 +13,17 @@ import { useChatSending } from '../hooks/use-session-chat';
 export function SessionChatSending({ chat }: { chat: Chat }) {
   const { t } = useTranslation();
   const sending = useChatSending(chat);
+  // Faded around the card: its rise ends at full opacity, holding its last frame.
   return sending.map((sent) => (
-    <ChatUserMessage
-      key={sent.id}
-      tone="wash"
-      aria-busy
-      className="opacity-60 motion-safe:animate-appear"
-      time={t('sessions.chat.sending')}
-    >
-      {sent.text}
-    </ChatUserMessage>
+    <div key={sent.id} className="opacity-60">
+      <ChatUserMessage
+        tone="wash"
+        aria-busy
+        className="motion-safe:animate-appear"
+        time={t('sessions.chat.sending')}
+      >
+        {sent.text}
+      </ChatUserMessage>
+    </div>
   ));
 }
