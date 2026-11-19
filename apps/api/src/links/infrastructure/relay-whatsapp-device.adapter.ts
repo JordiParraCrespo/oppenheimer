@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { WhatsappSendMessage } from '@oppenheimer/shared/protocol';
+import type { WhatsappMediaGetMessage, WhatsappSendMessage } from '@oppenheimer/shared/protocol';
 import type {
   WhatsappDevicePort,
   WhatsappDeviceReach,
   WhatsappQuote,
   WhatsappSendOutcome,
+  WhatsappVoiceNoteOutcome,
 } from '../../whatsapp/application/whatsapp-device.port';
 import type { LinkRegistryPort } from '../application/link-registry.port';
 import type { LinkRepliesPort } from '../application/link-replies.port';
@@ -17,6 +18,12 @@ import { LINK_REGISTRY, LINK_REPLIES } from '../links.di-tokens';
  * that the message may still have gone.
  */
 export const WHATSAPP_SEND_TIMEOUT_MS = 20_000;
+
+/**
+ * How long a voice note may take: the runner downloads it from WhatsApp's
+ * media servers, and gives up itself at 40 seconds.
+ */
+export const WHATSAPP_VOICE_NOTE_TIMEOUT_MS = 45_000;
 
 /**
  * `WhatsappDevicePort` over the runner link. Sent only to a runner whose hello
@@ -77,6 +84,34 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
     // A reply is matched by command id, so another kind is a runner bug.
     if (reply.type !== 'whatsapp.sent') return { kind: 'failed', code: 'UNEXPECTED_REPLY' };
     return { kind: 'sent', id: reply.id, sentAt: new Date(reply.sentAt) };
+  }
+
+  async voiceNote(
+    hostId: string,
+    chatId: string,
+    messageId: string,
+  ): Promise<WhatsappVoiceNoteOutcome> {
+    const link = this.links.find(hostId);
+    if (!link) return { kind: 'host_offline' };
+    if (!link.capabilities.includes('whatsapp.voice')) return { kind: 'not_supported' };
+    const message: WhatsappMediaGetMessage = {
+      type: 'whatsapp.media.get',
+      commandId: randomUUID(),
+      chatId,
+      messageId,
+    };
+    const pending = this.replies.expect(hostId, message.commandId, WHATSAPP_VOICE_NOTE_TIMEOUT_MS);
+    if (!link.send(message)) {
+      pending.cancel();
+      return { kind: 'host_offline' };
+    }
+    const reply = await pending.reply;
+    if (!reply) return { kind: 'timed_out' };
+    if (reply.type === 'command.failed') {
+      return { kind: 'failed', code: reply.code, detail: reply.detail };
+    }
+    if (reply.type !== 'whatsapp.media') return { kind: 'failed', code: 'UNEXPECTED_REPLY' };
+    return { kind: 'fetched', data: Buffer.from(reply.data, 'base64'), mimetype: reply.mimetype };
   }
 
   private command(hostId: string, type: 'whatsapp.link' | 'whatsapp.unlink'): boolean {

@@ -53,6 +53,12 @@ so something has to choose.
 - **A default bot per number**, chosen when the number starts answering.
   It is an account route (customers-and-routes.md §3, row 3), so a message
   always has a bot.
+- **An allowed chat picks its bot** (2026-11-18): each group or person a
+  number allows answers with the number's default bot, or another of the
+  owner's bots chosen for that chat (by the bot that allowed it, or in
+  Settings). The owner asked "for each number which bots can respond? Or
+  for which group?" and chose the default plus a bot per chat over a list
+  of bots allowed per number.
 - **Routes pick another bot** for a person or a group, as
   customers-and-routes.md has them: a person or group is routed by being a
   customer's identity (its §2 and §3, rows 1 and 2), so "the family group
@@ -113,6 +119,18 @@ apart, as OpenClaw and Hermes do.
 - **Approving is in the console only.** No code is typed back in a chat,
   so there is nothing to guess (Hermes locks out after five wrong codes;
   we have no codes to lock).
+- **Allowing a chat is the owner's, by asking a bot in their own chat**
+  (2026-11-18). A WhatsApp number allows chats only once its
+  owner's number is confirmed, and never the owner's own chat (always
+  theirs) nor the number's with itself. A bot allows one with
+  `allow_whatsapp_chat` (and stops with `revoke_whatsapp_chat`), offered only
+  in the owner's console chat with it and their own chat with the number:
+  never in a group's or a contact's turn, a routine's run or a wake, so
+  nothing someone else wrote can allow a chat. A bot allows only when the
+  owner asks in their own words; Settings → WhatsApp → **Allowed chats**
+  shows each group and person, the bot that allowed it, the bot that
+  answers there, and Remove. At most 50 chats per number
+  (`whatsapp_chat_grant`).
 - **Groups are off.** A group is allowed by its id, and then the bot
   wakes only on a mention, a reply to it or a command; the lines in
   between are kept as context (channels.md §5). On Telegram, privacy mode
@@ -236,7 +254,17 @@ per-chat "Always allow" for sends are unchanged.
    stored the messages in (`whatsapp_message.seq`). Strangers, groups, the
    number's own messages and its self-chat are stored and do nothing else.
    Left for later: contacts and groups through routes.*
-4. **Voice notes**, transcribed through voice's providers, on both.
+4. **WhatsApp chats allowed** (2026-11-18). The list per number of the
+   groups and people allowed besides the owner, each with its bot; the
+   owner's bot allows and revokes them in the owner's own chats
+   (`allow_whatsapp_chat`, `revoke_whatsapp_chat`,
+   `list_whatsapp_allowed_chats`); Settings → WhatsApp shows them. Stored and
+   shown only: an allowed chat wakes no bot yet.
+5. **WhatsApp groups and contacts answered.** An allowed group wakes its bot
+   on a mention of the number or a reply to it, an allowed person on any
+   message, with the contact's turn of §3; the runner reports mentions and
+   whose message a reply quotes.
+6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions
 
@@ -252,6 +280,7 @@ per-chat "Always allow" for sends are unchanged.
 
 ## Decided
 
+
 - 2026-11-09: a Telegram bot belongs to one Oppenheimer bot, polled by
   that bot's home host; a WhatsApp number has a default bot and routes,
   and your personal number, confirmed by a code, is your line there. A
@@ -262,3 +291,8 @@ per-chat "Always allow" for sends are unchanged.
   bot's own facts.
   Approvals are answered in the console only. From OpenClaw and Hermes
   Agent.
+- 2026-11-18: a WhatsApp number's chats are allowed by the owner asking a
+  bot in their own chat (console or WhatsApp), never from a group's or a
+  contact's turn; Settings lists them, changes their bot and removes them.
+  Each has the number's default bot or one chosen for it. Built before the
+  turns that answer them.

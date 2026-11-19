@@ -1,5 +1,6 @@
 import { type TriggerInputDto, triggerInputSchema } from '@oppenheimer/shared';
 import type { GithubEventType, ScheduleFrequency } from '@oppenheimer/shared/automations';
+import { promptText } from './domain/bot-prompt-text.policy';
 
 /** A schedule as the bot writes it: the frequency and the fields that frequency reads. */
 export interface RoutineScheduleInput {
@@ -73,7 +74,10 @@ export function routineTriggers(
     if (!parsed.success) {
       const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'trigger');
       return {
-        refusal: `Trigger ${index + 1} is not valid (${[...new Set(fields)].join(', ')}). A weekly schedule needs days, a monthly one day_of_month, a once one date (YYYY-MM-DD); a GitHub trigger needs repository ids; a mail query is at most 500 characters.`,
+        refusal: promptText('tools/routine.routine-triggers-refusal', {
+          index: String(index + 1),
+          value: [...new Set(fields)].join(', '),
+        }),
       };
     }
     triggers.push(parsed.data);

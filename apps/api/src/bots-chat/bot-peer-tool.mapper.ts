@@ -12,6 +12,7 @@ import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotEntity } from '../bots/domain/bot.entity';
 import { permissionForBotMadeBy } from '../bots/domain/bot-creation.policy';
 import type { BotGroupEntity } from '../bots/domain/bot-group.entity';
+import { promptText } from './domain/bot-prompt-text.policy';
 
 /**
  * How `create_bot`'s input becomes a bot to create, one
@@ -119,13 +120,15 @@ export function resolveProvider(
   const label = BOT_PROVIDER_CATALOG[provider].label;
   if (keyed.length === 0) {
     return {
-      refusal:
-        'The workspace has no model provider key, so no new bot could answer. Ask the person to add one in Settings → Model providers.',
+      refusal: promptText('tools/peer-messages.no-provider-key'),
     };
   }
   const usable = keyed.map((id) => `${id} (${BOT_PROVIDER_CATALOG[id].label})`).join(', ');
   return {
-    refusal: `The workspace has no ${label} key, so a bot on ${label} could not answer. Providers it can use: ${usable}. Pick one of those, or ask the person to add a ${label} key in Settings → Model providers.`,
+    refusal: promptText('tools/peer-messages.no-key-for-provider', {
+      label,
+      usable,
+    }),
   };
 }
 
@@ -146,7 +149,12 @@ export function resolveModel(
   if (row) return { value: row.id };
   const offered = BOT_PROVIDER_CATALOG[provider].models.map((candidate) => candidate.id).join(', ');
   return {
-    refusal: `${BOT_PROVIDER_CATALOG[provider].label} has no model "${input.model}". Its models: ${offered}. Leave model out for ${engineLabelOf(provider, null)}.`,
+    refusal: promptText('tools/peer-messages.resolve-model-refusal', {
+      label: BOT_PROVIDER_CATALOG[provider].label,
+      model: input.model,
+      offered,
+      engineLabel: engineLabelOf(provider, null),
+    }),
   };
 }
 
@@ -162,9 +170,11 @@ function resolveEffort(
   if (!input.effort || effort !== null) return { value: effort };
   const levels = botModelOf(provider, model)?.effort?.levels ?? [];
   return {
-    refusal: `${engineLabelOf(provider, model)} does not take effort "${input.effort}". ${
-      levels.length ? `It takes: ${levels.join(', ')}.` : 'It takes no effort level.'
-    } Leave effort out for its default.`,
+    refusal: promptText('tools/peer-messages.resolve-effort-refusal', {
+      engineLabel: engineLabelOf(provider, model),
+      effort: input.effort,
+      levelsCount: levels.length ? `It takes: ${levels.join(', ')}.` : 'It takes no effort level.',
+    }),
   };
 }
 
@@ -173,7 +183,7 @@ function resolvePermission(input: CreateBotInput, creator: BotEntity): Resolved<
   if (!('refused' in level)) return { value: level.permission };
   const ceiling = BOT_PERMISSION_LABELS[level.ceiling];
   return {
-    refusal: `You run under ${ceiling}, and a bot you create can have no looser permissions than yours. Leave permission out (it gets ${ceiling}); the person can raise it in the new bot's settings.`,
+    refusal: promptText('tools/peer-messages.resolve-permission-refusal', { ceiling }),
   };
 }
 
@@ -189,9 +199,10 @@ export function resolveGroup(
   if (group) return { value: group };
   const names = groups.map((candidate) => `"${candidate.name}"`).join(', ');
   return {
-    refusal: `The workspace has no bot group "${input.group}". ${
-      names ? `Its groups: ${names}.` : 'It has no groups.'
-    } Leave group out to create it ungrouped; you cannot create groups.`,
+    refusal: promptText('tools/peer-messages.resolve-group-refusal', {
+      group: input.group,
+      names: names ? `Its groups: ${names}.` : 'It has no groups.',
+    }),
   };
 }
 
@@ -217,12 +228,16 @@ export function botCreationSummary(name: string, plan: BotCreationPlan): string 
 /** What the tool answers once the bot exists. */
 export function botCreatedAnswer(bot: BotEntity, groupName: string | null): string {
   const group = groupName ? `, in group ${groupName}` : '';
-  return [
-    `Created bot ${bot.id} "${bot.name}"${group}.`,
-    `- runs on: ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'})`,
-    `- permission: ${BOT_PERMISSION_LABELS[bot.permission]} (${bot.permission})`,
-    "It is the person's bot, marked as created by you. They can open it from the sidebar, under Employees.",
-  ].join('\n');
+  return promptText('tools/peer-messages.created-answer', {
+    id: bot.id,
+    name: bot.name,
+    group,
+    engineLabel: engineLabelOf(bot.provider, bot.model),
+    provider: bot.provider,
+    model: bot.model ?? 'default',
+    permission: BOT_PERMISSION_LABELS[bot.permission],
+    permission2: bot.permission,
+  });
 }
 
 /**

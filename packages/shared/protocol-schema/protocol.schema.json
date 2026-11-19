@@ -2296,6 +2296,11 @@
                 "minLength": 1,
                 "maxLength": 128
               },
+              "voiceSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 86400
+              },
               "sentAt": {
                 "type": "string",
                 "format": "date-time",
@@ -2416,6 +2421,62 @@
         "commandId",
         "id",
         "sentAt"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.media.get"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "messageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "messageId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.media"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "mimetype": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 480600
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "mimetype",
+        "data"
       ]
     },
     {
@@ -3198,6 +3259,7 @@
       "session.teleport",
       "session.watch",
       "whatsapp",
+      "whatsapp.voice",
       "telegram",
       "shared.preview",
       "transcript.read",

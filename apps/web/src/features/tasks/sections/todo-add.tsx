@@ -7,7 +7,7 @@ import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
 
 /**
- * The dashed row under To do's list: Enter adds the typed task, put on the
+ * The dashed row above To do's list: Enter adds the typed task, put on the
  * day shown (its focus date; it has no due date until one is given), in the project the view is narrowed to when it is one (the
  * Unassigned project otherwise). The field keeps what is typed until it is
  * added.

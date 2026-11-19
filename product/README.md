@@ -1763,6 +1763,13 @@ earlier note:
   header whatever layers were on. On 2026-11-17 the owner asked for filters
   (kind, project, status, who added a task, §7) and the counts now follow
   what the calendar shows: a hidden layer counts nothing.
+- `versions/mvp/25-bots.md` §8 put a bot's prompt files in two folders,
+  `system/` and `turn/`, with the wakes in `turn/`. On 2026-11-18 the owner
+  asked to expand that with sibling folders: what opens a turn an event
+  started is `wake/` now, and `turn/` keeps what a turn carries besides
+  its opening (`research/prompt-file-formats.md` §4.1).
+  started is `wake/` now, and `turn/` keeps what goes with a turn the
+  person started (`research/prompt-file-formats.md` §4.1).
 
 - On 2026-11-17, a runner-started Codex cloud session was confirmed complete
   while its console link opened only the Codex home page. The console now
@@ -1785,3 +1792,20 @@ earlier note:
   14–17 Nov). On 2026-11-17 a job the provider refused for the account
   (`usage_limit`, `credential`) ends without a retry or a report; the next
   turn past the threshold folds again once the account is sorted.
+- `next-steps/whatsapp.md` §3 kept a message's media on the phone, the bot
+  told only its kind ("[audio]"). On 2026-11-18 the owner asked for bots
+  that hear voice notes: the runner keeps each voice note's media key and
+  path for 48 hours and hands the audio over when asked
+  (`whatsapp.media.get`), and the API hears it through voice's providers
+  when the turn the owner's voice note queued starts, keeping the transcript
+  on the row, never the audio. Images and the bot's own voice replies come next.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had a
+  group, and any allowed contact, added only in the console, from a list per
+  number. On 2026-11-18 the owner asked for a bot to do it too, in the
+  conversation with the person who confirmed the number, and to see and
+  manage the list in Settings: a bot allows a chat, and picks the bot that
+  answers there, with `allow_whatsapp_chat`, offered only in the owner's
+  console chat and their own chat with the number; Settings → WhatsApp lists
+  the allowed chats with who allowed each, their bot and Remove. Which bots
+  answer on a number is its default plus a bot per allowed chat, not a list
+  of bots per number (`next-steps/whatsapp.md`, open question 1).

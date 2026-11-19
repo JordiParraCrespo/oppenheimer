@@ -3,12 +3,14 @@ import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import {
   BOT_ATTENDED_ORIGINS,
   type BotPermission,
+  type BotTurnLane,
   type BotTurnOrigin,
   expandScopes,
   type Scope,
 } from '@oppenheimer/shared';
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   BotSkillNudge,
   carrySkillNudge,
@@ -48,10 +50,12 @@ import {
   type BotToolContext,
   type BotToolDefinition,
   type BotToolResult,
+  ownersOwnTurn,
   raisedCard,
 } from './bot-tool.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
+import { BotWhatsappGrantToolsFactory } from './bot-whatsapp-grant-tools.factory';
 import { BotWhatsappToolsFactory } from './bot-whatsapp-tools.factory';
 
 /**
@@ -85,6 +89,7 @@ export class BotToolboxFactory {
     mailWrites: BotMailWriteToolsFactory,
     mailOrganizing: BotMailOrganizeToolsFactory,
     whatsapp: BotWhatsappToolsFactory,
+    whatsappGrants: BotWhatsappGrantToolsFactory,
     telegram: BotTelegramToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
@@ -122,6 +127,7 @@ export class BotToolboxFactory {
       mailWrites,
       mailOrganizing,
       whatsapp,
+      whatsappGrants,
       telegram,
       peers,
       web,
@@ -227,14 +233,26 @@ export class BotToolboxFactory {
   ): Promise<BotToolResult> {
     const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
     if (!definition)
-      return { content: `Not run: ${call.tool} is no longer a tool.`, isError: true };
+      return {
+        content: promptText('tools/toolbox.run-approved-content-run-longer-tool', {
+          tool: call.tool,
+        }),
+        isError: true,
+      };
     // Turned Off while the card waited: the owner's latest word stands.
     if (toolDecision(standing.permissions, definition.traits, standing.preset) === 'off') {
-      return { content: `Not run: ${call.tool} is turned off for this bot.`, isError: true };
+      return {
+        content: promptText('tools/toolbox.run-approved-content-run-turned-off', {
+          tool: call.tool,
+        }),
+        isError: true,
+      };
     }
     if (granted !== null && !expandScopes(granted).has(definition.scope)) {
       return {
-        content: `Not run: your credential does not cover ${definition.scope}.`,
+        content: promptText('tools/toolbox.approved-not-covered-by-credential', {
+          scope: definition.scope,
+        }),
         isError: true,
       };
     }
@@ -260,6 +278,7 @@ export class BotToolboxFactory {
       (definition) =>
         toolDecision(standing.permissions, definition.traits, standing.preset) !== 'off' &&
         !(origin && definition.notOn.includes(origin)) &&
+        ownersOwnTurn(definition, { ...standing, credentialScopes: granted }) &&
         !(origin && definition.attendedOnly && !isAttended(origin)),
     );
   }
@@ -295,12 +314,19 @@ function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngi
 export interface BotStanding {
   preset: BotPermission;
   permissions: BotPermissions;
-  /** Why the turn exists, for the tools offered only to some turns (`notOn`, `attendedOnly`). */
+  /** Why the turn exists, for the tools offered only to some turns (`notOn`, `ownerOnlyOn`, `attendedOnly`). */
   origin?: BotTurnOrigin;
+  /** Whose words the turn answers; `ownerOnlyOn` tools are offered only in the owner's. */
+  lane?: BotTurnLane;
 }
 
 function standingOf(context: BotToolContext): BotStanding {
-  return { preset: context.permission, permissions: context.permissions, origin: context.origin };
+  return {
+    preset: context.permission,
+    permissions: context.permissions,
+    origin: context.origin,
+    lane: context.lane,
+  };
 }
 
 /** Whether a person is waiting on a turn of this origin (`BOT_ATTENDED_ORIGINS`). */

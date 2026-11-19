@@ -68,7 +68,13 @@ var ErrNoStatus = errors.New("status line payload names no conversation")
 // SaveStatus keeps what the chat shows of one status line payload in dir,
 // under the conversation it names, written whole (a temp file, renamed) so
 // the follower never reads half of one. It returns what it kept.
-func SaveStatus(dir string, payload []byte) (Status, error) {
+//
+// session is the Oppenheimer session whose window-0 agent drew the line
+// (`runner statusline --session`), or "" for any other Claude Code. For
+// one, the conversation the payload names is also kept as that session's
+// (ReportedConversation): Claude Code moves to a conversation of a new name
+// on `/clear`, on `/resume` and on a resume that forks, and says so only here.
+func SaveStatus(dir string, payload []byte, session string) (Status, error) {
 	if len(payload) > statusPayloadMax {
 		return Status{}, fmt.Errorf("status line payload of %d bytes", len(payload))
 	}
@@ -87,25 +93,57 @@ func SaveStatus(dir string, payload []byte) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := writeWhole(dir, statusPath(dir, in.SessionID), encoded); err != nil {
 		return Status{}, err
 	}
-	temp, err := os.CreateTemp(dir, ".status-*")
-	if err != nil {
-		return Status{}, err
-	}
-	defer func() { _ = os.Remove(temp.Name()) }()
-	if _, err := temp.Write(encoded); err != nil {
-		_ = temp.Close()
-		return Status{}, err
-	}
-	if err := temp.Close(); err != nil {
-		return Status{}, err
-	}
-	if err := os.Rename(temp.Name(), statusPath(dir, in.SessionID)); err != nil {
-		return Status{}, err
+	if conversationPattern.MatchString(session) && ReportedConversation(dir, session) != in.SessionID {
+		if err := writeWhole(filepath.Join(dir, reportedDir), reportedPath(dir, session), []byte(in.SessionID)); err != nil {
+			return Status{}, err
+		}
 	}
 	return status, nil
+}
+
+// reportedDir is the folder under the status folder that keeps, for each
+// session, the conversation its agent last reported being in.
+const reportedDir = "sessions"
+
+// ReportedConversation is the conversation the session's window-0 Claude
+// Code last said it is in (SaveStatus), or "" while it has said none.
+func ReportedConversation(dir, session string) string {
+	if dir == "" || !conversationPattern.MatchString(session) {
+		return ""
+	}
+	raw, err := os.ReadFile(reportedPath(dir, session)) //nolint:gosec // the runner's own state, under a checked session id
+	if err != nil || !conversationPattern.Match(raw) {
+		return ""
+	}
+	return string(raw)
+}
+
+func reportedPath(dir, session string) string {
+	return filepath.Join(dir, reportedDir, session)
+}
+
+// writeWhole writes data at path, in folder, through a temp file renamed
+// over it, so a reader never sees half of it.
+func writeWhole(folder, path string, data []byte) error {
+	if err := os.MkdirAll(folder, 0o700); err != nil {
+		return err
+	}
+	temp, err := os.CreateTemp(folder, ".status-*")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.Remove(temp.Name()) }()
+	if _, err := temp.Write(data); err != nil {
+		_ = temp.Close()
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(temp.Name(), path)
 }
 
 // cleanLimits drops a window whose share is not a number the console can
