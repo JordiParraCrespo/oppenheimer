@@ -359,9 +359,12 @@ export {
 } from './voice.queries';
 export {
   useAnswerWhatsappAs,
+  useAnswerWhatsappChatAs,
   useConfirmWhatsappOwner,
   useLinkWhatsapp,
   useRequestWhatsappOwner,
+  useRevokeWhatsappChat,
+  useSuspenseWhatsappChatGrants,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

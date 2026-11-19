@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -34,13 +35,23 @@ const statusLineNested = "OPPENHEIMER_STATUSLINE"
 // status line when they have one, run on the same payload, or the context
 // and the plan's usage. It never fails the CLI: whatever goes wrong, the
 // line is just shorter.
-func StatusLine(ctx context.Context, in io.Reader, out io.Writer) error {
+//
+// `--session <id>` names the session whose window-0 agent runs it, which
+// then also keeps the conversation the payload names as that session's: the
+// one the agent is in now, which `/clear` or `/resume` moves on from the one
+// it launched in. Only window 0's line is given it, so a second Claude Code
+// in another window never takes the session's chat over.
+func StatusLine(ctx context.Context, args []string, in io.Reader, out io.Writer) error {
+	flags := flag.NewFlagSet("statusline", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	session := flags.String("session", "", "the session whose window-0 agent this is")
+	_ = flags.Parse(args)
 	payload, _ := io.ReadAll(io.LimitReader(in, statusLinePayloadMax))
 	paths, err := ResolvePaths()
 	if err != nil {
 		return nil //nolint:nilerr // a status line has nowhere to report to
 	}
-	status, _ := transcript.SaveStatus(StatusDir(paths), payload)
+	status, _ := transcript.SaveStatus(StatusDir(paths), payload, *session)
 	if os.Getenv(statusLineNested) == "" {
 		if command, dir := ownStatusLine(paths.UserHome, payload); command != "" {
 			runStatusLine(ctx, command, dir, payload, out)
@@ -61,13 +72,21 @@ func StatusDir(paths Paths) string {
 
 // statusLineCommand is the command a session's Claude Code runs for its
 // status line: this binary's `statusline`, quoted for the shell Claude Code
-// runs it in.
-func statusLineCommand() string {
+// runs it in, naming session when it is window 0's agent's.
+func statusLineCommand(session string) string {
 	executable, err := os.Executable()
 	if err != nil {
 		return ""
 	}
-	return "'" + strings.ReplaceAll(executable, "'", `'\''`) + "' statusline"
+	command := shellQuote(executable) + " statusline"
+	if session != "" {
+		command += " --session " + shellQuote(session)
+	}
+	return command
+}
+
+func shellQuote(word string) string {
+	return "'" + strings.ReplaceAll(word, "'", `'\''`) + "'"
 }
 
 // ownStatusLine is the status line the person configured, which the

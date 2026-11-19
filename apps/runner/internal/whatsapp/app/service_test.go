@@ -26,6 +26,8 @@ type fakeDevice struct {
 	sendErr   error
 	sent      []string
 	loggedOut bool
+	// audio is what Download hands back for any ref.
+	audio []byte
 }
 
 func (d *fakeDevice) Open(context.Context, app.Events) (app.Paired, error) { return d.stored, nil }
@@ -59,7 +61,42 @@ func (d *fakeDevice) Send(_ context.Context, chatID, text string, quote *domain.
 	d.sent = append(d.sent, chatID+": "+text)
 	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
 }
+func (d *fakeDevice) Download(_ context.Context, ref []byte) ([]byte, string, error) {
+	if string(ref) != "ref" {
+		return nil, "", errors.New("unknown ref")
+	}
+	return d.audio, "audio/ogg; codecs=opus", nil
+}
 func (d *fakeDevice) Close() {}
+
+type memVoices struct {
+	mu   sync.Mutex
+	kept map[string]domain.Voice
+}
+
+func (v *memVoices) Keep(_ context.Context, chatID, id string, voice domain.Voice) error {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if v.kept == nil {
+		v.kept = map[string]domain.Voice{}
+	}
+	v.kept[domain.KeyOf(chatID, id)] = voice
+	return nil
+}
+
+func (v *memVoices) Find(_ context.Context, chatID, id string) (domain.Voice, bool, error) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	voice, ok := v.kept[domain.KeyOf(chatID, id)]
+	return voice, ok, nil
+}
+
+func (v *memVoices) ClearVoiceNotes(context.Context) error {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	v.kept = nil
+	return nil
+}
 
 type memOutbox struct {
 	mu   sync.Mutex
@@ -153,7 +190,7 @@ func started(t *testing.T, device *fakeDevice, budget *domain.Budget) (*app.Serv
 	t.Helper()
 	outbox, pub := &memOutbox{}, &recorder{}
 	svc := app.New(app.Options{
-		Device: device, Outbox: outbox, Budget: budget, Now: func() time.Time { return now },
+		Device: device, Outbox: outbox, VoiceNotes: &memVoices{}, Budget: budget, Now: func() time.Time { return now },
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	svc.SetPublisher(pub)
@@ -345,5 +382,54 @@ func TestUnlink(t *testing.T) {
 	}
 	if pending, _ := outbox.Pending(context.Background(), 10); len(pending) != 0 {
 		t.Fatalf("an unlinked number's messages are still waiting: %v", pending)
+	}
+}
+
+// A voice note that arrives goes out with how long it runs, and the control
+// plane can then fetch its audio, once the message is acknowledged too; one
+// the host does not know is WA_005, one past a frame WA_006, and unlinking
+// forgets them all.
+func TestVoiceNoteIsFetchedAfterTheAck(t *testing.T) {
+	device := &fakeDevice{audio: []byte("OggS voice")}
+	svc, outbox, pub := started(t, device, nil)
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	svc.LinkUp(context.Background())
+
+	note := message("V1")
+	note.Text, note.Media = "", domain.MediaAudio
+	note.Voice = &domain.Voice{Ref: []byte("ref"), Seconds: 12, Size: 10}
+	svc.Received(note)
+	big := message("V2")
+	big.Text, big.Media = "", domain.MediaAudio
+	big.Voice = &domain.Voice{Ref: []byte("ref"), Seconds: 900, Size: domain.VoiceNoteMaxBytes + 1}
+	svc.Received(big)
+
+	pub.mu.Lock()
+	sent := pub.batches[len(pub.batches)-1]
+	pub.mu.Unlock()
+	if got := sent[len(sent)-1]; got.ID != "V2" || got.VoiceSeconds != 900 {
+		t.Fatalf("the voice note went out as %+v", got)
+	}
+	svc.Ack(context.Background(), []string{domain.KeyOf(note.ChatID, "V1")})
+	if len(outbox.rows) != 1 {
+		t.Fatalf("outbox after the ack: %+v", outbox.rows)
+	}
+
+	data, mimetype, err := svc.VoiceNote(context.Background(), note.ChatID, "V1")
+	if err != nil || string(data) != "OggS voice" || mimetype != "audio/ogg; codecs=opus" {
+		t.Fatalf("fetched %q %q %v", data, mimetype, err)
+	}
+	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "V2"); codeOf(err) != "WA_006" {
+		t.Fatalf("a voice note past a frame answered %v", err)
+	}
+	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "nope"); codeOf(err) != "WA_005" {
+		t.Fatalf("an unknown voice note answered %v", err)
+	}
+	if err := svc.Unlink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "V1"); codeOf(err) != "WA_005" {
+		t.Fatalf("after unlinking, a kept voice note answered %v", err)
 	}
 }

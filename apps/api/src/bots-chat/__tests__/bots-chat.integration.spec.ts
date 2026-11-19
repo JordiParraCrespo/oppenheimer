@@ -36,6 +36,7 @@ import type { BotApprovalRequestFactory } from '../application/bot-approval-requ
 import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
+import { BotOpeningMediaResolver } from '../application/bot-opening-media.resolver';
 import type { BotOwnerPermissionsResolver } from '../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
 import type { BotPermissionsResolver } from '../application/bot-permissions.resolver';
@@ -1189,6 +1190,38 @@ describe('bots chat (integration)', () => {
     });
   });
 
+  // What breaks this: a voice note's words read but lost, so the next turn's history reads
+  // "[voice note]"; the note read again on a retry; or the words written onto another
+  // workspace's message.
+  it('keeps the words a turn read from its pending media, with nothing left pending, in its workspace alone', async () => {
+    const bot = await create('Voice Bot');
+    const note = sent(bot, '[voice note]');
+    const pending = BotMessageEntity.create({
+      id: note.message.id,
+      props: { ...note.message.getProps(), pendingMedia: { kind: 'whatsapp_voice_note' } },
+    });
+    await turns.enqueue(note.turn, pending, null);
+    const opening = (await messages.findOpening(organizationId, note.turn.id)) as BotMessageEntity;
+    expect(opening.pendingMedia).toEqual({ kind: 'whatsapp_voice_note' });
+
+    opening.read('[voice note, 0:12] Call the bank');
+    await messages.saveContent(opening);
+
+    expect(await messages.findOpening(organizationId, note.turn.id)).toMatchObject({
+      content: '[voice note, 0:12] Call the bank',
+      pendingMedia: null,
+    });
+    const other = await insertOrganization();
+    const stranger = BotMessageEntity.create({
+      id: opening.id,
+      props: { ...opening.getProps(), organizationId: other, content: 'not theirs' },
+    });
+    await messages.saveContent(stranger);
+    expect(await messages.findOpening(organizationId, note.turn.id)).toMatchObject({
+      content: '[voice note, 0:12] Call the bank',
+    });
+  });
+
   it('stores the chat, makes the last message the sidebar line, and reads back history before a turn', async () => {
     const bot = await create('Glm Bot');
     const first = sent(bot, 'What is staging?');
@@ -1559,6 +1592,7 @@ describe('bots chat (integration)', () => {
           remove: async () => undefined,
         },
         new BotAttachmentMapper(),
+        new BotOpeningMediaResolver(messages, []),
       ),
       { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
       { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,

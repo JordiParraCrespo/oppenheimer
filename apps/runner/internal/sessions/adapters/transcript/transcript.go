@@ -95,7 +95,7 @@ func New(opts Options) *Reader {
 	agents := map[domain.Agent]agentReader{}
 	chats := map[domain.Agent]chatSource{}
 	if opts.ClaudeProjects != "" {
-		claude := claudeReader{projects: opts.ClaudeProjects}
+		claude := claudeReader{projects: opts.ClaudeProjects, statusDir: opts.StatusDir}
 		agents[domain.AgentClaude] = claude
 		chats[domain.AgentClaude] = claude
 	}
@@ -115,6 +115,17 @@ func (r *Reader) ServedConversation(ctx context.Context, session domain.Session)
 		return ""
 	}
 	return r.openCode.served(ctx, *session.Launch.Server)
+}
+
+// CurrentConversation implements app.Transcripts: Claude Code's, by the
+// same rule its chat follows (claudeReader.conversation), so the session
+// keeps and resumes the conversation the chat shows.
+func (r *Reader) CurrentConversation(session domain.Session) string {
+	claude, ok := r.agents[domain.AgentClaude].(claudeReader)
+	if session.Agent != domain.AgentClaude || !ok {
+		return ""
+	}
+	return claude.conversation(session)
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.
