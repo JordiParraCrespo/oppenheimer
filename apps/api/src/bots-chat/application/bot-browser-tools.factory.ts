@@ -16,6 +16,7 @@ import { z } from 'zod/v4';
 import type { HostBrowserOutcome } from '../../sessions/application/host-browser.port';
 import { UseHostBrowserCommand } from '../../sessions/commands/use-host-browser/use-host-browser.command';
 import { toHostBrowserRequest } from '../bot-browser-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   type BrowserCall,
   browserCallProblem,
@@ -31,10 +32,6 @@ import {
   BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
-
-/** Said to a model that reads no images when it asks for the page's picture. */
-const NO_EYES =
-  'Your model cannot read images, so a screenshot would tell you nothing: use action "read", which gives you the page as text with a ref for everything you can act on.';
 
 /**
  * Using a browser (`25-bots.md` §4.2, "Using a browser"): a bot drives a
@@ -64,24 +61,20 @@ export class BotBrowserToolsFactory implements BotToolArea {
       name: 'use_browser',
       scope: 'sessions:write',
       asks: true,
-      description: `Does one thing in a browser of your own on one of the person's hosts and returns the page: its title and address, and everything on it you can act on (links, buttons, fields), each with a ref such as e7. Use it for a website that needs a real browser: one that runs scripts, a form to fill, a local dev server on that host. Start with action "open" and a url; then "click" or "type" with the ref of what you mean, and read the page that comes back before the next step. "read" also returns the page's text; "screenshot" shows how it looks. Refs hold until the page changes: after a click that loads a new page, use the refs of the new answer. The browser is yours alone, with its own profile: it is not the person's browser and holds none of their logins. For a public page you only need to read, fetching it is cheaper. The host decides: browsers are off for bots until the person there runs \`runner browser on\`; a refusal says why, and you pass that on. The host defaults to your home host.`,
+      description: promptText('tools/browser.use-browser'),
       input: z.object({
-        action: z
-          .enum(BROWSER_ACTIONS)
-          .describe(
-            'open (go to `url`), read (the page with its text), screenshot, click (`ref`, or `x` and `y` of the picture), type (`text`, into `ref` when given, replacing what it held), key (`keys`), scroll (`scroll_y`), back, wait (`seconds`), close (end your browser).',
-          ),
+        action: z.enum(BROWSER_ACTIONS).describe(promptText('tools/browser.use-browser-action')),
         url: z
           .string()
           .min(1)
           .max(BROWSER_URL_MAX)
           .optional()
-          .describe('The address to open: http or https, in full.'),
+          .describe(promptText('tools/browser.use-browser-url')),
         ref: z
           .string()
           .regex(BROWSER_REF_PATTERN)
           .optional()
-          .describe('The ref of an element, from the page you were last answered with.'),
+          .describe(promptText('tools/browser.use-browser-ref')),
         x: z.number().int().min(0).max(BROWSER_VIEWPORT_WIDTH).optional(),
         y: z.number().int().min(0).max(BROWSER_VIEWPORT_HEIGHT).optional(),
         scroll_y: z
@@ -90,32 +83,31 @@ export class BotBrowserToolsFactory implements BotToolArea {
           .min(-COMPUTER_SCROLL_MAX)
           .max(COMPUTER_SCROLL_MAX)
           .optional()
-          .describe('Wheel notches down; negative scrolls up.'),
+          .describe(promptText('tools/browser.use-browser-scroll-y')),
         text: z
           .string()
           .min(1)
           .max(COMPUTER_TEXT_MAX)
           .optional()
-          .describe('The text to type, as it is: never a password or a card number.'),
+          .describe(promptText('tools/browser.use-browser-text')),
         keys: z
           .array(z.string().regex(COMPUTER_KEY_PATTERN))
           .min(1)
           .max(COMPUTER_KEYS_MAX)
           .optional()
-          .describe(
-            'Key presses, in order: optional modifiers (ctrl, alt, shift, cmd) then one key, joined by +, such as "enter", "tab", "ctrl+a", "escape".',
-          ),
+          .describe(promptText('tools/browser.use-browser-keys')),
         seconds: z
           .number()
           .int()
           .min(0)
           .max(COMPUTER_WAIT_MAX_SECONDS)
           .optional()
-          .describe(`How long "wait" waits; at most ${COMPUTER_WAIT_MAX_SECONDS}.`),
-        host_id: z
-          .uuid()
-          .optional()
-          .describe('The host to browse from (from list_hosts); your home host when omitted.'),
+          .describe(
+            promptText('tools/browser.use-browser-seconds', {
+              maxSeconds: String(COMPUTER_WAIT_MAX_SECONDS),
+            }),
+          ),
+        host_id: z.uuid().optional().describe(promptText('tools/browser.use-browser-host-id')),
       }),
       normalize: async (input, context) => {
         this.refuseUnusable(input, context, true);
@@ -166,7 +158,7 @@ export class BotBrowserToolsFactory implements BotToolArea {
     const problem = browserCallProblem(input);
     if (problem) throw new BotToolRefusal(problem);
     if (inTurn && input.action === 'screenshot' && !context.seesImages) {
-      throw new BotToolRefusal(NO_EYES);
+      throw new BotToolRefusal(promptText('tools/browser.no-eyes'));
     }
   }
 }

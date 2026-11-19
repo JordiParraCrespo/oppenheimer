@@ -13,6 +13,7 @@ import { z } from 'zod/v4';
 import type { HostComputerOutcome } from '../../sessions/application/host-computer.port';
 import { UseHostComputerCommand } from '../../sessions/commands/use-host-computer/use-host-computer.command';
 import { toHostComputerRequest } from '../bot-computer-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   computerCallProblem,
   computerCommandIdOf,
@@ -35,14 +36,10 @@ const coordinate = (what: string) =>
     .min(0)
     .max(COMPUTER_SCREEN_MAX_EDGE)
     .optional()
-    .describe(`${what}, in pixels of the latest screen image, from its top left.`);
+    .describe(promptText('tools/computer.use-computer-coordinate', { what }));
 
 const scroll = (what: string) =>
   z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX).optional().describe(what);
-
-/** Said when the turn's model cannot read the screenshot every action answers with. */
-const NEEDS_EYES =
-  "Your model cannot read images, so you cannot use a computer: every step answers with a picture of the screen. Tell the person; they can switch this bot to a model that reads images in the chat's composer.";
 
 /**
  * Using a computer (`25-bots.md` §4.2, "Using a computer"): a bot sees the
@@ -71,44 +68,39 @@ export class BotComputerToolsFactory implements BotToolArea {
       name: 'use_computer',
       scope: 'sessions:write',
       asks: true,
-      description: `Does one thing on the screen of one of the person's hosts (look, click, type, press keys, scroll, drag) and returns a picture of the screen after it, for work that only has a graphical interface: an app, a simulator, a website that needs a real browser. Start with action "screenshot"; every other action also answers with the new screen, so look at it before the next step. x and y are pixels of the latest image, from its top left. "type" types text where the keyboard focus is (click the field first); "key" presses keys with modifiers, such as "cmd+s", "ctrl+c" or "enter" (cmd is Command on a Mac, Super elsewhere). The host decides: its screen is off for bots until the person there runs \`runner computer on\`; a refusal says why, and you pass that on rather than trying around it. On a Mac it is the person's own screen and pointer, so they see what you do. The host defaults to your home host.`,
+      description: promptText('tools/computer.use-computer'),
       input: z.object({
-        action: z
-          .enum(COMPUTER_ACTIONS)
-          .describe(
-            'screenshot (only look), wait (wait `seconds`, then look), move, click, double_click, right_click, middle_click (at x, y), drag (from x, y to to_x, to_y), scroll (at x, y by scroll_y and scroll_x), type (`text`), key (`keys`).',
-          ),
+        action: z.enum(COMPUTER_ACTIONS).describe(promptText('tools/computer.use-computer-action')),
         x: coordinate('Where to act, across'),
         y: coordinate('Where to act, down'),
         to_x: coordinate('Where a drag ends, across'),
         to_y: coordinate('Where a drag ends, down'),
-        scroll_y: scroll('Wheel notches down; negative scrolls up.'),
-        scroll_x: scroll('Wheel notches right; negative scrolls left.'),
+        scroll_y: scroll(promptText('tools/computer.use-computer-scroll-y')),
+        scroll_x: scroll(promptText('tools/computer.use-computer-scroll-x')),
         text: z
           .string()
           .min(1)
           .max(COMPUTER_TEXT_MAX)
           .optional()
-          .describe('The text to type, as it is: never a password or a card number.'),
+          .describe(promptText('tools/computer.use-computer-text')),
         keys: z
           .array(z.string().regex(COMPUTER_KEY_PATTERN))
           .min(1)
           .max(COMPUTER_KEYS_MAX)
           .optional()
-          .describe(
-            'Key presses, in order. Each is optional modifiers (ctrl, alt, shift, cmd) then one key, joined by +: a letter, a digit, f1 to f12, enter, tab, escape, backspace, delete, space, up, down, left, right, home, end, pageup, pagedown.',
-          ),
+          .describe(promptText('tools/computer.use-computer-keys')),
         seconds: z
           .number()
           .int()
           .min(0)
           .max(COMPUTER_WAIT_MAX_SECONDS)
           .optional()
-          .describe(`How long "wait" waits; at most ${COMPUTER_WAIT_MAX_SECONDS}.`),
-        host_id: z
-          .uuid()
-          .optional()
-          .describe('The host whose screen to use (from list_hosts); your home host when omitted.'),
+          .describe(
+            promptText('tools/computer.use-computer-seconds', {
+              maxSeconds: String(COMPUTER_WAIT_MAX_SECONDS),
+            }),
+          ),
+        host_id: z.uuid().optional().describe(promptText('tools/computer.use-computer-host-id')),
       }),
       normalize: async (input, context) => {
         this.refuseUnusable(input, context);
@@ -153,7 +145,7 @@ export class BotComputerToolsFactory implements BotToolArea {
     input: Parameters<typeof computerCallProblem>[0],
     context: BotToolCallContext,
   ): void {
-    if (!context.seesImages) throw new BotToolRefusal(NEEDS_EYES);
+    if (!context.seesImages) throw new BotToolRefusal(promptText('tools/computer.needs-eyes'));
     const problem = computerCallProblem(input);
     if (problem) throw new BotToolRefusal(problem);
   }
