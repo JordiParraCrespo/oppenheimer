@@ -134,15 +134,19 @@ function withoutTrailingReminders(text: string): string {
 
 /**
  * The person's prompts in a conversation, oldest first: the {@link typedText}
- * of each `user` entry. A tool's result reaches the transcript as a `user`
- * entry with no text part, so it is not one.
+ * of each `user` entry. One that carries a tool's result is the agent's
+ * bookkeeping, not a prompt, as the runner reads it. The chat page cuts a
+ * long block (`truncated`), so a reminder cut there has lost its closing tag
+ * and is dropped as a block before the words are read.
  */
 export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] {
   return entries.flatMap((entry) => {
     if (entry.role !== 'user') return [];
+    if (entry.parts.some((part) => part.kind === 'tool_result')) return [];
     const text = typedText(
       entry.parts
         .filter((part) => part.kind === 'text' && part.text)
+        .filter((part) => !(part.truncated && part.text?.trimStart().startsWith(REMINDER_OPEN)))
         .map((part) => part.text ?? '')
         .join('\n'),
     );

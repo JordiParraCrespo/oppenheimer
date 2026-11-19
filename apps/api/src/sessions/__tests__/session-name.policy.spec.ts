@@ -1,7 +1,9 @@
+import type { SessionTranscriptPartKind } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import {
   cleanModelTitle,
   conversationTitleRequest,
+  promptsOf,
   SESSION_NAME_MAX_LENGTH,
   sessionTitleRequest,
   titleFromPrompt,
@@ -166,5 +168,40 @@ describe('typedText', () => {
     ['a background task’s end', '<task-notification>done</task-notification>', ''],
   ])('%s', (_case, text, typed) => {
     expect(typedText(text)).toBe(typed);
+  });
+});
+
+describe('promptsOf', () => {
+  const part = (
+    text: string,
+    {
+      truncated = false,
+      kind = 'text',
+    }: { truncated?: boolean; kind?: SessionTranscriptPartKind } = {},
+  ) => ({
+    kind,
+    text,
+    tool: null,
+    isError: false,
+    truncated,
+  });
+  const user = (...parts: ReturnType<typeof part>[]) => ({
+    id: null,
+    at: null,
+    role: 'user' as const,
+    parts,
+  });
+
+  // The chat page cuts a block at its bound, so a long reminder arrives
+  // without its closing tag; the person's words beside it still count.
+  it('reads the words beside a reminder the page cut', () => {
+    const cut = part('<system-reminder>\n# CLAUDE.md\n…', { truncated: true });
+    expect(promptsOf([user(cut, part('Fix the picker'))])).toEqual(['Fix the picker']);
+  });
+
+  it('counts no message that carries a tool’s result', () => {
+    expect(promptsOf([user(part('ok', { kind: 'tool_result' }), part('and the next'))])).toEqual(
+      [],
+    );
   });
 });
