@@ -1663,6 +1663,36 @@
             "minLength": 1,
             "maxLength": 65536
           }
+        },
+        "commands": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "skill",
+                  "command"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "required": [
+              "name",
+              "kind"
+            ]
+          }
         }
       },
       "required": [
@@ -3271,6 +3301,7 @@
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
     "chatBatchMaxEntries": 256,
+    "chatCommandsMax": 200,
     "execOutputMaxBytes": 32768,
     "terminalScreenMaxBytes": 32768
   }

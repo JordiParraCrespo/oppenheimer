@@ -50,7 +50,8 @@ function sharedRead(chat: SessionChat): () => ChatState {
         next.sending === shared.sending &&
         next.status === shared.status &&
         next.older === shared.older &&
-        next.interruptible === shared.interruptible
+        next.interruptible === shared.interruptible &&
+        next.commands === shared.commands
           ? shared
           : { ...next, turns };
     }

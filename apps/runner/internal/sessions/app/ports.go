@@ -244,6 +244,14 @@ type ProgramStatus interface {
 	Forget(sessionID string)
 }
 
+// SlashCommands lists the commands a project gives Claude Code, from the
+// folder its agent runs in: what the chat composer's `/` menu offers beside
+// the agent's built-ins. A folder with none, or one it cannot read, is an
+// empty list, at most max of them.
+type SlashCommands interface {
+	InFolder(dir string, max int) []domain.SlashCommand
+}
+
 // Transcripts reads what an agent's own transcript says, on this host. The
 // transcript is the CLI's. Two things leave the host from it: the first
 // message, at most domain.FirstPromptMaxBytes of it, and, while a browser is
@@ -315,6 +323,9 @@ type ChatBatch struct {
 	// coming, HistoryEnd on its last batch.
 	Older   string
 	Entries []string
+	// Commands are the project's slash commands, on a batch that carries
+	// Reset, for an agent that takes them; nil otherwise.
+	Commands []domain.SlashCommand
 }
 
 // The values of ChatBatch.History.

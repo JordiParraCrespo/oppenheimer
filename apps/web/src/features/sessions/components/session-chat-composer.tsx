@@ -21,16 +21,19 @@ import {
   type ChatUsageContext,
   dictateInto,
   dictationSlots,
+  useCommandMenu,
   useDictation,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
-import { SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
+import { type ChatCommand, SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type HeldFile, useHeldFiles } from '../hooks/use-held-files';
 import { useTakeFiles } from '../hooks/use-take-files';
 import type { FileHandOff } from '../lib/file-hand-off';
 import { CHAT_MESSAGE_MAX_FILES, refusalText } from '../lib/session-files';
+import { sessionSlashQuery, sessionSlashRows } from '../lib/slash-commands';
+import { SessionSlashMenu } from './session-slash-menu';
 
 /** How a send went: all of it, or the files that reached the host before one did not. */
 export type ChatSendResult = { sent: true } | { sent: false; landed: readonly string[] };
@@ -61,6 +64,12 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * A refused one is said under the field. A message may be files alone. While
  * they upload, send is held and says so; what did not reach the host stays,
  * with the words, to be sent again.
+ *
+ * **The `/` menu**, for an agent whose commands it knows (`commands`): while
+ * the draft is a command being typed, the project's skills and commands
+ * and Claude Code's own commands that match open over the box. Up and Down
+ * move, Tab or Enter writes `/<name> ` for its input to follow, Escape
+ * closes it for that draft.
  */
 export function SessionChatComposer({
   agent,
@@ -77,6 +86,7 @@ export function SessionChatComposer({
   onSendQueued,
   onUnqueue,
   onCompact,
+  commands,
 }: {
   /** Whose conversation it is, named on the line under the field; none for a guest. */
   agent: SessionAgent | null;
@@ -100,6 +110,8 @@ export function SessionChatComposer({
   /** Takes a queued message back; its text, when it was still there. */
   onUnqueue: (id: string) => string | null;
   onCompact: () => void;
+  /** The project's slash commands for the `/` menu; null offers no menu. */
+  commands: readonly ChatCommand[] | null;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -108,6 +120,12 @@ export function SessionChatComposer({
   const picker = useRef<HTMLInputElement>(null);
   const dictation = useDictation({ voice, onText: dictateInto(setDraft) });
   useTakeFiles(handOff, hold);
+  const slash = useCommandMenu({
+    draft,
+    query: commands ? sessionSlashQuery(draft) : null,
+    rowsFor: (query) => sessionSlashRows(query, commands ?? [], (key) => t(key)),
+    onPick: (command) => setDraft(`/${command.name} `),
+  });
   const done = todos?.filter((todo) => todo.status === 'completed').length ?? 0;
   // A list the agent has finished is history, which the turn already tells.
   const tasks =
@@ -193,59 +211,70 @@ export function SessionChatComposer({
           }}
         />
       ) : null}
-      <ChatComposer
-        value={draft}
-        onValueChange={setDraft}
-        onSubmit={(text) => void submit(text)}
-        onStop={onStop}
-        // Not while files upload: the queued words would land among their paths.
-        onEmptyEnter={first && !sending ? () => onSendQueued(first.id) : undefined}
-        busy={busy && draft.trim() === '' && files.length === 0}
-        sendBlockedReason={sending ? t('sessions.chat.composer.attaching') : undefined}
-        allowEmpty={files.length > 0}
-        placeholder={
-          agent
-            ? t('sessions.chat.composer.placeholder', { agent: sessionAgentLabel(agent) })
-            : t('sessions.chat.composer.placeholderAnyAgent')
-        }
-        above={above}
-        layout="inline"
-        dictation={dictationSlots(dictation)}
-        onAttach={handOff ? () => picker.current?.click() : undefined}
-        attachments={
-          files.length > 0
-            ? files.map(({ id, file }) => (
-                <ComposerFile
-                  key={id}
-                  name={file.name}
-                  removeLabel={t('sessions.chat.composer.removeAttachment', { name: file.name })}
-                  onRemove={() => release([id])}
-                />
-              ))
-            : undefined
-        }
-        tools={
-          agent ? (
-            <span className="flex items-center gap-1.5">
-              <AgentMark agent={agent} className="size-3.5" />
-              {sessionAgentLabel(agent)}
-            </span>
-          ) : undefined
-        }
-        engine={
-          meter || model ? (
-            <>
-              {model}
-              {meter}
-            </>
-          ) : undefined
-        }
-        labels={{
-          send: t('sessions.chat.composer.send'),
-          stop: t('sessions.chat.composer.stop'),
-          attach: t('sessions.chat.composer.attach'),
-        }}
-      />
+      <div className="relative">
+        {slash.groups ? (
+          <SessionSlashMenu
+            project={slash.groups.project}
+            builtIns={slash.groups.builtIns}
+            highlighted={slash.highlighted}
+            onPick={slash.pick}
+          />
+        ) : null}
+        <ChatComposer
+          onKeyDownCapture={slash.onKeyDownCapture}
+          value={draft}
+          onValueChange={setDraft}
+          onSubmit={(text) => void submit(text)}
+          onStop={onStop}
+          // Not while files upload: the queued words would land among their paths.
+          onEmptyEnter={first && !sending ? () => onSendQueued(first.id) : undefined}
+          busy={busy && draft.trim() === '' && files.length === 0}
+          sendBlockedReason={sending ? t('sessions.chat.composer.attaching') : undefined}
+          allowEmpty={files.length > 0}
+          placeholder={
+            agent
+              ? t('sessions.chat.composer.placeholder', { agent: sessionAgentLabel(agent) })
+              : t('sessions.chat.composer.placeholderAnyAgent')
+          }
+          above={above}
+          layout="inline"
+          dictation={dictationSlots(dictation)}
+          onAttach={handOff ? () => picker.current?.click() : undefined}
+          attachments={
+            files.length > 0
+              ? files.map(({ id, file }) => (
+                  <ComposerFile
+                    key={id}
+                    name={file.name}
+                    removeLabel={t('sessions.chat.composer.removeAttachment', { name: file.name })}
+                    onRemove={() => release([id])}
+                  />
+                ))
+              : undefined
+          }
+          tools={
+            agent ? (
+              <span className="flex items-center gap-1.5">
+                <AgentMark agent={agent} className="size-3.5" />
+                {sessionAgentLabel(agent)}
+              </span>
+            ) : undefined
+          }
+          engine={
+            meter || model ? (
+              <>
+                {model}
+                {meter}
+              </>
+            ) : undefined
+          }
+          labels={{
+            send: t('sessions.chat.composer.send'),
+            stop: t('sessions.chat.composer.stop'),
+            attach: t('sessions.chat.composer.attach'),
+          }}
+        />
+      </div>
       {refusal ? (
         <FieldError className="mx-4.5">
           {refusalText(refusal, t, 'sessions.chat.composer')}
