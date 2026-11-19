@@ -9,6 +9,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { BotTurnMapper } from '../../bot-turn.mapper';
 import { WorkingBotsResponseDto } from '../../dtos/working-bots.response.dto';
 import { FindWorkingBotsQuery } from './find-working-bots.query';
 
@@ -19,7 +20,10 @@ import { FindWorkingBotsQuery } from './find-working-bots.query';
 @UseInterceptors(AccessScopeInterceptor)
 @Controller('working-bots')
 export class FindWorkingBotsHttpController {
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(
+    private readonly queryBus: QueryBus,
+    private readonly mapper: BotTurnMapper,
+  ) {}
 
   @Get()
   @Version('1')
@@ -35,6 +39,6 @@ export class FindWorkingBotsHttpController {
     const botIds = await this.queryBus.execute<FindWorkingBotsQuery, string[]>(
       new FindWorkingBotsQuery(scope),
     );
-    return { botIds };
+    return this.mapper.toWorkingBotsResponse(botIds);
   }
 }
