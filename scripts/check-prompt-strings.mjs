@@ -195,9 +195,11 @@ function wordsOf(node) {
   return node.text;
 }
 
-// A statement, not a sentence that opens with a word SQL also has ("UPDATE: the session ended…").
+// A statement, not a sentence that opens with a word SQL also has ("UPDATE: the session
+// ended…"): it opens with one of SQL's verbs and goes on to another of its words, both in
+// capitals, or it defines something (CREATE EXTENSION, DROP TABLE).
 const SQL =
-  /^\s*(SELECT\s|UPDATE\s+\S+\s+SET\b|INSERT\s+INTO\b|DELETE\s+FROM\b|WITH\s+\S+\s+AS\b|(CREATE|ALTER|DROP)\s+[A-Z]+\b)|\bFROM\s+"|\bWHERE\s+"/;
+  /^\s*(SELECT|UPDATE|INSERT|DELETE|WITH)\b[\s\S]*\b(FROM|SET|INTO|VALUES|AS)\b|^\s*(CREATE|ALTER|DROP)\s+[A-Z]+\b|\bFROM\s+"|\bWHERE\s+"/;
 
 function isSentence(node) {
   const text = wordsOf(node).trim();

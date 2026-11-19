@@ -95,6 +95,10 @@ test('a statement is SQL; a sentence that opens with one of its words is a sente
       const b = 'SELECT "id" FROM "bot_turn" WHERE "bot_id" = $1 ORDER BY "created_at"';
       const c = 'UPDATE: the session ended while you were away, so read its last message.';
       const d = 'DELETE nothing the person did not name, and say what you kept.';
+      const e = \`UPDATE \${table} SET status = $1 WHERE id = $2 AND status = $3 RETURNING id\`;
+      const f = 'UPDATE ONLY bot_turn AS t SET status = $1 WHERE t.id = $2 AND t.status = $3';
+      const g = 'WITH RECURSIVE tree AS (SELECT id FROM plan_task WHERE parent_id IS NULL) SELECT id FROM tree';
+      const h = 'SELECT(count(*)) AS total FROM bot_turn WHERE bot_id = $1 AND status = $2';
     `),
     ['UPDATE: the session ende', 'DELETE nothing the perso'],
   );
