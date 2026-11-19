@@ -573,6 +573,12 @@ export class SessionChat {
     { after: string | null; timer: ReturnType<typeof setTimeout> }
   >();
   private sendingIds = 0;
+  /**
+   * The prompts that have replaced a sent message's card, held while any is
+   * still on its way: a later batch must not hand one of them to another
+   * card that says the same.
+   */
+  private readonly matchedPrompts = new Set<string>();
   /** The quiet that ends a first load or a replay that came back short. */
   private readonly quiet = new Quiet();
 
@@ -905,8 +911,11 @@ export class SessionChat {
    * said, takes the oldest such message, and no other.
    */
   private landed(state: ChatState): ChatState {
-    if (state.sending.length === 0) return state;
-    const taken = new Set<string>();
+    if (state.sending.length === 0) {
+      this.matchedPrompts.clear();
+      return state;
+    }
+    const taken = this.matchedPrompts;
     const left = state.sending.filter((held) => {
       const from = this.sendingFrom.get(held.id);
       const start = from?.after ? state.turns.findIndex((turn) => turn.id === from.after) + 1 : 0;
@@ -925,12 +934,14 @@ export class SessionChat {
       this.sendingFrom.delete(held.id);
       return false;
     });
+    if (left.length === 0) taken.clear();
     return left.length === state.sending.length ? state : { ...state, sending: left };
   }
 
   private dropSending(): void {
     for (const { timer } of this.sendingFrom.values()) clearTimeout(timer);
     this.sendingFrom.clear();
+    this.matchedPrompts.clear();
   }
 
   /**

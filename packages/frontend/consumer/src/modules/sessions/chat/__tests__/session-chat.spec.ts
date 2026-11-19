@@ -968,6 +968,21 @@ describe('a message on its way', () => {
     vi.useRealTimers();
   });
 
+  // The prompts matched were forgotten between batches: the first prompt
+  // was matched again on the next line, and took the second card early.
+  it('keeps a second identical message on its way until its own prompt comes', () => {
+    const chat = new SessionChat();
+    chat.connect(() => {});
+    chat.post('continue');
+    chat.post('continue');
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'continue'))] });
+    expect(chat.snapshot().sending).toHaveLength(1);
+    chat.apply({ entries: [JSON.stringify(assistant('a1', [{ type: 'text', text: 'On it.' }]))] });
+    expect(chat.snapshot().sending).toHaveLength(1);
+    chat.apply({ entries: [JSON.stringify(user('u2', 'continue'))] });
+    expect(chat.snapshot().sending).toEqual([]);
+  });
+
   it('leaves a source that cannot stop the turn to say what waits with it', () => {
     const chat = new SessionChat();
     chat.connect(() => {}, undefined, { interruptible: false });
