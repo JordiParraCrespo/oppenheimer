@@ -151,7 +151,6 @@
     "error": "Something went wrong",
     "comingToMobile": {
       "title": "Coming to mobile",
-      "employees": "Chat with your employees from your phone.",
       "pullRequests": "Review the pull requests that need you.",
       "automations": "See your automations and how their runs went.",
       "plan": "Your tasks, milestones and calendar, from here."
@@ -1653,6 +1652,23 @@
         "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
         "agentLabel": "Prompt for your agent"
       }
+    },
+    "mobile": {
+      "notFound": "This session is gone. It may have been deleted from another device.",
+      "shareLink": "Share link",
+      "actions": "Session actions",
+      "answerFailed": "The answer didn't reach the agent. Try again.",
+      "needsApproval": "Needs approval",
+      "keys": "Terminal keys",
+      "replyToAgent": "Reply to the agent",
+      "reply": "Reply or run a command",
+      "starting": "Starting the session on its host…",
+      "cloud": "This session runs on {{place}}. Open it there to follow it.",
+      "openCloud": "Open in browser",
+      "failed": "The session could not be started.",
+      "connecting": "Connecting…",
+      "steps_one": "{{count}} step",
+      "steps_other": "{{count}} steps"
     }
   },
   "bots": {
@@ -2415,6 +2431,18 @@
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
       "hide": "Hide from {{section}}"
+    },
+    "mobile": {
+      "search": "Search employees",
+      "loadFailed": "Your employees could not be loaded.",
+      "ungrouped": "Ungrouped",
+      "noMatches": "No employee is called “{{query}}”.",
+      "empty": "No employees yet. Make one in the console on your computer.",
+      "notFound": "This employee is gone. It may have been deleted from another device.",
+      "chatFailed": "The chat could not be loaded.",
+      "actions": "Employee actions",
+      "decideFailed": "The decision didn't reach the bot. Try again.",
+      "answerFailed": "The answer didn't reach the bot. Try again."
     }
   },
   "automations": {

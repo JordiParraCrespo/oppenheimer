@@ -5,14 +5,14 @@ import {
   SortableGroup,
   SortableSidebarProjectGroup,
 } from '@oppenheimer/design-system-web';
-import type { BotGroupEntity } from '@oppenheimer/frontend-consumer';
+import { type BotGroupEntity, type BotGroupSection } from '@oppenheimer/frontend-consumer';
 import { useDeleteBotGroup, useRenameBotGroup } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GroupMenu } from '@/features/bots/components/group-menu';
 import { GroupNameInput } from '@/features/bots/components/group-name-input';
-import { type BotSection, emptyGroupLine, sectionKey } from '@/features/bots/lib/bot-groups';
+import { emptyGroupLine, sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotSidebarRow } from './bot-sidebar-row';
 
 /**
@@ -35,7 +35,7 @@ export function BotGroup({
   searching,
   onHide,
 }: {
-  section: BotSection;
+  section: BotGroupSection;
   /** Every group, for the rows' Move pane. */
   groups: readonly BotGroupEntity[];
   open: boolean;

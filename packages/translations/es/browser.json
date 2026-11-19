@@ -153,7 +153,6 @@
     "error": "Algo ha ido mal",
     "comingToMobile": {
       "title": "Próximamente en el móvil",
-      "employees": "Habla con tus empleados desde el móvil.",
       "pullRequests": "Revisa las pull requests que te necesitan.",
       "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
       "plan": "Tus tareas, hitos y calendario, desde aquí."
@@ -1671,6 +1670,23 @@
         "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
         "agentLabel": "Prompt para tu agente"
       }
+    },
+    "mobile": {
+      "notFound": "Esta sesión ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "shareLink": "Compartir enlace",
+      "actions": "Acciones de la sesión",
+      "answerFailed": "La respuesta no llegó al agente. Vuelve a intentarlo.",
+      "needsApproval": "Necesita aprobación",
+      "keys": "Teclas del terminal",
+      "replyToAgent": "Responde al agente",
+      "reply": "Responde o ejecuta un comando",
+      "starting": "Iniciando la sesión en su host…",
+      "cloud": "Esta sesión se ejecuta en {{place}}. Ábrela allí para seguirla.",
+      "openCloud": "Abrir en el navegador",
+      "failed": "No se pudo iniciar la sesión.",
+      "connecting": "Conectando…",
+      "steps_one": "{{count}} paso",
+      "steps_other": "{{count}} pasos"
     }
   },
   "bots": {
@@ -2448,6 +2464,18 @@
       "checkedHint": "Los bots marcados aparecen en {{section}}.",
       "manageAll": "Gestionar en {{employees}}",
       "hide": "Ocultar de {{section}}"
+    },
+    "mobile": {
+      "search": "Buscar empleados",
+      "loadFailed": "No se pudieron cargar tus empleados.",
+      "ungrouped": "Sin grupo",
+      "noMatches": "Ningún empleado se llama «{{query}}».",
+      "empty": "Aún no hay empleados. Crea uno desde la consola en tu ordenador.",
+      "notFound": "Este empleado ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "chatFailed": "No se pudo cargar el chat.",
+      "actions": "Acciones del empleado",
+      "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
+      "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo."
     }
   },
   "automations": {

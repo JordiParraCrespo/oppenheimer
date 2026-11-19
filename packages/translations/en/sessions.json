@@ -862,5 +862,22 @@
       "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
       "agentLabel": "Prompt for your agent"
     }
+  },
+  "mobile": {
+    "notFound": "This session is gone. It may have been deleted from another device.",
+    "shareLink": "Share link",
+    "actions": "Session actions",
+    "answerFailed": "The answer didn't reach the agent. Try again.",
+    "needsApproval": "Needs approval",
+    "keys": "Terminal keys",
+    "replyToAgent": "Reply to the agent",
+    "reply": "Reply or run a command",
+    "starting": "Starting the session on its host…",
+    "cloud": "This session runs on {{place}}. Open it there to follow it.",
+    "openCloud": "Open in browser",
+    "failed": "The session could not be started.",
+    "connecting": "Connecting…",
+    "steps_one": "{{count}} step",
+    "steps_other": "{{count}} steps"
   }
 }

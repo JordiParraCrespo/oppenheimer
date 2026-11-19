@@ -1,3 +1,4 @@
+export { type ApprovalDecisionLook, approvalDecisionLooks } from './approval-decisions';
 export {
   BotDocumentEntity,
   BotDocumentRevisionEntity,
@@ -31,6 +32,7 @@ export {
   type WorkspaceBotApprovalEntity,
   type WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
+export { type BotGroupSection, botGroupSections } from './bot-group-sections';
 export type {
   BotPermissionRule,
   BotPermissionsEntity,
