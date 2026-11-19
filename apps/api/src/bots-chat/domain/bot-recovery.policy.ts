@@ -4,7 +4,7 @@ import { promptText } from './bot-prompt-text.policy';
  * What a bot does after a step fails, said once: a failed step sends the
  * bot to the next reasonable route before it reports, within limits no
  * route lifts. The words are `prompts/system/recovery.md` and the two
- * `prompts/turn/` files below; the system prompt's "How a turn goes" and
+ * `prompts/wake/` files below; the system prompt's "How a turn goes" and
  * "Which host", a repeated run's opening and the `failed` session wake all
  * read them from here, so a change to a route or a limit reaches every place
  * that states it.
@@ -19,7 +19,7 @@ const replaceWhatIsGone = (): string => promptText('system/recovery.replace-what
  * that turn does once the person has been told.
  */
 export function repeatedBlockerAsk(quiet: string): string {
-  return promptText('turn/repeated-blocker', { replaceWhatIsGone: replaceWhatIsGone(), quiet });
+  return promptText('wake/repeated-blocker', { replaceWhatIsGone: replaceWhatIsGone(), quiet });
 }
 
 /** The bullets "How a turn goes" carries about failures. */
@@ -35,10 +35,10 @@ export function hostCases(): string {
 /** What the `failed` wake asks, step by step, as one paragraph. */
 export function failedWakeAsk(): string {
   return [
-    promptText('turn/failed-session.read-it'),
-    promptText('turn/failed-session.the-host-was-at-fault'),
-    promptText('turn/failed-session.the-person-named-the-host'),
-    promptText('turn/failed-session.the-task-was-at-fault'),
-    promptText('turn/failed-session.closing-it'),
+    promptText('wake/failed-session.read-it'),
+    promptText('wake/failed-session.the-host-was-at-fault'),
+    promptText('wake/failed-session.the-person-named-the-host'),
+    promptText('wake/failed-session.the-task-was-at-fault'),
+    promptText('wake/failed-session.closing-it'),
   ].join(' ');
 }

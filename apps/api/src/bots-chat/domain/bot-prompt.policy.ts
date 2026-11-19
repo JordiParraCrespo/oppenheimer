@@ -504,7 +504,7 @@ type EventPrompts = {
  */
 const EVENT_PROMPTS: EventPrompts = {
   approval: (event, content) => approvalPrompt(content, event.stage),
-  question: (_event, content) => `${eventNote(content)}\n\n${promptText('turn/question-answered')}`,
+  question: (_event, content) => `${eventNote(content)}\n\n${promptText('wake/question-answered')}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,
