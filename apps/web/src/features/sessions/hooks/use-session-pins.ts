@@ -1,6 +1,6 @@
-import { useStoredList } from '@oppenheimer/frontend-web';
+import { useStoredList, withListedFirst } from '@oppenheimer/frontend-web';
 import { createContext, useContext, useMemo } from 'react';
-import { SESSION_PINS_KEY, withPin } from '../lib/session-pins';
+import { SESSION_PINS_KEY } from '../lib/session-pins';
 import { mergeOrder } from '../lib/sidebar-order';
 
 export type SessionPins = {
@@ -36,7 +36,7 @@ export function useSessionPins(): SessionPins {
     () => ({
       pins,
       setPinned: (id: string, pinned: boolean) =>
-        setPins((current) => withPin(current, id, pinned)),
+        setPins((current) => withListedFirst(current, id, pinned)),
       placePins: (dropped: readonly string[]) => setPins((current) => mergeOrder(dropped, current)),
     }),
     [pins, setPins],

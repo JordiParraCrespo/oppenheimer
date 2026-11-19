@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { LinkWhatsappNumberDialog } from '@/features/whatsapp/dialogs/link-whatsapp-number';
 import { whatsappHostsOf } from '@/features/whatsapp/lib/whatsapp-hosts';
 import { WhatsappAccountRow } from '@/features/whatsapp/sections/whatsapp-account-row';
+import { WhatsappAllowedChats } from '@/features/whatsapp/sections/whatsapp-allowed-chats';
 import { WhatsappAnsweringRow } from '@/features/whatsapp/sections/whatsapp-answering-row';
 import { WhatsappOwnerRow } from '@/features/whatsapp/sections/whatsapp-owner-row';
 
@@ -15,7 +16,8 @@ import { WhatsappOwnerRow } from '@/features/whatsapp/sections/whatsapp-owner-ro
  * The reader's linked numbers, one row each, and Link a number up to three,
  * under the screen's callout that says to use a spare one. Under a connected
  * number, who answers there: the bot that answers by default, and the
- * reader's own number, the only one answered. With none yet, the card that
+ * reader's own number, and once it is confirmed, the groups and people
+ * allowed to talk to their bots there. With none yet, the card that
  * says what linking gives the bots; with no host paired, Link is off with
  * that as its reason. Read under Suspense, in the screen's `QueryState`; a
  * refetch that fails keeps the rows and says so above them.
@@ -76,6 +78,9 @@ export function WhatsappAccounts() {
                   <>
                     <WhatsappAnsweringRow account={account} bots={bots} />
                     <WhatsappOwnerRow account={account} />
+                    {account.ownerNumber ? (
+                      <WhatsappAllowedChats account={account} bots={bots} />
+                    ) : null}
                   </>
                 ) : null}
               </Fragment>

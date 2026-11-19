@@ -6,7 +6,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { type SessionEntity, sessionAgentLabel } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useDragLabels, useOfflineOnce } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -101,6 +101,7 @@ export function SessionsSidebarBody() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { sessions: all, projects, hosts: everyHost, error } = useSuspenseSessionsSidebar();
+  const loadError = useOfflineOnce(error);
   const hosts = everyHost.map((host) => ({ id: host.id, name: host.name }));
   const [query, setQuery] = useState('');
   const { folded: closed, setOpen } = useFoldedGroups();
@@ -226,7 +227,7 @@ export function SessionsSidebarBody() {
         />
 
         <ErrorAlert
-          error={error}
+          error={loadError}
           fallback={t('sessions.sidebar.loadFailed')}
           className="mx-3 mb-2"
         />

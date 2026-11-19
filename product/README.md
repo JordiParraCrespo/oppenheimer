@@ -1751,3 +1751,35 @@ earlier note:
   asked to expand that with sibling folders: what opens a turn an event
   started is `wake/` now, and `turn/` keeps what goes with a turn the
   person started (`research/prompt-file-formats.md` §4.1).
+
+- On 2026-11-17, a runner-started Codex cloud session was confirmed complete
+  while its console link opened only the Codex home page. The console now
+  preserves the thread id at `https://chatgpt.com/local/<id>`
+  (`next-steps/cloud-agents.md`, "On Codex's current cloud").
+- `versions/mvp/05-screens.md` had GPT-6.1 Sol as Codex's default. On
+  2026-11-17 OpenAI released GPT-6.2 Sol and GPT-6.2 Astra, and the owner
+  asked for both in new sessions and in bots: they lead Codex's list,
+  GPT-6.2 Sol is the default, and OpenCode's `openai/` row gains both. The
+  OpenAI and ChatGPT bots read Codex's list, so they follow.
+- `versions/mvp/20-plan-calendar.md` let a task leave TODO only by moving
+  its TODO day, which a due date today or overdue overrides. On 2026-11-18
+  the owner asked to remove a task from TODO, and chose that removing one
+  keeps it off every day, its due date included, until it gets a TODO day
+  again or its due date changes (`task."offTodo"`).
+- `versions/mvp/25-bots.md` §2 had a summary job delay itself until the
+  reset on a refusal for "rate or quota", but a spent credit or a refused
+  key carries no reset, so it went to the queue's eight retries and each
+  job's last one was reported as an error (Sentry OPPENHEIMER-API-7,
+  14–17 Nov). On 2026-11-17 a job the provider refused for the account
+  (`usage_limit`, `credential`) ends without a retry or a report; the next
+  turn past the threshold folds again once the account is sorted.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had a
+  group, and any allowed contact, added only in the console, from a list per
+  number. On 2026-11-18 the owner asked for a bot to do it too, in the
+  conversation with the person who confirmed the number, and to see and
+  manage the list in Settings: a bot allows a chat, and picks the bot that
+  answers there, with `allow_whatsapp_chat`, offered only in the owner's
+  console chat and their own chat with the number; Settings → WhatsApp lists
+  the allowed chats with who allowed each, their bot and Remove. Which bots
+  answer on a number is its default plus a bot per allowed chat, not a list
+  of bots per number (`next-steps/whatsapp.md`, open question 1).

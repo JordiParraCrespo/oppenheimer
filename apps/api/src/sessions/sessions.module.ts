@@ -35,6 +35,8 @@ import { SessionProjectUsage } from './application/session-project-usage.resolve
 import { SessionPromptTyperResolver } from './application/session-prompt-typer.resolver';
 import { SessionReconciliationResolver } from './application/session-reconciliation.resolver';
 import { SessionShareAccessResolver } from './application/session-share-access.resolver';
+import { AcknowledgeSessionReportCommandHandler } from './commands/acknowledge-session-report/acknowledge-session-report.command-handler';
+import { AcknowledgeSessionReportHttpController } from './commands/acknowledge-session-report/acknowledge-session-report.http.controller';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
 import { AnswerSessionDecisionCommandHandler } from './commands/answer-session-decision/answer-session-decision.command-handler';
@@ -198,6 +200,7 @@ const httpControllers = [
   FindSessionHttpController,
   RenameSessionHttpController,
   SetSessionVisibilityHttpController,
+  AcknowledgeSessionReportHttpController,
   MoveSessionHttpController,
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
@@ -216,6 +219,7 @@ const commandHandlers: Provider[] = [
   StartCloudSessionCommandHandler,
   RenameSessionCommandHandler,
   SetSessionVisibilityCommandHandler,
+  AcknowledgeSessionReportCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
   WatchSessionTerminalCommandHandler,

@@ -7,6 +7,8 @@ import { LinksModule } from '../links/links.module';
 import { WhatsappAnswerResolver } from './application/whatsapp-answer.resolver';
 import { WhatsappChatResolver } from './application/whatsapp-chat.resolver';
 import { WhatsappReplyResolver } from './application/whatsapp-reply.resolver';
+import { AllowWhatsappChatCommandHandler } from './commands/allow-whatsapp-chat/allow-whatsapp-chat.command-handler';
+import { AllowWhatsappChatHttpController } from './commands/allow-whatsapp-chat/allow-whatsapp-chat.http.controller';
 import { ConfirmWhatsappOwnerCommandHandler } from './commands/confirm-whatsapp-owner/confirm-whatsapp-owner.command-handler';
 import { ConfirmWhatsappOwnerHttpController } from './commands/confirm-whatsapp-owner/confirm-whatsapp-owner.http.controller';
 import { LinkWhatsappCommandHandler } from './commands/link-whatsapp/link-whatsapp.command-handler';
@@ -18,21 +20,34 @@ import { RemoveWhatsappAccountHttpController } from './commands/remove-whatsapp-
 import { ReplyOnWhatsappCommandHandler } from './commands/reply-on-whatsapp/reply-on-whatsapp.command-handler';
 import { RequestWhatsappOwnerCommandHandler } from './commands/request-whatsapp-owner/request-whatsapp-owner.command-handler';
 import { RequestWhatsappOwnerHttpController } from './commands/request-whatsapp-owner/request-whatsapp-owner.http.controller';
+import { RevokeWhatsappChatCommandHandler } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.command-handler';
+import { RevokeWhatsappChatHttpController } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.http.controller';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
 import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
 import { UpdateWhatsappAccountHttpController } from './commands/update-whatsapp-account/update-whatsapp-account.http.controller';
+import { UpdateWhatsappChatGrantCommandHandler } from './commands/update-whatsapp-chat-grant/update-whatsapp-chat-grant.command-handler';
+import { UpdateWhatsappChatGrantHttpController } from './commands/update-whatsapp-chat-grant/update-whatsapp-chat-grant.http.controller';
 import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from './database/whatsapp-account.repository';
+import { WhatsappChatGrantOrmEntity } from './database/whatsapp-chat-grant.orm-entity';
+import { WhatsappChatGrantRepository } from './database/whatsapp-chat-grant.repository';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from './database/whatsapp-message.repository';
 import { FindWhatsappAccountsHttpController } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.http.controller';
 import { FindWhatsappAccountsQueryHandler } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.query-handler';
+import { FindWhatsappChatGrantsHttpController } from './queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.http.controller';
+import { FindWhatsappChatGrantsQueryHandler } from './queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.query-handler';
 import { FindWhatsappChatsQueryHandler } from './queries/find-whatsapp-chats/find-whatsapp-chats.query-handler';
 import { ReadWhatsappChatQueryHandler } from './queries/read-whatsapp-chat/read-whatsapp-chat.query-handler';
 import { SearchWhatsappMessagesQueryHandler } from './queries/search-whatsapp-messages/search-whatsapp-messages.query-handler';
-import { WHATSAPP_ACCOUNT_REPOSITORY, WHATSAPP_MESSAGE_REPOSITORY } from './whatsapp.di-tokens';
+import {
+  WHATSAPP_ACCOUNT_REPOSITORY,
+  WHATSAPP_CHAT_GRANT_REPOSITORY,
+  WHATSAPP_MESSAGE_REPOSITORY,
+} from './whatsapp.di-tokens';
 import { WhatsappResource } from './whatsapp.resource';
 import { WhatsappAccountMapper } from './whatsapp-account.mapper';
+import { WhatsappChatGrantMapper } from './whatsapp-chat-grant.mapper';
 import { WhatsappMessageMapper } from './whatsapp-message.mapper';
 
 const httpControllers = [
@@ -42,6 +57,10 @@ const httpControllers = [
   RequestWhatsappOwnerHttpController,
   ConfirmWhatsappOwnerHttpController,
   RemoveWhatsappAccountHttpController,
+  FindWhatsappChatGrantsHttpController,
+  AllowWhatsappChatHttpController,
+  UpdateWhatsappChatGrantHttpController,
+  RevokeWhatsappChatHttpController,
 ];
 
 /**
@@ -59,18 +78,23 @@ const commandHandlers: Provider[] = [
   RecordWhatsappStateCommandHandler,
   ReceiveWhatsappMessagesCommandHandler,
   SendWhatsappMessageCommandHandler,
+  AllowWhatsappChatCommandHandler,
+  UpdateWhatsappChatGrantCommandHandler,
+  RevokeWhatsappChatCommandHandler,
 ];
 
 /**
  * The reads a bot's WhatsApp tools dispatch (`bots-chat`'s
  * `BotWhatsappToolsFactory`): no route reaches the chats, so a number's
- * messages are read only by its owner's bots.
+ * messages are read only by its owner's bots. A number's allowed chats are
+ * read by both, Settings and the tools.
  */
 const queryHandlers: Provider[] = [
   FindWhatsappAccountsQueryHandler,
   FindWhatsappChatsQueryHandler,
   ReadWhatsappChatQueryHandler,
   SearchWhatsappMessagesQueryHandler,
+  FindWhatsappChatGrantsQueryHandler,
 ];
 
 /**
@@ -85,7 +109,11 @@ const queryHandlers: Provider[] = [
     CqrsModule,
     HostsModule,
     LinksModule,
-    TypeOrmModule.forFeature([WhatsappAccountOrmEntity, WhatsappMessageOrmEntity]),
+    TypeOrmModule.forFeature([
+      WhatsappAccountOrmEntity,
+      WhatsappMessageOrmEntity,
+      WhatsappChatGrantOrmEntity,
+    ]),
     AuthzKernelModule.forFeature([WhatsappResource]),
   ],
   controllers: [...httpControllers],
@@ -94,11 +122,13 @@ const queryHandlers: Provider[] = [
     ...queryHandlers,
     WhatsappAccountMapper,
     WhatsappMessageMapper,
+    WhatsappChatGrantMapper,
     WhatsappChatResolver,
     WhatsappReplyResolver,
     WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },
+    { provide: WHATSAPP_CHAT_GRANT_REPOSITORY, useClass: WhatsappChatGrantRepository },
   ],
 })
 export class WhatsappModule {}

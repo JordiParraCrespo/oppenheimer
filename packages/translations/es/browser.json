@@ -423,6 +423,10 @@
       "WHATSAPP_012": "Ningún número está esperando un código. Primero escribe tu número.",
       "WHATSAPP_013": "Ese no puede ser tu número aquí. Escribe el número desde el que escribes, no el vinculado.",
       "WHATSAPP_014": "Demasiados códigos incorrectos. Pide un código nuevo y vuelve a intentarlo.",
+      "WHATSAPP_015": "Confirma primero tu propio número. Solo entonces se pueden permitir otros chats en este número.",
+      "WHATSAPP_016": "Ese chat ya no está permitido en este número.",
+      "WHATSAPP_017": "Tu propio chat con el número siempre es tuyo, y el número no puede hablar consigo mismo.",
+      "WHATSAPP_018": "Este número ya permite todos los chats que puede. Quita uno primero.",
       "TELEGRAM_001": "Ese bot de Telegram ya no está conectado.",
       "TELEGRAM_002": "Telegram pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "TELEGRAM_003": "Ya has conectado tres bots de Telegram, el máximo por persona. Desconecta uno para añadir otro.",
@@ -1109,6 +1113,9 @@
       "pinned": "Fijadas",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "markUnread": "Marcar como no leída",
+      "markRead": "Marcar como leída",
+      "unreadLabel": "No leída",
       "hide": "Ocultar",
       "show": "Mostrar",
       "hidden": "Oculta",
@@ -3205,6 +3212,7 @@
       "deleting": "Eliminando…"
     },
     "dialog": {
+      "offTodo": "Fuera de TODO hasta que tenga un día",
       "newTitle": "Nueva tarea",
       "editTitle": "Editar tarea",
       "titleLabel": "Título",
@@ -3303,7 +3311,7 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "empty": "Añade una tarea arriba o elige algunas con Añadir tareas.",
       "emptyTitle": "Aún no hay nada en este día",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
@@ -3342,7 +3350,10 @@
       },
       "move": "Mover {{title}} a otro día",
       "moveTitle": "Mover a otro día",
-      "moveFailed": "No se pudo mover la tarea a otro día."
+      "moveFailed": "No se pudo mover la tarea a otro día.",
+      "remove": "Quitar {{title}} de TODO",
+      "removeTitle": "Quitar de TODO",
+      "removeFailed": "No se pudo quitar la tarea de TODO."
     },
     "selection": {
       "count_one": "{{count}} seleccionada",
@@ -4121,6 +4132,23 @@
         "change": "Cambiar",
         "otherNumber": "Usar otro número",
         "failed": "No ha funcionado. Inténtalo de nuevo."
+      },
+      "allowed": {
+        "title": "Chats permitidos",
+        "none": "Solo tú hablas con tus bots en este número. Para que un grupo u otra persona hable con ellos, pídeselo a un bot en tu propio chat, por ejemplo «permite el grupo de la familia, responde Juno».",
+        "some_one": "{{count}} grupo o persona puede hablar con tus bots en este número. Pide a un bot en tu propio chat que permita otro.",
+        "some_other": "{{count}} grupos o personas pueden hablar con tus bots en este número. Pide a un bot en tu propio chat que permita otro.",
+        "loadFailed": "No se pudieron cargar los chats que permite este número.",
+        "group": "Grupo",
+        "person": "Persona",
+        "allowedBy": "Permitido por {{bot}}",
+        "allowedByRemovedBot": "Permitido por un bot eliminado",
+        "allowedByYou": "Permitido por ti",
+        "botLabel": "El bot que responde en {{chat}}",
+        "defaultBot": "El bot por defecto del número",
+        "remove": "Quitar",
+        "removeLabel": "Dejar de permitir {{chat}}",
+        "removeFailed": "No se pudo quitar ese chat. Inténtalo de nuevo."
       }
     },
     "telegram": {

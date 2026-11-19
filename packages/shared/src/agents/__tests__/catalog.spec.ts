@@ -67,7 +67,9 @@ describe('coding agent catalog', () => {
     expect(levelsOf('codex', 'gpt-5.6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(effortFor('codex', 'gpt-5.6-sol')?.default).toBe('low');
     expect(effortFor('codex', 'gpt-5.6-terra')?.default).toBe('medium');
-    expect(levelsOf('codex', null)).toEqual(levelsOf('codex', 'gpt-6.1-sol'));
+    expect(levelsOf('codex', null)).toEqual(levelsOf('codex', 'gpt-6.2-sol'));
+    expect(effortFor('codex', 'gpt-6.2-sol')?.default).toBe('low');
+    expect(levelsOf('codex', 'gpt-6.2-astra')).toContain('ultra');
     expect(effortFor('codex', 'gpt-6.1-sol')?.default).toBe('low');
     expect(effortFor('codex', 'gpt-6-sol')?.default).toBe('medium');
     expect(effortFor('codex', 'gpt-6.1-terra')?.default).toBe('medium');
