@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LlmService } from '@oppenheimer/backend-llm';
+import { TRANSCRIPT_PAGE_MAX_ENTRIES } from '@oppenheimer/shared/protocol';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
 import {
   CONVERSATION_RENAME_AFTER_PROMPTS,
@@ -17,7 +18,7 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
 import { SessionTranscriptMapper } from '../session-transcript.mapper';
 import { SESSION_TRANSCRIPT, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
-import type { SessionTranscriptPort } from './session-transcript.port';
+import type { HostTranscriptRequest, SessionTranscriptPort } from './session-transcript.port';
 
 export interface SessionNameProposal {
   name: string;
@@ -25,11 +26,14 @@ export interface SessionNameProposal {
 }
 
 /**
- * How much of the conversation is read, from its first line, to find the
- * person's prompts: enough entries that a handful of prompts and the tool calls
- * between them fit, well under a page's bound.
+ * How the conversation is read to find the person's prompts: from its first
+ * line, a page at a time, until enough of them are found or it ends. Every tool
+ * call and its result is an entry of its own, so one long answer can take
+ * pages; past the last page read, this answer is given up and the next one
+ * reads again.
  */
-const CONVERSATION_READ_ENTRIES = 120;
+const CONVERSATION_PAGE_ENTRIES = TRANSCRIPT_PAGE_MAX_ENTRIES;
+const CONVERSATION_MAX_PAGES = 10;
 
 /**
  * The model's deadline for a conversation's title. Nobody waits on it (it runs
@@ -164,15 +168,7 @@ export class SessionNamingResolver {
     if (!this.llm.isConfigured() || !this.namerModel) return;
 
     try {
-      const outcome = await this.transcripts.read(session.hostId, session.id, {
-        limit: CONVERSATION_READ_ENTRIES,
-        from: 'start',
-      });
-      if (outcome.kind !== 'page') return;
-      const entries = SessionTranscriptMapper.toEntries(outcome.page.entries).map(
-        (entry) => redactEntry(entry).entry,
-      );
-      const prompts = promptsOf(entries);
+      const prompts = await this.promptsSoFar(session.hostId, session.id);
       if (prompts.length < CONVERSATION_RENAME_AFTER_PROMPTS) return;
 
       const name = await this.askModel(
@@ -196,6 +192,32 @@ export class SessionNamingResolver {
     } catch (error) {
       this.logger.warn(`Renaming session ${session.slug} failed: ${(error as Error).message}`);
     }
+  }
+
+  /**
+   * The person's prompts, redacted, read forward from the conversation's start
+   * until there are enough to rename by, it ends, or the page budget is spent.
+   */
+  private async promptsSoFar(hostId: string, sessionId: string): Promise<string[]> {
+    const prompts: string[] = [];
+    let request: HostTranscriptRequest = { limit: CONVERSATION_PAGE_ENTRIES, from: 'start' };
+    for (let read = 0; read < CONVERSATION_MAX_PAGES; read += 1) {
+      const outcome = await this.transcripts.read(hostId, sessionId, request);
+      if (outcome.kind !== 'page') break;
+      const { page } = outcome;
+      const entries = SessionTranscriptMapper.toTypedEntries(page.entries).map(
+        (entry) => redactEntry(entry).entry,
+      );
+      prompts.push(...promptsOf(entries));
+      if (prompts.length >= CONVERSATION_RENAME_AFTER_PROMPTS) break;
+      if (page.atEnd || !page.conversation || page.next <= page.from) break;
+      request = {
+        limit: CONVERSATION_PAGE_ENTRIES,
+        conversation: page.conversation,
+        after: page.next,
+      };
+    }
+    return prompts;
   }
 
   /** The configured model's title for this request, or `null`, never a rejection. */

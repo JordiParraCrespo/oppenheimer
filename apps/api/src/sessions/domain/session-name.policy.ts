@@ -81,11 +81,18 @@ const CONVERSATION_MAX_PROMPTS = 6;
 const CONVERSATION_PROMPT_MAX_CHARS = 600;
 
 /**
+ * What Claude Code writes into the person's turn that they never typed: an
+ * interrupted answer's marker, the caveat before a local command's output.
+ * Anything that opens with a tag (a command, a reminder, a notification) is
+ * the CLI's too. The runner reads the same lines the same way.
+ */
+const NOT_TYPED = [/^Caveat:/, /^\[Request interrupted/, /^</];
+
+/**
  * The person's prompts in a conversation, oldest first: the text of each
  * `user` entry that is something they wrote. A tool's result reaches the
- * transcript as a `user` entry with no text part, and what Claude Code writes
- * on the person's behalf (a slash command's expansion, a caveat, a reminder)
- * opens with a tag; neither is a prompt.
+ * transcript as a `user` entry with no text part, so it is not one; nor is
+ * anything {@link NOT_TYPED} matches.
  */
 export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] {
   return entries.flatMap((entry) => {
@@ -95,7 +102,7 @@ export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] 
       .map((part) => part.text ?? '')
       .join('\n')
       .trim();
-    return text && !text.startsWith('<') ? [text] : [];
+    return text && !NOT_TYPED.some((pattern) => pattern.test(text)) ? [text] : [];
   });
 }
 
