@@ -1,4 +1,4 @@
-import { matchingCommands, SLASH_MENU_MAX, type SlashCommand } from '@oppenheimer/frontend-web';
+import { leadThenFollow, type SlashCommand } from '@oppenheimer/frontend-web';
 import type { ChatCommand } from '@oppenheimer/shared/protocol';
 
 /**
@@ -45,7 +45,7 @@ export function sessionSlashRows(
   describe: (key: BuiltInDescriptionKey) => string,
 ): { project: SlashCommand[]; builtIns: SlashCommand[] } {
   const reserved: readonly string[] = CLAUDE_BUILT_IN_COMMANDS;
-  const own = matchingCommands(
+  const [own, builtIns] = leadThenFollow(
     project
       .filter((command) => !reserved.includes(command.name))
       .map((command) => ({
@@ -54,9 +54,6 @@ export function sessionSlashRows(
         command: `/${command.name}`,
         description: command.description ?? '',
       })),
-    query,
-  );
-  const builtIns = matchingCommands(
     CLAUDE_BUILT_IN_COMMANDS.map((name) => ({
       id: `built-in:${name}`,
       name,
@@ -64,7 +61,6 @@ export function sessionSlashRows(
       description: describe(BUILT_IN_DESCRIPTIONS[name]),
     })),
     query,
-    SLASH_MENU_MAX - own.length,
   );
   return { project: own, builtIns };
 }

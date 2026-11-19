@@ -57,39 +57,58 @@ func (Reader) InFolder(dir string, max int) []domain.SlashCommand {
 			out = append(out, command)
 		}
 	}
-	add(skills(filepath.Join(dir, ".claude", "skills"), max))
-	add(commands(filepath.Join(dir, ".claude", "commands"), max))
+	add(collect(filepath.Join(dir, ".claude", "skills"), skillSource, max))
+	add(collect(filepath.Join(dir, ".claude", "commands"), commandSource, max))
 	return out
 }
 
-// skills reads each `<dir>/SKILL.md`, following a symlinked folder, and leaves
-// out one whose front matter says `user-invocable: false`.
-func skills(root string, max int) []domain.SlashCommand {
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return nil
-	}
+// candidate is a file that may hold a command, and the name it goes by
+// unless its source lets the front matter name it.
+type candidate struct{ path, name string }
+
+// source is how one kind of file reads as a command: whether the front
+// matter's `name` wins over the file's, and whether a body's first line
+// stands in for a missing description.
+type source struct {
+	kind            domain.SlashCommandKind
+	namedByHeader   bool
+	describedByBody bool
+	candidatesUnder func(root string) []candidate
+}
+
+var (
+	// skillSource is `<dir>/SKILL.md`, through a symlinked folder.
+	skillSource = source{kind: domain.SlashCommandSkill, namedByHeader: true, candidatesUnder: skillFiles}
+	// commandSource is each `.md` under the folder, a subfolder's name joined
+	// to the file's with `:`.
+	commandSource = source{kind: domain.SlashCommandCommand, describedByBody: true, candidatesUnder: commandFiles}
+)
+
+// collect reads the commands a source finds under root, at most max, by
+// name, leaving out one whose front matter says `user-invocable: false`.
+func collect(root string, from source, max int) []domain.SlashCommand {
 	var out []domain.SlashCommand
-	for _, entry := range entries {
+	for _, found := range from.candidatesUnder(root) {
 		if len(out) >= max {
 			break
 		}
-		if strings.HasPrefix(entry.Name(), ".") {
-			continue
-		}
-		head, ok := readHead(filepath.Join(root, entry.Name(), "SKILL.md"))
+		head, ok := readHead(found.path)
 		if !ok {
 			continue
 		}
-		fields, _ := frontMatter(head)
+		fields, body := frontMatter(head)
 		if strings.EqualFold(fields["user-invocable"], "false") {
 			continue
 		}
-		name := fields["name"]
-		if name == "" {
-			name = entry.Name()
+		name := found.name
+		if from.namedByHeader && fields["name"] != "" {
+			name = fields["name"]
 		}
-		if command, ok := build(name, domain.SlashCommandSkill, fields["description"]); ok {
+		description := fields["description"]
+		if from.describedByBody && description == "" {
+			description = firstLine(body)
+		}
+		if command, ok := build(name, from.kind, description); ok {
 			out = append(out, command)
 		}
 	}
@@ -97,10 +116,23 @@ func skills(root string, max int) []domain.SlashCommand {
 	return out
 }
 
-// commands reads each `.md` under root, commandsDepth folders deep at most.
-// Its description is the front matter's, or else the body's first line.
-func commands(root string, max int) []domain.SlashCommand {
-	var out []domain.SlashCommand
+func skillFiles(root string) []candidate {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return nil
+	}
+	var found []candidate
+	for _, entry := range entries {
+		if !strings.HasPrefix(entry.Name(), ".") {
+			found = append(found, candidate{path: filepath.Join(root, entry.Name(), "SKILL.md"), name: entry.Name()})
+		}
+	}
+	return found
+}
+
+// commandFiles walks root commandsDepth folders deep at most.
+func commandFiles(root string) []candidate {
+	var found []candidate
 	var walk func(dir string, prefix []string)
 	walk = func(dir string, prefix []string) {
 		entries, err := os.ReadDir(dir)
@@ -108,9 +140,6 @@ func commands(root string, max int) []domain.SlashCommand {
 			return
 		}
 		for _, entry := range entries {
-			if len(out) >= max {
-				return
-			}
 			name := entry.Name()
 			if strings.HasPrefix(name, ".") {
 				continue
@@ -126,27 +155,14 @@ func commands(root string, max int) []domain.SlashCommand {
 				}
 				continue
 			}
-			if !strings.HasSuffix(name, ".md") {
-				continue
-			}
-			head, ok := readHead(path)
-			if !ok {
-				continue
-			}
-			fields, body := frontMatter(head)
-			description := fields["description"]
-			if description == "" {
-				description = firstLine(body)
-			}
-			full := strings.Join(append(append([]string{}, prefix...), strings.TrimSuffix(name, ".md")), ":")
-			if command, ok := build(full, domain.SlashCommandCommand, description); ok {
-				out = append(out, command)
+			if strings.HasSuffix(name, ".md") {
+				full := strings.Join(append(append([]string{}, prefix...), strings.TrimSuffix(name, ".md")), ":")
+				found = append(found, candidate{path: path, name: full})
 			}
 		}
 	}
 	walk(root, nil)
-	sortByName(out)
-	return out
+	return found
 }
 
 // build is one command as the wire takes it, or false for a name it refuses.
@@ -194,9 +210,12 @@ func readHead(path string) (string, bool) {
 }
 
 // frontMatter reads the top-level keys of a file's YAML front matter, as much
-// of YAML as a skill's header uses: a plain or quoted value, one folded onto
-// the indented lines below it, or a block (`>`, `|`) on those lines. It
-// answers the fields and the body after the front matter.
+// of YAML as a skill's header uses and no more: a plain or quoted scalar, one
+// folded onto the indented lines below it, or a block (`>`, `|`) on those
+// lines. A nested map or a list reads as its lines joined into one string;
+// only `name`, `description` and `user-invocable` are read, and a key that
+// needs more than this belongs to a real YAML parser. It answers the fields
+// and the body after the front matter.
 func frontMatter(text string) (map[string]string, string) {
 	fields := map[string]string{}
 	scanner := bufio.NewScanner(strings.NewReader(text))

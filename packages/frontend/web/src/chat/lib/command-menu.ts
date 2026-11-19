@@ -1,5 +1,5 @@
 /** The most commands a `/` menu lists at once. */
-export const SLASH_MENU_MAX = 8;
+const SLASH_MENU_MAX = 8;
 
 /**
  * One row of a composer's `/` menu: something `/<name>` runs, with the
@@ -23,4 +23,18 @@ export function matchingCommands<Command extends Pick<SlashCommand, 'name'>>(
     (command) => !command.name.startsWith(query) && command.name.includes(query),
   );
   return [...starts, ...contains].slice(0, max);
+}
+
+/**
+ * A `/` menu over two lists: what matches in `lead` first, then what matches
+ * in `follow` in the rows left, within one menu's worth. Which list leads and
+ * what each leaves out (a name another command runs) is the caller's.
+ */
+export function leadThenFollow<Command extends Pick<SlashCommand, 'name'>>(
+  lead: readonly Command[],
+  follow: readonly Command[],
+  query: string,
+): [Command[], Command[]] {
+  const first = matchingCommands(lead, query);
+  return [first, matchingCommands(follow, query, SLASH_MENU_MAX - first.length)];
 }

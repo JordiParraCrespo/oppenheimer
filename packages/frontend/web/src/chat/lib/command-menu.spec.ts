@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchingCommands } from './command-menu';
+import { leadThenFollow, matchingCommands } from './command-menu';
 
 /**
  * Which commands a `/` menu offers for what is typed. What breaks this: hiding
@@ -20,5 +20,15 @@ describe('matchingCommands', () => {
   it('lists at most eight', () => {
     const many = Array.from({ length: 12 }, (_, i) => named(`s${i}`));
     expect(matchingCommands(many, '')).toHaveLength(8);
+  });
+});
+
+describe('leadThenFollow', () => {
+  it('fills the rows the leading list leaves with the following one', () => {
+    const lead = Array.from({ length: 6 }, (_, i) => named(`a${i}`));
+    const follow = Array.from({ length: 6 }, (_, i) => named(`b${i}`));
+    const [first, second] = leadThenFollow(lead, follow, '');
+    expect(first).toHaveLength(6);
+    expect(second.map((found) => found.name)).toEqual(['b0', 'b1']);
   });
 });

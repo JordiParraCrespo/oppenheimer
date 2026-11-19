@@ -12,5 +12,5 @@ export { useExploredLine } from './hooks/use-explored-line';
 export { useObjectUrls } from './hooks/use-object-urls';
 export type { ChatGalleryImage } from './lib/chat-images';
 export type { ChatUsageContext, ChatUsageLimit } from './lib/chat-usage';
-export { matchingCommands, SLASH_MENU_MAX, type SlashCommand } from './lib/command-menu';
+export { leadThenFollow, type SlashCommand } from './lib/command-menu';
 export { formatTokens } from './lib/format-tokens';

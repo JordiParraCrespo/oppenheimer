@@ -1,4 +1,4 @@
-import { matchingCommands, SLASH_MENU_MAX, type SlashCommand } from '@oppenheimer/frontend-web';
+import { leadThenFollow, type SlashCommand } from '@oppenheimer/frontend-web';
 import {
   BOT_BUILT_IN_COMMANDS,
   BOT_RUNNABLE_BUILT_IN_SKILL_NAMES,
@@ -28,11 +28,11 @@ export function slashMenuItems(
   // Only a command's name runs something else; a skill under a built-in
   // skill's name (`oppenheimer`) is still the bot's and still runs.
   const reserved: readonly string[] = ['skill', ...BOT_BUILT_IN_COMMANDS];
-  const ownBuiltIns = matchingCommands(builtIns, query);
-  const ownSkills = matchingCommands(
+  const [ownBuiltIns, ownSkills] = leadThenFollow(
+    builtIns,
     skills.filter((skill) => !reserved.includes(skill.name)),
     query,
-  ).slice(0, SLASH_MENU_MAX - ownBuiltIns.length);
+  );
   return { builtIns: ownBuiltIns, skills: ownSkills };
 }
 
