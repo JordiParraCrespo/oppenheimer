@@ -134,11 +134,27 @@ standalone() {
 	p12_password_file
 	"$RCODESIGN" sign --p12-file "$MACOS_SIGN_P12" --p12-password-file "$P12_PASSWORD_FILE" \
 		--code-signature-flags runtime --binary-identifier "$BUNDLE_ID" "$1"
-	local zip
-	zip="$(mktemp -d)/runner.zip"
-	python3 -m zipfile -c "$zip" "$1"
-	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --max-wait-seconds 3600 --wait "$zip"
-	rm -rf "$(dirname "$zip")"
+	local dir
+	dir="$(mktemp -d)"
+	python3 -m zipfile -c "$dir/runner.zip" "$1"
+	"$RCODESIGN" notary-submit --api-key-file "$MACOS_NOTARY_KEY" --max-wait-seconds 3600 --wait "$dir/runner.zip" ||
+		{ rm -rf "$dir"; exit 1; }
+	rm -rf "$dir"
+}
+
+# signed_alone <archive> <member> <signature info> <pattern> present|absent <what>
+# — one property the standalone runner's signature must have, or must not.
+signed_alone() {
+	local found=absent
+	! grep -Eq "$4" <<<"$3" || found=present
+	[ "$found" = "$5" ] && return 0
+	if [ "$5" = present ]; then
+		echo "error: $2 in $1 is not signed to run on its own: it lacks $6" >&2
+	else
+		echo "error: $2 in $1 is not signed to run on its own: it carries $6" >&2
+	fi
+	grep -E 'flags:|cms|Info \(1\)|Resources \(3\)' <<<"$3" >&2
+	exit 1
 }
 
 # check_darwin_archive <archive> <dir> — what a runner up to 0.1.12 installs
@@ -167,12 +183,10 @@ check_darwin_archive() {
 	fi
 	info="$("$RCODESIGN" print-signature-info "$tmp/$member")"
 	rm -rf "$tmp"
-	if ! grep -q 'flags: CodeSignatureFlags(.*RUNTIME' <<<"$info" || ! grep -q '^ *cms:$' <<<"$info" ||
-		grep -q "'Resources (3):" <<<"$info" || grep -Eq "'Info \(1\): 0*[1-9a-f]" <<<"$info"; then
-		echo "error: $member in $archive is not signed to run on its own (hardened runtime, no bundle seal):" >&2
-		grep -E 'flags:|cms|Info \(1\)|Resources \(3\)' <<<"$info" >&2
-		exit 1
-	fi
+	signed_alone "$archive" "$member" "$info" 'flags: CodeSignatureFlags\(.*RUNTIME' present "the hardened runtime"
+	signed_alone "$archive" "$member" "$info" '^ *cms:$' present "a CMS (Developer ID) signature"
+	signed_alone "$archive" "$member" "$info" "'Resources \(3\):" absent "a seal on a bundle's resources"
+	signed_alone "$archive" "$member" "$info" "'Info \(1\): 0*[1-9a-f]" absent "a seal on a bundle's Info.plist"
 }
 OUT="$ROOT/dist/runner"
 KEYS_VAR="github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release.PublicKeys"

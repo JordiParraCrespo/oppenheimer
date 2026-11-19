@@ -27,8 +27,11 @@ var _ app.Binaries = (*Store)(nil)
 const selfCheckTimeout = 20 * time.Second
 
 // staleStaging is how long a file in staging goes untouched before a boot
-// sweeps it: far past the download timeout plus the self-check, so a stage
-// another process is still writing is never one of them.
+// sweeps it. A stage another process is still writing is bounded by the
+// download client's 10-minute timeout plus selfCheckTimeout, so it is never
+// one of them. This trusts the clock: a forward jump of an hour at boot
+// could sweep a `runner update` mid-download, which then fails before
+// promoting anything and stages afresh on the next run.
 const staleStaging = time.Hour
 
 // Store is the layout plus the HTTP client that fills it.
