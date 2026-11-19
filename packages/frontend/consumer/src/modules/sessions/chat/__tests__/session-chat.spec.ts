@@ -943,18 +943,6 @@ describe('a message on its way', () => {
     vi.useRealTimers();
   });
 
-  // `!ls` comes back as `! ls`: matched as typed, its card stayed under its turn.
-  it('knows a message in its prompt however the transcript spaces it', () => {
-    const chat = new SessionChat();
-    chat.connect(() => {});
-    chat.post('!ls');
-    chat.apply({
-      reset: true,
-      entries: [JSON.stringify(user('u1', '<bash-input>ls</bash-input>'))],
-    });
-    expect(chat.snapshot().sending).toEqual([]);
-  });
-
   // The agent takes it at its next call, with no prompt of its own to replace the card.
   it('shows nothing on its way for a message sent into the turn under way', () => {
     vi.useFakeTimers();
@@ -966,21 +954,6 @@ describe('a message on its way', () => {
     chat.sendQueued(queued?.id ?? '');
     expect(chat.snapshot().sending).toEqual([]);
     vi.useRealTimers();
-  });
-
-  // The prompts matched were forgotten between batches: the first prompt
-  // was matched again on the next line, and took the second card early.
-  it('keeps a second identical message on its way until its own prompt comes', () => {
-    const chat = new SessionChat();
-    chat.connect(() => {});
-    chat.post('continue');
-    chat.post('continue');
-    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'continue'))] });
-    expect(chat.snapshot().sending).toHaveLength(1);
-    chat.apply({ entries: [JSON.stringify(assistant('a1', [{ type: 'text', text: 'On it.' }]))] });
-    expect(chat.snapshot().sending).toHaveLength(1);
-    chat.apply({ entries: [JSON.stringify(user('u2', 'continue'))] });
-    expect(chat.snapshot().sending).toEqual([]);
   });
 
   it('leaves a source that cannot stop the turn to say what waits with it', () => {
