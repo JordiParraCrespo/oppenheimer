@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { TranscribeWhatsappVoiceNoteCommand } from '../../whatsapp/commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { whatsappMessageOf } from '../domain/bot-whatsapp-turn.policy';
 import type { BotOpeningMediaReaderPort } from './bot-opening-media-reader.port';
@@ -18,8 +19,7 @@ export class BotWhatsappVoiceNoteResolver implements BotOpeningMediaReaderPort {
 
   async read(turn: BotTurnEntity): Promise<string> {
     const source = whatsappMessageOf(turn.sourceKey);
-    if (!source)
-      return '[voice note, could not be transcribed: the turn names no WhatsApp message]';
+    if (!source) return promptText('turn/voice-note');
     return this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
       new TranscribeWhatsappVoiceNoteCommand({
         organizationId: turn.organizationId,
