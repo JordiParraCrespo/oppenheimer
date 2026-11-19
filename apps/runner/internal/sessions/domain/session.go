@@ -374,6 +374,20 @@ func NewID() (string, error) {
 	return idEncoding.EncodeToString(raw)[:12], nil
 }
 
+// controlPlaneIDPattern is the shape of a session id the control plane mints:
+// a UUID, which is what the link protocol's `sessionId` accepts.
+var controlPlaneIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// KnownToControlPlane says whether a session id came from the control plane.
+// A session the host minted itself with NewID (a child from `runner sessions
+// run`, one from `runner sessions create`) is the host's alone: the console
+// never sees it, and the link must not carry it, because the control plane
+// refuses any frame naming a session id that is not a UUID — a hello holding
+// one is refused whole and the host stays offline.
+func KnownToControlPlane(id string) bool {
+	return controlPlaneIDPattern.MatchString(id)
+}
+
 // repoPattern is `owner/name` with the characters GitHub allows.
 var repoPattern = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}/[A-Za-z0-9._-]{1,100}$`)
 

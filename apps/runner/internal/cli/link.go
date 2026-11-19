@@ -235,6 +235,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	}
 	handler.client = client
 	handler.reporter = link.NewReporter(runID, client, logger)
+	handler.reporter.OnlyFor(sessionsdomain.KnownToControlPlane)
 	handler.credentials = newCredentialBroker(client, a.Pairing.Unseal, a.Sessions.Get)
 	a.Credentials = handler.credentials
 	a.Sessions.SetPublisher(handler)
@@ -921,7 +922,9 @@ func (h *linkHandler) snapshots() []link.SessionSnapshot {
 	out := make([]link.SessionSnapshot, 0, len(sessions))
 	now := time.Now()
 	for _, s := range sessions {
-		if !s.State.Live() {
+		// A host-only session is not the control plane's to reconcile, and
+		// its id would get the whole hello or heartbeat refused.
+		if !s.State.Live() || !sessionsdomain.KnownToControlPlane(s.ID) {
 			continue
 		}
 		snapshot := link.SessionSnapshot{

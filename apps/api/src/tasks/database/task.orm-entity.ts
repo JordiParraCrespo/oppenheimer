@@ -82,6 +82,10 @@ export class TaskOrmEntity {
   @Column({ type: 'date', nullable: true })
   focusDate!: string | null;
 
+  /** Taken off To do by its person, its due date included, until planned or rescheduled. */
+  @Column({ type: 'boolean', default: false })
+  offTodo!: boolean;
+
   @Column({ type: 'varchar', length: 16, nullable: true })
   priority!: TaskPriority | null;
 

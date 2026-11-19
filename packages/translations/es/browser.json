@@ -1109,6 +1109,9 @@
       "pinned": "Fijadas",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "markUnread": "Marcar como no leída",
+      "markRead": "Marcar como leída",
+      "unreadLabel": "No leída",
       "hide": "Ocultar",
       "show": "Mostrar",
       "hidden": "Oculta",
@@ -3207,6 +3210,7 @@
       "deleting": "Eliminando…"
     },
     "dialog": {
+      "offTodo": "Fuera de TODO hasta que tenga un día",
       "newTitle": "Nueva tarea",
       "editTitle": "Editar tarea",
       "titleLabel": "Título",
@@ -3305,7 +3309,7 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Añade una tarea abajo o elige algunas con Añadir tareas.",
+      "empty": "Añade una tarea arriba o elige algunas con Añadir tareas.",
       "emptyTitle": "Aún no hay nada en este día",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
@@ -3344,7 +3348,10 @@
       },
       "move": "Mover {{title}} a otro día",
       "moveTitle": "Mover a otro día",
-      "moveFailed": "No se pudo mover la tarea a otro día."
+      "moveFailed": "No se pudo mover la tarea a otro día.",
+      "remove": "Quitar {{title}} de TODO",
+      "removeTitle": "Quitar de TODO",
+      "removeFailed": "No se pudo quitar la tarea de TODO."
     },
     "selection": {
       "count_one": "{{count}} seleccionada",

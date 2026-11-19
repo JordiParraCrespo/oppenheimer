@@ -123,6 +123,11 @@ export const updateTaskSchema = z
     dueTime: timeOfDaySchema.nullable().optional(),
     /** The day it is on To do from; `null` takes it off. */
     focusDate: calendarDateSchema.nullable().optional(),
+    /**
+     * `true` takes it off To do, its due date included, until it gets a TODO
+     * day again or its due date changes, which put it back on their own.
+     */
+    offTodo: z.boolean().optional(),
     /** `null` takes the priority off. */
     priority: taskPrioritySchema.nullable().optional(),
     /** Marks the task blocked and says why; `null` unblocks it. Done unblocks it too. */

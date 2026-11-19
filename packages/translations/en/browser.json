@@ -1099,6 +1099,9 @@
       "pinned": "Pinned",
       "pin": "Pin",
       "unpin": "Unpin",
+      "markUnread": "Mark as unread",
+      "markRead": "Mark as read",
+      "unreadLabel": "Unread",
       "hide": "Hide",
       "show": "Show",
       "hidden": "Hidden",
@@ -3170,6 +3173,7 @@
       "deleting": "Deleting…"
     },
     "dialog": {
+      "offTodo": "Off TODO until it gets a day",
       "newTitle": "New task",
       "editTitle": "Edit task",
       "titleLabel": "Title",
@@ -3268,7 +3272,7 @@
       "todayWeek": "Today · Week {{week}}",
       "weekNumber": "Week {{week}}",
       "includeOverdue": "Include overdue",
-      "empty": "Add a task below, or pick some with Add tasks.",
+      "empty": "Add a task above, or pick some with Add tasks.",
       "emptyTitle": "Nothing on this day yet",
       "noMatch": "No tasks match these filters.",
       "add": "Add a task",
@@ -3307,7 +3311,10 @@
       },
       "move": "Move {{title}} to another day",
       "moveTitle": "Move to another day",
-      "moveFailed": "Couldn’t move that task to another day."
+      "moveFailed": "Couldn’t move that task to another day.",
+      "remove": "Remove {{title}} from TODO",
+      "removeTitle": "Remove from TODO",
+      "removeFailed": "Couldn’t remove that task from TODO."
     },
     "selection": {
       "count_one": "{{count}} selected",

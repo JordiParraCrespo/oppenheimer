@@ -109,6 +109,7 @@ var launchCatalog = map[string]launchMap{
 		},
 		prompt:             []string{"--prompt", "<prompt>"},
 		conversationResume: []string{"--continue"},
+		conversationReopen: []string{"--session", "<conversation>"},
 	},
 	"grok": {
 		command:      "grok",

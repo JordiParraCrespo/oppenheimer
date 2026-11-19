@@ -27,6 +27,10 @@ const readLimit = 32 << 20
 // `<conversation>.jsonl`.
 type claudeReader struct {
 	projects string
+	// statusDir is where the runner's status line keeps the conversation
+	// each session's agent is in now (conversation); empty reads
+	// each session's launch conversation only.
+	statusDir string
 }
 
 func (c claudeReader) firstPrompt(conversation string) (string, error) {
@@ -256,13 +260,32 @@ func classifiedText(text string) string {
 	return text
 }
 
-// finder implements chatSource: the conversation's file, by its name.
+// finder implements chatSource: the file of the conversation the session is
+// in now (conversation), asked at each check, so the chat moves with the
+// agent when it opens another.
 func (c claudeReader) finder(session domain.Session) (func() string, bool) {
-	conversation := session.Launch.Conversation
-	if !conversationPattern.MatchString(conversation) {
+	if !conversationPattern.MatchString(session.Launch.Conversation) {
 		return nil, false
 	}
-	return func() string { return c.path(conversation) }, true
+	return func() string { return c.path(c.conversation(session)) }, true
+}
+
+// conversation is the one rule for which conversation a Claude Code session
+// is in now, read by its chat, its status and the session itself
+// (Reader.CurrentConversation): the one its window-0 agent last reported
+// (ReportedConversation), once Claude Code has written its transcript, and
+// otherwise the one the session holds. A conversation `/clear` just opened
+// has no transcript until the next message, and `claude --resume` refuses
+// an id with none, so until then the session stays where it was. A session
+// still looking for its teleported conversation has none.
+func (c claudeReader) conversation(session domain.Session) string {
+	if session.Launch.Conversation == "" {
+		return ""
+	}
+	if reported := ReportedConversation(c.statusDir, session.ID); reported != "" && c.path(reported) != "" {
+		return reported
+	}
+	return session.Launch.Conversation
 }
 
 // transcriber implements chatSource: each line of Claude Code's transcript

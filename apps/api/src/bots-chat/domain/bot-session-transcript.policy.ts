@@ -76,6 +76,11 @@ export function describeTranscriptPage(
       ),
     );
   }
+  if (page.hasEarlier) {
+    lines.push(
+      'Earlier turns came before these: read_session_transcript with from "start" reads the conversation from its first turn.',
+    );
+  }
   if (page.status === 'partial') {
     const left = page.dropped ? ` ${page.dropped} entries were left out for size.` : '';
     lines.push(`This page is partial: some of it was cut on the host.${left}`);
