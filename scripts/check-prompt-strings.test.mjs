@@ -7,7 +7,7 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { check, LEDGER, sentencesIn } from './check-prompt-strings.mjs';
+import { check, excusedIn, LEDGER, sentencesIn } from './check-prompt-strings.mjs';
 
 const starts = (text) => sentencesIn(text).map((sentence) => sentence.text.slice(0, 24));
 
@@ -64,6 +64,43 @@ test('a literal where no model reads it is not counted', () => {
       const tool = { summarize: (input) => \`Move \${input.count} messages to Trash in the inbox\` };
     `),
     [],
+  );
+});
+
+test('what is passed over is passed over for a named place, the nearest one', () => {
+  assert.deepEqual(
+    excusedIn(`
+      throw new ArgumentInvalidException('A loop runs every 1 minute to 1 day, no more');
+      this.logger.warn('Could not keep a bot turn in the stream this time');
+      outbox.stageJob(manager, { topic: 'checks', reason: 'bot handed a session task: check on how it goes' });
+      const tool = { summarize: (input) => \`Move \${input.count} messages to Trash in the inbox\` };
+      if (reason === 'the turn ended without saying why it did') stop();
+      const tool2 = { summarize: () => { throw new Error('No card line can be written for this tool'); } };
+    `).map((literal) => literal.place),
+    [
+      "an exception's message, a pattern or a domain event",
+      "a log line, a query or a prompt's id",
+      "an outbox row's reason",
+      "the line on the person's approval card",
+      'a comparison',
+      "an exception's message, a pattern or a domain event",
+    ],
+  );
+});
+
+test('a statement is SQL; a sentence that opens with one of its words is a sentence', () => {
+  assert.deepEqual(
+    starts(`
+      const a = 'UPDATE "bot_turn" SET "status" = $1 WHERE "id" = $2 AND "status" = $3';
+      const b = 'SELECT "id" FROM "bot_turn" WHERE "bot_id" = $1 ORDER BY "created_at"';
+      const c = 'UPDATE: the session ended while you were away, so read its last message.';
+      const d = 'DELETE nothing the person did not name, and say what you kept.';
+      const e = \`UPDATE \${table} SET status = $1 WHERE id = $2 AND status = $3 RETURNING id\`;
+      const f = 'UPDATE ONLY bot_turn AS t SET status = $1 WHERE t.id = $2 AND t.status = $3';
+      const g = 'WITH RECURSIVE tree AS (SELECT id FROM plan_task WHERE parent_id IS NULL) SELECT id FROM tree';
+      const h = 'SELECT(count(*)) AS total FROM bot_turn WHERE bot_id = $1 AND status = $2';
+    `),
+    ['UPDATE: the session ende', 'DELETE nothing the perso'],
   );
 });
 

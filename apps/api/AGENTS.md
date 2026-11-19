@@ -90,6 +90,10 @@ compile. After editing a `.md`, run
 `pnpm --filter @oppenheimer/api generate:prompts` and commit the module
 with it; `src/__tests__/prompt-files.spec.ts` fails on a stale one. The
 policy keeps what is logic: which prompt, when, and what fills its slots.
+Where a prompt is several parts in an order, the order is a list in the
+policy (`SECTIONS` in `bot-prompt.policy.ts`, `CONTEXT_LINES` in
+`bot-turn-context.policy.ts`): each row answers its words or null, so a new
+part is a row and where the row is, is where it is sent.
 One paragraph per line, as written: nothing reflows these files. A prompt
 longer than the ceiling in `prompt-files.spec.ts` fails it: split the
 prompt, or raise the number and say why. The same spec fails a prompt no
@@ -99,7 +103,8 @@ source file reads.
 prompt files, a sentence written as a string literal fails (four words and
 28 characters or more; an exception's message, a log line and a query are
 not counted). Text that is not for a model (shown to the person, stored as
-state) is listed in the check's ledger with why.
+state) is listed in the check's ledger with why; `--excused` lists every
+sentence it passes over and the place that excuses it.
 
 ## Delegating façades (organizations, admin)
 

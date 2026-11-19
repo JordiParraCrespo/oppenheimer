@@ -55,6 +55,38 @@ export const BOT_PROMPT_HOSTS_MAX = 10;
 /** The tag the block is wrapped in; the system prompt names it. */
 export const TURN_CONTEXT_TAG = 'turn_context';
 
+/** What the lines are decided from: the facts as read, and the zone they are told in. */
+interface Moment {
+  input: TurnContextInput;
+  /** The sender's zone. The send path checks it; a row that holds a bad one anyway reads as UTC. */
+  zone: string;
+}
+
+/** One line of the block: its words, or null when the moment has none for it. */
+type ContextLine = (moment: Moment) => string | null;
+
+/**
+ * The block's lines in the order they are sent: the time, the home host, the
+ * hosts, the channel the answer goes to, the room left in the model's
+ * context, the newest log facts and how many older ones wait for `recall`.
+ * A new fact of the moment is a row.
+ */
+const CONTEXT_LINES: readonly ContextLine[] = [
+  ({ input, zone }) => promptText('turn/context.now', { now: formatNow(input.now, zone) }),
+  ({ input }) =>
+    input.homeHost
+      ? promptText('turn/context.home-host', {
+          name: input.homeHost.name,
+          state: input.homeHost.online ? 'online' : 'offline',
+        })
+      : promptText('turn/context.no-home-host'),
+  ({ input }) => describeHosts(input.hosts),
+  ({ input }) => (input.channel ? promptText(CHANNEL_LINES[input.channel]) : null),
+  ({ input }) => describeRoom(input.lastContext),
+  ({ input, zone }) => describeLog(input.memory?.log ?? [], zone),
+  ({ input }) => describeOlderFacts(input.memory?.toRecall ?? 0),
+];
+
 /**
  * The moment a turn runs in: the time in the sender's zone,
  * the bot's home host and the owner's hosts, each online or not. It changes
@@ -64,52 +96,42 @@ export const TURN_CONTEXT_TAG = 'turn_context';
  * the person wrote, so a later turn reads it back without it.
  */
 export function composeTurnContext(input: TurnContextInput): string {
-  // The send path checks the zone; a row that holds a bad one anyway reads as UTC.
   const zone = input.timeZone && isValidTimeZone(input.timeZone) ? input.timeZone : 'UTC';
-  const lines = [promptText('turn/context.now', { now: formatNow(input.now, zone) })];
-  if (input.homeHost) {
-    lines.push(
-      promptText('turn/context.home-host', {
-        name: input.homeHost.name,
-        state: input.homeHost.online ? 'online' : 'offline',
-      }),
-    );
-  } else {
-    lines.push(promptText('turn/context.no-home-host'));
-  }
-  if (input.hosts === null) {
-    lines.push(promptText('turn/context.hosts-not-read'));
-  } else if (input.hosts.length === 0) {
-    lines.push(promptText('turn/context.no-hosts'));
-  } else {
-    const shown = input.hosts.slice(0, BOT_PROMPT_HOSTS_MAX).map(describeHost);
-    const more = input.hosts.length - shown.length;
-    lines.push(
-      promptText('turn/context.hosts', {
-        hosts: `${shown.join('; ')}${more > 0 ? `; and ${more} more` : ''}`,
-      }),
-    );
-  }
-  if (input.channel) lines.push(promptText(CHANNEL_LINES[input.channel]));
-  const room = describeRoom(input.lastContext);
-  if (room) lines.push(room);
-  if (input.memory?.log.length) {
-    const day = new Intl.DateTimeFormat('en-CA', { timeZone: zone });
-    const entries = input.memory.log.map(
-      (entry) =>
-        `- ${day.format(entry.createdAt)}${entry.scope === 'person' ? ' (general memory)' : ''}: ${asOneLogLine(entry.content)}`,
-    );
-    lines.push(`${promptText('turn/context.log')}\n${entries.join('\n')}`);
-  }
-  const older = input.memory?.toRecall ?? 0;
-  if (older > 0) {
-    lines.push(
-      older === 1
-        ? promptText('turn/context.one-older-fact')
-        : promptText('turn/context.older-facts', { count: String(older) }),
-    );
-  }
+  const lines = CONTEXT_LINES.flatMap((line) => line({ input, zone }) ?? []);
   return `<${TURN_CONTEXT_TAG}>\n${lines.join('\n')}\n</${TURN_CONTEXT_TAG}>`;
+}
+
+/** The owner's hosts, the first few by name and the rest counted, or why there are none to name. */
+function describeHosts(hosts: TurnContextInput['hosts']): string {
+  if (hosts === null) return promptText('turn/context.hosts-not-read');
+  if (hosts.length === 0) return promptText('turn/context.no-hosts');
+  const shown = hosts.slice(0, BOT_PROMPT_HOSTS_MAX).map(describeHost);
+  const more = hosts.length - shown.length;
+  return promptText('turn/context.hosts', {
+    hosts: `${shown.join('; ')}${more > 0 ? `; and ${more} more` : ''}`,
+  });
+}
+
+/** The newest log facts under their heading, each dated in the sender's zone. */
+function describeLog(
+  log: NonNullable<TurnContextInput['memory']>['log'],
+  zone: string,
+): string | null {
+  if (!log.length) return null;
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: zone });
+  const entries = log.map(
+    (entry) =>
+      `- ${day.format(entry.createdAt)}${entry.scope === 'person' ? ' (general memory)' : ''}: ${asOneLogLine(entry.content)}`,
+  );
+  return `${promptText('turn/context.log')}\n${entries.join('\n')}`;
+}
+
+/** How many facts the bot keeps only for `recall`. */
+function describeOlderFacts(older: number): string | null {
+  if (!(older > 0)) return null;
+  return older === 1
+    ? promptText('turn/context.one-older-fact')
+    : promptText('turn/context.older-facts', { count: String(older) });
 }
 
 /**

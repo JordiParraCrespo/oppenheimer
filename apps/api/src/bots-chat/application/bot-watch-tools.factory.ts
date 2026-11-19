@@ -1,7 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TERMINAL_WATCH_PATTERN_MAX } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
-import { BotSubscriptionMapper } from '../bot-subscription.mapper';
+import {
+  describePatternWatch,
+  describeWatch,
+  describeWatchStarted,
+} from '../bot-watch-tool.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import { promptText } from '../domain/bot-prompt-text.policy';
@@ -42,7 +46,6 @@ export class BotWatchToolsFactory implements BotToolArea {
     private readonly watches: BotSessionWatchResolver,
     @Inject(BOT_SUBSCRIPTION_REPOSITORY)
     private readonly subscriptions: BotSubscriptionRepositoryPort,
-    private readonly mapper: BotSubscriptionMapper,
     private readonly waits: BotSessionWaitResolver,
   ) {}
 
@@ -100,14 +103,14 @@ export class BotWatchToolsFactory implements BotToolArea {
           );
         }
         const answer = [
-          this.mapper.toWatchAnswer(subscription, session),
+          describeWatchStarted(subscription, session),
           checkInAnswer(live !== null, input.check_in_minutes ?? null),
         ]
           .filter(Boolean)
           .join(' ');
         if (!input.pattern) return answer;
         const hints = await this.watches.watchTerminal(context, subscription, input.pattern);
-        return `${answer} ${this.mapper.toPatternAnswer(input.pattern, hints)}`;
+        return `${answer} ${describePatternWatch(input.pattern, hints)}`;
       },
     });
   }
@@ -161,7 +164,7 @@ export class BotWatchToolsFactory implements BotToolArea {
         );
         if (!watched.length) return promptText('tools/watch.list-watches-follow-sessions-pull');
         return watched
-          .map((subscription) => this.mapper.toListLine(subscription, context.timeZone))
+          .map((subscription) => describeWatch(subscription, context.timeZone))
           .join('\n');
       },
     });

@@ -1,4 +1,4 @@
-<!-- What the watch tools tell a model: each tool's description (named for the tool), its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-session-watch.resolver.ts`, `bot-watch-tools.factory.ts`. The code reads each fragment by id and decides when it is said; the comment there says why. -->
+<!-- What the watch tools tell a model: each tool's description (named for the tool), its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-session-watch.resolver.ts`, `bot-watch-tools.factory.ts`, `bot-watch-tool.mapper.ts`. The code reads each fragment by id and decides when it is said; the comment there says why. -->
 
 <!-- fragment: handed-off -->
 
@@ -48,6 +48,26 @@ A regular expression (RE2: no lookaround or backreferences) to be woken by when 
 
 Also look at its running task once, this many minutes from now, even if nothing has happened: for when you told the person you would check back at a time.
 
+<!-- fragment: watch-session-answer -->
+
+You follow session {{sessionId}} "{{sessionName}}": {{follows}}. {{now}} You will be woken when a task you follow needs input, finishes, fails or is stopped; end your turn now rather than wait for it.
+
+<!-- fragment: watch-session-answer-every-task -->
+
+every task, until the session is closed
+
+<!-- fragment: watch-session-pattern-answer -->
+
+You are also woken when its terminal prints a new line matching “{{pattern}}”: you are told it matched, not the line.
+
+<!-- fragment: watch-session-pattern-runner-too-old -->
+
+{{watching}} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated: {{advice}}.
+
+<!-- fragment: watch-session-pattern-host-offline -->
+
+{{watching}} Its host is offline; the watch starts when it reconnects.
+
 <!-- fragment: unwatch-session -->
 
 Stops following a session: it will no longer wake you. The session itself keeps running.
@@ -71,6 +91,14 @@ Lists the sessions, pull requests, projects and milestones you follow: each one,
 <!-- fragment: list-watches-follow-sessions-pull -->
 
 You follow no sessions, pull requests, projects or milestones.
+
+<!-- fragment: list-watches-session-line -->
+
+session {{sessionId}} [{{parts}}]{{purpose}}
+
+<!-- fragment: list-watches-pull-request-line -->
+
+pull request #{{number}} of {{repository}} (repository id {{githubRepoId}}) [{{parts}}]{{purpose}}
 
 <!-- fragment: wait-for-session -->
 

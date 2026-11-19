@@ -803,12 +803,19 @@ export type PromptId =
   | "tools/watch.watch-session-purpose"
   | "tools/watch.watch-session-pattern"
   | "tools/watch.watch-session-check-in-minutes"
+  | "tools/watch.watch-session-answer"
+  | "tools/watch.watch-session-answer-every-task"
+  | "tools/watch.watch-session-pattern-answer"
+  | "tools/watch.watch-session-pattern-runner-too-old"
+  | "tools/watch.watch-session-pattern-host-offline"
   | "tools/watch.unwatch-session"
   | "tools/watch.unwatch-session-session-id"
   | "tools/watch.unwatch-session-longer-follow-session"
   | "tools/watch.unwatch-session-were-following-session"
   | "tools/watch.list-watches"
   | "tools/watch.list-watches-follow-sessions-pull"
+  | "tools/watch.list-watches-session-line"
+  | "tools/watch.list-watches-pull-request-line"
   | "tools/watch.wait-for-session"
   | "tools/watch.wait-for-session-session-id"
   | "tools/watch.wait-for-session-have-waited-times"
@@ -1372,8 +1379,14 @@ export interface PromptSlots {
   "tools/watch.store-session-closed-there": { sessionId: string };
   "tools/watch.store-already-follow-sessions": { subscriptionsPerBot: string };
   "tools/watch.watch-session": { subscriptionWakeLimit: string; subscriptionsPerBot: string };
+  "tools/watch.watch-session-answer": { sessionId: string; sessionName: string; follows: string; now: string };
+  "tools/watch.watch-session-pattern-answer": { pattern: string };
+  "tools/watch.watch-session-pattern-runner-too-old": { watching: string; advice: string };
+  "tools/watch.watch-session-pattern-host-offline": { watching: string };
   "tools/watch.unwatch-session-longer-follow-session": { sessionId: string };
   "tools/watch.unwatch-session-were-following-session": { sessionId: string };
+  "tools/watch.list-watches-session-line": { sessionId: string; parts: string; purpose: string };
+  "tools/watch.list-watches-pull-request-line": { number: string; repository: string; githubRepoId: string; parts: string; purpose: string };
   "tools/watch.wait-for-session": { sessionWaitMaxSeconds: string; sessionWaitsPerTurn: string };
   "tools/watch.wait-for-session-have-waited-times": { sessionWaitsPerTurn: string };
   "tools/web.refused-not-http": { protocol: string };
@@ -2293,12 +2306,19 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "tools/watch.watch-session-purpose": "Why you follow it, in a line; you are reminded of it when it wakes you.",
   "tools/watch.watch-session-pattern": "A regular expression (RE2: no lookaround or backreferences) to be woken by when a new line of the terminal matches it.",
   "tools/watch.watch-session-check-in-minutes": "Also look at its running task once, this many minutes from now, even if nothing has happened: for when you told the person you would check back at a time.",
+  "tools/watch.watch-session-answer": "You follow session {{sessionId}} \"{{sessionName}}\": {{follows}}. {{now}} You will be woken when a task you follow needs input, finishes, fails or is stopped; end your turn now rather than wait for it.",
+  "tools/watch.watch-session-answer-every-task": "every task, until the session is closed",
+  "tools/watch.watch-session-pattern-answer": "You are also woken when its terminal prints a new line matching “{{pattern}}”: you are told it matched, not the line.",
+  "tools/watch.watch-session-pattern-runner-too-old": "{{watching}} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated: {{advice}}.",
+  "tools/watch.watch-session-pattern-host-offline": "{{watching}} Its host is offline; the watch starts when it reconnects.",
   "tools/watch.unwatch-session": "Stops following a session: it will no longer wake you. The session itself keeps running.",
   "tools/watch.unwatch-session-session-id": "A session you watch (from list_watches).",
   "tools/watch.unwatch-session-longer-follow-session": "You no longer follow session {{sessionId}}.",
   "tools/watch.unwatch-session-were-following-session": "You were not following session {{sessionId}}.",
   "tools/watch.list-watches": "Lists the sessions, pull requests, projects and milestones you follow: each one, why, until when or on which changes, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request, a task with get_task.",
   "tools/watch.list-watches-follow-sessions-pull": "You follow no sessions, pull requests, projects or milestones.",
+  "tools/watch.list-watches-session-line": "session {{sessionId}} [{{parts}}]{{purpose}}",
+  "tools/watch.list-watches-pull-request-line": "pull request #{{number}} of {{repository}} (repository id {{githubRepoId}}) [{{parts}}]{{purpose}}",
   "tools/watch.wait-for-session": "Waits inside this turn, up to {{sessionWaitMaxSeconds}} seconds, until a session's current task needs input, finishes, fails or is stopped, or the session is closed; answers at once if it already has. Use it for a short task you want to report on in this reply; for anything longer, watch_session wakes you when it ends. At most {{sessionWaitsPerTurn}} waits a turn, and the turn's own 4-minute limit counts: never wait on work you cannot report before it.",
   "tools/watch.wait-for-session-session-id": "The session to wait on (from list_sessions).",
   "tools/watch.wait-for-session-have-waited-times": "You have waited {{sessionWaitsPerTurn}} times this turn. Watch the session with watch_session and end your turn; it wakes you when the task ends.",

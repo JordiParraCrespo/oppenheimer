@@ -495,17 +495,10 @@ export function sessionWakeText(wake: SessionWake): string {
   });
   const lines = [headline(session, cause)];
   if (wake.purpose) lines.push(promptText('wake/session.followed-to', { purpose: wake.purpose }));
-  lines.push(promptText(wake.ends ? 'wake/session.unsubscribed' : 'wake/session.still-subscribed'));
-  if (cause.kind === 'state') lines.push(...taskLines(cause));
-  if ((cause.kind === 'stall' || cause.kind === 'progress') && cause.task.prompt) {
-    lines.push(...promptLines(cause.task.prompt));
-  }
-  if (cause.kind === 'notice') {
-    lines.push(
-      promptText('wake/session.what-its-agent-sent'),
-      fenceUntrusted('session_notice', cut(cause.text, NOTICE_QUOTE_MAX)),
-    );
-  }
+  lines.push(
+    promptText(wake.ends ? 'wake/session.unsubscribed' : 'wake/session.still-subscribed'),
+    ...quotedLines(cause),
+  );
   return lines.join('\n');
 }
 
@@ -546,6 +539,28 @@ function headline(session: string, cause: SessionWakeCause): string {
           });
     case 'notice':
       return promptText('wake/session.agent-sent', { session });
+  }
+}
+
+/**
+ * What a wake quotes under its own lines, by what woke the bot: the session's
+ * words, each fenced as data.
+ */
+function quotedLines(cause: SessionWakeCause): string[] {
+  switch (cause.kind) {
+    case 'state':
+      return taskLines(cause);
+    case 'stall':
+    case 'progress':
+      return cause.task.prompt ? promptLines(cause.task.prompt) : [];
+    case 'notice':
+      return [
+        promptText('wake/session.what-its-agent-sent'),
+        fenceUntrusted('session_notice', cut(cause.text, NOTICE_QUOTE_MAX)),
+      ];
+    // A match quotes nothing: it says it matched, never what was printed.
+    default:
+      return [];
   }
 }
 

@@ -1769,7 +1769,10 @@ picked, and "Use its own face" goes back to the id's).
   `system/`, `turn/` for what a turn carries besides its opening, `wake/`
   for what an event says to the bot, `jobs/` for a model call that is not
   a bot's turn, and `tools/` for what a tool tells the model (the owner
-  chose sibling folders over a second level, 2026-11-18). No prompt is
+  chose sibling folders over a second level, 2026-11-18). Where a prompt
+  is several parts in an order (the system prompt's sections, the turn
+  context's lines), the order is a list in the policy, each row answering
+  its words or nothing, so the order sent is the order read. No prompt is
   longer than a ceiling a spec holds (`research/prompt-file-formats.md`
   §4.1 and §4.5). Text for the person rather than a model (what a channel
   is told when a turn ends with nothing to say, a card's note, a routine's

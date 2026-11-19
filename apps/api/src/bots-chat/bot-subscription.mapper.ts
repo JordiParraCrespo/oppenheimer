@@ -2,14 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { BOT_SESSION_WAKE_STATES, botDefaultModel, SCOPES, type Scope } from '@oppenheimer/shared';
 import type { BotEntity } from '../bots/domain/bot.entity';
 import type { WorkSessionEntity } from '../sessions/domain/work-session.entity';
-import { describePlanWatch } from './bot-plan-tool.mapper';
 import { BotSubscriptionOrmEntity } from './database/bot-subscription.orm-entity';
 import type { pullRequestWakeTurn } from './domain/bot-pull-request-wake.policy';
 import { BotSubscriptionEntity, type PullRequestRef } from './domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTION_KINDS,
   BOT_SUBSCRIPTION_UNTIL,
-  BOT_SUBSCRIPTION_WAKE_LIMIT,
   type BotSubscriptionUntil,
   type BotWatchFrom,
   type CheckFinding,
@@ -20,11 +18,11 @@ import {
   watchStartOf,
 } from './domain/bot-subscription.policy';
 import { knownTaskEvents } from './domain/bot-task-wake.policy';
-import { formatToolTime, RUNNER_TOO_OLD_ADVICE } from './domain/bot-tool-text.policy';
 
 /**
- * A bot's subscription between its row and the aggregate, and as its watch
- * tools word it; no route reads it yet.
+ * A bot's subscription between its row and the aggregate, and what a wake is
+ * told from it; no route reads it yet. How the watch tools word one is
+ * `bot-watch-tool.mapper.ts`.
  */
 @Injectable()
 export class BotSubscriptionMapper {
@@ -234,61 +232,6 @@ export class BotSubscriptionMapper {
     finding: CheckFinding,
   ): SessionWake {
     return { ...this.wakeOf(subscription, session, false), cause: { ...finding, task } };
-  }
-
-  /** What `watch_session` answers: what is followed now, and what the session is doing. */
-  toWatchAnswer(subscription: BotSubscriptionEntity, session: WorkSessionEntity): string {
-    const latest = session.latestTurn;
-    const now = latest
-      ? `Its latest task (#${latest.seq}) is ${latest.state}.`
-      : 'It has no task yet.';
-    const follows =
-      subscription.until === 'task'
-        ? `task #${subscription.watchedTurn}${latest && subscription.watchedTurn !== latest.seq ? ' (its next one)' : ''}, until it ends`
-        : 'every task, until the session is closed';
-    return `You follow session ${session.id} "${session.name}": ${follows}. ${now} You will be woken when a task you follow needs input, finishes, fails or is stopped; end your turn now rather than wait for it.`;
-  }
-
-  /** What `watch_session` adds when it also watches the terminal, and what the host could not take. */
-  toPatternAnswer(pattern: string, hints: readonly string[]): string {
-    const watching = `You are also woken when its terminal prints a new line matching “${pattern}”: you are told it matched, not the line.`;
-    if (hints.includes('not_supported')) {
-      return `${watching} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated: ${RUNNER_TOO_OLD_ADVICE}.`;
-    }
-    if (hints.includes('host_offline')) {
-      return `${watching} Its host is offline; the watch starts when it reconnects.`;
-    }
-    return watching;
-  }
-
-  /** One line of `list_watches`: a session's, a pull request's, a project's or a milestone's. */
-  toListLine(subscription: BotSubscriptionEntity, timeZone: string): string {
-    const plan = subscription.plan;
-    if (plan) return describePlanWatch(subscription, plan, timeZone);
-    const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
-    const pull = subscription.pullRequest;
-    if (pull) {
-      const parts = [
-        'until merged',
-        `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`,
-        `since ${formatToolTime(subscription.createdAt, timeZone)}`,
-      ];
-      return `pull request #${pull.number} of ${pull.repository} (repository id ${pull.githubRepoId}) [${parts.join('; ')}]${purpose}`;
-    }
-    const until =
-      subscription.until === 'task' ? `task #${subscription.watchedTurn}` : 'until closed';
-    const parts = [
-      until,
-      `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`,
-      subscription.lastState
-        ? `last: task #${subscription.lastTurn} ${subscription.lastState}`
-        : null,
-      subscription.terminalWatch
-        ? `pattern “${subscription.terminalWatch.pattern}”, ${subscription.matches} matching line${subscription.matches === 1 ? '' : 's'}`
-        : null,
-      `since ${formatToolTime(subscription.createdAt, timeZone)}`,
-    ].filter(Boolean);
-    return `session ${subscription.resourceId} [${parts.join('; ')}]${purpose}`;
   }
 }
 
