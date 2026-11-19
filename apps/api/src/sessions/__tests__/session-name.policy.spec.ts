@@ -72,6 +72,11 @@ describe('titleFromPrompt', () => {
 });
 
 describe('cleanModelTitle', () => {
+  it('drops a list number the model echoed from the numbered conversation', () => {
+    expect(cleanModelTitle('1. Caducidad del refresh token')).toBe('Caducidad del refresh token');
+    expect(cleanModelTitle('- Invoice CSV export')).toBe('Invoice CSV export');
+  });
+
   it('takes the first line, without quotes or a trailing period', () => {
     expect(cleanModelTitle('"Fix wallet empty state."\nThis title describes…')).toBe(
       'Fix wallet empty state',
@@ -103,9 +108,9 @@ describe('sessionTitleRequest', () => {
     const request = sessionTitleRequest('x'.repeat(10_000));
     expect(request.maxTokens).toBe(32);
     expect(request.temperature).toBe(0);
-    expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
-    // Only what is worth sending of a long prompt goes to the model.
-    expect(request.messages[0].content).toHaveLength(2_000);
+    // Only what is worth sending of a long prompt goes to the model, framed
+    // as a request to name rather than one to carry out.
+    expect(request.messages[0].content).toBe(`<request>\n${'x'.repeat(2_000)}\n</request>`);
   });
 });
 
@@ -119,15 +124,16 @@ describe('title requests', () => {
     ['the conversation', conversationTitleRequest(['fix the bug', 'the wallet one'])],
   ])('tell the model the bounds for %s', (_which, request) => {
     expect(request.system).not.toContain('{{');
-    expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
-    expect(request.system).toContain('at most 6 words');
+    // Asked for shorter than the row's hard cut, so a name that runs long is not cut mid-word.
+    expect(request.system).toContain('3 or 4 words, never more than 5, and at most 32 characters');
+    expect(32).toBeLessThan(SESSION_NAME_MAX_LENGTH);
   });
 
   it('numbers the person’s prompts in order and cuts each long one', () => {
     const request = conversationTitleRequest(['fix the bug', 'x'.repeat(2_000)]);
     const content = request.messages[0]?.content ?? '';
-    expect(content.startsWith('1. fix the bug\n\n2. ')).toBe(true);
-    expect(content.length).toBeLessThan(700);
+    expect(content.startsWith('<request>\n1. fix the bug\n\n2. ')).toBe(true);
+    expect(content.length).toBeLessThan(720);
   });
 });
 

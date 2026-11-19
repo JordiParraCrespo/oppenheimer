@@ -1,5 +1,5 @@
 import type { SessionTranscriptEntry } from '@oppenheimer/shared';
-import { PROMPT_TEXT, type PromptId, type PromptSlots } from './prompts/prompts.gen';
+import { PROMPT_TEXT, type PromptSlots } from './prompts/prompts.gen';
 
 /**
  * What a session is called once its first prompt exists: a model's title, cleaned
@@ -40,17 +40,38 @@ export interface SessionTitleRequest {
 /** The prompt is capped on the wire; this is what is worth sending of it. */
 const PROMPT_MAX_CHARS = 2_000;
 
-/** What the model is told a title is, with the bounds a sidebar row sets. */
-function titleInstruction(id: PromptId): string {
-  const slots: PromptSlots[PromptId] = {
-    maxChars: String(SESSION_NAME_MAX_LENGTH),
-    maxWords: String(MAX_WORDS),
-  };
-  return PROMPT_TEXT[id].replace(
-    /\{\{(maxChars|maxWords)\}\}/g,
-    (_slot, name: keyof typeof slots) => slots[name],
-  );
+/**
+ * The person's words as something to name, not something to do: a request
+ * that reads as an instruction ("translate the settings page") is otherwise
+ * carried out by the model instead of named.
+ */
+function quoted(text: string): string {
+  return `<request>\n${text}\n</request>`;
 }
+
+/**
+ * The length a name is asked for: under the row's hard cut
+ * ({@link SESSION_NAME_MAX_LENGTH}), so a model that runs a little long is
+ * still not cut mid-word.
+ */
+const ASKED_MIN_WORDS = 3;
+const ASKED_MAX_WORDS = 4;
+const ASKED_MAX_CHARS = 32;
+
+/** What the model is told: what it reads, then what a good name is. */
+function titleInstruction(id: 'system/title.first-prompt' | 'system/title.conversation'): string {
+  const rules = PROMPT_TEXT['system/title.rules'].replace(
+    /\{\{(minWords|maxWords|maxChars)\}\}/g,
+    (_slot, name: keyof PromptSlots['system/title.rules']) => RULE_SLOTS[name],
+  );
+  return `${PROMPT_TEXT[id]}\n\n${rules}`;
+}
+
+const RULE_SLOTS: PromptSlots['system/title.rules'] = {
+  minWords: String(ASKED_MIN_WORDS),
+  maxWords: String(ASKED_MAX_WORDS),
+  maxChars: String(ASKED_MAX_CHARS),
+};
 
 /**
  * The request that asks a model for this prompt's title. Strict, because the
@@ -61,7 +82,7 @@ function titleInstruction(id: PromptId): string {
 export function sessionTitleRequest(prompt: string): SessionTitleRequest {
   return {
     system: titleInstruction('system/title.first-prompt'),
-    messages: [{ role: 'user', content: prompt.slice(0, PROMPT_MAX_CHARS) }],
+    messages: [{ role: 'user', content: quoted(prompt.slice(0, PROMPT_MAX_CHARS)) }],
     maxTokens: 32,
     temperature: 0,
   };
@@ -179,7 +200,7 @@ export function conversationTitleRequest(prompts: readonly string[]): SessionTit
     .join('\n\n');
   return {
     system: titleInstruction('system/title.conversation'),
-    messages: [{ role: 'user', content: listed }],
+    messages: [{ role: 'user', content: quoted(listed) }],
     maxTokens: 32,
     temperature: 0,
   };
@@ -239,6 +260,8 @@ export function cleanModelTitle(answer: string): string | null {
   if (!line) return null;
   const text = line
     .replace(/^(?:title\s*:\s*)/i, '')
+    // The conversation is sent as a numbered list, and a model may echo a number.
+    .replace(/^(?:\d+[.)]|[-*•])\s+/, '')
     // A model that answers with a quoted or bolded title is answering correctly enough.
     .replace(/^["'`*_]+|["'`*_.]+$/g, '')
     .trim();

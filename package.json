@@ -58,6 +58,7 @@
     "eval:bot-session-search": "tsx scripts/evals/bot-session-search/run.ts",
     "eval:bot-session-unblock": "tsx scripts/evals/bot-session-unblock/run.ts",
     "eval:bot-skills": "tsx scripts/evals/bot-skills/run.ts",
+    "eval:session-title": "tsx scripts/evals/session-title/run.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"

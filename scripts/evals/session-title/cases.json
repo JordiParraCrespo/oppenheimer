@@ -1,0 +1,190 @@
+{
+  "cases": [
+    {
+      "id": "sidebar-scroll",
+      "group": "console-sidebar",
+      "lang": "en",
+      "prompts": ["the sidebar doesn't scroll when there are many sessions"],
+      "about": "the sessions sidebar not scrolling with many sessions"
+    },
+    {
+      "id": "sidebar-search-leak",
+      "group": "console-sidebar",
+      "lang": "en",
+      "prompts": ["fix the bug", "the sidebar search returns sessions from other projects"],
+      "about": "sidebar search showing sessions from other projects"
+    },
+    {
+      "id": "sidebar-drag-snap",
+      "group": "console-sidebar",
+      "lang": "en",
+      "prompts": [
+        "can you look at the sidebar?",
+        "dragging a project to reorder it snaps back on drop"
+      ],
+      "about": "reordering projects by drag in the sidebar snapping back"
+    },
+    {
+      "id": "sidebar-pinned",
+      "group": "console-sidebar",
+      "lang": "en",
+      "prompts": ["add a pinned section at the top of the sidebar"],
+      "about": "a new pinned section in the sidebar"
+    },
+    {
+      "id": "runner-update-macos",
+      "group": "runner",
+      "lang": "en",
+      "prompts": ["the runner fails to self-update on macOS, it says the signature is invalid"],
+      "about": "runner self-update failing on macOS with an invalid signature"
+    },
+    {
+      "id": "runner-update-debian",
+      "group": "runner",
+      "lang": "en",
+      "prompts": ["continue", "the runner self-update on Debian leaves the old binary running"],
+      "about": "runner self-update on Debian leaving the old binary running"
+    },
+    {
+      "id": "runner-tmux-sleep",
+      "group": "runner",
+      "lang": "en",
+      "prompts": ["tmux sessions die when the host goes to sleep"],
+      "about": "tmux sessions dying when the host sleeps"
+    },
+    {
+      "id": "runner-backoff-tests",
+      "group": "runner",
+      "lang": "en",
+      "prompts": ["write tests for the link reconnect backoff"],
+      "about": "tests for the runner link's reconnect backoff"
+    },
+    {
+      "id": "login-google-safari",
+      "group": "auth-es",
+      "lang": "es",
+      "prompts": ["el login con Google falla en Safari"],
+      "about": "el inicio de sesión con Google fallando en Safari"
+    },
+    {
+      "id": "logout-cookie-mobile",
+      "group": "auth-es",
+      "lang": "es",
+      "prompts": ["arregla el bug", "al cerrar sesión no se borra la cookie en el móvil"],
+      "about": "la cookie que no se borra al cerrar sesión en el móvil"
+    },
+    {
+      "id": "login-totp",
+      "group": "auth-es",
+      "lang": "es",
+      "prompts": ["añade 2FA con TOTP al login"],
+      "about": "añadir 2FA con TOTP al inicio de sesión"
+    },
+    {
+      "id": "refresh-token-expiry",
+      "group": "auth-es",
+      "lang": "es",
+      "prompts": ["revisa el PR 812", "el refresh token caduca a los 5 minutos en vez de 30 días"],
+      "about": "el refresh token caducando a los 5 minutos en vez de 30 días"
+    },
+    {
+      "id": "invoice-vat-spain",
+      "group": "billing",
+      "lang": "en",
+      "prompts": [
+        "help me with invoices",
+        "the PDF invoice shows the wrong VAT for Spanish customers"
+      ],
+      "about": "wrong VAT on PDF invoices for Spanish customers"
+    },
+    {
+      "id": "invoice-email-twice",
+      "group": "billing",
+      "lang": "en",
+      "prompts": ["invoices again", "the invoice email is sent twice when a payment retries"],
+      "about": "invoice email sent twice on a payment retry"
+    },
+    {
+      "id": "invoice-csv-export",
+      "group": "billing",
+      "lang": "en",
+      "prompts": ["ok so, can you please add a CSV export of invoices to the billing page"],
+      "about": "a CSV export of invoices on the billing page"
+    },
+    {
+      "id": "billing-webhook-review",
+      "group": "billing",
+      "lang": "en",
+      "prompts": ["/review the billing webhook handler"],
+      "about": "a review of the billing webhook handler"
+    },
+    {
+      "id": "dark-mode-persist",
+      "group": "settings-ca",
+      "lang": "ca",
+      "prompts": ["el mode fosc no es desa quan tanques el navegador"],
+      "about": "el mode fosc que no es desa en tancar el navegador"
+    },
+    {
+      "id": "settings-translate",
+      "group": "settings-ca",
+      "lang": "ca",
+      "prompts": ["tradueix la pàgina de configuració al català"],
+      "about": "traduir la pàgina de configuració al català"
+    },
+    {
+      "id": "session-search-slow",
+      "group": "settings-ca",
+      "lang": "ca",
+      "prompts": ["la cerca de sessions és molt lenta amb mil sessions"],
+      "about": "la cerca de sessions lenta amb moltes sessions"
+    },
+    {
+      "id": "date-picker-monday",
+      "group": "settings-ca",
+      "lang": "ca",
+      "prompts": [
+        "continua",
+        "el selector de dates no posa el dilluns com a primer dia de la setmana"
+      ],
+      "about": "el selector de dates sense el dilluns com a primer dia"
+    },
+    {
+      "id": "e2e-share-flaky",
+      "group": "api-internals",
+      "lang": "en",
+      "prompts": [
+        "The e2e test for sharing a session fails maybe one run in five on CI. It times out waiting for the share dialog. Locally it always passes. Can you find out why and make it reliable? Don't just raise the timeout."
+      ],
+      "about": "a flaky e2e test for sharing a session"
+    },
+    {
+      "id": "naming-module-refactor",
+      "group": "api-internals",
+      "lang": "en",
+      "prompts": [
+        "refactor",
+        "move the session naming code into its own module",
+        "and add tests for the fold's name ranks"
+      ],
+      "about": "moving session naming into its own module, with tests"
+    },
+    {
+      "id": "api-memory-day",
+      "group": "api-internals",
+      "lang": "en",
+      "prompts": ["investigate why memory grows on the API over a day"],
+      "about": "the API's memory growing over a day"
+    },
+    {
+      "id": "outbox-relay-leak",
+      "group": "api-internals",
+      "lang": "en",
+      "prompts": [
+        "investigate why memory grows",
+        "it's the outbox relay holding delivered rows in a map"
+      ],
+      "about": "the outbox relay leaking delivered rows in a map"
+    }
+  ]
+}

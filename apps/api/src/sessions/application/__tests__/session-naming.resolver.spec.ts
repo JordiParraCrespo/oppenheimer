@@ -94,7 +94,11 @@ describe('SessionNamingResolver.propose', () => {
         timeoutMs: 1_500,
         temperature: 0,
         messages: [
-          { role: 'user', content: 'the wallet list shows nothing when there are no wallets' },
+          {
+            role: 'user',
+            content:
+              '<request>\nthe wallet list shows nothing when there are no wallets\n</request>',
+          },
         ],
       }),
     );
