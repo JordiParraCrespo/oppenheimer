@@ -171,7 +171,13 @@ func clip(text string) string {
 	return text
 }
 
+// readHead reads the start of a regular file, through any symlink. Anything
+// else is refused before it is opened: opening a FIFO blocks until a writer
+// comes, which would hold the chat's first batch back for good.
 func readHead(path string) (string, bool) {
+	if info, err := os.Stat(path); err != nil || !info.Mode().IsRegular() {
+		return "", false
+	}
 	file, err := os.Open(path)
 	if err != nil {
 		return "", false

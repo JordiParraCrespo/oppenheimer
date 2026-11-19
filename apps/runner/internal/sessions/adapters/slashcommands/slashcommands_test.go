@@ -4,7 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -81,5 +83,29 @@ func TestTheListStaysInsideTheWiresBounds(t *testing.T) {
 	}
 	if (Reader{}).InFolder(filepath.Join(dir, "missing"), 10) != nil {
 		t.Fatal("a folder with no .claude lists commands")
+	}
+}
+
+// A pipe where a command would be is skipped, not opened: opening it would
+// wait for a writer, and the chat's first batch with it.
+func TestAPipeInTheProjectDoesNotHoldTheListBack(t *testing.T) {
+	dir := t.TempDir()
+	commands := filepath.Join(dir, ".claude", "commands")
+	write(t, filepath.Join(commands, "ok.md"), "Fine\n")
+	if err := syscall.Mkfifo(filepath.Join(commands, "pipe.md"), 0o644); err != nil {
+		t.Skipf("no FIFOs here: %v", err)
+	}
+	if err := os.Symlink(filepath.Join(commands, "pipe.md"), filepath.Join(commands, "linked.md")); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan []domain.SlashCommand, 1)
+	go func() { done <- Reader{}.InFolder(dir, 10) }()
+	select {
+	case got := <-done:
+		if len(got) != 1 || got[0].Name != "ok" {
+			t.Fatalf("got %+v, want the regular command alone", got)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("reading the commands blocked on a pipe")
 	}
 }
