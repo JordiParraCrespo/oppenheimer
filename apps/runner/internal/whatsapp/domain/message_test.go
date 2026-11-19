@@ -48,6 +48,27 @@ func TestAdmitKeepsMediaGroupsAndTheOwnersOwnMessages(t *testing.T) {
 	}
 }
 
+// A group message keeps who it mentions and whose message it quotes, which
+// is how the control plane tells one that speaks to this number. Mentions are
+// capped at what the schema takes: past it, the control plane would refuse
+// the whole batch, and the outbox would offer it again forever.
+func TestAdmitKeepsMentionsAndTheQuotedSenderWithinTheWire(t *testing.T) {
+	many := make([]string, domain.MentionsMax+5)
+	for i := range many {
+		many[i] = fmt.Sprintf("3460000%04d@s.whatsapp.net", i)
+	}
+	got, ok := domain.Admit(chat(func(r *domain.Received) {
+		r.ChatKind, r.QuotedID, r.QuotedSenderID, r.Mentions = domain.ChatGroup, "3EB0A0", "34600111222@s.whatsapp.net", many
+	}), now, time.Time{})
+	if !ok || got.QuotedSenderID != "34600111222@s.whatsapp.net" || len(got.Mentions) != domain.MentionsMax || got.Mentions[0] != many[0] {
+		t.Fatalf("got %+v, %v", got, ok)
+	}
+	alone, _ := domain.Admit(chat(func(r *domain.Received) { r.QuotedSenderID = "34600111222@s.whatsapp.net" }), now, time.Time{})
+	if alone.QuotedSenderID != "" {
+		t.Fatalf("a quoted sender without a quoted message was handed on: %+v", alone)
+	}
+}
+
 // What nobody wrote to the owner, what carries nothing, and what is old are
 // never handed on: OpenClaw's rules for keeping a number safe.
 func TestAdmitDrops(t *testing.T) {

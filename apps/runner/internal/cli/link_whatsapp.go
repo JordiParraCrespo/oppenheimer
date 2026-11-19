@@ -177,6 +177,7 @@ func (p whatsAppPublisher) Messages(batch []wadomain.Inbound) bool {
 			Key: m.Key, ID: m.ID, ChatID: m.ChatID, ChatKind: string(m.ChatKind),
 			ChatName: wadomain.Fit(m.ChatName, 200), SenderID: m.SenderID, SenderName: wadomain.Fit(m.SenderName, 200),
 			FromMe: m.FromMe, Text: m.Text, Media: m.Media, QuotedID: m.QuotedID,
+			QuotedSenderID: m.QuotedSenderID, Mentions: m.Mentions,
 			VoiceSeconds: m.VoiceSeconds, SentAt: m.SentAt,
 		})
 	}

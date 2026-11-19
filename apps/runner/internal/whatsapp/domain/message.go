@@ -83,6 +83,10 @@ type Voice struct {
 // TooLarge reports whether the voice note is past what one frame carries.
 func (v Voice) TooLarge() bool { return v.Size > VoiceNoteMaxBytes }
 
+// MentionsMax is how many mentions one message carries on the link at most
+// (`WHATSAPP_MENTIONS_MAX`); a message that names more keeps the first ones.
+const MentionsMax = 64
+
 // Received is a message as the adapter read it, before this context decides
 // whether it is one to hand on.
 type Received struct {
@@ -97,7 +101,12 @@ type Received struct {
 	Text       string
 	Media      string
 	QuotedID   string
-	SentAt     time.Time
+	// QuotedSenderID is who wrote the message QuotedID names, when WhatsApp
+	// says: a phone-number JID when its number is known.
+	QuotedSenderID string
+	// Mentions are the JIDs the message @-mentions, phone numbers when known.
+	Mentions []string
+	SentAt   time.Time
 	// Voice is set on a voice note (or any audio) the adapter can fetch later.
 	Voice *Voice
 }
@@ -117,6 +126,10 @@ type Inbound struct {
 	Text       string
 	Media      string
 	QuotedID   string
+	// QuotedSenderID and Mentions are as on Received: what tells a group's
+	// message that speaks to this number apart from the rest.
+	QuotedSenderID string
+	Mentions       []string
 	// VoiceSeconds is how long a voice note runs; zero on anything else.
 	VoiceSeconds int
 	SentAt       time.Time
@@ -153,6 +166,12 @@ func Admit(r Received, now, pairedAt time.Time) (Inbound, bool) {
 		SenderID: r.SenderID, SenderName: r.SenderName, FromMe: r.FromMe,
 		Text: CutText(r.Text), Media: r.Media, QuotedID: r.QuotedID,
 		SentAt: r.SentAt.UTC(),
+	}
+	if r.QuotedID != "" {
+		in.QuotedSenderID = r.QuotedSenderID
+	}
+	if len(r.Mentions) > 0 {
+		in.Mentions = r.Mentions[:min(len(r.Mentions), MentionsMax)]
 	}
 	if r.Voice != nil {
 		in.VoiceSeconds = r.Voice.Seconds

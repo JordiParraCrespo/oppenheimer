@@ -1084,19 +1084,21 @@ type WhatsappMessages struct {
 
 // WhatsappInbound is WhatsappMessages.Messages.
 type WhatsappInbound struct {
-	Key          string    `json:"key"`
-	ID           string    `json:"id"`
-	ChatID       string    `json:"chatId"`
-	ChatKind     string    `json:"chatKind"`
-	ChatName     string    `json:"chatName,omitempty"`
-	SenderID     string    `json:"senderId"`
-	SenderName   string    `json:"senderName,omitempty"`
-	FromMe       bool      `json:"fromMe"`
-	Text         string    `json:"text"`
-	Media        string    `json:"media,omitempty"`
-	QuotedID     string    `json:"quotedId,omitempty"`
-	VoiceSeconds int       `json:"voiceSeconds,omitempty"`
-	SentAt       time.Time `json:"sentAt"`
+	Key            string    `json:"key"`
+	ID             string    `json:"id"`
+	ChatID         string    `json:"chatId"`
+	ChatKind       string    `json:"chatKind"`
+	ChatName       string    `json:"chatName,omitempty"`
+	SenderID       string    `json:"senderId"`
+	SenderName     string    `json:"senderName,omitempty"`
+	FromMe         bool      `json:"fromMe"`
+	Text           string    `json:"text"`
+	Media          string    `json:"media,omitempty"`
+	QuotedID       string    `json:"quotedId,omitempty"`
+	QuotedSenderID string    `json:"quotedSenderId,omitempty"`
+	Mentions       []string  `json:"mentions,omitempty"`
+	VoiceSeconds   int       `json:"voiceSeconds,omitempty"`
+	SentAt         time.Time `json:"sentAt"`
 }
 
 // WhatsappAck is the `whatsapp.ack` message.

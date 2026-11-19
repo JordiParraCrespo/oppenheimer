@@ -264,6 +264,10 @@ per-chat "Always allow" for sends are unchanged.
    on a mention of the number or a reply to it, an allowed person on any
    message, with the contact's turn of §3; the runner reports mentions and
    whose message a reply quotes.
+   *Being built 2026-11-19 in three stacked pull requests. First, the
+   runner reports each message's mentions (`mentions`) and the sender of
+   the message it replies to (`quotedSenderId`), by phone number, the
+   number's own `@lid` id included.*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions
