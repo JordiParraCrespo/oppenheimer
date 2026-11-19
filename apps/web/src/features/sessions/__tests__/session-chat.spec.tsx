@@ -1255,4 +1255,24 @@ describe('find in the chat', () => {
     fireEvent.keyDown(field, { key: 'Escape' });
     expect(screen.queryByRole('textbox', { name: 'sessions.chat.find.label' })).toBeNull();
   });
+
+  // Regression: a letter that lowercases to two (Turkish İ) moved every
+  // offset after it, and the range set past its text threw in the layout
+  // effect, taking the chat down.
+  it('lands on a match after a letter that lowercases longer', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'İstanbul test' } }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'f', ctrlKey: true });
+    const field = screen.getByRole('textbox', { name: 'sessions.chat.find.label' });
+    fireEvent.change(field, { target: { value: 'test' } });
+    act(() => vi.advanceTimersByTime(200));
+    expect(screen.getByText('sessions.chat.find.count{"current":1,"total":1}')).toBeTruthy();
+  });
 });

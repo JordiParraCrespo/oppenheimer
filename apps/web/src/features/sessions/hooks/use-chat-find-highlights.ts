@@ -45,6 +45,25 @@ function blockOf(node: Node, root: Element): Element {
 }
 
 /**
+ * `text` lowercased, and where each of its offsets falls in `text`: a
+ * character can lower to more than one (`İ` to `i̇`), and a range is set on
+ * the text as drawn. The offset past the end maps to the end.
+ */
+function folded(text: string): { lower: string; origin: number[] } {
+  let lower = '';
+  const origin: number[] = [];
+  let at = 0;
+  for (const char of text) {
+    const low = char.toLocaleLowerCase();
+    for (let unit = 0; unit < low.length; unit++) origin.push(at);
+    lower += low;
+    at += char.length;
+  }
+  origin.push(text.length);
+  return { lower, origin };
+}
+
+/**
  * Every match of `needle` in the words of one element, as ranges: its text
  * nodes read as one string, a newline where one block ends and the next
  * begins, so a match across a bold word or a link is found and one across
@@ -73,15 +92,15 @@ function rangesIn(element: Element, needle: string): Range[] {
     }
     return { node: found.node, offset: offset - found.start };
   };
+  const { lower, origin } = folded(text);
   const ranges: Range[] = [];
-  const lower = text.toLocaleLowerCase();
   for (
     let from = lower.indexOf(needle);
     from >= 0;
     from = lower.indexOf(needle, from + needle.length)
   ) {
-    const start = locate(from, false);
-    const end = locate(from + needle.length, true);
+    const start = locate(origin[from], false);
+    const end = locate(origin[from + needle.length], true);
     const range = document.createRange();
     range.setStart(start.node, start.offset);
     range.setEnd(end.node, end.offset);
@@ -130,8 +149,9 @@ function paint(box: HTMLElement, needle: string, hit: ChatFindHit | null): Range
  * `hit` set apart. A new `hit` scrolls the chat to it, a third of the way
  * down; the words changing under the find (a reply streaming in, a code
  * block's colours landing) paints again where the matches now are, without
- * moving the reader. A browser without the CSS Custom Highlight API paints
- * nothing and still scrolls.
+ * moving the reader. The match it lands on in a reply's closed `<details>`
+ * opens it. A browser without the CSS Custom Highlight API paints nothing
+ * and still scrolls.
  *
  * Effect: the browser's highlight registry, the scroller's position, and a
  * `MutationObserver` on the chat's content. One layout effect does all
@@ -152,6 +172,10 @@ export function useChatFindHighlights(
     if (!box || !needle) return;
     const current = paint(box, needle, hit);
     if (current) {
+      // A match in a reply's closed fold opens it, so the words are drawn.
+      for (let at = current.startContainer.parentElement; at && at !== box; at = at.parentElement) {
+        if (at instanceof HTMLDetailsElement) at.open = true;
+      }
       const top = current.getBoundingClientRect().top - box.getBoundingClientRect().top;
       box.scrollBy({ top: top - box.clientHeight * LANDING });
     }
