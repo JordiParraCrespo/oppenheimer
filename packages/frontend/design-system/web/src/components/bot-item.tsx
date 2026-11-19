@@ -90,10 +90,18 @@ function BotItem({
       <span className="relative flex shrink-0">
         <BotAvatar option={{ image, initials }} size={20} face={face} />
         {live ? (
+          // The dot's cutout is the row's ground: the sidebar, under the
+          // row's own wash when it is hovered, its menu is open, or it is the
+          // open chat. The washes are translucent, so they are laid over the
+          // sidebar rather than standing in for it.
           <span
             aria-hidden
-            className="absolute -right-0.75 -bottom-0.75 size-2.25 rounded-pill border-2 border-sidebar bg-success"
-          />
+            className="absolute -right-0.75 -bottom-0.75 flex size-2.25 rounded-pill bg-sidebar p-0.5"
+          >
+            <span className="absolute inset-0 rounded-pill group-hover/bot:bg-hover-surface group-hover/row:bg-hover-surface group-data-menu-open/row:bg-hover-surface group-data-active/bot:hidden" />
+            <span className="absolute inset-0 rounded-pill group-data-active/bot:bg-selected-surface" />
+            <span className="relative size-full rounded-pill bg-success" />
+          </span>
         ) : null}
       </span>
       <span
