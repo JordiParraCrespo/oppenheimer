@@ -138,6 +138,8 @@ describe('whatsapp (integration)', () => {
       quotedId: null,
       sentAt: new Date(),
       sentByBotId: null,
+      voiceSeconds: null,
+      transcript: null,
       switchesToBotId: null,
       isReply: false,
       ...overrides,
@@ -213,6 +215,31 @@ describe('whatsapp (integration)', () => {
     const kept = await messages.findInChat(ref, once.chatId, 10, null);
     expect(kept).toHaveLength(2);
     expect(await messages.countBotSendsSince(ref, new Date(Date.now() - 60_000))).toBe(1);
+  });
+
+  // What breaks this: a second delivery of the wake overwriting what the first heard, a
+  // transcript written onto another number's row, or a NUL in one failing the turn.
+  it('keeps a voice note’s first transcript, on that number’s row alone', async () => {
+    const mine = number(ana);
+    const theirs = number(ana, randomUUID());
+    await accounts.insert(mine);
+    const ref = { organizationId, accountId: mine.id };
+    const [note] = await messages.insertMany([
+      message(mine, { text: '', media: 'audio', voiceSeconds: 12 }),
+    ]);
+    const id = note?.id ?? '';
+
+    await messages.saveTranscript({ organizationId, accountId: theirs.id }, id, 'not mine');
+    expect((await messages.findById(ref, id))?.transcript).toBeNull();
+    // A NUL from the speech provider is dropped, not refused by Postgres.
+    await messages.saveTranscript(ref, id, 'Call\u0000 the bank');
+    await messages.saveTranscript(ref, id, 'Call the bank later');
+
+    expect(await messages.findById(ref, id)).toMatchObject({
+      media: 'audio',
+      voiceSeconds: 12,
+      transcript: 'Call the bank',
+    });
   });
 
   it('lists chats newest first with their last message and the name last seen', async () => {
@@ -332,6 +359,7 @@ describe('whatsapp (integration)', () => {
           startsHere: place.startsAt === stored.seq,
           command: 'message',
           text: stored.text,
+          voiceNote: false,
         }),
     });
 

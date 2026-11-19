@@ -151,3 +151,24 @@ func TestOutgoingQuotesTheMessageRepliedTo(t *testing.T) {
 		t.Fatalf("plain: %v", plain)
 	}
 }
+
+// A voice note reads as audio with what fetching it later takes: the
+// AudioMessage itself, which audioOf reads back with its media key and path.
+// A text carries none.
+func TestReceivedKeepsAVoiceNoteForFetching(t *testing.T) {
+	note := read(evt(marta, marta, &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+		PTT: proto.Bool(true), Seconds: proto.Uint32(12), FileLength: proto.Uint64(20480),
+		Mimetype: proto.String("audio/ogg; codecs=opus"), DirectPath: proto.String("/v/t62.7117-24/1"),
+		MediaKey: []byte{7, 7, 7},
+	}}), nil, nil)
+	if note.Media != domain.MediaAudio || note.Voice == nil || note.Voice.Seconds != 12 || note.Voice.Size != 20480 {
+		t.Fatalf("voice note: %+v", note)
+	}
+	audio, err := audioOf(note.Voice.Ref)
+	if err != nil || audio.GetDirectPath() != "/v/t62.7117-24/1" || string(audio.GetMediaKey()) != "\x07\x07\x07" {
+		t.Fatalf("read back %v %v", audio, err)
+	}
+	if text := read(evt(marta, marta, &waE2E.Message{Conversation: proto.String("hola")}), nil, nil); text.Voice != nil {
+		t.Fatalf("a text carries a voice: %+v", text.Voice)
+	}
+}

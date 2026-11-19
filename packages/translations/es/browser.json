@@ -1374,6 +1374,20 @@
         "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
         "attaching": "Adjuntando archivos…"
       },
+      "slash": {
+        "menu": "Comandos que puedes ejecutar",
+        "pick": "Usar /{{name}}",
+        "builtInLabel": "Claude Code",
+        "projectLabel": "Este proyecto",
+        "builtIn": {
+          "clear": "Empieza una conversación nueva, con el contexto vacío.",
+          "compact": "Resume la conversación hasta ahora para liberar contexto.",
+          "context": "Muestra lo que ocupa ahora la ventana de contexto.",
+          "cost": "Muestra lo que ha gastado esta conversación.",
+          "init": "Escribe un CLAUDE.md que describe este repositorio.",
+          "review": "Revisa una pull request."
+        }
+      },
       "turn": {
         "working": "Trabajando desde hace",
         "worked": "Trabajó",
@@ -1381,6 +1395,7 @@
         "interrupted": "Interrumpido"
       },
       "copyMessage": "Copiar mensaje",
+      "sending": "Enviando…",
       "copyReply": "Copiar respuesta",
       "thinking": "Pensando",
       "plan": "Plan",

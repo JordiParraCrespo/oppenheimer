@@ -25,6 +25,9 @@ func (noDevice) Logout(context.Context) error { return nil }
 func (noDevice) Send(context.Context, string, string, *wadomain.Quote) (string, time.Time, error) {
 	return "", time.Time{}, nil
 }
+func (noDevice) Download(context.Context, []byte) ([]byte, string, error) {
+	return nil, "", nil
+}
 func (noDevice) Close() {}
 
 // emptyOutbox keeps nothing.

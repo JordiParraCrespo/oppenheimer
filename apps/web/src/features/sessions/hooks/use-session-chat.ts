@@ -47,9 +47,11 @@ function sharedRead(chat: SessionChat): () => ChatState {
         turns === shared.turns &&
         next.available === shared.available &&
         next.queued === shared.queued &&
+        next.sending === shared.sending &&
         next.status === shared.status &&
         next.older === shared.older &&
-        next.interruptible === shared.interruptible
+        next.interruptible === shared.interruptible &&
+        next.commands === shared.commands
           ? shared
           : { ...next, turns };
     }
@@ -119,6 +121,12 @@ export function useChatTurnIds(chat: SessionChat): readonly string[] {
 export function useChatOlder(chat: SessionChat): ChatState['older'] {
   const older = () => chat.snapshot().older;
   return useSyncExternalStore(chat.subscribe, older, older);
+}
+
+/** What went to the agent and is not in its transcript yet, drawn at the chat's end. */
+export function useChatSending(chat: SessionChat): ChatState['sending'] {
+  const sending = () => chat.snapshot().sending;
+  return useSyncExternalStore(chat.subscribe, sending, sending);
 }
 
 /** Whether a first load's history is still arriving, for the chat to wait for it. */

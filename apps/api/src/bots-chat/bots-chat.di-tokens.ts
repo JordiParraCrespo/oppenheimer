@@ -29,3 +29,5 @@ export const BOT_TOOL_PERMISSION_REPOSITORY = Symbol('BOT_TOOL_PERMISSION_REPOSI
 export const BOT_PERMISSION_RULE_REPOSITORY = Symbol('BOT_PERMISSION_RULE_REPOSITORY');
 /** Each bot's latest dream of its memory, and what undoing it puts back. */
 export const BOT_MEMORY_DREAM_REPOSITORY = Symbol('BOT_MEMORY_DREAM_REPOSITORY');
+/** The readers of a turn's pending opening media, one per kind (`BotOpeningMediaReaderPort`). */
+export const BOT_OPENING_MEDIA_READERS = Symbol('BOT_OPENING_MEDIA_READERS');

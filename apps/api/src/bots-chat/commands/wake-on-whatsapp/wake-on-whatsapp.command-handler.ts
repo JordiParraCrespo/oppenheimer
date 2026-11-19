@@ -13,7 +13,10 @@ import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
  * `/new` starts a conversation at itself; `/stop` asks the conversation's
  * running turn to stop (`BotChannelWakeResolver`). The resolver wakes
  * only a bot the owner made, so a switch by name never reaches someone
- * else's bot.
+ * else's bot. A voice note's turn is queued with the note pending and reads
+ * it when it runs: hearing one takes up to minutes, which an outbox listener
+ * must not spend, and the turn keeps its place among the owner's messages
+ * meanwhile.
  */
 @CommandHandler(WakeOnWhatsappCommand)
 export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhatsappCommand, void> {
@@ -34,6 +37,7 @@ export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhats
           whatsappAccountId,
           messageRowId,
           text: command.text,
+          voiceNote: command.command === 'message' && command.voiceNote,
         }),
     });
   }

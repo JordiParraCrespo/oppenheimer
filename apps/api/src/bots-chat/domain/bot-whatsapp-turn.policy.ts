@@ -12,7 +12,18 @@ export interface BotWhatsappMessage {
   messageRowId: string;
   /** What the owner wrote, without a switch's "Name:" prefix. */
   text: string;
+  /** An uncaptioned voice note: `text` is ignored, and the turn reads the note when it starts. */
+  voiceNote: boolean;
 }
+
+/**
+ * What a turn on the owner's uncaptioned voice note shows until the turn
+ * reads the note, which its opening's `pendingMedia` says it must: never
+ * matched on, so the owner typing it changes nothing. Queued with this rather
+ * than heard first, so the turn takes its place among the owner's messages
+ * at once, in the order they were sent.
+ */
+export const WHATSAPP_VOICE_NOTE_OPENING = '[voice note]';
 
 /**
  * The key that makes the owner's WhatsApp message one turn however often it
@@ -30,8 +41,15 @@ export function whatsappSourceKey(message: {
 
 /** The stored WhatsApp message a turn answers, from its key; null for a turn that answers none. */
 export function whatsappMessageRowIdOf(sourceKey: string | null): string | null {
-  const match = /^whatsapp:[0-9a-f-]{36}:([0-9a-f-]{36})$/.exec(sourceKey ?? '');
-  return match?.[1] ?? null;
+  return whatsappMessageOf(sourceKey)?.messageRowId ?? null;
+}
+
+/** The number and the stored message a turn answers, from its key; null for a turn that answers none. */
+export function whatsappMessageOf(
+  sourceKey: string | null,
+): { whatsappAccountId: string; messageRowId: string } | null {
+  const match = /^whatsapp:([0-9a-f-]{36}):([0-9a-f-]{36})$/.exec(sourceKey ?? '');
+  return match?.[1] && match[2] ? { whatsappAccountId: match[1], messageRowId: match[2] } : null;
 }
 
 /** The turn the owner's message on WhatsApp queues, in the chat's own conversation. */
@@ -43,6 +61,7 @@ export function whatsappTurn(
     origin: 'whatsapp',
     sourceKey: whatsappSourceKey(message),
     conversationId: message.conversationId,
-    text: message.text,
+    text: message.voiceNote ? WHATSAPP_VOICE_NOTE_OPENING : message.text,
+    pendingMedia: message.voiceNote ? { kind: 'whatsapp_voice_note' } : null,
   });
 }

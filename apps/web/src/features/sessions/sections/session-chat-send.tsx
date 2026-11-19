@@ -50,6 +50,7 @@ export function SessionChatSend({
   agent,
   files,
   upload,
+  hostCommands = false,
   onSent,
 }: {
   chat: Chat;
@@ -59,6 +60,12 @@ export function SessionChatSend({
   files?: FileHandOff;
   /** Puts one file in the agent's prompt; resolves once the host has pasted its path. */
   upload?: (file: File) => Promise<void>;
+  /**
+   * The agent runs on a host, which names the project's slash commands: the
+   * composer offers a `/` menu for a Claude Code session. A cloud session's
+   * replies take none.
+   */
+  hostCommands?: boolean;
   onSent: () => void;
 }) {
   const { t } = useTranslation();
@@ -145,6 +152,9 @@ export function SessionChatSend({
           onSendQueued={(id) => chat.sendQueued(id)}
           onUnqueue={(id) => chat.unqueue(id)}
           onCompact={() => chat.post('/compact')}
+          // Claude Code's commands are the ones the menu knows; a host that
+          // predates the project's list still takes the built-ins.
+          commands={hostCommands && agent === 'claude-code' ? (state.commands ?? []) : null}
         />
       </div>
     </div>

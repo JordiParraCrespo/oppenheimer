@@ -14,6 +14,8 @@
   <string>Oppenheimer Runner</string>
   <key>CFBundleDisplayName</key>
   <string>Oppenheimer Runner</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleExecutable</key>
   <string>runner</string>
   <key>CFBundlePackageType</key>

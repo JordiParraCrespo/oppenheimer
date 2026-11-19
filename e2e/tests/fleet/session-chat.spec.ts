@@ -284,3 +284,66 @@ test('a guest on a view-only link reads the chat, with no composer', async ({ br
     composer: false,
   });
 });
+
+test("the composer's / menu offers Claude Code's commands and the project's skills, read on the host", async ({
+  page,
+}) => {
+  const up = await fetch(WEB_URL).then(
+    (response) => response.ok,
+    () => false,
+  );
+  test.skip(!up, `the console is not running on ${WEB_URL}`);
+
+  const { api, user } = await signedUpContext('fleetchatslash');
+  await turnOnForEveryone(api, 'session_chat_view');
+  const installationId = await connectInstallation(api);
+  const [box] = await pairedHosts(api, 1, 'chatslash');
+  const sessionId = await createSession(api, box.id, installationId);
+  // The runner reads the project's skills where the agent runs, the
+  // session's checkout: a folder inside the one its tmux session opened in.
+  // They are written before the page attaches, when the runner reads them.
+  let checkout = '';
+  await expect
+    .poll(
+      () => {
+        try {
+          checkout = box.host
+            .exec(
+              `cd "$(tmux -L oppenheimer display-message -p -t opp-${sessionId} '#{session_path}')" && git -C */ rev-parse --show-toplevel`,
+            )
+            .trim();
+        } catch {
+          checkout = '';
+        }
+        return checkout;
+      },
+      { timeout: 120_000 },
+    )
+    .not.toBe('');
+  const skill = Buffer.from(
+    '---\nname: ship-it\ndescription: Merge the branch once CI is green.\n---\n# Ship it\n',
+  ).toString('base64');
+  box.host.exec(
+    `mkdir -p ${checkout}/.claude/skills/ship && echo ${skill} | base64 -d > ${checkout}/.claude/skills/ship/SKILL.md`,
+  );
+  appendTranscript(box.host, sessionId, [entry('user', 'u1', 'Fix the empty wallet')]);
+
+  await signInAs(page, user);
+  await page.goto(`/sessions/${sessionId}`);
+  const toggle = page.getByRole('group', { name: 'How to read this session' });
+  await expect(toggle).toBeVisible({ timeout: 120_000 });
+  await toggle.getByRole('button', { name: 'Chat' }).click();
+  const composer = await expectComposerClickable(page);
+
+  await composer.fill('/');
+  const menu = page.getByRole('listbox', { name: 'Commands you can run' });
+  await expect(menu.getByRole('option', { name: 'Use /compact' })).toBeVisible();
+  await expect(menu.getByRole('option', { name: 'Use /ship-it' })).toBeVisible();
+  await expect(menu.getByText('Merge the branch once CI is green.')).toBeVisible();
+
+  // Typing narrows it; Enter completes the command, and sends nothing yet.
+  await composer.fill('/shi');
+  await page.keyboard.press('Enter');
+  await expect(composer).toHaveValue('/ship-it ');
+  await expect(menu).toBeHidden();
+});

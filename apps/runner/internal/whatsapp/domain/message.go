@@ -59,6 +59,30 @@ const (
 	MediaLocation = "location"
 )
 
+// VoiceNoteMaxBytes is the largest voice note handed to the control plane
+// (`WHATSAPP_VOICE_NOTE_MAX_BYTES`): one link frame, base64 and all.
+const VoiceNoteMaxBytes = 352 * 1024
+
+// VoiceNoteKept is how long a voice note can still be fetched after it
+// arrived (`WHATSAPP_VOICE_NOTE_KEPT_HOURS`): what is kept is its media key
+// and path, never the audio, and an owner's bot asks for it within seconds.
+const VoiceNoteKept = 48 * time.Hour
+
+// VoiceNotesKeptMax bounds how many voice notes are kept at once; past it the
+// oldest go.
+const VoiceNotesKeptMax = 2000
+
+// Voice is what fetching a voice note takes: the adapter's own reference to
+// it (opaque here), how long it runs and how large WhatsApp says it is.
+type Voice struct {
+	Ref     []byte
+	Seconds int
+	Size    uint64
+}
+
+// TooLarge reports whether the voice note is past what one frame carries.
+func (v Voice) TooLarge() bool { return v.Size > VoiceNoteMaxBytes }
+
 // Received is a message as the adapter read it, before this context decides
 // whether it is one to hand on.
 type Received struct {
@@ -74,6 +98,8 @@ type Received struct {
 	Media      string
 	QuotedID   string
 	SentAt     time.Time
+	// Voice is set on a voice note (or any audio) the adapter can fetch later.
+	Voice *Voice
 }
 
 // Inbound is a message the control plane is handed and keeps.
@@ -91,7 +117,9 @@ type Inbound struct {
 	Text       string
 	Media      string
 	QuotedID   string
-	SentAt     time.Time
+	// VoiceSeconds is how long a voice note runs; zero on anything else.
+	VoiceSeconds int
+	SentAt       time.Time
 }
 
 // KeyOf is a message's outbox key.
@@ -119,13 +147,17 @@ func Admit(r Received, now, pairedAt time.Time) (Inbound, bool) {
 	if kind != ChatGroup {
 		kind = ChatDirect
 	}
-	return Inbound{
+	in := Inbound{
 		Key: KeyOf(r.ChatID, r.ID), ID: r.ID,
 		ChatID: r.ChatID, ChatKind: kind, ChatName: r.ChatName,
 		SenderID: r.SenderID, SenderName: r.SenderName, FromMe: r.FromMe,
 		Text: CutText(r.Text), Media: r.Media, QuotedID: r.QuotedID,
 		SentAt: r.SentAt.UTC(),
-	}, true
+	}
+	if r.Voice != nil {
+		in.VoiceSeconds = r.Voice.Seconds
+	}
+	return in, true
 }
 
 // CutText fits a text to TextMaxChars, ending a cut one with CutMark.
