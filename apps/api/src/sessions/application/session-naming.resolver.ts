@@ -12,7 +12,11 @@ import {
   sessionTitleRequest,
   titleFromPrompt,
 } from '../domain/session-name.policy';
-import { SESSION_EVENT_KINDS, type SessionNameSource } from '../domain/session-state.policy';
+import {
+  isFirstPromptName,
+  SESSION_EVENT_KINDS,
+  type SessionNameSource,
+} from '../domain/session-state.policy';
 import { redactEntry } from '../domain/session-transcript.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
@@ -163,7 +167,7 @@ export class SessionNamingResolver {
    * session's lock, so a rename typed while the model was thinking wins.
    */
   async renameFromConversation(session: WorkSessionEntity): Promise<void> {
-    if (session.nameSource !== 'model' && session.nameSource !== 'prompt') return;
+    if (!isFirstPromptName(session.nameSource)) return;
     if (session.place === 'cloud' || session.hostId === null) return;
     if (!this.llm.isConfigured() || !this.namerModel) return;
 
@@ -187,7 +191,7 @@ export class SessionNamingResolver {
             payload: { name, source: 'conversation' },
           },
         ],
-        (fold) => fold.nameSource === 'model' || fold.nameSource === 'prompt',
+        (fold) => isFirstPromptName(fold.nameSource),
       );
     } catch (error) {
       this.logger.warn(`Renaming session ${session.slug} failed: ${(error as Error).message}`);
@@ -266,14 +270,18 @@ export class SessionNamingResolver {
  */
 function finishedAnswer(event: WorkSessionEventEntity): boolean {
   if (event.kind !== SESSION_EVENT_KINDS.AGENT_OBSERVED) return false;
-  if (typeof event.payload !== 'object' || event.payload === null) return false;
-  const state = (event.payload as { state?: unknown }).state;
+  const state = fieldOf(event.payload, 'state');
   return state === 'done' || state === 'idle';
+}
+
+/** One field of a payload the runner wrote, narrowed without a cast. */
+function fieldOf(payload: unknown, key: string): unknown {
+  if (typeof payload !== 'object' || payload === null || !(key in payload)) return undefined;
+  return Reflect.get(payload, key);
 }
 
 /** The prompt the runner reported, narrowed once so nothing downstream casts. */
 function promptTextOf(payload: unknown): string | null {
-  if (typeof payload !== 'object' || payload === null) return null;
-  const text = (payload as { text?: unknown }).text;
+  const text = fieldOf(payload, 'text');
   return typeof text === 'string' && text.trim() ? text : null;
 }

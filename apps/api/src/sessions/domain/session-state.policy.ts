@@ -267,6 +267,28 @@ const REFUSAL_DETAIL_MAX = 500;
 export type SessionNameSource = 'user' | 'model' | 'prompt' | 'conversation';
 
 /**
+ * Which name wins, whichever order the entries arrive in: a name replaces one
+ * of the same rank or lower, never higher. A person's name outranks every
+ * derived one, and the title written from the conversation outranks the one
+ * from the first prompt alone.
+ */
+const NAME_SOURCE_RANK: Readonly<Record<SessionNameSource, number>> = {
+  prompt: 1,
+  model: 1,
+  conversation: 2,
+  user: 3,
+};
+
+function nameSourceRank(source: SessionNameSource | null): number {
+  return source === null ? 0 : NAME_SOURCE_RANK[source];
+}
+
+/** A name the namer chose and may still replace: from the first prompt, by a model or its words. */
+export function isFirstPromptName(source: SessionNameSource | null): boolean {
+  return source === 'model' || source === 'prompt';
+}
+
+/**
  * Everything the fold produces, and every one of these is a column on
  * `work_session`. That is the whole point: `group(now)` has to be a function of
  * the row, so a listing never walks a log.
@@ -611,13 +633,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
         recorded === 'model' || recorded === 'prompt' || recorded === 'conversation'
           ? recorded
           : 'user';
-      // A derived title never overwrites a name a person typed, whichever order
-      // the two arrive in; and one from the first prompt never overwrites the
-      // one written later from the whole conversation.
-      if (source !== 'user' && next.nameSource === 'user') return next;
-      if ((source === 'model' || source === 'prompt') && next.nameSource === 'conversation') {
-        return next;
-      }
+      if (NAME_SOURCE_RANK[source] < nameSourceRank(next.nameSource)) return next;
       next.name = name;
       next.nameSource = source;
       return next;

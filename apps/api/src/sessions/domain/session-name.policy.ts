@@ -101,7 +101,9 @@ const PASTED_CONTENT = /<\/?pasted_content(?:\s[^>]*)?>/g;
 /**
  * A `user` entry's text as the person typed it, or `''` when it is the CLI's
  * own: the runner's `typedText`, which names a session from its first prompt,
- * so both count the same lines as prompts. A slash command reads as
+ * so both count the same lines as prompts. Both are held to the cases in the
+ * runner's `transcript/testdata/typed-prompts.json`; a change to either is a
+ * case added there. A slash command reads as
  * `/name arguments` (and is nothing without arguments); reminders around the
  * words go; a paste loses its tags, after the line is told apart, so a paste
  * that starts like one of the CLI's lines stays the person's.
