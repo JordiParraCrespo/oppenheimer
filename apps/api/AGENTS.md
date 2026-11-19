@@ -63,6 +63,25 @@ the scalar ones, as methods. Where Better Auth owns the record and there is no
 aggregate, the same holds: `admin-user.mapper.ts` and `organization.mapper.ts`
 are one class each, a static method per shape the plugin returns.
 
+## What a model is told is prose, in `domain/prompts/`
+
+Text written for a model to read (a system prompt's sections, what a wake
+asks) is Markdown in the module's `domain/prompts/*.md`, never a string in
+a `*.policy.ts`. A file is one prompt, or several fragments under
+`<!-- fragment: name -->` markers when the code chooses among them;
+`{{name}}` is a slot the code fills; any other HTML comment is a note for
+whoever edits the file (why a sentence is there, the incident behind it) and
+is never sent. `apps/api/scripts/prompt-files.mjs` says the rest.
+
+The code reads the words by id through the module's `promptText`
+(`bots-chat/domain/bot-prompt-text.policy.ts`), typed by
+`prompts/prompts.gen.ts`: a prompt renamed or a slot left unfilled does not
+compile. After editing a `.md`, run
+`pnpm --filter @oppenheimer/api generate:prompts` and commit the module
+with it; `src/__tests__/prompt-files.spec.ts` fails on a stale one. The
+policy keeps what is logic: which prompt, when, and what fills its slots.
+One paragraph per line, as written: nothing reflows these files.
+
 ## Delegating façades (organizations, admin)
 
 `src/organizations/` and `src/admin/` expose the Better Auth organization/admin

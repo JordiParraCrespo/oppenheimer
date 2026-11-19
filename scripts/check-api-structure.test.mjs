@@ -169,6 +169,19 @@ test('a file the layer does not admit reports its kind, wherever it is', () => {
   ]);
 });
 
+test('domain/prompts/ holds prose and the module generated from it, and no code of its own', () => {
+  const prompts = {
+    ...CONFORMING,
+    'widget/domain/prompts/rules.md': 'Never guess.',
+    'widget/domain/prompts/prompts.gen.ts': 'export const PROMPT_TEXT = {};',
+  };
+  assert.deepEqual(check(prompts).outstanding, []);
+  assert.deepEqual(
+    kinds(check({ ...prompts, 'widget/domain/prompts/rules.policy.ts': 'export const R = 1;' })),
+    ['file-name-not-admitted'],
+  );
+});
+
 test('the caps bite, and only on the file kind they name', () => {
   const long = (n) => `${'// x\n'.repeat(n)}export class C {}`;
   const over = { ...CONFORMING };
