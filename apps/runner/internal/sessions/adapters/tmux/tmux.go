@@ -456,7 +456,10 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 	} else if name, window, ok := strings.Cut(target, ":"); ok && window != "0" {
 		rest = viewOf(name, window)
 	}
-	rest = append(hyperlinks(), rest...)
+	// Best effort, and on its own: in one `;` group a tmux without the
+	// option (before 3.2) would drop the attach after it.
+	_, _ = s.run(ctx, hyperlinks()...) //nolint:errcheck // an older tmux only loses clickable links
+
 	cmd := exec.CommandContext(ctx, s.binary, s.args(rest...)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 	file, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
@@ -475,10 +478,10 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 // It is set on every attach rather than in Config, which tmux reads only when
 // its server starts: the servers already holding sessions on a host never
 // read it. An indexed entry keeps the default features and stays one entry
-// however many times it is set; an older tmux ignores the feature it does not
-// know.
+// however many times it is set; tmux 3.2 and 3.3 skip the feature they do not
+// know, and an older tmux has no such option.
 func hyperlinks() []string {
-	return []string{"set-option", "-s", "terminal-features[90]", "xterm*:hyperlinks", ";"}
+	return []string{"set-option", "-s", "terminal-features[90]", "xterm*:hyperlinks"}
 }
 
 type attachment struct {

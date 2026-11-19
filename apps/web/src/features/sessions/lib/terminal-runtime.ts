@@ -114,7 +114,7 @@ export function mountSessionTerminal(
     // forces a selection everywhere but macOS, where it is Option.
     macOptionClickForcesSelection: true,
     disableStdin: options.readOnly ?? false,
-    linkHandler: OSC8_LINKS,
+    linkHandler: osc8Links(container),
   });
 
   const fit = new FitAddon();
@@ -394,16 +394,25 @@ const OSC52_CLIPBOARD: IClipboardProvider = {
 
 /**
  * An OSC 8 hyperlink, as Claude Code prints a Markdown link (`[24093](https://…)`):
- * opened in a new tab on click, as the chat view opens the same link. xterm's
- * own answer is a `confirm()` warning before every link. xterm hands over
- * only http(s) links (`allowNonHttpProtocols` is off), so a `file:` or
+ * opened in a new tab on click, as the chat view opens the same link, instead
+ * of xterm's `confirm()` before every link. Its text says nothing of where it
+ * goes, so hovering it shows the URL, as a link in the chat does. xterm hands
+ * over only http(s) links (`allowNonHttpProtocols` is off), so a `file:` or
  * `javascript:` link from the host never reaches this.
  */
-const OSC8_LINKS: ILinkHandler = {
-  activate: (_event, uri) => {
-    window.open(uri, '_blank', 'noopener,noreferrer');
-  },
-};
+function osc8Links(container: HTMLElement): ILinkHandler {
+  return {
+    activate: (_event, uri) => {
+      window.open(uri, '_blank', 'noopener,noreferrer');
+    },
+    hover: (_event, uri) => {
+      container.title = uri;
+    },
+    leave: () => {
+      container.removeAttribute('title');
+    },
+  };
+}
 
 /**
  * A wheel event in rows.
