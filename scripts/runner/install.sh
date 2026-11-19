@@ -68,11 +68,35 @@ Nothing is installed with a package manager unless you answer "y" on a terminal.
 EOF
 }
 
+# The runner's look on a terminal (apps/runner/internal/cli/look.go): the
+# console's mark, its one blue for what to type, green, amber and red only for
+# state. Piped or logged, and under NO_COLOR or TERM=dumb, every line is plain.
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != dumb ]; then
+	B="$(printf '\033[1m')" D="$(printf '\033[2m')" R="$(printf '\033[0m')"
+	BLUE="$(printf '\033[34m')" GREEN="$(printf '\033[32m')" AMBER="$(printf '\033[33m')"
+else
+	B="" D="" R="" BLUE="" GREEN="" AMBER=""
+fi
+if [ -t 2 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != dumb ]; then
+	ERR="$(printf '\033[1;31m')" ERR_R="$(printf '\033[0m')"
+else
+	ERR="" ERR_R=""
+fi
+
 say() { printf '%s\n' "$*"; }
-step() { printf '\033[1m==>\033[0m %s\n' "$*"; }
+step() { printf '%s==>%s %s\n' "$B$BLUE" "$R" "$*"; }
+warn() { printf '%swarning:%s %s\n' "$B$AMBER" "$R" "$*"; }
 die() {
-	printf '\033[31merror:\033[0m %s\n' "$*" >&2
+	printf '%serror:%s %s\n' "$ERR" "$ERR_R" "$*" >&2
 	exit 1
+}
+
+# banner — the fedora beside the name, once, at the top. Only on a terminal.
+banner() {
+	[ -n "$B" ] || return 0
+	printf '\n  %s  ▗▆▄▆▖  %s   %sOppenheimer Runner%s\n' "$B" "$R" "$B" "$R"
+	printf '  %s ▐█████▌ %s   %sinstalling the host agent on this machine%s\n' "$B" "$R" "$D" "$R"
+	printf '  %s▝▀▀▀▀▀▀▀▘%s\n\n' "$B" "$R"
 }
 
 # A terminal to ask on. Under `curl | sh` stdin is this script, so questions go
@@ -232,7 +256,7 @@ choose_workspaces() {
 	esac
 	case "$WORKSPACES" in
 	*/Library/Mobile\ Documents/* | */Library/CloudStorage/* | */Dropbox/* | */Dropbox | */Google\ Drive/* | */OneDrive/*)
-		say "warning: $WORKSPACES is in a synced folder; syncing git worktrees while an agent writes to them causes conflicts"
+		warn "$WORKSPACES is in a synced folder; syncing git worktrees while an agent writes to them causes conflicts"
 		;;
 	esac
 	say "    sessions will live in $WORKSPACES"
@@ -306,7 +330,7 @@ install_agents() {
 		"$RUNNER" "$kind" install "$a" || failed="$failed $kind:$a"
 	done
 	for f in $failed; do
-		say "warning: ${f#*:} was not installed; retry with: oppenheimer-runner ${f%%:*} install ${f#*:}"
+		warn "${f#*:} was not installed; retry with: oppenheimer-runner ${f%%:*} install ${f#*:}"
 	done
 }
 
@@ -373,7 +397,7 @@ main() {
 			DISTRO="$(. /etc/os-release && printf '%s' "${ID:-}${ID_LIKE:-}")"
 			case "$DISTRO" in
 			*debian* | *ubuntu*) ;;
-			*) say "warning: this distribution is not one the runner is tested on (Debian and Ubuntu are)" ;;
+			*) warn "this distribution is not one the runner is tested on (Debian and Ubuntu are)" ;;
 			esac
 		fi
 		;;
@@ -385,6 +409,7 @@ main() {
 	*) die "$ARCH is not supported; the runner is built for amd64 and arm64" ;;
 	esac
 	TARGET="$GOOS/$GOARCH"
+	banner
 	step "installing the Oppenheimer runner on $PLATFORM ($TARGET) as $(id -un)@$(uname -n)"
 
 	for tool in curl tar; do
@@ -516,10 +541,10 @@ Stop here and tell us; do not retry with a different mirror."
 	step "done"
 	"$RUNNER" status || true
 	say ""
-	say "The host should now be online in the console."
-	say "  status:    $HOME/.local/bin/oppenheimer-runner status"
-	say "  logs:      $RUNNER_HOME/log/runner.log"
-	say "  uninstall: $HOME/.local/bin/oppenheimer-runner uninstall"
+	if [ -n "$B" ]; then say "$GREEN●$R ${B}The host should now be online in the console.$R"; else say "The host should now be online in the console."; fi
+	say "  status:    $BLUE$HOME/.local/bin/oppenheimer-runner status$R"
+	say "  logs:      $D$RUNNER_HOME/log/runner.log$R"
+	say "  uninstall: $BLUE$HOME/.local/bin/oppenheimer-runner uninstall$R"
 	case ":$PATH:" in
 	*":$HOME/.local/bin:"*) ;;
 	*) say ""; say "note: $HOME/.local/bin is not on your PATH; add it to use \`oppenheimer-runner\` by name." ;;
