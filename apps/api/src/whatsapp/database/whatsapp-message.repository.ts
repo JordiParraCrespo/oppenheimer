@@ -93,7 +93,7 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
     await this.repository
       .createQueryBuilder()
       .update(WhatsappMessageOrmEntity)
-      .set({ transcript })
+      .set({ transcript: this.mapper.transcriptToPersistence(transcript) })
       .where('"id" = :id AND "organizationId" = :organizationId AND "accountId" = :accountId', {
         id,
         organizationId: account.organizationId,

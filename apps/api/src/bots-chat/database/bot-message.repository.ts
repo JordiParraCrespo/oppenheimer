@@ -70,7 +70,8 @@ export class BotMessageRepository
     await this.repository
       .createQueryBuilder()
       .update(BotMessageOrmEntity)
-      .set({ content: message.content })
+      // The mapper's content, so it is what an insert writes: cleaned for Postgres.
+      .set({ content: this.mapper.toPersistence(message).content })
       .where('id = :id AND "organizationId" = :organizationId', {
         id: message.id,
         organizationId: message.organizationId,

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { storableText } from '@oppenheimer/backend-core';
 import type { WhatsappInbound } from '@oppenheimer/shared/protocol';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import type { WhatsappAccountEntity } from './domain/whatsapp-account.entity';
@@ -78,6 +79,11 @@ export class WhatsappMessageMapper {
     draft: WhatsappMessageDraft,
   ): Omit<WhatsappMessageOrmEntity, 'id' | 'createdAt' | 'seq'> {
     return { ...draft };
+  }
+
+  /** A voice note's transcript as its column takes it: what Postgres cannot store (NUL) removed. */
+  transcriptToPersistence(transcript: string): string {
+    return storableText(transcript);
   }
 
   /** A row intake just stored, from the draft it wrote and what the insert returned. */
