@@ -209,6 +209,31 @@ func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 	}
 }
 
+// A link a program prints (Claude Code's `[24093](https://…)` is an OSC 8
+// hyperlink) reaches the browser with its URL. tmux keeps hyperlinks only for
+// a client whose terminal declares them; without that the reader sees the
+// link's text and nothing to click.
+func TestAHyperlinkReachesTheBrowserWithItsURL(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-link", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	attachment, err := s.Attach(ctx, "opp-link:0", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	t.Cleanup(func() { _ = attachment.Close() })
+
+	// The URL is whole only in the command's output, never in what was typed.
+	if _, err := io.WriteString(attachment, `printf '\033]8;;https://%s/order\033\\order\033]8;;\033\\\n' example.com`+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	if !readUntil(t, attachment, ";https://example.com/order\x1b\\") {
+		t.Fatal("the hyperlink's URL never came through the PTY")
+	}
+}
+
 // Redraw is what repairs a screen whose bytes were lost on the way (the
 // direct path closing mid-stream): the client paints everything again, and
 // what was already on the screen comes through the PTY a second time — and
