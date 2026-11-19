@@ -456,6 +456,7 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 	} else if name, window, ok := strings.Cut(target, ":"); ok && window != "0" {
 		rest = viewOf(name, window)
 	}
+	rest = append(hyperlinks(), rest...)
 	cmd := exec.CommandContext(ctx, s.binary, s.args(rest...)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 	file, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
@@ -463,6 +464,21 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 		return nil, domain.ErrTmuxCommand.WithDetail("attach %s: %v", target, err).WithCause(err)
 	}
 	return &attachment{file: file, cmd: cmd}, nil
+}
+
+// hyperlinks tells tmux the browser's terminal draws OSC 8 hyperlinks
+// (Claude Code's `[24093](https://…)`), ahead of an attach. tmux keeps a
+// pane's hyperlinks but writes them only to a client whose terminal has the
+// `hyperlinks` feature (tmux 3.4), and xterm-256color's defaults do not; the
+// reader got the link's text and nothing to click.
+//
+// It is set on every attach rather than in Config, which tmux reads only when
+// its server starts: the servers already holding sessions on a host never
+// read it. An indexed entry keeps the default features and stays one entry
+// however many times it is set; an older tmux ignores the feature it does not
+// know.
+func hyperlinks() []string {
+	return []string{"set-option", "-s", "terminal-features[90]", "xterm*:hyperlinks", ";"}
 }
 
 type attachment struct {
