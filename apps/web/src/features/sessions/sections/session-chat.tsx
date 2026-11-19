@@ -14,12 +14,18 @@ import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
 import { useChatFind } from '../hooks/use-chat-find';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
-import { useChatLoading, useChatOlder, useChatTurnIds } from '../hooks/use-session-chat';
+import {
+  useChatLoading,
+  useChatOlder,
+  useChatSending,
+  useChatTurnIds,
+} from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatActivity } from './session-chat-activity';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
 import { SessionChatFind } from './session-chat-find';
 import { SessionChatSend } from './session-chat-send';
+import { SessionChatSending } from './session-chat-sending';
 import { SessionChatTurn } from './session-chat-turn';
 
 /**
@@ -81,6 +87,8 @@ export function SessionChat({
   const ids = useChatTurnIds(chat);
   const loading = useChatLoading(chat);
   const older = useChatOlder(chat);
+  // Only whether there is any: a first message has no turn to stand under.
+  const sending = useChatSending(chat).length > 0;
   const { scroller, content, leave, atLatest, toLatest } = useStickToBottom();
   // The first turn drawn. At the latest it follows the end; away from it,
   // it is held, so a turn arriving never takes one off the top of what the
@@ -149,7 +157,7 @@ export function SessionChat({
               // The history is still arriving: the conversation is drawn once
               // it has, at its end, so until then the column says so.
               <SessionChatLoading agent={agent} />
-            ) : ids.length === 0 ? (
+            ) : ids.length === 0 && !sending ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
                   {agent ? (
@@ -186,6 +194,7 @@ export function SessionChat({
                 {shown.map((id) => (
                   <SessionChatTurn key={id} chat={chat} id={id} found={found === id} />
                 ))}
+                <SessionChatSending chat={chat} />
                 <SessionChatActivity chat={chat} />
               </ChatTranscript>
             )}

@@ -48,6 +48,18 @@ export interface BotToolStep {
 /** How much of a tool's answer a message keeps: enough to read, never a whole page. */
 export const BOT_TOOL_OUTPUT_MAX = 2_000;
 
+/**
+ * Media a message of yours carries that is read only when its turn starts:
+ * the words the turn is asked replace the message's placeholder then
+ * (`BotOpeningMediaResolver`). One reader per kind.
+ */
+export const BOT_PENDING_MEDIA_KINDS = ['whatsapp_voice_note'] as const;
+export type BotPendingMediaKind = (typeof BOT_PENDING_MEDIA_KINDS)[number];
+
+export interface BotPendingMedia {
+  kind: BotPendingMediaKind;
+}
+
 export interface BotMessageProps {
   organizationId: string;
   botId: string;
@@ -75,6 +87,8 @@ export interface BotMessageProps {
    * or the bot's, shown with `show_image`; none on any other.
    */
   attachments?: readonly BotAttachment[];
+  /** Media still to read before the turn this message opens is asked it; null once read. */
+  pendingMedia?: BotPendingMedia | null;
 }
 
 /** One thing the chat draws. */
@@ -101,6 +115,17 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   get turnId(): string | null {
     return this.props.turnId;
   }
+
+  /**
+   * What its pending media says, once its turn read it: the message's words
+   * from then on, in the chat and in every later turn's history, with
+   * nothing left pending.
+   */
+  read(words: string): void {
+    this.props.content = words;
+    this.props.pendingMedia = null;
+    this.validate();
+  }
   get role(): BotMessageRole {
     return this.props.role;
   }
@@ -118,6 +143,9 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   }
   get attachments(): readonly BotAttachment[] {
     return this.props.attachments ?? [];
+  }
+  get pendingMedia(): BotPendingMedia | null {
+    return this.props.pendingMedia ?? null;
   }
 
   public validate(): void {
@@ -140,6 +168,10 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
     }
     if (attachments.length > BOT_MESSAGE_IMAGES_MAX) {
       throw new ArgumentInvalidException('A message carries at most BOT_MESSAGE_IMAGES_MAX images');
+    }
+    const pending = props.pendingMedia ?? null;
+    if (pending && (props.role !== 'user' || !BOT_PENDING_MEDIA_KINDS.includes(pending.kind))) {
+      throw new ArgumentInvalidException('Only a message of yours carries media still to read');
     }
     if (props.role !== 'activity' && !props.content && attachments.length === 0) {
       throw new ArgumentInvalidException('A message says something');

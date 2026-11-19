@@ -1,5 +1,6 @@
 import type { WhatsappMessageDraft } from './whatsapp-message.types';
 import { sameWhatsappNumber } from './whatsapp-number.policy';
+import { isWhatsappVoiceNote } from './whatsapp-voice-note.policy';
 
 /** What the owner's message asks of the chat's bot. `help` is answered with a fixed line. */
 export type WhatsappOwnerCommand = 'message' | 'new' | 'stop' | 'help';
@@ -10,6 +11,8 @@ export type WhatsappOwnerCommand = 'message' | 'new' | 'stop' | 'help';
  * - `owner`: the confirmed owner wrote from their own number. `switchName`
  *   is the name a "Name: …" message starts with, still to be matched against
  *   their bots; `text` is then what follows it (empty for a bare "Name:").
+ *   `voiceNote` is a voice note with no caption: its words are heard when
+ *   the bot is woken, so `text` is empty until then.
  * - `ignore`: everything else, which is stored for the bots to read and
  *   nothing more: the number's own messages (`fromMe`, what is typed on the
  *   spare phone or what a bot sent), groups, the number's chat with itself,
@@ -17,7 +20,13 @@ export type WhatsappOwnerCommand = 'message' | 'new' | 'stop' | 'help';
  *   A stranger gets no line on WhatsApp.
  */
 export type WhatsappInboundAction =
-  | { kind: 'owner'; command: WhatsappOwnerCommand; text: string; switchName: string | null }
+  | {
+      kind: 'owner';
+      command: WhatsappOwnerCommand;
+      text: string;
+      switchName: string | null;
+      voiceNote: boolean;
+    }
   | { kind: 'ignore' };
 
 /** What the account knows of who may talk: its own number and its confirmed owner's. */
@@ -80,15 +89,24 @@ export function whatsappInboundAction(
   ) {
     return { kind: 'ignore' };
   }
+  if (isWhatsappVoiceNote(message)) {
+    return { kind: 'owner', command: 'message', text: '', switchName: null, voiceNote: true };
+  }
   const text = message.text.trim() || (message.media ? `[${message.media}]` : '');
   if (!text) return { kind: 'ignore' };
   const lowered = text.toLowerCase();
   const command = Object.hasOwn(COMMANDS, lowered) ? COMMANDS[lowered] : undefined;
-  if (command) return { kind: 'owner', command, text: '', switchName: null };
+  if (command) return { kind: 'owner', command, text: '', switchName: null, voiceNote: false };
   const switched = SWITCH.exec(text);
   const name = switched?.[1]?.trim();
   if (switched && name) {
-    return { kind: 'owner', command: 'message', text: switched[2]?.trim() ?? '', switchName: name };
+    return {
+      kind: 'owner',
+      command: 'message',
+      text: switched[2]?.trim() ?? '',
+      switchName: name,
+      voiceNote: false,
+    };
   }
-  return { kind: 'owner', command: 'message', text, switchName: null };
+  return { kind: 'owner', command: 'message', text, switchName: null, voiceNote: false };
 }

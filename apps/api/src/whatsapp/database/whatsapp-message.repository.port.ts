@@ -66,6 +66,8 @@ export interface WhatsappMessageRepositoryPort {
   search(account: WhatsappAccountRef, query: string, limit: number): Promise<WhatsappMessage[]>;
   /** One stored message by its row id: what a reply quotes. */
   findById(account: WhatsappAccountRef, id: string): Promise<WhatsappMessage | null>;
+  /** Keeps what a voice note says on its row, unless one is already there. */
+  saveTranscript(account: WhatsappAccountRef, id: string, transcript: string): Promise<void>;
   /**
    * The chat's bot now: the bot of its latest switch by name, or null when
    * none was made (the number's default then answers).

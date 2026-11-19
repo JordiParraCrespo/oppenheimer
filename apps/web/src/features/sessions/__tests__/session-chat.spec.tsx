@@ -1276,3 +1276,72 @@ describe('find in the chat', () => {
     expect(screen.getByText('sessions.chat.find.count{"current":1,"total":1}')).toBeTruthy();
   });
 });
+
+describe('the / menu', () => {
+  function renderOnHost(
+    commands?: { name: string; kind: 'skill' | 'command'; description?: string }[],
+  ) {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    act(() => chat.apply({ reset: true, history: 'end', entries: [], commands }));
+    render(
+      <SessionChat
+        chat={chat}
+        agent="claude-code"
+        readOnly={false}
+        attach={{ sessionId: 's1', files: createFileHandOff() }}
+      />,
+    );
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    ) as HTMLTextAreaElement;
+    return { field, typed };
+  }
+
+  // What breaks this: the project's skills missing from the menu, or Enter
+  // sending a half-typed command to the agent instead of completing it.
+  it("offers the project's skills ahead of Claude Code's commands, and Enter completes the one highlighted", () => {
+    const { field, typed } = renderOnHost([
+      { name: 'recap', kind: 'skill', description: 'Close the task' },
+      { name: 'review', kind: 'command', description: 'Shadowed by the built-in' },
+    ]);
+    fireEvent.change(field, { target: { value: '/re' } });
+
+    const menu = screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' });
+    expect(menu.textContent).toContain('/review');
+    expect(menu.textContent).toContain('/recap');
+    expect(menu.textContent).toContain('Close the task');
+    expect(menu.textContent).not.toContain('Shadowed by the built-in');
+
+    // The project's come first: they are what the person cannot type from memory.
+    expect(menu.textContent?.indexOf('/recap')).toBeLessThan(
+      menu.textContent?.indexOf('/review') ?? 0,
+    );
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'ArrowUp' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field.value).toBe('/recap ');
+    expect(typed).toEqual([]);
+    expect(screen.queryByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeNull();
+  });
+
+  it("offers Claude Code's commands from a host that names no project commands, and Escape closes it", () => {
+    const { field } = renderOnHost();
+    fireEvent.change(field, { target: { value: '/' } });
+    expect(screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' }).textContent).toContain(
+      '/compact',
+    );
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(screen.queryByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeNull();
+  });
+
+  // What breaks this: Enter that confirms an IME's composition picking a command instead.
+  it('leaves Enter to an IME that is composing', () => {
+    const { field } = renderOnHost([{ name: 'recap', kind: 'skill' }]);
+    fireEvent.change(field, { target: { value: '/' } });
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true });
+    expect(field.value).toBe('/');
+    expect(screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeTruthy();
+  });
+});

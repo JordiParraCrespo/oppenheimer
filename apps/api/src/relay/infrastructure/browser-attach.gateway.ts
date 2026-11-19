@@ -498,6 +498,7 @@ class BrowserAttachment implements AttachmentSink {
       ...(message.before !== undefined ? { before: message.before } : {}),
       ...(message.older ? { older: message.older } : {}),
       entries: message.entries,
+      ...(message.commands ? { commands: message.commands } : {}),
     });
   }
 
