@@ -40,6 +40,10 @@ Its conversation started over since your cursor, so this reads it from its start
 
 {{dropped}} entries were left out for size.
 
+<!-- fragment: page-earlier-turns -->
+
+Earlier turns came before these: read_session_transcript with from "start" reads the conversation from its first turn.
+
 <!-- fragment: page-partial -->
 
 This page is partial: some of it was cut on the host.{{left}}

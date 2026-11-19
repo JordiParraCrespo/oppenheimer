@@ -9,10 +9,6 @@ import type {
   WhatsappChatTarget,
   WhatsappMessage,
 } from '../../whatsapp/domain/whatsapp-message.types';
-import {
-  FindWhatsappAccountsQuery,
-  type WhatsappAccountView,
-} from '../../whatsapp/queries/find-whatsapp-accounts/find-whatsapp-accounts.query';
 import { FindWhatsappChatsQuery } from '../../whatsapp/queries/find-whatsapp-chats/find-whatsapp-chats.query';
 import {
   ReadWhatsappChatQuery,
@@ -35,29 +31,16 @@ import {
   BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
+import {
+  whatsappAccountInput as account,
+  BotWhatsappAccountsResolver,
+  whatsappChatInput as chat,
+} from './bot-whatsapp-accounts.resolver';
 
 /** Chats one list shows at most. */
 export const WHATSAPP_CHATS_LIMIT_MAX = 50;
 /** Messages one read shows at most. */
 export const WHATSAPP_READ_LIMIT_MAX = 100;
-
-const account = z
-  .string()
-  .trim()
-  .min(1)
-  .max(100)
-  .describe(
-    'Which linked number: its account id or its name ("Spare"), as list_whatsapp_accounts gives them. Leave it out when only one is linked.',
-  );
-
-const chat = z
-  .string()
-  .trim()
-  .min(1)
-  .max(200)
-  .describe(
-    "The chat: its chat id from list_whatsapp_chats, or the person's or group's name as that list shows it.",
-  );
 
 /** What a send carries once its card is raised: the number and the chat, resolved. */
 const plannedSend = z.object({
@@ -85,6 +68,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly accounts: BotWhatsappAccountsResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -100,7 +84,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         "Lists the person's own WhatsApp numbers linked to Oppenheimer: each one's name, number and account id, and whether it is connected. Every other WhatsApp tool takes one of these. An empty answer means none is linked.",
       input: z.object({}),
       run: async (_input, context) => {
-        const views = await this.accounts(context.owner);
+        const views = await this.accounts.all(context.owner);
         return formatToolList(
           'WhatsApp numbers',
           views.map((view) => describeWhatsappAccount(view.account, view.hostOnline)),
@@ -121,7 +105,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         limit: z.number().int().min(1).max(WHATSAPP_CHATS_LIMIT_MAX).default(20),
       }),
       run: async (input, context) => {
-        const chosen = await this.one(context.owner, input.account);
+        const chosen = await this.accounts.one(context.owner, input.account);
         const chats = await this.queryBus.execute<FindWhatsappChatsQuery, WhatsappChat[]>(
           new FindWhatsappChatsQuery({
             scope: context.owner,
@@ -156,7 +140,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
           .describe('Only messages sent before this time.'),
       }),
       run: async (input, context) => {
-        const chosen = await this.one(context.owner, input.account);
+        const chosen = await this.accounts.one(context.owner, input.account);
         const read = await this.queryBus.execute<ReadWhatsappChatQuery, WhatsappChatRead>(
           new ReadWhatsappChatQuery({
             scope: context.owner,
@@ -190,7 +174,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         limit: z.number().int().min(1).max(50).default(20),
       }),
       run: async (input, context) => {
-        const chosen = await this.one(context.owner, input.account);
+        const chosen = await this.accounts.one(context.owner, input.account);
         const found = await this.queryBus.execute<SearchWhatsappMessagesQuery, WhatsappMessage[]>(
           new SearchWhatsappMessagesQuery({
             scope: context.owner,
@@ -275,7 +259,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
     input: { account?: string; chat: string },
     owner: AccessScope,
   ): Promise<PlannedSend> {
-    const chosen = await this.one(owner, input.account);
+    const chosen = await this.accounts.one(owner, input.account);
     if (!chosen.account.isConnected || !chosen.hostOnline) {
       throw new BotToolRefusal(
         `${describeWhatsappAccount(chosen.account, chosen.hostOnline)}: it cannot send now.`,
@@ -295,31 +279,6 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       accountLabel: chosen.account.label,
       ...targetOf(read.chat),
     };
-  }
-
-  private accounts(owner: AccessScope): Promise<WhatsappAccountView[]> {
-    return this.queryBus.execute<FindWhatsappAccountsQuery, WhatsappAccountView[]>(
-      new FindWhatsappAccountsQuery({ scope: owner }),
-    );
-  }
-
-  /** One number by its id or name, ignoring case; the only one when none is named. */
-  private async one(owner: AccessScope, wanted: string | undefined): Promise<WhatsappAccountView> {
-    const views = await this.accounts(owner);
-    if (views.length === 0) throw new BotToolRefusal(NO_WHATSAPP);
-    const listed = () =>
-      views.map((view) => describeWhatsappAccount(view.account, view.hostOnline)).join('; ');
-    if (!wanted) {
-      if (views.length === 1 && views[0]) return views[0];
-      throw new BotToolRefusal(`Several numbers are linked; name one with account: ${listed()}.`);
-    }
-    const needle = wanted.trim().toLowerCase();
-    const found =
-      views.find((view) => view.account.id === wanted.trim()) ??
-      views.find((view) => view.account.label.toLowerCase() === needle);
-    if (!found)
-      throw new BotToolRefusal(`No linked number is "${wanted}". The numbers are: ${listed()}.`);
-    return found;
   }
 }
 

@@ -286,7 +286,10 @@ worker runs it and streams what happens back to the chat.
   are folded, up to the first that has not: a queued message is never in
   the summary before its own turn reads it. A provider that refuses the
   call for rate or quota delays the job until the reset it names
-  (`LlmRateLimitError`), rather than retrying on the queue's schedule. The summarizer keeps decisions, facts
+  (`LlmRateLimitError`), rather than retrying on the queue's schedule; one
+  that refuses the account (credit spent, key or sign-in refused) ends the
+  job with no retry and no error report, and the next turn past the
+  threshold stages the fold again (2026-11-17). The summarizer keeps decisions, facts
   about the person and their work, ids and names, open tasks and the
   bot's promises, drops small talk, and treats the conversation as data,
   not instructions. The summary is one row per bot,

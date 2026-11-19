@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -18,12 +19,15 @@ import (
 // OpenCode keeps its conversations in a database of its own, whose tables
 // move between its versions, so the chat view reads them where OpenCode
 // itself promises a shape: the API its TUI serves on a loopback port when it
-// is launched with one (domain.AgentServer). The session's conversation is
-// the newest root conversation OpenCode has for the session's directory,
-// touched since the session first launched, so `/new` in the TUI is followed,
-// and neither an older conversation in the same folder nor one in another
-// worktree of the same repository (OpenCode keeps one store per repository)
-// ever is.
+// is launched with one (domain.AgentServer). The session's conversation is a
+// root conversation OpenCode has for the session's directory, touched since
+// the session first launched, so neither an older conversation in the same
+// folder nor one in another worktree of the same repository (OpenCode keeps
+// one store per repository) ever is. Of those, it is the one the session's
+// own OpenCode process names on its event stream, which another OpenCode in
+// the same folder (a second session started there, or one run by hand) never
+// does, so `/new` in the TUI is followed and the other's conversation never
+// is (openCodeOwners, pickConversation).
 //
 // Each part of a message is sent once it is finished, as a line of the
 // transcript the chat already reads (Claude Code's shape, `claude_chat.go`):
@@ -57,19 +61,12 @@ const interruptedText = "[Request interrupted by user]"
 // until ctx ends. While OpenCode is not answering (starting, restarting) it
 // is asked again every openCodeRetryEvery, and each new connection starts the
 // history over.
-func followOpenCode(ctx context.Context, server domain.AgentServer, entryMax, batchMax int, emit func(app.ChatBatch) error) {
-	api := openCodeAPI{base: "http://127.0.0.1:" + strconv.Itoa(server.Port), server: server, http: &http.Client{}}
-	// OpenCode names a conversation's directory as the process found it, its
-	// links resolved.
-	directory := server.Directory
-	if directory != "" {
-		directory = filepath.Clean(directory)
-		if resolved, err := filepath.EvalSymlinks(directory); err == nil {
-			directory = resolved
-		}
-	}
+func followOpenCode(ctx context.Context, owners *openCodeOwners, server domain.AgentServer, entryMax, batchMax int, emit func(app.ChatBatch) error) {
+	api := newOpenCodeAPI(server)
+	directory := openCodeDirectory(server.Directory)
 	for {
 		f := newOpenCodeFollower(api, server.Since, directory, entryMax, batchMax, emit)
+		f.owners, f.kept = owners, server.Conversation
 		_ = f.run(ctx)
 		select {
 		case <-ctx.Done():
@@ -77,6 +74,230 @@ func followOpenCode(ctx context.Context, server domain.AgentServer, entryMax, ba
 		case <-time.After(openCodeRetryEvery):
 		}
 	}
+}
+
+func newOpenCodeAPI(server domain.AgentServer) openCodeAPI {
+	return openCodeAPI{base: "http://127.0.0.1:" + strconv.Itoa(server.Port), server: server, http: &http.Client{}}
+}
+
+// openCodeDirectory is directory as OpenCode names a conversation's: as the
+// process found it, its links resolved.
+func openCodeDirectory(directory string) string {
+	if directory == "" {
+		return ""
+	}
+	directory = filepath.Clean(directory)
+	if resolved, err := filepath.EvalSymlinks(directory); err == nil {
+		directory = resolved
+	}
+	return directory
+}
+
+// openCodeRoots is the root conversations OpenCode has in directory touched
+// since since. OpenCode is asked for the directory's alone, and each answer
+// is checked against it too, for a version that lists the whole repository's.
+func openCodeRoots(ctx context.Context, api openCodeAPI, since int64, directory string) ([]openCodeSession, error) {
+	query := url.Values{"roots": {"true"}}
+	if directory != "" {
+		query.Set("directory", directory)
+	}
+	var sessions []openCodeSession
+	if err := api.get(ctx, "/session", query, &sessions); err != nil {
+		return nil, err
+	}
+	roots := sessions[:0]
+	for _, s := range sessions {
+		if s.ParentID != "" || s.Time.Updated < since || !openCodeIDPattern.MatchString(s.ID) {
+			continue
+		}
+		if directory != "" && s.Directory != "" && filepath.Clean(s.Directory) != directory {
+			continue
+		}
+		roots = append(roots, s)
+	}
+	return roots, nil
+}
+
+// newestOf is the id of the most recently touched of sessions that keep
+// holds for, or "".
+func newestOf(sessions []openCodeSession, keep func(openCodeSession) bool) string {
+	var newest openCodeSession
+	for _, s := range sessions {
+		if keep(s) && (newest.ID == "" || s.Time.Updated > newest.Time.Updated) {
+			newest = s
+		}
+	}
+	return newest.ID
+}
+
+// openCodeOwners is the conversation each OpenCode process the runner
+// launched was last heard working in, by its API's password, which is its
+// launch's own. Each one's event stream is listened to from the first time
+// the poll loop asks about it (ServedConversation) until it has not asked for
+// openCodeWatchIdle: the session stopped, closed or was launched again under
+// another password, whose process is listened to instead. So a session whose
+// OpenCode sits idle when the chat is opened still shows its conversation,
+// and another session's conversation in the same folder is never taken for
+// its own.
+type openCodeOwners struct {
+	mu      sync.Mutex
+	watches map[string]*openCodeWatch
+	// idle is openCodeWatchIdle, shorter in tests.
+	idle time.Duration
+}
+
+// openCodeWatch is one OpenCode process listened to.
+type openCodeWatch struct {
+	// conversation is the one it was last heard working in.
+	conversation string
+	// heard is what its event stream has named since the last resolve.
+	heard map[string]bool
+	asked time.Time
+}
+
+// openCodeWatchIdle is how long a process is listened to after the poll loop
+// last asked about it: a few of its ticks.
+const openCodeWatchIdle = time.Minute
+
+func newOpenCodeOwners() *openCodeOwners {
+	return &openCodeOwners{watches: map[string]*openCodeWatch{}, idle: openCodeWatchIdle}
+}
+
+// served is the conversation server's process was last heard working in,
+// listening to it from now if nobody was, until nobody asks or ctx ends. A
+// process not heard from yet is taken to be in the one the session kept
+// (server.Conversation). It is the poll loop's ask, and the only one that
+// starts a listener.
+func (o *openCodeOwners) served(ctx context.Context, server domain.AgentServer) string {
+	o.mu.Lock()
+	watch, ok := o.watches[server.Password]
+	if !ok {
+		watch = &openCodeWatch{conversation: server.Conversation, heard: map[string]bool{}}
+		o.watches[server.Password] = watch
+		go o.listen(ctx, server, watch)
+	}
+	watch.asked = time.Now()
+	o.mu.Unlock()
+	return o.current(ctx, server)
+}
+
+// current is the conversation server's process was last heard working in,
+// taking in what its listener heard since the last ask; "" while nobody
+// listens to it. The chat asks it at each check, so `/new` reaches an open
+// chat as soon as the listener hears it.
+func (o *openCodeOwners) current(ctx context.Context, server domain.AgentServer) string {
+	o.mu.Lock()
+	watch, ok := o.watches[server.Password]
+	if !ok {
+		o.mu.Unlock()
+		return ""
+	}
+	heard := watch.heard
+	watch.heard = map[string]bool{}
+	o.mu.Unlock()
+	if len(heard) == 0 {
+		return o.mine(server.Password)
+	}
+	api := newOpenCodeAPI(server)
+	ctx, cancel := context.WithTimeout(ctx, openCodeTimeout)
+	defer cancel()
+	sessions, err := openCodeRoots(ctx, api, server.Since, openCodeDirectory(server.Directory))
+	if err != nil {
+		// Asked again on the next tick.
+		o.mu.Lock()
+		for id := range heard {
+			watch.heard[id] = true
+		}
+		o.mu.Unlock()
+		return o.mine(server.Password)
+	}
+	if named := newestOf(sessions, func(s openCodeSession) bool { return heard[s.ID] }); named != "" {
+		o.claim(server.Password, named)
+	}
+	return o.mine(server.Password)
+}
+
+// listen reads server's event stream, reconnecting while OpenCode restarts,
+// until nobody has asked about it for o.idle or base ends.
+func (o *openCodeOwners) listen(base context.Context, server domain.AgentServer, watch *openCodeWatch) {
+	api := newOpenCodeAPI(server)
+	for {
+		ctx, cancel := context.WithCancel(base)
+		go func() {
+			_ = api.events(ctx, func(conversation string) {
+				if conversation == "" {
+					return
+				}
+				o.mu.Lock()
+				watch.heard[conversation] = true
+				o.mu.Unlock()
+			})
+			cancel()
+		}()
+		for alive := true; alive; {
+			select {
+			case <-ctx.Done():
+				alive = false
+			case <-time.After(o.idle / 4):
+			}
+			o.mu.Lock()
+			stale := time.Since(watch.asked) > o.idle
+			if stale {
+				delete(o.watches, server.Password)
+			}
+			o.mu.Unlock()
+			if stale {
+				cancel()
+				return
+			}
+		}
+		cancel()
+		select {
+		case <-base.Done():
+			o.mu.Lock()
+			delete(o.watches, server.Password)
+			o.mu.Unlock()
+			return
+		case <-time.After(openCodeRetryEvery):
+		}
+	}
+}
+
+// claim says server is working in conversation: no other server is anymore.
+func (o *openCodeOwners) claim(server, conversation string) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	for other, watch := range o.watches {
+		if other != server && watch.conversation == conversation {
+			watch.conversation = ""
+		}
+	}
+	if watch, ok := o.watches[server]; ok {
+		watch.conversation = conversation
+	}
+}
+
+// mine is the conversation server was last heard working in, or "".
+func (o *openCodeOwners) mine(server string) string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if watch, ok := o.watches[server]; ok {
+		return watch.conversation
+	}
+	return ""
+}
+
+// others reports whether a server other than server is working in
+// conversation.
+func (o *openCodeOwners) others(server, conversation string) bool {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	for other, watch := range o.watches {
+		if other != server && watch.conversation == conversation {
+			return true
+		}
+	}
+	return false
 }
 
 // The parts of OpenCode's API the chat reads, loosely: each part type uses a
@@ -163,6 +384,11 @@ type openCodeFollower struct {
 	directory string
 	entryMax  int
 	out       *follower
+	// owners is the runner's record of which OpenCode works in which
+	// conversation; nil keeps none (a subagent's read). kept is the one the
+	// session kept (domain.AgentServer.Conversation).
+	owners *openCodeOwners
+	kept   string
 
 	session string
 	// sent is how far each message and part has been sent.
@@ -218,7 +444,7 @@ func (f *openCodeFollower) run(ctx context.Context) error {
 	defer cancel()
 	changed := make(chan struct{}, 1)
 	go func() {
-		_ = f.api.events(ctx, func() {
+		_ = f.api.events(ctx, func(string) {
 			select {
 			case changed <- struct{}{}:
 			default:
@@ -363,32 +589,49 @@ func (f *openCodeFollower) noteChild(part openCodePart, input any) {
 	}
 }
 
-// conversation is the session's conversation: the newest root one in its
-// directory touched since the session launched, or "" while there is none.
-// OpenCode is asked for the directory's alone, and each answer is checked
-// against it too, for a version that lists the whole repository's.
+// conversation is the session's conversation, or "" while there is none:
+// pickConversation over the root conversations in its directory touched
+// since the session launched, given the one the runner last heard its
+// OpenCode work in (openCodeOwners, the one record of it).
 func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
-	query := url.Values{"roots": {"true"}}
-	if f.directory != "" {
-		query.Set("directory", f.directory)
-	}
-	var sessions []openCodeSession
-	if err := f.api.get(ctx, "/session", query, &sessions); err != nil {
+	sessions, err := openCodeRoots(ctx, f.api, f.since, f.directory)
+	if err != nil {
 		return "", err
 	}
-	var newest openCodeSession
-	for _, s := range sessions {
-		if s.ParentID != "" || s.Time.Updated < f.since || !openCodeIDPattern.MatchString(s.ID) {
-			continue
-		}
-		if f.directory != "" && s.Directory != "" && filepath.Clean(s.Directory) != f.directory {
-			continue
-		}
-		if newest.ID == "" || s.Time.Updated > newest.Time.Updated {
-			newest = s
-		}
+	if f.owners == nil {
+		return pickConversation(sessions, "", f.kept, f.session, func(string) bool { return false }), nil
 	}
-	return newest.ID, nil
+	server := f.api.server
+	mine := f.owners.current(ctx, server)
+	return pickConversation(sessions, mine, f.kept, f.session, func(id string) bool {
+		return f.owners.others(server.Password, id)
+	}), nil
+}
+
+// pickConversation is the session's conversation among roots, in order:
+//
+//  1. mine, the one its OpenCode was last heard working in: the TUI is in it,
+//     or `/new` made it;
+//  2. kept, the one the session kept from that before the runner restarted;
+//  3. shown, the one the chat already shows, while no other OpenCode works
+//     in it (taken by others);
+//  4. the newest one no other OpenCode works in.
+//
+// So another OpenCode's conversation in the same folder, newer as it may
+// be, never replaces the session's own once that is known.
+func pickConversation(roots []openCodeSession, mine, kept, shown string, taken func(string) bool) string {
+	listed := func(id string) bool {
+		return id != "" && newestOf(roots, func(s openCodeSession) bool { return s.ID == id }) != ""
+	}
+	switch {
+	case listed(mine):
+		return mine
+	case listed(kept):
+		return kept
+	case listed(shown) && !taken(shown):
+		return shown
+	}
+	return newestOf(roots, func(s openCodeSession) bool { return !taken(s.ID) })
 }
 
 // messages is the conversation's messages, oldest first: its last few once

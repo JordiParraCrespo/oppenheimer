@@ -16,8 +16,8 @@ const todo = getRouteApi('/_authenticated/plan/todo');
 
 /**
  * Plan's To do (the 2026-11-08 `Tasks` frame): the day's header, the Project
- * filter with Add tasks and Include overdue at the end of its row,
- * the day's tasks, each a card, and the row that adds one to the day. A row
+ * filter with Add tasks and Include overdue at the end of its row, the row
+ * that adds a task to the day, then the day's tasks, each a card. A row
  * opens its task here (`?task=<task>`), so saving it leaves you on the day,
  * and its play button opens Start session here (`?start=<task>`), as the
  * board's task dialog does.
@@ -36,6 +36,7 @@ export function TodoScreen() {
         <TodoOverdueToggle />
       </div>
       <div className="flex flex-col gap-2">
+        <TodoAdd />
         <QueryState>
           <QueryState.Pending>
             <TodoListSkeleton />
@@ -45,7 +46,6 @@ export function TodoScreen() {
             <TodoList />
           </QueryState.Data>
         </QueryState>
-        <TodoAdd />
       </div>
       <TaskDialog
         open={task}

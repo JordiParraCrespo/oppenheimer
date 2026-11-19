@@ -361,8 +361,7 @@ export class SessionEntity {
 
   /**
    * The cloud session's page at its vendor, once it has one: claude.ai/code
-   * for Claude Code's; for Codex, an older session's task page, or Codex on
-   * chatgpt.com for a cloud thread, whose web address is not known.
+   * for Claude Code's; for Codex, its legacy task page or current cloud thread.
    */
   get cloudUrl(): string | null {
     if (!this.cloudSessionId) return null;
@@ -370,7 +369,7 @@ export class SessionEntity {
     if (this.agent !== 'codex') return `https://claude.ai/code/${id}`;
     return this.cloudSessionId.startsWith('task_')
       ? `https://chatgpt.com/codex/tasks/${id}`
-      : 'https://chatgpt.com/codex';
+      : `https://chatgpt.com/local/${id}`;
   }
 
   /**

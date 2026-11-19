@@ -101,6 +101,7 @@ import { TelegramAccountOrmEntity } from '../telegram/database/telegram-account.
 import { TelegramMessageOrmEntity } from '../telegram/database/telegram-message.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappChatGrantOrmEntity } from '../whatsapp/database/whatsapp-chat-grant.orm-entity';
 import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 const dataSource = new DataSource({
@@ -163,6 +164,7 @@ const dataSource = new DataSource({
     MailSendOrmEntity,
     WhatsappAccountOrmEntity,
     WhatsappMessageOrmEntity,
+    WhatsappChatGrantOrmEntity,
     TelegramAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,

@@ -55,6 +55,24 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   four chips behave as one thing. It is built on Popover, not Base UI
   Select, for that reason; `RepositorySelect` reuses its parts for the
   multi-repo pane. A foot action with `href` is a new-tab link.
+- **A picker with a search is picked from the keyboard, one way.** Its
+  search, list and rows sit in a `ChipSelectCombobox` (Base UI Combobox,
+  inline in the popup): ↑ ↓ move the highlight while the focus stays in the
+  search, Enter clicks the highlighted row, and the field names it to a
+  screen reader. A pane never keeps a highlight index or a key handler of
+  its own; a row's `onClick` is the one place a choice is made, by pointer
+  or key. A pane that opens on a choice to make (`ChipSelect`, a host's
+  places) lights its first row with `autoHighlight="always"`, and Enter with
+  nothing lit takes that first row (rows that land after the popup opened).
+  A pane that changes under the search (another tab, a host's places, a
+  folder opened) passes `resetOn`, so its highlight starts again; never a
+  value that changes as the reader types or as a read lands, since the
+  reset remounts the pane, which moves the caret and drops what an IME was
+  composing. Enter with nothing lit in any other pane is its `onEnterUnlit`
+  (the folder field uses the folder typed); a pane never reads the field's
+  ARIA state to decide. Rows are divs, so
+  the focus stays in the search: a multi-pick list stays open for the next
+  pick, and Escape closes it.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
   Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's
@@ -197,7 +215,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   custom properties. The theme is the app's: `DiffView` takes
   `colorScheme` from the caller and never reads the OS or the document.
 - **A file wears its type's mark.** `FileIcon` and the tree draw the same
-  published icon set (@pierre/trees, its `complete` set). Its hue comes
+  published icon set (@pierre/trees, its `complete` set), corrected and
+  widened in `internal/file-icon-set.ts`: markup (HTML, XML, templates) is
+  `</>` on the set's tile, where the set draws HTML as a CSS-like `#`; a
+  file that belongs to a mark the set has takes it (`go.mod` Go,
+  `Cargo.toml` Rust, a certificate the lock); a language the set has no
+  mark for wears its vendor's own, copied from Simple Icons
+  (`internal/file-icon-marks.json`: Java, Kotlin, PHP, Haskell…), a PDF a
+  red page, and one with no legible published mark the neutral code page,
+  never a redrawn logo. Its hue comes
   from one map, the `--file-icon-*` tokens in `globals.css`, which the
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.
