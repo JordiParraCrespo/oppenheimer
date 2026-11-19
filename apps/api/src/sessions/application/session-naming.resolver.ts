@@ -33,7 +33,7 @@ export interface SessionNameProposal {
  * reads again.
  */
 const CONVERSATION_PAGE_ENTRIES = TRANSCRIPT_PAGE_MAX_ENTRIES;
-const CONVERSATION_MAX_PAGES = 10;
+const CONVERSATION_MAX_PAGES = 5;
 
 /**
  * The model's deadline for a conversation's title. Nobody waits on it (it runs
@@ -205,6 +205,9 @@ export class SessionNamingResolver {
       const outcome = await this.transcripts.read(hostId, sessionId, request);
       if (outcome.kind !== 'page') break;
       const { page } = outcome;
+      // The conversation changed under the read (cleared, or another one
+      // opened): what was counted belongs to the old one, so nothing is.
+      if (read > 0 && page.restarted) return [];
       const entries = SessionTranscriptMapper.toTypedEntries(page.entries).map(
         (entry) => redactEntry(entry).entry,
       );

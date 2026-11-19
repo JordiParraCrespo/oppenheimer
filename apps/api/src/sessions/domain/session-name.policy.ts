@@ -80,29 +80,73 @@ const CONVERSATION_MAX_PROMPTS = 6;
 /** And each is cut here: a prompt's opening carries what it is about. */
 const CONVERSATION_PROMPT_MAX_CHARS = 600;
 
-/**
- * What Claude Code writes into the person's turn that they never typed: an
- * interrupted answer's marker, the caveat before a local command's output.
- * Anything that opens with a tag (a command, a reminder, a notification) is
- * the CLI's too. The runner reads the same lines the same way.
- */
-const NOT_TYPED = [/^Caveat:/, /^\[Request interrupted/, /^</];
+/** Lines of the CLI's own that open the person's turn: nothing the person typed. */
+const CLI_LINES = [
+  'Caveat:',
+  '[Request interrupted',
+  '<local-command-',
+  '<task-notification>',
+  '<system-reminder>',
+  '<bash-',
+];
+const COMMAND_NAME = /<command-name>([^<]*)<\/command-name>/;
+const COMMAND_ARGS = /<command-args>([\s\S]*?)<\/command-args>/;
+/** System reminders the CLI puts before the person's words, in a block of their own or the same one. */
+const LEADING_REMINDERS = /^(?:\s*<system-reminder>[\s\S]*?<\/system-reminder>)+/;
+const REMINDER_OPEN = '<system-reminder>';
+const REMINDER_CLOSE = '</system-reminder>';
+/** The tags Claude Code wraps around a paste; the words inside are the person's. */
+const PASTED_CONTENT = /<\/?pasted_content(?:\s[^>]*)?>/g;
 
 /**
- * The person's prompts in a conversation, oldest first: the text of each
- * `user` entry that is something they wrote. A tool's result reaches the
- * transcript as a `user` entry with no text part, so it is not one; nor is
- * anything {@link NOT_TYPED} matches.
+ * A `user` entry's text as the person typed it, or `''` when it is the CLI's
+ * own: the runner's `typedText`, which names a session from its first prompt,
+ * so both count the same lines as prompts. A slash command reads as
+ * `/name arguments` (and is nothing without arguments); reminders around the
+ * words go; a paste loses its tags, after the line is told apart, so a paste
+ * that starts like one of the CLI's lines stays the person's.
+ */
+export function typedText(text: string): string {
+  const words = withoutTrailingReminders(text.replace(LEADING_REMINDERS, '')).trim();
+  return classified(words).replace(PASTED_CONTENT, '').trim();
+}
+
+function classified(text: string): string {
+  if (!text || CLI_LINES.some((prefix) => text.startsWith(prefix))) return '';
+  if (!text.startsWith('<command-')) return text;
+  const args = COMMAND_ARGS.exec(text)?.[1]?.trim();
+  if (!args) return '';
+  const name = COMMAND_NAME.exec(text)?.[1]?.trim();
+  return name ? `${name} ${args}` : args;
+}
+
+/** Cuts the reminders that end the text, one at a time, so one quoted inside a paste stays. */
+function withoutTrailingReminders(text: string): string {
+  let rest = text;
+  for (;;) {
+    const trimmed = rest.trimEnd();
+    if (!trimmed.endsWith(REMINDER_CLOSE)) return rest;
+    const open = trimmed.lastIndexOf(REMINDER_OPEN);
+    if (open < 0) return rest;
+    rest = trimmed.slice(0, open);
+  }
+}
+
+/**
+ * The person's prompts in a conversation, oldest first: the {@link typedText}
+ * of each `user` entry. A tool's result reaches the transcript as a `user`
+ * entry with no text part, so it is not one.
  */
 export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] {
   return entries.flatMap((entry) => {
     if (entry.role !== 'user') return [];
-    const text = entry.parts
-      .filter((part) => part.kind === 'text' && part.text)
-      .map((part) => part.text ?? '')
-      .join('\n')
-      .trim();
-    return text && !NOT_TYPED.some((pattern) => pattern.test(text)) ? [text] : [];
+    const text = typedText(
+      entry.parts
+        .filter((part) => part.kind === 'text' && part.text)
+        .map((part) => part.text ?? '')
+        .join('\n'),
+    );
+    return text ? [text] : [];
   });
 }
 

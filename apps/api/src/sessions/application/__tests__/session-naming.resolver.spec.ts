@@ -287,6 +287,61 @@ describe('SessionNamingResolver.nameFromBatch', () => {
     expect(sessions.appendEventsIf).toHaveBeenCalled();
   });
 
+  it('counts a slash command with arguments as a prompt, as the runner does', async () => {
+    const sessions = repository();
+    const commands = transcript(
+      line(
+        'user',
+        '<command-name>/review</command-name>\n<command-args>the auth module</command-args>',
+      ),
+      line('assistant', 'Reviewed.'),
+      line('user', 'now fix what you found'),
+    );
+    const client = llm(answer('Auth module review fixes'));
+    await new SessionNamingResolver(sessions, commands, client, config()).nameFromBatch(
+      session('prompt'),
+      answered,
+    );
+    expect(vi.mocked(client.complete).mock.calls[0][0].messages[0].content).toContain(
+      '1. /review the auth module',
+    );
+    expect(sessions.appendEventsIf).toHaveBeenCalled();
+  });
+
+  it('counts nothing when the conversation started over between two reads', async () => {
+    const reader: SessionTranscriptPort = {
+      read: vi
+        .fn()
+        .mockResolvedValueOnce({
+          kind: 'page',
+          page: {
+            entries: [line('user', 'fix the bug')],
+            from: 0,
+            next: 1,
+            atEnd: false,
+            conversation: 'c1',
+          },
+        })
+        .mockResolvedValueOnce({
+          kind: 'page',
+          page: {
+            entries: [line('user', 'fix the bug')],
+            from: 0,
+            next: 1,
+            atEnd: true,
+            conversation: 'c2',
+            restarted: true,
+          },
+        }),
+    };
+    const sessions = repository();
+    await new SessionNamingResolver(sessions, reader, llm(answer('never')), config()).nameFromBatch(
+      session('model'),
+      answered,
+    );
+    expect(sessions.appendEventsIf).not.toHaveBeenCalled();
+  });
+
   it('waits for a second prompt before renaming', async () => {
     const sessions = repository();
     const client = llm(answer('never'));
