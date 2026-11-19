@@ -57,7 +57,7 @@ export class BotMessageRepository
     // nowhere to go, and nothing is stored.
     const stored: { id: string }[] = await this.dataSource.query(
       `INSERT INTO bot_message (${MESSAGE_COLUMNS}, "createdAt")
-       SELECT ${MESSAGE_VALUES}, $12
+       SELECT ${MESSAGE_VALUES}, $13
         WHERE EXISTS (SELECT 1 FROM bot_conversation WHERE "organizationId" = $2 AND id = $11)
        ON CONFLICT (id) DO NOTHING
        RETURNING id`,
@@ -387,8 +387,9 @@ function isTurnGone(error: unknown): boolean {
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */
-const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId"`;
-const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11';
+const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId", "pendingMedia"`;
+const MESSAGE_VALUES =
+  '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11, $12::jsonb';
 
 function messageParameters(record: BotMessageOrmEntity): unknown[] {
   return [
@@ -403,6 +404,7 @@ function messageParameters(record: BotMessageOrmEntity): unknown[] {
     record.event ? JSON.stringify(record.event) : null,
     JSON.stringify(record.attachments),
     record.conversationId,
+    record.pendingMedia ? JSON.stringify(record.pendingMedia) : null,
   ];
 }
 
