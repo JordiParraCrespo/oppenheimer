@@ -66,8 +66,8 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * with the words, to be sent again.
  *
  * **The `/` menu**, for an agent whose commands it knows (`commands`): while
- * the draft is a command being typed, Claude Code's own commands and the
- * project's skills and commands that match open over the box. Up and Down
+ * the draft is a command being typed, the project's skills and commands
+ * and Claude Code's own commands that match open over the box. Up and Down
  * move, Tab or Enter writes `/<name> ` for its input to follow, Escape
  * closes it for that draft.
  */
@@ -214,8 +214,8 @@ export function SessionChatComposer({
       <div className="relative">
         {slash.groups ? (
           <SessionSlashMenu
-            builtIns={slash.groups.builtIns}
             project={slash.groups.project}
+            builtIns={slash.groups.builtIns}
             highlighted={slash.highlighted}
             onPick={slash.pick}
           />

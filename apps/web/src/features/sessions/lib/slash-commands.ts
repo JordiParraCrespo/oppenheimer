@@ -34,25 +34,16 @@ export function sessionSlashQuery(draft: string): string | null {
 }
 
 /**
- * The menu's rows for what is typed: Claude Code's built-ins that match, then
- * the project's skills and commands, within the menu's cap. A project's
- * command under a built-in's name is left out, since `/<name>` runs the
- * built-in.
+ * The menu's rows for what is typed: the project's skills and commands that
+ * match first, since they are what the person cannot type from memory, then
+ * Claude Code's built-ins, within the menu's cap. A project's command under a
+ * built-in's name is left out, since `/<name>` runs the built-in.
  */
 export function sessionSlashRows(
   query: string,
   project: readonly ChatCommand[],
   describe: (key: BuiltInDescriptionKey) => string,
-): { builtIns: SlashCommand[]; project: SlashCommand[] } {
-  const builtIns = matchingCommands(
-    CLAUDE_BUILT_IN_COMMANDS.map((name) => ({
-      id: `built-in:${name}`,
-      name,
-      command: `/${name}`,
-      description: describe(BUILT_IN_DESCRIPTIONS[name]),
-    })),
-    query,
-  );
+): { project: SlashCommand[]; builtIns: SlashCommand[] } {
   const reserved: readonly string[] = CLAUDE_BUILT_IN_COMMANDS;
   const own = matchingCommands(
     project
@@ -64,7 +55,16 @@ export function sessionSlashRows(
         description: command.description ?? '',
       })),
     query,
-    SLASH_MENU_MAX - builtIns.length,
   );
-  return { builtIns, project: own };
+  const builtIns = matchingCommands(
+    CLAUDE_BUILT_IN_COMMANDS.map((name) => ({
+      id: `built-in:${name}`,
+      name,
+      command: `/${name}`,
+      description: describe(BUILT_IN_DESCRIPTIONS[name]),
+    })),
+    query,
+    SLASH_MENU_MAX - own.length,
+  );
+  return { project: own, builtIns };
 }

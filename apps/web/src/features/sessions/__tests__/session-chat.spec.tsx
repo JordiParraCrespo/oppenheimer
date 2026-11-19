@@ -1211,7 +1211,7 @@ describe('the / menu', () => {
 
   // What breaks this: the project's skills missing from the menu, or Enter
   // sending a half-typed command to the agent instead of completing it.
-  it("offers the project's skills beside Claude Code's commands, and Enter completes the one highlighted", () => {
+  it("offers the project's skills ahead of Claude Code's commands, and Enter completes the one highlighted", () => {
     const { field, typed } = renderOnHost([
       { name: 'recap', kind: 'skill', description: 'Close the task' },
       { name: 'review', kind: 'command', description: 'Shadowed by the built-in' },
@@ -1224,7 +1224,12 @@ describe('the / menu', () => {
     expect(menu.textContent).toContain('Close the task');
     expect(menu.textContent).not.toContain('Shadowed by the built-in');
 
+    // The project's come first: they are what the person cannot type from memory.
+    expect(menu.textContent?.indexOf('/recap')).toBeLessThan(
+      menu.textContent?.indexOf('/review') ?? 0,
+    );
     fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'ArrowUp' });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(field.value).toBe('/recap ');
     expect(typed).toEqual([]);
