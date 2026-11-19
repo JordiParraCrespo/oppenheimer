@@ -117,7 +117,6 @@ function setup(
   const factory = new BotWatchToolsFactory(
     resolver,
     repository,
-    new BotSubscriptionMapper(),
     new BotSessionWaitResolver(queries as unknown as QueryBus),
   );
   const approvals = { request: vi.fn<BotApprovalRequesterPort['request']>() };

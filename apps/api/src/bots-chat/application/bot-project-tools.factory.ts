@@ -21,6 +21,7 @@ import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-ses
 import { describeProjectInFull } from '../bot-plan-tool.mapper';
 import { createProjectBody, type ProjectBody, updateProjectBody } from '../bot-project-tool.mapper';
 import { namesakeRefusal, namesakesOf } from '../domain/bot-project.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -33,22 +34,28 @@ import {
 const OPEN_SESSIONS_SHOWN = 20;
 
 const repositoryInput = z.object({
-  installation_id: z.uuid().describe('The installation id list_repositories or get_project shows.'),
-  github_repo_id: z.number().int().positive().describe("GitHub's repository id, from the same."),
+  installation_id: z.uuid().describe(promptText('tools/projects.repository-installation-id')),
+  github_repo_id: z
+    .number()
+    .int()
+    .positive()
+    .describe(promptText('tools/projects.repository-github-repo-id')),
   base_branch: z
     .string()
     .trim()
     .min(FIELD_BOUNDS.gitRef.min)
     .max(FIELD_BOUNDS.gitRef.max)
-    .describe('The branch its sessions start from, usually main.'),
-  is_default: z.boolean().describe('Offered first for a new session; exactly one should be.'),
+    .describe(promptText('tools/projects.repository-base-branch')),
+  is_default: z.boolean().describe(promptText('tools/projects.repository-is-default')),
 });
 
 const repositoriesInput = z
   .array(repositoryInput)
   .max(MAX_PROJECT_REPOSITORIES)
   .describe(
-    `The project's repositories as a whole set, at most ${MAX_PROJECT_REPOSITORIES}: one marked is_default when there are any, none twice.`,
+    promptText('tools/projects.repositories', {
+      maxProjectRepositories: String(MAX_PROJECT_REPOSITORIES),
+    }),
   );
 
 const nameInput = z
@@ -60,9 +67,7 @@ const nameInput = z
 const allowSameNameInput = z
   .boolean()
   .default(false)
-  .describe(
-    'Only when the person said they want a second project with a name another already has.',
-  );
+  .describe(promptText('tools/projects.allow-same-name'));
 
 /**
  * Projects, the writes: make one, change its name, repositories and defaults,
@@ -101,9 +106,9 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_project',
       scope: 'projects:write',
-      description: `Makes a project: a name, optionally the repositories its sessions usually work on (ids from list_repositories) and the host and agent a new session is offered. Answers the new project's id. It refuses a name a project already has, archived ones included, so ask the person which they mean before passing allow_same_name. When the person names a project loosely, call list_projects first; never guess between two.`,
+      description: promptText('tools/projects.create-project'),
       input: z.object({
-        name: nameInput.describe('What the person calls it, as they wrote it.'),
+        name: nameInput.describe(promptText('tools/projects.create-project-name')),
         repositories: repositoriesInput.default([]),
         default_host_id: z.uuid().optional().describe('A host from list_hosts.'),
         default_agent: z.enum(CODING_AGENT_IDS).optional(),
@@ -124,11 +129,10 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_project',
       scope: 'projects:write',
-      description:
-        "Changes a project's name, repositories or default host and agent; only the fields you pass change, and null clears a default. repositories replaces the whole set: read get_project first and pass back the ones to keep with their ids. The slug never changes, the Unassigned project keeps its name, an archived project cannot be changed, and sessions already running are not touched. A rename onto another project's name is refused unless allow_same_name.",
+      description: promptText('tools/projects.update-project'),
       input: z
         .object({
-          project_id: z.uuid().describe('A project id from list_projects.'),
+          project_id: z.uuid().describe(promptText('tools/projects.update-project-project-id')),
           name: nameInput.optional(),
           repositories: repositoriesInput.optional(),
           default_host_id: z.uuid().nullable().optional().describe('A host, or null to clear.'),
@@ -141,7 +145,7 @@ export class BotProjectToolsFactory implements BotToolArea {
             value.repositories !== undefined ||
             value.default_host_id !== undefined ||
             value.default_agent !== undefined,
-          { message: 'nothing to change: pass at least one field' },
+          { message: promptText('tools/projects.update-project-message') },
         ),
       run: async (input, context) => {
         if (input.name !== undefined) {
@@ -166,18 +170,21 @@ export class BotProjectToolsFactory implements BotToolArea {
       scope: 'projects:write',
       asks: 'always',
       perCallOnly: true,
-      description:
-        'Archives a project: nothing new can be started or listed in it, its automations are paused, and its tasks and closed sessions stay where they are. restore_project brings it back with its name and slug, but its automations stay paused until the person resumes them. It is refused while the project has sessions that are not closed; move them (move_session) or close them first. Projects are never deleted: archiving is what the console calls deleting. Always asks the person first.',
-      input: z.object({ project_id: z.uuid().describe('A project id from list_projects.') }),
+      description: promptText('tools/projects.archive-project'),
+      input: z.object({
+        project_id: z.uuid().describe(promptText('tools/projects.update-project-project-id')),
+      }),
       normalize: async (input, context) => {
         const project = await this.project(context, input.project_id);
         if (project.isUnassigned) {
-          throw new BotToolRefusal(
-            'The Unassigned project is where work with no project goes; it cannot be archived.',
-          );
+          throw new BotToolRefusal(promptText('tools/projects.archive-unassigned'));
         }
         if (project.isArchived) {
-          throw new BotToolRefusal(`Project "${project.name}" is already archived.`);
+          throw new BotToolRefusal(
+            promptText('tools/projects.archive-already-archived', {
+              name: project.name,
+            }),
+          );
         }
         const open = await this.openSessions(context, project.id);
         if (open.length > 0) {
@@ -185,7 +192,10 @@ export class BotProjectToolsFactory implements BotToolArea {
             (session) => `${session.id} "${session.name}" (${session.state})`,
           );
           throw new BotToolRefusal(
-            `Project "${project.name}" still has sessions that are not closed: ${listed.join(', ')}. Nothing was archived. Ask the person whether to move them to another project (move_session) or close them first.`,
+            promptText('tools/projects.archive-open-sessions', {
+              name: project.name,
+              listed: listed.join(', '),
+            }),
           );
         }
         return input;
@@ -198,7 +208,10 @@ export class BotProjectToolsFactory implements BotToolArea {
         const project = await this.commandBus.execute<ArchiveProjectCommand, ProjectEntity>(
           new ArchiveProjectCommand({ scope: context.owner, projectId: input.project_id }),
         );
-        return `Archived project ${project.id} "${project.name}". Its tasks and past sessions stay listed under it; list_projects shows it only with include_archived.`;
+        return promptText('tools/projects.archive-project-archived-project-tasks', {
+          id: project.id,
+          name: project.name,
+        });
       },
     });
   }
@@ -207,12 +220,9 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'restore_project',
       scope: 'projects:write',
-      description:
-        'Restores an archived project (list_projects with include_archived shows them): work can be started and listed in it again, with its name, slug, repositories, tasks and past sessions as they were. The automations its archive paused stay paused; say so, and point the person at them (list_automations with its project_id). Restoring an active project changes nothing. When the person names an archived project loosely and more than one fits, ask which.',
+      description: promptText('tools/projects.restore-project'),
       input: z.object({
-        project_id: z
-          .uuid()
-          .describe('An archived project id from list_projects with include_archived.'),
+        project_id: z.uuid().describe(promptText('tools/projects.restore-project-project-id')),
       }),
       run: async (input, context) => {
         const { project, restored } = await this.commandBus.execute<
@@ -220,9 +230,16 @@ export class BotProjectToolsFactory implements BotToolArea {
           RestoreProjectResult
         >(new RestoreProjectCommand({ scope: context.owner, projectId: input.project_id }));
         if (!restored) {
-          return `Project ${project.id} "${project.name}" is not archived. Nothing changed.`;
+          return promptText('tools/projects.restore-not-archived', {
+            id: project.id,
+            name: project.name,
+          });
         }
-        return `Restored project ${project.id} "${project.name}"; work can be started in it again. The automations its archive paused are still paused.\n${describeProjectInFull(project, context)}`;
+        return promptText('tools/projects.restore-project-restored-project-work', {
+          id: project.id,
+          name: project.name,
+          describeProjectInFull: describeProjectInFull(project, context),
+        });
       },
     });
   }
@@ -231,14 +248,13 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'move_session',
       scope: 'sessions:write',
-      description:
-        "Moves a session to another project, or to Unassigned when project_id is null. Only the project it is filed under changes: the session keeps its id, history, state, worktree and branch, and a running agent is not interrupted. The move is recorded in the session's log. A closed session cannot be moved, nor one moved into an archived project. When the person names the session or the project loosely, find it with list_sessions or list_projects, and ask if more than one fits.",
+      description: promptText('tools/projects.move-session'),
       input: z.object({
-        session_id: z.uuid().describe('The session to move (from list_sessions).'),
+        session_id: z.uuid().describe(promptText('tools/projects.move-session-session-id')),
         project_id: z
           .uuid()
           .nullable()
-          .describe('The project to list it under (from list_projects); null for Unassigned.'),
+          .describe(promptText('tools/projects.move-session-project-id')),
       }),
       run: async (input, context) => {
         const [session, projects] = await Promise.all([
@@ -254,19 +270,25 @@ export class BotProjectToolsFactory implements BotToolArea {
         if (!target) {
           throw new BotToolRefusal(
             input.project_id === null
-              ? 'This workspace has no Unassigned project to move the session to.'
-              : `No project ${input.project_id} in this workspace. list_projects names the ones there are.`,
+              ? promptText('tools/projects.move-session-workspace-has-unassigned')
+              : promptText('tools/projects.move-session-project-workspace-list', {
+                  projectId: input.project_id,
+                }),
           );
         }
         if (target.isArchived) {
           throw new BotToolRefusal(
-            `Project "${target.name}" is archived, so nothing new can be listed in it. Nothing was moved; ask the person for another project.`,
+            promptText('tools/projects.move-session-project-archived-so', { name: target.name }),
           );
         }
         const from = projects.find((project) => project.id === session.projectId);
         const fromLabel = from ? `"${from.name}"` : `project ${session.projectId}`;
         if (session.projectId === target.id) {
-          return `Session ${session.id} "${session.name}" is already in "${target.name}". Nothing changed.`;
+          return promptText('tools/projects.move-session-session-already-nothing', {
+            id: session.id,
+            name: session.name,
+            name2: target.name,
+          });
         }
         await this.commandBus.execute<MoveSessionCommand, SessionCommandResult>(
           new MoveSessionCommand({
@@ -275,7 +297,14 @@ export class BotProjectToolsFactory implements BotToolArea {
             projectId: target.id,
           }),
         );
-        return `Moved session ${session.id} "${session.name}" from ${fromLabel} to "${target.name}" (${target.id}). It keeps its id, history, state (${session.state}) and worktree; nothing on the host changed.`;
+        return promptText('tools/projects.move-session-moved-session-from', {
+          id: session.id,
+          name: session.name,
+          fromLabel,
+          name2: target.name,
+          id2: target.id,
+          state: session.state,
+        });
       },
     });
   }

@@ -12,6 +12,7 @@ import {
 import { z } from 'zod/v4';
 import { BOT_QUESTION_REPOSITORY, BOT_STREAM } from '../bots-chat.di-tokens';
 import type { BotQuestionRepositoryPort } from '../database/bot-question.repository.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotQuestionEntity } from '../domain/bot-question.entity';
 import { askedQuestions, questionsSummary, waitingForAnswer } from '../domain/bot-question.policy';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
@@ -26,16 +27,16 @@ const askUserInput = z.object({
           .string()
           .max(BOT_QUESTION_HEADER_MAX)
           .optional()
-          .describe('A tag of a word or two over the question ("Scope", "Deadline").'),
+          .describe(promptText('tools/questions.ask-user-questions-header')),
         question: z
           .string()
           .min(1)
           .max(BOT_QUESTION_TEXT_MAX)
-          .describe('The question, ending in "?".'),
+          .describe(promptText('tools/questions.ask-user-questions-question')),
         multiSelect: z
           .boolean()
           .optional()
-          .describe('True when several options may be picked; one otherwise.'),
+          .describe(promptText('tools/questions.ask-user-questions-multi-select')),
         options: z
           .array(
             z.object({
@@ -44,12 +45,12 @@ const askUserInput = z.object({
                 .string()
                 .max(BOT_QUESTION_OPTION_DESCRIPTION_MAX)
                 .optional()
-                .describe('What picking it means, when the label does not say.'),
+                .describe(promptText('tools/questions.option-description')),
             }),
           )
           .min(BOT_QUESTION_OPTIONS_MIN)
           .max(BOT_QUESTION_OPTIONS_MAX)
-          .describe('The likely answers. The person may always answer in their own words instead.'),
+          .describe(promptText('tools/questions.options')),
       }),
     )
     .min(1)
@@ -79,7 +80,11 @@ export class BotQuestionToolsFactory implements BotToolArea {
         name: 'ask_user',
         scope: 'bots:write',
         attendedOnly: true,
-        description: `Asks the person up to ${BOT_QUESTIONS_MAX} questions on a card in the chat, each with ${BOT_QUESTION_OPTIONS_MIN} to ${BOT_QUESTION_OPTIONS_MAX} likely answers, and ends your turn; their answers open your next one. Use it when you cannot go on without a choice only they can make (which of two repositories, a deadline, what to leave out), rather than guessing. Do not use it for a yes to an action: the actions that need one ask on their own. One card waits at a time.`,
+        description: promptText('tools/questions.ask-user', {
+          questionsMax: String(BOT_QUESTIONS_MAX),
+          questionOptionsMin: String(BOT_QUESTION_OPTIONS_MIN),
+          questionOptionsMax: String(BOT_QUESTION_OPTIONS_MAX),
+        }),
         input: askUserInput,
         run: async (input, context) => {
           const questions = botQuestionsSchema.parse(input.questions);

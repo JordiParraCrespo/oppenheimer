@@ -30,6 +30,7 @@ import {
 import { BOT_ATTACHMENT_FILES, BOT_ATTACHMENT_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { formatToolList } from '../domain/bot-tool-text.policy';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
 import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
@@ -47,14 +48,7 @@ export const MAIL_SEARCH_LIMIT_MAX = 25;
 /** Attachments one turn may open. */
 export const MAIL_ATTACHMENTS_PER_TURN = 10;
 
-const account = z
-  .string()
-  .trim()
-  .min(1)
-  .max(320)
-  .describe(
-    'Which Gmail account: its account id, its address, or its name ("Work"), as list_gmail_accounts gives them.',
-  );
+const account = z.string().trim().min(1).max(320).describe(promptText('tools/mail.account'));
 
 /**
  * Mail, the reads: the owner's own Gmail accounts, searched in Gmail's query
@@ -90,8 +84,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'list_gmail_accounts',
       readOnly: true,
       scope: 'mail:read',
-      description:
-        "Lists the person's own Gmail accounts connected to Oppenheimer: each one's name, address and account id, and whether it needs reconnecting. Every other mail tool takes one of these. An empty answer means none is connected.",
+      description: promptText('tools/mail.list-gmail-accounts'),
       input: z.object({}),
       run: async (_input, context) => {
         const connections = await this.accounts.all(context.owner);
@@ -105,28 +98,28 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'search_mail',
       readOnly: true,
       scope: 'mail:read',
-      description: `Searches the person's Gmail in Gmail's own search language, newest first: from:, to:, subject:, has:attachment, filename:pdf, is:unread, label:, in:inbox, newer_than:7d, after:2026/10/01, "exact words", OR, -word. Leave account out to search every connected account. Returns each message's id, thread id, date, sender, recipients, subject, labels, a snippet and its attachments (with the part id read_mail_attachment takes); read_mail_thread reads one in full. At most ${MAIL_SEARCH_LIMIT_MAX} per account per call; page_token (with account) gets the next page. Spam and Trash are left out unless include_spam_trash. Searching marks nothing read.`,
+      description: promptText('tools/mail.search-mail', {
+        mailSearchLimitMax: String(MAIL_SEARCH_LIMIT_MAX),
+      }),
       input: z.object({
         query: z
           .string()
           .trim()
           .max(500)
           .default('')
-          .describe('Gmail search terms; empty for the newest mail.'),
+          .describe(promptText('tools/mail.search-mail-query')),
         account: account.optional(),
         limit: z.number().int().min(1).max(MAIL_SEARCH_LIMIT_MAX).default(10),
         page_token: z
           .string()
           .max(500)
           .optional()
-          .describe('The next_page_token of an earlier answer, for the same account and query.'),
+          .describe(promptText('tools/mail.search-mail-page-token')),
         include_spam_trash: z.boolean().default(false),
       }),
       run: async (input, context) => {
         if (input.page_token && !input.account) {
-          throw new BotToolRefusal(
-            'A page_token goes with the account it came from: give account too.',
-          );
+          throw new BotToolRefusal(promptText('tools/mail.search-mail-page-token-goes'));
         }
         const chosen = await this.accounts.choose(context.owner, input.account);
         const sections: string[] = [];
@@ -170,11 +163,15 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'read_mail_thread',
       readOnly: true,
       scope: 'mail:read',
-      description:
-        "Reads one Gmail thread in full, oldest message first: each message's sender, recipients, reply-to, date, labels, attachments (with part ids) and its text. Long bodies are cut, and quoted history below a reply is often repeated, so read the newest message first. Reading marks nothing read.",
+      description: promptText('tools/mail.read-mail-thread'),
       input: z.object({
         account,
-        thread_id: z.string().trim().min(1).max(100).describe('A thread id from search_mail.'),
+        thread_id: z
+          .string()
+          .trim()
+          .min(1)
+          .max(100)
+          .describe(promptText('tools/mail.read-mail-thread-thread-id')),
       }),
       run: async (input, context) => {
         const connection = await this.accounts.one(context.owner, input.account);
@@ -201,8 +198,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'list_mail_labels',
       readOnly: true,
       scope: 'mail:read',
-      description:
-        "Lists a Gmail account's labels: Gmail's own (INBOX, SENT, STARRED, IMPORTANT, CATEGORY_*) and the person's, with unread counts for the inbox and the person's labels. Use a label's name in search_mail as label:name.",
+      description: promptText('tools/mail.list-mail-labels'),
       input: z.object({ account }),
       run: async (input, context) => {
         const connection = await this.accounts.one(context.owner, input.account);
@@ -226,7 +222,9 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'list_mail_drafts',
       readOnly: true,
       scope: 'mail:read',
-      description: `Lists the drafts saved in a Gmail account, newest first: each draft's id, recipients, subject, snippet and attachments. At most ${MAIL_SEARCH_LIMIT_MAX} per call; page_token gets the next page. read_mail_thread reads one in full by its thread id.`,
+      description: promptText('tools/mail.list-mail-drafts', {
+        mailSearchLimitMax: String(MAIL_SEARCH_LIMIT_MAX),
+      }),
       input: z.object({
         account,
         limit: z.number().int().min(1).max(MAIL_SEARCH_LIMIT_MAX).default(10),
@@ -258,7 +256,9 @@ export class BotMailToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'read_mail_attachment',
       scope: 'mail:read',
-      description: `Opens one attachment of one message. PDFs (with a text layer), Word, Excel (as CSV per sheet) and PowerPoint files, text, CSV and HTML come back as text; images are shown to the person under your reply (you do not see them, so say what they are from the message). Other files, archives and scanned PDFs are not opened. Give the message id and the attachment's part id from search_mail or read_mail_thread. At most ${MAIL_ATTACHMENTS_PER_TURN} per turn.`,
+      description: promptText('tools/mail.read-mail-attachment', {
+        mailAttachmentsPerTurn: String(MAIL_ATTACHMENTS_PER_TURN),
+      }),
       input: z.object({
         account,
         message_id: z
@@ -266,12 +266,14 @@ export class BotMailToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(100)
-          .describe('The message (from search_mail or read_mail_thread).'),
+          .describe(promptText('tools/mail.read-mail-attachment-message-id')),
         part_id: z.string().trim().min(1).max(50).describe("The attachment's part id."),
       }),
       run: async (input, context) => {
         if (!context.budget.take('read_mail_attachment', MAIL_ATTACHMENTS_PER_TURN)) {
-          return `Refused: this turn has already opened ${MAIL_ATTACHMENTS_PER_TURN} attachments, the limit. Answer with what you have.`;
+          return promptText('tools/mail.read-mail-attachment-refused-turn-has', {
+            mailAttachmentsPerTurn: String(MAIL_ATTACHMENTS_PER_TURN),
+          });
         }
         const connection = await this.accounts.one(context.owner, input.account);
         const file = await this.queryBus.execute<ReadMailAttachmentQuery, MailAttachmentRead>(
@@ -289,7 +291,9 @@ export class BotMailToolsFactory implements BotToolArea {
         return [
           `${named}, read as ${file.reading.format}. ${MAIL_UNTRUSTED_NOTE}`,
           fenceMail(file.reading.text),
-          file.reading.truncated ? 'The file was longer; only its start is shown.' : '',
+          file.reading.truncated
+            ? promptText('tools/mail.read-mail-attachment-file-longer-only')
+            : '',
         ]
           .filter(Boolean)
           .join('\n');
@@ -301,7 +305,11 @@ export class BotMailToolsFactory implements BotToolArea {
   private async showImage(file: MailAttachmentRead, context: BotToolCallContext) {
     if (file.reading.kind !== 'image') throw new Error('Not an image');
     if (file.bytes.length > BOT_IMAGE_MAX_BYTES) {
-      return `"${file.filename}" is an image of ${formatSize(file.bytes.length)}, larger than the ${formatSize(BOT_IMAGE_MAX_BYTES)} the chat shows. It was not shown.`;
+      return promptText('tools/mail.show-image', {
+        filename: file.filename,
+        formatSize: formatSize(file.bytes.length),
+        formatSize2: formatSize(BOT_IMAGE_MAX_BYTES),
+      });
     }
     const mimeType = file.reading.mimeType;
     const attachment = BotAttachmentEntity.upload(
@@ -323,7 +331,7 @@ export class BotMailToolsFactory implements BotToolArea {
       throw error;
     }
     return {
-      content: `"${file.filename}" is an image; it is shown to the person under your reply. You do not see it: describe it from the message, or ask them.`,
+      content: promptText('tools/mail.show-image-content', { filename: file.filename }),
       images: [attachment.toMessageAttachment()],
     };
   }

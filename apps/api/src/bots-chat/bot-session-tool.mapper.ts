@@ -14,6 +14,7 @@ import {
 } from '@oppenheimer/shared/agents';
 import type { ProjectEntity } from '../projects/domain/project.entity';
 import { isLiveTurn, type SessionTurnFold } from '../sessions/domain/session-turn.policy';
+import { promptText } from './domain/bot-prompt-text.policy';
 import { launchPhrase, planBotSessionLaunch } from './domain/bot-session-launch.policy';
 import type { SessionWaitView } from './domain/bot-session-wait.policy';
 import { cut } from './domain/bot-tool-text.policy';
@@ -54,20 +55,18 @@ export function planSession(
 ): { body: CreateSessionDto; hostId: string } | { refusal: string } {
   if (!input.folder && !project) {
     return {
-      refusal: 'Give a project_id (to work in one of its repositories) or a folder on the host.',
+      refusal: promptText('tools/sessions.plan-session-refusal-give-project-id'),
     };
   }
   const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
-      refusal:
-        'No host given, and neither the project nor you have a default one. Ask which host to use (list_hosts).',
+      refusal: promptText('tools/sessions.launch-no-host'),
     };
   }
   if (input.folder && input.base_branch) {
     return {
-      refusal:
-        'A folder session runs in the folder as it is: base_branch takes a repository. Leave one out.',
+      refusal: promptText('tools/sessions.launch-folder-takes-no-branch'),
     };
   }
   const picked = input.folder ? null : pickRepository(project as ProjectEntity, input.repository);
@@ -89,7 +88,7 @@ export function planSession(
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
-  return parsedPlan(parsed, hostId, 'Check the task, folder, base branch and name.');
+  return parsedPlan(parsed, hostId, promptText('tools/sessions.plan-session'));
 }
 
 function parsedPlan(
@@ -107,7 +106,10 @@ export function invalidBodyRefusal(
   check: string,
 ): string {
   const fields = issues.map((issue) => toolField(issue.path.map(String).join('.')));
-  return `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). ${check}`;
+  return promptText('tools/sessions.invalid-body-refusal', {
+    value: [...new Set(fields)].join(', '),
+    check,
+  });
 }
 
 /**
@@ -211,8 +213,11 @@ export function pickRepository(
     const names = repositories.map((repo) => repo.repositoryFullName).join(', ') || 'none';
     return {
       reason: name
-        ? `The project has no repository ${name}. Its repositories: ${names}.`
-        : 'The project has no repository. Use a folder, or ask the person to add one to the project.',
+        ? promptText('tools/sessions.project-lacks-repository', {
+            name,
+            names,
+          })
+        : promptText('tools/sessions.project-has-no-repository'),
     };
   }
   return {
@@ -228,10 +233,10 @@ export function pickRepository(
  */
 export const SESSION_GROUP_PHRASES: Readonly<Record<SessionGroup, string>> = {
   working: 'the agent is at work',
-  'waiting-on-you': 'needs a person: it failed, is blocked on a question, or is stuck starting',
-  'ready-for-review': 'finished, with a report nobody has read yet',
-  landing: 'its pull request is open and approved, not yet merged',
-  idle: 'at its prompt, nothing new to read',
+  'waiting-on-you': promptText('tools/sessions.session-group-phrases-waiting-on-you'),
+  'ready-for-review': promptText('tools/sessions.session-group-phrases-ready-for-review'),
+  landing: promptText('tools/sessions.session-group-phrases-landing'),
+  idle: promptText('tools/sessions.session-group-phrases-idle'),
   resolved: 'closed',
 };
 
@@ -239,7 +244,7 @@ export const SESSION_GROUP_PHRASES: Readonly<Record<SessionGroup, string>> = {
 export function describeDecision(decision: SessionDecision): string[] {
   if (decision.kind === 'permission') {
     return [
-      `- waiting on a permission dialog (decision ${decision.id}): ${decision.title}`,
+      promptText('tools/sessions.describe-decision', { id: decision.id, title: decision.title }),
       ...(decision.detail ? [`  about: ${cut(decision.detail, 500)}`] : []),
       ...decision.options.map((option, index) => `  option ${index}: ${option.label}`),
     ];
@@ -310,17 +315,13 @@ const SESSION_ACTION_ANSWERS: Readonly<
 > = {
   stop: {
     done: (id) => `Session ${id} is stopped.`,
-    sent: (id) =>
-      `Asked session ${id} to stop. It stops once its host hears it; get_session shows when it has.`,
-    offline: (id) =>
-      `Session ${id}'s host is offline, so the stop did not reach it and is not sent again: once the host is back, check with get_session and stop it again if its agent still runs.`,
+    sent: (id) => promptText('tools/sessions.session-action-answers-stop-sent', { id }),
+    offline: (id) => promptText('tools/sessions.session-action-answers-stop-offline', { id }),
   },
   close: {
     done: (id) => `Session ${id} is closed.`,
-    sent: (id) =>
-      `Asked session ${id} to close. It closes once its host hears it; get_session shows when it has, or why the host refused.`,
-    offline: (id) =>
-      `Asked session ${id} to close. Its host is offline: the close is sent when it comes back. It closes once its host hears it; get_session shows when it has, or why the host refused.`,
+    sent: (id) => promptText('tools/sessions.session-action-answers-close-sent', { id }),
+    offline: (id) => promptText('tools/sessions.session-action-answers-close-offline', { id }),
   },
 };
 
@@ -356,15 +357,23 @@ export function decisionAnswerSummary(
   if (!decision || decision.id !== input.decision_id) {
     return {
       refusal: decision
-        ? `Session ${session.id} now waits on decision ${decision.id}, not ${input.decision_id}. Read it again with get_session.`
-        : `Session ${session.id} waits on no decision now.`,
+        ? promptText('tools/sessions.decision-changed', {
+            id: session.id,
+            id2: decision.id,
+            decisionId: input.decision_id,
+          })
+        : promptText('tools/sessions.decision-none', {
+            id: session.id,
+          }),
     };
   }
   if (decision.kind === 'permission') {
     const option = input.option === undefined ? undefined : decision.options[input.option];
     if (!option) {
       return {
-        refusal: `A permission dialog takes option, one of 0 to ${decision.options.length - 1}.`,
+        refusal: promptText('tools/sessions.decision-needs-option', {
+          optionsCount: String(decision.options.length - 1),
+        }),
       };
     }
     return { line: `Answer "${session.name}"'s dialog "${clip(decision.title)}": ${option.label}` };
@@ -372,7 +381,9 @@ export function decisionAnswerSummary(
   const answers = input.answers;
   if (!answers || answers.length !== decision.questions.length) {
     return {
-      refusal: `That decision has ${decision.questions.length} question(s): give one answer for each.`,
+      refusal: promptText('tools/sessions.decision-needs-answers', {
+        questionsCount: String(decision.questions.length),
+      }),
     };
   }
   const said = decision.questions.map((question, index) => {
@@ -435,5 +446,5 @@ export function waitViewOf(session: {
 export function readAfterHint(seq: number | undefined): string {
   return seq === undefined
     ? ''
-    : ` Its log was at entry ${seq}: read_session with after_seq ${seq} reads only what followed.`;
+    : ` ${promptText('tools/sessions.read-after-hint', { seq: String(seq) })}`;
 }

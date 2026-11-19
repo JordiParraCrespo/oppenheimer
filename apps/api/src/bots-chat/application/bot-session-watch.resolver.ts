@@ -12,6 +12,7 @@ import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BOT_STALL_CHECKS, BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import { WakeSubscribedBotCommand } from '../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTIONS_PER_BOT,
@@ -26,11 +27,10 @@ import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
 /** What `start_session`, `send_to_session` and `answer_session` answer once the task they set going is followed. */
-const HANDED_OFF =
-  'You are subscribed to it and will be woken when the task needs input or ends, if it has not got going in a few minutes, and every few minutes while it runs so you can look at how it is going: end your turn now, and report when you are.';
+const HANDED_OFF = promptText('tools/watch.handed-off');
 
 /** What a tool that set a task going answers when the bot said `watch: false`. */
-const NOT_FOLLOWED = 'You are not watching it; read how it goes with get_session or read_session.';
+const NOT_FOLLOWED = promptText('tools/watch.not-followed');
 
 /** What a watch came to: the subscription as stored, and the session as it stood. */
 export interface SessionWatch {
@@ -91,7 +91,7 @@ export class BotSessionWatchResolver {
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      return `It could not be watched (${reason}); read it later with get_session.`;
+      return promptText('tools/watch.follow', { reason });
     }
   }
 
@@ -163,7 +163,7 @@ export class BotSessionWatchResolver {
       new FindSessionQuery({ scope: context.owner, sessionId }),
     );
     if (session.isResolved) {
-      throw new BotToolRefusal(`Session ${sessionId} is closed: there is nothing left to follow.`);
+      throw new BotToolRefusal(promptText('tools/watch.store-session-closed-there', { sessionId }));
     }
     const existing = await this.subscriptions.findForBot(
       context.organizationId,
@@ -173,7 +173,9 @@ export class BotSessionWatchResolver {
     const current = existing.find((subscription) => subscription.resourceId === sessionId);
     if (!current && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests. Unwatch one you no longer need (list_watches shows them) first.`,
+        promptText('tools/watch.store-already-follow-sessions', {
+          subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
+        }),
       );
     }
     const subscription = await this.subscriptions.subscribe(
@@ -197,7 +199,7 @@ export class BotSessionWatchResolver {
     pattern: string,
   ): Promise<string[]> {
     const sessionId = subscription.resourceId;
-    if (!sessionId) throw new BotToolRefusal('Only a session has a terminal to watch.');
+    if (!sessionId) throw new BotToolRefusal(promptText('tools/watch.watch-terminal'));
     const made = await this.commands.execute<
       WatchSessionTerminalCommand,
       WatchSessionTerminalResult
