@@ -900,6 +900,7 @@ export type PromptId =
   | "turn/slash-command.loop-set"
   | "turn/transcript.compaction-content"
   | "turn/transcript.fail-unstored-call"
+  | "turn/voice-note"
   | "wake/approval.started"
   | "wake/approval.finished"
   | "wake/approval.it-ran"
@@ -2403,6 +2404,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "turn/slash-command.loop-set": "The person set a loop with /loop: you run this {{cadence}} for up to 3 days, and this is the first run: {{prompt}}",
   "turn/transcript.compaction-content": "Earlier in this turn, what you had read was summarized to keep your context small (about {{round}}k tokens down to {{round2}}k).",
   "turn/transcript.fail-unstored-call": "The tool's result could not be saved ({{start}}), so it is not kept. Call it again, or carry on without it.",
+  "turn/voice-note": "[voice note, could not be transcribed: the turn names no WhatsApp message]",
   "wake/approval.started": "{{who}} approved: {{summary}}\nIt is running now.",
   "wake/approval.finished": "{{who}} approved a call, and it finished: {{summary}}\n{{answer}}: {{result}}",
   "wake/approval.it-ran": "It ran",

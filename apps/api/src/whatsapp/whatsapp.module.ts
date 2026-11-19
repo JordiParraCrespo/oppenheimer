@@ -23,6 +23,7 @@ import { RequestWhatsappOwnerHttpController } from './commands/request-whatsapp-
 import { RevokeWhatsappChatCommandHandler } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.command-handler';
 import { RevokeWhatsappChatHttpController } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.http.controller';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
+import { TranscribeWhatsappVoiceNoteCommandHandler } from './commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command-handler';
 import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
 import { UpdateWhatsappAccountHttpController } from './commands/update-whatsapp-account/update-whatsapp-account.http.controller';
 import { UpdateWhatsappChatGrantCommandHandler } from './commands/update-whatsapp-chat-grant/update-whatsapp-chat-grant.command-handler';
@@ -33,6 +34,7 @@ import { WhatsappChatGrantOrmEntity } from './database/whatsapp-chat-grant.orm-e
 import { WhatsappChatGrantRepository } from './database/whatsapp-chat-grant.repository';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from './database/whatsapp-message.repository';
+import { OggOpusVoiceNoteDecoderAdapter } from './infrastructure/ogg-opus-voice-note-decoder.adapter';
 import { FindWhatsappAccountsHttpController } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.http.controller';
 import { FindWhatsappAccountsQueryHandler } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.query-handler';
 import { FindWhatsappChatGrantsHttpController } from './queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.http.controller';
@@ -41,6 +43,7 @@ import { FindWhatsappChatsQueryHandler } from './queries/find-whatsapp-chats/fin
 import { ReadWhatsappChatQueryHandler } from './queries/read-whatsapp-chat/read-whatsapp-chat.query-handler';
 import { SearchWhatsappMessagesQueryHandler } from './queries/search-whatsapp-messages/search-whatsapp-messages.query-handler';
 import {
+  VOICE_NOTE_DECODER,
   WHATSAPP_ACCOUNT_REPOSITORY,
   WHATSAPP_CHAT_GRANT_REPOSITORY,
   WHATSAPP_MESSAGE_REPOSITORY,
@@ -65,8 +68,9 @@ const httpControllers = [
 
 /**
  * The relay dispatches the host's reports (`RecordWhatsappState`,
- * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, and the end of
- * a WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`).
+ * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
+ * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), and a wake on
+ * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`).
  */
 const commandHandlers: Provider[] = [
   LinkWhatsappCommandHandler,
@@ -78,6 +82,7 @@ const commandHandlers: Provider[] = [
   RecordWhatsappStateCommandHandler,
   ReceiveWhatsappMessagesCommandHandler,
   SendWhatsappMessageCommandHandler,
+  TranscribeWhatsappVoiceNoteCommandHandler,
   AllowWhatsappChatCommandHandler,
   UpdateWhatsappChatGrantCommandHandler,
   RevokeWhatsappChatCommandHandler,
@@ -128,6 +133,7 @@ const queryHandlers: Provider[] = [
     WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },
+    { provide: VOICE_NOTE_DECODER, useClass: OggOpusVoiceNoteDecoderAdapter },
     { provide: WHATSAPP_CHAT_GRANT_REPOSITORY, useClass: WhatsappChatGrantRepository },
   ],
 })

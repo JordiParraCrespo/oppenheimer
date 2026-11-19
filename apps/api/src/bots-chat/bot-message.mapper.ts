@@ -30,7 +30,12 @@ import {
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
-import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
+import {
+  BOT_PENDING_MEDIA_KINDS,
+  BotMessageEntity,
+  type BotPendingMedia,
+  type BotToolStep,
+} from './domain/bot-message.entity';
 import { rateLimitOfRecord } from './domain/bot-rate-limit.policy';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
@@ -81,6 +86,7 @@ export class BotMessageMapper
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
     record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
+    record.pendingMedia = entity.pendingMedia ? { kind: entity.pendingMedia.kind } : null;
     return record;
   }
 
@@ -100,6 +106,7 @@ export class BotMessageMapper
         position: record.position,
         event: toEvent(record.event),
         attachments: (record.attachments ?? []).flatMap(toAttachment),
+        pendingMedia: toPendingMedia(record.pendingMedia),
       },
     });
   }
@@ -497,4 +504,10 @@ function matchOf(raw: unknown): { match?: { pattern: string; count: number } } {
   return typeof pattern === 'string' && typeof count === 'number' && count > 0
     ? { match: { pattern, count } }
     : {};
+}
+
+/** A stored pending media, or null for none or a kind this version does not read. */
+function toPendingMedia(value: Record<string, unknown> | null | undefined): BotPendingMedia | null {
+  const kind = BOT_PENDING_MEDIA_KINDS.find((known) => known === value?.kind);
+  return kind ? { kind } : null;
 }

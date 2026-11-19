@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { storableText } from '@oppenheimer/backend-core';
 import type { WhatsappInbound } from '@oppenheimer/shared/protocol';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import type { WhatsappAccountEntity } from './domain/whatsapp-account.entity';
@@ -29,6 +30,8 @@ export class WhatsappMessageMapper {
       quotedId: inbound.quotedId ?? null,
       sentAt: new Date(inbound.sentAt),
       sentByBotId: null,
+      voiceSeconds: inbound.media === 'audio' ? (inbound.voiceSeconds ?? null) : null,
+      transcript: null,
       switchesToBotId: null,
       isReply: false,
     };
@@ -65,6 +68,8 @@ export class WhatsappMessageMapper {
       quotedId: props.quotedId ?? null,
       sentAt: sent.sentAt,
       sentByBotId: props.botId,
+      voiceSeconds: null,
+      transcript: null,
       switchesToBotId: null,
       isReply: (props.isReply ?? false) && props.botId !== null,
     };
@@ -74,6 +79,11 @@ export class WhatsappMessageMapper {
     draft: WhatsappMessageDraft,
   ): Omit<WhatsappMessageOrmEntity, 'id' | 'createdAt' | 'seq'> {
     return { ...draft };
+  }
+
+  /** A voice note's transcript as its column takes it: what Postgres cannot store (NUL) removed. */
+  transcriptToPersistence(transcript: string): string {
+    return storableText(transcript);
   }
 
   /** A row intake just stored, from the draft it wrote and what the insert returned. */
@@ -102,6 +112,8 @@ export class WhatsappMessageMapper {
       quotedId: record.quotedId,
       sentAt: record.sentAt,
       sentByBotId: record.sentByBotId,
+      voiceSeconds: record.voiceSeconds,
+      transcript: record.transcript,
     };
   }
 }

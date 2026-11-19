@@ -30,6 +30,8 @@ export type WhatsappDecidedAction =
       text: string;
       /** The bot a "Name: …" switched to; null when it named none, or several. */
       switchedTo: { id: string; name: string } | null;
+      /** A voice note with no caption, heard when the bot is woken. */
+      voiceNote: boolean;
     }
   | { kind: 'ignore' };
 
@@ -82,6 +84,7 @@ export class WhatsappAnswerResolver {
         command: action.command,
         text: bot || !action.switchName ? action.text : draft.text.trim(),
         switchedTo: bot ? { id: bot.id, name: bot.name } : null,
+        voiceNote: action.voiceNote,
       });
       return bot ? { ...draft, switchesToBotId: bot.id } : draft;
     });
@@ -109,8 +112,16 @@ export class WhatsappAnswerResolver {
       eventFor: (message, place) => {
         const action = batch.actionOf(message);
         if (action.kind !== 'owner' || action.command === 'help' || !place.botId) return null;
-        if (action.command === 'message' && !action.text) return null;
-        return eventOf(account, message, place, place.botId, action.command, action.text);
+        if (action.command === 'message' && !action.text && !action.voiceNote) return null;
+        return eventOf(
+          account,
+          message,
+          place,
+          place.botId,
+          action.command,
+          action.text,
+          action.voiceNote,
+        );
       },
     };
   }
@@ -178,6 +189,7 @@ function eventOf(
   botId: string,
   command: 'message' | 'new' | 'stop',
   text: string,
+  voiceNote: boolean,
 ): WhatsappOwnerWroteDomainEvent {
   return new WhatsappOwnerWroteDomainEvent({
     aggregateId: account.id,
@@ -193,5 +205,6 @@ function eventOf(
     startsHere: place.startsAt === message.seq,
     command,
     text,
+    voiceNote,
   });
 }

@@ -1,5 +1,5 @@
 import type { BotChannelOrigin } from '@oppenheimer/shared';
-import { BotMessageEntity } from './bot-message.entity';
+import { BotMessageEntity, type BotPendingMedia } from './bot-message.entity';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /** What a channel turn takes from the bot it wakes: everything but where it runs. */
@@ -13,11 +13,18 @@ export type ChannelTurnProps = Omit<
  * owner lane, as the owner, in the chat's own conversation, opened by what
  * they wrote as their message. It is the owner's own direct chat, so it is
  * theirs as a console message is: the bot's tools and memory. The channel
- * names its origin and the key that makes the message one turn.
+ * names its origin and the key that makes the message one turn, and any
+ * media the turn reads when it starts.
  */
 export function channelTurn(
   props: ChannelTurnProps,
-  message: { origin: BotChannelOrigin; sourceKey: string; conversationId: string; text: string },
+  message: {
+    origin: BotChannelOrigin;
+    sourceKey: string;
+    conversationId: string;
+    text: string;
+    pendingMedia?: BotPendingMedia | null;
+  },
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue({
     ...props,
@@ -35,6 +42,7 @@ export function channelTurn(
     content: message.text,
     steps: [],
     position: 0,
+    pendingMedia: message.pendingMedia ?? null,
   });
   return { turn, opening };
 }

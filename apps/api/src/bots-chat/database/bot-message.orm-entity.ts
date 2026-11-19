@@ -59,6 +59,10 @@ export class BotMessageOrmEntity {
   @Column({ type: 'jsonb', nullable: true })
   event!: Record<string, unknown> | null;
 
+  /** Media still to read when its turn starts (`BotPendingMedia`); null for none. */
+  @Column({ type: 'jsonb', nullable: true })
+  pendingMedia!: Record<string, unknown> | null;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
