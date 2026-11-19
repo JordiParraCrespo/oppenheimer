@@ -133,11 +133,22 @@ function withoutTrailingReminders(text: string): string {
 }
 
 /**
+ * A block the chat page cut (`truncated`) without the reminder it was in the
+ * middle of: one opened and never closed can only run to the cut, so it goes
+ * from its opening to the end. What came before it stays.
+ */
+function withoutCutReminder(text: string): string {
+  const open = text.lastIndexOf(REMINDER_OPEN);
+  if (open < 0 || text.indexOf(REMINDER_CLOSE, open) >= 0) return text;
+  return text.slice(0, open);
+}
+
+/**
  * The person's prompts in a conversation, oldest first: the {@link typedText}
  * of each `user` entry. One that carries a tool's result is the agent's
- * bookkeeping, not a prompt, as the runner reads it. The chat page cuts a
- * long block (`truncated`), so a reminder cut there has lost its closing tag
- * and is dropped as a block before the words are read.
+ * bookkeeping, not a prompt, as the runner reads it. The runner reads the
+ * whole line; the chat page this reads has long blocks cut, so a reminder cut
+ * there is taken off first ({@link withoutCutReminder}).
  */
 export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] {
   return entries.flatMap((entry) => {
@@ -146,8 +157,7 @@ export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] 
     const text = typedText(
       entry.parts
         .filter((part) => part.kind === 'text' && part.text)
-        .filter((part) => !(part.truncated && part.text?.trimStart().startsWith(REMINDER_OPEN)))
-        .map((part) => part.text ?? '')
+        .map((part) => (part.truncated ? withoutCutReminder(part.text ?? '') : (part.text ?? '')))
         .join('\n'),
     );
     return text ? [text] : [];

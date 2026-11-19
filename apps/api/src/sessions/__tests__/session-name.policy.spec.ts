@@ -199,6 +199,23 @@ describe('promptsOf', () => {
     expect(promptsOf([user(cut, part('Fix the picker'))])).toEqual(['Fix the picker']);
   });
 
+  it('leaves out a reminder the page cut after the person’s words', () => {
+    const cut = part('Fix the wallet bug\n<system-reminder>\n# CLAUDE.md\nrepository context…', {
+      truncated: true,
+    });
+    expect(promptsOf([user(cut)])).toEqual(['Fix the wallet bug']);
+  });
+
+  it('keeps a long prompt the page cut behind a whole reminder', () => {
+    const cut = part(
+      '<system-reminder>Today is Thursday.</system-reminder>\nFix the wallet bug …',
+      {
+        truncated: true,
+      },
+    );
+    expect(promptsOf([user(cut)])).toEqual(['Fix the wallet bug …']);
+  });
+
   it('counts no message that carries a tool’s result', () => {
     expect(promptsOf([user(part('ok', { kind: 'tool_result' }), part('and the next'))])).toEqual(
       [],
