@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { SessionEntity, type SessionGroup } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { attentionFor, rowGlyphFor } from '../lib/session-run-state';
+import { attentionFor, rowAttentionFor, rowGlyphFor } from '../lib/session-run-state';
 
 /**
  * A session's sidebar row speaks the bots' dots: amber while it waits on the
@@ -53,5 +53,13 @@ describe('a session row’s dot', () => {
     expect(rowGlyphFor(session('waiting-on-you'))).toBe('idle');
     expect(rowGlyphFor(session('working'))).toBe('idle');
     expect(rowGlyphFor(session('ready-for-review'))).toBe('idle');
+  });
+});
+
+describe('rowAttentionFor', () => {
+  it('draws the reader’s unread mark only where the session needs nothing from them', () => {
+    expect(rowAttentionFor(session('idle'), true)).toBe('unread');
+    expect(rowAttentionFor(session('waiting-on-you'), true)).toBe('needs-you');
+    expect(rowAttentionFor(session('idle'), false)).toBeUndefined();
   });
 });

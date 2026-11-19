@@ -188,6 +188,9 @@ function render() {
       fields.push(['conversationResume', goStrings(launch.conversation.resume)]);
     }
     if (launch.conversation?.resumeLeads) fields.push(['conversationResumeLeads', 'true']);
+    if (launch.conversation?.reopen) {
+      fields.push(['conversationReopen', goStrings(launch.conversation.reopen)]);
+    }
     if (launch.teleport) {
       fields.push(['teleportStart', goStrings(launch.teleport.start)]);
       fields.push(['teleportResume', goStrings(launch.teleport.resume)]);

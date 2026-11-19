@@ -456,6 +456,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.sharedFiles;
   }
 
+  /**
+   * The report somebody has yet to read (the last turn's end), or null when
+   * there is none or it was read: what an acknowledgement records.
+   */
+  get unreadReportHash(): string | null {
+    const { reportHash, ackedReportHash } = this.props;
+    return reportHash && reportHash !== ackedReportHash ? reportHash : null;
+  }
+
   /** Left out of the console's sidebar until the person shows hidden sessions. */
   get hidden(): boolean {
     return this.props.hidden;

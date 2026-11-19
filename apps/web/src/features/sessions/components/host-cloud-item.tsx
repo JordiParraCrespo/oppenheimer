@@ -15,15 +15,11 @@ export function HostCloudItem({
   agent,
   host,
   selected,
-  highlighted,
-  onMouseEnter,
   onClick,
 }: {
   agent: HostCloudAgentId;
   host: PlaceHost | null;
   selected: boolean;
-  highlighted: boolean;
-  onMouseEnter: () => void;
   onClick: () => void;
 }) {
   const { t } = useTranslation();
@@ -32,7 +28,6 @@ export function HostCloudItem({
   return (
     <ChipSelectItem
       selected={selected}
-      highlighted={highlighted}
       disabled={!host}
       data-disabled={host ? undefined : ''}
       aria-label={label}
@@ -45,7 +40,6 @@ export function HostCloudItem({
           {host ? <ChevronRight className="size-3.5 shrink-0 text-fg-subtle" /> : null}
         </span>
       }
-      onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
       {label}

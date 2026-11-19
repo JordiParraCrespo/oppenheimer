@@ -5,3 +5,4 @@ export {
   type WhatsappAccountStatus,
   type WhatsappOwnerState,
 } from './whatsapp-account.entity';
+export { WhatsappChatGrantEntity } from './whatsapp-chat-grant.entity';
