@@ -28,6 +28,7 @@ export class BotWhatsappWakeDomainEventHandler {
       | 'conversationStartsAt'
       | 'command'
       | 'text'
+      | 'voiceNote'
       | 'metadata'
     >,
   ): Promise<void> {
@@ -43,6 +44,8 @@ export class BotWhatsappWakeDomainEventHandler {
         conversationStartsAt: event.conversationStartsAt,
         command: event.command,
         text: event.text,
+        // Absent on an event staged before voice notes were heard.
+        voiceNote: event.voiceNote ?? false,
         metadata: { correlationId: event.metadata?.correlationId ?? undefined },
       }),
     );

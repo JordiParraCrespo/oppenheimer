@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/shared';
 import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import type { ZodType as SharedSchema, ZodTypeDef } from 'zod';
+import { promptText } from './domain/bot-prompt-text.policy';
 
 /**
  * How the project tools' input becomes the body the projects' own commands
@@ -78,8 +79,8 @@ function checked<Dto>(
     // The shared schemas carry no messages (their package's rule); a rule of
     // their own is named by the field's description, which the model has.
     return issue.code === 'custom'
-      ? `${field}breaks the rule its description gives`
+      ? promptText('tools/projects.checked', { field })
       : `${field}${issue.message}`;
   });
-  return { refusal: `Not a project the console would take: ${issues.join('; ')}.` };
+  return { refusal: promptText('tools/projects.checked-refusal', { issues: issues.join('; ') }) };
 }

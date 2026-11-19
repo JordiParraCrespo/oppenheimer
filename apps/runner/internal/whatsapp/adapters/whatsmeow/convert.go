@@ -2,6 +2,7 @@ package whatsmeow
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -66,7 +67,35 @@ func (rd reader) received(ctx context.Context, evt *events.Message) domain.Recei
 		r.ChatName = info.PushName
 	}
 	r.Text, r.Media, r.QuotedID = content(evt.Message)
+	r.Voice = voiceOf(evt.Message, rd.logger)
 	return r
+}
+
+// voiceOf is what fetching a message's audio later takes, when it carries
+// some: the AudioMessage itself, serialized, which holds its media key and
+// path. A voice note and an audio file alike.
+func voiceOf(m *waE2E.Message, logger *slog.Logger) *domain.Voice {
+	audio := m.GetAudioMessage()
+	if audio == nil {
+		return nil
+	}
+	ref, err := proto.Marshal(audio)
+	if err != nil {
+		if logger != nil {
+			logger.Warn("whatsapp: a voice note could not be kept for fetching", slog.Any("error", err))
+		}
+		return nil
+	}
+	return &domain.Voice{Ref: ref, Seconds: int(audio.GetSeconds()), Size: audio.GetFileLength()}
+}
+
+// audioOf reads back the AudioMessage voiceOf kept.
+func audioOf(ref []byte) (*waE2E.AudioMessage, error) {
+	var audio waE2E.AudioMessage
+	if err := proto.Unmarshal(ref, &audio); err != nil {
+		return nil, fmt.Errorf("a kept voice note is unreadable: %w", err)
+	}
+	return &audio, nil
 }
 
 // phoneOf is who as a phone-number JID when it is a `@lid` id and its number

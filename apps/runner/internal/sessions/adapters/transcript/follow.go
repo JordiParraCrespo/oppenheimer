@@ -62,8 +62,9 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		f.opens = cut.opensTurn
 	}
 	f.t = f.fresh()
-	if r.statusDir != "" && session.Agent == domain.AgentClaude {
-		f.status = statusPath(r.statusDir, session.Launch.Conversation)
+	if claude, ok := source.(claudeReader); ok && r.statusDir != "" {
+		f.statusDir = r.statusDir
+		f.conversation = func() string { return claude.conversation(session) }
 	}
 	if r.filesDir != "" && conversationPattern.MatchString(session.ID) {
 		f.shared, f.sharedSeen = SharedDir(r.filesDir, session.ID), map[string]bool{}
@@ -161,10 +162,14 @@ type follower struct {
 	// older is the page of older turns asked for, still to send.
 	older olderPage
 
-	// status is the conversation's status file, and statusSeen the version of
-	// it last sent; an empty path follows none.
-	status     string
-	statusSeen statusVersion
+	// statusDir is where each conversation's status is kept, by its name,
+	// and conversation the one the session is in now, asked at each check;
+	// an empty folder follows none. statusSeen is the version last sent of
+	// statusOf's.
+	statusDir    string
+	conversation func() string
+	statusOf     string
+	statusSeen   statusVersion
 
 	// shared is the session's folder of files its agent shared, and
 	// sharedSeen the entries already sent from it; an empty path follows none.
@@ -213,10 +218,19 @@ type statusVersion struct {
 // it and the console always holds the latest one. A batch the link refuses
 // is offered again on the next check.
 func (f *follower) checkStatus() {
-	if f.status == "" || f.history != historySent || len(f.pending) > 0 {
+	if f.statusDir == "" || f.history != historySent || len(f.pending) > 0 {
 		return
 	}
-	info, err := os.Stat(f.status)
+	conversation := f.conversation()
+	if !conversationPattern.MatchString(conversation) {
+		return
+	}
+	if conversation != f.statusOf {
+		// Another conversation has a status of its own.
+		f.statusOf, f.statusSeen = conversation, statusVersion{}
+	}
+	status := statusPath(f.statusDir, conversation)
+	info, err := os.Stat(status)
 	if err != nil || info.Size() > statusEntryMax {
 		return
 	}
@@ -224,7 +238,7 @@ func (f *follower) checkStatus() {
 	if seen == f.statusSeen {
 		return
 	}
-	entry, err := os.ReadFile(f.status)
+	entry, err := os.ReadFile(status) //nolint:gosec // the runner's own state, named by a checked conversation id
 	if err != nil || !json.Valid(entry) {
 		return
 	}

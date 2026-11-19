@@ -23,6 +23,8 @@ export class WakeOnWhatsappCommand extends CommandBase {
   readonly conversationStartsAt: string;
   readonly command: 'message' | 'new' | 'stop';
   readonly text: string;
+  /** A voice note with no caption: `text` is empty, and the turn's words are what it says. */
+  readonly voiceNote: boolean;
 
   constructor(props: CommandProps<WakeOnWhatsappCommand>) {
     super(props);
@@ -36,5 +38,6 @@ export class WakeOnWhatsappCommand extends CommandBase {
     this.conversationStartsAt = props.conversationStartsAt;
     this.command = props.command;
     this.text = props.text;
+    this.voiceNote = props.voiceNote;
   }
 }

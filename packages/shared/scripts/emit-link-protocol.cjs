@@ -63,6 +63,7 @@ const INTEGER_TYPES = {
   'hello.protocol.max': 'int',
   'heartbeat.load.memoryAvailableBytes': 'uint64',
   'hint.retryAfterSeconds': 'int',
+  'whatsapp.messages.messages[].voiceSeconds': 'int',
   'welcome.protocol': 'int',
   'welcome.epoch': 'uint64',
   'attachment.credit.bytes': 'int',

@@ -90,7 +90,11 @@ export const whatsappStateSchema = z.object({
 
 export type WhatsappStateMessage = z.infer<typeof whatsappStateSchema>;
 
-/** What a message carries besides its text. Only the kind is sent: media stays on the phone. */
+/**
+ * What a message carries besides its text. Only the kind is sent: media stays
+ * on the phone, except a voice note the control plane asks for
+ * (`whatsapp.media.get`).
+ */
 export const WHATSAPP_MEDIA_KINDS = [
   'image',
   'video',
@@ -124,6 +128,12 @@ export const whatsappInboundSchema = z.object({
   media: z.enum(WHATSAPP_MEDIA_KINDS).optional(),
   /** The message it replies to, when it quotes one. */
   quotedId: z.string().min(1).max(128).optional(),
+  /**
+   * How long a voice note runs, in seconds, as WhatsApp gives it. Only on a
+   * voice note a runner can hand over (`whatsapp.voice`); a runner from
+   * before it sends none, and its voice notes stay `[audio]`.
+   */
+  voiceSeconds: z.number().int().min(0).max(86_400).optional(),
   sentAt: z.iso.datetime(),
 });
 
@@ -185,3 +195,49 @@ export const whatsappSentSchema = z.object({
 });
 
 export type WhatsappSentMessage = z.infer<typeof whatsappSentSchema>;
+
+/**
+ * The largest voice note `whatsapp.media` carries, in bytes before base64:
+ * one frame under `LINK_MAX_FRAME_BYTES` with room for its envelope. A
+ * WhatsApp voice note is Ogg/Opus at about 16 kbit/s, so this is two minutes
+ * and more; a longer one is refused (`WA_006`) rather than split.
+ */
+export const WHATSAPP_VOICE_NOTE_MAX_BYTES = 352 * 1024;
+
+/**
+ * Hand over a voice note the number received, to be transcribed. The runner
+ * keeps what it needs to fetch one (the message's media key and path, never
+ * the audio) for `WHATSAPP_VOICE_NOTE_KEPT_HOURS`, and downloads it from
+ * WhatsApp only when asked. Answered by `whatsapp.media` with the same
+ * `commandId`, or `command.failed`: `WA_002` no device is connected, `WA_005`
+ * no voice note the host still knows by that id, `WA_006` it is larger than
+ * `WHATSAPP_VOICE_NOTE_MAX_BYTES`, `WA_007` WhatsApp would not hand it over.
+ * Sent only to a runner that names `whatsapp.voice`.
+ */
+export const whatsappMediaGetSchema = z.object({
+  type: z.literal('whatsapp.media.get'),
+  commandId: commandIdSchema,
+  chatId: jid(),
+  /** WhatsApp's id of the voice note's message. */
+  messageId: z.string().min(1).max(128),
+});
+
+export type WhatsappMediaGetMessage = z.infer<typeof whatsappMediaGetSchema>;
+
+/** How long a runner can still fetch a voice note it received. */
+export const WHATSAPP_VOICE_NOTE_KEPT_HOURS = 48;
+
+/** A voice note, as WhatsApp stored it: decrypted, in its own container. */
+export const whatsappMediaSchema = z.object({
+  type: z.literal('whatsapp.media'),
+  commandId: commandIdSchema,
+  /** WhatsApp's MIME type for it: `audio/ogg; codecs=opus` for a voice note. */
+  mimetype: z.string().min(1).max(128),
+  /** The bytes, base64. */
+  data: z
+    .string()
+    .min(1)
+    .max(Math.ceil(WHATSAPP_VOICE_NOTE_MAX_BYTES / 3) * 4),
+});
+
+export type WhatsappMediaMessage = z.infer<typeof whatsappMediaSchema>;

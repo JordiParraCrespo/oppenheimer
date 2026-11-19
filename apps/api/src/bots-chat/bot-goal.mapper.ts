@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BOT_GOAL_PAUSE_REASONS, SCOPES, type Scope } from '@oppenheimer/shared';
 import { BotGoalOrmEntity } from './database/bot-goal.orm-entity';
 import { BotGoalEntity } from './domain/bot-goal.entity';
+import { promptText } from './domain/bot-prompt-text.policy';
 import { BotGoalResponseDto } from './dtos/bot-goal.response.dto';
 
 @Injectable()
@@ -84,8 +85,12 @@ export class BotGoalMapper {
     const budget =
       goal.tokenBudget === null
         ? ''
-        : ` It pauses once its turns spend ${goal.tokenBudget} tokens.`;
-    return `Goal set: ${goal.objective}.${before} After each of your turns another comes, for as long as the goal is open.${budget} When it is met, show its check and call end_goal with outcome met: a reviewer reads your turn and ends it, or sends you on. If it cannot go on without the person, call end_goal with outcome blocked.`;
+        : ` ${promptText('tools/goal.to-set-answer-pauses-once-turns', { tokenBudget: String(goal.tokenBudget) })}`;
+    return promptText('tools/goal.to-set-answer-goal-set-after', {
+      objective: goal.objective,
+      before,
+      budget,
+    });
   }
 }
 

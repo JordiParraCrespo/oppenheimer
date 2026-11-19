@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
 /**
@@ -16,9 +17,7 @@ export class BotHostTargetResolver {
   idOf(input: { host_id?: string }, context: BotToolCallContext): string {
     const hostId = input.host_id ?? context.homeHostId;
     if (!hostId) {
-      throw new BotToolRefusal(
-        'No host named and you have no home host: ask which host to use, and say they can set one in Settings → Home host.',
-      );
+      throw new BotToolRefusal(promptText('tools/host.id-of'));
     }
     return hostId;
   }
@@ -35,9 +34,7 @@ export class BotHostTargetResolver {
       .then(() => true)
       .catch(() => false);
     if (!found) {
-      throw new BotToolRefusal(
-        `${hostId} is not one of the person's hosts. Leave host_id out to use your home host, or take a host id from list_hosts or the turn context; never make one up.`,
-      );
+      throw new BotToolRefusal(promptText('tools/host.usable', { hostId }));
     }
     return hostId;
   }

@@ -84,4 +84,28 @@ export const WhatsappErrors = {
     message: 'Too many wrong codes',
     httpStatus: 429,
   },
+  /** No number of the owner's is confirmed here yet: chats are allowed only once one is. */
+  OWNER_NOT_CONFIRMED: {
+    code: 'WHATSAPP_015',
+    message: 'Confirm your own number before allowing other chats',
+    httpStatus: 409,
+  },
+  /** No such allowed chat on that number. */
+  GRANT_NOT_FOUND: {
+    code: 'WHATSAPP_016',
+    message: 'That chat is not allowed on this number',
+    httpStatus: 404,
+  },
+  /** The owner's own chat, or the number's chat with itself: neither is allowed, the first always is. */
+  CHAT_NOT_GRANTABLE: {
+    code: 'WHATSAPP_017',
+    message: 'That chat cannot be allowed',
+    httpStatus: 422,
+  },
+  /** The number allows as many chats as it may: remove one first. */
+  GRANT_LIMIT_REACHED: {
+    code: 'WHATSAPP_018',
+    message: 'That is as many chats as one number allows',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

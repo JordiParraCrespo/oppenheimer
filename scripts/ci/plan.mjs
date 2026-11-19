@@ -90,6 +90,8 @@ export function plan(
   add('lint', 'Design-system lint (reports, never fails)', 'pnpm', ['lint:design']);
   // oppenheimer:end web|web-showcase
   add('lint', 'API structure', 'pnpm', ['check:api-structure']);
+  // What a model is told is prose in a module's prompt files, never a sentence in its code.
+  add('lint', 'Prompt strings', 'pnpm', ['check:prompt-strings']);
   add('lint', 'Feature flags', 'pnpm', ['check:flags']);
   // The agent git guard (`.agents/hooks/git-guard.mjs`): its policy, case by case.
   add('lint', 'Agent git guard', 'pnpm', ['check:hooks']);

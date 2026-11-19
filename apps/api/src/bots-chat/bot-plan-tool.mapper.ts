@@ -11,6 +11,7 @@ import type { ProjectEntity } from './../projects/domain/project.entity';
 import type { PlanActor } from './../tasks/domain/plan-change.types';
 import type { TaskEntity } from './../tasks/domain/task.entity';
 import { type BotToolCallContext } from './application/bot-tool.factory';
+import { promptText } from './domain/bot-prompt-text.policy';
 import type { BotSubscriptionEntity } from './domain/bot-subscription.entity';
 import { BOT_SUBSCRIPTION_PURPOSE_MAX } from './domain/bot-subscription.policy';
 import type { TaskActivityFields, TaskWake } from './domain/bot-task-wake.policy';
@@ -37,21 +38,13 @@ export const calendarDate = z.iso.date();
 /** A time of day, `HH:MM`, 24-hour. */
 export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:MM, 24-hour');
 
-export const statusInput = z
-  .enum(TASK_STATUSES)
-  .describe('The column: todo (Not started), doing (In progress), review (In review) or done.');
-export const priorityInput = z
-  .enum(TASK_PRIORITIES)
-  .describe(
-    'How much it matters: urgent (drop other work for it), high, medium or low. Leave it off unless the person said or it is plainly urgent.',
-  );
+export const statusInput = z.enum(TASK_STATUSES).describe(promptText('tools/plan.status'));
+export const priorityInput = z.enum(TASK_PRIORITIES).describe(promptText('tools/plan.priority'));
 export const expectedVersionInput = z
   .number()
   .int()
   .min(1)
-  .describe(
-    'The version you last read the task at (list_tasks or get_task shows it as "v<n>"). If someone changed the task since, the write is refused: read it again and decide again.',
-  );
+  .describe(promptText('tools/plan.expected-version'));
 
 /** A due time needs its day, as the shared task schemas say. */
 export const dueTimeHasDate = (value: { due_date?: string | null; due_time?: string | null }) =>
@@ -78,7 +71,7 @@ export function describeProject(project: ProjectEntity, context: BotToolCallCont
     `default host ${project.defaultHostId ?? 'none'}`,
     `default agent ${project.defaultAgent ?? 'none'}`,
   ];
-  if (project.isUnassigned) parts.push('Unassigned: where work with no project goes');
+  if (project.isUnassigned) parts.push(promptText('tools/plan.describe-project'));
   if (project.archivedAt)
     parts.push(`archived ${formatToolTime(project.archivedAt, context.timeZone)}`);
   return `${project.id} "${project.name}" [${parts.join('; ')}]`;
@@ -95,7 +88,7 @@ export function describeProjectInFull(project: ProjectEntity, context: BotToolCa
       `  - ${repository.repositoryFullName} (base ${repository.baseBranch})${repository.isDefault ? ' default' : ''} [installation_id ${repository.installationId}; github_repo_id ${repository.githubRepoId}]`,
   );
   return [
-    `Project ${project.id} "${project.name}"${project.isUnassigned ? ' (Unassigned: where work with no project goes)' : ''}`,
+    `Project ${project.id} "${project.name}"${project.isUnassigned ? ` ${promptText('tools/plan.describe-project-in-full')}` : ''}`,
     `- slug: ${project.slug}`,
     `- archived: ${project.archivedAt ? formatToolTime(project.archivedAt, context.timeZone) : 'no'}`,
     `- default host: ${project.defaultHostId ?? 'none'}`,
@@ -150,7 +143,13 @@ export function describeTaskInFull(task: TaskEntity, context: BotToolCallContext
 
 export function describeSummary(summary: ProjectPlanSummary, name: string | undefined): string {
   const lines = [
-    `Project ${summary.projectId}${name ? ` "${name}"` : ''}: ${summary.status.replace('_', ' ')}, ${summary.done} of ${summary.total} tasks done`,
+    promptText('tools/plan.describe-summary-project-tasks-done', {
+      projectId: summary.projectId,
+      name: name ? ` "${name}"` : '',
+      replace: summary.status.replace('_', ' '),
+      done: String(summary.done),
+      total: String(summary.total),
+    }),
   ];
   lines.push(
     summary.doing.length
@@ -170,7 +169,7 @@ export function describeSummary(summary: ProjectPlanSummary, name: string | unde
   lines.push(
     summary.nextDue
       ? `- next due: ${summary.nextDue.taskId} "${summary.nextDue.title}" on ${summary.nextDue.dueDate}`
-      : '- next due: no open task has a due date',
+      : promptText('tools/plan.describe-summary-next-due-open'),
   );
   lines.push(
     summary.milestones.length
