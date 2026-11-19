@@ -50,8 +50,9 @@ func TestAdmitKeepsMediaGroupsAndTheOwnersOwnMessages(t *testing.T) {
 
 // A group message keeps who it mentions and whose message it quotes, which
 // is how the control plane tells one that speaks to this number. Mentions are
-// capped at what the schema takes: past it, the control plane would refuse
-// the whole batch, and the outbox would offer it again forever.
+// capped at what the schema takes, in number and in length: past it, the
+// control plane would refuse the whole batch, and the outbox would offer it
+// again forever. A forged id from a modified client is dropped.
 func TestAdmitKeepsMentionsAndTheQuotedSenderWithinTheWire(t *testing.T) {
 	many := make([]string, domain.MentionsMax+5)
 	for i := range many {
@@ -62,6 +63,13 @@ func TestAdmitKeepsMentionsAndTheQuotedSenderWithinTheWire(t *testing.T) {
 	}), now, time.Time{})
 	if !ok || got.QuotedSenderID != "34600111222@s.whatsapp.net" || len(got.Mentions) != domain.MentionsMax || got.Mentions[0] != many[0] {
 		t.Fatalf("got %+v, %v", got, ok)
+	}
+	long := strings.Repeat("9", domain.IDMaxBytes) + "@s.whatsapp.net"
+	forged, _ := domain.Admit(chat(func(r *domain.Received) {
+		r.QuotedID, r.QuotedSenderID, r.Mentions = "3EB0A0", long, []string{long, "34600111222@s.whatsapp.net"}
+	}), now, time.Time{})
+	if forged.QuotedSenderID != "" || len(forged.Mentions) != 1 || forged.Mentions[0] != "34600111222@s.whatsapp.net" {
+		t.Fatalf("an id past the wire's bound was handed on: %+v", forged)
 	}
 	alone, _ := domain.Admit(chat(func(r *domain.Received) { r.QuotedSenderID = "34600111222@s.whatsapp.net" }), now, time.Time{})
 	if alone.QuotedSenderID != "" {

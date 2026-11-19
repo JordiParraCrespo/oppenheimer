@@ -83,6 +83,12 @@ type Voice struct {
 // TooLarge reports whether the voice note is past what one frame carries.
 func (v Voice) TooLarge() bool { return v.Size > VoiceNoteMaxBytes }
 
+// IDMaxBytes is the longest WhatsApp id or JID the link carries (`max(128)`
+// on the wire). Counted in bytes, never fewer than the schema's UTF-16 units,
+// so a longer one is dropped here rather than having the control plane refuse
+// the whole batch: a modified client can put any text in a message's context.
+const IDMaxBytes = 128
+
 // MentionsMax is how many mentions one message carries on the link at most
 // (`WHATSAPP_MENTIONS_MAX`); a message that names more keeps the first ones.
 const MentionsMax = 64
@@ -135,6 +141,10 @@ type Inbound struct {
 	SentAt       time.Time
 }
 
+// fits reports whether id is one the wire carries: present, and no longer
+// than IDMaxBytes.
+func fits(id string) bool { return id != "" && len(id) <= IDMaxBytes }
+
 // KeyOf is a message's outbox key.
 func KeyOf(chatID, id string) string { return chatID + "/" + id }
 
@@ -164,14 +174,22 @@ func Admit(r Received, now, pairedAt time.Time) (Inbound, bool) {
 		Key: KeyOf(r.ChatID, r.ID), ID: r.ID,
 		ChatID: r.ChatID, ChatKind: kind, ChatName: r.ChatName,
 		SenderID: r.SenderID, SenderName: r.SenderName, FromMe: r.FromMe,
-		Text: CutText(r.Text), Media: r.Media, QuotedID: r.QuotedID,
+		Text: CutText(r.Text), Media: r.Media,
 		SentAt: r.SentAt.UTC(),
 	}
-	if r.QuotedID != "" {
-		in.QuotedSenderID = r.QuotedSenderID
+	if fits(r.QuotedID) {
+		in.QuotedID = r.QuotedID
+		if fits(r.QuotedSenderID) {
+			in.QuotedSenderID = r.QuotedSenderID
+		}
 	}
-	if len(r.Mentions) > 0 {
-		in.Mentions = r.Mentions[:min(len(r.Mentions), MentionsMax)]
+	for _, mentioned := range r.Mentions {
+		if len(in.Mentions) == MentionsMax {
+			break
+		}
+		if fits(mentioned) {
+			in.Mentions = append(in.Mentions, mentioned)
+		}
 	}
 	if r.Voice != nil {
 		in.VoiceSeconds = r.Voice.Seconds
