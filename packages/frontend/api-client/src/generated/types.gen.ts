@@ -3389,6 +3389,41 @@ export type ConfirmWhatsappOwnerRequest = {
     code: string;
 };
 
+export type WhatsappChatGrantResponseDto = {
+    id: string;
+    /**
+     * The linked number the chat is on.
+     */
+    accountId: string;
+    /**
+     * The chat’s WhatsApp id: a group’s, or a person’s number.
+     */
+    chatId: string;
+    chatKind: 'direct' | 'group';
+    /**
+     * The group’s or person’s name as the number last saw it.
+     */
+    chatName: string | null;
+    /**
+     * The bot that answers in this chat; null for the number’s default bot.
+     */
+    botId: string | null;
+    /**
+     * The bot whose tool allowed the chat, in the owner’s own chat with it; null when allowed in Settings.
+     */
+    grantedByBotId: string | null;
+    grantedAt: string;
+};
+
+export type AllowWhatsappChatRequest = {
+    chat: string;
+    botId?: string | null;
+};
+
+export type UpdateWhatsappChatGrantRequest = {
+    botId: string | null;
+};
+
 export type TelegramAccountResponseDto = {
     id: string;
     /**
@@ -14108,6 +14143,174 @@ export type ConfirmWhatsappOwnerResponses = {
 };
 
 export type ConfirmWhatsappOwnerResponse = ConfirmWhatsappOwnerResponses[keyof ConfirmWhatsappOwnerResponses];
+
+export type FindWhatsappChatGrantsData = {
+    body?: never;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants';
+};
+
+export type FindWhatsappChatGrantsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindWhatsappChatGrantsError = FindWhatsappChatGrantsErrors[keyof FindWhatsappChatGrantsErrors];
+
+export type FindWhatsappChatGrantsResponses = {
+    200: Array<WhatsappChatGrantResponseDto>;
+};
+
+export type FindWhatsappChatGrantsResponse = FindWhatsappChatGrantsResponses[keyof FindWhatsappChatGrantsResponses];
+
+export type AllowWhatsappChatData = {
+    body: AllowWhatsappChatRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants';
+};
+
+export type AllowWhatsappChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_010 — No such chat
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_018 — Too many allowed chats
+     *
+     * WHATSAPP_015 — The owner’s number is not confirmed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_017 — The owner’s own chat, or the number itself
+     */
+    422: ProblemDetailsDto;
+};
+
+export type AllowWhatsappChatError = AllowWhatsappChatErrors[keyof AllowWhatsappChatErrors];
+
+export type AllowWhatsappChatResponses = {
+    201: WhatsappChatGrantResponseDto;
+};
+
+export type AllowWhatsappChatResponse = AllowWhatsappChatResponses[keyof AllowWhatsappChatResponses];
+
+export type RevokeWhatsappChatData = {
+    body?: never;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+        /**
+         * The allowed chat.
+         */
+        grantId: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants/{grantId}';
+};
+
+export type RevokeWhatsappChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_016 — No such allowed chat
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RevokeWhatsappChatError = RevokeWhatsappChatErrors[keyof RevokeWhatsappChatErrors];
+
+export type RevokeWhatsappChatResponses = {
+    204: void;
+};
+
+export type RevokeWhatsappChatResponse = RevokeWhatsappChatResponses[keyof RevokeWhatsappChatResponses];
+
+export type UpdateWhatsappChatGrantData = {
+    body: UpdateWhatsappChatGrantRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+        /**
+         * The allowed chat.
+         */
+        grantId: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants/{grantId}';
+};
+
+export type UpdateWhatsappChatGrantErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_016 — No such allowed chat
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateWhatsappChatGrantError = UpdateWhatsappChatGrantErrors[keyof UpdateWhatsappChatGrantErrors];
+
+export type UpdateWhatsappChatGrantResponses = {
+    200: WhatsappChatGrantResponseDto;
+};
+
+export type UpdateWhatsappChatGrantResponse = UpdateWhatsappChatGrantResponses[keyof UpdateWhatsappChatGrantResponses];
 
 export type FindTelegramAccountsData = {
     body?: never;

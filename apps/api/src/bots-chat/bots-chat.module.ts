@@ -75,6 +75,8 @@ import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver'
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotWhatsappAccountsResolver } from './application/bot-whatsapp-accounts.resolver';
+import { BotWhatsappGrantToolsFactory } from './application/bot-whatsapp-grant-tools.factory';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotWhatsappVoiceNoteResolver } from './application/bot-whatsapp-voice-note.resolver';
 import { BotMilestoneDeletedDomainEventHandler } from './application/event-handlers/bot-milestone-deleted.domain-event-handler';
@@ -478,6 +480,8 @@ const queryHandlers: Provider[] = [
     BotWebToolsFactory,
     BotMailToolsFactory,
     BotWhatsappToolsFactory,
+    BotWhatsappGrantToolsFactory,
+    BotWhatsappAccountsResolver,
     BotTelegramToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,

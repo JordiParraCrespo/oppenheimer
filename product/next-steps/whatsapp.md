@@ -173,7 +173,10 @@ A group of its own in Settings → Permissions, **WhatsApp**:
 ## Open questions
 
 1. Should the owner choose which bots may use a number, rather than every
-   bot of theirs?
+   bot of theirs? *For answering, decided 2026-11-18: the number's default
+   bot and a bot per allowed chat, no list per number
+   ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §1).
+   Which bots may read and send with the number's tools stays open.*
 2. Should a group need a mention of the owner before a routine wakes on it,
    as `channels.md` §5 has for channels?
 3. A send whose host answered too late may have gone: retrying it could

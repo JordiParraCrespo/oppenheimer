@@ -57,8 +57,9 @@ export interface BotRepositoryPort {
   /**
    * The bot, its documents, their history and its memory; nothing deleted,
    * and the channel that holds it, while it answers on a Telegram bot
-   * (`FK_telegram_account_answering_bot`) or is a WhatsApp number's default
-   * (`FK_whatsapp_account_answering_bot`).
+   * (`FK_telegram_account_answering_bot`), is a WhatsApp number's default
+   * (`FK_whatsapp_account_answering_bot`) or answers in a chat a number
+   * allows (`FK_whatsapp_chat_grant_bot`).
    */
   delete(bot: BotEntity): Promise<'deleted' | { boundTo: BotDeleteBinding }>;
 }
