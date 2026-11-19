@@ -1,39 +1,21 @@
-import type { RunState } from '@oppenheimer/design-system-web';
-import type {
-  AutomationEntity,
-  AutomationRunEntity,
-  BotRoutineEntity,
+import {
+  type AutomationEntity,
+  type AutomationRunEntity,
+  automationAgentText,
+  type BotRoutineEntity,
+  nextInstantText,
 } from '@oppenheimer/frontend-consumer';
+import { formatCountdown, formatShortDuration } from '@oppenheimer/frontend-web';
 import {
-  formatCountdown,
-  formatShortDuration,
-  viewerTimeZone,
-  weekdayDate,
-} from '@oppenheimer/frontend-web';
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
-import {
-  AUTOMATION_PAUSED_REASONS,
   AUTOMATION_SKIP_REASONS,
-  type AutomationPausedReason,
-  type AutomationPlace,
-  type AutomationRunStatus,
   type AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
-import { CLOUD_AGENT_LABELS, type CloudAgentId } from '@oppenheimer/shared/schemas/cloud-agent';
 import type { TFunction } from 'i18next';
-import { clock, dayOffset } from './time';
 
 /**
  * Entities in, what a row prints out. Nothing here renders and nothing here
  * reads the clock: `now` is handed in by the leaf that ticks.
  */
-
-/** The three glyphs a run row has: a live dot, a check, an alert. */
-export function runState(status: AutomationRunStatus): RunState {
-  if (status === 'queued' || status === 'running') return 'running';
-  if (status === 'failed' || status === 'cancelled' || status === 'expired') return 'failed';
-  return 'completed';
-}
 
 /**
  * Reasons arrive from the API, which may learn a new one before this build
@@ -44,22 +26,10 @@ function isKnownSkipReason(reason: string): reason is AutomationSkipReason {
   return (AUTOMATION_SKIP_REASONS as readonly string[]).includes(reason);
 }
 
-function isKnownPausedReason(reason: string): reason is AutomationPausedReason {
-  return (AUTOMATION_PAUSED_REASONS as readonly string[]).includes(reason);
-}
-
 function skipReasonText(reason: string, t: TFunction): string {
   return isKnownSkipReason(reason)
     ? t(`automations.skipReason.${reason}`)
     : t('automations.skipReasonOther');
-}
-
-/** Why an automation is paused, in words; the reader paused it when the API says nothing. */
-export function pausedReasonText(reason: string | null, t: TFunction): string {
-  if (reason === null) return t('automations.pausedReason.user');
-  return isKnownPausedReason(reason)
-    ? t(`automations.pausedReason.${reason}`)
-    : t('automations.pausedReasonOther');
 }
 
 export function runTitle(run: AutomationRunEntity, t: TFunction): string {
@@ -69,27 +39,6 @@ export function runTitle(run: AutomationRunEntity, t: TFunction): string {
 /** The status dot's state for an automation: the design system's routine vocabulary. */
 export function automationDot(automation: AutomationEntity): 'running' | 'active' | 'paused' {
   return automation.status;
-}
-
-/**
- * The table's next-run column: "Today, 09:00", "Tomorrow, 02:00",
- * "Mon 5 Oct, 09:00"; "On next event" for an automation that only listens;
- * a dash while paused or with nothing ahead.
- */
-export function nextRunText(
-  automation: AutomationEntity,
-  now: number,
-  locale: string,
-  t: TFunction,
-): string {
-  if (automation.isPaused) return t('automations.next.none');
-  const next = automation.nextRunAt;
-  if (!next) {
-    return automation.triggers.some((trigger) => trigger.source === 'github')
-      ? t('automations.next.onEvent')
-      : t('automations.next.none');
-  }
-  return nextInstantText(next, now, locale, t);
 }
 
 /** A bot routine's next run, as `nextRunText` says an automation's. */
@@ -104,15 +53,6 @@ export function routineNextText(
   return routine.triggers.some((trigger) => trigger.source === 'github')
     ? t('automations.next.onEvent')
     : t('automations.next.none');
-}
-
-export function nextInstantText(next: Date, now: number, locale: string, t: TFunction): string {
-  const zone = viewerTimeZone();
-  const time = clock(next, zone);
-  const offset = dayOffset(next.getTime(), now, zone);
-  if (offset === 0) return t('automations.next.today', { time });
-  if (offset === 1) return t('automations.next.tomorrow', { time });
-  return `${weekdayDate(next, locale, zone)}, ${time}`;
 }
 
 /** The mono countdown under a next run, or nothing when there is none. */
@@ -141,33 +81,13 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
   return automation.runCount ? String(automation.runCount) : '';
 }
 
-/** The agent's name, and Claude Code's cloud named as a place of its own. */
-function agentLabel(agent: string, place: AutomationPlace, t: TFunction): string {
-  if (place === 'claude-cloud') return t('automations.editor.placeClaudeCloud');
-  if (isCodingAgentId(agent)) return CODING_AGENTS[agent].label;
-  return CLOUD_AGENT_LABELS[agent as CloudAgentId] ?? agent;
-}
-
-/** The model's name, or the agent's default model's when none was picked. */
-function modelLabel(agent: string, model: string | null): string | null {
-  if (!isCodingAgentId(agent)) return model;
-  const models = CODING_AGENTS[agent].models;
-  const picked = model ? models.find((candidate) => candidate.id === model) : undefined;
-  if (picked) return picked.label;
-  if (model) return model;
-  return models.find((candidate) => candidate.default)?.label ?? null;
-}
-
 /** Agent · model · project: the line under an automation's name. */
 export function automationSubline(
   automation: AutomationEntity,
   project: string | undefined,
   t: TFunction,
 ) {
-  const { agent, model, place } = automation.revision;
-  return [agentLabel(agent, place, t), modelLabel(agent, model), project]
-    .filter(Boolean)
-    .join(' · ');
+  return [automationAgentText(automation, t), project].filter(Boolean).join(' · ');
 }
 
 /** The bot routines table's column heads, for the table and its placeholder. */

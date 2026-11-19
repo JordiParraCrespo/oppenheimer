@@ -878,6 +878,7 @@
     "failed": "The session could not be started.",
     "connecting": "Connecting…",
     "steps_one": "{{count}} step",
-    "steps_other": "{{count}} steps"
+    "steps_other": "{{count}} steps",
+    "loadFailed": "This session could not be loaded."
   }
 }

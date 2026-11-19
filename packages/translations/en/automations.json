@@ -343,5 +343,15 @@
     "loadFailed": "Bot routines could not be loaded.",
     "empty": "A bot's routines are made in its chat, with /schedule.",
     "emptyTitle": "No bot routines yet"
+  },
+  "mobile": {
+    "empty": "No automations yet. Make one in the console on your computer.",
+    "pauseFailed": "The automation could not be paused or resumed.",
+    "runFailed": "The run could not be started.",
+    "duplicateFailed": "The automation could not be duplicated.",
+    "started": "Run started",
+    "nextRun": "Next run · {{when}}",
+    "instructions": "Instructions",
+    "recentRuns": "Recent runs"
   }
 }

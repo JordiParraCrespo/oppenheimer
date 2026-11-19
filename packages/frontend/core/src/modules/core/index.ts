@@ -1,3 +1,5 @@
+/** The translate function the product package's word helpers take, so it need not install i18next itself. */
+export type { TFunction } from 'i18next';
 export type { CoreModuleConfig } from './core.module';
 export { assignProps } from './entity-props';
 export {
@@ -16,6 +18,14 @@ export {
   type SdkResult,
   unwrapBody,
 } from './errors';
+export {
+  clock,
+  dateFormatter,
+  dayOffset,
+  viewerTimeZone,
+  wallClock,
+  weekdayDate,
+} from './format-date';
 export {
   type EventSourceFactory,
   type EventSourceLike,

@@ -1,9 +1,10 @@
 import { useNow } from '@oppenheimer/design-system-web';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
+import { nextRunText } from '@oppenheimer/frontend-consumer';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { nextRunCountdown, nextRunText } from '../lib/automation-view';
+import { nextRunCountdown } from '../lib/automation-view';
 
 /**
  * The table's next-run cell: the clock time, and under it a mono countdown

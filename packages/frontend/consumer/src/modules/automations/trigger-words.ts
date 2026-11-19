@@ -1,11 +1,11 @@
+import type { TFunction } from '@oppenheimer/frontend-core';
+import { dateFormatter, viewerTimeZone, wallClock, weekdayDate } from '@oppenheimer/frontend-core';
 import {
   externalEventDefinition,
   type GithubEventType,
   type ScheduleFrequency,
   timeZoneAbbreviation,
 } from '@oppenheimer/shared/automations';
-import type { TFunction } from 'i18next';
-import { dateFormatter, viewerTimeZone, wallClock, weekdayDate } from './format-date';
 
 /**
  * A trigger in words, the way the frames say it: "Weekdays at 08:30",

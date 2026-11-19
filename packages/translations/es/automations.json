@@ -345,5 +345,15 @@
     "loadFailed": "No se pudieron cargar las rutinas de los bots.",
     "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
     "emptyTitle": "Aún no hay rutinas de bots"
+  },
+  "mobile": {
+    "empty": "Aún no hay automatizaciones. Crea una desde la consola en tu ordenador.",
+    "pauseFailed": "No se pudo pausar ni reanudar la automatización.",
+    "runFailed": "No se pudo iniciar la ejecución.",
+    "duplicateFailed": "No se pudo duplicar la automatización.",
+    "started": "Ejecución iniciada",
+    "nextRun": "Próxima ejecución · {{when}}",
+    "instructions": "Instrucciones",
+    "recentRuns": "Ejecuciones recientes"
   }
 }

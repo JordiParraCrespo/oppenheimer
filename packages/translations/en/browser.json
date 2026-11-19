@@ -152,7 +152,6 @@
     "comingToMobile": {
       "title": "Coming to mobile",
       "pullRequests": "Review the pull requests that need you.",
-      "automations": "See your automations and how their runs went.",
       "plan": "Your tasks, milestones and calendar, from here."
     },
     "projectFilter": {
@@ -1668,7 +1667,8 @@
       "failed": "The session could not be started.",
       "connecting": "Connecting…",
       "steps_one": "{{count}} step",
-      "steps_other": "{{count}} steps"
+      "steps_other": "{{count}} steps",
+      "loadFailed": "This session could not be loaded."
     }
   },
   "bots": {
@@ -2442,7 +2442,8 @@
       "chatFailed": "The chat could not be loaded.",
       "actions": "Employee actions",
       "decideFailed": "The decision didn't reach the bot. Try again.",
-      "answerFailed": "The answer didn't reach the bot. Try again."
+      "answerFailed": "The answer didn't reach the bot. Try again.",
+      "botLoadFailed": "This employee could not be loaded."
     }
   },
   "automations": {
@@ -2790,6 +2791,16 @@
       "loadFailed": "Bot routines could not be loaded.",
       "empty": "A bot's routines are made in its chat, with /schedule.",
       "emptyTitle": "No bot routines yet"
+    },
+    "mobile": {
+      "empty": "No automations yet. Make one in the console on your computer.",
+      "pauseFailed": "The automation could not be paused or resumed.",
+      "runFailed": "The run could not be started.",
+      "duplicateFailed": "The automation could not be duplicated.",
+      "started": "Run started",
+      "nextRun": "Next run · {{when}}",
+      "instructions": "Instructions",
+      "recentRuns": "Recent runs"
     }
   },
   "pullRequests": {
