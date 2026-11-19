@@ -1,4 +1,5 @@
 import type { SessionTerminalOutcome } from '../../sessions/application/session-terminal.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
 
 /**
@@ -7,21 +8,20 @@ import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
  */
 const REFUSALS: Readonly<Record<string, { meaning: string; advice?: string }>> = {
   EXEC_006: {
-    meaning: 'this host does not let bots drive a terminal: its exec mode is not full',
-    advice: 'Tell the person; only they can change it, on the host, with `runner exec mode full`.',
+    meaning: promptText('tools/terminal.refusals-exec-006-meaning'),
+    advice: promptText('tools/terminal.refusals-exec-006-advice'),
   },
-  EXEC_007: { meaning: 'that session is not a blank terminal; use open_terminal for one' },
-  SESS_001: { meaning: 'that session is not on the host' },
+  EXEC_007: { meaning: promptText('tools/terminal.refusals-exec-007-meaning') },
+  SESS_001: { meaning: promptText('tools/terminal.refusals-sess-001-meaning') },
   SESS_003: { meaning: 'the terminal is not running' },
-  INVALID_PATTERN: { meaning: 'wait_for is not a valid regular expression' },
+  INVALID_PATTERN: { meaning: promptText('tools/terminal.refusals-invalid-pattern-meaning') },
 };
 
 /**
  * Any other failure may come after the text went in (the shell exited, the
  * capture failed), so it is never told as nothing typed.
  */
-const MAYBE_TYPED =
-  'What you gave may already have been typed: read the terminal before typing again.';
+const MAYBE_TYPED = promptText('tools/terminal.maybe-typed');
 
 /** The Needs input card's line: "Type `ssh build-02` then Enter in terminal …". */
 export function terminalTypeSummary(
@@ -46,15 +46,15 @@ export function describeTerminal(outcome: SessionTerminalOutcome, sessionId: str
       const waited = `${(screen.waitedMs / 1000).toFixed(1)} s`;
       const head = screen.matched
         ? `The pattern showed after ${waited}.`
-        : `Waited ${waited}; the pattern, if you gave one, did not show yet.`;
+        : promptText('tools/terminal.describe-terminal-waited-pattern-if', { waited });
       return `${head} Screen of terminal ${sessionId}:\n${fenceUntrusted('terminal_screen', screen.screen)}`;
     }
     case 'host_offline':
-      return 'The host is offline: nothing was typed or read.';
+      return promptText('tools/terminal.describe-terminal-host-offline-nothing');
     case 'not_supported':
-      return "The runner on that host is too old to drive a terminal. The person can update it from the host's page.";
+      return promptText('tools/terminal.describe-terminal-runner-host-too');
     case 'timed_out':
-      return 'The host did not answer in time; whether the keys were typed is unknown. Read the terminal before typing again.';
+      return promptText('tools/terminal.describe-terminal-host-did-answer');
     case 'failed': {
       const known = REFUSALS[outcome.code];
       const code = known ? `${outcome.code}: ${known.meaning}` : outcome.code;

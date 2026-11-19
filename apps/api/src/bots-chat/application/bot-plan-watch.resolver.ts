@@ -12,6 +12,7 @@ import { FindMilestoneQuery } from '../../tasks/queries/find-milestone/find-mile
 import { type PlanWatch, toPlanWatchProps } from '../bot-plan-tool.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { BOT_SUBSCRIPTIONS_PER_BOT } from '../domain/bot-subscription.policy';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
@@ -44,7 +45,7 @@ export class BotPlanWatchResolver {
     const name = await this.nameOf(context.owner, watch.scope, watch.id);
     if (name === null) {
       throw new BotToolRefusal(
-        `There is no ${watch.scope} ${watch.id} you can read: list_projects lists the projects, list_tasks names each task's milestone.`,
+        promptText('tools/plan-watch.watch', { scope: watch.scope, id: watch.id }),
       );
     }
     await this.assertRoom(context, watch);
@@ -97,7 +98,9 @@ export class BotPlanWatchResolver {
     );
     if (!already && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions, pull requests, projects and milestones. Unwatch one you no longer need (list_watches shows them) first.`,
+        promptText('tools/plan-watch.assert-room', {
+          subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
+        }),
       );
     }
   }

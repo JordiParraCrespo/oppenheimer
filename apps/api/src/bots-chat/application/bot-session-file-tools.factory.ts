@@ -9,6 +9,7 @@ import {
 import { BOT_ATTACHMENT_FILES, BOT_ATTACHMENT_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { isShowableSharedFile } from '../domain/bot-shared-file.policy';
 import { SHOWN_IMAGES_PER_TURN } from '../domain/bot-shown-image.policy';
 import { cut, RUNNER_TOO_OLD_ADVICE } from '../domain/bot-tool-text.policy';
@@ -45,10 +46,18 @@ export class BotSessionFileToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_session_file',
         scope: 'sessions:read',
-        description: `Shows the person an image a session's agent shared, under your reply, as a picture they can open: a screenshot of what it built, a chart it drew. get_session lists the files a session's agent shared, with their ids; only an image the host kept a preview of can be shown (a JPEG of at most 1600 px), and the session's host must be online. Counts against the ${SHOWN_IMAGES_PER_TURN} images a turn may show. You do not see the image; say in your reply what it is.`,
+        description: promptText('tools/session-file.show-session-file', {
+          shownImagesPerTurn: String(SHOWN_IMAGES_PER_TURN),
+        }),
         input: z.object({
-          session_id: z.uuid().describe('The session (from list_sessions).'),
-          file_id: z.string().min(1).max(64).describe("The file's id, from get_session."),
+          session_id: z
+            .uuid()
+            .describe(promptText('tools/session-file.show-session-file-session-id')),
+          file_id: z
+            .string()
+            .min(1)
+            .max(64)
+            .describe(promptText('tools/session-file.show-session-file-file-id')),
         }),
         run: async (input, context) => {
           const read = await this.queryBus.execute<
@@ -65,11 +74,16 @@ export class BotSessionFileToolsFactory implements BotToolArea {
           if (!isShowableSharedFile(read.file))
             return refusalOf({ kind: 'no_preview', file: read.file }, input.file_id);
           if (!context.budget.take('show_image', SHOWN_IMAGES_PER_TURN)) {
-            return `Refused: this turn has already shown ${SHOWN_IMAGES_PER_TURN} images, the limit.`;
+            return promptText('tools/session-file.show-session-file-refused-turn-has', {
+              shownImagesPerTurn: String(SHOWN_IMAGES_PER_TURN),
+            });
           }
           const shown = await this.store(Buffer.from(read.data, 'base64'), read.file.name, context);
           return {
-            content: `Shown to the person under your reply as "${shown.name}" (a preview of ${read.file.name}).`,
+            content: promptText('tools/session-file.show-session-file-content', {
+              name: shown.name,
+              name2: read.file.name,
+            }),
             images: [shown],
           };
         },
@@ -109,16 +123,28 @@ export class BotSessionFileToolsFactory implements BotToolArea {
 function refusalOf(read: Exclude<SessionSharedPreviewRead, { kind: 'preview' }>, fileId: string) {
   switch (read.kind) {
     case 'unknown_file':
-      return `Refused: the session lists no shared file ${fileId}. get_session lists the files its agent shared (the last 20).`;
+      return promptText('tools/session-file.refusal-of-refused-session-lists', { fileId });
     case 'no_preview':
-      return `Refused: ${read.file.name} (${read.file.mediaType}) is not an image the host kept a preview of, so it cannot be shown. A text file's words are not shown here either; tell the person it is on the host, or read what the agent said about it with read_session.`;
+      return promptText('tools/session-file.refusal-of-refused-image-host', {
+        name: read.file.name,
+        mediaType: read.file.mediaType,
+      });
     case 'host_offline':
-      return `Not shown: the session's host is offline, and ${read.file.name} is only on it. Try again when it is back.`;
+      return promptText('tools/session-file.refusal-of-shown-sessions-host', {
+        name: read.file.name,
+      });
     case 'not_supported':
-      return `Not shown: the session's host runs a runner too old to send a shared file's preview: ${RUNNER_TOO_OLD_ADVICE}.`;
+      return promptText('tools/session-file.not-shown-runner-too-old', {
+        runnerTooOldAdvice: RUNNER_TOO_OLD_ADVICE,
+      });
     case 'timed_out':
-      return `Not shown: the session's host did not send ${read.file.name} in time. Try again.`;
+      return promptText('tools/session-file.not-shown-timed-out', {
+        name: read.file.name,
+      });
     case 'gone':
-      return `Not shown: the host no longer has ${read.file.name} (${read.code}).`;
+      return promptText('tools/session-file.refusal-of-shown-host-longer', {
+        name: read.file.name,
+        code: read.code,
+      });
   }
 }

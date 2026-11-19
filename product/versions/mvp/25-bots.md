@@ -1763,7 +1763,9 @@ picked, and "Use its own face" goes back to the id's).
   words, and what a routine, a loop and a goal open with and say when they
   pause or end; then the model calls that are not a bot's turn (the dream,
   the goal and rule reviews, the summary, a subagent) and what the tools'
-  policies answer and refuse with. A folder says where the words are sent:
+  policies answer and refuse with; then the tools themselves, each tool's
+  description, its parameters' and its answers (about 700 sentences in 57
+  files). A folder says where the words are sent:
   `system/`, `turn/` for what a turn carries besides its opening, `wake/`
   for what an event says to the bot, `jobs/` for a model call that is not
   a bot's turn, and `tools/` for what a tool tells the model (the owner

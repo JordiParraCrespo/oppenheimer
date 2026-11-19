@@ -4,6 +4,7 @@ import type { MailLocalFiles, MailRequest } from '../../mail/domain/mail-send.po
 import { chatImageAttachment } from '../bot-mail-tool.mapper';
 import { BOT_ATTACHMENT_FILES, BOT_ATTACHMENT_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
@@ -30,9 +31,7 @@ export class BotMailChatFilesResolver {
     return ids.map((id) => {
       const image = found.find((candidate) => candidate.id === id);
       if (!image) {
-        throw new BotToolRefusal(
-          `No image ${id} in this chat. Use the image ids the person's messages list.`,
-        );
+        throw new BotToolRefusal(promptText('tools/mail.planned', { id }));
       }
       return chatImageAttachment(image);
     });
@@ -52,9 +51,7 @@ export class BotMailChatFilesResolver {
       const image = found.find((candidate) => candidate.id === file.attachmentId);
       const bytes = image ? await this.files.read(image.storageKey).catch(() => null) : null;
       if (!bytes) {
-        throw new BotToolRefusal(
-          `The image "${file.filename}" is gone from this chat; nothing was written.`,
-        );
+        throw new BotToolRefusal(promptText('tools/mail.bytes', { filename: file.filename }));
       }
       files.set(mailAttachmentKey(file), bytes);
     }
