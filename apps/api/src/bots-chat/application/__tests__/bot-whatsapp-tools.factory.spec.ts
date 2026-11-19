@@ -1,12 +1,19 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
+import type { BotEntity } from '../../../bots/domain/bot.entity';
+import { FindBotsQuery } from '../../../bots/queries/find-bots/find-bots.query';
+import { AllowWhatsappChatCommand } from '../../../whatsapp/commands/allow-whatsapp-chat/allow-whatsapp-chat.command';
 import { WhatsappAccountEntity } from '../../../whatsapp/domain/whatsapp-account.entity';
+import { WhatsappChatGrantEntity } from '../../../whatsapp/domain/whatsapp-chat-grant.entity';
 import type { WhatsappMessage } from '../../../whatsapp/domain/whatsapp-message.types';
 import { FindWhatsappAccountsQuery } from '../../../whatsapp/queries/find-whatsapp-accounts/find-whatsapp-accounts.query';
+import { FindWhatsappChatGrantsQuery } from '../../../whatsapp/queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.query';
 import { ReadWhatsappChatQuery } from '../../../whatsapp/queries/read-whatsapp-chat/read-whatsapp-chat.query';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotToolContext } from '../bot-tool.factory';
+import { BotWhatsappAccountsResolver } from '../bot-whatsapp-accounts.resolver';
+import { BotWhatsappGrantToolsFactory } from '../bot-whatsapp-grant-tools.factory';
 import { BotWhatsappToolsFactory } from '../bot-whatsapp-tools.factory';
 
 /**
@@ -56,6 +63,22 @@ const HOSTILE: WhatsappMessage = {
   sentByBotId: null,
 };
 
+const OWN_BOTS = [
+  { id: 'bot-1', name: 'Juno', createdByUserId: 'owner-1' },
+  { id: 'bot-2', name: 'Shop', createdByUserId: 'owner-1' },
+  { id: 'bot-3', name: 'Shop', createdByUserId: 'someone-else' },
+] as unknown as BotEntity[];
+
+const FAMILY = WhatsappChatGrantEntity.allow({
+  organizationId: 'org-1',
+  accountId: SPARE.id,
+  chatId: '120363000000000001@g.us',
+  chatKind: 'group',
+  chatName: 'Family',
+  botId: 'bot-2',
+  grantedByBotId: 'bot-1',
+});
+
 function setup() {
   const query = vi.fn(async (asked: unknown) => {
     if (asked instanceof FindWhatsappAccountsQuery) return [{ account: SPARE, hostOnline: true }];
@@ -66,13 +89,20 @@ function setup() {
         messages: asked.targetOnly ? [] : [HOSTILE],
       };
     }
+    if (asked instanceof FindWhatsappChatGrantsQuery) return [FAMILY];
+    if (asked instanceof FindBotsQuery) return OWN_BOTS;
     throw new Error('unexpected query');
   });
-  const command = vi.fn(async () => '3EB1');
-  const tools = new BotWhatsappToolsFactory(
-    { execute: query } as unknown as QueryBus,
-    { execute: command } as unknown as CommandBus,
-  ).definitions();
+  const command = vi.fn(async (sent: unknown) =>
+    sent instanceof AllowWhatsappChatCommand ? FAMILY.id : '3EB1',
+  );
+  const queryBus = { execute: query } as unknown as QueryBus;
+  const commandBus = { execute: command } as unknown as CommandBus;
+  const accounts = new BotWhatsappAccountsResolver(queryBus);
+  const tools = [
+    ...new BotWhatsappToolsFactory(queryBus, commandBus, accounts).definitions(),
+    ...new BotWhatsappGrantToolsFactory(queryBus, commandBus, accounts).definitions(),
+  ];
   const tool = (name: string) => {
     const found = tools.find((definition) => definition.name === name);
     if (!found) throw new Error(`no ${name}`);
@@ -94,13 +124,14 @@ describe('BotWhatsappToolsFactory', () => {
     expect(content.match(/<\/whatsapp>/g)).toHaveLength(1);
   });
 
-  it('only reads, except the send, which asks and reaches outside', () => {
+  it('only reads, except the send, which asks and reaches outside, and the owner’s grants', () => {
     const { tool } = setup();
     for (const name of [
       'list_whatsapp_accounts',
       'list_whatsapp_chats',
       'read_whatsapp_chat',
       'search_whatsapp',
+      'list_whatsapp_allowed_chats',
     ]) {
       expect(tool(name).readOnly).toBe(true);
     }
@@ -109,6 +140,57 @@ describe('BotWhatsappToolsFactory', () => {
     expect(send.traits.asks).toBe(true);
     expect(send.sharesOutside).toBe(true);
     expect(send.scope).toBe('whatsapp:write');
+  });
+
+  // What breaks this: a group's or a routine's turn letting a bot allow chats
+  // on the owner's number from someone else's words.
+  it('offers allowing and revoking chats only in the owner’s console chat and their own WhatsApp chat', () => {
+    const { tool } = setup();
+    for (const name of ['allow_whatsapp_chat', 'revoke_whatsapp_chat']) {
+      expect(tool(name).ownerOnlyOn).toEqual(['message', 'whatsapp']);
+      expect(tool(name).scope).toBe('whatsapp:write');
+    }
+    expect(tool('list_whatsapp_allowed_chats').ownerOnlyOn).toBeNull();
+  });
+
+  it('allows a chat for the owner’s own bot named, recording the bot that allowed it', async () => {
+    const { command, tool } = setup();
+    const { content, isError } = await tool('allow_whatsapp_chat')
+      .bind(context())
+      .run({ chat: 'Family', bot: 'shop' }, { signal });
+    expect(isError).toBeFalsy();
+    expect(command).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: SPARE.id,
+        chat: 'Family',
+        botId: 'bot-2',
+        grantedByBotId: 'bot-1',
+      }),
+    );
+    expect(content).toContain('Shop answers');
+    expect(content).toContain('allowed by Juno');
+  });
+
+  // What breaks this: a chat given its own bot can never go back to the number's default.
+  it('puts an allowed chat back on the number’s default bot when asked for "default"', async () => {
+    const { command, tool } = setup();
+    await tool('allow_whatsapp_chat')
+      .bind(context())
+      .run({ chat: 'Family', bot: 'Default' }, { signal });
+    expect(command).toHaveBeenCalledWith(expect.objectContaining({ botId: null }));
+    command.mockClear();
+    await tool('allow_whatsapp_chat').bind(context()).run({ chat: 'Family' }, { signal });
+    expect(command).toHaveBeenCalledWith(expect.objectContaining({ botId: undefined }));
+  });
+
+  it('refuses a bot that is not the owner’s, naming theirs', async () => {
+    const { command, tool } = setup();
+    const { content, isError } = await tool('allow_whatsapp_chat')
+      .bind(context())
+      .run({ chat: 'Family', bot: 'Nova' }, { signal });
+    expect(isError).toBe(true);
+    expect(content).toContain('"Juno", "Shop"');
+    expect(command).not.toHaveBeenCalled();
   });
 
   it('sends to the chat it resolved, as the bot, under Full access', async () => {

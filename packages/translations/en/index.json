@@ -421,6 +421,10 @@
       "WHATSAPP_012": "No number is waiting for a code. Enter your number first.",
       "WHATSAPP_013": "That can't be your own number here. Enter the number you write from, not the one linked.",
       "WHATSAPP_014": "Too many wrong codes. Ask for a new code and try again.",
+      "WHATSAPP_015": "Confirm your own number first. Only then can other chats be allowed on this number.",
+      "WHATSAPP_016": "That chat isn’t allowed on this number any more.",
+      "WHATSAPP_017": "Your own chat with the number is always yours, and the number can’t talk to itself.",
+      "WHATSAPP_018": "This number allows as many chats as it can. Remove one first.",
       "TELEGRAM_001": "That Telegram bot isn't connected any more.",
       "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
       "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
@@ -4082,6 +4086,23 @@
         "change": "Change",
         "otherNumber": "Use another number",
         "failed": "That did not work. Try again."
+      },
+      "allowed": {
+        "title": "Allowed chats",
+        "none": "Only you talk to your bots on this number. To let a group or another person talk to them, ask a bot in your own chat, for example “allow the family group, Juno answers there”.",
+        "some_one": "{{count}} group or person may talk to your bots on this number. Ask a bot in your own chat to allow another.",
+        "some_other": "{{count}} groups or people may talk to your bots on this number. Ask a bot in your own chat to allow another.",
+        "loadFailed": "Couldn’t load the chats this number allows.",
+        "group": "Group",
+        "person": "Person",
+        "allowedBy": "Allowed by {{bot}}",
+        "allowedByRemovedBot": "Allowed by a removed bot",
+        "allowedByYou": "Allowed by you",
+        "botLabel": "The bot that answers in {{chat}}",
+        "defaultBot": "The number’s default bot",
+        "remove": "Remove",
+        "removeLabel": "Stop allowing {{chat}}",
+        "removeFailed": "Couldn’t remove that chat. Try again."
       }
     },
     "telegram": {

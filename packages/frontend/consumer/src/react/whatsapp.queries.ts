@@ -1,8 +1,12 @@
 'use client';
 
-import { useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { WhatsappAccountEntity } from '../modules/whatsapp';
+import type { WhatsappAccountEntity, WhatsappChatGrantEntity } from '../modules/whatsapp';
 import { useBotListQuery } from './bots.queries';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
@@ -11,6 +15,7 @@ import { usePollWhile } from './live-poll';
 const whatsappKeys = {
   all: ['whatsapp'] as const,
   accounts: () => [...whatsappKeys.all, 'accounts'] as const,
+  grants: (accountId: string) => [...whatsappKeys.all, 'grants', accountId] as const,
 };
 
 /**
@@ -138,5 +143,58 @@ export function useConfirmWhatsappOwner(
     mutationFn: ({ id, code }: ConfirmWhatsappOwnerVariables) =>
       app.whatsapp.confirmOwner(id, code),
     ...withCacheOnSuccess(options, write),
+  });
+}
+
+/**
+ * The chats one of the reader's numbers allows besides their own, the oldest
+ * first, under a Suspense `QueryState` of their own: a bot allows them in the
+ * reader's own chat with it, and Settings shows who may talk and which bot
+ * answers each.
+ */
+export function useSuspenseWhatsappChatGrants(accountId: string) {
+  const app = useConsumerApp();
+  return useSuspenseQuery({
+    queryKey: whatsappKeys.grants(accountId),
+    queryFn: () => app.whatsapp.findGrants(accountId),
+  });
+}
+
+type AnswerWhatsappChatAsVariables = { accountId: string; grantId: string; botId: string | null };
+
+/** Chooses which of the reader's bots answers in an allowed chat, or the number's default; the row is written in. */
+export function useAnswerWhatsappChatAs(
+  options?: UseMutationOptions<WhatsappChatGrantEntity, Error, AnswerWhatsappChatAsVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ accountId, grantId, botId }: AnswerWhatsappChatAsVariables) =>
+      app.whatsapp.answerChatAs(accountId, grantId, botId),
+    ...withCacheOnSuccess(options, (updated) => {
+      queryClient.setQueryData<WhatsappChatGrantEntity[]>(
+        whatsappKeys.grants(updated.accountId),
+        (rows) => rows?.map((row) => (row.id === updated.id ? updated : row)),
+      );
+    }),
+  });
+}
+
+type RevokeWhatsappChatVariables = { accountId: string; grantId: string };
+
+/** Stops allowing a chat: it leaves the list, and no longer talks to the reader's bots there. */
+export function useRevokeWhatsappChat(
+  options?: UseMutationOptions<void, Error, RevokeWhatsappChatVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ accountId, grantId }: RevokeWhatsappChatVariables) =>
+      app.whatsapp.revokeGrant(accountId, grantId),
+    ...withCacheOnSuccess(options, (_result, { accountId, grantId }) => {
+      queryClient.setQueryData<WhatsappChatGrantEntity[]>(whatsappKeys.grants(accountId), (rows) =>
+        rows?.filter((row) => row.id !== grantId),
+      );
+    }),
   });
 }

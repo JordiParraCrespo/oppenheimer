@@ -1768,3 +1768,13 @@ earlier note:
   14–17 Nov). On 2026-11-17 a job the provider refused for the account
   (`usage_limit`, `credential`) ends without a retry or a report; the next
   turn past the threshold folds again once the account is sorted.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had a
+  group, and any allowed contact, added only in the console, from a list per
+  number. On 2026-11-18 the owner asked for a bot to do it too, in the
+  conversation with the person who confirmed the number, and to see and
+  manage the list in Settings: a bot allows a chat, and picks the bot that
+  answers there, with `allow_whatsapp_chat`, offered only in the owner's
+  console chat and their own chat with the number; Settings → WhatsApp lists
+  the allowed chats with who allowed each, their bot and Remove. Which bots
+  answer on a number is its default plus a bot per allowed chat, not a list
+  of bots per number (`next-steps/whatsapp.md`, open question 1).
