@@ -1,4 +1,5 @@
 import type { SessionTranscriptEntry } from '@oppenheimer/shared';
+import { PROMPT_TEXT, type PromptId, type PromptSlots } from './prompts/prompts.gen';
 
 /**
  * What a session is called once its first prompt exists: a model's title, cleaned
@@ -39,6 +40,18 @@ export interface SessionTitleRequest {
 /** The prompt is capped on the wire; this is what is worth sending of it. */
 const PROMPT_MAX_CHARS = 2_000;
 
+/** What the model is told a title is, with the bounds a sidebar row sets. */
+function titleInstruction(id: PromptId): string {
+  const slots: PromptSlots[PromptId] = {
+    maxChars: String(SESSION_NAME_MAX_LENGTH),
+    maxWords: String(MAX_WORDS),
+  };
+  return PROMPT_TEXT[id].replace(
+    /\{\{(maxChars|maxWords)\}\}/g,
+    (_slot, name: keyof typeof slots) => slots[name],
+  );
+}
+
 /**
  * The request that asks a model for this prompt's title. Strict, because the
  * answer goes straight into a column; a 32-token budget, because a title is a
@@ -47,7 +60,7 @@ const PROMPT_MAX_CHARS = 2_000;
  */
 export function sessionTitleRequest(prompt: string): SessionTitleRequest {
   return {
-    system: `Write a title for a software task, from the request that follows. At most ${SESSION_NAME_MAX_LENGTH} characters and at most ${MAX_WORDS} words. Reply with the title alone: no quotes, no punctuation at the end, no explanation.`,
+    system: titleInstruction('system/title.first-prompt'),
     messages: [{ role: 'user', content: prompt.slice(0, PROMPT_MAX_CHARS) }],
     maxTokens: 32,
     temperature: 0,
@@ -98,7 +111,7 @@ export function conversationTitleRequest(prompts: readonly string[]): SessionTit
     .map((prompt, index) => `${index + 1}. ${prompt.slice(0, CONVERSATION_PROMPT_MAX_CHARS)}`)
     .join('\n\n');
   return {
-    system: `Write a title for a software task, from the requests a person made in one conversation, in order. Name what the conversation as a whole is about, not only its first request. At most ${SESSION_NAME_MAX_LENGTH} characters and at most ${MAX_WORDS} words. Reply with the title alone: no quotes, no punctuation at the end, no explanation.`,
+    system: titleInstruction('system/title.conversation'),
     messages: [{ role: 'user', content: listed }],
     maxTokens: 32,
     temperature: 0,

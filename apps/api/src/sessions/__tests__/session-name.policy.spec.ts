@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   cleanModelTitle,
+  conversationTitleRequest,
   SESSION_NAME_MAX_LENGTH,
   sessionTitleRequest,
   titleFromPrompt,
@@ -100,5 +101,27 @@ describe('sessionTitleRequest', () => {
     expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
     // Only what is worth sending of a long prompt goes to the model.
     expect(request.messages[0].content).toHaveLength(2_000);
+  });
+});
+
+/**
+ * The instructions are Markdown with slots for the bounds; a model sent a
+ * literal `{{maxChars}}` would answer with titles of any length.
+ */
+describe('title requests', () => {
+  it.each([
+    ['the first prompt', sessionTitleRequest('fix the bug')],
+    ['the conversation', conversationTitleRequest(['fix the bug', 'the wallet one'])],
+  ])('tell the model the bounds for %s', (_which, request) => {
+    expect(request.system).not.toContain('{{');
+    expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
+    expect(request.system).toContain('at most 6 words');
+  });
+
+  it('numbers the person’s prompts in order and cuts each long one', () => {
+    const request = conversationTitleRequest(['fix the bug', 'x'.repeat(2_000)]);
+    const content = request.messages[0]?.content ?? '';
+    expect(content.startsWith('1. fix the bug\n\n2. ')).toBe(true);
+    expect(content.length).toBeLessThan(700);
   });
 });
