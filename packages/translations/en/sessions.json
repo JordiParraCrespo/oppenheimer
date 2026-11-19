@@ -696,6 +696,15 @@
         "failed": "Failed",
         "stopped": "Stopped"
       }
+    },
+    "find": {
+      "label": "Find in chat",
+      "placeholder": "Find in chat",
+      "count": "{{current}} of {{total}}",
+      "none": "No results",
+      "previous": "Previous match",
+      "next": "Next match",
+      "close": "Close find"
     }
   },
   "side": {

@@ -1186,3 +1186,73 @@ describe('subagents', () => {
     expect(mentions()).toBe(closed + 1);
   });
 });
+
+describe('find in the chat', () => {
+  /** A turn whose first words are folded once it settles: a reply, a call, then the answer. */
+  const folded = (n: number, before: string) => [
+    entry({ type: 'user', uuid: `u${n}`, message: { role: 'user', content: `Prompt ${n}` } }),
+    entry({
+      type: 'assistant',
+      uuid: `a${n}`,
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'text', text: before },
+          { type: 'tool_use', id: `t${n}`, name: 'Bash', input: { command: 'ls' } },
+        ],
+      },
+    }),
+    entry({
+      type: 'user',
+      uuid: `r${n}`,
+      message: {
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: `t${n}`, content: 'ok' }],
+      },
+    }),
+    entry({
+      type: 'assistant',
+      uuid: `b${n}`,
+      message: { role: 'assistant', content: [{ type: 'text', text: `Answer ${n}` }] },
+    }),
+  ];
+
+  beforeAll(() => {
+    // jsdom lays nothing out: no rectangle to land a match by, nothing to scroll.
+    Range.prototype.getBoundingClientRect ??= () => new DOMRect();
+    Element.prototype.scrollBy ??= () => {};
+  });
+
+  // Regressions: a match in a turn the chat has not drawn (past its latest
+  // forty) or in the words a settled turn folded away was counted and never
+  // shown, and Ctrl+F opened the browser's find, which sees neither.
+  it('opens on Ctrl+F, and draws and opens the turn its match is in', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const entries = [
+      ...folded(1, 'Opened pull request 58'),
+      ...Array.from({ length: 60 }, (_, i) => folded(i + 2, `Step ${i + 2}`)).flat(),
+    ];
+    chat.apply({ reset: true, entries });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    expect(screen.queryByText('Prompt 1')).toBeNull();
+
+    const composer = screen.getByRole('textbox');
+    const opened = fireEvent.keyDown(composer, { key: 'f', ctrlKey: true });
+    expect(opened).toBe(false);
+    const field = screen.getByRole('textbox', { name: 'sessions.chat.find.label' });
+    fireEvent.change(field, { target: { value: 'PULL request' } });
+    act(() => vi.advanceTimersByTime(200));
+
+    expect(screen.getByText('sessions.chat.find.count{"current":1,"total":1}')).toBeTruthy();
+    expect(screen.getByText('Prompt 1')).toBeTruthy();
+    expect(screen.getByText('Opened pull request 58')).toBeTruthy();
+
+    fireEvent.change(field, { target: { value: 'nowhere' } });
+    act(() => vi.advanceTimersByTime(200));
+    expect(screen.getByText('sessions.chat.find.none')).toBeTruthy();
+
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(screen.queryByRole('textbox', { name: 'sessions.chat.find.label' })).toBeNull();
+  });
+});

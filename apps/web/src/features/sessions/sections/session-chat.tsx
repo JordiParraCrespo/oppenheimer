@@ -7,16 +7,19 @@ import {
 } from '@oppenheimer/design-system-web';
 import { ArrowDown, LoaderIcon } from '@oppenheimer/design-system-web/icons';
 import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
+import { useChatFindHighlights } from '../hooks/use-chat-find-highlights';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
+import { useFindKey } from '../hooks/use-find-key';
 import { useChatLoading, useChatOlder, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatActivity } from './session-chat-activity';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
+import { type ChatFindTarget, SessionChatFind } from './session-chat-find';
 import { SessionChatSend } from './session-chat-send';
 import { SessionChatTurn } from './session-chat-turn';
 
@@ -56,7 +59,10 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * and composer stand in the terminal grid's `TerminalColumn`, so Terminal /
  * Chat moves neither edge of the text. While the agent works, its own word
  * for the moment, off the terminal's spinner, closes the column
- * (`SessionChatActivity`).
+ * (`SessionChatActivity`). Ctrl+F (⌘F) opens a find over the conversation
+ * the chat holds (`SessionChatFind`): a match in a turn not drawn draws it,
+ * a match in a folded turn opens it, and the chat scrolls to it, the matches
+ * painted in the words (`useChatFindHighlights`).
  */
 export function SessionChat({
   chat,
@@ -76,7 +82,7 @@ export function SessionChat({
   const ids = useChatTurnIds(chat);
   const loading = useChatLoading(chat);
   const older = useChatOlder(chat);
-  const { scroller, content, atLatest, toLatest } = useStickToBottom();
+  const { scroller, content, leave, atLatest, toLatest } = useStickToBottom();
   // The first turn drawn. At the latest it follows the end; away from it,
   // it is held, so a turn arriving never takes one off the top of what the
   // reader is on. Back at the latest, it follows again. It is held by its
@@ -110,8 +116,39 @@ export function SessionChat({
     }
   }, askedHost);
 
+  // What the find is on, none while it is closed.
+  const [find, setFind] = useState<ChatFindTarget | null>(null);
+  const findInput = useRef<HTMLInputElement>(null);
+  useChatFindHighlights(scroller, find?.query ?? null, find?.hit ?? null);
+  const onFind = (target: ChatFindTarget) => {
+    if (target.hit) {
+      // The chat moves the reader to it: off the end, and the turn drawn.
+      leave();
+      const at = ids.indexOf(target.hit.turnId);
+      if (at >= 0 && at < first) setHeld(anchor(at));
+    }
+    setFind(target);
+  };
+  // The keys reach it from the composer or the transcript, which takes
+  // focus when clicked.
+  const root = useRef<HTMLDivElement>(null);
+  useFindKey(root, () => {
+    if (find) findInput.current?.select();
+    else setFind({ query: '', hit: null });
+  });
+
   return (
-    <div className="relative flex size-full flex-col">
+    <div ref={root} className="relative flex size-full flex-col">
+      {find ? (
+        <div className="absolute top-2 right-4 z-10">
+          <SessionChatFind
+            chat={chat}
+            inputRef={findInput}
+            onFind={onFind}
+            onClose={() => setFind(null)}
+          />
+        </div>
+      ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col">
         {/* No scroll anchoring: the turns that leave the top as the drawn
             window follows the end would move the reader up, and the follow
@@ -119,7 +156,8 @@ export function SessionChat({
             its place itself (`keepingPlace`, the held window). */}
         <div
           ref={scroller}
-          className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4 [overflow-anchor:none]"
+          tabIndex={-1}
+          className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]"
         >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {loading ? (
@@ -161,7 +199,7 @@ export function SessionChat({
                   </div>
                 ) : null}
                 {shown.map((id) => (
-                  <SessionChatTurn key={id} chat={chat} id={id} />
+                  <SessionChatTurn key={id} chat={chat} id={id} found={find?.hit?.turnId === id} />
                 ))}
                 <SessionChatActivity chat={chat} />
               </ChatTranscript>

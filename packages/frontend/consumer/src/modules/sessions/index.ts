@@ -26,6 +26,7 @@ export {
   SessionChat,
 } from './chat/session-chat';
 export type { ChatSharedFile } from './chat/session-chat-files';
+export { type ChatFindHit, findInChat } from './chat/session-chat-find';
 export {
   type AttachTicket,
   type CreateSessionCheckout,
