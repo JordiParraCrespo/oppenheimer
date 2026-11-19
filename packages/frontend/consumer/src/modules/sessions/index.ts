@@ -12,6 +12,7 @@ export {
   type ChatPrompt,
   type ChatQuestion,
   type ChatQueued,
+  type ChatSending,
   type ChatState,
   type ChatStatus,
   type ChatStep,
