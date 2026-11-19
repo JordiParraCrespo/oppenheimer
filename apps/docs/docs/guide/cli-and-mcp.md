@@ -54,7 +54,7 @@ The console has no page for API tokens; use `opp tokens`.
 | `opp projects list` | Projects with their repositories, default host and agent |
 | `opp sessions list \| get \| run \| send \| wait \| stop \| close` | Sessions on your hosts |
 | `opp sessions run --hidden`, `opp sessions hide \| show <id>` | Keep a session out of the console's sidebar, or show it again; it runs the same |
-| `opp sessions transcript` | A session's conversation, a page at a time (`--cursor` reads on), secrets replaced |
+| `opp sessions transcript` | A session's conversation, a page at a time (`--cursor` reads on, `--from-start` begins at its first turn, `--all` reads all of it), secrets replaced |
 | `opp automations list \| create \| run \| pause \| resume \| delete` | Automations |
 | `opp bots list \| chat` | Your bots; `chat` waits for the answer |
 | `opp tasks list \| add \| move` | Plan's board |

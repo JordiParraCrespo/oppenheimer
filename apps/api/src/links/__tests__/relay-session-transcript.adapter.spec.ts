@@ -88,6 +88,48 @@ describe('RelaySessionTranscriptAdapter', () => {
     expect(message.after).toBeUndefined();
   });
 
+  // Until the wire has a field for it, the start is asked for as a
+  // conversation no runner has, which every runner out there answers from
+  // the first line with `restarted`; that flag is this read's doing, not a
+  // conversation replaced, and must not reach the reader.
+  it('asks for the start as the interim sentinel, and drops the restarted it causes', async () => {
+    const { adapter, link, replies } = harness(true);
+
+    const pending = adapter.read(HOST, SESSION, { limit: 30, from: 'start' });
+    const message = sent(link);
+    expect(message).toMatchObject({ limit: 30, conversation: 'start', after: 0 });
+    replies.settle(HOST, {
+      type: 'transcript.page',
+      commandId: message.commandId,
+      ...PAGE,
+      from: 0,
+      restarted: true,
+    });
+
+    await expect(pending).resolves.toEqual({
+      kind: 'page',
+      page: { ...PAGE, from: 0, restarted: false },
+    });
+  });
+
+  it('passes on a restarted the runner sends for a cursor that no longer applies', async () => {
+    const { adapter, link, replies } = harness(true);
+
+    const pending = adapter.read(HOST, SESSION, {
+      limit: 30,
+      conversation: 'c4b1e09a7f2d3e65',
+      after: 100,
+    });
+    replies.settle(HOST, {
+      type: 'transcript.page',
+      commandId: sent(link).commandId,
+      ...PAGE,
+      restarted: true,
+    });
+
+    await expect(pending).resolves.toMatchObject({ page: { restarted: true } });
+  });
+
   it('answers with the runner’s refusal and its code', async () => {
     const { adapter, link, replies } = harness(true);
 

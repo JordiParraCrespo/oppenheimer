@@ -1,4 +1,4 @@
-<!-- What the whatsapp tools tell a model: each tool's description (named for the tool), its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-whatsapp-tools.factory.ts`, `bot-whatsapp-tool.mapper.ts`. The code reads each fragment by id and decides when it is said; the comment there says why. -->
+<!-- What the whatsapp tools tell a model: each tool's description (named for the tool), its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-whatsapp-tools.factory.ts`, `bot-whatsapp-accounts.resolver.ts`, `bot-whatsapp-tool.mapper.ts`. The code reads each fragment by id and decides when it is said; the comment there says why. -->
 
 <!-- fragment: account -->
 
@@ -76,3 +76,7 @@ its host is offline, so nothing arrives or goes
 
 {{chatKind}} "{{name}}" (chat id {{chatId}}, {{messageCount}} message(s) kept)
   last: {{describeWhatsappMessage}}
+
+<!-- fragment: grant-default-bot-answers -->
+
+the number's default bot answers

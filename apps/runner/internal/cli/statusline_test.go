@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/cli"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
 )
 
 const statusConversation = "3f1c2b8e-4a5d-4c6e-9f70-1a2b3c4d5e6f"
@@ -39,7 +40,7 @@ func statusHome(t *testing.T) (home, project string) {
 func runStatusLine(t *testing.T, payload string) string {
 	t.Helper()
 	var out bytes.Buffer
-	if err := cli.StatusLine(context.Background(), strings.NewReader(payload), &out); err != nil {
+	if err := cli.StatusLine(context.Background(), nil, strings.NewReader(payload), &out); err != nil {
 		t.Fatal(err)
 	}
 	return out.String()
@@ -56,6 +57,27 @@ func TestTheStatusLineKeepsTheFiguresAndShowsThemWhenThePersonHasNone(t *testing
 	}
 	if _, err := os.Stat(filepath.Join(cli.StatusDir(paths), statusConversation+".json")); err != nil {
 		t.Fatalf("status not kept under %s: %v", home, err)
+	}
+}
+
+// The status line of a session's window-0 agent names the session, and keeps
+// the conversation the agent is in as that session's, which the chat and a
+// Restart read once `/clear` or `/resume` moves it off the launched one.
+func TestTheStatusLineOfASessionsAgentKeepsWhichConversationItIsIn(t *testing.T) {
+	_, project := statusHome(t)
+	var out bytes.Buffer
+	if err := cli.StatusLine(context.Background(), []string{"--session", "bold-otter-3f9a"}, strings.NewReader(statusPayload(project)), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "ctx 32% · 5h 23%\n" {
+		t.Fatalf("line = %q", out.String())
+	}
+	paths, err := cli.ResolvePaths()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transcript.ReportedConversation(cli.StatusDir(paths), "bold-otter-3f9a"); got != statusConversation {
+		t.Fatalf("reported = %q, want %q", got, statusConversation)
 	}
 }
 

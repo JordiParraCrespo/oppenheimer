@@ -10,26 +10,20 @@ import type { StartFromHost } from '../lib/session-options';
 export function StartFromItem({
   host,
   selected,
-  highlighted,
-  onMouseEnter,
   onClick,
 }: {
   host: StartFromHost;
   selected: boolean;
-  highlighted: boolean;
-  onMouseEnter: () => void;
   onClick: () => void;
 }) {
   return (
     <ChipSelectItem
       selected={selected}
-      highlighted={highlighted}
       disabled={host.disabled}
       data-disabled={host.disabled ? '' : undefined}
       aria-label={host.label}
       leading={<span className={dotVariants({ state: host.online ? 'running' : 'idle' })} />}
       trailing={<span className="truncate text-xs text-fg-muted">{host.description}</span>}
-      onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
       {host.label}

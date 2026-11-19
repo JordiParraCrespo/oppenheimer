@@ -5,6 +5,7 @@ import {
   SESSION_GROUPS,
   SESSION_STATES,
   SESSION_TRANSCRIPT_CURSOR_MAX,
+  SESSION_TRANSCRIPT_FROM,
   type SessionGroup,
   type SessionTranscriptPage,
 } from '@oppenheimer/shared';
@@ -378,6 +379,10 @@ export class BotHostToolsFactory implements BotToolArea {
           .max(SESSION_TRANSCRIPT_CURSOR_MAX)
           .optional()
           .describe(promptText('tools/host.read-session-transcript-cursor')),
+        from: z
+          .enum(SESSION_TRANSCRIPT_FROM)
+          .default('latest')
+          .describe(promptText('tools/host.read-session-transcript-from')),
       }),
       run: async (input, context) => {
         if (context.budget.overspent(SESSION_READ_BUDGET_KEY, SESSION_READ_CHARS_PER_TURN)) {
@@ -393,6 +398,7 @@ export class BotHostToolsFactory implements BotToolArea {
               sessionId: input.session_id,
               cursor: input.cursor,
               limit: input.limit,
+              from: input.from,
             }),
           ),
         ]);

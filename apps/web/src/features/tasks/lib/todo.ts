@@ -77,7 +77,9 @@ function isOverdueOn(task: TaskEntity, day: string, today: string): boolean {
  * not done. A task carried or overdue that is ticked done stays on the day
  * it was done, so finishing it does not make it vanish. A past day lists its
  * own and what was finished on it. `projectIds` narrows it as the board's
- * Project filter does (`undefined` is every project).
+ * Project filter does (`undefined` is every project). A task its person took
+ * off To do (`offTodo`) is on no day, whatever its dates, until it gets a TODO
+ * day again or its due date changes.
  */
 export function todoEntries(
   tasks: readonly TaskEntity[],
@@ -85,7 +87,7 @@ export function todoEntries(
   options: TodoOptions,
 ): TodoEntry[] {
   const inScope = (task: TaskEntity) =>
-    !options.projectIds || options.projectIds.includes(task.projectId);
+    !task.offTodo && (!options.projectIds || options.projectIds.includes(task.projectId));
   const listed = new Set<string>();
   const take = (rows: TaskEntity[], reason: TodoReason): TodoEntry[] =>
     rows.flatMap((task) => {

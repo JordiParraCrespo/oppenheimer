@@ -28,6 +28,7 @@ function task(
     priority: TaskPriority | null;
     completedAt: string;
     sessionIds: string[];
+    offTodo: boolean;
   }> = {},
 ) {
   return new TaskEntity(
@@ -54,6 +55,7 @@ function task(
     'person',
     null,
     overrides.priority ?? null,
+    overrides.offTodo ?? false,
   );
 }
 
@@ -204,6 +206,23 @@ describe("To do's day", () => {
     expect(todoLabels({ task: task('y', { focusDate: DAY }), reason: 'day' }, DAY, DAY)).toEqual(
       [],
     );
+  });
+
+  it('leaves a task taken off To do off every day, its due date and TODO day included, and offers it to Add', () => {
+    const rows = [
+      task('kept', { dueDate: DAY }),
+      task('due', { dueDate: DAY, offTodo: true }),
+      task('overdue', { dueDate: '2026-11-02', offTodo: true }),
+      task('planned', { focusDate: '2026-11-05', offTodo: true }),
+    ];
+    const entries = todoEntries(rows, DAY, { today: DAY, overdue: true });
+    expect(entries.map((entry) => entry.task.id)).toEqual(['kept']);
+    expect(todoCounts(rows, DAY, { today: DAY, overdue: true }, new Map())).toEqual({
+      left: 1,
+      done: 0,
+    });
+    const onDay = new Set(entries.map((entry) => entry.task.id));
+    expect(addableTasks(rows, onDay).map((row) => row.id)).toEqual(['due', 'overdue', 'planned']);
   });
 
   it('offers the open tasks not already on the day, dated or not, in the projects in scope', () => {

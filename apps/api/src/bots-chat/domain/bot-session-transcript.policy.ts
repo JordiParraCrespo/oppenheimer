@@ -81,6 +81,9 @@ export function describeTranscriptPage(
       ),
     );
   }
+  if (page.hasEarlier) {
+    lines.push(promptText('tools/session-transcript.page-earlier-turns'));
+  }
   if (page.status === 'partial') {
     const left = page.dropped
       ? ` ${promptText('tools/session-transcript.page-entries-dropped', { dropped: String(page.dropped) })}`
