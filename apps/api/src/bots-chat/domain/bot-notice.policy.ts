@@ -1,3 +1,5 @@
+import { promptText } from './bot-prompt-text.policy';
+
 /**
  * The words around a bot's notice (`notify`): what the tool answers the model,
  * and how many one turn may send. A
@@ -23,5 +25,4 @@ export function noticesSpent(): string {
  * "reaches out with results or decisions that need you"). One statement,
  * read by \`notify\` and by a routine's run, so the two cannot drift.
  */
-export const WORTH_SAYING =
-  'Speak only for something they asked to hear about, something that needs them (a decision, an approval, a blocker only they can clear), or something new and worth interrupting them for; routine progress, a retry that worked and a blocker you already told them about are not.';
+export const WORTH_SAYING = promptText('wake/worth-saying');

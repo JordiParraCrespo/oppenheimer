@@ -10,6 +10,7 @@
     "start:prod": "node dist/main",
     "lint": "biome check src/",
     "arch": "depcruise src --config .dependency-cruiser.cjs",
+    "generate:prompts": "node scripts/emit-prompts.mjs",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
