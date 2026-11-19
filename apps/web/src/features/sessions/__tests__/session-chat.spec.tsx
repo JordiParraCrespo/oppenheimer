@@ -1245,4 +1245,13 @@ describe('the / menu', () => {
     fireEvent.keyDown(field, { key: 'Escape' });
     expect(screen.queryByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeNull();
   });
+
+  // What breaks this: Enter that confirms an IME's composition picking a command instead.
+  it('leaves Enter to an IME that is composing', () => {
+    const { field } = renderOnHost([{ name: 'recap', kind: 'skill' }]);
+    fireEvent.change(field, { target: { value: '/' } });
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true });
+    expect(field.value).toBe('/');
+    expect(screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeTruthy();
+  });
 });

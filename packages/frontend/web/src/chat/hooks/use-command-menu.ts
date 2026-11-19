@@ -7,7 +7,7 @@ import type { SlashCommand } from '../lib/command-menu';
  * typed (the caller reads it off the draft, by its own grammar), the rows
  * `rowsFor` gives for it, in groups whose order is the keyboard's. Up and
  * Down move through every row, Tab or Enter picks one, Escape closes the
- * menu for that draft. The highlight belongs to what was typed, so a new
+ * menu for that draft; none of them while an IME is composing. The highlight belongs to what was typed, so a new
  * letter starts it at the top again with no effect to reset it.
  */
 export function useCommandMenu<Groups extends Record<string, readonly SlashCommand[]>>({
@@ -30,7 +30,8 @@ export function useCommandMenu<Groups extends Record<string, readonly SlashComma
     highlight && highlight.query === query ? Math.min(highlight.index, items.length - 1) : 0;
 
   function onKeyDownCapture(event: KeyboardEvent<HTMLElement>) {
-    if (!open || query === null) return;
+    // Keys that confirm or move an IME's composition are the IME's.
+    if (!open || query === null || event.nativeEvent.isComposing) return;
     const move = (by: number) =>
       setHighlight({ query, index: (index + by + items.length) % items.length });
     const handled: Record<string, () => void> = {
