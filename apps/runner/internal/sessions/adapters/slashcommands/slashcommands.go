@@ -178,11 +178,11 @@ func readHead(path string) (string, bool) {
 	if info, err := os.Stat(path); err != nil || !info.Mode().IsRegular() {
 		return "", false
 	}
-	file, err := os.Open(path)
+	file, err := os.Open(path) //nolint:gosec // a path under the session's own .claude folder, by design
 	if err != nil {
 		return "", false
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	if info, err := file.Stat(); err != nil || !info.Mode().IsRegular() {
 		return "", false
 	}
