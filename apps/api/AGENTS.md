@@ -73,7 +73,10 @@ carries besides its opening (its context, the notes in its history, a
 slash command), `wake/` for what an event says to the bot: what opens the
 turn it starts and the lines it leaves in the chat outside one (a session,
 a pull request, a task, an approval, another bot, a routine, a loop, a
-goal); it is part of the id (`system/rules`). A file is
+goal), `jobs/` for a model call that is not a bot's turn (the dream, the
+goal and rule reviews, the summary, a subagent), `tools/` for what a tool
+tells the model (its description, its answers and refusals); it is part of
+the id (`system/rules`). A file is
 one prompt, or several fragments under
 `<!-- fragment: name -->` markers when the code chooses among them;
 `{{name}}` is a slot the code fills; any other HTML comment is a note for

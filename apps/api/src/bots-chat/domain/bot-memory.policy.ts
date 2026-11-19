@@ -4,6 +4,7 @@ import {
   type BotMemoryScope,
   type BotMemoryTier,
 } from '@oppenheimer/shared';
+import { promptText } from './bot-prompt-text.policy';
 
 /** A fact as the prompt reads it. */
 export interface RememberedFact {
@@ -87,13 +88,7 @@ function newestWithin(facts: readonly RememberedFact[], chars: number): Remember
  * test leans to the bot's own memory: a misfiled own fact costs one bot a
  * lookup, a misfiled general fact costs every bot its prompt.
  */
-export const MEMORY_CHOICE_RULE = [
-  'You write to one of two memories.',
-  'Your memory (memory "yours", the default) is read by you alone: everything about your job and the work you do for the person, such as their projects, repositories, folders, hosts, accounts, schedules, how they want this kind of work done, and settings or tools that only your work touches.',
-  'The general memory (memory "general") is read by every bot the person has, whatever its job: only who the person is and how they want to be treated by any bot, such as their name, what they do for a living and for whom, language, time zone, how to address them, and working preferences they state for all their work.',
-  'Choose "general" when the person says it is for all their bots or all their work ("any bot", "everything", "always"), or when it is who they are; save it in their words, without what it means for your own job.',
-  'Otherwise ask: would a bot with a completely different job need this fact? If not, or if you are unsure, use "yours". A fact that names one of the person\'s projects, repositories, folders, hosts, accounts or tools is "yours", even when it is a preference of theirs.',
-].join(' ');
+export const MEMORY_CHOICE_RULE = promptText('tools/memory.which-memory');
 
 /**
  * What `remember` tells the model: save as it goes,
@@ -102,15 +97,18 @@ export const MEMORY_CHOICE_RULE = [
  * words and the rule change together.
  */
 export const REMEMBER_DESCRIPTION = [
-  `Saves one fact, in a sentence of at most ${BOT_MEMORY_FACT_MAX} characters, for every later conversation.`,
-  'Save as you go, in the turn you learn it: a preference, a correction, a decision, a name, how the person likes work done, what you found out about their repositories, hosts and projects. Do not ask first and do not check recall for duplicates; when a fact you keep has changed, forget it and remember the new one.',
-  'When "Learn automatically" is off in your settings, nothing is saved: ask the person in the chat instead.',
+  promptText('tools/memory.remember-what-it-saves', {
+    memoryFactMax: String(BOT_MEMORY_FACT_MAX),
+  }),
+  promptText('tools/memory.remember-as-you-go'),
+  promptText('tools/memory.remember-learning-off'),
   MEMORY_CHOICE_RULE,
-  `tier "log" (the default) is a dated entry: your newest entries are in your prompt every turn and the rest are looked up with recall; once you keep ${BOT_MEMORY_FACTS_MAX} facts, your oldest log entry makes room. tier "profile" is for standing instructions and who the person is (their name, role, time zone, rules they gave you), in mind every turn; keep it short.`,
+  promptText('tools/memory.remember-tiers', {
+    memoryFactsMax: String(BOT_MEMORY_FACTS_MAX),
+  }),
 ].join(' ');
 
-export const REMEMBER_TIER_HINT =
-  '"log" (default): dated; the newest in mind, the rest looked up with recall. "profile": standing instructions and who the person is, in mind every turn.';
+export const REMEMBER_TIER_HINT = promptText('tools/memory.remember-tier-hint');
 
 /** The tier `remember` keeps a fact in when the model names none. */
 export const REMEMBER_DEFAULT_TIER: BotMemoryTier = 'log';
@@ -118,8 +116,7 @@ export const REMEMBER_DEFAULT_TIER: BotMemoryTier = 'log';
 /** Which memory `remember` writes to, as the model names it. */
 export const REMEMBER_MEMORY = ['yours', 'general'] as const;
 
-export const REMEMBER_MEMORY_HINT =
-  '"yours" (default): your own memory, read by you alone; anything about your job and the work you do. "general": about the person, read by every bot of theirs; only facts a bot with a different job would also need.';
+export const REMEMBER_MEMORY_HINT = promptText('tools/memory.remember-memory-hint');
 
 /** The memory a fact is in, by the name `remember` and the dream use for it. */
 export function memoryNameOf(scope: BotMemoryScope): (typeof REMEMBER_MEMORY)[number] {
@@ -144,6 +141,6 @@ export function describeKept(
 ): string {
   const tier = fact.tier === 'profile' ? 'in mind' : 'in the log';
   if (fact.scope === 'bot') return `your memory, ${tier}`;
-  const by = botId && fact.botId !== botId ? ', saved by another of their bots' : '';
+  const by = botId && fact.botId !== botId ? promptText('tools/memory.saved-by-another-bot') : '';
   return `general memory, ${tier}${by}`;
 }

@@ -270,7 +270,7 @@ export const QUIET_TOOL = 'nothing_to_report';
  * so a heartbeat that found nothing is one collapsed line in the chat.
  */
 export function quietTurnAnswer(): string {
-  return 'Noted: nothing to report. End your turn now without writing anything: what you write after this is not kept.';
+  return promptText('tools/notice.quiet-turn-answer');
 }
 
 /**

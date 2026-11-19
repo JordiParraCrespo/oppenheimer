@@ -1,3 +1,4 @@
+import { promptText } from './bot-prompt-text.policy';
 /**
  * What a bot checks before it names a project: a project
  * the person already has under that name. The console lets two projects share
@@ -42,5 +43,5 @@ export function namesakeRefusal(name: string, namesakes: readonly NamedProject[]
   const listed = namesakes
     .map((project) => `${project.id} "${project.name}"${project.archivedAt ? ' (archived)' : ''}`)
     .join(', ');
-  return `A project named "${name.trim()}" already exists: ${listed}. Ask the person whether they mean that one; only if they want a second project with the same name, call again with allow_same_name true.`;
+  return promptText('tools/projects.namesake-refusal', { name: name.trim(), listed });
 }

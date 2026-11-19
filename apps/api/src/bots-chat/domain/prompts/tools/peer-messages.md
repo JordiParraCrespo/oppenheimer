@@ -1,0 +1,45 @@
+<!-- What the tools tell a model about peer messages: answers, refusals and the wording of descriptions, from `bot-chain.policy.ts`, `bot-peer-message.policy.ts`. The code reads each fragment by id and decides when it is said; the comment there says why. -->
+
+<!-- fragment: chain-self -->
+
+You cannot message yourself. Do the work in this turn instead.
+
+<!-- fragment: chain-too-deep -->
+
+This request has already passed through {{chainDepth}} bots, the most one request of the person may reach ({{maxDepth}} bots deep). Do what you can yourself and tell the person what is left.
+
+<!-- fragment: chain-too-many -->
+
+Bots have already sent each other {{asks}} messages because of this request, the most one request of the person may cause ({{turnBudget}}). Finish with what you have and tell the person what is left.
+
+<!-- fragment: chain-circle -->
+
+That bot is already working on this request further up the chain, so messaging it would go round in a circle. Answer with what you have; if you were asked, your answer goes back on its own.
+
+<!-- fragment: refused-turn-not-running -->
+
+This turn is no longer running, so it can send nothing.
+
+<!-- fragment: refused-no-account -->
+
+The person this request came from no longer has an account.
+
+<!-- fragment: refused-chain-gone -->
+
+The request this belongs to was cleared from the chat it started in, so no more bots are messaged for it.
+
+<!-- fragment: refused-no-key -->
+
+{{name}} runs on {{provider}}, and the workspace has no {{provider}} key, so it could not answer. Tell the person; they can add the key in Settings → Model providers.
+
+<!-- fragment: refused-secret -->
+
+Not sent: the message contains what looks like {{kind}}. Credentials never travel between bots. Remove it and send again; if the other bot needs access, the person connects it in Settings.
+
+<!-- fragment: answer-stopped -->
+
+It was stopped before it answered.
+
+<!-- fragment: answer-empty -->
+
+It ended without writing an answer.

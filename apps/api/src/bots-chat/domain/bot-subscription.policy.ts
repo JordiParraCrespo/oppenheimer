@@ -239,12 +239,13 @@ export function liveTaskOf(
 /** What `watch_session` adds about the looks it owes the task it follows, if that task runs. */
 export function checkInAnswer(running: boolean, minutes: number | null): string {
   if (!running) {
-    return minutes === null
-      ? ''
-      : 'Its task is not running, so no look was set: you are woken when it next needs input or ends.';
+    return minutes === null ? '' : promptText('tools/sessions.check-in-task-not-running');
   }
-  const asked = minutes === null ? '' : ` and once in ${minutes} minutes, as you asked`;
-  return `While it runs you are also woken every few minutes${asked} to look at how it is going.`;
+  const asked =
+    minutes === null
+      ? ''
+      : ` ${promptText('tools/sessions.check-in-as-asked', { minutes: String(minutes) })}`;
+  return promptText('tools/sessions.check-in-while-it-runs', { asked });
 }
 
 /** The soonest and latest a bot may ask to look at a task it follows again (`watch_session`'s `check_in_minutes`). */
