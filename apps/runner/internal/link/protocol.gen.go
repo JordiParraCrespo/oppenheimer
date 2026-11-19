@@ -104,6 +104,7 @@ const (
 	CapabilitySessionTeleport          = "session.teleport"
 	CapabilitySessionWatch             = "session.watch"
 	CapabilityWhatsapp                 = "whatsapp"
+	CapabilityWhatsappVoice            = "whatsapp.voice"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
 	CapabilityTranscriptRead           = "transcript.read"
@@ -188,6 +189,8 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSent            = "whatsapp.sent"
+	TypeWhatsappMediaGet        = "whatsapp.media.get"
+	TypeWhatsappMedia           = "whatsapp.media"
 	TypeTelegramLink            = "telegram.link"
 	TypeTelegramUnlink          = "telegram.unlink"
 	TypeTelegramState           = "telegram.state"
@@ -274,6 +277,8 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSent,
+	TypeWhatsappMediaGet,
+	TypeWhatsappMedia,
 	TypeTelegramLink,
 	TypeTelegramUnlink,
 	TypeTelegramState,
@@ -433,6 +438,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
+	case TypeWhatsappMediaGet:
+		return new(WhatsappMediaGet), true
+	case TypeWhatsappMedia:
+		return new(WhatsappMedia), true
 	case TypeTelegramLink:
 		return new(TelegramLink), true
 	case TypeTelegramUnlink:
@@ -1166,18 +1175,19 @@ type WhatsappMessages struct {
 
 // WhatsappInbound is WhatsappMessages.Messages.
 type WhatsappInbound struct {
-	Key        string    `json:"key"`
-	ID         string    `json:"id"`
-	ChatID     string    `json:"chatId"`
-	ChatKind   string    `json:"chatKind"`
-	ChatName   string    `json:"chatName,omitempty"`
-	SenderID   string    `json:"senderId"`
-	SenderName string    `json:"senderName,omitempty"`
-	FromMe     bool      `json:"fromMe"`
-	Text       string    `json:"text"`
-	Media      string    `json:"media,omitempty"`
-	QuotedID   string    `json:"quotedId,omitempty"`
-	SentAt     time.Time `json:"sentAt"`
+	Key          string    `json:"key"`
+	ID           string    `json:"id"`
+	ChatID       string    `json:"chatId"`
+	ChatKind     string    `json:"chatKind"`
+	ChatName     string    `json:"chatName,omitempty"`
+	SenderID     string    `json:"senderId"`
+	SenderName   string    `json:"senderName,omitempty"`
+	FromMe       bool      `json:"fromMe"`
+	Text         string    `json:"text"`
+	Media        string    `json:"media,omitempty"`
+	QuotedID     string    `json:"quotedId,omitempty"`
+	VoiceSeconds int       `json:"voiceSeconds,omitempty"`
+	SentAt       time.Time `json:"sentAt"`
 }
 
 // WhatsappAck is the `whatsapp.ack` message.
@@ -1207,6 +1217,22 @@ type WhatsappSent struct {
 	CommandID string    `json:"commandId"`
 	ID        string    `json:"id"`
 	SentAt    time.Time `json:"sentAt"`
+}
+
+// WhatsappMediaGet is the `whatsapp.media.get` message.
+type WhatsappMediaGet struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	MessageID string `json:"messageId"`
+}
+
+// WhatsappMedia is the `whatsapp.media` message.
+type WhatsappMedia struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Mimetype  string `json:"mimetype"`
+	Data      string `json:"data"`
 }
 
 // TelegramLink is the `telegram.link` message.

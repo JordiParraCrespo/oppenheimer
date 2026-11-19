@@ -355,7 +355,7 @@ func (h *linkHandler) capabilities() []string {
 		named = append(named, link.CapabilityDesktopStream)
 	}
 	if h.whatsapp != nil {
-		named = append(named, link.CapabilityWhatsapp)
+		named = append(named, link.CapabilityWhatsapp, link.CapabilityWhatsappVoice)
 	}
 	if h.telegram != nil {
 		named = append(named, link.CapabilityTelegram)
@@ -771,7 +771,8 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// between links is only logged, as a create's is.
 			h.lanes.run(laneHostUpdate, func() { h.update(h.life, m) })
 		}
-	case link.TypeWhatsappLink, link.TypeWhatsappUnlink, link.TypeWhatsappSend, link.TypeWhatsappAck:
+	case link.TypeWhatsappLink, link.TypeWhatsappUnlink, link.TypeWhatsappSend, link.TypeWhatsappAck,
+		link.TypeWhatsappMediaGet:
 		h.whatsAppMessage(msg)
 	case link.TypeTelegramLink, link.TypeTelegramUnlink, link.TypeTelegramSend, link.TypeTelegramAck:
 		h.telegramMessage(msg)

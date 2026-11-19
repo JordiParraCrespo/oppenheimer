@@ -430,6 +430,7 @@ export class RunnerLinkGateway {
       case 'session.windows':
       case 'cloud.replied':
       case 'whatsapp.sent':
+      case 'whatsapp.media':
       case 'telegram.sent':
       case 'shared.preview':
       case 'transcript.page':

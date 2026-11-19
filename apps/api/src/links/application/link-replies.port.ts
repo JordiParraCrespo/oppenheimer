@@ -12,6 +12,7 @@ import type {
   TelegramSentMessage,
   TerminalScreenMessage,
   TranscriptPageMessage,
+  WhatsappMediaMessage,
   WhatsappSentMessage,
 } from '@oppenheimer/shared/protocol';
 
@@ -19,8 +20,8 @@ import type {
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
  * `session.windows`,
- * `cloud.replied`, `whatsapp.sent`, `telegram.sent`, `shared.preview`,
- * `transcript.page`, `host.exec.result`, `terminal.screen`, `computer.screen` or `browser.page`.
+ * `cloud.replied`, `whatsapp.sent`, `whatsapp.media`, `telegram.sent`, `shared.preview`,
+ * `transcript.page`, `host.exec.result` or `terminal.screen`.
  */
 export type LinkReply =
   | FsListingMessage
@@ -29,6 +30,7 @@ export type LinkReply =
   | SessionWindowsMessage
   | CloudRepliedMessage
   | WhatsappSentMessage
+  | WhatsappMediaMessage
   | TelegramSentMessage
   | SharedPreviewMessage
   | TranscriptPageMessage

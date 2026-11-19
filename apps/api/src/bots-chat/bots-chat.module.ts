@@ -38,6 +38,7 @@ import { BotMailWriteToolsFactory } from './application/bot-mail-write-tools.fac
 import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
 import { BotNoticeToolsFactory } from './application/bot-notice-tools.factory';
+import { BotOpeningMediaResolver } from './application/bot-opening-media.resolver';
 import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPermissionsResolver } from './application/bot-permissions.resolver';
@@ -79,6 +80,7 @@ import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotWhatsappAccountsResolver } from './application/bot-whatsapp-accounts.resolver';
 import { BotWhatsappGrantToolsFactory } from './application/bot-whatsapp-grant-tools.factory';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
+import { BotWhatsappVoiceNoteResolver } from './application/bot-whatsapp-voice-note.resolver';
 import { BotMilestoneDeletedDomainEventHandler } from './application/event-handlers/bot-milestone-deleted.domain-event-handler';
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
@@ -115,6 +117,7 @@ import {
   BOT_MEMORY_DREAM_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
   BOT_NOTICE_REPOSITORY,
+  BOT_OPENING_MEDIA_READERS,
   BOT_PERMISSION_RULE_REPOSITORY,
   BOT_QUESTION_REPOSITORY,
   BOT_STALL_CHECKS,
@@ -411,6 +414,15 @@ const queryHandlers: Provider[] = [
     BotUsageMapper,
     BotTurnContextResolver,
     BotTurnOpeningResolver,
+    BotOpeningMediaResolver,
+    BotWhatsappVoiceNoteResolver,
+    // The readers of what a turn's opening still has to read, one per kind of
+    // `BOT_PENDING_MEDIA_KINDS`. A new kind is a reader and a place here.
+    {
+      provide: BOT_OPENING_MEDIA_READERS,
+      inject: [BotWhatsappVoiceNoteResolver],
+      useFactory: (whatsappVoiceNotes: BotWhatsappVoiceNoteResolver) => [whatsappVoiceNotes],
+    },
     BotApprovalStartedPolicy,
     BotMessageAttachmentsResolver,
     BotSteeringFactory,
