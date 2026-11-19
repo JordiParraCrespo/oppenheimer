@@ -1,5 +1,5 @@
-import type { ChatFindHit } from '@oppenheimer/frontend-consumer';
-import { type RefObject, useEffect, useLayoutEffect } from 'react';
+import { type RefObject, useLayoutEffect } from 'react';
+import type { ChatFindHit } from '../lib/chat-find';
 
 /** The names the console's stylesheet paints (`::highlight(...)`, `globals.css`). */
 const ALL = 'chat-find';
@@ -8,26 +8,64 @@ const CURRENT = 'chat-find-current';
 /** Where the match the find lands on sits in the chat's view, from its top: a third of the way down. */
 const LANDING = 1 / 3;
 
+/** The elements a run of text breaks at, as `markdownText` breaks a reply between its blocks. */
+const BLOCKS = new Set([
+  'P',
+  'LI',
+  'PRE',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'TD',
+  'TH',
+  'BLOCKQUOTE',
+  'SUMMARY',
+  'DIV',
+]);
+
+/**
+ * Text the chat draws around the words, not in them: a code block's band
+ * (its language), a prompt's attachments and its trail (when it was sent).
+ */
+const CHROME =
+  '[data-slot="code-block-band"], [data-slot="chat-user-message-attachments"], [data-slot="chat-user-message-trail"], button';
+
 /** Whether this browser paints ranges without touching the DOM (the CSS Custom Highlight API). */
 function canHighlight(): boolean {
   return typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight !== 'undefined';
 }
 
+function blockOf(node: Node, root: Element): Element {
+  for (let at = node.parentElement; at && at !== root; at = at.parentElement) {
+    if (BLOCKS.has(at.tagName)) return at;
+  }
+  return root;
+}
+
 /**
  * Every match of `needle` in the words of one element, as ranges: its text
- * nodes read as one string, so a match across a bold word or a link is found.
+ * nodes read as one string, a newline where one block ends and the next
+ * begins, so a match across a bold word or a link is found and one across
+ * two paragraphs is not, as `findInChat` counts them.
  */
 function rangesIn(element: Element, needle: string): Range[] {
   const nodes: { node: Text; start: number }[] = [];
   let text = '';
+  let block: Element | null = null;
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const value = (node as Text).data;
+    if (node.parentElement?.closest(CHROME)) continue;
+    const at = blockOf(node, element);
+    if (block && at !== block) text += '\n';
+    block = at;
     nodes.push({ node: node as Text, start: text.length });
-    text += value;
+    text += (node as Text).data;
   }
-  const at = (offset: number, end: boolean) => {
-    // The last node starting before the offset, or at it for a range's start.
+  // The text node an offset falls in: the last that starts at it, or before
+  // it for a range's end.
+  const locate = (offset: number, end: boolean) => {
     let found = nodes[0];
     for (const entry of nodes) {
       if (end ? entry.start < offset : entry.start <= offset) found = entry;
@@ -42,8 +80,8 @@ function rangesIn(element: Element, needle: string): Range[] {
     from >= 0;
     from = lower.indexOf(needle, from + needle.length)
   ) {
-    const start = at(from, false);
-    const end = at(from + needle.length, true);
+    const start = locate(from, false);
+    const end = locate(from + needle.length, true);
     const range = document.createRange();
     range.setStart(start.node, start.offset);
     range.setEnd(end.node, end.offset);
@@ -73,9 +111,11 @@ function currentOf(byTurn: Map<string, Range[]>, hit: ChatFindHit | null): Range
   return ranges[Math.min(hit.index, ranges.length - 1)];
 }
 
+/** Paints the matches, and returns the one the find is on. */
 function paint(box: HTMLElement, needle: string, hit: ChatFindHit | null): Range | null {
   const byTurn = matchesIn(box, needle);
   const current = currentOf(byTurn, hit);
+  if (!canHighlight()) return current;
   const all = [...byTurn.values()].flat().filter((range) => range !== current);
   CSS.highlights.set(ALL, new Highlight(...all));
   if (current) CSS.highlights.set(CURRENT, new Highlight(current));
@@ -93,8 +133,10 @@ function paint(box: HTMLElement, needle: string, hit: ChatFindHit | null): Range
  * moving the reader. A browser without the CSS Custom Highlight API paints
  * nothing and still scrolls.
  *
- * Effects: the browser's highlight registry, the scroller's position, and a
- * `MutationObserver` on the chat's content.
+ * Effect: the browser's highlight registry, the scroller's position, and a
+ * `MutationObserver` on the chat's content. One layout effect does all
+ * three, so the registry a step cleans up is the one the step before it
+ * painted, never the one it paints itself.
  */
 export function useChatFindHighlights(
   scroller: RefObject<HTMLElement | null>,
@@ -108,17 +150,12 @@ export function useChatFindHighlights(
   useLayoutEffect(() => {
     const box = scroller.current;
     if (!box || !needle) return;
-    const current = canHighlight()
-      ? paint(box, needle, hit)
-      : currentOf(matchesIn(box, needle), hit);
-    if (!current) return;
-    const top = current.getBoundingClientRect().top - box.getBoundingClientRect().top;
-    box.scrollBy({ top: top - box.clientHeight * LANDING });
-  }, [scroller, needle, hit]);
-
-  useEffect(() => {
-    const box = scroller.current;
-    if (!box || !needle || !canHighlight()) return;
+    const current = paint(box, needle, hit);
+    if (current) {
+      const top = current.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      box.scrollBy({ top: top - box.clientHeight * LANDING });
+    }
+    if (!canHighlight()) return;
     let frame = 0;
     const observer = new MutationObserver(() => {
       cancelAnimationFrame(frame);

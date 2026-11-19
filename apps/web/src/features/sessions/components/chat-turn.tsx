@@ -63,6 +63,7 @@ export function ChatTurn({ turn, found = false }: { turn: Turn; found?: boolean 
     <div data-turn={turn.id} className="flex flex-col gap-4">
       {turn.prompt ? (
         <ChatUserMessage
+          data-chat-find=""
           // A session's chat stands on its terminal's ground, the card's own
           // colour, so the turn takes the chat's grey wash, a code block's.
           tone="wash"
@@ -86,7 +87,7 @@ export function ChatTurn({ turn, found = false }: { turn: Turn; found?: boolean 
             ) : undefined
           }
         >
-          <span data-chat-find="">{turn.prompt.text}</span>
+          {turn.prompt.text}
         </ChatUserMessage>
       ) : null}
       {blocks.length > 0 || live ? (

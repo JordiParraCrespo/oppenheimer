@@ -1,4 +1,5 @@
-import type { ChatTurn } from './session-chat';
+import type { ChatTurn } from '@oppenheimer/frontend-consumer';
+import { markdownText } from '@oppenheimer/frontend-web';
 
 /** One place a search found: the turn it is in, and which of that turn's matches it is, from 0. */
 export interface ChatFindHit {
@@ -7,20 +8,15 @@ export interface ChatFindHit {
 }
 
 /**
- * A markdown link's target, which the chat draws as the link's words alone:
- * left out, so a search counts what the reader can see.
- */
-const LINK_TARGET = /\]\([^)]*\)/g;
-
-/**
- * What a turn says in words a reader can find: the person's prompt and the
- * agent's replies. Thinking, calls and their output are left out: the chat
+ * What a turn says in words a reader can find, as the chat draws them: the
+ * person's prompt as written, the agent's replies as their markdown reads
+ * (`markdownText`). Thinking, calls and their output are left out: the chat
  * folds them, and a find that opened every fold would lose the reader.
  */
 function wordsOf(turn: ChatTurn): string[] {
   const words = turn.prompt?.text ? [turn.prompt.text] : [];
   for (const step of turn.steps) {
-    if (step.kind === 'reply') words.push(step.text.replace(LINK_TARGET, ']'));
+    if (step.kind === 'reply') words.push(markdownText(step.text));
   }
   return words;
 }

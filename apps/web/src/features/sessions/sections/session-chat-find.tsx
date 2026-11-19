@@ -1,13 +1,10 @@
 import { IconButton, Input, useDebouncedCallback } from '@oppenheimer/design-system-web';
 import { ChevronDown, ChevronUp, Search, X } from '@oppenheimer/design-system-web/icons';
-import {
-  type SessionChat as Chat,
-  type ChatFindHit,
-  findInChat,
-} from '@oppenheimer/frontend-consumer';
+import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
 import { type KeyboardEvent, type Ref, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '../hooks/use-session-chat';
+import { type ChatFindHit, findInChat } from '../lib/chat-find';
 
 /** How long the field waits after a key before it searches. */
 const SETTLE_MS = 150;
