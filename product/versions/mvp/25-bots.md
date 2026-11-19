@@ -431,6 +431,14 @@ happened and whether sending it again helps, from its kind (§2): Retry only
 when it can, Model providers for a refused key or sign-in, and the
 provider's own words under Show details.
 
+In the sidebar, a bot at work reads as one the way a working session does
+(2026-11-19): while a turn of its is queued or running, whatever started it
+(a message, a routine, another bot, a channel), its name shimmers and the
+green dot shows on its face. `GET /v1/working-bots` is the one read for the
+whole list, and the workspace stream's `botTurn.changed`, raised when a turn
+is queued or ends, says when to read it again; a 15-second poll stands in
+while the stream is down. The amber dot is still a card waiting on you (§5).
+
 ### 3.1 Images
 
 You can send a bot images (issue #426): the paperclip in the composer's

@@ -112,6 +112,8 @@ const REFRESHES: RefreshTable = {
   // Every notice a bot sends raises it: the Inbox's list across bots. The
   // bot's chat shows no notice, so it has nothing to refresh.
   'botNotice.changed': [{ prefix: botsKeys.workspaceNotices(), announcesEvery: true }],
+  // A turn queued or ended, whatever started it: which bots are working.
+  'botTurn.changed': [{ prefix: botsKeys.working(), announcesEvery: true }],
   // Every put and delete of the caller's marks.
   'inboxMark.changed': [{ prefix: inboxKeys.marks(), announcesEvery: true }],
   // A report posted and a report answered each raise it: the Inbox's open reports.

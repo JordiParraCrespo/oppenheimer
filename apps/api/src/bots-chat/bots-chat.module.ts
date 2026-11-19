@@ -247,6 +247,8 @@ import { FindBotUsageHttpController } from './queries/find-bot-usage/find-bot-us
 import { FindBotUsageQueryHandler } from './queries/find-bot-usage/find-bot-usage.query-handler';
 import { FindPendingBotQuestionHttpController } from './queries/find-pending-bot-question/find-pending-bot-question.http.controller';
 import { FindPendingBotQuestionQueryHandler } from './queries/find-pending-bot-question/find-pending-bot-question.query-handler';
+import { FindWorkingBotsHttpController } from './queries/find-working-bots/find-working-bots.http.controller';
+import { FindWorkingBotsQueryHandler } from './queries/find-working-bots/find-working-bots.query-handler';
 import { FindWorkspaceBotApprovalsHttpController } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.http.controller';
 import { FindWorkspaceBotApprovalsQueryHandler } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.query-handler';
 import { FindWorkspaceBotNoticesHttpController } from './queries/find-workspace-bot-notices/find-workspace-bot-notices.http.controller';
@@ -277,6 +279,7 @@ const httpControllers = [
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
+  FindWorkingBotsHttpController,
   FindWorkspaceBotNoticesHttpController,
   DecideBotApprovalHttpController,
   FindPendingBotQuestionHttpController,
@@ -341,6 +344,7 @@ const queryHandlers: Provider[] = [
   FindPendingBotQuestionQueryHandler,
   FindBotApprovalsQueryHandler,
   FindWorkspaceBotApprovalsQueryHandler,
+  FindWorkingBotsQueryHandler,
   FindWorkspaceBotNoticesQueryHandler,
   FindBotAttachmentQueryHandler,
   ReadBotAttachmentQueryHandler,

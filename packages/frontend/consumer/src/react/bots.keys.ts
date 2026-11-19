@@ -51,6 +51,9 @@ export const botsKeys = {
   // Each bot's latest notice (`notify`), across the workspace (the Inbox), and
   // announced by `botNotice.changed`.
   workspaceNotices: () => [...botsKeys.all, 'notices'] as const,
+  // The bots with a turn queued or running (the sidebar's shimmer), announced
+  // by `botTurn.changed`.
+  working: () => [...botsKeys.all, 'working'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
   groupLists: () => [...botsKeys.groups(), 'list'] as const,
   groupList: () => [...botsKeys.groupLists()] as const,

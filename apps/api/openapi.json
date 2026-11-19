@@ -24476,6 +24476,54 @@
         ]
       }
     },
+    "/api/v1/working-bots": {
+      "get": {
+        "description": "The bots you may read that have a turn queued or running. The workspace stream sends `botTurn.changed` when one may have started or stopped.",
+        "operationId": "findWorkingBots",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkingBotsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The bots at work",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bot-notices": {
       "get": {
         "description": "Each bot's latest line to the person (its `notify` tool), on the bots you may read, newest first, at most 50. A newer notice replaces a bot's last one under a new id.",
@@ -41177,6 +41225,22 @@
           "botId",
           "botName",
           "sessionId"
+        ]
+      },
+      "WorkingBotsResponseDto": {
+        "type": "object",
+        "properties": {
+          "botIds": {
+            "description": "The bots with a turn queued or running, in no order.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "botIds"
         ]
       },
       "WorkspaceBotNoticeResponseDto": {

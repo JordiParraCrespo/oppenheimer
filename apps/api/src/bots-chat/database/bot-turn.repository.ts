@@ -541,6 +541,8 @@ export class BotTurnRepository
         .execute();
       if (result.affected !== 1) return false;
       turn.markPersisted();
+      await this.outbox.stageEvents(manager, turn.domainEvents);
+      turn.clearEvents();
       await stageNext(this.outbox, manager, turn, correlationId);
       if (isChannelOrigin(turn.origin)) {
         await this.outbox.stageJob(manager, {
@@ -627,6 +629,16 @@ export class BotTurnRepository
       status: 'running',
     });
     return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async findWorkingBotIds(scope: AccessScope): Promise<string[]> {
+    // IDX_bot_turn_active: a workspace's queued and running turns are a handful per bot.
+    const rows: { botId: string }[] = await this.scopedQuery(scope)
+      .select('turn.botId', 'botId')
+      .distinct(true)
+      .andWhere('turn.status IN (:...active)', { active: BOT_ACTIVE_TURN_STATUSES })
+      .getRawMany();
+    return rows.map((row) => row.botId);
   }
 
   async requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean> {
@@ -741,6 +753,8 @@ export async function enqueueLocked(
   await ensureConsoleWithin(manager, turn);
   await manager.getRepository(BotTurnOrmEntity).insert(turns.toPersistence(turn));
   await insertMessageWithin(manager, messages, message);
+  await outbox.stageEvents(manager, turn.domainEvents);
+  turn.clearEvents();
   if (active > 0) return 'waiting';
   await stageRun(outbox, manager, turn.botId, turn.id, turn.lane, correlationId);
   return 'staged';

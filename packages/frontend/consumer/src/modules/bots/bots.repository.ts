@@ -613,6 +613,14 @@ export class BotsRepository {
     });
   }
 
+  /** The bots with a turn queued or running, on the bots the caller may read. */
+  findWorkingBotIds(): Promise<string[]> {
+    return callApi(BotsErrors.FETCH_LIST_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWorkingBots());
+      return data.botIds;
+    });
+  }
+
   /** Each bot's latest line to the person, on the bots the caller may read, newest first. */
   findWorkspaceNotices(): Promise<WorkspaceBotNoticeEntity[]> {
     return callApi(BotsErrors.FETCH_NOTICES_FAILED, async (api) => {

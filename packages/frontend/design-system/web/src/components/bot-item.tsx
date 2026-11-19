@@ -18,7 +18,8 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
 /**
  * BotItem — an employee in the sidebar, on one line: a 20px square photo
  * (initials in ink until it loads) with a 9px green dot on its corner while
- * the bot is working, then the name at 14px. The last message is the row's
+ * the bot is working, then the name at 14px, which breathes while it works
+ * as a working `SessionItem`'s does (`animate-shimmer`). The last message is the row's
  * tooltip, beside it on hover ("You: …" when it was yours). An unread chat
  * sets the name at 600 with a 7px blue dot at the end; one waiting on the
  * person (`needsInput`: an approval, a question) does the same with an amber
@@ -53,7 +54,7 @@ function BotItem({
   face?: BotFaceSpec;
   /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
-  /** The bot is working: the green dot on the photo. */
+  /** The bot is working: the green dot on the photo, and the name shimmers. */
   live?: boolean;
   unread?: boolean;
   /** The bot is waiting on the person (an approval, a question): the amber dot. */
@@ -71,6 +72,7 @@ function BotItem({
     <ButtonPrimitive
       data-slot="bot-item"
       data-active={active || undefined}
+      data-live={live || undefined}
       data-unread={unread || undefined}
       data-needs-input={needsInput || undefined}
       data-attention={unread || needsInput || undefined}
@@ -94,7 +96,12 @@ function BotItem({
           />
         ) : null}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold">
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold',
+          live && 'motion-safe:animate-shimmer',
+        )}
+      >
         {name}
       </span>
       {needsInput || unread ? (

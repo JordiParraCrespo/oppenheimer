@@ -143,6 +143,12 @@ describe('useWorkspaceEvents', () => {
     await send({ type: 'botNotice.changed', id: 'n-1', botId: 'b-1' });
     expect(invalidated).toEqual([botsKeys.workspaceNotices()]);
 
+    // A turn queued or ended, by any channel: the sidebar's working bots.
+    quiet();
+    invalidated.length = 0;
+    await send({ type: 'botTurn.changed', id: 't-1', botId: 'b-1' });
+    expect(invalidated).toEqual([botsKeys.working()]);
+
     quiet();
     invalidated.length = 0;
     await send({ type: 'inboxMark.changed', itemKey: 'approval:ap-1' });

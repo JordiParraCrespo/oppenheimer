@@ -373,6 +373,7 @@ export type {
   WatchedRepositoryDto,
   WhatsappAccountResponseDto,
   WhatsappChatGrantResponseDto,
+  WorkingBotsResponseDto,
   WorkspaceBotApprovalResponseDto,
   WorkspaceBotNoticeResponseDto,
   WorkspaceMemberResponseDto,

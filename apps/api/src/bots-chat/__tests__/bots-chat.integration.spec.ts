@@ -392,6 +392,54 @@ describe('bots chat (integration)', () => {
     expect(await turns.finish(stale, null)).toBe(false);
   });
 
+  /**
+   * The sidebar's working bots: a bot reads as working from the turn it is
+   * sent to the end of its last, through a running turn and one queued behind
+   * it, and each queue and each end stages the event that tells the consoles
+   * to read it again. Without the event the name would shimmer on after the
+   * turn ends; without the read, another workspace's turns would show.
+   */
+  it('reads a bot as working while a turn of its is queued or running, staging an event at each queue and end', async () => {
+    await dataSource.query(`DELETE FROM outbox_message`);
+    const bot = await create('Busy Bot');
+    const turnEvents = async (): Promise<string[]> => {
+      const rows: { aggregateId: string }[] = await dataSource.query(
+        `SELECT "aggregateId" FROM outbox_message WHERE "eventName" = 'BotTurnChangedDomainEvent'
+          ORDER BY "createdAt", id`,
+      );
+      return rows.map((row) => row.aggregateId);
+    };
+    expect(await turns.findWorkingBotIds(scope())).toEqual([]);
+
+    const first = sent(bot, 'One');
+    const second = sent(bot, 'Two');
+    await turns.enqueue(first.turn, first.message, null);
+    await turns.enqueue(second.turn, second.message, null);
+    expect(await turns.findWorkingBotIds(scope())).toEqual([bot.id]);
+    expect(await turns.findWorkingBotIds(scopeOf(randomUUID()))).toEqual([]);
+    expect(await turnEvents()).toEqual([first.turn.id, second.turn.id]);
+    expect(first.turn.domainEvents).toEqual([]);
+
+    const running = (await turns.findForRun(first.turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    running.end('completed', new Date());
+    await turns.finish(running, null);
+    // The second is still queued: the bot works on.
+    expect(await turns.findWorkingBotIds(scope())).toEqual([bot.id]);
+
+    const last = (await turns.findForRun(second.turn.id)).unwrap();
+    last.end('cancelled', new Date());
+    await turns.finish(last, null);
+    expect(await turns.findWorkingBotIds(scope())).toEqual([]);
+    expect(await turnEvents()).toEqual([
+      first.turn.id,
+      second.turn.id,
+      first.turn.id,
+      second.turn.id,
+    ]);
+  });
+
   it("queues a routine's run once, however often it is dispatched, and finds it live by its routine", async () => {
     await dataSource.query(`DELETE FROM outbox_message`);
     const bot = await create('Routine Bot');

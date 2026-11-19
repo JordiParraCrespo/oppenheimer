@@ -5138,6 +5138,13 @@ export type WorkspaceBotApprovalResponseDto = {
     sessionId: string | null;
 };
 
+export type WorkingBotsResponseDto = {
+    /**
+     * The bots with a turn queued or running, in no order.
+     */
+    botIds: Array<string>;
+};
+
 export type WorkspaceBotNoticeResponseDto = {
     /**
      * The notice: a new id with each notice, so a mark on one never hides the next.
@@ -16996,6 +17003,32 @@ export type FindWorkspaceBotApprovalsResponses = {
 };
 
 export type FindWorkspaceBotApprovalsResponse = FindWorkspaceBotApprovalsResponses[keyof FindWorkspaceBotApprovalsResponses];
+
+export type FindWorkingBotsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/working-bots';
+};
+
+export type FindWorkingBotsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindWorkingBotsError = FindWorkingBotsErrors[keyof FindWorkingBotsErrors];
+
+export type FindWorkingBotsResponses = {
+    200: WorkingBotsResponseDto;
+};
+
+export type FindWorkingBotsResponse = FindWorkingBotsResponses[keyof FindWorkingBotsResponses];
 
 export type FindWorkspaceBotNoticesData = {
     body?: never;
