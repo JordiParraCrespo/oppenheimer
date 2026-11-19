@@ -17,6 +17,7 @@ export {
   unwrapBody,
 } from './errors';
 export {
+  type EventSourceFactory,
   type EventSourceLike,
   ServerEventStream,
   type ServerEventStreamOptions,

@@ -54,7 +54,9 @@ export {
   type StartCloudSessionInput,
   sessionAgentLabel,
 } from './session.entity';
+export { groupByProject, matchesQuery, type ProjectGroup } from './session-groups';
 export { isSessionNotFound } from './session-not-found';
+export { type SessionStateWord, stateWordFor } from './session-state-word';
 export type {
   SessionStartProgress,
   SessionStartStep,

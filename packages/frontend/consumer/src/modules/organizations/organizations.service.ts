@@ -1,3 +1,4 @@
+import type { EventSourceFactory } from '@oppenheimer/frontend-core';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { WorkspaceEventStream } from './events/workspace-event-stream';
@@ -23,6 +24,9 @@ export class OrganizationsService {
     @inject(TOKENS.ApiBaseUrl)
     @optional()
     private readonly apiBaseUrl: string = '',
+    @inject(TOKENS.EventSourceFactory)
+    @optional()
+    private readonly sourceFactory?: EventSourceFactory,
   ) {}
 
   /**
@@ -30,7 +34,10 @@ export class OrganizationsService {
    * dials; `dispose()` closes it.
    */
   openEvents(): WorkspaceEventStream {
-    const stream = new WorkspaceEventStream({ apiBaseUrl: this.apiBaseUrl });
+    const stream = new WorkspaceEventStream({
+      apiBaseUrl: this.apiBaseUrl,
+      sourceFactory: this.sourceFactory,
+    });
     stream.open();
     return stream;
   }
