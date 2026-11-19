@@ -4,16 +4,10 @@ import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
 import { type KeyboardEvent, type Ref, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '../hooks/use-session-chat';
-import { type ChatFindHit, findInChat } from '../lib/chat-find';
+import { type ChatFindTarget, findInChat } from '../lib/chat-find';
 
 /** How long the field waits after a key before it searches. */
 const SETTLE_MS = 150;
-
-/** What the find is on: the words it looks for, and the match the chat brings into view. */
-export interface ChatFindTarget {
-  query: string;
-  hit: ChatFindHit | null;
-}
 
 /**
  * The session chat's find bar, over the top of the conversation: what is

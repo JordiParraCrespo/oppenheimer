@@ -12,14 +12,13 @@ import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
-import { useChatFindHighlights } from '../hooks/use-chat-find-highlights';
+import { useChatFind } from '../hooks/use-chat-find';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
-import { useFindKey } from '../hooks/use-find-key';
 import { useChatLoading, useChatOlder, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatActivity } from './session-chat-activity';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
-import { type ChatFindTarget, SessionChatFind } from './session-chat-find';
+import { SessionChatFind } from './session-chat-find';
 import { SessionChatSend } from './session-chat-send';
 import { SessionChatTurn } from './session-chat-turn';
 
@@ -116,37 +115,23 @@ export function SessionChat({
     }
   }, askedHost);
 
-  // What the find is on, none while it is closed.
-  const [find, setFind] = useState<ChatFindTarget | null>(null);
-  const findInput = useRef<HTMLInputElement>(null);
-  useChatFindHighlights(scroller, find?.query ?? null, find?.hit ?? null);
-  const onFind = (target: ChatFindTarget) => {
-    if (target.hit) {
-      // The chat moves the reader to it: off the end, and the turn drawn.
-      leave();
-      const at = ids.indexOf(target.hit.turnId);
-      if (at >= 0 && at < first) setHeld(anchor(at));
-    }
-    setFind(target);
-  };
-  // The keys reach it from the composer or the transcript, which takes
-  // focus when clicked.
   const root = useRef<HTMLDivElement>(null);
-  useFindKey(root, () => {
-    if (find) findInput.current?.select();
-    else setFind({ query: '', hit: null });
+  const { find, found, input, onFind, close } = useChatFind({
+    root,
+    scroller,
+    leave,
+    // A hit above the drawn window draws from its turn.
+    draw: (turnId) => {
+      const at = ids.indexOf(turnId);
+      if (at >= 0 && at < first) setHeld(anchor(at));
+    },
   });
 
   return (
     <div ref={root} className="relative flex size-full flex-col">
       {find ? (
         <div className="absolute top-2 right-4 z-10">
-          <SessionChatFind
-            chat={chat}
-            inputRef={findInput}
-            onFind={onFind}
-            onClose={() => setFind(null)}
-          />
+          <SessionChatFind chat={chat} inputRef={input} onFind={onFind} onClose={close} />
         </div>
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col">
@@ -199,7 +184,7 @@ export function SessionChat({
                   </div>
                 ) : null}
                 {shown.map((id) => (
-                  <SessionChatTurn key={id} chat={chat} id={id} found={find?.hit?.turnId === id} />
+                  <SessionChatTurn key={id} chat={chat} id={id} found={found === id} />
                 ))}
                 <SessionChatActivity chat={chat} />
               </ChatTranscript>

@@ -1,5 +1,5 @@
 import { type RefObject, useLayoutEffect } from 'react';
-import type { ChatFindHit } from '../lib/chat-find';
+import { type ChatFindHit, findRangesIn } from '../lib/chat-find';
 
 /** The names the console's stylesheet paints (`::highlight(...)`, `globals.css`). */
 const ALL = 'chat-find';
@@ -8,105 +8,9 @@ const CURRENT = 'chat-find-current';
 /** Where the match the find lands on sits in the chat's view, from its top: a third of the way down. */
 const LANDING = 1 / 3;
 
-/** The elements a run of text breaks at, as `markdownText` breaks a reply between its blocks. */
-const BLOCKS = new Set([
-  'P',
-  'LI',
-  'PRE',
-  'H2',
-  'H3',
-  'H4',
-  'H5',
-  'H6',
-  'TD',
-  'TH',
-  'BLOCKQUOTE',
-  'SUMMARY',
-  'DIV',
-]);
-
-/**
- * Text the chat draws around the words, not in them: a code block's band
- * (its language), a prompt's attachments and its trail (when it was sent).
- */
-const CHROME =
-  '[data-slot="code-block-band"], [data-slot="chat-user-message-attachments"], [data-slot="chat-user-message-trail"], button';
-
 /** Whether this browser paints ranges without touching the DOM (the CSS Custom Highlight API). */
 function canHighlight(): boolean {
   return typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight !== 'undefined';
-}
-
-function blockOf(node: Node, root: Element): Element {
-  for (let at = node.parentElement; at && at !== root; at = at.parentElement) {
-    if (BLOCKS.has(at.tagName)) return at;
-  }
-  return root;
-}
-
-/**
- * `text` lowercased, and where each of its offsets falls in `text`: a
- * character can lower to more than one (`İ` to `i̇`), and a range is set on
- * the text as drawn. The offset past the end maps to the end.
- */
-function folded(text: string): { lower: string; origin: number[] } {
-  let lower = '';
-  const origin: number[] = [];
-  let at = 0;
-  for (const char of text) {
-    const low = char.toLocaleLowerCase();
-    for (let unit = 0; unit < low.length; unit++) origin.push(at);
-    lower += low;
-    at += char.length;
-  }
-  origin.push(text.length);
-  return { lower, origin };
-}
-
-/**
- * Every match of `needle` in the words of one element, as ranges: its text
- * nodes read as one string, a newline where one block ends and the next
- * begins, so a match across a bold word or a link is found and one across
- * two paragraphs is not, as `findInChat` counts them.
- */
-function rangesIn(element: Element, needle: string): Range[] {
-  const nodes: { node: Text; start: number }[] = [];
-  let text = '';
-  let block: Element | null = null;
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    if (node.parentElement?.closest(CHROME)) continue;
-    const at = blockOf(node, element);
-    if (block && at !== block) text += '\n';
-    block = at;
-    nodes.push({ node: node as Text, start: text.length });
-    text += (node as Text).data;
-  }
-  // The text node an offset falls in: the last that starts at it, or before
-  // it for a range's end.
-  const locate = (offset: number, end: boolean) => {
-    let found = nodes[0];
-    for (const entry of nodes) {
-      if (end ? entry.start < offset : entry.start <= offset) found = entry;
-      else break;
-    }
-    return { node: found.node, offset: offset - found.start };
-  };
-  const { lower, origin } = folded(text);
-  const ranges: Range[] = [];
-  for (
-    let from = lower.indexOf(needle);
-    from >= 0;
-    from = lower.indexOf(needle, from + needle.length)
-  ) {
-    const start = locate(origin[from], false);
-    const end = locate(origin[from + needle.length], true);
-    const range = document.createRange();
-    range.setStart(start.node, start.offset);
-    range.setEnd(end.node, end.offset);
-    ranges.push(range);
-  }
-  return ranges;
 }
 
 /** Each drawn turn's matches, by its id, in reading order. */
@@ -115,7 +19,7 @@ function matchesIn(box: HTMLElement, needle: string): Map<string, Range[]> {
   for (const words of box.querySelectorAll('[data-chat-find]')) {
     const turn = words.closest<HTMLElement>('[data-turn]')?.dataset.turn;
     if (!turn) continue;
-    const ranges = rangesIn(words, needle);
+    const ranges = findRangesIn(words, needle);
     if (ranges.length === 0) continue;
     byTurn.set(turn, [...(byTurn.get(turn) ?? []), ...ranges]);
   }
