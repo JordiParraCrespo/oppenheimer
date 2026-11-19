@@ -41,6 +41,7 @@ import (
 	filestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/slashcommands"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/statuspty"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
@@ -268,7 +269,7 @@ func New(version string) (*App, error) {
 	}
 	app.Sessions = sessions
 	app.Conversations = sessionsapp.NewConversations(sessionsapp.ConversationsOptions{
-		Sessions: sessions, Transcripts: transcripts,
+		Sessions: sessions, Transcripts: transcripts, Commands: slashcommands.Reader{},
 	})
 	// Agents run agents: children of a session's agent, on this host.
 	app.Children = sessionsapp.NewChildren(sessionsapp.ChildrenOptions{

@@ -130,6 +130,10 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     entries: [
       '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
     ],
+    commands: [
+      { name: 'recap', kind: 'skill', description: 'Close a finished task with a short brief.' },
+      { name: 'frontend:audit', kind: 'command' },
+    ],
   },
   'attachment.chat.older': { type: 'attachment.chat.older', attachmentId: 7, before: 1_048_576 },
   'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },

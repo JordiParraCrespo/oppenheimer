@@ -165,6 +165,7 @@ const CONSTANT_DOCS = {
     'carries; the runner compacts each line first and drops one still bigger.',
   ],
   chatBatchMaxEntries: ['ChatBatchMaxEntries is the most entries one `attachment.chat` holds.'],
+  chatCommandsMax: ['ChatCommandsMax is the most slash commands one `attachment.chat` names.'],
   execOutputMaxBytes: [
     'ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`',
     'keeps: the last ones.',
@@ -434,6 +435,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.chatBatchMaxEntries),
     `const ChatBatchMaxEntries = ${constants.chatBatchMaxEntries}`,
+    '',
+    ...comment(CONSTANT_DOCS.chatCommandsMax),
+    `const ChatCommandsMax = ${constants.chatCommandsMax}`,
     '',
     ...comment(CONSTANT_DOCS.execOutputMaxBytes),
     `const ExecOutputMaxBytes = ${constants.execOutputMaxBytes}`,

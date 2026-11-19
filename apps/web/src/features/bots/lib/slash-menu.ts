@@ -1,22 +1,9 @@
+import { leadThenFollow, type SlashCommand } from '@oppenheimer/frontend-web';
 import {
   BOT_BUILT_IN_COMMANDS,
   BOT_RUNNABLE_BUILT_IN_SKILL_NAMES,
   BOT_SKILL_NAME_PATTERN,
 } from '@oppenheimer/shared/schemas/bot-skill';
-
-/** The most commands the `/` menu lists at once. */
-const SLASH_MENU_MAX = 8;
-
-/**
- * One row of the `/` menu: a built-in command Oppenheimer runs (`/goal`), or
- * one of the bot's skills the person may run. A skill entity is one as it is.
- */
-export interface SlashCommand {
-  id: string;
-  name: string;
-  command: string;
-  description: string;
-}
 
 /**
  * What the person is typing after `/`, while the draft is only a command
@@ -26,18 +13,6 @@ export interface SlashCommand {
 export function slashQuery(draft: string): string | null {
   const match = /^\/([a-z0-9-]*)$/.exec(draft);
   return match ? (match[1] ?? '') : null;
-}
-
-/** The commands whose names start with what is typed, then those that contain it, by name. */
-export function matchingCommands<Command extends Pick<SlashCommand, 'name'>>(
-  commands: readonly Command[],
-  query: string,
-): Command[] {
-  const starts = commands.filter((command) => command.name.startsWith(query));
-  const contains = commands.filter(
-    (command) => !command.name.startsWith(query) && command.name.includes(query),
-  );
-  return [...starts, ...contains].slice(0, SLASH_MENU_MAX);
 }
 
 /**
@@ -53,11 +28,11 @@ export function slashMenuItems(
   // Only a command's name runs something else; a skill under a built-in
   // skill's name (`oppenheimer`) is still the bot's and still runs.
   const reserved: readonly string[] = ['skill', ...BOT_BUILT_IN_COMMANDS];
-  const ownBuiltIns = matchingCommands(builtIns, query);
-  const ownSkills = matchingCommands(
+  const [ownBuiltIns, ownSkills] = leadThenFollow(
+    builtIns,
     skills.filter((skill) => !reserved.includes(skill.name)),
     query,
-  ).slice(0, SLASH_MENU_MAX - ownBuiltIns.length);
+  );
   return { builtIns: ownBuiltIns, skills: ownSkills };
 }
 

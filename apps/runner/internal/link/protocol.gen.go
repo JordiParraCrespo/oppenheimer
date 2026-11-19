@@ -64,6 +64,9 @@ const ChatEntryMaxBytes = 65536
 // ChatBatchMaxEntries is the most entries one `attachment.chat` holds.
 const ChatBatchMaxEntries = 256
 
+// ChatCommandsMax is the most slash commands one `attachment.chat` names.
+const ChatCommandsMax = 200
+
 // ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`
 // keeps: the last ones.
 const ExecOutputMaxBytes = 32768
@@ -991,13 +994,21 @@ type AttachmentPath struct {
 
 // AttachmentChat is the `attachment.chat` message.
 type AttachmentChat struct {
-	Type         string   `json:"type"`
-	AttachmentID uint32   `json:"attachmentId"`
-	Reset        bool     `json:"reset,omitempty"`
-	History      string   `json:"history,omitempty"`
-	Before       int64    `json:"before,omitempty"`
-	Older        string   `json:"older,omitempty"`
-	Entries      []string `json:"entries"`
+	Type         string                   `json:"type"`
+	AttachmentID uint32                   `json:"attachmentId"`
+	Reset        bool                     `json:"reset,omitempty"`
+	History      string                   `json:"history,omitempty"`
+	Before       int64                    `json:"before,omitempty"`
+	Older        string                   `json:"older,omitempty"`
+	Entries      []string                 `json:"entries"`
+	Commands     []AttachmentChatCommands `json:"commands,omitempty"`
+}
+
+// AttachmentChatCommands is AttachmentChat.Commands.
+type AttachmentChatCommands struct {
+	Name        string `json:"name"`
+	Kind        string `json:"kind"`
+	Description string `json:"description,omitempty"`
 }
 
 // AttachmentChatOlder is the `attachment.chat.older` message.

@@ -322,6 +322,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
 		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
 		ChatBatchMaxEntries  int               `json:"chatBatchMaxEntries"`
+		ChatCommandsMax      int               `json:"chatCommandsMax"`
 		ExecOutputMaxBytes   int               `json:"execOutputMaxBytes"`
 		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
 		ComputerScreenEdge   int               `json:"computerScreenMaxEdge"`
@@ -354,6 +355,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
 		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
 		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
+		"chatCommandsMax":      {constants.ChatCommandsMax, link.ChatCommandsMax},
 		"execOutputMaxBytes":   {constants.ExecOutputMaxBytes, link.ExecOutputMaxBytes},
 		"terminalScreenMax":    {constants.TerminalScreenMax, link.TerminalScreenMaxBytes},
 		"computerScreenEdge":   {constants.ComputerScreenEdge, link.ComputerScreenMaxEdge},

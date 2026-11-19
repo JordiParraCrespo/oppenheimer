@@ -25,3 +25,11 @@ func makeRaw(fd int) (func(), error) {
 	}
 	return func() { _ = unix.IoctlSetTermios(fd, setTermios, old) }, nil
 }
+
+// IsTerminal reports whether fd is a terminal: what the command line asks
+// before it draws the runner's mark and colours, which a pipe, a log file or
+// a script reading its output must never get.
+func IsTerminal(fd int) bool {
+	_, err := unix.IoctlGetTermios(fd, getTermios)
+	return err == nil
+}
