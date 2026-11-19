@@ -72,6 +72,14 @@ export class WhatsappMessageOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   sentByBotId!: string | null;
 
+  /** How long a voice note runs, in seconds; null on anything else. */
+  @Column({ type: 'integer', nullable: true })
+  voiceSeconds!: number | null;
+
+  /** What a voice note says, once a bot needed it heard. */
+  @Column({ type: 'text', nullable: true })
+  transcript!: string | null;
+
   /**
    * The order the control plane stored it in (`GENERATED ALWAYS AS
    * IDENTITY`): what a WhatsApp conversation starts at, since WhatsApp's own

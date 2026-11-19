@@ -10,6 +10,7 @@ import {
   noticesSpent,
   WORTH_SAYING,
 } from '../domain/bot-notice.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { QUIET_TOOL, quietTurnAnswer } from '../domain/bot-routine.policy';
 import {
   type BotToolArea,
@@ -24,7 +25,7 @@ const nothingToReportInput = z.object({
     .trim()
     .max(200)
     .optional()
-    .describe('What you looked at, in a few words (open PRs, new mail); the chat shows it.'),
+    .describe(promptText('tools/notice.nothing-to-report-checked')),
 });
 
 const notifyInput = z.object({
@@ -33,7 +34,7 @@ const notifyInput = z.object({
     .trim()
     .min(1)
     .max(BOT_NOTICE_TEXT_MAX)
-    .describe('One line for the person: what is done, or what you need from them.'),
+    .describe(promptText('tools/notice.notify-text')),
 });
 
 /**
@@ -58,7 +59,11 @@ export class BotNoticeToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'notify',
         scope: 'bots:write',
-        description: `Puts one line in the person's Inbox, where they see it whether or not they are in this chat. Use it when they may not be in your chat (a routine's run, a wake, a long task). ${WORTH_SAYING} Follow what they told you about when and what to hear. One line, at most ${BOT_NOTICE_TEXT_MAX} characters: what is done or what you need, not a report. The Inbox keeps one line per bot, so a new notice replaces your last one; at most ${BOT_NOTICES_PER_TURN} a turn; not for what you are already saying to them in the chat.`,
+        description: promptText('tools/notice.notify', {
+          worthSaying: WORTH_SAYING,
+          noticeTextMax: String(BOT_NOTICE_TEXT_MAX),
+          noticesPerTurn: String(BOT_NOTICES_PER_TURN),
+        }),
         input: notifyInput,
         run: async (input, context) => {
           if (!context.budget.take('notify', BOT_NOTICES_PER_TURN)) {
@@ -78,8 +83,7 @@ export class BotNoticeToolsFactory implements BotToolArea {
         name: QUIET_TOOL,
         scope: 'bots:read',
         notOn: BOT_ATTENDED_ORIGINS,
-        description:
-          'Ends a turn nobody is waiting on (a routine such as your heartbeat, a wake, a goal) quietly: nothing in the chat but this line, nothing in the Inbox. Use it when you checked and nothing needs you or the person; then write nothing, since what you write after it is not kept. Not when you did something or found something they should know: say that instead, briefly.',
+        description: promptText('tools/notice.quiet-tool'),
         input: nothingToReportInput,
         run: async () => quietTurnAnswer(),
       }),

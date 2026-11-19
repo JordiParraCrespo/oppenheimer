@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod/v4';
 import { guideIndexText, guidePageText } from '../domain/bot-guide.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
 /**
@@ -27,17 +28,14 @@ export class BotGuideToolsFactory implements BotToolArea {
       name: 'read_oppenheimer_docs',
       readOnly: true,
       scope: 'bots:read',
-      description:
-        "Reads Oppenheimer's own guide: what Oppenheimer is, how its hosts, sessions, projects, bots, routines, automations, inbox, GitHub, CLI and MCP work, where things are in the console and how to set them up. Use it before answering any question about Oppenheimer itself or about what bots can do in it, and answer from what it says. With no page it lists the pages and what each covers; with a page id it returns that page.",
+      description: promptText('tools/guide.read-oppenheimer-docs'),
       input: z.strictObject({
         page: z
           .string()
           .trim()
           .max(80)
           .optional()
-          .describe(
-            'The page to read, by its id from the index (e.g. "sessions"); a `./sessions.md` link works too. Leave it out for the index.',
-          ),
+          .describe(promptText('tools/guide.read-oppenheimer-docs-page')),
       }),
       run: async (input) =>
         input.page ? guidePageText(input.page, this.docsUrl) : guideIndexText(this.docsUrl),

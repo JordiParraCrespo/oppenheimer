@@ -23,6 +23,13 @@ export interface WhatsappMessage {
   sentAt: Date;
   /** The bot that sent it through `send_whatsapp_message`; null for everything else. */
   sentByBotId: string | null;
+  /**
+   * How long a voice note runs, in seconds; null on anything else, and on a
+   * voice note from a runner that cannot hand one over.
+   */
+  voiceSeconds: number | null;
+  /** What a voice note says, once a bot needed it heard; null until then. */
+  transcript: string | null;
 }
 
 /**

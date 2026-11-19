@@ -169,6 +169,48 @@ test('a file the layer does not admit reports its kind, wherever it is', () => {
   ]);
 });
 
+test('domain/prompts/ holds prose and the module generated from it, and no code of its own', () => {
+  const prompts = {
+    ...CONFORMING,
+    'widget/domain/prompts/rules.md': 'Never guess.',
+    'widget/domain/prompts/prompts.gen.ts': 'export const PROMPT_TEXT = {};',
+  };
+  assert.deepEqual(check(prompts).outstanding, []);
+  assert.deepEqual(
+    kinds(check({ ...prompts, 'widget/domain/prompts/rules.policy.ts': 'export const R = 1;' })),
+    ['file-name-not-admitted'],
+  );
+});
+
+test('domain/prompts/ nests one level of folders, of prose alone', () => {
+  const prompts = {
+    ...CONFORMING,
+    'widget/domain/prompts/system/rules.md': 'Never guess.',
+    'widget/domain/prompts/wake/failed-session.md': 'Read the session.',
+    'widget/domain/prompts/prompts.gen.ts': 'export const PROMPT_TEXT = {};',
+  };
+  assert.deepEqual(check(prompts).outstanding, []);
+  assert.deepEqual(
+    kinds(
+      check({ ...prompts, 'widget/domain/prompts/system/rules.policy.ts': 'export const R = 1;' }),
+    ),
+    ['file-name-not-admitted'],
+  );
+  assert.deepEqual(
+    kinds(check({ ...prompts, 'widget/domain/prompts/system/hosts/cases.md': 'Ask which.' })),
+    ['layer-too-deep'],
+  );
+  assert.deepEqual(
+    kinds(
+      check({
+        ...CONFORMING,
+        'widget/domain/value-objects/money/amount.value-object.ts': 'export class A {}',
+      }),
+    ),
+    ['layer-too-deep'],
+  );
+});
+
 test('the caps bite, and only on the file kind they name', () => {
   const long = (n) => `${'// x\n'.repeat(n)}export class C {}`;
   const over = { ...CONFORMING };

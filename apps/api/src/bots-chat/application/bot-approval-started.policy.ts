@@ -4,6 +4,7 @@ import type { BotMessageEvent } from '@oppenheimer/shared';
 import { BOT_APPROVAL_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotApprovalRepositoryPort } from '../database/bot-approval.repository.port';
 import { approvalStartedBy } from '../domain/bot-approval.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 
 /**
  * Model round trips in the turn a yes opens: one to say the bot is on it,
@@ -12,8 +13,7 @@ import { approvalStartedBy } from '../domain/bot-approval.policy';
 export const APPROVAL_STARTED_MAX_STEPS = 2;
 
 /** What a tool answers in that turn: nothing runs, the report comes next. */
-export const APPROVAL_STARTED_REFUSAL =
-  'Not in this turn: the call they approved is still running. Say in one sentence that you are on it and end your turn; how it went comes in your next turn.';
+export const APPROVAL_STARTED_REFUSAL = promptText('tools/toolbox.approval-started-refusal');
 
 /** What a turn runs with, and whether a message sent meanwhile may steer it. */
 export interface BotTurnShape<Request> {

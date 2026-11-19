@@ -15,6 +15,7 @@ import {
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   type BotRateLimit,
   laterLimit,
@@ -295,7 +296,10 @@ export class TurnTranscript {
       conversationId: this.turn.conversationId,
       turnId: this.turn.id,
       role: 'event',
-      content: `Earlier in this turn, what you had read was summarized to keep your context small (about ${Math.round(event.tokensBefore / 1000)}k tokens down to ${Math.round(event.tokensAfter / 1000)}k).`,
+      content: promptText('turn/transcript.compaction-content', {
+        round: String(Math.round(event.tokensBefore / 1000)),
+        round2: String(Math.round(event.tokensAfter / 1000)),
+      }),
       event: {
         kind: 'compaction',
         tokensBefore: Math.max(0, Math.round(event.tokensBefore)),
@@ -407,7 +411,9 @@ export class TurnStorageError extends Error {
 export function failUnstoredCall(line: BotMessageEntity, callId: string, cause: unknown): boolean {
   const step = line.steps.find((candidate) => candidate.callId === callId);
   if (!step) return false;
-  step.output = `The tool's result could not be saved (${startOf(failureReasonOf(cause), 200)}), so it is not kept. Call it again, or carry on without it.`;
+  step.output = promptText('turn/transcript.fail-unstored-call', {
+    start: startOf(failureReasonOf(cause), 200),
+  });
   step.isError = true;
   step.sessionId = null;
   step.subagents = null;

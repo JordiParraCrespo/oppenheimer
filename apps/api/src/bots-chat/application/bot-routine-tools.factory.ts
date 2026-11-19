@@ -13,6 +13,7 @@ import type { AutomationListing } from '../../automations/domain/automation-read
 import { FindBotRoutinesQuery } from '../../automations/queries/find-bot-routines/find-bot-routines.query';
 import { describeAccount } from '../bot-mail-tool.mapper';
 import { routineTriggers } from '../bot-routine-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { ROUTINE_ACTIONS, routineCallAsks } from '../domain/bot-routine.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { cut, formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
@@ -34,9 +35,7 @@ const scheduleTrigger = z.object({
   source: z.literal('schedule'),
   frequency: z
     .enum(SCHEDULE_FREQUENCIES)
-    .describe(
-      'once (needs date), hourly (at minute), daily, weekdays, weekly (needs days), monthly (needs day_of_month).',
-    ),
+    .describe(promptText('tools/routine.schedule-trigger-frequency')),
   hour: z.number().int().min(0).max(23).default(9),
   minute: z.number().int().min(0).max(59).default(0),
   days: z
@@ -45,7 +44,7 @@ const scheduleTrigger = z.object({
     .describe('Weekly: 0 = Sunday … 6 = Saturday.'),
   day_of_month: z.number().int().min(1).max(28).optional(),
   date: z.string().optional().describe('Once: YYYY-MM-DD.'),
-  timezone: z.string().optional().describe("An IANA zone; default the sender's."),
+  timezone: z.string().optional().describe(promptText('tools/routine.schedule-trigger-timezone')),
 });
 
 const githubTrigger = z.object({
@@ -54,31 +53,24 @@ const githubTrigger = z.object({
   repositories: z
     .array(z.number().int().positive())
     .min(1)
-    .describe('GitHub repository ids (list_repositories).'),
-  branch: z.string().optional().describe('Only for this branch; any branch when absent.'),
+    .describe(promptText('tools/routine.github-trigger-repositories')),
+  branch: z.string().optional().describe(promptText('tools/routine.github-trigger-branch')),
 });
 
 const gmailTrigger = z.object({
   source: z.literal('gmail'),
-  account: z.string().min(1).describe('The Gmail account to watch: its id, address or name.'),
+  account: z.string().min(1).describe(promptText('tools/routine.gmail-trigger-account')),
   query: z
     .string()
     .trim()
     .max(500)
     .optional()
-    .describe(
-      'Only mail matching this Gmail search (from:billing@x.com is:important); any new mail when absent.',
-    ),
+    .describe(promptText('tools/routine.gmail-trigger-query')),
 });
 
 const routineInput = z.object({
-  action: z
-    .enum(ROUTINE_ACTIONS)
-    .describe('What to do. Every action but list answers your whole list of routines.'),
-  routine_id: z
-    .uuid()
-    .optional()
-    .describe('The routine to act on (from list); not for create or list.'),
+  action: z.enum(ROUTINE_ACTIONS).describe(promptText('tools/routine.routine-action')),
+  routine_id: z.uuid().optional().describe(promptText('tools/routine.routine-routine-id')),
   name: z.string().trim().min(1).max(NAME_MAX).optional(),
   prompt: z
     .string()
@@ -86,22 +78,22 @@ const routineInput = z.object({
     .min(1)
     .max(PROMPT_MAX)
     .optional()
-    .describe('What you will do each time it runs, written to yourself.'),
+    .describe(promptText('tools/routine.routine-prompt')),
   triggers: z
     .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger]))
     .min(1)
     .max(TRIGGERS_MAX)
     .optional()
-    .describe('When it runs; any one starts a run. Replaces the set on update.'),
-  enabled: z.boolean().optional().describe('Create only: start paused with false. Default true.'),
+    .describe(promptText('tools/routine.routine-triggers')),
+  enabled: z.boolean().optional().describe(promptText('tools/routine.routine-enabled')),
 });
 
 const input = routineInput
   .refine((call) => call.action !== 'create' || (call.name && call.prompt && call.triggers), {
-    message: 'create needs a name, a prompt and at least one trigger',
+    message: promptText('tools/routine.input-message-create-needs-name'),
   })
   .refine((call) => ['list', 'create'].includes(call.action) || call.routine_id, {
-    message: 'this action needs routine_id',
+    message: promptText('tools/routine.input-message-action-needs-routine'),
   });
 
 type RoutineCall = z.output<typeof input>;
@@ -162,7 +154,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return {
       name: 'update_routine',
       scope: 'automations:write' as const,
-      description: `Lists, creates, changes, pauses, resumes, deletes or runs your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs"), when a GitHub event happens, or when new mail reaches one of the person's Gmail accounts (checked about once a minute). list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
+      description: promptText('tools/routine.update-routine'),
       input,
       normalize: (call: RoutineCall, context: BotToolCallContext) => this.checked(call, context),
       summarize: async (call: RoutineCall, context: BotToolCallContext) => {
@@ -286,7 +278,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     const routine = automations.find((candidate) => candidate.id === routineId);
     if (!routine) {
       throw new BotToolRefusal(
-        `No routine of yours has the id ${routineId ?? '(none)'}. Use update_routine list for their ids.`,
+        promptText('tools/routine.routine-of', { routineId: routineId ?? '(none)' }),
       );
     }
     return routine;
@@ -313,7 +305,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
         ];
         return `${routine.id} "${routine.name}" [${parts.join('; ')}]\n  prompt: ${cut(routine.revision.prompt, 300)}`;
       }),
-      'You have no routines. Create one when the person asks you to do something regularly.',
+      promptText('tools/routine.listing'),
       { shown: automations.length, total: automations.length, hint: '' },
     );
   }

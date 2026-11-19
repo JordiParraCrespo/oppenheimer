@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  WHATSAPP_VOICE_NOTE_OPENING,
   whatsappMessageRowIdOf,
   whatsappSourceKey,
   whatsappTurn,
@@ -27,6 +28,7 @@ const message = {
   whatsappAccountId: ACCOUNT,
   messageRowId: ROW,
   text: 'What sold today?',
+  voiceNote: false,
 };
 
 describe('whatsappTurn', () => {
@@ -44,9 +46,18 @@ describe('whatsappTurn', () => {
     expect(opening.conversationId).toBe(CONVERSATION);
     expect(opening.role).toBe('user');
     expect(opening.content).toBe('What sold today?');
+    expect(opening.pendingMedia).toBeNull();
 
     const again = whatsappTurn(props, { ...message, conversationId: OTHER_CONVERSATION });
     expect(again.turn.sourceKey).toBe(turn.sourceKey);
+  });
+
+  // What breaks this: a voice note's turn asking the bot "[voice note]", or the
+  // need to hear it read off the words (a typed "[voice note]" would collide).
+  it('opens a voice note’s turn with the note pending and a placeholder for the chat', () => {
+    const { opening } = whatsappTurn(props, { ...message, text: '', voiceNote: true });
+    expect(opening.content).toBe(WHATSAPP_VOICE_NOTE_OPENING);
+    expect(opening.pendingMedia).toEqual({ kind: 'whatsapp_voice_note' });
   });
 
   // What breaks this: a key built from the chat's JID and WhatsApp's own

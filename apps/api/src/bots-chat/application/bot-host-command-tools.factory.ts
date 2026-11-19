@@ -9,6 +9,7 @@ import {
 import { z } from 'zod/v4';
 import type { HostExecOutcome } from '../../sessions/application/host-exec.port';
 import { RunHostCommandCommand } from '../../sessions/commands/run-host-command/run-host-command.command';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   describeHostCommand,
   hostCommandIdOf,
@@ -50,27 +51,22 @@ export class BotHostCommandToolsFactory implements BotToolArea {
       name: 'run_command',
       scope: 'sessions:write',
       asks: true,
-      description: `Runs one program on one of the person's hosts and returns its exit code, stdout and stderr, for a quick command or a script: \`python3 report.py\`, \`node build.js\`, \`git status\`, \`ls -la\`. argv is the program and its arguments, run directly with no shell, so pipes, \`&&\`, redirects and \`$VAR\` are plain text unless the program is a shell (\`bash -c "…"\`), which the host must allow like any other. It starts in your own folder on that host, kept between calls, unless cwd names another; stdin is empty, so write a script there with one call (\`python3 -c\` code that writes the file) and run it with the next. The host decides what may run: by default nothing, and otherwise only the programs its owner allowed with \`runner exec\` on the host itself; a refusal says how to allow it, and you pass that on rather than trying another program. Each call lasts at most ${RUN_COMMAND_MAX_TIMEOUT_SECONDS} s; longer work, or changing code in a repository, is a session (start_session). Output keeps the last 32 KB of each stream. The host defaults to your home host.`,
+      description: promptText('tools/host-command.run-command', {
+        runCommandMaxTimeoutSeconds: String(RUN_COMMAND_MAX_TIMEOUT_SECONDS),
+      }),
       input: z.object({
         argv: z
           .array(z.string().min(1).max(HOST_EXEC_MAX_ARG_LENGTH))
           .min(1)
           .max(HOST_EXEC_MAX_ARGS)
-          .describe(
-            'The program, then its arguments, each one element: ["python3", "report.py", "--since", "7d"].',
-          ),
-        host_id: z
-          .uuid()
-          .optional()
-          .describe('The host to run on (from list_hosts); your home host when omitted.'),
+          .describe(promptText('tools/host-command.run-command-argv')),
+        host_id: z.uuid().optional().describe(promptText('tools/host-command.run-command-host-id')),
         cwd: z
           .string()
           .regex(/^\/[^\0]*$/)
           .max(1_024)
           .optional()
-          .describe(
-            'An absolute folder on the host to run in; your own folder there when omitted.',
-          ),
+          .describe(promptText('tools/host-command.run-command-cwd')),
         timeout_seconds: z
           .number()
           .int()
@@ -78,7 +74,9 @@ export class BotHostCommandToolsFactory implements BotToolArea {
           .max(RUN_COMMAND_MAX_TIMEOUT_SECONDS)
           .optional()
           .describe(
-            `How long it may run before it is stopped; ${HOST_EXEC_DEFAULT_TIMEOUT_SECONDS} when omitted.`,
+            promptText('tools/host-command.run-command-timeout-seconds', {
+              hostExecDefaultTimeoutSeconds: String(HOST_EXEC_DEFAULT_TIMEOUT_SECONDS),
+            }),
           ),
       }),
       normalize: async (input, context) => ({
