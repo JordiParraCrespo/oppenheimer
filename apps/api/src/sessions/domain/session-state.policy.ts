@@ -107,7 +107,10 @@ export const SESSION_EVENT_KINDS = {
   CLOSE_REQUESTED: 'session.close_requested',
   /** Branches pushed, worktrees removed. The row is kept for ever as a tombstone. */
   CLOSED: 'session.closed',
-  /** The display name changed — by a person, or by the namer reading the first prompt. */
+  /**
+   * The display name changed: by a person, by the namer reading the first prompt,
+   * or once more by the namer reading the conversation so far.
+   */
   NAMED: 'session.named',
   /**
    * Hidden from the console's sidebar, or shown again. Payload `{ hidden }`.
@@ -257,10 +260,11 @@ const REFUSAL_CODE_MAX = 32;
 const REFUSAL_DETAIL_MAX = 500;
 
 /**
- * Who chose the name: a person, a model reading the first prompt, or the first
- * prompt's own words when no model answered in time.
+ * Who chose the name: a person, a model reading the first prompt, the first
+ * prompt's own words when no model answered in time, or a model reading the
+ * conversation once it had gone further (`conversation`).
  */
-export type SessionNameSource = 'user' | 'model' | 'prompt';
+export type SessionNameSource = 'user' | 'model' | 'prompt' | 'conversation';
 
 /**
  * Everything the fold produces, and every one of these is a column on
@@ -278,7 +282,7 @@ export interface SessionFold {
   stoppedAt: Date | null;
   /** Null until something names the session; the slug stands in until then. */
   name: string | null;
-  /** A derived title (`model` or `prompt`) never overwrites one a person typed. */
+  /** A derived title (`model`, `prompt` or `conversation`) never overwrites one a person typed. */
   nameSource: SessionNameSource | null;
   /** Which checkout the agent was launched in. Null is the session directory itself. */
   cwdCheckoutId: string | null;
@@ -604,10 +608,16 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       if (!name) return next;
       const recorded = stringField(event.payload, 'source');
       const source: SessionNameSource =
-        recorded === 'model' || recorded === 'prompt' ? recorded : 'user';
-      // A title derived from the first prompt — by a model or from its words —
-      // never overwrites a name a person typed, whichever order the two arrive in.
+        recorded === 'model' || recorded === 'prompt' || recorded === 'conversation'
+          ? recorded
+          : 'user';
+      // A derived title never overwrites a name a person typed, whichever order
+      // the two arrive in; and one from the first prompt never overwrites the
+      // one written later from the whole conversation.
       if (source !== 'user' && next.nameSource === 'user') return next;
+      if ((source === 'model' || source === 'prompt') && next.nameSource === 'conversation') {
+        return next;
+      }
       next.name = name;
       next.nameSource = source;
       return next;

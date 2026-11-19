@@ -1,7 +1,11 @@
+import type { SessionTranscriptEntry } from '@oppenheimer/shared';
+
 /**
  * What a session is called once its first prompt exists: a model's title, cleaned
  * by {@link cleanModelTitle}, or {@link titleFromPrompt} when no model is configured
- * or its answer does not arrive in time.
+ * or its answer does not arrive in time. Once the conversation has gone further
+ * ({@link CONVERSATION_RENAME_AFTER_PROMPTS}), a model titles it once more from
+ * {@link conversationTitleRequest}.
  */
 
 /** Six words is the brief; forty characters is what a sidebar row can show. */
@@ -45,6 +49,57 @@ export function sessionTitleRequest(prompt: string): SessionTitleRequest {
   return {
     system: `Write a title for a software task, from the request that follows. At most ${SESSION_NAME_MAX_LENGTH} characters and at most ${MAX_WORDS} words. Reply with the title alone: no quotes, no punctuation at the end, no explanation.`,
     messages: [{ role: 'user', content: prompt.slice(0, PROMPT_MAX_CHARS) }],
+    maxTokens: 32,
+    temperature: 0,
+  };
+}
+
+/**
+ * How many of the person's prompts a conversation needs, each answered, before
+ * its title is written again from all of them. The first prompt alone often
+ * says too little ("fix the bug", "continue"); by the second answered one the
+ * task has usually shown where it is going.
+ */
+export const CONVERSATION_RENAME_AFTER_PROMPTS = 2;
+
+/** At most this many of the person's prompts are sent, from the first. */
+const CONVERSATION_MAX_PROMPTS = 6;
+/** And each is cut here: a prompt's opening carries what it is about. */
+const CONVERSATION_PROMPT_MAX_CHARS = 600;
+
+/**
+ * The person's prompts in a conversation, oldest first: the text of each
+ * `user` entry that is something they wrote. A tool's result reaches the
+ * transcript as a `user` entry with no text part, and what Claude Code writes
+ * on the person's behalf (a slash command's expansion, a caveat, a reminder)
+ * opens with a tag; neither is a prompt.
+ */
+export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] {
+  return entries.flatMap((entry) => {
+    if (entry.role !== 'user') return [];
+    const text = entry.parts
+      .filter((part) => part.kind === 'text' && part.text)
+      .map((part) => part.text ?? '')
+      .join('\n')
+      .trim();
+    return text && !text.startsWith('<') ? [text] : [];
+  });
+}
+
+/**
+ * The request that asks a model for a conversation's title, from the person's
+ * prompts alone: what leaves the host is still only what the person wrote,
+ * never the agent's answers or the code it read. Strict and deterministic for
+ * the same reasons as {@link sessionTitleRequest}.
+ */
+export function conversationTitleRequest(prompts: readonly string[]): SessionTitleRequest {
+  const listed = prompts
+    .slice(0, CONVERSATION_MAX_PROMPTS)
+    .map((prompt, index) => `${index + 1}. ${prompt.slice(0, CONVERSATION_PROMPT_MAX_CHARS)}`)
+    .join('\n\n');
+  return {
+    system: `Write a title for a software task, from the requests a person made in one conversation, in order. Name what the conversation as a whole is about, not only its first request. At most ${SESSION_NAME_MAX_LENGTH} characters and at most ${MAX_WORDS} words. Reply with the title alone: no quotes, no punctuation at the end, no explanation.`,
+    messages: [{ role: 'user', content: listed }],
     maxTokens: 32,
     temperature: 0,
   };

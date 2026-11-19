@@ -3,22 +3,46 @@ import { ConfigService } from '@nestjs/config';
 import { LlmService } from '@oppenheimer/backend-llm';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
 import {
+  CONVERSATION_RENAME_AFTER_PROMPTS,
   cleanModelTitle,
+  conversationTitleRequest,
+  promptsOf,
+  type SessionTitleRequest,
   sessionTitleRequest,
   titleFromPrompt,
 } from '../domain/session-name.policy';
 import { SESSION_EVENT_KINDS, type SessionNameSource } from '../domain/session-state.policy';
+import { redactEntry } from '../domain/session-transcript.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
-import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
+import { SessionTranscriptMapper } from '../session-transcript.mapper';
+import { SESSION_TRANSCRIPT, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
+import type { SessionTranscriptPort } from './session-transcript.port';
 
 export interface SessionNameProposal {
   name: string;
-  source: Exclude<SessionNameSource, 'user'>;
+  source: Exclude<SessionNameSource, 'user' | 'conversation'>;
 }
 
 /**
- * Names a session from its first prompt.
+ * How much of the conversation is read, from its first line, to find the
+ * person's prompts: enough entries that a handful of prompts and the tool calls
+ * between them fit, well under a page's bound.
+ */
+const CONVERSATION_READ_ENTRIES = 120;
+
+/**
+ * The model's deadline for a conversation's title. Nobody waits on it (it runs
+ * after a runner's batch is acknowledged), so it is longer than the create
+ * path's `SESSION_NAMER_TIMEOUT_MS`, as its input is.
+ */
+const CONVERSATION_TIMEOUT_MS = 15_000;
+
+/** The one `session.named` a conversation's title is recorded under, so it is written once. */
+const CONVERSATION_NAMED_KEY = `${SESSION_EVENT_KINDS.NAMED}:conversation`;
+
+/**
+ * Names a session from its first prompt, then once more from its conversation.
  *
  * **Model first, the prompt's own words if it is not quick.** `LlmService` gets a
  * short deadline (`SESSION_NAMER_TIMEOUT_MS`); on no provider, a timeout, a rate
@@ -33,6 +57,11 @@ export interface SessionNameProposal {
  * terminal; the runner reads Claude Code's today). {@link alreadyNamed} stops the second
  * renaming: a session named by anybody has had its first prompt.
  *
+ * **Once more, when the conversation has gone further.** After the agent answers
+ * the person's {@link CONVERSATION_RENAME_AFTER_PROMPTS}th prompt, a model titles
+ * the session again from all of their prompts so far ({@link renameFromConversation}),
+ * once, and only over a derived title: a name a person typed stays.
+ *
  * Nothing here throws: a title is not worth failing a create or an acknowledgement.
  */
 @Injectable()
@@ -42,9 +71,24 @@ export class SessionNamingResolver {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
+    @Inject(SESSION_TRANSCRIPT)
+    private readonly transcripts: SessionTranscriptPort,
     private readonly llm: LlmService,
     private readonly config: ConfigService,
   ) {}
+
+  /**
+   * What a runner's batch owes the name: the first prompt it carried names the
+   * session, and an answer the agent finished may rename it from the
+   * conversation. One after the other, so a batch with both sees the first name.
+   */
+  async nameFromBatch(
+    session: WorkSessionEntity,
+    appended: readonly WorkSessionEventEntity[],
+  ): Promise<void> {
+    await this.nameFromPrompt(session, appended);
+    if (appended.some(finishedAnswer)) await this.renameFromConversation(session);
+  }
 
   /**
    * The name this prompt gives the session, or `null` when it already has one or
@@ -54,22 +98,10 @@ export class SessionNamingResolver {
   async propose(session: WorkSessionEntity, text: string): Promise<SessionNameProposal | null> {
     if (this.alreadyNamed(session) || !text.trim()) return null;
 
-    const model = this.namerModel;
-    if (this.llm.isConfigured() && model) {
-      try {
-        const completion = await this.llm.complete({
-          ...sessionTitleRequest(text),
-          model,
-          timeoutMs: this.namerTimeoutMs,
-        });
-        const name = cleanModelTitle(completion.text);
-        if (name) return { name, source: 'model' };
-      } catch (error) {
-        this.logger.warn(
-          `No model title; naming the session from its prompt: ${(error as Error).message}`,
-        );
-      }
-    }
+    const name = await this.askModel(sessionTitleRequest(text), this.namerTimeoutMs, (error) =>
+      this.logger.warn(`No model title; naming the session from its prompt: ${error.message}`),
+    );
+    if (name) return { name, source: 'model' };
 
     const fromPrompt = titleFromPrompt(text);
     return fromPrompt ? { name: fromPrompt, source: 'prompt' } : null;
@@ -113,6 +145,76 @@ export class SessionNamingResolver {
     await this.record(session, await this.propose(session, text), prompt.idempotencyKey);
   }
 
+  /**
+   * Titles the session again from the person's prompts so far, once the
+   * conversation has {@link CONVERSATION_RENAME_AFTER_PROMPTS} of them, and
+   * records it as `conversation`.
+   *
+   * Only over a title derived from the first prompt: a session a person named,
+   * or one already renamed this way, is left alone without reading anything,
+   * so the host is asked for the conversation only until the rename lands. It
+   * needs a model: the prompt's own words already named the session, and
+   * guessing again without one would only churn the name. The write is
+   * conditional on the name still being derived when it lands, under the
+   * session's lock, so a rename typed while the model was thinking wins.
+   */
+  async renameFromConversation(session: WorkSessionEntity): Promise<void> {
+    if (session.nameSource !== 'model' && session.nameSource !== 'prompt') return;
+    if (session.place === 'cloud' || session.hostId === null) return;
+    if (!this.llm.isConfigured() || !this.namerModel) return;
+
+    try {
+      const outcome = await this.transcripts.read(session.hostId, session.id, {
+        limit: CONVERSATION_READ_ENTRIES,
+        from: 'start',
+      });
+      if (outcome.kind !== 'page') return;
+      const entries = SessionTranscriptMapper.toEntries(outcome.page.entries).map(
+        (entry) => redactEntry(entry).entry,
+      );
+      const prompts = promptsOf(entries);
+      if (prompts.length < CONVERSATION_RENAME_AFTER_PROMPTS) return;
+
+      const name = await this.askModel(
+        conversationTitleRequest(prompts),
+        CONVERSATION_TIMEOUT_MS,
+        (error) => this.logger.warn(`No conversation title for ${session.slug}: ${error.message}`),
+      );
+      if (!name) return;
+      await this.sessions.appendEventsIf(
+        session,
+        [
+          {
+            idempotencyKey: CONVERSATION_NAMED_KEY,
+            source: 'api',
+            kind: SESSION_EVENT_KINDS.NAMED,
+            payload: { name, source: 'conversation' },
+          },
+        ],
+        (fold) => fold.nameSource === 'model' || fold.nameSource === 'prompt',
+      );
+    } catch (error) {
+      this.logger.warn(`Renaming session ${session.slug} failed: ${(error as Error).message}`);
+    }
+  }
+
+  /** The configured model's title for this request, or `null`, never a rejection. */
+  private async askModel(
+    request: SessionTitleRequest,
+    timeoutMs: number | undefined,
+    onError: (error: Error) => void,
+  ): Promise<string | null> {
+    const model = this.namerModel;
+    if (!this.llm.isConfigured() || !model) return null;
+    try {
+      const completion = await this.llm.complete({ ...request, model, timeoutMs });
+      return cleanModelTitle(completion.text);
+    } catch (error) {
+      onError(error as Error);
+      return null;
+    }
+  }
+
   /** `SESSION_NAMER_MODEL`, else the provider's default (`LLM_MODEL`). */
   private get namerModel(): string | undefined {
     return this.config.get<string>('sessions.namerModel') ?? this.llm.defaultModel;
@@ -130,6 +232,18 @@ export class SessionNamingResolver {
   private alreadyNamed(session: WorkSessionEntity): boolean {
     return session.nameSource !== null;
   }
+}
+
+/**
+ * The agent finished answering: `done`, or back at its prompt (`idle`). An
+ * `idle` before it ever worked passes too, and costs one read that finds too
+ * few prompts.
+ */
+function finishedAnswer(event: WorkSessionEventEntity): boolean {
+  if (event.kind !== SESSION_EVENT_KINDS.AGENT_OBSERVED) return false;
+  if (typeof event.payload !== 'object' || event.payload === null) return false;
+  const state = (event.payload as { state?: unknown }).state;
+  return state === 'done' || state === 'idle';
 }
 
 /** The prompt the runner reported, narrowed once so nothing downstream casts. */

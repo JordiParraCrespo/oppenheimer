@@ -473,6 +473,9 @@ configured, the title is the prompt's own opening words instead. The result is a
 /sessions/{id}` can overwrite it at any time. The create path waits for the name,
 asking while it dispatches, so its response carries it (03); the runner's path
 does not wait. A session with a first prompt is never left on its slug.
+Once the agent has answered the person's second prompt, the resolver names
+it once more from their prompts so far (`source: conversation`), unless a
+person has named it (03).
 Reading the transcript is the posture note 06 already
 takes with the CLIs' usage files: the runner reads what the CLI writes
 and sends one line of it; the transcript never leaves the host. The one

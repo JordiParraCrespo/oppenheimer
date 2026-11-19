@@ -1778,3 +1778,8 @@ earlier note:
   the allowed chats with who allowed each, their bot and Remove. Which bots
   answer on a number is its default plus a bot per allowed chat, not a list
   of bots per number (`next-steps/whatsapp.md`, open question 1).
+- `versions/mvp/03-control-plane.md` named a session from its first prompt
+  only, once. On 2026-11-19 the owner asked for names that follow the
+  conversation: after the agent answers the person's second prompt, a
+  derived name is written once more from their prompts so far
+  (`source: conversation`); a name a person typed is never replaced.

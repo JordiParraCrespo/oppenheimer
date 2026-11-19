@@ -2,15 +2,26 @@ import type { ConfigService } from '@nestjs/config';
 import { LlmError, type LlmService } from '@oppenheimer/backend-llm';
 import { describe, expect, it, vi } from 'vitest';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionFold } from '../../domain/session-state.policy';
 import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { WorkSessionEventEntity } from '../../domain/work-session-event.entity';
 import { SessionNamingResolver } from '../session-naming.resolver';
+import type { SessionTranscriptOutcome, SessionTranscriptPort } from '../session-transcript.port';
 
 /**
  * Model first, the prompt's own words when the model is not there or not quick:
  * either way a session with a first prompt stops being called by its slug.
  */
-function session(nameSource: 'user' | 'model' | 'prompt' | null = null): WorkSessionEntity {
-  return { slug: 'bold-otter-3f9a7k', nameSource } as WorkSessionEntity;
+type NameSource = 'user' | 'model' | 'prompt' | 'conversation' | null;
+
+function session(nameSource: NameSource = null): WorkSessionEntity {
+  return {
+    id: 'session-1',
+    slug: 'bold-otter-3f9a7k',
+    hostId: 'host-1',
+    place: 'host',
+    nameSource,
+  } as WorkSessionEntity;
 }
 
 function llm(
@@ -38,11 +49,28 @@ function config(values: Record<string, unknown> = {}): ConfigService {
 }
 
 function repository(): WorkSessionRepositoryPort {
-  return { appendEvents: vi.fn().mockResolvedValue({}) } as unknown as WorkSessionRepositoryPort;
+  return {
+    appendEvents: vi.fn().mockResolvedValue({}),
+    appendEventsIf: vi.fn().mockResolvedValue({}),
+  } as unknown as WorkSessionRepositoryPort;
 }
 
+/** Claude Code's transcript lines, as the runner hands them over. */
+const line = (role: 'user' | 'assistant', content: unknown) =>
+  JSON.stringify({ type: role, uuid: `${role}-${Math.random()}`, message: { role, content } });
+
+function transcript(...entries: string[]): SessionTranscriptPort {
+  const outcome: SessionTranscriptOutcome = {
+    kind: 'page',
+    page: { entries, from: 0, next: 0, atEnd: true, conversation: 'c1' },
+  };
+  return { read: vi.fn().mockResolvedValue(outcome) };
+}
+
+const noTranscript = (): SessionTranscriptPort => ({ read: vi.fn() });
+
 const resolverWith = (client: LlmService, values?: Record<string, unknown>) =>
-  new SessionNamingResolver(repository(), client, config(values));
+  new SessionNamingResolver(repository(), noTranscript(), client, config(values));
 
 describe('SessionNamingResolver.propose', () => {
   it('takes the model’s title, asked within the naming deadline', async () => {
@@ -116,7 +144,12 @@ describe('SessionNamingResolver.propose', () => {
 describe('SessionNamingResolver.record', () => {
   it('records the proposal with who chose it, keyed on the prompt', async () => {
     const sessions = repository();
-    const resolver = new SessionNamingResolver(sessions, llm(answer('x')), config());
+    const resolver = new SessionNamingResolver(
+      sessions,
+      noTranscript(),
+      llm(answer('x')),
+      config(),
+    );
 
     await resolver.record(session(), { name: 'Add dark mode', source: 'prompt' }, 'cmd-1:prompt');
 
@@ -133,10 +166,118 @@ describe('SessionNamingResolver.record', () => {
   it('never fails the caller over a name it could not write', async () => {
     const sessions = repository();
     vi.mocked(sessions.appendEvents).mockRejectedValue(new Error('lock timeout'));
-    const resolver = new SessionNamingResolver(sessions, llm(answer('x')), config());
+    const resolver = new SessionNamingResolver(
+      sessions,
+      noTranscript(),
+      llm(answer('x')),
+      config(),
+    );
 
     await expect(
       resolver.record(session(), { name: 'Add dark mode', source: 'prompt' }, 'k'),
     ).resolves.toBeUndefined();
+  });
+});
+
+/**
+ * Once the person has asked a second thing and the agent has answered, the title
+ * is written again from everything they asked, unless they named it themselves.
+ */
+describe('SessionNamingResolver.nameFromBatch', () => {
+  const answered = [
+    { kind: 'agent.observed', payload: { state: 'idle' } },
+  ] as unknown as WorkSessionEventEntity[];
+
+  const twoPrompts = () =>
+    transcript(
+      line('user', 'fix the bug'),
+      line('assistant', [{ type: 'text', text: 'Which bug?' }]),
+      line('user', [{ type: 'tool_result', tool_use_id: 't', content: 'ok' }]),
+      line('user', '<command-name>/clear</command-name>'),
+      line(
+        'user',
+        'the wallet list is empty on mobile when sk-ant-abcdefghijklmnopqrstuvwxyz is set',
+      ),
+    );
+
+  it('renames a derived title from the person’s prompts, conditional on it still being derived', async () => {
+    const sessions = repository();
+    const client = llm(answer('Wallet list empty on mobile'));
+    const resolver = new SessionNamingResolver(sessions, twoPrompts(), client, config());
+
+    await resolver.nameFromBatch(session('model'), answered);
+
+    const request = vi.mocked(client.complete).mock.calls[0][0];
+    const sent = request.messages[0].content;
+    expect(sent).toContain('1. fix the bug');
+    expect(sent).toContain('2. the wallet list is empty on mobile');
+    // Only what the person wrote leaves the host, with secrets taken out.
+    expect(sent).not.toContain('Which bug?');
+    expect(sent).not.toContain('/clear');
+    expect(sent).not.toContain('sk-ant-');
+
+    const [, events, holds] = vi.mocked(sessions.appendEventsIf).mock.calls[0];
+    expect(events).toEqual([
+      {
+        idempotencyKey: 'session.named:conversation',
+        source: 'api',
+        kind: 'session.named',
+        payload: { name: 'Wallet list empty on mobile', source: 'conversation' },
+      },
+    ]);
+    // A rename typed while the model was thinking wins.
+    expect(holds({ nameSource: 'user' } as SessionFold, null)).toBe(false);
+    expect(holds({ nameSource: 'prompt' } as SessionFold, null)).toBe(true);
+  });
+
+  it('waits for a second prompt before renaming', async () => {
+    const sessions = repository();
+    const client = llm(answer('never'));
+    const onePrompt = transcript(line('user', 'fix the bug'), line('assistant', 'Done.'));
+    await new SessionNamingResolver(sessions, onePrompt, client, config()).nameFromBatch(
+      session('model'),
+      answered,
+    );
+    expect(client.complete).not.toHaveBeenCalled();
+    expect(sessions.appendEventsIf).not.toHaveBeenCalled();
+  });
+
+  it.each(['user', 'conversation'] as const)(
+    'never reads the conversation of a session named by %s',
+    async (source) => {
+      const reader = twoPrompts();
+      const client = llm(answer('never'));
+      await new SessionNamingResolver(repository(), reader, client, config()).nameFromBatch(
+        session(source),
+        answered,
+      );
+      expect(reader.read).not.toHaveBeenCalled();
+      expect(client.complete).not.toHaveBeenCalled();
+    },
+  );
+
+  it('leaves the name when no model is configured', async () => {
+    const reader = twoPrompts();
+    const sessions = repository();
+    await new SessionNamingResolver(
+      sessions,
+      reader,
+      llm(answer('never'), { configured: false }),
+      config(),
+    ).nameFromBatch(session('prompt'), answered);
+    expect(reader.read).not.toHaveBeenCalled();
+    expect(sessions.appendEventsIf).not.toHaveBeenCalled();
+  });
+
+  it('reads nothing while the agent is still working', async () => {
+    const reader = twoPrompts();
+    const working = [
+      { kind: 'agent.observed', payload: { state: 'working' } },
+    ] as unknown as WorkSessionEventEntity[];
+    await new SessionNamingResolver(repository(), reader, llm(answer('x')), config()).nameFromBatch(
+      session('model'),
+      working,
+    );
+    expect(reader.read).not.toHaveBeenCalled();
   });
 });
