@@ -52,10 +52,6 @@ every {{count}} hours
 
 every day
 
-<!-- fragment: every-days -->
-
-every {{count}} days
-
 <!-- fragment: end-line -->
 
 {{ended}} (after {{runs}} runs): {{prompt}}

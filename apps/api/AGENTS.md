@@ -92,7 +92,14 @@ with it; `src/__tests__/prompt-files.spec.ts` fails on a stale one. The
 policy keeps what is logic: which prompt, when, and what fills its slots.
 One paragraph per line, as written: nothing reflows these files. A prompt
 longer than the ceiling in `prompt-files.spec.ts` fails it: split the
-prompt, or raise the number and say why.
+prompt, or raise the number and say why. The same spec fails a prompt no
+source file reads.
+
+`pnpm check:prompt-strings` holds the other side: in a module that has
+prompt files, a sentence written as a string literal fails (four words and
+28 characters or more; an exception's message, a log line and a query are
+not counted). Text that is not for a model (shown to the person, stored as
+state) is listed in the check's ledger with why.
 
 ## Delegating façades (organizations, admin)
 

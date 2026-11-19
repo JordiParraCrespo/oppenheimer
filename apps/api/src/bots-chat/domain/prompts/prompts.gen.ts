@@ -934,7 +934,6 @@ export type PromptId =
   | "wake/goal.resumed"
   | "wake/goal.end-line"
   | "wake/goal.ended-met"
-  | "wake/goal.ended-impossible"
   | "wake/goal.ended-cleared"
   | "wake/goal.ended-exhausted"
   | "wake/goal.ended-stopped"
@@ -951,7 +950,6 @@ export type PromptId =
   | "wake/loop.every-hour"
   | "wake/loop.every-hours"
   | "wake/loop.every-day"
-  | "wake/loop.every-days"
   | "wake/loop.end-line"
   | "wake/loop.ended-cleared"
   | "wake/loop.ended-expired"
@@ -1445,7 +1443,6 @@ export interface PromptSlots {
   "wake/loop.schedule-the-next": { max: string };
   "wake/loop.every-minutes": { count: string };
   "wake/loop.every-hours": { count: string };
-  "wake/loop.every-days": { count: string };
   "wake/loop.end-line": { ended: string; runs: string; prompt: string };
   "wake/peer-message.sender": { name: string; id: string };
   "wake/peer-message.sender-since-deleted": { name: string };
@@ -2427,7 +2424,6 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "wake/goal.resumed": "The person resumed your goal: {{objective}}",
   "wake/goal.end-line": "{{ended}} ({{count}}): {{objective}}",
   "wake/goal.ended-met": "A reviewer found your goal met",
-  "wake/goal.ended-impossible": "A reviewer found your goal cannot be met without the person",
   "wake/goal.ended-cleared": "The person stopped your goal",
   "wake/goal.ended-exhausted": "Your goal used all its continuations and stopped",
   "wake/goal.ended-stopped": "Your goal stopped because its owner can no longer act in the workspace",
@@ -2444,7 +2440,6 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "wake/loop.every-hour": "every hour",
   "wake/loop.every-hours": "every {{count}} hours",
   "wake/loop.every-day": "every day",
-  "wake/loop.every-days": "every {{count}} days",
   "wake/loop.end-line": "{{ended}} (after {{runs}} runs): {{prompt}}",
   "wake/loop.ended-cleared": "The person stopped your loop",
   "wake/loop.ended-expired": "Your loop ran for 3 days and expired",
