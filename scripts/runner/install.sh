@@ -68,9 +68,11 @@ Nothing is installed with a package manager unless you answer "y" on a terminal.
 EOF
 }
 
-# The runner's look on a terminal (apps/runner/internal/cli/look.go): the
-# console's mark, its one blue for what to type, green, amber and red only for
-# state. Piped or logged, and under NO_COLOR or TERM=dumb, every line is plain.
+# The runner's look on a terminal. apps/runner/internal/cli/look.go owns it
+# (the mark, the colours, when to draw them); this is a copy, because the
+# installer runs before the runner is here. Change look.go first, then this:
+# scripts/runner/install-look.test.mjs fails while the marks differ. Piped or
+# logged, and under NO_COLOR or TERM=dumb, every line is plain.
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != dumb ]; then
 	B="$(printf '\033[1m')" D="$(printf '\033[2m')" R="$(printf '\033[0m')"
 	BLUE="$(printf '\033[34m')" GREEN="$(printf '\033[32m')" AMBER="$(printf '\033[33m')"

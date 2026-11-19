@@ -30,7 +30,7 @@
     "check:bootstrap": "node --test scripts/dev/bootstrap.test.mjs",
     "check:singletons": "node scripts/check-singletons.mjs && node --test scripts/check-singletons.test.mjs",
     "check:flags": "node --no-warnings scripts/check-feature-flags.mjs && node --no-warnings --test scripts/check-feature-flags.test.mjs",
-    "check:runner-release": "node --test scripts/runner/publish.test.mjs",
+    "check:runner-release": "node --test scripts/runner/publish.test.mjs scripts/runner/install-look.test.mjs",
     "starter:prune": "node scripts/starter/prune.mjs",
     "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
     "test": "turbo run test",
