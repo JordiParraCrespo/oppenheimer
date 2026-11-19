@@ -14,6 +14,7 @@ import { UpdateBotSkillCommand } from '../../bots/commands/update-bot-skill/upda
 import type { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
 import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-skill.query';
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   type BotBuiltInSkill,
   describeSkillUse,
@@ -43,7 +44,7 @@ const skillName = z
   .trim()
   .max(BOT_SKILL_NAME_MAX)
   .regex(BOT_SKILL_NAME_PATTERN)
-  .describe('The skill\'s name, as the skills list or /<name> shows it, e.g. "release-notes".');
+  .describe(promptText('tools/skills.skill-name-skills-name-skills'));
 
 /**
  * Its skills (from OpenClaw's skills and Grok Bot's saved skills): the bot
@@ -71,13 +72,12 @@ export class BotSkillToolsFactory implements BotToolArea {
       name: 'use_skill',
       readOnly: true,
       scope: 'bots:read',
-      description:
-        'Reads one of your skills in full, by name, so you can follow it. Use it before starting a request that one of your skills (listed under "Your skills") covers, then follow its steps. A skill only the person may run (by typing /<name>) is not yours to use unasked.',
+      description: promptText('tools/skills.use-skill'),
       input: z.strictObject({ name: skillName }),
       run: async (input, context) => {
         const skill = await this.skillToUse(context, input.name);
         if (!skill.modelInvocable) {
-          return `Not read: "${skill.name}" is a skill only the person runs, by typing /${skill.name}. Tell them it fits, if it does.`;
+          return promptText('tools/skills.use-skill-read-skill-only', { name: skill.name });
         }
         const read = `${describeSkillUse(skill)}\n\n${skillBlock(skill)}`;
         // Oppenheimer's own skills are product text: nothing for the bot to fix.
@@ -90,7 +90,12 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'save_skill',
       scope: 'bots:write',
-      description: `Saves a skill: a reusable way of doing one task, under a short name the person can run as /<name>. Use it when the person asks you to save how you did something ("save that as a skill called…"), or on your own after a task that took real work (several tool calls, or a dead end you worked around) and is likely to come up again, which the person saying they do it regularly is reason enough for: never for a one-off or a lookup of a call or two, and never with a secret or anyone's personal data in it (a key, token or password, bank or card details, a mail address, phone number or messages: leave them out and say where the person keeps them); at most one new skill a turn, and say in your answer that you saved it, by name. A skill of yours with that name is replaced: one the person wrote last only when they asked (set asked_by_person), and to fix one step use patch_skill rather than resending the whole body. The names of the skills Oppenheimer gives every bot are taken. The body says when it applies, what it needs, the steps, how to check the result and what to report, and what needs the person's OK. Name 1 to ${BOT_SKILL_NAME_MAX} of a-z, 0-9 and -; description at most ${BOT_SKILL_DESCRIPTION_MAX}; body at most ${BOT_SKILL_BODY_MAX}; at most ${BOT_SKILLS_MAX} skills. The person sees and edits it in Settings → Skills.`,
+      description: promptText('tools/skills.save-skill', {
+        skillNameMax: String(BOT_SKILL_NAME_MAX),
+        skillDescriptionMax: String(BOT_SKILL_DESCRIPTION_MAX),
+        skillBodyMax: String(BOT_SKILL_BODY_MAX),
+        skillsMax: String(BOT_SKILLS_MAX),
+      }),
       input: z.strictObject({
         name: skillName,
         description: z
@@ -98,29 +103,25 @@ export class BotSkillToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(BOT_SKILL_DESCRIPTION_MAX)
-          .describe('One sentence on what it does and when to use it.'),
+          .describe(promptText('tools/skills.skill-name-one-sentence-what')),
         body: z
           .string()
           .trim()
           .min(1)
           .max(BOT_SKILL_BODY_MAX)
-          .describe('The skill, in Markdown: when, inputs, steps, checks, what to report.'),
+          .describe(promptText('tools/skills.save-skill-body')),
         user_invocable: z
           .boolean()
           .optional()
-          .describe('Whether the person may run it as /<name>. Default true.'),
+          .describe(promptText('tools/skills.save-skill-user-invocable')),
         model_invocable: z
           .boolean()
           .optional()
-          .describe(
-            'Whether you may use it unasked when a request fits. Default true; false for a skill only the person should start.',
-          ),
+          .describe(promptText('tools/skills.save-skill-model-invocable')),
         asked_by_person: z
           .boolean()
           .optional()
-          .describe(
-            'True only when the person asked in this conversation to change this skill. Needed to replace a skill they wrote.',
-          ),
+          .describe(promptText('tools/skills.save-skill-asked-by-person')),
       }),
       run: async (input, context) => {
         const change = {
@@ -166,9 +167,13 @@ export class BotSkillToolsFactory implements BotToolArea {
         const saved = await this.skill(context, input.name);
         const runs = [
           saved.userInvocable ? `the person runs it as /${saved.name}` : null,
-          saved.modelInvocable ? 'you use it when a request fits' : null,
+          saved.modelInvocable ? promptText('tools/skills.save-skill-use-when-request') : null,
         ].filter(Boolean);
-        return `${existing ? 'Updated' : 'Saved'} skill "${saved.name}" (${runs.join('; ')}). The person can see and edit it in Settings → Skills.`;
+        return promptText('tools/skills.save-skill-skill-person-can', {
+          existing: existing ? 'Updated' : 'Saved',
+          name: saved.name,
+          runs: runs.join('; '),
+        });
       },
     });
   }
@@ -177,24 +182,24 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'patch_skill',
       scope: 'bots:write',
-      description: `Fixes part of one of your skills: replaces one exact passage of its body with new text, so a step that turned out wrong or out of date is fixed without resending the whole skill. Use it once the task is done, when a skill you followed was wrong or stale, and say in your answer what you fixed. old_text must occur exactly once in the body, copied as use_skill showed it; the result is at most ${BOT_SKILL_BODY_MAX} characters. A skill you saved last you may fix unasked; one the person wrote last only when they asked for the change in this conversation (set asked_by_person), otherwise propose the change in your answer. The skills Oppenheimer gives every bot cannot be changed.`,
+      description: promptText('tools/skills.patch-skill', {
+        skillBodyMax: String(BOT_SKILL_BODY_MAX),
+      }),
       input: z.strictObject({
         name: skillName,
         old_text: z
           .string()
           .min(1)
           .max(BOT_SKILL_BODY_MAX)
-          .describe('The passage to replace, exactly as it is in the skill, enough to be unique.'),
+          .describe(promptText('tools/skills.patch-skill-old-text')),
         new_text: z
           .string()
           .max(BOT_SKILL_BODY_MAX)
-          .describe('What replaces it; empty removes the passage.'),
+          .describe(promptText('tools/skills.patch-skill-new-text')),
         asked_by_person: z
           .boolean()
           .optional()
-          .describe(
-            'True only when the person asked for this change in this conversation. Needed to change a skill they wrote.',
-          ),
+          .describe(promptText('tools/skills.patch-skill-asked-by-person')),
       }),
       run: async (input, context) => {
         const own = (await this.skills(context)).find((skill) => skill.name === input.name);
@@ -217,7 +222,7 @@ export class BotSkillToolsFactory implements BotToolArea {
             author: 'bot',
           }),
         );
-        return `Fixed skill "${skill.name}". Say in your answer what you changed. The person can see and edit it in Settings → Skills.`;
+        return promptText('tools/skills.patch-skill-fixed-skill-say', { name: skill.name });
       },
     });
   }
@@ -226,8 +231,7 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'delete_skill',
       scope: 'bots:write',
-      description:
-        'Deletes one of your skills, by name, and its /<name> command with it. It cannot be undone; only when the person asks.',
+      description: promptText('tools/skills.delete-skill'),
       input: z.strictObject({ name: skillName }),
       run: async (input, context) => {
         const skill = await this.skill(context, input.name);
@@ -239,7 +243,10 @@ export class BotSkillToolsFactory implements BotToolArea {
           }),
         );
         const left = await this.skills(context);
-        return `Deleted skill "${skill.name}"; you have ${left.length} left.`;
+        return promptText('tools/skills.delete-skill-deleted-skill-have', {
+          name: skill.name,
+          leftCount: String(left.length),
+        });
       },
     });
   }

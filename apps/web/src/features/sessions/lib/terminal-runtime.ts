@@ -8,7 +8,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { Terminal } from '@xterm/xterm';
+import { type ILinkHandler, Terminal } from '@xterm/xterm';
 import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
 import { createSnapshotHandover } from './snapshot-handover';
@@ -114,6 +114,7 @@ export function mountSessionTerminal(
     // forces a selection everywhere but macOS, where it is Option.
     macOptionClickForcesSelection: true,
     disableStdin: options.readOnly ?? false,
+    linkHandler: osc8Links(container),
   });
 
   const fit = new FitAddon();
@@ -390,6 +391,28 @@ const OSC52_CLIPBOARD: IClipboardProvider = {
     if (target === '' || target.includes('c')) copyToClipboard(text);
   },
 };
+
+/**
+ * An OSC 8 hyperlink, as Claude Code prints a Markdown link (`[24093](https://…)`):
+ * opened in a new tab on click, as the chat view opens the same link, instead
+ * of xterm's `confirm()` before every link. Its text says nothing of where it
+ * goes, so hovering it shows the URL, as a link in the chat does. xterm hands
+ * over only http(s) links (`allowNonHttpProtocols` is off), so a `file:` or
+ * `javascript:` link from the host never reaches this.
+ */
+function osc8Links(container: HTMLElement): ILinkHandler {
+  return {
+    activate: (_event, uri) => {
+      window.open(uri, '_blank', 'noopener,noreferrer');
+    },
+    hover: (_event, uri) => {
+      container.title = uri;
+    },
+    leave: () => {
+      container.removeAttribute('title');
+    },
+  };
+}
 
 /**
  * A wheel event in rows.

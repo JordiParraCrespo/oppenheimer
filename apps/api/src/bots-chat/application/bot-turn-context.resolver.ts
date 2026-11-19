@@ -153,6 +153,7 @@ export class BotTurnContextResolver {
         budget: new BotTurnBudget(),
         credentialScopes: turn.credentialScopes,
         origin: turn.origin,
+        lane: turn.lane,
         ranCommand: command?.name ?? null,
         approvals: this.approvals,
         permissions,
@@ -198,6 +199,7 @@ export class BotTurnContextResolver {
               preset: bot.permission,
               permissions,
               origin: turn.origin,
+              lane: turn.lane,
             })
           : [],
         skills,

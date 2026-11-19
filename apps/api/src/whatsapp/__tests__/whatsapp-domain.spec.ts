@@ -176,6 +176,7 @@ describe('whatsappInboundAction', () => {
       command: 'message',
       text: 'what sold?\nand when',
       switchName: 'Shop',
+      voiceNote: false,
     });
     expect(whatsappInboundAction(owned, fromOwner('Shop:'))).toMatchObject({
       text: '',
@@ -184,6 +185,26 @@ describe('whatsappInboundAction', () => {
     expect(whatsappInboundAction(owned, fromOwner('what sold?'))).toMatchObject({
       text: 'what sold?',
       switchName: null,
+    });
+  });
+
+  // What breaks this: the owner's voice note waking the bot with "[audio]" as its words,
+  // or a captioned one losing its caption.
+  it('takes the owner’s uncaptioned voice note as one to hear, and a caption as its text', () => {
+    expect(whatsappInboundAction(owned, { ...fromOwner(''), media: 'audio' })).toEqual({
+      kind: 'owner',
+      command: 'message',
+      text: '',
+      switchName: null,
+      voiceNote: true,
+    });
+    expect(whatsappInboundAction(owned, { ...fromOwner('listen'), media: 'audio' })).toMatchObject({
+      text: 'listen',
+      voiceNote: false,
+    });
+    expect(whatsappInboundAction(owned, { ...fromOwner(''), media: 'image' })).toMatchObject({
+      text: '[image]',
+      voiceNote: false,
     });
   });
 });

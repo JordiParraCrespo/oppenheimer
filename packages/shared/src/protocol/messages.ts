@@ -66,6 +66,8 @@ import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
   whatsappLinkSchema,
+  whatsappMediaGetSchema,
+  whatsappMediaSchema,
   whatsappMessagesSchema,
   whatsappSendSchema,
   whatsappSentSchema,
@@ -198,6 +200,12 @@ export const RUNNER_CAPABILITIES = [
    * `whatsapp.messages`.
    */
   'whatsapp',
+  /**
+   * Hands over a voice note its WhatsApp device received: it sends
+   * `voiceSeconds` on each, and answers `whatsapp.media.get` with
+   * `whatsapp.media`, so the owner's bots hear them.
+   */
+  'whatsapp.voice',
   /**
    * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
    * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
@@ -1484,6 +1492,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSentSchema,
+  whatsappMediaGetSchema,
+  whatsappMediaSchema,
   telegramLinkSchema,
   telegramUnlinkSchema,
   telegramStateSchema,

@@ -9,6 +9,7 @@ import type { PullRequestDetailView, RepositoryView } from '../bot-github-tool.m
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { BOT_SUBSCRIPTIONS_PER_BOT } from '../domain/bot-subscription.policy';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
@@ -59,7 +60,11 @@ export class BotPullRequestWatchResolver {
     );
     if (pull.state !== 'open') {
       throw new BotToolRefusal(
-        `Pull request #${number} of ${found.repository.fullName} is ${pull.state}: there is nothing left to follow.`,
+        promptText('tools/pull-request-watch.watch', {
+          number: String(number),
+          fullName: found.repository.fullName,
+          state: pull.state,
+        }),
       );
     }
     const ref = {
@@ -118,7 +123,9 @@ export class BotPullRequestWatchResolver {
     );
     if (!already && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests. Unwatch one you no longer need (list_watches shows them) first.`,
+        promptText('tools/pull-request-watch.assert-room', {
+          subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
+        }),
       );
     }
   }
@@ -138,9 +145,7 @@ export class BotPullRequestWatchResolver {
     >(new FindInstallationsQuery({ scope: owner }));
     const usable = installations.filter((installation) => installation.isUsable);
     if (usable.length === 0) {
-      throw new BotToolRefusal(
-        'GitHub is not connected to this workspace, or its installations are suspended: there is no pull request you can follow.',
-      );
+      throw new BotToolRefusal(promptText('tools/pull-request-watch.github-not-connected'));
     }
     let unlisted = 0;
     for (const installation of usable) {
@@ -158,10 +163,13 @@ export class BotPullRequestWatchResolver {
       if (repository) return { installationId: installation.id, repository };
     }
     const why = unlisted
-      ? ` (${unlisted} installation${unlisted === 1 ? '' : 's'} could not be listed just now; try again later)`
+      ? ` ${promptText('tools/pull-request-watch.installations-unlisted', { unlisted: String(unlisted), suffix: unlisted === 1 ? '' : 's' })}`
       : '';
     throw new BotToolRefusal(
-      `Repository ${handle} is not one the workspace's GitHub installations let its owner read${why}. list_repositories shows the ones you can follow.`,
+      promptText('tools/pull-request-watch.repository-not-readable', {
+        handle: String(handle),
+        why,
+      }),
     );
   }
 }
