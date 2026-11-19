@@ -78,7 +78,7 @@ const LAYERS = {
       prompts: {
         what: 'the words a model is told: prose in *.md, and the prompts.gen.ts generated from it (pnpm --filter @oppenheimer/api generate:prompts)',
         files: [/\.md$/, /^prompts\.gen\.ts$/],
-        // A folder says where its words are sent (system/, turn/, wake/); it holds prose and nothing else.
+        // A folder says where its words are sent (system/, turn/, wake/, jobs/, tools/); it holds prose and nothing else.
         nested: {
           what: 'prose in *.md, in a folder named for where the words are sent',
           files: [/\.md$/],

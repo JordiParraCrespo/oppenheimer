@@ -16,9 +16,8 @@ import { BotTurnEntity } from './bot-turn.entity';
 /** "every 5 minutes", "every 2 hours", or "when you choose", for the bot's words. */
 function cadenceOf(intervalMinutes: number | null): string {
   if (intervalMinutes === null) return promptText('wake/loop.when-you-choose');
-  if (intervalMinutes % 1_440 === 0) {
-    return every(intervalMinutes / 1_440, 'wake/loop.every-day', 'wake/loop.every-days');
-  }
+  // A loop runs once a day at most (`BOT_LOOP_INTERVAL_MAX_MINUTES`), so days are never counted.
+  if (intervalMinutes === 1_440) return promptText('wake/loop.every-day');
   if (intervalMinutes % 60 === 0) {
     return every(intervalMinutes / 60, 'wake/loop.every-hour', 'wake/loop.every-hours');
   }
@@ -27,8 +26,8 @@ function cadenceOf(intervalMinutes: number | null): string {
 
 function every(
   count: number,
-  one: 'wake/loop.every-day' | 'wake/loop.every-hour' | 'wake/loop.every-minute',
-  many: 'wake/loop.every-days' | 'wake/loop.every-hours' | 'wake/loop.every-minutes',
+  one: 'wake/loop.every-hour' | 'wake/loop.every-minute',
+  many: 'wake/loop.every-hours' | 'wake/loop.every-minutes',
 ): string {
   return count === 1 ? promptText(one) : promptText(many, { count: String(count) });
 }

@@ -1,3 +1,4 @@
+import { promptText } from './bot-prompt-text.policy';
 /**
  * Which sessions a bot may end for good. A bot's session (origin `bot`) is
  * one a bot started for its owner, so a bot may close it; one the person, an
@@ -7,5 +8,9 @@
 export function botSessionRefusal(session: { id: string; origin: string }): string | null {
   if (session.origin === 'bot') return null;
   const article = /^[aeiou]/.test(session.origin) ? 'an' : 'a';
-  return `Session ${session.id} was not started by a bot (it is ${article} ${session.origin} session), so you cannot close it. Tell the person; they can close it from the console.`;
+  return promptText('tools/sessions.close-not-a-bots-session', {
+    id: session.id,
+    article,
+    origin: session.origin,
+  });
 }

@@ -97,10 +97,6 @@ The person resumed your goal: {{objective}}
 
 A reviewer found your goal met
 
-<!-- fragment: ended-impossible -->
-
-A reviewer found your goal cannot be met without the person
-
 <!-- fragment: ended-cleared -->
 
 The person stopped your goal
