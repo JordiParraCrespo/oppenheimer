@@ -3,6 +3,7 @@ import type { BotRoutineActivity } from '@oppenheimer/shared';
 import type { AutomationRunOutcome, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { BotMessageEntity } from './bot-message.entity';
 import { WORTH_SAYING } from './bot-notice.policy';
+import { promptText } from './bot-prompt-text.policy';
 import { repeatedBlockerAsk } from './bot-recovery.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -60,16 +61,11 @@ export function routineCallAsks(action: RoutineAction, ranSchedule = false): boo
  * minutes is a `/loop`, and one with no time is asked about, never guessed.
  */
 export function scheduleSetPrompt(request: string): string {
-  return [
-    `The person ran /schedule to have you save a routine: ${request}`,
-    'Create it now with update_routine (action create): a short name, the prompt you will run each time written to yourself, and a schedule trigger in their time zone. Their /schedule is their consent to this one routine, so it does not ask them.',
-    'A schedule runs once at a time of day on the days it names (daily, weekdays, weekly, monthly, or once on a date). If they want it every few minutes, tell them /loop does that instead and save nothing. If the request says what to do but not when, ask them when in one line and save nothing yet.',
-    'Then say in one line what you scheduled and when it runs.',
-  ].join('\n');
+  return promptText('turn/slash-command.schedule', { request });
 }
 
 /** How a routine's run stays silent about a blocker the person already knows. */
-export const ROUTINE_QUIET = 'call nothing_to_report and write nothing';
+export const ROUTINE_QUIET = promptText('wake/routine.quiet');
 
 /** Every turn of one routine's runs begins with this. */
 export function routinePrefix(automationId: string): string {
@@ -83,14 +79,12 @@ export function routinePrefix(automationId: string): string {
  * to read as the bot dropping by, never as a job's output.
  */
 export function routineOpening(firing: RoutineFiring): string {
-  return [
-    `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
-    'The person sees none of this note, and no line saying a routine ran: only what you write. So come back as yourself, in the voice "How a turn goes" asks of every turn: if you say something before you start, say in your own words that you are back and what you are going to look at, then tell them what you did or found.',
-    `${WORTH_SAYING} Otherwise call nothing_to_report and write nothing.`,
-    repeatedBlockerAsk(ROUTINE_QUIET),
-    '',
-    firing.instructions,
-  ].join('\n');
+  return promptText('wake/routine.opening', {
+    name: firing.name,
+    worthSaying: WORTH_SAYING,
+    repeatedBlocker: repeatedBlockerAsk(ROUTINE_QUIET),
+    instructions: firing.instructions,
+  });
 }
 
 /**
@@ -213,22 +207,25 @@ export function uuidV5(name: string, namespace: string): string {
 
 /** What the bot reads when its history reaches the line: the same news, in words. */
 export function routineActivityText(activity: RoutineActivity): string {
-  const name = `"${activity.name}"`;
+  const { name } = activity;
   switch (activity.activity) {
     case 'saved':
-      return `Your routine ${name} was saved.`;
+      return promptText('wake/routine.saved', { name });
     case 'changed':
-      return `Your routine ${name} was changed.`;
+      return promptText('wake/routine.changed', { name });
     case 'paused':
       return activity.reason === 'bot_provider_missing'
-        ? `Your routine ${name} was paused: your model provider has no key or sign-in, so it could not run.`
-        : `Your routine ${name} was paused.`;
+        ? promptText('wake/routine.paused-no-provider', { name })
+        : promptText('wake/routine.paused', { name });
     case 'resumed':
-      return `Your routine ${name} was resumed.`;
+      return promptText('wake/routine.resumed', { name });
     case 'deleted':
-      return `Your routine ${name} was deleted.`;
+      return promptText('wake/routine.deleted', { name });
     case 'failed':
-      return `A run of your routine ${name} did not start (${activity.reason ?? 'unknown'}).`;
+      return promptText('wake/routine.run-did-not-start', {
+        name,
+        reason: activity.reason ?? promptText('wake/routine.reason-unknown'),
+      });
   }
 }
 

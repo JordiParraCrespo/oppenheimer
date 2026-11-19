@@ -125,3 +125,25 @@ describe('TaskEntity: what a follower of its project is told', () => {
     expect(event.projectId).not.toBe(before.projectId);
   });
 });
+
+describe('TaskEntity: taken off To do', () => {
+  it('stays off until its person gives it a TODO day or its due date changes', () => {
+    const task = newTask();
+    task.edit({ focusDate: '2026-11-13', dueDate: '2026-11-15' });
+    task.edit({ focusDate: null, offTodo: true });
+    expect([task.offTodo, task.focusDate]).toEqual([true, null]);
+
+    task.edit({ title: 'Biometric unlock, v2', priority: 'high' });
+    expect(task.offTodo).toBe(true);
+
+    task.edit({ focusDate: '2026-11-18' });
+    expect(task.offTodo).toBe(false);
+
+    task.edit({ focusDate: null, offTodo: true });
+    task.edit({ dueDate: '2026-11-15' });
+    task.edit({ dueDate: '2026-11-15', dueTime: '11:00' });
+    expect(task.offTodo).toBe(true);
+    task.edit({ dueDate: '2026-11-20' });
+    expect(task.offTodo).toBe(false);
+  });
+});

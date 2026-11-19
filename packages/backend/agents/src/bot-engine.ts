@@ -283,6 +283,31 @@ export interface BotCompletion {
   usage: BotCompletionUsage | null;
 }
 
+/**
+ * A completion that did not complete for any reason but a rate limit: the
+ * turn's reason, and the kind of failure the engine named (null when it named
+ * none, as on a cancel). The kind is what lets a caller tell the provider
+ * refusing the account (`usage_limit`, `credential`), which no retry fixes,
+ * from a fault worth reporting.
+ *
+ * A rate limit stays `LlmRateLimitError` on purpose, not a kind of this one:
+ * it is the one rate-limit type both model stacks raise (this package's
+ * `complete` and `@oppenheimer/backend-llm`'s), so a caller handles a model's
+ * rate limit once, whichever stack refused (`.agents/rules/integrations.md`).
+ * A caller that needs every kind reads both, in one place (the API's
+ * `bot-summaries` worker, `refusalOf`).
+ */
+export class BotCompletionError extends Error {
+  override readonly name = 'BotCompletionError';
+
+  constructor(
+    message: string,
+    readonly failure: BotEngineFailure | null,
+  ) {
+    super(message);
+  }
+}
+
 /** What makes a run a completion: one step, none of our tools and none of the engine's. */
 const COMPLETION_MAX_STEPS = 1;
 
@@ -320,7 +345,8 @@ export abstract class BotEngine {
    * error, abort honoured). Resolves to the text the model wrote; rejects
    * with the turn's reason when it does not complete, as an
    * `LlmRateLimitError` (`@oppenheimer/backend-llm`, the type both model
-   * stacks raise) when the provider refused for rate or quota.
+   * stacks raise) when the provider refused for rate or quota, and as a
+   * `BotCompletionError` naming the kind of failure otherwise.
    */
   async complete(request: BotCompletionRequest): Promise<string> {
     return (await this.completeWithUsage(request)).text;
@@ -349,7 +375,7 @@ export abstract class BotEngine {
         if (event.rateLimit) {
           throw new LlmRateLimitError(request.provider, reason, event.rateLimit.resetAt);
         }
-        throw new Error(reason);
+        throw new BotCompletionError(reason, event.failure ?? null);
       }
     }
     return { text: texts.join('\n\n').trim(), usage };

@@ -914,9 +914,9 @@ never dreamed, or its latest dream was undone already: only the latest can be.
 `BOTS_042` is a delete of a bot that answers you on a Telegram bot. Choose
 another bot, or none, to answer there (Settings → Telegram), then delete it.
 
-`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default: it
-answers you there. Choose another bot, or none (Settings → WhatsApp), then
-delete it.
+`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default, or
+the bot of one of its allowed chats: it answers there. Choose another bot, or
+none (Settings → WhatsApp), then delete it.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1129,6 +1129,10 @@ one of their hosts, and the messages it sees, kept for their bots. See
 | `WHATSAPP_012` <a id="whatsapp_012" /> | No number is waiting to be confirmed                        | 409  |
 | `WHATSAPP_013` <a id="whatsapp_013" /> | That number cannot be your own number here                  | 422  |
 | `WHATSAPP_014` <a id="whatsapp_014" /> | Too many wrong codes                                        | 429  |
+| `WHATSAPP_015` <a id="whatsapp_015" /> | Confirm your own number before allowing other chats         | 409  |
+| `WHATSAPP_016` <a id="whatsapp_016" /> | That chat is not allowed on this number                     | 404  |
+| `WHATSAPP_017` <a id="whatsapp_017" /> | That chat cannot be allowed                                 | 422  |
+| `WHATSAPP_018` <a id="whatsapp_018" /> | That is as many chats as one number allows                  | 409  |
 
 `WHATSAPP_005` is a runner that predates WhatsApp, or one started with
 `RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
@@ -1145,6 +1149,14 @@ a phone number, or is the linked number itself. `WHATSAPP_011` is a wrong
 code, or one past its ten minutes; after five wrong codes it is locked
 (`WHATSAPP_014`) and a new one has to be asked for. `WHATSAPP_012` is a
 confirm with no code waiting.
+
+`WHATSAPP_015` to `WHATSAPP_018` are a number's allowed chats
+(`/v1/whatsapp/accounts/{id}/grants`, and the bot tool `allow_whatsapp_chat`):
+the groups and people besides the owner who may talk to the number's bots,
+each with the bot that answers there. Nothing is allowed until the owner's own
+number is confirmed (`WHATSAPP_015`). `WHATSAPP_017` is the owner's own chat,
+which is always theirs, or the number's chat with itself. A number allows 50
+chats at most (`WHATSAPP_018`).
 
 ## Telegram
 

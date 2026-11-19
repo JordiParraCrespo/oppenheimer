@@ -8,6 +8,7 @@ import type {
   BotPermission,
   BotSubagentRun,
   BotToolGroup,
+  BotTurnLane,
   BotTurnOrigin,
   Scope,
 } from '@oppenheimer/shared';
@@ -71,6 +72,11 @@ export interface BotToolCallContext {
   budget: BotTurnBudget;
   /** Why the turn exists; a tool offered only to some turns reads it (`notOn`). */
   origin?: BotTurnOrigin;
+  /**
+   * Whose words the turn answers: `owner` for the person's own, `bots` for
+   * another bot's, `background` for nobody's (`ownerOnlyOn`).
+   */
+  lane?: BotTurnLane;
   /**
    * The slash command the person's message ran, when the turn opens with
    * one (`/schedule`): a tool may read it as the person's own ask
@@ -239,6 +245,15 @@ export interface BotToolSpec<Input extends z.ZodType> {
    */
   notOn?: readonly BotTurnOrigin[];
   /**
+   * Offered only on the owner's own turns of these origins: a tool that acts
+   * for the owner on what only they may decide (`allow_whatsapp_chat`). Their
+   * own turn is one in the owner's lane, sent without an API token or OAuth
+   * grant; another bot's message (a `message` turn in the `bots` lane), a
+   * routine's run, a token's message and a `delegate` child's turn are not.
+   * `ownersOwnTurn` decides it.
+   */
+  ownerOnlyOn?: readonly BotTurnOrigin[];
+  /**
    * Offered only on a turn a person is waiting on (`BOT_ATTENDED_ORIGINS`):
    * a tool that needs someone to answer it, never on a routine's run, a
    * wake or a goal's continuation.
@@ -298,6 +313,8 @@ export interface BotToolDefinition {
   readonly sharesOutside: boolean;
   /** The turns not offered the tool (`BotToolSpec.notOn`). */
   readonly notOn: readonly BotTurnOrigin[];
+  /** The origins of the owner's own turns the tool is kept to; null for any (`BotToolSpec.ownerOnlyOn`). */
+  readonly ownerOnlyOn: readonly BotTurnOrigin[] | null;
   /** Offered only on a turn a person is waiting on (`BotToolSpec.attendedOnly`). */
   readonly attendedOnly: boolean;
   /** The tool for one turn; an asking tool asks first under Approve for me. */
@@ -377,6 +394,7 @@ export function defineBotTool<Input extends z.ZodType>(
     scope: spec.scope,
     readOnly: spec.readOnly === true,
     notOn: spec.notOn ?? [],
+    ownerOnlyOn: spec.ownerOnlyOn ?? null,
     attendedOnly: spec.attendedOnly === true,
     traits,
     sharesOutside: spec.sharesOutside === true,
@@ -659,4 +677,30 @@ export function repositorySubject(
     key: `${input.installation_id}:${input.github_repo_id}`,
     label: name ?? `repository ${input.github_repo_id}`,
   };
+}
+
+/** What a turn is, for whether a tool kept to the owner's own turns is offered on it. */
+export interface BotTurnStanding {
+  origin?: BotTurnOrigin;
+  lane?: BotTurnLane;
+  /** The scopes of the credential the turn was sent with; null for none. */
+  credentialScopes: readonly Scope[] | null;
+}
+
+/**
+ * Whether a tool is offered on a turn as far as `ownerOnlyOn` goes: any turn
+ * for a tool not kept to the owner's own, else only a turn of one of its
+ * origins, in the owner's lane, sent without a credential.
+ */
+export function ownersOwnTurn(
+  definition: Pick<BotToolDefinition, 'ownerOnlyOn'>,
+  turn: BotTurnStanding,
+): boolean {
+  if (definition.ownerOnlyOn === null) return true;
+  return (
+    turn.origin !== undefined &&
+    definition.ownerOnlyOn.includes(turn.origin) &&
+    turn.lane === 'owner' &&
+    turn.credentialScopes === null
+  );
 }

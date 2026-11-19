@@ -39,7 +39,7 @@ opp hosts list
 opp sessions run --host mac-studio --repo acme/app "Run the iOS tests; report what fails"
 opp sessions wait <id>                    # until it is through, or needs you
 opp sessions get <id>                     # what it said, what it waits on
-opp sessions transcript <id>              # its conversation, a page at a time (--cursor reads on)
+opp sessions transcript <id>              # its conversation, a page at a time (--cursor reads on, --from-start, --all)
 opp sessions send <id> "Fix the first failure and push"
 opp sessions close <id>
 ```

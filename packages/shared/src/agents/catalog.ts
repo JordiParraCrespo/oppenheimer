@@ -225,6 +225,13 @@ export interface CodingAgentLaunch {
      * resume --last`.
      */
     readonly resumeLeads?: boolean;
+    /**
+     * Reopens a conversation the runner learned the name of while the agent
+     * ran, on a restart, in place of `resume`, for an agent whose `resume`
+     * names none: OpenCode, where another OpenCode in the same folder makes
+     * "the last one" someone else's.
+     */
+    readonly reopen?: readonly string[];
   };
   /**
    * How a session continues a conversation that ran in the agent's cloud,
@@ -641,7 +648,15 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // Codex it names its own conversation, so there is nothing to pin on a
       // create, and with nothing to continue it opens a fresh OpenCode rather
       // than failing.
-      conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
+      //
+      // A direct session runs in a folder that is not its own, though, and
+      // another OpenCode there makes "the last session" someone else's. So a
+      // session whose conversation the runner has heard its OpenCode work in
+      // reopens that one by its id (`--session`, the same `--help`).
+      conversation: Object.freeze({
+        resume: Object.freeze(['--continue']),
+        reopen: Object.freeze(['--session', '<conversation>']),
+      }),
       // Read off opencode 1.18.32's own `--help` and `debug agent build`.
       //
       // The TUI has one approval flag, `--auto` ("auto-approve permissions

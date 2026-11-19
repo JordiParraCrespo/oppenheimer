@@ -11,7 +11,7 @@ import { DeleteBotCommand } from './delete-bot.command';
 /**
  * Gone for good: the bot, its soul and instructions with their history, and
  * its memory. Not while it answers on a Telegram bot (`BOTS_042`) or is a
- * WhatsApp number's default (`BOTS_043`).
+ * WhatsApp number's default or answers in a chat it allows (`BOTS_043`).
  */
 @CommandHandler(DeleteBotCommand)
 export class DeleteBotCommandHandler implements ICommandHandler<DeleteBotCommand, AggregateID> {

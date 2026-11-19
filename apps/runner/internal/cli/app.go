@@ -254,7 +254,7 @@ func New(version string) (*App, error) {
 		Transcripts: transcripts,
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
-		StatusLine: statusLineCommand(),
+		StatusLine: statusLineCommand,
 		// OpenCode serves its conversation on a loopback port the runner
 		// picks, which the chat view reads it through.
 		FreePort: freeLoopbackPort,

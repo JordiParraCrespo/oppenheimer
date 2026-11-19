@@ -75,6 +75,15 @@ const LAYERS = {
     dirs: {
       'value-objects': { files: [/\.value-object\.ts$/] },
       events: { files: [/\.domain-event\.ts$/] },
+      prompts: {
+        what: 'the words a model is told: prose in *.md, and the prompts.gen.ts generated from it (pnpm --filter @oppenheimer/api generate:prompts)',
+        files: [/\.md$/, /^prompts\.gen\.ts$/],
+        // A folder says where its words are sent (system/, turn/, wake/); it holds prose and nothing else.
+        nested: {
+          what: 'prose in *.md, in a folder named for where the words are sent',
+          files: [/\.md$/],
+        },
+      },
       __tests__: { files: [/\.spec\.ts$/] },
     },
   },
@@ -391,11 +400,25 @@ function checkLayer(dir, label, spec) {
     if (!requireNonEmpty(join(dir, sub.name), subLabel)) continue;
     checkFiles(join(dir, sub.name), subLabel, subSpec.files, subSpec.what ?? spec.what);
     for (const deeper of subDirs(join(dir, sub.name))) {
-      fail(
-        `${subLabel}/${deeper.name}`,
-        'layer-too-deep',
-        `${subLabel}/${deeper.name}: the layer directories are two deep at most`,
-      );
+      const deeperLabel = `${subLabel}/${deeper.name}`;
+      if (!subSpec.nested) {
+        fail(
+          deeperLabel,
+          'layer-too-deep',
+          `${deeperLabel}: the layer directories are two deep at most`,
+        );
+        continue;
+      }
+      const deeperDir = join(dir, sub.name, deeper.name);
+      if (!requireNonEmpty(deeperDir, deeperLabel)) continue;
+      checkFiles(deeperDir, deeperLabel, subSpec.nested.files, subSpec.nested.what);
+      for (const deepest of subDirs(deeperDir)) {
+        fail(
+          `${deeperLabel}/${deepest.name}`,
+          'layer-too-deep',
+          `${deeperLabel}/${deepest.name}: ${sub.name}/ nests one level of folders and no more`,
+        );
+      }
     }
   }
 }

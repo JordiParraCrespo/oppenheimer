@@ -1,9 +1,10 @@
 'use client';
 
 import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { inputVariants } from '../components/input';
+import { ComboboxScope, enterWithNothingLit } from './combobox-scope';
 import { cn } from '../lib/utils';
 
 /**
@@ -28,6 +29,7 @@ function ComboboxField({
   'aria-label'?: string;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
 }) {
+  const scope = React.useContext(ComboboxScope);
   return (
     <div data-slot="input" data-size={size} className={cn(inputVariants({ size, quiet }), className)}>
       {leading ? (
@@ -40,7 +42,10 @@ function ComboboxField({
         autoFocus
         data-slot="input-control"
         className="min-w-0 flex-1 border-0 bg-transparent p-0 font-[inherit] text-inherit tracking-inherit outline-none placeholder:text-field-placeholder"
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (!event.defaultPrevented) enterWithNothingLit(scope, event);
+        }}
         {...props}
       />
     </div>

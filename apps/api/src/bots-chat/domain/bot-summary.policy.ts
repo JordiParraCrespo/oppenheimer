@@ -1,4 +1,4 @@
-import type { BotMessageRole } from '@oppenheimer/shared';
+import type { BotMessageRole, BotTurnFailure } from '@oppenheimer/shared';
 import {
   BOT_HISTORY_TOKEN_BUDGET,
   estimateTokens,
@@ -8,6 +8,7 @@ import {
   SUMMARY_NOTE_PREFIX,
 } from './bot-history.policy';
 import { EARLIER_IMAGES_HEADROOM_TOKENS } from './bot-image.policy';
+import { isAccountFailure } from './bot-provider-hold.policy';
 import { neutraliseTags } from './bot-tool-text.policy';
 
 /** The longest summary kept (`bot_conversation_summary.content`); a longer one is cut. */
@@ -132,6 +133,39 @@ export function summaryRetryAt(resetAt: Date | null, now: Date): Date {
   const floor = now.getTime() + 1_000;
   if (resetAt && resetAt.getTime() >= floor) return resetAt;
   return new Date(now.getTime() + BOT_SUMMARY_RATE_LIMIT_WAIT_MS);
+}
+
+/**
+ * What a fold that failed said about why: the kind of failure the provider's
+ * refusal named, and the reset a rate limit named. Null when the failure was
+ * not the model's (the database, an empty answer).
+ */
+export interface SummaryRefusal {
+  failure: BotTurnFailure | null;
+  resetAt?: Date | null;
+}
+
+/**
+ * What the `bot-summaries` worker does with a fold that failed:
+ * - `delay`: a rate limit, waited out until `until`, spending no attempt;
+ * - `end`: the provider refused the account (`isAccountFailure`), which no
+ *   retry fixes; the summary is unchanged and the next turn past the
+ *   threshold stages the fold again (Sentry OPPENHEIMER-API-7, 2026-11-17);
+ * - `retry`: anything else, to the queue's retries and, past them, the report.
+ */
+export type SummaryOutcome =
+  | { kind: 'delay'; until: Date }
+  | { kind: 'end'; failure: BotTurnFailure }
+  | { kind: 'retry' };
+
+export function summaryOutcome(refusal: SummaryRefusal | null, now: Date): SummaryOutcome {
+  if (refusal?.failure === 'rate_limit') {
+    return { kind: 'delay', until: summaryRetryAt(refusal.resetAt ?? null, now) };
+  }
+  if (refusal?.failure && isAccountFailure(refusal.failure)) {
+    return { kind: 'end', failure: refusal.failure };
+  }
+  return { kind: 'retry' };
 }
 
 /** Who said a message, as the summarizer's transcript names them. */
