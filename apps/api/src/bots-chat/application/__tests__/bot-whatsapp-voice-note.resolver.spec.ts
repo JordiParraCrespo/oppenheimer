@@ -77,4 +77,16 @@ describe('BotWhatsappVoiceNoteResolver', () => {
     expect(commands.execute).not.toHaveBeenCalled();
     expect(messages.saveContent).not.toHaveBeenCalled();
   });
+
+  // What breaks this: the owner typing "[voice note]" on WhatsApp and their words being rewritten.
+  it('keeps a typed message that only looks like the marker, when the row is no voice note', async () => {
+    const { turn, opening } = queued(WHATSAPP_VOICE_NOTE_OPENING);
+    const { resolver, messages, commands } = setup();
+    commands.execute.mockResolvedValueOnce(null as unknown as string);
+
+    await resolver.hear(turn, opening);
+
+    expect(opening.content).toBe(WHATSAPP_VOICE_NOTE_OPENING);
+    expect(messages.saveContent).not.toHaveBeenCalled();
+  });
 });

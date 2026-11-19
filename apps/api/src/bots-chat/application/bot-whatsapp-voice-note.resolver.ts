@@ -12,7 +12,8 @@ import { WHATSAPP_VOICE_NOTE_OPENING, whatsappMessageOf } from '../domain/bot-wh
  * worker: the whatsapp module fetches it from the host and transcribes it,
  * and its words (or why it could not be heard) replace the turn's opening
  * marker, kept so the chat and every later turn read them too. Anything else
- * is left as it is.
+ * (a text the owner typed that only looks like the marker included) is left
+ * as it is.
  */
 @Injectable()
 export class BotWhatsappVoiceNoteResolver {
@@ -26,13 +27,14 @@ export class BotWhatsappVoiceNoteResolver {
     if (opening.content !== WHATSAPP_VOICE_NOTE_OPENING) return;
     const source = whatsappMessageOf(turn.sourceKey);
     if (!source) return;
-    const words = await this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
+    const words = await this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string | null>(
       new TranscribeWhatsappVoiceNoteCommand({
         organizationId: turn.organizationId,
         accountId: source.whatsappAccountId,
         messageRowId: source.messageRowId,
       }),
     );
+    if (words === null) return;
     opening.heard(words);
     await this.messages.saveContent(opening);
   }

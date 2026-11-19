@@ -1,9 +1,10 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
- * Hear a voice note a linked number received: what wakes the owner's bot on
- * one dispatches it first. Answers the note as the bot reads it: its words, or
- * why they could not be heard.
+ * Hear a voice note a linked number received: the turn the owner's voice note
+ * queued dispatches it when it starts. Answers the note as the bot reads it
+ * (its words, or why they could not be heard), or null when the row is not a
+ * voice note.
  */
 export class TranscribeWhatsappVoiceNoteCommand extends CommandBase {
   readonly organizationId: string;

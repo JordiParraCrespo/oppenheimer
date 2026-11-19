@@ -195,6 +195,14 @@ describe('TranscribeWhatsappVoiceNoteCommandHandler', () => {
     expect(messages.saveTranscript).not.toHaveBeenCalled();
   });
 
+  // What breaks this: the owner typing "[voice note]" and their words being replaced.
+  it('answers nothing for a row that is not a voice note, and asks the host nothing', async () => {
+    const { run, device } = setup({ message: voiceNote({ media: null, text: '[voice note]' }) });
+
+    await expect(run()).resolves.toBeNull();
+    expect(device.voiceNote).not.toHaveBeenCalled();
+  });
+
   it('answers why when what the host handed over is not Ogg/Opus', async () => {
     const { run, commandBus } = setup({
       device: { kind: 'fetched', data: Buffer.from('ID3 not ogg'), mimetype: 'audio/mpeg' },
