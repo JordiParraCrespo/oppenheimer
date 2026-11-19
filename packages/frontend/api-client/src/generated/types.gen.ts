@@ -1953,6 +1953,10 @@ export type SessionTranscriptPageResponseDto = {
      */
     atEnd: boolean;
     /**
+     * The conversation has entries before this page: read with `from=start` and follow `nextCursor` to have all of it.
+     */
+    hasEarlier: boolean;
+    /**
      * The cursor no longer applied, so the page starts the current conversation over.
      */
     restarted: boolean;
@@ -2873,6 +2877,10 @@ export type TaskResponseDto = {
      */
     focusDate?: string | null;
     /**
+     * Taken off To do by its person: on no day’s list, whatever its due date, until it gets a TODO day again or its due date changes.
+     */
+    offTodo: boolean;
+    /**
      * How much it matters, most first: urgent, high, medium or low; null when it has none. It never changes the order of a column.
      */
     priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
@@ -2922,6 +2930,7 @@ export type UpdateTaskRequest = {
     dueDate?: string | null;
     dueTime?: string | null;
     focusDate?: string | null;
+    offTodo?: boolean;
     priority?: 'urgent' | 'high' | 'medium' | 'low' | null;
     blockedReason?: string | null;
     expectedVersion?: number;
@@ -3378,6 +3387,41 @@ export type RequestWhatsappOwnerRequest = {
 
 export type ConfirmWhatsappOwnerRequest = {
     code: string;
+};
+
+export type WhatsappChatGrantResponseDto = {
+    id: string;
+    /**
+     * The linked number the chat is on.
+     */
+    accountId: string;
+    /**
+     * The chat’s WhatsApp id: a group’s, or a person’s number.
+     */
+    chatId: string;
+    chatKind: 'direct' | 'group';
+    /**
+     * The group’s or person’s name as the number last saw it.
+     */
+    chatName: string | null;
+    /**
+     * The bot that answers in this chat; null for the number’s default bot.
+     */
+    botId: string | null;
+    /**
+     * The bot whose tool allowed the chat, in the owner’s own chat with it; null when allowed in Settings.
+     */
+    grantedByBotId: string | null;
+    grantedAt: string;
+};
+
+export type AllowWhatsappChatRequest = {
+    chat: string;
+    botId?: string | null;
+};
+
+export type UpdateWhatsappChatGrantRequest = {
+    botId: string | null;
 };
 
 export type TelegramAccountResponseDto = {
@@ -10377,6 +10421,10 @@ export type FindSessionTranscriptData = {
     };
     query?: {
         /**
+         * Without `cursor`: `latest` (default) or `start`. Ignored beside `cursor`.
+         */
+        from?: 'latest' | 'start';
+        /**
          * Entries per page
          */
         limit?: number;
@@ -11390,6 +11438,38 @@ export type SetSessionVisibilityResponses = {
 };
 
 export type SetSessionVisibilityResponse = SetSessionVisibilityResponses[keyof SetSessionVisibilityResponses];
+
+export type AcknowledgeSessionReportData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/report/acknowledge';
+};
+
+export type AcknowledgeSessionReportErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type AcknowledgeSessionReportError = AcknowledgeSessionReportErrors[keyof AcknowledgeSessionReportErrors];
+
+export type AcknowledgeSessionReportResponses = {
+    200: SessionResponseDto;
+};
+
+export type AcknowledgeSessionReportResponse = AcknowledgeSessionReportResponses[keyof AcknowledgeSessionReportResponses];
 
 export type MoveSessionData = {
     body: MoveSessionRequest;
@@ -14063,6 +14143,174 @@ export type ConfirmWhatsappOwnerResponses = {
 };
 
 export type ConfirmWhatsappOwnerResponse = ConfirmWhatsappOwnerResponses[keyof ConfirmWhatsappOwnerResponses];
+
+export type FindWhatsappChatGrantsData = {
+    body?: never;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants';
+};
+
+export type FindWhatsappChatGrantsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindWhatsappChatGrantsError = FindWhatsappChatGrantsErrors[keyof FindWhatsappChatGrantsErrors];
+
+export type FindWhatsappChatGrantsResponses = {
+    200: Array<WhatsappChatGrantResponseDto>;
+};
+
+export type FindWhatsappChatGrantsResponse = FindWhatsappChatGrantsResponses[keyof FindWhatsappChatGrantsResponses];
+
+export type AllowWhatsappChatData = {
+    body: AllowWhatsappChatRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants';
+};
+
+export type AllowWhatsappChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_010 — No such chat
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_018 — Too many allowed chats
+     *
+     * WHATSAPP_015 — The owner’s number is not confirmed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_017 — The owner’s own chat, or the number itself
+     */
+    422: ProblemDetailsDto;
+};
+
+export type AllowWhatsappChatError = AllowWhatsappChatErrors[keyof AllowWhatsappChatErrors];
+
+export type AllowWhatsappChatResponses = {
+    201: WhatsappChatGrantResponseDto;
+};
+
+export type AllowWhatsappChatResponse = AllowWhatsappChatResponses[keyof AllowWhatsappChatResponses];
+
+export type RevokeWhatsappChatData = {
+    body?: never;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+        /**
+         * The allowed chat.
+         */
+        grantId: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants/{grantId}';
+};
+
+export type RevokeWhatsappChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_016 — No such allowed chat
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RevokeWhatsappChatError = RevokeWhatsappChatErrors[keyof RevokeWhatsappChatErrors];
+
+export type RevokeWhatsappChatResponses = {
+    204: void;
+};
+
+export type RevokeWhatsappChatResponse = RevokeWhatsappChatResponses[keyof RevokeWhatsappChatResponses];
+
+export type UpdateWhatsappChatGrantData = {
+    body: UpdateWhatsappChatGrantRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+        /**
+         * The allowed chat.
+         */
+        grantId: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/grants/{grantId}';
+};
+
+export type UpdateWhatsappChatGrantErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_016 — No such allowed chat
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateWhatsappChatGrantError = UpdateWhatsappChatGrantErrors[keyof UpdateWhatsappChatGrantErrors];
+
+export type UpdateWhatsappChatGrantResponses = {
+    200: WhatsappChatGrantResponseDto;
+};
+
+export type UpdateWhatsappChatGrantResponse = UpdateWhatsappChatGrantResponses[keyof UpdateWhatsappChatGrantResponses];
 
 export type FindTelegramAccountsData = {
     body?: never;

@@ -75,7 +75,7 @@ describe('the engine button’s Claude Code tab', () => {
 
   it('finds an earlier model by search without opening More models', () => {
     open('claude-opus-5-5');
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'opus 4' } });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'opus 4' } });
     expect(options()).toEqual(['Opus 4.8', 'Opus 4.7', 'Opus 4.6']);
   });
 });
@@ -95,5 +95,18 @@ describe('the engine popup’s configure glyph', () => {
     fireEvent.click(gear);
     expect(onConfigure).toHaveBeenCalledOnce();
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  /**
+   * A favourite's star sits in the row beside the model, inside the list
+   * that walks the models with the arrows. Enter on the star is the star's:
+   * a regression let the list take it and switch to the highlighted model.
+   */
+  it('leaves Enter on a star to the star, and switches no model', () => {
+    const { onValueChange } = open('claude-opus-5-5');
+    const star = screen.getAllByRole('button', { pressed: false })[1];
+    star.focus();
+    fireEvent.keyDown(star, { key: 'Enter' });
+    expect(onValueChange).not.toHaveBeenCalled();
   });
 });

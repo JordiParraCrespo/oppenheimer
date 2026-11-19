@@ -48,6 +48,17 @@ export function attentionFor(session: SessionEntity): 'needs-you' | 'done' | und
 }
 
 /**
+ * The row's dot, all told: what the session needs from the reader wins, then
+ * the reader's own unread mark.
+ */
+export function rowAttentionFor(
+  session: SessionEntity,
+  unread: boolean,
+): 'needs-you' | 'done' | 'unread' | undefined {
+  return attentionFor(session) ?? (unread ? 'unread' : undefined);
+}
+
+/**
  * Whether the agent is at work right now, which the row's name shimmers for:
  * the `working` group of a session that is up, not one the dot merely draws
  * green (`ready-for-review` is green and done).

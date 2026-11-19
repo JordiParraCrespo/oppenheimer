@@ -260,3 +260,28 @@ func TestAPayloadIsNotHTMLEscaped(t *testing.T) {
 		t.Fatalf("payload = %s", payload)
 	}
 }
+
+// A session the reporter is told not to carry never reaches the link, and an
+// event waiting on its delivery is settled at once. The regression: a
+// host-only child's events named an id the control plane cannot parse, it
+// dropped them without an ack, and the batch was resent every minute.
+func TestEventsOfASessionTheLinkDoesNotCarryStayOffIt(t *testing.T) {
+	sender := &fakeSender{}
+	r := link.NewReporter("run", sender, nil)
+	r.OnlyFor(func(sessionID string) bool { return sessionID != "hostonly1234" })
+
+	settled := false
+	r.AppendSettled("hostonly1234", "prompt.first", map[string]any{"text": "hi"}, func() { settled = true })
+	r.Append("hostonly1234", "agent.observed", map[string]any{"state": "idle"})
+	r.Append("s1", "agent.observed", map[string]any{"state": "idle"})
+
+	if len(sender.sent) != 1 || sender.sent[0].SessionID != "s1" {
+		t.Fatalf("sent %+v, want only s1's batch", sender.sent)
+	}
+	if r.Pending() != 1 {
+		t.Fatalf("pending = %d, want only s1's batch", r.Pending())
+	}
+	if !settled {
+		t.Fatal("an event that will never be delivered was left unsettled")
+	}
+}

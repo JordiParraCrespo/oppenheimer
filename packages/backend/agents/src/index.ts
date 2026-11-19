@@ -1,6 +1,7 @@
 export {
   BOT_ENGINE_FAILURES,
   type BotCompletion,
+  BotCompletionError,
   type BotCompletionRequest,
   type BotCompletionUsage,
   type BotEffort,

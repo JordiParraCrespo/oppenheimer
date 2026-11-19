@@ -54,7 +54,7 @@ test('a folder session from the picker, and a blank terminal from Settings', asy
   ).toBeVisible();
 
   // A path that is not there cannot be used.
-  const input = page.getByRole('textbox', { name: 'Folder path' });
+  const input = page.getByRole('combobox', { name: 'Folder path' });
   await input.fill('~/code/nowhere/');
   await expect(page.getByText('Pick an existing folder. Nothing is created.')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Use/ })).toBeDisabled();

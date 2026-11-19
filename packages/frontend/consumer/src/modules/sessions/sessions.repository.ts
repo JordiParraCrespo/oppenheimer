@@ -377,6 +377,14 @@ export class SessionsRepository {
     });
   }
 
+  /** What the agent's last turn left, read: the session is no longer ready for review. */
+  acknowledgeReport(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.REPORT_ACKNOWLEDGE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.acknowledgeSessionReport({ path: { id } }));
+      return toEntity(data);
+    });
+  }
+
   /** To a project that holds the session's repository; nothing on the host moves. */
   move(id: string, projectId: string): Promise<SessionEntity> {
     return callApi(SessionsErrors.MOVE_FAILED, async (api) => {

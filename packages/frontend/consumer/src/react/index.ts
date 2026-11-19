@@ -279,6 +279,7 @@ export {
   type SetSessionHiddenVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAcknowledgeSessionReport,
   useAnswerSessionDecision,
   useCloseSession,
   useCloseSessionWindow,
@@ -358,9 +359,12 @@ export {
 } from './voice.queries';
 export {
   useAnswerWhatsappAs,
+  useAnswerWhatsappChatAs,
   useConfirmWhatsappOwner,
   useLinkWhatsapp,
   useRequestWhatsappOwner,
+  useRevokeWhatsappChat,
+  useSuspenseWhatsappChatGrants,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

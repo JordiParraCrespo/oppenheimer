@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import {
   ChipSelectActionRow,
   ChipSelectBack,
+  ChipSelectCombobox,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
@@ -210,14 +211,9 @@ function RepositorySelect({
             >
               {branchPaneTitle(paneRepo.name)}
             </ChipSelectBack>
-            <ChipSelectSearch
-              value={query}
-              placeholder={branchSearchPlaceholder}
-              aria-label={branchSearchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
-            />
+            <ChipSelectCombobox query={query} onQueryChange={setQuery}>
+            <ChipSelectSearch placeholder={branchSearchPlaceholder} aria-label={branchSearchPlaceholder} />
             <ChipSelectList
-              role="listbox"
               aria-label={String(branchPaneTitle(paneRepo.name))}
               loading={branchesLoading}
               loadingText={branchesLoadingText}
@@ -234,17 +230,13 @@ function RepositorySelect({
                 </ChipSelectItem>
               ))}
             </ChipSelectList>
+            </ChipSelectCombobox>
           </>
         ) : (
           <>
-            <ChipSelectSearch
-              value={query}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
-            />
+            <ChipSelectCombobox query={query} onQueryChange={setQuery}>
+            <ChipSelectSearch placeholder={searchPlaceholder} aria-label={searchPlaceholder} />
             <ChipSelectList
-              role="listbox"
               aria-multiselectable
               aria-label={ariaLabel}
               loading={loading}
@@ -291,6 +283,7 @@ function RepositorySelect({
                   );
                 })}
             </ChipSelectList>
+            </ChipSelectCombobox>
             {action ? (
               <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
             ) : null}

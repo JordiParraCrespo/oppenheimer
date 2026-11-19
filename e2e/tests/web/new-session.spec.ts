@@ -64,6 +64,9 @@ test.describe('New session', () => {
       .getByRole('listbox')
       .getByRole('option', { name: new RegExp(STUB_REPOSITORIES.web.name) })
       .click();
+    // The picker stays open for another repository, as the multi-pick
+    // pickers do; Escape closes it.
+    await page.keyboard.press('Escape');
     // The default host is in the Defaults fold.
     await projectDialog.getByRole('button', { name: /^Defaults/ }).click();
     await projectDialog.getByRole('button', { name: 'E2E box' }).click();

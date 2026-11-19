@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
+import { SESSION_TRANSCRIPT_PAGE_MAX } from '@oppenheimer/shared/schemas/session-transcript';
 import { Command, Option } from 'commander';
 import type {
   Host,
@@ -12,9 +13,14 @@ import type { ApiClient } from '../lib/client';
 import { contextFor } from '../lib/context';
 import { CliError, ExitCode } from '../lib/errors';
 import { type LaunchOptions, planLaunch } from '../lib/launch';
-import { describeTranscript, formatDate, render, style, table } from '../lib/output';
+import { describeTranscript, formatDate, render, style, table, warn } from '../lib/output';
 import { confirm } from '../lib/prompt';
 import { pickByNameOrId, resolveProject } from '../lib/resolve';
+import {
+  readWholeTranscript,
+  TRANSCRIPT_WALK_PAGE_GAP_MS,
+  type TranscriptPageReader,
+} from '../lib/transcript';
 import { parseDuration, waitForSessions } from '../lib/wait';
 
 const PERMISSIONS = ['ask', 'auto', 'full'] as const;
@@ -111,11 +117,38 @@ function transcriptCommand(): Command {
     .argument('<id>', 'Session id')
     .option('--cursor <cursor>', 'Read on from where a page ended (the cursor it printed)')
     .option('--limit <n>', 'Entries per page, max 200', (value) => Number(value), 50)
+    .option('--from-start', 'Without --cursor, read from the conversation’s first turn')
+    .option('--all', 'Read the whole conversation, from its first turn to its last')
     .action(async function (this: Command, id: string) {
       const context = contextFor(this);
-      const { cursor, limit } = this.opts<{ cursor?: string; limit: number }>();
-      const page = await context.client.get<SessionTranscriptPage>(`/sessions/${id}/transcript`, {
-        query: { cursor, limit },
+      const options = this.opts<{
+        cursor?: string;
+        limit: number;
+        fromStart?: boolean;
+        all?: boolean;
+      }>();
+      const read: TranscriptPageReader = (query) =>
+        context.client.get<SessionTranscriptPage>(`/sessions/${id}/transcript`, { query });
+      if (options.all) {
+        const { whole, stoppedBy } = await readWholeTranscript(
+          read,
+          SESSION_TRANSCRIPT_PAGE_MAX,
+          TRANSCRIPT_WALK_PAGE_GAP_MS,
+        );
+        render(context.json, whole, () => describeTranscript(id, whole));
+        if (stoppedBy) {
+          // What was read is printed; the error says why it stops there.
+          if (whole.nextCursor) {
+            warn(`Stopped early; read on with --cursor ${whole.nextCursor}`);
+          }
+          throw stoppedBy;
+        }
+        return;
+      }
+      const page = await read({
+        cursor: options.cursor,
+        limit: options.limit,
+        from: options.fromStart ? 'start' : undefined,
       });
       render(context.json, page, () => describeTranscript(id, page));
     });

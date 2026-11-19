@@ -6,7 +6,14 @@ import * as React from 'react';
 import { FIELD_SIZE, type FieldSize } from '../internal/control-size';
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
-import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import {
+  ChipSelectCombobox,
+  ChipSelectEmpty,
+  ChipSelectItem,
+  ChipSelectList,
+  ChipSelectPopup,
+  ChipSelectSearch,
+} from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 /** Both looks (see `FieldSelect`), keyed on `data-variant` so one class list carries them. */
@@ -150,13 +157,12 @@ function FieldSelect(props: FieldSelectProps) {
         side="bottom"
         align={variant === 'quiet' ? 'end' : 'start'}
       >
+        <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
         <ChipSelectSearch
-          value={query}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          onChange={(event) => setQuery(event.target.value)}
         />
-        <div role="listbox" aria-multiselectable={props.multiple || undefined} className="max-h-[220px] overflow-y-auto">
+        <ChipSelectList aria-multiselectable={props.multiple || undefined} className="max-h-[220px]">
           {shown.length === 0 ? (
             <ChipSelectEmpty className="text-left text-fg-muted">{emptyText(query)}</ChipSelectEmpty>
           ) : (
@@ -190,7 +196,8 @@ function FieldSelect(props: FieldSelectProps) {
               );
             })
           )}
-        </div>
+        </ChipSelectList>
+        </ChipSelectCombobox>
       </ChipSelectPopup>
     </Popover>
   );
