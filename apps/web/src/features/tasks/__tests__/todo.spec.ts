@@ -1,7 +1,6 @@
-import { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
+import { SessionEntity, TaskEntity, taskSessionsOf } from '@oppenheimer/frontend-consumer';
 import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
-import { taskSessionsOf } from '../lib/session-line';
 import {
   type AddFilter,
   addableCounts,

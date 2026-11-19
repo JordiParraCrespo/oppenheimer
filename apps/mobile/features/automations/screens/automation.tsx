@@ -1,11 +1,9 @@
-import { Button } from '@oppenheimer/design-system-mobile/button';
-import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
-import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useAutomations } from '@oppenheimer/frontend-consumer/react';
+import { RecordState } from '@oppenheimer/frontend-mobile';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { AutomationActions } from '../sections/automation-actions';
 import { AutomationDetail } from '../sections/automation-detail';
 import { RunNow } from '../sections/run-now';
@@ -25,28 +23,12 @@ export function AutomationScreen({ id }: { id: string }) {
     return (
       <>
         <Stack.Screen options={{ title: '' }} />
-        {list.isPending ? (
-          <View className="flex-1 items-center justify-center" aria-busy>
-            <ActivityIndicator />
-          </View>
-        ) : list.isError ? (
-          <View className="flex-1 items-center justify-center gap-3 px-6">
-            <Text variant="body" tone="destructive">
-              {t('automations.detail.loadFailed')}
-            </Text>
-            <Button variant="outline" onPress={() => list.refetch()}>
-              <Text>{t('common.retry')}</Text>
-            </Button>
-          </View>
-        ) : (
-          <View className="flex-1 justify-center px-6">
-            <EmptyState>
-              <EmptyState.Header>
-                <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </View>
-        )}
+        <RecordState
+          pending={list.isPending}
+          failed={list.isError ? t('automations.detail.loadFailed') : null}
+          onRetry={() => list.refetch()}
+          notFound={t('automations.detail.notFound')}
+        />
       </>
     );
   }

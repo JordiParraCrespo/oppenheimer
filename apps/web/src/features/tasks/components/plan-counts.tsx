@@ -4,8 +4,8 @@ import {
   PageHeaderStat,
   Skeleton,
 } from '@oppenheimer/design-system-web';
+import { type boardCounts } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
-import type { boardCounts } from '../lib/board';
 
 const PENDING = <Skeleton shape="sm" className="inline-block h-2.5 w-2 align-[-0.05em]" />;
 

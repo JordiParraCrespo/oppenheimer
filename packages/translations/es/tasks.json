@@ -265,5 +265,12 @@
     "high": "Alta",
     "medium": "Media",
     "low": "Baja"
+  },
+  "mobile": {
+    "actions": "Acciones de la tarea",
+    "notFound": "Esta tarea ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "due": "Vence",
+    "sessions": "Sesiones",
+    "noSessions": "Ninguna sesión trabaja en esta tarea todavía. Inicia una desde la consola en tu ordenador."
   }
 }

@@ -1,10 +1,12 @@
-import type { TaskDueTone } from '@oppenheimer/design-system-web';
-import type { TaskEntity } from '@oppenheimer/frontend-consumer';
-import { daysBetween, nearDay } from '@oppenheimer/frontend-web';
+import { daysBetween, nearDay } from '@oppenheimer/frontend-core';
 import type { TaskPriority } from '@oppenheimer/shared/schemas/task';
 import { type BoardFilter, soleProjectOf } from './board';
+import type { TaskEntity } from './task.entity';
 
-/** What a card draws, in the reader's words. */
+/** How a card's due date is drawn: red once past, strong within a day, else quiet. */
+export type TaskDueTone = 'default' | 'soon' | 'overdue';
+
+/** What a task's card or row draws, in the reader's words, on the web and the phone alike. */
 export interface TaskCardView {
   id: string;
   title: string;
