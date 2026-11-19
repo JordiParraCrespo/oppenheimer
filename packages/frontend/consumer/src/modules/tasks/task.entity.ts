@@ -46,6 +46,8 @@ export class TaskEntity {
     public readonly triagedAt: Date | null = null,
     /** How much it matters, or null for none. Never moves it on the board. */
     public readonly priority: TaskPriority | null = null,
+    /** Taken off To do by its person, its due date included, until planned or rescheduled. */
+    public readonly offTodo = false,
   ) {}
 
   /**
@@ -127,6 +129,8 @@ export interface TaskInput {
   dueTime?: string | null;
   /** The day it is on To do from; `null` takes it off. */
   focusDate?: string | null;
+  /** `true` takes it off To do; a new TODO day or due date puts it back. */
+  offTodo?: boolean;
   /** `null` takes the priority off. */
   priority?: TaskPriority | null;
   /** Marks the task blocked and says why; `null` unblocks it. */

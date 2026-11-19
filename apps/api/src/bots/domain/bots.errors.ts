@@ -248,8 +248,9 @@ export const BotErrors = {
     httpStatus: 409,
   },
   /**
-   * A bot that is a linked WhatsApp number's default is not deleted: the
-   * owner first picks another bot, or none, in Settings → WhatsApp.
+   * A bot that is a linked WhatsApp number's default, or answers in a chat it
+   * allows, is not deleted: the owner first picks another bot, or none, in
+   * Settings → WhatsApp.
    */
   ANSWERS_ON_WHATSAPP: {
     code: 'BOTS_043',

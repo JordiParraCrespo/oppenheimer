@@ -3,7 +3,7 @@ import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSessionPins } from '../hooks/use-session-pins';
-import { SESSION_PINS_KEY, splitPinned, withPin } from '../lib/session-pins';
+import { SESSION_PINS_KEY, splitPinned } from '../lib/session-pins';
 
 /**
  * A pinned session comes back pinned on the next visit, on top of the ones
@@ -27,12 +27,6 @@ describe('useSessionPins', () => {
     expect(second.result.current.pins).toEqual(['s2', 's1']);
     act(() => second.result.current.setPinned('s2', false));
     expect(storedList(SESSION_PINS_KEY)).toEqual(['s1']);
-  });
-});
-
-describe('withPin', () => {
-  it('moves a session pinned again to the top rather than listing it twice', () => {
-    expect(withPin(['a', 'b'], 'b', true)).toEqual(['b', 'a']);
   });
 });
 

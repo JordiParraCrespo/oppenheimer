@@ -16,6 +16,7 @@ const page = (over: Partial<SessionTranscriptPage> = {}): SessionTranscriptPage 
   entries: [],
   nextCursor: null,
   atEnd: true,
+  hasEarlier: false,
   restarted: false,
   dropped: 0,
   redactions: 0,

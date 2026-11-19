@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { TranscriptReadMessage } from '@oppenheimer/shared/protocol';
+import {
+  TRANSCRIPT_START_CONVERSATION,
+  type TranscriptReadMessage,
+} from '@oppenheimer/shared/protocol';
 import type {
   HostTranscriptRequest,
   SessionTranscriptOutcome,
@@ -22,7 +25,8 @@ export const TRANSCRIPT_READ_TIMEOUT_MS = 8_000;
  * fresh `commandId`, then the `transcript.page` or `command.failed` that
  * names it, through `LinkRepliesPort`. Sent only to a runner whose hello
  * named `transcript.read`; an older one would log the frame as unknown and
- * never answer.
+ * never answer. A read from the start is sent the protocol's interim way,
+ * `TRANSCRIPT_START_CONVERSATION`, until the wire has a field of its own.
  */
 @Injectable()
 export class RelaySessionTranscriptAdapter implements SessionTranscriptPort {
@@ -42,11 +46,14 @@ export class RelaySessionTranscriptAdapter implements SessionTranscriptPort {
     if (!link) return { kind: 'host_offline' };
     if (!link.capabilities.includes('transcript.read')) return { kind: 'not_supported' };
 
+    const fromStart = 'from' in request;
     const message: TranscriptReadMessage = {
       type: 'transcript.read',
       commandId: randomUUID(),
       sessionId,
-      ...request,
+      ...(fromStart
+        ? { limit: request.limit, conversation: TRANSCRIPT_START_CONVERSATION, after: 0 }
+        : request),
     };
     // Waiting before sending, so an answer faster than this line cannot be missed.
     const pending = this.replies.expect(hostId, message.commandId, TRANSCRIPT_READ_TIMEOUT_MS);
@@ -62,6 +69,9 @@ export class RelaySessionTranscriptAdapter implements SessionTranscriptPort {
     // A reply is matched by command id, so another kind is a runner bug.
     if (reply.type !== 'transcript.page') return { kind: 'failed', code: 'UNEXPECTED_REPLY' };
     const { type: _type, commandId: _commandId, ...page } = reply;
-    return { kind: 'page', page };
+    // The start is asked for as a conversation the host does not have, which
+    // it answers as a stale cursor (`restarted`); that flag is this read's own
+    // doing, not news, so it ends here, beside the sentinel that caused it.
+    return { kind: 'page', page: fromStart ? { ...page, restarted: false } : page };
   }
 }

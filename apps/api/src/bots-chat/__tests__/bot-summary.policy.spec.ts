@@ -10,6 +10,7 @@ import {
   planSummary,
   type SummarizableMessage,
   summaryContent,
+  summaryOutcome,
   summaryRetryAt,
 } from '../domain/bot-summary.policy';
 
@@ -179,6 +180,43 @@ describe('summaryRetryAt', () => {
     const minute = new Date('2026-10-15T09:01:00Z');
     expect(summaryRetryAt(null, now)).toEqual(minute);
     expect(summaryRetryAt(new Date('2026-10-15T08:00:00Z'), now)).toEqual(minute);
+  });
+});
+
+// What breaks this: Sentry OPPENHEIMER-API-7, a spent credit retried eight
+// times per job and reported, because only a rate limit had an outcome of
+// its own and everything else went to the retries.
+describe('summaryOutcome', () => {
+  const now = new Date('2026-10-15T09:00:00Z');
+
+  it('waits out a rate limit until its reset', () => {
+    const reset = new Date('2026-10-15T09:05:00Z');
+    expect(summaryOutcome({ failure: 'rate_limit', resetAt: reset }, now)).toEqual({
+      kind: 'delay',
+      until: reset,
+    });
+    expect(summaryOutcome({ failure: 'rate_limit' }, now)).toEqual({
+      kind: 'delay',
+      until: new Date('2026-10-15T09:01:00Z'),
+    });
+  });
+
+  it.each(['usage_limit', 'credential'] as const)(
+    'ends the fold when the provider refused the account (%s)',
+    (failure) => {
+      expect(summaryOutcome({ failure }, now)).toEqual({ kind: 'end', failure });
+    },
+  );
+
+  it.each(['refused', 'unavailable', 'other', null] as const)(
+    'retries a %s failure, so a fault of ours is still reported',
+    (failure) => {
+      expect(summaryOutcome({ failure }, now)).toEqual({ kind: 'retry' });
+    },
+  );
+
+  it('retries a failure that was not the model’s', () => {
+    expect(summaryOutcome(null, now)).toEqual({ kind: 'retry' });
   });
 });
 

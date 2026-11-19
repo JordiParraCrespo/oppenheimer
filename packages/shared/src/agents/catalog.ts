@@ -21,10 +21,10 @@
  * does not load those scripts with the catalog.
  */
 
+import { CODEX_MODELS } from './codex-models.js';
 import {
   CLAUDE_4_6_LEVELS,
   CLAUDE_LEVELS,
-  CODEX_LEVELS,
   GROK_4_5_LEVELS,
   GROK_LEVELS,
   levels,
@@ -225,6 +225,13 @@ export interface CodingAgentLaunch {
      * resume --last`.
      */
     readonly resumeLeads?: boolean;
+    /**
+     * Reopens a conversation the runner learned the name of while the agent
+     * ran, on a restart, in place of `resume`, for an agent whose `resume`
+     * names none: OpenCode, where another OpenCode in the same folder makes
+     * "the last one" someone else's.
+     */
+    readonly reopen?: readonly string[];
   };
   /**
    * How a session continues a conversation that ran in the agent's cloud,
@@ -384,8 +391,6 @@ export interface CodingAgentDefinition {
    */
   readonly input?: CodingAgentInput;
 }
-
-const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
 
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
@@ -554,53 +559,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // What codex's own picker lists, in its order, with the slugs `codex
-    // --model` takes and each model's levels and default as codex reports them;
-    // a seed, with the limit Claude Code's has: nothing probes which a host's
-    // CLI knows.
-    models: Object.freeze([
-      Object.freeze({
-        id: 'gpt-6.1-sol',
-        label: 'GPT-6.1 Sol',
-        default: true as const,
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-6.1-terra',
-        label: 'GPT-6.1 Terra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-6-astra',
-        label: 'GPT-6 Astra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-6-sol',
-        label: 'GPT-6 Sol',
-        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-6-luna',
-        label: 'GPT-6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-5.6-sol',
-        label: 'GPT-5.6 Sol',
-        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
-      }),
-      Object.freeze({
-        id: 'gpt-5.6-terra',
-        label: 'GPT-5.6 Terra',
-        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
-      }),
-      Object.freeze({
-        id: 'gpt-5.6-luna',
-        label: 'GPT-5.6 Luna',
-        effort: levels(CODEX_LEVELS, 'medium'),
-      }),
-    ]),
+    models: CODEX_MODELS,
     launch: Object.freeze({
       // A session is a terminal nobody is watching, so it cannot depend on
       // the state of a server shared with whatever else the host runs. Codex
@@ -689,7 +648,15 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // Codex it names its own conversation, so there is nothing to pin on a
       // create, and with nothing to continue it opens a fresh OpenCode rather
       // than failing.
-      conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
+      //
+      // A direct session runs in a folder that is not its own, though, and
+      // another OpenCode there makes "the last session" someone else's. So a
+      // session whose conversation the runner has heard its OpenCode work in
+      // reopens that one by its id (`--session`, the same `--help`).
+      conversation: Object.freeze({
+        resume: Object.freeze(['--continue']),
+        reopen: Object.freeze(['--session', '<conversation>']),
+      }),
       // Read off opencode 1.18.32's own `--help` and `debug agent build`.
       //
       // The TUI has one approval flag, `--auto` ("auto-approve permissions

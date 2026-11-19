@@ -27,13 +27,20 @@ type openCode struct {
 	messages map[string][]map[string]any
 	reads    int
 	// asked is the directory the last session list was asked for.
-	asked  string
+	asked string
+	// listed is how many times the conversations were listed: one per check.
+	listed int
 	server *httptest.Server
+	// events is what this OpenCode process says on its event stream, to
+	// every listener, and listening how many listen.
+	events    []chan string
+	listening int
+	done      chan struct{}
 }
 
 func newOpenCode(t *testing.T) *openCode {
 	t.Helper()
-	oc := &openCode{messages: map[string][]map[string]any{}}
+	oc := &openCode{messages: map[string][]map[string]any{}, done: make(chan struct{})}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /session", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("roots") != "true" {
@@ -43,6 +50,7 @@ func newOpenCode(t *testing.T) *openCode {
 		oc.mu.Lock()
 		defer oc.mu.Unlock()
 		oc.asked = r.URL.Query().Get("directory")
+		oc.listed++
 		_ = json.NewEncoder(w).Encode(oc.sessions)
 	})
 	mux.HandleFunc("GET /session/{id}/message", func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +72,27 @@ func newOpenCode(t *testing.T) *openCode {
 		w.Header().Set("Content-Type", "text/event-stream")
 		_, _ = fmt.Fprint(w, "data: {\"id\":\"1\",\"type\":\"server.connected\",\"properties\":{}}\n\n")
 		w.(http.Flusher).Flush()
-		<-r.Context().Done()
+		events := make(chan string, 16)
+		oc.mu.Lock()
+		oc.events = append(oc.events, events)
+		oc.listening++
+		oc.mu.Unlock()
+		defer func() {
+			oc.mu.Lock()
+			oc.listening--
+			oc.mu.Unlock()
+		}()
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			case <-oc.done:
+				return
+			case data := <-events:
+				_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
+				w.(http.Flusher).Flush()
+			}
+		}
 	})
 	oc.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, password, ok := r.BasicAuth()
@@ -75,6 +103,9 @@ func newOpenCode(t *testing.T) *openCode {
 		mux.ServeHTTP(w, r)
 	}))
 	t.Cleanup(oc.server.Close)
+	// Before the server closes: a stream the runner keeps open would hold
+	// it.
+	t.Cleanup(func() { close(oc.done) })
 	return oc
 }
 
@@ -156,16 +187,76 @@ func bashCall(status string) map[string]any {
 	return map[string]any{"id": "prt-bash", "type": "tool", "callID": "call-1", "tool": "bash", "state": state}
 }
 
+// speaksOf has the OpenCode process say on its event stream that
+// conversation changed, as it does while its TUI works in it.
+func (oc *openCode) speaksOf(conversation string) {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
+	for _, events := range oc.events {
+		select {
+		case events <- fmt.Sprintf(`{"type":"session.status","properties":{"sessionID":%q,"status":{"type":"busy"}}}`, conversation):
+		default:
+		}
+	}
+}
+
+// speaksOfTo says it on the nth event stream alone (0 the first opened), as
+// when the others dropped.
+func (oc *openCode) speaksOfTo(n int, conversation string) {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
+	oc.events[n] <- fmt.Sprintf(`{"type":"session.status","properties":{"sessionID":%q,"status":{"type":"busy"}}}`, conversation)
+}
+
+// listened waits until n event streams are open.
+func (oc *openCode) listened(t *testing.T, n int) {
+	t.Helper()
+	eventually(t, "the event stream", func() bool {
+		oc.mu.Lock()
+		defer oc.mu.Unlock()
+		return oc.listening >= n
+	})
+}
+
 func followOpenCode(t *testing.T, server domain.AgentServer, sink *batches) {
+	t.Helper()
+	attach(t, transcript.New(transcript.Options{}), server, sink)
+}
+
+// attach opens the chat on reader until the test ends.
+func attach(t *testing.T, reader *transcript.Reader, server domain.AgentServer, sink *batches) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_ = transcript.New(transcript.Options{}).
-			Follow(ctx, domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}, 64<<10, 256, nil, sink.emit)
+		_ = reader.Follow(ctx, domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}, 64<<10, 256, nil, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
+}
+
+// checked waits until the follower has checked the conversations twice
+// more: what it has seen by now is in its answer.
+func (oc *openCode) checked(t *testing.T) {
+	t.Helper()
+	oc.mu.Lock()
+	from := oc.listed
+	oc.mu.Unlock()
+	eventually(t, "two more checks", func() bool {
+		oc.mu.Lock()
+		defer oc.mu.Unlock()
+		return oc.listed >= from+2
+	})
+}
+
+// lastText is the text of the chat's last entry, or "".
+func lastText(sink *batches) string {
+	got := sink.entries()
+	if len(got) == 0 {
+		return ""
+	}
+	text, _ := blockOf(got[len(got)-1])["text"].(string)
+	return text
 }
 
 // blockOf is an entry's first content block, or its content when that is text.
@@ -365,5 +456,93 @@ func TestTheChatFollowsOnlyTheConversationsInTheSessionsDirectory(t *testing.T) 
 	oc.mu.Unlock()
 	if asked != mine {
 		t.Fatalf("listed the conversations of %q, want the session's directory %q", asked, mine)
+	}
+}
+
+// Two OpenCodes in one folder (two sessions started in the same directory,
+// or one run by hand beside a session's) write to one store, and the other's
+// conversation can be the newer. The runner listens to the session's own
+// OpenCode while it runs, chat open or not, so the chat first opened while
+// it sits idle shows its conversation, and so does one opened after the
+// runner restarted, from what the session kept; `/new` in its TUI still
+// moves it. Regression: a session's chat showing the conversation another
+// OpenCode had last touched in the same folder, while its terminal showed
+// its own.
+func TestTheChatFollowsItsOwnOpenCodeNotAnotherInTheSameFolder(t *testing.T) {
+	oc := newOpenCode(t)
+	oc.conversation("ses_mine", 1_700_000_100_000)
+	oc.say("ses_mine", userMessage("msg_1", "connect to the raspberry pi"))
+	reader := transcript.New(transcript.Options{})
+	server := domain.AgentServer{Port: oc.port(t), Password: openCodePassword, Since: 1_700_000_000_000}
+	session := domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}
+
+	// The poll loop asks about the session while its OpenCode works, with
+	// no chat open.
+	if got := reader.ServedConversation(context.Background(), session); got != "" {
+		t.Fatalf("served = %q before OpenCode said anything", got)
+	}
+	oc.listened(t, 1)
+	oc.speaksOf("ses_mine")
+	eventually(t, "the conversation its OpenCode works in", func() bool { return reader.ServedConversation(context.Background(), session) == "ses_mine" })
+
+	// Another OpenCode in the folder starts a conversation, newer than ours;
+	// ours sits idle, and the chat is opened.
+	oc.conversation("ses_theirs", 1_700_000_200_000)
+	oc.say("ses_theirs", userMessage("msg_2", "someone else's question"))
+	sink := &batches{}
+	attach(t, reader, server, sink)
+	oc.checked(t)
+	if text := lastText(sink); text != "connect to the raspberry pi" {
+		t.Fatalf("opened on %q, want the session's own conversation", text)
+	}
+
+	// `/new` in the session's TUI.
+	oc.listened(t, 2)
+	oc.conversation("ses_next", 1_700_000_300_000)
+	oc.say("ses_next", userMessage("msg_3", "a fresh start"))
+	oc.speaksOf("ses_next")
+	eventually(t, "the new conversation", func() bool { return lastText(sink) == "a fresh start" })
+
+	// The runner restarted, and the session kept its conversation.
+	kept := server
+	kept.Conversation = "ses_mine"
+	again := &batches{}
+	attach(t, transcript.New(transcript.Options{}), kept, again)
+	oc.checked(t)
+	if text := lastText(again); text != "connect to the raspberry pi" {
+		t.Fatalf("after a restart opened on %q, want the conversation the session kept", text)
+	}
+}
+
+// What the runner's own listener hears supersedes what an open chat heard
+// before: a chat whose stream dropped, while the runner's did not, still
+// moves on `/new`, and never claims the old conversation back. Regression:
+// the chat stuck on the conversation it once heard, saving it over the new
+// one.
+func TestTheRunnersListenerSupersedesWhatTheChatHeardBefore(t *testing.T) {
+	oc := newOpenCode(t)
+	oc.conversation("ses_mine", 1_700_000_100_000)
+	oc.say("ses_mine", userMessage("msg_1", "the first conversation"))
+	reader := transcript.New(transcript.Options{})
+	server := domain.AgentServer{Port: oc.port(t), Password: openCodePassword, Since: 1_700_000_000_000}
+	session := domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}
+
+	reader.ServedConversation(context.Background(), session)
+	oc.listened(t, 1)
+	sink := &batches{}
+	attach(t, reader, server, sink)
+	oc.listened(t, 2)
+	oc.speaksOf("ses_mine")
+	eventually(t, "the first conversation", func() bool { return lastText(sink) == "the first conversation" })
+
+	// `/new`, heard by the runner's listener alone.
+	oc.conversation("ses_next", 1_700_000_300_000)
+	oc.say("ses_next", userMessage("msg_2", "a fresh start"))
+	oc.speaksOfTo(0, "ses_next")
+	eventually(t, "the runner hearing it", func() bool { return reader.ServedConversation(context.Background(), session) == "ses_next" })
+	eventually(t, "the chat moving", func() bool { return lastText(sink) == "a fresh start" })
+	oc.checked(t)
+	if got := reader.ServedConversation(context.Background(), session); got != "ses_next" {
+		t.Fatalf("served = %q after the chat checked again, want the new conversation kept", got)
 	}
 }
