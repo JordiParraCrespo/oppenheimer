@@ -1,8 +1,8 @@
 import { ComposerMenu, ComposerMenuGroup, ComposerMenuItem } from '@oppenheimer/design-system-web';
 import { SquareSlash, Target } from '@oppenheimer/design-system-web/icons';
+import type { SlashCommand } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SlashCommand } from '@/features/bots/lib/slash-menu';
 
 /**
  * What a `/` can run, over the composer: the built-in commands Oppenheimer

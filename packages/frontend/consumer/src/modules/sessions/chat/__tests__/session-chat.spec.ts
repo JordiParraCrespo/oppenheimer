@@ -442,9 +442,23 @@ describe('SessionChat', () => {
       older: 'none',
       activity: null,
       interruptible: true,
+      commands: null,
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  // What breaks this: the composer's `/` menu losing the project's skills on
+  // the next live line, or keeping a list a host that no longer sends one left.
+  it("holds the project's commands from the last reset, through the batches that follow it", () => {
+    const chat = new SessionChat();
+    const recap = { name: 'recap', kind: 'skill' as const, description: 'Close the task' };
+    chat.apply({ reset: true, entries: [], commands: [recap] });
+    chat.apply({ entries: [JSON.stringify(user('u1', 'One'))] });
+    expect(chat.snapshot().commands).toEqual([recap]);
+
+    chat.apply({ reset: true, entries: [] });
+    expect(chat.snapshot().commands).toBeNull();
   });
 
   it('draws a long first load once, when its history has all come', () => {

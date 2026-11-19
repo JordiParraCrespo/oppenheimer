@@ -12,6 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
@@ -250,6 +251,12 @@ export interface ChatState {
    * source keeps it until the agent takes it.
    */
   interruptible: boolean;
+  /**
+   * The slash commands the session's project gives its agent, from the
+   * host's last reset; null until a host says, and from one that predates
+   * them, when the composer offers the agent's built-ins alone.
+   */
+  commands: readonly ChatCommand[] | null;
 }
 
 export interface ChatBatch {
@@ -265,6 +272,8 @@ export interface ChatBatch {
   /** Part of an older page asked for (`loadOlder`): `more` is coming, or this batch is its `end`. */
   older?: 'more' | 'end';
   entries: readonly string[];
+  /** On a reset: the project's slash commands (`ChatState.commands`). */
+  commands?: readonly ChatCommand[];
 }
 
 const EMPTY: ChatState = {
@@ -277,6 +286,7 @@ const EMPTY: ChatState = {
   older: 'none',
   activity: null,
   interruptible: true,
+  commands: null,
 };
 
 /** The entry the runner adds for the status line's figures. */
@@ -600,7 +610,8 @@ export class SessionChat {
     // The history's end, before every line held came again: the transcript
     // is shorter now, without waiting for a quiet to say so.
     if (batch.history === 'end' && this.transcript.settle()) changed = true;
-    this.publishBatch(changed, status, files);
+    const commands = batch.reset ? (batch.commands ?? null) : this.state.commands;
+    this.publishBatch(changed, status, files, commands);
     this.quiet.watch(this.settleAfter(), this.settled);
     this.flush();
   }
@@ -613,6 +624,7 @@ export class SessionChat {
     changed: boolean,
     status: ChatStatus | null,
     files: readonly ChatSharedFile[],
+    commands: readonly ChatCommand[] | null,
   ): void {
     const was = this.state;
     const redraw =
@@ -624,12 +636,14 @@ export class SessionChat {
       was.loading === this.loading &&
       was.status === status &&
       was.files === files &&
-      was.older === older
+      was.older === older &&
+      was.commands === commands
     ) {
       return;
     }
     this.publish({
       ...was,
+      commands,
       available: true,
       loading: this.loading,
       status,

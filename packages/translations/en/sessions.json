@@ -582,6 +582,20 @@
       "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
       "attaching": "Attaching files…"
     },
+    "slash": {
+      "menu": "Commands you can run",
+      "pick": "Use /{{name}}",
+      "builtInLabel": "Claude Code",
+      "projectLabel": "This project",
+      "builtIn": {
+        "clear": "Start a new conversation, with an empty context.",
+        "compact": "Summarise the conversation so far to free up context.",
+        "context": "Show what fills the context window now.",
+        "cost": "Show what this conversation has spent.",
+        "init": "Write a CLAUDE.md that describes this repository.",
+        "review": "Review a pull request."
+      }
+    },
     "turn": {
       "working": "Working for",
       "worked": "Worked for",
