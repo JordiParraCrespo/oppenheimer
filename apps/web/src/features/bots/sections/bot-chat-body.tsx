@@ -7,7 +7,9 @@ import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotHello } from '@/features/bots/components/bot-hello';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { BotTranscriptSkeleton } from '@/features/bots/components/bot-transcript-skeleton';
+import { useClearBotUnreadOnOpen } from '@/features/bots/hooks/use-bot-unread';
 import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
+import { useReadBotOnOpen } from '@/features/bots/hooks/use-read-bot-on-open';
 import { ToolCallsShownContext } from '@/features/bots/hooks/use-tool-calls-shown';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
@@ -51,6 +53,8 @@ export function BotChatBody({
 }) {
   const { t } = useTranslation();
   const update = useUpdateBotOptimistically();
+  useReadBotOnOpen(bot);
+  useClearBotUnreadOnOpen(bot.id);
   useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
   // Starts the documents' read beside the conversation's, so a chat with no
   // messages yet greets with its hello as the transcript lands, not a round

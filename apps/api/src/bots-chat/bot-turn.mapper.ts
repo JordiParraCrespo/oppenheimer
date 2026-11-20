@@ -16,6 +16,7 @@ import {
   type BotTurnPlanLimits,
   type BotTurnPlanWindow,
 } from './domain/bot-turn.entity';
+import { BotActivityResponseDto } from './dtos/bot-activity.response.dto';
 import { type BotTurnPlanLimitsDto, BotTurnResponseDto } from './dtos/bot-turn.response.dto';
 
 @Injectable()
@@ -124,6 +125,17 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         endedAt: record.endedAt ?? null,
       },
     });
+  }
+
+  /** Which bots are working and which wait on you, as `GET /bot-activity` answers it. */
+  toActivityResponse(activity: {
+    working: readonly string[];
+    waitingOnYou: readonly string[];
+  }): BotActivityResponseDto {
+    const dto = new BotActivityResponseDto();
+    dto.working = [...activity.working];
+    dto.waitingOnYou = [...activity.waitingOnYou];
+    return dto;
   }
 
   toResponse(entity: BotTurnEntity): BotTurnResponseDto {

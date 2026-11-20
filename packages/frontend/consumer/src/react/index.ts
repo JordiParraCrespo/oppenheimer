@@ -16,10 +16,10 @@ export {
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
+export { useAcknowledgeBot, useBotWaitingOnYou, useBotWorking } from './bot-activity.queries';
 export {
   type DecideBotApprovalVariables,
   useAnyBotNeedsInput,
-  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';

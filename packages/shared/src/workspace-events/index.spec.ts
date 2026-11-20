@@ -12,6 +12,7 @@ describe('isWorkspaceEvent', () => {
     );
     expect(isWorkspaceEvent({ type: 'botApproval.changed', id: 'ap', botId: 'b' })).toBe(true);
     expect(isWorkspaceEvent({ type: 'botNotice.changed', id: 'n', botId: 'b' })).toBe(true);
+    expect(isWorkspaceEvent({ type: 'botTurn.changed', id: 't', botId: 'b' })).toBe(true);
     expect(isWorkspaceEvent({ type: 'inboxMark.changed', itemKey: 'approval:ap' })).toBe(true);
     expect(isWorkspaceEvent({ type: 'inboxReport.changed', id: 'r' })).toBe(true);
   });
@@ -21,6 +22,7 @@ describe('isWorkspaceEvent', () => {
     expect(isWorkspaceEvent({ type: 'automationRun.changed', id: 'r' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'botApproval.changed', id: 'ap' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'botNotice.changed', id: 'n' })).toBe(false);
+    expect(isWorkspaceEvent({ type: 'botTurn.changed', id: 't' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'inboxMark.changed', id: 'x' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'inboxReport.changed', itemKey: 'report:r' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'invoice.paid', id: 'x' })).toBe(false);

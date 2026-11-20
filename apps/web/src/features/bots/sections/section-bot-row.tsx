@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { SectionBotRowMenu } from '@/features/bots/components/section-bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useBotRowItem } from '@/features/bots/hooks/use-bot-row-item';
+import { useBotUnread } from '@/features/bots/hooks/use-bot-unread';
 import { botChatDestination } from '@/features/bots/lib/bot-chat-destination';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
@@ -37,6 +38,7 @@ export function SectionBotRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const item = useBotRowItem(bot);
+  const mark = useBotUnread(bot.id);
 
   return (
     <>
@@ -50,6 +52,8 @@ export function SectionBotRow({
             open={menuOpen}
             onOpenChange={setMenuOpen}
             where={t(SECTION_NAMES[section])}
+            unread={mark.unread}
+            onUnreadChange={mark.setUnread}
             onSettings={() =>
               navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
             }

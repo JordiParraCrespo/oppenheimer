@@ -231,6 +231,8 @@ import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter
 import { StorageBotAttachmentFilesAdapter } from './infrastructure/storage-bot-attachment-files.adapter';
 import { ExportBotConversationHttpController } from './queries/export-bot-conversation/export-bot-conversation.http.controller';
 import { ExportBotConversationQueryHandler } from './queries/export-bot-conversation/export-bot-conversation.query-handler';
+import { FindBotActivityHttpController } from './queries/find-bot-activity/find-bot-activity.http.controller';
+import { FindBotActivityQueryHandler } from './queries/find-bot-activity/find-bot-activity.query-handler';
 import { FindBotApprovalQueryHandler } from './queries/find-bot-approval/find-bot-approval.query-handler';
 import { FindBotApprovalsHttpController } from './queries/find-bot-approvals/find-bot-approvals.http.controller';
 import { FindBotApprovalsQueryHandler } from './queries/find-bot-approvals/find-bot-approvals.query-handler';
@@ -281,6 +283,7 @@ const httpControllers = [
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
+  FindBotActivityHttpController,
   FindWorkspaceBotNoticesHttpController,
   DecideBotApprovalHttpController,
   FindPendingBotQuestionHttpController,
@@ -346,6 +349,7 @@ const queryHandlers: Provider[] = [
   FindPendingBotQuestionQueryHandler,
   FindBotApprovalsQueryHandler,
   FindWorkspaceBotApprovalsQueryHandler,
+  FindBotActivityQueryHandler,
   FindWorkspaceBotNoticesQueryHandler,
   FindBotAttachmentQueryHandler,
   ReadBotAttachmentQueryHandler,

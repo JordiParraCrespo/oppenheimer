@@ -431,6 +431,30 @@ happened and whether sending it again helps, from its kind (§2): Retry only
 when it can, Model providers for a refused key or sign-in, and the
 provider's own words under Show details.
 
+In the sidebar, a bot's row reads as a session's (2026-11-19, reworked
+2026-11-20), one state at a time, first match wins:
+
+- **Waiting on you**, the amber dot: an approval or a card of questions
+  pending (§5), or, once it stopped working, a turn of its that failed since
+  you last read the chat.
+- **Working**, the name shimmering: a turn of its queued or running, whatever
+  started it (a message, a routine, another bot, a channel). No dot on its
+  face; a session shows none either.
+- **Done with something unread**, the blue dot: its chat has a message newer
+  than your last read. Reading is the API's (`bot."acknowledgedAt"`, set by
+  `POST /v1/bots/:id/acknowledge` when its chat is open and in front, on its
+  page or beside a session), so it holds on every device, as a session's
+  acknowledged report does.
+- **Marked unread**, the blue dot too: the row's menu marks it (Mark as
+  unread / read), kept on the device as a session's mark is, and opening the
+  chat takes it off.
+
+`GET /v1/bot-activity` is the one read for the whole list (which bots are
+working, which wait on you); the workspace stream's `botTurn.changed` (a turn
+queued or ended: a card of questions ends its turn, an answer queues one)
+and `botApproval.changed` say when to read it again, and a 15-second poll
+catches a chat read on another device.
+
 ### 3.1 Images
 
 You can send a bot images (issue #426): the paperclip in the composer's

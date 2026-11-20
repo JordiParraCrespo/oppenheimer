@@ -4,6 +4,7 @@ import { AutomationsModule } from '../automations/automations.module';
 import { AutomationRunChangesDomainEventHandler } from './application/event-handlers/automation-run-changes.domain-event-handler';
 import { BotApprovalChangesDomainEventHandler } from './application/event-handlers/bot-approval-changes.domain-event-handler';
 import { BotNoticeChangesDomainEventHandler } from './application/event-handlers/bot-notice-changes.domain-event-handler';
+import { BotTurnChangesDomainEventHandler } from './application/event-handlers/bot-turn-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from './application/event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from './application/event-handlers/inbox-mark-changes.domain-event-handler';
 import { InboxReportChangesDomainEventHandler } from './application/event-handlers/inbox-report-changes.domain-event-handler';
@@ -39,6 +40,7 @@ import { WORKSPACE_EVENT_BUS } from './workspace-events.di-tokens';
     ProjectChangesDomainEventHandler,
     BotApprovalChangesDomainEventHandler,
     BotNoticeChangesDomainEventHandler,
+    BotTurnChangesDomainEventHandler,
     InboxMarkChangesDomainEventHandler,
     InboxReportChangesDomainEventHandler,
   ],
