@@ -1457,9 +1457,9 @@ not hear.
 `WA_003` (WhatsApp refused the upload or the message) and `WA_004`, the same
 budget a text spends. Before anything is uploaded the host refuses audio
 larger than one frame (`WA_006`) and audio that is not Ogg/Opus or runs
-outside 1 to 120 seconds (`WA_008`). The control plane refuses audio past one
-frame itself (`WHATSAPP_008`) before it reaches the link, so `WA_006` here is
-a bug in that check, and `WA_008` in the speech it was handed.
+outside 1 to 120 seconds (`WA_008`). The control plane's link refuses audio
+past one frame itself, as `WA_006`, before it is sent (a larger frame would
+close the host's link); the bot reads either as `WHATSAPP_008`.
 
 The `TG_*` codes reach the control plane the same way, in answer to
 `telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).

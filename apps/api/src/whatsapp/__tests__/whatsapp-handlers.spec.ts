@@ -502,32 +502,6 @@ describe('SendWhatsappMessageCommandHandler', () => {
       expect(device.sendVoice).not.toHaveBeenCalled();
     });
 
-    // What breaks this: a provider's large note reaching the link as a frame
-    // past the runner's cap, which closes the host's link and every session on it.
-    it('refuses audio past one link frame before it reaches the host', async () => {
-      const linked = account({ status: 'connected' });
-      const device = fakeDevice();
-      const refusal = await new SendWhatsappMessageCommandHandler(
-        fakeAccounts([linked]).repository,
-        fakeMessages(),
-        device,
-        new WhatsappMessageMapper(),
-      )
-        .execute(
-          new SendWhatsappMessageCommand({
-            scope: scopeOf(),
-            accountId: linked.id,
-            chat,
-            text: 'Tuesday works.',
-            botId: 'bot-1',
-            voice: { audio: Buffer.alloc(352 * 1024 + 1), seconds: 40 },
-          }),
-        )
-        .catch((error) => error);
-      expect(refusal).toMatchObject({ code: 'WHATSAPP_008' });
-      expect(device.sendVoice).not.toHaveBeenCalled();
-    });
-
     it('says a runner too old to send voice notes is one to update, and keeps nothing', async () => {
       const linked = account({ status: 'connected' });
       const messages = fakeMessages();

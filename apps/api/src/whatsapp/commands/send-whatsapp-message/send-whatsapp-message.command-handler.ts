@@ -2,7 +2,6 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { WHATSAPP_SENDS_PER_DAY } from '@oppenheimer/shared';
-import { WHATSAPP_VOICE_NOTE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type { WhatsappDevicePort } from '../../application/whatsapp-device.port';
 import { whatsappSentOrThrow } from '../../application/whatsapp-send-outcome.policy';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
@@ -59,22 +58,7 @@ export class SendWhatsappMessageCommandHandler
       });
     }
 
-    const { voice } = command;
-    // A frame past the link's cap closes the host's whole link, not just this send.
-    if (voice && voice.audio.length > WHATSAPP_VOICE_NOTE_MAX_BYTES) {
-      throw new AppError(WhatsappErrors.SEND_FAILED, {
-        detail: `The voice note is ${voice.audio.length} bytes; one link frame carries ${WHATSAPP_VOICE_NOTE_MAX_BYTES} at most. Send a shorter text.`,
-      });
-    }
-    const outcome = voice
-      ? await this.device.sendVoice(account.hostId, command.chat.chatId, voice.audio, voice.seconds)
-      : await this.device.send(account.hostId, command.chat.chatId, command.text);
-    if (voice && outcome.kind === 'not_supported') {
-      throw new AppError(WhatsappErrors.HOST_UNSUPPORTED, {
-        detail: 'The host’s runner predates sending voice notes; updating it fixes this.',
-      });
-    }
-    const sent = whatsappSentOrThrow(outcome);
+    const sent = await this.deliver(account.hostId, command);
     await this.messages.recordBotSend(
       this.mapper.fromBotSend({
         account,
@@ -82,9 +66,28 @@ export class SendWhatsappMessageCommandHandler
         text: command.text,
         sent,
         botId: command.botId,
-        voiceSeconds: voice?.seconds,
+        voiceSeconds: command.voice?.seconds,
       }),
     );
     return sent.id;
+  }
+
+  /**
+   * The message on the host: a text, or a voice note, and what came of it.
+   * Audio too large for one link frame is the link adapter's to refuse
+   * (`WA_006`), before it could close the link.
+   */
+  private async deliver(
+    hostId: string,
+    { chat, text, voice }: SendWhatsappMessageCommand,
+  ): Promise<{ id: string; sentAt: Date }> {
+    if (!voice) return whatsappSentOrThrow(await this.device.send(hostId, chat.chatId, text));
+    const outcome = await this.device.sendVoice(hostId, chat.chatId, voice.audio, voice.seconds);
+    if (outcome.kind === 'not_supported') {
+      throw new AppError(WhatsappErrors.HOST_UNSUPPORTED, {
+        detail: 'The host’s runner predates sending voice notes; updating it fixes this.',
+      });
+    }
+    return whatsappSentOrThrow(outcome);
   }
 }
