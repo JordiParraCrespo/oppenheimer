@@ -78,17 +78,52 @@ export interface ChannelTurnLine {
 }
 
 /**
+ * Where a turn that sends as it goes sends: a stored activity line is a run
+ * of tool calls beginning, and what the bot wrote before it goes out then.
+ * The one boundary both the sends along the way (`SaidAsItGoes`) and the
+ * turn's end (`unsentTexts`) cut at.
+ */
+function startsToolRun(line: { role: string }): boolean {
+  return line.role === 'activity';
+}
+
+/**
  * The texts a channel turn's end still owes its chat, in order: every text
  * the bot wrote, or, for a turn that sent as it went (`sendsAsItGoes`), the
  * ones after its last run of tool calls, the earlier ones having gone out
  * when that run began.
  */
 export function unsentTexts(lines: readonly ChannelTurnLine[], asItGoes: boolean): string[] {
-  const last = asItGoes ? lines.map((line) => line.role).lastIndexOf('activity') : -1;
+  let from = 0;
+  if (asItGoes) {
+    for (const [index, line] of lines.entries()) if (startsToolRun(line)) from = index + 1;
+  }
   return lines
-    .slice(last + 1)
+    .slice(from)
     .filter((line) => line.role === 'assistant')
     .map((line) => line.content);
+}
+
+/**
+ * What a turn that sends as it goes owes its chat while it runs: the texts
+ * it stored, sent together once a run of tool calls begins
+ * (`startsToolRun`). Texts stay owed until a send is confirmed (`sent`), so
+ * one that did not go (the host offline a moment) goes with the next.
+ */
+export class SaidAsItGoes {
+  private owed: string[] = [];
+
+  /** A line the turn stored: the words to send now, or null. */
+  stored(line: { role: string; content: string }): string | null {
+    if (line.role === 'assistant' && line.content.trim()) this.owed.push(line.content);
+    else if (startsToolRun(line) && this.owed.length > 0) return this.owed.join('\n\n');
+    return null;
+  }
+
+  /** The words `stored` handed out went to the chat. */
+  sent(): void {
+    this.owed = [];
+  }
 }
 
 /**

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
+import { BotChannelAsItGoesFactory } from '../../application/bot-channel-as-it-goes.factory';
 import { BotDreamTriggerPolicy } from '../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
@@ -22,7 +23,8 @@ import { RunBotTurnCommand } from './run-bot-turn.command';
  * Runs one turn: claims it (one running turn per bot), reads
  * what it needs, runs the engine with its steering (unless what it read says
  * the turn takes none, or has nothing left to say, and so ends at once),
- * hands what the transcript writes to the turn's writer (`TurnWriteFactory`),
+ * hands what the transcript writes to the turn's writer (`TurnWriteFactory`,
+ * which on a channel also sends as it goes: `BotChannelAsItGoesFactory`),
  * then records how it ended, makes the bot's next queued turn due and asks
  * whether the conversation needs summarizing. A turn found running was a
  * worker that died under it, and fails rather than running twice. A failure
@@ -43,6 +45,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     private readonly steering: BotSteeringFactory,
     private readonly writes: TurnWriteFactory,
     private readonly failures: BotTurnFailureReportPolicy,
+    private readonly asItGoes: BotChannelAsItGoesFactory,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
@@ -85,7 +88,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       // A message sent meanwhile that this turn cannot take waits for its own turn.
       const steering = shape.takesSteers ? this.steering.steering(turn) : undefined;
       const signal = watch.signal;
-      const write = this.writes.writer(turn);
+      const write = this.asItGoes.wrap(turn, this.writes.writer(turn));
       const request = { ...shape.request, signal, scratchDir, steering };
       for await (const event of this.engine.run(request)) {
         watch.saw(event);

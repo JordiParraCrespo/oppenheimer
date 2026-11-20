@@ -268,10 +268,7 @@ export class BotMessageRepository
       order: { position: 'ASC' },
       select: { id: true, role: true, content: true, position: true },
     });
-    return records.map((record) => ({
-      role: record.role === 'activity' ? 'activity' : 'assistant',
-      content: record.content,
-    }));
+    return records.map((record) => this.mapper.toChannelTurnLine(record));
   }
 
   async turnCalledTools(organizationId: string, turnId: string): Promise<boolean> {

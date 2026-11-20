@@ -34,7 +34,6 @@ import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-k
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
-import type { BotChannelReplyResolver } from '../application/bot-channel-reply.resolver';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BotOpeningMediaResolver } from '../application/bot-opening-media.resolver';
@@ -1336,11 +1335,7 @@ describe('bots chat (integration)', () => {
     await turns.enqueue(turn, message, null);
     const transcript = new TurnTranscript(turn);
     const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
-    const write = new TurnWriteFactory(
-      messages,
-      stream as unknown as BotStreamPort,
-      {} as BotChannelReplyResolver,
-    ).writer(turn);
+    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
     const events: BotEngineEvent[] = [
       {
         type: 'tool.started',
@@ -1380,11 +1375,7 @@ describe('bots chat (integration)', () => {
     const turn = await runningTurn(bot);
     const transcript = new TurnTranscript(turn);
     const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
-    const write = new TurnWriteFactory(
-      messages,
-      stream as unknown as BotStreamPort,
-      {} as BotChannelReplyResolver,
-    ).writer(turn);
+    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
     expect(await bots.delete(bot)).toBe('deleted');
 
     let refused: unknown = null;

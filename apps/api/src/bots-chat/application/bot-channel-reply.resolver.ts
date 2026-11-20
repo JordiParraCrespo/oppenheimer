@@ -17,34 +17,36 @@ type ChannelReply = Omit<
   'accountId' | 'replyToId'
 >;
 
-/** Each channel's reply, for a chat of its kind and the key of the turn that opened it. */
-const REPLY_ON: {
-  [K in BotChannelChat['kind']]: (
-    chat: Extract<BotChannelChat, { kind: K }>,
-    sourceKey: string | null,
-    reply: ChannelReply,
-  ) => ReplyOnTelegramCommand | ReplyOnWhatsappCommand;
-} = {
-  telegram: (chat, sourceKey, reply) =>
-    new ReplyOnTelegramCommand({
-      ...reply,
-      accountId: chat.telegramAccountId,
-      replyToId: telegramMessageIdOf(sourceKey),
-    }),
-  whatsapp: (chat, sourceKey, reply) =>
-    new ReplyOnWhatsappCommand({
-      ...reply,
-      accountId: chat.whatsappAccountId,
-      replyToRowId: whatsappMessageRowIdOf(sourceKey),
-    }),
-};
+/** The reply for a chat's channel, quoting the message the turn's key names. */
+function replyOn(
+  chat: BotChannelChat,
+  sourceKey: string | null,
+  reply: ChannelReply,
+): ReplyOnTelegramCommand | ReplyOnWhatsappCommand {
+  switch (chat.kind) {
+    case 'telegram':
+      return new ReplyOnTelegramCommand({
+        ...reply,
+        accountId: chat.telegramAccountId,
+        replyToId: telegramMessageIdOf(sourceKey),
+      });
+    case 'whatsapp':
+      return new ReplyOnWhatsappCommand({
+        ...reply,
+        accountId: chat.whatsappAccountId,
+        replyToRowId: whatsappMessageRowIdOf(sourceKey),
+      });
+  }
+}
 
 /**
  * Sends a channel turn's words to the chat its conversation is, as a reply to
  * the message that opened the turn, through the module of the chat's channel
  * (telegram, whatsapp), which sends only while this bot still answers that
- * chat. Nothing goes for a conversation that is no channel's chat (any more).
- * What the turn's end owes and what it sends as it goes are the callers'.
+ * chat. Answers how many messages went: none for a conversation that is no
+ * channel's chat (any more), a chat this bot no longer answers, or a host
+ * that did not send. What the turn's end owes and what it sends as it goes
+ * are the callers'.
  */
 @Injectable()
 export class BotChannelReplyResolver {
@@ -58,9 +60,9 @@ export class BotChannelReplyResolver {
     turn: Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>,
     text: string,
     correlationId: string | undefined,
-  ): Promise<void> {
+  ): Promise<number> {
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
-    if (!chat) return;
+    if (!chat) return 0;
     const reply: ChannelReply = {
       organizationId: turn.organizationId,
       chatId: chat.chatId,
@@ -68,11 +70,8 @@ export class BotChannelReplyResolver {
       botId: turn.botId,
       metadata: { correlationId },
     };
-    const replyOn = REPLY_ON[chat.kind] as (
-      chat: BotChannelChat,
-      sourceKey: string | null,
-      reply: ChannelReply,
-    ) => ReplyOnTelegramCommand | ReplyOnWhatsappCommand;
-    await this.commands.execute(replyOn(chat, turn.sourceKey, reply));
+    return this.commands.execute<ReplyOnTelegramCommand | ReplyOnWhatsappCommand, number>(
+      replyOn(chat, turn.sourceKey, reply),
+    );
   }
 }
