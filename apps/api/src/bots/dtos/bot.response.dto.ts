@@ -128,4 +128,10 @@ export class BotResponseDto {
     description: 'The start of its last message, for the sidebar; null before the first.',
   })
   lastMessagePreview!: string | null;
+
+  @ApiProperty({
+    description:
+      'Whether its chat has a message newer than the last time you read it (`POST /bots/:id/acknowledge`).',
+  })
+  unread!: boolean;
 }

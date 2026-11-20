@@ -63,6 +63,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         sections: (record.sections ?? []) as BotSection[],
         lastMessageAt: record.lastMessageAt ?? null,
         lastMessagePreview: record.lastMessagePreview ?? null,
+        acknowledgedAt: record.acknowledgedAt ?? null,
       },
     });
   }
@@ -88,6 +89,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.updatedAt = entity.updatedAt.toISOString();
     dto.lastActivityAt = (entity.lastMessageAt ?? entity.updatedAt).toISOString();
     dto.lastMessagePreview = entity.lastMessagePreview;
+    dto.unread = entity.hasUnreadMessage;
     return dto;
   }
 }

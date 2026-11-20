@@ -4092,6 +4092,10 @@ export type BotResponseDto = {
      * The start of its last message, for the sidebar; null before the first.
      */
     lastMessagePreview: string | null;
+    /**
+     * Whether its chat has a message newer than the last time you read it (`POST /bots/:id/acknowledge`).
+     */
+    unread: boolean;
 };
 
 export type CreateBotRequest = {
@@ -5138,11 +5142,15 @@ export type WorkspaceBotApprovalResponseDto = {
     sessionId: string | null;
 };
 
-export type WorkingBotsResponseDto = {
+export type BotActivityResponseDto = {
     /**
      * The bots with a turn queued or running, in no order.
      */
-    botIds: Array<string>;
+    working: Array<string>;
+    /**
+     * The bots waiting on you, in no order: an approval or a card of questions pending, or, while not working, a turn that failed since you last read the chat.
+     */
+    waitingOnYou: Array<string>;
 };
 
 export type WorkspaceBotNoticeResponseDto = {
@@ -15473,6 +15481,41 @@ export type UpdateBotResponses = {
 
 export type UpdateBotResponse = UpdateBotResponses[keyof UpdateBotResponses];
 
+export type AcknowledgeBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/acknowledge';
+};
+
+export type AcknowledgeBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type AcknowledgeBotError = AcknowledgeBotErrors[keyof AcknowledgeBotErrors];
+
+export type AcknowledgeBotResponses = {
+    /**
+     * Read
+     */
+    204: void;
+};
+
+export type AcknowledgeBotResponse = AcknowledgeBotResponses[keyof AcknowledgeBotResponses];
+
 export type FindBotDocumentsData = {
     body?: never;
     path: {
@@ -17004,14 +17047,14 @@ export type FindWorkspaceBotApprovalsResponses = {
 
 export type FindWorkspaceBotApprovalsResponse = FindWorkspaceBotApprovalsResponses[keyof FindWorkspaceBotApprovalsResponses];
 
-export type FindWorkingBotsData = {
+export type FindBotActivityData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/working-bots';
+    url: '/api/v1/bot-activity';
 };
 
-export type FindWorkingBotsErrors = {
+export type FindBotActivityErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -17022,13 +17065,13 @@ export type FindWorkingBotsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindWorkingBotsError = FindWorkingBotsErrors[keyof FindWorkingBotsErrors];
+export type FindBotActivityError = FindBotActivityErrors[keyof FindBotActivityErrors];
 
-export type FindWorkingBotsResponses = {
-    200: WorkingBotsResponseDto;
+export type FindBotActivityResponses = {
+    200: BotActivityResponseDto;
 };
 
-export type FindWorkingBotsResponse = FindWorkingBotsResponses[keyof FindWorkingBotsResponses];
+export type FindBotActivityResponse = FindBotActivityResponses[keyof FindBotActivityResponses];
 
 export type FindWorkspaceBotNoticesData = {
     body?: never;

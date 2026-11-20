@@ -10,16 +10,16 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { BotTurnMapper } from '../../bot-turn.mapper';
-import { WorkingBotsResponseDto } from '../../dtos/working-bots.response.dto';
-import { FindWorkingBotsQuery } from './find-working-bots.query';
+import { BotActivityResponseDto } from '../../dtos/bot-activity.response.dto';
+import { type BotActivity, FindBotActivityQuery } from './find-bot-activity.query';
 
 @ApiTags('Bots')
 @ApiBearerAuth()
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard, PoliciesGuard)
 @UseInterceptors(AccessScopeInterceptor)
-@Controller('working-bots')
-export class FindWorkingBotsHttpController {
+@Controller('bot-activity')
+export class FindBotActivityHttpController {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly mapper: BotTurnMapper,
@@ -30,15 +30,15 @@ export class FindWorkingBotsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Bot' })
   @RequireScopes('bots:read')
   @ApiOperation({
-    summary: 'The bots at work',
+    summary: 'What the bots are doing',
     description:
-      'The bots you may read that have a turn queued or running. The workspace stream sends `botTurn.changed` when one may have started or stopped.',
+      'Of the bots you may read: those working (a turn queued or running) and those waiting on you (an approval or questions pending, or a failed turn since you last read the chat). The workspace stream sends `botTurn.changed` and `botApproval.changed` when either may have moved.',
   })
-  @ApiResponse({ status: 200, type: WorkingBotsResponseDto })
-  async find(@CurrentAccessScope() scope: AccessScope): Promise<WorkingBotsResponseDto> {
-    const botIds = await this.queryBus.execute<FindWorkingBotsQuery, string[]>(
-      new FindWorkingBotsQuery(scope),
+  @ApiResponse({ status: 200, type: BotActivityResponseDto })
+  async find(@CurrentAccessScope() scope: AccessScope): Promise<BotActivityResponseDto> {
+    const activity = await this.queryBus.execute<FindBotActivityQuery, BotActivity>(
+      new FindBotActivityQuery(scope),
     );
-    return this.mapper.toWorkingBotsResponse(botIds);
+    return this.mapper.toActivityResponse(activity);
   }
 }

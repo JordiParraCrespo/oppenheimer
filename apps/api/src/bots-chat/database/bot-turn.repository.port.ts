@@ -231,6 +231,11 @@ export interface BotTurnRepositoryPort {
   findRunningIn(organizationId: string, conversationId: string): Promise<BotTurnEntity | null>;
   /** The bots with a turn queued or running, on the bots the scope may read: the sidebar's working bots. */
   findWorkingBotIds(scope: AccessScope): Promise<string[]>;
+  /**
+   * The bots whose last ended turn failed after the person last read the
+   * chat (`bot."acknowledgedAt"`), on the bots the scope may read.
+   */
+  findBotIdsWithUnreadFailure(scope: AccessScope): Promise<string[]>;
   /** Whether Stop was pressed on this turn. */
   isCancelRequested(turnId: string): Promise<boolean>;
 

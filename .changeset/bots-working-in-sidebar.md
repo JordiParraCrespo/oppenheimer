@@ -4,7 +4,8 @@
 "@oppenheimer/api-client": minor
 "@oppenheimer/frontend-consumer": minor
 "@oppenheimer/design-system-web": minor
+"@oppenheimer/translations": minor
 "@oppenheimer/web": minor
 ---
 
-A bot at work reads as one in the sidebar, as a working session does: while a turn of its is queued or running, its name shimmers and the green dot shows on its face. `GET /v1/working-bots` lists the bots with a turn queued or running, on the bots the caller may read; a turn queued or ended raises `BotTurnChangedDomainEvent`, which the workspace stream sends as `botTurn.changed { id, botId }`, and the console reads the list again on it (polling every 15 seconds while the stream is down). Once a bot stops working with a message not yet seen in its chat on this device, its row takes the blue dot at its end, as a session ready for review does; opening the chat takes it off.
+A bot's sidebar row reads as a session's. Waiting on you (an approval or questions pending, or a failed turn since you last read the chat) is the amber dot; working (a turn queued or running) shimmers the name; a message you have not read, or the row's own Mark as unread, is the blue dot. `GET /v1/bot-activity` lists the bots working and waiting on you; `POST /v1/bots/:id/acknowledge` reads a bot's chat (`bot."acknowledgedAt"`, added by a migration and backfilled to each bot's last message), and each bot carries `unread`. A turn queued or ended raises `BotTurnChangedDomainEvent`, sent on the workspace stream as `botTurn.changed { id, botId }`. `BotItem` takes `working` for the shimmer apart from `live`, its green dot.

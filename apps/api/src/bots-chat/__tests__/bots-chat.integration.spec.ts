@@ -440,6 +440,57 @@ describe('bots chat (integration)', () => {
     ]);
   });
 
+  /**
+   * What the sidebar reads beyond working, as a session's group: a bot is
+   * unread from its first message until its chat is read (`acknowledgedAt`),
+   * and waits on you for a failed turn until the chat is read or a later turn
+   * ends, and for a card of questions while it is pending. Without them a
+   * reply read on one device would stay blue on another, and a failure would
+   * say nothing outside its chat.
+   */
+  it('reads a bot unread until its chat is read, and a failed turn or a pending card as waiting on you', async () => {
+    const bot = await create('Watched Bot');
+    const unread = async () => (await bots.findOneById(scope(), bot.id)).unwrap().hasUnreadMessage;
+    expect(await unread()).toBe(false);
+
+    const first = sent(bot, 'Deploy it');
+    await turns.enqueue(first.turn, first.message, null);
+    expect(await unread()).toBe(true);
+
+    const failing = (await turns.findForRun(first.turn.id)).unwrap();
+    failing.start(new Date());
+    await turns.claim(failing);
+    failing.end('failed', new Date(), { error: 'The provider refused the key' });
+    await turns.finish(failing, null);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).toContain(bot.id);
+    expect(await turns.findBotIdsWithUnreadFailure(scopeOf(randomUUID()))).toEqual([]);
+
+    expect(await bots.acknowledge(scope(), bot.id, new Date())).toBe(true);
+    expect(await unread()).toBe(false);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).not.toContain(bot.id);
+    expect(await bots.acknowledge(scopeOf(randomUUID()), bot.id, new Date())).toBe(false);
+
+    // A failure after the read waits again, until a later turn ends well.
+    const second = sent(bot, 'Again');
+    await turns.enqueue(second.turn, second.message, null);
+    const again = (await turns.findForRun(second.turn.id)).unwrap();
+    again.end('failed', new Date(), { error: 'Still refused' });
+    await turns.finish(again, null);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).toContain(bot.id);
+    const third = sent(bot, 'Once more');
+    await turns.enqueue(third.turn, third.message, null);
+    const stopped = (await turns.findForRun(third.turn.id)).unwrap();
+    stopped.end('cancelled', new Date());
+    await turns.finish(stopped, null);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).not.toContain(bot.id);
+
+    const card = await questioned(bot);
+    expect(await questions.findPendingBotIds(scope())).not.toContain(bot.id);
+    expect(await questions.insertPending(card)).toBe('inserted');
+    expect(await questions.findPendingBotIds(scope())).toContain(bot.id);
+    expect(await questions.findPendingBotIds(scopeOf(randomUUID()))).toEqual([]);
+  });
+
   it("queues a routine's run once, however often it is dispatched, and finds it live by its routine", async () => {
     await dataSource.query(`DELETE FROM outbox_message`);
     const bot = await create('Routine Bot');

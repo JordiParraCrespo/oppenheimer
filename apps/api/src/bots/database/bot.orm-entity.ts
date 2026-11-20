@@ -110,6 +110,10 @@ export class BotOrmEntity {
   @Column({ type: 'varchar', length: 200, nullable: true })
   lastMessagePreview!: string | null;
 
+  /** When the person last read its chat; null before they first did. Written only by acknowledging. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  acknowledgedAt!: Date | null;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

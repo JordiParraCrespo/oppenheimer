@@ -101,6 +101,8 @@ const REFRESHES: RefreshTable = {
       key: () => botsKeys.pendingApprovals(),
       announcesEvery: true,
     },
+    // A pending card is the sidebar's amber dot.
+    { prefix: botsKeys.activity(), announcesEvery: false },
     // The bot's chat catches up on its own stream.
     {
       prefix: botsKeys.details(),
@@ -112,10 +114,11 @@ const REFRESHES: RefreshTable = {
   // Every notice a bot sends raises it: the Inbox's list across bots. The
   // bot's chat shows no notice, so it has nothing to refresh.
   'botNotice.changed': [{ prefix: botsKeys.workspaceNotices(), announcesEvery: true }],
-  // A turn queued or ended, whatever started it: which bots are working, and
-  // the list's last message, which the sidebar's done dot reads.
+  // A turn queued or ended, whatever started it: which bots are working or
+  // wait on you (a card of questions ends its turn, a failure is an end), and
+  // the list's last message, which the sidebar's blue dot reads.
   'botTurn.changed': [
-    { prefix: botsKeys.working(), announcesEvery: true },
+    { prefix: botsKeys.activity(), announcesEvery: false },
     { prefix: botsKeys.lists(), announcesEvery: false },
   ],
   // Every put and delete of the caller's marks.

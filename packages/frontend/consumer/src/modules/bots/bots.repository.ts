@@ -93,6 +93,12 @@ import { BotsErrors } from './bots.errors';
 import { readNdjson } from './ndjson';
 import { BotStream } from './stream/bot-stream';
 
+/** What the sidebar shows of the bots: which are working, which wait on you. */
+export interface BotActivity {
+  working: readonly string[];
+  waitingOnYou: readonly string[];
+}
+
 function toBot(dto: BotResponseDto): BotEntity {
   return new BotEntity(
     dto.id,
@@ -113,6 +119,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     dto.lastMessagePreview,
     dto.sections,
     dto.avatarFace,
+    dto.unread,
   );
 }
 
@@ -613,11 +620,18 @@ export class BotsRepository {
     });
   }
 
-  /** The bots with a turn queued or running, on the bots the caller may read. */
-  findWorkingBotIds(): Promise<string[]> {
+  /** Which of the bots the caller may read are working, and which wait on them. */
+  findActivity(): Promise<BotActivity> {
     return callApi(BotsErrors.FETCH_LIST_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findWorkingBots());
-      return data.botIds;
+      const data = await api.body(heyApiSdk.findBotActivity());
+      return { working: data.working, waitingOnYou: data.waitingOnYou };
+    });
+  }
+
+  /** The bot's chat read as of now, on every device. */
+  acknowledge(id: string): Promise<void> {
+    return callApi(BotsErrors.FETCH_FAILED, async (api) => {
+      await api.body(heyApiSdk.acknowledgeBot({ path: { id } }));
     });
   }
 

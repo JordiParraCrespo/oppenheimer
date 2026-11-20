@@ -16,10 +16,10 @@ export {
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
+export { useAcknowledgeBot, useBotWaitingOnYou, useBotWorking } from './bot-activity.queries';
 export {
   type DecideBotApprovalVariables,
   useAnyBotNeedsInput,
-  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';
@@ -91,7 +91,6 @@ export {
   useUpdateBotSkill,
 } from './bot-skills.queries';
 export { useSuspenseBotUsage } from './bot-usage.queries';
-export { useBotWorking } from './bot-working.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,

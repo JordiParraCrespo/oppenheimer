@@ -21226,6 +21226,66 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/acknowledge": {
+      "post": {
+        "description": "Everything in the chat until now is read: the bot is no longer `unread`, and a turn that failed before now no longer waits on you (`GET /bot-activity`).",
+        "operationId": "acknowledgeBot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Read"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a bot's chat read",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/documents": {
       "get": {
         "description": "Both documents, soul first, each with the revision a save sends back.",
@@ -24476,10 +24536,10 @@
         ]
       }
     },
-    "/api/v1/working-bots": {
+    "/api/v1/bot-activity": {
       "get": {
-        "description": "The bots you may read that have a turn queued or running. The workspace stream sends `botTurn.changed` when one may have started or stopped.",
-        "operationId": "findWorkingBots",
+        "description": "Of the bots you may read: those working (a turn queued or running) and those waiting on you (an approval or questions pending, or a failed turn since you last read the chat). The workspace stream sends `botTurn.changed` and `botApproval.changed` when either may have moved.",
+        "operationId": "findBotActivity",
         "parameters": [],
         "responses": {
           "200": {
@@ -24487,7 +24547,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WorkingBotsResponseDto"
+                  "$ref": "#/components/schemas/BotActivityResponseDto"
                 }
               }
             }
@@ -24518,7 +24578,7 @@
             "bearer": []
           }
         ],
-        "summary": "The bots at work",
+        "summary": "What the bots are doing",
         "tags": [
           "Bots"
         ]
@@ -38616,6 +38676,10 @@
             "type": "string",
             "nullable": true,
             "description": "The start of its last message, for the sidebar; null before the first."
+          },
+          "unread": {
+            "type": "boolean",
+            "description": "Whether its chat has a message newer than the last time you read it (`POST /bots/:id/acknowledge`)."
           }
         },
         "required": [
@@ -38637,7 +38701,8 @@
           "createdAt",
           "updatedAt",
           "lastActivityAt",
-          "lastMessagePreview"
+          "lastMessagePreview",
+          "unread"
         ]
       },
       "CreateBotRequest": {
@@ -41227,11 +41292,19 @@
           "sessionId"
         ]
       },
-      "WorkingBotsResponseDto": {
+      "BotActivityResponseDto": {
         "type": "object",
         "properties": {
-          "botIds": {
+          "working": {
             "description": "The bots with a turn queued or running, in no order.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "waitingOnYou": {
+            "description": "The bots waiting on you, in no order: an approval or a card of questions pending, or, while not working, a turn that failed since you last read the chat.",
             "type": "array",
             "items": {
               "type": "string",
@@ -41240,7 +41313,8 @@
           }
         },
         "required": [
-          "botIds"
+          "working",
+          "waitingOnYou"
         ]
       },
       "WorkspaceBotNoticeResponseDto": {

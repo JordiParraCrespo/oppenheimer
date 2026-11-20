@@ -12,6 +12,7 @@ import {
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
+import { BotOrmEntity } from '../../bots/database/bot.orm-entity';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -637,6 +638,27 @@ export class BotTurnRepository
       .select('turn.botId', 'botId')
       .distinct(true)
       .andWhere('turn.status IN (:...active)', { active: BOT_ACTIVE_TURN_STATUSES })
+      .getRawMany();
+    return rows.map((row) => row.botId);
+  }
+
+  async findBotIdsWithUnreadFailure(scope: AccessScope): Promise<string[]> {
+    // A workspace's failed turns are few; the later-turn probe reads IDX_bot_turn_bot.
+    const rows: { botId: string }[] = await this.scopedQuery(scope)
+      .select('turn.botId', 'botId')
+      .distinct(true)
+      .innerJoin(
+        BotOrmEntity,
+        'bot',
+        'bot.id = turn.botId AND bot.organizationId = turn.organizationId',
+      )
+      .andWhere(`turn.status = 'failed'`)
+      .andWhere('(bot.acknowledgedAt IS NULL OR turn.endedAt > bot.acknowledgedAt)')
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM bot_turn later
+          WHERE later."organizationId" = turn."organizationId" AND later."botId" = turn."botId"
+            AND later."endedAt" > turn."endedAt")`,
+      )
       .getRawMany();
     return rows.map((row) => row.botId);
   }

@@ -15,8 +15,8 @@ import {
   type BotTurnPlanLimits,
   type BotTurnPlanWindow,
 } from './domain/bot-turn.entity';
+import { BotActivityResponseDto } from './dtos/bot-activity.response.dto';
 import { type BotTurnPlanLimitsDto, BotTurnResponseDto } from './dtos/bot-turn.response.dto';
-import { WorkingBotsResponseDto } from './dtos/working-bots.response.dto';
 
 @Injectable()
 export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, BotTurnResponseDto> {
@@ -124,10 +124,14 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     });
   }
 
-  /** The bots with a turn queued or running, as `GET /working-bots` answers them. */
-  toWorkingBotsResponse(botIds: string[]): WorkingBotsResponseDto {
-    const dto = new WorkingBotsResponseDto();
-    dto.botIds = botIds;
+  /** Which bots are working and which wait on you, as `GET /bot-activity` answers it. */
+  toActivityResponse(activity: {
+    working: readonly string[];
+    waitingOnYou: readonly string[];
+  }): BotActivityResponseDto {
+    const dto = new BotActivityResponseDto();
+    dto.working = [...activity.working];
+    dto.waitingOnYou = [...activity.waitingOnYou];
     return dto;
   }
 

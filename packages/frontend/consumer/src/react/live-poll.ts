@@ -115,12 +115,13 @@ export const LIVE_POLL = {
    */
   botApprovals: { interval: 15_000, inBackground: false, streamCanCover: true },
   /**
-   * Which bots are working, behind the sidebar's shimmering names, while the
-   * workspace stream is down or turned off: a turn queued or ended elsewhere
-   * lands within this. Not in the background, and stood down while the stream
-   * announces `botTurn.changed`.
+   * Which bots are working and which wait on you, behind the sidebar's
+   * shimmering names and amber dots, while the workspace stream is down or
+   * turned off: a turn queued or ended elsewhere, or a card raised, lands
+   * within this. Not in the background, and stood down while the stream
+   * announces `botTurn.changed` and `botApproval.changed`.
    */
-  botsWorking: { interval: 15_000, inBackground: false, streamCanCover: true },
+  botActivity: { interval: 15_000, inBackground: false, streamCanCover: true },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;

@@ -18,8 +18,8 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
 /**
  * BotItem — an employee in the sidebar, on one line: a 20px square photo
  * (initials in ink until it loads) with a 9px green dot on its corner while
- * the bot is working, then the name at 14px, which breathes while it works
- * as a working `SessionItem`'s does (`animate-shimmer`). The last message is the row's
+ * the bot is `live`, then the name at 14px, which breathes while it is
+ * `working` as a working `SessionItem`'s does (`animate-shimmer`). The last message is the row's
  * tooltip, beside it on hover ("You: …" when it was yours). An unread chat
  * sets the name at 600 with a 7px blue dot at the end; one waiting on the
  * person (`needsInput`: an approval, a question) does the same with an amber
@@ -36,6 +36,7 @@ function BotItem({
   face,
   preview,
   live = false,
+  working = false,
   unread = false,
   needsInput = false,
   active,
@@ -54,8 +55,10 @@ function BotItem({
   face?: BotFaceSpec;
   /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
-  /** The bot is working: the green dot on the photo, and the name shimmers. */
+  /** The bot is live: the green dot on the photo. */
   live?: boolean;
+  /** The bot is at work: the name shimmers, as a working session's does. */
+  working?: boolean;
   unread?: boolean;
   /** The bot is waiting on the person (an approval, a question): the amber dot. */
   needsInput?: boolean;
@@ -72,7 +75,7 @@ function BotItem({
     <ButtonPrimitive
       data-slot="bot-item"
       data-active={active || undefined}
-      data-live={live || undefined}
+      data-working={working || undefined}
       data-unread={unread || undefined}
       data-needs-input={needsInput || undefined}
       data-attention={unread || needsInput || undefined}
@@ -107,7 +110,7 @@ function BotItem({
       <span
         className={cn(
           'min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold',
-          live && 'motion-safe:animate-shimmer',
+          working && 'motion-safe:animate-shimmer',
         )}
       >
         {name}
