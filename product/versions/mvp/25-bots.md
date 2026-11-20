@@ -2361,3 +2361,7 @@ The decisions it produced:
   bot's, kept a day in the cache; the model answers NONE when there is no
   clear next step, and a failure shows nothing. It is spend on the owner's
   key like the summary, recorded as the `suggestion` purpose in `/usage`.
+  It never claims the person did something outside the chat and never
+  suggests an irreversible step the bot did not propose. Eval
+  `bot-suggestion`: 47/48 on Opus 5.5; 33/48 on Haiku 5.5, which can answer
+  a preference question for the person with made-up details.
