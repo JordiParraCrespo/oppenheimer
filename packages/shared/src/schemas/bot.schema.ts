@@ -928,7 +928,13 @@ export interface BotLoop {
  * conversation starts them again. Cache reads and writes are part of the input,
  * never on top of it.
  */
-export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
+export const BOT_MODEL_CALL_PURPOSES = [
+  'goal_review',
+  'summary',
+  'rule_review',
+  'dream',
+  'suggestion',
+] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
 export interface BotTokenCounts {

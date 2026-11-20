@@ -231,8 +231,9 @@ export function useBotRoomLeft(id: string): BotRoomLeft {
 /**
  * The chat read again, and its goal and loop (a line or a turn may have set,
  * moved or ended either); when a turn has ended, the bot too (its last activity moved),
- * its Needs input card (the turn may have raised one) and its usage (an open
- * `/usage` card counts the turn).
+ * its Needs input card (the turn may have raised one), its usage (an open
+ * `/usage` card counts the turn) and the composer's suggestion (it answers the
+ * bot's last words).
  */
 function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Promise<unknown> {
   const reads = [
@@ -244,6 +245,7 @@ function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Prom
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.usage(id) }));
+    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.suggestion(id) }));
   }
   return Promise.all(reads);
 }
@@ -307,6 +309,8 @@ export function useSendBotMessage(
         botsKeys.sendings(variables.id),
         (sendings = NO_SENDINGS) => [...sendings, sending],
       );
+      // The suggestion answered the bot's last words, which this send answers instead.
+      queryClient.setQueryData(botsKeys.suggestion(variables.id), null);
       await options?.onMutate?.(variables, context);
       return { sending };
     },

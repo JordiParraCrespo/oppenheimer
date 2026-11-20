@@ -637,6 +637,14 @@ export class BotsRepository {
     });
   }
 
+  /** A guess at the person's next message, for the composer to offer; null when there is none. */
+  findSuggestion(id: string): Promise<string | null> {
+    return callApi(BotsErrors.FETCH_SUGGESTION_FAILED, async (api) => {
+      const { suggestion } = await api.body(heyApiSdk.findBotSuggestion({ path: { id } }));
+      return suggestion;
+    });
+  }
+
   /** Stops the bot's loop: no more runs, and one still waiting is cancelled. */
   clearLoop(id: string): Promise<void> {
     return callApi(BotsErrors.CLEAR_LOOP_FAILED, async (api) => {

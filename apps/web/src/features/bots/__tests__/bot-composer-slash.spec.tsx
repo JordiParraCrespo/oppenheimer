@@ -59,6 +59,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
   useBotGoal: () => ({ data: null }),
   useBotLoop: () => ({ data: null }),
+  useBotSuggestion: () => null,
   useBotWaitingMessages: () => [],
   useBotSentTexts: () => [],
   useModelProviders: () => ({ data: true }),

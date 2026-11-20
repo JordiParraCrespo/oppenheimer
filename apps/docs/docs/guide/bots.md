@@ -15,6 +15,7 @@ The Employees sidebar holds your bots in groups (New group, Move to group) in an
 ## The chat
 
 - Each message starts a **turn**; one runs at a time per bot, and closing the tab does not stop it. **Stop** cancels it. While it runs, **Enter steers** it and **Alt+Enter queues** your message for after.
+- Once the bot has answered and the box is empty, it shows a guess at what you will write next, greyed out (as Claude Code does). **Tab** writes it into the box, to send as it is or edit first; type anything else to ignore it. The bot's own model makes the guess, so it counts in `/usage` as a suggested reply.
 - The chat shows the bot's text, an activity line per run of tool calls, cards for what needs you, and a line for every change it makes to itself.
 - You can send images (PNG, JPEG, GIF, WebP; up to 5 MB, four a message), except to GLM models. No other file types.
 - The composer picks the provider, model and effort, and its meter shows context use and, on a ChatGPT sign-in, the plan's limits.

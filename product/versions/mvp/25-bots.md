@@ -2352,4 +2352,12 @@ The decisions it produced:
   for what the person asked to hear, what needs them, or what is new and
   worth interrupting them for. Evals: `bot-first-chat` 2/18 before (new
   cases), 17/18 after; `bot-memory` 99/100; `bot-blocked-run` 30/30.
-
+- 2026-11-20: **the composer suggests your next message** (from Claude
+  Code's prompt suggestions). After a turn ends, with the box empty, the
+  bot's own model, with no tools, guesses the person's next message from
+  the end of the chat (`GET /bots/:id/suggestion`, the prompt
+  `jobs/suggestion.md`); the composer shows it as the placeholder and Tab
+  writes it into the box, never sends it. One guess per message of the
+  bot's, kept a day in the cache; the model answers NONE when there is no
+  clear next step, and a failure shows nothing. It is spend on the owner's
+  key like the summary, recorded as the `suggestion` purpose in `/usage`.
