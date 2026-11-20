@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { channelConversationFor, channelReplyOf } from '../domain/bot-channel-turn.policy';
+import {
+  approvalNoticeOf,
+  channelConversationFor,
+  channelReplyOf,
+} from '../domain/bot-channel-turn.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import { whatsappContactTurn, whatsappTurn } from '../domain/bot-whatsapp-turn.policy';
 
@@ -24,14 +28,18 @@ describe('channelReplyOf', () => {
 
   // What breaks this: a turn that stopped on a card leaves the chat with "Done"
   // and no way to the card, which is answered only in the console.
-  it('says the turn waits on an approval, with where to give it', () => {
-    const at = 'https://console.example/bots/b1';
-    expect(channelReplyOf({ status: 'completed', error: null }, ['I will merge it.'], at)).toBe(
-      `I will merge it.\n\nWaiting for your approval in Oppenheimer: ${at}`,
+  it('says the turn waits on its approval card, with where to give it', () => {
+    const turn = { id: 't1', botId: 'b1' };
+    const notice = approvalNoticeOf(turn, { turnId: 't1' }, 'https://console.example/');
+    expect(notice).toBe(
+      'Waiting for your approval in Oppenheimer: https://console.example/bots/b1',
     );
-    expect(channelReplyOf({ status: 'completed', error: null }, [], at)).toBe(
-      `Waiting for your approval in Oppenheimer: ${at}`,
+    expect(approvalNoticeOf(turn, { turnId: 'another' }, 'https://console.example')).toBeNull();
+    expect(approvalNoticeOf(turn, null, 'https://console.example')).toBeNull();
+    expect(channelReplyOf({ status: 'completed', error: null }, ['I will merge it.'], notice)).toBe(
+      `I will merge it.\n\n${notice}`,
     );
+    expect(channelReplyOf({ status: 'completed', error: null }, [], notice)).toBe(notice);
   });
 });
 

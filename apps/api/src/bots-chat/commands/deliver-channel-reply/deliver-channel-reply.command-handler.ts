@@ -12,11 +12,13 @@ import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repo
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import {
+  approvalNoticeOf,
   channelReplyOf,
   contactReplyOf,
   sendsAsItGoes,
   unsentTexts,
 } from '../../domain/bot-channel-turn.policy';
+import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { DeliverChannelReplyCommand } from './deliver-channel-reply.command';
 
 /**
@@ -50,19 +52,13 @@ export class DeliverChannelReplyCommandHandler
     // a contact's turn has nothing to approve, so only the owner's points at a card.
     const text = turn.contact
       ? contactReplyOf(turn, texts)
-      : channelReplyOf(turn, texts, await this.waitingAt(turn));
+      : channelReplyOf(turn, texts, await this.approvalNotice(turn));
     if (text) await this.channel.send(turn, text, metadata.correlationId);
   }
 
-  /** The bot's chat in the console, when the card waiting there is this turn's. */
-  private async waitingAt(turn: {
-    id: string;
-    organizationId: string;
-    botId: string;
-  }): Promise<string | null> {
-    const pending = await this.approvals.findPending(turn.organizationId, turn.botId);
-    if (pending.isNone() || pending.unwrap().turnId !== turn.id) return null;
+  private async approvalNotice(turn: BotTurnEntity): Promise<string | null> {
+    const card = await this.approvals.findPending(turn.organizationId, turn.botId);
     const origin = this.config.get<string>('app.frontendUrl') ?? 'http://localhost:3000';
-    return `${origin.replace(/\/+$/, '')}/bots/${turn.botId}`;
+    return approvalNoticeOf(turn, card.isSome() ? card.unwrap() : null, origin);
   }
 }

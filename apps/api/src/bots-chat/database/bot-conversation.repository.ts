@@ -10,15 +10,28 @@ import type {
   BotConversationRepositoryPort,
 } from './bot-conversation.repository.port';
 
+type ChatOf<K extends BotChannelChat['kind']> = Extract<BotChannelChat, { kind: K }>;
+
 /**
- * Each channel's account column, and the partial unique on its chats
- * (`UQ_bot_conversation_<kind>_chat`), whose predicate `ON CONFLICT` names.
+ * Each channel's account, in one place: its column, which names the partial
+ * unique on its chats (`UQ_bot_conversation_<kind>_chat`) that `ON CONFLICT`
+ * names, and the chat's id for it. A channel is a row here.
  */
-const ACCOUNT_COLUMN = {
-  telegram: '"telegramAccountId"',
-  whatsapp: '"whatsappAccountId"',
-  slack: '"slackAccountId"',
-} as const satisfies Record<BotChannelChat['kind'], string>;
+const CHANNEL_ACCOUNT: {
+  [K in BotChannelChat['kind']]: { column: string; of: (chat: ChatOf<K>) => string };
+} = {
+  telegram: { column: '"telegramAccountId"', of: (chat) => chat.telegramAccountId },
+  whatsapp: { column: '"whatsappAccountId"', of: (chat) => chat.whatsappAccountId },
+  slack: { column: '"slackAccountId"', of: (chat) => chat.slackAccountId },
+};
+
+/** The chat's channel account: its column and its id. */
+function accountOf<K extends BotChannelChat['kind']>(
+  chat: ChatOf<K>,
+): { column: string; id: string } {
+  const account = CHANNEL_ACCOUNT[chat.kind as K];
+  return { column: account.column, id: account.of(chat) };
+}
 
 @Injectable()
 export class BotConversationRepository implements BotConversationRepositoryPort {
@@ -28,8 +41,8 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
   ) {}
 
   async conversationAt(chat: BotChannelChat, startsAt: string, messageId: string): Promise<string> {
-    const account = ACCOUNT_COLUMN[chat.kind];
-    const params = [chat.organizationId, accountIdOf(chat), chat.chatId];
+    const { column: account, id: accountId } = accountOf(chat);
+    const params = [chat.organizationId, accountId, chat.chatId];
     // UQ_bot_conversation_<kind>_chat's leading columns: a chat's starts are a handful.
     const [latest]: ChannelConversationStart[] = await this.dataSource.query(
       `SELECT id, "botId", "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
@@ -108,16 +121,5 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
         WHERE "organizationId" = $1 AND id = $2`,
       params,
     );
-  }
-}
-
-function accountIdOf(chat: BotChannelChat): string {
-  switch (chat.kind) {
-    case 'telegram':
-      return chat.telegramAccountId;
-    case 'whatsapp':
-      return chat.whatsappAccountId;
-    case 'slack':
-      return chat.slackAccountId;
   }
 }

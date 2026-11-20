@@ -147,26 +147,42 @@ export function contactReplyOf(turn: { status: string }, texts: readonly string[
   return [...texts].reverse().find((text) => text.trim()) ?? null;
 }
 
+/** What a channel's chat is told when its turn ended on a Needs input card, before the card's address. */
+export const APPROVAL_WAITING_LINE = 'Waiting for your approval in Oppenheimer:';
+
+/**
+ * The line a channel turn owes when it ended on its own Needs input card: the
+ * card is answered in the console, never from the chat, so the line points at
+ * the bot there (`consoleOrigin`). Null when the bot's waiting card, if any,
+ * is another turn's.
+ */
+export function approvalNoticeOf(
+  turn: { id: string; botId: string },
+  waitingCard: { turnId: string } | null,
+  consoleOrigin: string,
+): string | null {
+  if (waitingCard?.turnId !== turn.id) return null;
+  return `${APPROVAL_WAITING_LINE} ${consoleOrigin.replace(/\/+$/, '')}/bots/${turn.botId}`;
+}
+
 /**
  * What a channel's turn (Telegram, WhatsApp, Slack) sends back when it ends:
  * its last text, or, with none, what happened to it, so the person on their
- * phone is never left without an answer. A turn that ended on a Needs input
- * card says so with the card's address (`waitingAt`): the card is answered in
- * the console, never from the chat.
+ * phone is never left without an answer; then the `notice` it owes, if any
+ * (`approvalNoticeOf`).
  */
 export function channelReplyOf(
   turn: { status: string; error: string | null },
   texts: readonly string[],
-  waitingAt: string | null = null,
+  notice: string | null = null,
 ): string {
   const last = [...texts].reverse().find((text) => text.trim()) ?? null;
   if (turn.status === 'failed') {
     return `I could not finish that: ${turn.error ?? 'the turn failed.'}`;
   }
-  const waiting = waitingAt ? `Waiting for your approval in Oppenheimer: ${waitingAt}` : null;
-  if (last && waiting) return `${last}\n\n${waiting}`;
+  if (last && notice) return `${last}\n\n${notice}`;
   if (last) return last;
-  if (waiting) return waiting;
+  if (notice) return notice;
   if (turn.status === 'cancelled') return 'Stopped.';
   return 'Done, with nothing to say here. The console has the details.';
 }
