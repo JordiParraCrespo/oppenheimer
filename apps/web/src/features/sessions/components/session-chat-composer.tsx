@@ -70,6 +70,11 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * and Claude Code's own commands that match open over the box. Up and Down
  * move, Tab or Enter writes `/<name> ` for its input to follow, Escape
  * closes it for that draft.
+ *
+ * **The suggestion**: the next message the agent predicts, off its own input
+ * box (`suggestion`), stands in the empty field as its placeholder, and Tab
+ * takes it into the draft to send or edit, the way Tab takes it in the
+ * agent's terminal.
  */
 export function SessionChatComposer({
   agent,
@@ -87,6 +92,7 @@ export function SessionChatComposer({
   onUnqueue,
   onCompact,
   commands,
+  suggestion,
 }: {
   /** Whose conversation it is, named on the line under the field; none for a guest. */
   agent: SessionAgent | null;
@@ -112,6 +118,8 @@ export function SessionChatComposer({
   onCompact: () => void;
   /** The project's slash commands for the `/` menu; null offers no menu. */
   commands: readonly ChatCommand[] | null;
+  /** The next message the agent suggests; null when it suggests none. */
+  suggestion: string | null;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -167,6 +175,8 @@ export function SessionChatComposer({
       </ComposerStack>
     ) : undefined;
   const first = queued[0];
+  // Offered only over an empty field, while the agent waits for a message.
+  const offered = suggestion && draft === '' && !busy ? suggestion : null;
   const meter =
     context || limits.fiveHour || limits.sevenDay ? (
       <ChatUsage
@@ -221,7 +231,14 @@ export function SessionChatComposer({
           />
         ) : null}
         <ChatComposer
-          onKeyDownCapture={slash.onKeyDownCapture}
+          onKeyDownCapture={(event) => {
+            slash.onKeyDownCapture(event);
+            if (event.defaultPrevented || !offered) return;
+            const plain = !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
+            if (event.key !== 'Tab' || !plain) return;
+            event.preventDefault();
+            setDraft(offered);
+          }}
           value={draft}
           onValueChange={setDraft}
           onSubmit={(text) => void submit(text)}
@@ -232,9 +249,11 @@ export function SessionChatComposer({
           sendBlockedReason={sending ? t('sessions.chat.composer.attaching') : undefined}
           allowEmpty={files.length > 0}
           placeholder={
-            agent
-              ? t('sessions.chat.composer.placeholder', { agent: sessionAgentLabel(agent) })
-              : t('sessions.chat.composer.placeholderAnyAgent')
+            offered
+              ? t('sessions.chat.composer.suggestion', { suggestion: offered })
+              : agent
+                ? t('sessions.chat.composer.placeholder', { agent: sessionAgentLabel(agent) })
+                : t('sessions.chat.composer.placeholderAnyAgent')
           }
           above={above}
           layout="inline"

@@ -1345,3 +1345,35 @@ describe('the / menu', () => {
     expect(screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeTruthy();
   });
 });
+
+describe("the agent's suggestion", () => {
+  // What breaks this: the suggestion Claude Code shows in its own box never
+  // reaching the chat, or Tab doing nothing with it there.
+  it('stands in the empty field, and Tab takes it into the draft without sending it', () => {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    act(() => chat.apply({ reset: true, history: 'end', entries: [] }));
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    act(() => chat.setSuggestion('save it to a file'));
+
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.suggestion{"suggestion":"save it to a file"}',
+    ) as HTMLTextAreaElement;
+    fireEvent.keyDown(field, { key: 'Tab' });
+    expect(field.value).toBe('save it to a file');
+    expect(typed).toEqual([]);
+  });
+
+  // What breaks this: Tab overwriting what the person was writing.
+  it('leaves Tab alone once the person has written something', () => {
+    const chat = new Chat();
+    act(() => chat.apply({ reset: true, history: 'end', entries: [] }));
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    act(() => chat.setSuggestion('save it to a file'));
+    const field = screen.getByRole('textbox') as HTMLTextAreaElement;
+    fireEvent.change(field, { target: { value: 'something else' } });
+    fireEvent.keyDown(field, { key: 'Tab' });
+    expect(field.value).toBe('something else');
+  });
+});
