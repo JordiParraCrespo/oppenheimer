@@ -1824,6 +1824,22 @@ earlier note:
   device, only the bot's replies counting), the amber dot took in questions
   and failed turns, the green face dot went, and Mark as unread came in as a
   device mark like a session's.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §3 (2026-11-09) gave a
+  contact's turn the customer turn's narrow tools: answer, the bot's
+  documents, memory for the conversation, `hand_off`. On 2026-11-20 the
+  owner asked for WhatsApp groups and other people to be answered next; the
+  first version gives a contact's turn no tools at all, and counts its limit
+  of 20 turns an hour per chat rather than per person. The narrow tools
+  come after.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-18) had a
+  chat allowed only by asking a bot in the owner's own chat, Settings
+  listing the allowed ones, at most 50 per number. On 2026-11-20 the owner,
+  with 25 groups and 200 contacts in mind, asked for settings that scale
+  and for a bot to show its gateways: Settings lists every chat a number
+  has seen, with search, filters and changes to many at once, and choosing
+  a bot there allows the chat; a bot's settings show the chats it answers
+  and add more. Only listed chats are answered (no catch-all), and a
+  number allows up to 1,000.
 - `25-bots.md` §4.4 made every GitHub write of a bot's in the owner's own
   name (2026-10-20). On 2026-11-20 a bot became askable on GitHub (§3.3,
   issue #952), and its answer there is posted by Oppenheimer's App instead:

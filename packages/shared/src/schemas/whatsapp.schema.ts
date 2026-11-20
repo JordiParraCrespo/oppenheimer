@@ -119,8 +119,42 @@ export const confirmWhatsappOwnerSchema = z.object({
 
 export type ConfirmWhatsappOwnerDto = z.infer<typeof confirmWhatsappOwnerSchema>;
 
-/** Chats one number allows besides its owner's: groups and other people. */
-export const WHATSAPP_CHAT_GRANTS_MAX = 50;
+/**
+ * Chats one number allows besides its owner's: groups and other people. Sized
+ * for an owner with a few dozen groups and a few hundred contacts.
+ */
+export const WHATSAPP_CHAT_GRANTS_MAX = 1_000;
+
+/** The most chats a number's chats list holds: the ones it saw most recently. */
+export const WHATSAPP_CHAT_ROUTES_MAX = 1_000;
+
+/** The most chats one change of who answers names. */
+export const WHATSAPP_ROUTE_CHATS_MAX = 200;
+
+/**
+ * Who answers a chat a number has seen: no one (`none`: the chat is not
+ * allowed, its messages are only kept), the number's default bot
+ * (`default`), or one bot of the owner's (`bot`).
+ */
+export const WHATSAPP_CHAT_ROUTES = ['none', 'default', 'bot'] as const;
+export type WhatsappChatRoute = (typeof WHATSAPP_CHAT_ROUTES)[number];
+
+/**
+ * `POST /whatsapp/accounts/:id/routes`: who answers a set of the number's
+ * chats, at once. `botId` goes with `bot` and only with it.
+ */
+export const routeWhatsappChatsSchema = z
+  .object({
+    chatIds: z.array(z.string().min(3).max(128)).min(1).max(WHATSAPP_ROUTE_CHATS_MAX),
+    route: z.enum(WHATSAPP_CHAT_ROUTES),
+    botId: z.string().uuid().optional(),
+  })
+  .refine((body) => (body.route === 'bot') === (body.botId !== undefined), {
+    message: 'A bot is named with the bot route, and only with it',
+    path: ['botId'],
+  });
+
+export type RouteWhatsappChatsDto = z.infer<typeof routeWhatsappChatsSchema>;
 
 /** What a chat is on WhatsApp: a person's direct chat, or a group. */
 export const WHATSAPP_CHAT_KINDS = ['direct', 'group'] as const;

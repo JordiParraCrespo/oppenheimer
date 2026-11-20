@@ -62,6 +62,11 @@ export const LEDGER = [
     why: 'sent to the person on Telegram or WhatsApp, not to a model',
   },
   {
+    file: 'bots-chat/domain/bot-channel-turn.policy.ts',
+    starts: 'Sorry, I can’t answer that right now.',
+    why: 'sent to a contact on WhatsApp when their turn failed, not to a model',
+  },
+  {
     file: 'bots-chat/domain/bot-approval.entity.ts',
     starts: 'expired: the owner wrote',
     why: "the reason on an approval's domain event, for whoever reads the outbox",

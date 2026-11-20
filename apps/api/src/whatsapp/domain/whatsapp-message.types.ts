@@ -41,6 +41,13 @@ export type WhatsappMessageDraft = Omit<WhatsappMessage, 'id'> & {
   switchesToBotId: string | null;
   /** A bot's answer to the owner's own message: not counted as one of its sends. */
   isReply: boolean;
+  /**
+   * Whom it @-mentions and who wrote the message it replies to, by phone
+   * number where the runner knows it: what tells whether a group's message
+   * speaks to the number. Read at intake only, never stored.
+   */
+  mentions: readonly string[];
+  quotedSenderId: string | null;
 };
 
 /**

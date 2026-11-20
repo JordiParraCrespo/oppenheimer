@@ -172,3 +172,33 @@ func TestReceivedKeepsAVoiceNoteForFetching(t *testing.T) {
 		t.Fatalf("a text carries a voice: %+v", text.Voice)
 	}
 }
+
+// A group message reports whom it mentions and whose message it quotes, by
+// phone number however WhatsApp addressed them: the number's own `@lid` id
+// included, which the device knows without its LID map. Lost, a mention of
+// the number in a LID-addressed group would never wake its bot.
+func TestReceivedReportsMentionsAndTheQuotedSenderByNumber(t *testing.T) {
+	self := types.NewJID("34600111222", types.DefaultUserServer)
+	selfLID := types.NewJID("55555", types.HiddenUserServer)
+	rd := reader{lids: fixedLIDs{"98765": marta}, self: selfIDs{phone: self, lid: selfLID}}
+	m := evt(group, marta, &waE2E.Message{ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+		Text: proto.String("@55555 @98765 what do you think?"),
+		ContextInfo: &waE2E.ContextInfo{
+			StanzaID:     proto.String("3EB0A0"),
+			Participant:  proto.String("55555@lid"),
+			MentionedJID: []string{"55555@lid", "98765@lid", "not a jid@"},
+		},
+	}})
+	got := rd.received(context.Background(), m)
+	if got.QuotedID != "3EB0A0" || got.QuotedSenderID != "34600111222@s.whatsapp.net" {
+		t.Fatalf("quote: %q by %q", got.QuotedID, got.QuotedSenderID)
+	}
+	if len(got.Mentions) != 2 || got.Mentions[0] != "34600111222@s.whatsapp.net" || got.Mentions[1] != "34600333444@s.whatsapp.net" {
+		t.Fatalf("mentions: %v", got.Mentions)
+	}
+
+	plain := rd.received(context.Background(), evt(group, marta, &waE2E.Message{Conversation: proto.String("hola")}))
+	if plain.QuotedSenderID != "" || plain.Mentions != nil {
+		t.Fatalf("a plain message reported %q, %v", plain.QuotedSenderID, plain.Mentions)
+	}
+}
