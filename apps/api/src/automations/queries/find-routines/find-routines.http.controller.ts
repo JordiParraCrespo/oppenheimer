@@ -41,7 +41,11 @@ export class FindRoutinesHttpController {
       new FindRoutinesQuery({ scope }),
     );
     return listing.automations.map((routine) =>
-      this.mapper.toRoutineResponse(routine, listing.digests.get(routine.id)),
+      this.mapper.toRoutineResponse(
+        routine,
+        listing.digests.get(routine.id),
+        listing.webhooks?.get(routine.id) ?? null,
+      ),
     );
   }
 }

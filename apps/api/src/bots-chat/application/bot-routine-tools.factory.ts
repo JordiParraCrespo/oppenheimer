@@ -68,6 +68,10 @@ const gmailTrigger = z.object({
     .describe(promptText('tools/routine.gmail-trigger-query')),
 });
 
+const webhookTrigger = z
+  .object({ source: z.literal('webhook') })
+  .describe(promptText('tools/routine.webhook-trigger'));
+
 const routineInput = z.object({
   action: z.enum(ROUTINE_ACTIONS).describe(promptText('tools/routine.routine-action')),
   routine_id: z.uuid().optional().describe(promptText('tools/routine.routine-routine-id')),
@@ -80,7 +84,7 @@ const routineInput = z.object({
     .optional()
     .describe(promptText('tools/routine.routine-prompt')),
   triggers: z
-    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger]))
+    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger, webhookTrigger]))
     .min(1)
     .max(TRIGGERS_MAX)
     .optional()
@@ -291,14 +295,25 @@ export class BotRoutineToolsFactory implements BotToolArea {
   }
 
   private async listing(context: BotToolCallContext): Promise<string> {
-    const { automations, digests } = await this.routines(context);
+    const { automations, digests, webhooks } = await this.routines(context);
     return formatToolList(
       'Your routines',
       automations.map((routine) => {
         const lastRun = digests.get(routine.id)?.lastRuns[0];
+        const hasUrl = webhooks?.has(routine.id) ?? false;
         const parts = [
           routine.isPaused ? 'paused' : 'on',
-          `when: ${routine.triggers.map((trigger) => describeTrigger(trigger, context)).join(' or ')}`,
+          `when: ${routine.triggers
+            .map((trigger) =>
+              trigger.source === 'webhook'
+                ? promptText(
+                    hasUrl
+                      ? 'tools/routine.describe-webhook-issued'
+                      : 'tools/routine.describe-webhook-not-issued',
+                  )
+                : describeTrigger(trigger, context),
+            )
+            .join(' or ')}`,
           lastRun
             ? `last run ${lastRun.status} ${formatToolTime(lastRun.createdAt, context.timeZone)}`
             : 'no runs yet',
@@ -323,6 +338,7 @@ function describeCall(
   if (trigger.source === 'github') {
     return `GitHub ${trigger.event}${trigger.branch ? ` on ${trigger.branch}` : ''}`;
   }
+  if (trigger.source === 'webhook') return promptText('tools/automation.describe-trigger-webhook');
   const at = `${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`;
   return trigger.frequency === 'hourly'
     ? `hourly at minute ${trigger.minute}`

@@ -5,8 +5,9 @@ import { AppError } from '@oppenheimer/backend-core';
 import { type AggregateID, ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { BotRoutineResolver } from '../../application/bot-routine.resolver';
-import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
+import { AUTOMATION_REPOSITORY, AUTOMATION_WEBHOOK_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
+import type { AutomationWebhookRepositoryPort } from '../../database/automation-webhook.repository.port';
 import { AutomationEntity } from '../../domain/automation.entity';
 import { AutomationErrors } from '../../domain/automations.errors';
 import { SaveBotRoutineCommand } from './save-bot-routine.command';
@@ -17,7 +18,8 @@ import { SaveBotRoutineCommand } from './save-bot-routine.command';
  * it; a routine of another bot, or a session automation, is not found. A
  * change to what it runs or when takes the scopes of the credential that made
  * it, so a routine never runs wider than whoever last edited it; a pause or
- * a resume leaves them as they were.
+ * a resume leaves them as they were. Triggers saved without a webhook take
+ * its URL with them, so a webhook added back later gets a new one.
  */
 @CommandHandler(SaveBotRoutineCommand)
 export class SaveBotRoutineCommandHandler
@@ -28,6 +30,8 @@ export class SaveBotRoutineCommandHandler
     private readonly automations: AutomationRepositoryPort,
     private readonly plan: AutomationPlanFactory,
     private readonly routines: BotRoutineResolver,
+    @Inject(AUTOMATION_WEBHOOK_REPOSITORY)
+    private readonly webhooks: AutomationWebhookRepositoryPort,
   ) {}
 
   async execute(command: SaveBotRoutineCommand): Promise<AggregateID> {
@@ -74,6 +78,9 @@ export class SaveBotRoutineCommandHandler
     if (changes.enabled === true) routine.resume(now);
     const outcome = await this.automations.save(routine, version);
     if (outcome === 'conflict') throw new AppError(AutomationErrors.VERSION_CONFLICT);
+    if (triggers && !triggers.some((trigger) => trigger.source === 'webhook')) {
+      await this.webhooks.revoke(routine.organizationId, routine.id);
+    }
     return routine.id;
   }
 }

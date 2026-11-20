@@ -20,6 +20,7 @@ import type { AutomationOrmEntity } from './database/automation.orm-entity';
 import type { AutomationRevisionOrmEntity } from './database/automation-revision.orm-entity';
 import type { AutomationSettingsOrmEntity } from './database/automation-settings.orm-entity';
 import type { AutomationTriggerOrmEntity } from './database/automation-trigger.orm-entity';
+import type { RoutineWebhookView } from './database/automation-webhook.repository.port';
 import { AutomationEntity } from './domain/automation.entity';
 import type {
   AutomationRepository,
@@ -37,6 +38,7 @@ import {
   AutomationTriggerResponseDto,
 } from './dtos/automation.response.dto';
 import { BotRoutineResponseDto } from './dtos/bot-routine.response.dto';
+import { RoutineWebhookResponseDto } from './dtos/routine-webhook.response.dto';
 
 type Json = Record<string, unknown>;
 
@@ -183,6 +185,17 @@ export class AutomationMapper {
         nextFireAt: record.nextFireAt ? new Date(record.nextFireAt) : null,
       };
     }
+    if (record.source === 'webhook') {
+      return {
+        id: record.id,
+        position: record.position,
+        source: 'webhook',
+        eventType: 'webhook_received',
+        config: {},
+        timezone: null,
+        nextFireAt: null,
+      };
+    }
     const filter = asRecord(config.filter);
     const stored: TriggerFilter =
       filter.op === 'equals' && typeof filter.value === 'string'
@@ -297,7 +310,8 @@ export class AutomationMapper {
 
   /** The subjects a trigger watches, as `automation_trigger_subject` rows. */
   subjectsOf(trigger: AutomationTriggerProps): { subjectKind: string; subjectRef: string }[] {
-    if (trigger.source === 'schedule') return [];
+    // A webhook is found by its routine's token, never by a subject.
+    if (trigger.source === 'schedule' || trigger.source === 'webhook') return [];
     if (trigger.source === 'gmail') {
       return [
         { subjectKind: TRIGGER_SUBJECT_KINDS.gmail, subjectRef: trigger.config.connectionId },
@@ -342,6 +356,7 @@ export class AutomationMapper {
   toRoutineResponse(
     entity: AutomationEntity,
     digest: AutomationRunDigest | undefined,
+    webhook: RoutineWebhookView | null,
   ): BotRoutineResponseDto {
     const dto = new BotRoutineResponseDto();
     dto.id = entity.id;
@@ -354,8 +369,18 @@ export class AutomationMapper {
     dto.triggers = entity.triggers.map((trigger) => this.triggerToResponse(trigger));
     const [last] = digest?.lastRuns ?? [];
     dto.lastRun = last ? this.runs.toSummary(last) : null;
+    dto.webhook = webhook ? this.webhookToResponse(webhook) : null;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
+    return dto;
+  }
+
+  webhookToResponse(webhook: RoutineWebhookView): RoutineWebhookResponseDto {
+    const dto = new RoutineWebhookResponseDto();
+    dto.tokenPrefix = webhook.tokenPrefix;
+    dto.signed = webhook.signed;
+    dto.issuedAt = webhook.issuedAt;
+    dto.lastReceivedAt = webhook.lastReceivedAt;
     return dto;
   }
 
@@ -395,6 +420,8 @@ export class AutomationMapper {
         ...(days ? { days: [...days] } : {}),
         timezone: trigger.timezone,
       };
+    } else if (trigger.source === 'webhook') {
+      // Nothing to show: the URL is the routine's (`BotRoutineResponseDto.webhook`).
     } else if (trigger.source === 'gmail') {
       dto.connectionId = trigger.config.connectionId;
       dto.query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;

@@ -1824,3 +1824,9 @@ earlier note:
   device, only the bot's replies counting), the amber dot took in questions
   and failed turns, the green face dot went, and Mark as unread came in as a
   device mark like a session's.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).

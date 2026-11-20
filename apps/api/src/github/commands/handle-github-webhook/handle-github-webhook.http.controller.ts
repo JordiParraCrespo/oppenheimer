@@ -4,6 +4,7 @@ import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
+import { rawBodyOf } from '../../../config/raw-body-parser';
 import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
 
 /**
@@ -43,16 +44,4 @@ export class HandleGithubWebhookHttpController {
     );
     return { received: true };
   }
-}
-
-/**
- * The bytes `mountGithubWebhookBodyParser` read. No body at all (a bare POST)
- * is an empty payload, which the signature check refuses; anything else is a
- * pipeline that parsed this route as something other than raw bytes, and a
- * digest over that would never match what GitHub signed.
- */
-function rawBodyOf(request: Request): Buffer {
-  if (Buffer.isBuffer(request.body)) return request.body;
-  if (request.body === undefined) return Buffer.alloc(0);
-  throw new Error('The GitHub webhook body was parsed before the raw parser read it');
 }

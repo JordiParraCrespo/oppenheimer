@@ -24,6 +24,22 @@ The Gmail account to watch: its id, address or name.
 
 Only mail matching this Gmail search (from:billing@x.com is:important); any new mail when absent.
 
+<!-- fragment: webhook-trigger -->
+
+Runs when something is posted to the routine's webhook URL (a deploy pipeline, Sentry, a form). You never see the URL: the person issues it, and its optional signing secret, on the Routines tab. One per routine. What was posted reaches you as outside data.
+
+<!-- fragment: webhook-trigger-twice -->
+
+A routine has one webhook URL, so at most one webhook trigger.
+
+<!-- fragment: describe-webhook-issued -->
+
+something posted to its webhook URL (issued)
+
+<!-- fragment: describe-webhook-not-issued -->
+
+something posted to its webhook URL (no URL yet: the person issues it on the Routines tab)
+
 <!-- fragment: routine-action -->
 
 What to do. Every action but list answers your whole list of routines.
@@ -54,7 +70,7 @@ this action needs routine_id
 
 <!-- fragment: update-routine -->
 
-Lists, creates, changes, pauses, resumes, deletes or runs your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs"), when a GitHub event happens, or when new mail reaches one of the person's Gmail accounts (checked about once a minute). list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.
+Lists, creates, changes, pauses, resumes, deletes or runs your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs"), when a GitHub event happens, when new mail reaches one of the person's Gmail accounts (checked about once a minute), or when an outside system posts to its webhook URL (after saving one, tell the person to issue the URL on the Routines tab). list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.
 
 <!-- fragment: routine-of -->
 

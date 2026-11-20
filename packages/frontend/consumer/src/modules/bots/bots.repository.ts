@@ -19,6 +19,7 @@ import {
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
   type PersonMemoryResponseDto,
+  type RoutineWebhookResponseDto,
   type WorkspaceBotApprovalResponseDto,
   type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
@@ -65,10 +66,12 @@ import {
   BotGroupEntity,
   BotMemoryFactEntity,
   BotRoutineEntity,
+  type BotRoutineWebhook,
   BotSkillEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
   type CreateBotSkillInput,
+  type IssuedBotRoutineWebhook,
   ModelProviderEntity,
   PersonMemoryEntity,
   type SaveBotDocumentInput,
@@ -182,7 +185,17 @@ function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
     dto.triggers.flatMap((trigger) => triggerOf(trigger) ?? []),
     dto.lastRun ? { status: dto.lastRun.status, createdAt: new Date(dto.lastRun.createdAt) } : null,
     new Date(dto.updatedAt),
+    dto.webhook ? toRoutineWebhook(dto.webhook) : null,
   );
+}
+
+function toRoutineWebhook(dto: RoutineWebhookResponseDto): BotRoutineWebhook {
+  return {
+    tokenPrefix: dto.tokenPrefix,
+    signed: dto.signed,
+    issuedAt: new Date(dto.issuedAt),
+    lastReceivedAt: dto.lastReceivedAt ? new Date(dto.lastReceivedAt) : null,
+  };
 }
 
 function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
@@ -914,6 +927,30 @@ export class BotsRepository {
           headers: { 'Idempotency-Key': idempotencyKey },
         }),
       );
+    });
+  }
+
+  /** A new URL for a routine's webhook; the old one stops working. Its URL and secret are only in this answer. */
+  issueRoutineWebhook(
+    id: string,
+    routineId: string,
+    signed: boolean,
+  ): Promise<IssuedBotRoutineWebhook> {
+    return callApi(BotsErrors.ISSUE_ROUTINE_WEBHOOK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.issueRoutineWebhook({ path: { id, routineId }, body: { signed } }),
+      );
+      return {
+        ...toRoutineWebhook(data),
+        url: data.url,
+        signingSecret: data.signingSecret ?? null,
+      };
+    });
+  }
+
+  revokeRoutineWebhook(id: string, routineId: string): Promise<void> {
+    return callApi(BotsErrors.REVOKE_ROUTINE_WEBHOOK_FAILED, async (api) => {
+      await api.result(heyApiSdk.revokeRoutineWebhook({ path: { id, routineId } }));
     });
   }
 

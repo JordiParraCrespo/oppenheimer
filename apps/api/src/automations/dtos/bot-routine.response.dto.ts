@@ -8,6 +8,7 @@ import {
   AutomationRunSummaryResponseDto,
   AutomationTriggerResponseDto,
 } from './automation.response.dto';
+import { RoutineWebhookResponseDto } from './routine-webhook.response.dto';
 
 /**
  * One of a bot's routines as its Routines tab reads it: what it is told, when
@@ -52,6 +53,14 @@ export class BotRoutineResponseDto {
     description: 'Its latest run over the listed window; null when it has none.',
   })
   lastRun!: AutomationRunSummaryResponseDto | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: RoutineWebhookResponseDto,
+    description:
+      'Its webhook URL, once one is issued; null without one. Only a routine with a webhook trigger can have one.',
+  })
+  webhook!: RoutineWebhookResponseDto | null;
 
   @ApiProperty()
   createdAt!: Date;

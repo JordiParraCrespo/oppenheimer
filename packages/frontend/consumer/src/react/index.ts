@@ -72,9 +72,12 @@ export {
 } from './bot-questions.queries';
 export {
   type BotRoutineVariables,
+  type IssueBotRoutineWebhookVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   useDeleteBotRoutine,
+  useIssueBotRoutineWebhook,
+  useRevokeBotRoutineWebhook,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
