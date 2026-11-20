@@ -238,12 +238,42 @@ const SHIFT_MAX = 3 * HOUR;
 const CRON_SEARCH_DAYS = 146_097;
 
 /**
- * A cron expression's first instant after `afterMs`, walking local calendar
- * days. Each slot goes through `zonedWallTimeToInstant`, so a skipped wall
+ * The earliest instant after `afterMs` among one calendar day's slots, or
+ * null. Each slot goes through `zonedWallTimeToInstant`, so a skipped wall
  * time fires as though the clock had not jumped and a repeated one fires once.
  * A skipped slot can land after a later slot of the same day (02:30 lands at
- * 03:30, after 03:00), so the earliest instant is taken, not the first slot,
- * and the day after the one that found it is read too.
+ * 03:30, after 03:00), so every slot within `SHIFT_MAX` of the first one that
+ * follows `afterMs` is weighed, and the earliest instant wins. Slots more than
+ * `SHIFT_MAX` before `afterMs`, in wall time, cannot follow it and are skipped.
+ */
+function earliestSlotOn(
+  spec: CronSpec,
+  day: WallTime,
+  timezone: string,
+  afterMs: number,
+  floor: number,
+): number | null {
+  let best: number | null = null;
+  let firstLocal: number | null = null;
+  for (const hour of spec.hours) {
+    for (const minute of spec.minutes) {
+      const wall = { ...day, hour, minute };
+      const local = wallAsUtc(wall);
+      if (local < floor) continue;
+      if (firstLocal !== null && local > firstLocal + SHIFT_MAX) return best;
+      const instant = zonedWallTimeToInstant(wall, timezone);
+      if (instant <= afterMs) continue;
+      firstLocal ??= local;
+      if (best === null || instant < best) best = instant;
+    }
+  }
+  return best;
+}
+
+/**
+ * A cron expression's first instant after `afterMs`, walking local calendar
+ * days that match. The day after the first one with a slot is read too, since
+ * a shift near midnight could carry one of its slots across the day's end.
  */
 function nextCronInstant(spec: CronSpec, timezone: string, afterMs: number): number | null {
   const start = wallTimeAt(afterMs, timezone);
@@ -253,19 +283,10 @@ function nextCronInstant(spec: CronSpec, timezone: string, afterMs: number): num
   for (let offset = 0; offset <= lastDay; offset += 1) {
     const day = addDays(start, offset);
     if (!cronDayMatches(spec, day.year, day.month, day.day)) continue;
-    let found: number | null = null;
-    for (const hour of spec.hours) {
-      for (const minute of spec.minutes) {
-        const wall = { ...day, hour, minute };
-        const local = wallAsUtc(wall);
-        if (local < floor) continue;
-        if (found !== null && local > found + SHIFT_MAX) break;
-        const instant = zonedWallTimeToInstant(wall, timezone);
-        if (instant > afterMs && (best === null || instant < best)) best = instant;
-        if (instant > afterMs && found === null) found = local;
-      }
-    }
-    if (best !== null && lastDay === CRON_SEARCH_DAYS) lastDay = offset + 1;
+    const found = earliestSlotOn(spec, day, timezone, afterMs, floor);
+    if (found === null) continue;
+    if (best === null || found < best) best = found;
+    lastDay = Math.min(lastDay, offset + 1);
   }
   return best;
 }
