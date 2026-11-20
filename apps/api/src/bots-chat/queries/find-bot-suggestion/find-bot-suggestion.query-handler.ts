@@ -51,7 +51,8 @@ export class FindBotSuggestionQueryHandler
   async execute({ scope, botId }: FindBotSuggestionQuery): Promise<string | null> {
     const { organizationId, id } = await this.lookup.bot(scope, botId);
     if (await this.turns.findRunningIn(organizationId, id)) return null;
-    const recent = await this.messages.findRecent(organizationId, id, BOT_SUGGESTION_READ_MAX);
+    // The console chat's own conversation: a channel's (Telegram, WhatsApp) is another person's.
+    const recent = await this.messages.findConversation(scope, id, BOT_SUGGESTION_READ_MAX);
     const anchor = suggestionAnchor(recent);
     if (!anchor) return null;
     const key = `bot-suggestion:${organizationId}:${id}:${anchor.id}`;

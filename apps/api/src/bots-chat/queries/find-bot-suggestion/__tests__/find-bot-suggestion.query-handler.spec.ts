@@ -44,6 +44,9 @@ function setup(
     { id: 'm-1', role: 'user', content: 'run the tests' },
     { id: 'm-2', role: 'assistant', content: 'All green. Open the pull request?' },
   ];
+  const messages = {
+    findConversation: vi.fn(async () => recent as unknown as BotMessageEntity[]),
+  } satisfies Pick<BotMessageRepositoryPort, 'findConversation'>;
   const kept = new Map<string, unknown>();
   const cache = {
     getOrSet: async <T>(key: string, _ttl: number, load: () => Promise<T>): Promise<T> => {
@@ -58,9 +61,7 @@ function setup(
     {
       findRunningIn: vi.fn(async () => (options.running ? ({} as BotTurnEntity) : null)),
     } satisfies Pick<BotTurnRepositoryPort, 'findRunningIn'> as unknown as BotTurnRepositoryPort,
-    {
-      findRecent: vi.fn(async () => recent as unknown as BotMessageEntity[]),
-    } satisfies Pick<BotMessageRepositoryPort, 'findRecent'> as unknown as BotMessageRepositoryPort,
+    messages as unknown as BotMessageRepositoryPort,
     {
       ownModel: vi.fn(async () =>
         options.target === false
@@ -72,7 +73,7 @@ function setup(
     cache as unknown as CacheService,
   );
   const run = () => handler.execute(new FindBotSuggestionQuery(scope, 'bot-1'));
-  return { run, requests, kept };
+  return { run, requests, kept, messages };
 }
 
 describe('FindBotSuggestionQueryHandler', () => {
@@ -88,6 +89,12 @@ describe('FindBotSuggestionQueryHandler', () => {
       tools: [],
     });
     expect(requests[0].message).toContain('All green. Open the pull request?');
+  });
+
+  it('reads the console chat alone, never a channel’s conversation (Telegram, WhatsApp)', async () => {
+    const { run, messages } = setup();
+    await run();
+    expect(messages.findConversation).toHaveBeenCalledWith(scope, 'bot-1', expect.any(Number));
   });
 
   it('asks once per message of the bot’s, however often the composer reads it', async () => {

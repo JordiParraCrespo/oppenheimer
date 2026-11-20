@@ -10,8 +10,12 @@ export interface SuggestionMessage {
   content: string;
 }
 
-/** How many of the newest messages the suggestion reads; activity lines are not among them. */
-export const BOT_SUGGESTION_READ_MAX = 12;
+/**
+ * How many of the chat's newest messages the suggestion reads. Activity lines
+ * are among them and are left out of what is sent, so this leaves room for a
+ * dozen messages of words after a turn of many tool calls.
+ */
+export const BOT_SUGGESTION_READ_MAX = 40;
 
 /** How much of the conversation's end the suggestion is sent: enough for what was just said, no more. */
 const BOT_SUGGESTION_TRANSCRIPT_TOKENS = 4_000;

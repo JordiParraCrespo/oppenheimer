@@ -225,7 +225,8 @@ export function BotComposer({
   // else to the walk through what you sent.
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     if (pastes.onKeyDownCapture(event)) return;
-    if (suggestion && isPlainTab(event)) {
+    // Tab on the paperclip or Send still moves focus; only the field's takes it.
+    if (suggestion && event.target === field.current && isPlainTab(event)) {
       event.preventDefault();
       fillBotDraft(botId, suggestion);
       return;

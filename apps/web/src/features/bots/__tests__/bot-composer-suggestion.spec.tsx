@@ -8,7 +8,8 @@ import { BotComposer } from '../sections/bot-composer';
  * the placeholder is, and Tab writes it into the field. What breaks this:
  * the suggestion not shown, or shown over a draft; Tab doing nothing, or
  * sending it rather than filling the field; Tab taken from the page when
- * there is nothing to offer, or with a modifier; the suggestion read while
+ * there is nothing to offer, with a modifier, or on the box's buttons; the
+ * suggestion read while
  * the bot is still working or the field holds words.
  */
 
@@ -104,6 +105,13 @@ describe('BotComposer’s suggested next message', () => {
     state.suggestion = 'yes';
     const again = composer();
     expect(tab(again, { shiftKey: true })).toBe(true);
+    expect(botDraft('b1')).toBe('');
+  });
+
+  it('leaves Tab to the box’s buttons, so focus can move back to the field', () => {
+    composer();
+    const attach = screen.getByRole('button', { name: 'bots.chat.images.attach' });
+    expect(tab(attach)).toBe(true);
     expect(botDraft('b1')).toBe('');
   });
 
