@@ -35,16 +35,19 @@ const ENTER = 'motion-safe:animate-appear';
  * cards. Codex's way with settled work: a turn is open while it works, and
  * once it settles it folds to its answer (its last words) and its cards, the
  * newest one too; the header opens it again. The prompt copies from under its
- * card, on hover, and a settled answer from the trail beneath it.
+ * card, on hover, and a settled answer from the trail beneath it. While the
+ * chat's find is on a match in it (`found`), it stays open, so the match is
+ * drawn; its prompt and replies are marked `data-chat-find`, the words the
+ * find looks in.
  */
-export function ChatTurn({ turn }: { turn: Turn }) {
+export function ChatTurn({ turn, found = false }: { turn: Turn; found?: boolean }) {
   const { t } = useTranslation();
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const time = dateFormatter(locale, { timeStyle: 'short' });
   const blocks = blocksOf(turn);
   const live = turn.working;
-  const shown = live || open;
+  const shown = live || open || found;
   const visible = shown ? blocks : foldedBlocks(blocks);
   const pictures = shownImages(turn.prompt?.images ?? null);
   // A file the host only named, an image without a preview or a document,
@@ -57,9 +60,10 @@ export function ChatTurn({ turn }: { turn: Turn }) {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div data-turn={turn.id} className="flex flex-col gap-4">
       {turn.prompt ? (
         <ChatUserMessage
+          data-chat-find=""
           // A session's chat stands on its terminal's ground, the card's own
           // colour, so the turn takes the chat's grey wash, a code block's.
           tone="wash"
@@ -99,7 +103,7 @@ export function ChatTurn({ turn }: { turn: Turn }) {
             )
           }
           open={shown}
-          onToggle={live ? undefined : () => setOpen(!open)}
+          onToggle={live || found ? undefined : () => setOpen(!open)}
           labels={{
             working: t('sessions.chat.turn.working'),
             worked: t('sessions.chat.turn.worked'),
@@ -111,7 +115,11 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       {visible.map((block, index) => {
         const last = index === visible.length - 1;
         return (
-          <div key={block.id} className={ENTER}>
+          <div
+            key={block.id}
+            className={ENTER}
+            data-chat-find={block.kind === 'reply' ? '' : undefined}
+          >
             <ChatTurnBlock block={block} live={live} last={last} />
           </div>
         );
