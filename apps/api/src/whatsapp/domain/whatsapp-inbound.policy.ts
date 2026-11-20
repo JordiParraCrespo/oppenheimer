@@ -110,3 +110,43 @@ export function whatsappInboundAction(
   }
   return { kind: 'owner', command: 'message', text, switchName: null, voiceNote: false };
 }
+
+/**
+ * What a message in a chat the number allows (`WhatsappChatGrantEntity`)
+ * comes to, for anyone but the owner in their own chat: `contact` wakes the
+ * chat's bot with `text`, as a contact's turn; anything else is stored only.
+ *
+ * - In a person's chat, any message they write with words (a caption, or
+ *   `[image]` for media without one).
+ * - In a group, only a message that speaks to the number: one that
+ *   @-mentions it, or replies to one of its messages. The lines in between
+ *   are kept and wake nothing, as OpenClaw and Hermes have it.
+ * - Never the number's own messages, its chat with itself, a chat it does
+ *   not allow, or a voice note without a caption, which no one hears yet.
+ */
+export type WhatsappContactAction = { kind: 'contact'; text: string } | { kind: 'ignore' };
+
+export function whatsappContactAction(
+  account: WhatsappInboundAccount,
+  allowed: boolean,
+  message: Pick<
+    WhatsappMessageDraft,
+    'chatId' | 'chatKind' | 'fromMe' | 'senderId' | 'text' | 'media' | 'mentions' | 'quotedSenderId'
+  >,
+): WhatsappContactAction {
+  if (!allowed || message.fromMe) return { kind: 'ignore' };
+  const number = account.phone;
+  if (number !== null && message.chatId === number) return { kind: 'ignore' };
+  if (message.chatKind === 'direct') {
+    if (!sameWhatsappNumber(message.senderId, message.chatId)) return { kind: 'ignore' };
+  } else {
+    const speaksToNumber =
+      number !== null &&
+      (message.mentions.some((mentioned) => sameWhatsappNumber(mentioned, number)) ||
+        (message.quotedSenderId !== null && sameWhatsappNumber(message.quotedSenderId, number)));
+    if (!speaksToNumber) return { kind: 'ignore' };
+  }
+  if (isWhatsappVoiceNote(message)) return { kind: 'ignore' };
+  const text = message.text.trim() || (message.media ? `[${message.media}]` : '');
+  return text ? { kind: 'contact', text } : { kind: 'ignore' };
+}

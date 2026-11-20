@@ -2326,6 +2326,20 @@
                 "minLength": 1,
                 "maxLength": 128
               },
+              "quotedSenderId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "mentions": {
+                "maxItems": 64,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 128
+                }
+              },
               "voiceSeconds": {
                 "type": "integer",
                 "minimum": 0,

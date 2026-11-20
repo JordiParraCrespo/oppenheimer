@@ -129,8 +129,9 @@ apart, as OpenClaw and Hermes do.
   nothing someone else wrote can allow a chat. A bot allows only when the
   owner asks in their own words; Settings → WhatsApp → **Allowed chats**
   shows each group and person, the bot that allowed it, the bot that
-  answers there, and Remove. At most 50 chats per number
-  (`whatsapp_chat_grant`).
+  answers there, and Remove. At most 1,000 chats per number
+  (`whatsapp_chat_grant`; 50 until 2026-11-20, when Settings also began
+  allowing chats, from the list of every chat a number has seen).
 - **Groups are off.** A group is allowed by its id, and then the bot
   wakes only on a mention, a reply to it or a command; the lines in
   between are kept as context (channels.md §5). On Telegram, privacy mode
@@ -274,6 +275,38 @@ per-chat "Always allow" for sends are unchanged.
    on a mention of the number or a reply to it, an allowed person on any
    message, with the contact's turn of §3; the runner reports mentions and
    whose message a reply quotes.
+   *Being built 2026-11-19 in three stacked pull requests. First, the
+   runner reports each message's mentions (`mentions`) and the sender of
+   the message it replies to (`quotedSenderId`), by phone number, the
+   number's own `@lid` id included.* *Then, 2026-11-20, one pull request
+   for the contact's turn and the wake together (the owner: "go with the
+   WhatsApp groups next and to be able to talk with others"): a message in
+   an allowed chat wakes the chat's bot, else the number's default, and
+   no one when the number's default is "None (doesn't answer)" and the chat
+   has no bot of its own. The contact's turn (`bot_turn."contact"`) has **no
+   tools at all** for now, not §3's narrow set: reading the bot's documents,
+   remembering for the conversation and `hand_off` come later. It reads the
+   bot's soul and instructions, none of the owner's facts, log, skills or
+   hosts, and what the contact wrote fenced in `<whatsapp>`, their name and
+   the group's included. The limit is 20 turns an hour per chat, not per
+   person. In a group, the lines in between are kept but not yet given to
+   the bot as context; an uncaptioned voice note from a contact wakes no
+   one; there is no bot loop guard yet.*
+   *Then, 2026-11-20, routing at scale (the owner: "maybe I have 25 groups
+   and 200 contacts… we have to come up with different settings, and also
+   in the bot maybe it can have its gateways"). Settings → WhatsApp → a
+   number lists every chat it has seen in Groups and People tabs, with a
+   search, a filter by who answers, a page of rows each with its own
+   picker (Not answered, the default bot, or a bot) and a bar that answers
+   many ticked chats at once (`POST /whatsapp/accounts/:id/routes`, up to
+   200). Choosing a bot or the default allows a chat; "Not answered"
+   stops it. Allowing from Settings is the owner's too, beside asking a
+   bot in their own chat; it is session-only, so no API token can allow a
+   chat. A bot's settings gain **Gateways**: each WhatsApp number with the
+   chats the bot answers there, Add chats (saying who answers each now,
+   which moves to this bot) and Remove, and the Telegram bots it answers
+   on. Only listed chats are answered; there is no catch-all for people
+   not on the list. A number allows up to 1,000 chats (was 50).*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions

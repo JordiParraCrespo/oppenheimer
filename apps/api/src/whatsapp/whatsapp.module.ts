@@ -6,6 +6,7 @@ import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { WhatsappAnswerResolver } from './application/whatsapp-answer.resolver';
 import { WhatsappChatResolver } from './application/whatsapp-chat.resolver';
+import { WhatsappChatRoutesResolver } from './application/whatsapp-chat-routes.resolver';
 import { WhatsappReplyResolver } from './application/whatsapp-reply.resolver';
 import { AllowWhatsappChatCommandHandler } from './commands/allow-whatsapp-chat/allow-whatsapp-chat.command-handler';
 import { AllowWhatsappChatHttpController } from './commands/allow-whatsapp-chat/allow-whatsapp-chat.http.controller';
@@ -22,6 +23,8 @@ import { RequestWhatsappOwnerCommandHandler } from './commands/request-whatsapp-
 import { RequestWhatsappOwnerHttpController } from './commands/request-whatsapp-owner/request-whatsapp-owner.http.controller';
 import { RevokeWhatsappChatCommandHandler } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.command-handler';
 import { RevokeWhatsappChatHttpController } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.http.controller';
+import { RouteWhatsappChatsCommandHandler } from './commands/route-whatsapp-chats/route-whatsapp-chats.command-handler';
+import { RouteWhatsappChatsHttpController } from './commands/route-whatsapp-chats/route-whatsapp-chats.http.controller';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
 import { TranscribeWhatsappVoiceNoteCommandHandler } from './commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command-handler';
 import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
@@ -39,6 +42,8 @@ import { FindWhatsappAccountsHttpController } from './queries/find-whatsapp-acco
 import { FindWhatsappAccountsQueryHandler } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.query-handler';
 import { FindWhatsappChatGrantsHttpController } from './queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.http.controller';
 import { FindWhatsappChatGrantsQueryHandler } from './queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.query-handler';
+import { FindWhatsappChatRoutesHttpController } from './queries/find-whatsapp-chat-routes/find-whatsapp-chat-routes.http.controller';
+import { FindWhatsappChatRoutesQueryHandler } from './queries/find-whatsapp-chat-routes/find-whatsapp-chat-routes.query-handler';
 import { FindWhatsappChatsQueryHandler } from './queries/find-whatsapp-chats/find-whatsapp-chats.query-handler';
 import { ReadWhatsappChatQueryHandler } from './queries/read-whatsapp-chat/read-whatsapp-chat.query-handler';
 import { SearchWhatsappMessagesQueryHandler } from './queries/search-whatsapp-messages/search-whatsapp-messages.query-handler';
@@ -61,6 +66,8 @@ const httpControllers = [
   ConfirmWhatsappOwnerHttpController,
   RemoveWhatsappAccountHttpController,
   FindWhatsappChatGrantsHttpController,
+  FindWhatsappChatRoutesHttpController,
+  RouteWhatsappChatsHttpController,
   AllowWhatsappChatHttpController,
   UpdateWhatsappChatGrantHttpController,
   RevokeWhatsappChatHttpController,
@@ -85,6 +92,7 @@ const commandHandlers: Provider[] = [
   TranscribeWhatsappVoiceNoteCommandHandler,
   AllowWhatsappChatCommandHandler,
   UpdateWhatsappChatGrantCommandHandler,
+  RouteWhatsappChatsCommandHandler,
   RevokeWhatsappChatCommandHandler,
 ];
 
@@ -100,6 +108,7 @@ const queryHandlers: Provider[] = [
   ReadWhatsappChatQueryHandler,
   SearchWhatsappMessagesQueryHandler,
   FindWhatsappChatGrantsQueryHandler,
+  FindWhatsappChatRoutesQueryHandler,
 ];
 
 /**
@@ -129,6 +138,7 @@ const queryHandlers: Provider[] = [
     WhatsappMessageMapper,
     WhatsappChatGrantMapper,
     WhatsappChatResolver,
+    WhatsappChatRoutesResolver,
     WhatsappReplyResolver,
     WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },

@@ -34,6 +34,8 @@ export class WhatsappMessageMapper {
       transcript: null,
       switchesToBotId: null,
       isReply: false,
+      mentions: inbound.mentions ?? [],
+      quotedSenderId: inbound.quotedSenderId ?? null,
     };
   }
 
@@ -72,13 +74,17 @@ export class WhatsappMessageMapper {
       transcript: null,
       switchesToBotId: null,
       isReply: (props.isReply ?? false) && props.botId !== null,
+      mentions: [],
+      quotedSenderId: null,
     };
   }
 
   toPersistence(
     draft: WhatsappMessageDraft,
   ): Omit<WhatsappMessageOrmEntity, 'id' | 'createdAt' | 'seq'> {
-    return { ...draft };
+    // Mentions and the quoted sender are read at intake, never stored.
+    const { mentions: _mentions, quotedSenderId: _quotedSenderId, ...row } = draft;
+    return row;
   }
 
   /** A voice note's transcript as its column takes it: what Postgres cannot store (NUL) removed. */

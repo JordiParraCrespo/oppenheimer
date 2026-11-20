@@ -24,6 +24,8 @@ export interface WhatsappMessagesOwed {
   /** Whether a new message is the owner's, to be placed. */
   isOwners: (message: WhatsappMessageDraft) => boolean;
   eventFor: (message: WhatsappStoredMessage, place: WhatsappChatPlace) => DomainEvent | null;
+  /** The event a new message from a contact in an allowed chat owes, if any; it has no place. */
+  contactEventFor?: (message: WhatsappStoredMessage) => DomainEvent | null;
 }
 
 /**

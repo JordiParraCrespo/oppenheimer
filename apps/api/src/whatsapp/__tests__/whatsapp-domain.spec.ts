@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
-import { whatsappInboundAction } from '../domain/whatsapp-inbound.policy';
+import { whatsappContactAction, whatsappInboundAction } from '../domain/whatsapp-inbound.policy';
 import type { WhatsappChat, WhatsappMessage } from '../domain/whatsapp-message.types';
 import { pickWhatsappChat, whatsappSendRefusal } from '../domain/whatsapp-send.policy';
 
@@ -206,5 +206,73 @@ describe('whatsappInboundAction', () => {
       text: '[image]',
       voiceNote: false,
     });
+  });
+});
+
+describe('whatsappContactAction', () => {
+  const number = '34611000000@s.whatsapp.net';
+  const linked = { phone: number, ownerPhone: '34622000000@s.whatsapp.net' };
+  const group = '120363000000000001@g.us';
+  const marta = '34600999888@s.whatsapp.net';
+  const inGroup = (overrides: Partial<Parameters<typeof whatsappContactAction>[2]> = {}) => ({
+    chatId: group,
+    chatKind: 'group' as const,
+    fromMe: false,
+    senderId: marta,
+    text: '@Juno what time is the dinner?',
+    media: null,
+    mentions: [] as string[],
+    quotedSenderId: null,
+    ...overrides,
+  });
+
+  // What breaks this: a bot answering every line of a busy group, or never
+  // answering when someone speaks to it.
+  it('wakes a group only on a mention of the number or a reply to it', () => {
+    expect(whatsappContactAction(linked, true, inGroup()).kind).toBe('ignore');
+    expect(whatsappContactAction(linked, true, inGroup({ mentions: [marta] })).kind).toBe('ignore');
+    expect(whatsappContactAction(linked, true, inGroup({ mentions: [number] }))).toEqual({
+      kind: 'contact',
+      text: '@Juno what time is the dinner?',
+    });
+    expect(whatsappContactAction(linked, true, inGroup({ quotedSenderId: number })).kind).toBe(
+      'contact',
+    );
+    // The number as the runner writes a device's id.
+    expect(
+      whatsappContactAction(linked, true, inGroup({ mentions: ['34611000000:12@s.whatsapp.net'] }))
+        .kind,
+    ).toBe('contact');
+  });
+
+  // What breaks this: a stranger, or a chat the owner never allowed, reaching a bot.
+  it('wakes nothing in a chat the number does not allow, on its own messages, or on a voice note without words', () => {
+    expect(whatsappContactAction(linked, false, inGroup({ mentions: [number] })).kind).toBe(
+      'ignore',
+    );
+    expect(
+      whatsappContactAction(linked, true, inGroup({ mentions: [number], fromMe: true })).kind,
+    ).toBe('ignore');
+    expect(
+      whatsappContactAction(linked, true, inGroup({ mentions: [number], text: '', media: 'audio' }))
+        .kind,
+    ).toBe('ignore');
+  });
+
+  // What breaks this: an allowed person having to mention the number in their own chat.
+  it('wakes on any message with words in an allowed person’s chat, from that person only', () => {
+    const direct = inGroup({ chatId: marta, chatKind: 'direct', text: 'Hi Juno' });
+    expect(whatsappContactAction(linked, true, direct)).toEqual({
+      kind: 'contact',
+      text: 'Hi Juno',
+    });
+    expect(whatsappContactAction(linked, true, { ...direct, text: '', media: 'image' })).toEqual({
+      kind: 'contact',
+      text: '[image]',
+    });
+    expect(
+      whatsappContactAction(linked, true, { ...direct, senderId: '34655000000@s.whatsapp.net' })
+        .kind,
+    ).toBe('ignore');
   });
 });
