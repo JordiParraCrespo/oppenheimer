@@ -206,6 +206,15 @@ describe("a routine's webhook", () => {
     expect(fired[0]?.webhookPayload?.body.length).toBe(WEBHOOK_BODY_KEPT_CHARS + 1);
   });
 
+  it('never splits a character in two where it cuts a long body', async () => {
+    const { issueUrl, post, fired } = setup();
+    const { token } = await issueUrl();
+    await post(token, `${'x'.repeat(WEBHOOK_BODY_KEPT_CHARS - 1)}😀 and more`);
+    const body = fired[0]?.webhookPayload?.body ?? '';
+    expect(body).toBe(`${'x'.repeat(WEBHOOK_BODY_KEPT_CHARS - 1)}…`);
+    expect(body.isWellFormed()).toBe(true);
+  });
+
   it('keeps a body with NUL bytes as text Postgres jsonb takes', async () => {
     const { issueUrl, post, fired } = setup();
     const { token } = await issueUrl();

@@ -13,10 +13,11 @@ import { WEBHOOK_SIGNATURE_HEADER } from '@oppenheimer/shared/automations';
 import type { Request } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { isBodyTooLarge, rawBodyOf } from '../../../config/raw-body-parser';
+import { AutomationMapper } from '../../automation.mapper';
 import { AutomationErrors } from '../../domain/automations.errors';
+import type { ReceivedWebhook } from '../../domain/routine-webhook.types';
 import { RoutineWebhookReceivedResponseDto } from '../../dtos/routine-webhook.response.dto';
 import { ReceiveRoutineWebhookCommand } from './receive-routine-webhook.command';
-import type { ReceivedWebhook } from './receive-routine-webhook.command-handler';
 
 /**
  * A routine's webhook URL. Public: whoever holds the URL may post to it, as a
@@ -30,7 +31,10 @@ import type { ReceivedWebhook } from './receive-routine-webhook.command-handler'
 @ApiSecurity('none')
 @Controller('routine-webhooks')
 export class ReceiveRoutineWebhookHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly mapper: AutomationMapper,
+  ) {}
 
   @Post(':token')
   @NoPolicy('authenticated by the routine webhook’s token and signature, not by a user')
@@ -70,6 +74,6 @@ export class ReceiveRoutineWebhookHttpController {
         idempotencyKey,
       }),
     );
-    return Object.assign(new RoutineWebhookReceivedResponseDto(), received);
+    return this.mapper.receivedWebhookToResponse(received);
   }
 }

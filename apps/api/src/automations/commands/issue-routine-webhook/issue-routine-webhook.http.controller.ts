@@ -70,14 +70,11 @@ export class IssueRoutineWebhookHttpController {
     const issued = await this.commandBus.execute<IssueRoutineWebhookCommand, IssuedWebhook>(
       new IssueRoutineWebhookCommand({ scope, botId, routineId, signed: body.signed }),
     );
-    const origin = (this.configService.get<string>('app.betterAuthUrl') ?? '').replace(/\/+$/, '');
-    return Object.assign(
-      new IssuedRoutineWebhookResponseDto(),
-      this.mapper.webhookToResponse(issued.view),
-      {
-        url: `${origin}/api/v1/routine-webhooks/${issued.token}`,
-        signingSecret: issued.signingSecret,
-      },
+    return this.mapper.issuedWebhookToResponse(
+      issued.view,
+      this.configService.get<string>('app.betterAuthUrl') ?? '',
+      issued.token,
+      issued.signingSecret,
     );
   }
 }

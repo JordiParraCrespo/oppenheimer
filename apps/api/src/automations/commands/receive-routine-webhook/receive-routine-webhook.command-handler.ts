@@ -1,7 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { AutomationLimitsResolver } from '../../application/automation-limits.resolver';
 import { RoutineWebhookResolver } from '../../application/routine-webhook.resolver';
 import {
@@ -14,23 +13,13 @@ import { AutomationRunEntity } from '../../domain/automation-run.entity';
 import { AutomationErrors } from '../../domain/automations.errors';
 import { rateGuard } from '../../domain/fire-guard.policy';
 import { webhookPayloadOf } from '../../domain/routine-webhook.policy';
+import type { ReceivedWebhook } from '../../domain/routine-webhook.types';
 import { webhookCauseSummary } from '../../domain/run-launch.policy';
 import { ReceiveRoutineWebhookCommand } from './receive-routine-webhook.command';
 
 const HOUR = 60 * 60 * 1000;
 /** The longest `Idempotency-Key` kept as part of a run's cause key. */
 const IDEMPOTENCY_KEY_MAX = 128;
-
-export interface ReceivedWebhook {
-  runId: string;
-  /**
-   * `queued` when it will run; `skipped` when an hourly cap turned it away (and
-   * recorded it); `duplicate` when an earlier POST with the same
-   * `Idempotency-Key` already made this run.
-   */
-  status: 'queued' | 'skipped' | 'duplicate';
-  skipReason: AutomationSkipReason | null;
-}
 
 /**
  * A POST to a routine's URL becomes one run of that routine, answered at once

@@ -31,6 +31,7 @@ import type {
 } from './domain/automation.types';
 import type { WorkspaceLimits } from './domain/automation-limits.policy';
 import type { AutomationRunDigest } from './domain/automation-read.types';
+import type { ReceivedWebhook } from './domain/routine-webhook.types';
 import {
   AutomationRepositoryResponseDto,
   AutomationResponseDto,
@@ -38,7 +39,11 @@ import {
   AutomationTriggerResponseDto,
 } from './dtos/automation.response.dto';
 import { BotRoutineResponseDto } from './dtos/bot-routine.response.dto';
-import { RoutineWebhookResponseDto } from './dtos/routine-webhook.response.dto';
+import {
+  IssuedRoutineWebhookResponseDto,
+  RoutineWebhookReceivedResponseDto,
+  RoutineWebhookResponseDto,
+} from './dtos/routine-webhook.response.dto';
 
 type Json = Record<string, unknown>;
 
@@ -372,6 +377,27 @@ export class AutomationMapper {
     dto.webhook = webhook ? this.webhookToResponse(webhook) : null;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
+    return dto;
+  }
+
+  /** A URL just issued: its view, and the URL and secret this one answer carries. */
+  issuedWebhookToResponse(
+    webhook: RoutineWebhookView,
+    origin: string,
+    token: string,
+    signingSecret: string | null,
+  ): IssuedRoutineWebhookResponseDto {
+    return Object.assign(new IssuedRoutineWebhookResponseDto(), this.webhookToResponse(webhook), {
+      url: `${origin.replace(/\/+$/, '')}/api/v1/routine-webhooks/${token}`,
+      signingSecret,
+    });
+  }
+
+  receivedWebhookToResponse(received: ReceivedWebhook): RoutineWebhookReceivedResponseDto {
+    const dto = new RoutineWebhookReceivedResponseDto();
+    dto.runId = received.runId;
+    dto.status = received.status;
+    dto.skipReason = received.skipReason;
     return dto;
   }
 

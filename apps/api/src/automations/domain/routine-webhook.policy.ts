@@ -97,7 +97,16 @@ export function webhookPayloadOf(
     null;
   return {
     contentType: type,
-    body: truncated ? `${text.slice(0, WEBHOOK_BODY_KEPT_CHARS)}…` : text,
+    body: truncated ? `${keptPrefix(text, WEBHOOK_BODY_KEPT_CHARS)}…` : text,
     bodyTruncated: truncated,
   };
+}
+
+/**
+ * The first `length` UTF-16 units of `text`, one fewer when the cut would
+ * split a surrogate pair: a lone surrogate is JSON Postgres `jsonb` refuses.
+ */
+function keptPrefix(text: string, length: number): string {
+  const last = text.charCodeAt(length - 1);
+  return text.slice(0, last >= 0xd800 && last <= 0xdbff ? length - 1 : length);
 }
