@@ -168,6 +168,11 @@ function cronDayText(day: CronDayWords, locale: string, t: TFunction): string {
       });
     case 'lastWeekdayOf':
       return t('automations.cron.lastWeekdayOf', { day: weekday(day.day) });
+    case 'both':
+      return t('automations.cron.both', {
+        monthDays: cronDayText(day.monthDays, locale, t),
+        weekDays: cronDayText(day.weekDays, locale, t),
+      });
     case 'either':
       return t('automations.cron.either', {
         monthDays: cronDayText(day.monthDays, locale, t),

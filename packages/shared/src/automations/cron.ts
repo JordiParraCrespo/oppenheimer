@@ -15,24 +15,30 @@
  * - `5L` in the day of week: the last Friday of the month.
  *
  * When both day fields are restricted, a day matching either fires, as in
- * every cron since Vixie's: `0 9 1 * 1` is the 1st and every Monday.
+ * every cron since Vixie's: `0 9 1 * 1` is the 1st and every Monday. A field
+ * written from `*` (`*\/2`) counts as unrestricted for that rule, as it does
+ * there, so `0 9 *\/2 * 1` is a Monday on an odd day.
  */
 
-/** How many times an hour a cron schedule may fire: every five minutes at most. */
-export const CRON_MAX_FIRES_PER_HOUR = 12;
+/**
+ * The shortest wait between two firings, in minutes: no two minutes of the
+ * hour closer than this, counting the wrap from :55 to the next hour's :00.
+ */
+export const CRON_MIN_GAP_MINUTES = 5;
 
 /** Longer than any expression worth writing; the schema refuses past it. */
 export const CRON_EXPRESSION_MAX = 100;
 
 export type CronDayOfMonth =
   | { kind: 'any' }
-  | { kind: 'days'; days: readonly number[] }
+  /** `starred`: written from `*`, so it narrows the other day field instead of adding to it. */
+  | { kind: 'days'; days: readonly number[]; starred: boolean }
   | { kind: 'last' }
   | { kind: 'lastWeekday' };
 
 export type CronDayOfWeek =
   | { kind: 'any' }
-  | { kind: 'days'; days: readonly number[] }
+  | { kind: 'days'; days: readonly number[]; starred: boolean }
   | { kind: 'nth'; day: number; nth: number }
   | { kind: 'last'; day: number };
 
@@ -121,7 +127,7 @@ function parseDayOfMonth(field: string): CronDayOfMonth | null {
   if (upper === 'L') return { kind: 'last' };
   if (upper === 'LW') return { kind: 'lastWeekday' };
   const days = parseField(field, 1, 31);
-  return days ? { kind: 'days', days } : null;
+  return days ? { kind: 'days', days, starred: field.startsWith('*') } : null;
 }
 
 function parseDayOfWeek(field: string): CronDayOfWeek | null {
@@ -138,7 +144,13 @@ function parseDayOfWeek(field: string): CronDayOfWeek | null {
   }
   // 7 is Sunday too; a range may end on it (`5-7`).
   const days = parseField(field, 0, 6, WEEKDAY_NAMES, 0, { from: 7, to: 0 });
-  return days ? { kind: 'days', days: [...new Set(days)].sort((a, b) => a - b) } : null;
+  return days
+    ? {
+        kind: 'days',
+        days: [...new Set(days)].sort((a, b) => a - b),
+        starred: field.startsWith('*'),
+      }
+    : null;
 }
 
 /** The expression as sets, or null when it is not five readable fields. */
@@ -158,7 +170,11 @@ export function parseCron(expression: string): CronSpec | null {
 export function cronProblem(expression: string): 'invalid' | 'too_often' | null {
   const spec = parseCron(expression);
   if (!spec) return 'invalid';
-  return spec.minutes.length > CRON_MAX_FIRES_PER_HOUR ? 'too_often' : null;
+  const { minutes } = spec;
+  const gaps = minutes.map((minute, index) =>
+    index === 0 ? minutes[0] + 60 - minutes[minutes.length - 1] : minute - minutes[index - 1],
+  );
+  return minutes.length > 1 && Math.min(...gaps) < CRON_MIN_GAP_MINUTES ? 'too_often' : null;
 }
 
 function daysInMonth(year: number, month: number): number {
@@ -193,8 +209,17 @@ export function cronDayMatches(spec: CronSpec, year: number, month: number, day:
       weekday === dayOfWeek.day &&
       Math.ceil(day / 7) === dayOfWeek.nth) ||
     (dayOfWeek.kind === 'last' && weekday === dayOfWeek.day && day + 7 > length);
-  if (dayOfMonth.kind === 'any' || dayOfWeek.kind === 'any') return monthMatch && weekMatch;
-  return monthMatch || weekMatch;
+  return bothNarrow(spec) ? monthMatch && weekMatch : monthMatch || weekMatch;
+}
+
+/** Whether a day must match both day fields; otherwise either one is enough. */
+function bothNarrow({ dayOfMonth, dayOfWeek }: CronSpec): boolean {
+  return (
+    dayOfMonth.kind === 'any' ||
+    dayOfWeek.kind === 'any' ||
+    (dayOfMonth.kind === 'days' && dayOfMonth.starred) ||
+    (dayOfWeek.kind === 'days' && dayOfWeek.starred)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -229,7 +254,8 @@ export type CronDayWords =
   | { kind: 'lastWeekday' }
   | { kind: 'nthWeekday'; day: number; nth: number }
   | { kind: 'lastWeekdayOf'; day: number }
-  | { kind: 'either'; monthDays: CronDayWords; weekDays: CronDayWords };
+  | { kind: 'either'; monthDays: CronDayWords; weekDays: CronDayWords }
+  | { kind: 'both'; monthDays: CronDayWords; weekDays: CronDayWords };
 
 export interface CronWords {
   readonly time: CronTimeWords;
@@ -302,7 +328,10 @@ function dayWords(spec: CronSpec): CronDayWords {
     return weekDayWords(dayOfWeek as Exclude<CronDayOfWeek, { kind: 'any' }>);
   const monthDays = monthDayWords(dayOfMonth);
   if (dayOfWeek.kind === 'any') return monthDays;
-  return { kind: 'either', monthDays, weekDays: weekDayWords(dayOfWeek) };
+  const weekDays = weekDayWords(dayOfWeek);
+  return bothNarrow(spec)
+    ? { kind: 'both', monthDays, weekDays }
+    : { kind: 'either', monthDays, weekDays };
 }
 
 /**
@@ -395,6 +424,8 @@ function dayEn(day: CronDayWords): string {
       return `on the last ${WEEKDAYS_EN[day.day]} of the month`;
     case 'either':
       return `${dayEn(day.monthDays)} or ${dayEn(day.weekDays)}`;
+    case 'both':
+      return `${dayEn(day.monthDays)}, when that is ${dayEn(day.weekDays).replace(/^on /, 'a ')}`;
   }
 }
 

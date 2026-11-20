@@ -39,6 +39,12 @@ describe('a cron schedule fires what the fixed frequencies cannot say', () => {
     expect(next('0 9 1 * 1', '2026-09-26T12:00:00Z')).toBe('2026-09-28T07:00:00.000Z');
   });
 
+  it('both day fields when one is written from a star, as Vixie cron reads it', () => {
+    // Odd days that are Mondays: not Sunday the 27th, not Monday the 28th, but 5 October.
+    expect(next('0 9 */2 * 1', '2026-09-26T12:00:00Z')).toBe('2026-10-05T07:00:00.000Z');
+    expect(cronToEnglish('0 9 */2 * 1')).toContain('when that is a Monday');
+  });
+
   it('a day that comes once in four years, and none for a day that never comes', () => {
     expect(next('0 12 29 2 *', '2026-03-01T00:00:00Z')).toBe('2028-02-29T11:00:00.000Z');
     expect(next('0 0 30 2 *', '2026-03-01T00:00:00Z')).toBeUndefined();
@@ -66,8 +72,12 @@ describe('a cron schedule keeps the daylight-saving rules', () => {
 describe('what a schedule may store', () => {
   it('reads names, 7 as Sunday and steps, and refuses what is not five fields in range', () => {
     expect(parseCron('0 9 * JAN,jul SUN')?.months).toEqual([1, 7]);
-    expect(parseCron('0 9 * * 7')?.dayOfWeek).toEqual({ kind: 'days', days: [0] });
-    expect(parseCron('0 9 * * 5-7')?.dayOfWeek).toEqual({ kind: 'days', days: [0, 5, 6] });
+    expect(parseCron('0 9 * * 7')?.dayOfWeek).toEqual({ kind: 'days', days: [0], starred: false });
+    expect(parseCron('0 9 * * 5-7')?.dayOfWeek).toEqual({
+      kind: 'days',
+      days: [0, 5, 6],
+      starred: false,
+    });
     for (const bad of [
       '',
       '0 9 * *',
@@ -83,9 +93,13 @@ describe('what a schedule may store', () => {
     }
   });
 
-  it('refuses a schedule that fires more than every five minutes', () => {
+  it('refuses two firings closer than five minutes, however few an hour', () => {
     expect(cronProblem('*/5 * * * *')).toBeNull();
+    expect(cronProblem('0,55 * * * *')).toBeNull();
     expect(cronProblem('*/4 * * * *')).toBe('too_often');
+    expect(cronProblem('0-11 * * * *')).toBe('too_often');
+    // :58 and the next hour's :00 are two minutes apart.
+    expect(cronProblem('0,58 * * * *')).toBe('too_often');
   });
 
   it('takes an expression with cron only, and a valid one', () => {

@@ -2651,6 +2651,7 @@
       "nthWeekday": "el {{nth}} {{day}} del mes",
       "lastWeekdayOf": "el último {{day}} del mes",
       "either": "{{monthDays}} o {{weekDays}}",
+      "both": "{{monthDays}}, si cae en {{weekDays}}",
       "ordinal": {
         "1": "primer",
         "2": "segundo",

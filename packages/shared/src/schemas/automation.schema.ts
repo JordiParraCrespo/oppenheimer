@@ -76,8 +76,8 @@ export const scheduleTriggerInputSchema = z
   .refine((value) => (value.frequency === 'cron') === (value.expression !== undefined), {
     path: ['expression'],
   })
-  // Five readable fields, firing at most every five minutes on average
-  // (`CRON_MAX_FIRES_PER_HOUR`); the hourly rate caps still bound the rest.
+  // Five readable fields, never two firings closer than `CRON_MIN_GAP_MINUTES`;
+  // the hourly rate caps still bound the rest.
   .refine((value) => value.expression === undefined || cronProblem(value.expression) === null, {
     path: ['expression'],
   });
