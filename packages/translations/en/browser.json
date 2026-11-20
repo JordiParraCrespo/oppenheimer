@@ -2064,7 +2064,9 @@
           "ruleReview_one": "{{count}} rule review",
           "ruleReview_other": "{{count}} rule reviews",
           "dream_one": "{{count}} memory tidy",
-          "dream_other": "{{count}} memory tidies"
+          "dream_other": "{{count}} memory tidies",
+          "suggestion_one": "{{count}} suggested reply",
+          "suggestion_other": "{{count}} suggested replies"
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."

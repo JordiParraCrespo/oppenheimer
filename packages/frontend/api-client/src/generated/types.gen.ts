@@ -4914,6 +4914,13 @@ export type BotLoopStateResponseDto = {
     loop: BotLoopResponseDto | null;
 };
 
+export type BotSuggestionResponseDto = {
+    /**
+     * The person's likely next message, offered in the composer; null when there is none to offer.
+     */
+    suggestion: string | null;
+};
+
 export type BotUsageModelResponseDto = {
     /**
      * Every token sent, cached or not.
@@ -4953,7 +4960,7 @@ export type BotUsageBackgroundResponseDto = {
     /**
      * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion';
     calls: number;
 };
 
@@ -16823,6 +16830,38 @@ export type FindBotLoopResponses = {
 };
 
 export type FindBotLoopResponse = FindBotLoopResponses[keyof FindBotLoopResponses];
+
+export type FindBotSuggestionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/suggestion';
+};
+
+export type FindBotSuggestionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotSuggestionError = FindBotSuggestionErrors[keyof FindBotSuggestionErrors];
+
+export type FindBotSuggestionResponses = {
+    200: BotSuggestionResponseDto;
+};
+
+export type FindBotSuggestionResponse = FindBotSuggestionResponses[keyof FindBotSuggestionResponses];
 
 export type FindBotUsageData = {
     body?: never;

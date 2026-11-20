@@ -65,6 +65,7 @@ import { BotSteeringFactory } from './application/bot-steering.factory';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
+import { BotSuggestionResolver } from './application/bot-suggestion.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
@@ -246,6 +247,8 @@ import { FindBotMemoryDreamQueryHandler } from './queries/find-bot-memory-dream/
 import { FindBotPermissionsHttpController } from './queries/find-bot-permissions/find-bot-permissions.http.controller';
 import { FindBotPermissionsQueryHandler } from './queries/find-bot-permissions/find-bot-permissions.query-handler';
 import { FindBotQuestionQueryHandler } from './queries/find-bot-question/find-bot-question.query-handler';
+import { FindBotSuggestionHttpController } from './queries/find-bot-suggestion/find-bot-suggestion.http.controller';
+import { FindBotSuggestionQueryHandler } from './queries/find-bot-suggestion/find-bot-suggestion.query-handler';
 import { FindBotTurnQueryHandler } from './queries/find-bot-turn/find-bot-turn.query-handler';
 import { FindBotUsageHttpController } from './queries/find-bot-usage/find-bot-usage.http.controller';
 import { FindBotUsageQueryHandler } from './queries/find-bot-usage/find-bot-usage.query-handler';
@@ -274,6 +277,7 @@ const httpControllers = [
   FindBotGoalHttpController,
   ClearBotLoopHttpController,
   FindBotLoopHttpController,
+  FindBotSuggestionHttpController,
   FindBotUsageHttpController,
   FindBotMemoryDreamHttpController,
   RequestBotMemoryDreamHttpController,
@@ -327,6 +331,7 @@ const commandHandlers: Provider[] = [
   FinishBotLoopRunCommandHandler,
   ClearBotLoopCommandHandler,
   FindBotLoopQueryHandler,
+  FindBotSuggestionQueryHandler,
   FindBotUsageQueryHandler,
   SetBotToolDecisionCommandHandler,
   CreateBotPermissionRuleCommandHandler,
@@ -472,6 +477,7 @@ const queryHandlers: Provider[] = [
     BotSentTurnResolver,
     BotGoalReviewResolver,
     BotCompletionResolver,
+    BotSuggestionResolver,
     BotSelfToolsFactory,
     BotSkillToolsFactory,
     BotGuideToolsFactory,

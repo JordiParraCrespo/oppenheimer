@@ -24072,6 +24072,73 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/suggestion": {
+      "get": {
+        "description": "After the bot answers, its own model guesses the person's next message, which the composer offers to take with Tab. Null while a turn runs, before the bot has answered, or when there is no clear next step. Kept per message it answers, so asking again costs nothing.",
+        "operationId": "findBotSuggestion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotSuggestionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A guess at the person's next message",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/usage": {
       "get": {
         "description": "The tokens its turns spent, by model, and its calls on the owner's key outside them (goal reviews, summaries, rule reviews), since the chat's first turn. Cache reads and writes are part of the input.",
@@ -40812,6 +40879,19 @@
           "loop"
         ]
       },
+      "BotSuggestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "suggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person's likely next message, offered in the composer; null when there is none to offer."
+          }
+        },
+        "required": [
+          "suggestion"
+        ]
+      },
       "BotUsageModelResponseDto": {
         "type": "object",
         "properties": {
@@ -40882,7 +40962,8 @@
               "goal_review",
               "summary",
               "rule_review",
-              "dream"
+              "dream",
+              "suggestion"
             ],
             "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory."
           },

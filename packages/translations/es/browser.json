@@ -2091,7 +2091,10 @@
           "ruleReview_one": "{{count}} revisión de reglas",
           "ruleReview_other": "{{count}} revisiones de reglas",
           "dream_one": "{{count}} orden de memoria",
-          "dream_other": "{{count}} órdenes de memoria"
+          "dream_other": "{{count}} órdenes de memoria",
+          "suggestion_one": "{{count}} respuesta sugerida",
+          "suggestion_many": "{{count}} respuestas sugeridas",
+          "suggestion_other": "{{count}} respuestas sugeridas"
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
