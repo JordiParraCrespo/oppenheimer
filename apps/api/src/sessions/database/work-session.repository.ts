@@ -126,8 +126,8 @@ export class WorkSessionRepository
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
             "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt", "origin",
-            "place", "folderPath")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+            "place", "folderPath", "botId")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -158,6 +158,7 @@ export class WorkSessionRepository
           record.origin,
           record.place,
           record.folderPath,
+          record.botId,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
