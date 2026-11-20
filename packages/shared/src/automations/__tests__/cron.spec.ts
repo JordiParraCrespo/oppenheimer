@@ -42,7 +42,13 @@ describe('a cron schedule fires what the fixed frequencies cannot say', () => {
   it('both day fields when one is written from a star, as Vixie cron reads it', () => {
     // Odd days that are Mondays: not Sunday the 27th, not Monday the 28th, but 5 October.
     expect(next('0 9 */2 * 1', '2026-09-26T12:00:00Z')).toBe('2026-10-05T07:00:00.000Z');
-    expect(cronToEnglish('0 9 */2 * 1')).toContain('when that is a Monday');
+    expect(cronToEnglish('0 9 */2 * 1')).toContain('if that falls on a Monday');
+    expect(cronToEnglish('0 9 L * */6')).toBe(
+      'At 09:00, on the last day of the month, if that falls on a weekend',
+    );
+    expect(cronToEnglish('0 9 */2 * 2#2')).toContain(
+      'if that falls on the second Tuesday of the month',
+    );
   });
 
   it('a day that comes once in four years, and none for a day that never comes', () => {
@@ -102,6 +108,10 @@ describe('what a schedule may store', () => {
     expect(cronProblem('0-11 * * * *')).toBe('too_often');
     // :58 and the next hour's :00 are two minutes apart.
     expect(cronProblem('0,58 * * * *')).toBe('too_often');
+    // With no next hour to roll into, :58 and :00 are a day apart, not two minutes.
+    expect(cronProblem('0,58 9 * * *')).toBeNull();
+    expect(cronProblem('0,57 9,15 * * *')).toBeNull();
+    expect(cronProblem('0,58 23,0 * * *')).toBe('too_often');
   });
 
   it('takes an expression with cron only, and a valid one', () => {

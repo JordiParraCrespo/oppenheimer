@@ -170,11 +170,14 @@ export function parseCron(expression: string): CronSpec | null {
 export function cronProblem(expression: string): 'invalid' | 'too_often' | null {
   const spec = parseCron(expression);
   if (!spec) return 'invalid';
-  const { minutes } = spec;
-  const gaps = minutes.map((minute, index) =>
-    index === 0 ? minutes[0] + 60 - minutes[minutes.length - 1] : minute - minutes[index - 1],
-  );
-  return minutes.length > 1 && Math.min(...gaps) < CRON_MIN_GAP_MINUTES ? 'too_often' : null;
+  const { minutes, hours } = spec;
+  const gaps = minutes.slice(1).map((minute, index) => minute - minutes[index]);
+  // The wrap from the hour's last minute to the next hour's first is a gap
+  // only when the next hour fires too (23 rolls into 0).
+  if (hours.some((hour) => hours.includes((hour + 1) % 24))) {
+    gaps.push(minutes[0] + 60 - minutes[minutes.length - 1]);
+  }
+  return gaps.some((gap) => gap < CRON_MIN_GAP_MINUTES) ? 'too_often' : null;
 }
 
 function daysInMonth(year: number, month: number): number {
@@ -429,8 +432,20 @@ function dayEn(day: CronDayWords): string {
     case 'either':
       return `${dayEn(day.monthDays)} or ${dayEn(day.weekDays)}`;
     case 'both':
-      return `${dayEn(day.monthDays)}, when that is ${dayEn(day.weekDays).replace(/^on /, 'a ')}`;
+      return `${dayEn(day.monthDays)}, if that falls ${fallsEn(day.weekDays)}`;
   }
+}
+
+/** The day-of-week half of a `both`, as what the day must fall on. */
+function fallsEn(day: CronDayWords): string {
+  if (day.kind !== 'weekDays') return dayEn(day);
+  const key = day.days.join(',');
+  if (key === '1,2,3,4,5') return 'on a weekday';
+  if (key === '0,6') return 'on a weekend';
+  return `on a ${listEn(
+    day.days.map((weekday) => WEEKDAYS_EN[weekday]),
+    'or',
+  )}`;
 }
 
 /** "Every 15 minutes from 09:00 to 17:45, Monday to Friday", or null when it does not parse. */

@@ -2617,7 +2617,8 @@
       "nthWeekday": "on the {{nth}} {{day}} of the month",
       "lastWeekdayOf": "on the last {{day}} of the month",
       "either": "{{monthDays}} or {{weekDays}}",
-      "both": "{{monthDays}}, when that is {{weekDays}}",
+      "both": "{{monthDays}}, if that falls {{weekDays}}",
+      "bothDays": "{{monthDays}}, if that falls on {{weekDays}}",
       "ordinal": {
         "1": "first",
         "2": "second",
