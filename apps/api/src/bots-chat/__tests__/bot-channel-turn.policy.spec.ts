@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { channelConversationFor, channelReplyOf } from '../domain/bot-channel-turn.policy';
+import { whatsappTurn } from '../domain/bot-whatsapp-turn.policy';
 
 /**
  * A channel's chat (Telegram, WhatsApp) is a run of conversations, each from
@@ -55,5 +57,32 @@ describe('channelConversationFor', () => {
         'shop',
       ),
     ).toEqual({ use: 'shop@9007199254740993' });
+  });
+});
+
+describe('the owner’s message on a channel, sent while the bot works', () => {
+  const props = {
+    organizationId: randomUUID(),
+    botId: randomUUID(),
+    requestedByUserId: randomUUID(),
+    provider: 'anthropic' as const,
+    model: 'claude-opus',
+    effort: null,
+  };
+  const message = (text: string, voiceNote = false) =>
+    whatsappTurn(props, {
+      conversationId: randomUUID(),
+      whatsappAccountId: randomUUID(),
+      messageRowId: randomUUID(),
+      text,
+      voiceNote,
+    }).turn;
+
+  // Breaks if a question asked mid-work waits for the work to end, or if a
+  // voice note or a skill's command is pushed into a turn that cannot read it.
+  it('steers the running turn when it is words alone', () => {
+    expect(message('Is the deploy one of them?').steer).toBe(true);
+    expect(message('', true).steer).toBe(false);
+    expect(message('/review 412').steer).toBe(false);
   });
 });

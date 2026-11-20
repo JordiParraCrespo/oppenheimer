@@ -18,6 +18,7 @@ import {
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotRateLimit } from './bot-rate-limit.policy';
+import { BotTurnChangedDomainEvent } from './events/bot-turn-changed.domain-event';
 
 export interface BotTurnProps {
   organizationId: string;
@@ -71,7 +72,8 @@ export interface BotTurnProps {
   /**
    * Sent as a steer: while it waits, the running turn of the same sender
    * takes its message at its next tool call (`BotSteerPolicy`); one it
-   * never reached runs as the turn it is. Only a message of yours steers.
+   * never reached runs as the turn it is. Only a message of yours steers:
+   * in the console, or in your own chat on a channel.
    */
   steer: boolean;
   /** Why it failed, in words a person can act on; never a key. */
@@ -219,6 +221,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       },
     });
     turn.validate();
+    turn.announce('queued');
     return turn;
   }
 
@@ -450,6 +453,20 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.cacheWriteTokens = outcome.cacheWriteTokens ?? this.props.cacheWriteTokens;
     this.props.context = outcome.context ?? this.props.context;
     this.props.planLimits = outcome.planLimits ?? this.props.planLimits;
+    this.announce(status);
+  }
+
+  /** The bot may have started or stopped working: the workspace's consoles re-read which bots are. */
+  private announce(what: string): void {
+    this.addEvent(
+      new BotTurnChangedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        botId: this.props.botId,
+        status: this.props.status,
+        reason: `bot ${this.props.botId}: turn ${this.id} ${what}`,
+      }),
+    );
   }
 
   /** A worker found it running: the one that ran it died, so it fails rather than running twice. */
@@ -491,7 +508,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     if (props.lane === 'bots' && props.chainId === null) {
       throw new ArgumentInvalidException('A turn a bot queued belongs to its chain');
     }
-    if (props.steer && (props.lane !== 'owner' || props.origin !== 'message')) {
+    if (
+      props.steer &&
+      (props.lane !== 'owner' || !(props.origin === 'message' || isChannelOrigin(props.origin)))
+    ) {
       throw new ArgumentInvalidException('Only a message of yours steers');
     }
     if (props.answersTurnId && props.replyRequested) {

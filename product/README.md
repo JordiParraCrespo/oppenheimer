@@ -1806,3 +1806,21 @@ earlier note:
   conversation: after the agent answers the person's second prompt, a
   derived name is written once more from their prompts so far
   (`source: conversation`); a name a person typed is never replaced.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
+  channel turn's answer once, at its end, and had a message sent meanwhile
+  wait for the next turn: asked to check something, the bot went quiet for
+  minutes, then answered. On 2026-11-20 the owner asked for a bot that
+  answers first, works, and comes back with the result, answering what they
+  ask in between: on the owner's own chat, what the bot writes before a tool
+  call goes out as the call begins ("On it, checking your sessions"), a
+  message sent meanwhile steers the running turn as a console message can,
+  and the end sends only what came after the last call. Telegram's typing
+  action and the fifteen-second line are not built.
+- `25-bots.md` §3 first kept a bot's "done" dot on the device (2026-11-20):
+  what you had seen was the bot's last message time while its chat was open,
+  per browser, beside the green dot on a working bot's face. The owner asked
+  for the bots to read exactly as the sessions do, so the same day the read
+  moved to the API (`bot."acknowledgedAt"`, set by opening the chat, on every
+  device, only the bot's replies counting), the amber dot took in questions
+  and failed turns, the green face dot went, and Mark as unread came in as a
+  device mark like a session's.

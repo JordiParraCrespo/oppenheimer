@@ -45,6 +45,7 @@ export type {
   AutomationSettingsResponseDto,
   AutomationTriggerResponseDto,
   BanUserRequest,
+  BotActivityResponseDto,
   BotAnsweredQuestionResponseDto,
   BotApprovalEventResponseDto,
   BotApprovalResponseDto,

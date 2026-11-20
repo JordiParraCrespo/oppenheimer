@@ -1705,6 +1705,8 @@
       "pinned": "Fijados",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "markUnread": "Marcar como no leído",
+      "markRead": "Marcar como leído",
       "dropToPin": "Suelta un bot aquí para fijarlo.",
       "allPinned": "Sus bots están en Fijados.",
       "rowActions": "Opciones del bot",

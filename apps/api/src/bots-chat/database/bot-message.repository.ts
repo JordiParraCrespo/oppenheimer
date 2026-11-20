@@ -4,6 +4,7 @@ import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-aut
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
+import type { ChannelTurnLine } from '../domain/bot-channel-turn.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
@@ -138,7 +139,11 @@ export class BotMessageRepository
             WHERE message."organizationId" = $1 AND message."botId" = $2
               AND message.role IN ('user', 'assistant') AND message.content <> ''
             ORDER BY message."createdAt" DESC, message.position DESC
-            LIMIT 1)
+            LIMIT 1),
+          "lastReplyAt" = (
+           SELECT max(message."createdAt") FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role = 'assistant' AND message.content <> '')
           WHERE "organizationId" = $1 AND id = $2`,
         [turn.organizationId, turn.botId],
       );
@@ -258,6 +263,16 @@ export class BotMessageRepository
       select: { id: true, content: true, position: true },
     });
     return records.map((record) => record.content);
+  }
+
+  async findTurnLines(organizationId: string, turnId: string): Promise<ChannelTurnLine[]> {
+    // IDX_bot_message_turn.
+    const records = await this.repository.find({
+      where: { organizationId, turnId, role: In(['assistant', 'activity']) },
+      order: { position: 'ASC' },
+      select: { id: true, role: true, content: true, position: true },
+    });
+    return records.map((record) => this.mapper.toChannelTurnLine(record));
   }
 
   async turnCalledTools(organizationId: string, turnId: string): Promise<boolean> {
@@ -427,10 +442,12 @@ export async function insertMessageWithin(
   // or the images a bot showed are none, and leave the bot's last words there.
   if (message.role === 'activity' || message.role === 'event') return;
   if (message.role === 'assistant' && !message.content) return;
+  // A reply also moves `lastReplyAt`, the sidebar's blue dot; your own words never do.
   await manager.query(
-    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')}
+    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')},
+       "lastReplyAt" = CASE WHEN $4 = 'assistant' THEN now() ELSE "lastReplyAt" END
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, record.content],
+    [message.organizationId, message.botId, record.content, message.role],
   );
 }
 

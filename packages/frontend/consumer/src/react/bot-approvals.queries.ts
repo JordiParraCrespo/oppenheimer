@@ -56,11 +56,6 @@ function usePendingApprovalsSelect<T>(
   return data ?? fallback;
 }
 
-/** Whether the bot waits on the person: a card of its is pending (the sidebar's amber dot). */
-export function useBotNeedsInput(id: string): boolean {
-  return usePendingApprovalsSelect((rows) => rows.some((row) => row.botId === id), false);
-}
-
 /** Whether any of the workspace's bots waits on the person (the rail's amber dot). */
 export function useAnyBotNeedsInput(): boolean {
   return usePendingApprovalsSelect((rows) => rows.length > 0, false);

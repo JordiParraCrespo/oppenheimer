@@ -20,6 +20,8 @@
     "pinned": "Pinned",
     "pin": "Pin",
     "unpin": "Unpin",
+    "markUnread": "Mark as unread",
+    "markRead": "Mark as read",
     "dropToPin": "Drop a bot here to pin it.",
     "allPinned": "Its bots are under Pinned.",
     "rowActions": "Bot options",
