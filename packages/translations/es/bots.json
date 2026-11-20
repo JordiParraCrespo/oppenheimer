@@ -428,7 +428,7 @@
       "permissions": "Permisos",
       "routines": "Rutinas",
       "homeHost": "Máquina principal",
-      "slack": "Slack"
+      "gateways": "Canales"
     },
     "profile": {
       "title": "Perfil",
@@ -762,6 +762,42 @@
           "new": "Nueva regla para permitir"
         }
       }
+    },
+    "gateways": {
+      "title": "Canales",
+      "subtitle": "Dónde la gente habla con este bot: los chats de WhatsApp que responde y los bots de Telegram en los que responde.",
+      "whatsappFailed": "No se pudieron cargar tus números de WhatsApp.",
+      "telegramFailed": "No se pudieron cargar tus bots de Telegram.",
+      "chatsFailed": "No se pudieron cargar los chats de este número.",
+      "noWhatsapp": "Aún ningún número de WhatsApp puede enviar chats aquí. Vincula uno y confirma tu propio número en Ajustes → WhatsApp.",
+      "whatsappTitle": "WhatsApp · {{label}}",
+      "answers": "Responde a {{groups}} grupos y {{people}} personas",
+      "isDefault": "El bot por defecto de este número",
+      "defaultIs": "Bot por defecto de este número: {{bot}}",
+      "noDefault": "Este número no tiene bot por defecto",
+      "numberSettings": "Ajustes del número",
+      "add": "Añadir chats",
+      "noneHere": "Este bot aún no responde por nombre a ningún chat de este número.",
+      "group": "Grupo",
+      "person": "Persona",
+      "remove": "Quitar",
+      "removeLabel": "Dejar de responder a {{chat}}",
+      "routeFailed": "No se guardó. Inténtalo de nuevo.",
+      "addTitle": "Añadir chats",
+      "addDescription": "Elige los grupos y las personas a los que responde este bot en este número. Un chat que responde otro bot pasa a este.",
+      "tabsLabel": "Grupos o personas",
+      "groups": "Grupos",
+      "people": "Personas",
+      "search": "Buscar por nombre o número",
+      "now": "Ahora: {{who}}",
+      "nowDefault": "bot por defecto ({{bot}})",
+      "nowNone": "sin respuesta",
+      "anotherBot": "otro bot",
+      "noCandidates": "Ningún chat coincide.",
+      "addCount_one": "Añadir {{count}} chat",
+      "addCount_other": "Añadir {{count}} chats",
+      "telegramTitle": "Telegram · {{name}}",
+      "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
     },
     "slack": {
       "title": "Slack",

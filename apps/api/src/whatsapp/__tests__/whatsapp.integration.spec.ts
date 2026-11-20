@@ -10,6 +10,7 @@ import { WhatsappChatGrantRepository } from '../database/whatsapp-chat-grant.rep
 import { WhatsappMessageOrmEntity } from '../database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from '../database/whatsapp-message.repository';
 import type { WhatsappMessagesOwed } from '../database/whatsapp-message.repository.port';
+import { WhatsappContactWroteDomainEvent } from '../domain/events/whatsapp-contact-wrote.domain-event';
 import { WhatsappOwnerWroteDomainEvent } from '../domain/events/whatsapp-owner-wrote.domain-event';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
 import { WhatsappChatGrantEntity } from '../domain/whatsapp-chat-grant.entity';
@@ -142,6 +143,8 @@ describe('whatsapp (integration)', () => {
       transcript: null,
       switchesToBotId: null,
       isReply: false,
+      mentions: [],
+      quotedSenderId: null,
       ...overrides,
     };
   }
@@ -386,6 +389,49 @@ describe('whatsapp (integration)', () => {
         [first?.id],
       );
       expect(seq).toBe(first?.seq);
+    });
+
+    // What breaks this: a contact's message in an allowed chat waking its bot
+    // twice when the host resends the batch, or its mentions written to a
+    // column that does not exist.
+    it('stages a contact’s wake with its message, once however often the batch comes', async () => {
+      const group = '120363000000000001@g.us';
+      const contactOwed = (): WhatsappMessagesOwed => ({
+        ...owed(),
+        contactEventFor: (stored) =>
+          stored.mentions.length > 0
+            ? new WhatsappContactWroteDomainEvent({
+                aggregateId: mine.id,
+                organizationId,
+                userId: ana,
+                accountId: mine.id,
+                chatId: stored.chatId,
+                chatKind: stored.chatKind,
+                chatName: stored.chatName,
+                senderId: stored.senderId,
+                senderName: stored.senderName,
+                messageRowId: stored.id,
+                seq: stored.seq,
+                botId: defaultBot,
+                text: stored.text,
+              })
+            : null,
+      });
+      const batch = [
+        message(mine, { chatId: group, chatKind: 'group', externalId: 'G1' }),
+        message(mine, {
+          chatId: group,
+          chatKind: 'group',
+          externalId: 'G2',
+          mentions: ['34611000000@s.whatsapp.net'],
+        }),
+      ];
+      const [quiet, spoken] = await messages.insertMany(batch, contactOwed());
+      await messages.insertMany(batch, contactOwed());
+
+      expect(quiet?.place).toBeNull();
+      expect(await stagedFor(quiet?.id ?? '')).toBe(0);
+      expect(await stagedFor(spoken?.id ?? '')).toBe(1);
     });
 
     // What breaks this: a conversation start or a switch lost between batches, or a stranger's /new counted.

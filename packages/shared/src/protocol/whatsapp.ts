@@ -21,6 +21,12 @@ export const WHATSAPP_BATCH_MAX_MESSAGES = 50;
  */
 export const WHATSAPP_TEXT_MAX_CHARS = 8_000;
 
+/**
+ * How many people one reported message names as mentioned at most; a runner
+ * keeps the first ones of a message that names more.
+ */
+export const WHATSAPP_MENTIONS_MAX = 64;
+
 /** A WhatsApp JID (`34600111222@s.whatsapp.net`, `1203…@g.us`). A fresh schema per use. */
 const jid = () => z.string().min(3).max(128);
 
@@ -128,6 +134,19 @@ export const whatsappInboundSchema = z.object({
   media: z.enum(WHATSAPP_MEDIA_KINDS).optional(),
   /** The message it replies to, when it quotes one. */
   quotedId: z.string().min(1).max(128).optional(),
+  /**
+   * Who wrote the message `quotedId` names, by phone number when the runner
+   * knows it, as `senderId` is. A reply to the linked number is one of the
+   * two things that wake a bot in a group. A runner from before it sends
+   * none.
+   */
+  quotedSenderId: jid().optional(),
+  /**
+   * Whom the message @-mentions, by phone number when known, as `senderId`
+   * is: a mention of the linked number wakes a bot in a group. A runner from
+   * before it sends none.
+   */
+  mentions: z.array(jid()).max(WHATSAPP_MENTIONS_MAX).optional(),
   /**
    * How long a voice note runs, in seconds, as WhatsApp gives it. Only on a
    * voice note a runner can hand over (`whatsapp.voice`); a runner from

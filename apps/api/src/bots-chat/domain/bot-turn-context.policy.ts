@@ -1,6 +1,7 @@
 import type { BotChannelOrigin, BotMemoryScope } from '@oppenheimer/shared';
 import { isValidTimeZone } from '@oppenheimer/shared/automations';
 import { type PlainPromptId, promptText } from './bot-prompt-text.policy';
+import type { BotContactChat } from './bot-turn.entity';
 
 /** A host as the turn sees it: what the owner would see on the Hosts screen. */
 export interface BotPromptHost {
@@ -40,6 +41,12 @@ export interface TurnContextInput {
    * work, and told that what the person writes meanwhile reaches it.
    */
   asItGoes?: boolean;
+  /**
+   * A contact's turn (`BotTurnEntity.contact`): someone who is not the owner,
+   * in a direct chat or a group. Told who it is answering, and nothing of the
+   * owner's (`CONTACT_LINES`): no hosts, no channel line of the owner's, no memory.
+   */
+  contact?: BotContactChat | null;
   memory?: {
     log: readonly { content: string; createdAt: Date; scope: BotMemoryScope }[];
     toRecall: number;
@@ -79,8 +86,23 @@ type ContextLine = (moment: Moment) => string | null;
  * context, the newest log facts and how many older ones wait for `recall`.
  * A new fact of the moment is a row.
  */
+const nowLine: ContextLine = ({ input, zone }) =>
+  promptText('turn/context.now', { now: formatNow(input.now, zone) });
+
+/**
+ * A contact's block: the time, and who they are to the bot. Nothing of the
+ * owner's (hosts, the owner's channel line, memory), whatever the input holds.
+ */
+const CONTACT_LINES: readonly ContextLine[] = [
+  nowLine,
+  ({ input }) =>
+    promptText(
+      input.contact === 'group' ? 'turn/context.contact-group' : 'turn/context.contact-direct',
+    ),
+];
+
 const CONTEXT_LINES: readonly ContextLine[] = [
-  ({ input, zone }) => promptText('turn/context.now', { now: formatNow(input.now, zone) }),
+  nowLine,
   ({ input }) =>
     input.homeHost
       ? promptText('turn/context.home-host', {
@@ -106,7 +128,9 @@ const CONTEXT_LINES: readonly ContextLine[] = [
  */
 export function composeTurnContext(input: TurnContextInput): string {
   const zone = input.timeZone && isValidTimeZone(input.timeZone) ? input.timeZone : 'UTC';
-  const lines = CONTEXT_LINES.flatMap((line) => line({ input, zone }) ?? []);
+  const lines = (input.contact ? CONTACT_LINES : CONTEXT_LINES).flatMap(
+    (line) => line({ input, zone }) ?? [],
+  );
   return `<${TURN_CONTEXT_TAG}>\n${lines.join('\n')}\n</${TURN_CONTEXT_TAG}>`;
 }
 

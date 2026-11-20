@@ -92,6 +92,12 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
     busyPrefix: string | null,
+    /**
+     * The most turns the turn's conversation may have been sent in the last
+     * hour, counted under the bot's lock with the insert, so a burst of
+     * wakes cannot all pass it; past it the outcome is `busy`.
+     */
+    perHour?: number,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
 
   /**

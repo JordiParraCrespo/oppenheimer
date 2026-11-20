@@ -292,6 +292,7 @@ export class BotMessageRepository
     turnId: string,
     afterMessageId: string | null,
     limit: number,
+    contactsOnly = false,
   ): Promise<BotMessageEntity[]> {
     // IDX_bot_message_conversation: the conversation's messages before this
     // turn was sent.
@@ -305,6 +306,12 @@ export class BotMessageRepository
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
       );
+    if (contactsOnly) {
+      // PK_bot_turn, once per message read.
+      query.andWhere(
+        `EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      );
+    }
     const records = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
@@ -326,6 +333,11 @@ export class BotMessageRepository
         botId,
       })
       .andWhere(`message.role <> 'activity'`)
+      // A contact's turn is not the owner's words: a dream never learns from it.
+      // PK_bot_turn, once per message read.
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      )
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .take(limit)

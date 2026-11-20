@@ -2,7 +2,7 @@ import {
   Bot,
   Database,
   FileText,
-  Hash,
+  MessageCircle,
   ShieldCheck,
   SquareSlash,
   Terminal,
@@ -52,10 +52,10 @@ export const BOT_SETTINGS_TABS = [
     Icon: Zap,
   },
   {
-    slug: 'slack',
-    to: '/bots/$botId/settings/slack',
-    labelKey: 'bots.settings.tabs.slack',
-    Icon: Hash,
+    slug: 'gateways',
+    to: '/bots/$botId/settings/gateways',
+    labelKey: 'bots.settings.tabs.gateways',
+    Icon: MessageCircle,
   },
   {
     slug: 'home-host',

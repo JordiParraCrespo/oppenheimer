@@ -22,6 +22,32 @@ describe('composeTurnContext', () => {
     lastContext: null,
   };
 
+  // What breaks this: a contact in a group told the owner's hosts, their
+  // log of facts, or that their words are the owner's own.
+  it('tells a contact’s turn the time and who it answers, and nothing of the owner’s', () => {
+    const owners = {
+      ...base,
+      homeHost: { name: 'pop-os', online: true, runningSessions: 1 },
+      hosts: [{ name: 'pop-os', online: true, runningSessions: 1 }],
+      channel: 'whatsapp' as const,
+      asItGoes: true,
+      memory: {
+        log: [{ content: 'Jordi’s bank is Ibercaja', createdAt: base.now, scope: 'bot' as const }],
+        toRecall: 3,
+      },
+    };
+    const group = composeTurnContext({ ...owners, contact: 'group' });
+    expect(group).toContain('It is Thursday, 15 October 2026');
+    expect(group).toContain('a WhatsApp group your owner allowed');
+    for (const owned of ['pop-os', 'Ibercaja', 'older fact', 'their own number', 'On it']) {
+      expect(group).not.toContain(owned);
+    }
+    expect(composeTurnContext({ ...owners, contact: 'direct' })).toContain(
+      'someone who is not your owner',
+    );
+    expect(composeTurnContext(owners)).toContain('pop-os');
+  });
+
   it('is one block, wrapped in the tag the system prompt names', () => {
     const block = composeTurnContext(base);
     expect(block.startsWith('<turn_context>\n')).toBe(true);

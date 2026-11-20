@@ -11,7 +11,12 @@ import {
 import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { channelReplyOf, sendsAsItGoes, unsentTexts } from '../../domain/bot-channel-turn.policy';
+import {
+  channelReplyOf,
+  contactReplyOf,
+  sendsAsItGoes,
+  unsentTexts,
+} from '../../domain/bot-channel-turn.policy';
 import { DeliverChannelReplyCommand } from './deliver-channel-reply.command';
 
 /**
@@ -40,12 +45,13 @@ export class DeliverChannelReplyCommandHandler
     const turn = found.unwrap();
     if (!isChannelOrigin(turn.origin) || !turn.ended) return;
     const lines = await this.messages.findTurnLines(turn.organizationId, turn.id);
-    const text = channelReplyOf(
-      turn,
-      unsentTexts(lines, sendsAsItGoes(turn)),
-      await this.waitingAt(turn),
-    );
-    await this.channel.send(turn, text, metadata.correlationId);
+    const texts = unsentTexts(lines, sendsAsItGoes(turn));
+    // A contact is told no failure's reason, and nothing when the bot said nothing;
+    // a contact's turn has nothing to approve, so only the owner's points at a card.
+    const text = turn.contact
+      ? contactReplyOf(turn, texts)
+      : channelReplyOf(turn, texts, await this.waitingAt(turn));
+    if (text) await this.channel.send(turn, text, metadata.correlationId);
   }
 
   /** The bot's chat in the console, when the card waiting there is this turn's. */

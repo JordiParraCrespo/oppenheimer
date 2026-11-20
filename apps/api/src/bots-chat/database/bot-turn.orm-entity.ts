@@ -179,6 +179,14 @@ export class BotTurnOrmEntity {
   @Column({ type: 'boolean', default: false })
   steer!: boolean;
 
+  /**
+   * A contact's turn (`1795172296524-AddBotTurnContact`): run for someone who
+   * is not the owner, without the owner's tools or memory; `direct` or
+   * `group`, null for any other turn.
+   */
+  @Column({ type: 'varchar', length: 8, nullable: true })
+  contact!: string | null;
+
   /** On an answer's turn: the turn it answers. */
   @Column({ type: 'uuid', nullable: true })
   answersTurnId!: string | null;

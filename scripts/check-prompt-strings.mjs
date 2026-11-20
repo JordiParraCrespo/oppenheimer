@@ -63,6 +63,11 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/domain/bot-channel-turn.policy.ts',
+    starts: 'Sorry, I can’t answer that right now.',
+    why: 'sent to a contact on WhatsApp when their turn failed, not to a model',
+  },
+  {
+    file: 'bots-chat/domain/bot-channel-turn.policy.ts',
     starts: 'Waiting for your approval in Oppenheimer:',
     why: 'sent to the person on Telegram, WhatsApp or Slack with the console link, not to a model',
   },

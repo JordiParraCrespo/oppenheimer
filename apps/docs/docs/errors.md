@@ -1151,12 +1151,13 @@ code, or one past its ten minutes; after five wrong codes it is locked
 confirm with no code waiting.
 
 `WHATSAPP_015` to `WHATSAPP_018` are a number's allowed chats
-(`/v1/whatsapp/accounts/{id}/grants`, and the bot tool `allow_whatsapp_chat`):
+(`/v1/whatsapp/accounts/{id}/grants`, `/v1/whatsapp/accounts/{id}/routes`, and
+the bot tool `allow_whatsapp_chat`):
 the groups and people besides the owner who may talk to the number's bots,
 each with the bot that answers there. Nothing is allowed until the owner's own
 number is confirmed (`WHATSAPP_015`). `WHATSAPP_017` is the owner's own chat,
-which is always theirs, or the number's chat with itself. A number allows 50
-chats at most (`WHATSAPP_018`).
+which is always theirs, or the number's chat with itself. A number allows
+1,000 chats at most (`WHATSAPP_018`).
 
 ## Telegram
 
