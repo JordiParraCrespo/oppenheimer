@@ -54,7 +54,7 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
   `"closeRefusalDetail" IS NULL OR "closeRefusalCode" IS NOT NULL`,
 )
 @Check('CHK_work_session_bot', `"botId" IS NULL OR origin = 'bot'`)
-@Index('IDX_work_session_bot', ['botId'], { where: '"botId" IS NOT NULL' })
+@Index('IDX_work_session_bot', ['organizationId', 'botId'], { where: '"botId" IS NOT NULL' })
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
 @Index('IDX_work_session_host_state', ['hostId', 'state'])
 @Index('IDX_work_session_created_by', ['createdByUserId'])
@@ -290,7 +290,7 @@ export class WorkSessionOrmEntity {
   origin!: 'person' | 'automation' | 'review' | 'bot';
 
   /**
-   * The bot that started it (`1795200000000-AddWorkSessionBot`), only on a
+   * The bot that started it (`1795193805274-AddWorkSessionBot`), only on a
    * `bot` session (`CHK_work_session_bot`); null on the ones from before.
    * Cleared when the bot is deleted: the session stays its owner's.
    */

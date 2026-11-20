@@ -8,14 +8,15 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * `work_session.botId` is nullable: only a `bot` session has one
  * (`CHK_work_session_bot`), and the bot sessions from before it was kept stay
  * null, since nothing recorded which bot it was. Deleting the bot clears it;
- * the session stays its owner's. Adding a null column rewrites no row.
+ * the session stays its owner's. The key carries the workspace, so a session
+ * never names another workspace's bot. Adding a null column rewrites no row.
  *
  * The lookup goes from the event's repository and branch to the sessions on
  * it, so `session_checkout` gets that index; `work_session.botId` gets one for
  * the foreign key's `SET NULL`.
  */
-export class AddWorkSessionBot1795200000000 implements MigrationInterface {
-  name = 'AddWorkSessionBot1795200000000';
+export class AddWorkSessionBot1795193805274 implements MigrationInterface {
+  name = 'AddWorkSessionBot1795193805274';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "work_session" ADD "botId" uuid`);
@@ -23,10 +24,10 @@ export class AddWorkSessionBot1795200000000 implements MigrationInterface {
       `ALTER TABLE "work_session" ADD CONSTRAINT "CHK_work_session_bot" CHECK ("botId" IS NULL OR origin = 'bot')`,
     );
     await queryRunner.query(
-      `ALTER TABLE "work_session" ADD CONSTRAINT "FK_work_session_bot" FOREIGN KEY ("botId") REFERENCES bot(id) ON DELETE SET NULL`,
+      `ALTER TABLE "work_session" ADD CONSTRAINT "FK_work_session_bot" FOREIGN KEY ("organizationId", "botId") REFERENCES bot("organizationId", id) ON DELETE SET NULL ("botId")`,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_work_session_bot" ON "work_session" ("botId") WHERE "botId" IS NOT NULL`,
+      `CREATE INDEX "IDX_work_session_bot" ON "work_session" ("organizationId", "botId") WHERE "botId" IS NOT NULL`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_session_checkout_repo_branch" ON "session_checkout" ("organizationId", "githubRepoId", branch)`,
