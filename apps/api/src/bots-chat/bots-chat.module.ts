@@ -63,6 +63,7 @@ import { BotSteeringFactory } from './application/bot-steering.factory';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
+import { BotSuggestionResolver } from './application/bot-suggestion.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
@@ -468,6 +469,7 @@ const queryHandlers: Provider[] = [
     BotSentTurnResolver,
     BotGoalReviewResolver,
     BotCompletionResolver,
+    BotSuggestionResolver,
     BotSelfToolsFactory,
     BotSkillToolsFactory,
     BotGuideToolsFactory,

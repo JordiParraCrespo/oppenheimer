@@ -5,7 +5,6 @@ import {
   useBotActiveTurn,
   useBotGoal,
   useBotLoop,
-  useBotSuggestion,
   useBotWaitingMessages,
   useCancelBotTurn,
   useModelProviders,
@@ -32,6 +31,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useComposerSuggestion } from '@/features/bots/hooks/use-composer-suggestion';
 import { useEscapeToStop } from '@/features/bots/hooks/use-escape-to-stop';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
@@ -76,7 +76,7 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  *
  * Once the bot has answered and the field is empty, it offers a guess at
  * what you will write next, greyed out where the placeholder is, the way
- * Claude Code does (`useBotSuggestion`): Tab writes it into the field, to
+ * Claude Code does (`useComposerSuggestion`): Tab writes it into the field, to
  * send as it is or to edit first; typing anything else ignores it.
  *
  * Images ride the message: the paperclip, a paste, or a drop holds them as
@@ -160,15 +160,12 @@ export function BotComposer({
     builtIn.notice;
   const failure = send.error ?? cancel.error ?? builtIn.error;
   const running = active?.status === 'running';
-  const suggestion = useBotSuggestion(
-    botId,
-    active === null &&
-      !send.isPending &&
-      waiting === 0 &&
-      draft === '' &&
-      images.images.length === 0 &&
-      !builtIn.notice,
-  );
+  const suggested = useComposerSuggestion(botId, field, {
+    busy: active !== null || send.isPending || waiting > 0,
+    draft,
+    images: images.images.length,
+    notice: Boolean(builtIn.notice),
+  });
   const message = (steer: boolean) => ({
     id: botId,
     content: pastes.content,
@@ -225,12 +222,7 @@ export function BotComposer({
   // else to the walk through what you sent.
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     if (pastes.onKeyDownCapture(event)) return;
-    // Tab on the paperclip or Send still moves focus; only the field's takes it.
-    if (suggestion && event.target === field.current && isPlainTab(event)) {
-      event.preventDefault();
-      fillBotDraft(botId, suggestion);
-      return;
-    }
+    if (suggested.onKeyDownCapture(event)) return;
     if (slash.open) slash.onKeyDownCapture(event);
     else recall.onKeyDownCapture(event);
   }
@@ -317,7 +309,7 @@ export function BotComposer({
                 : undefined
             }
             placeholder={
-              suggestion ??
+              suggested.suggestion ??
               (running
                 ? t('bots.chat.placeholderRunning', { name })
                 : t('bots.chat.placeholder', { name }))
@@ -349,12 +341,5 @@ export function BotComposer({
       </div>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
-  );
-}
-
-/** Tab alone, which takes the suggestion; with a modifier it moves focus as ever. */
-function isPlainTab(event: KeyboardEvent<HTMLDivElement>): boolean {
-  return (
-    event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey
   );
 }

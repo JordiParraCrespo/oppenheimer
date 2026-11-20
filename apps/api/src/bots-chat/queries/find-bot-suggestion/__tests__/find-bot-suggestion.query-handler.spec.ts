@@ -1,138 +1,73 @@
-import type { BotTurnRequest } from '@oppenheimer/backend-agents';
-import { FakeBotEngine } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import type { CacheService } from '@oppenheimer/backend-cache';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
-import { BotCompletionResolver } from '../../../application/bot-completion.resolver';
-import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
+import type { BotSuggestionResolver } from '../../../application/bot-suggestion.resolver';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import type { BotMessageEntity } from '../../../domain/bot-message.entity';
-import {
-  BOT_SUGGESTER_PROMPT,
-  type SuggestionMessage,
-} from '../../../domain/bot-suggestion.policy';
+import type { SuggestionMessage } from '../../../domain/bot-suggestion.policy';
 import type { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import { FindBotSuggestionQuery } from '../find-bot-suggestion.query';
 import { FindBotSuggestionQueryHandler } from '../find-bot-suggestion.query-handler';
 
 /**
- * The composer's suggestion: asked of the bot's own model, with no tools,
- * once per message of the bot's it answers (the cache), its spend recorded as
- * `suggestion`; none while a turn runs, before the bot answered, with no key,
- * or when the model fails. The policy's spec covers what is sent and shown.
+ * When the composer gets a suggestion at all: never while a turn runs or
+ * before the bot answered, and always from the console chat's own
+ * conversation, never a channel's. The model, the cache and the spend are
+ * `BotSuggestionResolver`'s spec.
  */
 const scope = { organizationId: 'org-1' } as AccessScope;
+const answered: SuggestionMessage[] = [
+  { id: 'm-1', role: 'user', content: 'run the tests' },
+  { id: 'm-2', role: 'assistant', content: 'All green. Open the pull request?' },
+];
 
-function setup(
-  options: {
-    recent?: SuggestionMessage[];
-    running?: boolean;
-    target?: boolean;
-    answer?: string;
-    fails?: boolean;
-  } = {},
-) {
-  const requests: BotTurnRequest[] = [];
-  const engine = new FakeBotEngine((request) => {
-    requests.push(request);
-    if (options.fails) return [{ type: 'done', reason: 'failed', error: 'upstream down' }];
-    return [{ type: 'text.done', text: options.answer ?? 'yes, open the pull request' }];
-  });
-  const recordCall = vi.fn(async () => undefined);
-  const recent = options.recent ?? [
-    { id: 'm-1', role: 'user', content: 'run the tests' },
-    { id: 'm-2', role: 'assistant', content: 'All green. Open the pull request?' },
-  ];
+function setup(options: { recent?: SuggestionMessage[]; running?: boolean } = {}) {
+  const recent = options.recent ?? answered;
+  const bot = { organizationId: 'org-1', id: 'bot-1' };
+  const lookup = {
+    bot: vi.fn(async () => bot as unknown as Awaited<ReturnType<BotLookupPort['bot']>>),
+  } satisfies BotLookupPort;
+  const turns = {
+    findRunningIn: vi.fn(async () => (options.running ? ({} as BotTurnEntity) : null)),
+  } satisfies Pick<BotTurnRepositoryPort, 'findRunningIn'>;
   const messages = {
     findConversation: vi.fn(async () => recent as unknown as BotMessageEntity[]),
   } satisfies Pick<BotMessageRepositoryPort, 'findConversation'>;
-  const kept = new Map<string, unknown>();
-  const cache = {
-    getOrSet: async <T>(key: string, _ttl: number, load: () => Promise<T>): Promise<T> => {
-      if (!kept.has(key)) kept.set(key, await load());
-      return kept.get(key) as T;
-    },
-  } satisfies Pick<CacheService, 'getOrSet'>;
+  const suggestions = {
+    suggest: vi.fn(async () => 'yes, open the pull request'),
+  } satisfies Pick<BotSuggestionResolver, 'suggest'>;
   const handler = new FindBotSuggestionQueryHandler(
-    {
-      bot: vi.fn(async () => ({ organizationId: 'org-1', id: 'bot-1' })),
-    } as unknown as BotLookupPort,
-    {
-      findRunningIn: vi.fn(async () => (options.running ? ({} as BotTurnEntity) : null)),
-    } satisfies Pick<BotTurnRepositoryPort, 'findRunningIn'> as unknown as BotTurnRepositoryPort,
+    lookup,
+    turns as unknown as BotTurnRepositoryPort,
     messages as unknown as BotMessageRepositoryPort,
-    {
-      ownModel: vi.fn(async () =>
-        options.target === false
-          ? null
-          : { provider: 'glm' as const, model: 'glm-5.3', apiKey: 'workspace-key' },
-      ),
-    } satisfies Pick<BotModelAccessResolver, 'ownModel'> as unknown as BotModelAccessResolver,
-    new BotCompletionResolver(engine, { recordCall, findForBot: vi.fn() }),
-    cache as unknown as CacheService,
+    suggestions as unknown as BotSuggestionResolver,
   );
   const run = () => handler.execute(new FindBotSuggestionQuery(scope, 'bot-1'));
-  return { run, requests, kept, messages };
+  return { run, messages, suggestions, bot };
 }
 
 describe('FindBotSuggestionQueryHandler', () => {
-  it('asks the bot’s own model, with no tools, for the person’s next message', async () => {
-    const { run, requests } = setup();
+  it('suggests an answer to the bot’s last message in the console chat', async () => {
+    const { run, messages, suggestions, bot } = setup();
     await expect(run()).resolves.toBe('yes, open the pull request');
-    expect(requests).toHaveLength(1);
-    expect(requests[0]).toMatchObject({
-      provider: 'glm',
-      model: 'glm-5.3',
-      apiKey: 'workspace-key',
-      systemPrompt: BOT_SUGGESTER_PROMPT,
-      tools: [],
-    });
-    expect(requests[0].message).toContain('All green. Open the pull request?');
-  });
-
-  it('reads the console chat alone, never a channel’s conversation (Telegram, WhatsApp)', async () => {
-    const { run, messages } = setup();
-    await run();
     expect(messages.findConversation).toHaveBeenCalledWith(scope, 'bot-1', expect.any(Number));
+    expect(suggestions.suggest).toHaveBeenCalledWith(bot, answered, answered[1]);
   });
 
-  it('asks once per message of the bot’s, however often the composer reads it', async () => {
-    const { run, requests, kept } = setup();
-    await run();
-    await expect(run()).resolves.toBe('yes, open the pull request');
-    expect(requests).toHaveLength(1);
-    expect([...kept.keys()]).toEqual(['bot-suggestion:org-1:bot-1:m-2']);
+  it('suggests nothing, and asks for none, while a turn runs', async () => {
+    const { run, suggestions } = setup({ running: true });
+    await expect(run()).resolves.toBeNull();
+    expect(suggestions.suggest).not.toHaveBeenCalled();
   });
 
-  it('suggests nothing, and calls no model, while a turn runs or before the bot answered', async () => {
-    const running = setup({ running: true });
-    await expect(running.run()).resolves.toBeNull();
-    expect(running.requests).toHaveLength(0);
-
-    const waiting = setup({
+  it('suggests nothing, and asks for none, before the bot has answered', async () => {
+    const { run, suggestions } = setup({
       recent: [
         { id: 'm-1', role: 'assistant', content: 'Hi.' },
         { id: 'm-2', role: 'user', content: 'deploy it' },
       ],
     });
-    await expect(waiting.run()).resolves.toBeNull();
-    expect(waiting.requests).toHaveLength(0);
-  });
-
-  it('suggests nothing when the bot’s provider has no credential', async () => {
-    const { run, requests } = setup({ target: false });
     await expect(run()).resolves.toBeNull();
-    expect(requests).toHaveLength(0);
-  });
-
-  it('suggests nothing when the model says NONE', async () => {
-    await expect(setup({ answer: 'NONE' }).run()).resolves.toBeNull();
-  });
-
-  it('suggests nothing when the model fails, and keeps no answer, so the next read asks again', async () => {
-    const { run, kept } = setup({ fails: true });
-    await expect(run()).resolves.toBeNull();
-    expect(kept.size).toBe(0);
+    expect(suggestions.suggest).not.toHaveBeenCalled();
   });
 });
