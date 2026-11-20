@@ -442,6 +442,7 @@ describe('SessionChat', () => {
       files: [],
       older: 'none',
       activity: null,
+      suggestion: null,
       interruptible: true,
       commands: null,
     });
