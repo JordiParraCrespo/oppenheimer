@@ -1353,7 +1353,20 @@ describe("the agent's suggestion", () => {
     const chat = new Chat();
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
-    act(() => chat.apply({ reset: true, history: 'end', entries: [] }));
+    act(() =>
+      chat.apply({
+        reset: true,
+        history: 'end',
+        entries: [
+          entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Write a poem' } }),
+          entry({
+            type: 'assistant',
+            uuid: 'a1',
+            message: { role: 'assistant', content: [{ type: 'text', text: 'Here it is.' }] },
+          }),
+        ],
+      }),
+    );
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     act(() => chat.setSuggestion('save it to a file'));
 
@@ -1365,10 +1378,37 @@ describe("the agent's suggestion", () => {
     expect(typed).toEqual([]);
   });
 
+  // What breaks this: Claude Code's own placeholder on a fresh session, which
+  // Tab does not take there, offered as a prediction.
+  it('offers nothing before the first turn has finished', () => {
+    const chat = new Chat();
+    act(() => chat.apply({ reset: true, history: 'end', entries: [] }));
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    act(() => chat.setSuggestion('save it to a file'));
+    expect(
+      screen.queryByPlaceholderText(
+        'sessions.chat.composer.suggestion{"suggestion":"save it to a file"}',
+      ),
+    ).toBeNull();
+  });
+
   // What breaks this: Tab overwriting what the person was writing.
   it('leaves Tab alone once the person has written something', () => {
     const chat = new Chat();
-    act(() => chat.apply({ reset: true, history: 'end', entries: [] }));
+    act(() =>
+      chat.apply({
+        reset: true,
+        history: 'end',
+        entries: [
+          entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Write a poem' } }),
+          entry({
+            type: 'assistant',
+            uuid: 'a1',
+            message: { role: 'assistant', content: [{ type: 'text', text: 'Here it is.' }] },
+          }),
+        ],
+      }),
+    );
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     act(() => chat.setSuggestion('save it to a file'));
     const field = screen.getByRole('textbox') as HTMLTextAreaElement;

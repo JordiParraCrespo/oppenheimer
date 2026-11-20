@@ -15,6 +15,13 @@ const RULE = /^\s*─{8,}\s*$/u;
 const PROMPT = /^(\s*[❯>][\s ])(.*)$/u;
 
 /**
+ * What else Claude Code draws faint in its empty box, which Tab does not
+ * take: the example it offers before the first message (`Try "…"`) and its
+ * hints about messages queued in its terminal.
+ */
+const NOT_A_SUGGESTION = /^(?:Try "|Press up to )/u;
+
+/**
  * The next message Claude Code predicts the person will send, read off its
  * input box. After most turns it fills the empty box with a suggestion drawn
  * faint, under the cursor, which Tab takes in its own terminal; the
@@ -25,7 +32,8 @@ const PROMPT = /^(\s*[❯>][\s ])(.*)$/u;
  * The box is the last row starting `❯` with a rule over and under it. The
  * first cell after the prompt holds the cursor, drawn inverse, so it is not
  * asked to be faint; every other letter is. None while the box is empty, the
- * agent works or asks (no box, or no faint text in it).
+ * agent works or asks (no box, or no faint text in it), or the faint text is
+ * one of Claude Code's own placeholders (`NOT_A_SUGGESTION`).
  */
 export function readPromptSuggestion(rows: readonly ScreenRow[]): string | null {
   for (let index = rows.length - 2; index >= 1; index--) {
@@ -44,7 +52,8 @@ export function readPromptSuggestion(rows: readonly ScreenRow[]): string | null 
       if (!row.faint[at]) return null;
       letters++;
     }
-    return letters > 0 ? text.trim() : null;
+    const suggestion = text.trim();
+    return letters > 0 && !NOT_A_SUGGESTION.test(suggestion) ? suggestion : null;
   }
   return null;
 }

@@ -154,7 +154,9 @@ export function SessionChatSend({
           onCompact={() => chat.post('/compact')}
           // Claude Code's commands are the ones the menu knows; a host that
           // predates the project's list still takes the built-ins.
-          suggestion={state.suggestion}
+          // A prediction follows a finished turn: before the first, the box
+          // holds only Claude Code's own placeholder.
+          suggestion={last && !last.working ? state.suggestion : null}
           commands={hostCommands && agent === 'claude-code' ? (state.commands ?? []) : null}
         />
       </div>

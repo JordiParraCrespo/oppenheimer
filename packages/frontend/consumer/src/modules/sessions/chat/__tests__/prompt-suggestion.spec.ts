@@ -43,6 +43,17 @@ describe('readPromptSuggestion', () => {
     expect(readPromptSuggestion(screen(box('❯ ', 'save it to a file', false)))).toBeNull();
   });
 
+  // What breaks this: Claude Code's example prompt on a fresh session offered
+  // as if it were a prediction, Tab putting `Try "…"` in the draft.
+  it("never offers Claude Code's own placeholders, which Tab does not take", () => {
+    expect(
+      readPromptSuggestion(screen(box('❯\u00a0', 'Try "refactor <filepath>"', true))),
+    ).toBeNull();
+    expect(
+      readPromptSuggestion(screen(box('❯\u00a0', 'Press up to edit queued messages', true))),
+    ).toBeNull();
+  });
+
   it('offers nothing while the box is empty', () => {
     expect(readPromptSuggestion(screen(box('❯ ', ' ', false)))).toBeNull();
   });
