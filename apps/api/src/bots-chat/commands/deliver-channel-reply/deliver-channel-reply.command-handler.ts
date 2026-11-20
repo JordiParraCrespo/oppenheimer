@@ -5,7 +5,12 @@ import { BotChannelReplyResolver } from '../../application/bot-channel-reply.res
 import { BOT_MESSAGE_REPOSITORY, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { channelReplyOf, sendsAsItGoes, unsentTexts } from '../../domain/bot-channel-turn.policy';
+import {
+  channelReplyOf,
+  contactReplyOf,
+  sendsAsItGoes,
+  unsentTexts,
+} from '../../domain/bot-channel-turn.policy';
 import { DeliverChannelReplyCommand } from './deliver-channel-reply.command';
 
 /**
@@ -31,7 +36,9 @@ export class DeliverChannelReplyCommandHandler
     const turn = found.unwrap();
     if (!isChannelOrigin(turn.origin) || !turn.ended) return;
     const lines = await this.messages.findTurnLines(turn.organizationId, turn.id);
-    const text = channelReplyOf(turn, unsentTexts(lines, sendsAsItGoes(turn)));
-    await this.channel.send(turn, text, metadata.correlationId);
+    const texts = unsentTexts(lines, sendsAsItGoes(turn));
+    // A contact is told no failure's reason, and nothing when the bot said nothing.
+    const text = turn.contact ? contactReplyOf(turn, texts) : channelReplyOf(turn, texts);
+    if (text) await this.channel.send(turn, text, metadata.correlationId);
   }
 }

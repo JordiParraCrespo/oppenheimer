@@ -363,12 +363,11 @@ export {
 } from './voice.queries';
 export {
   useAnswerWhatsappAs,
-  useAnswerWhatsappChatAs,
   useConfirmWhatsappOwner,
   useLinkWhatsapp,
   useRequestWhatsappOwner,
-  useRevokeWhatsappChat,
-  useSuspenseWhatsappChatGrants,
+  useRouteWhatsappChats,
+  useSuspenseWhatsappChats,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

@@ -10,12 +10,14 @@ import type { WhatsappDevicePort, WhatsappQuote } from './whatsapp-device.port';
 /** Where a reply goes: the owner's direct chat with the number, quoting their message. */
 export interface WhatsappReplyTarget {
   chatId: string;
+  /** The chat's kind and name, kept with the reply; the owner's own chat when left out. */
+  chat?: { chatKind: 'direct' | 'group'; chatName: string | null };
   /** The owner's message it answers, quoted above the first part; null to quote nothing. */
   quote: WhatsappQuote | null;
 }
 
 /**
- * Sends a reply in the owner's chat, not as a tool's send: a bot's answer to
+ * Sends a reply in the owner's chat, or in a chat the number allows, not as a tool's send: a bot's answer to
  * the owner's own message (`botId`, recorded as a reply, so it is not one of
  * the bot's sends a day), or a fixed line (no bot). It is cut to WhatsApp's
  * length, quotes the owner's message on its first part, is paced by the
@@ -57,7 +59,11 @@ export class WhatsappReplyResolver {
       await this.messages.recordBotSend(
         this.mapper.fromBotSend({
           account,
-          chat: { chatId: target.chatId, chatKind: 'direct', chatName: null },
+          chat: {
+            chatId: target.chatId,
+            chatKind: target.chat?.chatKind ?? 'direct',
+            chatName: target.chat?.chatName ?? null,
+          },
           text: part,
           sent: outcome,
           botId,

@@ -439,7 +439,7 @@ func (d *Device) onEvent(raw any) {
 	switch evt := raw.(type) {
 	case *events.Message:
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, logger: d.logger}
+		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, self: selfOf(client), logger: d.logger}
 		listener.Received(read.received(ctx, evt))
 		cancel()
 	case *events.Connected:
@@ -494,6 +494,16 @@ func (d *Device) reconnectOutdated(client *whatsmeow.Client) {
 	if err := client.Connect(); err != nil {
 		d.logger.Warn("whatsapp: reconnecting with the new web version failed", slog.Any("error", err))
 	}
+}
+
+// selfOf is the paired number's own ids, empty before pairing.
+func selfOf(client *whatsmeow.Client) selfIDs {
+	var self selfIDs
+	if client.Store.ID != nil {
+		self.phone = client.Store.ID.ToNonAD()
+	}
+	self.lid = client.Store.LID.ToNonAD()
+	return self
 }
 
 // clientNames reads names off the client's store and, for groups, WhatsApp.
