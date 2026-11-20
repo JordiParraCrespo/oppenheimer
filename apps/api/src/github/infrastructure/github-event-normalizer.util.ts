@@ -179,6 +179,9 @@ function pullRequestParts(pr: Json) {
       headSha: str(head.sha),
       draft: Boolean(pr.draft),
       fork,
+      // `fork` is also true inside a repository that is itself a fork; the
+      // head's id says whether the branch lives in another repository.
+      headRepoId: num(headRepo.id),
     },
     context: {
       ref: number === null ? undefined : `#${number}`,

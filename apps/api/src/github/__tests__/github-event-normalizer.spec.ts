@@ -108,6 +108,21 @@ describe('pull requests', () => {
     expect(event.attributes.fork).toBe(true);
   });
 
+  it("names the head's repository, so a pull request inside a forked repository is told from a fork's", () => {
+    const [own] = normalize('pull_request', {
+      action: 'opened',
+      pull_request: pullRequest({
+        head: {
+          ref: 'opp/fix-env',
+          sha: 'f00',
+          repo: { id: 821374923, full_name: 'acme/xrp-mobile', fork: true },
+        },
+      }),
+    });
+    expect(own.attributes).toMatchObject({ fork: true, headRepoId: 821374923 });
+    expect(own.subject.ref).toBe('821374923');
+  });
+
   it('makes one issue_labeled per label, keyed by the label', () => {
     const [event] = normalize('pull_request', {
       action: 'labeled',

@@ -77,7 +77,11 @@ function routine(botId: string) {
   return { automation, trigger: automation.triggers[0] };
 }
 
-function command(actorIsOwnApp = false, branch = 'feature/x', fork = false) {
+function command(
+  actorIsOwnApp = false,
+  branch = 'feature/x',
+  head: { fork: boolean; headRepoId: number | null } = { fork: false, headRepoId: 101 },
+) {
   return new FireEventTriggersCommand({
     organizationId: 'org-1',
     inboundEventId: 'event-1',
@@ -86,7 +90,7 @@ function command(actorIsOwnApp = false, branch = 'feature/x', fork = false) {
     subjectRef: '101',
     externalId: 'delivery-1',
     actorIsOwnApp,
-    attributes: { baseBranch: 'main', branch, fork },
+    attributes: { baseBranch: 'main', branch, ...head },
     metadata: { correlationId: 'delivery-corr' },
   });
 }
@@ -226,8 +230,22 @@ describe('FireEventTriggersCommandHandler', () => {
     // branch name reused on a fork must not hide someone else's pull request.
     const own = routine('bot-1');
     const { handler, decided, queryBus } = setup({ automation: 0, workspace: 0 }, [own], ['bot-1']);
-    expect(await handler.execute(command(false, 'opp/fix-login', true))).toBe(1);
+    expect(
+      await handler.execute(command(false, 'opp/fix-login', { fork: true, headRepoId: 202 })),
+    ).toBe(1);
     expect(decided.map((run) => run.skipReason)).toEqual([null]);
     expect(queryBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('skips its own pull request inside a repository that is itself a fork', async () => {
+    // Regression: GitHub marks the head `fork` whenever its repository is a
+    // fork, so keying on that flag let the loop back in for owners who work in
+    // their fork. The head's repository is the event's own here.
+    const own = routine('bot-1');
+    const { handler, decided } = setup({ automation: 0, workspace: 0 }, [own], ['bot-1']);
+    expect(
+      await handler.execute(command(false, 'opp/fix-login', { fork: true, headRepoId: 101 })),
+    ).toBe(0);
+    expect(decided.map((run) => run.skipReason)).toEqual(['own_session_event']);
   });
 });
