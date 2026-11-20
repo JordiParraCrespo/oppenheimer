@@ -15,6 +15,7 @@ import { userActor } from '../../bots/domain/bot.types';
 import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
+import { BotWhatsappContactWakeDomainEventHandler } from '../application/event-handlers/bot-whatsapp-contact-wake.domain-event-handler';
 import { BotWhatsappWakeDomainEventHandler } from '../application/event-handlers/bot-whatsapp-wake.domain-event-handler';
 import { BotConversationMapper } from '../bot-conversation.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
@@ -23,6 +24,8 @@ import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import type { WakeOnWhatsappCommand } from '../commands/wake-on-whatsapp/wake-on-whatsapp.command';
 import { WakeOnWhatsappCommandHandler } from '../commands/wake-on-whatsapp/wake-on-whatsapp.command-handler';
+import type { WakeOnWhatsappContactCommand } from '../commands/wake-on-whatsapp-contact/wake-on-whatsapp-contact.command';
+import { WakeOnWhatsappContactCommandHandler } from '../commands/wake-on-whatsapp-contact/wake-on-whatsapp-contact.command-handler';
 import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
@@ -31,7 +34,11 @@ import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
-import { WHATSAPP_VOICE_NOTE_OPENING, whatsappSourceKey } from '../domain/bot-whatsapp-turn.policy';
+import {
+  WHATSAPP_CONTACT_TURNS_PER_HOUR,
+  WHATSAPP_VOICE_NOTE_OPENING,
+  whatsappSourceKey,
+} from '../domain/bot-whatsapp-turn.policy';
 
 /**
  * The confirmed owner's messages to their linked number, as the outbox
@@ -329,6 +336,99 @@ describe('waking a bot on WhatsApp (integration)', () => {
       [theirs.id],
     );
     expect(count).toBe(0);
+  });
+
+  describe('a contact in a chat the number allows', () => {
+    const groupId = '120363000000000001@g.us';
+    let contactEvents: BotWhatsappContactWakeDomainEventHandler;
+
+    beforeAll(() => {
+      const wakeOn = new WakeOnWhatsappContactCommandHandler(
+        new BotChannelWakeResolver(
+          new BotConversationRepository(dataSource, new BotConversationMapper()),
+          turns,
+          new BotModelAccessResolver(bots, {} as TurnCredentialsPort),
+        ),
+      );
+      contactEvents = new BotWhatsappContactWakeDomainEventHandler({
+        execute: (command: WakeOnWhatsappContactCommand) => wakeOn.execute(command),
+      } as unknown as CommandBus);
+    });
+
+    const spoke = (
+      seq: string,
+      overrides: Partial<Parameters<BotWhatsappContactWakeDomainEventHandler['handle']>[0]> = {},
+    ) =>
+      contactEvents.handle({
+        organizationId,
+        userId,
+        accountId,
+        chatId: groupId,
+        chatKind: 'group',
+        chatName: 'Family',
+        senderId: '34600999888@s.whatsapp.net',
+        senderName: 'Marta',
+        messageRowId: rowOf(seq),
+        seq,
+        botId: juno.id,
+        text: `@Juno message ${seq}`,
+        metadata: { correlationId: randomUUID(), timestamp: Date.now() },
+        ...overrides,
+      });
+
+    // What breaks this: a contact's message run as the owner's turn (with
+    // their tools and memory), read unfenced, steering a turn under way, or
+    // answered twice when the outbox delivers it again.
+    it('queues one contact’s turn per message, in the group’s own conversation, with what they wrote fenced', async () => {
+      await spoke('50');
+      await spoke('50');
+
+      const queued: { id: string; conversationId: string; contact: boolean; steer: boolean }[] =
+        await dataSource.query(
+          `SELECT id, "conversationId", contact, steer FROM bot_turn WHERE "botId" = $1`,
+          [juno.id],
+        );
+      expect(queued).toHaveLength(1);
+      expect(queued[0]).toMatchObject({ contact: true, steer: false });
+      expect(await conversationOf(queued[0]?.conversationId ?? '')).toMatchObject({
+        kind: 'whatsapp',
+        chatId: groupId,
+      });
+      const [opening]: { content: string }[] = await dataSource.query(
+        `SELECT content FROM bot_message WHERE "turnId" = $1`,
+        [queued[0]?.id],
+      );
+      expect(opening?.content).toBe(
+        '<whatsapp>\nMarta (+34600999888) wrote in the group "Family":\n@Juno message 50\n</whatsapp>',
+      );
+      const turn = (await turns.findForRun(queued[0]?.id ?? '')).unwrap();
+      expect(turn.contact).toBe(true);
+    });
+
+    // What breaks this: a busy group spending the owner's model without end,
+    // or holding the bot from answering the owner.
+    it('wakes nothing past the chat’s turns an hour, and keeps the owner’s own chat apart', async () => {
+      for (let seq = 100; seq < 100 + WHATSAPP_CONTACT_TURNS_PER_HOUR + 3; seq++) {
+        await spoke(String(seq));
+      }
+      const [{ count }]: { count: number }[] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM bot_turn WHERE "botId" = $1 AND contact`,
+        [juno.id],
+      );
+      expect(count).toBe(WHATSAPP_CONTACT_TURNS_PER_HOUR);
+
+      await wrote('200');
+      expect(
+        (await whatsappTurns()).filter((turn) => turn.sourceKey === sourceOf('200')),
+      ).toHaveLength(1);
+    });
+
+    // What breaks this: a contact reaching a bot the number's owner did not make.
+    it('queues nothing for a bot the number’s owner did not make', async () => {
+      const theirs = await create('Shop', await insertUser());
+      await spoke('60', { botId: theirs.id });
+      expect(await whatsappTurns(theirs)).toEqual([]);
+    });
   });
 
   async function runningInConsole(): Promise<BotTurnEntity> {

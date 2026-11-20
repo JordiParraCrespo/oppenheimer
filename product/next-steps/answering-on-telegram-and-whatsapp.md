@@ -277,7 +277,20 @@ per-chat "Always allow" for sends are unchanged.
    *Being built 2026-11-19 in three stacked pull requests. First, the
    runner reports each message's mentions (`mentions`) and the sender of
    the message it replies to (`quotedSenderId`), by phone number, the
-   number's own `@lid` id included.*
+   number's own `@lid` id included.* *Then, 2026-11-20, one pull request
+   for the contact's turn and the wake together (the owner: "go with the
+   WhatsApp groups next and to be able to talk with others"): a message in
+   an allowed chat wakes the chat's bot, else the number's default, and
+   no one when the number's default is "None (doesn't answer)" and the chat
+   has no bot of its own. The contact's turn (`bot_turn."contact"`) has **no
+   tools at all** for now, not §3's narrow set: reading the bot's documents,
+   remembering for the conversation and `hand_off` come later. It reads the
+   bot's soul and instructions, none of the owner's facts, log, skills or
+   hosts, and what the contact wrote fenced in `<whatsapp>`, their name and
+   the group's included. The limit is 20 turns an hour per chat, not per
+   person. In a group, the lines in between are kept but not yet given to
+   the bot as context; an uncaptioned voice note from a contact wakes no
+   one; there is no bot loop guard yet.*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions

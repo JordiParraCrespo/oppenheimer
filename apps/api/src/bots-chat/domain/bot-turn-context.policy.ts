@@ -40,6 +40,12 @@ export interface TurnContextInput {
    * work, and told that what the person writes meanwhile reaches it.
    */
   asItGoes?: boolean;
+  /**
+   * A contact's turn (`BotTurnEntity.contact`): someone who is not the owner,
+   * in a direct chat or a group. Told who it is answering, and nothing of the
+   * owner's: no hosts, no channel line of the owner's, no memory.
+   */
+  contact?: 'direct' | 'group' | null;
   memory?: {
     log: readonly { content: string; createdAt: Date; scope: BotMemoryScope }[];
     toRecall: number;
@@ -81,6 +87,12 @@ type ContextLine = (moment: Moment) => string | null;
 const CONTEXT_LINES: readonly ContextLine[] = [
   ({ input, zone }) => promptText('turn/context.now', { now: formatNow(input.now, zone) }),
   ({ input }) =>
+    input.contact
+      ? promptText(
+          input.contact === 'group' ? 'turn/context.contact-group' : 'turn/context.contact-direct',
+        )
+      : null,
+  ({ input }) =>
     input.homeHost
       ? promptText('turn/context.home-host', {
           name: input.homeHost.name,
@@ -105,7 +117,10 @@ const CONTEXT_LINES: readonly ContextLine[] = [
  */
 export function composeTurnContext(input: TurnContextInput): string {
   const zone = input.timeZone && isValidTimeZone(input.timeZone) ? input.timeZone : 'UTC';
-  const lines = CONTEXT_LINES.flatMap((line) => line({ input, zone }) ?? []);
+  // A contact is told the time and who they are to the bot, nothing of the owner's.
+  const lines = (input.contact ? CONTEXT_LINES.slice(0, 2) : CONTEXT_LINES).flatMap(
+    (line) => line({ input, zone }) ?? [],
+  );
   return `<${TURN_CONTEXT_TAG}>\n${lines.join('\n')}\n</${TURN_CONTEXT_TAG}>`;
 }
 

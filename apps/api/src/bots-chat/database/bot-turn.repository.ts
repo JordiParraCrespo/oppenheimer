@@ -616,6 +616,16 @@ export class BotTurnRepository
     });
   }
 
+  async countSentIn(organizationId: string, conversationId: string, since: Date): Promise<number> {
+    // IDX_bot_turn_conversation: a chat's turns in an hour are a handful.
+    const [{ sent }]: { sent: number }[] = await this.repository.query(
+      `SELECT count(*)::int AS sent FROM bot_turn
+        WHERE "organizationId" = $1 AND "conversationId" = $2 AND "createdAt" >= $3`,
+      [organizationId, conversationId, since],
+    );
+    return sent;
+  }
+
   async findRunningIn(
     organizationId: string,
     conversationId: string,

@@ -1816,3 +1816,10 @@ earlier note:
   message sent meanwhile steers the running turn as a console message can,
   and the end sends only what came after the last call. Telegram's typing
   action and the fifteen-second line are not built.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §3 (2026-11-09) gave a
+  contact's turn the customer turn's narrow tools: answer, the bot's
+  documents, memory for the conversation, `hand_off`. On 2026-11-20 the
+  owner asked for WhatsApp groups and other people to be answered next; the
+  first version gives a contact's turn no tools at all, and counts its limit
+  of 20 turns an hour per chat rather than per person. The narrow tools
+  come after.

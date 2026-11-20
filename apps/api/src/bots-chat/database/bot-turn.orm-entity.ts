@@ -176,6 +176,13 @@ export class BotTurnOrmEntity {
   @Column({ type: 'boolean', default: false })
   steer!: boolean;
 
+  /**
+   * A contact's turn (`1795130000000-AddBotTurnContact`): run for someone who
+   * is not the owner, without the owner's tools or memory.
+   */
+  @Column({ type: 'boolean', default: false })
+  contact!: boolean;
+
   /** On an answer's turn: the turn it answers. */
   @Column({ type: 'uuid', nullable: true })
   answersTurnId!: string | null;

@@ -63,6 +63,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.askedByTurnId = entity.askedByTurnId;
     record.replyRequested = entity.replyRequested;
     record.steer = entity.steer;
+    record.contact = entity.contact;
     record.answersTurnId = entity.answersTurnId;
     record.error = entity.error;
     record.failure = entity.failure;
@@ -104,6 +105,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         askedByTurnId: record.askedByTurnId ?? null,
         replyRequested: record.replyRequested === true,
         steer: record.steer === true,
+        contact: record.contact === true,
         answersTurnId: record.answersTurnId ?? null,
         error: record.error ?? null,
         failure: record.failure ?? null,

@@ -11,7 +11,9 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 
-/** One message of the owner's on a channel, for the bot that answers the chat. */
+const HOUR_MS = 60 * 60 * 1000;
+
+/** One message on a channel, the owner's or a contact's, for the bot that answers the chat. */
 export interface BotChannelWake {
   chat: BotChannelChat;
   /** The chat's last start at or before the message, '0' for none, fixed when it was stored. */
@@ -19,7 +21,7 @@ export interface BotChannelWake {
   /** The message's place in the chat's order (Telegram's id, `whatsapp_message.seq`). */
   messageId: string;
   command: 'message' | 'new' | 'stop';
-  /** The owner who wrote it: only a bot they made answers them. */
+  /** The owner who wrote it, or whose number a contact wrote to: only a bot they made answers. */
   userId: string;
   /** The turn the message queues, and its opening, in the conversation that holds it. */
   turn: (
@@ -27,6 +29,12 @@ export interface BotChannelWake {
     conversationId: string,
   ) => { turn: BotTurnEntity; opening: BotMessageEntity };
   correlationId: string | null;
+  /**
+   * The most turns the chat's conversation is sent in an hour; past it the
+   * message is kept and wakes no one. A contact's chat has one, the owner's
+   * own none.
+   */
+  turnsPerHour?: number;
 }
 
 /**
@@ -62,6 +70,11 @@ export class BotChannelWakeResolver {
       const running = await this.turns.findRunningIn(wake.chat.organizationId, conversationId);
       if (running) await this.turns.requestCancel(running, new Date());
       return;
+    }
+    if (wake.turnsPerHour !== undefined) {
+      const since = new Date(Date.now() - HOUR_MS);
+      const sent = await this.turns.countSentIn(organizationId, conversationId, since);
+      if (sent >= wake.turnsPerHour) return;
     }
     const props: ChannelTurnProps = {
       organizationId,

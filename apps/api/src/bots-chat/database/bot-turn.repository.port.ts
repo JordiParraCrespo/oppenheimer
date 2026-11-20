@@ -228,6 +228,8 @@ export interface BotTurnRepositoryPort {
 
   /** Stop on a running turn: the worker sees it and aborts. Whether it was still running. */
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;
+  /** How many turns a conversation was sent since `since`: what a contact's limit counts. */
+  countSentIn(organizationId: string, conversationId: string, since: Date): Promise<number>;
   /** The turn running in a conversation, if one is: what a Telegram `/stop` stops. */
   findRunningIn(organizationId: string, conversationId: string): Promise<BotTurnEntity | null>;
   /** Whether Stop was pressed on this turn. */

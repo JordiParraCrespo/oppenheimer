@@ -75,6 +75,13 @@ export interface BotTurnProps {
    * in the console, or in your own chat on a channel.
    */
   steer: boolean;
+  /**
+   * Run for a contact, someone who is not the owner (a person or a group a
+   * WhatsApp number allows): no tools, none of the owner's memory, and what
+   * they wrote fenced as untrusted (`BotTurnContextResolver`). It is queued
+   * on the owner's account, as every turn is, so only this tells them apart.
+   */
+  contact: boolean;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
   /** What kind of failure that was, so the chat can say whether a retry helps; null unless failed. */
@@ -188,6 +195,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     replyRequested?: boolean;
     answersTurnId?: string | null;
     steer?: boolean;
+    contact?: boolean;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
@@ -200,6 +208,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         replyRequested: false,
         answersTurnId: null,
         steer: false,
+        contact: false,
         ...props,
         origin: props.origin ?? 'message',
         sourceKey: props.sourceKey ?? null,
@@ -357,6 +366,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get steer(): boolean {
     return this.props.steer;
   }
+
+  get contact(): boolean {
+    return this.props.contact;
+  }
   get timeZone(): string | null {
     return this.props.timeZone;
   }
@@ -497,6 +510,11 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       (props.lane !== 'owner' || !(props.origin === 'message' || isChannelOrigin(props.origin)))
     ) {
       throw new ArgumentInvalidException('Only a message of yours steers');
+    }
+    if (props.contact && (!isChannelOrigin(props.origin) || props.steer)) {
+      throw new ArgumentInvalidException(
+        'A contact’s turn answers on a channel and steers nothing',
+      );
     }
     if (props.answersTurnId && props.replyRequested) {
       throw new ArgumentInvalidException('An answer asks for no answer');

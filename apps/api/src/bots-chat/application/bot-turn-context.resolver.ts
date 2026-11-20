@@ -110,6 +110,8 @@ export class BotTurnContextResolver {
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
+    // A contact's turn acts for no one: no tools, none of the owner's memory or skills.
+    const contact = await this.channels.contactChat(turn);
     // The summary covers the console chat; a channel's conversation is read without one.
     const summarized = turn.inConsole
       ? await this.summaries.findForBot(turn.organizationId, bot.id)
@@ -140,7 +142,7 @@ export class BotTurnContextResolver {
     };
     // An owner who can no longer act leaves the bot nothing to act through.
     let tools: BotTurnContext['tools'] = [];
-    if (owner) {
+    if (owner && !contact) {
       const held = () => this.permissions.heldScopes(owner);
       const context: BotToolContext = {
         owner,
@@ -191,19 +193,20 @@ export class BotTurnContextResolver {
         description: bot.description,
         soul: documentText('soul'),
         instructions: documentText('instructions'),
-        facts: inMind.own,
-        personFacts: inMind.person,
-        personAbout: about,
+        facts: contact ? [] : inMind.own,
+        personFacts: contact ? [] : inMind.person,
+        personAbout: contact ? undefined : about,
         engineCapabilities: engineCapabilities(turn.provider),
-        tools: owner
-          ? this.toolbox.catalog(turn.credentialScopes, {
-              preset: bot.permission,
-              permissions,
-              origin: turn.origin,
-              lane: turn.lane,
-            })
-          : [],
-        skills,
+        tools:
+          owner && !contact
+            ? this.toolbox.catalog(turn.credentialScopes, {
+                preset: bot.permission,
+                permissions,
+                origin: turn.origin,
+                lane: turn.lane,
+              })
+            : [],
+        skills: contact ? [] : skills,
       }),
       history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
       message: withTurnContext(
@@ -213,11 +216,16 @@ export class BotTurnContextResolver {
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
           lastContext,
-          memory: { log: inMind.log, toRecall: inMind.toRecall },
+          memory: contact ? undefined : { log: inMind.log, toRecall: inMind.toRecall },
+          contact,
           channel: isChannelOrigin(turn.origin) ? turn.origin : null,
           asItGoes: sendsAsItGoes(turn),
         }),
-        composeTurnMessage(command, withBuiltInSkills(skills), prompt),
+        composeTurnMessage(
+          contact ? null : command,
+          withBuiltInSkills(contact ? [] : skills),
+          prompt,
+        ),
       ),
       images,
       tools,
