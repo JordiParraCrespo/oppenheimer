@@ -1,9 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { SessionTranscriptPartKind } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import {
   cleanModelTitle,
+  conversationTitleRequest,
+  promptsOf,
   SESSION_NAME_MAX_LENGTH,
   sessionTitleRequest,
   titleFromPrompt,
+  typedText,
 } from '../domain/session-name.policy';
 
 /**
@@ -66,6 +72,12 @@ describe('titleFromPrompt', () => {
 });
 
 describe('cleanModelTitle', () => {
+  it('drops a list number the model echoed from the numbered conversation', () => {
+    expect(cleanModelTitle('1. Caducidad del refresh token')).toBe('Caducidad del refresh token');
+    expect(cleanModelTitle('- Invoice CSV export')).toBe('Invoice CSV export');
+    expect(cleanModelTitle('Name: Invoice CSV export')).toBe('Invoice CSV export');
+  });
+
   it('takes the first line, without quotes or a trailing period', () => {
     expect(cleanModelTitle('"Fix wallet empty state."\nThis title describes…')).toBe(
       'Fix wallet empty state',
@@ -97,8 +109,107 @@ describe('sessionTitleRequest', () => {
     const request = sessionTitleRequest('x'.repeat(10_000));
     expect(request.maxTokens).toBe(32);
     expect(request.temperature).toBe(0);
-    expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
-    // Only what is worth sending of a long prompt goes to the model.
-    expect(request.messages[0].content).toHaveLength(2_000);
+    // Only what is worth sending of a long prompt goes to the model, framed
+    // as a request to name rather than one to carry out.
+    expect(request.messages[0].content).toBe(`<request>\n${'x'.repeat(2_000)}\n</request>`);
+  });
+});
+
+/**
+ * The instructions are Markdown with slots for the bounds; a model sent a
+ * literal `{{maxChars}}` would answer with titles of any length.
+ */
+describe('title requests', () => {
+  it.each([
+    ['the first prompt', sessionTitleRequest('fix the bug')],
+    ['the conversation', conversationTitleRequest(['fix the bug', 'the wallet one'])],
+  ])('tell the model the bounds for %s', (_which, request) => {
+    expect(request.system).not.toContain('{{');
+    // Asked for shorter than the row's hard cut, so a name that runs long is not cut mid-word.
+    expect(request.system).toContain('3 or 4 words, never more than 5, and at most 32 characters');
+    expect(32).toBeLessThan(SESSION_NAME_MAX_LENGTH);
+  });
+
+  it('numbers the person’s prompts in order and cuts each long one', () => {
+    const request = conversationTitleRequest(['fix the bug', 'x'.repeat(2_000)]);
+    const content = request.messages[0]?.content ?? '';
+    expect(content.startsWith('<request>\n1. fix the bug\n\n2. ')).toBe(true);
+    expect(content.length).toBeLessThan(720);
+  });
+});
+
+/**
+ * What the person typed, read the way the runner reads the first prompt that
+ * names the session. The cases are one file both suites run, so the two
+ * readings cannot drift: a case added there holds the runner too.
+ */
+describe('typedText', () => {
+  const shared = JSON.parse(
+    readFileSync(
+      join(
+        __dirname,
+        '../../../../runner/internal/sessions/adapters/transcript/testdata/typed-prompts.json',
+      ),
+      'utf8',
+    ),
+  ) as { cases: { case: string; text: string; typed: string }[] };
+
+  it.each(shared.cases.map((each) => [each.case, each.text, each.typed]))(
+    '%s',
+    (_case, text, typed) => {
+      expect(typedText(text)).toBe(typed);
+    },
+  );
+});
+
+describe('promptsOf', () => {
+  const part = (
+    text: string,
+    {
+      truncated = false,
+      kind = 'text',
+    }: { truncated?: boolean; kind?: SessionTranscriptPartKind } = {},
+  ) => ({
+    kind,
+    text,
+    tool: null,
+    isError: false,
+    truncated,
+  });
+  const user = (...parts: ReturnType<typeof part>[]) => ({
+    id: null,
+    at: null,
+    role: 'user' as const,
+    parts,
+  });
+
+  // The chat page cuts a block at its bound, so a long reminder arrives
+  // without its closing tag; the person's words beside it still count.
+  it('reads the words beside a reminder the page cut', () => {
+    const cut = part('<system-reminder>\n# CLAUDE.md\n…', { truncated: true });
+    expect(promptsOf([user(cut, part('Fix the picker'))])).toEqual(['Fix the picker']);
+  });
+
+  it('leaves out a reminder the page cut after the person’s words', () => {
+    const cut = part('Fix the wallet bug\n<system-reminder>\n# CLAUDE.md\nrepository context…', {
+      truncated: true,
+    });
+    expect(promptsOf([user(cut)])).toEqual(['Fix the wallet bug']);
+  });
+
+  it('keeps a long prompt the page cut behind a whole reminder', () => {
+    const cut = part(
+      '<system-reminder>Today is Thursday.</system-reminder>\nFix the wallet bug …',
+      {
+        truncated: true,
+      },
+    );
+    expect(promptsOf([user(cut)])).toEqual(['Fix the wallet bug …']);
+  });
+
+  it('counts no message that carries a tool’s result', () => {
+    expect(promptsOf([user(part('ok', { kind: 'tool_result' }), part('and the next'))])).toEqual(
+      [],
+    );
   });
 });

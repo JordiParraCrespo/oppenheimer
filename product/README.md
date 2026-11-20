@@ -1792,3 +1792,27 @@ earlier note:
   the allowed chats with who allowed each, their bot and Remove. Which bots
   answer on a number is its default plus a bot per allowed chat, not a list
   of bots per number (`next-steps/whatsapp.md`, open question 1).
+- `versions/mvp/09-runner-install-and-update.md` §5 (2026-11-04) had a Mac
+  that a runner from before the bundle updated run the bare binary out of
+  the new archive, then reinstall itself as the bundle. That bare binary is
+  the bundle's executable, sealed to the bundle by its signature, and macOS
+  kills it outside the bundle, so no Mac on 0.1.12 or older updated to 0.1.13
+  or later (seen on 2026-11-19, with 22 failed stages left in `.staging`).
+  With one Mac on the runner, already moved by hand, the owner chose on
+  2026-11-20 not to build a way across: §5 now says such a Mac is moved by
+  hand. A failed stage is now deleted, and a boot sweeps old ones.
+- `versions/mvp/03-control-plane.md` named a session from its first prompt
+  only, once. On 2026-11-19 the owner asked for names that follow the
+  conversation: after the agent answers the person's second prompt, a
+  derived name is written once more from their prompts so far
+  (`source: conversation`); a name a person typed is never replaced.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
+  channel turn's answer once, at its end, and had a message sent meanwhile
+  wait for the next turn: asked to check something, the bot went quiet for
+  minutes, then answered. On 2026-11-20 the owner asked for a bot that
+  answers first, works, and comes back with the result, answering what they
+  ask in between: on the owner's own chat, what the bot writes before a tool
+  call goes out as the call begins ("On it, checking your sessions"), a
+  message sent meanwhile steers the running turn as a console message can,
+  and the end sends only what came after the last call. Telegram's typing
+  action and the fifteen-second line are not built.

@@ -185,9 +185,19 @@ apart, as OpenClaw and Hermes do.
   bot's turn with a short debounce. The reply is the turn's last step and
   needs no approval: it is the reply. Writing to any other chat is still
   `send_telegram_message` or `send_whatsapp_message`, which asks.
-- **While it works:** Telegram's typing action, kept alive while the turn
-  runs; after fifteen seconds, one line saying it is on it. WhatsApp shows
-  nothing (whatsapp.md §2).
+- **While it works** (2026-11-20, the owner: "first respond, later perform
+  the task, and then come back with the result"): on the owner's own chat,
+  each block the bot writes before a tool call is sent as the call begins,
+  and the bot is asked to open work that takes tools with one line saying
+  what it will do ("On it, checking your sessions"). What the owner writes
+  meanwhile, words alone, steers the running turn at its next tool call, as
+  a console message can, so the bot answers it in a line and carries on;
+  the turn's end sends only what came after its last call. A voice note or
+  a skill's `/command` waits for its own turn. A reply to a message sent
+  mid-work waits for the call in flight, which is seconds for a read and
+  longer for a wait on a session. Telegram's typing action and a line after
+  fifteen seconds of silence are not built; WhatsApp shows nothing
+  (whatsapp.md §2).
 - **Replies** are split at Telegram's 4,096 characters and at our own
   8,000 on WhatsApp (whatsapp.md §4). On Telegram the bot's markdown is
   turned into Telegram's HTML by us, and everything else in it escaped, so

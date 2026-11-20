@@ -253,7 +253,7 @@ export function BotComposer({
         }}
       />
       <div ref={box} className="relative">
-        {slash.open ? (
+        {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
             skills={slash.groups.skills}
