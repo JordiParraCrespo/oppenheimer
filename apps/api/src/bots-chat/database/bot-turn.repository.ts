@@ -10,7 +10,6 @@ import {
   BOT_ACTIVE_TURN_STATUSES,
   type BotProvider,
   type BotTurnLane,
-  isChannelOrigin,
   QUEUE_NAMES,
 } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
@@ -34,6 +33,7 @@ import {
   type BotTurnEntity,
   ENDED_TURN_STATUSES,
 } from '../domain/bot-turn.entity';
+import { type TurnEndDelivery, turnEndDeliveries } from '../domain/bot-turn-end.policy';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import {
@@ -72,6 +72,21 @@ export const DELIVER_GITHUB_ANSWER_JOB = 'deliver-github-answer';
  * flight on a deployment carry it, so the worker accepts it for one release.
  */
 export const DELIVER_TELEGRAM_REPLY_JOB = 'deliver-telegram-reply';
+/** The job each delivery a turn's end owes is staged as (`turnEndDeliveries`), and what its outbox row says. */
+const TURN_END_JOBS: Readonly<
+  Record<TurnEndDelivery, { name: string; reason: (turn: BotTurnEntity) => string }>
+> = {
+  channel_reply: {
+    name: DELIVER_CHANNEL_REPLY_JOB,
+    reason: (turn) => `answers a message on ${turn.origin}`,
+  },
+  github_answer: { name: DELIVER_GITHUB_ANSWER_JOB, reason: () => 'answers an ask on GitHub' },
+  bot_answer: {
+    name: DELIVER_BOT_ANSWER_JOB,
+    reason: (turn) => `answers turn ${turn.askedByTurnId}`,
+  },
+};
+
 /** A turn of a bot with a goal ended: the goal decides whether to go on. */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
 /** A run of a bot's loop ended: the loop decides whether it ends. */
@@ -562,32 +577,13 @@ export class BotTurnRepository
       await this.outbox.stageEvents(manager, turn.domainEvents);
       turn.clearEvents();
       await stageNext(this.outbox, manager, turn, correlationId);
-      if (isChannelOrigin(turn.origin)) {
+      for (const delivery of turnEndDeliveries(turn)) {
+        const job = TURN_END_JOBS[delivery];
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: DELIVER_CHANNEL_REPLY_JOB,
+          jobName: job.name,
           payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} answers a message on ${turn.origin}`,
-          aggregateId: turn.id,
-          correlationId,
-        });
-      }
-      if (turn.origin === 'github') {
-        await this.outbox.stageJob(manager, {
-          queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: DELIVER_GITHUB_ANSWER_JOB,
-          payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} answers an ask on GitHub`,
-          aggregateId: turn.id,
-          correlationId,
-        });
-      }
-      if (turn.replyRequested && turn.askedByTurnId) {
-        await this.outbox.stageJob(manager, {
-          queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: DELIVER_BOT_ANSWER_JOB,
-          payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} answers turn ${turn.askedByTurnId}`,
+          reason: `bot ${turn.botId}: turn ${turn.id} ${job.reason(turn)}`,
           aggregateId: turn.id,
           correlationId,
         });

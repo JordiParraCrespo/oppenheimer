@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, type ICommand } from '@nestjs/cqrs';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
 import { ContinueBotGoalCommand } from '../commands/continue-bot-goal/continue-bot-goal.command';
@@ -20,6 +20,20 @@ import {
   FINISH_BOT_LOOP_RUN_JOB,
   RUN_BOT_TURN_JOB,
 } from '../database/bot-turn.repository';
+
+/** The command each job about one turn runs, by its name; a new one is a row. */
+const TURN_JOBS: ReadonlyMap<string, (turnId: string) => ICommand> = new Map<
+  string,
+  (turnId: string) => ICommand
+>([
+  [RUN_BOT_TURN_JOB, (turnId) => new RunBotTurnCommand({ turnId })],
+  [DELIVER_BOT_ANSWER_JOB, (turnId) => new DeliverBotAnswerCommand({ turnId })],
+  [DELIVER_CHANNEL_REPLY_JOB, (turnId) => new DeliverChannelReplyCommand({ turnId })],
+  [DELIVER_TELEGRAM_REPLY_JOB, (turnId) => new DeliverChannelReplyCommand({ turnId })],
+  [DELIVER_GITHUB_ANSWER_JOB, (turnId) => new DeliverGithubAnswerCommand({ turnId })],
+  [CONTINUE_BOT_GOAL_JOB, (turnId) => new ContinueBotGoalCommand({ turnId })],
+  [FINISH_BOT_LOOP_RUN_JOB, (turnId) => new FinishBotLoopRunCommand({ turnId })],
+]);
 
 /** How many turns one API process runs at once, across every bot. */
 const TURNS_PER_PROCESS = 8;
@@ -57,31 +71,9 @@ export class BotTurnsProcessor extends WorkerHost {
       );
       return;
     }
-    if (turnId && job.name === FINISH_BOT_LOOP_RUN_JOB) {
-      await this.commandBus.execute(new FinishBotLoopRunCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === RUN_BOT_TURN_JOB) {
-      await this.commandBus.execute(new RunBotTurnCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === DELIVER_BOT_ANSWER_JOB) {
-      await this.commandBus.execute(new DeliverBotAnswerCommand({ turnId }));
-      return;
-    }
-    if (
-      turnId &&
-      (job.name === DELIVER_CHANNEL_REPLY_JOB || job.name === DELIVER_TELEGRAM_REPLY_JOB)
-    ) {
-      await this.commandBus.execute(new DeliverChannelReplyCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === DELIVER_GITHUB_ANSWER_JOB) {
-      await this.commandBus.execute(new DeliverGithubAnswerCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === CONTINUE_BOT_GOAL_JOB) {
-      await this.commandBus.execute(new ContinueBotGoalCommand({ turnId }));
+    const command = turnId ? TURN_JOBS.get(job.name)?.(turnId) : undefined;
+    if (command) {
+      await this.commandBus.execute(command);
       return;
     }
     this.logger.warn({ message: 'Unknown bot-turns job', jobName: job.name, jobId: job.id });

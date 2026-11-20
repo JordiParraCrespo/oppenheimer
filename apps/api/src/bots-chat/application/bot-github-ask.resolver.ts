@@ -58,16 +58,16 @@ export class BotGithubAskResolver {
       FindInstallationsQuery,
       GithubInstallationEntity[]
     >(new FindInstallationsQuery({ scope }));
-    for (const installation of installations) {
-      if (!installation.isUsable) continue;
-      const repositories = await this.queryBus.execute<
-        ListInstallationRepositoriesQuery,
-        GithubRepository[]
-      >(new ListInstallationRepositoriesQuery({ scope, installationId: installation.id }));
-      if (repositories.some((repository) => repository.githubRepoId === githubRepoId)) {
-        return installation.id;
-      }
-    }
-    return null;
+    const usable = installations.filter((installation) => installation.isUsable);
+    const covered = await Promise.all(
+      usable.map(async (installation) => {
+        const repositories = await this.queryBus.execute<
+          ListInstallationRepositoriesQuery,
+          GithubRepository[]
+        >(new ListInstallationRepositoriesQuery({ scope, installationId: installation.id }));
+        return repositories.some((repository) => repository.githubRepoId === githubRepoId);
+      }),
+    );
+    return usable.find((_, index) => covered[index])?.id ?? null;
   }
 }
