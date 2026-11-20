@@ -455,6 +455,19 @@ describe('bots chat (integration)', () => {
 
     const first = sent(bot, 'Deploy it');
     await turns.enqueue(first.turn, first.message, null);
+    // Your own message is never unread; the bot's reply is.
+    expect(await unread()).toBe(false);
+    await messages.insert(
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: first.turn.id,
+        role: 'assistant',
+        content: 'Deploying.',
+        steps: [],
+        position: 1,
+      }),
+    );
     expect(await unread()).toBe(true);
 
     const failing = (await turns.findForRun(first.turn.id)).unwrap();
@@ -465,10 +478,10 @@ describe('bots chat (integration)', () => {
     expect(await turns.findBotIdsWithUnreadFailure(scope())).toContain(bot.id);
     expect(await turns.findBotIdsWithUnreadFailure(scopeOf(randomUUID()))).toEqual([]);
 
-    expect(await bots.acknowledge(scope(), bot.id, new Date())).toBe(true);
+    expect(await bots.acknowledge(scope(), bot.id)).toBe(true);
     expect(await unread()).toBe(false);
     expect(await turns.findBotIdsWithUnreadFailure(scope())).not.toContain(bot.id);
-    expect(await bots.acknowledge(scopeOf(randomUUID()), bot.id, new Date())).toBe(false);
+    expect(await bots.acknowledge(scopeOf(randomUUID()), bot.id)).toBe(false);
 
     // A failure after the read waits again, until a later turn ends well.
     const second = sent(bot, 'Again');

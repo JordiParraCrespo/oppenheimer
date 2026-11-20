@@ -4093,7 +4093,7 @@ export type BotResponseDto = {
      */
     lastMessagePreview: string | null;
     /**
-     * Whether its chat has a message newer than the last time you read it (`POST /bots/:id/acknowledge`).
+     * Whether it replied since you last read its chat (`POST /bots/:id/acknowledge`); your own messages never make it unread.
      */
     unread: boolean;
 };

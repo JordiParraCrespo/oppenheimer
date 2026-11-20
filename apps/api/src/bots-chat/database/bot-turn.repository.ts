@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import {
+  type AccessScope,
+  applyAccessScope,
+  ScopedRepositoryBase,
+} from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import {
   BOT_ACTIVE_TURN_STATUSES,
@@ -643,21 +647,22 @@ export class BotTurnRepository
   }
 
   async findBotIdsWithUnreadFailure(scope: AccessScope): Promise<string[]> {
-    // A workspace's failed turns are few; the later-turn probe reads IDX_bot_turn_bot.
-    const rows: { botId: string }[] = await this.scopedQuery(scope)
-      .select('turn.botId', 'botId')
-      .distinct(true)
-      .innerJoin(
-        BotOrmEntity,
-        'bot',
-        'bot.id = turn.botId AND bot.organizationId = turn.organizationId',
-      )
-      .andWhere(`turn.status = 'failed'`)
-      .andWhere('(bot.acknowledgedAt IS NULL OR turn.endedAt > bot.acknowledgedAt)')
+    // From the workspace's bots (a handful), each one's last ended turn through
+    // IDX_bot_turn_ended: never the turns' history.
+    const rows: { botId: string }[] = await applyAccessScope(
+      this.repository.manager.createQueryBuilder(BotOrmEntity, 'bot'),
+      BotResource,
+      scope,
+    )
+      .select('bot.id', 'botId')
       .andWhere(
-        `NOT EXISTS (SELECT 1 FROM bot_turn later
-          WHERE later."organizationId" = turn."organizationId" AND later."botId" = turn."botId"
-            AND later."endedAt" > turn."endedAt")`,
+        `EXISTS (SELECT 1 FROM (
+           SELECT last.status, last."endedAt" FROM bot_turn last
+            WHERE last."organizationId" = bot."organizationId" AND last."botId" = bot.id
+              AND last."endedAt" IS NOT NULL
+            ORDER BY last."endedAt" DESC LIMIT 1) latest
+          WHERE latest.status = 'failed'
+            AND (bot."acknowledgedAt" IS NULL OR latest."endedAt" > bot."acknowledgedAt"))`,
       )
       .getRawMany();
     return rows.map((row) => row.botId);

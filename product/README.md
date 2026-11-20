@@ -1801,3 +1801,11 @@ earlier note:
   With one Mac on the runner, already moved by hand, the owner chose on
   2026-11-20 not to build a way across: §5 now says such a Mac is moved by
   hand. A failed stage is now deleted, and a boot sweeps old ones.
+- `25-bots.md` §3 first kept a bot's "done" dot on the device (2026-11-20):
+  what you had seen was the bot's last message time while its chat was open,
+  per browser, beside the green dot on a working bot's face. The owner asked
+  for the bots to read exactly as the sessions do, so the same day the read
+  moved to the API (`bot."acknowledgedAt"`, set by opening the chat, on every
+  device, only the bot's replies counting), the amber dot took in questions
+  and failed turns, the green face dot went, and Mark as unread came in as a
+  device mark like a session's.

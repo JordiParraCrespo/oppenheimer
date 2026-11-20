@@ -68,7 +68,7 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async acknowledge(scope: AccessScope, id: string, at: Date): Promise<boolean> {
+  async acknowledge(scope: AccessScope, id: string): Promise<boolean> {
     // Read through the scope first: the write names the row the caller may reach.
     const found = await this.scopedQuery(scope)
       .select(['bot.id', 'bot.organizationId'])
@@ -78,7 +78,8 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     await this.repository
       .createQueryBuilder()
       .update(BotOrmEntity)
-      .set({ acknowledgedAt: at })
+      // The database's clock, the one every message's time is written with.
+      .set({ acknowledgedAt: () => 'now()' })
       .where('id = :id AND "organizationId" = :organizationId', {
         id: found.id,
         organizationId: found.organizationId,

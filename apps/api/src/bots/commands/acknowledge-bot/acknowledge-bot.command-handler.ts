@@ -16,7 +16,7 @@ export class AcknowledgeBotCommandHandler implements ICommandHandler<Acknowledge
   constructor(@Inject(BOT_REPOSITORY) private readonly bots: BotRepositoryPort) {}
 
   async execute({ scope, botId }: AcknowledgeBotCommand): Promise<void> {
-    if (!(await this.bots.acknowledge(scope, botId, new Date()))) {
+    if (!(await this.bots.acknowledge(scope, botId))) {
       throw new AppError(BotErrors.NOT_FOUND);
     }
   }

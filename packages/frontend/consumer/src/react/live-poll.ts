@@ -116,10 +116,10 @@ export const LIVE_POLL = {
   botApprovals: { interval: 15_000, inBackground: false, streamCanCover: true },
   /**
    * Which bots are working and which wait on you, behind the sidebar's
-   * shimmering names and amber dots, while the workspace stream is down or
-   * turned off: a turn queued or ended elsewhere, or a card raised, lands
-   * within this. Not in the background, and stood down while the stream
-   * announces `botTurn.changed` and `botApproval.changed`.
+   * shimmering names and amber dots. A turn queued or ended and a card raised
+   * are announced (`botTurn.changed`, `botApproval.changed`), but a chat read
+   * on another device, which takes a failure's amber dot off, is not, so this
+   * keeps running while the stream is live. Not in the background.
    */
   botActivity: { interval: 15_000, inBackground: false, streamCanCover: true },
 } as const;

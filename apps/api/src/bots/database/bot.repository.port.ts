@@ -54,8 +54,8 @@ export interface BotRepositoryPort {
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome>;
   save(bot: BotEntity): Promise<BotWriteOutcome>;
-  /** Its chat read as of `at` (`acknowledgedAt`); false for a missing or out-of-scope bot. */
-  acknowledge(scope: AccessScope, id: string, at: Date): Promise<boolean>;
+  /** Its chat read as of now (`acknowledgedAt`); false for a missing or out-of-scope bot. */
+  acknowledge(scope: AccessScope, id: string): Promise<boolean>;
   /**
    * The bot, its documents, their history and its memory; nothing deleted,
    * and the channel that holds it, while it answers on a Telegram bot
