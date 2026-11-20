@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -182,6 +184,24 @@ func outgoing(text string, quote *domain.Quote) *waE2E.Message {
 		info.Participant = proto.String(quote.SenderID)
 	}
 	return &waE2E.Message{ExtendedTextMessage: &waE2E.ExtendedTextMessage{Text: proto.String(text), ContextInfo: info}}
+}
+
+// outgoingVoice is the message a voice note uploaded to WhatsApp goes as:
+// an audio message marked push-to-talk, with the upload's keys and hashes, in
+// the one MIME type WhatsApp plays as a voice note.
+func outgoingVoice(up whatsmeow.UploadResponse, seconds int, at time.Time) *waE2E.Message {
+	return &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+		URL:               proto.String(up.URL),
+		DirectPath:        proto.String(up.DirectPath),
+		MediaKey:          up.MediaKey,
+		FileEncSHA256:     up.FileEncSHA256,
+		FileSHA256:        up.FileSHA256,
+		FileLength:        proto.Uint64(up.FileLength),
+		Mimetype:          proto.String(domain.VoiceNoteMimetype),
+		Seconds:           proto.Uint32(uint32(seconds)),
+		PTT:               proto.Bool(true),
+		MediaKeyTimestamp: proto.Int64(at.Unix()),
+	}}
 }
 
 func whereOf(chat types.JID) domain.Where {

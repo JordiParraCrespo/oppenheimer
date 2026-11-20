@@ -212,6 +212,27 @@ func (s *Service) Unlink(ctx context.Context) error {
 // quoting the message it replies to when there is one. A quoted reply spends
 // the budget exactly as a plain message does.
 func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Quote) (string, time.Time, error) {
+	return s.spend(func() (string, time.Time, error) { return s.device.Send(ctx, chatID, text, quote) })
+}
+
+// SendVoice sends a voice note as the paired number, inside the same budget
+// a text spends: one note is one message to WhatsApp. Audio that is not a
+// voice note WhatsApp plays is refused before it spends anything (WA_006,
+// WA_008); an upload or a send WhatsApp refuses is WA_003, as a text's is.
+func (s *Service) SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	if s.Status().State != domain.StateConnected {
+		return "", time.Time{}, domain.ErrNotConnected
+	}
+	if err := domain.CheckVoiceOut(audio, seconds); err != nil {
+		return "", time.Time{}, err
+	}
+	return s.spend(func() (string, time.Time, error) { return s.device.SendVoice(ctx, chatID, audio, seconds) })
+}
+
+// spend runs one send inside the host's budget: refused while the device is
+// not connected or the budget is spent, refunded when WhatsApp refuses it,
+// and pausing every send after WhatsApp's 429.
+func (s *Service) spend(send func() (string, time.Time, error)) (string, time.Time, error) {
 	if s.Status().State != domain.StateConnected {
 		return "", time.Time{}, domain.ErrNotConnected
 	}
@@ -220,7 +241,7 @@ func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Q
 		return "", time.Time{}, domain.ErrBudgetExceeded.WithDetail(
 			"at most %d a minute and %d a day", domain.SendsPerMinute, domain.SendsPerDay)
 	}
-	id, sentAt, err := s.device.Send(ctx, chatID, text, quote)
+	id, sentAt, err := send()
 	if err != nil {
 		s.budget.Refund(at)
 		if errors.Is(err, domain.ErrRateLimited) {

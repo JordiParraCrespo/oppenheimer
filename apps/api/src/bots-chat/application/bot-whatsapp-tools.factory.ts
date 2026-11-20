@@ -3,6 +3,12 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { WHATSAPP_TEXT_MAX_CHARS } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
+import {
+  type SpokenAudio,
+  SynthesizeSpeechCommand,
+} from '../../voice/commands/synthesize-speech/synthesize-speech.command';
+import { SPEECH_TEXT_MAX_CHARS } from '../../voice/domain/voice-synthesis.policy';
+import { FindSpeechSynthesisQuery } from '../../voice/queries/find-speech-synthesis/find-speech-synthesis.query';
 import { SendWhatsappMessageCommand } from '../../whatsapp/commands/send-whatsapp-message/send-whatsapp-message.command';
 import type {
   WhatsappChat,
@@ -57,10 +63,12 @@ type PlannedSend = z.infer<typeof plannedSend>;
 /**
  * WhatsApp: the owner's own linked numbers, their chats as the host saw them
  * since the number was linked, search over what was said, and a message sent as
- * the owner. Reads only see the owner's numbers; what other people wrote comes
- * back inside `<whatsapp>`, marked as data. A send asks by default (Settings →
+ * the owner, as text or as a voice note spoken from a short text. Reads only
+ * see the owner's numbers; what other people wrote comes back inside
+ * `<whatsapp>`, marked as data. A send asks by default (Settings →
  * Permissions can allow it per chat), because it speaks for the owner to
- * someone else.
+ * someone else; a voice note is a tool of its own, so a chat allowed for text
+ * is not thereby allowed for the owner's voice.
  */
 @Injectable()
 export class BotWhatsappToolsFactory implements BotToolArea {
@@ -73,7 +81,14 @@ export class BotWhatsappToolsFactory implements BotToolArea {
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
-    return [this.listAccounts(), this.listChats(), this.readChat(), this.search(), this.send()];
+    return [
+      this.listAccounts(),
+      this.listChats(),
+      this.readChat(),
+      this.search(),
+      this.send(),
+      this.sendVoice(),
+    ];
   }
 
   private listAccounts(): BotToolDefinition {
@@ -267,6 +282,89 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         });
       },
     });
+  }
+
+  private sendVoice(): BotToolDefinition {
+    return defineBotTool({
+      name: 'send_whatsapp_voice_note',
+      asks: true,
+      sharesOutside: true,
+      scope: 'whatsapp:write',
+      description: promptText('tools/whatsapp.send-whatsapp-voice-note', {
+        speechTextMaxChars: String(SPEECH_TEXT_MAX_CHARS),
+      }),
+      input: z.object({
+        account: account.optional(),
+        chat,
+        text: z
+          .string()
+          .trim()
+          .min(1)
+          .max(SPEECH_TEXT_MAX_CHARS)
+          .describe(promptText('tools/whatsapp.send-whatsapp-voice-note-text')),
+        planned: plannedSend
+          .optional()
+          .describe(promptText('tools/whatsapp.send-whatsapp-message-planned')),
+      }),
+      // Refused before any card: a yes the deployment cannot speak is a wait for nothing.
+      normalize: async (input, context) => {
+        await this.requireSpeech();
+        return { ...input, planned: await this.plan(input, context.owner) };
+      },
+      subject: (input) => {
+        const planned = plannedOf(input.planned);
+        return {
+          kind: 'whatsapp_chat',
+          key: `${planned.accountId}:${planned.chatId}`,
+          label: describeWhatsappTarget(planned),
+        };
+      },
+      // The card quotes every word the note will say, and where it goes.
+      summarize: (input) => {
+        const planned = plannedOf(input.planned);
+        return `Send a voice note on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}, saying: ${input.text}`;
+      },
+      run: async (input, context) => {
+        // As for a text: only an approval's stored call carries a plan Oppenheimer made.
+        const planned = context.approvalId
+          ? plannedOf(input.planned)
+          : await this.plan(input, context.owner);
+        await this.requireSpeech();
+        // The audio is spoken from the text the card showed, held in memory
+        // for this call only, and dropped once the host has it.
+        const spoken = await this.commandBus.execute<SynthesizeSpeechCommand, SpokenAudio>(
+          new SynthesizeSpeechCommand({ organizationId: context.organizationId, text: input.text }),
+        );
+        const id = await this.commandBus.execute<SendWhatsappMessageCommand, string>(
+          new SendWhatsappMessageCommand({
+            scope: context.owner,
+            accountId: planned.accountId,
+            chat: {
+              chatId: planned.chatId,
+              chatKind: planned.chatKind,
+              chatName: planned.chatName,
+            },
+            text: input.text,
+            botId: context.botId,
+            voice: { audio: spoken.data, seconds: spoken.seconds },
+          }),
+        );
+        return promptText('tools/whatsapp.send-whatsapp-voice-note-done', {
+          describeWhatsappTarget: describeWhatsappTarget(planned),
+          accountLabel: planned.accountLabel,
+          seconds: String(spoken.seconds),
+          id,
+        });
+      },
+    });
+  }
+
+  /** Refuses a voice note on a deployment with no text-to-speech server. */
+  private async requireSpeech(): Promise<void> {
+    const speaks = await this.queryBus.execute<FindSpeechSynthesisQuery, boolean>(
+      new FindSpeechSynthesisQuery(),
+    );
+    if (!speaks) throw new BotToolRefusal(promptText('tools/whatsapp.speech-not-set-up'));
   }
 
   /** The number and the chat a send means, resolved once so a yes sends where the card said. */

@@ -23,7 +23,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * is connected and under the day's share, through the host's runner, which
  * keeps a budget of its own. What went is kept beside what the number received,
  * marked as the bot's, so the chat reads whole and the day's sends can be
- * counted. Answers WhatsApp's id for the message.
+ * counted; a voice note is kept as one, with the text it spoke as its
+ * transcript and never its audio. Answers WhatsApp's id for the message.
  */
 @CommandHandler(SendWhatsappMessageCommand)
 export class SendWhatsappMessageCommandHandler
@@ -57,9 +58,16 @@ export class SendWhatsappMessageCommandHandler
       });
     }
 
-    const sent = whatsappSentOrThrow(
-      await this.device.send(account.hostId, command.chat.chatId, command.text),
-    );
+    const { voice } = command;
+    const outcome = voice
+      ? await this.device.sendVoice(account.hostId, command.chat.chatId, voice.audio, voice.seconds)
+      : await this.device.send(account.hostId, command.chat.chatId, command.text);
+    if (voice && outcome.kind === 'not_supported') {
+      throw new AppError(WhatsappErrors.HOST_UNSUPPORTED, {
+        detail: 'The host’s runner predates sending voice notes; updating it fixes this.',
+      });
+    }
+    const sent = whatsappSentOrThrow(outcome);
     await this.messages.recordBotSend(
       this.mapper.fromBotSend({
         account,
@@ -67,6 +75,7 @@ export class SendWhatsappMessageCommandHandler
         text: command.text,
         sent,
         botId: command.botId,
+        voiceSeconds: voice?.seconds,
       }),
     );
     return sent.id;

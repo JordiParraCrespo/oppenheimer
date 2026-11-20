@@ -104,3 +104,75 @@ describe('RelayWhatsappDeviceAdapter.voiceNote', () => {
     });
   });
 });
+
+/**
+ * Sending a bot's voice note over the link: the frame goes only to a runner
+ * that names `whatsapp.voice.send`, carries the audio whole as base64 with
+ * its length, and the host's `whatsapp.sent` or refusal comes back as what
+ * happened.
+ */
+describe('RelayWhatsappDeviceAdapter.sendVoice', () => {
+  const VOICE: RunnerCapability[] = ['whatsapp', 'whatsapp.voice', 'whatsapp.voice.send'];
+  const audio = Buffer.from('OggS spoken reply');
+
+  // What breaks this: the audio mangled on the way, or sent as anything WhatsApp would not play.
+  it('sends the audio whole to a runner that names whatsapp.voice.send and answers its whatsapp.sent', async () => {
+    const { adapter, sent, replies } = setup({
+      capabilities: VOICE,
+      reply: { type: 'whatsapp.sent', commandId: 'c', id: '3EB9', sentAt: '2026-11-20T10:00:00Z' },
+    });
+
+    const outcome = await adapter.sendVoice(HOST, CHAT, audio, 3);
+
+    expect(sent).toEqual([
+      {
+        type: 'whatsapp.send.voice',
+        commandId: expect.any(String),
+        chatId: CHAT,
+        mimetype: 'audio/ogg; codecs=opus',
+        data: audio.toString('base64'),
+        seconds: 3,
+      },
+    ]);
+    expect(Buffer.from((sent[0] as { data: string }).data, 'base64')).toEqual(audio);
+    expect(replies.expect).toHaveBeenCalledWith(
+      HOST,
+      (sent[0] as { commandId: string }).commandId,
+      45_000,
+    );
+    expect(outcome).toEqual({
+      kind: 'sent',
+      id: '3EB9',
+      sentAt: new Date('2026-11-20T10:00:00Z'),
+    });
+  });
+
+  // What breaks this: a runner from before voice sends given a frame it never answers.
+  it('sends nothing to a runner without whatsapp.voice.send, or to a host that is offline', async () => {
+    const old = setup({ capabilities: ['whatsapp', 'whatsapp.voice'] });
+    await expect(old.adapter.sendVoice(HOST, CHAT, audio, 3)).resolves.toEqual({
+      kind: 'not_supported',
+    });
+    expect(old.sent).toEqual([]);
+    const gone = setup({ capabilities: VOICE, online: false });
+    await expect(gone.adapter.sendVoice(HOST, CHAT, audio, 3)).resolves.toEqual({
+      kind: 'host_offline',
+    });
+  });
+
+  it('answers the runner’s refusal by its code, and silence as timed out', async () => {
+    const refused = setup({
+      capabilities: VOICE,
+      reply: { type: 'command.failed', commandId: 'c', code: 'WA_008', detail: 'not Ogg/Opus' },
+    });
+    await expect(refused.adapter.sendVoice(HOST, CHAT, audio, 3)).resolves.toEqual({
+      kind: 'failed',
+      code: 'WA_008',
+      detail: 'not Ogg/Opus',
+    });
+    const silent = setup({ capabilities: VOICE, reply: null });
+    await expect(silent.adapter.sendVoice(HOST, CHAT, audio, 3)).resolves.toEqual({
+      kind: 'timed_out',
+    });
+  });
+});
