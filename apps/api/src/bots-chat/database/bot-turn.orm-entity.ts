@@ -177,7 +177,7 @@ export class BotTurnOrmEntity {
   steer!: boolean;
 
   /**
-   * A contact's turn (`1795130000000-AddBotTurnContact`): run for someone who
+   * A contact's turn (`1795172296524-AddBotTurnContact`): run for someone who
    * is not the owner, without the owner's tools or memory.
    */
   @Column({ type: 'boolean', default: false })

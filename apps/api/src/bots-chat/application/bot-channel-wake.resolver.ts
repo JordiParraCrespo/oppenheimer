@@ -11,8 +11,6 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 
-const HOUR_MS = 60 * 60 * 1000;
-
 /** One message on a channel, the owner's or a contact's, for the bot that answers the chat. */
 export interface BotChannelWake {
   chat: BotChannelChat;
@@ -71,11 +69,6 @@ export class BotChannelWakeResolver {
       if (running) await this.turns.requestCancel(running, new Date());
       return;
     }
-    if (wake.turnsPerHour !== undefined) {
-      const since = new Date(Date.now() - HOUR_MS);
-      const sent = await this.turns.countSentIn(organizationId, conversationId, since);
-      if (sent >= wake.turnsPerHour) return;
-    }
     const props: ChannelTurnProps = {
       organizationId,
       botId: bot.id,
@@ -86,6 +79,6 @@ export class BotChannelWakeResolver {
     };
     const { turn, opening } = wake.turn(props, conversationId);
     // Not on the bot's stream, which is its console chat's.
-    await this.turns.enqueueOnce(turn, opening, wake.correlationId, null);
+    await this.turns.enqueueOnce(turn, opening, wake.correlationId, null, wake.turnsPerHour);
   }
 }

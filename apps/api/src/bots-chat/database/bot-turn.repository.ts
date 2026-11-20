@@ -211,6 +211,7 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
     busyPrefix: string | null,
+    perHour?: number,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }> {
     if (!turn.sourceKey) throw new Error('A turn queued once carries its source key');
     return this.outbox.transaction(async (manager) => {
@@ -232,6 +233,16 @@ export class BotTurnRepository
           [turn.organizationId, turn.botId, busyPrefix],
         );
         if (active) return { outcome: 'busy' as const, turnId: turn.id };
+      }
+      if (perHour !== undefined) {
+        // IDX_bot_turn_conversation: a chat's turns in an hour are a handful.
+        const [{ sent }]: { sent: number }[] = await manager.query(
+          `SELECT count(*)::int AS sent FROM bot_turn
+            WHERE "organizationId" = $1 AND "conversationId" = $2
+              AND "createdAt" >= now() - interval '1 hour'`,
+          [turn.organizationId, turn.conversationId],
+        );
+        if (sent >= perHour) return { outcome: 'busy' as const, turnId: turn.id };
       }
       const outcome = await enqueueLocked(
         manager,
@@ -614,16 +625,6 @@ export class BotTurnRepository
       }
       return taken;
     });
-  }
-
-  async countSentIn(organizationId: string, conversationId: string, since: Date): Promise<number> {
-    // IDX_bot_turn_conversation: a chat's turns in an hour are a handful.
-    const [{ sent }]: { sent: number }[] = await this.repository.query(
-      `SELECT count(*)::int AS sent FROM bot_turn
-        WHERE "organizationId" = $1 AND "conversationId" = $2 AND "createdAt" >= $3`,
-      [organizationId, conversationId, since],
-    );
-    return sent;
   }
 
   async findRunningIn(

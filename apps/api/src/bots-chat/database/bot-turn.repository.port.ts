@@ -92,6 +92,12 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
     busyPrefix: string | null,
+    /**
+     * The most turns the turn's conversation may have been sent in the last
+     * hour, counted under the bot's lock with the insert, so a burst of
+     * wakes cannot all pass it; past it the outcome is `busy`.
+     */
+    perHour?: number,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
 
   /**
@@ -228,8 +234,6 @@ export interface BotTurnRepositoryPort {
 
   /** Stop on a running turn: the worker sees it and aborts. Whether it was still running. */
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;
-  /** How many turns a conversation was sent since `since`: what a contact's limit counts. */
-  countSentIn(organizationId: string, conversationId: string, since: Date): Promise<number>;
   /** The turn running in a conversation, if one is: what a Telegram `/stop` stops. */
   findRunningIn(organizationId: string, conversationId: string): Promise<BotTurnEntity | null>;
   /** Whether Stop was pressed on this turn. */

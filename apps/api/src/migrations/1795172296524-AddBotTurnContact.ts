@@ -13,8 +13,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * adding one validates every row under the lock this boot holds to its end,
  * so that rule is the domain's (`BotTurnEntity`).
  */
-export class AddBotTurnContact1795130000000 implements MigrationInterface {
-  name = 'AddBotTurnContact1795130000000';
+export class AddBotTurnContact1795172296524 implements MigrationInterface {
+  name = 'AddBotTurnContact1795172296524';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

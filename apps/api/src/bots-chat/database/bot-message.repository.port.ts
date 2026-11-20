@@ -133,7 +133,8 @@ export interface BotMessageRepositoryPort {
   ): Promise<BotMessageEntity[]>;
   /**
    * What a dream checks the memory against: the bot's newest `limit`
-   * messages, oldest first, activity lines left out.
+   * messages, oldest first, activity lines and contacts' turns left out, so
+   * nothing a contact wrote or was told becomes the owner's memory.
    */
   findRecent(organizationId: string, botId: string, limit: number): Promise<BotMessageEntity[]>;
   /**
