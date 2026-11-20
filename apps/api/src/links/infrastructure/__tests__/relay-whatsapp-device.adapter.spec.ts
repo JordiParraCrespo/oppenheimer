@@ -160,6 +160,18 @@ describe('RelayWhatsappDeviceAdapter.sendVoice', () => {
     });
   });
 
+  // What breaks this: a frame past the runner's read cap closing the host's whole link.
+  it('never puts audio past one frame on the link', async () => {
+    const { adapter, sent } = setup({ capabilities: VOICE });
+    await expect(
+      adapter.sendVoice(HOST, CHAT, Buffer.alloc(352 * 1024 + 1), 40),
+    ).resolves.toMatchObject({
+      kind: 'failed',
+      code: 'WA_006',
+    });
+    expect(sent).toEqual([]);
+  });
+
   it('answers the runner’s refusal by its code, and silence as timed out', async () => {
     const refused = setup({
       capabilities: VOICE,

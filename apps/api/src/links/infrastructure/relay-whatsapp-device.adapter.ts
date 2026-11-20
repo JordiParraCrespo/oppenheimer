@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  WhatsappMediaGetMessage,
-  WhatsappSendMessage,
-  WhatsappSendVoiceMessage,
+import {
+  WHATSAPP_VOICE_NOTE_MAX_BYTES,
+  type WhatsappMediaGetMessage,
+  type WhatsappSendMessage,
+  type WhatsappSendVoiceMessage,
 } from '@oppenheimer/shared/protocol';
 import type {
   WhatsappDevicePort,
@@ -92,6 +93,11 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
     const link = this.links.find(hostId);
     if (!link) return { kind: 'host_offline' };
     if (!link.capabilities.includes('whatsapp.voice.send')) return { kind: 'not_supported' };
+    // The runner reads the link with a frame cap: a larger frame would close
+    // the link, every session on it included, before WA_006 could answer.
+    if (audio.length > WHATSAPP_VOICE_NOTE_MAX_BYTES) {
+      return { kind: 'failed', code: 'WA_006', detail: `${audio.length} bytes is past one frame` };
+    }
     const message: WhatsappSendVoiceMessage = {
       type: 'whatsapp.send.voice',
       commandId: randomUUID(),

@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { WHATSAPP_SENDS_PER_DAY } from '@oppenheimer/shared';
+import { WHATSAPP_VOICE_NOTE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type { WhatsappDevicePort } from '../../application/whatsapp-device.port';
 import { whatsappSentOrThrow } from '../../application/whatsapp-send-outcome.policy';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
@@ -59,6 +60,12 @@ export class SendWhatsappMessageCommandHandler
     }
 
     const { voice } = command;
+    // A frame past the link's cap closes the host's whole link, not just this send.
+    if (voice && voice.audio.length > WHATSAPP_VOICE_NOTE_MAX_BYTES) {
+      throw new AppError(WhatsappErrors.SEND_FAILED, {
+        detail: `The voice note is ${voice.audio.length} bytes; one link frame carries ${WHATSAPP_VOICE_NOTE_MAX_BYTES} at most. Send a shorter text.`,
+      });
+    }
     const outcome = voice
       ? await this.device.sendVoice(account.hostId, command.chat.chatId, voice.audio, voice.seconds)
       : await this.device.send(account.hostId, command.chat.chatId, command.text);
