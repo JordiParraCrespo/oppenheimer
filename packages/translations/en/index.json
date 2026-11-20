@@ -2425,7 +2425,7 @@
       },
       "gateways": {
         "title": "Gateways",
-        "subtitle": "Where people reach this bot: the WhatsApp chats it answers, and the Telegram bots it answers on.",
+        "subtitle": "Where people reach this bot: the WhatsApp chats it answers, the Telegram bots it answers on, and its own Slack app.",
         "whatsappFailed": "Couldn’t load your WhatsApp numbers.",
         "telegramFailed": "Couldn’t load your Telegram bots.",
         "chatsFailed": "Couldn’t load this number’s chats.",

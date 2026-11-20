@@ -765,7 +765,7 @@
     },
     "gateways": {
       "title": "Canales",
-      "subtitle": "Dónde la gente habla con este bot: los chats de WhatsApp que responde y los bots de Telegram en los que responde.",
+      "subtitle": "Dónde la gente habla con este bot: los chats de WhatsApp que responde, los bots de Telegram en los que responde y su propia app de Slack.",
       "whatsappFailed": "No se pudieron cargar tus números de WhatsApp.",
       "telegramFailed": "No se pudieron cargar tus bots de Telegram.",
       "chatsFailed": "No se pudieron cargar los chats de este número.",
