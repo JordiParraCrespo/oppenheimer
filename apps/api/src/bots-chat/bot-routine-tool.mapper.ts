@@ -11,6 +11,8 @@ export interface RoutineScheduleInput {
   days?: number[];
   day_of_month?: number;
   date?: string;
+  /** Cron: the five fields. */
+  cron?: string;
   timezone?: string;
 }
 
@@ -55,6 +57,7 @@ export function routineTriggers(
             ...(input.frequency === 'weekly' ? { days: input.days } : {}),
             ...(input.frequency === 'monthly' ? { dayOfMonth: input.day_of_month } : {}),
             ...(input.frequency === 'once' ? { date: input.date } : {}),
+            ...(input.frequency === 'cron' ? { expression: input.cron } : {}),
             timezone: input.timezone ?? timeZone,
           }
         : input.source === 'github'

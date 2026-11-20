@@ -1,4 +1,5 @@
 import type { ScheduleFrequency } from './catalog.js';
+import { type CronSpec, cronDayMatches, parseCron } from './cron.js';
 
 /**
  * A schedule rule and the arithmetic that turns it into instants.
@@ -32,6 +33,8 @@ export interface ScheduleRule {
   readonly dayOfMonth?: number;
   /** `once` only: the local calendar date, `YYYY-MM-DD`. */
   readonly date?: string;
+  /** `cron` only: the five fields (`cron.ts`), read in `timezone`. `hour` and `minute` are ignored. */
+  readonly expression?: string;
   /** An IANA zone, such as `Europe/Madrid`. */
   readonly timezone: string;
 }
@@ -177,6 +180,13 @@ export function nextScheduleOccurrence(rule: ScheduleRule, after: Date): Date | 
     return instant > afterMs ? new Date(instant) : null;
   }
 
+  if (rule.frequency === 'cron') {
+    const spec = parseCron(rule.expression ?? '');
+    if (!spec) return null;
+    const instant = nextCronInstant(spec, timezone, afterMs);
+    return instant === null ? null : new Date(instant);
+  }
+
   const start = wallTimeAt(afterMs, timezone);
 
   if (rule.frequency === 'hourly') {
@@ -212,6 +222,51 @@ export function nextScheduleOccurrence(rule: ScheduleRule, after: Date): Date | 
     if (instant > afterMs) return new Date(instant);
   }
   return null;
+}
+
+/**
+ * More than a daylight-saving transition can move a wall time (two hours at
+ * most, in any zone): a slot this far before `after` cannot follow it.
+ */
+const SHIFT_MAX = 3 * HOUR;
+
+/**
+ * Eight years of days: the longest wait a cron day can ask for is 29 February
+ * across a century that skips it.
+ */
+const CRON_SEARCH_DAYS = 8 * 366;
+
+/**
+ * A cron expression's first instant after `afterMs`, walking local calendar
+ * days. Each slot goes through `zonedWallTimeToInstant`, so a skipped wall
+ * time fires as though the clock had not jumped and a repeated one fires once.
+ * A skipped slot can land after a later slot of the same day (02:30 lands at
+ * 03:30, after 03:00), so the earliest instant is taken, not the first slot,
+ * and the day after the one that found it is read too.
+ */
+function nextCronInstant(spec: CronSpec, timezone: string, afterMs: number): number | null {
+  const start = wallTimeAt(afterMs, timezone);
+  const floor = wallAsUtc(start) - SHIFT_MAX;
+  let best: number | null = null;
+  let lastDay = CRON_SEARCH_DAYS;
+  for (let offset = 0; offset <= lastDay; offset += 1) {
+    const day = addDays(start, offset);
+    if (!cronDayMatches(spec, day.year, day.month, day.day)) continue;
+    let found: number | null = null;
+    for (const hour of spec.hours) {
+      for (const minute of spec.minutes) {
+        const wall = { ...day, hour, minute };
+        const local = wallAsUtc(wall);
+        if (local < floor) continue;
+        if (found !== null && local > found + SHIFT_MAX) break;
+        const instant = zonedWallTimeToInstant(wall, timezone);
+        if (instant > afterMs && (best === null || instant < best)) best = instant;
+        if (instant > afterMs && found === null) found = local;
+      }
+    }
+    if (best !== null && lastDay === CRON_SEARCH_DAYS) lastDay = offset + 1;
+  }
+  return best;
 }
 
 /**

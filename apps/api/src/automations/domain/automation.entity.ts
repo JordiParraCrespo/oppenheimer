@@ -426,6 +426,11 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       if (trigger.source === 'gmail') {
         throw new ArgumentInvalidException('Mail starts a bot routine, not a session automation');
       }
+      if (trigger.source === 'schedule' && trigger.config.frequency === 'cron') {
+        throw new ArgumentInvalidException(
+          'A cron schedule is a bot routine’s, not a session automation’s',
+        );
+      }
       if (trigger.source === 'schedule') continue;
       if (!trigger.config.repositories.every((id) => repositories.has(id))) {
         throw new ArgumentInvalidException(

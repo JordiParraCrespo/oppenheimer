@@ -12,6 +12,7 @@ import {
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
 } from '../automations/catalog.js';
+import { CRON_EXPRESSION_MAX, cronProblem } from '../automations/cron.js';
 import { isValidTimeZone } from '../automations/schedule.js';
 import { CLOUD_AGENT_IDS } from './cloud-agent.schema.js';
 import {
@@ -59,6 +60,8 @@ export const scheduleTriggerInputSchema = z
     days: z.array(weekdaySchema).min(1).max(7).optional(),
     dayOfMonth: z.number().int().min(1).max(SCHEDULE_MAX_DAY_OF_MONTH).optional(),
     date: localDateSchema.optional(),
+    /** `cron` only. `hour` and `minute` are still sent, and ignored, as `hourly` ignores `hour`. */
+    expression: z.string().trim().min(1).max(CRON_EXPRESSION_MAX).optional(),
     timezone: timeZoneSchema,
   })
   .refine((value) => (value.frequency === 'weekly') === (value.days !== undefined), {
@@ -69,6 +72,14 @@ export const scheduleTriggerInputSchema = z
   })
   .refine((value) => (value.frequency === 'once') === (value.date !== undefined), {
     path: ['date'],
+  })
+  .refine((value) => (value.frequency === 'cron') === (value.expression !== undefined), {
+    path: ['expression'],
+  })
+  // Five readable fields, firing at most every five minutes on average
+  // (`CRON_MAX_FIRES_PER_HOUR`); the hourly rate caps still bound the rest.
+  .refine((value) => value.expression === undefined || cronProblem(value.expression) === null, {
+    path: ['expression'],
   });
 
 export type ScheduleTriggerInputDto = z.infer<typeof scheduleTriggerInputSchema>;

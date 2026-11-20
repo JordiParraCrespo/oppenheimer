@@ -172,6 +172,7 @@ export class AutomationMapper {
         ...(Array.isArray(config.days) ? { days: config.days.map(Number) } : {}),
         ...(typeof config.dayOfMonth === 'number' ? { dayOfMonth: config.dayOfMonth } : {}),
         ...(typeof config.date === 'string' ? { date: config.date } : {}),
+        ...(typeof config.expression === 'string' ? { expression: config.expression } : {}),
       };
       return {
         id: record.id,

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import {
   AUTOMATION_RUN_STATUSES,
+  cronToEnglish,
   RUN_HISTORY_DAYS,
   RUN_WINDOWS,
 } from '@oppenheimer/shared/automations';
@@ -240,6 +241,10 @@ export function describeTrigger(
 ): string {
   if (trigger.source === 'schedule') {
     const { config } = trigger;
+    if (config.frequency === 'cron') {
+      const words = cronToEnglish(config.expression ?? '') ?? 'never';
+      return `schedule cron "${config.expression ?? ''}" (${words}) ${trigger.timezone}, next ${trigger.nextFireAt ? formatToolTime(trigger.nextFireAt, context.timeZone) : 'none'}`;
+    }
     const at = `${String(config.hour).padStart(2, '0')}:${String(config.minute).padStart(2, '0')}`;
     const detail =
       config.frequency === 'hourly'

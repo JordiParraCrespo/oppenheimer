@@ -87,6 +87,10 @@
     "monthly": {
       "label": "Mensual",
       "desc": "Un día del mes"
+    },
+    "cron": {
+      "label": "Personalizada",
+      "desc": "Con un horario que un bot escribe por ti"
     }
   },
   "event": {
@@ -157,6 +161,35 @@
     "manual": "Solo manual",
     "monFri": "lun–vie",
     "weekend": "sáb, dom"
+  },
+  "cron": {
+    "sentence": "{{time}}, {{day}}",
+    "sentenceMonths": "{{time}}, {{day}}, en {{months}}",
+    "zoned": "{{sentence}} ({{zone}})",
+    "custom": "Horario personalizado",
+    "at": "A las {{times}}",
+    "everyMinutes": "Cada {{step}} minutos",
+    "everyMinutesWindow": "Cada {{step}} minutos de {{from}} a {{to}}",
+    "everyHour": "Cada hora a los :{{minute}}",
+    "everyHourAt": "Cada hora a los {{minutes}}",
+    "everyHourWindow": "Cada hora a los :{{minute}} de {{from}} a {{to}}",
+    "everyHours": "Cada {{step}} horas a los :{{minute}}",
+    "everyHoursWindow": "Cada {{step}} horas a los :{{minute}} de {{from}} a {{to}}",
+    "minutesPast": "A los {{minutes}} de las {{hours}}",
+    "everyDay": "todos los días",
+    "monthDays": "el día {{days}} del mes",
+    "lastDay": "el último día del mes",
+    "lastWeekday": "el último día laborable del mes",
+    "nthWeekday": "el {{nth}} {{day}} del mes",
+    "lastWeekdayOf": "el último {{day}} del mes",
+    "either": "{{monthDays}} o {{weekDays}}",
+    "ordinal": {
+      "1": "primer",
+      "2": "segundo",
+      "3": "tercer",
+      "4": "cuarto",
+      "5": "quinto"
+    }
   },
   "next": {
     "onEvent": "En el próximo evento",
