@@ -30,6 +30,13 @@ describe('Slack text', () => {
     );
   });
 
+  // What breaks this: emphasis read as bold, or a quote shown as `> text`.
+  it('keeps italics italic and quotes quoted', () => {
+    expect(slackMrkdwn('an *aside* and **bold**\n> quoted 1 > 0')).toBe(
+      'an _aside_ and *bold*\n> quoted 1 &gt; 0',
+    );
+  });
+
   // What breaks this: code the owner is meant to run arrives changed.
   it('leaves code as written, restyling only the prose around it', () => {
     const answer =
