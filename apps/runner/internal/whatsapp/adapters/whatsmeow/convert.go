@@ -190,6 +190,11 @@ func outgoing(text string, quote *domain.Quote) *waE2E.Message {
 // an audio message marked push-to-talk, with the upload's keys and hashes, in
 // the one MIME type WhatsApp plays as a voice note.
 func outgoingVoice(up whatsmeow.UploadResponse, seconds int, at time.Time) *waE2E.Message {
+	// The service allows 1 to domain.VoiceSendMaxSeconds; anything else shows no length.
+	var length uint32
+	if seconds > 0 && seconds <= domain.VoiceSendMaxSeconds {
+		length = uint32(seconds)
+	}
 	return &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
 		URL:               proto.String(up.URL),
 		DirectPath:        proto.String(up.DirectPath),
@@ -198,7 +203,7 @@ func outgoingVoice(up whatsmeow.UploadResponse, seconds int, at time.Time) *waE2
 		FileSHA256:        up.FileSHA256,
 		FileLength:        proto.Uint64(up.FileLength),
 		Mimetype:          proto.String(domain.VoiceNoteMimetype),
-		Seconds:           proto.Uint32(uint32(seconds)),
+		Seconds:           proto.Uint32(length),
 		PTT:               proto.Bool(true),
 		MediaKeyTimestamp: proto.Int64(at.Unix()),
 	}}
