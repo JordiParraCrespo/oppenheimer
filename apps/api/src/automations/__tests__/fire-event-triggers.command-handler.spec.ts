@@ -1,8 +1,11 @@
 import type { ConfigService } from '@nestjs/config';
+import type { QueryBus } from '@nestjs/cqrs';
 import { Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
+import { FindBranchSessionBotsQuery } from '../../sessions/queries/find-branch-session-bots/find-branch-session-bots.query';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
+import { BranchSessionBotsResolver } from '../application/branch-session-bots.resolver';
 import type { AutomationRunMapper } from '../automation-run.mapper';
 import { FireEventTriggersCommand } from '../commands/fire-event-triggers/fire-event-triggers.command';
 import { FireEventTriggersCommandHandler } from '../commands/fire-event-triggers/fire-event-triggers.command-handler';
@@ -49,7 +52,32 @@ function watching(name: string) {
   return { automation, trigger: automation.triggers[0] };
 }
 
-function command(actorIsOwnApp = false) {
+function routine(botId: string) {
+  const automation = AutomationEntity.createRoutine({
+    organizationId: 'org-1',
+    ownerUserId: 'user-1',
+    botId,
+    name: `Review for ${botId}`,
+    prompt: 'Review every new pull request.',
+    triggers: [
+      triggerFromInput(
+        {
+          source: 'github',
+          event: 'pr_opened',
+          repositories: [101],
+          filter: { op: 'equals', value: 'main' },
+        },
+        0,
+      ),
+    ],
+    active: true,
+    credentialScopes: null,
+    now,
+  });
+  return { automation, trigger: automation.triggers[0] };
+}
+
+function command(actorIsOwnApp = false, branch = 'feature/x') {
   return new FireEventTriggersCommand({
     organizationId: 'org-1',
     inboundEventId: 'event-1',
@@ -58,13 +86,20 @@ function command(actorIsOwnApp = false) {
     subjectRef: '101',
     externalId: 'delivery-1',
     actorIsOwnApp,
-    attributes: { baseBranch: 'main' },
+    attributes: { baseBranch: 'main', branch },
     metadata: { correlationId: 'delivery-corr' },
   });
 }
 
-function setup(recent: { automation: number; workspace: number }) {
-  const candidates = [watching('One'), watching('Two'), watching('Three')];
+function setup(
+  recent: { automation: number; workspace: number },
+  candidates: { automation: AutomationEntity; trigger: AutomationEntity['triggers'][number] }[] = [
+    watching('One'),
+    watching('Two'),
+    watching('Three'),
+  ],
+  branchBots: string[] = [],
+) {
   const automations = {
     findEventCandidates: vi.fn(async () => candidates),
   } as unknown as AutomationRepositoryPort;
@@ -99,14 +134,18 @@ function setup(recent: { automation: number; workspace: number }) {
       context: {},
     }),
   } as unknown as AutomationRunMapper;
+  const queryBus = {
+    execute: vi.fn(async () => branchBots),
+  } as unknown as QueryBus & { execute: ReturnType<typeof vi.fn> };
   const handler = new FireEventTriggersCommandHandler(
     automations,
     runs,
     events,
     new AutomationLimitsResolver(settings, config),
     mapper,
+    new BranchSessionBotsResolver(queryBus),
   );
-  return { handler, candidates, fireUnderCaps, find, decided };
+  return { handler, candidates, fireUnderCaps, find, decided, queryBus };
 }
 
 describe('FireEventTriggersCommandHandler', () => {
@@ -145,5 +184,39 @@ describe('FireEventTriggersCommandHandler', () => {
     const { handler, decided } = setup({ automation: 0, workspace: 7 });
     expect(await handler.execute(command(true))).toBe(0);
     expect(decided.map((run) => run.skipReason)).toEqual(['own_event', 'own_event', 'own_event']);
+  });
+
+  it("skips a bot's routine for a pull request on the branch of a session that bot started", async () => {
+    // Regression: the session opens its pull request with `gh` as the owner, so
+    // the loop guard sees a person, and the routine woke its own bot to review
+    // its own work, round and round until the hourly cap.
+    const own = routine('bot-1');
+    const other = routine('bot-2');
+    const plain = watching('Plain');
+    const { handler, decided, queryBus } = setup(
+      { automation: 0, workspace: 0 },
+      [own, other, plain],
+      ['bot-1'],
+    );
+    expect(await handler.execute(command(false, 'opp/fix-login'))).toBe(2);
+    expect(decided.map((run) => [run.automationId, run.skipReason])).toEqual([
+      [own.automation.id, 'own_session_event'],
+      [other.automation.id, null],
+      [plain.automation.id, null],
+    ]);
+    expect(queryBus.execute).toHaveBeenCalledTimes(1);
+    expect(queryBus.execute.mock.calls[0][0]).toEqual(
+      new FindBranchSessionBotsQuery({
+        organizationId: 'org-1',
+        githubRepoId: '101',
+        branch: 'opp/fix-login',
+      }),
+    );
+  });
+
+  it('asks nothing of the sessions when no routine is among the matches', async () => {
+    const { handler, queryBus } = setup({ automation: 0, workspace: 0 });
+    expect(await handler.execute(command())).toBe(3);
+    expect(queryBus.execute).not.toHaveBeenCalled();
   });
 });

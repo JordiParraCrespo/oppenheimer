@@ -936,6 +936,71 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
   });
 
   describe('reading', () => {
+    it('names the bots whose sessions are on a repository branch, ended ones included, and only theirs', async () => {
+      // Regression: a routine's own bot opened a pull request through a
+      // session, and nothing could tell it was that bot's, so the routine woke
+      // it to review its own work.
+      const botId = randomUUID();
+      const otherBotId = randomUUID();
+      for (const id of [botId, otherBotId]) {
+        await dataSource.query(
+          `INSERT INTO bot ("id", "organizationId", "name") VALUES ($1, $2, 'Juno')`,
+          [id, organizationId],
+        );
+      }
+      const started = (bot: string | null) =>
+        WorkSessionEntity.request({
+          organizationId,
+          projectId,
+          createdByUserId: userId,
+          hostId,
+          slug: mintSessionSlug(),
+          agent: 'claude-code',
+          ...(bot ? { origin: 'bot' as const, botId: bot } : {}),
+        });
+      const mine = started(botId);
+      const theirs = started(otherBotId);
+      const persons = started(null);
+      for (const work of [mine, theirs, persons]) {
+        work.attachCheckout(checkout(work));
+        await repository.createIfUnclaimed(work, requested());
+      }
+      const branchOf = (work: WorkSessionEntity) => `oppenheimer/xrp-mobile/${work.slug}`;
+
+      expect(
+        await repository.findBotsOnBranchForSystem(organizationId, '4242', branchOf(mine)),
+      ).toEqual([botId]);
+      // A person's session, another repository, another workspace: no bot.
+      expect(
+        await repository.findBotsOnBranchForSystem(organizationId, '4242', branchOf(persons)),
+      ).toEqual([]);
+      expect(
+        await repository.findBotsOnBranchForSystem(organizationId, '9999', branchOf(mine)),
+      ).toEqual([]);
+      expect(
+        await repository.findBotsOnBranchForSystem(otherOrganizationId, '4242', branchOf(mine)),
+      ).toEqual([]);
+
+      // The pull request outlives the session: a retired checkout still counts.
+      await dataSource.query(
+        `UPDATE session_checkout SET "removedAt" = now() WHERE "sessionId" = $1`,
+        [mine.id],
+      );
+      expect(
+        await repository.findBotsOnBranchForSystem(organizationId, '4242', branchOf(mine)),
+      ).toEqual([botId]);
+
+      // Only a bot's session names a bot, and deleting the bot leaves the session.
+      await expect(
+        dataSource.query(`UPDATE work_session SET "botId" = $1 WHERE id = $2`, [botId, persons.id]),
+      ).rejects.toThrow(/CHK_work_session_bot/);
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [botId]);
+      const [row] = await dataSource.query(`SELECT "botId" FROM work_session WHERE id = $1`, [
+        mine.id,
+      ]);
+      expect(row.botId).toBeNull();
+    });
+
     it('does not show one workspace’s sessions to another', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());

@@ -2480,6 +2480,7 @@
       "paused": "Skipped: the automation was paused",
       "deleted": "Skipped: the automation was deleted",
       "own_event": "Skipped: the event was our own",
+      "own_session_event": "Skipped: a session this bot started caused it",
       "automation_rate_limited": "Skipped: this automation’s hourly limit",
       "workspace_rate_limited": "Skipped: the workspace’s hourly limit",
       "overlapping": "Skipped: a run was still going",

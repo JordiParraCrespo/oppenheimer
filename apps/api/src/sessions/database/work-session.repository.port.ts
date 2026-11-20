@@ -165,6 +165,18 @@ export interface WorkSessionRepositoryPort {
   ): Promise<WorkSessionEntity[]>;
 
   /**
+   * The bots that started a session in this workspace with a checkout of
+   * this repository on this branch, retired checkouts and ended sessions
+   * included: a pull request outlives the session that opened it. For a
+   * routine woken by a GitHub event on that branch; no person scopes a webhook.
+   */
+  findBotsOnBranchForSystem(
+    organizationId: string,
+    githubRepoId: string,
+    branch: string,
+  ): Promise<string[]>;
+
+  /**
    * How many sessions are running on each of these hosts, by the same rule.
    * The hosts were read under the caller's scope before they got here, and the
    * answer is a count, never a row. A host with none is absent from the map.

@@ -318,6 +318,7 @@ its run with the reason, so nothing disappears silently.
 | Paused | firing | triggers ignored while paused; Run now passes |
 | Dedupe | firing | the unique `(automationId, causeKey)` |
 | Loop | firing | skip events whose actor is our own App |
+| Own session | firing | a bot's routine skips an event on the branch of a session that bot started (`work_session.botId`): the session acts on GitHub as the owner, so Loop cannot see it (#956) |
 | Rate | firing | per automation and per workspace per hour |
 | Overlap | dispatch | `skip` (default) or `queue` while a run of the same automation is live |
 | Launchable | dispatch | owner still a member, host paired and usable by the owner, agent probed and headless-capable, project active |

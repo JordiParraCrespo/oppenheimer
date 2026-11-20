@@ -37,6 +37,16 @@ export function loopGuard(actorIsOwnApp: boolean): GuardVerdict {
   return actorIsOwnApp ? { kind: 'skip', reason: 'own_event' } : ALLOW;
 }
 
+/**
+ * A routine woken by an event on the branch of a session its own bot started
+ * would review its own work, and could start the next session that wakes it.
+ * The session acts as the owner on GitHub, so `loopGuard` cannot tell; the
+ * branch can. Other bots' routines and session automations still fire.
+ */
+export function ownSessionGuard(fromOwnBotsSession: boolean): GuardVerdict {
+  return fromOwnBotsSession ? { kind: 'skip', reason: 'own_session_event' } : ALLOW;
+}
+
 /** The hourly caps, per automation and per workspace, counted from stored runs. */
 export function rateGuard(
   limits: Pick<AutomationLimits, 'maxRunsPerAutomationHour' | 'maxRunsPerWorkspaceHour'>,

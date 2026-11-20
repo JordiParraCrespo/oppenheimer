@@ -132,6 +132,7 @@ export class BotTerminalToolsFactory implements BotToolArea {
             input: parsed.data,
             idempotencyKey: idempotencyKeyOf(context.turnId, parsed.data, context.approvalId),
             origin: 'bot',
+            botId: context.botId,
           }),
         );
         const offline = result.hints.includes('host_offline')

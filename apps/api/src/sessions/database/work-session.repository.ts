@@ -23,6 +23,7 @@ import {
 import { SessionResource } from '../sessions.resource';
 import { WorkSessionMapper } from '../work-session.mapper';
 import { WorkSessionEventMapper } from '../work-session-event.mapper';
+import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
 import { SessionCheckoutRepository } from './session-checkout.repository';
 import { SessionCloudRunRepository } from './session-cloud-run.repository';
 import { SessionTurnRepository } from './session-turn.repository';
@@ -556,6 +557,29 @@ export class WorkSessionRepository
     if (records.length === 0) return [];
     const checkouts = await this.checkouts.findForSessions(records.map((record) => record.id));
     return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+  }
+
+  async findBotsOnBranchForSystem(
+    organizationId: string,
+    githubRepoId: string,
+    branch: string,
+  ): Promise<string[]> {
+    const rows: { botId: string }[] = await this.unscopedQuery(
+      'a routine woken by a GitHub event asks whether its own bot started the branch, and a webhook has no person to scope by',
+    )
+      .innerJoin(
+        SessionCheckoutOrmEntity,
+        'checkout',
+        'checkout.sessionId = session.id AND checkout.organizationId = session.organizationId',
+      )
+      .where('session.organizationId = :organizationId', { organizationId })
+      .andWhere('session.botId IS NOT NULL')
+      .andWhere('checkout.githubRepoId = :githubRepoId', { githubRepoId })
+      .andWhere('checkout.branch = :branch', { branch })
+      .select('session.botId', 'botId')
+      .distinct(true)
+      .getRawMany();
+    return rows.map((row) => row.botId);
   }
 
   async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {
