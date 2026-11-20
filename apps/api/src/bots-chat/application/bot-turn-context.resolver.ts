@@ -128,6 +128,7 @@ export class BotTurnContextResolver {
           turn.id,
           summary?.coversThroughMessageId ?? null,
           BOT_HISTORY_READ_MAX,
+          turn.contact,
         ),
         this.hostsOf(owner, turn.id),
         this.turns.findLastContext(turn.organizationId, bot.id),
@@ -196,7 +197,7 @@ export class BotTurnContextResolver {
         facts: contact ? [] : inMind.own,
         personFacts: contact ? [] : inMind.person,
         personAbout: contact ? undefined : about,
-        engineCapabilities: engineCapabilities(turn.provider),
+        engineCapabilities: contact ? [] : engineCapabilities(turn.provider),
         tools:
           owner && !contact
             ? this.toolbox.catalog(turn.credentialScopes, {
@@ -229,6 +230,8 @@ export class BotTurnContextResolver {
       ),
       images,
       tools,
+      // A contact's turn has no tools of the engine's own either (web search, a todo list).
+      ...(contact && { engineTools: false }),
       // No step limit: the turn runs until the model answers, compacting
       // against the window its last turn reported.
       contextWindow: lastContext?.window ?? null,

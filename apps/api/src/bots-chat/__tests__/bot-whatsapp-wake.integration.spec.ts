@@ -443,6 +443,35 @@ describe('waking a bot on WhatsApp (integration)', () => {
       expect(read.map((message) => message.content)).toEqual(['Remember I like short answers']);
     });
 
+    // What breaks this: the owner's old number, allowed later as a contact,
+    // reading the owner's own turns (their tools' results, their words) in
+    // the conversation the chat already had.
+    it('reads only contacts’ turns as a contact’s history, in a chat that was once the owner’s', async () => {
+      const messages = new BotMessageRepository(
+        dataSource.getRepository(BotMessageOrmEntity),
+        dataSource,
+        new BotMessageMapper(),
+      );
+      await wrote('80', { text: 'My bank PIN hint is the dog’s name' });
+      await spoke('81', { chatId, chatKind: 'direct', chatName: null, text: 'hi' });
+      await spoke('82', { chatId, chatKind: 'direct', chatName: null, text: 'are you there?' });
+
+      const [contactTurn]: { id: string; conversationId: string }[] = await dataSource.query(
+        `SELECT id, "conversationId" FROM bot_turn WHERE "sourceKey" = $1`,
+        [sourceOf('82')],
+      );
+      const history = await messages.findHistory(
+        organizationId,
+        contactTurn?.conversationId ?? '',
+        contactTurn?.id ?? '',
+        null,
+        50,
+        true,
+      );
+      expect(history.map((message) => message.content).join('\n')).not.toContain('PIN');
+      expect(history).toHaveLength(1);
+    });
+
     // What breaks this: a contact reaching a bot the number's owner did not make.
     it('queues nothing for a bot the number’s owner did not make', async () => {
       const theirs = await create('Shop', await insertUser());

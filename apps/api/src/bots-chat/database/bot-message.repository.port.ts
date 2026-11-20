@@ -130,6 +130,11 @@ export interface BotMessageRepositoryPort {
     turnId: string,
     afterMessageId: string | null,
     limit: number,
+    /**
+     * Only what contacts' turns said and were told: a contact's turn never
+     * reads the owner's own turns, even in a chat that was once the owner's.
+     */
+    contactsOnly?: boolean,
   ): Promise<BotMessageEntity[]>;
   /**
    * What a dream checks the memory against: the bot's newest `limit`

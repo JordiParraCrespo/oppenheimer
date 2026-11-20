@@ -249,12 +249,14 @@ describe('BotTurnContextResolver', () => {
   // owner's mail or sessions, reading what the owner wrote about themselves,
   // or running one of the bot's skills with a /command.
   it('runs a contact’s turn with no tools, no skills and nothing the owner wrote about themselves', async () => {
+    const findHistory = vi.fn(async () => []);
     const { resolver } = setup(async () => [], {
       about: 'I am Jordi. My bank is Ibercaja.',
       skills: [skill('triage', { userInvocable: true })],
       offered: ['archive_mail'],
       opening: '/triage',
       channelChat: { chatId: '120363000000000001@g.us' },
+      findHistory,
     });
     const { turn } = whatsappContactTurn(
       {
@@ -279,6 +281,9 @@ describe('BotTurnContextResolver', () => {
     const shaped = await resolver.resolve(turn, new Date('2026-10-15T09:00:00Z'));
     if (!shaped) throw new Error('the contact’s turn did not run');
     expect(shaped.request.tools).toEqual([]);
+    expect(shaped.request.engineTools).toBe(false);
+    // Only contacts' turns, even in a chat that was once the owner's.
+    expect(findHistory.mock.calls[0]).toContain(true);
     expect(shaped.request.systemPrompt).not.toContain('Ibercaja');
     expect(shaped.request.systemPrompt).not.toContain('archive_mail');
     expect(shaped.request.systemPrompt).not.toContain('Does triage.');
@@ -430,6 +435,7 @@ describe('BotTurnContextResolver', () => {
       expect.any(String),
       'm-cut',
       expect.any(Number),
+      false,
     );
     expect(history).toHaveLength(2);
     expect(history[0].text).toContain('The person deploys from build-01.');
