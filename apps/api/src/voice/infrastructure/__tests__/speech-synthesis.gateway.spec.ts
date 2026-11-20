@@ -117,4 +117,59 @@ describe('OpenAiCompatibleSpeechSynthesisGateway', () => {
     await expect(gateway.synthesize('Hi.')).rejects.toMatchObject({ code: 'VOICE_010' });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
+
+  // What breaks this: a faulty server's endless body filling the API's memory before the refusal.
+  it('stops reading an answer past the cap, cancels the rest, and answers VOICE_009', async () => {
+    let pulled = 0;
+    let cancelled = false;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(256 * 1024));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(audio(200, endless)));
+    const gateway = new OpenAiCompatibleSpeechSynthesisGateway(
+      config({ 'voice.ttsBaseUrl': 'https://tts.example', 'voice.ttsModel': 'm' }),
+    );
+    await expect(gateway.synthesize('Hi.')).rejects.toMatchObject({ code: 'VOICE_009' });
+    expect(cancelled).toBe(true);
+    expect(pulled).toBeLessThan(10);
+  });
+
+  // What breaks this: a streamed answer letting more syntheses run than the server is given.
+  it('holds its slot until the audio is read, so a fifth call waits for one to finish', async () => {
+    const opened: Array<ReadableStreamDefaultController<Uint8Array>> = [];
+    const fetch = vi.fn(
+      async () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              opened.push(controller);
+            },
+          }),
+          { status: 200, headers: { 'content-type': 'audio/ogg' } },
+        ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new OpenAiCompatibleSpeechSynthesisGateway(
+      config({ 'voice.ttsBaseUrl': 'https://tts.example', 'voice.ttsModel': 'm' }),
+    );
+    const calls = Array.from({ length: 5 }, () => gateway.synthesize('Hi.'));
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(4));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(fetch).toHaveBeenCalledTimes(4);
+
+    opened[0].enqueue(new Uint8Array([0x4f, 0x67, 0x67, 0x53]));
+    opened[0].close();
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(5));
+    for (const controller of opened.slice(1)) {
+      controller.enqueue(new Uint8Array([1]));
+      controller.close();
+    }
+    await Promise.all(calls);
+  });
 });

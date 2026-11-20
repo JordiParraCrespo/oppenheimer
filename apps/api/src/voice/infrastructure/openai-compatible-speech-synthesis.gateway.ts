@@ -69,22 +69,27 @@ export class OpenAiCompatibleSpeechSynthesisGateway implements SpeechSynthesisPo
     const key = this.apiKey;
     if (key) headers.authorization = `Bearer ${key}`;
 
-    let exchanged: { response: Response; errorBody: string | null };
+    let exchanged: { response: SpeechAnswer; errorBody: string | null };
     try {
       exchanged = await this.limiter.exchange(
         [KEY_BUCKET],
-        () =>
-          fetch(`${baseUrl.replace(/\/+$/, '')}/audio/speech`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              model,
-              voice: this.voice,
-              input: text,
-              response_format: 'opus',
+        // The audio is read inside the slot: a server streams it after its
+        // headers, so the slot holds until the last byte, and reading stops
+        // at the cap rather than buffering whatever a server sends.
+        async () =>
+          speechAnswerOf(
+            await fetch(`${baseUrl.replace(/\/+$/, '')}/audio/speech`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                model,
+                voice: this.voice,
+                input: text,
+                response_format: 'opus',
+              }),
+              signal: AbortSignal.timeout(SYNTHESIS_TIMEOUT_MS),
             }),
-            signal: AbortSignal.timeout(SYNTHESIS_TIMEOUT_MS),
-          }),
+          ),
         readSpeechRefusal,
       );
     } catch (error) {
@@ -101,10 +106,10 @@ export class OpenAiCompatibleSpeechSynthesisGateway implements SpeechSynthesisPo
         detail: `${WHO} answered ${response.status} (${kind}).`,
       });
     }
-    const audio = Buffer.from(await response.arrayBuffer());
-    if (audio.length === 0 || audio.length > MAX_AUDIO_BYTES) {
+    const { audio } = response;
+    if (!audio || audio.length === 0) {
       throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
-        detail: `${WHO} answered ${audio.length} bytes (${kind}), which is not a voice note.`,
+        detail: `${WHO} answered ${audio ? 'no audio' : `more than ${MAX_AUDIO_BYTES} bytes`} (${kind}), which is not a voice note.`,
       });
     }
     return audio;
@@ -129,5 +134,45 @@ export class OpenAiCompatibleSpeechSynthesisGateway implements SpeechSynthesisPo
 
   private get voice(): string {
     return this.config.get<string>('voice.ttsVoice') ?? 'alloy';
+  }
+}
+
+/**
+ * A speech server's answer as the limiter reads it: a refusal's body when it
+ * is one, else the audio, read to the end inside the call (null past
+ * `MAX_AUDIO_BYTES`, the rest of the stream cancelled).
+ */
+interface SpeechAnswer {
+  status: number;
+  headers: Headers;
+  text(): Promise<string>;
+  audio: Buffer | null;
+}
+
+async function speechAnswerOf(response: Response): Promise<SpeechAnswer> {
+  const refused = response.status >= 400;
+  return {
+    status: response.status,
+    headers: response.headers,
+    text: () => response.text(),
+    audio: refused ? null : await readAtMost(response, MAX_AUDIO_BYTES),
+  };
+}
+
+/** The body's bytes, or null once it passes `max`, without reading further. */
+async function readAtMost(response: Response, max: number): Promise<Buffer | null> {
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return Buffer.concat(chunks);
+    total += value.length;
+    if (total > max) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
   }
 }
