@@ -4,8 +4,8 @@ import type { SlackAccountEntity } from '@oppenheimer/frontend-consumer';
 import { useOpenSlackOwnerLink, useRefreshSlack } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { CopyLine } from '@/features/slack/components/copy-line';
-import { SlackStep } from '@/features/slack/components/slack-step';
+import { CopyLine } from '@/features/bots/components/slack-copy-line';
+import { SlackStep } from '@/features/bots/components/slack-step';
 
 /**
  * Recording the reader's Slack user as the app's owner, the only person the

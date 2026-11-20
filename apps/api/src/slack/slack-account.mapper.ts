@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import { slackAppManifest } from '@oppenheimer/shared';
 import { SlackAccountOrmEntity } from './database/slack-account.orm-entity';
 import { SlackAccountEntity } from './domain/slack-account.entity';
 import { SlackAccountResponseDto } from './dtos/slack-account.response.dto';
+import { SlackAppSetupResponseDto } from './dtos/slack-app-setup.response.dto';
 
 @Injectable()
 export class SlackAccountMapper
@@ -68,6 +70,25 @@ export class SlackAccountMapper
     dto.tokenHint = entity.tokenHint;
     dto.ownerLinked = entity.ownerSlackUserId !== null;
     dto.linkedAt = entity.createdAt.toISOString();
+    return dto;
+  }
+
+  /**
+   * What creating a bot's app takes: its events address on the API's public
+   * `origin`, its manifest, and Slack's "Create an app" link carrying it.
+   */
+  toSetupResponse(
+    bot: { id: string; name: string; description: string },
+    origin: string,
+  ): SlackAppSetupResponseDto {
+    const eventsUrl = `${origin.replace(/\/+$/, '')}/api/v1/slack/events?bot=${bot.id}`;
+    const manifest = JSON.stringify(
+      slackAppManifest({ name: bot.name, description: bot.description, eventsUrl }),
+    );
+    const dto = new SlackAppSetupResponseDto();
+    dto.eventsUrl = eventsUrl;
+    dto.manifest = manifest;
+    dto.createUrl = `https://api.slack.com/apps?${new URLSearchParams({ new_app: '1', manifest_json: manifest }).toString()}`;
     return dto;
   }
 }

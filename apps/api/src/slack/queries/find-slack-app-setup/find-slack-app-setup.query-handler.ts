@@ -2,13 +2,13 @@ import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { type IQueryHandler, QueryBus, QueryHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { slackAppManifest } from '@oppenheimer/shared';
 import type { BotEntity } from '../../../bots/domain/bot.entity';
 import { FindBotQuery } from '../../../bots/queries/find-bot/find-bot.query';
 import { SlackErrors } from '../../domain/slack.errors';
-import { SlackAppSetupResponseDto } from '../../dtos/slack-app-setup.response.dto';
+import type { SlackAppSetupResponseDto } from '../../dtos/slack-app-setup.response.dto';
 import type { SlackSealerPort } from '../../infrastructure/slack-sealer.port';
 import { SLACK_SEALER } from '../../slack.di-tokens';
+import { SlackAccountMapper } from '../../slack-account.mapper';
 import { FindSlackAppSetupQuery } from './find-slack-app-setup.query';
 
 /**
@@ -25,6 +25,7 @@ export class FindSlackAppSetupQueryHandler
     private readonly queryBus: QueryBus,
     private readonly config: ConfigService,
     @Inject(SLACK_SEALER) private readonly sealer: SlackSealerPort,
+    private readonly mapper: SlackAccountMapper,
   ) {}
 
   async execute({ scope, botId }: FindSlackAppSetupQuery): Promise<SlackAppSetupResponseDto> {
@@ -36,14 +37,6 @@ export class FindSlackAppSetupQueryHandler
       this.config.get<string>('slack.eventsBaseUrl') ??
       this.config.get<string>('app.betterAuthUrl') ??
       'http://localhost:3001';
-    const eventsUrl = `${origin.replace(/\/+$/, '')}/api/v1/slack/events?bot=${bot.id}`;
-    const manifest = JSON.stringify(
-      slackAppManifest({ name: bot.name, description: bot.description, eventsUrl }),
-    );
-    const dto = new SlackAppSetupResponseDto();
-    dto.eventsUrl = eventsUrl;
-    dto.manifest = manifest;
-    dto.createUrl = `https://api.slack.com/apps?${new URLSearchParams({ new_app: '1', manifest_json: manifest }).toString()}`;
-    return dto;
+    return this.mapper.toSetupResponse(bot, origin);
   }
 }

@@ -3,11 +3,11 @@ import { useSuspenseBotSlack } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SlackStatus } from '@/features/slack/components/slack-status';
-import { DisconnectSlackDialog } from '@/features/slack/dialogs/disconnect-slack';
-import { ReplaceSlackTokenDialog } from '@/features/slack/dialogs/replace-slack-token';
-import { SlackOwnerLink } from '@/features/slack/sections/slack-owner-link';
-import { SlackSetup } from '@/features/slack/sections/slack-setup';
+import { SlackStatus } from '@/features/bots/components/slack-status';
+import { DisconnectSlackDialog } from '@/features/bots/dialogs/disconnect-slack';
+import { ReplaceSlackTokenDialog } from '@/features/bots/dialogs/replace-slack-token';
+import { SlackOwnerLink } from '@/features/bots/sections/slack-owner-link';
+import { SlackSetup } from '@/features/bots/sections/slack-setup';
 
 /**
  * The bot's Slack app: with none yet, the steps that create and connect it;

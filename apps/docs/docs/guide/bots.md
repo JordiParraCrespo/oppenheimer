@@ -32,7 +32,7 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 | Skills | Saved recipes for a task, at most 50. |
 | Permissions | Each tool set to Allow, Ask or Off; standing grants; plain-language rules. |
 | Routines | Its scheduled and event routines ([Routines and watches](./routines-and-watches.md)). |
-| Slack | Its own Slack app ([Slack](./slack.md)). |
+| Gateways | Where people reach it: WhatsApp, Telegram, [Slack](./slack.md). |
 | Home host | Where its sessions start when nobody names a machine, or **No home host** (it asks each time). The bot itself always runs in Oppenheimer. |
 
 ## Model providers

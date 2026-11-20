@@ -30,6 +30,15 @@ describe('Slack text', () => {
     );
   });
 
+  // What breaks this: code the owner is meant to run arrives changed.
+  it('leaves code as written, restyling only the prose around it', () => {
+    const answer =
+      '**Run** this:\n```python\n# square\nprint(2 ** 3 ** 2)\n```\nor `x ** 2 if a < b`';
+    expect(slackMrkdwn(answer)).toBe(
+      '*Run* this:\n```python\n# square\nprint(2 ** 3 ** 2)\n```\nor `x ** 2 if a &lt; b`',
+    );
+  });
+
   it('cuts a long answer at a paragraph, losing nothing', () => {
     const paragraph = `${'word '.repeat(500).trim()}\n\n`;
     const text = paragraph.repeat(4).trim();

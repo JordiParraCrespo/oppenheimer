@@ -4,9 +4,9 @@ import type { SlackAppSetup } from '@oppenheimer/frontend-consumer';
 import { useConnectSlack } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { CopyLine } from '@/features/slack/components/copy-line';
-import { SlackStep } from '@/features/slack/components/slack-step';
-import { ConnectSlackForm } from '@/features/slack/forms/connect-slack-form';
+import { CopyLine } from '@/features/bots/components/slack-copy-line';
+import { SlackStep } from '@/features/bots/components/slack-step';
+import { ConnectSlackForm } from '@/features/bots/forms/connect-slack-form';
 
 /**
  * Giving the bot its own Slack app, in three steps: create it in Slack from

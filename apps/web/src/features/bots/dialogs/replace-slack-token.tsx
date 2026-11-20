@@ -10,7 +10,7 @@ import type { SlackAccountEntity } from '@oppenheimer/frontend-consumer';
 import { useConnectSlack } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ConnectSlackForm } from '@/features/slack/forms/connect-slack-form';
+import { ConnectSlackForm } from '@/features/bots/forms/connect-slack-form';
 
 /**
  * New credentials for the bot's app: after Slack refused its token (the app

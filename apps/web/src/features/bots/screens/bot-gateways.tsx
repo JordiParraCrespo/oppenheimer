@@ -2,10 +2,10 @@ import { SettingsHeading, SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotGatewaysSkeleton } from '@/features/bots/components/bot-gateways-skeleton';
+import { BotSlackSkeleton } from '@/features/bots/components/bot-slack-skeleton';
+import { BotSlack } from '@/features/bots/sections/bot-slack';
 import { BotTelegramGateways } from '@/features/bots/sections/bot-telegram-gateways';
 import { BotWhatsappGateways } from '@/features/bots/sections/bot-whatsapp-gateways';
-import { BotSlackSkeleton } from '@/features/slack/components/bot-slack-skeleton';
-import { BotSlack } from '@/features/slack/sections/bot-slack';
 
 /**
  * `/bots/$botId/settings/gateways`: where people reach the bot. Each WhatsApp

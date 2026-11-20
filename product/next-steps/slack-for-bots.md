@@ -110,7 +110,7 @@ owner's only.
 - **bots-chat:** the `slack` conversation kind and turn origin, the wake
   (`WakeOnSlack`), the reply through `BotChannelReplyResolver`, the turn
   context's line, the approval line at the end of every channel turn.
-- **Console:** a **Slack** page in each bot's settings: the three steps that
+- **Console:** a **Slack** section on each bot's Gateways page: the three steps that
   create and connect its app, then the app, how it stands, the owner link,
   New token and Disconnect.
 

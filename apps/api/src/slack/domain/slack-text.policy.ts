@@ -1,17 +1,28 @@
 /** Slack's advice for one message's text: past this a long answer goes in several. */
 export const SLACK_MESSAGE_MAX = 3_900;
 
+/** A fenced block or an inline code span: what Slack shows as written, so nothing in it is restyled. */
+const CODE = /(```[\s\S]*?```|`[^`\n]+`)/;
+
 /**
- * The bot's markdown in Slack's own (`mrkdwn`): `&`, `<` and `>` escaped,
- * `**bold**` as `*bold*`, a heading as a bold line, `[label](url)` as Slack's
- * `<url|label>`, and `~~gone~~` as `~gone~`. Code spans and blocks keep their
- * backticks, which Slack reads the same way.
+ * The bot's markdown in Slack's own (`mrkdwn`): `&`, `<` and `>` escaped
+ * everywhere, and outside code only, `**bold**` as `*bold*`, a heading as a
+ * bold line, `[label](url)` as Slack's `<url|label>`, and `~~gone~~` as
+ * `~gone~`. Code keeps its backticks, which Slack reads the same way, and its
+ * text as written (`2 ** 3` stays `2 ** 3`, `# a comment` stays a comment).
  */
 export function slackMrkdwn(markdown: string): string {
   return markdown
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
+    .split(CODE)
+    .map((part, index) => {
+      const escaped = part.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+      return index % 2 === 1 ? escaped : slackProse(escaped);
+    })
+    .join('');
+}
+
+function slackProse(text: string): string {
+  return text
     .replace(/^#{1,6}\s+(.+?)\s*#*$/gm, '*$1*')
     .replace(/\*\*(.+?)\*\*/g, '*$1*')
     .replace(/~~(.+?)~~/g, '~$1~')
