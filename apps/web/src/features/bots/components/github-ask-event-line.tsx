@@ -32,7 +32,7 @@ export function GithubAskEventLine({ event }: { event: BotGithubAskEvent }) {
           href={event.url}
           target="_blank"
           rel="noreferrer"
-          className="max-w-xl truncate underline-offset-2 hover:text-fg hover:underline"
+          className="max-w-xl truncate text-fg-muted underline-offset-2 hover:text-fg hover:underline"
           title={line}
         >
           {line}
