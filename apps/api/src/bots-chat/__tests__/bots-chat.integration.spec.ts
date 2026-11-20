@@ -34,6 +34,7 @@ import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-k
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
+import type { BotChannelReplyResolver } from '../application/bot-channel-reply.resolver';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BotOpeningMediaResolver } from '../application/bot-opening-media.resolver';
@@ -897,6 +898,29 @@ describe('bots chat (integration)', () => {
       expect(opening.map((message) => message.content)).toEqual(['Message 9']);
     });
 
+    // What breaks this: a question sent mid-work waiting for the work to end
+    // (the two silent minutes on a phone), or, once the running turn took
+    // it, the same message delivered again answered a second time.
+    it('moves a message sent while the bot works into the running turn, and keeps a redelivery of it one turn', async () => {
+      await wake('30');
+      const [working] = await telegramTurns();
+      const running = await claimed(working?.id ?? '');
+      await wake('31', { text: 'Is the deploy one of them?' });
+      const [, waiting] = await telegramTurns();
+      expect(waiting).toMatchObject({ sourceKey: sourceOf('31'), status: 'queued' });
+
+      const taken = await turns.takeSteers(running, (turn) => takesSteer(running, turn));
+      expect(taken.map((steer) => steer.text)).toEqual(['Is the deploy one of them?']);
+      const [, kept] = await telegramTurns();
+      expect(kept).toMatchObject({ id: waiting?.id, status: 'completed' });
+
+      await wake('31', { text: 'Is the deploy one of them?' });
+      expect((await telegramTurns()).map((turn) => turn.sourceKey)).toEqual([
+        sourceOf('30'),
+        sourceOf('31'),
+      ]);
+    });
+
     // What breaks this: /new sent to the model as a message.
     it('starts a conversation at a /new itself and queues no turn for it', async () => {
       await wake('20', { command: 'new', conversationStartsAt: '20', text: '/new' });
@@ -1312,7 +1336,11 @@ describe('bots chat (integration)', () => {
     await turns.enqueue(turn, message, null);
     const transcript = new TurnTranscript(turn);
     const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
-    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
+    const write = new TurnWriteFactory(
+      messages,
+      stream as unknown as BotStreamPort,
+      {} as BotChannelReplyResolver,
+    ).writer(turn);
     const events: BotEngineEvent[] = [
       {
         type: 'tool.started',
@@ -1352,7 +1380,11 @@ describe('bots chat (integration)', () => {
     const turn = await runningTurn(bot);
     const transcript = new TurnTranscript(turn);
     const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
-    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
+    const write = new TurnWriteFactory(
+      messages,
+      stream as unknown as BotStreamPort,
+      {} as BotChannelReplyResolver,
+    ).writer(turn);
     expect(await bots.delete(bot)).toBe('deleted');
 
     let refused: unknown = null;

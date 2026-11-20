@@ -1,4 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { ChannelTurnLine } from '../domain/bot-channel-turn.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 
@@ -111,6 +112,11 @@ export interface BotMessageRepositoryPort {
   findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null>;
   /** A turn's own text, in the order the bot wrote it: what an ask's answer is drawn from. */
   findTurnTexts(organizationId: string, turnId: string): Promise<string[]>;
+  /**
+   * A turn's texts and activity lines, in order: what a channel turn's end
+   * reads to send what it has not sent yet (`unsentTexts`).
+   */
+  findTurnLines(organizationId: string, turnId: string): Promise<ChannelTurnLine[]>;
   /** Whether a turn called any tool: what a goal counts as progress (`BotGoalEntity.account`). */
   turnCalledTools(organizationId: string, turnId: string): Promise<boolean>;
   /**

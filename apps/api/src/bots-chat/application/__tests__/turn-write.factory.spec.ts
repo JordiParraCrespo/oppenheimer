@@ -4,7 +4,9 @@ import {
   UnstorableStepsError,
 } from '../../database/bot-message.repository.port';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
+import { whatsappTurn } from '../../domain/bot-whatsapp-turn.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
+import type { BotChannelReplyResolver } from '../bot-channel-reply.resolver';
 import { type TranscriptWrite, TurnTranscript, thrownFailure } from '../turn-transcript.policy';
 import { TurnWriteFactory } from '../turn-write.factory';
 
@@ -44,6 +46,7 @@ function setup(saveSteps: BotMessageRepositoryPort['saveSteps']) {
   const write = new TurnWriteFactory(
     messages as BotMessageRepositoryPort,
     stream as unknown as BotStreamPort,
+    { send: vi.fn() } as unknown as BotChannelReplyResolver,
   ).writer(turn);
   const transcript = new TurnTranscript(turn);
   const started = transcript.apply({
@@ -139,5 +142,95 @@ describe('TurnWriteFactory', () => {
     const failure = await writeAll(write, started).catch((error: unknown) => error);
 
     expect(thrownFailure(failure).failure).toBe('storage');
+  });
+});
+
+/**
+ * The owner's message on a channel hears from the bot as it works: what the
+ * bot wrote goes to the chat once its next tool calls begin ("On it,
+ * checking your sessions"), before the work rather than after it. A console
+ * turn's words stay in the console, and a send that fails never fails the
+ * turn.
+ */
+describe('TurnWriteFactory, a turn that sends as it goes', () => {
+  const ids = { organizationId: randomUUID(), botId: randomUUID(), userId: randomUUID() };
+
+  function channelSetup(turn: BotTurnEntity) {
+    const messages: Pick<BotMessageRepositoryPort, 'insert' | 'saveSteps'> = {
+      insert: vi.fn().mockResolvedValue(undefined),
+      saveSteps: vi.fn().mockResolvedValue(undefined),
+    };
+    const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
+    const channel = { send: vi.fn().mockResolvedValue(undefined) };
+    const write = new TurnWriteFactory(
+      messages as BotMessageRepositoryPort,
+      stream as unknown as BotStreamPort,
+      channel as unknown as BotChannelReplyResolver,
+    ).writer(turn);
+    const transcript = new TurnTranscript(turn);
+    const run = (events: Parameters<TurnTranscript['apply']>[0][]) =>
+      writeAll(
+        write,
+        events.flatMap((event) => transcript.apply(event)),
+      );
+    return { channel, run };
+  }
+
+  const ack = { type: 'text.done', text: 'On it, checking your sessions.' } as const;
+  const call = { type: 'tool.started', callId: 'c1', name: 'list_sessions', input: {} } as const;
+
+  function owners(): BotTurnEntity {
+    return whatsappTurn(
+      {
+        organizationId: ids.organizationId,
+        botId: ids.botId,
+        requestedByUserId: ids.userId,
+        provider: 'anthropic',
+        model: 'claude-opus',
+        effort: null,
+      },
+      {
+        conversationId: randomUUID(),
+        whatsappAccountId: randomUUID(),
+        messageRowId: randomUUID(),
+        text: 'Can you check my active sessions?',
+        voiceNote: false,
+      },
+    ).turn;
+  }
+
+  // Breaks if the acknowledgement waits for the work to end (the two silent
+  // minutes this was built to remove), or goes out before the bot moves on.
+  it('sends the owner’s chat what the bot wrote once its tool calls begin, once', async () => {
+    const turn = owners();
+    const { channel, run } = channelSetup(turn);
+    await run([ack]);
+    expect(channel.send).not.toHaveBeenCalled();
+
+    await run([call, { type: 'tool.started', callId: 'c2', name: 'list_hosts', input: {} }]);
+    expect(channel.send).toHaveBeenCalledTimes(1);
+    expect(channel.send).toHaveBeenCalledWith(turn, 'On it, checking your sessions.', undefined);
+  });
+
+  // Breaks if a console turn's words reach a channel.
+  it('sends nothing for a console turn', async () => {
+    const turn = BotTurnEntity.queue({
+      organizationId: ids.organizationId,
+      botId: ids.botId,
+      requestedByUserId: ids.userId,
+      provider: 'anthropic',
+      model: 'claude-opus',
+      effort: null,
+    });
+    const { channel, run } = channelSetup(turn);
+    await run([ack, call]);
+    expect(channel.send).not.toHaveBeenCalled();
+  });
+
+  // Breaks if a channel that is down ends the work the person asked for.
+  it('goes on when the send fails', async () => {
+    const { channel, run } = channelSetup(owners());
+    channel.send.mockRejectedValue(new Error('runner offline'));
+    await expect(run([ack, call])).resolves.toBeUndefined();
   });
 });

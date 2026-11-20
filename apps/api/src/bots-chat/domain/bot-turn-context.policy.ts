@@ -34,6 +34,12 @@ export interface TurnContextInput {
    * WhatsApp): the turn's last words are sent to their chat there.
    */
   channel?: BotChannelOrigin | null;
+  /**
+   * Whether that chat hears what the turn writes as it goes
+   * (`sendsAsItGoes`): the bot is asked to say what it will do before the
+   * work, and told that what the person writes meanwhile reaches it.
+   */
+  asItGoes?: boolean;
   memory?: {
     log: readonly { content: string; createdAt: Date; scope: BotMemoryScope }[];
     toRecall: number;
@@ -67,7 +73,8 @@ type ContextLine = (moment: Moment) => string | null;
 
 /**
  * The block's lines in the order they are sent: the time, the home host, the
- * hosts, the channel the answer goes to, the room left in the model's
+ * hosts, the channel the answer goes to and how it hears the bot as it
+ * works, the room left in the model's
  * context, the newest log facts and how many older ones wait for `recall`.
  * A new fact of the moment is a row.
  */
@@ -82,6 +89,7 @@ const CONTEXT_LINES: readonly ContextLine[] = [
       : promptText('turn/context.no-home-host'),
   ({ input }) => describeHosts(input.hosts),
   ({ input }) => (input.channel ? promptText(CHANNEL_LINES[input.channel]) : null),
+  ({ input }) => (input.channel && input.asItGoes ? promptText('turn/context.as-it-goes') : null),
   ({ input }) => describeRoom(input.lastContext),
   ({ input, zone }) => describeLog(input.memory?.log ?? [], zone),
   ({ input }) => describeOlderFacts(input.memory?.toRecall ?? 0),

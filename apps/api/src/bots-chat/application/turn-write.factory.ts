@@ -1,12 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BOT_MESSAGE_REPOSITORY, BOT_STREAM } from '../bots-chat.di-tokens';
 import {
   type BotMessageRepositoryPort,
   TurnGoneError,
   UnstorableStepsError,
 } from '../database/bot-message.repository.port';
+import { sendsAsItGoes } from '../domain/bot-channel-turn.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
+import { BotChannelReplyResolver } from './bot-channel-reply.resolver';
 import {
   failUnstoredCall,
   passedOnEvent,
@@ -27,12 +29,21 @@ import {
  * alone (`failUnstoredCall`); a turn deleted under it (`TurnGoneError`)
  * ends it as it came; any other failed write fails the turn as `storage`
  * (`TurnStorageError`).
+ *
+ * A turn that sends as it goes (`sendsAsItGoes`: the owner's message on a
+ * channel) also sends its chat the texts it stored once its next run of tool
+ * calls begins, so "On it" reaches the person before the work, not after.
+ * A send that fails is logged and never fails the turn: what it carried is
+ * still in the console.
  */
 @Injectable()
 export class TurnWriteFactory {
+  private readonly logger = new Logger(TurnWriteFactory.name);
+
   constructor(
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
+    private readonly channel: BotChannelReplyResolver,
   ) {}
 
   /**
@@ -46,7 +57,29 @@ export class TurnWriteFactory {
 
   /** The writer of one running turn. */
   writer(turn: BotTurnEntity): (write: TranscriptWrite) => Promise<void> {
-    return (write) => this.apply(turn, write);
+    if (!sendsAsItGoes(turn)) return (write) => this.apply(turn, write);
+    const unsent: string[] = [];
+    return async (write) => {
+      await this.apply(turn, write);
+      if (write.kind !== 'insert') return;
+      const { role, content } = write.message;
+      if (role === 'assistant' && content.trim()) unsent.push(content);
+      else if (role === 'activity' && unsent.length > 0) {
+        await this.sendAlong(turn, unsent.splice(0).join('\n\n'));
+      }
+    };
+  }
+
+  private async sendAlong(turn: BotTurnEntity, text: string): Promise<void> {
+    try {
+      await this.channel.send(turn, text, undefined);
+    } catch (error) {
+      this.logger.warn({
+        message: 'Could not send a channel turn’s words as it went',
+        turnId: turn.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {

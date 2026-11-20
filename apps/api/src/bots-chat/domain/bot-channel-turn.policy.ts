@@ -1,5 +1,11 @@
-import type { BotChannelOrigin } from '@oppenheimer/shared';
+import {
+  type BotChannelOrigin,
+  type BotTurnLane,
+  type BotTurnOrigin,
+  isChannelOrigin,
+} from '@oppenheimer/shared';
 import { BotMessageEntity, type BotPendingMedia } from './bot-message.entity';
+import { maySteer } from './bot-steer.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /** What a channel turn takes from the bot it wakes: everything but where it runs. */
@@ -15,6 +21,11 @@ export type ChannelTurnProps = Omit<
  * theirs as a console message is: the bot's tools and memory. The channel
  * names its origin and the key that makes the message one turn, and any
  * media the turn reads when it starts.
+ *
+ * Words alone are sent as a steer: written while the bot works on the chat's
+ * last request, they reach it at its next tool call, so it can answer in
+ * between and carry on (`takesSteer`), instead of waiting for the work to
+ * end. Media waits for a turn of its own, which reads it when it starts.
  */
 export function channelTurn(
   props: ChannelTurnProps,
@@ -32,6 +43,7 @@ export function channelTurn(
     origin: message.origin,
     lane: 'owner',
     sourceKey: message.sourceKey,
+    steer: !message.pendingMedia && maySteer(true, message.text, 0),
   });
   const opening = BotMessageEntity.createNew({
     organizationId: props.organizationId,
@@ -45,6 +57,38 @@ export function channelTurn(
     pendingMedia: message.pendingMedia ?? null,
   });
   return { turn, opening };
+}
+
+/**
+ * Whether a turn sends what it writes to its chat as it goes: the owner's own
+ * message on a channel. Each block of text the bot writes before it calls a
+ * tool ("On it, checking your sessions") goes out then, so the person hears
+ * from it at once rather than when the work is done, and the turn's end sends
+ * only what came after its last call. Any other channel turn (an answer to
+ * the bot's ask of another) still answers once, at its end.
+ */
+export function sendsAsItGoes(turn: { origin: BotTurnOrigin; lane: BotTurnLane }): boolean {
+  return isChannelOrigin(turn.origin) && turn.lane === 'owner';
+}
+
+/** One stored line of a turn, as the reply at its end reads it. */
+export interface ChannelTurnLine {
+  role: 'assistant' | 'activity';
+  content: string;
+}
+
+/**
+ * The texts a channel turn's end still owes its chat, in order: every text
+ * the bot wrote, or, for a turn that sent as it went (`sendsAsItGoes`), the
+ * ones after its last run of tool calls, the earlier ones having gone out
+ * when that run began.
+ */
+export function unsentTexts(lines: readonly ChannelTurnLine[], asItGoes: boolean): string[] {
+  const last = asItGoes ? lines.map((line) => line.role).lastIndexOf('activity') : -1;
+  return lines
+    .slice(last + 1)
+    .filter((line) => line.role === 'assistant')
+    .map((line) => line.content);
 }
 
 /**
