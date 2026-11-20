@@ -139,7 +139,11 @@ export class BotMessageRepository
             WHERE message."organizationId" = $1 AND message."botId" = $2
               AND message.role IN ('user', 'assistant') AND message.content <> ''
             ORDER BY message."createdAt" DESC, message.position DESC
-            LIMIT 1)
+            LIMIT 1),
+          "lastReplyAt" = (
+           SELECT max(message."createdAt") FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role = 'assistant' AND message.content <> '')
           WHERE "organizationId" = $1 AND id = $2`,
         [turn.organizationId, turn.botId],
       );
@@ -438,10 +442,12 @@ export async function insertMessageWithin(
   // or the images a bot showed are none, and leave the bot's last words there.
   if (message.role === 'activity' || message.role === 'event') return;
   if (message.role === 'assistant' && !message.content) return;
+  // A reply also moves `lastReplyAt`, the sidebar's blue dot; your own words never do.
   await manager.query(
-    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')}
+    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')},
+       "lastReplyAt" = CASE WHEN $4 = 'assistant' THEN now() ELSE "lastReplyAt" END
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, record.content],
+    [message.organizationId, message.botId, record.content, message.role],
   );
 }
 

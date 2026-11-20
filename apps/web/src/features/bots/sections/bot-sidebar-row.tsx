@@ -9,6 +9,7 @@ import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useBotPin } from '@/features/bots/hooks/use-bot-pins';
 import { useBotRowItem } from '@/features/bots/hooks/use-bot-row-item';
+import { useBotUnread } from '@/features/bots/hooks/use-bot-unread';
 
 /**
  * One bot in the Employees sidebar, on one line: its face on its colour
@@ -43,6 +44,7 @@ export function BotSidebarRow({
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
   const pin = useBotPin(bot.id);
+  const mark = useBotUnread(bot.id);
   const item = useBotRowItem(bot);
 
   return (
@@ -61,6 +63,8 @@ export function BotSidebarRow({
             groupId={bot.groupId}
             pinned={pin.pinned}
             onPinChange={pin.setPinned}
+            unread={mark.unread}
+            onUnreadChange={mark.setUnread}
             onSettings={() =>
               navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
             }

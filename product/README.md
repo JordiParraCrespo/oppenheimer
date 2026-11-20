@@ -1816,3 +1816,11 @@ earlier note:
   message sent meanwhile steers the running turn as a console message can,
   and the end sends only what came after the last call. Telegram's typing
   action and the fifteen-second line are not built.
+- `25-bots.md` §3 first kept a bot's "done" dot on the device (2026-11-20):
+  what you had seen was the bot's last message time while its chat was open,
+  per browser, beside the green dot on a working bot's face. The owner asked
+  for the bots to read exactly as the sessions do, so the same day the read
+  moved to the API (`bot."acknowledgedAt"`, set by opening the chat, on every
+  device, only the bot's replies counting), the amber dot took in questions
+  and failed turns, the green face dot went, and Mark as unread came in as a
+  device mark like a session's.

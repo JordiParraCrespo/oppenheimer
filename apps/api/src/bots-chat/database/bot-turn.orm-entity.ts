@@ -26,6 +26,9 @@ export interface BotTurnPlanLimitsRecord {
 @Unique('UQ_bot_turn_organization_id', ['organizationId', 'id'])
 @Index('IDX_bot_turn_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('IDX_bot_turn_conversation', ['organizationId', 'conversationId'])
+@Index('IDX_bot_turn_ended', ['organizationId', 'botId', 'endedAt'], {
+  where: '"endedAt" IS NOT NULL',
+})
 @Index('IDX_bot_turn_active', ['organizationId', 'botId', 'createdAt'], {
   where: `"status" IN ('queued', 'running')`,
 })

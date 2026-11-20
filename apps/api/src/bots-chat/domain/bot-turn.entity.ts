@@ -18,6 +18,7 @@ import {
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotRateLimit } from './bot-rate-limit.policy';
+import { BotTurnChangedDomainEvent } from './events/bot-turn-changed.domain-event';
 
 export interface BotTurnProps {
   organizationId: string;
@@ -220,6 +221,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       },
     });
     turn.validate();
+    turn.announce('queued');
     return turn;
   }
 
@@ -451,6 +453,20 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.cacheWriteTokens = outcome.cacheWriteTokens ?? this.props.cacheWriteTokens;
     this.props.context = outcome.context ?? this.props.context;
     this.props.planLimits = outcome.planLimits ?? this.props.planLimits;
+    this.announce(status);
+  }
+
+  /** The bot may have started or stopped working: the workspace's consoles re-read which bots are. */
+  private announce(what: string): void {
+    this.addEvent(
+      new BotTurnChangedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        botId: this.props.botId,
+        status: this.props.status,
+        reason: `bot ${this.props.botId}: turn ${this.id} ${what}`,
+      }),
+    );
   }
 
   /** A worker found it running: the one that ran it died, so it fails rather than running twice. */

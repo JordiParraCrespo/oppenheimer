@@ -49,6 +49,8 @@ export class BotEntity {
     public readonly sections: BotSection[] = [],
     /** The face its owner picked; `null` wears the one its id picks. */
     public readonly avatarFace: BotFace | null = null,
+    /** Whether its chat has a message newer than the person last read it, on any device. */
+    public readonly unread: boolean = false,
   ) {}
 
   /** What its avatar draws: its colour, its id (which picks a face) and the face it was given. */
