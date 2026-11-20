@@ -83,6 +83,25 @@ export class SessionTranscriptMapper {
     };
   }
 
+  /**
+   * The entries a person could have typed, oldest first: {@link toEntries}
+   * without the lines the agent wrote under the person's role, which Claude
+   * Code flags: a skill's or a command's expansion (`isMeta`), a subagent's
+   * conversation (`isSidechain`), the summary a compaction left (`isCompactSummary`).
+   */
+  static toTypedEntries(raw: readonly string[]): SessionTranscriptEntry[] {
+    return SessionTranscriptMapper.toEntries(
+      raw.filter((line) => {
+        try {
+          const entry = recordOf(JSON.parse(line));
+          return !entry.isMeta && !entry.isSidechain && !entry.isCompactSummary;
+        } catch {
+          return false;
+        }
+      }),
+    );
+  }
+
   /** The entries a page carried, oldest first; one that is not a message is left out. */
   static toEntries(raw: readonly string[]): SessionTranscriptEntry[] {
     return raw.flatMap((line) => {

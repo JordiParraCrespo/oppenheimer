@@ -27,7 +27,7 @@ function setup(appended: Awaited<ReturnType<WorkSessionRepositoryPort['appendEve
     findOneByIdForMachine: vi.fn(),
     appendEvents: vi.fn(),
   };
-  const naming = { nameFromPrompt: vi.fn().mockResolvedValue(undefined) };
+  const naming = { nameFromBatch: vi.fn().mockResolvedValue(undefined) };
   const handler = new RecordSessionEventsCommandHandler(
     sessions as unknown as WorkSessionRepositoryPort,
     naming as unknown as SessionNamingResolver,
@@ -61,7 +61,7 @@ describe('RecordSessionEventsCommandHandler', () => {
       expect.objectContaining({ source: 'runner', payload: { raw: 'not json' } }),
     ]);
     // Naming is handed the session the append built from the locked row.
-    expect(naming.nameFromPrompt).toHaveBeenCalledWith(session, []);
+    expect(naming.nameFromBatch).toHaveBeenCalledWith(session, []);
   });
 
   it('rejects every key, the same way, when the session is missing or on another host', async () => {
@@ -74,6 +74,6 @@ describe('RecordSessionEventsCommandHandler', () => {
         { idempotencyKey: 'run-1:2', reason: 'no such session on this host' },
       ],
     });
-    expect(naming.nameFromPrompt).not.toHaveBeenCalled();
+    expect(naming.nameFromBatch).not.toHaveBeenCalled();
   });
 });
