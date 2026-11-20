@@ -1,190 +1,202 @@
 {
   "cases": [
     {
-      "id": "sidebar-scroll",
-      "group": "console-sidebar",
+      "id": "update-macos-signature",
+      "group": "runner-self-update",
       "lang": "en",
-      "prompts": ["the sidebar doesn't scroll when there are many sessions"],
-      "about": "the sessions sidebar not scrolling with many sessions"
+      "prompts": ["the runner fails to self-update on macOS, it says the signature is invalid"],
+      "about": "the runner's self-update failing on macOS with an invalid signature",
+      "detail": "macOS, or the invalid signature"
     },
     {
-      "id": "sidebar-search-leak",
-      "group": "console-sidebar",
+      "id": "update-debian-old-binary",
+      "group": "runner-self-update",
       "lang": "en",
-      "prompts": ["fix the bug", "the sidebar search returns sessions from other projects"],
-      "about": "sidebar search showing sessions from other projects"
+      "prompts": ["continue", "the runner self-update on Debian leaves the old binary running"],
+      "about": "the runner's self-update on Debian leaving the old binary running",
+      "detail": "Debian, or the old binary left running"
     },
     {
-      "id": "sidebar-drag-snap",
-      "group": "console-sidebar",
+      "id": "update-download-loop",
+      "group": "runner-self-update",
+      "lang": "en",
+      "prompts": ["the runner keeps downloading the same update every five minutes"],
+      "about": "the runner downloading the same update over and over",
+      "detail": "the same update downloaded again and again"
+    },
+    {
+      "id": "update-rollback",
+      "group": "runner-self-update",
+      "lang": "en",
+      "prompts": ["add a way to roll back the runner to the previous release after a bad update"],
+      "about": "rolling the runner back to its previous release",
+      "detail": "rolling back"
+    },
+    {
+      "id": "drag-snaps-back",
+      "group": "sidebar-drag",
       "lang": "en",
       "prompts": [
         "can you look at the sidebar?",
         "dragging a project to reorder it snaps back on drop"
       ],
-      "about": "reordering projects by drag in the sidebar snapping back"
+      "about": "reordering projects by drag in the sidebar snapping back on drop",
+      "detail": "snapping back"
     },
     {
-      "id": "sidebar-pinned",
-      "group": "console-sidebar",
+      "id": "drag-order-lost",
+      "group": "sidebar-drag",
       "lang": "en",
-      "prompts": ["add a pinned section at the top of the sidebar"],
-      "about": "a new pinned section in the sidebar"
+      "prompts": ["the project order I set by dragging in the sidebar is lost when I reload"],
+      "about": "the sidebar's dragged project order being lost on reload",
+      "detail": "the order lost on reload"
     },
     {
-      "id": "runner-update-macos",
-      "group": "runner",
+      "id": "drag-laggy",
+      "group": "sidebar-drag",
       "lang": "en",
-      "prompts": ["the runner fails to self-update on macOS, it says the signature is invalid"],
-      "about": "runner self-update failing on macOS with an invalid signature"
+      "prompts": ["dragging sessions in the sidebar is really laggy with 200 sessions"],
+      "about": "dragging in the sidebar being slow with many sessions",
+      "detail": "slowness"
     },
     {
-      "id": "runner-update-debian",
-      "group": "runner",
+      "id": "drag-to-pin",
+      "group": "sidebar-drag",
       "lang": "en",
-      "prompts": ["continue", "the runner self-update on Debian leaves the old binary running"],
-      "about": "runner self-update on Debian leaving the old binary running"
-    },
-    {
-      "id": "runner-tmux-sleep",
-      "group": "runner",
-      "lang": "en",
-      "prompts": ["tmux sessions die when the host goes to sleep"],
-      "about": "tmux sessions dying when the host sleeps"
-    },
-    {
-      "id": "runner-backoff-tests",
-      "group": "runner",
-      "lang": "en",
-      "prompts": ["write tests for the link reconnect backoff"],
-      "about": "tests for the runner link's reconnect backoff"
-    },
-    {
-      "id": "login-google-safari",
-      "group": "auth-es",
-      "lang": "es",
-      "prompts": ["el login con Google falla en Safari"],
-      "about": "el inicio de sesión con Google fallando en Safari"
-    },
-    {
-      "id": "logout-cookie-mobile",
-      "group": "auth-es",
-      "lang": "es",
-      "prompts": ["arregla el bug", "al cerrar sesión no se borra la cookie en el móvil"],
-      "about": "la cookie que no se borra al cerrar sesión en el móvil"
-    },
-    {
-      "id": "login-totp",
-      "group": "auth-es",
-      "lang": "es",
-      "prompts": ["añade 2FA con TOTP al login"],
-      "about": "añadir 2FA con TOTP al inicio de sesión"
-    },
-    {
-      "id": "refresh-token-expiry",
-      "group": "auth-es",
-      "lang": "es",
-      "prompts": ["revisa el PR 812", "el refresh token caduca a los 5 minutos en vez de 30 días"],
-      "about": "el refresh token caducando a los 5 minutos en vez de 30 días"
-    },
-    {
-      "id": "invoice-vat-spain",
-      "group": "billing",
-      "lang": "en",
-      "prompts": [
-        "help me with invoices",
-        "the PDF invoice shows the wrong VAT for Spanish customers"
-      ],
-      "about": "wrong VAT on PDF invoices for Spanish customers"
+      "prompts": ["let me drag a session into the Pinned section to pin it"],
+      "about": "pinning a session by dragging it into Pinned",
+      "detail": "pinning by dragging"
     },
     {
       "id": "invoice-email-twice",
-      "group": "billing",
+      "group": "invoice-email",
       "lang": "en",
       "prompts": ["invoices again", "the invoice email is sent twice when a payment retries"],
-      "about": "invoice email sent twice on a payment retry"
+      "about": "the invoice email being sent twice when a payment retries",
+      "detail": "sent twice"
     },
     {
-      "id": "invoice-csv-export",
-      "group": "billing",
+      "id": "invoice-email-language",
+      "group": "invoice-email",
       "lang": "en",
-      "prompts": ["ok so, can you please add a CSV export of invoices to the billing page"],
-      "about": "a CSV export of invoices on the billing page"
+      "prompts": ["the invoice email goes out in English to customers who chose Spanish"],
+      "about": "the invoice email ignoring the customer's chosen language",
+      "detail": "the language"
     },
     {
-      "id": "billing-webhook-review",
-      "group": "billing",
+      "id": "invoice-email-no-pdf",
+      "group": "invoice-email",
       "lang": "en",
-      "prompts": ["/review the billing webhook handler"],
-      "about": "a review of the billing webhook handler"
+      "prompts": ["the invoice email arrives without the PDF attached for invoices over 50 lines"],
+      "about": "the invoice email missing its PDF on long invoices",
+      "detail": "the missing PDF"
     },
     {
-      "id": "dark-mode-persist",
-      "group": "settings-ca",
-      "lang": "ca",
-      "prompts": ["el mode fosc no es desa quan tanques el navegador"],
-      "about": "el mode fosc que no es desa en tancar el navegador"
+      "id": "invoice-email-template",
+      "group": "invoice-email",
+      "lang": "en",
+      "prompts": ["/review the invoice email template changes"],
+      "about": "the changes to the invoice email's template",
+      "detail": "the template"
     },
     {
-      "id": "settings-translate",
-      "group": "settings-ca",
-      "lang": "ca",
-      "prompts": ["tradueix la pàgina de configuració al català"],
-      "about": "traduir la pàgina de configuració al català"
+      "id": "login-google-safari",
+      "group": "login-es",
+      "lang": "es",
+      "prompts": ["el login con Google falla en Safari"],
+      "about": "signing in with Google failing on Safari",
+      "detail": "Safari"
     },
     {
-      "id": "session-search-slow",
-      "group": "settings-ca",
+      "id": "login-google-2fa-loop",
+      "group": "login-es",
+      "lang": "es",
+      "prompts": [
+        "arregla el bug",
+        "con 2FA activado, el login con Google vuelve a pedir el código en bucle"
+      ],
+      "about": "Google sign-in with 2FA asking for the code in a loop",
+      "detail": "2FA, or the code asked in a loop"
+    },
+    {
+      "id": "logout-cookie-mobile",
+      "group": "login-es",
+      "lang": "es",
+      "prompts": ["al cerrar sesión no se borra la cookie en el móvil"],
+      "about": "the cookie not being cleared on sign-out on mobile",
+      "detail": "the cookie not cleared"
+    },
+    {
+      "id": "refresh-token-expiry",
+      "group": "login-es",
+      "lang": "es",
+      "prompts": ["revisa el PR 812", "el refresh token caduca a los 5 minutos en vez de 30 días"],
+      "about": "the refresh token expiring after 5 minutes instead of 30 days",
+      "detail": "the refresh token expiring"
+    },
+    {
+      "id": "search-slow",
+      "group": "session-search-ca",
       "lang": "ca",
       "prompts": ["la cerca de sessions és molt lenta amb mil sessions"],
-      "about": "la cerca de sessions lenta amb moltes sessions"
+      "about": "session search being slow with many sessions",
+      "detail": "slowness"
     },
     {
-      "id": "date-picker-monday",
-      "group": "settings-ca",
+      "id": "search-accents",
+      "group": "session-search-ca",
       "lang": "ca",
-      "prompts": [
-        "continua",
-        "el selector de dates no posa el dilluns com a primer dia de la setmana"
-      ],
-      "about": "el selector de dates sense el dilluns com a primer dia"
+      "prompts": ["la cerca de sessions no troba res si escric amb accents"],
+      "about": "session search finding nothing when typed with accents",
+      "detail": "accents"
     },
     {
-      "id": "e2e-share-flaky",
-      "group": "api-internals",
-      "lang": "en",
-      "prompts": [
-        "The e2e test for sharing a session fails maybe one run in five on CI. It times out waiting for the share dialog. Locally it always passes. Can you find out why and make it reliable? Don't just raise the timeout."
-      ],
-      "about": "a flaky e2e test for sharing a session"
+      "id": "search-archived",
+      "group": "session-search-ca",
+      "lang": "ca",
+      "prompts": ["continua", "la cerca no hauria de mostrar les sessions arxivades"],
+      "about": "session search showing archived sessions",
+      "detail": "archived sessions"
     },
     {
-      "id": "naming-module-refactor",
-      "group": "api-internals",
-      "lang": "en",
-      "prompts": [
-        "refactor",
-        "move the session naming code into its own module",
-        "and add tests for the fold's name ranks"
-      ],
-      "about": "moving session naming into its own module, with tests"
+      "id": "search-translate",
+      "group": "session-search-ca",
+      "lang": "ca",
+      "prompts": ["tradueix els textos de la cerca de sessions al català"],
+      "about": "translating session search's texts into Catalan",
+      "detail": "the Catalan translation"
     },
     {
-      "id": "api-memory-day",
-      "group": "api-internals",
-      "lang": "en",
-      "prompts": ["investigate why memory grows on the API over a day"],
-      "about": "the API's memory growing over a day"
+      "id": "settings-dark-mode",
+      "group": "settings-fr",
+      "lang": "fr",
+      "prompts": ["le mode sombre n'est pas gardé quand on ferme le navigateur"],
+      "about": "dark mode not being kept after the browser closes",
+      "detail": "dark mode not kept"
     },
     {
-      "id": "outbox-relay-leak",
-      "group": "api-internals",
-      "lang": "en",
-      "prompts": [
-        "investigate why memory grows",
-        "it's the outbox relay holding delivered rows in a map"
-      ],
-      "about": "the outbox relay leaking delivered rows in a map"
+      "id": "settings-timezone",
+      "group": "settings-fr",
+      "lang": "fr",
+      "prompts": ["le fuseau horaire des paramètres revient toujours à UTC"],
+      "about": "the settings' time zone resetting to UTC",
+      "detail": "the time zone going back to UTC"
+    },
+    {
+      "id": "settings-avatar",
+      "group": "settings-fr",
+      "lang": "fr",
+      "prompts": ["l'upload de l'avatar dans les paramètres échoue au-delà de 2 Mo"],
+      "about": "avatar upload in settings failing above 2 MB",
+      "detail": "the avatar upload's size limit"
+    },
+    {
+      "id": "settings-shortcut",
+      "group": "settings-fr",
+      "lang": "fr",
+      "prompts": ["ajoute un raccourci clavier pour ouvrir les paramètres"],
+      "about": "a keyboard shortcut to open settings",
+      "detail": "a keyboard shortcut"
     }
   ]
 }

@@ -75,6 +75,7 @@ describe('cleanModelTitle', () => {
   it('drops a list number the model echoed from the numbered conversation', () => {
     expect(cleanModelTitle('1. Caducidad del refresh token')).toBe('Caducidad del refresh token');
     expect(cleanModelTitle('- Invoice CSV export')).toBe('Invoice CSV export');
+    expect(cleanModelTitle('Name: Invoice CSV export')).toBe('Invoice CSV export');
   });
 
   it('takes the first line, without quotes or a trailing period', () => {

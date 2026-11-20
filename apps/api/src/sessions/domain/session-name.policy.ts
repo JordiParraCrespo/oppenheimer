@@ -259,7 +259,7 @@ export function cleanModelTitle(answer: string): string | null {
     .find((candidate) => candidate.length > 0);
   if (!line) return null;
   const text = line
-    .replace(/^(?:title\s*:\s*)/i, '')
+    .replace(/^(?:title|name)\s*:\s*/i, '')
     // The conversation is sent as a numbered list, and a model may echo a number.
     .replace(/^(?:\d+[.)]|[-*•])\s+/, '')
     // A model that answers with a quoted or bolded title is answering correctly enough.
