@@ -438,6 +438,11 @@ green dot shows on its face. `GET /v1/working-bots` is the one read for the
 whole list, and the workspace stream's `botTurn.changed`, raised when a turn
 is queued or ends, says when to read it again; a 15-second poll stands in
 while the stream is down. The amber dot is still a card waiting on you (§5).
+Once a bot stops working with a message you have not seen, its row takes the
+blue dot at its end, as a session ready for review does (2026-11-20): what
+you have seen is kept on the device (the bot's last message time while its
+chat was open, its page or beside a session), opening the chat takes the dot
+off, and a bot this device never opened counts as seen from its first visit.
 
 ### 3.1 Images
 
