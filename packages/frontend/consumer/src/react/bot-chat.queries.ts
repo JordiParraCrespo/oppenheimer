@@ -245,7 +245,8 @@ function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Prom
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.usage(id) }));
-    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.suggestion(id) }));
+    // Reset, not just marked stale: the guess at an answer to the bot's earlier words is never shown beside its new ones.
+    reads.push(queryClient.resetQueries({ queryKey: botsKeys.suggestion(id) }));
   }
   return Promise.all(reads);
 }
@@ -309,7 +310,9 @@ export function useSendBotMessage(
         botsKeys.sendings(variables.id),
         (sendings = NO_SENDINGS) => [...sendings, sending],
       );
-      // The suggestion answered the bot's last words, which this send answers instead.
+      // The suggestion answered the bot's last words, which this send answers instead; a read
+      // still in flight is called off first, or its answer would put the old guess back.
+      await queryClient.cancelQueries({ queryKey: botsKeys.suggestion(variables.id) });
       queryClient.setQueryData(botsKeys.suggestion(variables.id), null);
       await options?.onMutate?.(variables, context);
       return { sending };
