@@ -90,3 +90,9 @@ between the two runs is that line's effect.
 
 | Date | Code | Model | Run | Right | Mid-work answered in its own line | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-20 | this change | claude-sonnet-5-5 | eval | 21/21 | 0/6 | Every task opened with "On it, checking your sessions." (once "Let me check your sessions.") before the first call. The mid-work question was answered every time, folded into the result: on WhatsApp the result came straight after the question; on Telegram the bot made two more lookups to answer it, then answered both at once |
+| 2026-11-20 | this change | claude-sonnet-5-5 | `--control` | 6/21 | n/a | Without the as-it-goes line, no task opened with a line: the first message came after the work, as on `main`. The 6 right runs are the two no-tool cases |
+
+On these cases, the as-it-goes line is what makes the bot answer first. A
+separate line for a mid-work question shows up only when work still goes on
+after it, and none of these cases left more than a lookup or two to do.
