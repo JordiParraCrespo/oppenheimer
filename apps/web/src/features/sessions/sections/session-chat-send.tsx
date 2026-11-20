@@ -1,4 +1,8 @@
-import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
+import {
+  type SessionChat as Chat,
+  offeredSuggestion,
+  type SessionAgent,
+} from '@oppenheimer/frontend-consumer';
 import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
@@ -154,6 +158,7 @@ export function SessionChatSend({
           onCompact={() => chat.post('/compact')}
           // Claude Code's commands are the ones the menu knows; a host that
           // predates the project's list still takes the built-ins.
+          suggestion={offeredSuggestion(last, state.suggestion)}
           commands={hostCommands && agent === 'claude-code' ? (state.commands ?? []) : null}
         />
       </div>

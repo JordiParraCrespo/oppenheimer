@@ -88,6 +88,7 @@ export type {
   BotSessionMatchResponseDto,
   BotSkillResponseDto,
   BotSubagentRunResponseDto,
+  BotSuggestionResponseDto,
   BotTaskEventResponseDto,
   BotToolGrantDto,
   BotToolPermissionDto,
