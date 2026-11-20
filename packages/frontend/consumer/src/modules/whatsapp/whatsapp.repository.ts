@@ -2,12 +2,14 @@ import {
   heyApiSdk,
   type WhatsappAccountResponseDto,
   type WhatsappChatGrantResponseDto,
+  type WhatsappChatRouteResponseDto,
 } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { WhatsappErrors } from './whatsapp.errors';
 import { WhatsappAccountEntity } from './whatsapp-account.entity';
 import { WhatsappChatGrantEntity } from './whatsapp-chat-grant.entity';
+import { type WhatsappChatAnswer, WhatsappChatRouteEntity } from './whatsapp-chat-route.entity';
 
 function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
   return new WhatsappAccountEntity(
@@ -39,6 +41,21 @@ function toGrant(data: WhatsappChatGrantResponseDto): WhatsappChatGrantEntity {
     data.botId ?? null,
     data.grantedByBotId ?? null,
     new Date(data.grantedAt),
+  );
+}
+
+function toChatRoute(
+  accountId: string,
+  data: WhatsappChatRouteResponseDto,
+): WhatsappChatRouteEntity {
+  return new WhatsappChatRouteEntity(
+    accountId,
+    data.chatId,
+    data.chatKind,
+    data.chatName ?? null,
+    data.messageCount,
+    data.lastAt ? new Date(data.lastAt) : null,
+    data.grant ? toGrant(data.grant) : null,
   );
 }
 
@@ -103,32 +120,36 @@ export class WhatsappRepository {
     });
   }
 
-  /** The chats a number allows besides the reader's own, the oldest first. */
-  findGrants(accountId: string): Promise<WhatsappChatGrantEntity[]> {
-    return callApi(WhatsappErrors.FETCH_GRANTS_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findWhatsappChatGrants({ path: { id: accountId } }));
-      return data.map(toGrant);
+  /** Every chat a number has seen, newest first, then any it allows with no message kept. */
+  findChats(accountId: string): Promise<WhatsappChatRouteEntity[]> {
+    return callApi(WhatsappErrors.FETCH_CHATS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWhatsappChatRoutes({ path: { id: accountId } }));
+      return data.map((row) => toChatRoute(accountId, row));
     });
   }
 
-  /** Which of the reader's bots answers in an allowed chat; null for the number's default. */
-  answerChatAs(
+  /**
+   * Who answers up to 200 of a number's chats from now on: no one, the
+   * number's default, or one of the reader's bots. Answers every chat as it
+   * is now.
+   */
+  routeChats(
     accountId: string,
-    grantId: string,
-    botId: string | null,
-  ): Promise<WhatsappChatGrantEntity> {
-    return callApi(WhatsappErrors.GRANT_UPDATE_FAILED, async (api) => {
+    chatIds: readonly string[],
+    answer: WhatsappChatAnswer,
+  ): Promise<WhatsappChatRouteEntity[]> {
+    return callApi(WhatsappErrors.ROUTE_FAILED, async (api) => {
       const data = await api.body(
-        heyApiSdk.updateWhatsappChatGrant({ path: { id: accountId, grantId }, body: { botId } }),
+        heyApiSdk.routeWhatsappChats({
+          path: { id: accountId },
+          body: {
+            chatIds: [...chatIds],
+            route: answer.kind,
+            ...(answer.kind === 'bot' ? { botId: answer.botId } : {}),
+          },
+        }),
       );
-      return toGrant(data);
-    });
-  }
-
-  /** The chat no longer talks to the reader's bots on this number. */
-  revokeGrant(accountId: string, grantId: string): Promise<void> {
-    return callApi(WhatsappErrors.GRANT_REVOKE_FAILED, async (api) => {
-      await api.result(heyApiSdk.revokeWhatsappChat({ path: { id: accountId, grantId } }));
+      return data.map((row) => toChatRoute(accountId, row));
     });
   }
 
