@@ -5,7 +5,11 @@ export type {
   CloudChatReply,
   PendingCloudReply,
 } from './chat/cloud-chat-feed';
-export { readPromptSuggestion, type ScreenRow } from './chat/prompt-suggestion';
+export {
+  offeredSuggestion,
+  readPromptSuggestion,
+  type ScreenRow,
+} from './chat/prompt-suggestion';
 export {
   type ChatBatch,
   type ChatFileEdit,

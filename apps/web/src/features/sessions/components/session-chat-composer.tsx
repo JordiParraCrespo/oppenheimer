@@ -33,6 +33,7 @@ import { useTakeFiles } from '../hooks/use-take-files';
 import type { FileHandOff } from '../lib/file-hand-off';
 import { CHAT_MESSAGE_MAX_FILES, refusalText } from '../lib/session-files';
 import { sessionSlashQuery, sessionSlashRows } from '../lib/slash-commands';
+import { takesSuggestion } from '../lib/suggestion-key';
 import { SessionSlashMenu } from './session-slash-menu';
 
 /** How a send went: all of it, or the files that reached the host before one did not. */
@@ -233,9 +234,7 @@ export function SessionChatComposer({
         <ChatComposer
           onKeyDownCapture={(event) => {
             slash.onKeyDownCapture(event);
-            if (event.defaultPrevented || !offered) return;
-            const plain = !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
-            if (event.key !== 'Tab' || !plain) return;
+            if (!offered || !takesSuggestion(event)) return;
             event.preventDefault();
             setDraft(offered);
           }}

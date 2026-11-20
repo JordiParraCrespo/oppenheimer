@@ -1,8 +1,6 @@
 import { readPromptSuggestion, type ScreenRow } from '@oppenheimer/frontend-consumer';
 import type { IBufferCell, Terminal } from '@xterm/xterm';
-
-/** How often the screen is read for a suggestion at most: one lands once a turn. */
-const READ_EVERY_MS = 250;
+import { watchScreen } from './screen-watch';
 
 /** xterm's palette index of bright black, the grey of `\e[90m`. */
 const BRIGHT_BLACK = 8;
@@ -36,9 +34,7 @@ export function bindPromptSuggestion(
   term: Terminal,
   onSuggestion: (suggestion: string | null) => void,
 ): () => void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const read = () => {
-    timer = null;
+  const stop = watchScreen(term, () => {
     const buffer = term.buffer.active;
     const cell = buffer.getNullCell();
     const rows: ScreenRow[] = [];
@@ -55,13 +51,9 @@ export function bindPromptSuggestion(
       rows.push({ text: text.trimEnd(), faint });
     }
     onSuggestion(readPromptSuggestion(rows));
-  };
-  const parsed = term.onWriteParsed(() => {
-    timer ??= setTimeout(read, READ_EVERY_MS);
   });
   return () => {
-    parsed.dispose();
-    if (timer !== null) clearTimeout(timer);
+    stop();
     onSuggestion(null);
   };
 }

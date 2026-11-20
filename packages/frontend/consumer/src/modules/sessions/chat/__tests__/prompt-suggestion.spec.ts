@@ -39,6 +39,14 @@ describe('readPromptSuggestion', () => {
     );
   });
 
+  // What breaks this: a long suggestion that Claude Code wraps in a narrow
+  // pane read as no box at all, or as its first row alone.
+  it('reads a suggestion wrapped onto the rows under the prompt', () => {
+    const rows = screen(box('❯\u00a0', 'save the poem to a file named', true));
+    rows.splice(6, 0, { text: '  tide-pools.md', faint: [false, false, ...Array(13).fill(true)] });
+    expect(readPromptSuggestion(rows)).toBe('save the poem to a file named tide-pools.md');
+  });
+
   it('never offers what the person typed into the box, which is drawn at full strength', () => {
     expect(readPromptSuggestion(screen(box('❯ ', 'save it to a file', false)))).toBeNull();
   });

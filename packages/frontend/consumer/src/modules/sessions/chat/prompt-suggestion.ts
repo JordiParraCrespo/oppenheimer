@@ -21,6 +21,9 @@ const PROMPT = /^(\s*[❯>][\s ])(.*)$/u;
  */
 const NOT_A_SUGGESTION = /^(?:Try "|Press up to )/u;
 
+/** The most rows a suggestion wraps onto in a narrow pane; a box taller than this is not read. */
+const BOX_ROWS_MAX = 8;
+
 /**
  * The next message Claude Code predicts the person will send, read off its
  * input box. After most turns it fills the empty box with a suggestion drawn
@@ -29,31 +32,57 @@ const NOT_A_SUGGESTION = /^(?:Try "|Press up to )/u;
  * the chat. Text the person typed is drawn at full strength, and so is never
  * taken for one.
  *
- * The box is the last row starting `❯` with a rule over and under it. The
- * first cell after the prompt holds the cursor, drawn inverse, so it is not
- * asked to be faint; every other letter is. None while the box is empty, the
- * agent works or asks (no box, or no faint text in it), or the faint text is
- * one of Claude Code's own placeholders (`NOT_A_SUGGESTION`).
+ * The box is the rows between the lowest pair of rules whose first row
+ * starts `❯`; a suggestion too long for the pane wraps onto the rows under
+ * it, which are read as its continuation. The first cell after the prompt
+ * holds the cursor, drawn inverse, so it is not asked to be faint; every
+ * other letter is. None while the box is empty, the agent works or asks (no
+ * box, or no faint text in it), or the faint text is one of Claude Code's own
+ * placeholders (`NOT_A_SUGGESTION`).
  */
 export function readPromptSuggestion(rows: readonly ScreenRow[]): string | null {
-  for (let index = rows.length - 2; index >= 1; index--) {
-    const row = rows[index];
-    if (!row || !RULE.test(rows[index - 1]?.text ?? '') || !RULE.test(rows[index + 1]?.text ?? ''))
-      continue;
-    const match = PROMPT.exec(row.text);
+  for (let bottom = rows.length - 1; bottom >= 2; bottom--) {
+    if (!RULE.test(rows[bottom]?.text ?? '')) continue;
+    let top = bottom - 1;
+    while (top > 0 && bottom - top <= BOX_ROWS_MAX && !RULE.test(rows[top]?.text ?? '')) top--;
+    if (!RULE.test(rows[top]?.text ?? '') || top === bottom - 1) continue;
+    const box = rows.slice(top + 1, bottom);
+    const match = PROMPT.exec(box[0]?.text ?? '');
     if (!match) continue;
-    const start = (match[1] ?? '').length;
-    const text = (match[2] ?? '').trimEnd();
-    if (text.trim() === '') return null;
-    let letters = 0;
+    return suggestionIn(box, (match[1] ?? '').length);
+  }
+  return null;
+}
+
+/** The box's text when every letter of it but the cursor's is faint, else none. */
+function suggestionIn(box: readonly ScreenRow[], start: number): string | null {
+  const parts: string[] = [];
+  let letters = 0;
+  for (const [index, row] of box.entries()) {
+    const from = index === 0 ? start : 0;
+    const part = row.text.slice(from).trim();
+    if (part === '') continue;
     // The cursor's cell is the first after the prompt: inverse, not faint.
-    for (let at = start + 1; at < start + text.length; at++) {
+    for (let at = index === 0 ? from + 1 : from; at < row.text.length; at++) {
       if (/\s/u.test(row.text[at] ?? ' ')) continue;
       if (!row.faint[at]) return null;
       letters++;
     }
-    const suggestion = text.trim();
-    return letters > 0 && !NOT_A_SUGGESTION.test(suggestion) ? suggestion : null;
+    parts.push(part);
   }
-  return null;
+  const suggestion = parts.join(' ');
+  return letters > 0 && !NOT_A_SUGGESTION.test(suggestion) ? suggestion : null;
+}
+
+/**
+ * The suggestion the chat offers: what the screen shows, once a turn has
+ * finished. Before the first, Claude Code's box holds only its own example,
+ * and while a turn runs no prediction is current. The one place that decides
+ * what counts, with `NOT_A_SUGGESTION` above.
+ */
+export function offeredSuggestion(
+  last: { working: boolean } | undefined,
+  suggestion: string | null,
+): string | null {
+  return last && !last.working ? suggestion : null;
 }
