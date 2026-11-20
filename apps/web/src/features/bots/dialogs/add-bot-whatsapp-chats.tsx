@@ -12,6 +12,7 @@ import {
   PillTab,
   PillTabs,
 } from '@oppenheimer/design-system-web';
+import { Search } from '@oppenheimer/design-system-web/icons';
 import type { BotEntity, WhatsappChatRouteEntity } from '@oppenheimer/frontend-consumer';
 import { useRouteWhatsappChats } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -93,7 +94,8 @@ export function AddBotWhatsappChatsDialog({
                 type="search"
                 size="sm"
                 pill
-                className="min-w-48 flex-1"
+                className="ml-auto w-52 max-w-full"
+                leading={<Search className="size-3.5" aria-hidden />}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t('bots.settings.gateways.search')}

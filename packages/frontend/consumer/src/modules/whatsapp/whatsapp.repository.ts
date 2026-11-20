@@ -5,6 +5,7 @@ import {
   type WhatsappChatRouteResponseDto,
 } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
+import { WHATSAPP_ROUTE_CHATS_MAX } from '@oppenheimer/shared/schemas/whatsapp';
 import { injectable } from 'inversify';
 import { WhatsappErrors } from './whatsapp.errors';
 import { WhatsappAccountEntity } from './whatsapp-account.entity';
@@ -133,22 +134,30 @@ export class WhatsappRepository {
    * number's default, or one of the reader's bots. Answers every chat as it
    * is now.
    */
+  /**
+   * Who answers `chatIds` from now on. The API takes `WHATSAPP_ROUTE_CHATS_MAX`
+   * chats a call, so a longer selection goes in turns of that many, and the
+   * last answer, every chat of the number, is the one returned.
+   */
   routeChats(
     accountId: string,
     chatIds: readonly string[],
     answer: WhatsappChatAnswer,
   ): Promise<WhatsappChatRouteEntity[]> {
     return callApi(WhatsappErrors.ROUTE_FAILED, async (api) => {
-      const data = await api.body(
-        heyApiSdk.routeWhatsappChats({
-          path: { id: accountId },
-          body: {
-            chatIds: [...chatIds],
-            route: answer.kind,
-            ...(answer.kind === 'bot' ? { botId: answer.botId } : {}),
-          },
-        }),
-      );
+      let data: WhatsappChatRouteResponseDto[] = [];
+      for (let at = 0; at < chatIds.length; at += WHATSAPP_ROUTE_CHATS_MAX) {
+        data = await api.body(
+          heyApiSdk.routeWhatsappChats({
+            path: { id: accountId },
+            body: {
+              chatIds: chatIds.slice(at, at + WHATSAPP_ROUTE_CHATS_MAX),
+              route: answer.kind,
+              ...(answer.kind === 'bot' ? { botId: answer.botId } : {}),
+            },
+          }),
+        );
+      }
       return data.map((row) => toChatRoute(accountId, row));
     });
   }

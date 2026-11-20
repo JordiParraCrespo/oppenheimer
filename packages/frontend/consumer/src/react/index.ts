@@ -363,7 +363,6 @@ export {
   useLinkWhatsapp,
   useRequestWhatsappOwner,
   useRouteWhatsappChats,
-  useSuspenseWhatsappAccounts,
   useSuspenseWhatsappChats,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,

@@ -151,18 +151,6 @@ export function useConfirmWhatsappOwner(
 }
 
 /**
- * The reader's own WhatsApp numbers alone, under a Suspense `QueryState`: what
- * a bot's Gateways page lists. Shares its cache with Settings → WhatsApp.
- */
-export function useSuspenseWhatsappAccounts() {
-  const app = useConsumerApp();
-  return useSuspenseQuery({
-    queryKey: whatsappKeys.accounts(),
-    queryFn: () => app.whatsapp.findAccounts(),
-  });
-}
-
-/**
  * Every chat one of the reader's numbers has seen (newest first) or allows,
  * with who answers each, under a Suspense `QueryState`: a number's chats page
  * filters and pages it, a bot's Gateways page picks out its own.
