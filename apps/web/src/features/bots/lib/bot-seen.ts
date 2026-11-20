@@ -1,14 +1,15 @@
 /**
  * When the reader last saw each bot's chat, on this device: the bot's
  * `lastActivityAt` as it stood while its chat was open, so the time is the
- * API's and never this machine's clock. A bot with something newer that is
+ * API's, not this machine's clock. A bot with something newer that is
  * not working is done, and its sidebar row takes the blue dot, as a session
  * ready for review does. The marks are the reader's; the API never hears of
  * them.
  *
- * `since` is when this device started keeping them: a bot whose chat was
- * never opened here counts as seen then, so the first visit does not light
- * every bot that ever said something.
+ * `since` is when this device started keeping them (this machine's clock,
+ * the one time it is read): a bot whose chat was never opened here counts as
+ * seen then, so the first visit does not light every bot that ever said
+ * something.
  */
 const BOT_SEEN_KEY = 'oppenheimer.bots.seen';
 
@@ -44,6 +45,11 @@ function write(stored: Stored): boolean {
  * that draws its dot read the same marks, whichever is mounted.
  */
 const listeners = new Set<() => void>();
+/**
+ * This page's marks, beside the stored ones: a write the browser refuses (a
+ * full quota) still takes the dot off the chat the reader opened.
+ */
+const marked = new Map<string, number>();
 const notify = () => {
   for (const onChange of listeners) onChange();
 };
@@ -66,12 +72,17 @@ export const botSeen = {
   at(id: string): number {
     const stored = read();
     if (!stored) return Number.POSITIVE_INFINITY;
-    return stored.seen[id] ?? stored.since;
+    return Math.max(stored.seen[id] ?? stored.since, marked.get(id) ?? 0);
   },
   mark(id: string, at: number): void {
-    const stored = read() ?? { since: at, seen: {} };
-    if ((stored.seen[id] ?? 0) >= at) return;
-    if (write({ since: stored.since, seen: { ...stored.seen, [id]: at } })) notify();
+    const stored = read() ?? { since: Date.now(), seen: {} };
+    if ((stored.seen[id] ?? 0) >= at && (marked.get(id) ?? 0) >= at) return;
+    marked.set(id, Math.max(marked.get(id) ?? 0, at));
+    write({
+      since: stored.since,
+      seen: { ...stored.seen, [id]: Math.max(stored.seen[id] ?? 0, at) },
+    });
+    notify();
   },
 };
 

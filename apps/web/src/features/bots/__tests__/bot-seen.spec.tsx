@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useBotSeenAt, useMarkBotSeen } from '../hooks/use-bot-seen';
 import { isBotDone } from '../lib/bot-seen';
 
@@ -12,7 +12,10 @@ import { isBotDone } from '../lib/bot-seen';
  * ever spoke.
  */
 
-afterEach(() => window.localStorage.clear());
+afterEach(() => {
+  vi.restoreAllMocks();
+  window.localStorage.clear();
+});
 
 const at = (ms: number) => new Date(ms);
 const spoke = (ms: number) => ({ lastActivityAt: at(ms), lastMessagePreview: 'Done.' });
@@ -45,5 +48,22 @@ describe('a bot done with something unseen', () => {
 
     chat.rerender({ last: since + 120_000 });
     expect(isBotDone(spoke(since + 120_000), false, row.result.current)).toBe(false);
+  });
+
+  it('starts the device from now when an open chat writes the first mark, not from that bot’s old message', () => {
+    const before = Date.now();
+    renderHook(() => useMarkBotSeen('b1', at(before - 86_400_000)));
+    const other = renderHook(() => useBotSeenAt('b2'));
+    expect(other.result.current).toBeGreaterThanOrEqual(before);
+  });
+
+  it('still takes the dot off the opened chat when the browser refuses the write', () => {
+    const row = renderHook(() => useBotSeenAt('quota'));
+    const since = row.result.current;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    renderHook(() => useMarkBotSeen('quota', at(since + 60_000)));
+    expect(isBotDone(spoke(since + 60_000), false, row.result.current)).toBe(false);
   });
 });
