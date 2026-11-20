@@ -15,8 +15,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Access patterns:
  * - the caller's apps, in a bot's settings: `IDX_slack_account_owner`, which
  *   also backs the foreign key to the workspace;
- * - the app a bot's events address names, on every event:
- *   `UQ_slack_account_bot`, which backs the foreign key to the bot;
+ * - the app a bot's events address names, on every event, by the bot alone:
+ *   `UQ_slack_account_bot`, led by the bot so that lookup is served, and
+ *   whose two columns back the foreign key to the bot;
  * - a reply's app by its id: `UQ_slack_account_organization_id`, the target of
  *   `bot_conversation`'s composite key.
  *
@@ -64,7 +65,7 @@ export class AddSlack1795193700000 implements MigrationInterface {
       `CREATE UNIQUE INDEX "UQ_slack_account_organization_id" ON slack_account USING btree ("organizationId", id)`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "UQ_slack_account_bot" ON slack_account USING btree ("botId")`,
+      `CREATE UNIQUE INDEX "UQ_slack_account_bot" ON slack_account USING btree ("botId", "organizationId")`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_slack_account_app" ON slack_account USING btree ("teamId", "botUserId")`,

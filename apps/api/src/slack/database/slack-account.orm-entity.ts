@@ -17,7 +17,7 @@ import {
  */
 @Entity('slack_account')
 @Index('UQ_slack_account_organization_id', ['organizationId', 'id'], { unique: true })
-@Index('UQ_slack_account_bot', ['botId'], { unique: true })
+@Index('UQ_slack_account_bot', ['botId', 'organizationId'], { unique: true })
 @Index('UQ_slack_account_app', ['teamId', 'botUserId'], { unique: true })
 @Index('IDX_slack_account_owner', ['organizationId', 'userId'])
 @Index('IDX_slack_account_user', ['userId'])

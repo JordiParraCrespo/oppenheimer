@@ -64,7 +64,7 @@ export class SlackAccountRepository
     try {
       // UQ_slack_account_bot: a bot's app is written over, never doubled.
       await this.repository.upsert(this.mapper.toPersistence(account), {
-        conflictPaths: ['botId'],
+        conflictPaths: ['botId', 'organizationId'],
         skipUpdateIfNoValuesChanged: true,
       });
       return 'saved';
