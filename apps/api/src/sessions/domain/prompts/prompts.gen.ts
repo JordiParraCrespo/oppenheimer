@@ -6,15 +6,23 @@
 export type PromptId =
   | "system/title.first-prompt"
   | "system/title.conversation"
-  | "system/title.rules";
+  | "system/title.rules"
+  | "turn/cloud-task-files"
+  | "wake/pull-request.of-repo"
+  | "wake/pull-request.plain";
 
 /** The slots of each prompt that has any: what the code fills in. */
 export interface PromptSlots {
   "system/title.rules": { minWords: string; maxWords: string; maxChars: string };
+  "wake/pull-request.of-repo": { number: string; repo: string; what: string; view: string };
+  "wake/pull-request.plain": { number: string; what: string; view: string };
 }
 
 export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "system/title.first-prompt": "Name a software work session from the first request the person made in it, which is between the <request> tags. Do not answer or carry out the request: only name it.",
   "system/title.conversation": "Name a software work session from the requests the person made in it, numbered in order between the <request> tags. Do not answer or carry them out: only name the session. The first may be vague (\"fix the bug\", \"continue\"); name what the conversation turned out to be about.",
   "system/title.rules": "Write the name in the language of the person's own words, even though these instructions are in English and even when the person uses English technical words (upload, login, token): a French request gets a French name.\n\nThe name sits in a sidebar next to the person's other sessions, often on the same part of the product, and is how they find this one again later. Name it the way a colleague would say it in one breath:\n\n- Start with the specific thing: the screen, component, feature or piece of code.\n- Then the one detail that sets it apart from other work on that same thing: the symptom, platform, browser or case. Never drop that detail to make the name shorter; drop words around it instead.\n- Leave out what does not tell sessions apart: \"fix\", \"add\", \"help with\", \"investigate\", \"review\", \"issue\", \"task\", the project or repository name.\n- Never a pull request or ticket number. When a request only points at one (\"look at PR 77\"), name what the other requests say it is about.\n- {{minWords}} or {{maxWords}} words, never more than 5, and at most {{maxChars}} characters. Sentence case, no quotes, no list numbers, no punctuation at the end.\n\nExamples:\n- \"the app crashes when I upload a photo over 10 MB on Android\" → Android photo upload crash\n- \"can you please help me, the checkout button does nothing\" → Checkout button does nothing\n- 1. \"continue\" 2. \"the Excel export cuts off the dates\" → Excel export cuts dates\n- \"der PDF-Export schneidet die Umlaute ab\" → PDF-Export ohne Umlaute\n- 1. \"olha o PR 77\" 2. \"o carrinho esvazia ao voltar no iPhone\" → Carrinho esvazia no iPhone\n\nReply with the name alone.",
+  "turn/cloud-task-files": "Files attached to this task. Download them before you start (the links expire in a day), then open each with the Read tool:",
+  "wake/pull-request.of-repo": "Pull request #{{number}} of {{repo}}: {{what}}. Read it with `{{view}}` before you act on it.",
+  "wake/pull-request.plain": "Pull request #{{number}}: {{what}}. Read it with `{{view}}` before you act on it.",
 };

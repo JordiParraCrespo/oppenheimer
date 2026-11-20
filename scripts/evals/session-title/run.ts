@@ -54,6 +54,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..', '..');
 const POLICY = 'apps/api/src/sessions/domain/session-name.policy.ts';
 const PROMPTS = 'apps/api/src/sessions/domain/prompts/prompts.gen.ts';
+const PROMPT_TEXT = 'apps/api/src/sessions/domain/session-prompt-text.policy.ts';
 const LANGUAGES: Record<string, string> = {
   en: 'English',
   es: 'Spanish',
@@ -109,8 +110,17 @@ async function policyAt(ref: string): Promise<Policy> {
   for (const [path, to] of [
     [POLICY, 'session-name.policy.ts'],
     [PROMPTS, 'prompts/prompts.gen.ts'],
+    [PROMPT_TEXT, 'session-prompt-text.policy.ts'],
   ] as const) {
-    writeFileSync(join(dir, to), execFileSync('git', ['show', `${sha}:${path}`], { cwd: ROOT }));
+    try {
+      writeFileSync(
+        join(dir, to),
+        execFileSync('git', ['show', `${sha}:${path}`], { cwd: ROOT, stdio: 'pipe' }),
+      );
+    } catch (error) {
+      // The prompt reader came later than the policy; a ref before it has none.
+      if (path !== PROMPT_TEXT) throw error;
+    }
   }
   const loaded = (await import(join(dir, 'session-name.policy.ts'))) as Omit<Policy, 'label'>;
   if (typeof loaded.conversationTitleRequest !== 'function') {

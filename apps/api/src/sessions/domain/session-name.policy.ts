@@ -1,5 +1,5 @@
 import type { SessionTranscriptEntry } from '@oppenheimer/shared';
-import { PROMPT_TEXT, type PromptSlots } from './prompts/prompts.gen';
+import { sessionPromptText } from './session-prompt-text.policy';
 
 /**
  * What a session is called once its first prompt exists: a model's title, cleaned
@@ -60,14 +60,10 @@ const ASKED_MAX_CHARS = 32;
 
 /** What the model is told: what it reads, then what a good name is. */
 function titleInstruction(id: 'system/title.first-prompt' | 'system/title.conversation'): string {
-  const rules = PROMPT_TEXT['system/title.rules'].replace(
-    /\{\{(minWords|maxWords|maxChars)\}\}/g,
-    (_slot, name: keyof PromptSlots['system/title.rules']) => RULE_SLOTS[name],
-  );
-  return `${PROMPT_TEXT[id]}\n\n${rules}`;
+  return `${sessionPromptText(id)}\n\n${sessionPromptText('system/title.rules', RULE_SLOTS)}`;
 }
 
-const RULE_SLOTS: PromptSlots['system/title.rules'] = {
+const RULE_SLOTS = {
   minWords: String(ASKED_MIN_WORDS),
   maxWords: String(ASKED_MAX_WORDS),
   maxChars: String(ASKED_MAX_CHARS),
