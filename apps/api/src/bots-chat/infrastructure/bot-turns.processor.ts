@@ -6,6 +6,7 @@ import type { Job } from 'bullmq';
 import { ContinueBotGoalCommand } from '../commands/continue-bot-goal/continue-bot-goal.command';
 import { DeliverBotAnswerCommand } from '../commands/deliver-bot-answer/deliver-bot-answer.command';
 import { DeliverChannelReplyCommand } from '../commands/deliver-channel-reply/deliver-channel-reply.command';
+import { DeliverGithubAnswerCommand } from '../commands/deliver-github-answer/deliver-github-answer.command';
 import { FinishBotLoopRunCommand } from '../commands/finish-bot-loop-run/finish-bot-loop-run.command';
 import { RunBotLoopCommand } from '../commands/run-bot-loop/run-bot-loop.command';
 import { RunBotTurnCommand } from '../commands/run-bot-turn/run-bot-turn.command';
@@ -14,6 +15,7 @@ import {
   CONTINUE_BOT_GOAL_JOB,
   DELIVER_BOT_ANSWER_JOB,
   DELIVER_CHANNEL_REPLY_JOB,
+  DELIVER_GITHUB_ANSWER_JOB,
   DELIVER_TELEGRAM_REPLY_JOB,
   FINISH_BOT_LOOP_RUN_JOB,
   RUN_BOT_TURN_JOB,
@@ -28,7 +30,8 @@ const TURNS_PER_PROCESS = 8;
  * bot that asked (`DELIVER_BOT_ANSWER_JOB`), and one per channel turn
  * (Telegram, WhatsApp) that ended, which sends its answer to the chat
  * (`DELIVER_CHANNEL_REPLY_JOB`, or the Telegram slice's name for it, still
- * in flight for one release). A turn runs for as long as the model works, so the job is not
+ * in flight for one release), and one per ask on GitHub that ended, which
+ * posts its answer there (`DELIVER_GITHUB_ANSWER_JOB`). A turn runs for as long as the model works, so the job is not
  * retried on a failure: the turn records it, and a worker that died under one
  * leaves it running for the next pickup to fail. A turn of a bot with a goal
  * that ended owes one more, which decides whether the goal goes on
@@ -71,6 +74,10 @@ export class BotTurnsProcessor extends WorkerHost {
       (job.name === DELIVER_CHANNEL_REPLY_JOB || job.name === DELIVER_TELEGRAM_REPLY_JOB)
     ) {
       await this.commandBus.execute(new DeliverChannelReplyCommand({ turnId }));
+      return;
+    }
+    if (turnId && job.name === DELIVER_GITHUB_ANSWER_JOB) {
+      await this.commandBus.execute(new DeliverGithubAnswerCommand({ turnId }));
       return;
     }
     if (turnId && job.name === CONTINUE_BOT_GOAL_JOB) {

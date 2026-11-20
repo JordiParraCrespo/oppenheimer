@@ -278,7 +278,10 @@ function commentEvents(
     url: str(comment.html_url) ?? undefined,
     author: str(obj(comment.user).login) ?? undefined,
   };
-  const attributes = { number, commentId: num(comment.id) };
+  // A line comment's parent is a pull request; a conversation comment's is an
+  // issue, which is a pull request's when GitHub links one.
+  const isPullRequest = payload.pull_request !== undefined || parent.pull_request !== undefined;
+  const attributes = { number, commentId: num(comment.id), isPullRequest };
   const at = dateOf(comment.created_at);
   const events = [make('comment', attributes, context, at)];
   if (mentions(comment.body, options.mentionHandle)) {

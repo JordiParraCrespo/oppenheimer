@@ -65,6 +65,8 @@ export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
 /** Sends a channel turn's answer (Telegram, WhatsApp) to the chat its message came from. */
 export const DELIVER_CHANNEL_REPLY_JOB = 'deliver-channel-reply';
+/** Posts the answer of a turn an ask on GitHub opened, on the issue or pull request it was asked on. */
+export const DELIVER_GITHUB_ANSWER_JOB = 'deliver-github-answer';
 /**
  * The name the Telegram slice staged that job under. Outbox rows still in
  * flight on a deployment carry it, so the worker accepts it for one release.
@@ -555,6 +557,16 @@ export class BotTurnRepository
           jobName: DELIVER_CHANNEL_REPLY_JOB,
           payload: { turnId: turn.id },
           reason: `bot ${turn.botId}: turn ${turn.id} answers a message on ${turn.origin}`,
+          aggregateId: turn.id,
+          correlationId,
+        });
+      }
+      if (turn.origin === 'github') {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_TURNS,
+          jobName: DELIVER_GITHUB_ANSWER_JOB,
+          payload: { turnId: turn.id },
+          reason: `bot ${turn.botId}: turn ${turn.id} answers an ask on GitHub`,
           aggregateId: turn.id,
           correlationId,
         });

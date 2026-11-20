@@ -5,8 +5,10 @@
  * (`workspaces/<slug>/…`) and travels on `session.create`; whether a person is
  * still a member, which the attach socket re-checks at ticket redemption
  * because sixty seconds is long enough to have been removed, and an
- * automation run re-checks for its owner; and which workspaces an account
- * owns, for account erasure. None of them lets the caller change anything.
+ * automation run re-checks for its owner; which workspaces an account owns,
+ * for account erasure; and who owns a workspace, for an ask from outside that
+ * names only the workspace (a GitHub mention of a bot). None of them lets the
+ * caller change anything.
  */
 export interface WorkspaceLookupPort {
   /** The organization's slug, or `null` for an id that names no workspace. */
@@ -17,4 +19,6 @@ export interface WorkspaceLookupPort {
    * sign-up gave them. What deleting an account removes the work of.
    */
   ownedBy(userId: string): Promise<string[]>;
+  /** The account that owns the workspace (its oldest owner), or `null` for none. */
+  ownerOf(organizationId: string): Promise<string | null>;
 }

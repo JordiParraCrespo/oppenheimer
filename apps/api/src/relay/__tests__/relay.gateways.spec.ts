@@ -168,6 +168,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
     ownedBy: vi.fn().mockResolvedValue([]),
+    ownerOf: vi.fn().mockResolvedValue(null),
   };
   const config = {
     get: (key: string) =>

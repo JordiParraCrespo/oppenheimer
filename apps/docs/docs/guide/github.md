@@ -65,6 +65,7 @@ Your review over a week, month or quarter on watched repositories: pull requests
 
 - **Automations** start on GitHub events such as a pull request opened, a check failed or a mention ([Automations](./automations.md)).
 - **Bots** list repositories and pull requests, read them, comment, review, merge (asking first under Approve for me, one call at a time and pinned to the commit the card showed; under Full access it merges without asking unless you set merging to Ask in Settings → Permissions), start review sessions, read and open issues, and follow a pull request with a watch ([Bots](./bots.md), [Routines and watches](./routines-and-watches.md)). Issue tools need the App's Issues permission accepted on the installation.
+- **Asking a bot**: `@oppenheimer <bot name>` in a comment or the label `bot:<bot name>` starts a turn of that bot, and its answer is posted back as a comment by the App; only you can ask ([Bots](./bots.md#asking-a-bot-on-github)).
 - The **Inbox** lists review requests and your pull requests that are ready to merge.
 
 ## Not available yet
