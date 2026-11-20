@@ -1,7 +1,7 @@
 import { type ChannelTurnProps, channelTurn } from './bot-channel-turn.policy';
-import { BotMessageEntity } from './bot-message.entity';
+import type { BotMessageEntity } from './bot-message.entity';
 import { fenceUntrusted } from './bot-tool-text.policy';
-import { BotTurnEntity } from './bot-turn.entity';
+import type { BotTurnEntity } from './bot-turn.entity';
 
 /** What a message of the owner's on WhatsApp is, for the turn it queues. */
 export interface BotWhatsappMessage {
@@ -96,32 +96,20 @@ export function whatsappContactOpening(message: BotWhatsappContactMessage): stri
 }
 
 /**
- * The turn a contact's message queues: a contact's turn (`BotTurnEntity.contact`),
- * on the owner's account in the chat's own conversation, keyed by the stored
- * row as the owner's are, opened by what they wrote, fenced. It steers
- * nothing: a contact never reaches into a turn under way.
+ * The turn a contact's message queues (`channelTurn` with `contact`): a
+ * contact's turn on the owner's account, in the chat's own conversation,
+ * keyed by the stored row as the owner's are, opened by what they wrote,
+ * fenced.
  */
 export function whatsappContactTurn(
   props: ChannelTurnProps,
   message: BotWhatsappContactMessage,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
-  const turn = BotTurnEntity.queue({
-    ...props,
-    conversationId: message.conversationId,
+  return channelTurn(props, {
     origin: 'whatsapp',
-    lane: 'owner',
     sourceKey: whatsappSourceKey(message),
-    contact: true,
-  });
-  const opening = BotMessageEntity.createNew({
-    organizationId: props.organizationId,
-    botId: props.botId,
     conversationId: message.conversationId,
-    turnId: turn.id,
-    role: 'user',
-    content: whatsappContactOpening(message),
-    steps: [],
-    position: 0,
+    text: whatsappContactOpening(message),
+    contact: message.chatKind,
   });
-  return { turn, opening };
 }

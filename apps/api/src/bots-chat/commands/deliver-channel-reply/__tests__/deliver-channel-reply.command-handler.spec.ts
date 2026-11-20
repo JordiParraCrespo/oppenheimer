@@ -241,7 +241,7 @@ describe('DeliverChannelReplyCommandHandler', () => {
         origin: 'whatsapp',
         lane: 'owner',
         sourceKey: whatsappSourceKey({ whatsappAccountId, messageRowId }),
-        contact: true,
+        contact: 'direct',
       });
     const failed = setup(ended(contactTurn(), 'failed'), whatsappChat);
     await failed.deliver();

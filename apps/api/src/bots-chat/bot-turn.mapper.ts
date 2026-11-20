@@ -11,6 +11,7 @@ import {
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotTurnOrmEntity, type BotTurnPlanLimitsRecord } from './database/bot-turn.orm-entity';
 import {
+  BOT_CONTACT_CHATS,
   BotTurnEntity,
   type BotTurnPlanLimits,
   type BotTurnPlanWindow,
@@ -105,7 +106,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         askedByTurnId: record.askedByTurnId ?? null,
         replyRequested: record.replyRequested === true,
         steer: record.steer === true,
-        contact: record.contact === true,
+        contact: BOT_CONTACT_CHATS.find((kind) => kind === record.contact) ?? null,
         answersTurnId: record.answersTurnId ?? null,
         error: record.error ?? null,
         failure: record.failure ?? null,

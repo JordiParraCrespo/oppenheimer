@@ -384,13 +384,17 @@ describe('waking a bot on WhatsApp (integration)', () => {
       await spoke('50');
       await spoke('50');
 
-      const queued: { id: string; conversationId: string; contact: boolean; steer: boolean }[] =
-        await dataSource.query(
-          `SELECT id, "conversationId", contact, steer FROM bot_turn WHERE "botId" = $1`,
-          [juno.id],
-        );
+      const queued: {
+        id: string;
+        conversationId: string;
+        contact: string | null;
+        steer: boolean;
+      }[] = await dataSource.query(
+        `SELECT id, "conversationId", contact, steer FROM bot_turn WHERE "botId" = $1`,
+        [juno.id],
+      );
       expect(queued).toHaveLength(1);
-      expect(queued[0]).toMatchObject({ contact: true, steer: false });
+      expect(queued[0]).toMatchObject({ contact: 'group', steer: false });
       expect(await conversationOf(queued[0]?.conversationId ?? '')).toMatchObject({
         kind: 'whatsapp',
         chatId: groupId,
@@ -403,7 +407,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
         '<whatsapp>\nMarta (+34600999888) wrote in the group "Family":\n@Juno message 50\n</whatsapp>',
       );
       const turn = (await turns.findForRun(queued[0]?.id ?? '')).unwrap();
-      expect(turn.contact).toBe(true);
+      expect(turn.contact).toBe('group');
     });
 
     // What breaks this: a busy group spending the owner's model without end,
@@ -417,7 +421,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
         ),
       );
       const [{ count }]: { count: number }[] = await dataSource.query(
-        `SELECT count(*)::int AS count FROM bot_turn WHERE "botId" = $1 AND contact`,
+        `SELECT count(*)::int AS count FROM bot_turn WHERE "botId" = $1 AND contact IS NOT NULL`,
         [juno.id],
       );
       expect(count).toBe(WHATSAPP_CONTACT_TURNS_PER_HOUR);

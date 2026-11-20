@@ -6,7 +6,7 @@ import {
 } from '@oppenheimer/shared';
 import { BotMessageEntity, type BotPendingMedia } from './bot-message.entity';
 import { maySteer } from './bot-steer.policy';
-import { BotTurnEntity } from './bot-turn.entity';
+import { type BotContactChat, BotTurnEntity } from './bot-turn.entity';
 
 /** What a channel turn takes from the bot it wakes: everything but where it runs. */
 export type ChannelTurnProps = Omit<
@@ -15,7 +15,7 @@ export type ChannelTurnProps = Omit<
 >;
 
 /**
- * The turn the owner's message on a channel queues: in the
+ * The turn a message on a channel queues, the owner's or a contact's: in the
  * owner lane, as the owner, in the chat's own conversation, opened by what
  * they wrote as their message. It is the owner's own direct chat, so it is
  * theirs as a console message is: the bot's tools and memory. The channel
@@ -35,15 +35,22 @@ export function channelTurn(
     conversationId: string;
     text: string;
     pendingMedia?: BotPendingMedia | null;
+    /**
+     * A contact's message, in one person's chat or a group's: the turn is a
+     * contact's (`turnReach`), and steers nothing.
+     */
+    contact?: BotContactChat;
   },
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
+  const contact = message.contact ?? null;
   const turn = BotTurnEntity.queue({
     ...props,
     conversationId: message.conversationId,
     origin: message.origin,
     lane: 'owner',
     sourceKey: message.sourceKey,
-    steer: !message.pendingMedia && maySteer(true, message.text, 0),
+    steer: contact === null && !message.pendingMedia && maySteer(true, message.text, 0),
+    contact,
   });
   const opening = BotMessageEntity.createNew({
     organizationId: props.organizationId,

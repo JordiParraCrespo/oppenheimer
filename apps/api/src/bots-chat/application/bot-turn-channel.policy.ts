@@ -16,16 +16,6 @@ export class BotTurnChannelPolicy {
     private readonly conversations: BotConversationRepositoryPort,
   ) {}
 
-  /**
-   * Who a contact's turn answers: a group (a WhatsApp group's id ends in
-   * `@g.us`) or one person; null for a turn that is no contact's.
-   */
-  async contactChat(turn: BotTurnEntity): Promise<'direct' | 'group' | null> {
-    if (!turn.contact) return null;
-    const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
-    return chat?.chatId.endsWith('@g.us') ? 'group' : 'direct';
-  }
-
   async answerable(turn: BotTurnEntity): Promise<boolean> {
     if (turn.inConsole) return true;
     return (

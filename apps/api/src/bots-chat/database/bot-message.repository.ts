@@ -305,7 +305,7 @@ export class BotMessageRepository
     if (contactsOnly) {
       // PK_bot_turn, once per message read.
       query.andWhere(
-        `EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact)`,
+        `EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
       );
     }
     const records = await after(query, afterMessageId)
@@ -331,7 +331,9 @@ export class BotMessageRepository
       .andWhere(`message.role <> 'activity'`)
       // A contact's turn is not the owner's words: a dream never learns from it.
       // PK_bot_turn, once per message read.
-      .andWhere(`NOT EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact)`)
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      )
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .take(limit)

@@ -39,6 +39,7 @@ import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.polic
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
+import { turnReach } from '../domain/bot-turn-reach.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotApprovalStartedPolicy, type BotTurnShape } from './bot-approval-started.policy';
@@ -110,8 +111,7 @@ export class BotTurnContextResolver {
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
-    // A contact's turn acts for no one: no tools, none of the owner's memory or skills.
-    const contact = await this.channels.contactChat(turn);
+    const reach = turnReach(turn);
     // The summary covers the console chat; a channel's conversation is read without one.
     const summarized = turn.inConsole
       ? await this.summaries.findForBot(turn.organizationId, bot.id)
@@ -128,7 +128,7 @@ export class BotTurnContextResolver {
           turn.id,
           summary?.coversThroughMessageId ?? null,
           BOT_HISTORY_READ_MAX,
-          turn.contact,
+          reach.history === 'contacts',
         ),
         this.hostsOf(owner, turn.id),
         this.turns.findLastContext(turn.organizationId, bot.id),
@@ -143,7 +143,7 @@ export class BotTurnContextResolver {
     };
     // An owner who can no longer act leaves the bot nothing to act through.
     let tools: BotTurnContext['tools'] = [];
-    if (owner && !contact) {
+    if (owner && reach.tools) {
       const held = () => this.permissions.heldScopes(owner);
       const context: BotToolContext = {
         owner,
@@ -194,12 +194,12 @@ export class BotTurnContextResolver {
         description: bot.description,
         soul: documentText('soul'),
         instructions: documentText('instructions'),
-        facts: contact ? [] : inMind.own,
-        personFacts: contact ? [] : inMind.person,
-        personAbout: contact ? undefined : about,
-        engineCapabilities: contact ? [] : engineCapabilities(turn.provider),
+        facts: reach.ownerMemory ? inMind.own : [],
+        personFacts: reach.ownerMemory ? inMind.person : [],
+        personAbout: reach.ownerMemory ? about : undefined,
+        engineCapabilities: reach.tools ? engineCapabilities(turn.provider) : [],
         tools:
-          owner && !contact
+          owner && reach.tools
             ? this.toolbox.catalog(turn.credentialScopes, {
                 preset: bot.permission,
                 permissions,
@@ -207,7 +207,7 @@ export class BotTurnContextResolver {
                 lane: turn.lane,
               })
             : [],
-        skills: contact ? [] : skills,
+        skills: reach.skills ? skills : [],
       }),
       history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
       message: withTurnContext(
@@ -217,21 +217,20 @@ export class BotTurnContextResolver {
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
           lastContext,
-          memory: contact ? undefined : { log: inMind.log, toRecall: inMind.toRecall },
-          contact,
+          memory: reach.ownerMemory ? { log: inMind.log, toRecall: inMind.toRecall } : undefined,
+          contact: reach.contact,
           channel: isChannelOrigin(turn.origin) ? turn.origin : null,
           asItGoes: sendsAsItGoes(turn),
         }),
         composeTurnMessage(
-          contact ? null : command,
-          withBuiltInSkills(contact ? [] : skills),
+          reach.skills ? command : null,
+          withBuiltInSkills(reach.skills ? skills : []),
           prompt,
         ),
       ),
       images,
       tools,
-      // A contact's turn has no tools of the engine's own either (web search, a todo list).
-      ...(contact && { engineTools: false }),
+      ...(!reach.tools && { engineTools: false }),
       // No step limit: the turn runs until the model answers, compacting
       // against the window its last turn reported.
       contextWindow: lastContext?.window ?? null,
