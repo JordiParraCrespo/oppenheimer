@@ -85,7 +85,9 @@ function follow(pinned: { current: boolean }, box: HTMLElement, on: boolean): vo
  * message the reader just sent): it is read once, called when the hook starts
  * watching and on every resize, and a `true` pins. Between `hold(true)` and
  * `hold(false)` something else owns the scroll (an animation of the chat's
- * own) and this hook does not follow. The first layout opens at the bottom.
+ * own) and this hook does not follow. `leave` stops following, as the
+ * reader scrolling up would, for a move up the chat makes itself (a find
+ * landing on an earlier match). The first layout opens at the bottom.
  *
  * While it follows, the scroller has no scroll anchoring: what leaves the top
  * of a chat that keeps a window of its latest lines would otherwise move the
@@ -96,6 +98,7 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
   scroller: RefObject<HTMLDivElement | null>;
   content: RefObject<HTMLDivElement | null>;
   hold: (owning: boolean) => void;
+  leave: () => void;
   atLatest: boolean;
   toLatest: () => void;
 } {
@@ -148,6 +151,11 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
     held.current = owning;
   };
 
+  const leave = () => {
+    const box = scroller.current;
+    if (box) follow(pinned, box, false);
+  };
+
   const toLatest = () => {
     const box = scroller.current;
     if (!box) return;
@@ -157,5 +165,5 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
     box.scrollTo({ top: box.scrollHeight, behavior: instant ? 'auto' : 'smooth' });
   };
 
-  return { scroller, content, hold, atLatest, toLatest };
+  return { scroller, content, hold, leave, atLatest, toLatest };
 }

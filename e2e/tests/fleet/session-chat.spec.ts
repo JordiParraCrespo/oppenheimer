@@ -10,6 +10,7 @@ import {
   expectChatFollows,
   expectChatOnTop,
   expectComposerClickable,
+  longTurns,
 } from '../../support/session-chat';
 import { connectInstallation, createSession } from '../../support/sessions';
 import { signInAs } from '../../support/web';
@@ -346,4 +347,69 @@ test("the composer's / menu offers Claude Code's commands and the project's skil
   await page.keyboard.press('Enter');
   await expect(composer).toHaveValue('/ship-it ');
   await expect(menu).toBeHidden();
+});
+
+test('Ctrl+F finds words in the conversation, opens the turn they are folded in and lands on them', async ({
+  page,
+}) => {
+  const up = await fetch(WEB_URL).then(
+    (response) => response.ok,
+    () => false,
+  );
+  test.skip(!up, `the console is not running on ${WEB_URL}`);
+
+  const { api, user } = await signedUpContext('fleetchatfind');
+  await turnOnForEveryone(api, 'session_chat_view');
+  const installationId = await connectInstallation(api);
+  const [box] = await pairedHosts(api, 1, 'chatfind');
+  const sessionId = await createSession(api, box.id, installationId);
+  // The match is in the first turn, in the words it folds once it settles.
+  appendTranscript(box.host, sessionId, [
+    entry('user', 'f-u', 'Open the release pull request'),
+    entry('assistant', 'f-a1', [
+      { type: 'text', text: 'Opened **pull request** 58 for the release.' },
+    ]),
+    entry('assistant', 'f-a2', [
+      { type: 'tool_use', id: 'f-t', name: 'Bash', input: { command: 'git push' } },
+    ]),
+    entry('user', 'f-r', [{ type: 'tool_result', tool_use_id: 'f-t', content: 'ok' }]),
+    entry('assistant', 'f-a3', [{ type: 'text', text: 'Pushed.' }]),
+    ...longTurns('later', 30),
+  ]);
+
+  await signInAs(page, user);
+  await page.goto(`/sessions/${sessionId}`);
+  const toggle = page.getByRole('group', { name: 'How to read this session' });
+  await expect(toggle).toBeVisible({ timeout: 120_000 });
+  await toggle.getByRole('button', { name: 'Chat' }).click();
+  await expect(page.getByText(/^later answer 29\./)).toBeVisible();
+  await expect(page.getByText(/for the release\./)).toHaveCount(0);
+
+  await page.getByPlaceholder(/^Message/).focus();
+  await page.keyboard.press('ControlOrMeta+f');
+  const find = page.getByRole('search', { name: 'Find in chat' });
+  // Across the bold: the count reads the reply as it is drawn.
+  await find.getByRole('textbox').fill('opened pull request');
+  await expect(find.getByText('1 of 1')).toBeVisible();
+  await expect(page.getByText(/for the release\./)).toBeInViewport();
+
+  // It opens on the newest match, and Enter steps back to the one before.
+  await find.getByRole('textbox').fill('later answer 1');
+  await expect(find.getByText('11 of 11')).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(find.getByText('10 of 11')).toBeVisible();
+  await expect(page.getByText(/^later answer 18\./)).toBeInViewport();
+  // The matches are painted, the one it is on apart from the rest.
+  const painted = await page.evaluate(() => {
+    // A Map of Sets in the browser; this lib types neither with its methods.
+    const registry = CSS.highlights as unknown as Map<string, Set<Range>>;
+    return {
+      all: registry.get('chat-find')?.size ?? 0,
+      current: registry.get('chat-find-current')?.size ?? 0,
+    };
+  });
+  expect(painted).toEqual({ all: 10, current: 1 });
+
+  await page.keyboard.press('Escape');
+  await expect(find).toHaveCount(0);
 });
