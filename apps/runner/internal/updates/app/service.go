@@ -134,6 +134,12 @@ func (s *Service) Apply(ctx context.Context, opts ApplyOptions) (domain.Plan, er
 	if err != nil {
 		return plan, err
 	}
+	promoted := false
+	defer func() {
+		if !promoted {
+			_ = s.binaries.Discard(staged)
+		}
+	}()
 	if err := s.binaries.SelfCheck(ctx, staged); err != nil {
 		return plan, domain.ErrSelfCheck.WithDetail(
 			"the %s binary did not pass its own self-check, so it was not activated: %v", plan.Release.Version, err).WithCause(err)
@@ -141,6 +147,7 @@ func (s *Service) Apply(ctx context.Context, opts ApplyOptions) (domain.Plan, er
 	if err := s.binaries.Promote(staged, plan.Release.Version); err != nil {
 		return plan, domain.ErrActivate.WithDetail("%v", err).WithCause(err)
 	}
+	promoted = true
 
 	// Record the pending update *before* activating: if the swap or the
 	// restart is interrupted, the next boot still knows what was going on.
@@ -171,7 +178,10 @@ func (s *Service) Apply(ctx context.Context, opts ApplyOptions) (domain.Plan, er
 // against a pending update and rolls back when the new version has used up
 // its attempts — which is how a release that crashes on one distro stops
 // being that host's problem without anyone logging in.
+//
+// It also sweeps staging of what earlier runs left there.
 func (s *Service) NoteBoot(ctx context.Context) (domain.State, error) {
+	_ = s.binaries.SweepStaging()
 	state, err := s.state.Load()
 	if err != nil || state.Phase != domain.PhasePending {
 		return state, nil //nolint:nilerr // no pending update is the normal path, not a failure

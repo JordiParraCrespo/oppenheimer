@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/binaries"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release"
@@ -262,6 +263,57 @@ func TestApplyStopsWhenTheNewBinaryFailsItsSelfCheck(t *testing.T) {
 	}
 	if h.restarts.calls != 0 {
 		t.Fatal("a binary that failed its self-check must not cause a restart")
+	}
+	// The loop tries again every few hours and stages a fresh copy each
+	// time: one left behind per failure filled a Mac's disk.
+	if left := stagingEntries(t, h.home); len(left) != 0 {
+		t.Fatalf("the failed stage was left in staging: %v", left)
+	}
+}
+
+func stagingEntries(t *testing.T, home string) []string {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join(home, "bin", ".staging"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names
+}
+
+// What runners before the cleanup left in staging goes on the next boot,
+// and a stage another process is still writing does not.
+func TestABootSweepsStaleStagingAndSparesAStageInFlight(t *testing.T) {
+	rs := newReleaseServer(t, "1.0.0")
+	h := newHarness(t, rs, "1.0.0")
+	staging := filepath.Join(h.home, "bin", ".staging")
+	stale := filepath.Join(staging, "runner-0.9.0-123")
+	staleApp := filepath.Join(staging, "runner-0.9.0-456.app")
+	fresh := filepath.Join(staging, "runner-1.0.0-789")
+	for _, f := range []string{stale, fresh, filepath.Join(staleApp, "Contents", "MacOS", "runner")} {
+		if err := os.MkdirAll(filepath.Dir(f), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(f, []byte("#!/bin/sh\n"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	old := time.Now().Add(-48 * time.Hour)
+	for _, f := range []string{stale, staleApp} {
+		if err := os.Chtimes(f, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := h.svc.NoteBoot(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if left := stagingEntries(t, h.home); len(left) != 1 || left[0] != filepath.Base(fresh) {
+		t.Fatalf("staging holds %v after the boot, want only the stage in flight", left)
 	}
 }
 

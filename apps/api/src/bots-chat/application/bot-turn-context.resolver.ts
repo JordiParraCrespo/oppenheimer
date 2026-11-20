@@ -31,6 +31,7 @@ import {
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import { sendsAsItGoes } from '../domain/bot-channel-turn.policy';
 import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
@@ -216,6 +217,7 @@ export class BotTurnContextResolver {
           lastContext,
           memory: { log: inMind.log, toRecall: inMind.toRecall },
           channel: isChannelOrigin(turn.origin) ? turn.origin : null,
+          asItGoes: sendsAsItGoes(turn),
         }),
         composeTurnMessage(command, withBuiltInSkills(skills), prompt),
       ),

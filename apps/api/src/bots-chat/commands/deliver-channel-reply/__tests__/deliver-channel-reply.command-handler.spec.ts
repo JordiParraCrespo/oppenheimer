@@ -3,13 +3,14 @@ import type { CommandBus } from '@nestjs/cqrs';
 import { None, Some } from 'oxide.ts';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
+import { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
 import type {
   BotChannelChat,
   BotConversationRepositoryPort,
 } from '../../../database/bot-conversation.repository.port';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
-import { channelReplyOf } from '../../../domain/bot-channel-turn.policy';
+import type { ChannelTurnLine } from '../../../domain/bot-channel-turn.policy';
 import { telegramTurn } from '../../../domain/bot-telegram-turn.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import { whatsappSourceKey } from '../../../domain/bot-whatsapp-turn.policy';
@@ -21,7 +22,9 @@ import { DeliverChannelReplyCommandHandler } from '../deliver-channel-reply.comm
  * to the chat its conversation is, as a reply to the message that opened it,
  * through the module of the chat's channel. A console turn, a turn still
  * running, a turn since gone and a chat whose account was disconnected send
- * nothing. Whether the bot still answers there is the channel module's
+ * nothing. A turn that sent as it went (the owner's own message) sends only
+ * what it wrote after its last tool calls; the rest went out before them.
+ * Whether the bot still answers there is the channel module's
  * (`ReplyOnTelegramCommandHandler`, `ReplyOnWhatsappCommandHandler`).
  */
 const organizationId = randomUUID();
@@ -71,13 +74,23 @@ function ended(turn: BotTurnEntity, status: 'completed' | 'failed' = 'completed'
   return turn;
 }
 
-function setup(turn: BotTurnEntity | null, chat: BotChannelChat | null = null) {
-  const texts = ['Looking it up.', 'Green since 10:12.'];
+/** A turn that said what it would do, called a tool, then answered. */
+const LINES: ChannelTurnLine[] = [
+  { role: 'assistant', content: 'Looking it up.' },
+  { role: 'activity', content: '' },
+  { role: 'assistant', content: 'Green since 10:12.' },
+];
+
+function setup(
+  turn: BotTurnEntity | null,
+  chat: BotChannelChat | null = null,
+  lines: ChannelTurnLine[] = LINES,
+) {
   const turns = {
     findForRun: vi.fn(async (id: string) => (turn && id === turn.id ? Some(turn) : None)),
   } satisfies Partial<BotTurnRepositoryPort>;
   const messages = {
-    findTurnTexts: vi.fn(async () => texts),
+    findTurnLines: vi.fn(async () => lines),
   } satisfies Partial<BotMessageRepositoryPort>;
   const conversations = {
     // Any conversation is the chat here, so only the turn's origin keeps a
@@ -88,12 +101,14 @@ function setup(turn: BotTurnEntity | null, chat: BotChannelChat | null = null) {
   const handler = new DeliverChannelReplyCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     messages as unknown as BotMessageRepositoryPort,
-    conversations as unknown as BotConversationRepositoryPort,
-    bus as unknown as CommandBus,
+    new BotChannelReplyResolver(
+      conversations as unknown as BotConversationRepositoryPort,
+      bus as unknown as CommandBus,
+    ),
   );
   const deliver = () =>
     handler.execute(new DeliverChannelReplyCommand({ turnId: turn?.id ?? randomUUID() }));
-  return { bus, texts, deliver };
+  return { bus, deliver };
 }
 
 const telegramChat: BotChannelChat = {
@@ -116,7 +131,7 @@ describe('DeliverChannelReplyCommandHandler', () => {
   // to another chat or Telegram bot than the conversation's.
   it('replies in the conversation’s Telegram chat, under the message that opened the turn, with its last words', async () => {
     const turn = ended(telegram());
-    const { bus, texts, deliver } = setup(turn, telegramChat);
+    const { bus, deliver } = setup(turn, telegramChat);
     await deliver();
 
     expect(bus.execute).toHaveBeenCalledTimes(1);
@@ -127,10 +142,43 @@ describe('DeliverChannelReplyCommandHandler', () => {
       accountId: telegramAccountId,
       chatId: '123456789',
       replyToId: '42',
-      text: channelReplyOf(turn, texts),
+      text: 'Green since 10:12.',
       botId,
     });
-    expect(sent.text).toBe('Green since 10:12.');
+  });
+
+  // Breaks if the end sends again what the turn already sent before its
+  // tool calls, or says "Done" over an answer the bot wrote last.
+  it('sends only what the owner’s turn wrote after its last tool calls, or a closing line when it wrote nothing after them', async () => {
+    const answered = setup(ended(whatsapp()), whatsappChat);
+    await answered.deliver();
+    expect(answered.bus.execute).toHaveBeenCalledTimes(1);
+    expect(answered.bus.execute.mock.calls[0]?.[0]).toMatchObject({ text: 'Green since 10:12.' });
+
+    const silent = setup(ended(whatsapp()), whatsappChat, LINES.slice(0, 2));
+    await silent.deliver();
+    expect(silent.bus.execute.mock.calls[0]?.[0]).toMatchObject({
+      text: 'Done, with nothing to say here. The console has the details.',
+    });
+  });
+
+  // Breaks if a turn that did not send as it went (an answer to the bot's
+  // ask, queued in the chat's conversation) loses the words it wrote before
+  // its last call: nothing sent them.
+  it('answers with the last words of a channel turn that did not send as it went', async () => {
+    const asked = BotTurnEntity.queue({
+      organizationId,
+      botId,
+      requestedByUserId: userId,
+      ...engine,
+      conversationId,
+      origin: 'telegram',
+      lane: 'bots',
+      chainId: randomUUID(),
+    });
+    const { bus, deliver } = setup(ended(asked), telegramChat, LINES.slice(0, 2));
+    await deliver();
+    expect(bus.execute.mock.calls[0]?.[0]).toMatchObject({ text: 'Looking it up.' });
   });
 
   // Breaks if a WhatsApp answer is sent through Telegram, to another number,

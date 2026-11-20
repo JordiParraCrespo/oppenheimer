@@ -14,6 +14,8 @@ import { BotApprovedCallResolver } from './application/bot-approved-call.resolve
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotBrowserToolsFactory } from './application/bot-browser-tools.factory';
+import { BotChannelAsItGoesFactory } from './application/bot-channel-as-it-goes.factory';
+import { BotChannelReplyResolver } from './application/bot-channel-reply.resolver';
 import { BotChannelWakeResolver } from './application/bot-channel-wake.resolver';
 import { BotCompletionResolver } from './application/bot-completion.resolver';
 import { BotComputerToolsFactory } from './application/bot-computer-tools.factory';
@@ -433,6 +435,8 @@ const queryHandlers: Provider[] = [
     BotDreamResolver,
     BotModelAccessResolver,
     BotTurnChannelPolicy,
+    BotChannelReplyResolver,
+    BotChannelAsItGoesFactory,
     BotTurnHoldPolicy,
     BotChannelWakeResolver,
     BotApprovalRequestFactory,

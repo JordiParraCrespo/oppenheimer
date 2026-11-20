@@ -717,6 +717,15 @@
         "failed": "Falló",
         "stopped": "Detenido"
       }
+    },
+    "find": {
+      "label": "Buscar en el chat",
+      "placeholder": "Buscar en el chat",
+      "count": "{{current}} de {{total}}",
+      "none": "Sin resultados",
+      "previous": "Coincidencia anterior",
+      "next": "Coincidencia siguiente",
+      "close": "Cerrar búsqueda"
     }
   },
   "side": {

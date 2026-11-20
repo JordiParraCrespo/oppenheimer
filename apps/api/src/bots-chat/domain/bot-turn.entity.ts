@@ -71,7 +71,8 @@ export interface BotTurnProps {
   /**
    * Sent as a steer: while it waits, the running turn of the same sender
    * takes its message at its next tool call (`BotSteerPolicy`); one it
-   * never reached runs as the turn it is. Only a message of yours steers.
+   * never reached runs as the turn it is. Only a message of yours steers:
+   * in the console, or in your own chat on a channel.
    */
   steer: boolean;
   /** Why it failed, in words a person can act on; never a key. */
@@ -491,7 +492,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     if (props.lane === 'bots' && props.chainId === null) {
       throw new ArgumentInvalidException('A turn a bot queued belongs to its chain');
     }
-    if (props.steer && (props.lane !== 'owner' || props.origin !== 'message')) {
+    if (
+      props.steer &&
+      (props.lane !== 'owner' || !(props.origin === 'message' || isChannelOrigin(props.origin)))
+    ) {
       throw new ArgumentInvalidException('Only a message of yours steers');
     }
     if (props.answersTurnId && props.replyRequested) {

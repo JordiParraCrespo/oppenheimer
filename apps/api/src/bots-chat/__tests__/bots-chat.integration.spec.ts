@@ -897,6 +897,29 @@ describe('bots chat (integration)', () => {
       expect(opening.map((message) => message.content)).toEqual(['Message 9']);
     });
 
+    // What breaks this: a question sent mid-work waiting for the work to end
+    // (the two silent minutes on a phone), or, once the running turn took
+    // it, the same message delivered again answered a second time.
+    it('moves a message sent while the bot works into the running turn, and keeps a redelivery of it one turn', async () => {
+      await wake('30');
+      const [working] = await telegramTurns();
+      const running = await claimed(working?.id ?? '');
+      await wake('31', { text: 'Is the deploy one of them?' });
+      const [, waiting] = await telegramTurns();
+      expect(waiting).toMatchObject({ sourceKey: sourceOf('31'), status: 'queued' });
+
+      const taken = await turns.takeSteers(running, (turn) => takesSteer(running, turn));
+      expect(taken.map((steer) => steer.text)).toEqual(['Is the deploy one of them?']);
+      const [, kept] = await telegramTurns();
+      expect(kept).toMatchObject({ id: waiting?.id, status: 'completed' });
+
+      await wake('31', { text: 'Is the deploy one of them?' });
+      expect((await telegramTurns()).map((turn) => turn.sourceKey)).toEqual([
+        sourceOf('30'),
+        sourceOf('31'),
+      ]);
+    });
+
     // What breaks this: /new sent to the model as a message.
     it('starts a conversation at a /new itself and queues no turn for it', async () => {
       await wake('20', { command: 'new', conversationStartsAt: '20', text: '/new' });

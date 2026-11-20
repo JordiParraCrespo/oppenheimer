@@ -3,6 +3,7 @@ import {
   SESSION_TEXT_TYPES,
   type SessionFileMediaType,
 } from '@oppenheimer/shared/protocol';
+import { sessionPromptText } from './session-prompt-text.policy';
 
 /** Where the agent is told to save the files, outside the checkout it works in. */
 const DOWNLOAD_DIR = '/tmp/attachments';
@@ -28,12 +29,7 @@ export function cloudTaskWithFiles(prompt: string, files: readonly CloudTaskFile
     (file, i) =>
       `curl -fsSL --create-dirs -o ${DOWNLOAD_DIR}/${i + 1}${extensionOf(file.mediaType)} '${file.url}'`,
   );
-  return [
-    prompt,
-    '',
-    'Files attached to this task. Download them before you start (the links expire in a day), then open each with the Read tool:',
-    ...downloads,
-  ].join('\n');
+  return [prompt, '', sessionPromptText('turn/cloud-task-files'), ...downloads].join('\n');
 }
 
 function extensionOf(mediaType: SessionFileMediaType): string {

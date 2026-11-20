@@ -101,6 +101,8 @@ func (*heldDownload) Activate(string) error                   { return nil }
 func (*heldDownload) Current() (string, error)                { return "1.0.0", nil }
 func (*heldDownload) Prune(...string) error                   { return nil }
 func (*heldDownload) ActivateBinary(string) error             { return nil }
+func (*heldDownload) Discard(string) error                    { return nil }
+func (*heldDownload) SweepStaging() error                     { return nil }
 func (*heldDownload) NeedsReinstall() bool                    { return false }
 
 type offeredRelease struct{}
