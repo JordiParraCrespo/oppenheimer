@@ -1806,3 +1806,13 @@ earlier note:
   conversation: after the agent answers the person's second prompt, a
   derived name is written once more from their prompts so far
   (`source: conversation`); a name a person typed is never replaced.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
+  channel turn's answer once, at its end, and had a message sent meanwhile
+  wait for the next turn: asked to check something, the bot went quiet for
+  minutes, then answered. On 2026-11-20 the owner asked for a bot that
+  answers first, works, and comes back with the result, answering what they
+  ask in between: on the owner's own chat, what the bot writes before a tool
+  call goes out as the call begins ("On it, checking your sessions"), a
+  message sent meanwhile steers the running turn as a console message can,
+  and the end sends only what came after the last call. Telegram's typing
+  action and the fifteen-second line are not built.

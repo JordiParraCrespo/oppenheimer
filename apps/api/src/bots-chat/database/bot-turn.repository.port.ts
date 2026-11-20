@@ -214,8 +214,9 @@ export interface BotTurnRepositoryPort {
    * Steer (`BotSteerPolicy`): under the bot's lock, every waiting steer of
    * the bot that `takes` allows, oldest first, moved into `running`: its
    * message onto the running turn at `BOT_STEER_HELD_POSITION`, its queued
-   * turn deleted, in one transaction, so a Stop, an edit or the worker that
-   * would run it sees it either waiting or gone. The message becomes the
+   * turn deleted (ended instead when it has a source key, so a channel's
+   * message delivered twice stays one turn), in one transaction, so a Stop,
+   * an edit or the worker that would run it sees it either waiting or gone. The message becomes the
    * running turn's newest, as of the take, until the transcript places it
    * where the turn delivered it. A steer whose message carries images stays
    * queued: the running turn would not read them.

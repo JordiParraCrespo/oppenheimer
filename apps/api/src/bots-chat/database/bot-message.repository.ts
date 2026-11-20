@@ -4,6 +4,7 @@ import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-aut
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
+import type { ChannelTurnLine } from '../domain/bot-channel-turn.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
@@ -258,6 +259,16 @@ export class BotMessageRepository
       select: { id: true, content: true, position: true },
     });
     return records.map((record) => record.content);
+  }
+
+  async findTurnLines(organizationId: string, turnId: string): Promise<ChannelTurnLine[]> {
+    // IDX_bot_message_turn.
+    const records = await this.repository.find({
+      where: { organizationId, turnId, role: In(['assistant', 'activity']) },
+      order: { position: 'ASC' },
+      select: { id: true, role: true, content: true, position: true },
+    });
+    return records.map((record) => this.mapper.toChannelTurnLine(record));
   }
 
   async turnCalledTools(organizationId: string, turnId: string): Promise<boolean> {

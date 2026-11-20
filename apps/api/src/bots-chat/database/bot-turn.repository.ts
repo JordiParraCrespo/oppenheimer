@@ -751,8 +751,10 @@ export async function enqueueLocked(
  * lock on the bot: its message becomes the turn's newest (after the turn's
  * last stored position, as of now), so a worker that dies before the
  * transcript places it still reads it in order, and its queued turn is
- * deleted. Null, and nothing written, when the turn is no longer queued or
- * its message carries images.
+ * deleted. A queued turn with a source key (a channel's message) is ended
+ * instead, empty, so its key still makes a delivery twice of that message
+ * one turn (`UQ_bot_turn_source`). Null, and nothing written, when the turn
+ * is no longer queued or its message carries images.
  */
 async function moveSteerWithin(
   manager: EntityManager,
@@ -773,7 +775,12 @@ async function moveSteerWithin(
         RETURNING id, content
      ), gone AS (
        DELETE FROM bot_turn
-        WHERE "organizationId" = $1 AND id = $2 AND EXISTS (SELECT 1 FROM moved)
+        WHERE "organizationId" = $1 AND id = $2 AND "sourceKey" IS NULL
+          AND EXISTS (SELECT 1 FROM moved)
+     ), kept AS (
+       UPDATE bot_turn SET "status" = 'completed', "endedAt" = now()
+        WHERE "organizationId" = $1 AND id = $2 AND "sourceKey" IS NOT NULL
+          AND EXISTS (SELECT 1 FROM moved)
      )
      SELECT id, content FROM moved`,
     [running.organizationId, steer.id, running.id],
