@@ -33,6 +33,11 @@ export class WhatsappOwnerWroteDomainEvent extends DomainEvent {
   readonly command: 'message' | 'new' | 'stop';
   /** What they wrote, without a switch's "Name:" prefix; empty for a command. */
   readonly text: string;
+  /**
+   * A voice note with no caption: `text` is empty, and the wake hears it
+   * (`TranscribeWhatsappVoiceNoteCommand`) before the bot reads it.
+   */
+  readonly voiceNote: boolean;
 
   constructor(props: DomainEventProps<WhatsappOwnerWroteDomainEvent>) {
     super(props);
@@ -47,5 +52,6 @@ export class WhatsappOwnerWroteDomainEvent extends DomainEvent {
     this.startsHere = props.startsHere;
     this.command = props.command;
     this.text = props.text;
+    this.voiceNote = props.voiceNote;
   }
 }

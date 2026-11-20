@@ -26,6 +26,14 @@ var _ app.Binaries = (*Store)(nil)
 // and prints a version; a binary that needs longer is already a problem.
 const selfCheckTimeout = 20 * time.Second
 
+// staleStaging is how long a file in staging goes untouched before a boot
+// sweeps it. A stage another process is still writing is bounded by the
+// download client's 10-minute timeout plus selfCheckTimeout, so it is never
+// one of them. This trusts the clock: a forward jump of an hour at boot
+// could sweep a `runner update` mid-download, which then fails before
+// promoting anything and stages afresh on the next run.
+const staleStaging = time.Hour
+
 // Store is the layout plus the HTTP client that fills it.
 type Store struct {
 	layout  selfupdate.Layout
@@ -219,6 +227,41 @@ func (s *Store) Current() (string, error) {
 // would be lost on every update, so the same version is worth installing
 // again from the release.
 func (s *Store) NeedsReinstall() bool { return s.bundle != "" && !s.linksLive() }
+
+// Discard deletes what Stage left in staging, a file or a bundle, once it
+// will not be promoted. Anything outside staging is refused.
+func (s *Store) Discard(stagedPath string) error {
+	rel, err := filepath.Rel(s.layout.StagingDir(), stagedPath)
+	if err != nil || rel == "." || strings.HasPrefix(rel, "..") || strings.ContainsRune(rel, filepath.Separator) {
+		return fmt.Errorf("binaries: %s is not in the staging directory", stagedPath)
+	}
+	return os.RemoveAll(stagedPath)
+}
+
+// SweepStaging deletes what earlier runs left in staging and has not been
+// touched for staleStaging: a stage interrupted by a crash or a reboot, or
+// left behind by a runner that did not clean up after a failed self-check.
+// A stage in flight in another process (`runner update`) is younger.
+func (s *Store) SweepStaging() error {
+	entries, err := os.ReadDir(s.layout.StagingDir())
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil || time.Since(info.ModTime()) < staleStaging {
+			continue
+		}
+		if err := os.RemoveAll(filepath.Join(s.layout.StagingDir(), e.Name())); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
 
 // Prune keeps the named versions and clears staging.
 func (s *Store) Prune(keep ...string) error {

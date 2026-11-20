@@ -57,13 +57,28 @@ export class BotMessageRepository
     // nowhere to go, and nothing is stored.
     const stored: { id: string }[] = await this.dataSource.query(
       `INSERT INTO bot_message (${MESSAGE_COLUMNS}, "createdAt")
-       SELECT ${MESSAGE_VALUES}, $12
+       SELECT ${MESSAGE_VALUES}, $13
         WHERE EXISTS (SELECT 1 FROM bot_conversation WHERE "organizationId" = $2 AND id = $11)
        ON CONFLICT (id) DO NOTHING
        RETURNING id`,
       [...messageParameters(this.mapper.toPersistence(message)), message.createdAt],
     );
     return stored.length === 1;
+  }
+
+  async saveContent(message: BotMessageEntity): Promise<void> {
+    // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
+    const { content, pendingMedia } = this.mapper.toPersistence(message);
+    await this.repository
+      .createQueryBuilder()
+      .update(BotMessageOrmEntity)
+      .set({ content, pendingMedia: () => ':pendingMedia::jsonb' })
+      .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
+      .where('id = :id AND "organizationId" = :organizationId', {
+        id: message.id,
+        organizationId: message.organizationId,
+      })
+      .execute();
   }
 
   async saveSteps(message: BotMessageEntity): Promise<void> {
@@ -372,8 +387,9 @@ function isTurnGone(error: unknown): boolean {
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */
-const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId"`;
-const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11';
+const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId", "pendingMedia"`;
+const MESSAGE_VALUES =
+  '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11, $12::jsonb';
 
 function messageParameters(record: BotMessageOrmEntity): unknown[] {
   return [
@@ -388,6 +404,7 @@ function messageParameters(record: BotMessageOrmEntity): unknown[] {
     record.event ? JSON.stringify(record.event) : null,
     JSON.stringify(record.attachments),
     record.conversationId,
+    record.pendingMedia ? JSON.stringify(record.pendingMedia) : null,
   ];
 }
 

@@ -4,6 +4,7 @@ import {
   BOT_SKILL_RESERVED_NAMES,
   type BotAuthor,
 } from '@oppenheimer/shared';
+import { promptText } from './bot-prompt-text.policy';
 import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
@@ -38,7 +39,7 @@ export const SKILL_NUDGE_TAG = 'oppenheimer_reminder';
  * any fenced text. One line, the same bytes every time, so the transcript
  * can take it back off.
  */
-export const SKILL_NUDGE = `\n\n<${SKILL_NUDGE_TAG}>From Oppenheimer, not from the tool: you have made ${BOT_SKILL_NUDGE_AFTER_STEPS} tool calls in this turn without a skill. If this is work you will be asked to do again, save how you did it with save_skill before you answer, and say you did; skip it for a one-off.</${SKILL_NUDGE_TAG}>`;
+export const SKILL_NUDGE = `\n\n${promptText('tools/skills.nudge', { skillNudgeTag: SKILL_NUDGE_TAG, skillNudgeAfterSteps: String(BOT_SKILL_NUDGE_AFTER_STEPS) })}`;
 
 /**
  * A tool's result as the model reads it on a turn that can be reminded:
@@ -111,12 +112,10 @@ export function skillAuthorNote(source: BotAuthor): string {
 }
 
 /** The note on a skill the bot wrote last: a step found wrong is fixed, not worked around. */
-export const SKILL_FIX_NOTE =
-  'You wrote this skill last. If a step turns out wrong or out of date while you follow it, fix it with patch_skill once the task is done, and say so in your answer.';
+export const SKILL_FIX_NOTE = promptText('tools/skills.fix-your-own');
 
 /** The note on a skill the person wrote last: their words, changed only when they ask. */
-export const THEIR_SKILL_NOTE =
-  'The person wrote this skill last: it is their words. If a step turns out wrong or out of date, do not change it; say in your answer what you would change, and change it only if they ask.';
+export const THEIR_SKILL_NOTE = promptText('tools/skills.theirs-do-not-change');
 
 /** A body with one passage replaced, or why it was not. */
 export type SkillPatch =
@@ -146,13 +145,16 @@ export function skillPatchRefusal(
 ): string {
   switch (reason) {
     case 'absent':
-      return `Not changed: old_text is not in skill "${name}". Read it with use_skill and copy the passage exactly, whitespace included.`;
+      return promptText('tools/skills.patch-text-absent', { name });
     case 'ambiguous':
-      return `Not changed: old_text occurs more than once in skill "${name}". Include more of the text around it so it matches one place.`;
+      return promptText('tools/skills.patch-text-ambiguous', { name });
     case 'empty':
-      return `Not changed: skill "${name}" would be empty. Delete it with delete_skill instead, only if the person asks.`;
+      return promptText('tools/skills.patch-would-be-empty', { name });
     case 'too_long':
-      return `Not changed: skill "${name}" would be over ${BOT_SKILL_BODY_MAX} characters. Make the change shorter.`;
+      return promptText('tools/skills.patch-too-long', {
+        name,
+        skillBodyMax: String(BOT_SKILL_BODY_MAX),
+      });
   }
 }
 
@@ -173,8 +175,8 @@ export function isOppenheimersSkillName(name: string, hasOwnRow: boolean): boole
  */
 export function oppenheimersSkillRefusal(name: string, action: 'saved' | 'changed'): string {
   return action === 'saved'
-    ? `Not saved: a skill cannot be named "${name}": Oppenheimer uses that name. Pick another name.`
-    : `Not changed: "${name}" is Oppenheimer's own (a skill every bot has, or a built-in command), and Oppenheimer uses that name; it cannot be changed. Propose the change in your answer instead, or save your own version under another name.`;
+    ? promptText('tools/skills.name-is-oppenheimers', { name })
+    : promptText('tools/skills.skill-is-oppenheimers', { name });
 }
 
 /**
@@ -189,5 +191,5 @@ export function skillChangeAllowed(input: { source: BotAuthor; askedByPerson: bo
 
 /** Why a change to the person's skill was not made, and what to do instead. */
 export function theirSkillRefusal(name: string, action: 'saved' | 'changed'): string {
-  return `Not ${action}: the person wrote skill "${name}" last, and did not ask you to change it. Propose the change in your answer instead; they can make it in Settings → Skills or ask you to.`;
+  return promptText('tools/skills.skill-is-theirs', { action, name });
 }

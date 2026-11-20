@@ -27,6 +27,12 @@ type Binaries interface {
 	// wrong-arch, truncated or incompatible binary fails here, while the
 	// old one is still the service.
 	SelfCheck(ctx context.Context, path string) error
+	// Discard deletes a staged binary that will not be promoted. Each failed
+	// apply stages a fresh copy, so one left behind is one per check, forever.
+	Discard(stagedPath string) error
+	// SweepStaging deletes what earlier runs left in staging and no apply
+	// is still writing.
+	SweepStaging() error
 	// Promote moves a staged binary in as a version, without activating it.
 	Promote(stagedPath, version string) error
 	// Activate points `current` at an installed version.

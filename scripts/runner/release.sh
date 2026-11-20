@@ -91,8 +91,11 @@ esac
 # without asking Apple.
 bundle() {
 	local app="$2/$BUNDLE"
-	mkdir -p "$app/Contents/MacOS"
+	mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 	mv "$1" "$app/Contents/MacOS/runner"
+	# The icon macOS shows in Login Items, Privacy & Security and every
+	# permission prompt the runner raises (scripts/runner/app-icon.mjs).
+	cp "$ROOT/apps/runner/packaging/macos/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 	sed "s|@VERSION@|$VERSION|g" "$ROOT/apps/runner/packaging/macos/Info.plist" >"$app/Contents/Info.plist"
 	[ "${MACOS_UNSIGNED:-}" != 1 ] || return 0
 	if [ -z "$P12_PASSWORD_FILE" ]; then

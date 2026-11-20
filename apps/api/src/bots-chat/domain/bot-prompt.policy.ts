@@ -59,69 +59,96 @@ export interface BotPromptInput {
   skills?: readonly BotSkillView[];
 }
 
+/** What the sections are decided from: the bot, and what the turn's tools allow. */
+interface PromptFacts {
+  input: BotPromptInput;
+  /** The names of the tools the turn offers. */
+  offered: readonly string[];
+  /** Whether the turn may start a session, run a command, and which terminal tools it has. */
+  sessions: boolean;
+  commands: boolean;
+  terminals: ReadonlySet<string>;
+}
+
+/** One section of the prompt: its words, or null when this turn has none for it. */
+type PromptSection = (facts: PromptFacts) => string | null;
+
 /**
- * The bot's system prompt. It is the whole prompt: no
- * engine default comes before it. In order: who the bot is, how a turn
- * goes, how it checks what it did, what it can and cannot do (a closed list, so a missing tool is a
- * plain "I can't" rather than a search of the machine it runs on), the
- * rules no instruction overrides, how it works on code through sessions
- * when the turn may start one, its own documents, its skills and memory. Empty
- * documents are left out rather than shown blank. The facts of the moment
- * (the time, the hosts) are not here: they open the turn's message, in a
- * block the prompt tells the model to trust. The words are prose in
- * `prompts/*.md` (`promptText`); what is here decides which are sent.
+ * The prompt's sections in the order they are sent: who the bot is, how a
+ * turn goes, how it checks what it did, what it can and cannot do (a closed
+ * list, so a missing tool is a plain "I can't" rather than a search of the
+ * machine it runs on), the rules no instruction overrides, how it works on
+ * code through sessions when the turn may start one, its own documents, its
+ * skills and memory. A new section is a row; where the row is, is where it
+ * is sent. An empty document is left out rather than shown blank.
+ */
+const SECTIONS: readonly PromptSection[] = [
+  ({ input }) => promptText('system/identity.opening', { name: input.name }),
+  ({ input }) =>
+    written(input.description, (description) =>
+      promptText('system/identity.description', { description }),
+    ),
+  ({ offered }) => howATurnGoes(offered.includes('remember')),
+  () => promptText('system/check-before-report'),
+  () => promptText('system/turn-context', { tag: TURN_CONTEXT_TAG }),
+  ({ input, sessions, commands, terminals }) =>
+    whatYouCanDo(input.engineCapabilities, input.tools, sessions, commands, terminals.size > 0),
+  () => promptText('system/rules'),
+  ({ sessions, commands, terminals }) =>
+    sessions ? workingOnCode(commands, terminals.size > 0) : null,
+  ({ commands }) => (commands ? promptText('system/commands-on-a-host') : null),
+  ({ commands, terminals }) => (terminals.size > 0 ? drivingATerminal(commands, terminals) : null),
+  ({ input }) => written(input.soul, (content) => promptText('system/documents.soul', { content })),
+  // Its instructions, or, while it has none, how a new bot sets itself up.
+  ({ input }) =>
+    written(input.instructions, (content) =>
+      promptText('system/documents.instructions', { content }),
+    ) ?? gettingStarted(input.name, input.tools),
+  ({ input, offered }) =>
+    skillsPromptSection(
+      withBuiltInSkills(input.skills ?? []).filter((skill) => canFollowSkill(skill, offered)),
+      { use: offered.includes('use_skill'), save: offered.includes('save_skill') },
+    ) || null,
+  ({ input }) =>
+    written(input.personAbout ?? '', (content) =>
+      promptText('system/documents.person-about', { content }),
+    ),
+  ({ input }) =>
+    listed(input.personFacts ?? [], (facts) =>
+      promptText('system/documents.general-memory', { facts }),
+    ),
+  ({ input }) =>
+    listed(input.facts, (facts) => promptText('system/documents.own-memory', { facts })),
+];
+
+/** What `words` makes of a text someone wrote, trimmed; nothing when they wrote none. */
+function written(text: string, words: (text: string) => string): string | null {
+  const trimmed = text.trim();
+  return trimmed ? words(trimmed) : null;
+}
+
+/** What `words` makes of facts as a list, one to a line; nothing when there are none. */
+function listed(facts: readonly string[], words: (list: string) => string): string | null {
+  return facts.length ? words(facts.map((fact) => `- ${fact}`).join('\n')) : null;
+}
+
+/**
+ * The bot's system prompt. It is the whole prompt: no engine default comes
+ * before it. It is `SECTIONS`, each asked for its words and those with none
+ * left out. The facts of the moment (the time, the hosts) are not here: they
+ * open the turn's message, in a block the prompt tells the model to trust.
+ * The words are prose in `prompts/*.md` (`promptText`); what is here decides
+ * which are sent.
  */
 export function composeBotSystemPrompt(input: BotPromptInput): string {
-  const parts = [promptText('system/identity.opening', { name: input.name })];
-  if (input.description.trim()) {
-    parts.push(
-      promptText('system/identity.description', { description: input.description.trim() }),
-    );
-  }
-  const sessions = offersSessions(input.tools);
-  const commands = offersCommands(input.tools);
-  const terminals = offeredTerminalTools(input.tools);
-  parts.push(
-    howATurnGoes(input.tools.some((tool) => tool.name === 'remember')),
-    promptText('system/check-before-report'),
-    promptText('system/turn-context', { tag: TURN_CONTEXT_TAG }),
-    whatYouCanDo(input.engineCapabilities, input.tools, sessions, commands, terminals.size > 0),
-    promptText('system/rules'),
-  );
-  if (sessions) parts.push(workingOnCode(commands, terminals.size > 0));
-  if (commands) parts.push(promptText('system/commands-on-a-host'));
-  if (terminals.size > 0) parts.push(drivingATerminal(commands, terminals));
-  if (input.soul.trim())
-    parts.push(promptText('system/documents.soul', { content: input.soul.trim() }));
-  if (input.instructions.trim()) {
-    parts.push(promptText('system/documents.instructions', { content: input.instructions.trim() }));
-  } else {
-    parts.push(gettingStarted(input.name, input.tools));
-  }
-  const offered = input.tools.map((tool) => tool.name);
-  const skills = skillsPromptSection(
-    withBuiltInSkills(input.skills ?? []).filter((skill) => canFollowSkill(skill, offered)),
-    { use: offered.includes('use_skill'), save: offered.includes('save_skill') },
-  );
-  if (skills) parts.push(skills);
-  if (input.personAbout?.trim()) {
-    parts.push(promptText('system/documents.person-about', { content: input.personAbout.trim() }));
-  }
-  if (input.personFacts?.length) {
-    parts.push(
-      promptText('system/documents.general-memory', {
-        facts: input.personFacts.map((fact) => `- ${fact}`).join('\n'),
-      }),
-    );
-  }
-  if (input.facts.length) {
-    parts.push(
-      promptText('system/documents.own-memory', {
-        facts: input.facts.map((fact) => `- ${fact}`).join('\n'),
-      }),
-    );
-  }
-  return parts.join('\n\n');
+  const facts: PromptFacts = {
+    input,
+    offered: input.tools.map((tool) => tool.name),
+    sessions: offersSessions(input.tools),
+    commands: offersCommands(input.tools),
+    terminals: offeredTerminalTools(input.tools),
+  };
+  return SECTIONS.flatMap((section) => section(facts) ?? []).join('\n\n');
 }
 
 /**
@@ -488,45 +515,52 @@ function approvalPrompt(content: string, stage?: BotApprovalEventStage): string 
   return `${eventNote(content)}\n\n${approvalAsk(stage)}`;
 }
 
-type EventPrompts = {
-  [Kind in BotMessageEvent['kind']]: (
-    event: Extract<BotMessageEvent, { kind: Kind }>,
-    content: string,
-  ) => string;
-};
-
 /**
- * The prompt of a turn an event opened, one entry per kind, so a new kind
- * is a row the compiler asks for. A routine's opening already says what to
- * do (`routineOpening`), and so do a goal's continuation
+ * The prompt of a turn an event opened, one case per kind, so a new kind is
+ * a case the compiler asks for. A routine's opening already says what to do
+ * (`routineOpening`), and so do a goal's continuation
  * (`goalContinuationText`) and a loop's run (`loopRunText`), so each is read
  * as the note it is.
  */
-const EVENT_PROMPTS: EventPrompts = {
-  approval: (event, content) => approvalPrompt(content, event.stage),
-  question: (_event, content) => `${eventNote(content)}\n\n${promptText('wake/question-answered')}`,
-  routine: (_event, content) => eventNote(content),
-  bot_message: peerMessagePrompt,
-  bot_reply: peerReplyPrompt,
-  session: sessionWakePrompt,
-  pull_request: pullRequestWakePrompt,
-  task: taskWakePrompt,
-  goal: (_event, content) => eventNote(content),
-  loop: (_event, content) => eventNote(content),
-  dream: (_event, content) => eventNote(content),
-  compaction: (_event, content) => eventNote(content),
-};
+function eventPrompt(event: BotMessageEvent, content: string): string {
+  switch (event.kind) {
+    case 'approval':
+      return approvalPrompt(content, event.stage);
+    case 'question':
+      return `${eventNote(content)}\n\n${promptText('wake/question-answered')}`;
+    case 'bot_message':
+      return peerMessagePrompt(event, content);
+    case 'bot_reply':
+      return peerReplyPrompt(event, content);
+    case 'session':
+      return sessionWakePrompt(event, content);
+    case 'pull_request':
+      return pullRequestWakePrompt(event, content);
+    case 'task':
+      return taskWakePrompt(event, content);
+    case 'routine':
+    case 'goal':
+    case 'loop':
+    case 'dream':
+    case 'compaction':
+      return eventNote(content);
+    // The mapper reads a kind it does not know as no event (`toEvent`), so none
+    // gets here; `never` is what makes a new kind a case the compiler asks for.
+    default:
+      throw new Error(
+        `An event of no known kind opened a turn: ${String((event satisfies never as { kind?: unknown }).kind)}`,
+      );
+  }
+}
 
 /**
  * What a turn is asked: your message as you wrote it, or, for a turn an event
- * opened, the event with what to do about it (`EVENT_PROMPTS`). An event
+ * opened, the event with what to do about it (`eventPrompt`). An event
  * this version cannot read is told as an approval's, as it always was.
  */
 export function botTurnPrompt(opening: HistoryMessage | null): string {
   if (!opening) return '';
   if (opening.role !== 'event') return opening.content;
   const event = opening.event;
-  if (!event) return approvalPrompt(opening.content);
-  const prompt = EVENT_PROMPTS[event.kind] as (event: BotMessageEvent, content: string) => string;
-  return prompt(event, opening.content);
+  return event ? eventPrompt(event, opening.content) : approvalPrompt(opening.content);
 }

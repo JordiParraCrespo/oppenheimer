@@ -437,14 +437,29 @@ describe('SessionChat', () => {
       loading: false,
       turns: [],
       queued: [],
+      sending: [],
       status: null,
       files: [],
       older: 'none',
       activity: null,
       interruptible: true,
+      commands: null,
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  // What breaks this: the composer's `/` menu losing the project's skills on
+  // the next live line, or keeping a list a host that no longer sends one left.
+  it("holds the project's commands from the last reset, through the batches that follow it", () => {
+    const chat = new SessionChat();
+    const recap = { name: 'recap', kind: 'skill' as const, description: 'Close the task' };
+    chat.apply({ reset: true, entries: [], commands: [recap] });
+    chat.apply({ entries: [JSON.stringify(user('u1', 'One'))] });
+    expect(chat.snapshot().commands).toEqual([recap]);
+
+    chat.apply({ reset: true, entries: [] });
+    expect(chat.snapshot().commands).toBeNull();
   });
 
   it('draws a long first load once, when its history has all come', () => {
@@ -899,6 +914,67 @@ describe('what the context holds', () => {
       answer('a3'),
     ]);
     expect(turns.map((turn) => turn.contextTokens)).toEqual([32_004, null]);
+  });
+});
+
+describe('a message on its way', () => {
+  const settled = JSON.stringify(
+    assistant('a1', [{ type: 'text', text: 'Fixed.' }], '2026-10-21T09:00:30.000Z'),
+  );
+
+  // The bubble used to wait for the agent to write the prompt down and the
+  // host to send the line on, so a message sent showed nothing for seconds.
+  it('shows what was sent at once, until its prompt comes back in the transcript', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.connect(() => {});
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Fix it')), settled] });
+
+    chat.post('And the photos are related?');
+    expect(chat.snapshot().sending.map((sent) => sent.text)).toEqual([
+      'And the photos are related?',
+    ]);
+
+    // An earlier prompt that says the same is not this one's.
+    chat.apply({ entries: [JSON.stringify(user('u2', 'Something else'))] });
+    expect(chat.snapshot().sending).toHaveLength(1);
+    chat.apply({ entries: [JSON.stringify(user('u3', 'And the photos are related?'))] });
+    expect(chat.snapshot().sending).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('lets go of one whose prompt never comes, and of every one when the pane goes', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.connect(() => {});
+    chat.post('/usage');
+    vi.advanceTimersByTime(30_000);
+    expect(chat.snapshot().sending).toEqual([]);
+
+    chat.post('Hello');
+    chat.detach();
+    expect(chat.snapshot().sending).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  // The agent takes it at its next call, with no prompt of its own to replace the card.
+  it('shows nothing on its way for a message sent into the turn under way', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.connect(() => {});
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'Fix it'))] });
+    chat.post('Also the docs');
+    const [queued] = chat.snapshot().queued;
+    chat.sendQueued(queued?.id ?? '');
+    expect(chat.snapshot().sending).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it('leaves a source that cannot stop the turn to say what waits with it', () => {
+    const chat = new SessionChat();
+    chat.connect(() => {}, undefined, { interruptible: false });
+    chat.post('Hello');
+    expect(chat.snapshot().sending).toEqual([]);
   });
 });
 

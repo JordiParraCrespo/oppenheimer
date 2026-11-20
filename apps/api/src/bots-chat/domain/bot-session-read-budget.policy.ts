@@ -15,6 +15,7 @@
  * slice. The refusal costs a read; thrash costs the turn. Pure.
  */
 
+import { promptText } from './bot-prompt-text.policy';
 import { BOT_TOOL_OUTPUT_MAX } from './bot-tool-text.policy';
 
 /** Where `read_session` and `read_session_transcript` meter their shared budget. */
@@ -39,5 +40,7 @@ export function sessionReadCost(content: string): number {
 
 /** Why no more session reads this turn, for the model to act on. */
 export function sessionReadBudgetSpentRefusal(): string {
-  return `Refused: this turn has already read about ${SESSION_READ_CHARS_PER_TURN.toLocaleString('en-US')} characters of your sessions' logs and conversations, the per-turn limit; reading more would overflow your own context and lose the turn. Stop reading and answer from what you have. If you must look further, do it in a new turn, or read a narrower slice: a smaller limit, a cursor or after_seq to read on from where you were, or search_sessions to go straight to the one session that matters.`;
+  return promptText('tools/sessions.read-budget-spent', {
+    sessionReadCharsPerTurn: SESSION_READ_CHARS_PER_TURN.toLocaleString('en-US'),
+  });
 }

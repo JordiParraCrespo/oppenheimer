@@ -13,6 +13,7 @@ vi.mock('react-i18next', () => ({
     t: (key: string, values?: Record<string, unknown>) =>
       values?.lines ? `${key}:${values.lines}` : key,
   }),
+  initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
 afterEach(cleanup);

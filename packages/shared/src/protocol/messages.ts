@@ -20,7 +20,7 @@ import {
   deviceSelectSchema,
 } from './devices.js';
 import { hintSchema } from './hint.js';
-import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_COMMANDS_MAX, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {
   portCloseSchema,
   portListingSchema,
@@ -66,6 +66,8 @@ import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
   whatsappLinkSchema,
+  whatsappMediaGetSchema,
+  whatsappMediaSchema,
   whatsappMessagesSchema,
   whatsappSendSchema,
   whatsappSentSchema,
@@ -198,6 +200,12 @@ export const RUNNER_CAPABILITIES = [
    * `whatsapp.messages`.
    */
   'whatsapp',
+  /**
+   * Hands over a voice note its WhatsApp device received: it sends
+   * `voiceSeconds` on each, and answers `whatsapp.media.get` with
+   * `whatsapp.media`, so the owner's bots hear them.
+   */
+  'whatsapp.voice',
   /**
    * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
    * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
@@ -1351,6 +1359,24 @@ export type AttachmentPathMessage = z.infer<typeof attachmentPathSchema>;
 /* ------------------------------------------------------------------ the chat view (0.7) */
 
 /**
+ * A slash command the session's agent takes, for the chat composer's `/`
+ * menu: one of the project's skills (`.claude/skills/<name>/SKILL.md`) or
+ * commands (`.claude/commands/<name>.md`, a subfolder joined with `:`), read
+ * from the folder the agent runs in.
+ */
+export const chatCommandSchema = z.object({
+  name: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[A-Za-z0-9][A-Za-z0-9_.:-]*$/),
+  kind: z.enum(['skill', 'command']),
+  description: z.string().max(300).optional(),
+});
+
+export type ChatCommand = z.infer<typeof chatCommandSchema>;
+
+/**
  * Entries of a session's agent transcript, for the chat view beside the
  * terminal. The agent still runs in tmux, unmodified, and the terminal is still
  * its interface: this is a second reading of the same conversation, from the
@@ -1389,6 +1415,12 @@ export const attachmentChatSchema = z.object({
    */
   older: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
+  /**
+   * The slash commands the session's project gives its agent, on a batch
+   * that carries `reset`. Absent from a runner that predates it, or for an
+   * agent it reads none for: the console then offers its built-ins alone.
+   */
+  commands: z.array(chatCommandSchema).max(CHAT_COMMANDS_MAX).optional(),
 });
 
 export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
@@ -1484,6 +1516,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSentSchema,
+  whatsappMediaGetSchema,
+  whatsappMediaSchema,
   telegramLinkSchema,
   telegramUnlinkSchema,
   telegramStateSchema,

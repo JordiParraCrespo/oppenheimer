@@ -12,6 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
@@ -24,7 +25,10 @@ import {
 } from './session-chat-files';
 import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
 import { typedPrompt, withoutReminders } from './session-chat-prompt';
+import { type ChatSending, SentMessages } from './session-chat-sending';
 import { Subagents } from './session-chat-subagents';
+
+export type { ChatSending } from './session-chat-sending';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -226,6 +230,8 @@ export interface ChatState {
   turns: ChatTurn[];
   /** What waits to be sent, in order; the first goes once the agent settles. */
   queued: readonly ChatQueued[];
+  /** What went to the agent and is not in its transcript yet, in the order sent. */
+  sending: readonly ChatSending[];
   /** The latest status the host sent, if any. */
   status: ChatStatus | null;
   /** The files the agent shared, in the order they came; each also a step of its turn. */
@@ -250,6 +256,12 @@ export interface ChatState {
    * source keeps it until the agent takes it.
    */
   interruptible: boolean;
+  /**
+   * The slash commands the session's project gives its agent, from the
+   * host's last reset; null until a host says, and from one that predates
+   * them, when the composer offers the agent's built-ins alone.
+   */
+  commands: readonly ChatCommand[] | null;
 }
 
 export interface ChatBatch {
@@ -265,6 +277,8 @@ export interface ChatBatch {
   /** Part of an older page asked for (`loadOlder`): `more` is coming, or this batch is its `end`. */
   older?: 'more' | 'end';
   entries: readonly string[];
+  /** On a reset: the project's slash commands (`ChatState.commands`). */
+  commands?: readonly ChatCommand[];
 }
 
 const EMPTY: ChatState = {
@@ -272,11 +286,13 @@ const EMPTY: ChatState = {
   loading: false,
   turns: [],
   queued: [],
+  sending: [],
   status: null,
   files: [],
   older: 'none',
   activity: null,
   interruptible: true,
+  commands: null,
 };
 
 /** The entry the runner adds for the status line's figures. */
@@ -548,6 +564,10 @@ export class SessionChat {
    */
   private queuedDuring: string | null = null;
   private queuedIds = 0;
+  /** What was typed and is not in the transcript yet (`ChatState.sending`). */
+  private readonly sent = new SentMessages((id) =>
+    this.publish({ ...this.state, sending: this.state.sending.filter((held) => held.id !== id) }),
+  );
   /** The quiet that ends a first load or a replay that came back short. */
   private readonly quiet = new Quiet();
 
@@ -600,7 +620,8 @@ export class SessionChat {
     // The history's end, before every line held came again: the transcript
     // is shorter now, without waiting for a quiet to say so.
     if (batch.history === 'end' && this.transcript.settle()) changed = true;
-    this.publishBatch(changed, status, files);
+    const commands = batch.reset ? (batch.commands ?? null) : this.state.commands;
+    this.publishBatch(changed, status, files, commands);
     this.quiet.watch(this.settleAfter(), this.settled);
     this.flush();
   }
@@ -613,6 +634,7 @@ export class SessionChat {
     changed: boolean,
     status: ChatStatus | null,
     files: readonly ChatSharedFile[],
+    commands: readonly ChatCommand[] | null,
   ): void {
     const was = this.state;
     const redraw =
@@ -624,12 +646,14 @@ export class SessionChat {
       was.loading === this.loading &&
       was.status === status &&
       was.files === files &&
-      was.older === older
+      was.older === older &&
+      was.commands === commands
     ) {
       return;
     }
     this.publish({
       ...was,
+      commands,
       available: true,
       loading: this.loading,
       status,
@@ -713,7 +737,11 @@ export class SessionChat {
   }
 
   private publish(state: ChatState): void {
-    this.state = state;
+    const sending =
+      state.turns !== this.state.turns
+        ? this.sent.landed(state.sending, state.turns)
+        : state.sending;
+    this.state = sending === state.sending ? state : { ...state, sending };
     for (const listener of this.listeners) listener();
   }
 
@@ -800,6 +828,7 @@ export class SessionChat {
     this.queuedDuring = null;
     this.sentQueued = null;
     this.olderLines = null;
+    this.sent.drop();
     if (this.loading) {
       this.firstLoad.end();
       this.transcript.reset(false);
@@ -809,8 +838,12 @@ export class SessionChat {
       return;
     }
     const older = this.olderState();
-    if (this.state.queued.length > 0 || this.state.older !== older) {
-      this.publish({ ...this.state, queued: [], older });
+    if (
+      this.state.queued.length > 0 ||
+      this.state.sending.length > 0 ||
+      this.state.older !== older
+    ) {
+      this.publish({ ...this.state, queued: [], sending: [], older });
     }
   }
 
@@ -852,6 +885,15 @@ export class SessionChat {
     if (!type || (empty && !withFiles)) return;
     if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
     setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    // A source that cannot stop the turn says itself what waits with it, and
+    // one taken into the turn under way opens no prompt to replace it.
+    if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);
+  }
+
+  /** Draws a message just typed until its prompt is in the transcript (`SentMessages`). */
+  private startSending(text: string): void {
+    const sent = this.sent.start(text, this.state.turns.at(-1)?.id ?? null);
+    this.publish({ ...this.state, sending: [...this.state.sending, sent] });
   }
 
   /**

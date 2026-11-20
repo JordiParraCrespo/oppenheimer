@@ -73,7 +73,10 @@ carries besides its opening (its context, the notes in its history, a
 slash command), `wake/` for what an event says to the bot: what opens the
 turn it starts and the lines it leaves in the chat outside one (a session,
 a pull request, a task, an approval, another bot, a routine, a loop, a
-goal); it is part of the id (`system/rules`). A file is
+goal), `jobs/` for a model call that is not a bot's turn (the dream, the
+goal and rule reviews, the summary, a subagent), `tools/` for what a tool
+tells the model (its description, its answers and refusals); it is part of
+the id (`system/rules`). A file is
 one prompt, or several fragments under
 `<!-- fragment: name -->` markers when the code chooses among them;
 `{{name}}` is a slot the code fills; any other HTML comment is a note for
@@ -87,9 +90,21 @@ compile. After editing a `.md`, run
 `pnpm --filter @oppenheimer/api generate:prompts` and commit the module
 with it; `src/__tests__/prompt-files.spec.ts` fails on a stale one. The
 policy keeps what is logic: which prompt, when, and what fills its slots.
+Where a prompt is several parts in an order, the order is a list in the
+policy (`SECTIONS` in `bot-prompt.policy.ts`, `CONTEXT_LINES` in
+`bot-turn-context.policy.ts`): each row answers its words or null, so a new
+part is a row and where the row is, is where it is sent.
 One paragraph per line, as written: nothing reflows these files. A prompt
 longer than the ceiling in `prompt-files.spec.ts` fails it: split the
-prompt, or raise the number and say why.
+prompt, or raise the number and say why. The same spec fails a prompt no
+source file reads.
+
+`pnpm check:prompt-strings` holds the other side: in a module that has
+prompt files, a sentence written as a string literal fails (four words and
+28 characters or more; an exception's message, a log line and a query are
+not counted). Text that is not for a model (shown to the person, stored as
+state) is listed in the check's ledger with why; `--excused` lists every
+sentence it passes over and the place that excuses it.
 
 ## Delegating façades (organizations, admin)
 

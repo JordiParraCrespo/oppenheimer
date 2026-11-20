@@ -1761,14 +1761,22 @@ picked, and "Use its own face" goes back to the id's).
   and another bot's message, the line that opens each and what its turn is
   asked; then the notes the history puts above what was not the person's
   words, and what a routine, a loop and a goal open with and say when they
-  pause or end. A folder says where the words are sent: `system/`, `turn/`
-  for what a turn carries besides its opening, and `wake/` for what opens
-  a turn an event started (the owner chose sibling folders over a second
-  level, 2026-11-18). No prompt is longer than a ceiling a spec holds
-  (`research/prompt-file-formats.md` §4.1 and §4.5). What a tool answers,
-  the jobs that are not a bot's turn (dream, goal review, the summary) and
-  the tools' descriptions are still strings
-  (`research/agent-stack-architecture.md` §5).
+  pause or end; then the model calls that are not a bot's turn (the dream,
+  the goal and rule reviews, the summary, a subagent) and what the tools'
+  policies answer and refuse with; then the tools themselves, each tool's
+  description, its parameters' and its answers (about 700 sentences in 57
+  files). A folder says where the words are sent:
+  `system/`, `turn/` for what a turn carries besides its opening, `wake/`
+  for what an event says to the bot, `jobs/` for a model call that is not
+  a bot's turn, and `tools/` for what a tool tells the model (the owner
+  chose sibling folders over a second level, 2026-11-18). Where a prompt
+  is several parts in an order (the system prompt's sections, the turn
+  context's lines), the order is a list in the policy, each row answering
+  its words or nothing, so the order sent is the order read. No prompt is
+  longer than a ceiling a spec holds (`research/prompt-file-formats.md`
+  §4.1 and §4.5). Text for the person rather than a model (what a channel
+  is told when a turn ends with nothing to say, a card's note, a routine's
+  line in the chat) stays where it is.
 - **Revisions and activity:** `bot_document_revision` covers the two
   documents, `SOUL.md` and `INSTRUCTIONS.md`, and only those: they are
   what Settings reads and reverts. A self-edit of the profile (`update_profile`)
