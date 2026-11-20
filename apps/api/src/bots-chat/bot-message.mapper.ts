@@ -30,6 +30,7 @@ import {
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
+import type { ChannelTurnLine } from './domain/bot-channel-turn.policy';
 import {
   BOT_PENDING_MEDIA_KINDS,
   BotMessageEntity,
@@ -152,6 +153,11 @@ export class BotMessageMapper
       turnEnded:
         message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
     };
+  }
+
+  /** A stored text or activity line, as a channel turn's end reads it (`unsentTexts`). */
+  toChannelTurnLine(record: Pick<BotMessageOrmEntity, 'role' | 'content'>): ChannelTurnLine {
+    return { role: record.role === 'activity' ? 'activity' : 'assistant', content: record.content };
   }
 
   /**

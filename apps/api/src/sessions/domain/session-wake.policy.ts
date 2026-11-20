@@ -3,6 +3,7 @@ import {
   githubRepositoryName,
   pullEventPhrase,
 } from '../../github/domain/github-pull-event.policy';
+import { sessionPromptText } from './session-prompt-text.policy';
 
 /**
  * What a GitHub event on a pull request a session watches says to its agent:
@@ -71,7 +72,14 @@ export function githubWakeText(
     : `gh pr view ${number} --comments`;
   return hostFrame(
     { from: 'github', event: type, ...(named ? { repo: named } : {}), pull: String(number) },
-    `Pull request #${number}${named ? ` of ${named}` : ''}: ${what}. Read it with \`${view}\` before you act on it.`,
+    named
+      ? sessionPromptText('wake/pull-request.of-repo', {
+          number: String(number),
+          repo: named,
+          what,
+          view,
+        })
+      : sessionPromptText('wake/pull-request.plain', { number: String(number), what, view }),
   );
 }
 

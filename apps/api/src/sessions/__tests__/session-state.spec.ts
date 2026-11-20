@@ -131,21 +131,31 @@ describe('the session fold', () => {
 
   it.each([
     // A derived title never overwrites a name a person typed, whichever derives it.
-    ['user', 'model', 'Fix the wallet list', 'user'],
-    ['user', 'prompt', 'Fix the wallet list', 'user'],
+    ['user', 'model', 'user'],
+    ['user', 'prompt', 'user'],
+    ['user', 'conversation', 'user'],
     // A person may always rename over a derived title.
-    ['model', 'user', 'Fix the wallet list', 'user'],
+    ['model', 'user', 'user'],
+    ['conversation', 'user', 'user'],
     // A name taken from the prompt's own words is recorded as such.
-    [null, 'prompt', 'Wallet list empty state', 'prompt'],
-  ] as const)('names: %s then %s keeps %s, from %s', (first, second, name, nameSource) => {
-    const named = (source: string) =>
-      entry(SESSION_EVENT_KINDS.NAMED, {
-        name: source === 'user' ? 'Fix the wallet list' : 'Wallet list empty state',
-        source,
-      });
+    [null, 'prompt', 'prompt'],
+    // The conversation's title replaces the first prompt's...
+    ['model', 'conversation', 'conversation'],
+    ['prompt', 'conversation', 'conversation'],
+    // ...and a first-prompt title arriving late does not put the older one back.
+    ['conversation', 'model', 'conversation'],
+  ] as const)('names: %s then %s keeps the name from %s', (first, second, kept) => {
+    const names = {
+      user: 'Fix the wallet list',
+      model: 'Wallet empty state',
+      prompt: 'Wallet list empty state',
+      conversation: 'Wallet list empty on mobile',
+    };
+    const named = (source: keyof typeof names) =>
+      entry(SESSION_EVENT_KINDS.NAMED, { name: names[source], source });
     const fold = foldSessionLog([...(first ? [named(first)] : []), named(second)]);
-    expect(fold.name).toBe(name);
-    expect(fold.nameSource).toBe(nameSource);
+    expect(fold.name).toBe(names[kept]);
+    expect(fold.nameSource).toBe(kept);
   });
 
   it('hides and shows the session with the last visibility entry, through a close, and ignores a malformed one', () => {
