@@ -30,7 +30,7 @@ A **folder session** works in your own folder, on whatever branch it is on, with
 
 ## The sidebar
 
-The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A session is named from its first task, and named once more after the agent has answered your second prompt, when the conversation says more about what it is for. Renaming it yourself keeps your name for good. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
 
 ### Hidden sessions
 

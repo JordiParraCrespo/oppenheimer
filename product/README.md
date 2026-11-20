@@ -1801,3 +1801,8 @@ earlier note:
   With one Mac on the runner, already moved by hand, the owner chose on
   2026-11-20 not to build a way across: §5 now says such a Mac is moved by
   hand. A failed stage is now deleted, and a boot sweeps old ones.
+- `versions/mvp/03-control-plane.md` named a session from its first prompt
+  only, once. On 2026-11-19 the owner asked for names that follow the
+  conversation: after the agent answers the person's second prompt, a
+  derived name is written once more from their prompts so far
+  (`source: conversation`); a name a person typed is never replaced.
