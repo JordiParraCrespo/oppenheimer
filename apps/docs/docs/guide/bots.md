@@ -19,14 +19,7 @@ The Employees sidebar holds your bots in groups (New group, Move to group) in an
 - The chat shows the bot's text, an activity line per run of tool calls, cards for what needs you, and a line for every change it makes to itself.
 - You can send images (PNG, JPEG, GIF, WebP; up to 5 MB, four a message), except to GLM models. No other file types.
 - The composer picks the provider, model and effort, and its meter shows context use and, on a ChatGPT sign-in, the plan's limits.
-
-## Asking a bot on GitHub
-
-Ask a bot where the work is: write `@oppenheimer <bot name>` in a comment or a review on a pull request or issue, or add the label `bot:<bot name>` (any case; `-` stands for a space, so `bot:release-juno` asks Release Juno). The bot works on it in the background and its last message is posted there as one comment by Oppenheimer's GitHub App. Its chat shows a line, **Asked on GitHub**, linking to where you asked, then the turn.
-
-- Only you can ask: GitHub must know your login here (connect GitHub in **Settings**, or install the App on your personal account). A mention or label by anyone else does nothing.
-- What was written reaches the bot as outside data, never as instructions. Nobody is in the console to answer a card, so a call that would ask is not made; the bot says in its answer what it would need you to approve.
-- The repository must be covered by an installation of the App, with its **Issues** permission accepted so it can comment. The App's own comments never ask a bot, so an answer that names one asks nothing.
+- On GitHub: `@oppenheimer <name>` or a `bot:<name>` label ([more](./github.md#asking-a-bot)).
 
 ## Settings
 
@@ -87,4 +80,4 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 - A turn has no step or time limit: it runs until the bot answers. When it has read about 90,000 tokens it summarises what came before and carries on, and the chat shows a line where it did. It stops if the model sends nothing for 5 minutes while no tool runs, or if it keeps repeating calls that change nothing. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
-- Not available: calendar tools, files other than images, group chats, bot templates, writing to a bot from Slack or mail, and asking a bot on GitHub from anyone but you.
+- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack or mail.

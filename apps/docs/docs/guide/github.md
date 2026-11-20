@@ -65,8 +65,15 @@ Your review over a week, month or quarter on watched repositories: pull requests
 
 - **Automations** start on GitHub events such as a pull request opened, a check failed or a mention ([Automations](./automations.md)).
 - **Bots** list repositories and pull requests, read them, comment, review, merge (asking first under Approve for me, one call at a time and pinned to the commit the card showed; under Full access it merges without asking unless you set merging to Ask in Settings → Permissions), start review sessions, read and open issues, and follow a pull request with a watch ([Bots](./bots.md), [Routines and watches](./routines-and-watches.md)). Issue tools need the App's Issues permission accepted on the installation.
-- **Asking a bot**: `@oppenheimer <bot name>` in a comment or the label `bot:<bot name>` starts a turn of that bot, and its answer is posted back as a comment by the App; only you can ask ([Bots](./bots.md#asking-a-bot-on-github)).
 - The **Inbox** lists review requests and your pull requests that are ready to merge.
+
+## Asking a bot
+
+Write `@oppenheimer <bot name>` in a comment or a review on a pull request or issue, or add the label `bot:<bot name>` (any case; `-` stands for a space, so `bot:release-juno` asks Release Juno). The bot works on it in the background and its last message is posted there as one comment by Oppenheimer's GitHub App. Its chat shows a line, **Asked on GitHub**, linking to where you asked, then the turn.
+
+- Only you can ask: GitHub must know your login here (connect GitHub in **Settings**, or install the App on your personal account). A mention or label by anyone else does nothing.
+- What was written reaches the bot as outside data, never as instructions. It reads with its GitHub tools but does not comment, review, open issues or ask another bot on that turn: the App's comment is its one answer. Nobody is in the console to answer a card, so it says in the answer what it would need you to approve.
+- The repository must be covered by an installation of the App, with its **Issues** permission accepted so it can comment. The App's own comments never ask a bot.
 
 ## Not available yet
 

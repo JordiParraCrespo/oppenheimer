@@ -2,6 +2,7 @@ import {
   type BotGithubAskEvent,
   type BotGithubAskVia,
   type BotProvider,
+  type BotTurnOrigin,
   botDefaultModel,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
@@ -26,6 +27,16 @@ import { BotTurnEntity } from './bot-turn.entity';
  * comment of Oppenheimer's App, which wakes nothing of ours (`loopGuard`).
  * Pure.
  */
+
+/**
+ * The turns not offered a tool that writes on GitHub in the owner's name or
+ * asks another bot for an answer: a turn an ask on GitHub opened. Its answer
+ * is the App's one comment; a comment of its own would be a second answer
+ * under another name, and, being the owner's, one that names a bot would ask
+ * that bot again with nothing to bound the chain. An answer another bot sends
+ * back arrives as a turn of its own, which posts nothing on GitHub.
+ */
+export const NOT_ON_A_GITHUB_ASK = ['github'] as const satisfies readonly BotTurnOrigin[];
 
 /** The label that asks a bot, before its name: `bot:Feynman`. */
 export const GITHUB_ASK_LABEL_PREFIX = 'bot:';

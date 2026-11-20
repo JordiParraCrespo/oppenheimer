@@ -578,13 +578,16 @@ back there as one comment.
   installation that covers the repository; with none there is no ask. The
   App posts it, not the owner, so the answer is told apart from what they
   wrote, and the App's own comments wake no routine and no bot
-  (`loopGuard`), so an answer that names a bot asks nothing. The bot is told
-  not to comment there itself, so the thread never gets two answers under
-  two names. The job is not retried: an answer GitHub refused is logged,
-  and the chat still has it.
+  (`loopGuard`), so an answer that names a bot asks nothing. The turn is not
+  offered the tools that write on GitHub in the owner's name (comment,
+  review, open an issue) nor `ask_bot` (`NOT_ON_A_GITHUB_ASK`): the thread
+  never gets two answers under two names, a comment of the owner's naming a
+  bot cannot ask it again in a chain nothing bounds, and no answer arrives
+  later as a turn that posts nothing. The job is not retried: an answer
+  GitHub refused is logged, and the chat still has it.
 - **Not built:** a reply tool for progress or a question before the answer
-  (the answer is one comment), anyone but the owner asking, Slack and
-  Linear.
+  (the answer is one comment), handing part of the work to another bot and
+  posting its answer, anyone but the owner asking, Slack and Linear.
 
 ## 4. The tools
 

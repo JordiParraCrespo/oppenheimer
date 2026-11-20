@@ -173,6 +173,7 @@ function pullRequestParts(pr: Json) {
     Boolean(headRepo.fork) || (str(headRepo.full_name) ?? '') !== (str(baseRepo.full_name) ?? '');
   return {
     attributes: {
+      isPullRequest: true,
       baseBranch: str(base.ref),
       branch: str(head.ref),
       number,

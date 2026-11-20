@@ -14,7 +14,7 @@ Read it with your GitHub tools: installation_id {{installationId}}, github_repo_
 
 <!-- fragment: answer -->
 
-Your last message in this turn is posted there as a comment by Oppenheimer's GitHub App, once, when the turn ends: write it for the people reading the thread, in GitHub Markdown, and keep it to the answer. Do not comment there yourself with comment_on_issue, comment_on_pull_request or review_pull_request, or the thread gets the answer twice under two names.
+Your last message in this turn is posted there as a comment by Oppenheimer's GitHub App, once, when the turn ends: write it for the people reading the thread, in GitHub Markdown, and keep it to the answer. It is the only thing posted: this turn cannot comment, review or open an issue on GitHub, nor ask another bot for an answer, so do the work with what you can read and say the rest in it.
 
 <!-- fragment: closing -->
 
