@@ -115,16 +115,8 @@ func (rs *releaseServer) archive(t *testing.T) []byte {
 	// manifest and its signature must describe the same bytes.
 	files := [][2]string{{"runner", script}}
 	if rs.bundle != "" {
-		// The macOS release format (scripts/runner/release.sh): a runner
-		// signed on its own first, where an updater from before the bundle
-		// takes it, then the bundle. The bundle's executable is sealed to
-		// its Info.plist: taken out of the bundle, it is killed at exec,
-		// as macOS kills a hardened-runtime executable whose seal is broken.
-		sealed := "#!/bin/sh\n[ -f \"$(dirname \"$0\")/../Info.plist\" ] || kill -KILL $$\n" +
-			"exit " + string(rune('0'+rs.selfCheckExit)) + "\n"
 		files = [][2]string{
-			{"runner", script},
-			{rs.bundle + "/Contents/MacOS/runner", sealed},
+			{rs.bundle + "/Contents/MacOS/runner", script},
 			{rs.bundle + "/Contents/Info.plist", "<key>CFBundleVersion</key><string>" + rs.version + "</string>"},
 		}
 	}
@@ -158,14 +150,8 @@ type harness struct {
 
 func newHarness(t *testing.T, rs *releaseServer, running string) *harness {
 	t.Helper()
-	return newHarnessIn(t, rs, running, t.TempDir(), rs.bundle)
-}
-
-// newHarnessIn installs on the layout in home: bundle empty is a runner
-// that knows nothing of the bundle, as every one up to 0.1.12 was.
-func newHarnessIn(t *testing.T, rs *releaseServer, running, home, bundle string) *harness {
-	t.Helper()
-	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client(), Bundle: bundle})
+	home := t.TempDir()
+	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client(), Bundle: rs.bundle})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -534,50 +520,5 @@ func TestAReinstallThatDoesNotStayUpReturnsToTheBareBinary(t *testing.T) {
 	}
 	if plan, err := h.svc.Check(context.Background()); err != nil || plan.Action != domain.ActionNone {
 		t.Fatalf("after a rolled-back reinstall, plan = %s (%s), %v; want none", plan.Action, plan.Reason, err)
-	}
-}
-
-// Every runner up to 0.1.12 takes the first file named `runner` out of the
-// archive and runs it outside any bundle. When that was the bundle's own
-// executable, sealed to the bundle, macOS killed it at its self-check and
-// those Macs never updated again. The release's standalone runner is what
-// carries them across: it installs, and the new version then reinstalls
-// itself as the bundle.
-func TestAMacOnARunnerFromBeforeTheBundleUpdatesAcrossToTheBundle(t *testing.T) {
-	rs := newReleaseServer(t, "1.1.0")
-	rs.bundle = "OppenheimerRunner.app"
-	home := t.TempDir()
-	old := newHarnessIn(t, rs, "1.0.0", home, "")
-
-	if _, err := old.svc.Apply(context.Background(), app.ApplyOptions{}); err != nil {
-		t.Fatalf("the pre-bundle updater could not install the release: %v", err)
-	}
-	if got, _ := old.store.Current(); got != "1.1.0" {
-		t.Fatalf("current = %q, want 1.1.0", got)
-	}
-
-	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client(), Bundle: rs.bundle})
-	if err != nil {
-		t.Fatal(err)
-	}
-	booted := app.New(app.Options{
-		Releases: release.New(release.Options{BaseURL: rs.URL, Target: rs.target, HTTP: rs.Client(), Keys: rs.keys}),
-		Binaries: store, Restarter: &restarter{}, State: old.state, Version: "1.1.0", Channel: "stable",
-	})
-	if _, err := booted.NoteBoot(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	if err := booted.MarkHealthy(); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := booted.Apply(context.Background(), app.ApplyOptions{}); err != nil {
-		t.Fatalf("reinstall as the bundle: %v", err)
-	}
-	live, err := filepath.EvalSymlinks(filepath.Join(home, "bin", "current"))
-	if err != nil || live != filepath.Join(home, "bin", rs.bundle, "Contents", "MacOS", "runner") {
-		t.Fatalf("current runs %q (%v), want the live bundle", live, err)
-	}
-	if err := store.SelfCheck(context.Background(), live); err != nil {
-		t.Fatalf("the live bundle does not run: %v", err)
 	}
 }
