@@ -8,11 +8,12 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { ApiProblemResponse } from '@oppenheimer/backend-core';
+import { ApiProblemResponse, AppError } from '@oppenheimer/backend-core';
 import { WEBHOOK_SIGNATURE_HEADER } from '@oppenheimer/shared/automations';
 import type { Request } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
-import { rawBodyOf } from '../../../config/raw-body-parser';
+import { isBodyTooLarge, rawBodyOf } from '../../../config/raw-body-parser';
+import { AutomationErrors } from '../../domain/automations.errors';
 import { RoutineWebhookReceivedResponseDto } from '../../dtos/routine-webhook.response.dto';
 import { ReceiveRoutineWebhookCommand } from './receive-routine-webhook.command';
 import type { ReceivedWebhook } from './receive-routine-webhook.command-handler';
@@ -59,6 +60,7 @@ export class ReceiveRoutineWebhookHttpController {
     @Headers(WEBHOOK_SIGNATURE_HEADER) signature: string | undefined,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
   ): Promise<RoutineWebhookReceivedResponseDto> {
+    if (isBodyTooLarge(request)) throw new AppError(AutomationErrors.WEBHOOK_BODY_TOO_LARGE);
     const received = await this.commandBus.execute<ReceiveRoutineWebhookCommand, ReceivedWebhook>(
       new ReceiveRoutineWebhookCommand({
         token,

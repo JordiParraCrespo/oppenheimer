@@ -71,6 +71,22 @@ test("a routine's webhook URL, issued on the tab, posted to and revoked", async 
   await page.reload();
   await expect(row).toContainText('last received');
 
+  // A body over 256 KiB is a problem document, and a NUL byte is kept as text.
+  const huge = await request.post(url, { data: 'x'.repeat(300 * 1024) });
+  expect(huge.status()).toBe(413);
+  expect(((await huge.json()) as { code: string }).code).toBe('AUTOMATIONS_012');
+  const binary = Buffer.from('a\u0000b');
+  const tb = Math.floor(Date.now() / 1000);
+  const vb = createHmac('sha256', secret).update(`${tb}.`).update(binary).digest('hex');
+  const withNul = await request.post(url, {
+    data: binary,
+    headers: {
+      'content-type': 'application/octet-stream',
+      'x-oppenheimer-signature': `t=${tb},v1=${vb}`,
+    },
+  });
+  expect(withNul.status()).toBe(202);
+
   // Revoked, the URL answers 404 and the row offers a new one.
   await row.getByRole('button', { name: 'Revoke' }).click();
   const confirm = page.getByRole('alertdialog', {

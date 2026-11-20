@@ -83,15 +83,18 @@ export function verifyWebhookSignature(
 /**
  * What a run keeps of a posted body: its text, cut to `WEBHOOK_BODY_KEPT_CHARS`
  * and marked when cut, and the content type without its parameters. Bytes that
- * are not UTF-8 are kept as the replacement character, never as binary.
+ * are not UTF-8, and NUL, which Postgres `jsonb` refuses, are kept as the
+ * replacement character, never as binary.
  */
 export function webhookPayloadOf(
   rawBody: Buffer,
   contentType: string | undefined,
 ): RunWebhookPayload {
-  const text = rawBody.toString('utf8');
+  const text = rawBody.toString('utf8').replaceAll('\u0000', '\uFFFD');
   const truncated = text.length > WEBHOOK_BODY_KEPT_CHARS;
-  const type = contentType?.split(';', 1)[0]?.trim().toLowerCase().slice(0, 100) || null;
+  const type =
+    contentType?.split(';', 1)[0]?.trim().toLowerCase().replaceAll('\u0000', '').slice(0, 100) ||
+    null;
   return {
     contentType: type,
     body: truncated ? `${text.slice(0, WEBHOOK_BODY_KEPT_CHARS)}…` : text,

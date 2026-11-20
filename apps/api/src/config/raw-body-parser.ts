@@ -25,13 +25,34 @@ export function mountRawBodyParser(
   controller: Type,
   method: string,
   limit: number,
+  options: { handOverOversize?: boolean } = {},
 ): void {
   const parse = bodyParser.raw({ type: () => true, inflate: false, limit });
+  // With `handOverOversize`, a body over the limit reaches the route marked
+  // (`isBodyTooLarge`), so its handler answers with its own problem document
+  // rather than Express's HTML page.
+  const read: RequestHandler = options.handOverOversize
+    ? (req, res, next) =>
+        parse(req, res, (error?: unknown) => {
+          if ((error as { type?: string } | undefined)?.type !== 'entity.too.large') {
+            return next(error);
+          }
+          (req as Request & { [TOO_LARGE]?: true })[TOO_LARGE] = true;
+          next();
+        })
+    : parse;
   // Express mounts by prefix; only the route itself (with or without its
   // trailing slash) is read at this limit.
   const exact: RequestHandler = (req, res, next) =>
-    (req as Request).path === '/' ? parse(req, res, next) : next();
+    (req as Request).path === '/' ? read(req, res, next) : next();
   adapterHost.httpAdapter.use(routeOf(config, controller, method), exact);
+}
+
+const TOO_LARGE = Symbol('raw body over the limit');
+
+/** Whether the raw parser refused this request's body as over its limit (`handOverOversize`). */
+export function isBodyTooLarge(request: Request): boolean {
+  return (request as Request & { [TOO_LARGE]?: true })[TOO_LARGE] === true;
 }
 
 /**

@@ -253,6 +253,7 @@ export class AutomationsModule implements NestModule {
       ReceiveRoutineWebhookHttpController,
       'receive',
       WEBHOOK_BODY_MAX_BYTES,
+      { handOverOversize: true },
     );
   }
 

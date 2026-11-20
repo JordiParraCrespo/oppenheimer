@@ -206,6 +206,13 @@ describe("a routine's webhook", () => {
     expect(fired[0]?.webhookPayload?.body.length).toBe(WEBHOOK_BODY_KEPT_CHARS + 1);
   });
 
+  it('keeps a body with NUL bytes as text Postgres jsonb takes', async () => {
+    const { issueUrl, post, fired } = setup();
+    const { token } = await issueUrl();
+    await post(token, 'a\u0000b', { contentType: 'application/octet-stream' });
+    expect(fired[0]?.webhookPayload?.body).toBe('a\uFFFDb');
+  });
+
   it('refuses a token no routine holds, and the old token once a new URL is issued', async () => {
     const { issueUrl, post, fired } = setup();
     const first = await issueUrl();
