@@ -172,7 +172,7 @@ type RouteWhatsappChatsVariables = {
 /**
  * Who answers a set of a number's chats from now on: no one, the number's
  * default, or one of the reader's bots. The number's chats the server
- * answered are written in.
+ * answered are written in; on a failure they are read again.
  */
 export function useRouteWhatsappChats(
   options?: UseMutationOptions<WhatsappChatRouteEntity[], Error, RouteWhatsappChatsVariables>,
@@ -185,5 +185,11 @@ export function useRouteWhatsappChats(
     ...withCacheOnSuccess(options, (rows, { accountId }) => {
       queryClient.setQueryData(whatsappKeys.chats(accountId), rows);
     }),
+    // A selection past one call goes in turns, and the turns before a refusal
+    // are saved: the list is read again so it shows them.
+    onError: (error, variables, context, mutation) => {
+      void queryClient.invalidateQueries({ queryKey: whatsappKeys.chats(variables.accountId) });
+      return options?.onError?.(error, variables, context, mutation);
+    },
   });
 }
