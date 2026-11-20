@@ -231,10 +231,11 @@ export function nextScheduleOccurrence(rule: ScheduleRule, after: Date): Date | 
 const SHIFT_MAX = 3 * HOUR;
 
 /**
- * Eight years of days: the longest wait a cron day can ask for is 29 February
- * across a century that skips it.
+ * One Gregorian cycle of days, after which the calendar repeats: a day the
+ * walk has not met by then (`0 0 30 2 *`) never comes. Waits really are that
+ * long: 29 February on a Sunday comes in 2032 and next in 2060.
  */
-const CRON_SEARCH_DAYS = 8 * 366;
+const CRON_SEARCH_DAYS = 146_097;
 
 /**
  * A cron expression's first instant after `afterMs`, walking local calendar

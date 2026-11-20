@@ -274,9 +274,13 @@ function stepOf(values: readonly number[]): number | null {
   return values.every((value, index) => value === values[0] + index * step) ? step : null;
 }
 
-/** Whether the values are a step run that covers the field from its start, as `*\/step` does. */
-function coversField(values: readonly number[], step: number, max: number): boolean {
-  return values[0] < step && values[values.length - 1] + step > max;
+/**
+ * Whether a step run keeps its step across the field's wrap too, so "every
+ * step" is true without a gap: `*\/15` does (:45 to the next :00), `*\/25`
+ * does not (:50 to the next :00 is ten minutes).
+ */
+function stepsThroughWrap(values: readonly number[], step: number, size: number): boolean {
+  return values[0] + size - values[values.length - 1] === step;
 }
 
 function timeWords(spec: CronSpec): CronTimeWords {
@@ -292,13 +296,13 @@ function timeWords(spec: CronSpec): CronTimeWords {
   const first = { hour: hours[0], minute: minutes[0] };
   const last = { hour: hours[hours.length - 1], minute: minutes[minutes.length - 1] };
   const minuteStep = stepOf(minutes);
-  if (minuteStep && coversField(minutes, minuteStep, 59) && (allDay || hourStep === 1)) {
+  if (minuteStep && stepsThroughWrap(minutes, minuteStep, 60) && (allDay || hourStep === 1)) {
     return allDay && minutes[0] === 0
       ? { kind: 'everyMinutes', step: minuteStep }
       : { kind: 'everyMinutes', step: minuteStep, from: first, to: last };
   }
   if (minutes.length === 1 && hourStep) {
-    const whole = coversField(hours, hourStep, 23) && hours[0] === 0;
+    const whole = stepsThroughWrap(hours, hourStep, 24) && hours[0] === 0;
     return whole
       ? { kind: 'everyHours', step: hourStep, minute: minutes[0] }
       : { kind: 'everyHours', step: hourStep, minute: minutes[0], from: first, to: last };

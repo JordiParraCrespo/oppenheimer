@@ -48,6 +48,8 @@ describe('a cron schedule fires what the fixed frequencies cannot say', () => {
   it('a day that comes once in four years, and none for a day that never comes', () => {
     expect(next('0 12 29 2 *', '2026-03-01T00:00:00Z')).toBe('2028-02-29T11:00:00.000Z');
     expect(next('0 0 30 2 *', '2026-03-01T00:00:00Z')).toBeUndefined();
+    // 29 February on a Sunday: 2032, then not until 2060.
+    expect(next('0 12 29 2 */7', '2032-03-01T00:00:00Z')).toBe('2060-02-29T11:00:00.000Z');
   });
 });
 
@@ -134,6 +136,12 @@ describe('a cron schedule in words', () => {
 
   it('says hour steps, months and both day fields', () => {
     expect(cronToEnglish('0 */2 * * 1-5')).toBe('Every 2 hours at :00, Monday to Friday');
+    // A step that does not divide the hour is not "every 25 minutes": :50 to :00 is ten.
+    expect(cronToEnglish('*/25 * * * *')).toBe('Every hour at :00, :25 and :50, every day');
+    expect(cronToEnglish('0 0-18/3 * * *')).toBe(
+      'Every 3 hours at :00 from 00:00 to 18:00, every day',
+    );
+    expect(cronToEnglish('0 */3 * * *')).toBe('Every 3 hours at :00, every day');
     expect(cronToEnglish('30 9 1 1,7 *')).toBe(
       'At 09:30, on day 1 of the month, in January and July',
     );
