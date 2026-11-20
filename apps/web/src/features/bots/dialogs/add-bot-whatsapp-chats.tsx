@@ -141,7 +141,9 @@ export function AddBotWhatsappChatsDialog({
               route.mutate({ accountId, chatIds: [...picked], answer: { kind: 'bot', botId } })
             }
           >
-            {t('bots.settings.gateways.addCount', { count: picked.size })}
+            {picked.size === 0
+              ? t('bots.settings.gateways.add')
+              : t('bots.settings.gateways.addCount', { count: picked.size })}
           </Button>
         </DialogFooter>
       </DialogContent>

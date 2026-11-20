@@ -1831,3 +1831,12 @@ earlier note:
   first version gives a contact's turn no tools at all, and counts its limit
   of 20 turns an hour per chat rather than per person. The narrow tools
   come after.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-18) had a
+  chat allowed only by asking a bot in the owner's own chat, Settings
+  listing the allowed ones, at most 50 per number. On 2026-11-20 the owner,
+  with 25 groups and 200 contacts in mind, asked for settings that scale
+  and for a bot to show its gateways: Settings lists every chat a number
+  has seen, with search, filters and changes to many at once, and choosing
+  a bot there allows the chat; a bot's settings show the chats it answers
+  and add more. Only listed chats are answered (no catch-all), and a
+  number allows up to 1,000.
