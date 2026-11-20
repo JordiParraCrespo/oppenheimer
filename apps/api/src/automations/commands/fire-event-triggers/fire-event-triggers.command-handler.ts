@@ -70,7 +70,7 @@ export class FireEventTriggersCommandHandler
     // Every candidate is of this workspace: its overrides are read once.
     const workspace = await this.limits.workspace(command.organizationId);
     const branchBots = await this.branchBots.of(
-      command,
+      { ...command, subjectName: found.unwrap().subject.name },
       matching.some(({ automation }) => automation.target.kind === 'bot'),
     );
     let queued = 0;
@@ -99,10 +99,7 @@ export class FireEventTriggersCommandHandler
         (recent) => {
           const verdict = firstRefusal(
             () => loopGuard(command.actorIsOwnApp),
-            () =>
-              ownSessionGuard(
-                automation.target.kind === 'bot' && branchBots.has(automation.target.botId),
-              ),
+            () => ownSessionGuard(automation.target, branchBots),
             () => rateGuard(limits, recent, false),
           );
           return verdict.kind === 'skip'

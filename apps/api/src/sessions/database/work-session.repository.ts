@@ -25,6 +25,7 @@ import { WorkSessionMapper } from '../work-session.mapper';
 import { WorkSessionEventMapper } from '../work-session-event.mapper';
 import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
 import { SessionCheckoutRepository } from './session-checkout.repository';
+import { SessionCloudRunOrmEntity } from './session-cloud-run.orm-entity';
 import { SessionCloudRunRepository } from './session-cloud-run.repository';
 import { SessionTurnRepository } from './session-turn.repository';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
@@ -562,12 +563,12 @@ export class WorkSessionRepository
 
   async findBotsOnBranchForSystem(
     organizationId: string,
-    githubRepoId: string,
-    branch: string,
+    repository: { githubRepoId: string; repositoryFullName: string; branch: string },
   ): Promise<string[]> {
-    const rows: { botId: string }[] = await this.unscopedQuery(
-      'a routine woken by a GitHub event asks whether its own bot started the branch, and a webhook has no person to scope by',
-    )
+    const { githubRepoId, repositoryFullName, branch } = repository;
+    const reason =
+      'a routine woken by a GitHub event asks whether its own bot started the branch, and a webhook has no person to scope by';
+    const onCheckout: { botId: string }[] = await this.unscopedQuery(reason)
       .innerJoin(
         SessionCheckoutOrmEntity,
         'checkout',
@@ -580,7 +581,24 @@ export class WorkSessionRepository
       .select('session.botId', 'botId')
       .distinct(true)
       .getRawMany();
-    return rows.map((row) => row.botId);
+    // A cloud run names its repository the one way a plan writes it,
+    // `https://github.com/<owner>/<name>`; GitHub compares names case-blind.
+    const onCloudRun: { botId: string }[] = await this.unscopedQuery(reason)
+      .innerJoin(
+        SessionCloudRunOrmEntity,
+        'run',
+        'run.sessionId = session.id AND run.organizationId = session.organizationId',
+      )
+      .where('session.organizationId = :organizationId', { organizationId })
+      .andWhere('session.botId IS NOT NULL')
+      .andWhere('run.branch = :branch', { branch })
+      .andWhere('lower(run.repositoryUrl) = lower(:url)', {
+        url: `https://github.com/${repositoryFullName}`,
+      })
+      .select('session.botId', 'botId')
+      .distinct(true)
+      .getRawMany();
+    return [...new Set([...onCheckout, ...onCloudRun].map((row) => row.botId))];
   }
 
   async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {

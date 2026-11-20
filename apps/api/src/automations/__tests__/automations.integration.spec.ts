@@ -116,7 +116,9 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       get: () => undefined,
     } as unknown as ConfigService);
     tick = new FireDueSchedulesCommandHandler(automations, limits);
-    const lookup = { findOne: async () => Some({}) } as unknown as InboundEventLookupPort;
+    const lookup = {
+      findOne: async () => Some({ subject: { name: 'acme/atlas' } }),
+    } as unknown as InboundEventLookupPort;
     const eventViews = {
       eventViewOf: () => ({
         type: 'pr_opened',

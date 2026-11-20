@@ -165,15 +165,16 @@ export interface WorkSessionRepositoryPort {
   ): Promise<WorkSessionEntity[]>;
 
   /**
-   * The bots that started a session in this workspace with a checkout of
-   * this repository on this branch, retired checkouts and ended sessions
-   * included: a pull request outlives the session that opened it. For a
-   * routine woken by a GitHub event on that branch; no person scopes a webhook.
+   * The bots that started a session in this workspace on this repository's
+   * branch: a host session's checkout of it (retired ones included), or a
+   * cloud session's run that pushed it, whose repository is its URL. Ended
+   * sessions count: a pull request outlives the session that opened it. For
+   * a routine woken by a GitHub event on that branch; no person scopes a
+   * webhook.
    */
   findBotsOnBranchForSystem(
     organizationId: string,
-    githubRepoId: string,
-    branch: string,
+    repository: { githubRepoId: string; repositoryFullName: string; branch: string },
   ): Promise<string[]>;
 
   /**

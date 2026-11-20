@@ -12,7 +12,8 @@ turn started another session, it looped until the hourly cap.
 
 A session a bot starts now records that bot (`work_session.botId`). When a
 GitHub event names a branch (pull request opened, pushed, merged, a check, a
-review, a push), a routine whose bot started a session on that branch records
-the run as skipped, `own_session_event`. Other bots' routines and session
+review, a push), a routine whose bot started a session on that branch, a host
+session's checkout or a cloud session's run, records the run as skipped,
+`own_session_event`. A fork's pull request never counts as a bot's own. Other bots' routines and session
 automations still fire, and a bot following its own pull request with
 `watch_pull_request` still wakes.

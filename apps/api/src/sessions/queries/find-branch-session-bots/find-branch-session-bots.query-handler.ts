@@ -15,10 +15,10 @@ export class FindBranchSessionBotsQueryHandler
   ) {}
 
   execute(query: FindBranchSessionBotsQuery): Promise<string[]> {
-    return this.sessions.findBotsOnBranchForSystem(
-      query.organizationId,
-      query.githubRepoId,
-      query.branch,
-    );
+    return this.sessions.findBotsOnBranchForSystem(query.organizationId, {
+      githubRepoId: query.githubRepoId,
+      repositoryFullName: query.repositoryFullName,
+      branch: query.branch,
+    });
   }
 }

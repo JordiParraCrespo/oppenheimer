@@ -77,7 +77,7 @@ function routine(botId: string) {
   return { automation, trigger: automation.triggers[0] };
 }
 
-function command(actorIsOwnApp = false, branch = 'feature/x') {
+function command(actorIsOwnApp = false, branch = 'feature/x', fork = false) {
   return new FireEventTriggersCommand({
     organizationId: 'org-1',
     inboundEventId: 'event-1',
@@ -86,7 +86,7 @@ function command(actorIsOwnApp = false, branch = 'feature/x') {
     subjectRef: '101',
     externalId: 'delivery-1',
     actorIsOwnApp,
-    attributes: { baseBranch: 'main', branch },
+    attributes: { baseBranch: 'main', branch, fork },
     metadata: { correlationId: 'delivery-corr' },
   });
 }
@@ -118,7 +118,7 @@ function setup(
   );
   const runs = { fireUnderCaps } as unknown as AutomationRunRepositoryPort;
   const events = {
-    findOne: vi.fn(async () => Some({})),
+    findOne: vi.fn(async () => Some({ subject: { name: 'acme/atlas' } })),
   } as unknown as InboundEventLookupPort;
   const find = vi.fn(async () => ({ maxRunsPerWorkspaceHour: 7 }));
   const settings: AutomationSettingsRepositoryPort = { find, upsert: vi.fn() };
@@ -209,6 +209,7 @@ describe('FireEventTriggersCommandHandler', () => {
       new FindBranchSessionBotsQuery({
         organizationId: 'org-1',
         githubRepoId: '101',
+        repositoryFullName: 'acme/atlas',
         branch: 'opp/fix-login',
       }),
     );
@@ -217,6 +218,16 @@ describe('FireEventTriggersCommandHandler', () => {
   it('asks nothing of the sessions when no routine is among the matches', async () => {
     const { handler, queryBus } = setup({ automation: 0, workspace: 0 });
     expect(await handler.execute(command())).toBe(3);
+    expect(queryBus.execute).not.toHaveBeenCalled();
+  });
+
+  it("fires a bot's routine for a fork's pull request, whatever its branch is called", async () => {
+    // A fork's branch is the fork's, not the base repository's: a bot session's
+    // branch name reused on a fork must not hide someone else's pull request.
+    const own = routine('bot-1');
+    const { handler, decided, queryBus } = setup({ automation: 0, workspace: 0 }, [own], ['bot-1']);
+    expect(await handler.execute(command(false, 'opp/fix-login', true))).toBe(1);
+    expect(decided.map((run) => run.skipReason)).toEqual([null]);
     expect(queryBus.execute).not.toHaveBeenCalled();
   });
 });

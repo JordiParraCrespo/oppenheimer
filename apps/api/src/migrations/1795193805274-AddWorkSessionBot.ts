@@ -12,8 +12,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * never names another workspace's bot. Adding a null column rewrites no row.
  *
  * The lookup goes from the event's repository and branch to the sessions on
- * it, so `session_checkout` gets that index; `work_session.botId` gets one for
- * the foreign key's `SET NULL`.
+ * it, a host session's checkout or a cloud session's run, so each gets that
+ * index; `work_session.botId` gets one for the foreign key's `SET NULL`.
  */
 export class AddWorkSessionBot1795193805274 implements MigrationInterface {
   name = 'AddWorkSessionBot1795193805274';
@@ -32,9 +32,13 @@ export class AddWorkSessionBot1795193805274 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX "IDX_session_checkout_repo_branch" ON "session_checkout" ("organizationId", "githubRepoId", branch)`,
     );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_session_cloud_run_branch" ON "session_cloud_run" ("organizationId", branch) WHERE branch IS NOT NULL`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX "IDX_session_cloud_run_branch"`);
     await queryRunner.query(`DROP INDEX "IDX_session_checkout_repo_branch"`);
     await queryRunner.query(`DROP INDEX "IDX_work_session_bot"`);
     await queryRunner.query(`ALTER TABLE "work_session" DROP CONSTRAINT "FK_work_session_bot"`);

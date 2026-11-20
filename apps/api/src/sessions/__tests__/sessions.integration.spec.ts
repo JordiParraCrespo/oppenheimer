@@ -968,17 +968,33 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const branchOf = (work: WorkSessionEntity) => `oppenheimer/xrp-mobile/${work.slug}`;
 
       expect(
-        await repository.findBotsOnBranchForSystem(organizationId, '4242', branchOf(mine)),
+        await repository.findBotsOnBranchForSystem(organizationId, {
+          githubRepoId: '4242',
+          repositoryFullName: 'acme/xrp-mobile',
+          branch: branchOf(mine),
+        }),
       ).toEqual([botId]);
       // A person's session, another repository, another workspace: no bot.
       expect(
-        await repository.findBotsOnBranchForSystem(organizationId, '4242', branchOf(persons)),
+        await repository.findBotsOnBranchForSystem(organizationId, {
+          githubRepoId: '4242',
+          repositoryFullName: 'acme/xrp-mobile',
+          branch: branchOf(persons),
+        }),
       ).toEqual([]);
       expect(
-        await repository.findBotsOnBranchForSystem(organizationId, '9999', branchOf(mine)),
+        await repository.findBotsOnBranchForSystem(organizationId, {
+          githubRepoId: '9999',
+          repositoryFullName: 'acme/xrp-mobile',
+          branch: branchOf(mine),
+        }),
       ).toEqual([]);
       expect(
-        await repository.findBotsOnBranchForSystem(otherOrganizationId, '4242', branchOf(mine)),
+        await repository.findBotsOnBranchForSystem(otherOrganizationId, {
+          githubRepoId: '4242',
+          repositoryFullName: 'acme/xrp-mobile',
+          branch: branchOf(mine),
+        }),
       ).toEqual([]);
 
       // The pull request outlives the session: a retired checkout still counts.
@@ -987,7 +1003,11 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         [mine.id],
       );
       expect(
-        await repository.findBotsOnBranchForSystem(organizationId, '4242', branchOf(mine)),
+        await repository.findBotsOnBranchForSystem(organizationId, {
+          githubRepoId: '4242',
+          repositoryFullName: 'acme/xrp-mobile',
+          branch: branchOf(mine),
+        }),
       ).toEqual([botId]);
 
       // Only a bot's session names a bot, and deleting the bot leaves the session.
@@ -1426,6 +1446,49 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         ...entry,
         source: 'api' as const,
       }));
+
+    it("names the bot whose cloud session pushed a branch, by the run's repository", async () => {
+      const botId = randomUUID();
+      await dataSource.query(
+        `INSERT INTO bot ("id", "organizationId", "name") VALUES ($1, $2, 'Juno')`,
+        [botId, organizationId],
+      );
+      const id = randomUUID();
+      const work = WorkSessionEntity.requestCloud({
+        id,
+        cloudRun: SessionCloudRunEntity.launched(
+          {
+            organizationId,
+            sessionId: id,
+            provider: 'cursor',
+            externalId: `bc-${id}`,
+            url: null,
+            repositoryUrl: 'https://github.com/acme/api',
+            run: { ...run('running'), branch: 'cursor/fix-login' },
+          },
+          new Date(),
+        ),
+        organizationId,
+        projectId,
+        createdByUserId: userId,
+        slug: mintSessionSlug(),
+        agent: 'cursor',
+        origin: 'bot',
+        botId,
+      });
+      await repository.createIfUnclaimed(work, [...requested(), ...reported(run('running'))]);
+
+      const lookup = (repositoryFullName: string, branch: string) =>
+        repository.findBotsOnBranchForSystem(organizationId, {
+          githubRepoId: '777',
+          repositoryFullName,
+          branch,
+        });
+      // GitHub reports the name in its own case; the run's URL is matched case-blind.
+      expect(await lookup('Acme/API', 'cursor/fix-login')).toEqual([botId]);
+      expect(await lookup('acme/api', 'cursor/other')).toEqual([]);
+      expect(await lookup('acme/api-v2', 'cursor/fix-login')).toEqual([]);
+    });
 
     it('is a session with no host, read back with its vendor half, in its project', async () => {
       const work = cloudSession(run('running'));
