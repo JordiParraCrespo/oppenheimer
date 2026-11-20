@@ -34,11 +34,11 @@ A routine has one webhook URL, so at most one webhook trigger.
 
 <!-- fragment: describe-webhook-issued -->
 
-something posted to its webhook URL (issued)
+webhook URL issued
 
 <!-- fragment: describe-webhook-not-issued -->
 
-something posted to its webhook URL (no URL yet: the person issues it on the Routines tab)
+no webhook URL yet: the person issues it on the Routines tab
 
 <!-- fragment: routine-action -->
 

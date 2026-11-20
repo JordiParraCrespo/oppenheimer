@@ -300,20 +300,10 @@ export class BotRoutineToolsFactory implements BotToolArea {
       'Your routines',
       automations.map((routine) => {
         const lastRun = digests.get(routine.id)?.lastRuns[0];
-        const hasUrl = webhooks?.has(routine.id) ?? false;
         const parts = [
           routine.isPaused ? 'paused' : 'on',
-          `when: ${routine.triggers
-            .map((trigger) =>
-              trigger.source === 'webhook'
-                ? promptText(
-                    hasUrl
-                      ? 'tools/routine.describe-webhook-issued'
-                      : 'tools/routine.describe-webhook-not-issued',
-                  )
-                : describeTrigger(trigger, context),
-            )
-            .join(' or ')}`,
+          `when: ${routine.triggers.map((trigger) => describeTrigger(trigger, context)).join(' or ')}`,
+          ...webhookUrlState(routine, webhooks),
           lastRun
             ? `last run ${lastRun.status} ${formatToolTime(lastRun.createdAt, context.timeZone)}`
             : 'no runs yet',
@@ -324,6 +314,21 @@ export class BotRoutineToolsFactory implements BotToolArea {
       { shown: automations.length, total: automations.length, hint: '' },
     );
   }
+}
+
+/** Whether a routine with a webhook trigger has its URL yet; nothing for any other routine. */
+function webhookUrlState(
+  routine: AutomationEntity,
+  webhooks: AutomationListing['webhooks'],
+): string[] {
+  if (!routine.triggers.some((trigger) => trigger.source === 'webhook')) return [];
+  return [
+    promptText(
+      webhooks?.has(routine.id)
+        ? 'tools/routine.describe-webhook-issued'
+        : 'tools/routine.describe-webhook-not-issued',
+    ),
+  ];
 }
 
 /** A trigger as the card states it, before it is saved. */

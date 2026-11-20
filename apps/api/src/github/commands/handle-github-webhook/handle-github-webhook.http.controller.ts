@@ -15,7 +15,7 @@ import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
  * Reads `req.body` as the raw bytes `mountGithubWebhookBodyParser` left there
  * (`GithubModule` mounts it on this route), so the digest is taken over exactly what
  * GitHub signed rather than a re-serialized object. A body past GitHub's 25 MB
- * cap is refused with 413 before it gets here.
+ * cap is answered 413, as a problem document, by `rawBodyOf`.
  */
 @Controller('github')
 export class HandleGithubWebhookHttpController {

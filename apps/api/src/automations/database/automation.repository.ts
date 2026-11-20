@@ -29,6 +29,7 @@ import {
 import { AutomationSettingsOrmEntity } from './automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from './automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from './automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from './automation-webhook.orm-entity';
 
 /**
  * The automation aggregate's store: the row, its current revision and its
@@ -409,6 +410,14 @@ export class AutomationRepository
         organizationId: entity.organizationId,
       }));
       if (subjects.length > 0) await manager.insert(AutomationTriggerSubjectOrmEntity, subjects);
+    }
+    // A routine's URL goes with its webhook trigger, in the same transaction,
+    // so a webhook added back later gets a new one.
+    if (!entity.triggers.some((trigger) => trigger.source === 'webhook')) {
+      await manager.delete(AutomationWebhookOrmEntity, {
+        organizationId: entity.organizationId,
+        automationId: entity.id,
+      });
     }
   }
 
