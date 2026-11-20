@@ -1792,3 +1792,12 @@ earlier note:
   the allowed chats with who allowed each, their bot and Remove. Which bots
   answer on a number is its default plus a bot per allowed chat, not a list
   of bots per number (`next-steps/whatsapp.md`, open question 1).
+- `versions/mvp/09-runner-install-and-update.md` §5 (2026-11-04) had a Mac
+  that a runner from before the bundle updated run the bare binary out of
+  the new archive, then reinstall itself as the bundle. That bare binary is
+  the bundle's executable, sealed to the bundle by its signature, and macOS
+  kills it outside the bundle, so no Mac on 0.1.12 or older updated to 0.1.13
+  or later (seen on 2026-11-19, with 22 failed stages left in `.staging`).
+  With one Mac on the runner, already moved by hand, the owner chose on
+  2026-11-20 not to build a way across: §5 now says such a Mac is moved by
+  hand. A failed stage is now deleted, and a boot sweeps old ones.
