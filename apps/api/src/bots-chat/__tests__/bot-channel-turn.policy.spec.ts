@@ -20,6 +20,18 @@ describe('channelReplyOf', () => {
     expect(channelReplyOf({ status: 'cancelled', error: null }, [])).toBe('Stopped.');
     expect(channelReplyOf({ status: 'completed', error: null }, [])).toMatch(/console/);
   });
+
+  // What breaks this: a turn that stopped on a card leaves the chat with "Done"
+  // and no way to the card, which is answered only in the console.
+  it('says the turn waits on an approval, with where to give it', () => {
+    const at = 'https://console.example/bots/b1';
+    expect(channelReplyOf({ status: 'completed', error: null }, ['I will merge it.'], at)).toBe(
+      `I will merge it.\n\nWaiting for your approval in Oppenheimer: ${at}`,
+    );
+    expect(channelReplyOf({ status: 'completed', error: null }, [], at)).toBe(
+      `Waiting for your approval in Oppenheimer: ${at}`,
+    );
+  });
 });
 
 describe('channelConversationFor', () => {

@@ -127,19 +127,25 @@ export class SaidAsItGoes {
 }
 
 /**
- * What a channel's turn (Telegram, WhatsApp) sends back when it ends: its
- * last text, or, with none, what happened to it, so the person on their
- * phone is never left without an answer.
+ * What a channel's turn (Telegram, WhatsApp, Slack) sends back when it ends:
+ * its last text, or, with none, what happened to it, so the person on their
+ * phone is never left without an answer. A turn that ended on a Needs input
+ * card says so with the card's address (`waitingAt`): the card is answered in
+ * the console, never from the chat.
  */
 export function channelReplyOf(
   turn: { status: string; error: string | null },
   texts: readonly string[],
+  waitingAt: string | null = null,
 ): string {
   const last = [...texts].reverse().find((text) => text.trim()) ?? null;
   if (turn.status === 'failed') {
     return `I could not finish that: ${turn.error ?? 'the turn failed.'}`;
   }
+  const waiting = waitingAt ? `Waiting for your approval in Oppenheimer: ${waitingAt}` : null;
+  if (last && waiting) return `${last}\n\n${waiting}`;
   if (last) return last;
+  if (waiting) return waiting;
   if (turn.status === 'cancelled') return 'Stopped.';
   return 'Done, with nothing to say here. The console has the details.';
 }

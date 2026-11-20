@@ -263,6 +263,9 @@ owner chose**, not by the API.
 
 ### 7.2 Slack: one Oppenheimer app, installed per workspace
 
+*Changed 2026-11-20: each bot has a Slack app of its own, made from a
+manifest, and answers only its owner; see [Slack for bots](slack-for-bots.md).*
+
 - **One app,** installed into a Slack workspace with OAuth ("Add to
   Slack"), events over HTTP to `POST /v1/channels/slack/events`, verified by
   Slack's signing secret. No Socket Mode: the API has a public URL.

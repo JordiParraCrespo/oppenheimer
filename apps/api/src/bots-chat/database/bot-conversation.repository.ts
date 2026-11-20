@@ -17,6 +17,7 @@ import type {
 const ACCOUNT_COLUMN = {
   telegram: '"telegramAccountId"',
   whatsapp: '"whatsappAccountId"',
+  slack: '"slackAccountId"',
 } as const satisfies Record<BotChannelChat['kind'], string>;
 
 @Injectable()
@@ -62,7 +63,7 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
   ): Promise<BotChannelChat | null> {
     // PK_bot_conversation.
     const [row]: BotConversationChatRecord[] = await this.dataSource.query(
-      `SELECT "organizationId", "botId", kind, "telegramAccountId", "whatsappAccountId", "chatId"
+      `SELECT "organizationId", "botId", kind, "telegramAccountId", "whatsappAccountId", "slackAccountId", "chatId"
          FROM bot_conversation
         WHERE "organizationId" = $1 AND id = $2 AND kind <> 'console'`,
       [organizationId, conversationId],
@@ -111,5 +112,12 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
 }
 
 function accountIdOf(chat: BotChannelChat): string {
-  return chat.kind === 'telegram' ? chat.telegramAccountId : chat.whatsappAccountId;
+  switch (chat.kind) {
+    case 'telegram':
+      return chat.telegramAccountId;
+    case 'whatsapp':
+      return chat.whatsappAccountId;
+    case 'slack':
+      return chat.slackAccountId;
+  }
 }

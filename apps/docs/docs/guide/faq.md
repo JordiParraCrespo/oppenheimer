@@ -66,4 +66,4 @@ Use `opp` or the MCP server with a scoped API token. See [CLI and MCP](./cli-and
 
 ## What is not available yet?
 
-Virtual machines and containers as hosts; teams; Slack; people writing to a bot over mail, WhatsApp, Telegram or Slack; bot templates and group chats; the `/plan` and `/grill-me` commands; automation templates and headless runs; push guardrails; extra terminal windows in the console; pull requests from forks in review sessions.
+Virtual machines and containers as hosts; teams; starting or following sessions from Slack (bots answer there: see [Bots](./bots.md#asking-a-bot-from-slack)); people writing to a bot over mail, WhatsApp or Telegram; bot templates and group chats; the `/plan` and `/grill-me` commands; automation templates and headless runs; push guardrails; extra terminal windows in the console; pull requests from forks in review sessions.

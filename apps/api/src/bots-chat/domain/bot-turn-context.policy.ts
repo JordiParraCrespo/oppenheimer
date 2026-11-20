@@ -53,6 +53,7 @@ export interface TurnContextInput {
 const CHANNEL_LINES: Readonly<Record<BotChannelOrigin, PlainPromptId>> = {
   telegram: 'turn/context.on-telegram',
   whatsapp: 'turn/context.on-whatsapp',
+  slack: 'turn/context.on-slack',
 };
 
 /** How many hosts the turn context lists; the rest are counted. */

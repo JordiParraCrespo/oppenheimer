@@ -19016,6 +19016,383 @@
         ]
       }
     },
+    "/api/v1/slack/accounts": {
+      "get": {
+        "description": "Each connected app, the bot it is and the Slack workspace it is in. Never a token.",
+        "operationId": "findSlackAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SlackAccountResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List your bots’ Slack apps",
+        "tags": [
+          "Slack"
+        ]
+      },
+      "post": {
+        "description": "Slack is asked whose the bot token is first; a token it refuses is not stored. The token and the signing secret are sealed, replace the bot’s earlier ones, and are never returned. The app answers only its owner, once they send it the code of `POST /slack/accounts/{id}/owner-link`.",
+        "operationId": "connectSlack",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectSlackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackAccountResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SLACK_002 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SLACK_005 — That Slack app already answers as another bot",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SLACK_004 — Slack refused the bot token",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "SLACK_007 — Slack's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "SLACK_006 — Slack did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SLACK_003 — Slack is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a bot’s own Slack app",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
+    "/api/v1/slack/bots/{botId}/app": {
+      "get": {
+        "description": "The address Slack sends the bot’s events to, its app manifest (the bot’s name, the scopes and events it needs), and the link that opens Slack’s \"Create an app\" with the manifest filled in.",
+        "operationId": "findSlackAppSetup",
+        "parameters": [
+          {
+            "name": "botId",
+            "required": true,
+            "in": "path",
+            "description": "One of the caller’s bots.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackAppSetupResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SLACK_003 — Slack is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "What creating a bot’s Slack app takes",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
+    "/api/v1/slack/accounts/{id}/owner-link": {
+      "post": {
+        "description": "Answers the message to send the bot’s Slack app in its DM, with a one-time code, and a link that opens that DM. Whoever sends it within ten minutes is recorded as the owner: the only Slack user the bot answers. A new code replaces an open one; it is stored hashed, so only this answer carries it.",
+        "operationId": "openSlackOwnerLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Slack app.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackOwnerLinkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SLACK_001 — No such Slack app",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a one-time code that records the owner",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
+    "/api/v1/slack/accounts/{id}": {
+      "delete": {
+        "description": "Forgets the app’s token and signing secret, so the bot stops answering in Slack. The app stays in Slack: delete it there to end it. An id that is not one of the caller’s does nothing.",
+        "operationId": "removeSlackAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Slack app.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a bot’s Slack app",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
     "/api/v1/pulls": {
       "get": {
         "description": "Open pull requests read live through the workspace’s installations: all of them (`all`), or yours and your sessions’ (`mine`) and review requests (`requested`) from every repository, the rest (`watching`) only from the repositories the caller watches; longest wait first, each with its lane and what holds it.",
@@ -27359,6 +27736,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -27422,6 +27801,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -27527,6 +27908,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -27656,6 +28039,8 @@
               "whatsapp:write",
               "telegram:read",
               "telegram:write",
+              "slack:read",
+              "slack:write",
               "cloud-agents:read",
               "cloud-agents:write",
               "pulls:read",
@@ -27736,6 +28121,7 @@
               "mail",
               "whatsapp",
               "telegram",
+              "slack",
               "cloud-agents",
               "pulls",
               "repositories",
@@ -27830,6 +28216,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -27907,6 +28295,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -28019,6 +28409,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -37118,6 +37510,152 @@
         },
         "required": [
           "answeringBotId"
+        ]
+      },
+      "SlackAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The Oppenheimer bot the app is."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "revoked"
+            ],
+            "description": "`connected` answers; `revoked` is a token Slack refused (the app was uninstalled, or the token rotated), until it is connected again."
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why it is revoked, in Slack’s words."
+          },
+          "teamId": {
+            "type": "string",
+            "example": "T0123ABCD",
+            "description": "The Slack workspace the app is installed in."
+          },
+          "teamName": {
+            "type": "string",
+            "example": "Acme"
+          },
+          "botUserId": {
+            "type": "string",
+            "example": "U0123ABCD",
+            "description": "The app’s bot user."
+          },
+          "botName": {
+            "type": "string",
+            "example": "juno"
+          },
+          "tokenHint": {
+            "type": "string",
+            "example": "x9Qa",
+            "description": "The bot token’s last characters."
+          },
+          "ownerLinked": {
+            "type": "boolean",
+            "description": "Whether the owner’s Slack user is recorded, by the one-time `link` code."
+          },
+          "linkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it was first connected."
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "status",
+          "statusReason",
+          "teamId",
+          "teamName",
+          "botUserId",
+          "botName",
+          "tokenHint",
+          "ownerLinked",
+          "linkedAt"
+        ]
+      },
+      "SlackAppSetupResponseDto": {
+        "type": "object",
+        "properties": {
+          "eventsUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://api.example.com/api/v1/slack/events?bot=9f1c…",
+            "description": "The address Slack sends the app’s events to: this bot’s."
+          },
+          "createUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Opens Slack’s \"Create an app\" with the manifest below filled in."
+          },
+          "manifest": {
+            "type": "string",
+            "description": "The app’s manifest, as JSON: its name, scopes and events."
+          }
+        },
+        "required": [
+          "eventsUrl",
+          "createUrl",
+          "manifest"
+        ]
+      },
+      "ConnectSlackRequest": {
+        "type": "object",
+        "properties": {
+          "botId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "botToken": {
+            "type": "string",
+            "maxLength": 260,
+            "pattern": "^xoxb-[A-Za-z0-9-]{20,250}$"
+          },
+          "signingSecret": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        "required": [
+          "botId",
+          "botToken",
+          "signingSecret"
+        ]
+      },
+      "SlackOwnerLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "link Q2xhdWRlIHdh",
+            "description": "What to send the app in its DM."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://slack.com/app_redirect?channel=U0123ABCD&team=T0123ABCD",
+            "description": "Opens the app’s direct messages in Slack."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the code stops working: ten minutes after it was made."
+          }
+        },
+        "required": [
+          "message",
+          "url",
+          "expiresAt"
         ]
       },
       "PullRequestLaneReasonDto": {

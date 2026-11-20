@@ -84,6 +84,7 @@ import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './rou
 import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
 import { Route as AuthenticatedBotsBotIdSettingsSkillsRouteImport } from './routes/_authenticated/bots_.$botId.settings/skills'
+import { Route as AuthenticatedBotsBotIdSettingsSlackRouteImport } from './routes/_authenticated/bots_.$botId.settings/slack'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
 import { Route as AuthenticatedSettingsHostsHostIdDesktopRouteImport } from './routes/_authenticated/settings/hosts/$hostId.desktop'
 
@@ -504,6 +505,12 @@ const AuthenticatedBotsBotIdSettingsSkillsRoute =
     path: '/skills',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsSlackRoute =
+  AuthenticatedBotsBotIdSettingsSlackRouteImport.update({
+    id: '/slack',
+    path: '/slack',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport.update({
     id: '/pulls_/$installationId/$githubRepoId/$number',
@@ -589,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
+  '/bots/$botId/settings/slack': typeof AuthenticatedBotsBotIdSettingsSlackRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
@@ -659,6 +667,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
+  '/bots/$botId/settings/slack': typeof AuthenticatedBotsBotIdSettingsSlackRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
@@ -739,6 +748,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/_authenticated/bots_/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
+  '/_authenticated/bots_/$botId/settings/slack': typeof AuthenticatedBotsBotIdSettingsSlackRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/_authenticated/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
@@ -817,6 +827,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
     | '/bots/$botId/settings/skills'
+    | '/bots/$botId/settings/slack'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/settings/hosts/$hostId/desktop'
     | '/bots/$botId/settings/'
@@ -887,6 +898,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
     | '/bots/$botId/settings/skills'
+    | '/bots/$botId/settings/slack'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/settings/hosts/$hostId/desktop'
     | '/bots/$botId/settings'
@@ -966,6 +978,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
     | '/_authenticated/bots_/$botId/settings/skills'
+    | '/_authenticated/bots_/$botId/settings/slack'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
     | '/_authenticated/settings/hosts/$hostId/desktop'
     | '/_authenticated/bots_/$botId/settings/'
@@ -1509,6 +1522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/slack': {
+      id: '/_authenticated/bots_/$botId/settings/slack'
+      path: '/slack'
+      fullPath: '/bots/$botId/settings/slack'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsSlackRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/pulls_/$installationId/$githubRepoId/$number': {
       id: '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
       path: '/pulls/$installationId/$githubRepoId/$number'
@@ -1694,6 +1714,7 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   AuthenticatedBotsBotIdSettingsSkillsRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRoute
+  AuthenticatedBotsBotIdSettingsSlackRoute: typeof AuthenticatedBotsBotIdSettingsSlackRoute
   AuthenticatedBotsBotIdSettingsIndexRoute: typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 
@@ -1715,6 +1736,8 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsRunsOnRoute,
     AuthenticatedBotsBotIdSettingsSkillsRoute:
       AuthenticatedBotsBotIdSettingsSkillsRoute,
+    AuthenticatedBotsBotIdSettingsSlackRoute:
+      AuthenticatedBotsBotIdSettingsSlackRoute,
     AuthenticatedBotsBotIdSettingsIndexRoute:
       AuthenticatedBotsBotIdSettingsIndexRoute,
   }

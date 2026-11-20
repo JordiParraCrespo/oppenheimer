@@ -1824,3 +1824,11 @@ earlier note:
   device, only the bot's replies counting), the amber dot took in questions
   and failed turns, the green face dot went, and Mark as unread came in as a
   device mark like a session's.
+- `next-steps/channels.md` §7.2 had one Oppenheimer Slack app per Slack
+  workspace, speaking as each bot. On 2026-11-20, asked for a way to ask a
+  bot from Slack (JordiParraCrespo/oppenheimer#954), each bot got an app of
+  its own instead, so it has its own name and face and nothing routes by
+  mention (`next-steps/slack-for-bots.md`): made from a manifest the console
+  fills in, its token and secret pasted and sealed, answering only its
+  owner's Slack user in the thread asked in. A channel turn that ends on an
+  approval card now says so with a link, on Telegram and WhatsApp too.

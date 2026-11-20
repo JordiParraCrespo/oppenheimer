@@ -1,0 +1,134 @@
+# Slack for bots — ask a bot from Slack
+
+**Goal:** you ask your bot from Slack, with `@Juno` in a channel or in a
+direct message to it, and it answers in the thread you asked in, as it would
+in the console.
+
+Asked for on 2026-11-20 (JordiParraCrespo/oppenheimer#954). Asking from where
+the work already is matters most for bots after GitHub
+(`../research/orca-bots.md` §3, §4). This is [Channels](channels.md) §7.2's
+Slack, changed in one way (§1), on the core
+[Answering on Telegram and WhatsApp](answering-on-telegram-and-whatsapp.md)
+built: the bot's conversations, the wake, the owner-only rule, the reply as
+the turn's last step and the words sent as it goes.
+
+## 1. One Slack app per bot
+
+Each bot gets a Slack app of its own, so it has its own name and face in
+Slack, and whoever writes to `@Juno` is talking to Juno. Nothing routes; the
+binding is the answer, as a Telegram bot belongs to one Oppenheimer bot.
+
+Channels §7.2 had one Oppenheimer app installed per workspace, speaking as
+each bot with `chat:write.customize`. That routes by mention, but a mention
+names the one app, so the bot asked would have to be read from the words, and
+every bot would share one entry in Slack's member list and DMs. Orca makes one
+app per bot too (`../research/orca-bots.md`).
+
+- **Created from a manifest.** The bot's Slack settings answer its manifest
+  (the bot's name and description, the scopes and events it needs, its events
+  address) as Slack's "Create an app" link with the manifest filled in
+  (`https://api.slack.com/apps?new_app=1&manifest_json=…`). The person picks
+  their workspace, creates it, installs it, and pastes its **bot token** and
+  **signing secret**. Orca creates the app itself from a one-time App
+  Configuration Token; that token lasts twelve hours and is refreshed by a
+  second one, and the app still has to be installed by hand, so pasting two
+  values once is the smaller thing to keep. It can come later without
+  changing anything else.
+- **Scopes:** `app_mentions:read`, `chat:write`, `im:history`, `im:read`,
+  `im:write`. **Events:** `app_mention` and `message.im`. A thread in a
+  channel is answered when the bot is mentioned in it; the bot does not read
+  channels it is not asked in.
+- **One app is one bot** (`UQ_slack_account_app`): the same app pasted for a
+  second bot is refused (`SLACK_005`). Deleting a bot forgets its app.
+- **Kept sealed.** The token and secret are sealed under `SLACK_TOKEN_KEY`
+  (AES-256-GCM, the API's sealed-blob layout) and never answered. Without the
+  key the server keeps no Slack app (`SLACK_003`).
+
+## 2. How events arrive
+
+- **Over HTTP, to the API:** `POST /v1/slack/events?bot=<id>`, as GitHub's
+  webhooks do. The API holds no socket (Channels §2): Socket Mode would need a
+  socket per app, kept somewhere.
+- **Signed:** nothing is read before `X-Slack-Signature` is checked against the
+  app's signing secret over the raw body, with the timestamp within five
+  minutes (`SLACK_008` otherwise). The one exception is Slack's
+  `url_verification`, which arrives when the app is created, before the person
+  has a secret to paste; its answer only echoes the challenge.
+- **Answered at once:** Slack wants an answer within three seconds. The event
+  stages `SlackOwnerWroteDomainEvent` in the outbox and returns; the wake and
+  the turn run after.
+- **Once:** a retry, or a DM mention that arrives as both events, is one turn,
+  keyed by the app, channel and message timestamp.
+
+## 3. Who may ask
+
+Workspaces are personal (`../versions/mvp/08-auth.md`), so Slack is the
+owner's only.
+
+- **The owner's Slack user** is recorded by a one-time code: the bot's Slack
+  settings make one (ten minutes, stored hashed), and the owner sends
+  `link <code>` to the app in its DM. A code in a channel records nothing.
+  Another app (a new token for a different app or workspace) forgets the
+  owner.
+- **Anyone else is ignored**, in a channel or in the DM, with no reply. Nobody
+  is held for Allow: there are no contacts on Slack yet.
+- **The app's own messages, other bots', edits and joins** are ignored.
+- **What the owner wrote** reaches the bot as their message, mentions and
+  links made readable, as their Telegram message does. Nothing else from the
+  channel reaches it: the bot reads no thread history.
+
+## 4. Answers go in the thread
+
+- **A thread is a conversation.** A mention or a DM at the top level starts a
+  thread under it, and the answer goes there; a message in that thread
+  continues the same conversation. A new question is a new top-level message,
+  so there is no `/new`. `stop` in a thread asks its running turn to stop.
+- **The answer** is the turn's last words in Slack's markdown (bold, links,
+  code), cut to Slack's length; as on Telegram, what the bot writes before a
+  tool call goes out as the call begins.
+- **In a channel everyone there reads the thread.** The bot is told so, and to
+  keep private things (mail, memory, other people's details) out of it unless
+  asked there. It is still the owner's turn with the bot's tools: the owner is
+  the only one who can ask. Answering on Telegram and WhatsApp §3 narrows a
+  group's turn; whether a Slack channel's should be narrowed too is open (§6).
+- **Approvals stay in the console and the Inbox.** A turn that ends on a Needs
+  input card adds "Waiting for your approval in Oppenheimer: <link to the
+  bot>" to its answer. This is every channel's end, so Telegram and WhatsApp
+  get the line too, as Answering on Telegram and WhatsApp §3 already said.
+- **A token Slack refuses** (the app uninstalled, the token revoked) marks the
+  app `revoked`, and its settings say so with New token.
+- **Limits:** every call goes through `UpstreamLimiter`, bucketed per app and
+  workspace, forty posts a minute (Slack allows about one a second per
+  channel), `SLACK_007` on Slack's 429.
+
+## 5. Where things live
+
+- **API module `slack`:** `slack_account`, the events route and its raw-body
+  parser, connect, owner link, disconnect, the reply (`ReplyOnSlack`). Scopes
+  `slack:read` and `slack:write`, the `Slack` policy subject; the owner link is
+  session-only, as Telegram's.
+- **bots-chat:** the `slack` conversation kind and turn origin, the wake
+  (`WakeOnSlack`), the reply through `BotChannelReplyResolver`, the turn
+  context's line, the approval line at the end of every channel turn.
+- **Console:** a **Slack** page in each bot's settings: the three steps that
+  create and connect its app, then the app, how it stands, the owner link,
+  New token and Disconnect.
+
+## 6. Open
+
+1. A Slack channel's turn has the owner's tools (§4). Narrow it as a group's
+   turn is narrowed on Telegram and WhatsApp, or keep it, since only the owner
+   can ask?
+2. Create the app from an App Configuration Token, as Orca does, instead of
+   the manifest link and two pasted values?
+3. Answering others in the workspace (contacts, as Telegram has them), and
+   approval buttons in Slack.
+
+## Decided
+
+- 2026-11-20: one Slack app per bot, created from a manifest the console
+  fills in, its bot token and signing secret pasted and sealed; events over
+  HTTP to the API; the owner's Slack user only, recorded by a one-time code
+  sent in the app's DM; answers in the thread asked in; approvals stay in the
+  console with a link in the thread. Changes Channels §7.2's one app per
+  workspace.
