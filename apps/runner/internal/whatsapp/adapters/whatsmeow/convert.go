@@ -42,6 +42,16 @@ type selfIDs struct {
 	phone, lid types.JID
 }
 
+// phoneFor is the paired number's phone-number JID when lid is its own
+// `@lid` id: a mapping known without asking the device's LID store, which
+// may not hold the number's own.
+func (s selfIDs) phoneFor(lid types.JID) (types.JID, bool) {
+	if s.lid.User == "" || s.phone.User == "" || lid.User != s.lid.User {
+		return types.EmptyJID, false
+	}
+	return s.phone.ToNonAD(), true
+}
+
 // received reads a whatsmeow message into the domain's shape. Whether it is
 // one to hand on is the domain's to decide (domain.Admit): this only says
 // where it was sent and what it carries.
@@ -128,7 +138,8 @@ func (rd reader) idOf(ctx context.Context, raw string) string {
 }
 
 // phoneOf is who as a phone-number JID when it is a `@lid` id and its number
-// is known: alt when WhatsApp gave it, else the device's LID map. The owner
+// is known: alt when WhatsApp gave it, the paired number's own (selfIDs),
+// else the device's LID map. The owner
 // is named by phone number, and a person must keep one id across messages,
 // so the number wins. An id whose number is unknown stays as it is.
 func (rd reader) phoneOf(ctx context.Context, who, alt types.JID) types.JID {
@@ -139,8 +150,8 @@ func (rd reader) phoneOf(ctx context.Context, who, alt types.JID) types.JID {
 	if alt.Server == types.DefaultUserServer {
 		return alt.ToNonAD()
 	}
-	if rd.self.lid.User != "" && who.User == rd.self.lid.User && rd.self.phone.User != "" {
-		return rd.self.phone.ToNonAD()
+	if pn, ok := rd.self.phoneFor(who); ok {
+		return pn
 	}
 	if rd.lids == nil {
 		return who

@@ -177,24 +177,40 @@ func Admit(r Received, now, pairedAt time.Time) (Inbound, bool) {
 		Text: CutText(r.Text), Media: r.Media,
 		SentAt: r.SentAt.UTC(),
 	}
-	if fits(r.QuotedID) {
-		in.QuotedID = r.QuotedID
-		if fits(r.QuotedSenderID) {
-			in.QuotedSenderID = r.QuotedSenderID
-		}
-	}
-	for _, mentioned := range r.Mentions {
-		if len(in.Mentions) == MentionsMax {
-			break
-		}
-		if fits(mentioned) {
-			in.Mentions = append(in.Mentions, mentioned)
-		}
-	}
+	in.QuotedID, in.QuotedSenderID = fitQuoted(r.QuotedID, r.QuotedSenderID)
+	in.Mentions = boundedIDs(r.Mentions, MentionsMax)
 	if r.Voice != nil {
 		in.VoiceSeconds = r.Voice.Seconds
 	}
 	return in, true
+}
+
+// fitQuoted is what the wire takes of a reply: the quoted message's id when
+// it fits, and its sender only with it, since a sender alone names nothing.
+func fitQuoted(id, sender string) (string, string) {
+	if !fits(id) {
+		return "", ""
+	}
+	if !fits(sender) {
+		return id, ""
+	}
+	return id, sender
+}
+
+// boundedIDs is ids without the ones the wire would refuse, at most max of
+// them, in order: one over-long id from a modified client must not have the
+// control plane refuse the whole batch.
+func boundedIDs(ids []string, max int) []string {
+	var kept []string
+	for _, id := range ids {
+		if len(kept) == max {
+			break
+		}
+		if fits(id) {
+			kept = append(kept, id)
+		}
+	}
+	return kept
 }
 
 // CutText fits a text to TextMaxChars, ending a cut one with CutMark.
