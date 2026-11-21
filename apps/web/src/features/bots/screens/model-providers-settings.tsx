@@ -6,6 +6,7 @@ import { ModelProvidersSkeleton } from '../components/model-providers-skeleton';
 import { VoiceSettingsSkeleton } from '../components/voice-settings-skeleton';
 import { useModelProvidersTab } from '../hooks/use-model-providers-tab';
 import { MODEL_PROVIDER_TABS, type ModelProviderTab } from '../lib/model-providers-search';
+import { ConnectedProvidersCount } from '../sections/connected-providers-count';
 import { ModelProviders } from '../sections/model-providers';
 import { VoiceSettingsSection } from '../sections/voice-settings';
 
@@ -31,13 +32,18 @@ export function ModelProvidersSettingsScreen() {
         <Callout className="mb-4">{t('settings.modelProviders.unavailable')}</Callout>
       ) : null}
       <PillTabs
+        size="sm"
         className="mb-4"
         aria-label={t('settings.modelProviders.tabs.label')}
         value={tab}
         onValueChange={(next) => setTab(next as ModelProviderTab)}
       >
         {MODEL_PROVIDER_TABS.map((id) => (
-          <PillTab key={id} value={id}>
+          <PillTab
+            key={id}
+            value={id}
+            count={id === 'providers' ? <ConnectedProvidersCount /> : undefined}
+          >
             {t(`settings.modelProviders.tabs.${id}`)}
           </PillTab>
         ))}
