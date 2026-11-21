@@ -10248,6 +10248,10 @@ export type FindSessionsData = {
         sort?: 'recent' | 'oldest' | 'name';
         agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
         /**
+         * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
+         */
+        resolved?: 'true' | 'false';
+        /**
          * A live checkout of it
          */
         githubRepoId?: number;
