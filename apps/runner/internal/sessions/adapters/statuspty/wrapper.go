@@ -58,6 +58,13 @@ func Run(ctx context.Context, opts RunOptions) (int, error) {
 	if grace <= 0 {
 		grace = DefaultGrace
 	}
+	// Taken before the program starts: a hangup in between would end the
+	// wrapper by default and leave the program, in a session of its own,
+	// running.
+	signals := make(chan os.Signal, 4)
+	signal.Notify(signals, syscall.SIGWINCH, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer signal.Stop(signals)
+
 	// Not killed when ctx ends: the loop below hangs it up first.
 	cmd := exec.CommandContext(context.WithoutCancel(ctx), opts.Argv[0], opts.Argv[1:]...) //nolint:gosec // the agent's own command line, built by the runner
 	size, sizeErr := pty.GetsizeFull(opts.In)
@@ -78,10 +85,6 @@ func Run(ctx context.Context, opts RunOptions) (int, error) {
 	if restore, err := makeRaw(int(opts.In.Fd())); err == nil {
 		defer restore()
 	}
-
-	signals := make(chan os.Signal, 4)
-	signal.Notify(signals, syscall.SIGWINCH, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	defer signal.Stop(signals)
 
 	keeper := &reportKeeper{path: opts.Report}
 	defer keeper.remove()

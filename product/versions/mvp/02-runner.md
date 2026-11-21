@@ -448,8 +448,10 @@ closing pane sends tmux's and the kernel's). Stop, close and `uninstall
 --force` then find the session's wrapper in the process table and do the
 same from outside, so `closed` means nothing of the session runs. And
 the daemon looks at boot and every 5 minutes for a wrapper whose session
-is closed, stopped or has no tmux session, and ends it the same way,
-logging the session and pid. A wrapper is this runner's only when it runs
+has no tmux session (closing and stopping kill it), and ends it the same
+way, logging the session and pid. The tmux session is the witness, not
+the daemon's map: `runner sessions restart` runs in a process of its own,
+and a session it restarts still reads stopped in the daemon for a while. A wrapper is this runner's only when it runs
 as this account and its command line is `pty --report <file> --` with
 the file in this runner's own `state/program-status/`: the user's own
 tmux and their other `claude` processes are never looked at.

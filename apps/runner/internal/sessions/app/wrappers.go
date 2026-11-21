@@ -68,8 +68,8 @@ func (s *Service) endEach(ctx context.Context, wrappers []Wrapper) ([]Wrapper, e
 	return ended, errors.Join(errs...)
 }
 
-// EndStrayWrappers ends the wrappers whose session is over: closed or
-// stopped in the session map, or whose tmux session is gone. It is the
+// EndStrayWrappers ends the wrappers whose session is over: those whose
+// tmux session is gone, which closing and stopping both kill. It is the
 // safety net behind endTerminal, for an agent a close could not end (a
 // runner that stopped halfway, or one from before endTerminal existed). A
 // session a command is working on, or still being created, is left to that
@@ -102,9 +102,12 @@ func (s *Service) EndStrayWrappers(ctx context.Context) ([]Wrapper, error) {
 		if creating || s.busy[w.SessionID] > 0 {
 			continue
 		}
-		session, known := s.sessions[w.SessionID]
-		over := known && (session.State == domain.StateClosed || session.State == domain.StateStopped)
-		if over || !live[w.SessionID] {
+		// The tmux session is the one witness to trust. A closed or stopped
+		// record alone is not: `runner sessions restart` runs in a process
+		// of its own and gives the session a new tmux session and wrapper
+		// while this one's map still says stopped. Closing or stopping
+		// kills the tmux session, so a session that is over has none.
+		if !live[w.SessionID] {
 			stray = append(stray, w)
 		}
 	}

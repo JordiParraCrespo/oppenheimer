@@ -15,8 +15,8 @@ the hangup `tmux kill-session` sends and nothing came after it.
 - Stop, close and `uninstall --force` find the session's wrapper in the
   process table after `kill-session` and end it the same way, so `closed`
   means nothing of the session runs.
-- The daemon looks at boot and every 5 minutes for a wrapper whose session is
-  closed, stopped or has no tmux session, ends it, and logs the session and
-  pid. Only processes of this account whose command line is
+- The daemon looks at boot and every 5 minutes for a wrapper whose session
+  has no tmux session (closing and stopping kill it), ends it, and logs the
+  session and pid. Only processes of this account whose command line is
   `pty --report <file> --`, with the file in this runner's
   `state/program-status/`, are ever looked at.

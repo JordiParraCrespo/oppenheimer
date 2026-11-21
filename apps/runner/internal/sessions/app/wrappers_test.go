@@ -11,18 +11,49 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
+// A session this daemon holds as stopped, but whose tmux session is up
+// again, is left running: `runner sessions restart` restarts it from a
+// process of its own, and the daemon's map only catches up later. It broke
+// when a stopped record alone counted as over, and the restarted agent was
+// killed within five minutes.
+func TestAStoppedSessionRestartedElsewhereKeepsItsAgent(t *testing.T) {
+	svc, wrappers, terminals := newWrappedHost(t)
+	session := openWrapped(t, svc)
+	if _, err := svc.Stop(context.Background(), session.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := terminals.Create(context.Background(), session.TmuxName(), session.Dir, "claude", nil); err != nil {
+		t.Fatal(err)
+	}
+	wrappers.Start(app.Wrapper{SessionID: session.ID, Pid: 101, Group: 102})
+
+	if _, err := svc.EndStrayWrappers(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := wrappers.EndedSessions(); len(got) != 0 {
+		t.Fatalf("ended %v, the agent of a session that is running again", got)
+	}
+}
+
 func newWrappedService(t *testing.T) (*app.Service, *fake.Wrappers) {
 	t.Helper()
-	wrappers := fake.NewWrappers()
+	svc, wrappers, _ := newWrappedHost(t)
+	return svc, wrappers
+}
+
+func newWrappedHost(t *testing.T) (*app.Service, *fake.Wrappers, *fake.Terminals) {
+	t.Helper()
+	wrappers, terminals := fake.NewWrappers(), fake.NewTerminals()
 	svc, err := app.New(app.Options{
-		Terminals: fake.NewTerminals(), Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
+		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
 		Store: &memoryStore{}, Files: fake.NewFiles(), Places: fake.NewPlaces(),
 		Layout: domain.Layout{Root: "/home/jordi/oppenheimer"}, Wrappers: wrappers,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return svc, wrappers
+	return svc, wrappers, terminals
 }
 
 func openWrapped(t *testing.T, svc *app.Service) domain.Session {
