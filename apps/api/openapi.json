@@ -25814,6 +25814,123 @@
         ]
       }
     },
+    "/api/v1/voice/settings": {
+      "get": {
+        "description": "The provider and model that transcribe dictation and voice notes, the provider, model and voice bots speak voice notes in, and the model that tidies a transcript; null is automatic. `available` lists what the workspace can use now, in the order each is tried.",
+        "operationId": "findVoiceSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "How the workspace hears and speaks",
+        "tags": [
+          "Voice"
+        ]
+      },
+      "put": {
+        "description": "Replaces the voice choices whole. A model or voice is one its provider lists (ElevenLabs takes any voice id); null is automatic, or the provider’s default.",
+        "operationId": "updateVoiceSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVoiceSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose how the workspace hears and speaks",
+        "tags": [
+          "Voice"
+        ]
+      }
+    },
     "/api/v1/inbox/marks": {
       "get": {
         "description": "What you did to Inbox items in this workspace, the newest changed first, at most 1000. A snooze whose end has passed is left out: its item is back.",
@@ -39708,7 +39825,9 @@
               "glm",
               "openai",
               "chatgpt",
-              "xai"
+              "xai",
+              "groq",
+              "elevenlabs"
             ]
           },
           "configured": {
@@ -42133,6 +42252,9 @@
             "type": "string",
             "enum": [
               "chatgpt",
+              "openai",
+              "groq",
+              "elevenlabs",
               "speech_key"
             ],
             "description": "Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server."
@@ -42163,6 +42285,9 @@
               "type": "string",
               "enum": [
                 "chatgpt",
+                "openai",
+                "groq",
+                "elevenlabs",
                 "speech_key"
               ]
             }
@@ -42171,6 +42296,193 @@
         "required": [
           "available",
           "providers"
+        ]
+      },
+      "VoiceSettingsAvailableDto": {
+        "type": "object",
+        "properties": {
+          "transcription": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "chatgpt",
+                "openai",
+                "groq",
+                "elevenlabs",
+                "speech_key"
+              ]
+            }
+          },
+          "synthesis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "openai",
+                "elevenlabs",
+                "speech_key"
+              ]
+            }
+          },
+          "polish": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "anthropic",
+                "glm",
+                "openai",
+                "chatgpt",
+                "xai"
+              ]
+            }
+          }
+        },
+        "required": [
+          "transcription",
+          "synthesis",
+          "polish"
+        ]
+      },
+      "VoiceSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "transcriptionProvider": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "openai",
+              "groq",
+              "elevenlabs",
+              "speech_key"
+            ],
+            "nullable": true
+          },
+          "transcriptionModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "synthesisProvider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "elevenlabs",
+              "speech_key"
+            ],
+            "nullable": true
+          },
+          "synthesisModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "synthesisVoice": {
+            "type": "string",
+            "nullable": true
+          },
+          "polishProvider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "glm",
+              "openai",
+              "chatgpt",
+              "xai",
+              "off"
+            ],
+            "nullable": true
+          },
+          "polishModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "available": {
+            "$ref": "#/components/schemas/VoiceSettingsAvailableDto"
+          }
+        },
+        "required": [
+          "transcriptionProvider",
+          "transcriptionModel",
+          "synthesisProvider",
+          "synthesisModel",
+          "synthesisVoice",
+          "polishProvider",
+          "polishModel",
+          "available"
+        ]
+      },
+      "UpdateVoiceSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "transcriptionProvider": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "openai",
+              "groq",
+              "elevenlabs",
+              "speech_key",
+              null
+            ],
+            "nullable": true
+          },
+          "transcriptionModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "nullable": true
+          },
+          "synthesisProvider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "elevenlabs",
+              "speech_key",
+              null
+            ],
+            "nullable": true
+          },
+          "synthesisModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "nullable": true
+          },
+          "synthesisVoice": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "nullable": true
+          },
+          "polishProvider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "glm",
+              "openai",
+              "chatgpt",
+              "xai",
+              "off",
+              null
+            ],
+            "nullable": true
+          },
+          "polishModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "nullable": true
+          }
+        },
+        "required": [
+          "transcriptionProvider",
+          "transcriptionModel",
+          "synthesisProvider",
+          "synthesisModel",
+          "synthesisVoice",
+          "polishProvider",
+          "polishModel"
         ]
       },
       "InboxMarkResponseDto": {

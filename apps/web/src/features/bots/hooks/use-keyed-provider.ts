@@ -1,5 +1,6 @@
 import { useModelProviders } from '@oppenheimer/frontend-consumer/react';
 import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
+import { isBotProvider } from '@oppenheimer/shared/schemas/model-provider';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import { keyedProviderFor } from '@/features/bots/lib/bot-engine';
 
@@ -18,7 +19,10 @@ export function useKeyedProvider(
     refetchOnMount: 'always',
     select: (rows) =>
       keyedProviderFor(
-        rows.filter((row) => row.configured).map((row) => row.provider),
+        rows
+          .filter((row) => row.configured)
+          .map((row) => row.provider)
+          .filter(isBotProvider),
         provider,
       ),
   });

@@ -131,7 +131,7 @@
   },
   "modelProviders": {
     "title": "Proveedores de modelos",
-    "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
+    "description": "Las claves con las que funcionan tus bots y la voz. Cada bot usa la clave de su proveedor; Groq y ElevenLabs sirven solo para la voz. Una clave se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
     "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
     "loadFailed": "No se pudieron cargar los proveedores de modelos.",
     "keyEnding": "Clave que termina en {{hint}}",
@@ -154,7 +154,9 @@
       "glm": "Modelos GLM, a través de z.ai.",
       "openai": "Modelos GPT, a través de la API de OpenAI.",
       "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API.",
-      "xai": "Modelos Grok, a través de la API de xAI."
+      "xai": "Modelos Grok, a través de la API de xAI.",
+      "groq": "Transcripción con Whisper, rápida, a través de la API de Groq.",
+      "elevenlabs": "Transcripción y voces naturales, a través de la API de ElevenLabs."
     },
     "dialog": {
       "title": "Clave de {{provider}}",
@@ -183,6 +185,46 @@
       "connected": "Sesión iniciada. Los bots de ChatGPT ya funcionan con esta suscripción.",
       "done": "Hecho",
       "failed": "No se pudo iniciar sesión en ChatGPT."
+    },
+    "voice": {
+      "title": "Voz",
+      "description": "Qué escucha el dictado y las notas de voz que reciben tus bots, con qué hablan tus bots en sus notas de voz y qué pule una transcripción. Automático usa el primer proveedor que tengas, en el orden de la lista.",
+      "loadFailed": "No se pudieron cargar los ajustes de voz.",
+      "saveFailed": "No se pudieron guardar los ajustes de voz.",
+      "automatic": "Automático",
+      "notConnected": "{{provider}} · no conectado",
+      "server": "Este servidor",
+      "search": "Buscar",
+      "noMatch": "Nada coincide con «{{query}}».",
+      "transcription": {
+        "title": "Voz a texto",
+        "meta": "El dictado en la consola y las notas de voz que reciben tus bots.",
+        "providerLabel": "Proveedor de voz a texto",
+        "modelLabel": "Modelo de voz a texto"
+      },
+      "synthesis": {
+        "title": "Notas de voz",
+        "meta": "Con qué voz hablan tus bots cuando responden con una nota de voz.",
+        "providerLabel": "Proveedor de notas de voz",
+        "modelLabel": "Modelo de notas de voz",
+        "voiceLabel": "Voz",
+        "ownVoice": "Una voz de mi biblioteca…",
+        "own": "Voz {{id}}"
+      },
+      "polish": {
+        "title": "Pulido de la transcripción",
+        "meta": "Convierte lo escuchado en texto escrito: sin muletillas, con los nombres escritos como tú los escribes.",
+        "providerLabel": "Proveedor del pulido",
+        "modelLabel": "Modelo del pulido",
+        "off": "Desactivado: tal cual"
+      },
+      "voiceDialog": {
+        "title": "Voz de ElevenLabs",
+        "description": "Pega el ID de una voz de tu biblioteca de ElevenLabs, también una clonada. Los bots hablan con ella desde su próxima nota de voz.",
+        "label": "ID de la voz",
+        "save": "Usar esta voz",
+        "saving": "Guardando…"
+      }
     }
   },
   "cloudAgents": {

@@ -2,19 +2,21 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { VoiceSynthesisResolver } from '../../application/voice-synthesis.resolver';
+import type { VoiceSettingsRepositoryPort } from '../../database/voice-settings.repository.port';
 import { VoiceErrors } from '../../domain/voice.errors';
 import {
   oggOpusSeconds,
   SPEECH_MAX_SECONDS,
   SPEECH_TEXT_MAX_CHARS,
 } from '../../domain/voice-synthesis.policy';
-import type { SpeechSynthesisPort } from '../../infrastructure/speech-synthesis.port';
-import { SPEECH_SYNTHESIS } from '../../voice.di-tokens';
+import { VOICE_SETTINGS_REPOSITORY } from '../../voice.di-tokens';
 import { type SpokenAudio, SynthesizeSpeechCommand } from './synthesize-speech.command';
 
 /**
- * Speaks a short text on the deployment's text-to-speech server, for a bot's
- * WhatsApp voice note: the text judged first (`VOICE_011`), the answer judged
+ * Speaks a short text for a bot's voice note, on the provider, model and
+ * voice the workspace chose (Settings → Model providers), else the first it
+ * has (`VoiceSynthesisResolver`): the text judged first (`VOICE_011`), the answer judged
  * by its bytes after (Ogg/Opus, no longer than a voice note runs), so what
  * reaches the host is a note the phone plays. Nothing is kept: the audio
  * lives in memory for this call and is never written to disk.
@@ -26,7 +28,10 @@ import { type SpokenAudio, SynthesizeSpeechCommand } from './synthesize-speech.c
 export class SynthesizeSpeechCommandHandler
   implements ICommandHandler<SynthesizeSpeechCommand, SpokenAudio>
 {
-  constructor(@Inject(SPEECH_SYNTHESIS) private readonly speech: SpeechSynthesisPort) {}
+  constructor(
+    private readonly speech: VoiceSynthesisResolver,
+    @Inject(VOICE_SETTINGS_REPOSITORY) private readonly settings: VoiceSettingsRepositoryPort,
+  ) {}
 
   async execute(command: SynthesizeSpeechCommand): Promise<SpokenAudio> {
     requireOrganization(command.organizationId);
@@ -36,13 +41,22 @@ export class SynthesizeSpeechCommandHandler
         detail: `Speak 1 to ${SPEECH_TEXT_MAX_CHARS} characters; this is ${text.length}.`,
       });
     }
-    if (!this.speech.isConfigured()) throw new AppError(VoiceErrors.SYNTHESIS_NOT_CONFIGURED);
 
-    const data = await this.speech.synthesize(text);
+    const settings = await this.settings.find(command.organizationId);
+    const { audio: data, provider } = await this.speech.speak(
+      command.organizationId,
+      text,
+      new Date(),
+      {
+        provider: settings.synthesisProvider,
+        model: settings.synthesisModel,
+        voice: settings.synthesisVoice,
+      },
+    );
     const seconds = oggOpusSeconds(data);
     if (seconds === null) {
       throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
-        detail: 'The text-to-speech server did not answer Ogg/Opus audio.',
+        detail: `The text-to-speech provider (${provider}) did not answer Ogg/Opus audio.`,
       });
     }
     if (seconds > SPEECH_MAX_SECONDS) {

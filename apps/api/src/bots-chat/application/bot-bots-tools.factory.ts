@@ -10,6 +10,7 @@ import {
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
   type BotProvider,
+  isBotProvider,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
@@ -243,7 +244,9 @@ export class BotPeerToolsFactory implements BotToolArea {
           )
         : Promise.resolve([]),
     ]);
-    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const keyed: BotProvider[] = credentials
+      .map((credential) => credential.provider)
+      .filter(isBotProvider);
     const plan = planBotCreation(input, creator, keyed, groups);
     if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
     return plan;
@@ -385,7 +388,9 @@ export class BotPeerToolsFactory implements BotToolArea {
       );
     }
     const bots = ids.map((id) => byId.get(id) as BotEntity);
-    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const keyed: BotProvider[] = credentials
+      .map((credential) => credential.provider)
+      .filter(isBotProvider);
     const plan = planBotUpdate(input, caller, bots, keyed, groups);
     if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
     return plan;

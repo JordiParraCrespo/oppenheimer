@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
-import type { VoiceProvider } from '@oppenheimer/shared';
+import { TRANSCRIPTION_MODELS, type VoiceProvider, voiceModelFor } from '@oppenheimer/shared';
 import { VoiceErrors } from '../domain/voice.errors';
+import { chosenFirst } from '../domain/voice-preference.policy';
 import { withoutSilenceHallucinations } from '../domain/voice-speech.policy';
 import type { VoiceClip } from '../infrastructure/speech-to-text.port';
 import type { PolishModel } from './speech-provider.port';
@@ -18,10 +19,19 @@ export interface HeardClip {
   polishOn: PolishModel | null;
 }
 
+/** The provider and model the workspace chose to hear with (Settings → Model providers); null is automatic. */
+export interface TranscriptionChoice {
+  provider: VoiceProvider | null;
+  model: string | null;
+}
+
+const AUTOMATIC: TranscriptionChoice = { provider: null, model: null };
+
 /**
- * Who hears a workspace's clip: the first provider in `SpeechProviderRegistry`
- * available for the workspace, and the next one when it fails. A refusal for
- * rate (`VOICE_007`) is not retried on another provider: it is the provider
+ * Who hears a workspace's clip: the providers in `SpeechProviderRegistry`'s
+ * order, the one it chose (Settings → Model providers) moved first, the first
+ * available for the workspace hearing it, and the next one when it fails. A
+ * refusal for rate (`VOICE_007`) is not retried on another provider: it is the provider
  * saying "not now", and spending a second provider's budget on it hides that.
  * When every available provider failed, the first failure is the answer, since
  * it is the provider the workspace would have used; when none is available,
@@ -33,17 +43,28 @@ export class VoiceTranscriptionResolver {
 
   constructor(private readonly registry: SpeechProviderRegistry) {}
 
-  async hear(organizationId: string, clip: VoiceClip, now: Date): Promise<HeardClip> {
+  async hear(
+    organizationId: string,
+    clip: VoiceClip,
+    now: Date,
+    choice: TranscriptionChoice = AUTOMATIC,
+  ): Promise<HeardClip> {
     let first: unknown = null;
     let tried = false;
-    for (const provider of this.registry.all()) {
+    for (const provider of chosenFirst(this.registry.all(), choice.provider)) {
       try {
         // Asked here, in order, so a provider whose lookup fails is that
         // provider failing: the next one is still tried.
         if (!(await provider.availableFor(organizationId))) continue;
         tried = true;
         const grant = await provider.grantFor(organizationId, now);
-        const raw = withoutSilenceHallucinations(await provider.transcribe(clip, grant));
+        // The chosen model goes to the chosen provider only; any other runs its default.
+        const model = voiceModelFor(
+          TRANSCRIPTION_MODELS[provider.id],
+          provider.id === choice.provider ? choice.model : null,
+        );
+        const heard = await provider.transcribe(model ? { ...clip, model } : clip, grant);
+        const raw = withoutSilenceHallucinations(heard);
         return { raw, provider: provider.id, polishOn: grant.polishOn };
       } catch (error) {
         if (isRateLimit(error)) throw error;

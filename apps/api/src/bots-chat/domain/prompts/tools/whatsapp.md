@@ -58,7 +58,7 @@ Voice note ({{seconds}} s) sent on WhatsApp to {{describeWhatsappTarget}} from "
 
 <!-- fragment: speech-not-set-up -->
 
-Voice notes are not set up on this Oppenheimer: it has no text-to-speech server. Send the reply as text with send_whatsapp_message, or tell the person that whoever runs it can set one up.
+Voice notes are not set up for this workspace: it has no provider that speaks. Send the reply as text with send_whatsapp_message, or tell the person they can add an OpenAI or ElevenLabs key in Settings → Model providers.
 
 <!-- fragment: one-several-numbers-linked -->
 

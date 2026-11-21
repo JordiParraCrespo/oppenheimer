@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
-import type { BotProvider } from '@oppenheimer/shared';
+import type { ModelProvider } from '@oppenheimer/shared';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, PROVIDER_KEY_SEALER } from '../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../database/model-provider-credential.repository.port';
 import { BotErrors } from '../domain/bots.errors';
@@ -12,13 +12,13 @@ type CredentialSource = (organizationId: string, now: Date) => Promise<TurnCrede
 
 /**
  * Each provider's way to the credential a turn runs on, declared once: a
- * provider added to `BOT_PROVIDERS` does not compile until it names one here.
+ * provider added to `MODEL_PROVIDERS` does not compile until it names one here.
  * A key is the stored one, opened; a sign-in (ChatGPT) is its own resolver,
  * which refreshes the token it holds.
  */
 @Injectable()
 export class TurnCredentialsResolver implements TurnCredentialsPort {
-  private readonly sources: Readonly<Record<BotProvider, CredentialSource>>;
+  private readonly sources: Readonly<Record<ModelProvider, CredentialSource>>;
 
   constructor(
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
@@ -27,7 +27,7 @@ export class TurnCredentialsResolver implements TurnCredentialsPort {
     chatgpt: ChatgptCredentialResolver,
   ) {
     const key =
-      (provider: BotProvider): CredentialSource =>
+      (provider: ModelProvider): CredentialSource =>
       (organizationId) =>
         this.keyFor(organizationId, provider);
     this.sources = {
@@ -36,19 +36,21 @@ export class TurnCredentialsResolver implements TurnCredentialsPort {
       openai: key('openai'),
       chatgpt: (organizationId, now) => chatgpt.turnCredential(organizationId, now),
       xai: key('xai'),
+      groq: key('groq'),
+      elevenlabs: key('elevenlabs'),
     };
   }
 
-  forTurn(organizationId: string, provider: BotProvider, now: Date): Promise<TurnCredential> {
+  forTurn(organizationId: string, provider: ModelProvider, now: Date): Promise<TurnCredential> {
     return this.sources[provider](organizationId, now);
   }
 
-  async has(organizationId: string, provider: BotProvider): Promise<boolean> {
+  async has(organizationId: string, provider: ModelProvider): Promise<boolean> {
     if (!this.sealer.isConfigured()) return false;
     return (await this.credentials.findForRun(organizationId, provider)).isSome();
   }
 
-  private async keyFor(organizationId: string, provider: BotProvider): Promise<TurnCredential> {
+  private async keyFor(organizationId: string, provider: ModelProvider): Promise<TurnCredential> {
     const stored = await this.credentials.findForRun(organizationId, provider);
     if (stored.isNone() || !this.sealer.isConfigured()) {
       throw new AppError(BotErrors.PROVIDER_KEY_MISSING);

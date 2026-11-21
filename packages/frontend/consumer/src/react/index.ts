@@ -355,6 +355,8 @@ export {
   useUnlinkTelegram,
 } from './telegram.queries';
 export {
+  useSuspenseVoiceSettings,
+  useUpdateVoiceSettings,
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
