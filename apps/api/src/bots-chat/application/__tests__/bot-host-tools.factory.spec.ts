@@ -22,6 +22,7 @@ import {
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotHostToolsFactory } from '../bot-host-tools.factory';
+import { BotSessionLinkResolver } from '../bot-session-link.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
@@ -48,10 +49,10 @@ const context: BotToolContext = {
 
 const PROJECT_ID = '44444444-4444-4444-8444-444444444444';
 
-/** The console's address, `app.frontendUrl`. */
-const config = {
+/** Session links over the console's address, `app.frontendUrl`. */
+const links = new BotSessionLinkResolver({
   getOrThrow: () => 'https://console.example',
-} as Pick<ConfigService, 'getOrThrow'> as ConfigService;
+} as Pick<ConfigService, 'getOrThrow'> as ConfigService);
 
 /** The owner's projects, unless a test answers the projects query itself. */
 function setup(
@@ -69,7 +70,7 @@ function setup(
   const factory = new BotHostToolsFactory(
     queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
-    config,
+    links,
   );
   const tool = (name: string) => {
     const found = factory.definitions().find((definition) => definition.name === name);
@@ -702,7 +703,7 @@ describe('BotHostToolsFactory', () => {
     });
 
     it('is a read the toolbox may hand a delegate child, behind sessions:read', () => {
-      const factory = new BotHostToolsFactory({} as QueryBus, {} as CommandBus, config);
+      const factory = new BotHostToolsFactory({} as QueryBus, {} as CommandBus, links);
       const definition = factory.definitions().find((tool) => tool.name === 'search_sessions');
       expect(definition?.readOnly).toBe(true);
       expect(definition?.scope).toBe('sessions:read');
@@ -746,7 +747,7 @@ describe('BotHostToolsFactory', () => {
       const factory = new BotHostToolsFactory(
         queryBus as unknown as QueryBus,
         { execute: vi.fn() } as unknown as CommandBus,
-        config,
+        links,
       );
       const bind = (name: string) => {
         const definition = factory.definitions().find((tool) => tool.name === name);

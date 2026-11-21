@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared/agents';
@@ -33,7 +32,6 @@ import {
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { answerNeedsPerson, SESSION_UNBLOCK_RULE } from '../domain/bot-session-decision.policy';
 import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
-import { sessionLink } from '../domain/bot-session-link.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
@@ -45,6 +43,7 @@ import {
   cloudStartAnswer,
   planCloudSession,
 } from './bot-cloud-session.policy';
+import { BotSessionLinkResolver } from './bot-session-link.resolver';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -53,7 +52,6 @@ import {
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
-  inChannel,
 } from './bot-tool.factory';
 
 /** How long `start_cloud_session` waits for the cloud session's id: the runner's own start limit. */
@@ -88,7 +86,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     private readonly commandBus: CommandBus,
     private readonly watches: BotSessionWatchResolver,
     private readonly waits: BotSessionWaitResolver,
-    private readonly config: ConfigService,
+    private readonly links: BotSessionLinkResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -234,15 +232,11 @@ export class BotSessionToolsFactory implements BotToolArea {
           offline,
           watched,
         });
-        const link = inChannel(context)
-          ? ` ${promptText('tools/sessions.start-session-channel-link', {
-              link: sessionLink(
-                this.config.getOrThrow<string>('app.frontendUrl'),
-                result.sessionId,
-              ),
-            })}`
+        const link = this.links.forTurn(context, result.sessionId);
+        const channelLink = link
+          ? ` ${promptText('tools/sessions.start-session-channel-link', { link })}`
           : '';
-        return { content: `${started}${link}`, sessionId: result.sessionId };
+        return { content: `${started}${channelLink}`, sessionId: result.sessionId };
       },
     });
   }

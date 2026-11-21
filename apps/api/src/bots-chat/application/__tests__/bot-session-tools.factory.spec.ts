@@ -17,6 +17,7 @@ import { FindSessionQuery } from '../../../sessions/queries/find-session/find-se
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
+import { BotSessionLinkResolver } from '../bot-session-link.resolver';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
 import { BotSessionWaitResolver } from '../bot-session-wait.resolver';
 import type { BotSessionWatchResolver } from '../bot-session-watch.resolver';
@@ -237,10 +238,10 @@ function setup(permission: BotToolContext['permission'], conversationId = 'bot-1
     commandBus as unknown as CommandBus,
     watches as unknown as BotSessionWatchResolver,
     new BotSessionWaitResolver(queryBus as unknown as QueryBus),
-    { getOrThrow: () => 'https://console.example' } as Pick<
+    new BotSessionLinkResolver({ getOrThrow: () => 'https://console.example' } as Pick<
       ConfigService,
       'getOrThrow'
-    > as ConfigService,
+    > as ConfigService),
   );
   const call = (name: string, input: unknown) => {
     const definition = factory.definitions().find((candidate) => candidate.name === name);
