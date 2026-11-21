@@ -6,8 +6,9 @@ import { BotRoutines } from '@/features/bots/sections/bot-routines';
 
 /**
  * `/bots/$botId/settings/routines`: what the bot does on its own, on a
- * schedule or when something happens. The chat is where a routine is made
- * and changed; this page turns one on or off, runs it now or deletes it.
+ * schedule or when something happens. The chat is where a routine is made;
+ * this page turns one on or off, runs it now, edits its name and prompt, or
+ * deletes it.
  */
 export function BotRoutinesScreen({ botId }: { botId: string }) {
   const { t } = useTranslation();

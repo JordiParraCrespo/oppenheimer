@@ -6,9 +6,12 @@ export { type ChatPickerQuestion, ChatQuestionPicker } from './components/chat-q
 export { ChatQueuedRow } from './components/chat-queued-row';
 export { ChatToolOutput } from './components/chat-tool-output';
 export { ChatUsage } from './components/chat-usage';
+export { ComposerEmojiBox } from './components/composer-emoji-box';
 export { CopyTextButton } from './components/copy-text-button';
+export { useCommandMenu } from './hooks/use-command-menu';
 export { useExploredLine } from './hooks/use-explored-line';
 export { useObjectUrls } from './hooks/use-object-urls';
 export type { ChatGalleryImage } from './lib/chat-images';
 export type { ChatUsageContext, ChatUsageLimit } from './lib/chat-usage';
+export { leadThenFollow, type SlashCommand } from './lib/command-menu';
 export { formatTokens } from './lib/format-tokens';

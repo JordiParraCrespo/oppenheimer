@@ -20,6 +20,8 @@ export interface BotQuestionRepositoryPort {
   ): Promise<Option<BotQuestionEntity>>;
   /** The bot's waiting card, read by its workspace (the chat, a new message). */
   findPending(organizationId: string, botId: string): Promise<Option<BotQuestionEntity>>;
+  /** The bots with a card of questions pending, on the bots the scope may read. */
+  findPendingBotIds(scope: AccessScope): Promise<string[]>;
 
   /**
    * Stores a move, conditioned on the status the card was loaded in, with

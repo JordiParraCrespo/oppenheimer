@@ -38,6 +38,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => ({ id: 'run', status: 'running' }),
   useBotGoal: () => ({ data: null }),
   useBotLoop: () => ({ data: null }),
+  useBotSuggestion: () => null,
   useBotWaitingMessages: () => [
     { turnId: 'q1', text: 'Then the tests', images: 0, steer: false },
     { turnId: 'q2', text: '', images: 2, steer: false },

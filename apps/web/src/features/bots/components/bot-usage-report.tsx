@@ -23,6 +23,7 @@ const PURPOSE_KEYS = {
   summary: 'bots.chat.usage.purpose.summary',
   rule_review: 'bots.chat.usage.purpose.ruleReview',
   dream: 'bots.chat.usage.purpose.dream',
+  suggestion: 'bots.chat.usage.purpose.suggestion',
 } as const;
 
 /**

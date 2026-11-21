@@ -1,8 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import type { WhatsappMessagesMessage, WhatsappStateMessage } from '@oppenheimer/shared/protocol';
+import type {
+  WhatsappChatsMessage,
+  WhatsappMessagesMessage,
+  WhatsappStateMessage,
+} from '@oppenheimer/shared/protocol';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import { ReceiveWhatsappMessagesCommand } from '../../whatsapp/commands/receive-whatsapp-messages/receive-whatsapp-messages.command';
+import { RecordWhatsappChatsCommand } from '../../whatsapp/commands/record-whatsapp-chats/record-whatsapp-chats.command';
 import { RecordWhatsappStateCommand } from '../../whatsapp/commands/record-whatsapp-state/record-whatsapp-state.command';
 
 /**
@@ -18,6 +23,13 @@ export const WHATSAPP_INTAKE_QUEUE_MAX = 4;
  * host until the window has room.
  */
 export const WHATSAPP_INTAKE_PER_MINUTE = 600;
+
+/**
+ * `whatsapp.chats` frames one host's link may hand over in a minute: a device
+ * reports its whole list on connect and on each change, a few frames of 500
+ * at most. Past it a frame is dropped, and the next change sends the list again.
+ */
+export const WHATSAPP_CHATS_FRAMES_PER_MINUTE = 30;
 
 const MINUTE_MS = 60_000;
 
@@ -45,12 +57,32 @@ interface LinkIntake {
 export class WhatsappLinkProcessor {
   private readonly logger = new Logger(WhatsappLinkProcessor.name);
   private readonly intakes = new WeakMap<RunnerLink, LinkIntake>();
+  private readonly chatFrames = new WeakMap<RunnerLink, number[]>();
 
   constructor(private readonly commandBus: CommandBus) {}
 
   async onState(link: RunnerLink, message: WhatsappStateMessage): Promise<void> {
     await this.commandBus.execute(
       new RecordWhatsappStateCommand({ hostId: link.hostId, report: message }),
+    );
+  }
+
+  /** The chats a host's device can be reached in, one frame at a time, bounded per minute. */
+  async onChats(link: RunnerLink, message: WhatsappChatsMessage, now = Date.now()): Promise<void> {
+    const taken = (this.chatFrames.get(link) ?? []).filter((at) => at > now - MINUTE_MS);
+    if (taken.length >= WHATSAPP_CHATS_FRAMES_PER_MINUTE) {
+      this.logger.warn({
+        message: 'WhatsApp chat lists over their bound; the frame is dropped',
+        hostId: link.hostId,
+        chats: message.chats.length,
+      });
+      this.chatFrames.set(link, taken);
+      return;
+    }
+    taken.push(now);
+    this.chatFrames.set(link, taken);
+    await this.commandBus.execute(
+      new RecordWhatsappChatsCommand({ hostId: link.hostId, chats: message.chats }),
     );
   }
 

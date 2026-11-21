@@ -162,6 +162,12 @@
     --danger-surface: rgba(232, 39, 44, 0.11);
     --info-surface: rgba(0, 113, 227, 0.11);
 
+    /* ---- Find — a match painted in text, and the one the find is on --
+       Status amber, not the selection's blue: a found word must not read as
+       text the reader selected. The current match is the stronger wash. */
+    --find-match: rgba(255, 179, 0, 0.28);
+    --find-current: rgba(255, 149, 0, 0.62);
+
     /* ---- Sidebar — its own surface tier ------------------------------ */
     --sidebar: #fafafb;
     --sidebar-fg: var(--op-gray-900);
@@ -618,6 +624,9 @@
     --danger-surface: rgba(255, 69, 58, 0.14);
     --info-surface: rgba(41, 151, 255, 0.14);
 
+    --find-match: rgba(255, 179, 0, 0.24);
+    --find-current: rgba(255, 159, 10, 0.55);
+
     --sidebar: #161618;
     --sidebar-fg: var(--op-gray-50);
     --sidebar-muted: #8f8f95;
@@ -880,6 +889,8 @@
   --color-warning-surface: var(--warning-surface);
   --color-danger-surface: var(--danger-surface);
   --color-info-surface: var(--info-surface);
+  --color-find-match: var(--find-match);
+  --color-find-current: var(--find-current);
   --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar-item-hover: var(--sidebar-item-hover);
   --color-sidebar-item-active: var(--sidebar-item-active);

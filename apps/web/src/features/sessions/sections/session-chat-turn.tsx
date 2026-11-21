@@ -6,7 +6,16 @@ import { useChatTurn } from '../hooks/use-session-chat';
  * One turn of a session's chat, subscribed to that turn alone: a line the
  * agent writes redraws the turn it lands in, never the forty above it.
  */
-export function SessionChatTurn({ chat, id }: { chat: Chat; id: string }) {
+export function SessionChatTurn({
+  chat,
+  id,
+  found = false,
+}: {
+  chat: Chat;
+  id: string;
+  /** The find is on a match in this turn: it opens, so the match is drawn. */
+  found?: boolean;
+}) {
   const turn = useChatTurn(chat, id);
-  return turn ? <ChatTurn turn={turn} /> : null;
+  return turn ? <ChatTurn turn={turn} found={found} /> : null;
 }

@@ -25,16 +25,12 @@ export const WhatsappErrors = {
     code: 'WHATSAPP_CLIENT_006',
     message: 'Failed to confirm your number',
   },
-  FETCH_GRANTS_FAILED: {
-    code: 'WHATSAPP_CLIENT_007',
-    message: 'Failed to load the chats this number allows',
+  FETCH_CHATS_FAILED: {
+    code: 'WHATSAPP_CLIENT_010',
+    message: 'Failed to load this number’s chats',
   },
-  GRANT_UPDATE_FAILED: {
-    code: 'WHATSAPP_CLIENT_008',
-    message: 'Failed to choose the bot that answers in that chat',
-  },
-  GRANT_REVOKE_FAILED: {
-    code: 'WHATSAPP_CLIENT_009',
-    message: 'Failed to stop allowing that chat',
+  ROUTE_FAILED: {
+    code: 'WHATSAPP_CLIENT_011',
+    message: 'Failed to change who answers those chats',
   },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -1,7 +1,12 @@
+import type { SessionTranscriptEntry } from '@oppenheimer/shared';
+import { sessionPromptText } from './session-prompt-text.policy';
+
 /**
  * What a session is called once its first prompt exists: a model's title, cleaned
  * by {@link cleanModelTitle}, or {@link titleFromPrompt} when no model is configured
- * or its answer does not arrive in time.
+ * or its answer does not arrive in time. Once the conversation has gone further
+ * ({@link CONVERSATION_RENAME_AFTER_PROMPTS}), a model titles it once more from
+ * {@link conversationTitleRequest}.
  */
 
 /** Six words is the brief; forty characters is what a sidebar row can show. */
@@ -36,6 +41,35 @@ export interface SessionTitleRequest {
 const PROMPT_MAX_CHARS = 2_000;
 
 /**
+ * The person's words as something to name, not something to do: a request
+ * that reads as an instruction ("translate the settings page") is otherwise
+ * carried out by the model instead of named.
+ */
+function quoted(text: string): string {
+  return `<request>\n${text}\n</request>`;
+}
+
+/**
+ * The length a name is asked for: under the row's hard cut
+ * ({@link SESSION_NAME_MAX_LENGTH}), so a model that runs a little long is
+ * still not cut mid-word.
+ */
+const ASKED_MIN_WORDS = 3;
+const ASKED_MAX_WORDS = 4;
+const ASKED_MAX_CHARS = 32;
+
+/** What the model is told: what it reads, then what a good name is. */
+function titleInstruction(id: 'system/title.first-prompt' | 'system/title.conversation'): string {
+  return `${sessionPromptText(id)}\n\n${sessionPromptText('system/title.rules', RULE_SLOTS)}`;
+}
+
+const RULE_SLOTS = {
+  minWords: String(ASKED_MIN_WORDS),
+  maxWords: String(ASKED_MAX_WORDS),
+  maxChars: String(ASKED_MAX_CHARS),
+};
+
+/**
  * The request that asks a model for this prompt's title. Strict, because the
  * answer goes straight into a column; a 32-token budget, because a title is a
  * handful of words; temperature 0, because the same prompt naming two sessions
@@ -43,8 +77,126 @@ const PROMPT_MAX_CHARS = 2_000;
  */
 export function sessionTitleRequest(prompt: string): SessionTitleRequest {
   return {
-    system: `Write a title for a software task, from the request that follows. At most ${SESSION_NAME_MAX_LENGTH} characters and at most ${MAX_WORDS} words. Reply with the title alone: no quotes, no punctuation at the end, no explanation.`,
-    messages: [{ role: 'user', content: prompt.slice(0, PROMPT_MAX_CHARS) }],
+    system: titleInstruction('system/title.first-prompt'),
+    messages: [{ role: 'user', content: quoted(prompt.slice(0, PROMPT_MAX_CHARS)) }],
+    maxTokens: 32,
+    temperature: 0,
+  };
+}
+
+/**
+ * How many of the person's prompts a conversation needs, each answered, before
+ * its title is written again from all of them. The first prompt alone often
+ * says too little ("fix the bug", "continue"); by the second answered one the
+ * task has usually shown where it is going.
+ */
+export const CONVERSATION_RENAME_AFTER_PROMPTS = 2;
+
+/** At most this many of the person's prompts are sent, from the first. */
+const CONVERSATION_MAX_PROMPTS = 6;
+/** And each is cut here: a prompt's opening carries what it is about. */
+const CONVERSATION_PROMPT_MAX_CHARS = 600;
+
+/** Lines of the CLI's own that open the person's turn: nothing the person typed. */
+const CLI_LINES = [
+  'Caveat:',
+  '[Request interrupted',
+  '<local-command-',
+  '<task-notification>',
+  '<system-reminder>',
+  '<bash-',
+];
+const COMMAND_NAME = /<command-name>([^<]*)<\/command-name>/;
+const COMMAND_ARGS = /<command-args>([\s\S]*?)<\/command-args>/;
+/** System reminders the CLI puts before the person's words, in a block of their own or the same one. */
+const LEADING_REMINDERS = /^(?:\s*<system-reminder>[\s\S]*?<\/system-reminder>)+/;
+const REMINDER_OPEN = '<system-reminder>';
+const REMINDER_CLOSE = '</system-reminder>';
+/** The tags Claude Code wraps around a paste; the words inside are the person's. */
+const PASTED_CONTENT = /<\/?pasted_content(?:\s[^>]*)?>/g;
+
+/**
+ * A `user` entry's text as the person typed it, or `''` when it is the CLI's
+ * own: the runner's `typedText`, which names a session from its first prompt,
+ * so both count the same lines as prompts. Both are held to the cases in the
+ * runner's `transcript/testdata/typed-prompts.json`; a change to either is a
+ * case added there. A slash command reads as
+ * `/name arguments` (and is nothing without arguments); reminders around the
+ * words go; a paste loses its tags, after the line is told apart, so a paste
+ * that starts like one of the CLI's lines stays the person's.
+ */
+export function typedText(text: string): string {
+  const words = withoutTrailingReminders(text.replace(LEADING_REMINDERS, '')).trim();
+  return classified(words).replace(PASTED_CONTENT, '').trim();
+}
+
+function classified(text: string): string {
+  if (!text || CLI_LINES.some((prefix) => text.startsWith(prefix))) return '';
+  if (!text.startsWith('<command-')) return text;
+  const args = COMMAND_ARGS.exec(text)?.[1]?.trim();
+  if (!args) return '';
+  const name = COMMAND_NAME.exec(text)?.[1]?.trim();
+  return name ? `${name} ${args}` : args;
+}
+
+/** Cuts the reminders that end the text, one at a time, so one quoted inside a paste stays. */
+function withoutTrailingReminders(text: string): string {
+  let rest = text;
+  for (;;) {
+    const trimmed = rest.trimEnd();
+    if (!trimmed.endsWith(REMINDER_CLOSE)) return rest;
+    const open = trimmed.lastIndexOf(REMINDER_OPEN);
+    if (open < 0) return rest;
+    rest = trimmed.slice(0, open);
+  }
+}
+
+/**
+ * A block the chat page cut (`truncated`) without the reminder it was in the
+ * middle of: one opened and never closed can only run to the cut, so it goes
+ * from its opening to the end. What came before it stays.
+ */
+function withoutCutReminder(text: string): string {
+  const open = text.lastIndexOf(REMINDER_OPEN);
+  if (open < 0 || text.indexOf(REMINDER_CLOSE, open) >= 0) return text;
+  return text.slice(0, open);
+}
+
+/**
+ * The person's prompts in a conversation, oldest first: the {@link typedText}
+ * of each `user` entry. One that carries a tool's result is the agent's
+ * bookkeeping, not a prompt, as the runner reads it. The runner reads the
+ * whole line; the chat page this reads has long blocks cut, so a reminder cut
+ * there is taken off first ({@link withoutCutReminder}).
+ */
+export function promptsOf(entries: readonly SessionTranscriptEntry[]): string[] {
+  return entries.flatMap((entry) => {
+    if (entry.role !== 'user') return [];
+    if (entry.parts.some((part) => part.kind === 'tool_result')) return [];
+    const text = typedText(
+      entry.parts
+        .filter((part) => part.kind === 'text' && part.text)
+        .map((part) => (part.truncated ? withoutCutReminder(part.text ?? '') : (part.text ?? '')))
+        .join('\n'),
+    );
+    return text ? [text] : [];
+  });
+}
+
+/**
+ * The request that asks a model for a conversation's title, from the person's
+ * prompts alone: what leaves the host is still only what the person wrote,
+ * never the agent's answers or the code it read. Strict and deterministic for
+ * the same reasons as {@link sessionTitleRequest}.
+ */
+export function conversationTitleRequest(prompts: readonly string[]): SessionTitleRequest {
+  const listed = prompts
+    .slice(0, CONVERSATION_MAX_PROMPTS)
+    .map((prompt, index) => `${index + 1}. ${prompt.slice(0, CONVERSATION_PROMPT_MAX_CHARS)}`)
+    .join('\n\n');
+  return {
+    system: titleInstruction('system/title.conversation'),
+    messages: [{ role: 'user', content: quoted(listed) }],
     maxTokens: 32,
     temperature: 0,
   };
@@ -103,7 +255,9 @@ export function cleanModelTitle(answer: string): string | null {
     .find((candidate) => candidate.length > 0);
   if (!line) return null;
   const text = line
-    .replace(/^(?:title\s*:\s*)/i, '')
+    .replace(/^(?:title|name)\s*:\s*/i, '')
+    // The conversation is sent as a numbered list, and a model may echo a number.
+    .replace(/^(?:\d+[.)]|[-*•])\s+/, '')
     // A model that answers with a quoted or bolded title is answering correctly enough.
     .replace(/^["'`*_]+|["'`*_.]+$/g, '')
     .trim();

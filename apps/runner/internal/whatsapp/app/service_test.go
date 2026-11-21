@@ -61,6 +61,15 @@ func (d *fakeDevice) Send(_ context.Context, chatID, text string, quote *domain.
 	d.sent = append(d.sent, chatID+": "+text)
 	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
 }
+func (d *fakeDevice) SendVoice(_ context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.sendErr != nil {
+		return "", time.Time{}, d.sendErr
+	}
+	d.sent = append(d.sent, fmt.Sprintf("%s: voice %ds %dB", chatID, seconds, len(audio)))
+	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
+}
 func (d *fakeDevice) Download(_ context.Context, ref []byte) ([]byte, string, error) {
 	if string(ref) != "ref" {
 		return nil, "", errors.New("unknown ref")
@@ -149,7 +158,20 @@ type recorder struct {
 	mu      sync.Mutex
 	states  []domain.Status
 	batches [][]domain.Inbound
+	chats   [][]domain.KnownChat
 	refuse  bool
+}
+
+func (r *recorder) Chats(batch []domain.KnownChat) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.chats = append(r.chats, append([]domain.KnownChat(nil), batch...))
+}
+
+func (r *recorder) chatFrames() [][]domain.KnownChat {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([][]domain.KnownChat(nil), r.chats...)
 }
 
 func (r *recorder) State(s domain.Status) {
@@ -230,6 +252,43 @@ func TestStartConnectsAStoredDevice(t *testing.T) {
 	if got := pub.last(); got.State != domain.StateConnecting || got.Phone != "34600111222@s.whatsapp.net" {
 		t.Fatalf("link up heard %+v", got)
 	}
+}
+
+// The device's groups and contacts go to the link in frames of at most
+// ChatsBatchMax, and again to every new link, so Settings lists them before
+// anyone writes; unlinking forgets them. Breaks if a list is sent in one
+// frame the control plane refuses, or a link that came up later never hears it.
+func TestChatsGoToTheLinkInFramesAndAgainOnLinkUp(t *testing.T) {
+	device := &fakeDevice{}
+	svc, _, pub := started(t, device, nil)
+	chats := make([]domain.KnownChat, domain.ChatsBatchMax+2)
+	for i := range chats {
+		chats[i] = domain.KnownChat{ChatID: fmt.Sprintf("3460000%04d@s.whatsapp.net", i), Kind: domain.ChatDirect}
+	}
+	svc.Chats(chats)
+	frames := pub.chatFrames()
+	if len(frames) != 2 || len(frames[0]) != domain.ChatsBatchMax || len(frames[1]) != 2 {
+		t.Fatalf("frames of %v", frameSizes(frames))
+	}
+	svc.LinkUp(context.Background())
+	if got := frameSizes(pub.chatFrames()); len(got) != 4 {
+		t.Fatalf("a new link heard frames of %v", got)
+	}
+	if err := svc.Unlink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.LinkUp(context.Background())
+	if got := frameSizes(pub.chatFrames()); len(got) != 4 {
+		t.Fatalf("an unlinked number's chats went out again: %v", got)
+	}
+}
+
+func frameSizes(frames [][]domain.KnownChat) []int {
+	sizes := make([]int, 0, len(frames))
+	for _, f := range frames {
+		sizes = append(sizes, len(f))
+	}
+	return sizes
 }
 
 // Pairing hands every QR code to the link, then the paired number; a host
@@ -431,5 +490,59 @@ func TestVoiceNoteIsFetchedAfterTheAck(t *testing.T) {
 	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
 	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "V1"); codeOf(err) != "WA_005" {
 		t.Fatalf("after unlinking, a kept voice note answered %v", err)
+	}
+}
+
+// oggOpus is the smallest audio CheckVoiceOut takes: one Ogg page, no
+// segments, carrying the Opus identification header.
+func oggOpus(size int) []byte {
+	head := append([]byte("OggS"), make([]byte, 23)...)
+	head = append(head, []byte("OpusHead")...)
+	if size > len(head) {
+		head = append(head, make([]byte, size-len(head))...)
+	}
+	return head
+}
+
+// A voice note reaches the device only from a connected number, only as
+// Ogg/Opus within a frame (WA_008, WA_006, before any budget is spent), and
+// spends the same host budget a text does, so speaking cannot get round the
+// number's send limits; WhatsApp's 429 on it pauses every send (WA_003, then
+// WA_004). A voice path that skipped the budget would let a bot burn the
+// number by answering aloud.
+func TestSendVoiceRefusalsAndBudget(t *testing.T) {
+	chat := "34600333444@s.whatsapp.net"
+	device := &fakeDevice{}
+	svc, _, _ := started(t, device, domain.NewBudget(1, 10))
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 3); codeOf(err) != "WA_002" {
+		t.Fatalf("voice without a device: %v", err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.SendVoice(context.Background(), chat, []byte("RIFF....WAVEfmt "), 3); codeOf(err) != "WA_008" {
+		t.Fatalf("a WAV sent as a voice note: %v", err)
+	}
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(domain.VoiceNoteMaxBytes+1), 3); codeOf(err) != "WA_006" {
+		t.Fatalf("a voice note past a frame: %v", err)
+	}
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 0); codeOf(err) != "WA_008" {
+		t.Fatalf("a voice note of no length: %v", err)
+	}
+	id, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 3)
+	if err != nil || id != "ID1" || len(device.sent) != 1 || device.sent[0] != chat+": voice 3s 64B" {
+		t.Fatalf("voice: %q %v %v", id, err, device.sent)
+	}
+	if _, _, err := svc.Send(context.Background(), chat, "and a text", nil); codeOf(err) != "WA_004" {
+		t.Fatalf("a text after the voice note spent the budget: %v", err)
+	}
+
+	limited := &fakeDevice{sendErr: fmt.Errorf("%w: 429", domain.ErrRateLimited)}
+	svc, _, _ = started(t, limited, domain.NewBudget(5, 10))
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 3); codeOf(err) != "WA_003" {
+		t.Fatalf("rate-limited voice: %v", err)
+	}
+	limited.sendErr = nil
+	if _, _, err := svc.Send(context.Background(), chat, "hi", nil); codeOf(err) != "WA_004" {
+		t.Fatalf("send during WhatsApp's pause after a voice note: %v", err)
 	}
 }
