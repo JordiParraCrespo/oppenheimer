@@ -29,6 +29,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
+  useBotSuggestion: () => null,
   useBotWaitingMessages: () => [],
   useBotSentTexts: () => [],
   useBotGoal: () => ({ data: null }),

@@ -5,11 +5,11 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import { BOT_PROVIDERS, type BotProvider } from '@oppenheimer/shared';
+import { MODEL_PROVIDERS, type ModelProvider } from '@oppenheimer/shared';
 
 export interface ModelProviderCredentialProps {
   organizationId: string;
-  provider: BotProvider;
+  provider: ModelProvider;
   /** The key, sealed by `ProviderKeySealerPort`; never the key itself. */
   sealedKey: Buffer;
   /** The key's last four characters, so a person can tell which one is stored. */
@@ -44,7 +44,7 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
 
   static createNew(props: {
     organizationId: string;
-    provider: BotProvider;
+    provider: ModelProvider;
     sealedKey: Buffer;
     keyHint: string;
     updatedByUserId: string;
@@ -61,7 +61,7 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
     return this.props.organizationId;
   }
 
-  get provider(): BotProvider {
+  get provider(): ModelProvider {
     return this.props.provider;
   }
 
@@ -86,8 +86,8 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
     if (!props.organizationId) {
       throw new ArgumentNotProvidedException('A provider key belongs to a workspace');
     }
-    if (!BOT_PROVIDERS.includes(props.provider)) {
-      throw new ArgumentInvalidException(`${props.provider} is not a bot provider`);
+    if (!MODEL_PROVIDERS.includes(props.provider)) {
+      throw new ArgumentInvalidException(`${props.provider} is not a model provider`);
     }
     if (props.sealedKey.length === 0) {
       throw new ArgumentNotProvidedException('A provider key is stored sealed');

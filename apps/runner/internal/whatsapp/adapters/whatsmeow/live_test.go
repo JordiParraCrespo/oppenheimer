@@ -47,6 +47,7 @@ func TestLiveWhatsAppHandsOutAPairingCode(t *testing.T) {
 type noEvents struct{}
 
 func (noEvents) Received(domain.Received) {}
+func (noEvents) Chats([]domain.KnownChat) {}
 func (noEvents) Connected(string, string) {}
 func (noEvents) Disconnected()            {}
 func (noEvents) LoggedOut(string)         {}

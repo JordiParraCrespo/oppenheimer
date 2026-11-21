@@ -106,7 +106,8 @@ function SettingsHeading({ className, ...props }: React.ComponentProps<'h2'>) {
  * what the row does (Revert, edit and delete icon buttons, a `Switch`), or a
  * word in their place ("Current"). `muted` is a record the bot can read but
  * not change (a fact shared from another bot). An edit in place passes the
- * field as `children` instead of the text.
+ * field as `children` instead of the text. A row that is only its text (the
+ * card's empty row, "No skills yet.") centres it in the row's height.
  */
 function SettingsListRow({
   lead,
@@ -127,13 +128,14 @@ function SettingsListRow({
   /** `center` for a one-line record with a control (a connector and its switch). */
   align?: 'start' | 'center';
 }) {
+  const textOnly = !lead && !meta && !kind && !actions;
   return (
     <div
       data-slot="settings-list-row"
       data-muted={muted || undefined}
       className={cn(
         'flex min-h-13 flex-wrap gap-x-3 gap-y-2 border-t border-border-subtle py-3 pr-3 pl-5 first:border-t-0',
-        align === 'center' ? 'items-center' : 'items-start',
+        align === 'center' || textOnly ? 'items-center' : 'items-start',
         className,
       )}
       {...props}

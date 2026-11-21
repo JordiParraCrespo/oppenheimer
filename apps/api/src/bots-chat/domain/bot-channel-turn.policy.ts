@@ -1,6 +1,12 @@
-import type { BotChannelOrigin } from '@oppenheimer/shared';
+import {
+  type BotChannelOrigin,
+  type BotTurnLane,
+  type BotTurnOrigin,
+  isChannelOrigin,
+} from '@oppenheimer/shared';
 import { BotMessageEntity, type BotPendingMedia } from './bot-message.entity';
-import { BotTurnEntity } from './bot-turn.entity';
+import { maySteer } from './bot-steer.policy';
+import { type BotContactChat, BotTurnEntity } from './bot-turn.entity';
 
 /** What a channel turn takes from the bot it wakes: everything but where it runs. */
 export type ChannelTurnProps = Omit<
@@ -9,12 +15,17 @@ export type ChannelTurnProps = Omit<
 >;
 
 /**
- * The turn the owner's message on a channel queues: in the
+ * The turn a message on a channel queues, the owner's or a contact's: in the
  * owner lane, as the owner, in the chat's own conversation, opened by what
  * they wrote as their message. It is the owner's own direct chat, so it is
  * theirs as a console message is: the bot's tools and memory. The channel
  * names its origin and the key that makes the message one turn, and any
  * media the turn reads when it starts.
+ *
+ * Words alone are sent as a steer: written while the bot works on the chat's
+ * last request, they reach it at its next tool call, so it can answer in
+ * between and carry on (`takesSteer`), instead of waiting for the work to
+ * end. Media waits for a turn of its own, which reads it when it starts.
  */
 export function channelTurn(
   props: ChannelTurnProps,
@@ -24,14 +35,22 @@ export function channelTurn(
     conversationId: string;
     text: string;
     pendingMedia?: BotPendingMedia | null;
+    /**
+     * A contact's message, in one person's chat or a group's: the turn is a
+     * contact's (`turnReach`), and steers nothing.
+     */
+    contact?: BotContactChat;
   },
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
+  const contact = message.contact ?? null;
   const turn = BotTurnEntity.queue({
     ...props,
     conversationId: message.conversationId,
     origin: message.origin,
     lane: 'owner',
     sourceKey: message.sourceKey,
+    steer: contact === null && !message.pendingMedia && maySteer(true, message.text, 0),
+    contact,
   });
   const opening = BotMessageEntity.createNew({
     organizationId: props.organizationId,
@@ -45,6 +64,87 @@ export function channelTurn(
     pendingMedia: message.pendingMedia ?? null,
   });
   return { turn, opening };
+}
+
+/**
+ * Whether a turn sends what it writes to its chat as it goes: the owner's own
+ * message on a channel. Each block of text the bot writes before it calls a
+ * tool ("On it, checking your sessions") goes out then, so the person hears
+ * from it at once rather than when the work is done, and the turn's end sends
+ * only what came after its last call. Any other channel turn (an answer to
+ * the bot's ask of another) still answers once, at its end.
+ */
+export function sendsAsItGoes(turn: { origin: BotTurnOrigin; lane: BotTurnLane }): boolean {
+  return isChannelOrigin(turn.origin) && turn.lane === 'owner';
+}
+
+/** One stored line of a turn, as the reply at its end reads it. */
+export interface ChannelTurnLine {
+  role: 'assistant' | 'activity';
+  content: string;
+}
+
+/**
+ * Where a turn that sends as it goes sends: a stored activity line is a run
+ * of tool calls beginning, and what the bot wrote before it goes out then.
+ * The one boundary both the sends along the way (`SaidAsItGoes`) and the
+ * turn's end (`unsentTexts`) cut at.
+ */
+function startsToolRun(line: { role: string }): boolean {
+  return line.role === 'activity';
+}
+
+/**
+ * The texts a channel turn's end still owes its chat, in order: every text
+ * the bot wrote, or, for a turn that sent as it went (`sendsAsItGoes`), the
+ * ones after its last run of tool calls, the earlier ones having gone out
+ * when that run began.
+ */
+export function unsentTexts(lines: readonly ChannelTurnLine[], asItGoes: boolean): string[] {
+  let from = 0;
+  if (asItGoes) {
+    for (const [index, line] of lines.entries()) if (startsToolRun(line)) from = index + 1;
+  }
+  return lines
+    .slice(from)
+    .filter((line) => line.role === 'assistant')
+    .map((line) => line.content);
+}
+
+/**
+ * What a turn that sends as it goes owes its chat while it runs: the texts
+ * it stored, sent together once a run of tool calls begins
+ * (`startsToolRun`). Texts stay owed until a send is confirmed (`sent`), so
+ * one that did not go (the host offline a moment) goes with the next.
+ */
+export class SaidAsItGoes {
+  private owed: string[] = [];
+
+  /** A line the turn stored: the words to send now, or null. */
+  stored(line: { role: string; content: string }): string | null {
+    if (line.role === 'assistant' && line.content.trim()) this.owed.push(line.content);
+    else if (startsToolRun(line) && this.owed.length > 0) return this.owed.join('\n\n');
+    return null;
+  }
+
+  /** The words `stored` handed out went to the chat. */
+  sent(): void {
+    this.owed = [];
+  }
+}
+
+/** What a contact is told when their turn failed: never why, which is the owner's to read. */
+export const CONTACT_FAILED_LINE = 'Sorry, I can’t answer that right now.';
+
+/**
+ * What a contact's turn sends back when it ends: its last text, a fixed line
+ * when it failed, and nothing when it ended with nothing to say. A contact,
+ * or a whole group, never reads why a turn failed (a key refused, a provider
+ * or database error) nor a pointer to the owner's console.
+ */
+export function contactReplyOf(turn: { status: string }, texts: readonly string[]): string | null {
+  if (turn.status === 'failed') return CONTACT_FAILED_LINE;
+  return [...texts].reverse().find((text) => text.trim()) ?? null;
 }
 
 /**

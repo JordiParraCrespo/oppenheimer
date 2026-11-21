@@ -59,6 +59,10 @@ export interface BotProps {
   /** When its chat last had a message, and the start of it; written by the chat, never an edit. */
   lastMessageAt?: Date | null;
   lastMessagePreview?: string | null;
+  /** When the bot last wrote words in a chat; written by the chat, never an edit. */
+  lastReplyAt?: Date | null;
+  /** When the person last read its chat; written by acknowledging, never an edit. */
+  acknowledgedAt?: Date | null;
 }
 
 export interface CreateBotProps {
@@ -224,6 +228,14 @@ export class BotEntity extends AggregateRoot<BotProps> {
 
   get lastMessagePreview(): string | null {
     return this.props.lastMessagePreview ?? null;
+  }
+
+  /** Whether it replied since the person last read its chat, or ever, when they never did. */
+  get hasUnreadMessage(): boolean {
+    const last = this.props.lastReplyAt;
+    if (!last) return false;
+    const read = this.props.acknowledgedAt;
+    return !read || last.getTime() > read.getTime();
   }
 
   /** Where the next write puts it among its group's bots, when it moved; null when it did not. */

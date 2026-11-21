@@ -92,6 +92,12 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
     busyPrefix: string | null,
+    /**
+     * The most turns the turn's conversation may have been sent in the last
+     * hour, counted under the bot's lock with the insert, so a burst of
+     * wakes cannot all pass it; past it the outcome is `busy`.
+     */
+    perHour?: number,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
 
   /**
@@ -214,8 +220,9 @@ export interface BotTurnRepositoryPort {
    * Steer (`BotSteerPolicy`): under the bot's lock, every waiting steer of
    * the bot that `takes` allows, oldest first, moved into `running`: its
    * message onto the running turn at `BOT_STEER_HELD_POSITION`, its queued
-   * turn deleted, in one transaction, so a Stop, an edit or the worker that
-   * would run it sees it either waiting or gone. The message becomes the
+   * turn deleted (ended instead when it has a source key, so a channel's
+   * message delivered twice stays one turn), in one transaction, so a Stop,
+   * an edit or the worker that would run it sees it either waiting or gone. The message becomes the
    * running turn's newest, as of the take, until the transcript places it
    * where the turn delivered it. A steer whose message carries images stays
    * queued: the running turn would not read them.
@@ -229,6 +236,13 @@ export interface BotTurnRepositoryPort {
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;
   /** The turn running in a conversation, if one is: what a Telegram `/stop` stops. */
   findRunningIn(organizationId: string, conversationId: string): Promise<BotTurnEntity | null>;
+  /** The bots with a turn queued or running, on the bots the scope may read: the sidebar's working bots. */
+  findWorkingBotIds(scope: AccessScope): Promise<string[]>;
+  /**
+   * The bots whose last ended turn failed after the person last read the
+   * chat (`bot."acknowledgedAt"`), on the bots the scope may read.
+   */
+  findBotIdsWithUnreadFailure(scope: AccessScope): Promise<string[]>;
   /** Whether Stop was pressed on this turn. */
   isCancelRequested(turnId: string): Promise<boolean>;
 

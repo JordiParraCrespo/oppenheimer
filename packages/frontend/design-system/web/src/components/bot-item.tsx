@@ -18,7 +18,8 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
 /**
  * BotItem — an employee in the sidebar, on one line: a 20px square photo
  * (initials in ink until it loads) with a 9px green dot on its corner while
- * the bot is working, then the name at 14px. The last message is the row's
+ * the bot is `live`, then the name at 14px, which breathes while it is
+ * `working` as a working `SessionItem`'s does (`animate-shimmer`). The last message is the row's
  * tooltip, beside it on hover ("You: …" when it was yours). An unread chat
  * sets the name at 600 with a 7px blue dot at the end; one waiting on the
  * person (`needsInput`: an approval, a question) does the same with an amber
@@ -35,6 +36,7 @@ function BotItem({
   face,
   preview,
   live = false,
+  working = false,
   unread = false,
   needsInput = false,
   active,
@@ -53,8 +55,10 @@ function BotItem({
   face?: BotFaceSpec;
   /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
-  /** The bot is working: the green dot on the photo. */
+  /** The bot is live: the green dot on the photo. */
   live?: boolean;
+  /** The bot is at work: the name shimmers, as a working session's does. */
+  working?: boolean;
   unread?: boolean;
   /** The bot is waiting on the person (an approval, a question): the amber dot. */
   needsInput?: boolean;
@@ -71,6 +75,7 @@ function BotItem({
     <ButtonPrimitive
       data-slot="bot-item"
       data-active={active || undefined}
+      data-working={working || undefined}
       data-unread={unread || undefined}
       data-needs-input={needsInput || undefined}
       data-attention={unread || needsInput || undefined}
@@ -88,13 +93,26 @@ function BotItem({
       <span className="relative flex shrink-0">
         <BotAvatar option={{ image, initials }} size={20} face={face} />
         {live ? (
+          // The dot's cutout is the row's ground: the sidebar, under the
+          // row's own wash when it is hovered, its menu is open, or it is the
+          // open chat. The washes are translucent, so they are laid over the
+          // sidebar rather than standing in for it.
           <span
             aria-hidden
-            className="absolute -right-0.75 -bottom-0.75 size-2.25 rounded-pill border-2 border-sidebar bg-success"
-          />
+            className="absolute -right-0.75 -bottom-0.75 flex size-2.25 rounded-pill bg-sidebar p-0.5"
+          >
+            <span className="absolute inset-0 rounded-pill group-hover/bot:bg-hover-surface group-hover/row:bg-hover-surface group-data-menu-open/row:bg-hover-surface group-data-active/bot:hidden" />
+            <span className="absolute inset-0 rounded-pill group-data-active/bot:bg-selected-surface" />
+            <span className="relative size-full rounded-pill bg-success" />
+          </span>
         ) : null}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold">
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold',
+          working && 'motion-safe:animate-shimmer',
+        )}
+      >
         {name}
       </span>
       {needsInput || unread ? (

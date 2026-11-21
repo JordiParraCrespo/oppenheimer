@@ -15049,7 +15049,7 @@
     },
     "/api/v1/bots/{id}/routines/{routineId}": {
       "patch": {
-        "description": "The Routines tab’s switch: off pauses its triggers, on resumes them from now. What a routine does is changed in the bot’s chat, through its own tool.",
+        "description": "The Routines tab’s switch and its Edit dialog. `enabled` off pauses its triggers, on resumes them from now; `name` and `prompt` change what it is called and what it asks the bot, the prompt as its next revision. Fields left out stay as they are. When it runs (its triggers) is changed in the bot’s chat, through its own tool.",
         "operationId": "updateBotRoutine",
         "parameters": [
           {
@@ -15112,6 +15112,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTOMATIONS_003 — The routine changed meanwhile",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -15119,7 +15129,7 @@
             "bearer": []
           }
         ],
-        "summary": "Turn a bot’s routine on or off",
+        "summary": "Change a bot’s routine: its name, its prompt, or whether it is on",
         "tags": [
           "Bots"
         ]
@@ -18522,6 +18532,180 @@
         ]
       }
     },
+    "/api/v1/whatsapp/accounts/{id}/chats": {
+      "get": {
+        "description": "Every group and person the number has seen (the most recently active first, up to 1,000), then any it allows with no message kept, each with its grant: answered by a bot, by the number’s default, or by no one (`grant: null`). The owner’s own chat and the number’s chat with itself are not listed.",
+        "operationId": "findWhatsappChatRoutes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WhatsappChatRouteResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a WhatsApp number’s chats and who answers each",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts/{id}/routes": {
+      "post": {
+        "description": "Up to 200 chats the number lists at once: `none` stops answering them (their messages are only kept), `default` has the number’s default bot answer them, `bot` one of the caller’s bots (`botId`). A chat not allowed yet is allowed. Answers the number’s chats as they are now.",
+        "operationId": "routeWhatsappChats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteWhatsappChatsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WhatsappChatRouteResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of the caller’s\n\nWHATSAPP_010 — A chat the number has not seen\n\nWHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WHATSAPP_018 — Past the chats one number allows\n\nWHATSAPP_015 — The owner’s number is not confirmed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WHATSAPP_017 — The owner’s own chat, or the number’s",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose who answers a set of a WhatsApp number’s chats",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
     "/api/v1/whatsapp/accounts/{id}/grants/{grantId}": {
       "patch": {
         "description": "Sets the caller’s bot that answers in a chat the number allows, or the number’s default (`null`). A bot that answers in one cannot be deleted until it is unbound.",
@@ -21221,6 +21405,66 @@
           }
         ],
         "summary": "Delete a bot",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/acknowledge": {
+      "post": {
+        "description": "Everything in the chat until now is read: the bot is no longer `unread`, and a turn that failed before now no longer waits on you (`GET /bot-activity`).",
+        "operationId": "acknowledgeBot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Read"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a bot's chat read",
         "tags": [
           "Bots"
         ]
@@ -24012,6 +24256,73 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/suggestion": {
+      "get": {
+        "description": "After the bot answers, its own model guesses the person's next message, which the composer offers to take with Tab. Null while a turn runs, before the bot has answered, or when there is no clear next step. Kept per message it answers, so asking again costs nothing.",
+        "operationId": "findBotSuggestion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotSuggestionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A guess at the person's next message",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/usage": {
       "get": {
         "description": "The tokens its turns spent, by model, and its calls on the owner's key outside them (goal reviews, summaries, rule reviews), since the chat's first turn. Cache reads and writes are part of the input.",
@@ -24471,6 +24782,54 @@
           }
         ],
         "summary": "The workspace's bot approvals",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bot-activity": {
+      "get": {
+        "description": "Of the bots you may read: those working (a turn queued or running) and those waiting on you (an approval or questions pending, or a failed turn since you last read the chat). The workspace stream sends `botTurn.changed` and `botApproval.changed` when either may have moved.",
+        "operationId": "findBotActivity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotActivityResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "What the bots are doing",
         "tags": [
           "Bots"
         ]
@@ -25460,6 +25819,123 @@
           }
         ],
         "summary": "Whether the workspace can dictate",
+        "tags": [
+          "Voice"
+        ]
+      }
+    },
+    "/api/v1/voice/settings": {
+      "get": {
+        "description": "The provider and model that transcribe dictation and voice notes, the provider, model and voice bots speak voice notes in, and the model that tidies a transcript; null is automatic. `available` lists what the workspace can use now, in the order each is tried.",
+        "operationId": "findVoiceSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "How the workspace hears and speaks",
+        "tags": [
+          "Voice"
+        ]
+      },
+      "put": {
+        "description": "Replaces the voice choices whole. A model or voice is one its provider lists (ElevenLabs takes any voice id); null is automatic, or the provider’s default.",
+        "operationId": "updateVoiceSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVoiceSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose how the workspace hears and speaks",
         "tags": [
           "Voice"
         ]
@@ -35179,13 +35655,20 @@
       "UpdateBotRoutineRequest": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8000
+          },
           "enabled": {
             "type": "boolean"
           }
-        },
-        "required": [
-          "enabled"
-        ]
+        }
       },
       "TaskSessionLinkResponseDto": {
         "type": "object",
@@ -36773,6 +37256,87 @@
           "botId",
           "grantedByBotId",
           "grantedAt"
+        ]
+      },
+      "WhatsappChatRouteResponseDto": {
+        "type": "object",
+        "properties": {
+          "chatId": {
+            "type": "string",
+            "example": "120363000000000000@g.us",
+            "description": "The chat’s WhatsApp id: a group’s, or a person’s number."
+          },
+          "chatKind": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "group"
+            ]
+          },
+          "chatName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The group’s or person’s name as the number last saw it."
+          },
+          "messageCount": {
+            "type": "number",
+            "description": "How many of its messages the number keeps."
+          },
+          "lastAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the number last saw a message in it; null for a chat allowed before any."
+          },
+          "grant": {
+            "nullable": true,
+            "description": "Its grant: the chat is answered, by `botId` (null: the number’s default bot). Null when no one answers it.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WhatsappChatGrantResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "chatId",
+          "chatKind",
+          "chatName",
+          "messageCount",
+          "lastAt",
+          "grant"
+        ]
+      },
+      "RouteWhatsappChatsRequest": {
+        "type": "object",
+        "properties": {
+          "chatIds": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            }
+          },
+          "route": {
+            "type": "string",
+            "enum": [
+              "none",
+              "default",
+              "bot"
+            ]
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "chatIds",
+          "route"
         ]
       },
       "AllowWhatsappChatRequest": {
@@ -38568,6 +39132,10 @@
             "type": "string",
             "nullable": true,
             "description": "The start of its last message, for the sidebar; null before the first."
+          },
+          "unread": {
+            "type": "boolean",
+            "description": "Whether it replied since you last read its chat (`POST /bots/:id/acknowledge`); your own messages never make it unread."
           }
         },
         "required": [
@@ -38589,7 +39157,8 @@
           "createdAt",
           "updatedAt",
           "lastActivityAt",
-          "lastMessagePreview"
+          "lastMessagePreview",
+          "unread"
         ]
       },
       "CreateBotRequest": {
@@ -39273,7 +39842,9 @@
               "glm",
               "openai",
               "chatgpt",
-              "xai"
+              "xai",
+              "groq",
+              "elevenlabs"
             ]
           },
           "configured": {
@@ -40699,6 +41270,19 @@
           "loop"
         ]
       },
+      "BotSuggestionResponseDto": {
+        "type": "object",
+        "properties": {
+          "suggestion": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person's likely next message, offered in the composer; null when there is none to offer."
+          }
+        },
+        "required": [
+          "suggestion"
+        ]
+      },
       "BotUsageModelResponseDto": {
         "type": "object",
         "properties": {
@@ -40769,7 +41353,8 @@
               "goal_review",
               "summary",
               "rule_review",
-              "dream"
+              "dream",
+              "suggestion"
             ],
             "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory."
           },
@@ -41177,6 +41762,31 @@
           "botId",
           "botName",
           "sessionId"
+        ]
+      },
+      "BotActivityResponseDto": {
+        "type": "object",
+        "properties": {
+          "working": {
+            "description": "The bots with a turn queued or running, in no order.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "waitingOnYou": {
+            "description": "The bots waiting on you, in no order: an approval or a card of questions pending, or, while not working, a turn that failed since you last read the chat.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "working",
+          "waitingOnYou"
         ]
       },
       "WorkspaceBotNoticeResponseDto": {
@@ -41659,6 +42269,9 @@
             "type": "string",
             "enum": [
               "chatgpt",
+              "openai",
+              "groq",
+              "elevenlabs",
               "speech_key"
             ],
             "description": "Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server."
@@ -41689,6 +42302,9 @@
               "type": "string",
               "enum": [
                 "chatgpt",
+                "openai",
+                "groq",
+                "elevenlabs",
                 "speech_key"
               ]
             }
@@ -41697,6 +42313,193 @@
         "required": [
           "available",
           "providers"
+        ]
+      },
+      "VoiceSettingsAvailableDto": {
+        "type": "object",
+        "properties": {
+          "transcription": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "chatgpt",
+                "openai",
+                "groq",
+                "elevenlabs",
+                "speech_key"
+              ]
+            }
+          },
+          "synthesis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "openai",
+                "elevenlabs",
+                "speech_key"
+              ]
+            }
+          },
+          "polish": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "anthropic",
+                "glm",
+                "openai",
+                "chatgpt",
+                "xai"
+              ]
+            }
+          }
+        },
+        "required": [
+          "transcription",
+          "synthesis",
+          "polish"
+        ]
+      },
+      "VoiceSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "transcriptionProvider": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "openai",
+              "groq",
+              "elevenlabs",
+              "speech_key"
+            ],
+            "nullable": true
+          },
+          "transcriptionModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "synthesisProvider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "elevenlabs",
+              "speech_key"
+            ],
+            "nullable": true
+          },
+          "synthesisModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "synthesisVoice": {
+            "type": "string",
+            "nullable": true
+          },
+          "polishProvider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "glm",
+              "openai",
+              "chatgpt",
+              "xai",
+              "off"
+            ],
+            "nullable": true
+          },
+          "polishModel": {
+            "type": "string",
+            "nullable": true
+          },
+          "available": {
+            "$ref": "#/components/schemas/VoiceSettingsAvailableDto"
+          }
+        },
+        "required": [
+          "transcriptionProvider",
+          "transcriptionModel",
+          "synthesisProvider",
+          "synthesisModel",
+          "synthesisVoice",
+          "polishProvider",
+          "polishModel",
+          "available"
+        ]
+      },
+      "UpdateVoiceSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "transcriptionProvider": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "openai",
+              "groq",
+              "elevenlabs",
+              "speech_key",
+              null
+            ],
+            "nullable": true
+          },
+          "transcriptionModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "nullable": true
+          },
+          "synthesisProvider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "elevenlabs",
+              "speech_key",
+              null
+            ],
+            "nullable": true
+          },
+          "synthesisModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "nullable": true
+          },
+          "synthesisVoice": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "nullable": true
+          },
+          "polishProvider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "glm",
+              "openai",
+              "chatgpt",
+              "xai",
+              "off",
+              null
+            ],
+            "nullable": true
+          },
+          "polishModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "nullable": true
+          }
+        },
+        "required": [
+          "transcriptionProvider",
+          "transcriptionModel",
+          "synthesisProvider",
+          "synthesisModel",
+          "synthesisVoice",
+          "polishProvider",
+          "polishModel"
         ]
       },
       "InboxMarkResponseDto": {

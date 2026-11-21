@@ -62,7 +62,7 @@ function ChatUserMessage({
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
-      {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
+      {attachments ? <div data-slot="chat-user-message-attachments" className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
       {children != null && children !== false ? (
         <div
           className={cn(
@@ -74,7 +74,7 @@ function ChatUserMessage({
         </div>
       ) : null}
       {time || actions ? (
-        <div className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
+        <div data-slot="chat-user-message-trail" className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
           {time ? <span className="figures pr-1 font-mono text-[11px]">{time}</span> : null}
           {actions}
         </div>

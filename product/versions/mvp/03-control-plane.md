@@ -347,9 +347,20 @@ the same way every time. The `session.named` entry records which it was:
 asking the model while the host is told about the session, and returns it; the
 runner's path does not wait. A derived title, from either source, never
 overwrites a name a person typed, and that rule is in the fold; it is also
-what stops a second naming, since the *first* prompt is the one it names from
-and there is only one of those. The one line that leaves the host is the
-person's own prompt.
+what stops a second naming from the first prompt, since there is only one of
+those. The one line that leaves the host is the person's own prompt.
+
+**Then named once more, from the conversation.** The first prompt alone often
+says little ("fix the bug"). Once the agent has answered the person's second
+prompt, and only while the name is still derived (`model` or `prompt`), the
+API reads the conversation off the host (`transcript.read`, from its start),
+asks the model for a title from the person's prompts so far (at most six, the
+agent's answers never), and records `session.named` with `source:
+conversation`, once per session. A person's rename at any time stops it for
+good, and the write is conditional on the name still being derived under the
+session's lock. Without a model nothing is renamed: the prompt's own words
+already named it. What leaves the host is still only what the person wrote,
+with secrets taken out.
 
 **A session moves between projects as one event, and nothing else moves.**
 `POST /sessions/{id}/move` appends `session.moved` (`{ from, to }`; an entry

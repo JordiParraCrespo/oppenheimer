@@ -2,6 +2,7 @@ import {
   Bot,
   Database,
   FileText,
+  MessageCircle,
   ShieldCheck,
   SquareSlash,
   Terminal,
@@ -49,6 +50,12 @@ export const BOT_SETTINGS_TABS = [
     to: '/bots/$botId/settings/routines',
     labelKey: 'bots.settings.tabs.routines',
     Icon: Zap,
+  },
+  {
+    slug: 'gateways',
+    to: '/bots/$botId/settings/gateways',
+    labelKey: 'bots.settings.tabs.gateways',
+    Icon: MessageCircle,
   },
   {
     slug: 'home-host',

@@ -392,6 +392,118 @@ describe('bots chat (integration)', () => {
     expect(await turns.finish(stale, null)).toBe(false);
   });
 
+  /**
+   * The sidebar's working bots: a bot reads as working from the turn it is
+   * sent to the end of its last, through a running turn and one queued behind
+   * it, and each queue and each end stages the event that tells the consoles
+   * to read it again. Without the event the name would shimmer on after the
+   * turn ends; without the read, another workspace's turns would show.
+   */
+  it('reads a bot as working while a turn of its is queued or running, staging an event at each queue and end', async () => {
+    await dataSource.query(`DELETE FROM outbox_message`);
+    const bot = await create('Busy Bot');
+    const turnEvents = async (): Promise<string[]> => {
+      const rows: { aggregateId: string }[] = await dataSource.query(
+        `SELECT "aggregateId" FROM outbox_message WHERE "eventName" = 'BotTurnChangedDomainEvent'
+          ORDER BY "createdAt", id`,
+      );
+      return rows.map((row) => row.aggregateId);
+    };
+    expect(await turns.findWorkingBotIds(scope())).toEqual([]);
+
+    const first = sent(bot, 'One');
+    const second = sent(bot, 'Two');
+    await turns.enqueue(first.turn, first.message, null);
+    await turns.enqueue(second.turn, second.message, null);
+    expect(await turns.findWorkingBotIds(scope())).toEqual([bot.id]);
+    expect(await turns.findWorkingBotIds(scopeOf(randomUUID()))).toEqual([]);
+    expect(await turnEvents()).toEqual([first.turn.id, second.turn.id]);
+    expect(first.turn.domainEvents).toEqual([]);
+
+    const running = (await turns.findForRun(first.turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    running.end('completed', new Date());
+    await turns.finish(running, null);
+    // The second is still queued: the bot works on.
+    expect(await turns.findWorkingBotIds(scope())).toEqual([bot.id]);
+
+    const last = (await turns.findForRun(second.turn.id)).unwrap();
+    last.end('cancelled', new Date());
+    await turns.finish(last, null);
+    expect(await turns.findWorkingBotIds(scope())).toEqual([]);
+    expect(await turnEvents()).toEqual([
+      first.turn.id,
+      second.turn.id,
+      first.turn.id,
+      second.turn.id,
+    ]);
+  });
+
+  /**
+   * What the sidebar reads beyond working, as a session's group: a bot is
+   * unread from its first message until its chat is read (`acknowledgedAt`),
+   * and waits on you for a failed turn until the chat is read or a later turn
+   * ends, and for a card of questions while it is pending. Without them a
+   * reply read on one device would stay blue on another, and a failure would
+   * say nothing outside its chat.
+   */
+  it('reads a bot unread until its chat is read, and a failed turn or a pending card as waiting on you', async () => {
+    const bot = await create('Watched Bot');
+    const unread = async () => (await bots.findOneById(scope(), bot.id)).unwrap().hasUnreadMessage;
+    expect(await unread()).toBe(false);
+
+    const first = sent(bot, 'Deploy it');
+    await turns.enqueue(first.turn, first.message, null);
+    // Your own message is never unread; the bot's reply is.
+    expect(await unread()).toBe(false);
+    await messages.insert(
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: first.turn.id,
+        role: 'assistant',
+        content: 'Deploying.',
+        steps: [],
+        position: 1,
+      }),
+    );
+    expect(await unread()).toBe(true);
+
+    const failing = (await turns.findForRun(first.turn.id)).unwrap();
+    failing.start(new Date());
+    await turns.claim(failing);
+    failing.end('failed', new Date(), { error: 'The provider refused the key' });
+    await turns.finish(failing, null);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).toContain(bot.id);
+    expect(await turns.findBotIdsWithUnreadFailure(scopeOf(randomUUID()))).toEqual([]);
+
+    expect(await bots.acknowledge(scope(), bot.id)).toBe(true);
+    expect(await unread()).toBe(false);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).not.toContain(bot.id);
+    expect(await bots.acknowledge(scopeOf(randomUUID()), bot.id)).toBe(false);
+
+    // A failure after the read waits again, until a later turn ends well.
+    const second = sent(bot, 'Again');
+    await turns.enqueue(second.turn, second.message, null);
+    const again = (await turns.findForRun(second.turn.id)).unwrap();
+    again.end('failed', new Date(), { error: 'Still refused' });
+    await turns.finish(again, null);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).toContain(bot.id);
+    const third = sent(bot, 'Once more');
+    await turns.enqueue(third.turn, third.message, null);
+    const stopped = (await turns.findForRun(third.turn.id)).unwrap();
+    stopped.end('cancelled', new Date());
+    await turns.finish(stopped, null);
+    expect(await turns.findBotIdsWithUnreadFailure(scope())).not.toContain(bot.id);
+
+    const card = await questioned(bot);
+    expect(await questions.findPendingBotIds(scope())).not.toContain(bot.id);
+    expect(await questions.insertPending(card)).toBe('inserted');
+    expect(await questions.findPendingBotIds(scope())).toContain(bot.id);
+    expect(await questions.findPendingBotIds(scopeOf(randomUUID()))).toEqual([]);
+  });
+
   it("queues a routine's run once, however often it is dispatched, and finds it live by its routine", async () => {
     await dataSource.query(`DELETE FROM outbox_message`);
     const bot = await create('Routine Bot');
@@ -895,6 +1007,29 @@ describe('bots chat (integration)', () => {
         [queued[0]?.conversationId],
       );
       expect(opening.map((message) => message.content)).toEqual(['Message 9']);
+    });
+
+    // What breaks this: a question sent mid-work waiting for the work to end
+    // (the two silent minutes on a phone), or, once the running turn took
+    // it, the same message delivered again answered a second time.
+    it('moves a message sent while the bot works into the running turn, and keeps a redelivery of it one turn', async () => {
+      await wake('30');
+      const [working] = await telegramTurns();
+      const running = await claimed(working?.id ?? '');
+      await wake('31', { text: 'Is the deploy one of them?' });
+      const [, waiting] = await telegramTurns();
+      expect(waiting).toMatchObject({ sourceKey: sourceOf('31'), status: 'queued' });
+
+      const taken = await turns.takeSteers(running, (turn) => takesSteer(running, turn));
+      expect(taken.map((steer) => steer.text)).toEqual(['Is the deploy one of them?']);
+      const [, kept] = await telegramTurns();
+      expect(kept).toMatchObject({ id: waiting?.id, status: 'completed' });
+
+      await wake('31', { text: 'Is the deploy one of them?' });
+      expect((await telegramTurns()).map((turn) => turn.sourceKey)).toEqual([
+        sourceOf('30'),
+        sourceOf('31'),
+      ]);
     });
 
     // What breaks this: /new sent to the model as a message.

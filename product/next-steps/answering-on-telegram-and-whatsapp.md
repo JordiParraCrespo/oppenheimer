@@ -129,8 +129,9 @@ apart, as OpenClaw and Hermes do.
   nothing someone else wrote can allow a chat. A bot allows only when the
   owner asks in their own words; Settings → WhatsApp → **Allowed chats**
   shows each group and person, the bot that allowed it, the bot that
-  answers there, and Remove. At most 50 chats per number
-  (`whatsapp_chat_grant`).
+  answers there, and Remove. At most 1,000 chats per number
+  (`whatsapp_chat_grant`; 50 until 2026-11-20, when Settings also began
+  allowing chats, from the list of every chat a number has seen).
 - **Groups are off.** A group is allowed by its id, and then the bot
   wakes only on a mention, a reply to it or a command; the lines in
   between are kept as context (channels.md §5). On Telegram, privacy mode
@@ -185,9 +186,19 @@ apart, as OpenClaw and Hermes do.
   bot's turn with a short debounce. The reply is the turn's last step and
   needs no approval: it is the reply. Writing to any other chat is still
   `send_telegram_message` or `send_whatsapp_message`, which asks.
-- **While it works:** Telegram's typing action, kept alive while the turn
-  runs; after fifteen seconds, one line saying it is on it. WhatsApp shows
-  nothing (whatsapp.md §2).
+- **While it works** (2026-11-20, the owner: "first respond, later perform
+  the task, and then come back with the result"): on the owner's own chat,
+  each block the bot writes before a tool call is sent as the call begins,
+  and the bot is asked to open work that takes tools with one line saying
+  what it will do ("On it, checking your sessions"). What the owner writes
+  meanwhile, words alone, steers the running turn at its next tool call, as
+  a console message can, so the bot answers it in a line and carries on;
+  the turn's end sends only what came after its last call. A voice note or
+  a skill's `/command` waits for its own turn. A reply to a message sent
+  mid-work waits for the call in flight, which is seconds for a read and
+  longer for a wait on a session. Telegram's typing action and a line after
+  fifteen seconds of silence are not built; WhatsApp shows nothing
+  (whatsapp.md §2).
 - **Replies** are split at Telegram's 4,096 characters and at our own
   8,000 on WhatsApp (whatsapp.md §4). On Telegram the bot's markdown is
   turned into Telegram's HTML by us, and everything else in it escaped, so
@@ -264,6 +275,49 @@ per-chat "Always allow" for sends are unchanged.
    on a mention of the number or a reply to it, an allowed person on any
    message, with the contact's turn of §3; the runner reports mentions and
    whose message a reply quotes.
+   *Being built 2026-11-19 in three stacked pull requests. First, the
+   runner reports each message's mentions (`mentions`) and the sender of
+   the message it replies to (`quotedSenderId`), by phone number, the
+   number's own `@lid` id included.* *Then, 2026-11-20, one pull request
+   for the contact's turn and the wake together (the owner: "go with the
+   WhatsApp groups next and to be able to talk with others"): a message in
+   an allowed chat wakes the chat's bot, else the number's default, and
+   no one when the number's default is "None (doesn't answer)" and the chat
+   has no bot of its own. The contact's turn (`bot_turn."contact"`) has **no
+   tools at all** for now, not §3's narrow set: reading the bot's documents,
+   remembering for the conversation and `hand_off` come later. It reads the
+   bot's soul and instructions, none of the owner's facts, log, skills or
+   hosts, and what the contact wrote fenced in `<whatsapp>`, their name and
+   the group's included. The limit is 20 turns an hour per chat, not per
+   person. In a group, the lines in between are kept but not yet given to
+   the bot as context; an uncaptioned voice note from a contact wakes no
+   one; there is no bot loop guard yet.*
+   *Then, 2026-11-20, routing at scale (the owner: "maybe I have 25 groups
+   and 200 contacts… we have to come up with different settings, and also
+   in the bot maybe it can have its gateways"). Settings → WhatsApp → a
+   number lists every chat it has seen in Groups and People tabs, with a
+   search, a filter by who answers, a page of rows each with its own
+   picker (Not answered, the default bot, or a bot) and a bar that answers
+   many ticked chats at once (`POST /whatsapp/accounts/:id/routes`, up to
+   200). Choosing a bot or the default allows a chat; "Not answered"
+   stops it. Allowing from Settings is the owner's too, beside asking a
+   bot in their own chat; it is session-only, so no API token can allow a
+   chat. A bot's settings gain **Gateways**: each WhatsApp number with the
+   chats the bot answers there, Add chats (saying who answers each now,
+   which moves to this bot) and Remove, and the Telegram bots it answers
+   on. Only listed chats are answered; there is no catch-all for people
+   not on the list. A number allows up to 1,000 chats (was 50).*
+   *Then, 2026-11-21 (the owner: a group set to a bot "is not answering",
+   and People showed 0): in a group the owner allowed, every message with
+   words wakes its bot, not only a mention or a reply, and a group's limit
+   is 120 turns an hour (a person's chat stays at 20). The runner reports
+   the groups the number is in and its saved contacts (a name the phone
+   gave them, never someone only seen in a group) when the device connects
+   and again when it joins a group, a group is renamed or the contacts
+   change (`whatsapp.chats`, at most once a minute, kept per number up to
+   5,000, a chat it stops reporting forgotten after 7 days), so Settings
+   lists them before anyone writes. People lists the owner first, fixed on
+   the default bot.*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions
