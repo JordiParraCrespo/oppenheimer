@@ -1,5 +1,5 @@
 import { ChatComposer } from '@oppenheimer/design-system-web';
-import { ComposerEmojiMenu, useEmojiMenu } from '@oppenheimer/frontend-web';
+import { ComposerEmojiBox } from '@oppenheimer/frontend-web';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -28,18 +28,9 @@ export function SideAgentComposer({
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
-  const emoji = useEmojiMenu(draft, setDraft);
 
   return (
-    <div className="relative" onKeyDownCapture={emoji.onKeyDownCapture} {...emoji.track}>
-      {emoji.rows ? (
-        <ComposerEmojiMenu
-          rows={emoji.rows}
-          left={emoji.left}
-          highlighted={emoji.highlighted}
-          onPick={emoji.pick}
-        />
-      ) : null}
+    <ComposerEmojiBox draft={draft} setDraft={setDraft}>
       <ChatComposer
         layout="inline"
         value={draft}
@@ -56,6 +47,6 @@ export function SideAgentComposer({
           attach: t('bots.chat.images.attach'),
         }}
       />
-    </div>
+    </ComposerEmojiBox>
   );
 }

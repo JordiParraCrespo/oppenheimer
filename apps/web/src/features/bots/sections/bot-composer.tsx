@@ -12,12 +12,11 @@ import {
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import {
-  ComposerEmojiMenu,
+  ComposerEmojiBox,
   dictateInto,
   dictationSlots,
   ErrorAlert,
   useDictation,
-  useEmojiMenu,
 } from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
@@ -128,7 +127,6 @@ export function BotComposer({
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
-  const emoji = useEmojiMenu(draft, setDraft);
   const recall = useSentHistory(botId, draft, setDraft);
   const pastes = useBotPastes(botId, draft, setDraft);
   const active = useBotActiveTurn(botId);
@@ -274,20 +272,7 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div
-        ref={box}
-        className="relative"
-        onKeyDownCapture={emoji.onKeyDownCapture}
-        {...emoji.track}
-      >
-        {emoji.rows ? (
-          <ComposerEmojiMenu
-            rows={emoji.rows}
-            left={emoji.left}
-            highlighted={emoji.highlighted}
-            onPick={emoji.pick}
-          />
-        ) : null}
+      <ComposerEmojiBox ref={box} draft={draft} setDraft={setDraft}>
         {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
@@ -359,7 +344,7 @@ export function BotComposer({
             }}
           />
         </DropZone>
-      </div>
+      </ComposerEmojiBox>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
   );

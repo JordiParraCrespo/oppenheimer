@@ -19,12 +19,11 @@ import {
   ChatQueuedRow,
   ChatUsage,
   type ChatUsageContext,
-  ComposerEmojiMenu,
+  ComposerEmojiBox,
   dictateInto,
   dictationSlots,
   useCommandMenu,
   useDictation,
-  useEmojiMenu,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
 import { type ChatCommand, SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
@@ -137,7 +136,6 @@ export function SessionChatComposer({
     rowsFor: (query) => sessionSlashRows(query, commands ?? [], (key) => t(key)),
     onPick: (command) => setDraft(`/${command.name} `),
   });
-  const emoji = useEmojiMenu(draft, setDraft);
   const done = todos?.filter((todo) => todo.status === 'completed').length ?? 0;
   // A list the agent has finished is history, which the turn already tells.
   const tasks =
@@ -225,15 +223,7 @@ export function SessionChatComposer({
           }}
         />
       ) : null}
-      <div className="relative" onKeyDownCapture={emoji.onKeyDownCapture} {...emoji.track}>
-        {emoji.rows ? (
-          <ComposerEmojiMenu
-            rows={emoji.rows}
-            left={emoji.left}
-            highlighted={emoji.highlighted}
-            onPick={emoji.pick}
-          />
-        ) : null}
+      <ComposerEmojiBox draft={draft} setDraft={setDraft}>
         {slash.groups ? (
           <SessionSlashMenu
             project={slash.groups.project}
@@ -303,7 +293,7 @@ export function SessionChatComposer({
             attach: t('sessions.chat.composer.attach'),
           }}
         />
-      </div>
+      </ComposerEmojiBox>
       {refusal ? (
         <FieldError className="mx-4.5">
           {refusalText(refusal, t, 'sessions.chat.composer')}

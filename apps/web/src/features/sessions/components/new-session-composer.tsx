@@ -1,10 +1,9 @@
 import { ComposerChoices, ComposerPill, FieldError } from '@oppenheimer/design-system-web';
 import {
-  ComposerEmojiMenu,
+  ComposerEmojiBox,
   dictateInto,
   dictationSlots,
   useDictation,
-  useEmojiMenu,
   useStoredText,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
@@ -76,7 +75,6 @@ export function NewSessionComposer({
     onText: dictateInto((update) => setNewSessionTask(update(newSessionTask()))),
   });
 
-  const emoji = useEmojiMenu(draft, setNewSessionTask);
   useReceiveDrops(hold);
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
@@ -102,15 +100,7 @@ export function NewSessionComposer({
           hold(picked);
         }}
       />
-      <div className="relative" onKeyDownCapture={emoji.onKeyDownCapture} {...emoji.track}>
-        {emoji.rows ? (
-          <ComposerEmojiMenu
-            rows={emoji.rows}
-            left={emoji.left}
-            highlighted={emoji.highlighted}
-            onPick={emoji.pick}
-          />
-        ) : null}
+      <ComposerEmojiBox draft={draft} setDraft={setNewSessionTask}>
         <ComposerPill
           value={draft}
           onValueChange={setNewSessionTask}
@@ -146,7 +136,7 @@ export function NewSessionComposer({
             // sentence and its files where their author can fix them and send again.
           }}
         />
-      </div>
+      </ComposerEmojiBox>
       <ComposerChoices engine={engine}>
         {scope}
         {tools}
