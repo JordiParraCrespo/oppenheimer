@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from 'react';
+import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { useRef, useState } from 'react';
 import {
   type EmojiRow,
@@ -17,7 +17,8 @@ import { useCommandMenu } from './use-command-menu';
  *
  * The caret is read from the field's own events, which bubble to the box
  * that spreads `track` (`onInput`, `onSelect`, `onKeyUp`, `onMouseUp`), so
- * any composer's textarea serves without handing its ref up. The list of
+ * any composer's textarea serves without handing its ref up. The menu takes
+ * only the field's keys, and closes when the field loses focus. The list of
  * emoji is fetched the first time a shortcode is typed.
  */
 export function useEmojiMenu(draft: string, setDraft: (next: string) => void) {
@@ -35,6 +36,16 @@ export function useEmojiMenu(draft: string, setDraft: (next: string) => void) {
     if (!emoji && emojiQuery(target.value, at)) {
       loadEmoji().then(setEmoji, () => undefined);
     }
+  }
+
+  // The field leaving focus (the mic's recorder, a chip) closes the menu, so its keys stay theirs.
+  function onBlur(event: SyntheticEvent<HTMLElement>) {
+    if (event.target instanceof HTMLTextAreaElement) setCaret(null);
+  }
+
+  // Only a key in the field is the menu's: Enter on the recorder or a chip in the box stays theirs.
+  function onKeyDownCapture(event: KeyboardEvent<HTMLElement>) {
+    if (event.target instanceof HTMLTextAreaElement) menu.onKeyDownCapture(event);
   }
 
   const menu = useCommandMenu<EmojiRow>({
@@ -58,7 +69,7 @@ export function useEmojiMenu(draft: string, setDraft: (next: string) => void) {
     rows: menu.groups?.emoji ?? null,
     highlighted: menu.highlighted,
     pick: menu.pick,
-    onKeyDownCapture: menu.onKeyDownCapture,
-    track: { onInput: onCaret, onSelect: onCaret, onKeyUp: onCaret, onMouseUp: onCaret },
+    onKeyDownCapture,
+    track: { onInput: onCaret, onSelect: onCaret, onKeyUp: onCaret, onMouseUp: onCaret, onBlur },
   };
 }
