@@ -2393,7 +2393,7 @@ The decisions it produced:
   A bot on a phone read like a help desk: it quoted the owner's words back
   ("I got your 'Hello?'"), said how a voice note reached it, and listed what
   it can and cannot do, down to how many days messages are kept. The turn's
-  channel line (`turn/context.md`, `on-whatsapp`, `on-telegram`) now asks for
+  channel line (`turn/context.md`) is followed, on WhatsApp and Telegram alike, by one shared fragment, `on-a-phone`, that asks for
   a friend's texting voice in the owner's language and register, an emoji
   when it fits, an answer to what they meant, never their words echoed or the
   way their message arrived, and no capabilities, machinery or limits unless
