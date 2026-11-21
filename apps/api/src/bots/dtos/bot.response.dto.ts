@@ -128,4 +128,10 @@ export class BotResponseDto {
     description: 'The start of its last message, for the sidebar; null before the first.',
   })
   lastMessagePreview!: string | null;
+
+  @ApiProperty({
+    description:
+      'Whether it replied since you last read its chat (`POST /bots/:id/acknowledge`); your own messages never make it unread.',
+  })
+  unread!: boolean;
 }

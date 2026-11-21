@@ -15,6 +15,7 @@ import (
 type Conversations struct {
 	sessions    RecordedSessions
 	transcripts Transcripts
+	commands    SlashCommands
 }
 
 // RecordedSessions is where Conversations finds a session: only one whose
@@ -35,17 +36,21 @@ type ConversationsOptions struct {
 	// Transcripts reads the agents' transcripts; nil reads none, and every
 	// session then has no chat and no transcript.
 	Transcripts Transcripts
+	// Commands lists a project's slash commands for the chat's `/` menu;
+	// nil lists none.
+	Commands SlashCommands
 }
 
 // NewConversations builds the conversation reader.
 func NewConversations(opts ConversationsOptions) *Conversations {
-	return &Conversations{sessions: opts.Sessions, transcripts: opts.Transcripts}
+	return &Conversations{sessions: opts.Sessions, transcripts: opts.Transcripts, commands: opts.Commands}
 }
 
 // FollowChat follows a session's conversation for the chat view, sending
-// its transcript entries to emit until ctx ends (Transcripts.Follow).
+// its transcript entries to emit until ctx ends (Transcripts.Follow), and
+// with each Reset at most commandsMax of the project's slash commands.
 // ErrNoChat for a session whose agent's transcript this runner cannot read.
-func (c *Conversations) FollowChat(ctx context.Context, id string, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error {
+func (c *Conversations) FollowChat(ctx context.Context, id string, entryMax, batchMax, commandsMax int, older <-chan int64, emit func(ChatBatch) error) error {
 	if c.transcripts == nil {
 		return ErrNoChat
 	}
@@ -53,7 +58,23 @@ func (c *Conversations) FollowChat(ctx context.Context, id string, entryMax, bat
 	if err != nil {
 		return err
 	}
-	return c.transcripts.Follow(ctx, session, entryMax, batchMax, older, emit)
+	commands := c.slashCommands(session, commandsMax)
+	return c.transcripts.Follow(ctx, session, entryMax, batchMax, older, func(batch ChatBatch) error {
+		if batch.Reset {
+			batch.Commands = commands
+		}
+		return emit(batch)
+	})
+}
+
+// slashCommands are the commands the session's project gives its agent,
+// read once per follow: Claude Code's alone, the one agent whose skills and
+// commands this runner knows where to find.
+func (c *Conversations) slashCommands(session domain.Session, max int) []domain.SlashCommand {
+	if c.commands == nil || session.Agent != domain.AgentClaude || max <= 0 {
+		return nil
+	}
+	return c.commands.InFolder(session.Cwd(), max)
 }
 
 // ReadTranscript is one page of a session's conversation, read on request

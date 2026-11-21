@@ -65,7 +65,7 @@ export function BotItemsDemo() {
   const [active, setActive] = React.useState('release');
   const [open, setOpen] = React.useState(true);
   const bots = [
-    { id: 'release', name: 'Release Bot', initials: 'RB', color: 'coral', preview: 'The stop path now reaches the tool layer.', live: true },
+    { id: 'release', name: 'Release Bot', initials: 'RB', color: 'coral', preview: 'The stop path now reaches the tool layer.', working: true },
     { id: 'deploy', name: 'Deploy Bot', initials: 'DB', color: 'sky', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
     { id: 'quota', name: 'Quota Bot', initials: 'QB', color: 'lemon', preview: 'You: Added a banner to the workspace page' },
     { id: 'new', name: 'New Bot', initials: 'NB', color: 'mint', preview: 'What would you most like help with?', unread: true },
@@ -388,8 +388,8 @@ export function EmployeesSection() {
         id="botitem"
         title="BotItem"
         meta="bot-item.tsx"
-        desc="An employee in the sidebar, on one line: a 20px square photo (its drawn face until one loads) with a green dot on its corner while the bot works, then the name. The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
-        code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} live active /></BotList>`}
+        desc="An employee in the sidebar, on one line: a 20px square photo (its drawn face until one loads), then the name, which shimmers while the bot works, as a working session's does (a green dot on the photo's corner is `live`, for a surface that wants one). The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
+        code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} working active /></BotList>`}
       >
         <BotItemsDemo />
       </Spec>

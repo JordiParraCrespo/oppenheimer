@@ -175,7 +175,7 @@ You are {name}. You are becoming someone, not a chatbot.
 - **Trustworthy.** Do what you are asked, fully. Never pretend a step finished when it did not. Ask before anything public or hard to undo that nobody asked for.
 
 ## Vibe
-Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant.
+Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant. On a phone you text like a person, not a help desk: short, natural, never repeating their words back.
 
 ## This file
 It is yours to evolve: as you learn who you are, update it with \`edit_soul\`, and tell the person when you do.
@@ -928,7 +928,13 @@ export interface BotLoop {
  * conversation starts them again. Cache reads and writes are part of the input,
  * never on top of it.
  */
-export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
+export const BOT_MODEL_CALL_PURPOSES = [
+  'goal_review',
+  'summary',
+  'rule_review',
+  'dream',
+  'suggestion',
+] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
 export interface BotTokenCounts {
@@ -1247,12 +1253,31 @@ export const findBotConversationSchema = z.object({
 });
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
+/** A routine's name and prompt, as long as the bot's own `update_routine` tool takes them. */
+export const BOT_ROUTINE_NAME_MAX = 200;
+export const BOT_ROUTINE_PROMPT_MAX = 8_000;
+
 /**
- * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch. The tab
- * changes whether a routine runs, never what it is: that is the chat's, through
- * the bot's own tool.
+ * The Routines tab's Edit dialog: the two fields a person types. When it runs
+ * (its triggers) is still the chat's, through the bot's own tool.
  */
-export const updateBotRoutineSchema = z.object({ enabled: z.boolean() });
+export const botRoutineTaskSchema = z.object({
+  name: z.string().trim().min(1).max(BOT_ROUTINE_NAME_MAX),
+  prompt: z.string().trim().min(1).max(BOT_ROUTINE_PROMPT_MAX),
+});
+export type BotRoutineTaskDto = z.infer<typeof botRoutineTaskSchema>;
+
+/**
+ * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch and its
+ * Edit dialog. Any of the three, at least one; what is absent stays as it is.
+ */
+export const updateBotRoutineSchema = botRoutineTaskSchema
+  .partial()
+  .extend({ enabled: z.boolean().optional() })
+  .refine(
+    (body) => body.enabled !== undefined || body.name !== undefined || body.prompt !== undefined,
+    { path: ['enabled'], params: { i18nKey: 'validation.required' } },
+  );
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
 
 /**

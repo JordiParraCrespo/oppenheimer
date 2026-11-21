@@ -114,6 +114,14 @@ export const LIVE_POLL = {
    * and stood down while the stream announces `botApproval.changed`.
    */
   botApprovals: { interval: 15_000, inBackground: false, streamCanCover: true },
+  /**
+   * Which bots are working and which wait on you, behind the sidebar's
+   * shimmering names and amber dots. A turn queued or ended and a card raised
+   * are announced (`botTurn.changed`, `botApproval.changed`), but a chat read
+   * on another device, which takes a failure's amber dot off, is not, so this
+   * keeps running while the stream is live. Not in the background.
+   */
+  botActivity: { interval: 15_000, inBackground: false, streamCanCover: true },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;

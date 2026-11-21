@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { BOT_PROVIDER_CATALOG, BOT_PROVIDERS, type BotProvider } from './bot.schema.js';
+import {
+  SYNTHESIS_MODELS,
+  SYNTHESIS_PROVIDERS,
+  type SynthesisProvider,
+  synthesisVoiceFor,
+  TRANSCRIPTION_MODELS,
+  VOICE_PROVIDERS,
+  type VoiceProvider,
+  voiceModelFor,
+} from './voice-catalog.schema.js';
 
 /**
  * Dictation: one recorded clip in, the text it says out. The console records 16
@@ -61,13 +72,108 @@ export function vocabularyTerms(raw: string | readonly string[] | undefined): st
   return [...terms];
 }
 
+/** A voice id as a provider takes it in a URL: letters, digits, `_` and `-`. */
+export const SYNTHESIS_VOICE_ID_MAX = 64;
+export const synthesisVoiceIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(SYNTHESIS_VOICE_ID_MAX)
+  .regex(/^[A-Za-z0-9_-]+$/);
+const voiceModelIdSchema = z.string().min(1).max(64);
+
+/** `PUT /voice/settings`'s voice id alone, for the console's form that takes one. */
+export const synthesisVoiceFormSchema = z.object({ voice: synthesisVoiceIdSchema });
+export type SynthesisVoiceFormDto = z.infer<typeof synthesisVoiceFormSchema>;
+
+/** No polish: the transcript goes in the field as heard. */
+export const POLISH_OFF = 'off' as const;
+export const POLISH_CHOICES = [...BOT_PROVIDERS, POLISH_OFF] as const;
+export type PolishChoice = (typeof POLISH_CHOICES)[number];
+
 /**
- * Who can hear a clip: the workspace's ChatGPT sign-in, or the deployment's
- * own key. A new speech provider adds its id here and nowhere else in this
- * package (`SpeechProvider` in `apps/api/src/voice/application/`).
+ * `PUT /voice/settings`: how the workspace hears and speaks, replaced whole.
+ * A null provider is automatic (the order above, the first one available); a
+ * null model or voice is the provider's default. A chosen provider is tried
+ * first, and the others after it when it is not available or fails, so a key
+ * removed later never stops dictation. The polish runs on the chosen bot
+ * provider's credential and model, `off` skips it, null keeps the automatic
+ * rule (the sign-in that heard the clip, else the deployment's LLM).
  */
-export const VOICE_PROVIDERS = ['chatgpt', 'speech_key'] as const;
-export type VoiceProvider = (typeof VOICE_PROVIDERS)[number];
+export const voiceSettingsSchema = z
+  .object({
+    transcriptionProvider: z.enum(VOICE_PROVIDERS).nullable(),
+    transcriptionModel: voiceModelIdSchema.nullable(),
+    synthesisProvider: z.enum(SYNTHESIS_PROVIDERS).nullable(),
+    synthesisModel: voiceModelIdSchema.nullable(),
+    synthesisVoice: synthesisVoiceIdSchema.nullable(),
+    polishProvider: z.enum(POLISH_CHOICES).nullable(),
+    polishModel: voiceModelIdSchema.nullable(),
+  })
+  .superRefine((value, context) => {
+    const invalid = (path: string) =>
+      context.addIssue({ code: 'custom', path: [path], params: { i18nKey: 'validation.invalid' } });
+    const listed = (models: readonly { id: string }[], id: string | null) =>
+      id === null || models.some((row) => row.id === id);
+    if (
+      value.transcriptionModel !== null &&
+      (value.transcriptionProvider === null ||
+        !listed(TRANSCRIPTION_MODELS[value.transcriptionProvider], value.transcriptionModel))
+    ) {
+      invalid('transcriptionModel');
+    }
+    if (
+      value.synthesisModel !== null &&
+      (value.synthesisProvider === null ||
+        !listed(SYNTHESIS_MODELS[value.synthesisProvider], value.synthesisModel))
+    ) {
+      invalid('synthesisModel');
+    }
+    if (
+      value.synthesisVoice !== null &&
+      (value.synthesisProvider === null ||
+        synthesisVoiceFor(
+          value.synthesisProvider,
+          value.synthesisVoice,
+          voiceModelFor(SYNTHESIS_MODELS[value.synthesisProvider], value.synthesisModel),
+        ) !== value.synthesisVoice)
+    ) {
+      invalid('synthesisVoice');
+    }
+    if (
+      value.polishModel !== null &&
+      (value.polishProvider === null ||
+        value.polishProvider === POLISH_OFF ||
+        !listed(BOT_PROVIDER_CATALOG[value.polishProvider].models, value.polishModel))
+    ) {
+      invalid('polishModel');
+    }
+  });
+export type VoiceSettings = z.infer<typeof voiceSettingsSchema>;
+
+/** A workspace that never saved any: everything automatic, as before there were settings. */
+export const DEFAULT_VOICE_SETTINGS: VoiceSettings = Object.freeze({
+  transcriptionProvider: null,
+  transcriptionModel: null,
+  synthesisProvider: null,
+  synthesisModel: null,
+  synthesisVoice: null,
+  polishProvider: null,
+  polishModel: null,
+});
+
+/**
+ * `GET /voice/settings`: what the workspace chose, and which providers it can
+ * use right now (a key or sign-in stored, or the deployment's server
+ * configured), in the order each is tried, so the console offers those.
+ */
+export interface VoiceSettingsDto extends VoiceSettings {
+  available: {
+    transcription: VoiceProvider[];
+    synthesis: SynthesisProvider[];
+    polish: BotProvider[];
+  };
+}
 
 /** What a transcription answers: the text to put in the field, and what was heard. */
 export interface VoiceTranscriptionDto {

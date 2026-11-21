@@ -22,12 +22,15 @@ import { SendWhatsappMessageCommandHandler } from '../commands/send-whatsapp-mes
 import { UpdateWhatsappAccountCommand } from '../commands/update-whatsapp-account/update-whatsapp-account.command';
 import { UpdateWhatsappAccountCommandHandler } from '../commands/update-whatsapp-account/update-whatsapp-account.command-handler';
 import type { WhatsappAccountRepositoryPort } from '../database/whatsapp-account.repository.port';
+import type { WhatsappChatGrantRepositoryPort } from '../database/whatsapp-chat-grant.repository.port';
 import type {
   WhatsappMessageRepositoryPort,
   WhatsappMessagesOwed,
 } from '../database/whatsapp-message.repository.port';
+import type { WhatsappContactWroteDomainEvent } from '../domain/events/whatsapp-contact-wrote.domain-event';
 import type { WhatsappOwnerWroteDomainEvent } from '../domain/events/whatsapp-owner-wrote.domain-event';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
+import { WhatsappChatGrantEntity } from '../domain/whatsapp-chat-grant.entity';
 import type { WhatsappMessageDraft, WhatsappStoredMessage } from '../domain/whatsapp-message.types';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
@@ -92,6 +95,8 @@ function fakeDevice(overrides: Partial<WhatsappDevicePort> = {}): WhatsappDevice
     link: vi.fn().mockReturnValue(true),
     unlink: vi.fn().mockReturnValue(true),
     send: vi.fn(),
+    sendVoice: vi.fn(),
+    voiceNote: vi.fn(),
     ...overrides,
   };
 }
@@ -124,6 +129,7 @@ function answersOf(
   messages: WhatsappMessageRepositoryPort,
   owned: BotEntity[] = [],
   device: WhatsappDevicePort = fakeDevice(),
+  allowed: WhatsappChatGrantEntity[] = [],
 ) {
   const queryBus = { execute: vi.fn(async () => owned) } as unknown as QueryBus;
   const scopes = { resolve: vi.fn(async () => scopeOf()) } as unknown as ScopeResolverPort;
@@ -131,7 +137,36 @@ function answersOf(
     queryBus,
     scopes,
     new WhatsappReplyResolver(device, messages, new WhatsappMessageMapper()),
+    fakeGrants(allowed),
   );
+}
+
+/** The chats a number allows, faked: read by chat or whole. */
+function fakeGrants(allowed: WhatsappChatGrantEntity[] = []): WhatsappChatGrantRepositoryPort {
+  return {
+    findAll: vi.fn(async () => allowed),
+    findByChat: vi.fn(async (_of, chatId: string) => {
+      const grant = allowed.find((each) => each.chatId === chatId);
+      return grant ? Some(grant) : None;
+    }),
+  } as unknown as WhatsappChatGrantRepositoryPort;
+}
+
+/** A chat the number allows, answered by `botId` (null: the number's default). */
+function grant(
+  chatId: string,
+  chatKind: 'direct' | 'group',
+  botId: string | null,
+): WhatsappChatGrantEntity {
+  return WhatsappChatGrantEntity.allow({
+    organizationId: ORG,
+    accountId: 'account',
+    chatId,
+    chatKind,
+    chatName: chatKind === 'group' ? 'Family' : null,
+    botId,
+    grantedByBotId: null,
+  });
 }
 
 const hosts: HostAccessPort = { assertUsable: vi.fn(async () => ({ probedTools: null })) };
@@ -409,6 +444,100 @@ describe('SendWhatsappMessageCommandHandler', () => {
     ).toBe('WHATSAPP_009');
   });
 
+  describe('a voice note', () => {
+    const audio = Buffer.from('OggS-spoken');
+    const spoken = (accountId: string) =>
+      new SendWhatsappMessageCommand({
+        scope: scopeOf(),
+        accountId,
+        chat,
+        text: 'Tuesday works.',
+        botId: 'bot-1',
+        voice: { audio, seconds: 3 },
+      });
+
+    // What breaks this: a voice note sent as a text, or kept with its audio, or
+    // read back by the bot as "[audio]" it cannot tell it said.
+    it('goes to the host as audio, never as text, and is kept as a voice note saying the text', async () => {
+      const linked = account({ status: 'connected' });
+      const messages = fakeMessages();
+      const device = fakeDevice({
+        sendVoice: vi.fn(async () => ({ kind: 'sent' as const, id: '3EB9', sentAt: new Date() })),
+      });
+      const handler = new SendWhatsappMessageCommandHandler(
+        fakeAccounts([linked]).repository,
+        messages,
+        device,
+        new WhatsappMessageMapper(),
+      );
+
+      await expect(handler.execute(spoken(linked.id))).resolves.toBe('3EB9');
+      expect(device.sendVoice).toHaveBeenCalledWith(HOST, chat.chatId, audio, 3);
+      expect(device.send).not.toHaveBeenCalled();
+      expect(vi.mocked(messages.recordBotSend).mock.calls[0]?.[0]).toMatchObject({
+        externalId: '3EB9',
+        fromMe: true,
+        sentByBotId: 'bot-1',
+        text: '',
+        media: 'audio',
+        voiceSeconds: 3,
+        transcript: 'Tuesday works.',
+      });
+    });
+
+    // What breaks this: speaking getting round the day's share a text spends.
+    it('spends the day’s share a text does, and is refused past it before reaching the host', async () => {
+      const busy = account({ status: 'connected' });
+      const device = fakeDevice();
+      expect(
+        await codeOf(
+          new SendWhatsappMessageCommandHandler(
+            fakeAccounts([busy]).repository,
+            fakeMessages({ countBotSendsSince: vi.fn(async () => 100) }),
+            device,
+            new WhatsappMessageMapper(),
+          ).execute(spoken(busy.id)),
+        ),
+      ).toBe('WHATSAPP_009');
+      expect(device.sendVoice).not.toHaveBeenCalled();
+    });
+
+    it('says a runner too old to send voice notes is one to update, and keeps nothing', async () => {
+      const linked = account({ status: 'connected' });
+      const messages = fakeMessages();
+      const refusal = await new SendWhatsappMessageCommandHandler(
+        fakeAccounts([linked]).repository,
+        messages,
+        fakeDevice({ sendVoice: vi.fn(async () => ({ kind: 'not_supported' as const })) }),
+        new WhatsappMessageMapper(),
+      )
+        .execute(spoken(linked.id))
+        .catch((error) => error);
+      expect(refusal).toMatchObject({ code: 'WHATSAPP_005' });
+      expect(refusal.detail).toContain('voice notes');
+      expect(messages.recordBotSend).not.toHaveBeenCalled();
+    });
+
+    it('answers audio the host would not send, and WhatsApp refusing it, as WHATSAPP_008, keeping nothing', async () => {
+      const linked = account({ status: 'connected' });
+      for (const code of ['WA_008', 'WA_006', 'WA_003']) {
+        const messages = fakeMessages();
+        const refusal = await new SendWhatsappMessageCommandHandler(
+          fakeAccounts([linked]).repository,
+          messages,
+          fakeDevice({
+            sendVoice: vi.fn(async () => ({ kind: 'failed' as const, code, detail: 'refused' })),
+          }),
+          new WhatsappMessageMapper(),
+        )
+          .execute(spoken(linked.id))
+          .catch((error) => error);
+        expect(refusal).toMatchObject({ code: 'WHATSAPP_008', extensions: { upstreamCode: code } });
+        expect(messages.recordBotSend).not.toHaveBeenCalled();
+      }
+    });
+  });
+
   it('treats someone else’s number as not linked', async () => {
     const theirs = account({ userId: 'someone-else', status: 'connected' });
     expect(
@@ -539,6 +668,102 @@ describe('ReceiveWhatsappMessagesCommandHandler, the owner’s messages', () => 
   });
 });
 
+describe('ReceiveWhatsappMessagesCommandHandler, the chats a number allows', () => {
+  const OWNER = '34600999888@s.whatsapp.net';
+  const NUMBER = '34611000000@s.whatsapp.net';
+  const GROUP = '120363000000000001@g.us';
+  const MARTA = '34600111333@s.whatsapp.net';
+
+  function owned(defaultBot: string | null) {
+    const linked = account({ status: 'connected' });
+    linked.report({ state: 'connected', phone: NUMBER });
+    const named = linked.nameOwner(OWNER, new Date());
+    linked.confirmOwner(named?.code ?? '', new Date());
+    linked.answerAs(defaultBot);
+    return linked;
+  }
+
+  const inbound = (
+    id: string,
+    chatId: string,
+    overrides: Partial<ReceiveWhatsappMessagesCommand['messages'][number]> = {},
+  ) => ({
+    key: `${chatId}/${id}`,
+    id,
+    chatId,
+    chatKind: chatId.endsWith('@g.us') ? ('group' as const) : ('direct' as const),
+    chatName: chatId.endsWith('@g.us') ? 'Family' : undefined,
+    senderId: MARTA,
+    senderName: 'Marta',
+    fromMe: false,
+    text: `message ${id}`,
+    sentAt: '2026-11-20T10:00:00Z',
+    ...overrides,
+  });
+
+  async function receive(
+    defaultBot: string | null,
+    allowed: WhatsappChatGrantEntity[],
+    ...messages: ReturnType<typeof inbound>[]
+  ) {
+    const staged: unknown[] = [];
+    const store = fakeMessages({
+      insertMany: vi.fn(
+        async (drafts: readonly WhatsappMessageDraft[], owed?: WhatsappMessagesOwed) =>
+          drafts.map((draft, index) => {
+            const stored: WhatsappStoredMessage = {
+              ...draft,
+              id: `row-${index + 1}`,
+              seq: String(index + 1),
+              place: null,
+            };
+            const event = owed?.contactEventFor?.(stored);
+            if (event) staged.push(event);
+            return stored;
+          }),
+      ),
+    });
+    await new ReceiveWhatsappMessagesCommandHandler(
+      fakeAccounts([owned(defaultBot)]).repository,
+      store,
+      new WhatsappMessageMapper(),
+      answersOf(store, [], fakeDevice(), allowed),
+    ).execute(new ReceiveWhatsappMessagesCommand({ hostId: HOST, messages }));
+    return staged as WhatsappContactWroteDomainEvent[];
+  }
+
+  // What breaks this: the family group's bot left silent on a line that does
+  // not mention the number; a person the owner allowed unanswered.
+  it('wakes the chat’s bot on every message of an allowed group, and of an allowed person', async () => {
+    const staged = await receive(
+      'bot-default',
+      [grant(GROUP, 'group', 'bot-family'), grant(MARTA, 'direct', null)],
+      inbound('G1', GROUP),
+      inbound('G2', GROUP, { mentions: [NUMBER], text: '@Juno dinner at 8?' }),
+      inbound('D1', MARTA, { text: 'Hi Juno' }),
+    );
+    expect(staged.map((event) => [event.chatId, event.botId, event.text, event.chatKind])).toEqual([
+      [GROUP, 'bot-family', 'message G1', 'group'],
+      [GROUP, 'bot-family', '@Juno dinner at 8?', 'group'],
+      [MARTA, 'bot-default', 'Hi Juno', 'direct'],
+    ]);
+    expect(staged[0]).toMatchObject({ senderId: MARTA, senderName: 'Marta', chatName: 'Family' });
+  });
+
+  // What breaks this: "don't answer" in Settings still answering, or a chat
+  // the owner never allowed reaching a bot.
+  it('wakes no one in a chat with no bot and no default, or in a chat it does not allow', async () => {
+    const silent = await receive(null, [grant(MARTA, 'direct', null)], inbound('D1', MARTA));
+    expect(silent).toEqual([]);
+    const stranger = await receive(
+      'bot-default',
+      [],
+      inbound('D1', '34655000000@s.whatsapp.net', { senderId: '34655000000@s.whatsapp.net' }),
+    );
+    expect(stranger).toEqual([]);
+  });
+});
+
 describe('ReplyOnWhatsappCommandHandler', () => {
   const OWNER = '34600999888@s.whatsapp.net';
   const BOT = 'bot-1';
@@ -555,6 +780,7 @@ describe('ReplyOnWhatsappCommandHandler', () => {
   function reply(
     linked: WhatsappAccountEntity,
     overrides: Partial<WhatsappMessageRepositoryPort> = {},
+    allowed: WhatsappChatGrantEntity[] = [],
   ) {
     const device = fakeDevice({
       send: vi.fn(async () => ({ kind: 'sent' as const, id: 'out', sentAt: new Date() })),
@@ -566,14 +792,15 @@ describe('ReplyOnWhatsappCommandHandler', () => {
     const handler = new ReplyOnWhatsappCommandHandler(
       fakeAccounts([linked]).repository,
       messages,
+      fakeGrants(allowed),
       new WhatsappReplyResolver(device, messages, new WhatsappMessageMapper()),
     );
-    const run = (text: string, botId = BOT) =>
+    const run = (text: string, botId = BOT, chatId = OWNER) =>
       handler.execute(
         new ReplyOnWhatsappCommand({
           organizationId: ORG,
           accountId: linked.id,
-          chatId: OWNER,
+          chatId,
           replyToRowId: '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5',
           text,
           botId,
@@ -608,6 +835,30 @@ describe('ReplyOnWhatsappCommandHandler', () => {
     const offline = reply(owned('logged_out'));
     await expect(offline.run('hello')).resolves.toBe(0);
     expect(offline.device.send).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a bot answering in a chat no longer allowed, or in one
+  // another bot answers; or a group's answer kept as a direct chat's.
+  it('answers a chat the number allows with that chat’s bot, else the default, and nowhere else', async () => {
+    const GROUP = '120363000000000001@g.us';
+    const MARTA = '34600111333@s.whatsapp.net';
+    const allowed = [grant(GROUP, 'group', 'bot-family'), grant(MARTA, 'direct', null)];
+
+    const family = reply(owned(), {}, allowed);
+    await expect(family.run('Dinner at 8.', 'bot-family', GROUP)).resolves.toBe(1);
+    expect(vi.mocked(family.messages.recordBotSend).mock.calls[0]?.[0]).toMatchObject({
+      chatId: GROUP,
+      chatKind: 'group',
+      chatName: 'Family',
+    });
+    await expect(family.run('Dinner at 8.', BOT, GROUP)).resolves.toBe(0);
+
+    const marta = reply(owned(), {}, allowed);
+    await expect(marta.run('Hi Marta', BOT, MARTA)).resolves.toBe(1);
+
+    const stranger = reply(owned(), {}, allowed);
+    await expect(stranger.run('Hi', BOT, '34699000000@s.whatsapp.net')).resolves.toBe(0);
+    expect(stranger.device.send).not.toHaveBeenCalled();
   });
 });
 

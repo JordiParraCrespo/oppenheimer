@@ -5,7 +5,7 @@ import {
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
-import { BOT_PROVIDERS } from '@oppenheimer/shared/schemas/bot';
+import { MODEL_PROVIDERS } from '@oppenheimer/shared/schemas/model-provider';
 import { useTranslation } from 'react-i18next';
 import { ModelProviderName } from './model-provider-name';
 
@@ -25,7 +25,7 @@ export function ModelProvidersSkeleton() {
         <Skeleton shape="sm" className="inline-block h-2.5 w-24 align-middle" />
       </SettingsHeading>
       <SettingsGroup>
-        {BOT_PROVIDERS.map((provider) => (
+        {MODEL_PROVIDERS.map((provider) => (
           <SettingsListRow
             key={provider}
             align="center"

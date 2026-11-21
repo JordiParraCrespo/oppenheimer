@@ -1,15 +1,16 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
- * Send an Oppenheimer bot's answer in the owner's chat with the linked number
- * it answers on: the reply to the owner's own message, quoting it, not a
+ * Send an Oppenheimer bot's answer in the chat it was asked in on the linked
+ * number it answers on (the owner's own chat, or a chat the number allows):
+ * the reply to the message it answers, quoting it, not a
  * tool's send, so it asks nothing and counts against no daily limit (only the
  * host's own send budget).
  */
 export class ReplyOnWhatsappCommand extends CommandBase {
   readonly organizationId: string;
   readonly accountId: string;
-  /** The owner's chat, as its JID. */
+  /** The chat, as its JID: the owner's, or one the number allows. */
   readonly chatId: string;
   /** The stored `whatsapp_message` row it answers, quoted; null to send it on its own. */
   readonly replyToRowId: string | null;

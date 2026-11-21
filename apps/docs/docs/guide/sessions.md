@@ -30,7 +30,7 @@ A **folder session** works in your own folder, on whatever branch it is on, with
 
 ## The sidebar
 
-The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A session is named from its first task, and named once more after the agent has answered your second prompt, when the conversation says more about what it is for. Renaming it yourself keeps your name for good. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
 
 ### Hidden sessions
 
@@ -56,7 +56,7 @@ Sessions that need input, failed, or have not started after a minute also appear
 The session pane has a bar with the name, the state, **Terminal / Chat**, the preview toggle and **Share**.
 
 - **Terminal** (the default) is the agent's real terminal. Type into it as you would locally. A plain drag selects and copies text. Paste or drop files onto it and their paths land in the agent's prompt.
-- **Chat** shows the same conversation read from the agent's transcript on the host: your messages, the agent's replies, its tool calls grouped ("read 3 files, ran 2 commands"), images it read, and files it shared. You can write to the agent and attach files from the chat's composer. Chat works for Claude Code, Codex, OpenCode and Grok; Pi and Oh My Pi are terminal only for now, and a blank terminal has none.
+- **Chat** shows the same conversation read from the agent's transcript on the host: your messages, the agent's replies, its tool calls grouped ("read 3 files, ran 2 commands"), images it read, and files it shared. You can write to the agent and attach files from the chat's composer. After a turn, when Claude Code suggests your next message in its own input box, the chat's empty composer shows that suggestion; press **Tab** to put it in the composer, then edit it or send it. Chat works for Claude Code, Codex, OpenCode and Grok; Pi and Oh My Pi are terminal only for now, and a blank terminal has none.
 
 The console shows window 0, the agent's window. Extra shell windows can be made from the host with `runner sessions window`, but the console has no tab strip for them yet.
 

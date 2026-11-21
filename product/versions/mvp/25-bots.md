@@ -431,6 +431,30 @@ happened and whether sending it again helps, from its kind (§2): Retry only
 when it can, Model providers for a refused key or sign-in, and the
 provider's own words under Show details.
 
+In the sidebar, a bot's row reads as a session's (2026-11-19, reworked
+2026-11-20), one state at a time, first match wins:
+
+- **Waiting on you**, the amber dot: an approval or a card of questions
+  pending (§5), or, once it stopped working, a turn of its that failed since
+  you last read the chat.
+- **Working**, the name shimmering: a turn of its queued or running, whatever
+  started it (a message, a routine, another bot, a channel). No dot on its
+  face; a session shows none either.
+- **Done with something unread**, the blue dot: its chat has a message newer
+  than your last read. Reading is the API's (`bot."acknowledgedAt"`, set by
+  `POST /v1/bots/:id/acknowledge` when its chat is open and in front, on its
+  page or beside a session), so it holds on every device, as a session's
+  acknowledged report does.
+- **Marked unread**, the blue dot too: the row's menu marks it (Mark as
+  unread / read), kept on the device as a session's mark is, and opening the
+  chat takes it off.
+
+`GET /v1/bot-activity` is the one read for the whole list (which bots are
+working, which wait on you); the workspace stream's `botTurn.changed` (a turn
+queued or ended: a card of questions ends its turn, an answer queues one)
+and `botApproval.changed` say when to read it again, and a 15-second poll
+catches a chat read on another device.
+
 ### 3.1 Images
 
 You can send a bot images (issue #426): the paperclip in the composer's
@@ -2352,4 +2376,26 @@ The decisions it produced:
   for what the person asked to hear, what needs them, or what is new and
   worth interrupting them for. Evals: `bot-first-chat` 2/18 before (new
   cases), 17/18 after; `bot-memory` 99/100; `bot-blocked-run` 30/30.
-
+- 2026-11-20: **the composer suggests your next message** (from Claude
+  Code's prompt suggestions). After a turn ends, with the box empty, the
+  bot's own model, with no tools, guesses the person's next message from
+  the end of the chat (`GET /bots/:id/suggestion`, the prompt
+  `jobs/suggestion.md`); the composer shows it as the placeholder and Tab
+  writes it into the box, never sends it. One guess per message of the
+  bot's, kept a day in the cache; the model answers NONE when there is no
+  clear next step, and a failure shows nothing. It is spend on the owner's
+  key like the summary, recorded as the `suggestion` purpose in `/usage`.
+  It never claims the person did something outside the chat and never
+  suggests an irreversible step the bot did not propose. Eval
+  `bot-suggestion`: 47/48 on Opus 5.5; 33/48 on Haiku 5.5, which can answer
+  a preference question for the person with made-up details.
+- 2026-11-21: **a bot texts like a person on WhatsApp and Telegram** (§1).
+  A bot on a phone read like a help desk: it quoted the owner's words back
+  ("I got your 'Hello?'"), said how a voice note reached it, and listed what
+  it can and cannot do, down to how many days messages are kept. The turn's
+  channel line (`turn/context.md`) is followed, on WhatsApp and Telegram alike, by one shared fragment, `on-a-phone`, that asks for
+  a friend's texting voice in the owner's language and register, an emoji
+  when it fits, an answer to what they meant, never their words echoed or the
+  way their message arrived, and no capabilities, machinery or limits unless
+  asked. A new bot's `SOUL.md` says the same in one line under Vibe; an
+  existing bot's soul is its own and is left as it is.
