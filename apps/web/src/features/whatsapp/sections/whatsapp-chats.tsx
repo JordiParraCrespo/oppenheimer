@@ -15,12 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { ChatSearchField } from '@/features/whatsapp/components/chat-search-field';
 import { WhatsappOwnerChatRow } from '@/features/whatsapp/components/whatsapp-owner-chat-row';
 import { useChatsFilter } from '@/features/whatsapp/hooks/use-chats-filter';
-import {
-  CHATS_PAGE_SIZE,
-  type ChatsBy,
-  filterChats,
-  OWNER_CHAT,
-} from '@/features/whatsapp/lib/chat-filter';
+import { CHATS_PAGE_SIZE, type ChatsBy, filterChats } from '@/features/whatsapp/lib/chat-filter';
 import { CHAT_TABS, type ChatTab } from '@/features/whatsapp/lib/chats-search';
 import { WhatsappChatRow } from '@/features/whatsapp/sections/whatsapp-chat-row';
 import { WhatsappChatsBulk } from '@/features/whatsapp/sections/whatsapp-chats-bulk';
@@ -48,7 +43,7 @@ export function WhatsappChats({
     ? { number: account.ownerNumber, title: t('settings.whatsapp.chats.you') }
     : null;
   const view = filterChats(chats, filter, account.answeringBotId, owner);
-  const onPage = view.rows.flatMap((row) => (row === OWNER_CHAT ? [] : [row.chatId]));
+  const onPage = view.rows.flatMap((row) => (row.kind === 'chat' ? [row.key] : []));
   const allTicked = onPage.length > 0 && onPage.every((id) => ticked.has(id));
   const narrow = (apply: () => void) => {
     setTicked(new Set());
@@ -151,21 +146,21 @@ export function WhatsappChats({
               />
               {t('settings.whatsapp.chats.selectPage')}
             </div>
-            {view.rows.map((chat) =>
-              chat === OWNER_CHAT ? (
+            {view.rows.map((row) =>
+              row.kind === 'owner' ? (
                 <WhatsappOwnerChatRow
-                  key={OWNER_CHAT}
-                  number={account.ownerNumber ?? ''}
+                  key={row.key}
+                  number={row.number}
                   defaultBotName={defaultBotName}
                 />
               ) : (
                 <WhatsappChatRow
-                  key={chat.chatId}
-                  chat={chat}
+                  key={row.key}
+                  chat={row.chat}
                   bots={bots}
                   defaultBotName={defaultBotName}
-                  selected={ticked.has(chat.chatId)}
-                  onSelect={(on) => tick(chat.chatId, on)}
+                  selected={ticked.has(row.key)}
+                  onSelect={(on) => tick(row.key, on)}
                 />
               ),
             )}

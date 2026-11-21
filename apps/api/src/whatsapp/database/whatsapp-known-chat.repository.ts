@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
+import { whatsappKnownChatsUnderCap } from '../domain/whatsapp-chat-route.policy';
 import type { WhatsappKnownChat } from '../domain/whatsapp-message.types';
 import type { WhatsappGrantsOf } from './whatsapp-chat-grant.repository.port';
 import { WhatsappKnownChatOrmEntity } from './whatsapp-known-chat.orm-entity';
@@ -48,9 +49,7 @@ export class WhatsappKnownChatRepository implements WhatsappKnownChatRepositoryP
           })
         ).map((record) => record.chatId),
       );
-      const room = Math.max(0, max - known.size);
-      const fresh = chats.filter((chat) => !known.has(chat.chatId)).slice(0, room);
-      const kept = [...chats.filter((chat) => known.has(chat.chatId)), ...fresh];
+      const kept = whatsappKnownChatsUnderCap(known, chats, max);
       if (kept.length === 0) return;
       await repository
         .createQueryBuilder()

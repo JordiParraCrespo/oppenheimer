@@ -1,11 +1,7 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { BotChannelWakeResolver } from '../../application/bot-channel-wake.resolver';
 import { phoneOf } from '../../bot-whatsapp-tool.mapper';
-import {
-  WHATSAPP_CONTACT_TURNS_PER_HOUR,
-  WHATSAPP_GROUP_TURNS_PER_HOUR,
-  whatsappContactTurn,
-} from '../../domain/bot-whatsapp-turn.policy';
+import { whatsappContactTurn, whatsappTurnsPerHour } from '../../domain/bot-whatsapp-turn.policy';
 import { WakeOnWhatsappContactCommand } from './wake-on-whatsapp-contact.command';
 
 /**
@@ -33,10 +29,7 @@ export class WakeOnWhatsappContactCommandHandler
       messageId: command.seq,
       command: 'message',
       correlationId: command.metadata.correlationId,
-      turnsPerHour:
-        command.chatKind === 'group'
-          ? WHATSAPP_GROUP_TURNS_PER_HOUR
-          : WHATSAPP_CONTACT_TURNS_PER_HOUR,
+      turnsPerHour: whatsappTurnsPerHour(command.chatKind),
       turn: (props, conversationId) =>
         whatsappContactTurn(props, {
           conversationId,

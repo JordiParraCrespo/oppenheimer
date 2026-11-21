@@ -101,6 +101,21 @@ export function whatsappKnownChats(
   return [...byId.values()];
 }
 
+/**
+ * Which of a report's chats a number writes, holding at most `max`: every
+ * chat it already knows (renamed in place), then new ones while there is
+ * room, in the order reported; the rest wait for their first message.
+ */
+export function whatsappKnownChatsUnderCap<T extends { chatId: string }>(
+  known: ReadonlySet<string>,
+  reported: readonly T[],
+  max: number,
+): T[] {
+  const room = Math.max(0, max - known.size);
+  const fresh = reported.filter((chat) => !known.has(chat.chatId)).slice(0, room);
+  return [...reported.filter((chat) => known.has(chat.chatId)), ...fresh];
+}
+
 /** What one change of who answers a set of chats writes. */
 export interface WhatsappRouteChanges {
   insert: WhatsappChatGrantEntity[];

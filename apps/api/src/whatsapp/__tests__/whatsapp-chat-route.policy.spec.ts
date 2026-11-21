@@ -5,6 +5,7 @@ import {
   type WhatsappChatRouteRow,
   whatsappChatRoutes,
   whatsappKnownChats,
+  whatsappKnownChatsUnderCap,
   whatsappRouteChanges,
 } from '../domain/whatsapp-chat-route.policy';
 import type { WhatsappChat, WhatsappMessage } from '../domain/whatsapp-message.types';
@@ -105,6 +106,25 @@ describe('the chats a number’s device reports', () => {
         { chatId: PAU, chatKind: 'direct', chatName: 'Pau' },
       ]),
     ).toEqual([{ chatId: PAU, chatKind: 'direct', chatName: 'Pau' }]);
+  });
+});
+
+describe('whatsappKnownChatsUnderCap', () => {
+  // Breaks if a full number stops renaming the chats it knows, drops a known
+  // chat for a new one, or grows past its cap on a report.
+  it('keeps every chat already known, then new ones while there is room', () => {
+    const reported = ['new-1', 'old-1', 'new-2', 'old-2', 'new-3'].map((chatId) => ({ chatId }));
+    const known = new Set(['old-1', 'old-2', 'gone']);
+    expect(whatsappKnownChatsUnderCap(known, reported, 5).map((c) => c.chatId)).toEqual([
+      'old-1',
+      'old-2',
+      'new-1',
+      'new-2',
+    ]);
+    expect(whatsappKnownChatsUnderCap(known, reported, 3).map((c) => c.chatId)).toEqual([
+      'old-1',
+      'old-2',
+    ]);
   });
 });
 

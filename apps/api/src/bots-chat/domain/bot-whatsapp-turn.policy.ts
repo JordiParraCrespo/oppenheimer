@@ -77,6 +77,16 @@ export const WHATSAPP_CONTACT_TURNS_PER_HOUR = 20;
  */
 export const WHATSAPP_GROUP_TURNS_PER_HOUR = 120;
 
+const TURNS_PER_HOUR: Record<'direct' | 'group', number> = {
+  direct: WHATSAPP_CONTACT_TURNS_PER_HOUR,
+  group: WHATSAPP_GROUP_TURNS_PER_HOUR,
+};
+
+/** The most turns a contact's chat of this kind is sent in an hour. */
+export function whatsappTurnsPerHour(chatKind: 'direct' | 'group'): number {
+  return TURNS_PER_HOUR[chatKind];
+}
+
 /** What a contact wrote in a chat the number allows, for the turn it queues. */
 export interface BotWhatsappContactMessage {
   conversationId: string;

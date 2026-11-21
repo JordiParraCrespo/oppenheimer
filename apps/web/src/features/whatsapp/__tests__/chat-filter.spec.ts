@@ -6,7 +6,6 @@ import {
   CHATS_PAGE_SIZE,
   type ChatListRow,
   filterChats,
-  OWNER_CHAT,
 } from '@/features/whatsapp/lib/chat-filter';
 
 /**
@@ -39,7 +38,7 @@ function chat(chatId: string, name: string, botId?: string | null) {
   );
 }
 
-const titleOf = (row: ChatListRow) => (row === OWNER_CHAT ? 'You' : row.title);
+const titleOf = (row: ChatListRow) => (row.kind === 'owner' ? 'You' : row.chat.title);
 
 const chats = [
   chat('1@g.us', 'Family', 'shop'),
@@ -98,7 +97,7 @@ describe('filterChats', () => {
       'juno',
       owner,
     );
-    expect(groups.rows).not.toContain(OWNER_CHAT);
+    expect(groups.rows.map(titleOf)).not.toContain('You');
 
     const byNumber = filterChats(
       chats,
@@ -106,7 +105,7 @@ describe('filterChats', () => {
       'juno',
       owner,
     );
-    expect(byNumber.rows).toEqual([OWNER_CHAT]);
+    expect(byNumber.rows.map(titleOf)).toEqual(['You']);
 
     const noDefault = filterChats(
       chats,
@@ -114,7 +113,7 @@ describe('filterChats', () => {
       null,
       owner,
     );
-    expect(noDefault.rows).not.toContain(OWNER_CHAT);
+    expect(noDefault.rows.map(titleOf)).not.toContain('You');
     expect(noDefault.answeredCount).toBe(1);
   });
 
