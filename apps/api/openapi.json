@@ -9796,6 +9796,19 @@
             }
           },
           {
+            "name": "resolved",
+            "required": false,
+            "in": "query",
+            "description": "`false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.",
+            "schema": {
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          },
+          {
             "name": "githubRepoId",
             "required": false,
             "in": "query",
