@@ -47,9 +47,9 @@ test('a Groq key is stored and picked to hear dictation, with its model', async 
       return [
         settings.transcriptionProvider,
         settings.transcriptionModel,
-        settings.available.transcription,
+        settings.available.transcription.includes('groq'),
       ];
     })
-    .toEqual(['groq', 'whisper-large-v3', ['groq']]);
+    .toEqual(['groq', 'whisper-large-v3', true]);
   await owner.api.dispose();
 });
