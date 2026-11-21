@@ -33,7 +33,12 @@ export function SideAgentComposer({
   return (
     <div className="relative" onKeyDownCapture={emoji.onKeyDownCapture} {...emoji.track}>
       {emoji.rows ? (
-        <ComposerEmojiMenu rows={emoji.rows} highlighted={emoji.highlighted} onPick={emoji.pick} />
+        <ComposerEmojiMenu
+          rows={emoji.rows}
+          left={emoji.left}
+          highlighted={emoji.highlighted}
+          onPick={emoji.pick}
+        />
       ) : null}
       <ChatComposer
         layout="inline"

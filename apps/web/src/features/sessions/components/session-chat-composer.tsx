@@ -229,6 +229,7 @@ export function SessionChatComposer({
         {emoji.rows ? (
           <ComposerEmojiMenu
             rows={emoji.rows}
+            left={emoji.left}
             highlighted={emoji.highlighted}
             onPick={emoji.pick}
           />

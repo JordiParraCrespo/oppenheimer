@@ -283,6 +283,7 @@ export function BotComposer({
         {emoji.rows ? (
           <ComposerEmojiMenu
             rows={emoji.rows}
+            left={emoji.left}
             highlighted={emoji.highlighted}
             onPick={emoji.pick}
           />
