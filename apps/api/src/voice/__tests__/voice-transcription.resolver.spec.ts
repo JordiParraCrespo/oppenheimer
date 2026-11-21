@@ -162,3 +162,34 @@ describe('ChatgptSpeechResolver', () => {
     });
   });
 });
+
+describe('VoiceTranscriptionResolver, with a choice', () => {
+  it('tries the chosen provider first with its model, and the others after it on their defaults', async () => {
+    const chatgpt = provider('chatgpt');
+    const groq = provider('groq');
+
+    await expect(
+      resolverOver(chatgpt, groq).hear(ORG, CLIP, NOW, {
+        provider: 'groq',
+        model: 'whisper-large-v3',
+      }),
+    ).resolves.toMatchObject({ provider: 'groq' });
+    expect(groq.transcribe).toHaveBeenCalledWith(
+      { ...CLIP, model: 'whisper-large-v3' },
+      expect.anything(),
+    );
+    expect(chatgpt.grantFor).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a workspace whose chosen key was removed can no longer dictate.
+  it('falls back to the usual order when the chosen provider is not available', async () => {
+    const chatgpt = provider('chatgpt');
+    const groq = provider('groq', { available: false });
+
+    await expect(
+      resolverOver(chatgpt, groq).hear(ORG, CLIP, NOW, { provider: 'groq', model: null }),
+    ).resolves.toMatchObject({ provider: 'chatgpt' });
+    // ChatGPT's route takes no model.
+    expect(chatgpt.transcribe).toHaveBeenCalledWith(CLIP, expect.anything());
+  });
+});

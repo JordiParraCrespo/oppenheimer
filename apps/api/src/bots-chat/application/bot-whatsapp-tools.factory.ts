@@ -68,7 +68,7 @@ interface AskingSendSpec {
   /** The text the tool takes, with its own bound. */
   text: z.ZodString;
   /** Refuses the call when it cannot go at all: before any card, and again before it runs. */
-  ready?: () => Promise<void>;
+  ready?: (organizationId: string) => Promise<void>;
   /** The card's line: every word that goes, and where. */
   summarize(planned: PlannedSend, text: string): string;
   /** Sends the text to the planned chat, and answers what the model is told. */
@@ -268,8 +268,8 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         .min(1)
         .max(SPEECH_TEXT_MAX_CHARS)
         .describe(promptText('tools/whatsapp.send-whatsapp-voice-note-text')),
-      // A yes the deployment cannot speak would be a wait for nothing.
-      ready: () => this.requireSpeech(),
+      // A yes the workspace cannot speak would be a wait for nothing.
+      ready: (organizationId) => this.requireSpeech(organizationId),
       // The card quotes every word the note will say, and where it goes.
       summarize: (planned, text) =>
         `Send a voice note on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}, saying: ${text}`,
@@ -315,7 +315,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
           .describe(promptText('tools/whatsapp.send-whatsapp-message-planned')),
       }),
       normalize: async (input, context) => {
-        await spec.ready?.();
+        await spec.ready?.(context.organizationId);
         return { ...input, planned: await this.plan(input, context.owner) };
       },
       subject: (input) => {
@@ -335,7 +335,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         const planned = context.approvalId
           ? plannedOf(input.planned)
           : await this.plan(input, context.owner);
-        await spec.ready?.();
+        await spec.ready?.(context.organizationId);
         return spec.deliver(planned, input.text, context);
       },
     });
@@ -360,10 +360,10 @@ export class BotWhatsappToolsFactory implements BotToolArea {
     );
   }
 
-  /** Refuses a voice note on a deployment with no text-to-speech server. */
-  private async requireSpeech(): Promise<void> {
+  /** Refuses a voice note for a workspace with no provider to speak it. */
+  private async requireSpeech(organizationId: string): Promise<void> {
     const speaks = await this.queryBus.execute<FindSpeechSynthesisQuery, boolean>(
-      new FindSpeechSynthesisQuery(),
+      new FindSpeechSynthesisQuery(organizationId),
     );
     if (!speaks) throw new BotToolRefusal(promptText('tools/whatsapp.speech-not-set-up'));
   }

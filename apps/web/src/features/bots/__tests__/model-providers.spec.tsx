@@ -42,6 +42,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
       { provider: 'glm', configured: false, keyHint: null, updatedAt: null, isDefault: false },
       { provider: 'openai', configured: true, keyHint: '12ab', updatedAt: null, isDefault: false },
       { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'groq', configured: true, keyHint: 'gq12', updatedAt: null, isDefault: false },
     ],
     error: null,
   }),
@@ -127,6 +128,7 @@ describe('ModelProviders', () => {
     expect(rows(/groups\.connected/)).toEqual([
       expect.stringContaining('Anthropic'),
       expect.stringContaining('OpenAI'),
+      expect.stringContaining('Groq'),
     ]);
     expect(rows(/groups\.notConnected/)).toEqual([
       expect.stringContaining('GLM'),
@@ -157,5 +159,19 @@ describe('ModelProviders', () => {
     fireEvent.click(screen.getByRole('button', { name: 'settings.modelProviders.connect' }));
     expect(screen.getByTestId('chatgpt-dialog')).toBeTruthy();
     expect(screen.queryByTestId('key-dialog')).toBeNull();
+  });
+
+  // What breaks this: Make default on a voice-only key, which the API refuses (BOTS_012).
+  it('offers Make default on no voice-only provider, whose key still has Replace and Remove', () => {
+    render(<ModelProviders />);
+    const groq = screen
+      .getAllByTestId('model-provider')
+      .find((row) => row.textContent?.includes('Groq')) as HTMLElement;
+    expect(
+      within(groq).queryByRole('button', { name: 'settings.modelProviders.makeDefault' }),
+    ).toBeNull();
+    expect(
+      within(groq).getByRole('button', { name: 'settings.modelProviders.removeLabel' }),
+    ).toBeTruthy();
   });
 });

@@ -8,7 +8,10 @@ import {
 } from '@oppenheimer/design-system-web';
 import { usePutModelProviderKey } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
+import {
+  MODEL_PROVIDER_CATALOG,
+  type ModelProvider,
+} from '@oppenheimer/shared/schemas/model-provider';
 import { useTranslation } from 'react-i18next';
 import { ModelProviderKeyForm } from '../forms/model-provider-key-form';
 
@@ -17,12 +20,12 @@ export function ModelProviderKeyDialog({
   provider,
   onClose,
 }: {
-  provider: BotProvider;
+  provider: ModelProvider;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const put = usePutModelProviderKey({ onSuccess: onClose });
-  const label = BOT_PROVIDER_CATALOG[provider].label;
+  const label = MODEL_PROVIDER_CATALOG[provider].label;
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

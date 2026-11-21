@@ -24,7 +24,7 @@ export class SetDefaultModelProviderCommandHandler
   ) {}
 
   async execute({ scope, provider }: SetDefaultModelProviderCommand): Promise<void> {
-    const known = this.providers.provider(provider);
+    const known = this.providers.botProvider(provider);
     requireTenant(scope);
     if (!(await this.credentials.setDefault(scope, known))) {
       throw new AppError(BotErrors.DEFAULT_PROVIDER_KEY_MISSING, {

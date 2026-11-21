@@ -18,8 +18,8 @@ export const VoiceErrors = {
     httpStatus: 415,
   },
   /**
-   * Nobody to hear it: the workspace is not signed in to ChatGPT and the
-   * deployment has no speech-to-text server of its own.
+   * Nobody to hear it: no ChatGPT sign-in, no OpenAI, Groq or ElevenLabs key,
+   * and no speech-to-text server on the deployment.
    */
   NOT_CONFIGURED: {
     code: 'VOICE_005',
@@ -37,10 +37,10 @@ export const VoiceErrors = {
     message: 'The speech-to-text provider is rate limiting this workspace',
     httpStatus: 429,
   },
-  /** Nobody to speak it: the deployment has no text-to-speech server (`VOICE_TTS_*`). */
+  /** Nobody to speak it: no OpenAI or ElevenLabs key, and no deployment server (`VOICE_TTS_*`). */
   SYNTHESIS_NOT_CONFIGURED: {
     code: 'VOICE_008',
-    message: 'Speech synthesis is not set up on this deployment',
+    message: 'Speech synthesis is not set up for this workspace',
     httpStatus: 409,
   },
   /** The provider was unreachable, refused the text, or answered something that is not Ogg/Opus speech. */
@@ -51,7 +51,7 @@ export const VoiceErrors = {
   },
   SYNTHESIS_RATE_LIMITED: {
     code: 'VOICE_010',
-    message: 'The text-to-speech provider is rate limiting this deployment',
+    message: 'The text-to-speech provider is rate limiting this workspace',
     httpStatus: 429,
   },
   /** Empty, or longer than one voice note says (`SPEECH_TEXT_MAX_CHARS`). */

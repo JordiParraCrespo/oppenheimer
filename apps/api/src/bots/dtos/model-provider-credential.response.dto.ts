@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BOT_PROVIDERS, type BotProvider } from '@oppenheimer/shared';
+import { MODEL_PROVIDERS, type ModelProvider } from '@oppenheimer/shared';
 
 /** One provider's key as the console sees it: whether there is one, never what it is. */
 export class ModelProviderCredentialResponseDto {
-  @ApiProperty({ enum: BOT_PROVIDERS })
-  provider!: BotProvider;
+  @ApiProperty({ enum: MODEL_PROVIDERS })
+  provider!: ModelProvider;
 
   @ApiProperty({ description: 'Whether the workspace has a key for this provider.' })
   configured!: boolean;

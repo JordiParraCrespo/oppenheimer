@@ -322,7 +322,7 @@
     "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
     "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
     "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento.",
-    "VOICE_008": "Las notas de voz no están configuradas en este servidor.",
+    "VOICE_008": "Las notas de voz no están configuradas en este espacio de trabajo. Añade una clave de OpenAI o ElevenLabs en Ajustes → Proveedores de modelos.",
     "VOICE_009": "No se ha podido generar la nota de voz. Inténtalo de nuevo en un momento.",
     "VOICE_010": "Demasiadas notas de voz por ahora. Inténtalo de nuevo en un momento.",
     "VOICE_011": "Ese texto es demasiado largo para una nota de voz.",
