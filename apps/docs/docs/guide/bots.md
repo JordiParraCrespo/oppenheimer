@@ -19,7 +19,6 @@ The Employees sidebar holds your bots in groups (New group, Move to group) in an
 - The chat shows the bot's text, an activity line per run of tool calls, cards for what needs you, and a line for every change it makes to itself.
 - You can send images (PNG, JPEG, GIF, WebP; up to 5 MB, four a message), except to GLM models. No other file types.
 - The composer picks the provider, model and effort, and its meter shows context use and, on a ChatGPT sign-in, the plan's limits.
-- On GitHub: `@oppenheimer <name>` or a `bot:<name>` label ([more](./github.md#asking-a-bot)).
 
 ## Settings
 
