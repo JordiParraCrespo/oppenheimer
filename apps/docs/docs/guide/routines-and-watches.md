@@ -20,7 +20,7 @@ Triggers a routine can have:
 
 **Making one**: ask the bot in chat ("every weekday at 9, check open PRs and tell me which need me"), or type `/schedule` followed by the request. The bot saves it with its routine tool. A save asks you first with a card, except a create from your own `/schedule` command, which is the consent. Changing, deleting or running a routine from the chat asks too.
 
-**The Routines tab** is controls, not an editor. Each row shows the name, when it runs (or Paused) and its last and next run, with a switch, **Run now**, **Edit in chat** (puts "Edit your routine: …" in the composer for the bot to change it), and **Delete**. Using the tab yourself raises no card.
+**The Routines tab** shows each routine's name, when it runs (or Paused) and its last and next run, with a switch, **Run now**, **Edit routine** and **Delete**. Edit routine opens a dialog where you change its name and prompt yourself; to change when it runs, its **Ask in chat** puts "Edit your routine: …" in the composer for the bot to change it. Using the tab yourself raises no card.
 
 A routine is skipped and paused when it cannot run, with the reason in the chat: the bot's provider has no key, its owner lost access, or an hourly run limit was hit (10 runs an hour per routine, 100 per workspace by default). A run due while the last one is still running is skipped.
 

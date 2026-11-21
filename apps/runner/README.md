@@ -57,6 +57,12 @@ a minute, 300 a day). A reply quotes the message it answers when the control
 plane names one (`whatsapp.send`'s `replyTo`). A sender or direct chat that
 WhatsApp addresses by `@lid` is reported by its phone number whenever the
 device knows it, so a bot's owner, named by number, is recognised either way.
+So are the people a message @-mentions and the sender of the message it
+replies to. On connect, and again when it joins a group, a group is renamed
+or its contacts change, the device reports the groups it is in and its
+saved contacts (`whatsapp.chats`), so Settings lists them before anyone
+writes; someone only seen in a group, with no name the phone saved, is not
+reported.
 
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container

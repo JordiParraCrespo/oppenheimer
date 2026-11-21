@@ -88,6 +88,7 @@ import { BotRoutineActivityDomainEventHandler } from './application/event-handle
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { BotTaskWakeDomainEventHandler } from './application/event-handlers/bot-task-wake.domain-event-handler';
 import { BotTelegramWakeDomainEventHandler } from './application/event-handlers/bot-telegram-wake.domain-event-handler';
+import { BotWhatsappContactWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-contact-wake.domain-event-handler';
 import { BotWhatsappWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from './application/turn-write.factory';
@@ -179,6 +180,7 @@ import { WakeOnTaskActivityCommandHandler } from './commands/wake-on-task-activi
 import { WakeOnTelegramCommandHandler } from './commands/wake-on-telegram/wake-on-telegram.command-handler';
 import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
 import { WakeOnWhatsappCommandHandler } from './commands/wake-on-whatsapp/wake-on-whatsapp.command-handler';
+import { WakeOnWhatsappContactCommandHandler } from './commands/wake-on-whatsapp-contact/wake-on-whatsapp-contact.command-handler';
 import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
@@ -323,6 +325,7 @@ const commandHandlers: Provider[] = [
   WakeOnTaskActivityCommandHandler,
   WakeOnTelegramCommandHandler,
   WakeOnWhatsappCommandHandler,
+  WakeOnWhatsappContactCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
   ResumeBotGoalCommandHandler,
@@ -512,6 +515,7 @@ const queryHandlers: Provider[] = [
     BotMilestoneDeletedDomainEventHandler,
     BotTelegramWakeDomainEventHandler,
     BotWhatsappWakeDomainEventHandler,
+    BotWhatsappContactWakeDomainEventHandler,
     TurnCancelWatchFactory,
     BotBackgroundTurnsProcessor,
     BotTurnsProcessor,

@@ -226,4 +226,31 @@ describe('DeliverChannelReplyCommandHandler', () => {
       expect(bus.execute).not.toHaveBeenCalled();
     }
   });
+
+  // What breaks this: a group reading why a turn failed (the owner's key,
+  // a provider's or the database's words), or "the console has the
+  // details" sent to someone who has no console.
+  it('tells a contact a failed turn failed without why, and sends nothing when the bot said nothing', async () => {
+    const contactTurn = () =>
+      BotTurnEntity.queue({
+        organizationId,
+        botId,
+        requestedByUserId: userId,
+        ...engine,
+        conversationId,
+        origin: 'whatsapp',
+        lane: 'owner',
+        sourceKey: whatsappSourceKey({ whatsappAccountId, messageRowId }),
+        contact: 'direct',
+      });
+    const failed = setup(ended(contactTurn(), 'failed'), whatsappChat);
+    await failed.deliver();
+    expect(failed.bus.execute.mock.calls[0]?.[0]).toMatchObject({
+      text: 'Sorry, I can’t answer that right now.',
+    });
+
+    const silent = setup(ended(contactTurn()), whatsappChat, []);
+    await silent.deliver();
+    expect(silent.bus.execute).not.toHaveBeenCalled();
+  });
 });
