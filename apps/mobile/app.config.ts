@@ -1,5 +1,6 @@
 import { loadEnv } from '@oppenheimer/env';
 import type { ExpoConfig } from 'expo/config';
+import { ICONS_DIR } from './native-sources';
 
 // Expo only reads .env files from the app directory, but this monorepo keeps a
 // single .env at the workspace root. This config runs in Node before Metro
@@ -22,7 +23,7 @@ const plugins: ExpoConfig['plugins'] = [
   [
     'react-native-nano-icons',
     {
-      iconSets: [{ inputDir: '../../packages/frontend/design-system/mobile/assets/icons/ui' }],
+      iconSets: [{ inputDir: ICONS_DIR }],
     },
   ],
   // oppenheimer:plugins expo-plugins

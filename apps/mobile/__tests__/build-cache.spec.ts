@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Cache = {
@@ -78,29 +78,20 @@ describe('the native build cache', () => {
     expect(await cache.resolveBuildCache(android)).toBeNull();
   });
 
-  it('keeps only the newest builds', async () => {
-    const resolve = (hash: string) =>
-      cache.resolveBuildCache({ platform: 'ios', fingerprintHash: hash, runOptions: {} });
-    const hashes = ['one', 'two', 'three'];
-    for (const [age, hash] of hashes.entries()) {
-      await cache.uploadBuildCache(
-        { platform: 'ios', fingerprintHash: hash, runOptions: {}, buildPath: builtApp(hash) },
-        { keep: 2 },
-      );
-      const kept = join(
-        home,
-        'Library',
-        'Caches',
-        'oppenheimer',
-        'mobile-builds',
-        `ios-Debug-${hash}.app`,
-      );
-      const linux = join(home, '.cache', 'oppenheimer', 'mobile-builds', `ios-Debug-${hash}.app`);
-      const when = new Date(Date.UTC(2026, 0, 1 + age));
-      utimesSync(process.platform === 'darwin' ? kept : linux, when, when);
+  it('keeps only the most recently used builds', async () => {
+    const kept: string[] = [];
+    for (const [age, hash] of ['one', 'two', 'three'].entries()) {
+      const props = { platform: 'ios', fingerprintHash: hash, runOptions: {} };
+      await cache.uploadBuildCache({ ...props, buildPath: builtApp(hash) }, { keep: 2 });
+      const entry = (await cache.resolveBuildCache(props)) as string;
+      const used = new Date(Date.UTC(2026, 0, 1 + age));
+      utimesSync(entry, used, used);
+      kept.push(entry);
     }
-    expect(await resolve('one')).toBeNull();
-    expect(await resolve('two')).not.toBeNull();
-    expect(await resolve('three')).not.toBeNull();
+
+    expect(readdirSync(dirname(kept[0] as string)).sort()).toEqual([
+      'ios-Debug-three.app',
+      'ios-Debug-two.app',
+    ]);
   });
 });
