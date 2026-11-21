@@ -111,10 +111,7 @@ export function withSynthesisProvider(
 }
 
 /** The settings with another polish choice: its model back to that provider's default. */
-function withPolishProvider(
-  settings: VoiceSettings,
-  provider: PolishChoice | null,
-): VoiceSettings {
+function withPolishProvider(settings: VoiceSettings, provider: PolishChoice | null): VoiceSettings {
   return { ...settings, polishProvider: provider, polishModel: null };
 }
 
