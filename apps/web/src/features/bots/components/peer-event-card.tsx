@@ -1,4 +1,4 @@
-import { BotExchange, BotExchangeTurn } from '@oppenheimer/design-system-web';
+import { BotExchange, BotExchangeFoldTurn, BotExchangeTurn } from '@oppenheimer/design-system-web';
 import type { BotPeerMessageEvent, BotPeerReplyEvent } from '@oppenheimer/shared/schemas/bot';
 import { Trans } from 'react-i18next';
 
@@ -28,12 +28,12 @@ export function PeerEventCard({
   messageId: string;
   content: string;
 }) {
+  const Turn = event.kind === 'bot_reply' ? BotExchangeFoldTurn : BotExchangeTurn;
   return (
     <BotExchange data-message-id={messageId}>
-      <BotExchangeTurn
+      <Turn
         direction="in"
         reply={event.kind === 'bot_reply'}
-        collapsible={event.kind === 'bot_reply'}
         lead={
           <Trans
             i18nKey={leadKey(event)}
@@ -43,7 +43,7 @@ export function PeerEventCard({
         }
       >
         <span className="whitespace-pre-wrap">{content}</span>
-      </BotExchangeTurn>
+      </Turn>
     </BotExchange>
   );
 }

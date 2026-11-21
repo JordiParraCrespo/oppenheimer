@@ -76,6 +76,7 @@ export type { ProposedPlanLabels, SubagentState } from './components/chat-cards'
 export {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,

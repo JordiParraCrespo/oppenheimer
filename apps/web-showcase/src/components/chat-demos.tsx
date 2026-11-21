@@ -6,6 +6,7 @@ import { Button } from '@oppenheimer/design-system-web/button';
 import {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
@@ -555,9 +556,9 @@ function ChatCardsBody() {
           >
             Is the cancel path on this week’s milestone, or can it wait for 0.9?
           </BotExchangeTurn>
-          <BotExchangeTurn direction="in" reply collapsible lead="Plan Bot replied">
+          <BotExchangeFoldTurn direction="in" reply lead="Plan Bot replied">
             It is on Friday’s milestone, as the second of three tasks. Ship it this week.
-          </BotExchangeTurn>
+          </BotExchangeFoldTurn>
         </BotExchange>
         <BotExchange>
           <BotExchangeTurn
