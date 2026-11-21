@@ -29,18 +29,25 @@ function cacheRoot() {
   );
 }
 
-// Only a build that loads its JavaScript from Metro can be handed to another
-// checkout: the iOS Debug configuration, simulator only (Expo never asks for
-// a device build). A Release build carries its JavaScript bundle inside the
-// app, which the fingerprint does not cover, so reusing it would install
-// another checkout's JavaScript. Android is left out too: a debug APK is built
-// for the connected device's ABI alone, which the key cannot see.
-function cacheable({ platform, runOptions }) {
-  return platform === 'ios' && (runOptions?.configuration ?? 'Debug') === 'Debug';
-}
+// What may be handed to another checkout, by platform and then configuration
+// (iOS `--configuration`, Debug by default). Only a build that loads its
+// JavaScript from Metro qualifies: a Release build carries its bundle inside
+// the app, which the fingerprint does not cover, so reusing it would install
+// another checkout's JavaScript. Expo only asks for iOS simulator builds. No
+// Android variant is listed: a debug APK is built for the connected device's
+// ABI alone, which the key cannot see.
+const CACHEABLE = {
+  ios: { default: 'Debug', configurations: ['Debug'] },
+};
 
-function entryName({ platform, fingerprintHash }) {
-  return `${platform}-Debug-${fingerprintHash}`;
+// The entry's name, or null when the build must not be cached.
+function entryName({ platform, fingerprintHash, runOptions }) {
+  const policy = CACHEABLE[platform];
+  const configuration = runOptions?.configuration ?? policy?.default;
+  if (!policy?.configurations.includes(configuration)) {
+    return null;
+  }
+  return `${platform}-${configuration}-${fingerprintHash}`;
 }
 
 function findEntry(dir, name) {
@@ -63,10 +70,11 @@ function prune(dir, platform, keep) {
 }
 
 async function resolveBuildCache({ platform, fingerprintHash, runOptions }) {
-  if (!cacheable({ platform, runOptions })) {
+  const name = entryName({ platform, fingerprintHash, runOptions });
+  if (!name) {
     return null;
   }
-  const entry = findEntry(cacheRoot(), entryName({ platform, fingerprintHash }));
+  const entry = findEntry(cacheRoot(), name);
   if (!entry) {
     console.log(
       `Build cache: no ${platform} build for fingerprint ${fingerprintHash}; building it.`,
@@ -81,11 +89,11 @@ async function resolveBuildCache({ platform, fingerprintHash, runOptions }) {
 }
 
 async function uploadBuildCache({ platform, fingerprintHash, buildPath, runOptions }, options) {
-  if (!cacheable({ platform, runOptions })) {
+  const name = entryName({ platform, fingerprintHash, runOptions });
+  if (!name) {
     return;
   }
   const dir = cacheRoot();
-  const name = entryName({ platform, fingerprintHash });
   if (findEntry(dir, name)) {
     return;
   }

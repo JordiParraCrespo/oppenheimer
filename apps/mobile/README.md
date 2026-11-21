@@ -84,6 +84,7 @@ lib/                   # configuration only: oppenheimer.ts, auth-client.ts, que
 app.config.ts          # Expo config — the source of truth for native
 build-cache.js         # native builds kept by fingerprint, shared by every checkout
 fingerprint.config.js  # what the fingerprint hashes beyond what it finds itself
+native-sources.js      # inputs baked into the binary, shared by app.config.ts and the fingerprint
 metro.config.js, tailwind.config.js, global.css
 ```
 
