@@ -118,6 +118,7 @@ import { CloudReplyWakesProcessor } from './infrastructure/cloud-reply-wakes.pro
 import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
 import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
+import { FindBranchSessionBotsQueryHandler } from './queries/find-branch-session-bots/find-branch-session-bots.query-handler';
 import { FindCloudChatHttpController } from './queries/find-cloud-chat/find-cloud-chat.http.controller';
 import { FindCloudChatQueryHandler } from './queries/find-cloud-chat/find-cloud-chat.query-handler';
 import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
@@ -269,6 +270,7 @@ const queryHandlers: Provider[] = [
   FindCloudFileQueryHandler,
   FindCloudChatQueryHandler,
   SearchSessionsQueryHandler,
+  FindBranchSessionBotsQueryHandler,
 ];
 
 const adapters: Provider[] = [

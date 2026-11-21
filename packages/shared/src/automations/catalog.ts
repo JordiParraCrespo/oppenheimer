@@ -391,6 +391,11 @@ export const AUTOMATION_SKIP_REASONS = [
   'deleted',
   /** An event our own App caused (a run's push, its comment). */
   'own_event',
+  /**
+   * A routine's event on the branch of a session its own bot started: the
+   * session opened the pull request as the owner, so `own_event` cannot see it.
+   */
+  'own_session_event',
   /** The per-automation hourly cap. */
   'automation_rate_limited',
   /** The per-workspace hourly cap. */

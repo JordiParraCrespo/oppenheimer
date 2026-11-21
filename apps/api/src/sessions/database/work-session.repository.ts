@@ -23,7 +23,9 @@ import {
 import { SessionResource } from '../sessions.resource';
 import { WorkSessionMapper } from '../work-session.mapper';
 import { WorkSessionEventMapper } from '../work-session-event.mapper';
+import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
 import { SessionCheckoutRepository } from './session-checkout.repository';
+import { SessionCloudRunOrmEntity } from './session-cloud-run.orm-entity';
 import { SessionCloudRunRepository } from './session-cloud-run.repository';
 import { SessionTurnRepository } from './session-turn.repository';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
@@ -125,8 +127,8 @@ export class WorkSessionRepository
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
             "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt", "origin",
-            "place", "folderPath")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+            "place", "folderPath", "botId")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -157,6 +159,7 @@ export class WorkSessionRepository
           record.origin,
           record.place,
           record.folderPath,
+          record.botId,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
@@ -556,6 +559,46 @@ export class WorkSessionRepository
     if (records.length === 0) return [];
     const checkouts = await this.checkouts.findForSessions(records.map((record) => record.id));
     return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+  }
+
+  async findBotsOnBranchForSystem(
+    organizationId: string,
+    repository: { githubRepoId: string; repositoryFullName: string; branch: string },
+  ): Promise<string[]> {
+    const { githubRepoId, repositoryFullName, branch } = repository;
+    const reason =
+      'a routine woken by a GitHub event asks whether its own bot started the branch, and a webhook has no person to scope by';
+    const onCheckout: { botId: string }[] = await this.unscopedQuery(reason)
+      .innerJoin(
+        SessionCheckoutOrmEntity,
+        'checkout',
+        'checkout.sessionId = session.id AND checkout.organizationId = session.organizationId',
+      )
+      .where('session.organizationId = :organizationId', { organizationId })
+      .andWhere('session.botId IS NOT NULL')
+      .andWhere('checkout.githubRepoId = :githubRepoId', { githubRepoId })
+      .andWhere('checkout.branch = :branch', { branch })
+      .select('session.botId', 'botId')
+      .distinct(true)
+      .getRawMany();
+    // A cloud run names its repository the one way a plan writes it,
+    // `https://github.com/<owner>/<name>`; GitHub compares names case-blind.
+    const onCloudRun: { botId: string }[] = await this.unscopedQuery(reason)
+      .innerJoin(
+        SessionCloudRunOrmEntity,
+        'run',
+        'run.sessionId = session.id AND run.organizationId = session.organizationId',
+      )
+      .where('session.organizationId = :organizationId', { organizationId })
+      .andWhere('session.botId IS NOT NULL')
+      .andWhere('run.branch = :branch', { branch })
+      .andWhere('lower(run.repositoryUrl) = lower(:url)', {
+        url: `https://github.com/${repositoryFullName}`,
+      })
+      .select('session.botId', 'botId')
+      .distinct(true)
+      .getRawMany();
+    return [...new Set([...onCheckout, ...onCloudRun].map((row) => row.botId))];
   }
 
   async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {

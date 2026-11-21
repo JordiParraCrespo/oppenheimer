@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
+import type { QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { Some } from 'oxide.ts';
@@ -7,6 +8,7 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
+import { BranchSessionBotsResolver } from '../application/branch-session-bots.resolver';
 import { AutomationMapper } from '../automation.mapper';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { FireDueSchedulesCommand } from '../commands/fire-due-schedules/fire-due-schedules.command';
@@ -114,7 +116,9 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       get: () => undefined,
     } as unknown as ConfigService);
     tick = new FireDueSchedulesCommandHandler(automations, limits);
-    const lookup = { findOne: async () => Some({}) } as unknown as InboundEventLookupPort;
+    const lookup = {
+      findOne: async () => Some({ subject: { name: 'acme/atlas' } }),
+    } as unknown as InboundEventLookupPort;
     const eventViews = {
       eventViewOf: () => ({
         type: 'pr_opened',
@@ -126,7 +130,16 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         context: {},
       }),
     } as unknown as AutomationRunMapper;
-    events = new FireEventTriggersCommandHandler(automations, runs, lookup, limits, eventViews);
+    // No session on any branch here: the bus's answer for `ownSessionGuard`.
+    const queries = { execute: async () => [] } as unknown as QueryBus;
+    events = new FireEventTriggersCommandHandler(
+      automations,
+      runs,
+      lookup,
+      limits,
+      eventViews,
+      new BranchSessionBotsResolver(queries),
+    );
   }, 180000);
 
   afterAll(async () => {

@@ -26,6 +26,10 @@ import {
   `status IN ('starting', 'running', 'finished', 'failed', 'cancelled', 'expired')`,
 )
 @Index('IDX_session_cloud_run_session', ['organizationId', 'sessionId'])
+// A routine asks which bots' sessions pushed an event's branch.
+@Index('IDX_session_cloud_run_branch', ['organizationId', 'branch'], {
+  where: 'branch IS NOT NULL',
+})
 export class SessionCloudRunOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
   sessionId!: string;

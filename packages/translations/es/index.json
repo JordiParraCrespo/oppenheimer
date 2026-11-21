@@ -2555,6 +2555,7 @@
       "paused": "Omitida: la automatización estaba en pausa",
       "deleted": "Omitida: la automatización se eliminó",
       "own_event": "Omitida: el evento era nuestro",
+      "own_session_event": "Omitida: la causó una sesión que inició este bot",
       "automation_rate_limited": "Omitida: límite por hora de esta automatización",
       "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
       "overlapping": "Omitida: otra ejecución seguía en curso",

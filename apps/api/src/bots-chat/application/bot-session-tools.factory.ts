@@ -213,6 +213,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             input: body,
             idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
             origin: 'bot',
+            botId: context.botId,
           }),
         );
         const offline = result.hints.includes('host_offline')
@@ -625,6 +626,7 @@ function cloudSessionCommand(
     userId: context.owner.userId,
     idempotencyKey: idempotencyKeyOf(context.turnId, plan.body, context.approvalId),
     origin: 'bot' as const,
+    botId: context.botId,
   };
   return plan.kind === 'host'
     ? new CreateSessionCommand({ ...props, input: plan.body })
