@@ -130,6 +130,15 @@ export function useChatSending(chat: SessionChat): ChatState['sending'] {
   return useSyncExternalStore(chat.subscribe, sending, sending);
 }
 
+/**
+ * Whether anything is on its way, for a reader that needs only that: a
+ * second send, or one of two landing, leaves it as it was and redraws nothing.
+ */
+export function useChatHasSending(chat: SessionChat): boolean {
+  const any = () => chat.snapshot().sending.length > 0;
+  return useSyncExternalStore(chat.subscribe, any, any);
+}
+
 /** Whether a first load's history is still arriving, for the chat to wait for it. */
 export function useChatLoading(chat: SessionChat): boolean {
   const loading = () => chat.snapshot().loading;

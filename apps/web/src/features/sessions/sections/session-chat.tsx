@@ -15,9 +15,9 @@ import { TerminalColumn } from '../components/terminal-column';
 import { useChatFind } from '../hooks/use-chat-find';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
 import {
+  useChatHasSending,
   useChatLoading,
   useChatOlder,
-  useChatSending,
   useChatTurnIds,
 } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
@@ -88,7 +88,7 @@ export function SessionChat({
   const loading = useChatLoading(chat);
   const older = useChatOlder(chat);
   // Only whether there is any: a first message has no turn to stand under.
-  const sending = useChatSending(chat).length > 0;
+  const sending = useChatHasSending(chat);
   const { scroller, content, leave, atLatest, toLatest } = useStickToBottom();
   // The first turn drawn. At the latest it follows the end; away from it,
   // it is held, so a turn arriving never takes one off the top of what the

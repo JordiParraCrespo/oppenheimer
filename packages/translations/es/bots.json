@@ -59,7 +59,9 @@
       "chars": "[Texto pegado #{{n}} {{chars}} caracteres]"
     },
     "fold": {
-      "showAll": "Mostrar las {{lines}} líneas",
+      "showAll_one": "Mostrar la línea entera",
+      "showAll_many": "Mostrar las {{count}} de líneas",
+      "showAll_other": "Mostrar las {{count}} líneas",
       "showLess": "Mostrar menos"
     },
     "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
