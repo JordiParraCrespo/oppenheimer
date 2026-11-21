@@ -11,7 +11,14 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
+import {
+  ComposerEmojiMenu,
+  dictateInto,
+  dictationSlots,
+  ErrorAlert,
+  useDictation,
+  useEmojiMenu,
+} from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
@@ -121,6 +128,7 @@ export function BotComposer({
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
+  const emoji = useEmojiMenu(draft, setDraft);
   const recall = useSentHistory(botId, draft, setDraft);
   const pastes = useBotPastes(botId, draft, setDraft);
   const active = useBotActiveTurn(botId);
@@ -266,7 +274,19 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div ref={box} className="relative">
+      <div
+        ref={box}
+        className="relative"
+        onKeyDownCapture={emoji.onKeyDownCapture}
+        {...emoji.track}
+      >
+        {emoji.rows ? (
+          <ComposerEmojiMenu
+            rows={emoji.rows}
+            highlighted={emoji.highlighted}
+            onPick={emoji.pick}
+          />
+        ) : null}
         {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}

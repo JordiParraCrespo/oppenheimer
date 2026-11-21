@@ -1,8 +1,10 @@
 import { ComposerChoices, ComposerPill, FieldError } from '@oppenheimer/design-system-web';
 import {
+  ComposerEmojiMenu,
   dictateInto,
   dictationSlots,
   useDictation,
+  useEmojiMenu,
   useStoredText,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
@@ -74,6 +76,7 @@ export function NewSessionComposer({
     onText: dictateInto((update) => setNewSessionTask(update(newSessionTask()))),
   });
 
+  const emoji = useEmojiMenu(draft, setNewSessionTask);
   useReceiveDrops(hold);
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
@@ -99,41 +102,50 @@ export function NewSessionComposer({
           hold(picked);
         }}
       />
-      <ComposerPill
-        value={draft}
-        onValueChange={setNewSessionTask}
-        busy={busy}
-        disabled={disabled}
-        allowEmpty={taskOptional}
-        placeholder={t(
-          taskOptional
-            ? 'sessions.new.composer.placeholderOptional'
-            : 'sessions.new.composer.placeholder',
-        )}
-        labels={{
-          send: t('sessions.new.composer.send'),
-          stop: t('sessions.new.composer.stop'),
-          attach: t('sessions.new.composer.attach'),
-          removeAttachment: (name) => t('sessions.new.composer.removeAttachment', { name }),
-        }}
-        attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
-        onRemoveAttachment={(id) => release([id])}
-        onAttach={() => picker.current?.click()}
-        onPaste={onPaste}
-        dictation={dictationSlots(dictation)}
-        onSubmit={(text) => {
-          const task = text.trim();
-          // A file rides a written task: the text is optional only with none held.
-          if (!task && (!taskOptional || files.length > 0)) return;
-          onSubmit(
-            task,
-            files.map(({ file }) => file),
-          );
-          // Deliberately not cleared. A successful start forgets the text
-          // (`NewSessionSend`) and navigates away; a failed one leaves the
-          // sentence and its files where their author can fix them and send again.
-        }}
-      />
+      <div className="relative" onKeyDownCapture={emoji.onKeyDownCapture} {...emoji.track}>
+        {emoji.rows ? (
+          <ComposerEmojiMenu
+            rows={emoji.rows}
+            highlighted={emoji.highlighted}
+            onPick={emoji.pick}
+          />
+        ) : null}
+        <ComposerPill
+          value={draft}
+          onValueChange={setNewSessionTask}
+          busy={busy}
+          disabled={disabled}
+          allowEmpty={taskOptional}
+          placeholder={t(
+            taskOptional
+              ? 'sessions.new.composer.placeholderOptional'
+              : 'sessions.new.composer.placeholder',
+          )}
+          labels={{
+            send: t('sessions.new.composer.send'),
+            stop: t('sessions.new.composer.stop'),
+            attach: t('sessions.new.composer.attach'),
+            removeAttachment: (name) => t('sessions.new.composer.removeAttachment', { name }),
+          }}
+          attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
+          onRemoveAttachment={(id) => release([id])}
+          onAttach={() => picker.current?.click()}
+          onPaste={onPaste}
+          dictation={dictationSlots(dictation)}
+          onSubmit={(text) => {
+            const task = text.trim();
+            // A file rides a written task: the text is optional only with none held.
+            if (!task && (!taskOptional || files.length > 0)) return;
+            onSubmit(
+              task,
+              files.map(({ file }) => file),
+            );
+            // Deliberately not cleared. A successful start forgets the text
+            // (`NewSessionSend`) and navigates away; a failed one leaves the
+            // sentence and its files where their author can fix them and send again.
+          }}
+        />
+      </div>
       <ComposerChoices engine={engine}>
         {scope}
         {tools}

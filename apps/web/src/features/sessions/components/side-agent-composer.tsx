@@ -1,4 +1,5 @@
 import { ChatComposer } from '@oppenheimer/design-system-web';
+import { ComposerEmojiMenu, useEmojiMenu } from '@oppenheimer/frontend-web';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,23 +28,29 @@ export function SideAgentComposer({
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
+  const emoji = useEmojiMenu(draft, setDraft);
 
   return (
-    <ChatComposer
-      layout="inline"
-      value={draft}
-      onValueChange={setDraft}
-      onSubmit={() => onSubmit(draft.trim())}
-      allowEmpty
-      disabled={starting}
-      placeholder={t('sessions.new.composer.placeholder')}
-      tools={tools}
-      engine={engine}
-      labels={{
-        send: sendLabel,
-        stop: t('bots.chat.stop'),
-        attach: t('bots.chat.images.attach'),
-      }}
-    />
+    <div className="relative" onKeyDownCapture={emoji.onKeyDownCapture} {...emoji.track}>
+      {emoji.rows ? (
+        <ComposerEmojiMenu rows={emoji.rows} highlighted={emoji.highlighted} onPick={emoji.pick} />
+      ) : null}
+      <ChatComposer
+        layout="inline"
+        value={draft}
+        onValueChange={setDraft}
+        onSubmit={() => onSubmit(draft.trim())}
+        allowEmpty
+        disabled={starting}
+        placeholder={t('sessions.new.composer.placeholder')}
+        tools={tools}
+        engine={engine}
+        labels={{
+          send: sendLabel,
+          stop: t('bots.chat.stop'),
+          attach: t('bots.chat.images.attach'),
+        }}
+      />
+    </div>
   );
 }
