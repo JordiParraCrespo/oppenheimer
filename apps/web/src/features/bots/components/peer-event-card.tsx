@@ -28,12 +28,13 @@ export function PeerEventCard({
   messageId: string;
   content: string;
 }) {
-  const Turn = event.kind === 'bot_reply' ? BotExchangeFoldTurn : BotExchangeTurn;
+  const isReply = event.kind === 'bot_reply';
+  const Turn = isReply ? BotExchangeFoldTurn : BotExchangeTurn;
   return (
     <BotExchange data-message-id={messageId}>
       <Turn
         direction="in"
-        reply={event.kind === 'bot_reply'}
+        reply={isReply}
         lead={
           <Trans
             i18nKey={leadKey(event)}

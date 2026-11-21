@@ -483,16 +483,22 @@ type BotExchangeTurnProps = {
 const TURN_CLASS =
   'group/turn flex items-start gap-2.5 px-3 py-2.5 data-reply:border-t data-reply:border-border-subtle data-reply:bg-hover-surface';
 const LEAD_CLASS = 'min-w-0 text-fg-muted [&_strong]:font-medium [&_strong]:text-fg';
-const WORDS_CLASS = 'leading-normal text-pretty text-fg';
+const WORDS_CLASS = 'block pt-0.75 leading-normal text-pretty text-fg';
 
-function TurnArrow() {
+/** A turn's anatomy, whichever root holds it: the arrow, the lead with its time, then the words. */
+function TurnBody({ lead, time, children }: { lead: React.ReactNode; time?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
+    <>
+      <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex items-baseline gap-2">
+          {lead}
+          {time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null}
+        </span>
+        {children}
+      </span>
+    </>
   );
-}
-
-function TurnTime({ time }: { time?: React.ReactNode }) {
-  return time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null;
 }
 
 function BotExchangeTurn({ direction, reply = false, lead, time, className, children }: BotExchangeTurnProps) {
@@ -503,14 +509,9 @@ function BotExchangeTurn({ direction, reply = false, lead, time, className, chil
       data-reply={reply || undefined}
       className={cn(TURN_CLASS, className)}
     >
-      <TurnArrow />
-      <span className="flex min-w-0 flex-1 flex-col gap-0.75">
-        <span className="flex items-baseline gap-2">
-          <span className={cn(LEAD_CLASS, 'flex-1')}>{lead}</span>
-          <TurnTime time={time} />
-        </span>
+      <TurnBody lead={<span className={cn(LEAD_CLASS, 'flex-1')}>{lead}</span>} time={time}>
         <span className={WORDS_CLASS}>{children}</span>
-      </span>
+      </TurnBody>
     </div>
   );
 }
@@ -537,18 +538,18 @@ function BotExchangeFoldTurn({
       defaultOpen={defaultOpen}
       className={cn(TURN_CLASS, className)}
     >
-      <TurnArrow />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex items-baseline gap-2">
+      <TurnBody
+        lead={
           <FoldTrigger className={cn(LEAD_CLASS, 'inline-flex flex-1 items-center gap-1.5')}>
             <span className="min-w-0">{lead}</span>
           </FoldTrigger>
-          <TurnTime time={time} />
-        </span>
+        }
+        time={time}
+      >
         <FoldPanel>
-          <span className={cn('block pt-0.75', WORDS_CLASS)}>{children}</span>
+          <span className={WORDS_CLASS}>{children}</span>
         </FoldPanel>
-      </span>
+      </TurnBody>
     </Fold>
   );
 }
