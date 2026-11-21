@@ -137,6 +137,10 @@
         "list": "Listed",
         "more_one": "+{{count}} more",
         "more_other": "+{{count}} more"
+      },
+      "emoji": {
+        "menu": "Emoji",
+        "pick": "Insert {{emoji}} :{{name}}:"
       }
     },
     "search": {

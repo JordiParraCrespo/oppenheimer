@@ -1,4 +1,5 @@
 import { ChatComposer } from '@oppenheimer/design-system-web';
+import { ComposerEmojiBox } from '@oppenheimer/frontend-web';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -29,21 +30,23 @@ export function SideAgentComposer({
   const [draft, setDraft] = useState('');
 
   return (
-    <ChatComposer
-      layout="inline"
-      value={draft}
-      onValueChange={setDraft}
-      onSubmit={() => onSubmit(draft.trim())}
-      allowEmpty
-      disabled={starting}
-      placeholder={t('sessions.new.composer.placeholder')}
-      tools={tools}
-      engine={engine}
-      labels={{
-        send: sendLabel,
-        stop: t('bots.chat.stop'),
-        attach: t('bots.chat.images.attach'),
-      }}
-    />
+    <ComposerEmojiBox draft={draft} setDraft={setDraft}>
+      <ChatComposer
+        layout="inline"
+        value={draft}
+        onValueChange={setDraft}
+        onSubmit={() => onSubmit(draft.trim())}
+        allowEmpty
+        disabled={starting}
+        placeholder={t('sessions.new.composer.placeholder')}
+        tools={tools}
+        engine={engine}
+        labels={{
+          send: sendLabel,
+          stop: t('bots.chat.stop'),
+          attach: t('bots.chat.images.attach'),
+        }}
+      />
+    </ComposerEmojiBox>
   );
 }
