@@ -63,8 +63,7 @@ export class UpdateBotRoutineHttpController {
         botId,
         routineId,
         changes: { enabled: body.enabled, name: body.name, prompt: body.prompt },
-        // A name or prompt change takes the editor's scopes, as the bot's tool does;
-        // a switch alone keeps the routine's (the handler reads them only on an edit).
+        // The handler decides whether this is an edit that takes them.
         credentialScopes: credential ? credential.scopes : null,
       }),
     );

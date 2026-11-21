@@ -52,7 +52,7 @@ export interface SetBotRoutineEnabledVariables extends BotRoutineVariables {
 }
 
 export interface UpdateBotRoutineVariables extends BotRoutineVariables {
-  /** Only what changed: an edit takes the editor's scopes, so an unchanged Save sends nothing. */
+  /** Only what changed; a field left out stays as the server has it. */
   name?: string;
   prompt?: string;
 }

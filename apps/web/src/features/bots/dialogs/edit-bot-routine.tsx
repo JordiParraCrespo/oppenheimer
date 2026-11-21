@@ -41,8 +41,9 @@ export function EditBotRoutineDialog({
   // untouched field look edited and write the old value back over the new.
   const [opened] = useState(routine);
 
-  // Only what changed is sent: an edit takes the editor's scopes, so a Save
-  // that changes nothing closes without touching the routine.
+  // Only what was changed here is sent, so a field the reader left alone
+  // never writes this dialog's copy over a newer one; with nothing changed
+  // there is nothing to send.
   function save(values: BotRoutineTaskDto) {
     const changes = {
       name: values.name === opened.name ? undefined : values.name,
