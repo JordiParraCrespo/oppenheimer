@@ -24,6 +24,7 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/health', group: 'capabilities' },
     { templatePrefix: '/v1/events', group: 'events' },
     { templatePrefix: '/v1/github/webhook', group: 'webhooks' },
+    { templatePrefix: '/v1/routine-webhooks', group: 'webhooks' },
     { templatePrefix: '/v1/sessions', group: 'sessions' },
     { templatePrefix: '/v1/shared-sessions', group: 'sessions' },
     { templatePrefix: '/v1/cloud-files', group: 'sessions' },

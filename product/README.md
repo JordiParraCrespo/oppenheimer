@@ -1840,3 +1840,9 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).

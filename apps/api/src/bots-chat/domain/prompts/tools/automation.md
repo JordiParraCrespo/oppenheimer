@@ -80,6 +80,10 @@ In this window: {{completed}} completed, {{failed}} failed, {{running}} running,
 
 gmail mail_received in account {{connectionId}}{{query}}
 
+<!-- fragment: describe-trigger-webhook -->
+
+something posted to its webhook URL
+
 <!-- fragment: describe-trigger-every-new-message -->
 
 (every new message in the inbox)

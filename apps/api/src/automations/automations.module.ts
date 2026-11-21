@@ -1,7 +1,12 @@
-import { Module, type Provider, type Type } from '@nestjs/common';
+import { Module, type NestModule, type Provider, type Type } from '@nestjs/common';
+import { ApplicationConfig, HttpAdapterHost } from '@nestjs/core';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { configKeySealer } from '@oppenheimer/backend-core';
+import { WEBHOOK_BODY_MAX_BYTES } from '@oppenheimer/shared/automations';
+import { botsProviderKeyOf } from '../config/bots.config';
+import { mountRawBodyParser } from '../config/raw-body-parser';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
@@ -19,6 +24,7 @@ import { ExternalEventReceivedDomainEventHandler } from './application/event-han
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
 import { OwnerScopeResolver } from './application/owner-scope.resolver';
+import { RoutineWebhookResolver } from './application/routine-webhook.resolver';
 import { RunDispatchResolver } from './application/run-dispatch.resolver';
 import { AutomationMapper } from './automation.mapper';
 import { AutomationRunMapper } from './automation-run.mapper';
@@ -26,6 +32,8 @@ import {
   AUTOMATION_REPOSITORY,
   AUTOMATION_RUN_REPOSITORY,
   AUTOMATION_SETTINGS_REPOSITORY,
+  AUTOMATION_WEBHOOK_REPOSITORY,
+  WEBHOOK_SECRET_SEALER,
 } from './automations.di-tokens';
 import { AutomationResource } from './automations.resource';
 import { CreateAutomationCommandHandler } from './commands/create-automation/create-automation.command-handler';
@@ -42,10 +50,16 @@ import { DuplicateAutomationHttpController } from './commands/duplicate-automati
 import { EnforceRunLimitsCommandHandler } from './commands/enforce-run-limits/enforce-run-limits.command-handler';
 import { FireDueSchedulesCommandHandler } from './commands/fire-due-schedules/fire-due-schedules.command-handler';
 import { FireEventTriggersCommandHandler } from './commands/fire-event-triggers/fire-event-triggers.command-handler';
+import { IssueRoutineWebhookCommandHandler } from './commands/issue-routine-webhook/issue-routine-webhook.command-handler';
+import { IssueRoutineWebhookHttpController } from './commands/issue-routine-webhook/issue-routine-webhook.http.controller';
 import { PauseAutomationCommandHandler } from './commands/pause-automation/pause-automation.command-handler';
 import { PauseAutomationHttpController } from './commands/pause-automation/pause-automation.http.controller';
+import { ReceiveRoutineWebhookCommandHandler } from './commands/receive-routine-webhook/receive-routine-webhook.command-handler';
+import { ReceiveRoutineWebhookHttpController } from './commands/receive-routine-webhook/receive-routine-webhook.http.controller';
 import { ResumeAutomationCommandHandler } from './commands/resume-automation/resume-automation.command-handler';
 import { ResumeAutomationHttpController } from './commands/resume-automation/resume-automation.http.controller';
+import { RevokeRoutineWebhookCommandHandler } from './commands/revoke-routine-webhook/revoke-routine-webhook.command-handler';
+import { RevokeRoutineWebhookHttpController } from './commands/revoke-routine-webhook/revoke-routine-webhook.http.controller';
 import { RunAutomationCommandHandler } from './commands/run-automation/run-automation.command-handler';
 import { RunAutomationHttpController } from './commands/run-automation/run-automation.http.controller';
 import { RunBotRoutineCommandHandler } from './commands/run-bot-routine/run-bot-routine.command-handler';
@@ -65,6 +79,8 @@ import { AutomationSettingsOrmEntity } from './database/automation-settings.orm-
 import { AutomationSettingsRepository } from './database/automation-settings.repository';
 import { AutomationTriggerOrmEntity } from './database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from './database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from './database/automation-webhook.orm-entity';
+import { AutomationWebhookRepository } from './database/automation-webhook.repository';
 import { AutomationRetentionProcessor } from './infrastructure/automation-retention.processor';
 import { AutomationRunsProcessor } from './infrastructure/automation-runs.processor';
 import { AutomationSchedulesProcessor } from './infrastructure/automation-schedules.processor';
@@ -112,6 +128,9 @@ const httpControllers = [
   UpdateBotRoutineHttpController,
   RunBotRoutineHttpController,
   DeleteBotRoutineHttpController,
+  IssueRoutineWebhookHttpController,
+  RevokeRoutineWebhookHttpController,
+  ReceiveRoutineWebhookHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -130,6 +149,9 @@ const commandHandlers: Provider[] = [
   EnforceRunLimitsCommandHandler,
   DispatchAutomationRunCommandHandler,
   SaveBotRoutineCommandHandler,
+  IssueRoutineWebhookCommandHandler,
+  RevokeRoutineWebhookCommandHandler,
+  ReceiveRoutineWebhookCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -163,6 +185,7 @@ const queryHandlers: Provider[] = [
       AutomationTriggerSubjectOrmEntity,
       AutomationRunOrmEntity,
       AutomationSettingsOrmEntity,
+      AutomationWebhookOrmEntity,
     ]),
     AuthzKernelModule.forFeature([AutomationResource]),
     // The automation-runs, -schedules and -retention queues.
@@ -187,6 +210,7 @@ const queryHandlers: Provider[] = [
     AutomationRunMapper,
     AutomationPlanFactory,
     BotRoutineResolver,
+    RoutineWebhookResolver,
     AutomationLimitsResolver,
     OwnerScopeResolver,
     RunDispatchResolver,
@@ -202,12 +226,36 @@ const queryHandlers: Provider[] = [
     { provide: AUTOMATION_REPOSITORY, useClass: AutomationRepository },
     { provide: AUTOMATION_RUN_REPOSITORY, useClass: AutomationRunRepository },
     { provide: AUTOMATION_SETTINGS_REPOSITORY, useClass: AutomationSettingsRepository },
+    { provide: AUTOMATION_WEBHOOK_REPOSITORY, useClass: AutomationWebhookRepository },
+    // A routine runs on its bot's provider, whose keys are sealed under this
+    // key: a deployment with routines has it, and a webhook's secret joins them.
+    configKeySealer(WEBHOOK_SECRET_SEALER, {
+      configKey: 'bots.providerKey',
+      envName: 'BOTS_PROVIDER_KEY',
+      keyOf: botsProviderKeyOf,
+    }),
   ],
   // The run a session was started for, so the workspace feed can say that run
   // moved; the registry, for the targets other modules contribute.
   exports: [AUTOMATION_RUN_REPOSITORY, AutomationRunTargetRegistry],
 })
-export class AutomationsModule {
+export class AutomationsModule implements NestModule {
+  constructor(
+    private readonly adapterHost: HttpAdapterHost,
+    private readonly appConfig: ApplicationConfig,
+  ) {}
+
+  /** A routine webhook's body as raw bytes, so a signature is checked over exactly what was sent. */
+  configure(): void {
+    mountRawBodyParser(
+      this.adapterHost,
+      this.appConfig,
+      ReceiveRoutineWebhookHttpController,
+      'receive',
+      WEBHOOK_BODY_MAX_BYTES,
+    );
+  }
+
   /**
    * The providers a module adds to carry out runs of its own kind:
    *
