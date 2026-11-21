@@ -20,6 +20,7 @@ import type { WhatsappMessageDraft } from '../domain/whatsapp-message.types';
 import { hashWhatsappOwnerCode } from '../domain/whatsapp-owner-code.policy';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';
 import { WhatsappChatGrantMapper } from '../whatsapp-chat-grant.mapper';
+import { WhatsappKnownChatMapper } from '../whatsapp-known-chat.mapper';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 
 /**
@@ -86,7 +87,10 @@ describe('whatsapp (integration)', () => {
       dataSource.getRepository(WhatsappChatGrantOrmEntity),
       new WhatsappChatGrantMapper(),
     );
-    known = new WhatsappKnownChatRepository(dataSource.getRepository(WhatsappKnownChatOrmEntity));
+    known = new WhatsappKnownChatRepository(
+      dataSource.getRepository(WhatsappKnownChatOrmEntity),
+      new WhatsappKnownChatMapper(),
+    );
   }, 180000);
 
   afterAll(async () => {
@@ -212,6 +216,21 @@ describe('whatsapp (integration)', () => {
       { ...family, chatName: 'Family 🏠' },
       { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
     ]);
+
+    // Frames that arrive side by side take turns, so together they never
+    // pass the cap.
+    const cap = (await known.findAll(of, 10)).length + 1;
+    await Promise.all(
+      ['34600333601', '34600333602', '34600333603'].map((digits) =>
+        known.record(
+          of,
+          [{ chatId: `${digits}@s.whatsapp.net`, chatKind: 'direct', chatName: digits }],
+          cap,
+          longAgo,
+        ),
+      ),
+    );
+    expect(await known.findAll(of, 10)).toHaveLength(cap);
 
     // A report once the others went stale forgets them, which frees the cap.
     await known.record(

@@ -60,6 +60,7 @@ import {
 import { WhatsappResource } from './whatsapp.resource';
 import { WhatsappAccountMapper } from './whatsapp-account.mapper';
 import { WhatsappChatGrantMapper } from './whatsapp-chat-grant.mapper';
+import { WhatsappKnownChatMapper } from './whatsapp-known-chat.mapper';
 import { WhatsappMessageMapper } from './whatsapp-message.mapper';
 
 const httpControllers = [
@@ -143,6 +144,7 @@ const queryHandlers: Provider[] = [
     WhatsappAccountMapper,
     WhatsappMessageMapper,
     WhatsappChatGrantMapper,
+    WhatsappKnownChatMapper,
     WhatsappChatResolver,
     WhatsappChatRoutesResolver,
     WhatsappReplyResolver,
