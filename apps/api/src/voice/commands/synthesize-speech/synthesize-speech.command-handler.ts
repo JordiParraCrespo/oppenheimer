@@ -5,11 +5,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { VoiceSynthesisResolver } from '../../application/voice-synthesis.resolver';
 import type { VoiceSettingsRepositoryPort } from '../../database/voice-settings.repository.port';
 import { VoiceErrors } from '../../domain/voice.errors';
-import {
-  oggOpusSeconds,
-  SPEECH_MAX_SECONDS,
-  SPEECH_TEXT_MAX_CHARS,
-} from '../../domain/voice-synthesis.policy';
+import { SPEECH_MAX_SECONDS, SPEECH_TEXT_MAX_CHARS } from '../../domain/voice-synthesis.policy';
 import { VOICE_SETTINGS_REPOSITORY } from '../../voice.di-tokens';
 import { type SpokenAudio, SynthesizeSpeechCommand } from './synthesize-speech.command';
 
@@ -43,7 +39,7 @@ export class SynthesizeSpeechCommandHandler
     }
 
     const settings = await this.settings.find(command.organizationId);
-    const { audio: data, provider } = await this.speech.speak(
+    const { audio: data, seconds } = await this.speech.speak(
       command.organizationId,
       text,
       new Date(),
@@ -53,12 +49,6 @@ export class SynthesizeSpeechCommandHandler
         voice: settings.synthesisVoice,
       },
     );
-    const seconds = oggOpusSeconds(data);
-    if (seconds === null) {
-      throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
-        detail: `The text-to-speech provider (${provider}) did not answer Ogg/Opus audio.`,
-      });
-    }
     if (seconds > SPEECH_MAX_SECONDS) {
       throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
         detail: `The speech runs ${seconds} seconds; a voice note runs ${SPEECH_MAX_SECONDS} at most.`,

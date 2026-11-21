@@ -28,16 +28,12 @@ export class FindVoiceSettingsQueryHandler
   ) {}
 
   async execute({ organizationId }: FindVoiceSettingsQuery): Promise<VoiceSettingsDto> {
-    const [settings, transcription, synthesis, held] = await Promise.all([
+    const [settings, hearing, speaking, botCredentialsHeld] = await Promise.all([
       this.settings.find(organizationId),
       this.hearing.availableFor(organizationId),
       this.speaking.availableFor(organizationId),
       Promise.all(BOT_PROVIDERS.map((provider) => this.credentials.has(organizationId, provider))),
     ]);
-    return VoiceSettingsMapper.toResponse(settings, {
-      transcription: transcription.map((provider) => provider.id),
-      synthesis: synthesis.map((provider) => provider.id),
-      polish: VoiceSettingsMapper.polishProviders(held),
-    });
+    return VoiceSettingsMapper.toResponse(settings, { hearing, speaking, botCredentialsHeld });
   }
 }

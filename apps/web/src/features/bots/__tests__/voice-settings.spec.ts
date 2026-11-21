@@ -5,6 +5,7 @@ import {
   providerChoices,
   shownModel,
   transcriptionModels,
+  withSynthesisModel,
   withSynthesisProvider,
 } from '../lib/voice-settings';
 
@@ -45,5 +46,18 @@ describe('Voice settings options', () => {
     expect(transcriptionModels('chatgpt')).toEqual([]);
     expect(polishModels('off')).toEqual([]);
     expect(polishModels('xai').map((row) => row.id)).toContain('grok-4.6');
+  });
+
+  // What breaks this: Verse kept after moving to tts-1, which OpenAI refuses on every voice note.
+  it('drops a voice the new model does not speak, and keeps one it does', () => {
+    const verse = {
+      ...DEFAULT_VOICE_SETTINGS,
+      synthesisProvider: 'openai' as const,
+      synthesisVoice: 'verse',
+    };
+    expect(withSynthesisModel(verse, 'tts-1').synthesisVoice).toBeNull();
+    expect(withSynthesisModel({ ...verse, synthesisVoice: 'nova' }, 'tts-1').synthesisVoice).toBe(
+      'nova',
+    );
   });
 });

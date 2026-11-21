@@ -34,6 +34,7 @@ import {
   synthesisVoices,
   transcriptionModels,
   withPolishProvider,
+  withSynthesisModel,
   withSynthesisProvider,
   withTranscriptionProvider,
 } from '../lib/voice-settings';
@@ -98,7 +99,10 @@ export function VoiceSettingsSection() {
       />
     ) : null;
 
-  const voices = synthesisVoices(settings.synthesisProvider);
+  const voices = synthesisVoices(
+    settings.synthesisProvider,
+    shownModel(synthesisModels(settings.synthesisProvider), settings.synthesisModel),
+  );
   const shownVoice = settings.synthesisVoice ?? voices?.default ?? null;
   const voiceOptions = voices
     ? [
@@ -188,7 +192,7 @@ export function VoiceSettingsSection() {
                 synthesisModels(settings.synthesisProvider),
                 settings.synthesisModel,
                 t('settings.modelProviders.voice.synthesis.modelLabel'),
-                (model) => save({ ...settings, synthesisModel: model }),
+                (model) => save(withSynthesisModel(settings, model)),
               )}
               {voiceOptions.length > 0 ? (
                 <FieldSelect

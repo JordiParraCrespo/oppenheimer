@@ -5,6 +5,8 @@ import {
   SYNTHESIS_MODELS,
   SYNTHESIS_VOICES,
   type SynthesisProvider,
+  synthesisVoiceFor,
+  synthesisVoicesFor,
   TRANSCRIPTION_MODELS,
   type VoiceModel,
   type VoiceProvider,
@@ -66,9 +68,27 @@ export function shownModel(models: readonly VoiceModel[], chosen: string | null)
   return voiceModelFor(models, chosen);
 }
 
-/** The voices a provider lists, and whether it takes an id of the account's own. */
-export function synthesisVoices(provider: SynthesisProvider | null) {
-  return provider ? SYNTHESIS_VOICES[provider] : null;
+/**
+ * The voices a provider lists that `model` speaks, the one it uses when none
+ * is chosen, and whether it takes an id of the account's own.
+ */
+export function synthesisVoices(provider: SynthesisProvider | null, model: string | null) {
+  if (!provider) return null;
+  const { default: fallback, custom } = SYNTHESIS_VOICES[provider];
+  return { voices: synthesisVoicesFor(provider, model), default: fallback, custom };
+}
+
+/** The settings on another voice-note model: a voice that model does not speak goes back to the default. */
+export function withSynthesisModel(settings: VoiceSettings, model: string): VoiceSettings {
+  const provider = settings.synthesisProvider;
+  const keeps =
+    provider !== null &&
+    synthesisVoiceFor(provider, settings.synthesisVoice, model) === settings.synthesisVoice;
+  return {
+    ...settings,
+    synthesisModel: model,
+    synthesisVoice: keeps ? settings.synthesisVoice : null,
+  };
 }
 
 /** The settings with another transcription provider: its model back to that provider's default. */

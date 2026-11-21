@@ -139,7 +139,26 @@ export interface SynthesisVoiceCatalog {
   readonly default: string | null;
   /** Whether a voice id outside the list is taken: an ElevenLabs voice from the account's own library. */
   readonly custom: boolean;
+  /**
+   * Models that speak only some of the listed voices, by model id: OpenAI's
+   * `tts-1` and `tts-1-hd` have no Ballad or Verse. A model not named here
+   * speaks every listed voice.
+   */
+  readonly byModel?: Readonly<Record<string, readonly string[]>>;
 }
+
+/** The voices OpenAI's older speech models take (`gpt-4o-mini-tts` takes these and Ballad and Verse). */
+const OPENAI_TTS_1_VOICES = Object.freeze([
+  'alloy',
+  'ash',
+  'coral',
+  'echo',
+  'fable',
+  'nova',
+  'onyx',
+  'sage',
+  'shimmer',
+]);
 
 const voice = (id: string, label: string): SynthesisVoice => Object.freeze({ id, label });
 
@@ -168,6 +187,7 @@ export const SYNTHESIS_VOICES: Readonly<Record<SynthesisProvider, SynthesisVoice
       ),
       default: 'alloy',
       custom: false,
+      byModel: Object.freeze({ 'tts-1': OPENAI_TTS_1_VOICES, 'tts-1-hd': OPENAI_TTS_1_VOICES }),
     }),
     elevenlabs: Object.freeze({
       voices: Object.freeze([
@@ -187,13 +207,29 @@ export function voiceModelFor(models: readonly VoiceModel[], chosen: string | nu
   return (models.find((row) => row.default) ?? models[0])?.id ?? null;
 }
 
-/** The voice `provider` speaks in for `chosen`: a listed one, any id where custom ones are taken, else its default. */
+/** The listed voices `model` speaks on `provider`: all of them unless the model takes fewer. */
+export function synthesisVoicesFor(
+  provider: SynthesisProvider,
+  model: string | null,
+): readonly SynthesisVoice[] {
+  const catalog = SYNTHESIS_VOICES[provider];
+  const only = model ? catalog.byModel?.[model] : undefined;
+  return only ? catalog.voices.filter((row) => only.includes(row.id)) : catalog.voices;
+}
+
+/**
+ * The voice `provider` speaks in on `model` for `chosen`: a listed one that
+ * model speaks, any id where custom ones are taken, else its default.
+ * `model` is the one that will run (`voiceModelFor`), the default included.
+ */
 export function synthesisVoiceFor(
   provider: SynthesisProvider,
   chosen: string | null,
+  model: string | null = voiceModelFor(SYNTHESIS_MODELS[provider], null),
 ): string | null {
   const catalog = SYNTHESIS_VOICES[provider];
-  if (chosen && (catalog.custom || catalog.voices.some((row) => row.id === chosen))) return chosen;
+  const voices = synthesisVoicesFor(provider, model);
+  if (chosen && (catalog.custom || voices.some((row) => row.id === chosen))) return chosen;
   return catalog.default;
 }
 
@@ -257,7 +293,11 @@ export const voiceSettingsSchema = z
     if (
       value.synthesisVoice !== null &&
       (value.synthesisProvider === null ||
-        synthesisVoiceFor(value.synthesisProvider, value.synthesisVoice) !== value.synthesisVoice)
+        synthesisVoiceFor(
+          value.synthesisProvider,
+          value.synthesisVoice,
+          voiceModelFor(SYNTHESIS_MODELS[value.synthesisProvider], value.synthesisModel),
+        ) !== value.synthesisVoice)
     ) {
       invalid('synthesisVoice');
     }

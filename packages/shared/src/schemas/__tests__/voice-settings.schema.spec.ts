@@ -32,6 +32,15 @@ describe('voiceSettingsSchema', () => {
     expect(valid({ polishProvider: 'off', polishModel: 'grok-4.6' })).toBe(false);
   });
 
+  // What breaks this: Verse saved on tts-1, which OpenAI refuses on every voice note.
+  it('refuses a voice the chosen model does not speak, and takes it on one that does', () => {
+    const openai = { synthesisProvider: 'openai' as const, synthesisVoice: 'verse' };
+    expect(valid({ ...openai, synthesisModel: 'tts-1' })).toBe(false);
+    expect(valid({ ...openai, synthesisModel: 'tts-1-hd' })).toBe(false);
+    expect(valid({ ...openai, synthesisModel: 'gpt-4o-mini-tts' })).toBe(true);
+    expect(valid({ ...openai, synthesisModel: null })).toBe(true);
+  });
+
   it("takes any ElevenLabs voice id from the account's library, but only as a path-safe id", () => {
     expect(valid({ synthesisProvider: 'elevenlabs', synthesisVoice: 'my-cloned_Voice1' })).toBe(
       true,

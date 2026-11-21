@@ -8,6 +8,7 @@ import {
 } from '@oppenheimer/shared';
 import { VoiceErrors } from '../domain/voice.errors';
 import { chosenFirst } from '../domain/voice-preference.policy';
+import { oggOpusSeconds } from '../domain/voice-synthesis.policy';
 import { SynthesisProviderRegistry } from './synthesis-provider.registry';
 
 /** The provider, model and voice the workspace chose to speak with; null is automatic. */
@@ -17,10 +18,11 @@ export interface SynthesisSettings {
   voice: string | null;
 }
 
-/** The text, spoken, and who spoke it. Not yet judged as a voice note. */
+/** The text, spoken as Ogg/Opus, who spoke it, and how long it runs in whole seconds. */
 export interface SpokenText {
   audio: Buffer;
   provider: SynthesisProvider;
+  seconds: number;
 }
 
 /**
@@ -29,9 +31,10 @@ export interface SpokenText {
  * available for the workspace speaking it, the next one when it fails. The
  * fallback rule is dictation's (`provider-integrations.md`): a rate limit
  * (`VOICE_010`) is answered at once, the first failure is the answer when all
- * failed, `VOICE_008` when none is available. The chosen model and voice go to
- * the chosen provider only; any other speaks in its defaults, since a voice id
- * means nothing to another provider.
+ * failed, `VOICE_008` when none is available. An answer that is not Ogg/Opus
+ * is that provider failing (`VOICE_009`), judged here so the next one is tried.
+ * The chosen model and voice go to the chosen provider only; any other speaks
+ * in its defaults, since a voice id means nothing to another provider.
  */
 @Injectable()
 export class VoiceSynthesisResolver {
@@ -53,11 +56,18 @@ export class VoiceSynthesisResolver {
         tried = true;
         const chosen = provider.id === settings.provider;
         const access = await provider.grantFor(organizationId, now);
+        const model = voiceModelFor(SYNTHESIS_MODELS[provider.id], chosen ? settings.model : null);
         const audio = await provider.synthesize(text, access, {
-          model: voiceModelFor(SYNTHESIS_MODELS[provider.id], chosen ? settings.model : null),
-          voice: synthesisVoiceFor(provider.id, chosen ? settings.voice : null),
+          model,
+          voice: synthesisVoiceFor(provider.id, chosen ? settings.voice : null, model),
         });
-        return { audio, provider: provider.id };
+        const seconds = oggOpusSeconds(audio);
+        if (seconds === null) {
+          throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
+            detail: `The text-to-speech provider (${provider.id}) did not answer Ogg/Opus audio.`,
+          });
+        }
+        return { audio, provider: provider.id, seconds };
       } catch (error) {
         if (error instanceof AppError && error.code === VoiceErrors.SYNTHESIS_RATE_LIMITED.code) {
           throw error;

@@ -4,6 +4,7 @@ import type { Synthesizer } from '../application/synthesis-provider.port';
 import { SynthesisProviderRegistry } from '../application/synthesis-provider.registry';
 import { VoiceSynthesisResolver } from '../application/voice-synthesis.resolver';
 import { VoiceErrors } from '../domain/voice.errors';
+import { oggOpus } from './ogg-opus.spec-support';
 
 /**
  * Who speaks a workspace's voice note, over fake providers: the one it chose
@@ -16,6 +17,13 @@ const ORG = 'org-placeholder';
 const NOW = new Date('2026-11-21T10:00:00Z');
 const AUTOMATIC = { provider: null, model: null, voice: null };
 
+/** Ogg/Opus of a length of its own per provider, so the answer says who spoke. */
+const tags = new Map<string, Buffer>();
+function spoken(id: string): Buffer {
+  if (!tags.has(id)) tags.set(id, oggOpus(312 + 48_000 * (tags.size + 2)));
+  return tags.get(id) as Buffer;
+}
+
 function voice(
   id: SynthesisProvider,
   { available = true, fails }: { available?: boolean; fails?: Error } = {},
@@ -26,7 +34,7 @@ function voice(
     grantFor: vi.fn().mockResolvedValue(`${id}-access`),
     synthesize: vi.fn(async () => {
       if (fails) throw fails;
-      return Buffer.from(`spoken by ${id}`);
+      return spoken(id);
     }),
   } satisfies Synthesizer<string>;
 }
@@ -40,8 +48,9 @@ describe('VoiceSynthesisResolver', () => {
     const elevenlabs = voice('elevenlabs');
 
     await expect(over(openai, elevenlabs).speak(ORG, 'Hola', NOW, AUTOMATIC)).resolves.toEqual({
-      audio: Buffer.from('spoken by elevenlabs'),
+      audio: spoken('elevenlabs'),
       provider: 'elevenlabs',
+      seconds: expect.any(Number),
     });
     expect(elevenlabs.synthesize).toHaveBeenCalledWith('Hola', 'elevenlabs-access', {
       model: 'eleven_multilingual_v2',
@@ -98,5 +107,29 @@ describe('VoiceSynthesisResolver', () => {
 
   it('refuses two voices with one id', () => {
     expect(() => new SynthesisProviderRegistry([voice('openai'), voice('openai')])).toThrow();
+  });
+
+  // What breaks this: a provider answering MP3 or a page with a 200 ends the walk, and no voice note goes out.
+  it('tries the next voice when one answers something that is not Ogg/Opus', async () => {
+    const mp3 = voice('openai');
+    mp3.synthesize.mockResolvedValue(Buffer.from('ID3 not a voice note'));
+    const next = voice('speech_key');
+
+    await expect(over(mp3, next).speak(ORG, 'Hola', NOW, AUTOMATIC)).resolves.toMatchObject({
+      provider: 'speech_key',
+    });
+  });
+
+  it("hands OpenAI's older model a voice it speaks, not the chosen one it does not", async () => {
+    const openai = voice('openai');
+    await over(openai).speak(ORG, 'Hola', NOW, {
+      provider: 'openai',
+      model: 'tts-1',
+      voice: 'verse',
+    });
+    expect(openai.synthesize).toHaveBeenCalledWith('Hola', 'openai-access', {
+      model: 'tts-1',
+      voice: 'alloy',
+    });
   });
 });
