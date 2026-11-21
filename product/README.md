@@ -1850,6 +1850,11 @@ earlier note:
   and its saved contacts on connect and on each change (`whatsapp.chats`),
   so Settings lists them before anyone writes. The owner's own chat is
   listed first among People, answered by the default bot.
+- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+  editor: the Routines tab's Edit put "Edit your routine: *name*" in the
+  composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
+  a dialog for its name and prompt, and only when it runs (its triggers)
+  is still changed in the chat.
 - `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
   `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
   on 2026-11-20 (#953) with the token in the URL instead,

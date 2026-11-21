@@ -16,9 +16,10 @@ import { SaveBotRoutineCommand } from './save-bot-routine.command';
  * revision, the triggers are replaced whole, and `enabled` pauses or resumes
  * it; a routine of another bot, or a session automation, is not found. A
  * change to what it runs or when takes the scopes of the credential that made
- * it, so a routine never runs wider than whoever last edited it; a pause or
- * a resume leaves them as they were. Triggers saved without a webhook take
- * its URL with them (the repository's save drops it in the same transaction).
+ * it, so a routine never runs wider than whoever last edited it; a pause, a
+ * resume, or a name and prompt sent unchanged leave them as they were.
+ * Triggers saved without a webhook take its URL with them (the repository's
+ * save drops it in the same transaction).
  */
 @CommandHandler(SaveBotRoutineCommand)
 export class SaveBotRoutineCommandHandler
@@ -60,8 +61,13 @@ export class SaveBotRoutineCommandHandler
 
     const routine = await this.routines.require(scope, command.botId, command.routineId);
     const version = routine.version;
+    // An edit is a real change, not a field present: a save that sends the
+    // name and prompt it already has (the tab's dialog, a retried call) keeps
+    // the scopes, as a pause does.
     const edits =
-      changes.name !== undefined || changes.prompt !== undefined || triggers !== undefined;
+      (changes.name !== undefined && changes.name.trim() !== routine.name) ||
+      (changes.prompt !== undefined && changes.prompt !== routine.revision.prompt) ||
+      triggers !== undefined;
     routine.change({ name: changes.name, triggers }, now);
     routine.reviseRoutine(
       {

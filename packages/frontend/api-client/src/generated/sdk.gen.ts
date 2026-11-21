@@ -2206,9 +2206,9 @@ export const deleteBotRoutine = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Turn a bot’s routine on or off
+ * Change a bot’s routine: its name, its prompt, or whether it is on
  *
- * The Routines tab’s switch: off pauses its triggers, on resumes them from now. What a routine does is changed in the bot’s chat, through its own tool.
+ * The Routines tab’s switch and its Edit dialog. `enabled` off pauses its triggers, on resumes them from now; `name` and `prompt` change what it is called and what it asks the bot, the prompt as its next revision. Fields left out stay as they are. When it runs (its triggers) is changed in the bot’s chat, through its own tool.
  */
 export const updateBotRoutine = <ThrowOnError extends boolean = false>(options: Options<UpdateBotRoutineData, ThrowOnError>): RequestResult<UpdateBotRoutineResponses, UpdateBotRoutineErrors, ThrowOnError> => (options.client ?? client).patch<UpdateBotRoutineResponses, UpdateBotRoutineErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

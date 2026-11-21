@@ -75,6 +75,7 @@ export {
   type IssueBotRoutineWebhookVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
+  type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
   useIssueBotRoutineWebhook,
   useRevokeBotRoutineWebhook,
@@ -82,6 +83,7 @@ export {
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
+  useUpdateBotRoutine,
 } from './bot-routines.queries';
 export {
   type AddBotSkillVariables,

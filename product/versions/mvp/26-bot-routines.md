@@ -420,16 +420,22 @@ clock, spent tokens to say `nothing_to_report`. So:
 
 ## 7. The Routines tab
 
-Bot settings gain **Routines**. As in Grok Bot, the chat is the editor and
-the tab is controls: it changes whether and when a routine runs, never
-what it is.
+Bot settings gain **Routines**. As in Grok Bot, the chat is where a
+routine is made and where its triggers change; the tab is controls, plus
+a hand edit of the routine's name and prompt (changed 2026-11-21, below).
 
 - **A row** is the name, the *when* in words ("Weekdays around 09:00",
   "When a PR opens in atlas") or "Paused", and a switch ("Pause *name*,
   *when*"). Its menu: Pause or Resume, **Run now** ("Running…" while its
   run is live), **Edit**, **Delete**.
-- **Edit** puts "Edit your routine: *name*" in the chat's composer, so the
-  bot changes it through `update_routine` and its card.
+- **Edit** opens a dialog with the routine's name and prompt to change by
+  hand, and its *when* read-only with **Ask in chat**, which puts "Edit your
+  routine: *name*" in the chat's composer so the bot changes the triggers
+  through `update_routine` and its card. **Changed 2026-11-21:** Edit only
+  sent you to the chat; the owner wanted to fix a prompt without asking the
+  bot to rewrite it, so `PATCH /bots/:id/routines/:routineId` takes `name`
+  and `prompt` beside `enabled`, the prompt saved as the routine's next
+  revision with the editing credential's scopes, as `update_routine` does.
 - **Delete** confirms: "This deletes the routine and stops its future
   runs. This can't be undone."
 - **Opening a row** shows its instruction (the prompt, as Markdown), *when
@@ -437,8 +443,8 @@ what it is.
 - **Empty**: "Routines are tasks this bot runs on a schedule or when
   something happens. Ask it in chat to set one up."
 
-The switch, Run now and Delete are the owner acting, so there is no
-card. They dispatch the same commands `update_routine` does, so their
+The switch, Run now, Edit's Save and Delete are the owner acting, so
+there is no card. They dispatch the same commands `update_routine` does, so their
 activity lines come from the same listener (§4, "In the chat").
 `/automations` lists bot routines too, with the bot that runs them, on a
 tab of their own (`/automations/routines`) between Automations and Runs.

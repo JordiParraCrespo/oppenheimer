@@ -3,11 +3,10 @@ import { Clock, GitPullRequest, Mail, Webhook } from '@oppenheimer/design-system
 import type { BotRoutineEntity } from '@oppenheimer/frontend-consumer';
 import { useRunBotRoutine, useSetBotRoutineEnabled } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
-import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DeleteBotRoutineDialog } from '@/features/bots/dialogs/delete-bot-routine';
-import { fillBotDraft } from '@/features/bots/lib/bot-drafts';
+import { EditBotRoutineDialog } from '@/features/bots/dialogs/edit-bot-routine';
 import { routineMoment, routineWhen } from '@/features/bots/lib/routine-text';
 import { BotRoutineWebhook } from '@/features/bots/sections/bot-routine-webhook';
 
@@ -20,15 +19,14 @@ const ROUTINE_ICONS = {
 } as const;
 
 /**
- * One routine as a card: its switch, Run now, Edit and Delete. Edit does
- * not open a form: it writes "Edit your routine: …" into the bot's chat and
- * goes there, so the bot changes it with its own tool and asks first, as
- * the chat is where a routine is made.
+ * One routine as a card: its switch, Run now, Edit and Delete. Edit opens a
+ * dialog to change its name and prompt by hand; when it runs is still the
+ * chat's, and the dialog sends you there for it.
  */
 export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotRoutineEntity }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const toggle = useSetBotRoutineEnabled();
   const run = useRunBotRoutine();
@@ -53,10 +51,7 @@ export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotR
         onRun={() =>
           run.mutate({ id: botId, routineId: routine.id, idempotencyKey: crypto.randomUUID() })
         }
-        onEdit={() => {
-          fillBotDraft(botId, t('bots.settings.routines.editPrompt', { name: routine.name }));
-          void navigate({ to: '/bots/$botId', params: { botId } });
-        }}
+        onEdit={() => setEditing(true)}
         onDelete={() => setDeleting(true)}
         labels={{
           active: t('bots.settings.routines.switch', { name: routine.name }),
@@ -83,6 +78,9 @@ export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotR
         fallback={t('bots.settings.routines.runFailed')}
         onDismiss={() => run.reset()}
       />
+      {editing ? (
+        <EditBotRoutineDialog botId={botId} routine={routine} onClose={() => setEditing(false)} />
+      ) : null}
       {deleting ? (
         <DeleteBotRoutineDialog
           botId={botId}
