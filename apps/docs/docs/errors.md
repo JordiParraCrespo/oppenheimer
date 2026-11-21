@@ -1205,6 +1205,32 @@ Choosing the bot that answers you on a Telegram bot answers `BOTS_001` for a
 bot that is not yours. A one-time owner link for a bot the host has not
 checked yet answers `TELEGRAM_007`: its Telegram name is not known until then.
 
+## Slack
+
+A bot's own Slack app, created from the manifest in the bot's Slack settings,
+whose events reach `POST /v1/slack/events?bot=<id>` and which answers its
+owner in the thread they asked in. See `product/next-steps/slack-for-bots.md`.
+
+| Code                             | Title                                         | HTTP |
+| -------------------------------- | --------------------------------------------- | ---- |
+| `SLACK_001` <a id="slack_001" /> | That Slack app is not connected               | 404  |
+| `SLACK_002` <a id="slack_002" /> | Slack belongs to an organization              | 400  |
+| `SLACK_003` <a id="slack_003" /> | Slack is not configured on this server        | 503  |
+| `SLACK_004` <a id="slack_004" /> | Slack refused the bot token                   | 422  |
+| `SLACK_005` <a id="slack_005" /> | That Slack app already answers as another bot | 409  |
+| `SLACK_006` <a id="slack_006" /> | Slack did not answer                          | 502  |
+| `SLACK_007` <a id="slack_007" /> | Slack’s rate limit was reached                | 429  |
+| `SLACK_008` <a id="slack_008" /> | The Slack event’s signature does not match    | 401  |
+
+`SLACK_003` is a server with no `SLACK_TOKEN_KEY`: no app's token can be kept.
+`SLACK_004` is Slack refusing the bot token when it is connected, or later
+when the bot answers (the app was uninstalled, or its token revoked): the app
+then reads `revoked` until it is connected again; `upstreamCode` carries
+Slack's error. `SLACK_005` is one Slack app pasted for a second bot: each bot
+needs its own. `SLACK_007` carries `Retry-After`. `SLACK_008` is answered to
+Slack, never to a person: a request not signed with the app's signing secret,
+or signed more than five minutes ago.
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each

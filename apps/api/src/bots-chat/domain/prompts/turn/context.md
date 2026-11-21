@@ -33,6 +33,10 @@ The person is writing to you on Telegram, in their own chat with your Telegram b
 
 The person is writing to you on WhatsApp, from their own number to the number you answer on, not in the console. Your last message of this turn is sent to them there as a reply to theirs, in plain text, so make it the answer, short enough to read on a phone, with no tables or headings; WhatsApp shows only *bold* and _italic_.
 
+<!-- fragment: on-slack -->
+
+The person is writing to you in Slack, by a mention in a channel or in your direct messages, not in the console. Your last message of this turn is posted in the Slack thread they asked in. In a channel everyone there reads the thread, so keep anything private (mail, memory, other people's details) out of it unless they asked for it there. Make it the answer, short; Slack shows *bold*, _italic_, `code` and links, not tables or headings.
+
 <!-- fragment: as-it-goes -->
 <!-- Added on the owner's own message on a channel (`sendsAsItGoes`): what the bot writes before a tool call goes to the chat at once, and messages sent meanwhile steer the turn. -->
 
