@@ -78,6 +78,22 @@ describe('ErrorAlert with a resolved message', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  // Regression: a dismissed sentence hid the next identical refusal (a second
+  // wrong password), so the reader got no word that the retry failed.
+  it('shows the same sentence again once the failure cleared or carries a new reference', () => {
+    const { rerender } = render(<ErrorAlert message="Wrong password" correlationId="req-1" />);
+    fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    rerender(<ErrorAlert message="Wrong password" correlationId="req-2" />);
+    expect(screen.getByRole('alert')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
+    rerender(<ErrorAlert message={null} />);
+    rerender(<ErrorAlert message="Wrong password" />);
+    expect(screen.getByRole('alert')).toBeTruthy();
+  });
+
   it('takes the caller’s action instead of Dismiss', () => {
     render(<ErrorAlert message="Refused" action={<button type="button">Retry</button>} />);
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
