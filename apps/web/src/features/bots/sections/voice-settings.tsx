@@ -9,34 +9,21 @@ import {
   useUpdateVoiceSettings,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { MODEL_PROVIDER_CATALOG } from '@oppenheimer/shared/schemas/model-provider';
 import {
-  POLISH_OFF,
-  type PolishChoice,
-  type SynthesisProvider,
-  type VoiceModel,
-  type VoiceProvider,
-  type VoiceSettings,
-} from '@oppenheimer/shared/schemas/voice';
+  MODEL_PROVIDER_CATALOG,
+  type ModelProvider,
+} from '@oppenheimer/shared/schemas/model-provider';
+import { POLISH_OFF, type VoiceSettings } from '@oppenheimer/shared/schemas/voice';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SynthesisVoiceDialog } from '../dialogs/synthesis-voice';
 import {
   AUTOMATIC,
-  botProviderLabel,
-  type ProviderChoice,
-  polishModels,
-  providerChoices,
-  providerOf,
   settingsOf,
   shownModel,
   synthesisModels,
   synthesisVoices,
-  transcriptionModels,
-  withPolishProvider,
-  withSynthesisModel,
-  withSynthesisProvider,
-  withTranscriptionProvider,
+  voiceRows,
 } from '../lib/voice-settings';
 
 /** A select's value for "a voice of the account's own", which opens the voice id dialog. */
@@ -44,13 +31,14 @@ const OWN_VOICE = '__own_voice__';
 
 /**
  * Settings → Model providers, Voice: how the workspace hears and speaks, one
- * row each. Speech to text (dictation, and the voice notes bots are sent),
- * Voice notes (what bots reply in, with the model and voice), Transcript
- * polish (the model that tidies what was heard, or none). Each row picks a
- * provider among those the workspace can use now, or Automatic, the first it
- * has; then that provider's model, and for voice notes its voice: one of
- * OpenAI's, or an ElevenLabs voice by id, a cloned one included. A choice is
- * saved as it is picked. Read under Suspense, in the screen's `QueryState`.
+ * row each (`voiceRows`): Speech to text (dictation, and the voice notes bots
+ * are sent), Voice notes (what bots reply in) and Transcript polish (the model
+ * that tidies what was heard, or none). Every row picks a provider among those
+ * the workspace can use now, or Automatic, the first it has, then that
+ * provider's model; the voice-notes row alone adds the voice: one of OpenAI's
+ * that the model speaks, or an ElevenLabs voice by id, a cloned one included.
+ * A choice is saved as it is picked. Read under Suspense, in the screen's
+ * `QueryState`.
  */
 export function VoiceSettingsSection() {
   const { t } = useTranslation();
@@ -60,44 +48,15 @@ export function VoiceSettingsSection() {
   const settings = settingsOf(data);
   const save = (next: VoiceSettings) => update.mutate(next);
 
-  const voiceLabel = (provider: VoiceProvider | SynthesisProvider) =>
+  const providerLabel = (provider: string) =>
     provider === 'speech_key'
       ? t('settings.modelProviders.voice.server')
-      : MODEL_PROVIDER_CATALOG[provider].label;
-  const choiceOptions = <P extends string>(
-    choices: ProviderChoice<P>[],
-    label: (provider: P) => string,
-  ) => [
-    { value: AUTOMATIC, label: t('settings.modelProviders.voice.automatic') },
-    ...choices.map(({ value, available }) => ({
-      value,
-      label: available
-        ? label(value)
-        : t('settings.modelProviders.voice.notConnected', { provider: label(value) }),
-    })),
-  ];
+      : MODEL_PROVIDER_CATALOG[provider as ModelProvider].label;
   const selectText = {
     searchPlaceholder: t('settings.modelProviders.voice.search'),
     emptyText: (query: string) => t('settings.modelProviders.voice.noMatch', { query }),
+    disabled: update.isPending,
   };
-  const modelSelect = (
-    models: readonly VoiceModel[],
-    chosen: string | null,
-    label: string,
-    onPick: (model: string) => void,
-  ) =>
-    models.length > 1 ? (
-      <FieldSelect
-        variant="quiet"
-        aria-label={label}
-        value={shownModel(models, chosen)}
-        options={models.map((row) => ({ value: row.id, label: row.label }))}
-        placeholder={label}
-        disabled={update.isPending}
-        onValueChange={onPick}
-        {...selectText}
-      />
-    ) : null;
 
   const voices = synthesisVoices(
     settings.synthesisProvider,
@@ -135,124 +94,73 @@ export function VoiceSettingsSection() {
         onDismiss={() => update.reset()}
       />
       <SettingsGroup>
-        <SettingsListRow
-          align="center"
-          data-testid="voice-transcription"
-          meta={t('settings.modelProviders.voice.transcription.meta')}
-          actions={
-            <>
-              <FieldSelect
-                variant="quiet"
-                aria-label={t('settings.modelProviders.voice.transcription.providerLabel')}
-                value={settings.transcriptionProvider ?? AUTOMATIC}
-                options={choiceOptions(
-                  providerChoices(data.available.transcription, settings.transcriptionProvider),
-                  voiceLabel,
-                )}
-                placeholder={t('settings.modelProviders.voice.automatic')}
-                disabled={update.isPending}
-                onValueChange={(value) =>
-                  save(withTranscriptionProvider(settings, providerOf<VoiceProvider>(value)))
-                }
-                {...selectText}
-              />
-              {modelSelect(
-                transcriptionModels(settings.transcriptionProvider),
-                settings.transcriptionModel,
-                t('settings.modelProviders.voice.transcription.modelLabel'),
-                (model) => save({ ...settings, transcriptionModel: model }),
-              )}
-            </>
-          }
-        >
-          {t('settings.modelProviders.voice.transcription.title')}
-        </SettingsListRow>
-        <SettingsListRow
-          align="center"
-          data-testid="voice-synthesis"
-          meta={t('settings.modelProviders.voice.synthesis.meta')}
-          actions={
-            <>
-              <FieldSelect
-                variant="quiet"
-                aria-label={t('settings.modelProviders.voice.synthesis.providerLabel')}
-                value={settings.synthesisProvider ?? AUTOMATIC}
-                options={choiceOptions(
-                  providerChoices(data.available.synthesis, settings.synthesisProvider),
-                  voiceLabel,
-                )}
-                placeholder={t('settings.modelProviders.voice.automatic')}
-                disabled={update.isPending}
-                onValueChange={(value) =>
-                  save(withSynthesisProvider(settings, providerOf<SynthesisProvider>(value)))
-                }
-                {...selectText}
-              />
-              {modelSelect(
-                synthesisModels(settings.synthesisProvider),
-                settings.synthesisModel,
-                t('settings.modelProviders.voice.synthesis.modelLabel'),
-                (model) => save(withSynthesisModel(settings, model)),
-              )}
-              {voiceOptions.length > 0 ? (
+        {voiceRows(data).map((row) => (
+          <SettingsListRow
+            key={row.id}
+            align="center"
+            data-testid={`voice-${row.id}`}
+            meta={t(`settings.modelProviders.voice.${row.id}.meta`)}
+            actions={
+              <>
                 <FieldSelect
                   variant="quiet"
-                  aria-label={t('settings.modelProviders.voice.synthesis.voiceLabel')}
-                  value={shownVoice}
-                  options={voiceOptions}
-                  placeholder={t('settings.modelProviders.voice.synthesis.voiceLabel')}
-                  disabled={update.isPending}
-                  onValueChange={(value) =>
-                    value === OWN_VOICE
-                      ? setOwnVoiceOpen(true)
-                      : save({ ...settings, synthesisVoice: value })
-                  }
+                  aria-label={t(`settings.modelProviders.voice.${row.id}.providerLabel`)}
+                  value={row.provider}
+                  options={[
+                    { value: AUTOMATIC, label: t('settings.modelProviders.voice.automatic') },
+                    ...row.choices.map(({ value, available }) => ({
+                      value,
+                      label: available
+                        ? providerLabel(value)
+                        : t('settings.modelProviders.voice.notConnected', {
+                            provider: providerLabel(value),
+                          }),
+                    })),
+                    ...(row.off
+                      ? [
+                          {
+                            value: POLISH_OFF,
+                            label: t('settings.modelProviders.voice.polish.off'),
+                          },
+                        ]
+                      : []),
+                  ]}
+                  placeholder={t('settings.modelProviders.voice.automatic')}
+                  onValueChange={(value) => save(row.withProvider(settings, value))}
                   {...selectText}
                 />
-              ) : null}
-            </>
-          }
-        >
-          {t('settings.modelProviders.voice.synthesis.title')}
-        </SettingsListRow>
-        <SettingsListRow
-          align="center"
-          data-testid="voice-polish"
-          meta={t('settings.modelProviders.voice.polish.meta')}
-          actions={
-            <>
-              <FieldSelect
-                variant="quiet"
-                aria-label={t('settings.modelProviders.voice.polish.providerLabel')}
-                value={settings.polishProvider ?? AUTOMATIC}
-                options={[
-                  ...choiceOptions(
-                    providerChoices(
-                      data.available.polish,
-                      settings.polishProvider === POLISH_OFF ? null : settings.polishProvider,
-                    ),
-                    botProviderLabel,
-                  ),
-                  { value: POLISH_OFF, label: t('settings.modelProviders.voice.polish.off') },
-                ]}
-                placeholder={t('settings.modelProviders.voice.automatic')}
-                disabled={update.isPending}
-                onValueChange={(value) =>
-                  save(withPolishProvider(settings, providerOf<PolishChoice>(value)))
-                }
-                {...selectText}
-              />
-              {modelSelect(
-                polishModels(settings.polishProvider),
-                settings.polishModel,
-                t('settings.modelProviders.voice.polish.modelLabel'),
-                (model) => save({ ...settings, polishModel: model }),
-              )}
-            </>
-          }
-        >
-          {t('settings.modelProviders.voice.polish.title')}
-        </SettingsListRow>
+                {row.models.length > 1 ? (
+                  <FieldSelect
+                    variant="quiet"
+                    aria-label={t(`settings.modelProviders.voice.${row.id}.modelLabel`)}
+                    value={row.model}
+                    options={row.models.map((model) => ({ value: model.id, label: model.label }))}
+                    placeholder={t(`settings.modelProviders.voice.${row.id}.modelLabel`)}
+                    onValueChange={(model) => save(row.withModel(settings, model))}
+                    {...selectText}
+                  />
+                ) : null}
+                {row.id === 'synthesis' && voiceOptions.length > 0 ? (
+                  <FieldSelect
+                    variant="quiet"
+                    aria-label={t('settings.modelProviders.voice.synthesis.voiceLabel')}
+                    value={shownVoice}
+                    options={voiceOptions}
+                    placeholder={t('settings.modelProviders.voice.synthesis.voiceLabel')}
+                    onValueChange={(value) =>
+                      value === OWN_VOICE
+                        ? setOwnVoiceOpen(true)
+                        : save({ ...settings, synthesisVoice: value })
+                    }
+                    {...selectText}
+                  />
+                ) : null}
+              </>
+            }
+          >
+            {t(`settings.modelProviders.voice.${row.id}.title`)}
+          </SettingsListRow>
+        ))}
       </SettingsGroup>
       {ownVoiceOpen ? (
         <SynthesisVoiceDialog

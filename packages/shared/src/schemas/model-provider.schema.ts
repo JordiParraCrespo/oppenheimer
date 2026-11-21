@@ -65,3 +65,8 @@ export const MODEL_PROVIDER_CATALOG: Readonly<Record<ModelProvider, ModelProvide
 export function isBotProvider(provider: ModelProvider): provider is BotProvider {
   return (BOT_PROVIDERS as readonly string[]).includes(provider);
 }
+
+/** The bot providers among `providers`, in their order: a voice-only key (Groq, ElevenLabs) never runs a bot. */
+export function botProvidersOf(providers: readonly ModelProvider[]): BotProvider[] {
+  return providers.filter(isBotProvider);
+}

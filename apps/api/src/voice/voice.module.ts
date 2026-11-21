@@ -84,11 +84,9 @@ import {
     OpenAiSynthesisResolver,
     ElevenlabsSynthesisResolver,
     SpeechKeySynthesisResolver,
-    // The providers, in the order a dictation tries them when the workspace
-    // chose none: a sign-in first (it costs the workspace nothing more), then
-    // its keys, best transcription first, the deployment's server last. A new
-    // one is a `SpeechProvider` class, its id in `VOICE_PROVIDERS`, and a place
-    // here, in the same order as that list.
+    // The providers, one per id; their order is the shared catalog's
+    // (`VOICE_PROVIDERS`, `SYNTHESIS_PROVIDERS`), declared there alone. A new
+    // one is a class, its id in that list, and its entry here.
     {
       provide: SpeechProviderRegistry,
       inject: [
@@ -103,19 +101,24 @@ import {
         openai: OpenAiSpeechResolver,
         groq: GroqSpeechResolver,
         elevenlabs: ElevenlabsSpeechResolver,
-        key: SpeechKeyResolver,
-      ) => new SpeechProviderRegistry([chatgpt, openai, groq, elevenlabs, key]),
+        speechKey: SpeechKeyResolver,
+      ) =>
+        SpeechProviderRegistry.inCatalogOrder({
+          chatgpt,
+          openai,
+          groq,
+          elevenlabs,
+          speech_key: speechKey,
+        }),
     },
-    // The voices, in the order a voice note tries them when the workspace
-    // chose none: its own keys, then the deployment's server.
     {
       provide: SynthesisProviderRegistry,
       inject: [OpenAiSynthesisResolver, ElevenlabsSynthesisResolver, SpeechKeySynthesisResolver],
       useFactory: (
         openai: OpenAiSynthesisResolver,
         elevenlabs: ElevenlabsSynthesisResolver,
-        key: SpeechKeySynthesisResolver,
-      ) => new SynthesisProviderRegistry([openai, elevenlabs, key]),
+        speechKey: SpeechKeySynthesisResolver,
+      ) => SynthesisProviderRegistry.inCatalogOrder({ openai, elevenlabs, speech_key: speechKey }),
     },
     VoicePolishResolver,
     PolishModelResolver,

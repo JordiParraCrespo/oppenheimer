@@ -7,8 +7,8 @@ import {
   voiceModelFor,
 } from '@oppenheimer/shared';
 import { VoiceErrors } from '../domain/voice.errors';
-import { chosenFirst } from '../domain/voice-preference.policy';
 import { oggOpusSeconds } from '../domain/voice-synthesis.policy';
+import { firstProviderAnswer } from './provider-fallback.policy';
 import { SynthesisProviderRegistry } from './synthesis-provider.registry';
 
 /** The provider, model and voice the workspace chose to speak with; null is automatic. */
@@ -48,18 +48,23 @@ export class VoiceSynthesisResolver {
     now: Date,
     settings: SynthesisSettings,
   ): Promise<SpokenText> {
-    let first: unknown = null;
-    let tried = false;
-    for (const provider of chosenFirst(this.registry.all(), settings.provider)) {
-      try {
-        if (!(await provider.availableFor(organizationId))) continue;
-        tried = true;
-        const chosen = provider.id === settings.provider;
+    return firstProviderAnswer({
+      organizationId,
+      providers: this.registry.all(),
+      chosen: settings.provider,
+      rateLimited: VoiceErrors.SYNTHESIS_RATE_LIMITED,
+      notConfigured: VoiceErrors.SYNTHESIS_NOT_CONFIGURED,
+      logger: this.logger,
+      failed: 'A synthesis provider could not speak; trying the next',
+      attempt: async (provider, isChosen) => {
         const access = await provider.grantFor(organizationId, now);
-        const model = voiceModelFor(SYNTHESIS_MODELS[provider.id], chosen ? settings.model : null);
+        const model = voiceModelFor(
+          SYNTHESIS_MODELS[provider.id],
+          isChosen ? settings.model : null,
+        );
         const audio = await provider.synthesize(text, access, {
           model,
-          voice: synthesisVoiceFor(provider.id, chosen ? settings.voice : null, model),
+          voice: synthesisVoiceFor(provider.id, isChosen ? settings.voice : null, model),
         });
         const seconds = oggOpusSeconds(audio);
         if (seconds === null) {
@@ -68,23 +73,7 @@ export class VoiceSynthesisResolver {
           });
         }
         return { audio, provider: provider.id, seconds };
-      } catch (error) {
-        if (error instanceof AppError && error.code === VoiceErrors.SYNTHESIS_RATE_LIMITED.code) {
-          throw error;
-        }
-        tried = true;
-        first ??= error;
-        const { code, detail } = error instanceof AppError ? error : {};
-        this.logger.warn({
-          message: 'A synthesis provider could not speak; trying the next',
-          organizationId,
-          provider: provider.id,
-          code,
-          detail,
-        });
-      }
-    }
-    if (tried) throw first;
-    throw new AppError(VoiceErrors.SYNTHESIS_NOT_CONFIGURED);
+      },
+    });
   }
 }

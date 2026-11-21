@@ -1,7 +1,7 @@
 import { useModelProviders } from '@oppenheimer/frontend-consumer/react';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
-import { isBotProvider } from '@oppenheimer/shared/schemas/model-provider';
+import { botProvidersOf } from '@oppenheimer/shared/schemas/model-provider';
 import { BotEngineChips } from '@/features/bots/components/bot-engine-chips';
 
 /**
@@ -25,10 +25,7 @@ export function BotEngine({
 }) {
   const { data: configured = [] } = useModelProviders({
     select: (rows) =>
-      rows
-        .filter((row) => row.configured)
-        .map((row) => row.provider)
-        .filter(isBotProvider),
+      botProvidersOf(rows.filter((row) => row.configured).map((row) => row.provider)),
   });
 
   return (

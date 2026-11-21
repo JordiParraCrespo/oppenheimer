@@ -1,7 +1,11 @@
-import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
+import { BOT_PROVIDER_CATALOG } from '@oppenheimer/shared/schemas/bot';
 import {
   POLISH_OFF,
   type PolishChoice,
+  type VoiceSettings,
+  type VoiceSettingsDto,
+} from '@oppenheimer/shared/schemas/voice';
+import {
   SYNTHESIS_MODELS,
   SYNTHESIS_VOICES,
   type SynthesisProvider,
@@ -10,9 +14,8 @@ import {
   TRANSCRIPTION_MODELS,
   type VoiceModel,
   type VoiceProvider,
-  type VoiceSettings,
   voiceModelFor,
-} from '@oppenheimer/shared/schemas/voice';
+} from '@oppenheimer/shared/schemas/voice-catalog';
 
 /** A select's value for "automatic": the first provider the workspace has, in order. */
 export const AUTOMATIC = 'automatic';
@@ -39,7 +42,7 @@ export function providerChoices<P extends string>(
 }
 
 /** A select's value read back as a provider, or null for automatic. */
-export function providerOf<P extends string>(value: string): P | null {
+function providerOf<P extends string>(value: string): P | null {
   return value === AUTOMATIC ? null : (value as P);
 }
 
@@ -92,7 +95,7 @@ export function withSynthesisModel(settings: VoiceSettings, model: string): Voic
 }
 
 /** The settings with another transcription provider: its model back to that provider's default. */
-export function withTranscriptionProvider(
+function withTranscriptionProvider(
   settings: VoiceSettings,
   provider: VoiceProvider | null,
 ): VoiceSettings {
@@ -108,16 +111,11 @@ export function withSynthesisProvider(
 }
 
 /** The settings with another polish choice: its model back to that provider's default. */
-export function withPolishProvider(
+function withPolishProvider(
   settings: VoiceSettings,
   provider: PolishChoice | null,
 ): VoiceSettings {
   return { ...settings, polishProvider: provider, polishModel: null };
-}
-
-/** The bot providers' labels, for the polish select. */
-export function botProviderLabel(provider: BotProvider): string {
-  return BOT_PROVIDER_CATALOG[provider].label;
 }
 
 /** The settings alone, without what the workspace can choose from: what `PUT` takes. */
@@ -131,4 +129,71 @@ export function settingsOf(dto: VoiceSettings): VoiceSettings {
     polishProvider: dto.polishProvider,
     polishModel: dto.polishModel,
   };
+}
+
+/** The Voice section's rows, in the order drawn; each names its copy (`settings.modelProviders.voice.<id>.*`). */
+export type VoiceRowId = 'transcription' | 'synthesis' | 'polish';
+
+/**
+ * One Voice row as the section draws it: a provider select (Automatic, the
+ * providers available, one chosen whose key is gone, and an extra choice such
+ * as the polish's Off), then the provider's models when it offers a choice.
+ * The voice-notes row's voice select is the one part a row draws apart.
+ */
+export interface VoiceRow {
+  id: VoiceRowId;
+  /** The provider select's value: a provider id, or `AUTOMATIC`. */
+  provider: string;
+  choices: ProviderChoice<string>[];
+  /** A choice after the providers that is not one: the polish's Off. */
+  off: boolean;
+  models: readonly VoiceModel[];
+  /** The model the select shows: the one saved, else the provider's default. */
+  model: string | null;
+  withProvider(settings: VoiceSettings, value: string): VoiceSettings;
+  withModel(settings: VoiceSettings, model: string): VoiceSettings;
+}
+
+/** The three rows for the workspace's settings and what it can choose from. */
+export function voiceRows(data: VoiceSettingsDto): VoiceRow[] {
+  const settings = settingsOf(data);
+  const transcriptionModelList = transcriptionModels(settings.transcriptionProvider);
+  const synthesisModelList = synthesisModels(settings.synthesisProvider);
+  const polishModelList = polishModels(settings.polishProvider);
+  const polishChosen = settings.polishProvider === POLISH_OFF ? null : settings.polishProvider;
+  return [
+    {
+      id: 'transcription',
+      provider: settings.transcriptionProvider ?? AUTOMATIC,
+      choices: providerChoices(data.available.transcription, settings.transcriptionProvider),
+      off: false,
+      models: transcriptionModelList,
+      model: shownModel(transcriptionModelList, settings.transcriptionModel),
+      withProvider: (current, value) =>
+        withTranscriptionProvider(current, providerOf<VoiceProvider>(value)),
+      withModel: (current, model) => ({ ...current, transcriptionModel: model }),
+    },
+    {
+      id: 'synthesis',
+      provider: settings.synthesisProvider ?? AUTOMATIC,
+      choices: providerChoices(data.available.synthesis, settings.synthesisProvider),
+      off: false,
+      models: synthesisModelList,
+      model: shownModel(synthesisModelList, settings.synthesisModel),
+      withProvider: (current, value) =>
+        withSynthesisProvider(current, providerOf<SynthesisProvider>(value)),
+      withModel: withSynthesisModel,
+    },
+    {
+      id: 'polish',
+      provider: settings.polishProvider ?? AUTOMATIC,
+      choices: providerChoices<string>(data.available.polish, polishChosen),
+      off: true,
+      models: polishModelList,
+      model: shownModel(polishModelList, settings.polishModel),
+      withProvider: (current, value) =>
+        withPolishProvider(current, providerOf<PolishChoice>(value)),
+      withModel: (current, model) => ({ ...current, polishModel: model }),
+    },
+  ];
 }

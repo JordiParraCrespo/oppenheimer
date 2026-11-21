@@ -1,11 +1,18 @@
+import { SYNTHESIS_PROVIDERS, type SynthesisProvider } from '@oppenheimer/shared';
 import type { Synthesizer } from './synthesis-provider.port';
 
 /**
  * The speech synthesis providers this deployment knows, in the order a voice
- * note tries them when the workspace chose none. Built once, in
- * `voice.module.ts`; it is the one place a provider is added.
+ * note tries them when the workspace chose none: `SYNTHESIS_PROVIDERS`'s
+ * order and nowhere else's, `inCatalogOrder` taking one provider per id.
  */
 export class SynthesisProviderRegistry {
+  static inCatalogOrder(
+    byId: Readonly<Record<SynthesisProvider, Synthesizer>>,
+  ): SynthesisProviderRegistry {
+    return new SynthesisProviderRegistry(SYNTHESIS_PROVIDERS.map((id) => byId[id]));
+  }
+
   constructor(private readonly providers: readonly Synthesizer[]) {
     const ids = providers.map((provider) => provider.id);
     if (new Set(ids).size !== ids.length) {

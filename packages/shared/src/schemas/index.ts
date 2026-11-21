@@ -35,4 +35,5 @@ export * from './task.schema.js';
 export * from './telegram.schema.js';
 export * from './user.schema.js';
 export * from './voice.schema.js';
+export * from './voice-catalog.schema.js';
 export * from './whatsapp.schema.js';

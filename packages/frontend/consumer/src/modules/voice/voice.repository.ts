@@ -1,12 +1,12 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
 import {
-  type VoiceProvider,
   type VoiceSettings,
   type VoiceSettingsDto,
   type VoiceStatusDto,
   vocabularyTerms,
 } from '@oppenheimer/shared/schemas/voice';
+import { type VoiceProvider } from '@oppenheimer/shared/schemas/voice-catalog';
 import { injectable } from 'inversify';
 import { VoiceErrors } from './voice.errors';
 
