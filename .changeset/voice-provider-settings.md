@@ -5,7 +5,6 @@
 "@oppenheimer/frontend-consumer": minor
 "@oppenheimer/api-client": minor
 "@oppenheimer/translations": minor
-"@oppenheimer/docs": patch
 ---
 
 Voice is configured with the keys. Settings → Model providers lists Groq and
