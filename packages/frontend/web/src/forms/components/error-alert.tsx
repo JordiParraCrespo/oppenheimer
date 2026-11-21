@@ -6,8 +6,10 @@ import {
   Button,
 } from '@oppenheimer/design-system-web';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDismissible } from '../hooks/use-dismissible';
+import { failureIdentity } from '../lib/failure-identity';
 
 /** Where the sentence comes from: a raw failure to resolve, or one already resolved. */
 type ErrorAlertSource =
@@ -60,18 +62,6 @@ export function ErrorAlert({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  // What the reader closed: the failure object, or a resolved sentence with
-  // its reference, so a new failure (a fresh request id) shows again.
-  const current =
-    source.message !== undefined
-      ? source.message && `${source.message}\u0000${source.correlationId ?? ''}`
-      : source.error;
-  const [dismissed, setDismissed] = useState<unknown>(undefined);
-  // The failure cleared: forget the dismissal, so the same sentence after a
-  // retry is shown (a render-phase reset, not an effect).
-  if (dismissed !== undefined && (current === null || current === undefined || current === '')) {
-    setDismissed(undefined);
-  }
   const resolved =
     source.message !== undefined
       ? source.message
@@ -80,14 +70,15 @@ export function ErrorAlert({
       : source.error === null || source.error === undefined
         ? null
         : resolveError(source.error, source.fallback);
-  if (!resolved || (dismissed !== undefined && Object.is(dismissed, current))) return null;
+  const { dismissed, dismiss } = useDismissible(failureIdentity(source));
+  if (!resolved || dismissed) return null;
   const { message, correlationId } = resolved;
   const trailing = action ?? (
     <Button
       variant="ghost"
       size="sm"
       onClick={() => {
-        setDismissed(current);
+        dismiss();
         onDismiss?.();
       }}
     >
