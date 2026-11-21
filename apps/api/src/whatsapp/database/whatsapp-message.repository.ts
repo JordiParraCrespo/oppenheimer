@@ -58,7 +58,9 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
         this.mapper.toStored(message, row, places.get(row.id) ?? null),
       );
       const events = stored.flatMap((message) => {
-        const event = message.place ? owed?.eventFor(message, message.place) : null;
+        const event = message.place
+          ? owed?.eventFor(message, message.place)
+          : (owed?.contactEventFor?.(message) ?? null);
         return event ? [event] : [];
       });
       if (events.length > 0) await this.outbox.stageEvents(manager, events);

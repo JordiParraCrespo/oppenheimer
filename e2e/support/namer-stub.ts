@@ -120,9 +120,12 @@ export async function startNamerStub(port = 0): Promise<NamerStub> {
           choices: [{ message: { role: 'assistant', content: briefFor(prompt) } }],
         });
       }
-      prompts.push(prompt);
+      // The namer is sent the person's words between <request> tags, to name
+      // rather than carry out; the stub names what is inside them.
+      const asked = /<request>\n([\s\S]*)\n<\/request>/.exec(prompt)?.[1] ?? prompt;
+      prompts.push(asked);
       json(response, 200, {
-        choices: [{ message: { role: 'assistant', content: titleFor(prompt) } }],
+        choices: [{ message: { role: 'assistant', content: titleFor(asked) } }],
       });
     });
   });

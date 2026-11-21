@@ -135,13 +135,23 @@ describe('useWorkspaceEvents', () => {
     quiet();
     invalidated.length = 0;
     await send({ type: 'botApproval.changed', id: 'ap-1', botId: 'b-1' });
-    expect(invalidated).toEqual([botsKeys.pendingApprovals(), botsKeys.approvals('b-1')]);
+    expect(invalidated).toEqual([
+      botsKeys.pendingApprovals(),
+      botsKeys.activity(),
+      botsKeys.approvals('b-1'),
+    ]);
     expect(botsKeys.pendingApprovals()).toEqual(['bots', 'approvals', 'pending']);
 
     quiet();
     invalidated.length = 0;
     await send({ type: 'botNotice.changed', id: 'n-1', botId: 'b-1' });
     expect(invalidated).toEqual([botsKeys.workspaceNotices()]);
+
+    // A turn queued or ended, by any channel: the sidebar's working bots.
+    quiet();
+    invalidated.length = 0;
+    await send({ type: 'botTurn.changed', id: 't-1', botId: 'b-1' });
+    expect(invalidated).toEqual([botsKeys.activity(), botsKeys.lists()]);
 
     quiet();
     invalidated.length = 0;

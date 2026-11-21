@@ -110,3 +110,37 @@ export function whatsappInboundAction(
   }
   return { kind: 'owner', command: 'message', text, switchName: null, voiceNote: false };
 }
+
+/**
+ * What a message in a chat the number allows (`WhatsappChatGrantEntity`)
+ * comes to, for anyone but the owner in their own chat: `contact` wakes the
+ * chat's bot with `text`, as a contact's turn; anything else is stored only.
+ *
+ * - In a person's chat, any message they write with words (a caption, or
+ *   `[image]` for media without one).
+ * - In a group, any message with words from anyone in it: allowing a group
+ *   is asking its bot to take part in all of it, not only when @-mentioned
+ *   or replied to, which left a group set to a bot looking unanswered.
+ * - Never the number's own messages, its chat with itself, a chat it does
+ *   not allow, or a voice note without a caption, which no one hears yet.
+ */
+export type WhatsappContactAction = { kind: 'contact'; text: string } | { kind: 'ignore' };
+
+export function whatsappContactAction(
+  account: WhatsappInboundAccount,
+  allowed: boolean,
+  message: Pick<
+    WhatsappMessageDraft,
+    'chatId' | 'chatKind' | 'fromMe' | 'senderId' | 'text' | 'media'
+  >,
+): WhatsappContactAction {
+  if (!allowed || message.fromMe) return { kind: 'ignore' };
+  const number = account.phone;
+  if (number !== null && message.chatId === number) return { kind: 'ignore' };
+  if (message.chatKind === 'direct' && !sameWhatsappNumber(message.senderId, message.chatId)) {
+    return { kind: 'ignore' };
+  }
+  if (isWhatsappVoiceNote(message)) return { kind: 'ignore' };
+  const text = message.text.trim() || (message.media ? `[${message.media}]` : '');
+  return text ? { kind: 'contact', text } : { kind: 'ignore' };
+}

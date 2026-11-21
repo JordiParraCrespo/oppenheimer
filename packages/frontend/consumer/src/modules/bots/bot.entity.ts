@@ -12,6 +12,7 @@ import type {
   BotProvider,
   BotSection,
 } from '@oppenheimer/shared/schemas/bot';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
 /**
@@ -49,6 +50,8 @@ export class BotEntity {
     public readonly sections: BotSection[] = [],
     /** The face its owner picked; `null` wears the one its id picks. */
     public readonly avatarFace: BotFace | null = null,
+    /** Whether its chat has a message newer than the person last read it, on any device. */
+    public readonly unread: boolean = false,
   ) {}
 
   /** What its avatar draws: its colour, its id (which picks a face) and the face it was given. */
@@ -267,7 +270,7 @@ export function documentConflictRevision(error: unknown): number | null {
  */
 export class ModelProviderEntity {
   constructor(
-    public readonly provider: BotProvider,
+    public readonly provider: ModelProvider,
     public readonly configured: boolean,
     public readonly keyHint: string | null,
     public readonly updatedAt: Date | null,

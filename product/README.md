@@ -1809,3 +1809,74 @@ earlier note:
   the allowed chats with who allowed each, their bot and Remove. Which bots
   answer on a number is its default plus a bot per allowed chat, not a list
   of bots per number (`next-steps/whatsapp.md`, open question 1).
+- `versions/mvp/09-runner-install-and-update.md` §5 (2026-11-04) had a Mac
+  that a runner from before the bundle updated run the bare binary out of
+  the new archive, then reinstall itself as the bundle. That bare binary is
+  the bundle's executable, sealed to the bundle by its signature, and macOS
+  kills it outside the bundle, so no Mac on 0.1.12 or older updated to 0.1.13
+  or later (seen on 2026-11-19, with 22 failed stages left in `.staging`).
+  With one Mac on the runner, already moved by hand, the owner chose on
+  2026-11-20 not to build a way across: §5 now says such a Mac is moved by
+  hand. A failed stage is now deleted, and a boot sweeps old ones.
+- `versions/mvp/03-control-plane.md` named a session from its first prompt
+  only, once. On 2026-11-19 the owner asked for names that follow the
+  conversation: after the agent answers the person's second prompt, a
+  derived name is written once more from their prompts so far
+  (`source: conversation`); a name a person typed is never replaced.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
+  channel turn's answer once, at its end, and had a message sent meanwhile
+  wait for the next turn: asked to check something, the bot went quiet for
+  minutes, then answered. On 2026-11-20 the owner asked for a bot that
+  answers first, works, and comes back with the result, answering what they
+  ask in between: on the owner's own chat, what the bot writes before a tool
+  call goes out as the call begins ("On it, checking your sessions"), a
+  message sent meanwhile steers the running turn as a console message can,
+  and the end sends only what came after the last call. Telegram's typing
+  action and the fifteen-second line are not built.
+- `25-bots.md` §3 first kept a bot's "done" dot on the device (2026-11-20):
+  what you had seen was the bot's last message time while its chat was open,
+  per browser, beside the green dot on a working bot's face. The owner asked
+  for the bots to read exactly as the sessions do, so the same day the read
+  moved to the API (`bot."acknowledgedAt"`, set by opening the chat, on every
+  device, only the bot's replies counting), the amber dot took in questions
+  and failed turns, the green face dot went, and Mark as unread came in as a
+  device mark like a session's.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §3 (2026-11-09) gave a
+  contact's turn the customer turn's narrow tools: answer, the bot's
+  documents, memory for the conversation, `hand_off`. On 2026-11-20 the
+  owner asked for WhatsApp groups and other people to be answered next; the
+  first version gives a contact's turn no tools at all, and counts its limit
+  of 20 turns an hour per chat rather than per person. The narrow tools
+  come after.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-18) had a
+  chat allowed only by asking a bot in the owner's own chat, Settings
+  listing the allowed ones, at most 50 per number. On 2026-11-20 the owner,
+  with 25 groups and 200 contacts in mind, asked for settings that scale
+  and for a bot to show its gateways: Settings lists every chat a number
+  has seen, with search, filters and changes to many at once, and choosing
+  a bot there allows the chat; a bot's settings show the chats it answers
+  and add more. Only listed chats are answered (no catch-all), and a
+  number allows up to 1,000.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
+  bot in a group only when a message @-mentioned the number or replied to
+  it, and listed only the chats a number had seen a message in. On
+  2026-11-21 the owner found a group set to a bot silent ("not answering")
+  and People empty: a group the owner sets to a bot now wakes it on every
+  message with words (up to 120 turns an hour per group; 20 stays a
+  person's chat's), and the runner reports the groups the number is in
+  and its saved contacts on connect and on each change (`whatsapp.chats`),
+  so Settings lists them before anyone writes. The owner's own chat is
+  listed first among People, answered by the default bot.
+- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+  editor: the Routines tab's Edit put "Edit your routine: *name*" in the
+  composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
+  a dialog for its name and prompt, and only when it runs (its triggers)
+  is still changed in the chat.
+- `next-steps/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
+  or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
+  on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
+  be configured with the keys: Settings → Model providers adds Groq and
+  ElevenLabs (voice only) and a Voice tab choosing, for the workspace,
+  the transcription provider and model, the voice-note provider, model and
+  voice, and the polish model or none. A choice is tried first, the old
+  order after it; the env servers stay as the last provider.

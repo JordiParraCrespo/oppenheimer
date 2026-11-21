@@ -24,6 +24,7 @@ import {
   type BotTurnContext,
   BotTurnEntity,
 } from '../../domain/bot-turn.entity';
+import { whatsappContactTurn } from '../../domain/bot-whatsapp-turn.policy';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../bot-approval-started.policy';
@@ -84,6 +85,8 @@ function setup(
     about?: string;
     /** The bot's last turn that reached the provider or failed. */
     lastOnProvider?: BotTurnEntity;
+    /** The channel chat a channel's turn answers in; none by default. */
+    channelChat?: { chatId: string };
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -135,7 +138,7 @@ function setup(
     { hostsOf: vi.fn(hostsOf) },
     turns,
     new BotTurnChannelPolicy({
-      findChannelChat: async () => null,
+      findChannelChat: async () => conversation.channelChat ?? null,
     } as unknown as BotConversationRepositoryPort),
     {
       tools: () => [
@@ -240,6 +243,52 @@ describe('BotTurnContextResolver', () => {
 
     const blank = await setup(async () => []).resolve();
     expect(blank.systemPrompt).not.toContain('About the person, in their own words');
+  });
+
+  // What breaks this: someone in a group the owner allowed driving the
+  // owner's mail or sessions, reading what the owner wrote about themselves,
+  // or running one of the bot's skills with a /command.
+  it('runs a contact’s turn with no tools, no skills and nothing the owner wrote about themselves', async () => {
+    const findHistory = vi.fn(async () => []);
+    const { resolver } = setup(async () => [], {
+      about: 'I am Jordi. My bank is Ibercaja.',
+      skills: [skill('triage', { userInvocable: true })],
+      offered: ['archive_mail'],
+      opening: '/triage',
+      channelChat: { chatId: '120363000000000001@g.us' },
+      findHistory,
+    });
+    const { turn } = whatsappContactTurn(
+      {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        requestedByUserId: 'owner-1',
+        provider: 'glm',
+        model: 'model-1',
+        effort: null,
+      },
+      {
+        conversationId: '0b3e2a1c-5555-4c5d-8e6f-70819203b4c5',
+        whatsappAccountId: '0b3e2a1c-6666-4c5d-8e6f-70819203b4c5',
+        messageRowId: '0b3e2a1c-7777-4c5d-8e6f-70819203b4c5',
+        chatKind: 'group',
+        chatName: 'Family',
+        senderName: 'Marta',
+        sender: '+34600111333',
+        text: '/triage',
+      },
+    );
+    const shaped = await resolver.resolve(turn, new Date('2026-10-15T09:00:00Z'));
+    if (!shaped) throw new Error('the contact’s turn did not run');
+    expect(shaped.request.tools).toEqual([]);
+    expect(shaped.request.engineTools).toBe(false);
+    // Only contacts' turns, even in a chat that was once the owner's.
+    expect(findHistory.mock.calls[0]).toContain(true);
+    expect(shaped.request.systemPrompt).not.toContain('Ibercaja');
+    expect(shaped.request.systemPrompt).not.toContain('archive_mail');
+    expect(shaped.request.systemPrompt).not.toContain('Does triage.');
+    expect(shaped.request.message).toContain('a WhatsApp group your owner allowed');
+    expect(shaped.request.message).not.toContain('Steps for triage.');
   });
 
   // What breaks this: a Telegram turn queued before its Telegram bot was
@@ -386,6 +435,7 @@ describe('BotTurnContextResolver', () => {
       expect.any(String),
       'm-cut',
       expect.any(Number),
+      false,
     );
     expect(history).toHaveLength(2);
     expect(history[0].text).toContain('The person deploys from build-01.');

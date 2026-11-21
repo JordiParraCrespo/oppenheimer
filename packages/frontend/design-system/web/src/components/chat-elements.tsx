@@ -133,7 +133,7 @@ function CodeBlockBand({
   const { copied, copy } = useCopy(code);
   const wrapLabel = wrapped ? label.unwrap : label.wrap;
   return (
-    <div className="flex items-center gap-0.5 pt-1.5 pr-1.5 pl-4">
+    <div data-slot="code-block-band" className="flex items-center gap-0.5 pt-1.5 pr-1.5 pl-4">
       <span className="min-w-0 flex-1 truncate font-mono text-[13px] text-fg-muted">{language || 'text'}</span>
       {views}
       {onWrap ? (

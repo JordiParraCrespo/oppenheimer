@@ -208,3 +208,67 @@ export function imageSource(html: string): { src: string; alt: string } | null {
   const alt = /\salt\s*=\s*["']([^"']*)["']/i.exec(html)?.[1] ?? '';
   return { src: decodeEntities(src), alt: decodeEntities(alt) };
 }
+
+/** What one token draws as text, into `out`; each block between newlines. */
+function drawnText(token: MarkdownToken, out: string[]): void {
+  const inline = (tokens: Token[] | undefined) => {
+    for (const child of tokens ?? []) drawnText(child as MarkdownToken, out);
+  };
+  const block = (tokens: Token[] | undefined) => {
+    out.push('\n');
+    inline(tokens);
+    out.push('\n');
+  };
+  switch (token.type) {
+    case 'text':
+      if (token.tokens) inline(token.tokens);
+      else out.push(decodeEntities(token.text));
+      return;
+    case 'escape':
+      out.push(token.text);
+      return;
+    case 'codespan':
+      out.push(decodeEntities(token.text));
+      return;
+    case 'code':
+      out.push('\n', token.text, '\n');
+      return;
+    case 'list':
+      for (const item of token.items) block(item.tokens);
+      return;
+    case 'table':
+      for (const cell of [...token.header, ...token.rows.flat()]) block(cell.tokens);
+      return;
+    case 'details':
+      out.push('\n', token.summary, '\n');
+      block(token.tokens);
+      return;
+    case 'paragraph':
+    case 'heading':
+    case 'blockquote':
+      block(token.tokens);
+      return;
+    case 'strong':
+    case 'em':
+    case 'del':
+    case 'link':
+    case 'basicHtml':
+      inline(token.tokens);
+      return;
+    default:
+      // An image, a rule, a break, HTML: no words of their own.
+      return;
+  }
+}
+
+/**
+ * The words `Markdown` draws for a source, its marks and link targets left
+ * out, each block (a paragraph, a list item, a cell, a code block) between
+ * newlines so a search never runs from one into the next: what a find
+ * counts in a reply, to agree with what it finds on screen.
+ */
+export function markdownText(source: string): string {
+  const out: string[] = [];
+  for (const token of parseMarkdown(source)) drawnText(token, out);
+  return out.join('');
+}

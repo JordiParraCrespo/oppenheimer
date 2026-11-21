@@ -62,6 +62,11 @@ export const LEDGER = [
     why: 'sent to the person on Telegram or WhatsApp, not to a model',
   },
   {
+    file: 'bots-chat/domain/bot-channel-turn.policy.ts',
+    starts: 'Sorry, I can’t answer that right now.',
+    why: 'sent to a contact on WhatsApp when their turn failed, not to a model',
+  },
+  {
     file: 'bots-chat/domain/bot-approval.entity.ts',
     starts: 'expired: the owner wrote',
     why: "the reason on an approval's domain event, for whoever reads the outbox",
@@ -160,6 +165,53 @@ export const LEDGER = [
     file: 'bots-chat/bot-session-tool.mapper.ts',
     starts: 'Close the session "',
     why: "the line on the person's approval card for closing a session",
+  },
+  {
+    file: 'sessions/application/cloud-follow-up.resolver.ts',
+    starts: 'The agent moved on before the prompt could be sent.',
+    why: "a refusal the API answers a person or client with, not a model's words",
+  },
+  {
+    file: 'sessions/application/session-prompt-typer.resolver.ts',
+    starts: 'The agent moved on before the prompt could be sent.',
+    why: "a refusal the API answers a person or client with, not a model's words",
+  },
+  {
+    file: 'sessions/application/require-launchable-host.policy.ts',
+    why: 'why a host cannot start a session, in the refusal the console shows',
+  },
+  {
+    file: 'sessions/commands/drive-session-terminal/drive-session-terminal.command-handler.ts',
+    why: "a refusal's detail for the API's client",
+  },
+  {
+    file: 'sessions/commands/record-session-events/record-session-events.command-handler.ts',
+    why: "the reason in a runner's acknowledgement, read by the runner's code",
+  },
+  {
+    file: 'sessions/domain/session-decision.policy.ts',
+    why: "refusals of an answer to a session's decision, for the person or client who sent it",
+  },
+  {
+    file: 'sessions/domain/session-prompt.policy.ts',
+    why: 'why a prompt cannot be sent now, in the refusal its sender gets',
+  },
+  {
+    file: 'sessions/domain/session-terminal-watch.entity.ts',
+    why: "why a watch's pattern is refused, for the client that set it",
+  },
+  {
+    file: 'sessions/domain/session-transcript.policy.ts',
+    why: 'what each redaction rule catches, a description for whoever reads the table',
+  },
+  {
+    file: 'sessions/domain/session-wake.policy.ts',
+    starts: 'gh pr view',
+    why: 'a shell command the wake hands the agent, filled into its prompt, not a sentence',
+  },
+  {
+    file: 'sessions/sessions.resource.ts',
+    why: "the resource's description in the API's documentation",
   },
 ];
 

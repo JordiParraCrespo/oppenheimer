@@ -8,6 +8,8 @@ import { AppError } from '@oppenheimer/backend-core';
 import { type ErrorReportContext, ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import { None, Some } from 'oxide.ts';
 import { BotErrors } from '../../../../bots/domain/bots.errors';
+import { BotChannelAsItGoesFactory } from '../../../application/bot-channel-as-it-goes.factory';
+import type { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
 import type { BotDreamTriggerPolicy } from '../../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../../application/bot-steering.factory';
 import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
@@ -155,6 +157,7 @@ function setup(
     new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
     new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
     new BotTurnFailureReportPolicy(reporter),
+    new BotChannelAsItGoesFactory({} as BotChannelReplyResolver),
   );
   return { handler, turns, messages, stream, summaries, heard, context, reporter };
 }

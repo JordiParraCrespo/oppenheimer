@@ -69,7 +69,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useCreateBotGroup: idle,
   useCreateBot: idle,
   useDeleteBot: idle,
-  useBotNeedsInput: () => false,
+  useBotWorking: () => false,
+  useBotWaitingOnYou: () => false,
 }));
 
 vi.mock('@tanstack/react-router', () => ({

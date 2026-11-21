@@ -76,6 +76,15 @@ export class BotQuestionRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findPendingBotIds(scope: AccessScope): Promise<string[]> {
+    // UQ_bot_question_pending: one pending card per bot at most.
+    const rows: { botId: string }[] = await this.scopedQuery(scope)
+      .select('question.botId', 'botId')
+      .andWhere(`question.status = 'pending'`)
+      .getRawMany();
+    return rows.map((row) => row.botId);
+  }
+
   async findPending(organizationId: string, botId: string): Promise<Option<BotQuestionEntity>> {
     // UQ_bot_question_pending.
     const record = await this.repository.findOne({

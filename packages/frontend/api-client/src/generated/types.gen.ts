@@ -2838,7 +2838,9 @@ export type UpdateAutomationSettingsRequest = {
 };
 
 export type UpdateBotRoutineRequest = {
-    enabled: boolean;
+    name?: string;
+    prompt?: string;
+    enabled?: boolean;
 };
 
 export type TaskSessionLinkResponseDto = {
@@ -3413,6 +3415,36 @@ export type WhatsappChatGrantResponseDto = {
      */
     grantedByBotId: string | null;
     grantedAt: string;
+};
+
+export type WhatsappChatRouteResponseDto = {
+    /**
+     * The chat’s WhatsApp id: a group’s, or a person’s number.
+     */
+    chatId: string;
+    chatKind: 'direct' | 'group';
+    /**
+     * The group’s or person’s name as the number last saw it.
+     */
+    chatName: string | null;
+    /**
+     * How many of its messages the number keeps.
+     */
+    messageCount: number;
+    /**
+     * When the number last saw a message in it; null for a chat allowed before any.
+     */
+    lastAt: string | null;
+    /**
+     * Its grant: the chat is answered, by `botId` (null: the number’s default bot). Null when no one answers it.
+     */
+    grant: WhatsappChatGrantResponseDto | null;
+};
+
+export type RouteWhatsappChatsRequest = {
+    chatIds: Array<string>;
+    route: 'none' | 'default' | 'bot';
+    botId?: string;
 };
 
 export type AllowWhatsappChatRequest = {
@@ -4092,6 +4124,10 @@ export type BotResponseDto = {
      * The start of its last message, for the sidebar; null before the first.
      */
     lastMessagePreview: string | null;
+    /**
+     * Whether it replied since you last read its chat (`POST /bots/:id/acknowledge`); your own messages never make it unread.
+     */
+    unread: boolean;
 };
 
 export type CreateBotRequest = {
@@ -4294,7 +4330,7 @@ export type UpdateBotGroupRequest = {
 };
 
 export type ModelProviderCredentialResponseDto = {
-    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'groq' | 'elevenlabs';
     /**
      * Whether the workspace has a key for this provider.
      */
@@ -4910,6 +4946,13 @@ export type BotLoopStateResponseDto = {
     loop: BotLoopResponseDto | null;
 };
 
+export type BotSuggestionResponseDto = {
+    /**
+     * The person's likely next message, offered in the composer; null when there is none to offer.
+     */
+    suggestion: string | null;
+};
+
 export type BotUsageModelResponseDto = {
     /**
      * Every token sent, cached or not.
@@ -4949,7 +4992,7 @@ export type BotUsageBackgroundResponseDto = {
     /**
      * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion';
     calls: number;
 };
 
@@ -5138,6 +5181,17 @@ export type WorkspaceBotApprovalResponseDto = {
     sessionId: string | null;
 };
 
+export type BotActivityResponseDto = {
+    /**
+     * The bots with a turn queued or running, in no order.
+     */
+    working: Array<string>;
+    /**
+     * The bots waiting on you, in no order: an approval or a card of questions pending, or, while not working, a turn that failed since you last read the chat.
+     */
+    waitingOnYou: Array<string>;
+};
+
 export type WorkspaceBotNoticeResponseDto = {
     /**
      * The notice: a new id with each notice, so a mark on one never hides the next.
@@ -5321,7 +5375,7 @@ export type VoiceTranscriptionResponseDto = {
     /**
      * Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server.
      */
-    provider: 'chatgpt' | 'speech_key';
+    provider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key';
     /**
      * Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough.
      */
@@ -5336,7 +5390,34 @@ export type VoiceStatusResponseDto = {
     /**
      * The providers available, in the order a dictation tries them.
      */
-    providers: Array<'chatgpt' | 'speech_key'>;
+    providers: Array<'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key'>;
+};
+
+export type VoiceSettingsAvailableDto = {
+    transcription: Array<'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key'>;
+    synthesis: Array<'openai' | 'elevenlabs' | 'speech_key'>;
+    polish: Array<'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai'>;
+};
+
+export type VoiceSettingsResponseDto = {
+    transcriptionProvider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key';
+    transcriptionModel: string | null;
+    synthesisProvider: 'openai' | 'elevenlabs' | 'speech_key';
+    synthesisModel: string | null;
+    synthesisVoice: string | null;
+    polishProvider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'off';
+    polishModel: string | null;
+    available: VoiceSettingsAvailableDto;
+};
+
+export type UpdateVoiceSettingsRequest = {
+    transcriptionProvider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key' | null;
+    transcriptionModel: string | null;
+    synthesisProvider: 'openai' | 'elevenlabs' | 'speech_key' | null;
+    synthesisModel: string | null;
+    synthesisVoice: string | null;
+    polishProvider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'off' | null;
+    polishModel: string | null;
 };
 
 export type InboxMarkResponseDto = {
@@ -12660,6 +12741,10 @@ export type UpdateBotRoutineErrors = {
      * AUTOMATIONS_001 — Routine not found
      */
     404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_003 — The routine changed meanwhile
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UpdateBotRoutineError = UpdateBotRoutineErrors[keyof UpdateBotRoutineErrors];
@@ -14228,6 +14313,90 @@ export type AllowWhatsappChatResponses = {
 
 export type AllowWhatsappChatResponse = AllowWhatsappChatResponses[keyof AllowWhatsappChatResponses];
 
+export type FindWhatsappChatRoutesData = {
+    body?: never;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/chats';
+};
+
+export type FindWhatsappChatRoutesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindWhatsappChatRoutesError = FindWhatsappChatRoutesErrors[keyof FindWhatsappChatRoutesErrors];
+
+export type FindWhatsappChatRoutesResponses = {
+    200: Array<WhatsappChatRouteResponseDto>;
+};
+
+export type FindWhatsappChatRoutesResponse = FindWhatsappChatRoutesResponses[keyof FindWhatsappChatRoutesResponses];
+
+export type RouteWhatsappChatsData = {
+    body: RouteWhatsappChatsRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/routes';
+};
+
+export type RouteWhatsappChatsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_010 — A chat the number has not seen
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_018 — Past the chats one number allows
+     *
+     * WHATSAPP_015 — The owner’s number is not confirmed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_017 — The owner’s own chat, or the number’s
+     */
+    422: ProblemDetailsDto;
+};
+
+export type RouteWhatsappChatsError = RouteWhatsappChatsErrors[keyof RouteWhatsappChatsErrors];
+
+export type RouteWhatsappChatsResponses = {
+    200: Array<WhatsappChatRouteResponseDto>;
+};
+
+export type RouteWhatsappChatsResponse = RouteWhatsappChatsResponses[keyof RouteWhatsappChatsResponses];
+
 export type RevokeWhatsappChatData = {
     body?: never;
     path: {
@@ -15465,6 +15634,41 @@ export type UpdateBotResponses = {
 };
 
 export type UpdateBotResponse = UpdateBotResponses[keyof UpdateBotResponses];
+
+export type AcknowledgeBotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/acknowledge';
+};
+
+export type AcknowledgeBotErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type AcknowledgeBotError = AcknowledgeBotErrors[keyof AcknowledgeBotErrors];
+
+export type AcknowledgeBotResponses = {
+    /**
+     * Read
+     */
+    204: void;
+};
+
+export type AcknowledgeBotResponse = AcknowledgeBotResponses[keyof AcknowledgeBotResponses];
 
 export type FindBotDocumentsData = {
     body?: never;
@@ -16774,6 +16978,38 @@ export type FindBotLoopResponses = {
 
 export type FindBotLoopResponse = FindBotLoopResponses[keyof FindBotLoopResponses];
 
+export type FindBotSuggestionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/suggestion';
+};
+
+export type FindBotSuggestionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotSuggestionError = FindBotSuggestionErrors[keyof FindBotSuggestionErrors];
+
+export type FindBotSuggestionResponses = {
+    200: BotSuggestionResponseDto;
+};
+
+export type FindBotSuggestionResponse = FindBotSuggestionResponses[keyof FindBotSuggestionResponses];
+
 export type FindBotUsageData = {
     body?: never;
     path: {
@@ -16996,6 +17232,32 @@ export type FindWorkspaceBotApprovalsResponses = {
 };
 
 export type FindWorkspaceBotApprovalsResponse = FindWorkspaceBotApprovalsResponses[keyof FindWorkspaceBotApprovalsResponses];
+
+export type FindBotActivityData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-activity';
+};
+
+export type FindBotActivityErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindBotActivityError = FindBotActivityErrors[keyof FindBotActivityErrors];
+
+export type FindBotActivityResponses = {
+    200: BotActivityResponseDto;
+};
+
+export type FindBotActivityResponse = FindBotActivityResponses[keyof FindBotActivityResponses];
 
 export type FindWorkspaceBotNoticesData = {
     body?: never;
@@ -17448,6 +17710,66 @@ export type FindVoiceStatusResponses = {
 };
 
 export type FindVoiceStatusResponse = FindVoiceStatusResponses[keyof FindVoiceStatusResponses];
+
+export type FindVoiceSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/settings';
+};
+
+export type FindVoiceSettingsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindVoiceSettingsError = FindVoiceSettingsErrors[keyof FindVoiceSettingsErrors];
+
+export type FindVoiceSettingsResponses = {
+    200: VoiceSettingsResponseDto;
+};
+
+export type FindVoiceSettingsResponse = FindVoiceSettingsResponses[keyof FindVoiceSettingsResponses];
+
+export type UpdateVoiceSettingsData = {
+    body: UpdateVoiceSettingsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/settings';
+};
+
+export type UpdateVoiceSettingsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdateVoiceSettingsError = UpdateVoiceSettingsErrors[keyof UpdateVoiceSettingsErrors];
+
+export type UpdateVoiceSettingsResponses = {
+    204: void;
+};
+
+export type UpdateVoiceSettingsResponse = UpdateVoiceSettingsResponses[keyof UpdateVoiceSettingsResponses];
 
 export type FindInboxMarksData = {
     body?: never;

@@ -33,6 +33,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
   useBotGoal: () => ({ data: null }),
   useBotLoop: () => ({ data: null }),
+  useBotSuggestion: () => null,
   useBotWaitingMessages: () => [],
   // Newest first, as the conversation hands them.
   useBotSentTexts: () => ['run the tests', 'fix the build\nthen push', 'hello'],
