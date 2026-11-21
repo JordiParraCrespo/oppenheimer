@@ -40,6 +40,36 @@ pnpm --filter @oppenheimer/mobile arch         # dependency-cruiser
 pnpm --filter @oppenheimer/mobile build:dev    # EAS build (development profile)
 ```
 
+### Native builds across worktrees
+
+The native app (the dev client) only changes when the native side does:
+native dependencies, config plugins, `app.config.ts`, and the SVGs the icon
+font is built from. Everything else is JavaScript that Metro serves. Xcode
+keeps its build cache per folder, so every new worktree or clone used to start
+with a full build. Two things now carry work over:
+
+- **A build cache by fingerprint** (`build-cache.js`, `buildCacheProvider` in
+  `app.config.ts`). `expo run:ios` on a simulator computes the project's
+  fingerprint (`@expo/fingerprint`, with `fingerprint.config.js` adding the
+  icon SVGs), which is the same in every checkout whose native side is the
+  same, whatever its path. A Debug build is kept in
+  `~/Library/Caches/oppenheimer/mobile-builds`, keyed by that fingerprint. A
+  later checkout with the same fingerprint installs it and starts Metro,
+  with no Xcode build. A native change gets a new fingerprint and builds
+  once. The six most recently used builds are kept. Release builds (their
+  JavaScript is inside the app) and Android (an APK is built for one
+  device's ABI) always build.
+- **ccache** (`expo-build-properties`, `ios.ccacheEnabled`) for the C, C++
+  and Objective-C a native build compiles, when `ccache` is on the PATH at
+  `pod install` (`brew install ccache`, then `prebuild`). It speeds up a
+  rebuild in the same folder after `prebuild --clean`. Swift is not cached.
+
+Reviewing a stack of pull requests needs one build per native change, not
+one per pull request: check out each, `pnpm install`, `pnpm --filter
+@oppenheimer/mobile ios`, and the ones that share a fingerprint start in
+seconds. To build a fingerprint again, delete its entry from that folder
+(`--no-build-cache` cleans the Xcode build but still takes a kept one).
+
 ## Layout
 
 ```
@@ -52,6 +82,9 @@ app/                   # expo-router routes: a default export that mounts a scre
 features/              # <module>/{screens,sections,dialogs,forms,components,hooks,lib,__tests__}
 lib/                   # configuration only: oppenheimer.ts, auth-client.ts, query.ts
 app.config.ts          # Expo config — the source of truth for native
+build-cache.js         # native builds kept by fingerprint, shared by every checkout
+fingerprint.config.js  # what the fingerprint hashes beyond what it finds itself
+native-sources.js      # inputs baked into the binary, shared by app.config.ts and the fingerprint
 metro.config.js, tailwind.config.js, global.css
 ```
 
