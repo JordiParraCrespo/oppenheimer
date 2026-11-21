@@ -12,6 +12,7 @@ import { useUpdateBotRoutine } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import type { BotRoutineTaskDto } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotRoutineForm } from '@/features/bots/forms/bot-routine-form';
 import { fillBotDraft } from '@/features/bots/lib/bot-drafts';
@@ -35,13 +36,17 @@ export function EditBotRoutineDialog({
   const locale = useLocale();
   const navigate = useNavigate();
   const update = useUpdateBotRoutine({ onSuccess: onClose });
+  // The routine as the dialog opened on it: the form is seeded from it once,
+  // so a refetch while it is open (another tab, the bot) must not make an
+  // untouched field look edited and write the old value back over the new.
+  const [opened] = useState(routine);
 
   // Only what changed is sent: an edit takes the editor's scopes, so a Save
   // that changes nothing closes without touching the routine.
   function save(values: BotRoutineTaskDto) {
     const changes = {
-      name: values.name === routine.name ? undefined : values.name,
-      prompt: values.prompt === routine.prompt ? undefined : values.prompt,
+      name: values.name === opened.name ? undefined : values.name,
+      prompt: values.prompt === opened.prompt ? undefined : values.prompt,
     };
     if (changes.name === undefined && changes.prompt === undefined) {
       onClose();
@@ -81,7 +86,7 @@ export function EditBotRoutineDialog({
               </div>
             </div>
             <BotRoutineForm
-              routine={routine}
+              routine={opened}
               isPending={update.isPending}
               onSubmit={save}
               onCancel={onClose}
