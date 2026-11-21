@@ -31,6 +31,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useComposerSuggestion } from '@/features/bots/hooks/use-composer-suggestion';
 import { useEscapeToStop } from '@/features/bots/hooks/use-escape-to-stop';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
@@ -72,6 +73,11 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * the field brings back what you sent before and Down walks back to your
  * draft (`useSentHistory`); while it does, the box's caption says which
  * one ("History 1/2").
+ *
+ * Once the bot has answered and the field is empty, it offers a guess at
+ * what you will write next, greyed out where the placeholder is, the way
+ * Claude Code does (`useComposerSuggestion`): Tab writes it into the field, to
+ * send as it is or to edit first; typing anything else ignores it.
  *
  * Images ride the message: the paperclip, a paste, or a drop holds them as
  * tiles over the text, each uploaded at once (`useBotImages`). On the bot's
@@ -154,6 +160,12 @@ export function BotComposer({
     builtIn.notice;
   const failure = send.error ?? cancel.error ?? builtIn.error;
   const running = active?.status === 'running';
+  const suggested = useComposerSuggestion(botId, field, {
+    busy: active !== null || send.isPending || waiting > 0,
+    draft,
+    images: images.images.length,
+    notice: Boolean(builtIn.notice),
+  });
   const message = (steer: boolean) => ({
     id: botId,
     content: pastes.content,
@@ -205,10 +217,12 @@ export function BotComposer({
     pastes.onPaste(event);
   }
 
-  // A long paste's label is taken out whole first; the rest of the keys belong
-  // to the `/` menu while it is open, else to the walk through what you sent.
+  // A long paste's label is taken out whole first, then Tab takes the
+  // suggestion; the rest of the keys belong to the `/` menu while it is open,
+  // else to the walk through what you sent.
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     if (pastes.onKeyDownCapture(event)) return;
+    if (suggested.onKeyDownCapture(event)) return;
     if (slash.open) slash.onKeyDownCapture(event);
     else recall.onKeyDownCapture(event);
   }
@@ -253,7 +267,7 @@ export function BotComposer({
         }}
       />
       <div ref={box} className="relative">
-        {slash.open ? (
+        {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
             skills={slash.groups.skills}
@@ -295,9 +309,10 @@ export function BotComposer({
                 : undefined
             }
             placeholder={
-              running
+              suggested.suggestion ??
+              (running
                 ? t('bots.chat.placeholderRunning', { name })
-                : t('bots.chat.placeholder', { name })
+                : t('bots.chat.placeholder', { name }))
             }
             tools={tools}
             engine={engine}

@@ -241,6 +241,17 @@
     "before": 524288,
     "entries": [
       "{\"type\":\"user\",\"uuid\":\"u1\",\"message\":{\"role\":\"user\",\"content\":\"fix the failing test\"}}"
+    ],
+    "commands": [
+      {
+        "name": "recap",
+        "kind": "skill",
+        "description": "Close a finished task with a short brief."
+      },
+      {
+        "name": "frontend:audit",
+        "kind": "command"
+      }
     ]
   },
   "attachment.chat.older": {
@@ -389,6 +400,18 @@
         "media": "image",
         "quotedId": "3EB0C7A1F1",
         "sentAt": "2026-09-19T10:00:00Z"
+      },
+      {
+        "key": "34600333444@s.whatsapp.net/3EB0C7A1F4",
+        "id": "3EB0C7A1F4",
+        "chatId": "34600333444@s.whatsapp.net",
+        "chatKind": "direct",
+        "senderId": "34600333444@s.whatsapp.net",
+        "fromMe": false,
+        "text": "",
+        "media": "audio",
+        "voiceSeconds": 12,
+        "sentAt": "2026-09-19T10:00:00Z"
       }
     ]
   },
@@ -413,6 +436,18 @@
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "id": "3EB0C7A1F3",
     "sentAt": "2026-09-19T10:00:00Z"
+  },
+  "whatsapp.media.get": {
+    "type": "whatsapp.media.get",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "chatId": "34600333444@s.whatsapp.net",
+    "messageId": "3EB0C7A1F4"
+  },
+  "whatsapp.media": {
+    "type": "whatsapp.media",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "mimetype": "audio/ogg; codecs=opus",
+    "data": "T2dnUwACAAAAAAAAAAA="
   },
   "telegram.link": {
     "type": "telegram.link",

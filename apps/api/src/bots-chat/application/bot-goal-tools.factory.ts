@@ -10,6 +10,7 @@ import { BOT_GOAL_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotGoalRepositoryPort } from '../database/bot-goal.repository.port';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalPauseLine } from '../domain/bot-goal.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotGoalResolver } from './bot-goal.resolver';
 import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
@@ -41,21 +42,21 @@ export class BotGoalToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'set_goal',
       scope: 'bots:write',
-      description: `Sets a goal you keep working toward across turns, for work that takes several steps on your own: "get the release branch green", "triage every open issue labelled bug". Write it as a condition with the check that proves it ("pnpm test exits 0 on the release branch"). After each of your turns another comes, with no limit, until you call end_goal with outcome met and a reviewer agrees from what you showed; the person sees each one and can stop it. It pauses after ${BOT_GOAL_IDLE_TURNS} turns in a row that call no tool, and when a turn fails. One goal at a time: setting one replaces the last. Not for a task one turn finishes, and not for waiting on a session (watch it instead).`,
+      description: promptText('tools/goal.set-goal', {
+        goalIdleTurns: String(BOT_GOAL_IDLE_TURNS),
+      }),
       input: z.object({
         objective: z
           .string()
           .min(1)
           .max(BOT_GOAL_OBJECTIVE_MAX)
-          .describe('What done looks like, and how to check it, in words the person can read.'),
+          .describe(promptText('tools/goal.set-goal-objective')),
         token_budget: z
           .number()
           .int()
           .min(BOT_GOAL_TOKEN_BUDGET_MIN)
           .optional()
-          .describe(
-            'The most tokens its turns may spend, input and output, before it pauses. Only when the person names a budget; none by default.',
-          ),
+          .describe(promptText('tools/goal.set-goal-token-budget')),
       }),
       // A continuation is not offered it, so a goal never renews itself.
       notOn: ['goal'],
@@ -79,15 +80,10 @@ export class BotGoalToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'end_goal',
       scope: 'bots:write',
-      description:
-        "Says your goal is done or stuck. outcome met: you ran its check and it holds; when this turn ends a reviewer reads what you showed and ends the goal, or sends you on with its reason. outcome blocked: it cannot go on without the person; it pauses until they resume it. Say why in reason and in your reply. Outside the goal's own turns (the person asked you to stop it), met ends it at once.",
+      description: promptText('tools/goal.end-goal'),
       input: z.object({
         outcome: z.enum(['met', 'blocked']),
-        reason: z
-          .string()
-          .min(1)
-          .max(1_000)
-          .describe('For met, the check you ran and what it answered; for blocked, what you need.'),
+        reason: z.string().min(1).max(1_000).describe(promptText('tools/goal.end-goal-reason')),
       }),
       run: async (input, context) => {
         const goal = await this.goals.findForBot(context.organizationId, context.botId);
@@ -96,24 +92,29 @@ export class BotGoalToolsFactory implements BotToolArea {
         if (input.outcome === 'blocked') {
           goal.pause('blocked', input.reason, new Date());
           if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused')))) {
-            return 'Your goal changed meanwhile (it was paused, ended or replaced); nothing was done.';
+            return promptText('tools/goal.end-goal-goal-changed-meanwhile');
           }
           await this.goalsOf.cancelWaiting(goal, null);
-          return `Goal paused as blocked: ${goal.objective}. It stays open until the person resumes it.`;
+          return promptText('tools/goal.end-goal-goal-paused-blocked', {
+            objective: goal.objective,
+          });
         }
         if (!ownTurn) {
           // No line: the call is the record, in this turn's activity.
           await this.goalsOf.end(goal, null, null);
-          return `Goal ended after ${goal.continuations} continuations: ${goal.objective}`;
+          return promptText('tools/goal.end-goal-goal-ended-after', {
+            continuations: String(goal.continuations),
+            objective: goal.objective,
+          });
         }
         if (goal.paused) {
-          return 'Your goal is paused; the person resumes it. Say in your reply what you found.';
+          return promptText('tools/goal.end-goal-goal-paused-person');
         }
         goal.claimMet(input.reason);
         if (!(await this.goals.claim(goal))) {
-          return 'Your goal changed meanwhile (it was paused, ended or replaced); nothing was done.';
+          return promptText('tools/goal.end-goal-goal-changed-meanwhile');
         }
-        return 'Noted. When this turn ends a reviewer reads what you showed: the goal ends if it holds, otherwise your next turn says why not. Finish the turn by reporting the check and its result.';
+        return promptText('tools/goal.end-goal-noted-when-turn');
       },
     });
   }

@@ -27,7 +27,10 @@ const (
 type Options struct {
 	Device Device
 	Outbox Outbox
-	Logger *slog.Logger
+	// VoiceNotes keeps the voice notes the control plane may ask for; nil
+	// keeps none, and every ask is WA_005.
+	VoiceNotes VoiceNotes
+	Logger     *slog.Logger
 	// Budget is the host's own send limit; nil is domain.SendsPerMinute and
 	// domain.SendsPerDay.
 	Budget *domain.Budget
@@ -39,6 +42,7 @@ type Options struct {
 type Service struct {
 	device Device
 	outbox Outbox
+	voices VoiceNotes
 	logger *slog.Logger
 	budget *domain.Budget
 	now    func() time.Time
@@ -71,7 +75,7 @@ func New(opts Options) *Service {
 		logger = slog.Default()
 	}
 	return &Service{
-		device: opts.Device, outbox: opts.Outbox, logger: logger, budget: budget, now: now,
+		device: opts.Device, outbox: opts.Outbox, voices: opts.VoiceNotes, logger: logger, budget: budget, now: now,
 		status: domain.Status{State: domain.StateUnlinked}, inFlight: map[string]time.Time{},
 	}
 }
@@ -192,6 +196,11 @@ func (s *Service) Unlink(ctx context.Context) error {
 	if err := s.outbox.Clear(ctx); err != nil {
 		s.logger.Warn("whatsapp: the outbox could not be emptied", slog.Any("error", err))
 	}
+	if s.voices != nil {
+		if err := s.voices.ClearVoiceNotes(ctx); err != nil {
+			s.logger.Warn("whatsapp: the kept voice notes could not be forgotten", slog.Any("error", err))
+		}
+	}
 	s.mu.Lock()
 	s.inFlight = map[string]time.Time{}
 	s.mu.Unlock()
@@ -220,6 +229,37 @@ func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Q
 		return "", time.Time{}, domain.ErrSendRefused.WithDetail("%v", err)
 	}
 	return id, sentAt.UTC(), nil
+}
+
+// VoiceNote fetches a voice note the number received, for the control plane
+// to transcribe: one it still keeps (domain.VoiceNoteKept), no larger than a
+// frame carries. Fetching spends no send budget: it is a download from
+// WhatsApp's media servers, which the phone itself makes for every note.
+func (s *Service) VoiceNote(ctx context.Context, chatID, id string) ([]byte, string, error) {
+	if s.Status().State != domain.StateConnected {
+		return nil, "", domain.ErrNotConnected
+	}
+	if s.voices == nil {
+		return nil, "", domain.ErrNoVoiceNote
+	}
+	voice, ok, err := s.voices.Find(ctx, chatID, id)
+	if err != nil {
+		return nil, "", domain.ErrNoVoiceNote.WithDetail("the kept voice notes could not be read: %v", err)
+	}
+	if !ok {
+		return nil, "", domain.ErrNoVoiceNote.WithDetail("none kept for %s; they are kept %s", id, domain.VoiceNoteKept)
+	}
+	if voice.TooLarge() {
+		return nil, "", domain.ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", voice.Size, domain.VoiceNoteMaxBytes)
+	}
+	data, mimetype, err := s.device.Download(ctx, voice.Ref)
+	if err != nil {
+		return nil, "", domain.ErrVoiceDownload.WithDetail("%v", err)
+	}
+	if len(data) > domain.VoiceNoteMaxBytes {
+		return nil, "", domain.ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", len(data), domain.VoiceNoteMaxBytes)
+	}
+	return data, mimetype, nil
 }
 
 // Ack forgets what the control plane stored.
@@ -285,6 +325,13 @@ func (s *Service) Received(r domain.Received) {
 		return
 	}
 	ctx := context.Background()
+	if r.Voice != nil && s.voices != nil {
+		// Kept before the message goes out, so an ask for it never finds nothing.
+		if err := s.voices.Keep(ctx, message.ChatID, message.ID, *r.Voice); err != nil {
+			s.logger.Warn("whatsapp: a voice note could not be kept; bots will not hear it", slog.Any("error", err))
+			message.VoiceSeconds = 0
+		}
+	}
 	if err := s.outbox.Put(ctx, message); err != nil {
 		s.logger.Error("whatsapp: a message could not be kept; it is lost", slog.Any("error", err))
 		return

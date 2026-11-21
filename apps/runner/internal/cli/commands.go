@@ -119,6 +119,10 @@ func (p *printer) println(args ...any) {
 	_, p.err = fmt.Fprintln(p.w, args...)
 }
 
+// look is how the printer's writer is decorated: plain unless it is a
+// terminal (look.go).
+func (p *printer) look() Look { return LookFor(p.w) }
+
 func (p *printer) print(text string) {
 	if p.err != nil {
 		return
@@ -156,7 +160,7 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 			return err
 		}
 		for _, warning := range warnings {
-			p.printf("warning: %s\n", warning)
+			p.printf("%s %s\n", p.look().Label("warn", "warning:"), warning)
 		}
 		workspaces = dir
 	}
@@ -186,7 +190,7 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 	if opts.KeepExisting {
 		if identity, err := a.Pairing.Identity(); err == nil && !identity.Revoked() &&
 			sameOrigin(identity.ControlPlaneURL, opts.URL) {
-			p.printf("already paired as %s (%s); keeping it — the token was not used\n", identity.Name, identity.HostID)
+			p.printf("%s (%s); keeping it — the token was not used\n", p.look().State("ok", "already paired as "+p.look().Bold(identity.Name)), identity.HostID)
 			if workspaces != a.Paths.Workspaces {
 				if err := a.moveWorkspaces(ctx, p, workspaces); err != nil {
 					return err
@@ -226,11 +230,12 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 	} else if err := ExcludeFromIndexing(workspaces); err != nil {
 		// A chosen directory got the opt-out from ChooseWorkspaces; the
 		// default gets it here, so pairing leaves both roots the same way.
-		p.printf("warning: could not keep %s out of the desktop search index (%v); indexing a session's checkouts costs this host CPU it owes the agents\n", workspaces, err)
+		p.printf(p.look().Label("warn", "warning:")+" could not keep %s out of the desktop search index (%v); indexing a session's checkouts costs this host CPU it owes the agents\n", workspaces, err)
 	}
-	p.printf("paired as %s (%s)\n", identity.Name, identity.HostID)
-	p.printf("control plane %s, channel %s\n", identity.ControlPlaneURL, identity.Channel)
-	p.printf("sessions will live in %s\n", workspaces)
+	look := p.look()
+	p.printf("%s (%s)\n", look.State("ok", "paired as "+look.Bold(identity.Name)), identity.HostID)
+	p.printf("control plane %s, channel %s\n", look.Accent(identity.ControlPlaneURL), identity.Channel)
+	p.printf("sessions will live in %s\n", look.Bold(workspaces))
 	if p.err != nil {
 		return p.err
 	}
@@ -249,7 +254,7 @@ func (a *App) Workspaces(ctx context.Context, out io.Writer, dir string) error {
 		return err
 	}
 	for _, warning := range warnings {
-		p.printf("warning: %s\n", warning)
+		p.printf("%s %s\n", p.look().Label("warn", "warning:"), warning)
 	}
 	if err := a.moveWorkspaces(ctx, p, chosen); err != nil {
 		return err
@@ -384,7 +389,7 @@ func (a *App) Install(ctx context.Context, out io.Writer, print bool) error {
 	if err != nil {
 		return err
 	}
-	p.printf("service installed (%s) at %s\n", status.Kind, status.Path)
+	p.printf("%s (%s) at %s\n", p.look().State("ok", "service installed"), status.Kind, p.look().Dim(status.Path))
 	if status.Detail != "" {
 		p.printf("state: %s\n", status.Detail)
 	}
@@ -425,7 +430,7 @@ func (a *App) Uninstall(ctx context.Context, out io.Writer, opts UninstallOption
 	if err := a.Service.Uninstall(ctx); err != nil {
 		errs = append(errs, err)
 	} else {
-		p.println("service removed")
+		p.println(p.look().State("ok", "service removed"))
 	}
 	// After the service is gone, so the daemon is not writing the same
 	// session records while they are marked stopped.
@@ -448,7 +453,7 @@ func (a *App) Uninstall(ctx context.Context, out io.Writer, opts UninstallOption
 		case err != nil:
 			errs = append(errs, err)
 		case result.Revoked():
-			p.println("host revoked at the control plane and identity erased")
+			p.println(p.look().State("ok", "host revoked at the control plane and identity erased"))
 		default:
 			errs = append(errs, a.printStillPaired(p, result))
 		}
@@ -476,12 +481,14 @@ func (a *App) printStillPaired(p *printer, result pairapp.Unregistration) error 
 		identity.HostID, origin, problemLine(result.RevokeErr)).WithCause(result.RevokeErr)
 }
 
-// Status prints what a person needs to answer "is this host working".
+// Status prints what a person needs to answer "the state of this host".
 func (a *App) Status(ctx context.Context, out io.Writer) error {
 	facts, err := a.Host.Collect(ctx)
 	if err != nil {
 		return err
 	}
+	look := LookFor(out)
+	look.Banner(out, " "+look.Dim(a.Version), "the state of this host")
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	p := newPrinter(tw)
 	p.printf("runner\t%s\n", a.Version)
@@ -491,12 +498,12 @@ func (a *App) Status(ctx context.Context, out io.Writer) error {
 	identity, pairErr := a.Pairing.Identity()
 	switch {
 	case pairErr != nil:
-		p.printf("paired\tno — %s\n", detail(pairErr))
+		p.printf("paired\t%s — %s\n", look.State("fail", "no"), detail(pairErr))
 	case identity.Revoked():
-		p.printf("paired\tno — unpaired by the control plane on %s; pair it again from Add host, or run `oppenheimer-runner uninstall`\n",
-			identity.RevokedAt.Format(time.RFC3339))
+		p.printf("paired\t%s — unpaired by the control plane on %s; pair it again from Add host, or run %s\n",
+			look.State("fail", "no"), identity.RevokedAt.Format(time.RFC3339), look.Accent("`oppenheimer-runner uninstall`"))
 	default:
-		p.printf("paired\t%s (%s)\n", identity.HostID, identity.ControlPlaneURL)
+		p.printf("paired\t%s (%s)\n", look.State("ok", identity.HostID), look.Accent(identity.ControlPlaneURL))
 		// The same value the control plane stores for this host and quotes in
 		// the "a new machine was paired" email, so a person can check the email
 		// is about this machine.
@@ -505,16 +512,16 @@ func (a *App) Status(ctx context.Context, out io.Writer) error {
 	}
 
 	if status, err := a.Service.Status(ctx); err == nil {
-		state := "stopped"
+		state := look.State("warn", "stopped")
 		if status.Running {
-			state = "running"
+			state = look.State("ok", "running")
 		}
 		if !status.Installed {
-			state = "not installed"
+			state = look.State("fail", "not installed")
 		}
-		p.printf("service\t%s (%s) %s\n", state, status.Kind, status.Detail)
+		p.printf("service\t%s (%s) %s\n", state, status.Kind, look.Dim(status.Detail))
 	} else {
-		p.printf("service\t%s\n", detail(err))
+		p.printf("service\t%s\n", look.State("fail", detail(err)))
 	}
 
 	if current, err := a.Binaries.Current(); err == nil {
@@ -526,11 +533,11 @@ func (a *App) Status(ctx context.Context, out io.Writer) error {
 		}
 	}
 	for _, tool := range facts.Tools {
-		value := "not found"
+		value := look.State("fail", "not found")
 		if tool.Found() {
-			value = tool.Version
+			value = look.State("ok", tool.Version)
 		} else if !tool.Required {
-			value = "not found (sessions still open): " + installHintFor(facts.Platform, tool.Name)
+			value = look.State("warn", "not found (sessions still open): ") + look.Accent(installHintFor(facts.Platform, tool.Name))
 		}
 		p.printf("%s\t%s\n", tool.Name, value)
 	}
@@ -646,14 +653,14 @@ func (a *App) LinkRunning() error {
 func (a *App) printPreflight(ctx context.Context, out io.Writer, facts hostdomain.Facts) error {
 	p := newPrinter(out)
 	if err := facts.Validate(); err != nil {
-		p.printf("preflight: %v\n", err)
+		p.printf("preflight: %s\n", p.look().State("fail", err.Error()))
 		if p.err != nil {
 			return p.err
 		}
 		_, preflightErr := a.Host.Preflight(ctx)
 		return preflightErr
 	}
-	p.println("preflight: ok")
+	p.println("preflight: " + p.look().State("ok", "ok"))
 	return p.err
 }
 

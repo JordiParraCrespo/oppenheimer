@@ -423,6 +423,10 @@
       "WHATSAPP_012": "Ningún número está esperando un código. Primero escribe tu número.",
       "WHATSAPP_013": "Ese no puede ser tu número aquí. Escribe el número desde el que escribes, no el vinculado.",
       "WHATSAPP_014": "Demasiados códigos incorrectos. Pide un código nuevo y vuelve a intentarlo.",
+      "WHATSAPP_015": "Confirma primero tu propio número. Solo entonces se pueden permitir otros chats en este número.",
+      "WHATSAPP_016": "Ese chat ya no está permitido en este número.",
+      "WHATSAPP_017": "Tu propio chat con el número siempre es tuyo, y el número no puede hablar consigo mismo.",
+      "WHATSAPP_018": "Este número ya permite todos los chats que puede. Quita uno primero.",
       "TELEGRAM_001": "Ese bot de Telegram ya no está conectado.",
       "TELEGRAM_002": "Telegram pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "TELEGRAM_003": "Ya has conectado tres bots de Telegram, el máximo por persona. Desconecta uno para añadir otro.",
@@ -1361,6 +1365,7 @@
       "composer": {
         "placeholder": "Escribe a {{agent}}",
         "placeholderAnyAgent": "Escribe al agente",
+        "suggestion": "{{suggestion}}  ·  Tab para usarlo",
         "send": "Enviar",
         "stop": "Detener",
         "attach": "Adjuntar archivos",
@@ -1370,6 +1375,20 @@
         "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
         "attaching": "Adjuntando archivos…"
       },
+      "slash": {
+        "menu": "Comandos que puedes ejecutar",
+        "pick": "Usar /{{name}}",
+        "builtInLabel": "Claude Code",
+        "projectLabel": "Este proyecto",
+        "builtIn": {
+          "clear": "Empieza una conversación nueva, con el contexto vacío.",
+          "compact": "Resume la conversación hasta ahora para liberar contexto.",
+          "context": "Muestra lo que ocupa ahora la ventana de contexto.",
+          "cost": "Muestra lo que ha gastado esta conversación.",
+          "init": "Escribe un CLAUDE.md que describe este repositorio.",
+          "review": "Revisa una pull request."
+        }
+      },
       "turn": {
         "working": "Trabajando desde hace",
         "worked": "Trabajó",
@@ -1377,6 +1396,7 @@
         "interrupted": "Interrumpido"
       },
       "copyMessage": "Copiar mensaje",
+      "sending": "Enviando…",
       "copyReply": "Copiar respuesta",
       "thinking": "Pensando",
       "plan": "Plan",
@@ -1486,6 +1506,15 @@
           "failed": "Falló",
           "stopped": "Detenido"
         }
+      },
+      "find": {
+        "label": "Buscar en el chat",
+        "placeholder": "Buscar en el chat",
+        "count": "{{current}} de {{total}}",
+        "none": "Sin resultados",
+        "previous": "Coincidencia anterior",
+        "next": "Coincidencia siguiente",
+        "close": "Cerrar búsqueda"
       }
     },
     "side": {
@@ -1677,6 +1706,8 @@
       "pinned": "Fijados",
       "pin": "Fijar",
       "unpin": "Desfijar",
+      "markUnread": "Marcar como no leído",
+      "markRead": "Marcar como leído",
       "dropToPin": "Suelta un bot aquí para fijarlo.",
       "allPinned": "Sus bots están en Fijados.",
       "rowActions": "Opciones del bot",
@@ -2063,7 +2094,10 @@
           "ruleReview_one": "{{count}} revisión de reglas",
           "ruleReview_other": "{{count}} revisiones de reglas",
           "dream_one": "{{count}} orden de memoria",
-          "dream_other": "{{count}} órdenes de memoria"
+          "dream_other": "{{count}} órdenes de memoria",
+          "suggestion_one": "{{count}} respuesta sugerida",
+          "suggestion_many": "{{count}} respuestas sugeridas",
+          "suggestion_other": "{{count}} respuestas sugeridas"
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
@@ -2081,7 +2115,8 @@
         "skills": "Habilidades",
         "permissions": "Permisos",
         "routines": "Rutinas",
-        "homeHost": "Máquina principal"
+        "homeHost": "Máquina principal",
+        "gateways": "Canales"
       },
       "profile": {
         "title": "Perfil",
@@ -2415,6 +2450,42 @@
             "new": "Nueva regla para permitir"
           }
         }
+      },
+      "gateways": {
+        "title": "Canales",
+        "subtitle": "Dónde la gente habla con este bot: los chats de WhatsApp que responde y los bots de Telegram en los que responde.",
+        "whatsappFailed": "No se pudieron cargar tus números de WhatsApp.",
+        "telegramFailed": "No se pudieron cargar tus bots de Telegram.",
+        "chatsFailed": "No se pudieron cargar los chats de este número.",
+        "noWhatsapp": "Aún ningún número de WhatsApp puede enviar chats aquí. Vincula uno y confirma tu propio número en Ajustes → WhatsApp.",
+        "whatsappTitle": "WhatsApp · {{label}}",
+        "answers": "Responde a {{groups}} grupos y {{people}} personas",
+        "isDefault": "El bot por defecto de este número",
+        "defaultIs": "Bot por defecto de este número: {{bot}}",
+        "noDefault": "Este número no tiene bot por defecto",
+        "numberSettings": "Ajustes del número",
+        "add": "Añadir chats",
+        "noneHere": "Este bot aún no responde por nombre a ningún chat de este número.",
+        "group": "Grupo",
+        "person": "Persona",
+        "remove": "Quitar",
+        "removeLabel": "Dejar de responder a {{chat}}",
+        "routeFailed": "No se guardó. Inténtalo de nuevo.",
+        "addTitle": "Añadir chats",
+        "addDescription": "Elige los grupos y las personas a los que responde este bot en este número. Un chat que responde otro bot pasa a este.",
+        "tabsLabel": "Grupos o personas",
+        "groups": "Grupos",
+        "people": "Personas",
+        "search": "Buscar por nombre o número",
+        "now": "Ahora: {{who}}",
+        "nowDefault": "bot por defecto ({{bot}})",
+        "nowNone": "sin respuesta",
+        "anotherBot": "otro bot",
+        "noCandidates": "Ningún chat coincide.",
+        "addCount_one": "Añadir {{count}} chat",
+        "addCount_other": "Añadir {{count}} chats",
+        "telegramTitle": "Telegram · {{name}}",
+        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
       }
     },
     "delete": {
@@ -4106,8 +4177,8 @@
         "noBot": "Ninguno (no responde)",
         "search": "Busca un bot",
         "noMatch": "Ningún bot coincide",
-        "none": "Aún no responde ningún bot en este número. Elige uno para que responda a tu propio número.",
-        "chosen": "Responde a tu propio número. Escribe «Nombre: …» en el chat para hablar con otro de tus bots.",
+        "none": "Aún no responde ningún bot en este número. Elige uno para que responda a tu propio número y a cada chat con «Bot por defecto».",
+        "chosen": "Responde a tu propio número y a cada chat con «Bot por defecto». Escribe «Nombre: …» en tu chat para hablar con otro de tus bots.",
         "failed": "No se ha guardado. Inténtalo de nuevo."
       },
       "owner": {
@@ -4130,6 +4201,55 @@
         "change": "Cambiar",
         "otherNumber": "Usar otro número",
         "failed": "No ha funcionado. Inténtalo de nuevo."
+      },
+      "chats": {
+        "title": "Chats",
+        "linkMeta": "Elige qué bot responde a cada grupo y persona en este número, o ninguno.",
+        "manage": "Gestionar chats",
+        "manageLabel": "Gestionar los chats de {{label}}",
+        "pageTitle": "Número de WhatsApp",
+        "pageDescription": "Quién responde en este número: su bot por defecto, y cada grupo y persona que ha visto.",
+        "goneTitle": "Este número ya no está vinculado.",
+        "back": "Volver a WhatsApp",
+        "ownerFirst": "Confirma primero tu propio número. Después podrás elegir quién responde a cada grupo y persona aquí.",
+        "loadFailed": "No se pudieron cargar los chats de este número.",
+        "summary_one": "{{answered}} de {{count}} chat con respuesta",
+        "summary_other": "{{answered}} de {{count}} chats con respuesta",
+        "tabsLabel": "Grupos o personas",
+        "tabs": {
+          "group": "Grupos",
+          "person": "Personas"
+        },
+        "search": "Buscar por nombre o número",
+        "byLabel": "Responde",
+        "byAll": "Cualquiera o nadie",
+        "byAnswered": "Con respuesta",
+        "byDefault": "Bot por defecto",
+        "none": "Sin respuesta",
+        "defaultNamed": "Bot por defecto ({{bot}})",
+        "defaultNone": "Bot por defecto (ninguno)",
+        "group": "Grupo",
+        "person": "Persona",
+        "noMessages": "Aún sin mensajes",
+        "justNow": "Ahora mismo",
+        "answerLabel": "Quién responde a {{chat}}",
+        "selectLabel": "Seleccionar {{chat}}",
+        "selectPage": "Seleccionar esta página",
+        "bulkLabel": "Chats seleccionados",
+        "selected_one": "{{count}} chat seleccionado",
+        "selected_other": "{{count}} chats seleccionados",
+        "answerWith": "Responder con",
+        "apply": "Aplicar",
+        "stop": "Dejar de responder",
+        "clear": "Limpiar",
+        "routeFailed": "No se guardó. Inténtalo de nuevo.",
+        "emptyTitle": "Este número aún no ha visto ningún chat",
+        "emptyDescription": "Los grupos y las personas aparecen aquí cuando escriben al número, o él les escribe.",
+        "noMatch": "Ningún chat coincide",
+        "range_one": "{{from}}–{{to}} de {{count}}",
+        "range_other": "{{from}}–{{to}} de {{count}}",
+        "previous": "Anterior",
+        "next": "Siguiente"
       }
     },
     "telegram": {

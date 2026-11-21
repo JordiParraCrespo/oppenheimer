@@ -1,3 +1,4 @@
+import { promptText } from './bot-prompt-text.policy';
 /**
  * A system a bot's tool calls (Gmail, GitHub, a calendar) limiting our
  * requests. Running into one is a normal part
@@ -63,7 +64,12 @@ export function laterLimit(held: BotRateLimit | null, limit: BotRateLimit): BotR
  * instead (`rateLimitedPartwayLine`).
  */
 export function rateLimitedLine(code: string, limit: BotRateLimit, now: Date): string {
-  return `${code}: ${limit.system} is limiting our requests ${untilWords(limit, now)}, and stopped this call there. ${waitAdvice(limit)}`;
+  return promptText('tools/rate-limit.rate-limited-line', {
+    code,
+    system: limit.system,
+    until: untilWords(limit, now),
+    waitAdvice: waitAdvice(limit),
+  });
 }
 
 /**
@@ -71,7 +77,12 @@ export function rateLimitedLine(code: string, limit: BotRateLimit, now: Date): s
  * stands, the rest was not reached.
  */
 export function rateLimitedPartwayLine(limit: BotRateLimit, notReached: number, now: Date): string {
-  return `${limit.system} began limiting our requests ${untilWords(limit, now)}, so ${notReached} more were not reached; the ones above did change. ${waitAdvice(limit)}`;
+  return promptText('tools/rate-limit.rate-limited-partway-line', {
+    system: limit.system,
+    until: untilWords(limit, now),
+    notReached: String(notReached),
+    waitAdvice: waitAdvice(limit),
+  });
 }
 
 function untilWords(limit: BotRateLimit, now: Date): string {
@@ -81,5 +92,5 @@ function untilWords(limit: BotRateLimit, now: Date): string {
 }
 
 function waitAdvice(limit: BotRateLimit): string {
-  return `A limit is normal when working through a lot and passes on its own; calling ${limit.system} again before then only meets it again. Do not retry it in this turn: say what is done, what is left, and that it can go on after then. A goal's next turn waits for it on its own.`;
+  return promptText('tools/rate-limit.wait-advice', { system: limit.system });
 }

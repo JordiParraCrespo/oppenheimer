@@ -52,9 +52,10 @@ export class RecordSessionEventsCommandHandler
 
     const { session, outcome } = appended.unwrap();
 
-    // Not awaited: naming talks to somebody's inference API, and a runner's
-    // acknowledgement must not wait on that — or fail because of it.
-    void this.naming.nameFromPrompt(session, outcome.appended);
+    // Not awaited: naming talks to somebody's inference API (and renaming reads
+    // the conversation off the host), and a runner's acknowledgement must not
+    // wait on that — or fail because of it.
+    void this.naming.nameFromBatch(session, outcome.appended);
     return { batchId: command.batchId, accepted: outcome.accepted, rejected: outcome.rejected };
   }
 }

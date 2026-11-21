@@ -20,6 +20,8 @@
     "pinned": "Pinned",
     "pin": "Pin",
     "unpin": "Unpin",
+    "markUnread": "Mark as unread",
+    "markRead": "Mark as read",
     "dropToPin": "Drop a bot here to pin it.",
     "allPinned": "Its bots are under Pinned.",
     "rowActions": "Bot options",
@@ -396,7 +398,9 @@
         "ruleReview_one": "{{count}} rule review",
         "ruleReview_other": "{{count}} rule reviews",
         "dream_one": "{{count}} memory tidy",
-        "dream_other": "{{count}} memory tidies"
+        "dream_other": "{{count}} memory tidies",
+        "suggestion_one": "{{count}} suggested reply",
+        "suggestion_other": "{{count}} suggested replies"
       },
       "empty": "Nothing spent in this chat yet.",
       "loadFailed": "Could not load the usage. Try again."
@@ -414,7 +418,8 @@
       "skills": "Skills",
       "permissions": "Permissions",
       "routines": "Routines",
-      "homeHost": "Home host"
+      "homeHost": "Home host",
+      "gateways": "Gateways"
     },
     "profile": {
       "title": "Profile",
@@ -742,6 +747,42 @@
           "new": "New allow rule"
         }
       }
+    },
+    "gateways": {
+      "title": "Gateways",
+      "subtitle": "Where people reach this bot: the WhatsApp chats it answers, and the Telegram bots it answers on.",
+      "whatsappFailed": "Couldn’t load your WhatsApp numbers.",
+      "telegramFailed": "Couldn’t load your Telegram bots.",
+      "chatsFailed": "Couldn’t load this number’s chats.",
+      "noWhatsapp": "No WhatsApp number can route chats here yet. Link one and confirm your own number in Settings → WhatsApp.",
+      "whatsappTitle": "WhatsApp · {{label}}",
+      "answers": "Answers {{groups}} groups and {{people}} people",
+      "isDefault": "The default bot on this number",
+      "defaultIs": "Default bot on this number: {{bot}}",
+      "noDefault": "No default bot on this number",
+      "numberSettings": "Number settings",
+      "add": "Add chats",
+      "noneHere": "This bot answers no chat by name on this number yet.",
+      "group": "Group",
+      "person": "Person",
+      "remove": "Remove",
+      "removeLabel": "Stop answering {{chat}}",
+      "routeFailed": "That did not save. Try again.",
+      "addTitle": "Add chats",
+      "addDescription": "Pick the groups and people this bot answers on this number. A chat another bot answers moves to this one.",
+      "tabsLabel": "Groups or people",
+      "groups": "Groups",
+      "people": "People",
+      "search": "Search by name or number",
+      "now": "Now: {{who}}",
+      "nowDefault": "default bot ({{bot}})",
+      "nowNone": "not answered",
+      "anotherBot": "another bot",
+      "noCandidates": "No chat matches.",
+      "addCount_one": "Add {{count}} chat",
+      "addCount_other": "Add {{count}} chats",
+      "telegramTitle": "Telegram · {{name}}",
+      "telegramMeta": "Answers you there. Groups and other people on Telegram come next."
     }
   },
   "delete": {

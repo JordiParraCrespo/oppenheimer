@@ -914,9 +914,9 @@ never dreamed, or its latest dream was undone already: only the latest can be.
 `BOTS_042` is a delete of a bot that answers you on a Telegram bot. Choose
 another bot, or none, to answer there (Settings → Telegram), then delete it.
 
-`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default: it
-answers you there. Choose another bot, or none (Settings → WhatsApp), then
-delete it.
+`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default, or
+the bot of one of its allowed chats: it answers there. Choose another bot, or
+none (Settings → WhatsApp), then delete it.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1129,6 +1129,10 @@ one of their hosts, and the messages it sees, kept for their bots. See
 | `WHATSAPP_012` <a id="whatsapp_012" /> | No number is waiting to be confirmed                        | 409  |
 | `WHATSAPP_013` <a id="whatsapp_013" /> | That number cannot be your own number here                  | 422  |
 | `WHATSAPP_014` <a id="whatsapp_014" /> | Too many wrong codes                                        | 429  |
+| `WHATSAPP_015` <a id="whatsapp_015" /> | Confirm your own number before allowing other chats         | 409  |
+| `WHATSAPP_016` <a id="whatsapp_016" /> | That chat is not allowed on this number                     | 404  |
+| `WHATSAPP_017` <a id="whatsapp_017" /> | That chat cannot be allowed                                 | 422  |
+| `WHATSAPP_018` <a id="whatsapp_018" /> | That is as many chats as one number allows                  | 409  |
 
 `WHATSAPP_005` is a runner that predates WhatsApp, or one started with
 `RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
@@ -1145,6 +1149,15 @@ a phone number, or is the linked number itself. `WHATSAPP_011` is a wrong
 code, or one past its ten minutes; after five wrong codes it is locked
 (`WHATSAPP_014`) and a new one has to be asked for. `WHATSAPP_012` is a
 confirm with no code waiting.
+
+`WHATSAPP_015` to `WHATSAPP_018` are a number's allowed chats
+(`/v1/whatsapp/accounts/{id}/grants`, `/v1/whatsapp/accounts/{id}/routes`, and
+the bot tool `allow_whatsapp_chat`):
+the groups and people besides the owner who may talk to the number's bots,
+each with the bot that answers there. Nothing is allowed until the owner's own
+number is confirmed (`WHATSAPP_015`). `WHATSAPP_017` is the owner's own chat,
+which is always theirs, or the number's chat with itself. A number allows
+1,000 chats at most (`WHATSAPP_018`).
 
 ## Telegram
 
@@ -1313,6 +1326,9 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
 | `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
+| `WA_005` <a id="wa_005" />           | This host knows no such WhatsApp voice note  | 404  |
+| `WA_006` <a id="wa_006" />           | The WhatsApp voice note is too large to hand over | 413  |
+| `WA_007` <a id="wa_007" />           | WhatsApp would not hand over the voice note  | 502  |
 | `TG_001` <a id="tg_001" />           | Telegram refused the bot's token             | 400  |
 | `TG_002` <a id="tg_002" />           | This host already holds another Telegram bot | 409  |
 | `TG_003` <a id="tg_003" />           | No Telegram bot is connected on this host    | 503  |
@@ -1415,6 +1431,14 @@ for a linked device, and going over one costs the number. `WA_003`
 after WhatsApp's own `rate-overlimit` also stops every send from the host for
 ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
 for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
+
+`WA_005` to `WA_007` answer `whatsapp.media.get`, the control plane asking
+for a voice note to transcribe. The host keeps what fetching one takes (its
+media key and path, never the audio) for 48 hours, so an older one, or one
+from before the host was updated, is `WA_005`. `WA_006` is a note longer than
+one link frame carries, about two minutes. `WA_007` is WhatsApp's media
+server refusing the download. The bot then reads the note as one it could
+not hear.
 
 The `TG_*` codes reach the control plane the same way, in answer to
 `telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).

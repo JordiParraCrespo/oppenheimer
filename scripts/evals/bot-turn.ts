@@ -58,6 +58,8 @@ export interface TurnRequest {
   /** The most model calls (the Messages API) or turns (the Agent SDK's `maxTurns`). */
   maxTurns: number;
   maxTokens?: number;
+  /** Sent on the Messages API path; the Agent SDK takes none, so it samples at its default. */
+  temperature?: number;
 }
 
 export interface Transport {
@@ -113,6 +115,7 @@ function messagesApi(apiKey: string, model: string): Transport['turn'] {
       const response = await client.messages.create({
         model,
         max_tokens: request.maxTokens ?? 2048,
+        ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
         system: request.system,
         tools: request.tools.map(
           (tool) =>

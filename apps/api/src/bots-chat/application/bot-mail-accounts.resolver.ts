@@ -4,6 +4,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { GmailConnectionEntity } from '../../mail/domain/gmail-connection.entity';
 import { FindGmailConnectionsQuery } from '../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { describeAccount, NO_GMAIL } from '../bot-mail-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { BotToolRefusal } from './bot-tool.factory';
 
 /**
@@ -30,7 +31,9 @@ export class BotMailAccountsResolver {
     const active = connections.filter((connection) => connection.isActive);
     if (active.length === 0) {
       throw new BotToolRefusal(
-        `Every connected Gmail account needs reconnecting in Settings → Mail: ${connections.map(describeAccount).join('; ')}.`,
+        promptText('tools/mail.choose', {
+          connections: connections.map(describeAccount).join('; '),
+        }),
       );
     }
     return active;
@@ -47,7 +50,10 @@ export class BotMailAccountsResolver {
       connections.find((connection) => connection.label.toLowerCase() === needle);
     if (!found) {
       throw new BotToolRefusal(
-        `No connected Gmail account is "${wanted}". The accounts are: ${connections.map(describeAccount).join('; ')}.`,
+        promptText('tools/mail.one', {
+          wanted,
+          connections: connections.map(describeAccount).join('; '),
+        }),
       );
     }
     return found;

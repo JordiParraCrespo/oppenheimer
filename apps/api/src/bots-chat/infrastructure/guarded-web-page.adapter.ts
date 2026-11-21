@@ -3,6 +3,7 @@ import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { isIP, type LookupFunction } from 'node:net';
 import { Injectable } from '@nestjs/common';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { isPublicAddress, refuseUrl } from '../domain/web-address.policy';
 import type { WebImageResult, WebPagePort, WebPageResult } from './web-page.port';
 
@@ -47,7 +48,10 @@ export class GuardedWebPageAdapter implements WebPagePort {
       return { kind: 'failed', reason: `The address answered ${response.status}.` };
     }
     if (response.truncated) {
-      return { kind: 'refused', reason: `The image is larger than ${maxBytes} bytes.` };
+      return {
+        kind: 'refused',
+        reason: promptText('tools/web.fetch-image-reason', { maxBytes: String(maxBytes) }),
+      };
     }
     return { kind: 'image', image: { url: result.url.toString(), bytes: response.body } };
   }
@@ -106,10 +110,10 @@ export class GuardedWebPageAdapter implements WebPagePort {
     try {
       addresses = await lookup(host, { all: true, verbatim: true });
     } catch {
-      return { reason: `The name ${host} does not resolve.` };
+      return { reason: promptText('tools/web.resolve-reason-name-does-resolve', { host }) };
     }
     if (addresses.length === 0 || addresses.some(({ address }) => !isPublicAddress(address))) {
-      return { reason: 'That address is not on the public internet.' };
+      return { reason: promptText('tools/web.resolve-reason-address-public-internet') };
     }
     return addresses[0];
   }
@@ -149,7 +153,7 @@ export class GuardedWebPageAdapter implements WebPagePort {
   private page(url: URL, response: Response): WebPageResult {
     const contentType = (response.contentType ?? 'unknown').split(';')[0].trim();
     if (!TEXT_TYPES.test(contentType)) {
-      return { kind: 'refused', reason: `Not a text page (${contentType}); it was not read.` };
+      return { kind: 'refused', reason: promptText('tools/web.page-reason', { contentType }) };
     }
     const raw = response.body.toString('utf8');
     const html = /html/i.test(contentType);

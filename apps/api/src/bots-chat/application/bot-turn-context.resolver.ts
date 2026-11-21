@@ -30,6 +30,7 @@ import {
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import { sendsAsItGoes } from '../domain/bot-channel-turn.policy';
 import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
@@ -38,6 +39,7 @@ import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.polic
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
+import { turnReach } from '../domain/bot-turn-reach.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotApprovalStartedPolicy, type BotTurnShape } from './bot-approval-started.policy';
@@ -109,6 +111,7 @@ export class BotTurnContextResolver {
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
+    const reach = turnReach(turn);
     // The summary covers the console chat; a channel's conversation is read without one.
     const summarized = turn.inConsole
       ? await this.summaries.findForBot(turn.organizationId, bot.id)
@@ -125,6 +128,7 @@ export class BotTurnContextResolver {
           turn.id,
           summary?.coversThroughMessageId ?? null,
           BOT_HISTORY_READ_MAX,
+          reach.history === 'contacts',
         ),
         this.hostsOf(owner, turn.id),
         this.turns.findLastContext(turn.organizationId, bot.id),
@@ -139,7 +143,7 @@ export class BotTurnContextResolver {
     };
     // An owner who can no longer act leaves the bot nothing to act through.
     let tools: BotTurnContext['tools'] = [];
-    if (owner) {
+    if (owner && reach.tools) {
       const held = () => this.permissions.heldScopes(owner);
       const context: BotToolContext = {
         owner,
@@ -153,6 +157,7 @@ export class BotTurnContextResolver {
         budget: new BotTurnBudget(),
         credentialScopes: turn.credentialScopes,
         origin: turn.origin,
+        lane: turn.lane,
         ranCommand: command?.name ?? null,
         approvals: this.approvals,
         permissions,
@@ -189,18 +194,20 @@ export class BotTurnContextResolver {
         description: bot.description,
         soul: documentText('soul'),
         instructions: documentText('instructions'),
-        facts: inMind.own,
-        personFacts: inMind.person,
-        personAbout: about,
-        engineCapabilities: engineCapabilities(turn.provider),
-        tools: owner
-          ? this.toolbox.catalog(turn.credentialScopes, {
-              preset: bot.permission,
-              permissions,
-              origin: turn.origin,
-            })
-          : [],
-        skills,
+        facts: reach.ownerMemory ? inMind.own : [],
+        personFacts: reach.ownerMemory ? inMind.person : [],
+        personAbout: reach.ownerMemory ? about : undefined,
+        engineCapabilities: reach.tools ? engineCapabilities(turn.provider) : [],
+        tools:
+          owner && reach.tools
+            ? this.toolbox.catalog(turn.credentialScopes, {
+                preset: bot.permission,
+                permissions,
+                origin: turn.origin,
+                lane: turn.lane,
+              })
+            : [],
+        skills: reach.skills ? skills : [],
       }),
       history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
       message: withTurnContext(
@@ -210,13 +217,20 @@ export class BotTurnContextResolver {
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
           lastContext,
-          memory: { log: inMind.log, toRecall: inMind.toRecall },
+          memory: reach.ownerMemory ? { log: inMind.log, toRecall: inMind.toRecall } : undefined,
+          contact: reach.contact,
           channel: isChannelOrigin(turn.origin) ? turn.origin : null,
+          asItGoes: sendsAsItGoes(turn),
         }),
-        composeTurnMessage(command, withBuiltInSkills(skills), prompt),
+        composeTurnMessage(
+          reach.skills ? command : null,
+          withBuiltInSkills(reach.skills ? skills : []),
+          prompt,
+        ),
       ),
       images,
       tools,
+      ...(!reach.tools && { engineTools: false }),
       // No step limit: the turn runs until the model answers, compacting
       // against the window its last turn reported.
       contextWindow: lastContext?.window ?? null,

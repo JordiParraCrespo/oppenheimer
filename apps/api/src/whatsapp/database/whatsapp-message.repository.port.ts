@@ -24,6 +24,8 @@ export interface WhatsappMessagesOwed {
   /** Whether a new message is the owner's, to be placed. */
   isOwners: (message: WhatsappMessageDraft) => boolean;
   eventFor: (message: WhatsappStoredMessage, place: WhatsappChatPlace) => DomainEvent | null;
+  /** The event a new message from a contact in an allowed chat owes, if any; it has no place. */
+  contactEventFor?: (message: WhatsappStoredMessage) => DomainEvent | null;
 }
 
 /**
@@ -66,6 +68,8 @@ export interface WhatsappMessageRepositoryPort {
   search(account: WhatsappAccountRef, query: string, limit: number): Promise<WhatsappMessage[]>;
   /** One stored message by its row id: what a reply quotes. */
   findById(account: WhatsappAccountRef, id: string): Promise<WhatsappMessage | null>;
+  /** Keeps what a voice note says on its row, unless one is already there. */
+  saveTranscript(account: WhatsappAccountRef, id: string, transcript: string): Promise<void>;
   /**
    * The chat's bot now: the bot of its latest switch by name, or null when
    * none was made (the number's default then answers).

@@ -25,7 +25,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useDeleteBot: () => ({ mutate: vi.fn(), isPending: false, error: null }),
   useUpdateBot: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
   useBotsSnapshot: () => () => listed.bots,
-  useBotNeedsInput: () => false,
+  useBotWorking: () => false,
+  useBotWaitingOnYou: () => false,
 }));
 
 vi.mock('@tanstack/react-router', () => ({

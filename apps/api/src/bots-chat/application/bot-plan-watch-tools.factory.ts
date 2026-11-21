@@ -6,6 +6,7 @@ import {
   type PlanTaskEventKind,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import {
   BOT_SUBSCRIPTION_PURPOSE_MAX,
   BOT_SUBSCRIPTIONS_PER_BOT,
@@ -19,15 +20,17 @@ import {
 } from './bot-tool.factory';
 
 /** What each change a bot can follow means, for the tools' descriptions. */
-const EVENTS_HELP =
-  'created (a task was added), status_changed (moved between Not started, In progress and In review), completed (moved to Done), reopened (moved out of Done), blocked, unblocked, deleted, rescheduled (its due date changed), reassigned (moved to another project or milestone), session_linked (a session was attached to it)';
+const EVENTS_HELP = promptText('tools/plan-watch.events-help');
 
 const eventsInput = z
   .array(z.enum(BOT_TASK_WAKE_EVENTS))
   .min(1)
   .optional()
   .describe(
-    `The changes that wake you. Default: ${BOT_TASK_WAKE_DEFAULT.join(', ')}. One of: ${EVENTS_HELP}.`,
+    promptText('tools/plan-watch.events', {
+      taskWakeDefault: BOT_TASK_WAKE_DEFAULT.join(', '),
+      eventsHelp: EVENTS_HELP,
+    }),
   );
 
 const purposeInput = z
@@ -35,7 +38,7 @@ const purposeInput = z
   .min(1)
   .max(BOT_SUBSCRIPTION_PURPOSE_MAX)
   .optional()
-  .describe('Why you follow it, in a line; you are reminded of it when it wakes you.');
+  .describe(promptText('tools/plan-watch.purpose'));
 
 /**
  * Following the plan: watch a project's tasks, or one milestone's, and stop.
@@ -66,7 +69,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
       scope: 'tasks:read',
       description: watchDescription('project', 'every task of a project'),
       input: z.object({
-        project_id: z.uuid().describe('The project to follow (from list_projects).'),
+        project_id: z.uuid().describe(promptText('tools/plan-watch.watch-project-project-id')),
         events: eventsInput,
         purpose: purposeInput,
       }),
@@ -79,10 +82,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_milestone',
       scope: 'tasks:read',
-      description: watchDescription(
-        'milestone',
-        "the tasks under one milestone of a project (list_tasks shows a task's milestone)",
-      ),
+      description: watchDescription('milestone', promptText('tools/plan-watch.watch-milestone')),
       input: z.object({
         milestone_id: z.uuid().describe('The milestone to follow.'),
         events: eventsInput,
@@ -99,7 +99,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
       scope: 'tasks:read',
       description: unwatchDescription('project'),
       input: z.object({
-        project_id: z.uuid().describe('A project you follow (from list_watches).'),
+        project_id: z.uuid().describe(promptText('tools/plan-watch.unwatch-project-project-id')),
       }),
       run: (input, context) => this.stop(context, 'project', input.project_id),
     });
@@ -111,7 +111,9 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
       scope: 'tasks:read',
       description: unwatchDescription('milestone'),
       input: z.object({
-        milestone_id: z.uuid().describe('A milestone you follow (from list_watches).'),
+        milestone_id: z
+          .uuid()
+          .describe(promptText('tools/plan-watch.unwatch-milestone-milestone-id')),
       }),
       run: (input, context) => this.stop(context, 'milestone', input.milestone_id),
     });
@@ -126,7 +128,12 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
   ): Promise<string> {
     const taskEvents = events ?? BOT_TASK_WAKE_DEFAULT;
     const { name } = await this.watches.watch(context, { scope, id, taskEvents }, purpose ?? null);
-    return `You follow the tasks of ${scope} "${name}" (${id}) and will be woken on: ${taskEvents.join(', ')}. End your turn now rather than wait for it.`;
+    return promptText('tools/plan-watch.follow', {
+      scope,
+      name,
+      id,
+      taskEvents: taskEvents.join(', '),
+    });
   }
 
   private async stop(
@@ -142,9 +149,13 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
 }
 
 function watchDescription(scope: BotPlanWatchScope, what: string): string {
-  return `Subscribes you to ${what}, so you are woken with a turn of your own when one of them changes the way you name in events: by default when a task is added, moves column, is done or reopened, is blocked or unblocked, or is deleted. No need to poll list_tasks. You are told which task, what changed and whether your person did it, never its notes: read it with get_task. Your own changes never wake you. It lasts until unwatch_${scope}; watching it again replaces the events and the purpose. At most ${BOT_SUBSCRIPTIONS_PER_BOT} sessions, pull requests, projects and milestones followed at once.`;
+  return promptText('tools/plan-watch.watch-description', {
+    what,
+    scope,
+    subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
+  });
 }
 
 function unwatchDescription(scope: BotPlanWatchScope): string {
-  return `Stops following a ${scope}'s tasks: they will no longer wake you. The ${scope} itself is untouched.`;
+  return promptText('tools/plan-watch.unwatch-description', { scope });
 }

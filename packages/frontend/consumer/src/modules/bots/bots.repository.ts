@@ -93,6 +93,12 @@ import { BotsErrors } from './bots.errors';
 import { readNdjson } from './ndjson';
 import { BotStream } from './stream/bot-stream';
 
+/** What the sidebar shows of the bots: which are working, which wait on you. */
+export interface BotActivity {
+  working: readonly string[];
+  waitingOnYou: readonly string[];
+}
+
 function toBot(dto: BotResponseDto): BotEntity {
   return new BotEntity(
     dto.id,
@@ -113,6 +119,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     dto.lastMessagePreview,
     dto.sections,
     dto.avatarFace,
+    dto.unread,
   );
 }
 
@@ -613,6 +620,21 @@ export class BotsRepository {
     });
   }
 
+  /** Which of the bots the caller may read are working, and which wait on them. */
+  findActivity(): Promise<BotActivity> {
+    return callApi(BotsErrors.FETCH_LIST_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotActivity());
+      return { working: data.working, waitingOnYou: data.waitingOnYou };
+    });
+  }
+
+  /** The bot's chat read as of now, on every device. */
+  acknowledge(id: string): Promise<void> {
+    return callApi(BotsErrors.FETCH_FAILED, async (api) => {
+      await api.body(heyApiSdk.acknowledgeBot({ path: { id } }));
+    });
+  }
+
   /** Each bot's latest line to the person, on the bots the caller may read, newest first. */
   findWorkspaceNotices(): Promise<WorkspaceBotNoticeEntity[]> {
     return callApi(BotsErrors.FETCH_NOTICES_FAILED, async (api) => {
@@ -634,6 +656,14 @@ export class BotsRepository {
     return callApi(BotsErrors.FETCH_LOOP_FAILED, async (api) => {
       const { loop } = await api.body(heyApiSdk.findBotLoop({ path: { id } }));
       return loop;
+    });
+  }
+
+  /** A guess at the person's next message, for the composer to offer; null when there is none. */
+  findSuggestion(id: string): Promise<string | null> {
+    return callApi(BotsErrors.FETCH_SUGGESTION_FAILED, async (api) => {
+      const { suggestion } = await api.body(heyApiSdk.findBotSuggestion({ path: { id } }));
+      return suggestion;
     });
   }
 

@@ -118,3 +118,84 @@ export const confirmWhatsappOwnerSchema = z.object({
 });
 
 export type ConfirmWhatsappOwnerDto = z.infer<typeof confirmWhatsappOwnerSchema>;
+
+/**
+ * Chats one number allows besides its owner's: groups and other people. Sized
+ * for an owner with a few dozen groups and a few hundred contacts.
+ */
+export const WHATSAPP_CHAT_GRANTS_MAX = 1_000;
+
+/** The most chats a number's chats list holds: the ones it saw most recently. */
+export const WHATSAPP_CHAT_ROUTES_MAX = 1_000;
+
+/** The most chats one change of who answers names. */
+export const WHATSAPP_ROUTE_CHATS_MAX = 200;
+
+/**
+ * Who answers a chat a number has seen: no one (`none`: the chat is not
+ * allowed, its messages are only kept), the number's default bot
+ * (`default`), or one bot of the owner's (`bot`).
+ */
+export const WHATSAPP_CHAT_ROUTES = ['none', 'default', 'bot'] as const;
+export type WhatsappChatRoute = (typeof WHATSAPP_CHAT_ROUTES)[number];
+
+/**
+ * `POST /whatsapp/accounts/:id/routes`: who answers a set of the number's
+ * chats, at once. `botId` goes with `bot` and only with it.
+ */
+export const routeWhatsappChatsSchema = z
+  .object({
+    chatIds: z.array(z.string().min(3).max(128)).min(1).max(WHATSAPP_ROUTE_CHATS_MAX),
+    route: z.enum(WHATSAPP_CHAT_ROUTES),
+    botId: z.string().uuid().optional(),
+  })
+  .refine((body) => (body.route === 'bot') === (body.botId !== undefined), {
+    message: 'A bot is named with the bot route, and only with it',
+    path: ['botId'],
+  });
+
+export type RouteWhatsappChatsDto = z.infer<typeof routeWhatsappChatsSchema>;
+
+/** What a chat is on WhatsApp: a person's direct chat, or a group. */
+export const WHATSAPP_CHAT_KINDS = ['direct', 'group'] as const;
+export type WhatsappChatKind = (typeof WHATSAPP_CHAT_KINDS)[number];
+
+/**
+ * A chat the owner allowed on one of their numbers (Settings → WhatsApp,
+ * "Allowed chats"): a group or a person besides the owner, and the bot that
+ * answers there, or the number's default bot when `botId` is null.
+ */
+export const whatsappChatGrantSchema = z.object({
+  id: z.string().uuid(),
+  accountId: z.string().uuid(),
+  chatId: z.string(),
+  chatKind: z.enum(WHATSAPP_CHAT_KINDS),
+  /** The group's or person's name as the number last saw it; null when it has none yet. */
+  chatName: z.string().nullable(),
+  /** The bot that answers in this chat; null for the number's default bot. */
+  botId: z.string().uuid().nullable(),
+  /** The bot whose tool allowed it, in the owner's own chat with it; null when allowed in Settings. */
+  grantedByBotId: z.string().uuid().nullable(),
+  grantedAt: z.string(),
+});
+
+export type WhatsappChatGrant = z.infer<typeof whatsappChatGrantSchema>;
+
+/**
+ * `POST /whatsapp/accounts/:id/grants`: allow a chat on the number, by its
+ * chat id, its name, or (for a person who has not written yet) their phone
+ * number; allowing one already allowed changes its bot.
+ */
+export const allowWhatsappChatSchema = z.object({
+  chat: z.string().trim().min(1).max(200),
+  botId: z.string().uuid().nullable().optional(),
+});
+
+export type AllowWhatsappChatDto = z.infer<typeof allowWhatsappChatSchema>;
+
+/** `PATCH /whatsapp/accounts/:id/grants/:grantId`: which bot answers in the chat; null for the default. */
+export const updateWhatsappChatGrantSchema = z.object({
+  botId: z.string().uuid().nullable(),
+});
+
+export type UpdateWhatsappChatGrantDto = z.infer<typeof updateWhatsappChatGrantSchema>;

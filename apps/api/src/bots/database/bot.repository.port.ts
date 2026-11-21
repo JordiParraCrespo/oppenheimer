@@ -54,11 +54,14 @@ export interface BotRepositoryPort {
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome>;
   save(bot: BotEntity): Promise<BotWriteOutcome>;
+  /** Its chat read as of now (`acknowledgedAt`); false for a missing or out-of-scope bot. */
+  acknowledge(scope: AccessScope, id: string): Promise<boolean>;
   /**
    * The bot, its documents, their history and its memory; nothing deleted,
    * and the channel that holds it, while it answers on a Telegram bot
-   * (`FK_telegram_account_answering_bot`) or is a WhatsApp number's default
-   * (`FK_whatsapp_account_answering_bot`).
+   * (`FK_telegram_account_answering_bot`), is a WhatsApp number's default
+   * (`FK_whatsapp_account_answering_bot`) or answers in a chat a number
+   * allows (`FK_whatsapp_chat_grant_bot`).
    */
   delete(bot: BotEntity): Promise<'deleted' | { boundTo: BotDeleteBinding }>;
 }

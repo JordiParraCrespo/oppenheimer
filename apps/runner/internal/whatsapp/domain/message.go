@@ -59,6 +59,40 @@ const (
 	MediaLocation = "location"
 )
 
+// VoiceNoteMaxBytes is the largest voice note handed to the control plane
+// (`WHATSAPP_VOICE_NOTE_MAX_BYTES`): one link frame, base64 and all.
+const VoiceNoteMaxBytes = 352 * 1024
+
+// VoiceNoteKept is how long a voice note can still be fetched after it
+// arrived (`WHATSAPP_VOICE_NOTE_KEPT_HOURS`): what is kept is its media key
+// and path, never the audio, and an owner's bot asks for it within seconds.
+const VoiceNoteKept = 48 * time.Hour
+
+// VoiceNotesKeptMax bounds how many voice notes are kept at once; past it the
+// oldest go.
+const VoiceNotesKeptMax = 2000
+
+// Voice is what fetching a voice note takes: the adapter's own reference to
+// it (opaque here), how long it runs and how large WhatsApp says it is.
+type Voice struct {
+	Ref     []byte
+	Seconds int
+	Size    uint64
+}
+
+// TooLarge reports whether the voice note is past what one frame carries.
+func (v Voice) TooLarge() bool { return v.Size > VoiceNoteMaxBytes }
+
+// IDMaxBytes is the longest WhatsApp id or JID the link carries (`max(128)`
+// on the wire). Counted in bytes, never fewer than the schema's UTF-16 units,
+// so a longer one is dropped here rather than having the control plane refuse
+// the whole batch: a modified client can put any text in a message's context.
+const IDMaxBytes = 128
+
+// MentionsMax is how many mentions one message carries on the link at most
+// (`WHATSAPP_MENTIONS_MAX`); a message that names more keeps the first ones.
+const MentionsMax = 64
+
 // Received is a message as the adapter read it, before this context decides
 // whether it is one to hand on.
 type Received struct {
@@ -73,7 +107,14 @@ type Received struct {
 	Text       string
 	Media      string
 	QuotedID   string
-	SentAt     time.Time
+	// QuotedSenderID is who wrote the message QuotedID names, when WhatsApp
+	// says: a phone-number JID when its number is known.
+	QuotedSenderID string
+	// Mentions are the JIDs the message @-mentions, phone numbers when known.
+	Mentions []string
+	SentAt   time.Time
+	// Voice is set on a voice note (or any audio) the adapter can fetch later.
+	Voice *Voice
 }
 
 // Inbound is a message the control plane is handed and keeps.
@@ -91,8 +132,18 @@ type Inbound struct {
 	Text       string
 	Media      string
 	QuotedID   string
-	SentAt     time.Time
+	// QuotedSenderID and Mentions are as on Received: what tells a group's
+	// message that speaks to this number apart from the rest.
+	QuotedSenderID string
+	Mentions       []string
+	// VoiceSeconds is how long a voice note runs; zero on anything else.
+	VoiceSeconds int
+	SentAt       time.Time
 }
+
+// fits reports whether id is one the wire carries: present, and no longer
+// than IDMaxBytes.
+func fits(id string) bool { return id != "" && len(id) <= IDMaxBytes }
 
 // KeyOf is a message's outbox key.
 func KeyOf(chatID, id string) string { return chatID + "/" + id }
@@ -119,13 +170,47 @@ func Admit(r Received, now, pairedAt time.Time) (Inbound, bool) {
 	if kind != ChatGroup {
 		kind = ChatDirect
 	}
-	return Inbound{
+	in := Inbound{
 		Key: KeyOf(r.ChatID, r.ID), ID: r.ID,
 		ChatID: r.ChatID, ChatKind: kind, ChatName: r.ChatName,
 		SenderID: r.SenderID, SenderName: r.SenderName, FromMe: r.FromMe,
-		Text: CutText(r.Text), Media: r.Media, QuotedID: r.QuotedID,
+		Text: CutText(r.Text), Media: r.Media,
 		SentAt: r.SentAt.UTC(),
-	}, true
+	}
+	in.QuotedID, in.QuotedSenderID = fitQuoted(r.QuotedID, r.QuotedSenderID)
+	in.Mentions = boundedIDs(r.Mentions, MentionsMax)
+	if r.Voice != nil {
+		in.VoiceSeconds = r.Voice.Seconds
+	}
+	return in, true
+}
+
+// fitQuoted is what the wire takes of a reply: the quoted message's id when
+// it fits, and its sender only with it, since a sender alone names nothing.
+func fitQuoted(id, sender string) (string, string) {
+	if !fits(id) {
+		return "", ""
+	}
+	if !fits(sender) {
+		return id, ""
+	}
+	return id, sender
+}
+
+// boundedIDs is ids without the ones the wire would refuse, at most max of
+// them, in order: one over-long id from a modified client must not have the
+// control plane refuse the whole batch.
+func boundedIDs(ids []string, max int) []string {
+	var kept []string
+	for _, id := range ids {
+		if len(kept) == max {
+			break
+		}
+		if fits(id) {
+			kept = append(kept, id)
+		}
+	}
+	return kept
 }
 
 // CutText fits a text to TextMaxChars, ending a cut one with CutMark.

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * A bot row's ellipsis in the Employees sidebar: Settings, Pin or Unpin,
+ * Mark as unread or read (on this device, as a session's),
  * Move to group, Hide from sidebar and Delete bot. Move slides the menu to a pane of the groups it can go to,
  * Ungrouped among them, the way a session's Move to project does. Props in,
  * choice out: the row owns the move and the delete.
@@ -26,6 +27,8 @@ export function BotRowMenu({
   groupId,
   pinned,
   onPinChange,
+  unread,
+  onUnreadChange,
   onSettings,
   onMove,
   onHide,
@@ -38,6 +41,8 @@ export function BotRowMenu({
   groupId: string | null;
   pinned: boolean;
   onPinChange: (pinned: boolean) => void;
+  unread: boolean;
+  onUnreadChange: (unread: boolean) => void;
   onSettings: () => void;
   onMove: (groupId: string | null) => void;
   /** Takes the bot out of the sidebar on this device; the filter menu shows it again. */
@@ -70,6 +75,9 @@ export function BotRowMenu({
             <DropdownMenuItem onClick={onSettings}>{t('bots.sidebar.settings')}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
               {pinned ? t('bots.sidebar.unpin') : t('bots.sidebar.pin')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onUnreadChange(!unread)}>
+              {unread ? t('bots.sidebar.markRead') : t('bots.sidebar.markUnread')}
             </DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('bots.sidebar.move')}

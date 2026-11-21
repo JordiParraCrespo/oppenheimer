@@ -431,6 +431,30 @@ happened and whether sending it again helps, from its kind (§2): Retry only
 when it can, Model providers for a refused key or sign-in, and the
 provider's own words under Show details.
 
+In the sidebar, a bot's row reads as a session's (2026-11-19, reworked
+2026-11-20), one state at a time, first match wins:
+
+- **Waiting on you**, the amber dot: an approval or a card of questions
+  pending (§5), or, once it stopped working, a turn of its that failed since
+  you last read the chat.
+- **Working**, the name shimmering: a turn of its queued or running, whatever
+  started it (a message, a routine, another bot, a channel). No dot on its
+  face; a session shows none either.
+- **Done with something unread**, the blue dot: its chat has a message newer
+  than your last read. Reading is the API's (`bot."acknowledgedAt"`, set by
+  `POST /v1/bots/:id/acknowledge` when its chat is open and in front, on its
+  page or beside a session), so it holds on every device, as a session's
+  acknowledged report does.
+- **Marked unread**, the blue dot too: the row's menu marks it (Mark as
+  unread / read), kept on the device as a session's mark is, and opening the
+  chat takes it off.
+
+`GET /v1/bot-activity` is the one read for the whole list (which bots are
+working, which wait on you); the workspace stream's `botTurn.changed` (a turn
+queued or ended: a card of questions ends its turn, an answer queues one)
+and `botApproval.changed` say when to read it again, and a 15-second poll
+catches a chat read on another device.
+
 ### 3.1 Images
 
 You can send a bot images (issue #426): the paperclip in the composer's
@@ -1747,6 +1771,36 @@ picked, and "Use its own face" goes back to the id's).
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
   the only code that imports either SDK.
+- **The prompt's words:** Markdown in `apps/api/src/bots-chat/domain/prompts/`
+  (2026-11-17; they were strings in `bot-prompt.policy.ts`, which the owner
+  found the hardest part of the bots' code to read). The policy decides
+  which are sent and fills their slots; `pnpm --filter @oppenheimer/api
+  generate:prompts` writes the module the API imports them from, so nothing
+  is read from disk when a turn runs. The system prompt moved first, byte
+  for byte; then, the same day, the recovery rules, the skills section, the
+  turn context and what opens a turn on a slash command, a failed session
+  or a repeated blocker, and the phrases Getting started is built from
+  (`AREA_INTROS` now names them by id), again byte for byte; on
+  2026-11-18 the wakes of a session, a pull request, a task, an approval
+  and another bot's message, the line that opens each and what its turn is
+  asked; then the notes the history puts above what was not the person's
+  words, and what a routine, a loop and a goal open with and say when they
+  pause or end; then the model calls that are not a bot's turn (the dream,
+  the goal and rule reviews, the summary, a subagent) and what the tools'
+  policies answer and refuse with; then the tools themselves, each tool's
+  description, its parameters' and its answers (about 700 sentences in 57
+  files). A folder says where the words are sent:
+  `system/`, `turn/` for what a turn carries besides its opening, `wake/`
+  for what an event says to the bot, `jobs/` for a model call that is not
+  a bot's turn, and `tools/` for what a tool tells the model (the owner
+  chose sibling folders over a second level, 2026-11-18). Where a prompt
+  is several parts in an order (the system prompt's sections, the turn
+  context's lines), the order is a list in the policy, each row answering
+  its words or nothing, so the order sent is the order read. No prompt is
+  longer than a ceiling a spec holds (`research/prompt-file-formats.md`
+  §4.1 and §4.5). Text for the person rather than a model (what a channel
+  is told when a turn ends with nothing to say, a card's note, a routine's
+  line in the chat) stays where it is.
 - **Revisions and activity:** `bot_document_revision` covers the two
   documents, `SOUL.md` and `INSTRUCTIONS.md`, and only those: they are
   what Settings reads and reverts. A self-edit of the profile (`update_profile`)
@@ -2322,4 +2376,16 @@ The decisions it produced:
   for what the person asked to hear, what needs them, or what is new and
   worth interrupting them for. Evals: `bot-first-chat` 2/18 before (new
   cases), 17/18 after; `bot-memory` 99/100; `bot-blocked-run` 30/30.
-
+- 2026-11-20: **the composer suggests your next message** (from Claude
+  Code's prompt suggestions). After a turn ends, with the box empty, the
+  bot's own model, with no tools, guesses the person's next message from
+  the end of the chat (`GET /bots/:id/suggestion`, the prompt
+  `jobs/suggestion.md`); the composer shows it as the placeholder and Tab
+  writes it into the box, never sends it. One guess per message of the
+  bot's, kept a day in the cache; the model answers NONE when there is no
+  clear next step, and a failure shows nothing. It is spend on the owner's
+  key like the summary, recorded as the `suggestion` purpose in `/usage`.
+  It never claims the person did something outside the chat and never
+  suggests an irreversible step the bot did not propose. Eval
+  `bot-suggestion`: 47/48 on Opus 5.5; 33/48 on Haiku 5.5, which can answer
+  a preference question for the person with made-up details.

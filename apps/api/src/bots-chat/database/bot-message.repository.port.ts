@@ -1,4 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { ChannelTurnLine } from '../domain/bot-channel-turn.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 
@@ -45,6 +46,8 @@ export interface BotMessageRepositoryPort {
    * when Postgres refuses what they hold; any other failure as it came.
    */
   saveSteps(message: BotMessageEntity): Promise<void>;
+  /** Writes what a message says now and what it still has to read (`BotMessageEntity.read`). */
+  saveContent(message: BotMessageEntity): Promise<void>;
   /**
    * A steer the running turn took (`BotTurnRepositoryPort.takeSteers`), put
    * where the turn delivered it: at `position`, as of `at`, which is what
@@ -109,6 +112,11 @@ export interface BotMessageRepositoryPort {
   findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null>;
   /** A turn's own text, in the order the bot wrote it: what an ask's answer is drawn from. */
   findTurnTexts(organizationId: string, turnId: string): Promise<string[]>;
+  /**
+   * A turn's texts and activity lines, in order: what a channel turn's end
+   * reads to send what it has not sent yet (`unsentTexts`).
+   */
+  findTurnLines(organizationId: string, turnId: string): Promise<ChannelTurnLine[]>;
   /** Whether a turn called any tool: what a goal counts as progress (`BotGoalEntity.account`). */
   turnCalledTools(organizationId: string, turnId: string): Promise<boolean>;
   /**
@@ -122,10 +130,16 @@ export interface BotMessageRepositoryPort {
     turnId: string,
     afterMessageId: string | null,
     limit: number,
+    /**
+     * Only what contacts' turns said and were told: a contact's turn never
+     * reads the owner's own turns, even in a chat that was once the owner's.
+     */
+    contactsOnly?: boolean,
   ): Promise<BotMessageEntity[]>;
   /**
    * What a dream checks the memory against: the bot's newest `limit`
-   * messages, oldest first, activity lines left out.
+   * messages, oldest first, activity lines and contacts' turns left out, so
+   * nothing a contact wrote or was told becomes the owner's memory.
    */
   findRecent(organizationId: string, botId: string, limit: number): Promise<BotMessageEntity[]>;
   /**

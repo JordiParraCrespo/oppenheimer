@@ -78,6 +78,7 @@ type Device struct {
 	client    *whatsmeow.Client
 	events    app.Events
 	outbox    *Outbox
+	voices    *Voices
 	handler   uint32
 
 	groups sync.Map // types.JID → groupName
@@ -89,8 +90,9 @@ type groupName struct {
 }
 
 var (
-	_ app.Device = (*Device)(nil)
-	_ app.Outbox = (*Device)(nil)
+	_ app.Device     = (*Device)(nil)
+	_ app.Outbox     = (*Device)(nil)
+	_ app.VoiceNotes = (*Device)(nil)
 )
 
 // New builds the device; nothing is opened until Open.
@@ -132,13 +134,18 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 		_ = db.Close()
 		return app.Paired{}, err
 	}
+	voices, err := newVoices(ctx, db)
+	if err != nil {
+		_ = db.Close()
+		return app.Paired{}, err
+	}
 	device, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		_ = db.Close()
 		return app.Paired{}, fmt.Errorf("whatsapp store: %w", err)
 	}
 	d.mu.Lock()
-	d.db, d.container, d.events, d.outbox = db, container, listener, outbox
+	d.db, d.container, d.events, d.outbox, d.voices = db, container, listener, outbox, voices
 	d.useClientLocked(device)
 	d.mu.Unlock()
 	if device.ID == nil {
@@ -307,6 +314,24 @@ func (d *Device) Send(ctx context.Context, chatID, text string, quote *domain.Qu
 	return resp.ID, resp.Timestamp, nil
 }
 
+// Download fetches a voice note from WhatsApp's media servers and decrypts
+// it, from the serialized AudioMessage ref holds.
+func (d *Device) Download(ctx context.Context, ref []byte) ([]byte, string, error) {
+	client, _ := d.current()
+	if client == nil || !client.IsLoggedIn() {
+		return nil, "", domain.ErrNotConnected
+	}
+	audio, err := audioOf(ref)
+	if err != nil {
+		return nil, "", err
+	}
+	data, err := client.Download(ctx, audio)
+	if err != nil {
+		return nil, "", err
+	}
+	return data, audio.GetMimetype(), nil
+}
+
 // Close disconnects and closes the file.
 func (d *Device) Close() {
 	d.mu.Lock()
@@ -366,6 +391,44 @@ func (d *Device) Clear(ctx context.Context) error {
 	return box.Clear(ctx)
 }
 
+/* ---------------------------------------------------------------- voice notes, on the same file */
+
+func (d *Device) voiceStore() (*Voices, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.voices == nil {
+		return nil, errors.New("whatsapp store not open")
+	}
+	return d.voices, nil
+}
+
+// Keep keeps what fetching a voice note takes.
+func (d *Device) Keep(ctx context.Context, chatID, id string, voice domain.Voice) error {
+	voices, err := d.voiceStore()
+	if err != nil {
+		return err
+	}
+	return voices.Keep(ctx, chatID, id, voice)
+}
+
+// Find is a kept voice note.
+func (d *Device) Find(ctx context.Context, chatID, id string) (domain.Voice, bool, error) {
+	voices, err := d.voiceStore()
+	if err != nil {
+		return domain.Voice{}, false, err
+	}
+	return voices.Find(ctx, chatID, id)
+}
+
+// ClearVoiceNotes forgets every kept voice note.
+func (d *Device) ClearVoiceNotes(ctx context.Context) error {
+	voices, err := d.voiceStore()
+	if err != nil {
+		return err
+	}
+	return voices.ClearVoiceNotes(ctx)
+}
+
 /* ---------------------------------------------------------------- events */
 
 func (d *Device) onEvent(raw any) {
@@ -376,7 +439,7 @@ func (d *Device) onEvent(raw any) {
 	switch evt := raw.(type) {
 	case *events.Message:
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, logger: d.logger}
+		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, self: selfOf(client), logger: d.logger}
 		listener.Received(read.received(ctx, evt))
 		cancel()
 	case *events.Connected:
@@ -431,6 +494,16 @@ func (d *Device) reconnectOutdated(client *whatsmeow.Client) {
 	if err := client.Connect(); err != nil {
 		d.logger.Warn("whatsapp: reconnecting with the new web version failed", slog.Any("error", err))
 	}
+}
+
+// selfOf is the paired number's own ids, empty before pairing.
+func selfOf(client *whatsmeow.Client) selfIDs {
+	var self selfIDs
+	if client.Store.ID != nil {
+		self.phone = client.Store.ID.ToNonAD()
+	}
+	self.lid = client.Store.LID.ToNonAD()
+	return self
 }
 
 // clientNames reads names off the client's store and, for groups, WhatsApp.

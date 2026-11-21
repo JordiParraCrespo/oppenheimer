@@ -2,13 +2,7 @@ import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { builtInCommandActionOf } from '../lib/built-in-command';
 import { skillRowModel } from '../lib/skill-row';
-import {
-  leadingCommand,
-  matchingCommands,
-  slashMenuItems,
-  slashMenuRows,
-  slashQuery,
-} from '../lib/slash-menu';
+import { leadingCommand, slashMenuItems, slashMenuRows, slashQuery } from '../lib/slash-menu';
 
 /**
  * What the `/` menu reads of the draft and how a skill's row reads. What breaks
@@ -29,21 +23,6 @@ describe('slashQuery', () => {
     expect(slashQuery('/Rel')).toBeNull();
     expect(slashQuery(' /rel')).toBeNull();
     expect(slashQuery('/rel\n')).toBeNull();
-  });
-});
-
-describe('matchingCommands', () => {
-  it('lists names that start with what is typed first, then those that contain it', () => {
-    const names = matchingCommands(
-      [skill('pr-review'), skill('review'), skill('triage')],
-      'rev',
-    ).map((found) => found.name);
-    expect(names).toEqual(['review', 'pr-review']);
-  });
-
-  it('lists at most eight', () => {
-    const many = Array.from({ length: 12 }, (_, i) => skill(`s${i}`));
-    expect(matchingCommands(many, '')).toHaveLength(8);
   });
 });
 

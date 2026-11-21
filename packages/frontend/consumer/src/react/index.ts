@@ -16,10 +16,10 @@ export {
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
+export { useAcknowledgeBot, useBotWaitingOnYou, useBotWorking } from './bot-activity.queries';
 export {
   type DecideBotApprovalVariables,
   useAnyBotNeedsInput,
-  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';
@@ -90,6 +90,7 @@ export {
   useSuspenseBotSkills,
   useUpdateBotSkill,
 } from './bot-skills.queries';
+export { useBotSuggestion } from './bot-suggestion.queries';
 export { useSuspenseBotUsage } from './bot-usage.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
@@ -362,6 +363,8 @@ export {
   useConfirmWhatsappOwner,
   useLinkWhatsapp,
   useRequestWhatsappOwner,
+  useRouteWhatsappChats,
+  useSuspenseWhatsappChats,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

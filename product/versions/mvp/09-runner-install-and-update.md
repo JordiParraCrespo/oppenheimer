@@ -310,7 +310,9 @@ putting the user's credentials on it.
   2. Verify digest and signature. Any mismatch aborts and the staging
      directory is emptied.
   3. `chmod 0700`, then run `runner-<version> selfcheck` (on macOS the
-     executable inside the staged bundle).
+     executable inside the staged bundle). A stage that fails it, or
+     cannot be promoted, is deleted; each boot also deletes what has sat
+     in staging for over an hour, which no apply in flight is.
   4. `rename()` into place, then repoint `current` by creating a temp
      symlink and renaming it over the old one. On macOS (§2) the bundle
      is renamed in as `runner-<version>.app`, copied into staging, and
@@ -318,14 +320,22 @@ putting the user's credentials on it.
      `renamex_np(RENAME_SWAP)`, so there is no instant without a live
      bundle and the versioned copies stay as installed; `current` already
      points into the live bundle and is left alone. A rollback is the
-     same swap from the previous version's copy. A Mac that a runner
-     from before the bundle updated runs the bare binary out of the new
-     archive; its runner sees that `current` does not point into the
-     bundle and installs its own version again as the bundle, at the
-     next quiet moment, like any update. If that bundle does not stay
-     up, the rollback returns to the bare binary and the reinstall is not
-     tried again; the next release installs as the bundle. A release without a bundle
-     (one from before it) still installs as a bare binary.
+     same swap from the previous version's copy. A runner from before
+     the bundle (0.1.12 and older) cannot update to it: it takes the
+     first file named `runner` out of the archive and runs it outside any
+     bundle, and the bundle's executable, whose signature (Developer ID,
+     hardened runtime) seals the bundle's `Info.plist` and resources, is
+     killed by macOS there, so it fails its self-check every time. Such a
+     Mac is moved by hand once: copy the release's `OppenheimerRunner.app`
+     to `~/.oppenheimer/bin/`, point `current` at
+     `OppenheimerRunner.app/Contents/MacOS/runner` and
+     `launchctl kickstart -k` the agent. A Mac that runs a bare binary of
+     a bundle release (installed by hand, say) sees that `current` does
+     not point into the bundle and installs its own version again as the
+     bundle, at the next quiet moment, like any update; if that bundle
+     does not stay up, the rollback returns to the bare binary and the
+     reinstall is not tried again. A release without a bundle (one from
+     before it) still installs as a bare binary.
   5. Record the update, then restart through the service manager —
      `launchctl kickstart -k` or `systemctl --user restart` — and if
      that fails, exit so `KeepAlive` or `Restart=always` brings the new
