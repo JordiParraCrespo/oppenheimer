@@ -27,6 +27,7 @@ import {
   BOT_APPROVAL_DECISIONS,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_PLAN_WATCH_SCOPES,
@@ -329,6 +330,22 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             repository: dto.repository,
             number: dto.number,
             event,
+          }
+        : null;
+    }
+    case 'github_ask': {
+      const via = BOT_GITHUB_ASK_VIAS.find((candidate) => candidate === dto.via);
+      return via
+        ? {
+            kind: 'github_ask',
+            via,
+            installationId: dto.installationId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            isPullRequest: dto.isPullRequest ?? null,
+            url: dto.url ?? null,
+            actorLogin: dto.actorLogin,
           }
         : null;
     }

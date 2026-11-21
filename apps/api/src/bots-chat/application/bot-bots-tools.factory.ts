@@ -36,6 +36,7 @@ import {
   SendBotPeerMessageCommand,
   type SendBotPeerMessageResult,
 } from '../commands/send-bot-peer-message/send-bot-peer-message.command';
+import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { BOT_PEER_MESSAGES_PER_TURN } from '../domain/bot-peer-message.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
@@ -101,6 +102,7 @@ export class BotPeerToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'ask_bot',
       scope: 'bots:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       description: promptText('tools/bots.ask-bot', {
         peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
       }),

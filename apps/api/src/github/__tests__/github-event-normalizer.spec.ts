@@ -158,6 +158,33 @@ describe('issues and comments', () => {
     expect(new Set(mentioned.map((event) => event.externalId)).size).toBe(2);
   });
 
+  // Breaks if a bot asked on a pull request is told it is an issue, and reads
+  // it with the issue tools, which refuse a pull request's number.
+  it('says whether what was commented or labelled is a pull request', () => {
+    const on = (event: ReturnType<typeof normalize>[number] | undefined) =>
+      event?.attributes.isPullRequest;
+    const comment = { id: 11, body: 'hi', created_at: '2026-09-27T09:32:00Z' };
+    expect(on(normalize('issue_comment', { action: 'created', issue, comment })[0])).toBe(false);
+    expect(
+      on(
+        normalize('issue_comment', {
+          action: 'created',
+          issue: { ...issue, pull_request: { url: 'x' } },
+          comment,
+        })[0],
+      ),
+    ).toBe(true);
+    expect(
+      on(
+        normalize('pull_request', {
+          action: 'labeled',
+          label: { name: 'bot:x' },
+          pull_request: pullRequest(),
+        })[0],
+      ),
+    ).toBe(true);
+  });
+
   it('caps an untrusted body so it cannot flood a prompt', () => {
     const [event] = normalize('issues', {
       action: 'opened',

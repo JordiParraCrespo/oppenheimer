@@ -544,6 +544,51 @@ questions on a card, each with two to four likely answers and a tag
   and handing a computer over; they need a connector or a host to resume
   from.
 
+### 3.3 Asked on GitHub
+
+Built 2026-11-20 (issue #952, from `../../research/orca-bots.md` §4.2): a
+bot is asked where the work already is. The owner writes
+`@oppenheimer <bot>` in a comment or a review on a pull request or issue,
+or adds the label `bot:<bot>`; the bot works on it, and its last words go
+back there as one comment.
+
+- **Who asks.** Only the workspace's owner, whose GitHub login is the one
+  the GitHub module knows them by (their App user authorization, else a
+  personal installation, else their oldest personal token). Anyone else's
+  mention or label queues nothing and answers nothing, and their words are
+  never read. A workspace whose owner has no known login cannot be asked.
+- **Which bot.** The owner's bot whose name follows `@oppenheimer`, the
+  longest that fits ("Feynman 2" over "Feynman"), or the one the label
+  names after `bot:`; neither the case nor `-`, `_` or a space between words
+  matters. A mention that names no bot is left to the routines that wake on
+  a mention.
+- **What it reads.** A line naming where the ask was made and how to read it
+  with the GitHub tools, then what was written (the comment, or for a label
+  the issue's title and body) inside the untrusted-data envelope routines
+  use: GitHub saying the owner wrote it is not proof, so it is a request to
+  weigh, never an instruction or an approval.
+- **The turn.** Origin `github`, in the background lane, in the bot's
+  console chat, keyed by the stored event so a redelivery is one turn. It is
+  not attended: nobody is in the console to answer a card, so a tool that
+  asks is not offered, and the bot says in its answer what it would need
+  approved. The chat shows a line, "Asked on GitHub, in a comment on #7 of
+  acme/app", linking to the comment (`github_ask`).
+- **The answer.** When the turn ends, its last text (or what happened to
+  it) is posted once, as a comment of Oppenheimer's App, through the
+  installation that covers the repository; with none there is no ask. The
+  App posts it, not the owner, so the answer is told apart from what they
+  wrote, and the App's own comments wake no routine and no bot
+  (`loopGuard`), so an answer that names a bot asks nothing. The turn is not
+  offered the tools that write on GitHub in the owner's name (comment,
+  review, open an issue) nor `ask_bot` (`NOT_ON_A_GITHUB_ASK`): the thread
+  never gets two answers under two names, a comment of the owner's naming a
+  bot cannot ask it again in a chain nothing bounds, and no answer arrives
+  later as a turn that posts nothing. The job is not retried: an answer
+  GitHub refused is logged, and the chat still has it.
+- **Not built:** a reply tool for progress or a question before the answer
+  (the answer is one comment), handing part of the work to another bot and
+  posting its answer, anyone but the owner asking, Slack and Linear.
+
 ## 4. The tools
 
 Every tool is a thin wrapper over a command or query the API already
@@ -1431,6 +1476,8 @@ Built 2026-10-20, after a bot told its owner it could not merge a pull
 request it had just reported ready. Every write is made with the owner's
 own GitHub user token through the pull-requests and github modules'
 commands, so GitHub records the person and its branch rules stay the gate.
+The one exception (2026-11-20) is the answer to an ask on GitHub (§3.3),
+posted by the App with the installation's token, which no tool makes.
 `comment_on_pull_request` posts on the conversation, or on a line when
 `path` and `line` are given; `review_pull_request` offers approve, request
 changes and comment, never approve and merge, so every merge goes through
