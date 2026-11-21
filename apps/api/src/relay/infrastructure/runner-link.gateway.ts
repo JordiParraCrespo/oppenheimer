@@ -492,6 +492,8 @@ export class RunnerLinkGateway {
         return this.whatsapp.onState(link, message);
       case 'whatsapp.messages':
         return this.whatsapp.onMessages(link, message);
+      case 'whatsapp.chats':
+        return this.whatsapp.onChats(link, message);
       case 'telegram.state':
         return this.telegram.onState(link, message);
       case 'telegram.messages':

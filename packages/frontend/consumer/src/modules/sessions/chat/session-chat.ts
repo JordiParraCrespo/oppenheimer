@@ -249,6 +249,13 @@ export interface ChatState {
    */
   activity: ChatActivity | null;
   /**
+   * The next message the agent predicts the person will send, off its input
+   * box on the terminal (`setSuggestion`, `readPromptSuggestion`), for the
+   * composer to offer: Tab takes it. None while the agent shows none, or
+   * while no terminal is drawn to read it from.
+   */
+  suggestion: string | null;
+  /**
    * Whether what the chat is connected to can stop the agent's turn: a
    * terminal can (Escape), a Claude Code cloud session's hooks cannot
    * (`connect`). While it cannot, the composer offers no Stop, and a message
@@ -291,6 +298,7 @@ const EMPTY: ChatState = {
   files: [],
   older: 'none',
   activity: null,
+  suggestion: null,
   interruptible: true,
   commands: null,
 };
@@ -923,6 +931,16 @@ export class SessionChat {
   setActivity(activity: ChatActivity | null): void {
     if (sameActivity(this.state.activity, activity)) return;
     this.publish({ ...this.state, activity });
+  }
+
+  /**
+   * The next message the agent suggests now, as the terminal under the chat
+   * reads it (`readPromptSuggestion`); none once it is gone. A reading that
+   * says what the last one said publishes nothing.
+   */
+  setSuggestion(suggestion: string | null): void {
+    if (this.state.suggestion === suggestion) return;
+    this.publish({ ...this.state, suggestion });
   }
 
   snapshot = (): ChatState => this.state;

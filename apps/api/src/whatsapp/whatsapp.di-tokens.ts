@@ -5,3 +5,4 @@ export const WHATSAPP_DEVICE = Symbol('WHATSAPP_DEVICE');
 /** Turns a voice note into what a speech model takes. */
 export const VOICE_NOTE_DECODER = Symbol('VOICE_NOTE_DECODER');
 export const WHATSAPP_CHAT_GRANT_REPOSITORY = Symbol('WHATSAPP_CHAT_GRANT_REPOSITORY');
+export const WHATSAPP_KNOWN_CHAT_REPOSITORY = Symbol('WHATSAPP_KNOWN_CHAT_REPOSITORY');

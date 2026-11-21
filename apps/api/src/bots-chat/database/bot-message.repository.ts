@@ -139,7 +139,11 @@ export class BotMessageRepository
             WHERE message."organizationId" = $1 AND message."botId" = $2
               AND message.role IN ('user', 'assistant') AND message.content <> ''
             ORDER BY message."createdAt" DESC, message.position DESC
-            LIMIT 1)
+            LIMIT 1),
+          "lastReplyAt" = (
+           SELECT max(message."createdAt") FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role = 'assistant' AND message.content <> '')
           WHERE "organizationId" = $1 AND id = $2`,
         [turn.organizationId, turn.botId],
       );
@@ -288,6 +292,7 @@ export class BotMessageRepository
     turnId: string,
     afterMessageId: string | null,
     limit: number,
+    contactsOnly = false,
   ): Promise<BotMessageEntity[]> {
     // IDX_bot_message_conversation: the conversation's messages before this
     // turn was sent.
@@ -301,6 +306,12 @@ export class BotMessageRepository
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
       );
+    if (contactsOnly) {
+      // PK_bot_turn, once per message read.
+      query.andWhere(
+        `EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      );
+    }
     const records = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
@@ -322,6 +333,11 @@ export class BotMessageRepository
         botId,
       })
       .andWhere(`message.role <> 'activity'`)
+      // A contact's turn is not the owner's words: a dream never learns from it.
+      // PK_bot_turn, once per message read.
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      )
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .take(limit)
@@ -438,10 +454,12 @@ export async function insertMessageWithin(
   // or the images a bot showed are none, and leave the bot's last words there.
   if (message.role === 'activity' || message.role === 'event') return;
   if (message.role === 'assistant' && !message.content) return;
+  // A reply also moves `lastReplyAt`, the sidebar's blue dot; your own words never do.
   await manager.query(
-    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')}
+    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')},
+       "lastReplyAt" = CASE WHEN $4 = 'assistant' THEN now() ELSE "lastReplyAt" END
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, record.content],
+    [message.organizationId, message.botId, record.content, message.role],
   );
 }
 

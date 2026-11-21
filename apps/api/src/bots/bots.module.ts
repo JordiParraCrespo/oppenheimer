@@ -30,6 +30,8 @@ import {
 } from './bots.di-tokens';
 import { BotResource } from './bots.resource';
 import { ChatgptSignInMapper } from './chatgpt-sign-in.mapper';
+import { AcknowledgeBotCommandHandler } from './commands/acknowledge-bot/acknowledge-bot.command-handler';
+import { AcknowledgeBotHttpController } from './commands/acknowledge-bot/acknowledge-bot.http.controller';
 import { ClearBotMemoryCommandHandler } from './commands/clear-bot-memory/clear-bot-memory.command-handler';
 import { ClearBotMemoryHttpController } from './commands/clear-bot-memory/clear-bot-memory.http.controller';
 import { CreateBotCommandHandler } from './commands/create-bot/create-bot.command-handler';
@@ -118,6 +120,7 @@ const httpControllers = [
   CreateBotHttpController,
   FindBotHttpController,
   UpdateBotHttpController,
+  AcknowledgeBotHttpController,
   DeleteBotHttpController,
   FindBotDocumentsHttpController,
   UpdateBotDocumentHttpController,
@@ -149,6 +152,7 @@ const httpControllers = [
 const commandHandlers: Provider[] = [
   CreateBotCommandHandler,
   UpdateBotCommandHandler,
+  AcknowledgeBotCommandHandler,
   DeleteBotCommandHandler,
   CreateBotGroupCommandHandler,
   UpdateBotGroupCommandHandler,

@@ -11,10 +11,12 @@ import {
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotTurnOrmEntity, type BotTurnPlanLimitsRecord } from './database/bot-turn.orm-entity';
 import {
+  BOT_CONTACT_CHATS,
   BotTurnEntity,
   type BotTurnPlanLimits,
   type BotTurnPlanWindow,
 } from './domain/bot-turn.entity';
+import { BotActivityResponseDto } from './dtos/bot-activity.response.dto';
 import { type BotTurnPlanLimitsDto, BotTurnResponseDto } from './dtos/bot-turn.response.dto';
 
 @Injectable()
@@ -63,6 +65,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.askedByTurnId = entity.askedByTurnId;
     record.replyRequested = entity.replyRequested;
     record.steer = entity.steer;
+    record.contact = entity.contact;
     record.answersTurnId = entity.answersTurnId;
     record.error = entity.error;
     record.failure = entity.failure;
@@ -104,6 +107,7 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         askedByTurnId: record.askedByTurnId ?? null,
         replyRequested: record.replyRequested === true,
         steer: record.steer === true,
+        contact: BOT_CONTACT_CHATS.find((kind) => kind === record.contact) ?? null,
         answersTurnId: record.answersTurnId ?? null,
         error: record.error ?? null,
         failure: record.failure ?? null,
@@ -121,6 +125,17 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         endedAt: record.endedAt ?? null,
       },
     });
+  }
+
+  /** Which bots are working and which wait on you, as `GET /bot-activity` answers it. */
+  toActivityResponse(activity: {
+    working: readonly string[];
+    waitingOnYou: readonly string[];
+  }): BotActivityResponseDto {
+    const dto = new BotActivityResponseDto();
+    dto.working = [...activity.working];
+    dto.waitingOnYou = [...activity.waitingOnYou];
+    return dto;
   }
 
   toResponse(entity: BotTurnEntity): BotTurnResponseDto {

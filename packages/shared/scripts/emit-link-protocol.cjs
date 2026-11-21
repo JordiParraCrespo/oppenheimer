@@ -64,6 +64,7 @@ const INTEGER_TYPES = {
   'heartbeat.load.memoryAvailableBytes': 'uint64',
   'hint.retryAfterSeconds': 'int',
   'whatsapp.messages.messages[].voiceSeconds': 'int',
+  'whatsapp.send.voice.seconds': 'int',
   'welcome.protocol': 'int',
   'welcome.epoch': 'uint64',
   'attachment.credit.bytes': 'int',
@@ -115,6 +116,7 @@ const NESTED_NAMES = {
   'session.create.checkouts[]': 'Checkout',
   'port.listing.ports[]': 'ListedPort',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
+  'whatsapp.chats.chats[]': 'WhatsappKnownChat',
 };
 
 /** Doc comments for the constants, which the schema carries as bare values. */

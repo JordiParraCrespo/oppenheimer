@@ -8,6 +8,8 @@ import {
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDismissible } from '../hooks/use-dismissible';
+import { failureIdentity } from '../lib/failure-identity';
 
 /** Where the sentence comes from: a raw failure to resolve, or one already resolved. */
 type ErrorAlertSource =
@@ -40,8 +42,10 @@ type ErrorAlertSource =
  * caller writes `<ErrorAlert error={mutation.error} … />` with no guard.
  *
  * `title` names what failed when one alert speaks for several rows. The one
- * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
- * `reset`) or the caller's own (`action`, a terminal's Retry).
+ * action is Dismiss or the caller's own (`action`, a terminal's Retry).
+ * Dismiss is always offered: with `onDismiss` (`lastFailure(…).dismiss` or a
+ * mutation's `reset`) the caller clears the failure; without it the alert
+ * hides itself until a different failure arrives.
  */
 export function ErrorAlert({
   title,
@@ -66,15 +70,21 @@ export function ErrorAlert({
       : source.error === null || source.error === undefined
         ? null
         : resolveError(source.error, source.fallback);
-  if (!resolved) return null;
+  const { dismissed, dismiss } = useDismissible(failureIdentity(source));
+  if (!resolved || dismissed) return null;
   const { message, correlationId } = resolved;
-  const trailing =
-    action ??
-    (onDismiss ? (
-      <Button variant="ghost" size="sm" onClick={onDismiss}>
-        {t('common.dismiss')}
-      </Button>
-    ) : null);
+  const trailing = action ?? (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        dismiss();
+        onDismiss?.();
+      }}
+    >
+      {t('common.dismiss')}
+    </Button>
+  );
 
   return (
     <Alert tone="danger" className={className}>
@@ -87,7 +97,7 @@ export function ErrorAlert({
           </span>
         ) : null}
       </AlertDescription>
-      {trailing ? <AlertAction>{trailing}</AlertAction> : null}
+      <AlertAction>{trailing}</AlertAction>
     </Alert>
   );
 }

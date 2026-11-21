@@ -18,6 +18,11 @@ import {
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotRateLimit } from './bot-rate-limit.policy';
+import { BotTurnChangedDomainEvent } from './events/bot-turn-changed.domain-event';
+
+/** Whom a contact's turn answers: one person, or a group. */
+export const BOT_CONTACT_CHATS = ['direct', 'group'] as const;
+export type BotContactChat = (typeof BOT_CONTACT_CHATS)[number];
 
 export interface BotTurnProps {
   organizationId: string;
@@ -75,6 +80,14 @@ export interface BotTurnProps {
    * in the console, or in your own chat on a channel.
    */
   steer: boolean;
+  /**
+   * Run for a contact, someone who is not the owner, in one person's chat
+   * (`direct`) or a group's: what the turn may reach is `turnReach`'s, and
+   * what they wrote is fenced as untrusted. Null for any other turn. It is
+   * queued on the owner's account, as every turn is, so only this tells
+   * them apart.
+   */
+  contact: BotContactChat | null;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
   /** What kind of failure that was, so the chat can say whether a retry helps; null unless failed. */
@@ -188,6 +201,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     replyRequested?: boolean;
     answersTurnId?: string | null;
     steer?: boolean;
+    contact?: BotContactChat | null;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
@@ -200,6 +214,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         replyRequested: false,
         answersTurnId: null,
         steer: false,
+        contact: null,
         ...props,
         origin: props.origin ?? 'message',
         sourceKey: props.sourceKey ?? null,
@@ -220,6 +235,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       },
     });
     turn.validate();
+    turn.announce('queued');
     return turn;
   }
 
@@ -357,6 +373,10 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get steer(): boolean {
     return this.props.steer;
   }
+
+  get contact(): BotContactChat | null {
+    return this.props.contact;
+  }
   get timeZone(): string | null {
     return this.props.timeZone;
   }
@@ -451,6 +471,20 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     this.props.cacheWriteTokens = outcome.cacheWriteTokens ?? this.props.cacheWriteTokens;
     this.props.context = outcome.context ?? this.props.context;
     this.props.planLimits = outcome.planLimits ?? this.props.planLimits;
+    this.announce(status);
+  }
+
+  /** The bot may have started or stopped working: the workspace's consoles re-read which bots are. */
+  private announce(what: string): void {
+    this.addEvent(
+      new BotTurnChangedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        botId: this.props.botId,
+        status: this.props.status,
+        reason: `bot ${this.props.botId}: turn ${this.id} ${what}`,
+      }),
+    );
   }
 
   /** A worker found it running: the one that ran it died, so it fails rather than running twice. */
@@ -497,6 +531,14 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       (props.lane !== 'owner' || !(props.origin === 'message' || isChannelOrigin(props.origin)))
     ) {
       throw new ArgumentInvalidException('Only a message of yours steers');
+    }
+    if (props.contact !== null && !BOT_CONTACT_CHATS.includes(props.contact)) {
+      throw new ArgumentInvalidException(`${props.contact} is not a contact's chat`);
+    }
+    if (props.contact !== null && (!isChannelOrigin(props.origin) || props.steer)) {
+      throw new ArgumentInvalidException(
+        'A contact’s turn answers on a channel and steers nothing',
+      );
     }
     if (props.answersTurnId && props.replyRequested) {
       throw new ArgumentInvalidException('An answer asks for no answer');

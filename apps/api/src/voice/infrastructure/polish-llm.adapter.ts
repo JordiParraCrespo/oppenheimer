@@ -25,7 +25,7 @@ export class PolishLlmAdapter implements PolishLlmPort {
       provider: model.provider,
       apiKey: model.credential.apiKey,
       accountId: model.credential.accountId,
-      model: botDefaultModel(model.provider).id,
+      model: model.model ?? botDefaultModel(model.provider).id,
       effort: 'low',
     });
   }

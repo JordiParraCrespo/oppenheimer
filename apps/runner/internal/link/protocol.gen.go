@@ -108,6 +108,7 @@ const (
 	CapabilitySessionWatch             = "session.watch"
 	CapabilityWhatsapp                 = "whatsapp"
 	CapabilityWhatsappVoice            = "whatsapp.voice"
+	CapabilityWhatsappVoiceSend        = "whatsapp.voice.send"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
 	CapabilityTranscriptRead           = "transcript.read"
@@ -189,8 +190,10 @@ const (
 	TypeWhatsappUnlink          = "whatsapp.unlink"
 	TypeWhatsappState           = "whatsapp.state"
 	TypeWhatsappMessages        = "whatsapp.messages"
+	TypeWhatsappChats           = "whatsapp.chats"
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
+	TypeWhatsappSendVoice       = "whatsapp.send.voice"
 	TypeWhatsappSent            = "whatsapp.sent"
 	TypeWhatsappMediaGet        = "whatsapp.media.get"
 	TypeWhatsappMedia           = "whatsapp.media"
@@ -277,8 +280,10 @@ var MessageTypes = []string{
 	TypeWhatsappUnlink,
 	TypeWhatsappState,
 	TypeWhatsappMessages,
+	TypeWhatsappChats,
 	TypeWhatsappAck,
 	TypeWhatsappSend,
+	TypeWhatsappSendVoice,
 	TypeWhatsappSent,
 	TypeWhatsappMediaGet,
 	TypeWhatsappMedia,
@@ -435,10 +440,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappState), true
 	case TypeWhatsappMessages:
 		return new(WhatsappMessages), true
+	case TypeWhatsappChats:
+		return new(WhatsappChats), true
 	case TypeWhatsappAck:
 		return new(WhatsappAck), true
 	case TypeWhatsappSend:
 		return new(WhatsappSend), true
+	case TypeWhatsappSendVoice:
+		return new(WhatsappSendVoice), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
 	case TypeWhatsappMediaGet:
@@ -1186,19 +1195,34 @@ type WhatsappMessages struct {
 
 // WhatsappInbound is WhatsappMessages.Messages.
 type WhatsappInbound struct {
-	Key          string    `json:"key"`
-	ID           string    `json:"id"`
-	ChatID       string    `json:"chatId"`
-	ChatKind     string    `json:"chatKind"`
-	ChatName     string    `json:"chatName,omitempty"`
-	SenderID     string    `json:"senderId"`
-	SenderName   string    `json:"senderName,omitempty"`
-	FromMe       bool      `json:"fromMe"`
-	Text         string    `json:"text"`
-	Media        string    `json:"media,omitempty"`
-	QuotedID     string    `json:"quotedId,omitempty"`
-	VoiceSeconds int       `json:"voiceSeconds,omitempty"`
-	SentAt       time.Time `json:"sentAt"`
+	Key            string    `json:"key"`
+	ID             string    `json:"id"`
+	ChatID         string    `json:"chatId"`
+	ChatKind       string    `json:"chatKind"`
+	ChatName       string    `json:"chatName,omitempty"`
+	SenderID       string    `json:"senderId"`
+	SenderName     string    `json:"senderName,omitempty"`
+	FromMe         bool      `json:"fromMe"`
+	Text           string    `json:"text"`
+	Media          string    `json:"media,omitempty"`
+	QuotedID       string    `json:"quotedId,omitempty"`
+	QuotedSenderID string    `json:"quotedSenderId,omitempty"`
+	Mentions       []string  `json:"mentions,omitempty"`
+	VoiceSeconds   int       `json:"voiceSeconds,omitempty"`
+	SentAt         time.Time `json:"sentAt"`
+}
+
+// WhatsappChats is the `whatsapp.chats` message.
+type WhatsappChats struct {
+	Type  string              `json:"type"`
+	Chats []WhatsappKnownChat `json:"chats"`
+}
+
+// WhatsappKnownChat is WhatsappChats.Chats.
+type WhatsappKnownChat struct {
+	ChatID   string `json:"chatId"`
+	ChatKind string `json:"chatKind"`
+	ChatName string `json:"chatName,omitempty"`
 }
 
 // WhatsappAck is the `whatsapp.ack` message.
@@ -1220,6 +1244,16 @@ type WhatsappSend struct {
 type WhatsappSendReplyTo struct {
 	ID       string `json:"id"`
 	SenderID string `json:"senderId"`
+}
+
+// WhatsappSendVoice is the `whatsapp.send.voice` message.
+type WhatsappSendVoice struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	Mimetype  string `json:"mimetype"`
+	Data      string `json:"data"`
+	Seconds   int    `json:"seconds"`
 }
 
 // WhatsappSent is the `whatsapp.sent` message.

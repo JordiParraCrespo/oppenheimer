@@ -51,7 +51,7 @@ export class VoicePolishResolver {
         // settings (low effort, `PolishLlmAdapter`); a bot engine takes no
         // sampling settings. The deployment's LLM keeps its own `LLM_MODEL`.
         ...(model
-          ? { model: this.polishModel }
+          ? { model: model.model ?? this.polishModel }
           : // Two minutes of fast speech is about 400 words; the answer is no longer.
             { temperature: 0, maxTokens: 2048 }),
       });

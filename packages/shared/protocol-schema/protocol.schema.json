@@ -2601,6 +2601,20 @@
                 "minLength": 1,
                 "maxLength": 128
               },
+              "quotedSenderId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "mentions": {
+                "maxItems": 64,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 128
+                }
+              },
               "voiceSeconds": {
                 "type": "integer",
                 "minimum": 0,
@@ -2628,6 +2642,50 @@
       "required": [
         "type",
         "messages"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.chats"
+        },
+        "chats": {
+          "minItems": 1,
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "chatId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "chatKind": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "group"
+                ]
+              },
+              "chatName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "chatId",
+              "chatKind"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "chats"
       ]
     },
     {
@@ -2698,6 +2756,46 @@
         "commandId",
         "chatId",
         "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.send.voice"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "mimetype": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 480600
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "mimetype",
+        "data",
+        "seconds"
       ]
     },
     {
@@ -3565,6 +3663,7 @@
       "session.watch",
       "whatsapp",
       "whatsapp.voice",
+      "whatsapp.voice.send",
       "telegram",
       "shared.preview",
       "transcript.read",

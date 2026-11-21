@@ -35,6 +35,7 @@ const state = vi.hoisted(() => ({ send: vi.fn() }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
+  useBotSuggestion: () => null,
   useBotWaitingMessages: () => [],
   useBotSentTexts: () => [],
   useBotGoal: () => ({ data: null }),

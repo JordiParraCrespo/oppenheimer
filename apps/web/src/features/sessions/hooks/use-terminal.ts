@@ -133,6 +133,8 @@ export function useTerminal(
       onFirstOutput: () => setHasOutput(true),
       // The chat over the grid says what the agent's spinner says.
       onActivity: chat ? (activity) => chat.setActivity(activity) : undefined,
+      // and what it suggests sending next, which the composer offers.
+      onSuggestion: chat ? (suggestion) => chat.setSuggestion(suggestion) : undefined,
     });
     const offStatus = stream.onStatus((next) => {
       setStatus(next);
