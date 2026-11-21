@@ -189,14 +189,15 @@ describe('whatsapp (integration)', () => {
   });
 
   // What breaks this: a report sent again adding twins, a renamed group
-  // keeping its old name, a device reporting without bound, or a number's
-  // chats outliving it.
-  it('keeps each reported chat once, renames it in place, stops at the cap, and forgets them on unlink', async () => {
+  // keeping its old name, a device reporting without bound, a group left
+  // kept forever and filling the cap, or a number's chats outliving it.
+  it('keeps each reported chat once, renames it in place, stops at the cap, forgets the stale, and forgets them on unlink', async () => {
     const mine = number(ana);
     await accounts.insert(mine);
     const of = { organizationId, accountId: mine.id };
     const family = { chatId: '120363000000000001@g.us', chatKind: 'group' as const };
-    await known.record(of, [{ ...family, chatName: 'Family' }], 2);
+    const longAgo = new Date(Date.now() - 86_400_000);
+    await known.record(of, [{ ...family, chatName: 'Family' }], 2, longAgo);
     await known.record(
       of,
       [
@@ -205,10 +206,22 @@ describe('whatsapp (integration)', () => {
         { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct', chatName: 'Pau' },
       ],
       2,
+      longAgo,
     );
     expect(await known.findAll(of, 10)).toEqual([
       { ...family, chatName: 'Family 🏠' },
       { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
+    ]);
+
+    // A report once the others went stale forgets them, which frees the cap.
+    await known.record(
+      of,
+      [{ chatId: '34600333555@s.whatsapp.net', chatKind: 'direct', chatName: 'Pau' }],
+      2,
+      new Date(Date.now() + 60_000),
+    );
+    expect(await known.findAll(of, 10)).toEqual([
+      { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct', chatName: 'Pau' },
     ]);
 
     await accounts.delete(mine);

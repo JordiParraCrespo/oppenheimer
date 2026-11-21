@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import type { WhatsappKnownChat } from '../domain/whatsapp-message.types';
 import type { WhatsappGrantsOf } from './whatsapp-chat-grant.repository.port';
 import { WhatsappKnownChatOrmEntity } from './whatsapp-known-chat.orm-entity';
@@ -30,10 +30,16 @@ export class WhatsappKnownChatRepository implements WhatsappKnownChatRepositoryP
     of: WhatsappGrantsOf,
     chats: readonly WhatsappKnownChat[],
     max: number,
+    staleBefore: Date,
   ): Promise<void> {
     if (chats.length === 0) return;
     await this.repository.manager.transaction(async (manager) => {
       const repository = manager.getRepository(WhatsappKnownChatOrmEntity);
+      await repository.delete({
+        organizationId: of.organizationId,
+        accountId: of.accountId,
+        updatedAt: LessThan(staleBefore),
+      });
       const known = new Set(
         (
           await repository.find({
@@ -56,10 +62,10 @@ export class WhatsappKnownChatRepository implements WhatsappKnownChatRepositoryP
             chatId: chat.chatId,
             chatKind: chat.chatKind,
             chatName: chat.chatName,
-            reportedAt: () => 'now()',
+            updatedAt: () => 'now()',
           })),
         )
-        .orUpdate(['chatKind', 'chatName', 'reportedAt'], ['accountId', 'chatId'])
+        .orUpdate(['chatKind', 'chatName', 'updatedAt'], ['accountId', 'chatId'])
         .execute();
     });
   }

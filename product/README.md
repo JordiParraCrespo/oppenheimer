@@ -1845,7 +1845,8 @@ earlier note:
   it, and listed only the chats a number had seen a message in. On
   2026-11-21 the owner found a group set to a bot silent ("not answering")
   and People empty: a group the owner sets to a bot now wakes it on every
-  message with words, and the runner reports the groups the number is in
+  message with words (up to 120 turns an hour per group; 20 stays a
+  person's chat's), and the runner reports the groups the number is in
   and its saved contacts on connect and on each change (`whatsapp.chats`),
   so Settings lists them before anyone writes. The owner's own chat is
   listed first among People, answered by the default bot.

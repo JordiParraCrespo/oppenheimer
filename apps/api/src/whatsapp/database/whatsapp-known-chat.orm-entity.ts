@@ -1,6 +1,14 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { WhatsappChatKind } from '@oppenheimer/shared';
-import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Check,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * A chat a linked number can be reached in before anyone writes there, as its
@@ -10,7 +18,7 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
  */
 @Entity('whatsapp_known_chat')
 @Index('UQ_whatsapp_known_chat_chat', ['accountId', 'chatId'], { unique: true })
-@Index('IDX_whatsapp_known_chat_account', ['organizationId', 'accountId'])
+@Index('IDX_whatsapp_known_chat_account', ['organizationId', 'accountId', 'updatedAt'])
 @Check('CHK_whatsapp_known_chat_chat_kind', `"chatKind" IN ('direct', 'group')`)
 export class WhatsappKnownChatOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -36,7 +44,7 @@ export class WhatsappKnownChatOrmEntity {
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  /** When the device last reported it. */
-  @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
-  reportedAt!: Date;
+  /** When the device last reported it; a chat it stops reporting is deleted once this is stale. */
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
+  updatedAt!: Date;
 }

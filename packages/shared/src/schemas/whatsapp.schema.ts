@@ -135,6 +135,13 @@ export const WHATSAPP_CHAT_ROUTES_MAX = 1_000;
  */
 export const WHATSAPP_KNOWN_CHATS_MAX = 5_000;
 
+/**
+ * How long a reported chat the device stops reporting is kept: a device
+ * reports its whole list on every connect and change, so one missing that
+ * long has left the number (a group left, a contact deleted).
+ */
+export const WHATSAPP_KNOWN_CHAT_STALE_DAYS = 7;
+
 /** The most chats one change of who answers names. */
 export const WHATSAPP_ROUTE_CHATS_MAX = 200;
 

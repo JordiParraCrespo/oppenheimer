@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { WHATSAPP_KNOWN_CHATS_MAX } from '@oppenheimer/shared';
+import { WHATSAPP_KNOWN_CHAT_STALE_DAYS, WHATSAPP_KNOWN_CHATS_MAX } from '@oppenheimer/shared';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
 import type { WhatsappKnownChatRepositoryPort } from '../../database/whatsapp-known-chat.repository.port';
 import { whatsappKnownChats } from '../../domain/whatsapp-chat-route.policy';
@@ -10,10 +10,14 @@ import {
 } from '../../whatsapp.di-tokens';
 import { RecordWhatsappChatsCommand } from './record-whatsapp-chats.command';
 
+const DAY_MS = 86_400_000;
+
 /**
  * Keeps the chats a host's device says its number can be reached in, on the
- * number linked there, so Settings lists them before anyone writes. A host
- * with no number linked is ignored: its state report already unlinks it.
+ * number linked there, so Settings lists them before anyone writes, and
+ * forgets those it has stopped reporting (a group left, a contact deleted).
+ * A host with no number linked is ignored: its state report already
+ * unlinks it.
  */
 @CommandHandler(RecordWhatsappChatsCommand)
 export class RecordWhatsappChatsCommandHandler
@@ -34,6 +38,7 @@ export class RecordWhatsappChatsCommandHandler
       { organizationId: account.organizationId, accountId: account.id },
       whatsappKnownChats(account, chats),
       WHATSAPP_KNOWN_CHATS_MAX,
+      new Date(Date.now() - WHATSAPP_KNOWN_CHAT_STALE_DAYS * DAY_MS),
     );
   }
 }

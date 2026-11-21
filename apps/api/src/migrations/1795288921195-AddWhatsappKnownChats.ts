@@ -14,12 +14,15 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - `"accountId"`: `CASCADE`, so unlinking a number forgets its chats.
  * - `"chatName"`: the group's subject or the contact's saved name, as last
  *   reported; null when the device knows none.
- * - `"reportedAt"`: when the device last reported it. Nothing is deleted on a
- *   report: one comes in several frames, and none says it is the last.
+ * - `"updatedAt"`: when the device last reported it. A report comes in
+ *   several frames and none says it is the last, so a frame never deletes
+ *   what it leaves out; a chat not reported for
+ *   `WHATSAPP_KNOWN_CHAT_STALE_DAYS` (a group left, a contact deleted) is
+ *   deleted on the next report, which also frees its place under the cap.
  * - At most `WHATSAPP_KNOWN_CHATS_MAX` per number, counted on write.
  */
-export class AddWhatsappKnownChats1795200000000 implements MigrationInterface {
-  name = 'AddWhatsappKnownChats1795200000000';
+export class AddWhatsappKnownChats1795288921195 implements MigrationInterface {
+  name = 'AddWhatsappKnownChats1795288921195';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -31,7 +34,7 @@ export class AddWhatsappKnownChats1795200000000 implements MigrationInterface {
         "chatKind" character varying(8) NOT NULL,
         "chatName" character varying(200),
         "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-        "reportedAt" timestamp with time zone DEFAULT now() NOT NULL,
+        "updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
         CONSTRAINT "PK_whatsapp_known_chat" PRIMARY KEY (id),
         CONSTRAINT "CHK_whatsapp_known_chat_chat_kind" CHECK ("chatKind" IN ('direct', 'group'))
       )`,
@@ -40,7 +43,7 @@ export class AddWhatsappKnownChats1795200000000 implements MigrationInterface {
       `CREATE UNIQUE INDEX "UQ_whatsapp_known_chat_chat" ON whatsapp_known_chat USING btree ("accountId", "chatId")`,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_whatsapp_known_chat_account" ON whatsapp_known_chat USING btree ("organizationId", "accountId")`,
+      `CREATE INDEX "IDX_whatsapp_known_chat_account" ON whatsapp_known_chat USING btree ("organizationId", "accountId", "updatedAt")`,
     );
     await queryRunner.query(
       `ALTER TABLE whatsapp_known_chat ADD CONSTRAINT "FK_whatsapp_known_chat_account" FOREIGN KEY ("organizationId", "accountId") REFERENCES whatsapp_account("organizationId", id) ON DELETE CASCADE`,

@@ -60,6 +60,11 @@ const maxReconnectErrors = 15
 // events, read once.
 const chatsSettle = 3 * time.Second
 
+// chatsEvery is the least time between two reads of the list: each asks
+// WhatsApp for every group the number is in, which a busy community could
+// otherwise have it ask every few seconds.
+const chatsEvery = time.Minute
+
 // groupNameTTL is how long a group's subject is trusted before it is read
 // again: a rename shows within the hour.
 const groupNameTTL = time.Hour
@@ -91,6 +96,7 @@ type Device struct {
 
 	chatsMu    sync.Mutex
 	chatsTimer *time.Timer
+	chatsAt    time.Time // when the list was last read
 }
 
 type groupName struct {
@@ -496,9 +502,14 @@ func (d *Device) onEvent(raw any) {
 		}
 		listener.Connected(phone, name)
 		d.readChatsSoon(client, listener)
-	case *events.JoinedGroup, *events.GroupInfo, *events.Contact, *events.AppStateSyncComplete:
-		// A group joined or renamed, a contact saved or changed, the phone's
-		// contacts synced: the list Settings shows changed.
+	case *events.GroupInfo:
+		// Only a rename changes the list; joins, leaves and settings do not.
+		if evt.Name != nil {
+			d.readChatsSoon(client, listener)
+		}
+	case *events.JoinedGroup, *events.Contact, *events.AppStateSyncComplete:
+		// A group joined, a contact saved or changed, the phone's contacts
+		// synced: the list Settings shows changed.
 		d.readChatsSoon(client, listener)
 	case *events.Disconnected, *events.KeepAliveTimeout:
 		listener.Disconnected()
@@ -524,17 +535,22 @@ func (d *Device) onEvent(raw any) {
 	}
 }
 
-// readChatsSoon reads the device's chats once the changes around it settle.
+// readChatsSoon reads the device's chats once the changes around it settle,
+// and no sooner than chatsEvery after the last read.
 func (d *Device) readChatsSoon(client *whatsmeow.Client, listener app.Events) {
 	d.chatsMu.Lock()
 	defer d.chatsMu.Unlock()
 	if d.chatsTimer != nil {
 		d.chatsTimer.Stop()
 	}
-	d.chatsTimer = time.AfterFunc(chatsSettle, func() {
+	wait := max(chatsSettle, chatsEvery-time.Since(d.chatsAt))
+	d.chatsTimer = time.AfterFunc(wait, func() {
 		if current, _ := d.current(); current != client {
 			return
 		}
+		d.chatsMu.Lock()
+		d.chatsAt = time.Now()
+		d.chatsMu.Unlock()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		chats, err := readChats(ctx, client)
