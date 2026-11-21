@@ -79,7 +79,16 @@ export class VoiceSynthesisResolver {
             detail: `The text-to-speech provider (${provider.id}) did not answer Ogg/Opus audio.`,
           });
         }
-        if (spokeNothing(await this.spokenAudio.peak(audio))) {
+        const peak = await this.spokenAudio.peak(audio);
+        // How loud, never what: the one sign in the logs that a note sent had sound.
+        this.logger.log({
+          message: 'Speech synthesized',
+          provider: provider.id,
+          seconds,
+          bytes: audio.length,
+          peak: peak === null ? null : Number(peak.toFixed(4)),
+        });
+        if (spokeNothing(peak)) {
           throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
             detail: `The text-to-speech provider (${provider.id}) answered audio that plays no sound.`,
           });
