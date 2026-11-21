@@ -36,8 +36,18 @@ export function EditBotRoutineDialog({
   const navigate = useNavigate();
   const update = useUpdateBotRoutine({ onSuccess: onClose });
 
+  // Only what changed is sent: an edit takes the editor's scopes, so a Save
+  // that changes nothing closes without touching the routine.
   function save(values: BotRoutineTaskDto) {
-    update.mutate({ id: botId, routineId: routine.id, ...values });
+    const changes = {
+      name: values.name === routine.name ? undefined : values.name,
+      prompt: values.prompt === routine.prompt ? undefined : values.prompt,
+    };
+    if (changes.name === undefined && changes.prompt === undefined) {
+      onClose();
+      return;
+    }
+    update.mutate({ id: botId, routineId: routine.id, ...changes });
   }
 
   function askInChat() {

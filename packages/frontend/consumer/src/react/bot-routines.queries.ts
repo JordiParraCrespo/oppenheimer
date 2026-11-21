@@ -52,8 +52,9 @@ export interface SetBotRoutineEnabledVariables extends BotRoutineVariables {
 }
 
 export interface UpdateBotRoutineVariables extends BotRoutineVariables {
-  name: string;
-  prompt: string;
+  /** Only what changed: an edit takes the editor's scopes, so an unchanged Save sends nothing. */
+  name?: string;
+  prompt?: string;
 }
 
 export interface RunBotRoutineVariables extends BotRoutineVariables {
@@ -96,8 +97,8 @@ export function useUpdateBotRoutine(
 ) {
   const app = useConsumerApp();
   return useRoutineWrite(
-    ({ id, routineId, name, prompt }: UpdateBotRoutineVariables) =>
-      app.bots.updateRoutine(id, routineId, name, prompt),
+    ({ id, routineId, ...changes }: UpdateBotRoutineVariables) =>
+      app.bots.updateRoutine(id, routineId, changes),
     options,
   );
 }
