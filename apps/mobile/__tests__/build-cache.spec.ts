@@ -35,11 +35,12 @@ afterEach(() => {
 });
 
 // A second worktree whose native side matches installs the first one's build
-// instead of compiling again; a different fingerprint or configuration is a
-// different binary and must build. Without the cache, every new checkout paid
-// for a full Xcode build.
+// instead of compiling again; a different fingerprint is a different binary
+// and must build. Only an iOS Debug build is handed over: a Release build
+// carries its JavaScript inside it, and reusing one would install another
+// checkout's code; an Android APK is built for one device's ABI.
 describe('the native build cache', () => {
-  it('hands a later checkout the build kept for its fingerprint and configuration', async () => {
+  it('hands a later checkout the iOS Debug build kept for its fingerprint', async () => {
     const debug = {
       platform: 'ios',
       fingerprintHash: 'abc',
@@ -50,14 +51,34 @@ describe('the native build cache', () => {
     const hit = await cache.resolveBuildCache(debug);
     expect(hit).toMatch(/ios-Debug-abc\.app$/);
     expect(readdirSync(hit as string)).toEqual(['Info.plist']);
-
     expect(await cache.resolveBuildCache({ ...debug, fingerprintHash: 'other' })).toBeNull();
-    expect(
-      await cache.resolveBuildCache({ ...debug, runOptions: { configuration: 'Release' } }),
-    ).toBeNull();
   });
 
-  it('keeps only the newest builds of a platform', async () => {
+  it('never keeps or hands over a build that embeds its JavaScript, nor an Android one', async () => {
+    const release = {
+      platform: 'ios',
+      fingerprintHash: 'abc',
+      runOptions: { configuration: 'Release' },
+    };
+    const android = {
+      platform: 'android',
+      fingerprintHash: 'abc',
+      runOptions: { variant: 'debug' },
+    };
+    await cache.uploadBuildCache({ ...release, buildPath: builtApp('Release') });
+    await cache.uploadBuildCache({ ...android, buildPath: builtApp('app-debug') });
+    await cache.uploadBuildCache({
+      platform: 'ios',
+      fingerprintHash: 'abc',
+      runOptions: {},
+      buildPath: builtApp('Debug'),
+    });
+
+    expect(await cache.resolveBuildCache(release)).toBeNull();
+    expect(await cache.resolveBuildCache(android)).toBeNull();
+  });
+
+  it('keeps only the newest builds', async () => {
     const resolve = (hash: string) =>
       cache.resolveBuildCache({ platform: 'ios', fingerprintHash: hash, runOptions: {} });
     const hashes = ['one', 'two', 'three'];

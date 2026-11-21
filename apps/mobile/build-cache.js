@@ -1,15 +1,15 @@
-// The build cache `expo run:ios` and `expo run:android` consult before they
-// compile (`buildCacheProvider` in app.config.ts). A native build is keyed by
-// the project's fingerprint (@expo/fingerprint: native dependencies, config
-// plugins, app config), which is the same in every checkout whose native side
+// The build cache `expo run:ios` consults before it compiles
+// (`buildCacheProvider` in app.config.ts). A native build is keyed by the
+// project's fingerprint (@expo/fingerprint: native dependencies, config
+// plugins, app config, the icon font's SVGs), which is the same in every checkout whose native side
 // is the same. Each session is a git worktree at a path of its own, so Xcode's
 // DerivedData starts empty in each, and before this cache every new checkout
 // paid for a full native build that another one had already made. Now the
 // first build of a fingerprint is kept in one folder on the machine, and every
 // checkout with that fingerprint installs it and only starts Metro.
 //
-// Kept: the newest `keep` builds per platform (default 6), oldest used first
-// out. A build is copied in under a temporary name and renamed, so two
+// Kept: the newest `keep` builds (default 6), the least recently used out
+// first. A build is copied in under a temporary name and renamed, so two
 // checkouts finishing the same fingerprint at once leave one whole copy.
 const fs = require('node:fs');
 const os = require('node:os');
@@ -29,12 +29,18 @@ function cacheRoot() {
   );
 }
 
-// iOS builds one configuration (`--configuration`, Debug by default), Android
-// one variant (`--variant`, debug by default); each is its own binary.
-function entryName({ platform, fingerprintHash, runOptions }) {
-  const flavor =
-    platform === 'ios' ? (runOptions?.configuration ?? 'Debug') : (runOptions?.variant ?? 'debug');
-  return `${platform}-${flavor}-${fingerprintHash}`;
+// Only a build that loads its JavaScript from Metro can be handed to another
+// checkout: the iOS Debug configuration, simulator only (Expo never asks for
+// a device build). A Release build carries its JavaScript bundle inside the
+// app, which the fingerprint does not cover, so reusing it would install
+// another checkout's JavaScript. Android is left out too: a debug APK is built
+// for the connected device's ABI alone, which the key cannot see.
+function cacheable({ platform, runOptions }) {
+  return platform === 'ios' && (runOptions?.configuration ?? 'Debug') === 'Debug';
+}
+
+function entryName({ platform, fingerprintHash }) {
+  return `${platform}-Debug-${fingerprintHash}`;
 }
 
 function findEntry(dir, name) {
@@ -57,7 +63,10 @@ function prune(dir, platform, keep) {
 }
 
 async function resolveBuildCache({ platform, fingerprintHash, runOptions }) {
-  const entry = findEntry(cacheRoot(), entryName({ platform, fingerprintHash, runOptions }));
+  if (!cacheable({ platform, runOptions })) {
+    return null;
+  }
+  const entry = findEntry(cacheRoot(), entryName({ platform, fingerprintHash }));
   if (!entry) {
     console.log(
       `Build cache: no ${platform} build for fingerprint ${fingerprintHash}; building it.`,
@@ -72,8 +81,11 @@ async function resolveBuildCache({ platform, fingerprintHash, runOptions }) {
 }
 
 async function uploadBuildCache({ platform, fingerprintHash, buildPath, runOptions }, options) {
+  if (!cacheable({ platform, runOptions })) {
+    return;
+  }
   const dir = cacheRoot();
-  const name = entryName({ platform, fingerprintHash, runOptions });
+  const name = entryName({ platform, fingerprintHash });
   if (findEntry(dir, name)) {
     return;
   }
