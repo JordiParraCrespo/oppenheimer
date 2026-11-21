@@ -43,14 +43,26 @@ describe('ErrorAlert', () => {
     expect(screen.getByRole('alert').textContent).toContain('Nightly triage');
   });
 
-  it('offers a dismiss only when asked', () => {
+  it('hands the dismiss to the caller when it clears the failure', () => {
     const onDismiss = vi.fn();
-    const { rerender } = render(<ErrorAlert error={refused()} fallback="Could not delete" />);
-    expect(screen.queryByRole('button')).toBeNull();
-
-    rerender(<ErrorAlert error={refused()} fallback="Could not delete" onDismiss={onDismiss} />);
+    render(<ErrorAlert error={refused()} fallback="Could not delete" onDismiss={onDismiss} />);
     fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
     expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  // Regression: a failure the caller never clears (a list's load error) left
+  // the reader no way to close the alert.
+  it('closes on its own when the caller gives no dismiss, until a new failure', () => {
+    const first = refused();
+    const { rerender } = render(<ErrorAlert error={first} fallback="Could not load" />);
+    fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    rerender(<ErrorAlert error={first} fallback="Could not load" />);
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    rerender(<ErrorAlert error={refused()} fallback="Could not load" />);
+    expect(screen.getByRole('alert')).toBeTruthy();
   });
 });
 

@@ -6,7 +6,7 @@ import {
   Button,
 } from '@oppenheimer/design-system-web';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** Where the sentence comes from: a raw failure to resolve, or one already resolved. */
@@ -40,8 +40,10 @@ type ErrorAlertSource =
  * caller writes `<ErrorAlert error={mutation.error} … />` with no guard.
  *
  * `title` names what failed when one alert speaks for several rows. The one
- * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
- * `reset`) or the caller's own (`action`, a terminal's Retry).
+ * action is Dismiss or the caller's own (`action`, a terminal's Retry).
+ * Dismiss is always offered: with `onDismiss` (`lastFailure(…).dismiss` or a
+ * mutation's `reset`) the caller clears the failure; without it the alert
+ * hides itself until a different failure arrives.
  */
 export function ErrorAlert({
   title,
@@ -58,6 +60,9 @@ export function ErrorAlert({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
+  // What the reader closed: the failure itself, so a new one shows again.
+  const current = source.message !== undefined ? source.message : source.error;
+  const [dismissed, setDismissed] = useState<unknown>(undefined);
   const resolved =
     source.message !== undefined
       ? source.message
@@ -66,15 +71,20 @@ export function ErrorAlert({
       : source.error === null || source.error === undefined
         ? null
         : resolveError(source.error, source.fallback);
-  if (!resolved) return null;
+  if (!resolved || (dismissed !== undefined && Object.is(dismissed, current))) return null;
   const { message, correlationId } = resolved;
-  const trailing =
-    action ??
-    (onDismiss ? (
-      <Button variant="ghost" size="sm" onClick={onDismiss}>
-        {t('common.dismiss')}
-      </Button>
-    ) : null);
+  const trailing = action ?? (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        setDismissed(current);
+        onDismiss?.();
+      }}
+    >
+      {t('common.dismiss')}
+    </Button>
+  );
 
   return (
     <Alert tone="danger" className={className}>
@@ -87,7 +97,7 @@ export function ErrorAlert({
           </span>
         ) : null}
       </AlertDescription>
-      {trailing ? <AlertAction>{trailing}</AlertAction> : null}
+      <AlertAction>{trailing}</AlertAction>
     </Alert>
   );
 }
