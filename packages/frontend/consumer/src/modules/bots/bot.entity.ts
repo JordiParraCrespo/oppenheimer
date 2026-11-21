@@ -12,6 +12,7 @@ import type {
   BotProvider,
   BotSection,
 } from '@oppenheimer/shared/schemas/bot';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
 /**
@@ -269,7 +270,7 @@ export function documentConflictRevision(error: unknown): number | null {
  */
 export class ModelProviderEntity {
   constructor(
-    public readonly provider: BotProvider,
+    public readonly provider: ModelProvider,
     public readonly configured: boolean,
     public readonly keyHint: string | null,
     public readonly updatedAt: Date | null,

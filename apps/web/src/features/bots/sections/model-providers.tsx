@@ -6,7 +6,11 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/schemas/bot';
+import {
+  isBotProvider,
+  MODEL_PROVIDER_CATALOG,
+  type ModelProvider,
+} from '@oppenheimer/shared/schemas/model-provider';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModelProviderActions } from '../components/model-provider-actions';
@@ -17,12 +21,13 @@ import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
 import { groupModelProviders } from '../lib/model-provider-groups';
 
 /**
- * The providers, in two cards: Connected (a key or a sign-in) above, Not
+ * The providers, bots' and voice-only ones (Groq, ElevenLabs), in two cards: Connected (a key or a sign-in) above, Not
  * connected below, each headed by how many it holds and in catalog order
  * within; a card with none is left out. One row each: the provider's mark and
  * name, what it serves, the key's last four characters behind a green check,
  * and Add key or Replace and Remove. The one new bots start on carries a
- * Default badge; another with a key offers Make default. The
+ * Default badge; another bot provider with a key offers Make default (a
+ * voice-only one never does: no bot runs on it). The
  * key is typed in a dialog and never comes back. ChatGPT takes no key: its row
  * signs in to a ChatGPT subscription (Connect ChatGPT, Sign in again,
  * Disconnect), and says which account by its last characters. Read under
@@ -34,7 +39,7 @@ export function ModelProviders() {
   const { t } = useTranslation();
   const { data: providers, error } = useSuspenseModelProviders();
   const { data: deployment } = useDeploymentCapabilities();
-  const [editing, setEditing] = useState<BotProvider | null>(null);
+  const [editing, setEditing] = useState<ModelProvider | null>(null);
   const remove = useRemoveModelProviderKey();
   const makeDefault = useSetDefaultModelProvider();
   const groups = groupModelProviders(providers);
@@ -68,7 +73,8 @@ export function ModelProviders() {
           </SettingsHeading>
           <SettingsGroup>
             {rows.map((row) => {
-              const { label, auth } = BOT_PROVIDER_CATALOG[row.provider];
+              const { label, auth } = MODEL_PROVIDER_CATALOG[row.provider];
+              const runsBots = isBotProvider(row.provider);
               const signIn = auth === 'sign_in';
               return (
                 <SettingsListRow
@@ -88,13 +94,16 @@ export function ModelProviders() {
                       signIn={signIn}
                       configured={row.configured}
                       isDefault={row.isDefault}
+                      runsBots={runsBots}
                       unavailableReason={unavailableReason}
                       makingDefault={
                         makeDefault.isPending && makeDefault.variables === row.provider
                       }
                       defaultBusy={makeDefault.isPending}
                       removing={remove.isPending && remove.variables === row.provider}
-                      onMakeDefault={() => makeDefault.mutate(row.provider)}
+                      onMakeDefault={() => {
+                        if (isBotProvider(row.provider)) makeDefault.mutate(row.provider);
+                      }}
                       onRemove={() => remove.mutate(row.provider)}
                       onEdit={() => setEditing(row.provider)}
                     />

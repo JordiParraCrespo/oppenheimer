@@ -2,6 +2,7 @@
 
 import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
 import { type QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { ModelProviderEntity } from '../modules/bots/bot.entity';
 import { botsKeys } from './bots.keys';
@@ -37,13 +38,14 @@ export function useSuspenseModelProviders() {
 }
 
 interface ModelProviderKeyVariables {
-  provider: BotProvider;
+  provider: ModelProvider;
   apiKey: string;
 }
 
 /**
  * Re-reads what a workspace's model providers decide: the provider list, and
- * whether it can dictate (a ChatGPT sign-in is a speech provider). Every
+ * everything voice reads from them (whether it can dictate, the voice
+ * settings' choices: a sign-in or a key is a speech provider). Every
  * change to a sign-in or a key goes through here.
  */
 export function invalidateModelProviders(queryClient: QueryClient): Promise<unknown> {
@@ -66,7 +68,7 @@ export const useSetDefaultModelProvider = mutation<void, BotProvider>({
 });
 
 /** Forgets a provider's key, and with it the default when it was the one. */
-export const useRemoveModelProviderKey = mutation<void, BotProvider>({
+export const useRemoveModelProviderKey = mutation<void, ModelProvider>({
   run: (app, provider) => app.bots.removeModelProviderKey(provider),
   update: (queryClient) => invalidateModelProviders(queryClient),
 });

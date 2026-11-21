@@ -954,24 +954,26 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 | `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
 | `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
 | `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
-| `VOICE_008` <a id="voice_008" />     | Speech synthesis is not set up on this deployment            | 409  |
+| `VOICE_008` <a id="voice_008" />     | Speech synthesis is not set up for this workspace            | 409  |
 | `VOICE_009` <a id="voice_009" />     | The text-to-speech provider could not speak the text         | 502  |
-| `VOICE_010` <a id="voice_010" />     | The text-to-speech provider is rate limiting this deployment | 429  |
+| `VOICE_010` <a id="voice_010" />     | The text-to-speech provider is rate limiting this workspace  | 429  |
 | `VOICE_011` <a id="voice_011" />     | That text cannot be spoken as one voice note                 | 422  |
 
 `VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
-(Settings → Model providers), or give the deployment a speech-to-text server.
-A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
-falls back to the deployment's server when there is one; a rate limit
+or add an OpenAI, Groq or ElevenLabs key (Settings → Model providers), or give
+the deployment a speech-to-text server. The provider chosen under Voice on that
+page is tried first; one that cannot transcribe (`VOICE_006`, or a lapsed
+sign-in or removed key) falls back to the next one available; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
 
 `VOICE_008` to `VOICE_011` are a bot's WhatsApp voice note being spoken.
-`VOICE_008` is a deployment with no text-to-speech server (`VOICE_TTS_*` in
-`.env.example`); the bot is refused before any card and told to send text.
-`VOICE_009` is that server unreachable, refusing, or answering something that
-is not Ogg/Opus audio of at most two minutes; `VOICE_010` is it rate limiting
-the deployment's key, with `Retry-After`. `VOICE_011` is an empty text or one
-longer than 600 characters.
+`VOICE_008` is a workspace with no provider that speaks: no OpenAI or
+ElevenLabs key, and no text-to-speech server on the deployment (`VOICE_TTS_*`
+in `.env.example`); the bot is refused before any card and told to send text.
+`VOICE_009` is the provider unreachable, refusing (an ElevenLabs voice the
+account cannot use, say), or answering something that is not Ogg/Opus audio of
+at most two minutes; `VOICE_010` is it rate limiting the key, with
+`Retry-After`. `VOICE_011` is an empty text or one longer than 600 characters.
 
 ## Inbox
 

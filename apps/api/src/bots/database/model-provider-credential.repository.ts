@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import type { BotProvider } from '@oppenheimer/shared';
+import type { BotProvider, ModelProvider } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import { BotResource } from '../bots.resource';
@@ -28,14 +28,14 @@ export class ModelProviderCredentialRepository
   }
 
   async findAll(scope: AccessScope): Promise<ModelProviderCredentialEntity[]> {
-    // UQ_model_provider_credential_provider: three rows at most.
+    // UQ_model_provider_credential_provider: one row per provider at most.
     const records = await this.scopedQuery(scope).orderBy('credential.provider', 'ASC').getMany();
     return records.map((record) => this.mapper.toDomain(record));
   }
 
   async findOne(
     scope: AccessScope,
-    provider: BotProvider,
+    provider: ModelProvider,
   ): Promise<Option<ModelProviderCredentialEntity>> {
     const record = await this.scopedQuery(scope)
       .andWhere('credential.provider = :provider', { provider })
@@ -45,7 +45,7 @@ export class ModelProviderCredentialRepository
 
   async findForRun(
     organizationId: string,
-    provider: BotProvider,
+    provider: ModelProvider,
   ): Promise<Option<ModelProviderCredentialEntity>> {
     const record = await this.repository.findOne({ where: { organizationId, provider } });
     return record ? Some(this.mapper.toDomain(record)) : None;
@@ -92,7 +92,7 @@ export class ModelProviderCredentialRepository
     });
   }
 
-  async delete(scope: AccessScope, provider: BotProvider): Promise<boolean> {
+  async delete(scope: AccessScope, provider: ModelProvider): Promise<boolean> {
     if (!scope.organizationId) return false;
     const result = await this.repository.delete({
       organizationId: scope.organizationId,

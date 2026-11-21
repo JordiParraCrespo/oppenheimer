@@ -289,6 +289,14 @@ test.describe('Bots', () => {
       { provider: 'openai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
       { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
       { provider: 'xai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'groq', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      {
+        provider: 'elevenlabs',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+      },
     ]);
 
     const secret = `zai-${randomUUID()}-wxyz`;

@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { BOT_PROVIDER_CATALOG } from '@oppenheimer/shared';
+import { MODEL_PROVIDER_CATALOG } from '@oppenheimer/shared';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, PROVIDER_KEY_SEALER } from '../../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';
@@ -39,7 +39,7 @@ export class PutModelProviderCredentialCommandHandler
     apiKey,
   }: PutModelProviderCredentialCommand): Promise<AggregateID> {
     const known = this.providers.provider(provider);
-    if (BOT_PROVIDER_CATALOG[known].auth !== 'api_key') {
+    if (MODEL_PROVIDER_CATALOG[known].auth !== 'api_key') {
       throw new AppError(BotErrors.CHATGPT_SIGN_IN_ONLY);
     }
     requireTenant(scope);
