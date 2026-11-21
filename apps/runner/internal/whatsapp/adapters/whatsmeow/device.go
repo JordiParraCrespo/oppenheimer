@@ -305,13 +305,43 @@ func (d *Device) Send(ctx context.Context, chatID, text string, quote *domain.Qu
 		return "", time.Time{}, fmt.Errorf("not a WhatsApp chat: %w", err)
 	}
 	resp, err := client.SendMessage(ctx, to, outgoing(text, quote))
-	if errors.Is(err, whatsmeow.ErrIQRateOverLimit) || (err != nil && strings.Contains(err.Error(), "rate-overlimit")) {
-		return "", time.Time{}, fmt.Errorf("%w: %w", domain.ErrRateLimited, err)
-	}
 	if err != nil {
-		return "", time.Time{}, err
+		return "", time.Time{}, rateLimited(err)
 	}
 	return resp.ID, resp.Timestamp, nil
+}
+
+// SendVoice uploads a voice note to WhatsApp's media servers, encrypted
+// there as every attachment is, then sends the message that points at it as
+// push-to-talk, so the phone draws a playable voice note. The audio is only
+// ever in memory: nothing is written to the host's disk.
+func (d *Device) SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	client, _ := d.current()
+	if client == nil || !client.IsLoggedIn() {
+		return "", time.Time{}, domain.ErrNotConnected
+	}
+	to, err := types.ParseJID(chatID)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("not a WhatsApp chat: %w", err)
+	}
+	uploaded, err := client.Upload(ctx, audio, whatsmeow.MediaAudio)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("the upload failed: %w", rateLimited(err))
+	}
+	resp, err := client.SendMessage(ctx, to, outgoingVoice(uploaded, seconds, time.Now()))
+	if err != nil {
+		return "", time.Time{}, rateLimited(err)
+	}
+	return resp.ID, resp.Timestamp, nil
+}
+
+// rateLimited marks WhatsApp's 429 as domain.ErrRateLimited, which pauses the
+// host's sends.
+func rateLimited(err error) error {
+	if errors.Is(err, whatsmeow.ErrIQRateOverLimit) || strings.Contains(err.Error(), "rate-overlimit") {
+		return fmt.Errorf("%w: %w", domain.ErrRateLimited, err)
+	}
+	return err
 }
 
 // Download fetches a voice note from WhatsApp's media servers and decrypts

@@ -224,6 +224,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     text: 'Tuesday works.',
     replyTo: { id: '3EB0C7A1F2', senderId: '34600333444@s.whatsapp.net' },
   },
+  'whatsapp.send.voice': {
+    type: 'whatsapp.send.voice',
+    commandId,
+    chatId: '34600333444@s.whatsapp.net',
+    mimetype: 'audio/ogg; codecs=opus',
+    data: 'T2dnUwACAAAAAAAAAAA=',
+    seconds: 4,
+  },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
   'whatsapp.media.get': {
     type: 'whatsapp.media.get',

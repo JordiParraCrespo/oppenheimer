@@ -29,6 +29,10 @@
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
  * dictate is `GET /voice/status`, which asks every speech provider.
  *
+ * `voice_synthesis` says whether the deployment has a text-to-speech server
+ * (`VOICE_TTS_*`) a bot speaks its WhatsApp voice notes on, for the startup
+ * log; the tool itself refuses without one.
+ *
  * `cloud_agents` says whether a person can store a cloud agent vendor's key:
  * the key it is sealed under (`CLOUD_AGENTS_KEY`). Whether a person can
  * launch one is `GET /cloud-agents/status`, which asks every provider.
@@ -52,6 +56,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'gmail',
   'bot_providers',
   'voice_transcription',
+  'voice_synthesis',
   'cloud_agents',
   'slack',
   'session_previews',

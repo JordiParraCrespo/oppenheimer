@@ -37,6 +37,10 @@ type Device interface {
 	// Send sends a text message to a chat, as a reply to quote when there is
 	// one; the id and time are WhatsApp's.
 	Send(ctx context.Context, chatID, text string, quote *domain.Quote) (id string, at time.Time, err error)
+	// SendVoice uploads Ogg/Opus audio to WhatsApp's media servers and sends it
+	// to a chat as a push-to-talk voice note running seconds; the id and time
+	// are WhatsApp's. The audio is held in memory only.
+	SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (id string, at time.Time, err error)
 	// Download fetches and decrypts the audio a domain.Voice's Ref names, and
 	// says WhatsApp's MIME type for it.
 	Download(ctx context.Context, ref []byte) (data []byte, mimetype string, err error)

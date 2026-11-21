@@ -95,6 +95,8 @@ function fakeDevice(overrides: Partial<WhatsappDevicePort> = {}): WhatsappDevice
     link: vi.fn().mockReturnValue(true),
     unlink: vi.fn().mockReturnValue(true),
     send: vi.fn(),
+    sendVoice: vi.fn(),
+    voiceNote: vi.fn(),
     ...overrides,
   };
 }
@@ -440,6 +442,100 @@ describe('SendWhatsappMessageCommandHandler', () => {
         ).execute(command(busy.id)),
       ),
     ).toBe('WHATSAPP_009');
+  });
+
+  describe('a voice note', () => {
+    const audio = Buffer.from('OggS-spoken');
+    const spoken = (accountId: string) =>
+      new SendWhatsappMessageCommand({
+        scope: scopeOf(),
+        accountId,
+        chat,
+        text: 'Tuesday works.',
+        botId: 'bot-1',
+        voice: { audio, seconds: 3 },
+      });
+
+    // What breaks this: a voice note sent as a text, or kept with its audio, or
+    // read back by the bot as "[audio]" it cannot tell it said.
+    it('goes to the host as audio, never as text, and is kept as a voice note saying the text', async () => {
+      const linked = account({ status: 'connected' });
+      const messages = fakeMessages();
+      const device = fakeDevice({
+        sendVoice: vi.fn(async () => ({ kind: 'sent' as const, id: '3EB9', sentAt: new Date() })),
+      });
+      const handler = new SendWhatsappMessageCommandHandler(
+        fakeAccounts([linked]).repository,
+        messages,
+        device,
+        new WhatsappMessageMapper(),
+      );
+
+      await expect(handler.execute(spoken(linked.id))).resolves.toBe('3EB9');
+      expect(device.sendVoice).toHaveBeenCalledWith(HOST, chat.chatId, audio, 3);
+      expect(device.send).not.toHaveBeenCalled();
+      expect(vi.mocked(messages.recordBotSend).mock.calls[0]?.[0]).toMatchObject({
+        externalId: '3EB9',
+        fromMe: true,
+        sentByBotId: 'bot-1',
+        text: '',
+        media: 'audio',
+        voiceSeconds: 3,
+        transcript: 'Tuesday works.',
+      });
+    });
+
+    // What breaks this: speaking getting round the day's share a text spends.
+    it('spends the day’s share a text does, and is refused past it before reaching the host', async () => {
+      const busy = account({ status: 'connected' });
+      const device = fakeDevice();
+      expect(
+        await codeOf(
+          new SendWhatsappMessageCommandHandler(
+            fakeAccounts([busy]).repository,
+            fakeMessages({ countBotSendsSince: vi.fn(async () => 100) }),
+            device,
+            new WhatsappMessageMapper(),
+          ).execute(spoken(busy.id)),
+        ),
+      ).toBe('WHATSAPP_009');
+      expect(device.sendVoice).not.toHaveBeenCalled();
+    });
+
+    it('says a runner too old to send voice notes is one to update, and keeps nothing', async () => {
+      const linked = account({ status: 'connected' });
+      const messages = fakeMessages();
+      const refusal = await new SendWhatsappMessageCommandHandler(
+        fakeAccounts([linked]).repository,
+        messages,
+        fakeDevice({ sendVoice: vi.fn(async () => ({ kind: 'not_supported' as const })) }),
+        new WhatsappMessageMapper(),
+      )
+        .execute(spoken(linked.id))
+        .catch((error) => error);
+      expect(refusal).toMatchObject({ code: 'WHATSAPP_005' });
+      expect(refusal.detail).toContain('voice notes');
+      expect(messages.recordBotSend).not.toHaveBeenCalled();
+    });
+
+    it('answers audio the host would not send, and WhatsApp refusing it, as WHATSAPP_008, keeping nothing', async () => {
+      const linked = account({ status: 'connected' });
+      for (const code of ['WA_008', 'WA_006', 'WA_003']) {
+        const messages = fakeMessages();
+        const refusal = await new SendWhatsappMessageCommandHandler(
+          fakeAccounts([linked]).repository,
+          messages,
+          fakeDevice({
+            sendVoice: vi.fn(async () => ({ kind: 'failed' as const, code, detail: 'refused' })),
+          }),
+          new WhatsappMessageMapper(),
+        )
+          .execute(spoken(linked.id))
+          .catch((error) => error);
+        expect(refusal).toMatchObject({ code: 'WHATSAPP_008', extensions: { upstreamCode: code } });
+        expect(messages.recordBotSend).not.toHaveBeenCalled();
+      }
+    });
   });
 
   it('treats someone else’s number as not linked', async () => {

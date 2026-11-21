@@ -10,7 +10,7 @@ import { mailTokenKeyOf } from '../config/mail.config';
 import { previewsAreConfigured } from '../config/relay.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { slackTokenKeyOf } from '../config/slack.config';
-import { speechKeyIsConfigured } from '../config/voice.config';
+import { speechKeyIsConfigured, speechSynthesisIsConfigured } from '../config/voice.config';
 
 /**
  * Whether the sessions GitHub App is usable on this deployment. All six values are
@@ -92,6 +92,8 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // The deployment's own speech-to-text server. A workspace signed in to
     // ChatGPT dictates without it; this is every other workspace's way in.
     voice_transcription: speechKeyIsConfigured(configService),
+    // The deployment's own text-to-speech server: bots' WhatsApp voice notes.
+    voice_synthesis: speechSynthesisIsConfigured(configService),
     // A domain to serve sessions' previews on. The same predicate the preview
     // routes refuse on, so the Browser tab is never offered to fail.
     session_previews: previewsAreConfigured(configService),

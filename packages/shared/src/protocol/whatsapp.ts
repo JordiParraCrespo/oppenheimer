@@ -260,3 +260,39 @@ export const whatsappMediaSchema = z.object({
 });
 
 export type WhatsappMediaMessage = z.infer<typeof whatsappMediaSchema>;
+
+/**
+ * The longest voice note a bot sends, in seconds. A spoken reply is a few
+ * sentences; past this, text reads better than a note anyone has to sit
+ * through, and the audio stays well inside `WHATSAPP_VOICE_NOTE_MAX_BYTES`.
+ */
+export const WHATSAPP_VOICE_SEND_MAX_SECONDS = 120;
+
+/**
+ * Send a voice note to one chat, as the paired number: Ogg/Opus audio the
+ * control plane made, which the runner uploads to WhatsApp's media servers
+ * and sends as a push-to-talk audio message, so the phone draws it as a
+ * playable voice note rather than a file. The audio lives in this frame and
+ * in memory on the host, never on its disk. Answered by `whatsapp.sent` with
+ * the same `commandId`, or `command.failed`: `WA_002` no device is connected,
+ * `WA_003` WhatsApp refused it (the upload or the message), `WA_004` the
+ * host's own send budget is spent (a voice note spends it as a text does),
+ * `WA_006` it is larger than `WHATSAPP_VOICE_NOTE_MAX_BYTES` or not Ogg.
+ * Sent only to a runner that names `whatsapp.voice.send`.
+ */
+export const whatsappSendVoiceSchema = z.object({
+  type: z.literal('whatsapp.send.voice'),
+  commandId: commandIdSchema,
+  chatId: jid(),
+  /** The audio's MIME type: `audio/ogg; codecs=opus`, the one WhatsApp plays as a voice note. */
+  mimetype: z.string().min(1).max(128),
+  /** The bytes, base64. */
+  data: z
+    .string()
+    .min(1)
+    .max(Math.ceil(WHATSAPP_VOICE_NOTE_MAX_BYTES / 3) * 4),
+  /** How long it runs, which the phone shows before it is played. */
+  seconds: z.number().int().min(1).max(WHATSAPP_VOICE_SEND_MAX_SECONDS),
+});
+
+export type WhatsappSendVoiceMessage = z.infer<typeof whatsappSendVoiceSchema>;

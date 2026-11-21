@@ -70,6 +70,7 @@ import {
   whatsappMediaSchema,
   whatsappMessagesSchema,
   whatsappSendSchema,
+  whatsappSendVoiceSchema,
   whatsappSentSchema,
   whatsappStateSchema,
   whatsappUnlinkSchema,
@@ -206,6 +207,11 @@ export const RUNNER_CAPABILITIES = [
    * `whatsapp.media`, so the owner's bots hear them.
    */
   'whatsapp.voice',
+  /**
+   * Answers `whatsapp.send.voice` with `whatsapp.sent`: a voice note a bot
+   * spoke, sent as a playable push-to-talk message.
+   */
+  'whatsapp.voice.send',
   /**
    * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
    * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
@@ -1515,6 +1521,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappMessagesSchema,
   whatsappAckSchema,
   whatsappSendSchema,
+  whatsappSendVoiceSchema,
   whatsappSentSchema,
   whatsappMediaGetSchema,
   whatsappMediaSchema,
