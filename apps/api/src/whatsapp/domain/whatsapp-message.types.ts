@@ -79,6 +79,13 @@ export interface WhatsappChat {
   last: WhatsappMessage;
 }
 
+/** A chat the number's device says it can be reached in, before any message there. */
+export interface WhatsappKnownChat {
+  chatId: string;
+  chatKind: 'direct' | 'group';
+  chatName: string | null;
+}
+
 /** Where a message goes: a chat the number has, or a new direct chat with a phone number. */
 export interface WhatsappChatTarget {
   chatId: string;

@@ -53,6 +53,8 @@ type Service struct {
 	pairing   bool
 	pairedAt  time.Time
 	publisher Publisher
+	// chats is the device's last list of chats, handed to every new link.
+	chats []domain.KnownChat
 	// inFlight is when each message was last handed to the link, until its
 	// ack; a flush skips what was handed on less than ackTimeout ago.
 	inFlight map[string]time.Time
@@ -138,6 +140,7 @@ func (s *Service) LinkUp(ctx context.Context) {
 	s.inFlight = map[string]time.Time{}
 	s.mu.Unlock()
 	s.publish()
+	s.publishChats()
 	s.Flush(ctx)
 }
 
@@ -203,6 +206,7 @@ func (s *Service) Unlink(ctx context.Context) error {
 	}
 	s.mu.Lock()
 	s.inFlight = map[string]time.Time{}
+	s.chats = nil
 	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateUnlinked, Reason: "unlinked from Oppenheimer"})
 	return nil
@@ -212,6 +216,27 @@ func (s *Service) Unlink(ctx context.Context) error {
 // quoting the message it replies to when there is one. A quoted reply spends
 // the budget exactly as a plain message does.
 func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Quote) (string, time.Time, error) {
+	return s.spend(func() (string, time.Time, error) { return s.device.Send(ctx, chatID, text, quote) })
+}
+
+// SendVoice sends a voice note as the paired number, inside the same budget
+// a text spends: one note is one message to WhatsApp. Audio that is not a
+// voice note WhatsApp plays is refused before it spends anything (WA_006,
+// WA_008); an upload or a send WhatsApp refuses is WA_003, as a text's is.
+func (s *Service) SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	if s.Status().State != domain.StateConnected {
+		return "", time.Time{}, domain.ErrNotConnected
+	}
+	if err := domain.CheckVoiceOut(audio, seconds); err != nil {
+		return "", time.Time{}, err
+	}
+	return s.spend(func() (string, time.Time, error) { return s.device.SendVoice(ctx, chatID, audio, seconds) })
+}
+
+// spend runs one send inside the host's budget: refused while the device is
+// not connected or the budget is spent, refunded when WhatsApp refuses it,
+// and pausing every send after WhatsApp's 429.
+func (s *Service) spend(send func() (string, time.Time, error)) (string, time.Time, error) {
 	if s.Status().State != domain.StateConnected {
 		return "", time.Time{}, domain.ErrNotConnected
 	}
@@ -220,7 +245,7 @@ func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Q
 		return "", time.Time{}, domain.ErrBudgetExceeded.WithDetail(
 			"at most %d a minute and %d a day", domain.SendsPerMinute, domain.SendsPerDay)
 	}
-	id, sentAt, err := s.device.Send(ctx, chatID, text, quote)
+	id, sentAt, err := send()
 	if err != nil {
 		s.budget.Refund(at)
 		if errors.Is(err, domain.ErrRateLimited) {
@@ -339,6 +364,27 @@ func (s *Service) Received(r domain.Received) {
 	s.Flush(ctx)
 }
 
+// Chats keeps the device's chats and hands them to the link. A list lost to a
+// link that is down goes with the next LinkUp.
+func (s *Service) Chats(chats []domain.KnownChat) {
+	s.mu.Lock()
+	s.chats = chats
+	s.mu.Unlock()
+	s.publishChats()
+}
+
+func (s *Service) publishChats() {
+	s.mu.Lock()
+	publisher, chats := s.publisher, s.chats
+	s.mu.Unlock()
+	if publisher == nil {
+		return
+	}
+	for _, batch := range domain.ChatBatches(chats) {
+		publisher.Chats(batch)
+	}
+}
+
 // Connected is the device online.
 func (s *Service) Connected(phone, name string) {
 	s.set(domain.Status{State: domain.StateConnected, Phone: phone, Name: name})
@@ -359,6 +405,9 @@ func (s *Service) Disconnected() {
 // LoggedOut is the phone removing the device, or WhatsApp logging it out:
 // its keys are gone, and it is not retried.
 func (s *Service) LoggedOut(reason string) {
+	s.mu.Lock()
+	s.chats = nil
+	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateLoggedOut, Reason: domain.Fit(reason, 200)})
 }
 

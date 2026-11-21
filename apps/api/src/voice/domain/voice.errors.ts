@@ -37,4 +37,27 @@ export const VoiceErrors = {
     message: 'The speech-to-text provider is rate limiting this workspace',
     httpStatus: 429,
   },
+  /** Nobody to speak it: the deployment has no text-to-speech server (`VOICE_TTS_*`). */
+  SYNTHESIS_NOT_CONFIGURED: {
+    code: 'VOICE_008',
+    message: 'Speech synthesis is not set up on this deployment',
+    httpStatus: 409,
+  },
+  /** The provider was unreachable, refused the text, or answered something that is not Ogg/Opus speech. */
+  SYNTHESIS_UNAVAILABLE: {
+    code: 'VOICE_009',
+    message: 'The text-to-speech provider could not speak the text',
+    httpStatus: 502,
+  },
+  SYNTHESIS_RATE_LIMITED: {
+    code: 'VOICE_010',
+    message: 'The text-to-speech provider is rate limiting this deployment',
+    httpStatus: 429,
+  },
+  /** Empty, or longer than one voice note says (`SPEECH_TEXT_MAX_CHARS`). */
+  SYNTHESIS_TEXT_INVALID: {
+    code: 'VOICE_011',
+    message: 'That text cannot be spoken as one voice note',
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

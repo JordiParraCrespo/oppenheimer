@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -200,5 +201,23 @@ func TestReceivedReportsMentionsAndTheQuotedSenderByNumber(t *testing.T) {
 	plain := rd.received(context.Background(), evt(group, marta, &waE2E.Message{Conversation: proto.String("hola")}))
 	if plain.QuotedSenderID != "" || plain.Mentions != nil {
 		t.Fatalf("a plain message reported %q, %v", plain.QuotedSenderID, plain.Mentions)
+	}
+}
+
+// A voice note goes as push-to-talk Ogg/Opus with the upload's keys, which is
+// what makes the phone draw a playable voice note: without PTT it shows as an
+// audio file, and without the keys and path the recipient cannot fetch it.
+func TestOutgoingVoiceIsAPlayableVoiceNote(t *testing.T) {
+	at := time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC)
+	m := outgoingVoice(whatsmeow.UploadResponse{
+		URL: "https://mmg.whatsapp.net/v/1", DirectPath: "/v/1", MediaKey: []byte{1},
+		FileEncSHA256: []byte{2}, FileSHA256: []byte{3}, FileLength: 2048,
+	}, 4, at).GetAudioMessage()
+	if !m.GetPTT() || m.GetMimetype() != "audio/ogg; codecs=opus" || m.GetSeconds() != 4 ||
+		m.GetDirectPath() != "/v/1" || m.GetURL() != "https://mmg.whatsapp.net/v/1" ||
+		string(m.GetMediaKey()) != "\x01" || string(m.GetFileEncSHA256()) != "\x02" ||
+		string(m.GetFileSHA256()) != "\x03" || m.GetFileLength() != 2048 ||
+		m.GetMediaKeyTimestamp() != at.Unix() {
+		t.Fatalf("voice note: %v", m)
 	}
 }
