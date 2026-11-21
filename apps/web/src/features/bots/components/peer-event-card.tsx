@@ -15,7 +15,9 @@ function leadKey(event: BotPeerMessageEvent | BotPeerReplyEvent) {
 /**
  * Another bot's message, or its answer to one this bot asked, as a
  * `BotExchange` card naming the bot Oppenheimer recorded as the sender,
- * with what it said.
+ * with what it said. An answer comes back folded to its lead ("Oppie
+ * replied"): it can run long, and the bot's own reply under it says what it
+ * took from it; the person opens it when they want the words.
  */
 export function PeerEventCard({
   event,
@@ -31,6 +33,7 @@ export function PeerEventCard({
       <BotExchangeTurn
         direction="in"
         reply={event.kind === 'bot_reply'}
+        collapsible={event.kind === 'bot_reply'}
         lead={
           <Trans
             i18nKey={leadKey(event)}

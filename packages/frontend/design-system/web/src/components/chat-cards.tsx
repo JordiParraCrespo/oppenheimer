@@ -448,7 +448,8 @@ function AnsweredQuestions({
  * card at 13.5px, one `BotExchangeTurn` per message. The first turn is the
  * message (out: "Sent to **Plan Bot**", in: "From **Quota Bot**", with its
  * time in mono); the answer under it is a `BotExchangeTurn reply`, on the
- * hover wash under a hairline. The arrow points the way the words went.
+ * hover wash under a hairline. The arrow points the way the words went. A
+ * `collapsible` turn shows its lead alone until it is opened.
  *
  * ```tsx
  * <BotExchange>
@@ -472,6 +473,8 @@ function BotExchangeTurn({
   reply = false,
   lead,
   time,
+  collapsible = false,
+  defaultOpen = false,
   className,
   children,
 }: {
@@ -482,26 +485,55 @@ function BotExchangeTurn({
   /** Who and which way, in muted ink; the bot's name in a `strong` takes full ink. */
   lead: React.ReactNode;
   time?: React.ReactNode;
+  /** The lead folds the words under it, its chevron after it; closed unless `defaultOpen`. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
+  const turnClass = cn(
+    'group/turn flex items-start gap-2.5 px-3 py-2.5 data-reply:border-t data-reply:border-border-subtle data-reply:bg-hover-surface',
+    className,
+  );
+  const arrow = (
+    <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
+  );
+  const leadClass = 'min-w-0 text-fg-muted [&_strong]:font-medium [&_strong]:text-fg';
+  const timeTag = time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null;
+  const words = 'leading-normal text-pretty text-fg';
+  if (collapsible) {
+    return (
+      <Fold
+        data-slot="bot-exchange-turn"
+        data-direction={direction}
+        data-reply={reply || undefined}
+        defaultOpen={defaultOpen}
+        className={turnClass}
+      >
+        {arrow}
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex items-baseline gap-2">
+            <FoldTrigger className={cn(leadClass, 'inline-flex flex-1 items-center gap-1.5')}>
+              <span className="min-w-0">{lead}</span>
+            </FoldTrigger>
+            {timeTag}
+          </span>
+          <FoldPanel>
+            <span className={cn('block pt-0.75', words)}>{children}</span>
+          </FoldPanel>
+        </span>
+      </Fold>
+    );
+  }
   return (
-    <div
-      data-slot="bot-exchange-turn"
-      data-direction={direction}
-      data-reply={reply || undefined}
-      className={cn(
-        'group/turn flex items-start gap-2.5 px-3 py-2.5 data-reply:border-t data-reply:border-border-subtle data-reply:bg-hover-surface',
-        className,
-      )}
-    >
-      <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
+    <div data-slot="bot-exchange-turn" data-direction={direction} data-reply={reply || undefined} className={turnClass}>
+      {arrow}
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 text-fg-muted [&_strong]:font-medium [&_strong]:text-fg">{lead}</span>
-          {time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null}
+          <span className={cn(leadClass, 'flex-1')}>{lead}</span>
+          {timeTag}
         </span>
-        <span className="leading-normal text-pretty text-fg">{children}</span>
+        <span className={words}>{children}</span>
       </span>
     </div>
   );

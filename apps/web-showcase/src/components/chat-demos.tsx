@@ -555,7 +555,7 @@ function ChatCardsBody() {
           >
             Is the cancel path on this week’s milestone, or can it wait for 0.9?
           </BotExchangeTurn>
-          <BotExchangeTurn direction="in" reply lead="Plan Bot replied">
+          <BotExchangeTurn direction="in" reply collapsible lead="Plan Bot replied">
             It is on Friday’s milestone, as the second of three tasks. Ship it this week.
           </BotExchangeTurn>
         </BotExchange>
