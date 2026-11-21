@@ -49,6 +49,8 @@ export interface SessionFilters {
   /** Sessions with a live checkout of this repository. */
   githubRepoId?: number;
   agent?: string;
+  /** `false` leaves resolved sessions out, `true` keeps only them; absent, both. */
+  resolved?: boolean;
   /** Last activity first by default. */
   sort?: SessionSortDto;
 }

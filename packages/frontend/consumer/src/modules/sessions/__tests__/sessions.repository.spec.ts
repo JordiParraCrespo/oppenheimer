@@ -62,7 +62,11 @@ describe('SessionsRepository.findAll', () => {
 
     expect(sessions.map((each) => each.id)).toEqual(['s1', 's2', 's3', 's4', 's5']);
     expect(vi.mocked(heyApiSdk.findSessions).mock.calls.map(([options]) => options?.query)).toEqual(
-      [{ limit: 100 }, { limit: 100, cursor: 'c1' }, { limit: 100, cursor: 'c2' }],
+      [
+        { limit: 100, resolved: 'false' },
+        { limit: 100, resolved: 'false', cursor: 'c1' },
+        { limit: 100, resolved: 'false', cursor: 'c2' },
+      ],
     );
   });
 
