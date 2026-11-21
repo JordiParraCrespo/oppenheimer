@@ -1,5 +1,29 @@
 # @oppenheimer/backend-cache
 
+## 0.3.0
+
+### Minor Changes
+
+- fda123f: A host's own desktop in the console: a Desktop tab beside a session and a Desktop page per host in Settings, watching until Take control, with Full screen. The host's owner shares it with `runner desktop on`; the runner signs in to the screen-sharing server on its loopback with credentials that stay on the host, and drops the browser's input until it takes control.
+- 2e5879e: Observability for the bots, the cache and the logs. The API exports `bot_engine_*` metrics for every bot turn and completion (runs by how they ended, failures by kind, tokens with the prompt cache's share, duration, tool calls, retries) and `cache_reads_total` for the Redis cache (hits, misses, errors by namespace), with a Grafana dashboard and alerts for both. `LOG_FILE` also writes the API's log lines as JSON to a file, which `pnpm monitoring:up` now ships to Loki through Grafana Alloy, and `pnpm logs` queries with LogQL. `@oppenheimer/backend-cache` takes an `onRead` observer; `@oppenheimer/backend-core`'s logging takes a `file`.
+- 1ee269e: Rate limits are kept before the provider says them, and a bot treats one as
+  a wait.
+
+  - `@oppenheimer/backend-core`: `UpstreamLimiter` takes a `budget` (units a
+    window per bucket) and `exchange` a call's `cost`; a call the window cannot
+    hold pauses the bucket until the window ends and is refused without being
+    sent, shared across replicas through the store's `incrementBy`.
+    `GoogleOAuthClient.fetch` takes the call's units. `upstreamRateLimitOf`
+    reads `{ system, resetAt }` back off any integration's rate-limit problem.
+  - `@oppenheimer/backend-cache`: `CacheService.incrementBy`, one atomic add
+    that sets the TTL of a new key.
+  - `@oppenheimer/api`: Gmail spends each call's quota units from 12,000 a
+    minute per account. A bot's tool answers a rate limit as who is limiting,
+    until when, and not to retry in the turn, without the provider's text; a
+    bulk Gmail write the limit stopped partway answers what it changed and what
+    it did not reach; and a goal's next turn waits for the limit's end instead
+    of running into it again.
+
 ## 0.2.0
 
 ### Minor Changes
