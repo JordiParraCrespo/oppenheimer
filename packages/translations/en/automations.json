@@ -87,6 +87,10 @@
     "monthly": {
       "label": "Monthly",
       "desc": "On one day of the month"
+    },
+    "cron": {
+      "label": "Custom",
+      "desc": "On a schedule a bot writes for you"
     }
   },
   "event": {
@@ -157,6 +161,37 @@
     "manual": "Manual only",
     "monFri": "Mon–Fri",
     "weekend": "Sat, Sun"
+  },
+  "cron": {
+    "sentence": "{{time}}, {{day}}",
+    "sentenceMonths": "{{time}}, {{day}}, in {{months}}",
+    "zoned": "{{sentence}} ({{zone}})",
+    "custom": "Custom schedule",
+    "at": "At {{times}}",
+    "everyMinutes": "Every {{step}} minutes",
+    "everyMinutesWindow": "Every {{step}} minutes from {{from}} to {{to}}",
+    "everyHour": "Every hour at :{{minute}}",
+    "everyHourAt": "Every hour at {{minutes}}",
+    "everyHourWindow": "Every hour at :{{minute}} from {{from}} to {{to}}",
+    "everyHours": "Every {{step}} hours at :{{minute}}",
+    "everyHoursWindow": "Every {{step}} hours at :{{minute}} from {{from}} to {{to}}",
+    "minutesPast": "At {{minutes}} past {{hours}}",
+    "everyDay": "every day",
+    "monthDays": "on day {{days}} of the month",
+    "lastDay": "on the last day of the month",
+    "lastWeekday": "on the last weekday of the month",
+    "nthWeekday": "on the {{nth}} {{day}} of the month",
+    "lastWeekdayOf": "on the last {{day}} of the month",
+    "either": "{{monthDays}} or {{weekDays}}",
+    "both": "{{monthDays}}, if that falls {{weekDays}}",
+    "bothDays": "{{monthDays}}, if that falls on {{weekDays}}",
+    "ordinal": {
+      "1": "first",
+      "2": "second",
+      "3": "third",
+      "4": "fourth",
+      "5": "fifth"
+    }
   },
   "next": {
     "onEvent": "On next event",

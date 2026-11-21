@@ -2,7 +2,11 @@
 
 <!-- fragment: schedule-trigger-frequency -->
 
-once (needs date), hourly (at minute), daily, weekdays, weekly (needs days), monthly (needs day_of_month).
+once (needs date), hourly (at minute), daily, weekdays, weekly (needs days), monthly (needs day_of_month), cron (needs cron) for what the others cannot say.
+
+<!-- fragment: schedule-trigger-cron -->
+
+Cron only: five fields, minute hour day-of-month month day-of-week (0 = Sunday), in the zone; write it from the person's words. Several times a day: 0 9,13,18 * * *. Every 15 minutes in work hours: */15 9-17 * * 1-5. Last weekday of the month: 0 17 LW * *. Second Tuesday: 0 10 * * 2#2. Last Friday: 0 16 * * 5L. No two firings closer than 5 minutes. Leave hour and minute out.
 
 <!-- fragment: schedule-trigger-timezone -->
 
@@ -66,4 +70,4 @@ You have no routines. Create one when the person asks you to do something regula
 
 <!-- fragment: routine-triggers-refusal -->
 
-Trigger {{index}} is not valid ({{value}}). A weekly schedule needs days, a monthly one day_of_month, a once one date (YYYY-MM-DD); a GitHub trigger needs repository ids; a mail query is at most 500 characters.
+Trigger {{index}} is not valid ({{value}}). A weekly schedule needs days, a monthly one day_of_month, a once one date (YYYY-MM-DD), a cron one a five-field cron with no two firings closer than 5 minutes; a GitHub trigger needs repository ids; a mail query is at most 500 characters.
