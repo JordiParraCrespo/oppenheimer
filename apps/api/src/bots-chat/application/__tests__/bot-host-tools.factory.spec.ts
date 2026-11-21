@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
@@ -35,6 +36,7 @@ const context: BotToolContext = {
   owner,
   organizationId: 'org-1',
   botId: 'bot-1',
+  conversationId: 'bot-1',
   turnId: 'turn-1',
   homeHostId: '11111111-1111-4111-8111-111111111111',
   timeZone: 'Europe/Madrid',
@@ -46,10 +48,16 @@ const context: BotToolContext = {
 
 const PROJECT_ID = '44444444-4444-4444-8444-444444444444';
 
+/** The console's address, `app.frontendUrl`. */
+const config = {
+  getOrThrow: () => 'https://console.example',
+} as Pick<ConfigService, 'getOrThrow'> as ConfigService;
+
 /** The owner's projects, unless a test answers the projects query itself. */
 function setup(
   answer: (query: unknown) => unknown,
   permission: BotToolContext['permission'] = 'auto',
+  conversationId = 'bot-1',
 ) {
   const queryBus = {
     execute: vi.fn(async (query: unknown) =>
@@ -61,11 +69,12 @@ function setup(
   const factory = new BotHostToolsFactory(
     queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
+    config,
   );
   const tool = (name: string) => {
     const found = factory.definitions().find((definition) => definition.name === name);
     if (!found) throw new Error(`no tool ${name}`);
-    return found.bind({ ...context, permission, approvals } as BotToolContext);
+    return found.bind({ ...context, permission, approvals, conversationId } as BotToolContext);
   };
   const call = (name: string, input: unknown) =>
     tool(name).run(input, { signal: new AbortController().signal });
@@ -276,6 +285,8 @@ describe('BotHostToolsFactory', () => {
     const { call } = setup((query) => (query instanceof FindSessionQuery ? blocked : null));
     const result = await call('get_session', { session_id: blocked.id });
     expect(result.content).toContain('- project: "Website"');
+    // The bot has the session's address to give when asked for its link.
+    expect(result.content).toContain(`- link: https://console.example/sessions/${blocked.id}`);
     expect(result.content).toContain(
       'permission dialog (decision perm-1): Do you want to proceed?',
     );
@@ -394,6 +405,25 @@ describe('BotHostToolsFactory', () => {
       // 2026-11-10: a bot answered with the button alone, its finding left
       // in its thinking; the result says the reply still answers.
       expect(result.content).toContain('now write your reply as if there were no button');
+    });
+
+    // The regression: on WhatsApp the bot "sent" a button the chat never
+    // draws, then told the person it could not make a link at all.
+    it('answers a WhatsApp turn with the session’s console link to write, not a button', async () => {
+      const found = working();
+      const { call } = setup(() => found, 'auto', 'whatsapp-chat-1');
+      const result = await call('show_session', { session_id: found.id });
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toContain(`https://console.example/sessions/${found.id}`);
+      expect(result.content).toContain('This chat draws no buttons');
+      expect(result.content).not.toContain('as if there were no button');
+    });
+
+    it('keeps the console chat’s answer free of the address, since its button is the link', async () => {
+      const found = working();
+      const { call } = setup(() => found);
+      const result = await call('show_session', { session_id: found.id });
+      expect(result.content).not.toContain('https://console.example');
     });
 
     // The regression: a session the owner cannot read still gets a button.
@@ -672,7 +702,7 @@ describe('BotHostToolsFactory', () => {
     });
 
     it('is a read the toolbox may hand a delegate child, behind sessions:read', () => {
-      const factory = new BotHostToolsFactory({} as QueryBus);
+      const factory = new BotHostToolsFactory({} as QueryBus, {} as CommandBus, config);
       const definition = factory.definitions().find((tool) => tool.name === 'search_sessions');
       expect(definition?.readOnly).toBe(true);
       expect(definition?.scope).toBe('sessions:read');
@@ -716,6 +746,7 @@ describe('BotHostToolsFactory', () => {
       const factory = new BotHostToolsFactory(
         queryBus as unknown as QueryBus,
         { execute: vi.fn() } as unknown as CommandBus,
+        config,
       );
       const bind = (name: string) => {
         const definition = factory.definitions().find((tool) => tool.name === name);

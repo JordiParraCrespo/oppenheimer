@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared/agents';
@@ -32,6 +33,7 @@ import {
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { answerNeedsPerson, SESSION_UNBLOCK_RULE } from '../domain/bot-session-decision.policy';
 import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
+import { sessionLink } from '../domain/bot-session-link.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
@@ -51,6 +53,7 @@ import {
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
+  inChannel,
 } from './bot-tool.factory';
 
 /** How long `start_cloud_session` waits for the cloud session's id: the runner's own start limit. */
@@ -85,6 +88,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     private readonly commandBus: CommandBus,
     private readonly watches: BotSessionWatchResolver,
     private readonly waits: BotSessionWaitResolver,
+    private readonly config: ConfigService,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -224,15 +228,21 @@ export class BotSessionToolsFactory implements BotToolArea {
           'first_task',
           input.watch,
         );
-        return {
-          content: promptText('tools/sessions.start-session-content', {
-            sessionId: result.sessionId,
-            hostId,
-            offline,
-            watched,
-          }),
+        const started = promptText('tools/sessions.start-session-content', {
           sessionId: result.sessionId,
-        };
+          hostId,
+          offline,
+          watched,
+        });
+        const link = inChannel(context)
+          ? ` ${promptText('tools/sessions.start-session-channel-link', {
+              link: sessionLink(
+                this.config.getOrThrow<string>('app.frontendUrl'),
+                result.sessionId,
+              ),
+            })}`
+          : '';
+        return { content: `${started}${link}`, sessionId: result.sessionId };
       },
     });
   }

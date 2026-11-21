@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { FIELD_BOUNDS } from '@oppenheimer/shared';
@@ -38,10 +39,12 @@ const INSTALLATION = '44444444-4444-4444-8444-444444444444';
 const context = (
   permission: BotToolContext['permission'],
   approvals: BotApprovalRequesterPort,
+  conversationId = 'bot-1',
 ): BotToolContext => ({
   owner,
   organizationId: 'org-1',
   botId: 'bot-1',
+  conversationId,
   turnId: 'turn-1',
   homeHostId: HOME,
   timeZone: 'UTC',
@@ -201,7 +204,7 @@ function cloudSession(
   return session;
 }
 
-function setup(permission: BotToolContext['permission']) {
+function setup(permission: BotToolContext['permission'], conversationId = 'bot-1') {
   const session = blockedSession();
   const queryBus = {
     execute: vi.fn(async (query: unknown) => {
@@ -234,12 +237,16 @@ function setup(permission: BotToolContext['permission']) {
     commandBus as unknown as CommandBus,
     watches as unknown as BotSessionWatchResolver,
     new BotSessionWaitResolver(queryBus as unknown as QueryBus),
+    { getOrThrow: () => 'https://console.example' } as Pick<
+      ConfigService,
+      'getOrThrow'
+    > as ConfigService,
   );
   const call = (name: string, input: unknown) => {
     const definition = factory.definitions().find((candidate) => candidate.name === name);
     if (!definition) throw new Error(`no tool ${name}`);
     return definition
-      .bind(context(permission, approvals))
+      .bind(context(permission, approvals, conversationId))
       .run(input, { signal: new AbortController().signal });
   };
   return { queryBus, commandBus, approvals, watches, call, session };
@@ -299,6 +306,22 @@ describe('BotSessionToolsFactory', () => {
     expect(result.content).toContain('Started session session-1');
     // The chat links to the session from this, not from the words.
     expect(result.data).toEqual({ sessionId: 'session-1' });
+  });
+
+  // The regression: a session started from WhatsApp left the person with
+  // no way in, its Open session button drawn only in the console.
+  it('gives a WhatsApp turn the started session’s console link to write; the console’s answer stays without it', async () => {
+    const inChannel = await setup('full', 'whatsapp-chat-1').call('start_session', {
+      task: 'Research',
+      project_id: PROJECT,
+    });
+    expect(inChannel.content).toContain('https://console.example/sessions/session-1');
+    expect(inChannel.data).toEqual({ sessionId: 'session-1' });
+    const inConsole = await setup('full').call('start_session', {
+      task: 'Research',
+      project_id: PROJECT,
+    });
+    expect(inConsole.content).not.toContain('https://console.example');
   });
 
   it('subscribes the bot to the session it started, and says so in its answer', async () => {

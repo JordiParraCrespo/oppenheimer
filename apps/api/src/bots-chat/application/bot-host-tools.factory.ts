@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   PAGINATION,
@@ -37,6 +38,7 @@ import { SearchSessionsQuery } from '../../sessions/queries/search-sessions/sear
 import { describeDecision, groupScanOf, SESSION_GROUP_PHRASES } from '../bot-session-tool.mapper';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { describeSessionActivity } from '../domain/bot-session-activity.policy';
+import { sessionLink } from '../domain/bot-session-link.policy';
 import {
   SESSION_READ_BUDGET_KEY,
   SESSION_READ_CHARS_PER_TURN,
@@ -59,6 +61,7 @@ import {
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
+  inChannel,
 } from './bot-tool.factory';
 
 /** A host as `FindHostsQuery` answers it, the part a tool writes. */
@@ -115,7 +118,12 @@ export class BotHostToolsFactory implements BotToolArea {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly config: ConfigService,
   ) {}
+
+  private link(sessionId: string): string {
+    return sessionLink(this.config.getOrThrow<string>('app.frontendUrl'), sessionId);
+  }
 
   definitions(): readonly BotToolDefinition[] {
     return [
@@ -282,6 +290,7 @@ export class BotHostToolsFactory implements BotToolArea {
           `- where: ${session.folderPath ? `folder ${session.folderPath}` : `branch ${session.branch ?? 'none yet'}`}`,
           `- last activity: ${formatToolTime(session.lastEventAt, context.timeZone)}`,
           `- stopped: ${session.stoppedAt ? formatToolTime(session.stoppedAt, context.timeZone) : 'no'}`,
+          `- link: ${this.link(session.id)}`,
         ];
         const cloud = describeCloudSession(session);
         if (cloud) lines.push(cloud);
@@ -306,7 +315,8 @@ export class BotHostToolsFactory implements BotToolArea {
   /**
    * The console's Open session button on the call's line, for a session the
    * bot only found: the chat draws it from the call's session, never from
-   * the words, as it does for one `start_session` started.
+   * the words, as it does for one `start_session` started. A channel's chat
+   * draws no buttons, so there the answer is the link the bot writes.
    */
   private showSession(): BotToolDefinition {
     return defineBotTool({
@@ -321,13 +331,14 @@ export class BotHostToolsFactory implements BotToolArea {
         const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
           new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
         );
-        return {
-          content: promptText('tools/host.show-session-content', {
-            id: session.id,
-            name: session.name,
-          }),
-          sessionId: session.id,
-        };
+        const content = inChannel(context)
+          ? promptText('tools/host.show-session-channel-content', {
+              id: session.id,
+              name: session.name,
+              link: this.link(session.id),
+            })
+          : promptText('tools/host.show-session-content', { id: session.id, name: session.name });
+        return { content, sessionId: session.id };
       },
     });
   }
