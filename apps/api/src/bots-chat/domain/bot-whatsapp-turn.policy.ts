@@ -67,8 +67,25 @@ export function whatsappTurn(
   });
 }
 
-/** The most turns a contact's chat (a person or a group the number allows) is sent in an hour. */
+/** The most turns a person's chat the number allows is sent in an hour. */
 export const WHATSAPP_CONTACT_TURNS_PER_HOUR = 20;
+
+/**
+ * The most turns a group the number allows is sent in an hour. Every line of
+ * a group with words wakes its bot, so a group talks far more than a person:
+ * at a person's cap a lively group would fall silent within minutes.
+ */
+export const WHATSAPP_GROUP_TURNS_PER_HOUR = 120;
+
+const TURNS_PER_HOUR: Record<'direct' | 'group', number> = {
+  direct: WHATSAPP_CONTACT_TURNS_PER_HOUR,
+  group: WHATSAPP_GROUP_TURNS_PER_HOUR,
+};
+
+/** The most turns a contact's chat of this kind is sent in an hour. */
+export function whatsappTurnsPerHour(chatKind: 'direct' | 'group'): number {
+  return TURNS_PER_HOUR[chatKind];
+}
 
 /** What a contact wrote in a chat the number allows, for the turn it queues. */
 export interface BotWhatsappContactMessage {

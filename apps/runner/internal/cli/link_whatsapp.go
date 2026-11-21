@@ -199,6 +199,17 @@ func (p whatsAppPublisher) State(status wadomain.Status) {
 	_ = p.h.client.Send(out)
 }
 
+func (p whatsAppPublisher) Chats(batch []wadomain.KnownChat) {
+	out := link.WhatsappChats{Type: link.TypeWhatsappChats, Chats: make([]link.WhatsappKnownChat, 0, len(batch))}
+	for _, c := range batch {
+		out.Chats = append(out.Chats, link.WhatsappKnownChat{
+			ChatID: c.ChatID, ChatKind: string(c.Kind), ChatName: wadomain.Fit(c.Name, 200),
+		})
+	}
+	// A list lost to a link that is down goes again with the next LinkUp.
+	_ = p.h.client.Send(out)
+}
+
 func (p whatsAppPublisher) Messages(batch []wadomain.Inbound) bool {
 	out := link.WhatsappMessages{Type: link.TypeWhatsappMessages, Messages: make([]link.WhatsappInbound, 0, len(batch))}
 	for _, m := range batch {

@@ -185,6 +185,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     name: 'Jordi',
     reason: 'paired from the console',
   },
+  'whatsapp.chats': {
+    type: 'whatsapp.chats',
+    chats: [
+      { chatId: '120363000000000001@g.us', chatKind: 'group', chatName: 'Family' },
+      { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
+      { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct' },
+    ],
+  },
   'whatsapp.messages': {
     type: 'whatsapp.messages',
     messages: [

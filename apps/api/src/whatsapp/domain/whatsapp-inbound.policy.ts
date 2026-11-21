@@ -118,9 +118,9 @@ export function whatsappInboundAction(
  *
  * - In a person's chat, any message they write with words (a caption, or
  *   `[image]` for media without one).
- * - In a group, only a message that speaks to the number: one that
- *   @-mentions it, or replies to one of its messages. The lines in between
- *   are kept and wake nothing, as OpenClaw and Hermes have it.
+ * - In a group, any message with words from anyone in it: allowing a group
+ *   is asking its bot to take part in all of it, not only when @-mentioned
+ *   or replied to, which left a group set to a bot looking unanswered.
  * - Never the number's own messages, its chat with itself, a chat it does
  *   not allow, or a voice note without a caption, which no one hears yet.
  */
@@ -131,20 +131,14 @@ export function whatsappContactAction(
   allowed: boolean,
   message: Pick<
     WhatsappMessageDraft,
-    'chatId' | 'chatKind' | 'fromMe' | 'senderId' | 'text' | 'media' | 'mentions' | 'quotedSenderId'
+    'chatId' | 'chatKind' | 'fromMe' | 'senderId' | 'text' | 'media'
   >,
 ): WhatsappContactAction {
   if (!allowed || message.fromMe) return { kind: 'ignore' };
   const number = account.phone;
   if (number !== null && message.chatId === number) return { kind: 'ignore' };
-  if (message.chatKind === 'direct') {
-    if (!sameWhatsappNumber(message.senderId, message.chatId)) return { kind: 'ignore' };
-  } else {
-    const speaksToNumber =
-      number !== null &&
-      (message.mentions.some((mentioned) => sameWhatsappNumber(mentioned, number)) ||
-        (message.quotedSenderId !== null && sameWhatsappNumber(message.quotedSenderId, number)));
-    if (!speaksToNumber) return { kind: 'ignore' };
+  if (message.chatKind === 'direct' && !sameWhatsappNumber(message.senderId, message.chatId)) {
+    return { kind: 'ignore' };
   }
   if (isWhatsappVoiceNote(message)) return { kind: 'ignore' };
   const text = message.text.trim() || (message.media ? `[${message.media}]` : '');

@@ -103,6 +103,7 @@ const NESTED_NAMES = {
   'session.create.checkouts[]': 'Checkout',
   'port.listing.ports[]': 'ListedPort',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
+  'whatsapp.chats.chats[]': 'WhatsappKnownChat',
 };
 
 /** Doc comments for the constants, which the schema carries as bare values. */

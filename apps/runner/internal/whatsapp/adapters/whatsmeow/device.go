@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +54,16 @@ const DeviceName = "Oppenheimer"
 // maxReconnectErrors caps whatsmeow's linear backoff (2 s per failed attempt)
 // at 30 s.
 const maxReconnectErrors = 15
+
+// chatsSettle is how long the device waits after a change to its groups or
+// contacts before it reads the list again: a full contact sync is hundreds of
+// events, read once.
+const chatsSettle = 3 * time.Second
+
+// chatsEvery is the least time between two reads of the list: each asks
+// WhatsApp for every group the number is in, which a busy community could
+// otherwise have it ask every few seconds.
+const chatsEvery = time.Minute
 
 // groupNameTTL is how long a group's subject is trusted before it is read
 // again: a rename shows within the hour.
@@ -82,6 +93,10 @@ type Device struct {
 	handler   uint32
 
 	groups sync.Map // types.JID → groupName
+
+	chatsMu    sync.Mutex
+	chatsTimer *time.Timer
+	chatsAt    time.Time // when the list was last read
 }
 
 type groupName struct {
@@ -486,6 +501,16 @@ func (d *Device) onEvent(raw any) {
 			phone = client.Store.ID.ToNonAD().String()
 		}
 		listener.Connected(phone, name)
+		d.readChatsSoon(client, listener)
+	case *events.GroupInfo:
+		// Only a rename changes the list; joins, leaves and settings do not.
+		if evt.Name != nil {
+			d.readChatsSoon(client, listener)
+		}
+	case *events.JoinedGroup, *events.Contact, *events.AppStateSyncComplete:
+		// A group joined, a contact saved or changed, the phone's contacts
+		// synced: the list Settings shows changed.
+		d.readChatsSoon(client, listener)
 	case *events.Disconnected, *events.KeepAliveTimeout:
 		listener.Disconnected()
 	case *events.LoggedOut:
@@ -508,6 +533,93 @@ func (d *Device) onEvent(raw any) {
 	case *events.HistorySync:
 		// Asked for none; dropped unread.
 	}
+}
+
+// readChatsSoon reads the device's chats once the changes around it settle,
+// and no sooner than chatsEvery after the last read.
+func (d *Device) readChatsSoon(client *whatsmeow.Client, listener app.Events) {
+	d.chatsMu.Lock()
+	defer d.chatsMu.Unlock()
+	if d.chatsTimer != nil {
+		d.chatsTimer.Stop()
+	}
+	wait := max(chatsSettle, chatsEvery-time.Since(d.chatsAt))
+	d.chatsTimer = time.AfterFunc(wait, func() {
+		if current, _ := d.current(); current != client {
+			return
+		}
+		d.chatsMu.Lock()
+		d.chatsAt = time.Now()
+		d.chatsMu.Unlock()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		chats, err := readChats(ctx, client)
+		if err != nil {
+			d.logger.Warn("whatsapp: the number's groups and contacts could not be read", slog.Any("error", err))
+			return
+		}
+		for _, c := range chats {
+			if c.Kind == domain.ChatGroup && c.Name != "" {
+				if jid, err := types.ParseJID(c.ChatID); err == nil {
+					d.groups.Store(jid, groupName{name: c.Name, at: time.Now()})
+				}
+			}
+		}
+		listener.Chats(chats)
+	})
+}
+
+// readChats is the groups the number is in and the people among its
+// contacts: groups first, then people, each by name. A person is a contact the
+// phone saved (a name of their own, or a business's), never someone only seen
+// in a group with the name they gave themselves, and never the number itself.
+func readChats(ctx context.Context, client *whatsmeow.Client) ([]domain.KnownChat, error) {
+	groups, err := client.GetJoinedGroups(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("joined groups: %w", err)
+	}
+	contacts, err := client.Store.Contacts.GetAllContacts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("contacts: %w", err)
+	}
+	self := selfOf(client)
+	chats := make([]domain.KnownChat, 0, len(groups)+len(contacts))
+	for _, g := range groups {
+		if g == nil {
+			continue
+		}
+		chats = append(chats, domain.KnownChat{ChatID: g.JID.ToNonAD().String(), Kind: domain.ChatGroup, Name: g.Name})
+	}
+	var people []domain.KnownChat
+	for jid, contact := range contacts {
+		jid = jid.ToNonAD()
+		if jid.Server != types.DefaultUserServer || jid == self.phone {
+			continue
+		}
+		name := firstName(contact.FullName, contact.FirstName, contact.BusinessName)
+		if name == "" {
+			continue
+		}
+		people = append(people, domain.KnownChat{ChatID: jid.String(), Kind: domain.ChatDirect, Name: name})
+	}
+	byName := func(a, b domain.KnownChat) int {
+		if c := strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)); c != 0 {
+			return c
+		}
+		return strings.Compare(a.ChatID, b.ChatID)
+	}
+	slices.SortFunc(chats, byName)
+	slices.SortFunc(people, byName)
+	return append(chats, people...), nil
+}
+
+func firstName(names ...string) string {
+	for _, name := range names {
+		if name = strings.TrimSpace(name); name != "" {
+			return name
+		}
+	}
+	return ""
 }
 
 // reconnectOutdated reconnects client after WhatsApp refused it as outdated,

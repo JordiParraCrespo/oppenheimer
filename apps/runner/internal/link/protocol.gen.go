@@ -176,6 +176,7 @@ const (
 	TypeWhatsappUnlink          = "whatsapp.unlink"
 	TypeWhatsappState           = "whatsapp.state"
 	TypeWhatsappMessages        = "whatsapp.messages"
+	TypeWhatsappChats           = "whatsapp.chats"
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSendVoice       = "whatsapp.send.voice"
@@ -261,6 +262,7 @@ var MessageTypes = []string{
 	TypeWhatsappUnlink,
 	TypeWhatsappState,
 	TypeWhatsappMessages,
+	TypeWhatsappChats,
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSendVoice,
@@ -412,6 +414,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappState), true
 	case TypeWhatsappMessages:
 		return new(WhatsappMessages), true
+	case TypeWhatsappChats:
+		return new(WhatsappChats), true
 	case TypeWhatsappAck:
 		return new(WhatsappAck), true
 	case TypeWhatsappSend:
@@ -1115,6 +1119,19 @@ type WhatsappInbound struct {
 	Mentions       []string  `json:"mentions,omitempty"`
 	VoiceSeconds   int       `json:"voiceSeconds,omitempty"`
 	SentAt         time.Time `json:"sentAt"`
+}
+
+// WhatsappChats is the `whatsapp.chats` message.
+type WhatsappChats struct {
+	Type  string              `json:"type"`
+	Chats []WhatsappKnownChat `json:"chats"`
+}
+
+// WhatsappKnownChat is WhatsappChats.Chats.
+type WhatsappKnownChat struct {
+	ChatID   string `json:"chatId"`
+	ChatKind string `json:"chatKind"`
+	ChatName string `json:"chatName,omitempty"`
 }
 
 // WhatsappAck is the `whatsapp.ack` message.
