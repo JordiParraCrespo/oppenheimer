@@ -1,4 +1,5 @@
 import { ATTACH_CLOSE_CODES, type AttachDeviceInput } from '@oppenheimer/shared/protocol';
+import { CONSUMER_CONFIG } from '../../../config';
 import {
   openAttachSocket,
   readAttachMessage,
@@ -50,6 +51,11 @@ export interface DeviceStream {
   onFrame(listener: (frame: Blob, drawn: () => void) => void): () => void;
   onDevice(listener: (device: DeviceInfo) => void): () => void;
   onStatus(listener: (status: DeviceStatus) => void): () => void;
+  /**
+   * Send a gesture or key to the device. Input sent while the stream is not
+   * live (its socket redialling) is held, at most `HELD_INPUT_MAX` for
+   * `CONSUMER_CONFIG.device.heldInputMs` each, and sent in order once it is live again.
+   */
   input(input: DeviceInput): void;
   /**
    * Move the session onto another of its host's devices, one `devices` lists
@@ -74,6 +80,12 @@ export interface DeviceStreamOptions {
   /** Injected in tests; `setTimeout` otherwise. */
   schedule?: Schedule;
 }
+
+/**
+ * The most input held while the stream is not live: a few taps and a swipe,
+ * not a backlog that would replay a minute of clicking on the device.
+ */
+const HELD_INPUT_MAX = 16;
 
 /** Close codes no reconnect can change. */
 const FINAL = new Map<number, DeviceStatus>([
@@ -101,6 +113,8 @@ export class AttachDeviceStream implements DeviceStream {
   private cancelRetry: (() => void) | null = null;
   /** Each dial's number: a dial a refresh overtook drops its socket unopened. */
   private dial = 0;
+  /** Input sent while not live, oldest first, each with its expiry's cancel. */
+  private held: { input: DeviceInput; expire: () => void }[] = [];
 
   constructor(private readonly options: DeviceStreamOptions) {
     this.socketFactory = options.socketFactory ?? webSocketFactory;
@@ -126,7 +140,20 @@ export class AttachDeviceStream implements DeviceStream {
   }
 
   input(input: DeviceInput): void {
-    this.tell({ type: 'device.input', ...input });
+    if (this.disposed) return;
+    if (this.status === 'live' && this.isOpen()) {
+      this.tell({ type: 'device.input', ...input });
+      return;
+    }
+    if (this.status === 'unavailable' || this.status === 'ended') return;
+    if (this.held.length >= HELD_INPUT_MAX) this.held.shift()?.expire();
+    const entry = {
+      input,
+      expire: this.schedule(() => {
+        this.held = this.held.filter((held) => held !== entry);
+      }, CONSUMER_CONFIG.device.heldInputMs),
+    };
+    this.held.push(entry);
   }
 
   select(serial: string): void {
@@ -149,6 +176,7 @@ export class AttachDeviceStream implements DeviceStream {
   dispose(): void {
     this.disposed = true;
     this.cancelRetry?.();
+    this.dropHeld();
     const socket = this.socket;
     this.socket = null;
     socket?.close(1000, 'closed');
@@ -178,6 +206,7 @@ export class AttachDeviceStream implements DeviceStream {
       this.socket = null;
       const final = FINAL.get(event.code);
       if (final) {
+        this.dropHeld();
         this.setStatus(final);
         return;
       }
@@ -195,6 +224,7 @@ export class AttachDeviceStream implements DeviceStream {
         this.attempt = 0;
         for (const listener of this.deviceListeners) listener(device);
         this.setStatus('live');
+        this.sendHeld();
         return;
       }
       case 'hint':
@@ -229,6 +259,25 @@ export class AttachDeviceStream implements DeviceStream {
     if (this.status === status) return;
     this.status = status;
     for (const listener of this.statusListeners) listener(status);
+  }
+
+  /** The input held while the stream was not live, in the order it was sent. */
+  private sendHeld(): void {
+    const held = this.held;
+    this.held = [];
+    for (const { input, expire } of held) {
+      expire();
+      this.tell({ type: 'device.input', ...input });
+    }
+  }
+
+  private dropHeld(): void {
+    for (const { expire } of this.held) expire();
+    this.held = [];
+  }
+
+  private isOpen(): boolean {
+    return this.socket?.readyState === WebSocket.OPEN;
   }
 
   private tell(message: object): void {

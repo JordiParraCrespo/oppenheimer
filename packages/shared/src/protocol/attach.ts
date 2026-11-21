@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { DEVICE_CHOICES_MAX, deviceChoiceSchema } from './devices.js';
+import { DEVICE_CHOICES_MAX, deviceChoiceSchema, deviceSwipeDurationSchema } from './devices.js';
 import { attachTicketHintSchema } from './hint.js';
 import {
   CHAT_BATCH_MAX_ENTRIES,
@@ -67,8 +67,8 @@ const devicePoint = () => z.number().min(0).max(1);
 
 /**
  * A gesture or key for the session's device, on a device attachment (a
- * ticket minted with `target: 'device'`). Relayed as `device.input`; the
- * runner applies it to the session's own device.
+ * ticket minted with `target: 'device'`). Relayed as `device.input`, whose
+ * fields it has; the runner applies it to the session's own device.
  */
 export const attachDeviceInputSchema = z.object({
   type: z.literal('device.input'),
@@ -77,6 +77,8 @@ export const attachDeviceInputSchema = z.object({
   y: devicePoint().optional(),
   toX: devicePoint().optional(),
   toY: devicePoint().optional(),
+  durationMs: deviceSwipeDurationSchema().optional(),
+  momentum: z.boolean().optional(),
   text: z.string().min(1).max(1000).optional(),
   key: z.enum(DEVICE_KEYS).optional(),
   button: z.enum(DEVICE_BUTTONS).optional(),
