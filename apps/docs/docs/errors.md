@@ -954,12 +954,24 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 | `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
 | `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
 | `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
+| `VOICE_008` <a id="voice_008" />     | Speech synthesis is not set up on this deployment            | 409  |
+| `VOICE_009` <a id="voice_009" />     | The text-to-speech provider could not speak the text         | 502  |
+| `VOICE_010` <a id="voice_010" />     | The text-to-speech provider is rate limiting this deployment | 429  |
+| `VOICE_011` <a id="voice_011" />     | That text cannot be spoken as one voice note                 | 422  |
 
 `VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
 (Settings → Model providers), or give the deployment a speech-to-text server.
 A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
 falls back to the deployment's server when there is one; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
+
+`VOICE_008` to `VOICE_011` are a bot's WhatsApp voice note being spoken.
+`VOICE_008` is a deployment with no text-to-speech server (`VOICE_TTS_*` in
+`.env.example`); the bot is refused before any card and told to send text.
+`VOICE_009` is that server unreachable, refusing, or answering something that
+is not Ogg/Opus audio of at most two minutes; `VOICE_010` is it rate limiting
+the deployment's key, with `Retry-After`. `VOICE_011` is an empty text or one
+longer than 600 characters.
 
 ## Inbox
 
@@ -1349,6 +1361,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `WA_005` <a id="wa_005" />           | This host knows no such WhatsApp voice note  | 404  |
 | `WA_006` <a id="wa_006" />           | The WhatsApp voice note is too large to hand over | 413  |
 | `WA_007` <a id="wa_007" />           | WhatsApp would not hand over the voice note  | 502  |
+| `WA_008` <a id="wa_008" />           | That audio is not a voice note WhatsApp can play | 415  |
 | `TG_001` <a id="tg_001" />           | Telegram refused the bot's token             | 400  |
 | `TG_002` <a id="tg_002" />           | This host already holds another Telegram bot | 409  |
 | `TG_003` <a id="tg_003" />           | No Telegram bot is connected on this host    | 503  |
@@ -1459,6 +1472,14 @@ from before the host was updated, is `WA_005`. `WA_006` is a note longer than
 one link frame carries, about two minutes. `WA_007` is WhatsApp's media
 server refusing the download. The bot then reads the note as one it could
 not hear.
+
+`whatsapp.send.voice`, a bot's spoken reply, is answered like a text: `WA_002`,
+`WA_003` (WhatsApp refused the upload or the message) and `WA_004`, the same
+budget a text spends. Before anything is uploaded the host refuses audio
+larger than one frame (`WA_006`) and audio that is not Ogg/Opus or runs
+outside 1 to 120 seconds (`WA_008`). The control plane's link refuses audio
+past one frame itself, as `WA_006`, before it is sent (a larger frame would
+close the host's link); the bot reads either as `WHATSAPP_008`.
 
 The `TG_*` codes reach the control plane the same way, in answer to
 `telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).

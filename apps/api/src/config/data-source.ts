@@ -94,6 +94,7 @@ import { TelegramMessageOrmEntity } from '../telegram/database/telegram-message.
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
 import { WhatsappChatGrantOrmEntity } from '../whatsapp/database/whatsapp-chat-grant.orm-entity';
+import { WhatsappKnownChatOrmEntity } from '../whatsapp/database/whatsapp-known-chat.orm-entity';
 import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 /**
@@ -159,6 +160,7 @@ export default new DataSource({
     WhatsappAccountOrmEntity,
     WhatsappMessageOrmEntity,
     WhatsappChatGrantOrmEntity,
+    WhatsappKnownChatOrmEntity,
     TelegramAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,

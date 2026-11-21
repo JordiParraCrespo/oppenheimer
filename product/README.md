@@ -1840,6 +1840,16 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
+  bot in a group only when a message @-mentioned the number or replied to
+  it, and listed only the chats a number had seen a message in. On
+  2026-11-21 the owner found a group set to a bot silent ("not answering")
+  and People empty: a group the owner sets to a bot now wakes it on every
+  message with words (up to 120 turns an hour per group; 20 stays a
+  person's chat's), and the runner reports the groups the number is in
+  and its saved contacts on connect and on each change (`whatsapp.chats`),
+  so Settings lists them before anyone writes. The owner's own chat is
+  listed first among People, answered by the default bot.
 - `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
   `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
   on 2026-11-20 (#953) with the token in the URL instead,

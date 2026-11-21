@@ -21,10 +21,22 @@ const TRIGGER_CLASSES =
 const TRIGGER_VARIANT = {
   pill: 'h-7.5 gap-1.75 bg-hover-surface px-3 text-[13.5px] text-fg hover:bg-control-hover active:scale-[0.975] data-popup-open:bg-selected-surface data-set:bg-selected-surface data-set:text-selected-fg [&_svg:not([class*=size-])]:size-3.25',
   labelled:
-    'h-(--control-h-md) gap-1.5 bg-hover-surface px-3 text-[13px] text-fg hover:bg-selected-surface data-popup-open:bg-selected-surface data-set:bg-selected-surface',
+    'gap-1.5 bg-hover-surface px-3 text-[13px] text-fg hover:bg-selected-surface data-popup-open:bg-selected-surface data-set:bg-selected-surface',
 } as const;
 
 type FacetVariant = keyof typeof TRIGGER_VARIANT;
+
+/**
+ * The `labelled` trigger's rung on the control ramp: `md` (34px) beside a
+ * form's fields, `sm` (28px) in a filter row of `sm` pill tabs and a `sm`
+ * search, so the row stands at one height. The `pill` trigger has its own.
+ */
+const LABELLED_SIZE = {
+  sm: 'h-(--control-h-sm)',
+  md: 'h-(--control-h-md)',
+} as const;
+
+type FacetSize = keyof typeof LABELLED_SIZE;
 
 /**
  * The trigger both facets share: its props, spread onto a menu's or a
@@ -36,6 +48,7 @@ function facetTriggerProps({
   current,
   set,
   variant,
+  size,
   icon,
   className,
 }: {
@@ -43,6 +56,7 @@ function facetTriggerProps({
   current: React.ReactNode;
   set: boolean;
   variant: FacetVariant;
+  size: FacetSize;
   icon?: React.ReactNode;
   className?: string;
 }) {
@@ -51,7 +65,12 @@ function facetTriggerProps({
     'data-variant': variant,
     'data-set': set || undefined,
     'aria-label': variant === 'pill' ? label : undefined,
-    className: cn(TRIGGER_CLASSES, TRIGGER_VARIANT[variant], className),
+    className: cn(
+      TRIGGER_CLASSES,
+      TRIGGER_VARIANT[variant],
+      variant === 'labelled' && LABELLED_SIZE[size],
+      className,
+    ),
     children: (
       <>
         {variant === 'pill' ? (
@@ -90,7 +109,7 @@ type FacetOption = {
  * - `pill` (30px, Plan's board): the icon, then the facet's name while unset
  *   or the picked option's label, then the chevron; picked, it takes the
  *   selected ink.
- * - `labelled` (34px, the queue's row): the facet's name in muted ink, the
+ * - `labelled` (34px, or 28px at `size="sm"` in a row of `sm` controls; the queue's row): the facet's name in muted ink, the
  *   current option in full ink, the chevron. The name stays, because the
  *   queue shows every facet at once.
  *
@@ -111,6 +130,7 @@ function FacetSelect({
   value,
   onValueChange,
   variant = 'labelled',
+  size = 'md',
   icon,
   menuWidth,
   className,
@@ -120,6 +140,8 @@ function FacetSelect({
   value: string;
   onValueChange: (value: string) => void;
   variant?: FacetVariant;
+  /** The `labelled` trigger's height; `md` unless the row around it is `sm`. */
+  size?: FacetSize;
   /** The `pill` trigger's leading glyph (a folder, a milestone diamond). */
   icon?: React.ReactNode;
   menuWidth?: number;
@@ -135,6 +157,7 @@ function FacetSelect({
           current: current?.label,
           set,
           variant,
+          size,
           icon,
           className,
         })}
@@ -164,6 +187,8 @@ type SearchableFacetProps = {
   searchPlaceholder: string;
   emptyText: (query: string) => React.ReactNode;
   variant?: FacetVariant;
+  /** The `labelled` trigger's height; `md` unless the row around it is `sm`. */
+  size?: FacetSize;
   icon?: React.ReactNode;
   menuWidth?: number;
   className?: string;
@@ -181,6 +206,7 @@ function SearchableFacet({
   searchPlaceholder,
   emptyText,
   variant = 'labelled',
+  size = 'md',
   icon,
   menuWidth = 272,
   className,
@@ -197,7 +223,9 @@ function SearchableFacet({
   const [open, setOpen] = React.useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger {...facetTriggerProps({ label, current, set, variant, icon, className })} />
+      <PopoverTrigger
+        {...facetTriggerProps({ label, current, set, variant, size, icon, className })}
+      />
       <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
         <SearchList
           aria-label={label}

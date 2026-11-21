@@ -2389,3 +2389,13 @@ The decisions it produced:
   suggests an irreversible step the bot did not propose. Eval
   `bot-suggestion`: 47/48 on Opus 5.5; 33/48 on Haiku 5.5, which can answer
   a preference question for the person with made-up details.
+- 2026-11-21: **a bot texts like a person on WhatsApp and Telegram** (§1).
+  A bot on a phone read like a help desk: it quoted the owner's words back
+  ("I got your 'Hello?'"), said how a voice note reached it, and listed what
+  it can and cannot do, down to how many days messages are kept. The turn's
+  channel line (`turn/context.md`) is followed, on WhatsApp and Telegram alike, by one shared fragment, `on-a-phone`, that asks for
+  a friend's texting voice in the owner's language and register, an emoji
+  when it fits, an answer to what they meant, never their words echoed or the
+  way their message arrived, and no capabilities, machinery or limits unless
+  asked. A new bot's `SOUL.md` says the same in one line under Vibe; an
+  existing bot's soul is its own and is left as it is.

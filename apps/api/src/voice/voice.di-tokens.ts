@@ -4,3 +4,5 @@ export const KEYED_SPEECH = Symbol('KEYED_SPEECH');
 export const VOICE_POLISH_ENGINE = Symbol('VOICE_POLISH_ENGINE');
 /** The `LlmService` a clip's polish runs on (`PolishLlmPort`). */
 export const POLISH_LLM = Symbol('POLISH_LLM');
+/** The deployment's text-to-speech server (`SpeechSynthesisPort`). */
+export const SPEECH_SYNTHESIS = Symbol('SPEECH_SYNTHESIS');

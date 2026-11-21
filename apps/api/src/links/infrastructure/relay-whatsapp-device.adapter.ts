@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { WhatsappMediaGetMessage, WhatsappSendMessage } from '@oppenheimer/shared/protocol';
+import {
+  WHATSAPP_VOICE_NOTE_MAX_BYTES,
+  type WhatsappMediaGetMessage,
+  type WhatsappSendMessage,
+  type WhatsappSendVoiceMessage,
+} from '@oppenheimer/shared/protocol';
 import type {
   WhatsappDevicePort,
   WhatsappDeviceReach,
@@ -8,7 +13,7 @@ import type {
   WhatsappSendOutcome,
   WhatsappVoiceNoteOutcome,
 } from '../../whatsapp/application/whatsapp-device.port';
-import type { LinkRegistryPort } from '../application/link-registry.port';
+import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
 import type { LinkRepliesPort } from '../application/link-replies.port';
 import { LINK_REGISTRY, LINK_REPLIES } from '../links.di-tokens';
 
@@ -24,6 +29,12 @@ export const WHATSAPP_SEND_TIMEOUT_MS = 20_000;
  * media servers, and gives up itself at 40 seconds.
  */
 export const WHATSAPP_VOICE_NOTE_TIMEOUT_MS = 45_000;
+
+/**
+ * How long a voice note may take: the runner uploads it to WhatsApp's media
+ * servers, then sends it, and gives up itself at 40 seconds.
+ */
+export const WHATSAPP_VOICE_SEND_TIMEOUT_MS = 45_000;
 
 /**
  * `WhatsappDevicePort` over the runner link. Sent only to a runner whose hello
@@ -70,8 +81,43 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
       text,
       ...(replyTo ? { replyTo: { id: replyTo.id, senderId: replyTo.senderId } } : {}),
     };
+    return this.sent(hostId, link, message, WHATSAPP_SEND_TIMEOUT_MS);
+  }
+
+  async sendVoice(
+    hostId: string,
+    chatId: string,
+    audio: Buffer,
+    seconds: number,
+  ): Promise<WhatsappSendOutcome> {
+    const link = this.links.find(hostId);
+    if (!link) return { kind: 'host_offline' };
+    if (!link.capabilities.includes('whatsapp.voice.send')) return { kind: 'not_supported' };
+    // The runner reads the link with a frame cap: a larger frame would close
+    // the link, every session on it included, before WA_006 could answer.
+    if (audio.length > WHATSAPP_VOICE_NOTE_MAX_BYTES) {
+      return { kind: 'failed', code: 'WA_006', detail: `${audio.length} bytes is past one frame` };
+    }
+    const message: WhatsappSendVoiceMessage = {
+      type: 'whatsapp.send.voice',
+      commandId: randomUUID(),
+      chatId,
+      mimetype: 'audio/ogg; codecs=opus',
+      data: audio.toString('base64'),
+      seconds,
+    };
+    return this.sent(hostId, link, message, WHATSAPP_VOICE_SEND_TIMEOUT_MS);
+  }
+
+  /** A send on the link, waited for: the host's `whatsapp.sent`, or why not. */
+  private async sent(
+    hostId: string,
+    link: RunnerLink,
+    message: WhatsappSendMessage | WhatsappSendVoiceMessage,
+    timeoutMs: number,
+  ): Promise<WhatsappSendOutcome> {
     // Waiting before sending, so an answer faster than this line cannot be missed.
-    const pending = this.replies.expect(hostId, message.commandId, WHATSAPP_SEND_TIMEOUT_MS);
+    const pending = this.replies.expect(hostId, message.commandId, timeoutMs);
     if (!link.send(message)) {
       pending.cancel();
       return { kind: 'host_offline' };

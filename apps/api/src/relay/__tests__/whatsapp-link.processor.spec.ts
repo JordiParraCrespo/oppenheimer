@@ -4,6 +4,7 @@ import type { WhatsappInbound, WhatsappMessagesMessage } from '@oppenheimer/shar
 import { describe, expect, it, vi } from 'vitest';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import {
+  WHATSAPP_CHATS_FRAMES_PER_MINUTE,
   WHATSAPP_INTAKE_PER_MINUTE,
   WHATSAPP_INTAKE_QUEUE_MAX,
   WhatsappLinkProcessor,
@@ -93,5 +94,28 @@ describe('WhatsappLinkProcessor', () => {
     release.shift()?.();
     await later;
     expect(execute).toHaveBeenCalledTimes(full + 1);
+  });
+
+  // Breaks if a runner that keeps reporting its chat list can make the
+  // database write without bound, or a list is never taken again after a burst.
+  it('records a chat list frame by frame, up to the minute’s allowance', async () => {
+    const execute = vi.fn().mockResolvedValue(undefined);
+    const link = { hostId: 'host-1', send: vi.fn() } as unknown as RunnerLink;
+    const processor = new WhatsappLinkProcessor({ execute } as unknown as CommandBus);
+    const now = Date.parse('2026-10-30T10:00:00Z');
+    const list = {
+      type: 'whatsapp.chats' as const,
+      chats: [
+        { chatId: '120363000000000001@g.us', chatKind: 'group' as const, chatName: 'Family' },
+      ],
+    };
+    for (let index = 0; index <= WHATSAPP_CHATS_FRAMES_PER_MINUTE; index += 1) {
+      await processor.onChats(link, list, now + index);
+    }
+    expect(execute).toHaveBeenCalledTimes(WHATSAPP_CHATS_FRAMES_PER_MINUTE);
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({ hostId: 'host-1', chats: list.chats });
+
+    await processor.onChats(link, list, now + 61_000);
+    expect(execute).toHaveBeenCalledTimes(WHATSAPP_CHATS_FRAMES_PER_MINUTE + 1);
   });
 });
