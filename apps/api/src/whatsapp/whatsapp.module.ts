@@ -15,6 +15,7 @@ import { ConfirmWhatsappOwnerHttpController } from './commands/confirm-whatsapp-
 import { LinkWhatsappCommandHandler } from './commands/link-whatsapp/link-whatsapp.command-handler';
 import { LinkWhatsappHttpController } from './commands/link-whatsapp/link-whatsapp.http.controller';
 import { ReceiveWhatsappMessagesCommandHandler } from './commands/receive-whatsapp-messages/receive-whatsapp-messages.command-handler';
+import { RecordWhatsappChatsCommandHandler } from './commands/record-whatsapp-chats/record-whatsapp-chats.command-handler';
 import { RecordWhatsappStateCommandHandler } from './commands/record-whatsapp-state/record-whatsapp-state.command-handler';
 import { RemoveWhatsappAccountCommandHandler } from './commands/remove-whatsapp-account/remove-whatsapp-account.command-handler';
 import { RemoveWhatsappAccountHttpController } from './commands/remove-whatsapp-account/remove-whatsapp-account.http.controller';
@@ -35,6 +36,8 @@ import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity
 import { WhatsappAccountRepository } from './database/whatsapp-account.repository';
 import { WhatsappChatGrantOrmEntity } from './database/whatsapp-chat-grant.orm-entity';
 import { WhatsappChatGrantRepository } from './database/whatsapp-chat-grant.repository';
+import { WhatsappKnownChatOrmEntity } from './database/whatsapp-known-chat.orm-entity';
+import { WhatsappKnownChatRepository } from './database/whatsapp-known-chat.repository';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from './database/whatsapp-message.repository';
 import { OggOpusVoiceNoteDecoderAdapter } from './infrastructure/ogg-opus-voice-note-decoder.adapter';
@@ -51,6 +54,7 @@ import {
   VOICE_NOTE_DECODER,
   WHATSAPP_ACCOUNT_REPOSITORY,
   WHATSAPP_CHAT_GRANT_REPOSITORY,
+  WHATSAPP_KNOWN_CHAT_REPOSITORY,
   WHATSAPP_MESSAGE_REPOSITORY,
 } from './whatsapp.di-tokens';
 import { WhatsappResource } from './whatsapp.resource';
@@ -75,7 +79,7 @@ const httpControllers = [
 
 /**
  * The relay dispatches the host's reports (`RecordWhatsappState`,
- * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
+ * `RecordWhatsappChats`, `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
  * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), and a wake on
  * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`).
  */
@@ -87,6 +91,7 @@ const commandHandlers: Provider[] = [
   ReplyOnWhatsappCommandHandler,
   RemoveWhatsappAccountCommandHandler,
   RecordWhatsappStateCommandHandler,
+  RecordWhatsappChatsCommandHandler,
   ReceiveWhatsappMessagesCommandHandler,
   SendWhatsappMessageCommandHandler,
   TranscribeWhatsappVoiceNoteCommandHandler,
@@ -127,6 +132,7 @@ const queryHandlers: Provider[] = [
       WhatsappAccountOrmEntity,
       WhatsappMessageOrmEntity,
       WhatsappChatGrantOrmEntity,
+      WhatsappKnownChatOrmEntity,
     ]),
     AuthzKernelModule.forFeature([WhatsappResource]),
   ],
@@ -145,6 +151,7 @@ const queryHandlers: Provider[] = [
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },
     { provide: VOICE_NOTE_DECODER, useClass: OggOpusVoiceNoteDecoderAdapter },
     { provide: WHATSAPP_CHAT_GRANT_REPOSITORY, useClass: WhatsappChatGrantRepository },
+    { provide: WHATSAPP_KNOWN_CHAT_REPOSITORY, useClass: WhatsappKnownChatRepository },
   ],
 })
 export class WhatsappModule {}

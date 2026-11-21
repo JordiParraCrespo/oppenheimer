@@ -307,6 +307,15 @@ per-chat "Always allow" for sends are unchanged.
    which moves to this bot) and Remove, and the Telegram bots it answers
    on. Only listed chats are answered; there is no catch-all for people
    not on the list. A number allows up to 1,000 chats (was 50).*
+   *Then, 2026-11-21 (the owner: a group set to a bot "is not answering",
+   and People showed 0): in a group the owner allowed, every message with
+   words wakes its bot, not only a mention or a reply. The runner reports
+   the groups the number is in and its saved contacts (a name the phone
+   gave them, never someone only seen in a group) when the device connects
+   and again when it joins a group, a group is renamed or the contacts
+   change (`whatsapp.chats`, kept per number, up to 5,000), so Settings
+   lists them before anyone writes. People lists the owner first, fixed on
+   the default bot.*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions

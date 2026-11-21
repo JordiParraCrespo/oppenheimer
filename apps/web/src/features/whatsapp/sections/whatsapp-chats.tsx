@@ -2,9 +2,9 @@ import {
   Button,
   Checkbox,
   EmptyState,
-  FacetSelect,
   PillTab,
   PillTabs,
+  SearchableFacetSelect,
   SettingsGroup,
 } from '@oppenheimer/design-system-web';
 import type { BotEntity, WhatsappAccountEntity } from '@oppenheimer/frontend-consumer';
@@ -13,8 +13,14 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatSearchField } from '@/features/whatsapp/components/chat-search-field';
+import { WhatsappOwnerChatRow } from '@/features/whatsapp/components/whatsapp-owner-chat-row';
 import { useChatsFilter } from '@/features/whatsapp/hooks/use-chats-filter';
-import { CHATS_PAGE_SIZE, type ChatsBy, filterChats } from '@/features/whatsapp/lib/chat-filter';
+import {
+  CHATS_PAGE_SIZE,
+  type ChatsBy,
+  filterChats,
+  OWNER_CHAT,
+} from '@/features/whatsapp/lib/chat-filter';
 import { CHAT_TABS, type ChatTab } from '@/features/whatsapp/lib/chats-search';
 import { WhatsappChatRow } from '@/features/whatsapp/sections/whatsapp-chat-row';
 import { WhatsappChatsBulk } from '@/features/whatsapp/sections/whatsapp-chats-bulk';
@@ -38,8 +44,11 @@ export function WhatsappChats({
   const { filter, setTab, setQuery, setBy, setPage } = useChatsFilter();
   const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
   const defaultBotName = bots.find((bot) => bot.id === account.answeringBotId)?.name ?? null;
-  const view = filterChats(chats, filter, account.answeringBotId);
-  const onPage = view.rows.map((chat) => chat.chatId);
+  const owner = account.ownerNumber
+    ? { number: account.ownerNumber, title: t('settings.whatsapp.chats.you') }
+    : null;
+  const view = filterChats(chats, filter, account.answeringBotId, owner);
+  const onPage = view.rows.flatMap((row) => (row === OWNER_CHAT ? [] : [row.chatId]));
   const allTicked = onPage.length > 0 && onPage.every((id) => ticked.has(id));
   const narrow = (apply: () => void) => {
     setTicked(new Set());
@@ -66,7 +75,7 @@ export function WhatsappChats({
       <p className="m-0 px-1 text-sm text-fg-muted">
         {t('settings.whatsapp.chats.summary', {
           answered: view.answeredCount,
-          count: chats.length,
+          count: view.count,
         })}
       </p>
       <ErrorAlert error={error} fallback={t('settings.whatsapp.chats.loadFailed')} />
@@ -88,12 +97,14 @@ export function WhatsappChats({
           value={filter.query}
           onChange={(query) => narrow(() => setQuery(query))}
         />
-        <FacetSelect
+        <SearchableFacetSelect
+          size="sm"
           label={t('settings.whatsapp.chats.byLabel')}
           value={filter.by}
-          menuWidth={240}
           onValueChange={(by) => narrow(() => setBy(by))}
           options={byOptions.map((option) => ({ ...option, count: view.byCount(option.value) }))}
+          searchPlaceholder={t('settings.whatsapp.chats.bySearch')}
+          emptyText={(query) => t('settings.whatsapp.chats.byNoMatch', { query })}
         />
       </div>
       {ticked.size > 0 ? (
@@ -109,11 +120,11 @@ export function WhatsappChats({
         <EmptyState>
           <EmptyState.Header>
             <EmptyState.Title>
-              {chats.length === 0
+              {view.count === 0
                 ? t('settings.whatsapp.chats.emptyTitle')
                 : t('settings.whatsapp.chats.noMatch')}
             </EmptyState.Title>
-            {chats.length === 0 ? (
+            {view.count === 0 ? (
               <EmptyState.Description>
                 {t('settings.whatsapp.chats.emptyDescription')}
               </EmptyState.Description>
@@ -140,16 +151,24 @@ export function WhatsappChats({
               />
               {t('settings.whatsapp.chats.selectPage')}
             </div>
-            {view.rows.map((chat) => (
-              <WhatsappChatRow
-                key={chat.chatId}
-                chat={chat}
-                bots={bots}
-                defaultBotName={defaultBotName}
-                selected={ticked.has(chat.chatId)}
-                onSelect={(on) => tick(chat.chatId, on)}
-              />
-            ))}
+            {view.rows.map((chat) =>
+              chat === OWNER_CHAT ? (
+                <WhatsappOwnerChatRow
+                  key={OWNER_CHAT}
+                  number={account.ownerNumber ?? ''}
+                  defaultBotName={defaultBotName}
+                />
+              ) : (
+                <WhatsappChatRow
+                  key={chat.chatId}
+                  chat={chat}
+                  bots={bots}
+                  defaultBotName={defaultBotName}
+                  selected={ticked.has(chat.chatId)}
+                  onSelect={(on) => tick(chat.chatId, on)}
+                />
+              ),
+            )}
           </SettingsGroup>
           <div className="flex items-center gap-2 px-1 text-sm text-fg-muted">
             <span className="flex-1">

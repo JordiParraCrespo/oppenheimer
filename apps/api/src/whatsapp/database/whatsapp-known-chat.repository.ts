@@ -1,0 +1,66 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import type { WhatsappKnownChat } from '../domain/whatsapp-message.types';
+import type { WhatsappGrantsOf } from './whatsapp-chat-grant.repository.port';
+import { WhatsappKnownChatOrmEntity } from './whatsapp-known-chat.orm-entity';
+import type { WhatsappKnownChatRepositoryPort } from './whatsapp-known-chat.repository.port';
+
+@Injectable()
+export class WhatsappKnownChatRepository implements WhatsappKnownChatRepositoryPort {
+  constructor(
+    @InjectRepository(WhatsappKnownChatOrmEntity)
+    private readonly repository: Repository<WhatsappKnownChatOrmEntity>,
+  ) {}
+
+  async findAll(of: WhatsappGrantsOf, limit: number): Promise<WhatsappKnownChat[]> {
+    const records = await this.repository.find({
+      where: { organizationId: of.organizationId, accountId: of.accountId },
+      order: { chatName: 'ASC', chatId: 'ASC' },
+      take: limit,
+    });
+    return records.map((record) => ({
+      chatId: record.chatId,
+      chatKind: record.chatKind,
+      chatName: record.chatName,
+    }));
+  }
+
+  async record(
+    of: WhatsappGrantsOf,
+    chats: readonly WhatsappKnownChat[],
+    max: number,
+  ): Promise<void> {
+    if (chats.length === 0) return;
+    await this.repository.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(WhatsappKnownChatOrmEntity);
+      const known = new Set(
+        (
+          await repository.find({
+            select: { chatId: true },
+            where: { organizationId: of.organizationId, accountId: of.accountId },
+          })
+        ).map((record) => record.chatId),
+      );
+      const room = Math.max(0, max - known.size);
+      const fresh = chats.filter((chat) => !known.has(chat.chatId)).slice(0, room);
+      const kept = [...chats.filter((chat) => known.has(chat.chatId)), ...fresh];
+      if (kept.length === 0) return;
+      await repository
+        .createQueryBuilder()
+        .insert()
+        .values(
+          kept.map((chat) => ({
+            organizationId: of.organizationId,
+            accountId: of.accountId,
+            chatId: chat.chatId,
+            chatKind: chat.chatKind,
+            chatName: chat.chatName,
+            reportedAt: () => 'now()',
+          })),
+        )
+        .orUpdate(['chatKind', 'chatName', 'reportedAt'], ['accountId', 'chatId'])
+        .execute();
+    });
+  }
+}
