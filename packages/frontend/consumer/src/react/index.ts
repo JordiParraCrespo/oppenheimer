@@ -16,10 +16,10 @@ export {
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
+export { useAcknowledgeBot, useBotWaitingOnYou, useBotWorking } from './bot-activity.queries';
 export {
   type DecideBotApprovalVariables,
   useAnyBotNeedsInput,
-  useBotNeedsInput,
   useBotPendingApproval,
   useDecideBotApproval,
 } from './bot-approvals.queries';
@@ -74,11 +74,13 @@ export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
+  type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
+  useUpdateBotRoutine,
 } from './bot-routines.queries';
 export {
   type AddBotSkillVariables,
@@ -90,6 +92,7 @@ export {
   useSuspenseBotSkills,
   useUpdateBotSkill,
 } from './bot-skills.queries';
+export { useBotSuggestion } from './bot-suggestion.queries';
 export { useSuspenseBotUsage } from './bot-usage.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
@@ -354,17 +357,18 @@ export {
   useUnlinkTelegram,
 } from './telegram.queries';
 export {
+  useSuspenseVoiceSettings,
+  useUpdateVoiceSettings,
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
 export {
   useAnswerWhatsappAs,
-  useAnswerWhatsappChatAs,
   useConfirmWhatsappOwner,
   useLinkWhatsapp,
   useRequestWhatsappOwner,
-  useRevokeWhatsappChat,
-  useSuspenseWhatsappChatGrants,
+  useRouteWhatsappChats,
+  useSuspenseWhatsappChats,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

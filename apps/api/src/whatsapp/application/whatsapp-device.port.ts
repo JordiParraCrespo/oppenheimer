@@ -48,6 +48,17 @@ export interface WhatsappDevicePort {
     text: string,
     replyTo?: WhatsappQuote,
   ): Promise<WhatsappSendOutcome>;
+  /**
+   * Send a voice note: Ogg/Opus audio running `seconds`, which the host
+   * uploads and sends as push-to-talk. `not_supported` is a runner from
+   * before it (`whatsapp.voice.send`).
+   */
+  sendVoice(
+    hostId: string,
+    chatId: string,
+    audio: Buffer,
+    seconds: number,
+  ): Promise<WhatsappSendOutcome>;
   /** Fetch a voice note the number received, by its chat and WhatsApp id. */
   voiceNote(hostId: string, chatId: string, messageId: string): Promise<WhatsappVoiceNoteOutcome>;
 }

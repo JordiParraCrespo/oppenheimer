@@ -1186,3 +1186,234 @@ describe('subagents', () => {
     expect(mentions()).toBe(closed + 1);
   });
 });
+
+describe('find in the chat', () => {
+  /** A turn whose first words are folded once it settles: a reply, a call, then the answer. */
+  const folded = (n: number, before: string) => [
+    entry({ type: 'user', uuid: `u${n}`, message: { role: 'user', content: `Prompt ${n}` } }),
+    entry({
+      type: 'assistant',
+      uuid: `a${n}`,
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'text', text: before },
+          { type: 'tool_use', id: `t${n}`, name: 'Bash', input: { command: 'ls' } },
+        ],
+      },
+    }),
+    entry({
+      type: 'user',
+      uuid: `r${n}`,
+      message: {
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: `t${n}`, content: 'ok' }],
+      },
+    }),
+    entry({
+      type: 'assistant',
+      uuid: `b${n}`,
+      message: { role: 'assistant', content: [{ type: 'text', text: `Answer ${n}` }] },
+    }),
+  ];
+
+  beforeAll(() => {
+    // jsdom lays nothing out: no rectangle to land a match by, nothing to scroll.
+    Range.prototype.getBoundingClientRect ??= () => new DOMRect();
+    Element.prototype.scrollBy ??= () => {};
+  });
+
+  // Regressions: a match in a turn the chat has not drawn (past its latest
+  // forty) or in the words a settled turn folded away was counted and never
+  // shown, and Ctrl+F opened the browser's find, which sees neither.
+  it('opens on Ctrl+F, and draws and opens the turn its match is in', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const entries = [
+      ...folded(1, 'Opened pull request 58'),
+      ...Array.from({ length: 60 }, (_, i) => folded(i + 2, `Step ${i + 2}`)).flat(),
+    ];
+    chat.apply({ reset: true, entries });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    expect(screen.queryByText('Prompt 1')).toBeNull();
+
+    const composer = screen.getByRole('textbox');
+    const opened = fireEvent.keyDown(composer, { key: 'f', ctrlKey: true });
+    expect(opened).toBe(false);
+    const field = screen.getByRole('textbox', { name: 'sessions.chat.find.label' });
+    fireEvent.change(field, { target: { value: 'PULL request' } });
+    act(() => vi.advanceTimersByTime(200));
+
+    expect(screen.getByText('sessions.chat.find.count{"current":1,"total":1}')).toBeTruthy();
+    expect(screen.getByText('Prompt 1')).toBeTruthy();
+    expect(screen.getByText('Opened pull request 58')).toBeTruthy();
+
+    fireEvent.change(field, { target: { value: 'nowhere' } });
+    act(() => vi.advanceTimersByTime(200));
+    expect(screen.getByText('sessions.chat.find.none')).toBeTruthy();
+
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(screen.queryByRole('textbox', { name: 'sessions.chat.find.label' })).toBeNull();
+  });
+
+  // Regression: a letter that lowercases to two (Turkish İ) moved every
+  // offset after it, and the range set past its text threw in the layout
+  // effect, taking the chat down.
+  it('lands on a match after a letter that lowercases longer', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'İstanbul test' } }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'f', ctrlKey: true });
+    const field = screen.getByRole('textbox', { name: 'sessions.chat.find.label' });
+    fireEvent.change(field, { target: { value: 'test' } });
+    act(() => vi.advanceTimersByTime(200));
+    expect(screen.getByText('sessions.chat.find.count{"current":1,"total":1}')).toBeTruthy();
+  });
+});
+
+describe('the / menu', () => {
+  function renderOnHost(
+    commands?: { name: string; kind: 'skill' | 'command'; description?: string }[],
+  ) {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    act(() => chat.apply({ reset: true, history: 'end', entries: [], commands }));
+    render(
+      <SessionChat
+        chat={chat}
+        agent="claude-code"
+        readOnly={false}
+        attach={{ sessionId: 's1', files: createFileHandOff() }}
+      />,
+    );
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    ) as HTMLTextAreaElement;
+    return { field, typed };
+  }
+
+  // What breaks this: the project's skills missing from the menu, or Enter
+  // sending a half-typed command to the agent instead of completing it.
+  it("offers the project's skills ahead of Claude Code's commands, and Enter completes the one highlighted", () => {
+    const { field, typed } = renderOnHost([
+      { name: 'recap', kind: 'skill', description: 'Close the task' },
+      { name: 'review', kind: 'command', description: 'Shadowed by the built-in' },
+    ]);
+    fireEvent.change(field, { target: { value: '/re' } });
+
+    const menu = screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' });
+    expect(menu.textContent).toContain('/review');
+    expect(menu.textContent).toContain('/recap');
+    expect(menu.textContent).toContain('Close the task');
+    expect(menu.textContent).not.toContain('Shadowed by the built-in');
+
+    // The project's come first: they are what the person cannot type from memory.
+    expect(menu.textContent?.indexOf('/recap')).toBeLessThan(
+      menu.textContent?.indexOf('/review') ?? 0,
+    );
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'ArrowUp' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field.value).toBe('/recap ');
+    expect(typed).toEqual([]);
+    expect(screen.queryByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeNull();
+  });
+
+  it("offers Claude Code's commands from a host that names no project commands, and Escape closes it", () => {
+    const { field } = renderOnHost();
+    fireEvent.change(field, { target: { value: '/' } });
+    expect(screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' }).textContent).toContain(
+      '/compact',
+    );
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(screen.queryByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeNull();
+  });
+
+  // What breaks this: Enter that confirms an IME's composition picking a command instead.
+  it('leaves Enter to an IME that is composing', () => {
+    const { field } = renderOnHost([{ name: 'recap', kind: 'skill' }]);
+    fireEvent.change(field, { target: { value: '/' } });
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true });
+    expect(field.value).toBe('/');
+    expect(screen.getByRole('listbox', { name: 'sessions.chat.slash.menu' })).toBeTruthy();
+  });
+});
+
+describe("the agent's suggestion", () => {
+  // What breaks this: the suggestion Claude Code shows in its own box never
+  // reaching the chat, or Tab doing nothing with it there.
+  it('stands in the empty field, and Tab takes it into the draft without sending it', () => {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    act(() =>
+      chat.apply({
+        reset: true,
+        history: 'end',
+        entries: [
+          entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Write a poem' } }),
+          entry({
+            type: 'assistant',
+            uuid: 'a1',
+            message: { role: 'assistant', content: [{ type: 'text', text: 'Here it is.' }] },
+          }),
+        ],
+      }),
+    );
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    act(() => chat.setSuggestion('save it to a file'));
+
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.suggestion{"suggestion":"save it to a file"}',
+    ) as HTMLTextAreaElement;
+    fireEvent.keyDown(field, { key: 'Tab' });
+    expect(field.value).toBe('save it to a file');
+    expect(typed).toEqual([]);
+  });
+
+  // What breaks this: Claude Code's own placeholder on a fresh session, which
+  // Tab does not take there, offered as a prediction.
+  it('offers nothing before the first turn has finished', () => {
+    const chat = new Chat();
+    act(() => chat.apply({ reset: true, history: 'end', entries: [] }));
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    act(() => chat.setSuggestion('save it to a file'));
+    expect(
+      screen.queryByPlaceholderText(
+        'sessions.chat.composer.suggestion{"suggestion":"save it to a file"}',
+      ),
+    ).toBeNull();
+  });
+
+  // What breaks this: Tab overwriting what the person was writing.
+  it('leaves Tab alone once the person has written something', () => {
+    const chat = new Chat();
+    act(() =>
+      chat.apply({
+        reset: true,
+        history: 'end',
+        entries: [
+          entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Write a poem' } }),
+          entry({
+            type: 'assistant',
+            uuid: 'a1',
+            message: { role: 'assistant', content: [{ type: 'text', text: 'Here it is.' }] },
+          }),
+        ],
+      }),
+    );
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    act(() => chat.setSuggestion('save it to a file'));
+    const field = screen.getByRole('textbox') as HTMLTextAreaElement;
+    fireEvent.change(field, { target: { value: 'something else' } });
+    fireEvent.keyDown(field, { key: 'Tab' });
+    expect(field.value).toBe('something else');
+  });
+});

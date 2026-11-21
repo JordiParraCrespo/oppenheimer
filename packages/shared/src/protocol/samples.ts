@@ -130,6 +130,10 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     entries: [
       '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
     ],
+    commands: [
+      { name: 'recap', kind: 'skill', description: 'Close a finished task with a short brief.' },
+      { name: 'frontend:audit', kind: 'command' },
+    ],
   },
   'attachment.chat.older': { type: 'attachment.chat.older', attachmentId: 7, before: 1_048_576 },
   'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },
@@ -181,6 +185,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     name: 'Jordi',
     reason: 'paired from the console',
   },
+  'whatsapp.chats': {
+    type: 'whatsapp.chats',
+    chats: [
+      { chatId: '120363000000000001@g.us', chatKind: 'group', chatName: 'Family' },
+      { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
+      { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct' },
+    ],
+  },
   'whatsapp.messages': {
     type: 'whatsapp.messages',
     messages: [
@@ -219,6 +231,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     chatId: '34600333444@s.whatsapp.net',
     text: 'Tuesday works.',
     replyTo: { id: '3EB0C7A1F2', senderId: '34600333444@s.whatsapp.net' },
+  },
+  'whatsapp.send.voice': {
+    type: 'whatsapp.send.voice',
+    commandId,
+    chatId: '34600333444@s.whatsapp.net',
+    mimetype: 'audio/ogg; codecs=opus',
+    data: 'T2dnUwACAAAAAAAAAAA=',
+    seconds: 4,
   },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
   'whatsapp.media.get': {

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -30,8 +32,26 @@ type reader struct {
 	names names
 	// lids, when set, gives the phone number behind a `@lid` id that arrives
 	// without one.
-	lids   lidMap
+	lids lidMap
+	// self is this device's own number and `@lid` id, when paired: a group
+	// mentions the number, and quotes it, by either.
+	self   selfIDs
 	logger *slog.Logger
+}
+
+// selfIDs is the paired number's phone-number JID and its `@lid` id.
+type selfIDs struct {
+	phone, lid types.JID
+}
+
+// phoneFor is the paired number's phone-number JID when lid is its own
+// `@lid` id: a mapping known without asking the device's LID store, which
+// may not hold the number's own.
+func (s selfIDs) phoneFor(lid types.JID) (types.JID, bool) {
+	if s.lid.User == "" || s.phone.User == "" || lid.User != s.lid.User {
+		return types.EmptyJID, false
+	}
+	return s.phone.ToNonAD(), true
 }
 
 // received reads a whatsmeow message into the domain's shape. Whether it is
@@ -66,7 +86,17 @@ func (rd reader) received(ctx context.Context, evt *events.Message) domain.Recei
 	if r.ChatKind == domain.ChatDirect && r.ChatName == "" && !info.IsFromMe {
 		r.ChatName = info.PushName
 	}
-	r.Text, r.Media, r.QuotedID = content(evt.Message)
+	var ctxInfo *waE2E.ContextInfo
+	r.Text, r.Media, ctxInfo = content(evt.Message)
+	r.QuotedID = ctxInfo.GetStanzaID()
+	if r.QuotedID != "" && ctxInfo.GetParticipant() != "" {
+		r.QuotedSenderID = rd.idOf(ctx, ctxInfo.GetParticipant())
+	}
+	for _, mentioned := range ctxInfo.GetMentionedJID() {
+		if id := rd.idOf(ctx, mentioned); id != "" {
+			r.Mentions = append(r.Mentions, id)
+		}
+	}
 	r.Voice = voiceOf(evt.Message, rd.logger)
 	return r
 }
@@ -98,8 +128,20 @@ func audioOf(ref []byte) (*waE2E.AudioMessage, error) {
 	return &audio, nil
 }
 
+// idOf reads a JID WhatsApp wrote as text (a mention, a quoted message's
+// sender) and names it the way senders are named: by phone number when it is
+// known. Empty when it is not a JID.
+func (rd reader) idOf(ctx context.Context, raw string) string {
+	who, err := types.ParseJID(raw)
+	if err != nil || who.User == "" {
+		return ""
+	}
+	return rd.phoneOf(ctx, who, types.EmptyJID).String()
+}
+
 // phoneOf is who as a phone-number JID when it is a `@lid` id and its number
-// is known: alt when WhatsApp gave it, else the device's LID map. The owner
+// is known: alt when WhatsApp gave it, the paired number's own (selfIDs),
+// else the device's LID map. The owner
 // is named by phone number, and a person must keep one id across messages,
 // so the number wins. An id whose number is unknown stays as it is.
 func (rd reader) phoneOf(ctx context.Context, who, alt types.JID) types.JID {
@@ -109,6 +151,9 @@ func (rd reader) phoneOf(ctx context.Context, who, alt types.JID) types.JID {
 	}
 	if alt.Server == types.DefaultUserServer {
 		return alt.ToNonAD()
+	}
+	if pn, ok := rd.self.phoneFor(who); ok {
+		return pn
 	}
 	if rd.lids == nil {
 		return who
@@ -141,6 +186,29 @@ func outgoing(text string, quote *domain.Quote) *waE2E.Message {
 	return &waE2E.Message{ExtendedTextMessage: &waE2E.ExtendedTextMessage{Text: proto.String(text), ContextInfo: info}}
 }
 
+// outgoingVoice is the message a voice note uploaded to WhatsApp goes as:
+// an audio message marked push-to-talk, with the upload's keys and hashes, in
+// the one MIME type WhatsApp plays as a voice note.
+func outgoingVoice(up whatsmeow.UploadResponse, seconds int, at time.Time) *waE2E.Message {
+	// The service allows 1 to domain.VoiceSendMaxSeconds; anything else shows no length.
+	var length uint32
+	if seconds > 0 && seconds <= domain.VoiceSendMaxSeconds {
+		length = uint32(seconds)
+	}
+	return &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+		URL:               proto.String(up.URL),
+		DirectPath:        proto.String(up.DirectPath),
+		MediaKey:          up.MediaKey,
+		FileEncSHA256:     up.FileEncSHA256,
+		FileSHA256:        up.FileSHA256,
+		FileLength:        proto.Uint64(up.FileLength),
+		Mimetype:          proto.String(domain.VoiceNoteMimetype),
+		Seconds:           proto.Uint32(length),
+		PTT:               proto.Bool(true),
+		MediaKeyTimestamp: proto.Int64(at.Unix()),
+	}}
+}
+
 func whereOf(chat types.JID) domain.Where {
 	switch {
 	case chat.Server == types.BroadcastServer && chat.User == types.StatusBroadcastJID.User:
@@ -154,13 +222,12 @@ func whereOf(chat types.JID) domain.Where {
 }
 
 // content is a message's text (or a media message's caption), its media
-// kind, and the id of the message it quotes. Reactions, edits, polls and
+// kind, and its context: the message it quotes and whom it mentions. Reactions, edits, polls and
 // protocol messages carry neither text nor media here, and are not read yet.
-func content(m *waE2E.Message) (text, media, quoted string) {
+func content(m *waE2E.Message) (text, media string, ctxInfo *waE2E.ContextInfo) {
 	if m == nil {
-		return "", "", ""
+		return "", "", nil
 	}
-	var ctxInfo *waE2E.ContextInfo
 	switch {
 	case m.GetConversation() != "":
 		text = m.GetConversation()
@@ -186,5 +253,5 @@ func content(m *waE2E.Message) (text, media, quoted string) {
 		loc := m.GetLocationMessage()
 		text, media, ctxInfo = loc.GetName(), domain.MediaLocation, loc.GetContextInfo()
 	}
-	return text, media, ctxInfo.GetStanzaID()
+	return text, media, ctxInfo
 }

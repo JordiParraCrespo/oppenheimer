@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { BOT_PROVIDERS, type BotProvider } from '@oppenheimer/shared';
+import { MODEL_PROVIDERS, type ModelProvider } from '@oppenheimer/shared';
 import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialEntity } from './domain/model-provider-credential.entity';
 import { defaultBotProvider } from './domain/model-provider-default.policy';
@@ -35,7 +35,7 @@ export class ModelProviderCredentialMapper
       updatedAt: record.updatedAt,
       props: {
         organizationId: record.organizationId,
-        provider: record.provider as BotProvider,
+        provider: record.provider as ModelProvider,
         sealedKey: record.sealedKey,
         keyHint: record.keyHint,
         updatedByUserId: record.updatedByUserId,
@@ -64,7 +64,7 @@ export class ModelProviderCredentialMapper
   }
 
   /**
-   * Every provider a bot can run on, in catalog order, each from the workspace's
+   * Every provider, the speech-only ones after the bots', in catalog order, each from the workspace's
    * stored key when it has one and as "no key" when it has none. Exactly one is
    * the default: the provider a new bot starts on (`defaultBotProvider`).
    */
@@ -73,7 +73,7 @@ export class ModelProviderCredentialMapper
   ): ModelProviderCredentialResponseDto[] {
     const byProvider = new Map(credentials.map((row) => [row.provider, row]));
     const fallback = defaultBotProvider(credentials);
-    return BOT_PROVIDERS.map((provider) => {
+    return MODEL_PROVIDERS.map((provider) => {
       const credential = byProvider.get(provider);
       const isDefault = provider === fallback;
       return credential
@@ -84,7 +84,7 @@ export class ModelProviderCredentialMapper
 
   /** A provider with no key stored. */
   private toMissingResponse(
-    provider: BotProvider,
+    provider: ModelProvider,
     isDefault: boolean,
   ): ModelProviderCredentialResponseDto {
     const dto = new ModelProviderCredentialResponseDto();

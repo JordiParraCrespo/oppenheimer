@@ -6,12 +6,18 @@ export type {
   PendingCloudReply,
 } from './chat/cloud-chat-feed';
 export {
+  offeredSuggestion,
+  readPromptSuggestion,
+  type ScreenRow,
+} from './chat/prompt-suggestion';
+export {
   type ChatBatch,
   type ChatFileEdit,
   type ChatLimit,
   type ChatPrompt,
   type ChatQuestion,
   type ChatQueued,
+  type ChatSending,
   type ChatState,
   type ChatStatus,
   type ChatStep,

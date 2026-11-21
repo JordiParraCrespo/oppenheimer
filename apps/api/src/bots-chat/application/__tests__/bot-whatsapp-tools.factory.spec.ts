@@ -1,7 +1,11 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
+import { AppError } from '@oppenheimer/backend-core';
 import type { BotEntity } from '../../../bots/domain/bot.entity';
 import { FindBotsQuery } from '../../../bots/queries/find-bots/find-bots.query';
+import { SynthesizeSpeechCommand } from '../../../voice/commands/synthesize-speech/synthesize-speech.command';
+import { VoiceErrors } from '../../../voice/domain/voice.errors';
+import { FindSpeechSynthesisQuery } from '../../../voice/queries/find-speech-synthesis/find-speech-synthesis.query';
 import { AllowWhatsappChatCommand } from '../../../whatsapp/commands/allow-whatsapp-chat/allow-whatsapp-chat.command';
 import { WhatsappAccountEntity } from '../../../whatsapp/domain/whatsapp-account.entity';
 import { WhatsappChatGrantEntity } from '../../../whatsapp/domain/whatsapp-chat-grant.entity';
@@ -9,7 +13,7 @@ import type { WhatsappMessage } from '../../../whatsapp/domain/whatsapp-message.
 import { FindWhatsappAccountsQuery } from '../../../whatsapp/queries/find-whatsapp-accounts/find-whatsapp-accounts.query';
 import { FindWhatsappChatGrantsQuery } from '../../../whatsapp/queries/find-whatsapp-chat-grants/find-whatsapp-chat-grants.query';
 import { ReadWhatsappChatQuery } from '../../../whatsapp/queries/read-whatsapp-chat/read-whatsapp-chat.query';
-import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+import { type BotPermissions, NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotToolContext } from '../bot-tool.factory';
 import { BotWhatsappAccountsResolver } from '../bot-whatsapp-accounts.resolver';
@@ -99,8 +103,12 @@ const FAMILY = WhatsappChatGrantEntity.allow({
   grantedByBotId: 'bot-1',
 });
 
-function setup() {
+/** What the text-to-speech server hands back, as the voice module judged it. */
+const SPOKEN = { data: Buffer.from('OggS-spoken'), mimetype: 'audio/ogg; codecs=opus', seconds: 4 };
+
+function setup({ speaks = true }: { speaks?: boolean } = {}) {
   const query = vi.fn(async (asked: unknown) => {
+    if (asked instanceof FindSpeechSynthesisQuery) return speaks;
     if (asked instanceof FindWhatsappAccountsQuery) return [{ account: SPARE, hostOnline: true }];
     if (asked instanceof ReadWhatsappChatQuery) {
       return {
@@ -113,9 +121,10 @@ function setup() {
     if (asked instanceof FindBotsQuery) return OWN_BOTS;
     throw new Error('unexpected query');
   });
-  const command = vi.fn(async (sent: unknown) =>
-    sent instanceof AllowWhatsappChatCommand ? FAMILY.id : '3EB1',
-  );
+  const command = vi.fn(async (sent: unknown): Promise<unknown> => {
+    if (sent instanceof SynthesizeSpeechCommand) return SPOKEN;
+    return sent instanceof AllowWhatsappChatCommand ? FAMILY.id : '3EB1';
+  });
   const queryBus = { execute: query } as unknown as QueryBus;
   const commandBus = { execute: command } as unknown as CommandBus;
   const accounts = new BotWhatsappAccountsResolver(queryBus);
@@ -276,5 +285,179 @@ describe('BotWhatsappToolsFactory', () => {
       .run({ chat: 'Marta', text: 'Tuesday works.' }, { signal });
     expect(ctx.approvals.request).toHaveBeenCalled();
     expect(command).not.toHaveBeenCalled();
+  });
+
+  describe('send_whatsapp_voice_note', () => {
+    const MARTA = { chatId: HOSTILE.chatId, chatKind: 'direct', chatName: 'Marta' };
+
+    it('asks and reaches outside like a text, under the same scope, as a tool of its own', () => {
+      const { tool } = setup();
+      const voice = tool('send_whatsapp_voice_note');
+      expect(voice.readOnly).toBe(false);
+      expect(voice.traits.asks).toBe(true);
+      expect(voice.traits.perCallOnly).toBe(false);
+      expect(voice.sharesOutside).toBe(true);
+      expect(voice.scope).toBe('whatsapp:write');
+    });
+
+    // What breaks this: the note saying anything but what the bot wrote, or
+    // going as a text, or to a chat the plan did not resolve.
+    it('speaks exactly the text, then sends it as a voice note to the chat it resolved, under Full access', async () => {
+      const { command, tool } = setup();
+      const { content, isError } = await tool('send_whatsapp_voice_note')
+        .bind({ ...context(), permission: 'full' })
+        .run({ chat: 'Marta', text: '  Tuesday works, see you then.  ' }, { signal });
+
+      expect(isError).toBeFalsy();
+      expect(content).toContain('Voice note (4 s)');
+      expect(content).toContain('message id 3EB1');
+      expect(command).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ organizationId: 'org-1', text: 'Tuesday works, see you then.' }),
+      );
+      expect(command).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          accountId: SPARE.id,
+          chat: MARTA,
+          text: 'Tuesday works, see you then.',
+          botId: 'bot-1',
+          voice: { audio: SPOKEN.data, seconds: 4 },
+        }),
+      );
+    });
+
+    // What breaks this: a card that hides what the owner's voice will say, or where it goes.
+    it('asks under Approve for me with the exact words and the destination on the card, speaking and sending nothing yet', async () => {
+      const { command, tool } = setup();
+      const ctx = context();
+      vi.mocked(ctx.approvals.request).mockResolvedValue({
+        status: 'requested',
+        approvalId: 'appr-1',
+      });
+      await tool('send_whatsapp_voice_note')
+        .bind(ctx)
+        .run({ chat: 'Marta', text: 'Tuesday works.' }, { signal });
+
+      expect(ctx.approvals.request).toHaveBeenCalledTimes(1);
+      const call = vi.mocked(ctx.approvals.request).mock.calls[0][0];
+      expect(call.tool).toBe('send_whatsapp_voice_note');
+      expect(call.summary).toContain('"Spare"');
+      expect(call.summary).toContain('Marta');
+      expect(call.summary).toContain('saying: Tuesday works.');
+      expect(call.input).toMatchObject({
+        text: 'Tuesday works.',
+        planned: { accountId: SPARE.id, chatId: HOSTILE.chatId },
+      });
+      expect(call.subject).toEqual({
+        kind: 'whatsapp_chat',
+        key: `${SPARE.id}:${HOSTILE.chatId}`,
+        label: expect.stringContaining('Marta'),
+      });
+      expect(command).not.toHaveBeenCalled();
+    });
+
+    // What breaks this: allowing texts to a chat silently letting the bot speak there as the owner.
+    it('still asks in a chat allowed only for texts', async () => {
+      const { command, tool } = setup();
+      const ctx = context();
+      const subject = {
+        kind: 'whatsapp_chat',
+        key: `${SPARE.id}:${HOSTILE.chatId}`,
+        label: 'Marta',
+      };
+      const permissions: BotPermissions = {
+        ...NO_PERMISSIONS,
+        grants: [{ tool: 'send_whatsapp_message', subject }],
+      };
+      vi.mocked(ctx.approvals.request).mockResolvedValue({
+        status: 'requested',
+        approvalId: 'appr-2',
+      });
+      await tool('send_whatsapp_voice_note')
+        .bind({ ...ctx, permissions })
+        .run({ chat: 'Marta', text: 'Tuesday works.' }, { signal });
+      expect(ctx.approvals.request).toHaveBeenCalledTimes(1);
+      expect(command).not.toHaveBeenCalled();
+
+      // The same grant for the voice tool lets the call run.
+      const allowed = setup();
+      await allowed
+        .tool('send_whatsapp_voice_note')
+        .bind({
+          ...context(),
+          permissions: {
+            ...NO_PERMISSIONS,
+            grants: [{ tool: 'send_whatsapp_voice_note', subject }],
+          },
+        })
+        .run({ chat: 'Marta', text: 'Tuesday works.' }, { signal });
+      expect(allowed.command).toHaveBeenCalledTimes(2);
+    });
+
+    // What breaks this: a yes that speaks different words, or sends somewhere else, than the card showed.
+    it('carries out an approval with the stored words to the stored chat', async () => {
+      const { command, query, tool } = setup();
+      const planned = {
+        accountId: SPARE.id,
+        accountLabel: 'Spare',
+        chatId: HOSTILE.chatId,
+        chatKind: 'direct',
+        chatName: 'Marta',
+        isNew: false,
+      };
+      const { isError } = await tool('send_whatsapp_voice_note').runApproved(
+        { chat: 'Marta', text: 'Tuesday works.', planned },
+        { ...context(), approvalId: 'appr-1' },
+        signal,
+      );
+      expect(isError).toBeFalsy();
+      expect(query).not.toHaveBeenCalledWith(expect.any(ReadWhatsappChatQuery));
+      expect(command).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ text: 'Tuesday works.' }),
+      );
+      expect(command).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ chat: MARTA, text: 'Tuesday works.', voice: expect.anything() }),
+      );
+    });
+
+    it('refuses before any card on a deployment with no text-to-speech, pointing at a text instead', async () => {
+      const { command, tool } = setup({ speaks: false });
+      const ctx = context();
+      const { content, isError } = await tool('send_whatsapp_voice_note')
+        .bind(ctx)
+        .run({ chat: 'Marta', text: 'Tuesday works.' }, { signal });
+      expect(isError).toBe(true);
+      expect(content).toContain('send_whatsapp_message');
+      expect(ctx.approvals.request).not.toHaveBeenCalled();
+      expect(command).not.toHaveBeenCalled();
+    });
+
+    it('refuses a text longer than one voice note says before anything is asked or spoken', async () => {
+      const { command, tool } = setup();
+      const ctx = context();
+      const { isError } = await tool('send_whatsapp_voice_note')
+        .bind(ctx)
+        .run({ chat: 'Marta', text: 'a'.repeat(601) }, { signal });
+      expect(isError).toBe(true);
+      expect(ctx.approvals.request).not.toHaveBeenCalled();
+      expect(command).not.toHaveBeenCalled();
+    });
+
+    // What breaks this: a text-to-speech failure sending a broken note, or failing the turn.
+    it('answers a speech failure by its code and sends nothing', async () => {
+      const { command, tool } = setup();
+      command.mockImplementationOnce(async () => {
+        throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, { detail: 'answered 500' });
+      });
+      const { content, isError } = await tool('send_whatsapp_voice_note')
+        .bind({ ...context(), permission: 'full' })
+        .run({ chat: 'Marta', text: 'Tuesday works.' }, { signal });
+      expect(isError).toBe(true);
+      expect(content).toContain('VOICE_009');
+      expect(command).toHaveBeenCalledTimes(1);
+    });
   });
 });

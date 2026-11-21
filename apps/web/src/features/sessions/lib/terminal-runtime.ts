@@ -11,6 +11,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { type ILinkHandler, Terminal } from '@xterm/xterm';
 import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
+import { bindPromptSuggestion } from './prompt-suggestion';
 import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
@@ -75,6 +76,11 @@ export interface SessionTerminalOptions {
    * drawn over the grid (`bindAgentActivity`); none once it is gone.
    */
   onActivity?: (activity: ChatActivity | null) => void;
+  /**
+   * The next message the agent suggests in its input box, for the chat's
+   * composer to offer (`bindPromptSuggestion`); none once it is gone.
+   */
+  onSuggestion?: (suggestion: string | null) => void;
 }
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
@@ -337,9 +343,13 @@ export function mountSessionTerminal(
   const unbindActivity = options.onActivity
     ? bindAgentActivity(term, options.onActivity)
     : undefined;
+  const unbindSuggestion = options.onSuggestion
+    ? bindPromptSuggestion(term, options.onSuggestion)
+    : undefined;
 
   return () => {
     unbindActivity?.();
+    unbindSuggestion?.();
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();

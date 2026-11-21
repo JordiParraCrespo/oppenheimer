@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { BOT_PROVIDERS } from '@oppenheimer/shared';
+import { MODEL_PROVIDERS } from '@oppenheimer/shared';
 import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 
@@ -10,7 +10,7 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
  * key reaches the response.
  */
 const updatedAt = new Date('2026-10-01T09:30:00.000Z');
-const stored = (provider: 'glm' | 'openai', keyHint: string, markedDefault = false) =>
+const stored = (provider: 'glm' | 'openai' | 'groq', keyHint: string, markedDefault = false) =>
   ModelProviderCredentialEntity.create({
     id: randomUUID(),
     createdAt: updatedAt,
@@ -30,7 +30,7 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
 
   it('lists every provider in catalog order, stored keys by hint alone, the rest as missing', () => {
     const list = mapper.toResponseList([stored('openai', '9f3a'), stored('glm', '12ab')]);
-    expect(list.map((row) => row.provider)).toEqual([...BOT_PROVIDERS]);
+    expect(list.map((row) => row.provider)).toEqual([...MODEL_PROVIDERS]);
     expect(list).toEqual([
       {
         provider: 'anthropic',
@@ -55,6 +55,14 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
       },
       { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
       { provider: 'xai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'groq', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      {
+        provider: 'elevenlabs',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+      },
     ]);
   });
 
@@ -64,5 +72,12 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
     ]);
     const list = mapper.toResponseList([stored('openai', '9f3a'), stored('glm', '12ab', true)]);
     expect(list.filter((row) => row.isDefault)).toMatchObject([{ provider: 'glm' }]);
+  });
+
+  // What breaks this: a workspace with only a Groq key gets new bots on Groq, which runs no bot.
+  it('never makes a speech-only provider the default, marked or not', () => {
+    const list = mapper.toResponseList([stored('groq', 'gq12', true)]);
+    expect(list.filter((row) => row.isDefault)).toMatchObject([{ provider: 'anthropic' }]);
+    expect(list.find((row) => row.provider === 'groq')).toMatchObject({ configured: true });
   });
 });

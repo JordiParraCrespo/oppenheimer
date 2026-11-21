@@ -9,6 +9,8 @@ export interface VoiceClip {
    * towards it.
    */
   prompt?: string;
+  /** The model to hear it with, from the provider's catalog; unset where the provider takes no choice. */
+  model?: string;
 }
 
 /** A ChatGPT sign-in's access, as `TURN_CREDENTIALS` hands it out. A live credential: never logged. */

@@ -8,3 +8,14 @@
 /* Dark mode is class-driven. `[data-theme='dark']` is accepted too so markup
    copied from the brand's reference pages themes correctly. */
 @custom-variant dark (&:where(.dark, .dark *, [data-theme='dark'], [data-theme='dark'] *));
+
+/* The session chat's find (`use-chat-find-highlights.ts`): ranges the CSS
+   Custom Highlight API paints, so the matches are marked without touching
+   the chat's DOM. */
+::highlight(chat-find) {
+  background-color: var(--color-find-match);
+}
+
+::highlight(chat-find-current) {
+  background-color: var(--color-find-current);
+}

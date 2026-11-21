@@ -85,7 +85,14 @@ function fakeMessages(): WhatsappMessageRepositoryPort {
 }
 
 function fakeDevice(send: WhatsappDevicePort['send']): WhatsappDevicePort {
-  return { reach: vi.fn(), link: vi.fn(), unlink: vi.fn(), send: vi.fn(send) };
+  return {
+    reach: vi.fn(),
+    link: vi.fn(),
+    unlink: vi.fn(),
+    send: vi.fn(send),
+    sendVoice: vi.fn(),
+    voiceNote: vi.fn(),
+  };
 }
 
 async function codeOf(promise: Promise<unknown>): Promise<string | undefined> {

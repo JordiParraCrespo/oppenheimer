@@ -29,6 +29,7 @@ export function SessionChatAttachingSend({
       agent={agent}
       files={attach.files}
       upload={(file) => paste.mutateAsync(file)}
+      hostCommands
       onSent={onSent}
     />
   );

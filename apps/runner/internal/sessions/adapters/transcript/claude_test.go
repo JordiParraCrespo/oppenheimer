@@ -1,6 +1,7 @@
 package transcript_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -216,5 +217,33 @@ func TestATeleportedConversationIsTheNewestInTheSessionsFolderSinceItOpened(t *t
 	}
 	if got := reader.Teleported(domain.AgentCodex, dir, opened); got != "" {
 		t.Fatalf("teleported for Codex = %q, want none", got)
+	}
+}
+
+// What counts as a typed prompt is read the same way by the API, which
+// counts a conversation's prompts to rename the session; both suites run the
+// cases in testdata/typed-prompts.json.
+func TestTypedPromptsMatchTheSharedCases(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "typed-prompts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var shared struct {
+		Cases []struct{ Case, Text, Typed string } `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &shared); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range shared.Cases {
+		t.Run(tc.Case, func(t *testing.T) {
+			content, err := json.Marshal(tc.Text)
+			if err != nil {
+				t.Fatal(err)
+			}
+			projects := write(t, `{"type":"user","message":{"role":"user","content":`+string(content)+`}}`)
+			if got := firstPrompt(projects); got != tc.Typed {
+				t.Fatalf("first prompt = %q, want %q", got, tc.Typed)
+			}
+		})
 	}
 }

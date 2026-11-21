@@ -1,12 +1,6 @@
 import { type ChatActivity, readAgentActivity } from '@oppenheimer/frontend-consumer';
 import type { Terminal } from '@xterm/xterm';
-
-/**
- * How often the screen is read for the spinner at most: it moves once a
- * second (its clock) and on each new word, so a quarter second is current
- * without reading the grid for every chunk a busy agent writes.
- */
-const READ_EVERY_MS = 250;
+import { watchScreen } from './screen-watch';
 
 /**
  * Reads the agent's spinner line off the grid as output lands, and hands
@@ -18,9 +12,7 @@ export function bindAgentActivity(
   term: Terminal,
   onActivity: (activity: ChatActivity | null) => void,
 ): () => void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const read = () => {
-    timer = null;
+  const stop = watchScreen(term, () => {
     const buffer = term.buffer.active;
     // A row xterm wrapped onto is joined to the one it continues, so a
     // spinner line wider than the grid reads as the one line it is.
@@ -32,13 +24,9 @@ export function bindAgentActivity(
       else rows.push(text);
     }
     onActivity(readAgentActivity(rows));
-  };
-  const parsed = term.onWriteParsed(() => {
-    timer ??= setTimeout(read, READ_EVERY_MS);
   });
   return () => {
-    parsed.dispose();
-    if (timer !== null) clearTimeout(timer);
+    stop();
     onActivity(null);
   };
 }
