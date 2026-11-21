@@ -15049,7 +15049,7 @@
     },
     "/api/v1/bots/{id}/routines/{routineId}": {
       "patch": {
-        "description": "The Routines tab’s switch: off pauses its triggers, on resumes them from now. What a routine does is changed in the bot’s chat, through its own tool.",
+        "description": "The Routines tab’s switch and its Edit dialog. `enabled` off pauses its triggers, on resumes them from now; `name` and `prompt` change what it is called and what it asks the bot, the prompt as its next revision. Fields left out stay as they are. When it runs (its triggers) is changed in the bot’s chat, through its own tool.",
         "operationId": "updateBotRoutine",
         "parameters": [
           {
@@ -15112,6 +15112,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "AUTOMATIONS_003 — The routine changed meanwhile",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -15119,7 +15129,7 @@
             "bearer": []
           }
         ],
-        "summary": "Turn a bot’s routine on or off",
+        "summary": "Change a bot’s routine: its name, its prompt, or whether it is on",
         "tags": [
           "Bots"
         ]
@@ -35645,13 +35655,20 @@
       "UpdateBotRoutineRequest": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8000
+          },
           "enabled": {
             "type": "boolean"
           }
-        },
-        "required": [
-          "enabled"
-        ]
+        }
       },
       "TaskSessionLinkResponseDto": {
         "type": "object",

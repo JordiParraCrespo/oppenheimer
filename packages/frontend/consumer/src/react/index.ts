@@ -74,11 +74,13 @@ export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
+  type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
+  useUpdateBotRoutine,
 } from './bot-routines.queries';
 export {
   type AddBotSkillVariables,

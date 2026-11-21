@@ -74,6 +74,14 @@ describe('SaveBotRoutineCommandHandler', () => {
     expect(routine.target).toMatchObject({ credentialScopes: ['automations:read'] });
   });
 
+  it('leaves the scopes alone when the name and prompt sent are the ones it has', async () => {
+    const { routine, saveWith } = setup();
+    await saveWith({ name: 'Morning PR digest', prompt: 'List the open pull requests.' }, [
+      'automations:read',
+    ]);
+    expect(routine.target).toMatchObject({ credentialScopes: ['automations:write'] });
+  });
+
   it('leaves the scopes as they were on a pause from a browser session', async () => {
     const { routine, saveWith } = setup();
     await saveWith({ enabled: false }, null);

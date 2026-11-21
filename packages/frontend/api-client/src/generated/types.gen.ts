@@ -2838,7 +2838,9 @@ export type UpdateAutomationSettingsRequest = {
 };
 
 export type UpdateBotRoutineRequest = {
-    enabled: boolean;
+    name?: string;
+    prompt?: string;
+    enabled?: boolean;
 };
 
 export type TaskSessionLinkResponseDto = {
@@ -12739,6 +12741,10 @@ export type UpdateBotRoutineErrors = {
      * AUTOMATIONS_001 — Routine not found
      */
     404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_003 — The routine changed meanwhile
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UpdateBotRoutineError = UpdateBotRoutineErrors[keyof UpdateBotRoutineErrors];
