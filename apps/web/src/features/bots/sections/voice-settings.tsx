@@ -1,9 +1,4 @@
-import {
-  FieldSelect,
-  SettingsGroup,
-  SettingsHeading,
-  SettingsListRow,
-} from '@oppenheimer/design-system-web';
+import { FieldSelect, SettingsGroup, SettingsListRow } from '@oppenheimer/design-system-web';
 import {
   useSuspenseVoiceSettings,
   useUpdateVoiceSettings,
@@ -81,11 +76,11 @@ export function VoiceSettingsSection() {
     : [];
 
   return (
-    <section aria-labelledby="model-providers-voice" className="flex flex-col gap-2.5">
-      <SettingsHeading id="model-providers-voice">
-        {t('settings.modelProviders.voice.title')}
-      </SettingsHeading>
-      <p className="-mt-1 mb-1 text-13 text-fg-subtle">
+    <section
+      aria-label={t('settings.modelProviders.voice.title')}
+      className="flex flex-col gap-2.5"
+    >
+      <p className="mb-1 px-1 text-13 text-fg-subtle">
         {t('settings.modelProviders.voice.description')}
       </p>
       <ErrorAlert

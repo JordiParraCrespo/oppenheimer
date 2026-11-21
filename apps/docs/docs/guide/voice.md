@@ -1,6 +1,6 @@
 ---
 title: Voice
-description: How dictation and bots' voice notes are heard and spoken, and the Voice section of Settings → Model providers that picks the speech-to-text provider and model, the voice-note provider, model and voice, and the transcript polish.
+description: How dictation and bots' voice notes are heard and spoken, and the Voice tab of Settings → Model providers that picks the speech-to-text provider and model, the voice-note provider, model and voice, and the transcript polish.
 sidebar_position: 5.7
 ---
 
@@ -18,9 +18,9 @@ Voice is two things: **dictation**, the mic in the console's fields and the voic
 | ElevenLabs | Yes | Yes | API key; voice only, no bot runs on it |
 | This server | If its admin set one up | If its admin set one up | Nothing to add |
 
-## The Voice section
+## The Voice tab
 
-Under the providers, **Voice** has three rows. Each starts on **Automatic**, which uses the first provider you have, in the order of the table above.
+Settings → Model providers has two tabs: **Providers**, the keys, and **Voice**, which has three rows. Each starts on **Automatic**, which uses the first provider you have, in the order of the table above.
 
 - **Speech to text**: what hears dictation and the voice notes your bots are sent, and the model where the provider offers one (OpenAI: GPT-4o Transcribe, GPT-4o mini Transcribe, Whisper; Groq: Whisper large v3 Turbo or v3; ElevenLabs: Scribe).
 - **Voice notes**: what your bots speak in, its model, and the voice. OpenAI offers its own set of voices (Alloy, Nova, Shimmer and the rest). ElevenLabs offers a few premade voices and **A voice from my library…**, which takes the ID of any voice in your ElevenLabs account, a cloned one included.

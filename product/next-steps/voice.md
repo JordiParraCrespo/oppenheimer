@@ -345,7 +345,8 @@ voice notes, to come, read the same settings.
 - **Settings → Model providers lists Groq and ElevenLabs** beside the bot
   providers, each a key sealed like the others. They serve voice only: a
   bot never runs on them, and neither can be the default.
-- **A Voice section under the providers** picks, per row: Speech to text
+- **A Voice tab beside the providers** (the page's second tab, `?tab=voice`;
+  the owner asked for tabs over one long page) picks, per row: Speech to text
   (ChatGPT, OpenAI, Groq, ElevenLabs, this server; a model for those that
   offer one), Voice notes (OpenAI, ElevenLabs, this server; a model and a
   voice: OpenAI's set, or any ElevenLabs voice id the account holds) and

@@ -3,8 +3,8 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * Settings → Model providers, Voice, against the real control plane: a Groq
- * key stored from its row (voice only, so it never offers Make default), then
- * picked to hear dictation with a model of its own, and the choice is what
+ * key stored from its row (voice only, so it never offers Make default), then,
+ * on the Voice tab, picked to hear dictation with a model of its own, and the choice is what
  * the API holds. Breaks if the voice-only providers cannot take a key, if a
  * new key does not reach the Voice rows without a reload, or if a pick is not
  * saved.
@@ -24,6 +24,13 @@ test('a Groq key is stored and picked to hear dictation, with its model', async 
   await expect(groq).toContainText('Key ending in 7731');
   await expect(groq.getByRole('button', { name: 'Make default' })).toHaveCount(0);
 
+  // Voice is the page's second tab, and the address says so.
+  await page
+    .getByRole('group', { name: 'Model providers views' })
+    .getByRole('button', { name: 'Voice' })
+    .click();
+  await expect(page).toHaveURL(/[?&]tab=voice/);
+  await expect(groq).toHaveCount(0);
   const row = page.getByTestId('voice-transcription');
   const provider = row.getByRole('button', { name: 'Speech-to-text provider' });
   await expect(provider).toContainText('Automatic');

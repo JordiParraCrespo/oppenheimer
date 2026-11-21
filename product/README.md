@@ -1854,7 +1854,7 @@ earlier note:
   or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
   on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
   be configured with the keys: Settings → Model providers adds Groq and
-  ElevenLabs (voice only) and a Voice section choosing, for the workspace,
+  ElevenLabs (voice only) and a Voice tab choosing, for the workspace,
   the transcription provider and model, the voice-note provider, model and
   voice, and the polish model or none. A choice is tried first, the old
   order after it; the env servers stay as the last provider.

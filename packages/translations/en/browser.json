@@ -3959,6 +3959,11 @@
     "modelProviders": {
       "title": "Model providers",
       "description": "The keys your bots and voice run on. Each bot uses its provider’s key; Groq and ElevenLabs serve voice only. A key is stored encrypted and never shown again. New bots start on the default provider.",
+      "tabs": {
+        "label": "Model providers views",
+        "providers": "Providers",
+        "voice": "Voice"
+      },
       "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
       "loadFailed": "Couldn’t load the model providers.",
       "keyEnding": "Key ending in {{hint}}",

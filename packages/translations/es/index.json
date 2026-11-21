@@ -4004,6 +4004,11 @@
     "modelProviders": {
       "title": "Proveedores de modelos",
       "description": "Las claves con las que funcionan tus bots y la voz. Cada bot usa la clave de su proveedor; Groq y ElevenLabs sirven solo para la voz. Una clave se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
+      "tabs": {
+        "label": "Vistas de proveedores de modelos",
+        "providers": "Proveedores",
+        "voice": "Voz"
+      },
       "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
       "loadFailed": "No se pudieron cargar los proveedores de modelos.",
       "keyEnding": "Clave que termina en {{hint}}",
