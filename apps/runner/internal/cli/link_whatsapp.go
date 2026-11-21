@@ -1,8 +1,8 @@
 package cli
 
 // The host's WhatsApp linked device on the link:
-// `whatsapp.link`, `whatsapp.unlink`, `whatsapp.send`, `whatsapp.ack` and
-// `whatsapp.media.get` from the control plane, `whatsapp.state`,
+// `whatsapp.link`, `whatsapp.unlink`, `whatsapp.send`, `whatsapp.send.voice`,
+// `whatsapp.ack` and `whatsapp.media.get` from the control plane, `whatsapp.state`,
 // `whatsapp.messages` and `whatsapp.media` to it. The
 // device lives on the daemon's context, not a link's: a link that drops
 // leaves it connected, and what arrives meanwhile waits in its outbox.
@@ -90,6 +90,11 @@ func (h *linkHandler) whatsAppMessage(msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppSend(m) })
 		}
+	case link.TypeWhatsappSendVoice:
+		var m link.WhatsappSendVoice
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppSendVoice(m) })
+		}
 	case link.TypeWhatsappAck:
 		var m link.WhatsappAck
 		if msg.Decode(&m) == nil && h.whatsapp != nil {
@@ -145,6 +150,30 @@ func (h *linkHandler) whatsAppSend(m link.WhatsappSend) {
 		quote = &wadomain.Quote{ID: m.ReplyTo.ID, SenderID: m.ReplyTo.SenderID}
 	}
 	id, at, err := h.whatsapp.Send(ctx, m.ChatID, m.Text, quote)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	_ = h.client.Send(link.WhatsappSent{Type: link.TypeWhatsappSent, CommandID: m.CommandID, ID: id, SentAt: at})
+}
+
+// whatsAppVoiceSendTimeout bounds one voice note: an upload to WhatsApp's
+// media servers, then the send. The control plane gives up a little later.
+const whatsAppVoiceSendTimeout = 40 * time.Second
+
+func (h *linkHandler) whatsAppSendVoice(m link.WhatsappSendVoice) {
+	if h.whatsapp == nil {
+		h.fail(m.CommandID, wadomain.ErrNotConnected.WithDetail("this host offers no WhatsApp device"))
+		return
+	}
+	audio, err := base64.StdEncoding.DecodeString(m.Data)
+	if err != nil {
+		h.fail(m.CommandID, wadomain.ErrNotVoiceNote.WithDetail("the audio is not base64"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(h.life, whatsAppVoiceSendTimeout)
+	defer cancel()
+	id, at, err := h.whatsapp.SendVoice(ctx, m.ChatID, audio, m.Seconds)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
