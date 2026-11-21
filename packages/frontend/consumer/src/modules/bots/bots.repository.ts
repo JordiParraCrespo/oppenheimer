@@ -905,6 +905,15 @@ export class BotsRepository {
     });
   }
 
+  /** The tab's Edit dialog: a new name and prompt, the prompt as the routine's next revision. */
+  updateRoutine(id: string, routineId: string, name: string, prompt: string): Promise<void> {
+    return callApi(BotsErrors.SAVE_ROUTINE_FAILED, async (api) => {
+      await api.result(
+        heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: { name, prompt } }),
+      );
+    });
+  }
+
   /** Run now: one run, paused or not. */
   runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
     return callApi(BotsErrors.RUN_ROUTINE_FAILED, async (api) => {

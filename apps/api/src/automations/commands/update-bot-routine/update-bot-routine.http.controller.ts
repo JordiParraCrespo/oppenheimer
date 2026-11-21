@@ -14,7 +14,9 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import type { ScopeContext } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -37,26 +39,33 @@ export class UpdateBotRoutineHttpController {
   @CheckPolicies({ action: 'update', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    summary: 'Turn a bot’s routine on or off',
+    summary: 'Change a bot’s routine: its name, its prompt, or whether it is on',
     description:
-      'The Routines tab’s switch: off pauses its triggers, on resumes them from now. What a routine does is changed in the bot’s chat, through its own tool.',
+      'The Routines tab’s switch and its Edit dialog. `enabled` off pauses its triggers, on resumes them from now; `name` and `prompt` change what it is called and what it asks the bot, the prompt as its next revision. Fields left out stay as they are. When it runs (its triggers) is changed in the bot’s chat, through its own tool.',
   })
   @ApiResponse({ status: 204 })
   @ApiProblemResponse({ status: 404, description: 'Routine not found', code: 'AUTOMATIONS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The routine changed meanwhile',
+    code: 'AUTOMATIONS_003',
+  })
   async update(
     @CurrentAccessScope() scope: AccessScope,
+    @CurrentScope() credential: ScopeContext | null,
     @Param('id', new ParseUUIDPipe()) botId: string,
     @Param('routineId', new ParseUUIDPipe()) routineId: string,
     @Body() body: UpdateBotRoutineRequest,
   ): Promise<void> {
     await this.commandBus.execute<SaveBotRoutineCommand, string>(
-      // A switch changes neither what runs nor when, so it keeps the routine's scopes.
       new SaveBotRoutineCommand({
         scope,
         botId,
         routineId,
-        changes: { enabled: body.enabled },
-        credentialScopes: null,
+        changes: { enabled: body.enabled, name: body.name, prompt: body.prompt },
+        // A name or prompt change takes the editor's scopes, as the bot's tool does;
+        // a switch alone keeps the routine's (the handler reads them only on an edit).
+        credentialScopes: credential ? credential.scopes : null,
       }),
     );
   }
