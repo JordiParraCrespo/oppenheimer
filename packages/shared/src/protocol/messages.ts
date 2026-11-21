@@ -65,6 +65,7 @@ import {
 import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
+  whatsappChatsSchema,
   whatsappLinkSchema,
   whatsappMediaGetSchema,
   whatsappMediaSchema,
@@ -197,8 +198,8 @@ export const RUNNER_CAPABILITIES = [
   'session.watch',
   /**
    * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
-   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
-   * `whatsapp.messages`.
+   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state`,
+   * `whatsapp.messages` and `whatsapp.chats`.
    */
   'whatsapp',
   /**
@@ -1519,6 +1520,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappUnlinkSchema,
   whatsappStateSchema,
   whatsappMessagesSchema,
+  whatsappChatsSchema,
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSendVoiceSchema,

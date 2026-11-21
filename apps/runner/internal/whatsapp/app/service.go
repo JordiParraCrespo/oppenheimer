@@ -53,6 +53,8 @@ type Service struct {
 	pairing   bool
 	pairedAt  time.Time
 	publisher Publisher
+	// chats is the device's last list of chats, handed to every new link.
+	chats []domain.KnownChat
 	// inFlight is when each message was last handed to the link, until its
 	// ack; a flush skips what was handed on less than ackTimeout ago.
 	inFlight map[string]time.Time
@@ -138,6 +140,7 @@ func (s *Service) LinkUp(ctx context.Context) {
 	s.inFlight = map[string]time.Time{}
 	s.mu.Unlock()
 	s.publish()
+	s.publishChats()
 	s.Flush(ctx)
 }
 
@@ -203,6 +206,7 @@ func (s *Service) Unlink(ctx context.Context) error {
 	}
 	s.mu.Lock()
 	s.inFlight = map[string]time.Time{}
+	s.chats = nil
 	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateUnlinked, Reason: "unlinked from Oppenheimer"})
 	return nil
@@ -360,6 +364,27 @@ func (s *Service) Received(r domain.Received) {
 	s.Flush(ctx)
 }
 
+// Chats keeps the device's chats and hands them to the link. A list lost to a
+// link that is down goes with the next LinkUp.
+func (s *Service) Chats(chats []domain.KnownChat) {
+	s.mu.Lock()
+	s.chats = chats
+	s.mu.Unlock()
+	s.publishChats()
+}
+
+func (s *Service) publishChats() {
+	s.mu.Lock()
+	publisher, chats := s.publisher, s.chats
+	s.mu.Unlock()
+	if publisher == nil {
+		return
+	}
+	for _, batch := range domain.ChatBatches(chats) {
+		publisher.Chats(batch)
+	}
+}
+
 // Connected is the device online.
 func (s *Service) Connected(phone, name string) {
 	s.set(domain.Status{State: domain.StateConnected, Phone: phone, Name: name})
@@ -380,6 +405,9 @@ func (s *Service) Disconnected() {
 // LoggedOut is the phone removing the device, or WhatsApp logging it out:
 // its keys are gone, and it is not retried.
 func (s *Service) LoggedOut(reason string) {
+	s.mu.Lock()
+	s.chats = nil
+	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateLoggedOut, Reason: domain.Fit(reason, 200)})
 }
 

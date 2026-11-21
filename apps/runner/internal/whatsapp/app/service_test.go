@@ -158,7 +158,20 @@ type recorder struct {
 	mu      sync.Mutex
 	states  []domain.Status
 	batches [][]domain.Inbound
+	chats   [][]domain.KnownChat
 	refuse  bool
+}
+
+func (r *recorder) Chats(batch []domain.KnownChat) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.chats = append(r.chats, append([]domain.KnownChat(nil), batch...))
+}
+
+func (r *recorder) chatFrames() [][]domain.KnownChat {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([][]domain.KnownChat(nil), r.chats...)
 }
 
 func (r *recorder) State(s domain.Status) {
@@ -239,6 +252,43 @@ func TestStartConnectsAStoredDevice(t *testing.T) {
 	if got := pub.last(); got.State != domain.StateConnecting || got.Phone != "34600111222@s.whatsapp.net" {
 		t.Fatalf("link up heard %+v", got)
 	}
+}
+
+// The device's groups and contacts go to the link in frames of at most
+// ChatsBatchMax, and again to every new link, so Settings lists them before
+// anyone writes; unlinking forgets them. Breaks if a list is sent in one
+// frame the control plane refuses, or a link that came up later never hears it.
+func TestChatsGoToTheLinkInFramesAndAgainOnLinkUp(t *testing.T) {
+	device := &fakeDevice{}
+	svc, _, pub := started(t, device, nil)
+	chats := make([]domain.KnownChat, domain.ChatsBatchMax+2)
+	for i := range chats {
+		chats[i] = domain.KnownChat{ChatID: fmt.Sprintf("3460000%04d@s.whatsapp.net", i), Kind: domain.ChatDirect}
+	}
+	svc.Chats(chats)
+	frames := pub.chatFrames()
+	if len(frames) != 2 || len(frames[0]) != domain.ChatsBatchMax || len(frames[1]) != 2 {
+		t.Fatalf("frames of %v", frameSizes(frames))
+	}
+	svc.LinkUp(context.Background())
+	if got := frameSizes(pub.chatFrames()); len(got) != 4 {
+		t.Fatalf("a new link heard frames of %v", got)
+	}
+	if err := svc.Unlink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.LinkUp(context.Background())
+	if got := frameSizes(pub.chatFrames()); len(got) != 4 {
+		t.Fatalf("an unlinked number's chats went out again: %v", got)
+	}
+}
+
+func frameSizes(frames [][]domain.KnownChat) []int {
+	sizes := make([]int, 0, len(frames))
+	for _, f := range frames {
+		sizes = append(sizes, len(f))
+	}
+	return sizes
 }
 
 // Pairing hands every QR code to the link, then the paired number; a host

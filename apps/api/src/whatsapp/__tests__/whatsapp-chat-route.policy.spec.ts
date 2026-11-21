@@ -4,6 +4,8 @@ import { WhatsappChatGrantEntity } from '../domain/whatsapp-chat-grant.entity';
 import {
   type WhatsappChatRouteRow,
   whatsappChatRoutes,
+  whatsappKnownChats,
+  whatsappKnownChatsUnderCap,
   whatsappRouteChanges,
 } from '../domain/whatsapp-chat-route.policy';
 import type { WhatsappChat, WhatsappMessage } from '../domain/whatsapp-message.types';
@@ -64,6 +66,64 @@ describe('whatsappChatRoutes', () => {
     expect(rows.map((row) => [row.chatId, row.grant?.botId, row.lastAt === null])).toEqual([
       [FAMILY, 'shop', false],
       [MARTA, null, true],
+    ]);
+  });
+});
+
+describe('the chats a number’s device reports', () => {
+  const PADEL = '120363000000000002@g.us';
+  const PAU = '34600111444@s.whatsapp.net';
+
+  // Breaks if a group the number is in stays off Settings until someone
+  // writes there (People showed 0 with a phone full of contacts), a chat is
+  // listed twice, or a seen chat with no name loses the one its device knows.
+  it('lists the groups and contacts it reports after the chats it saw, each once, with its grant', () => {
+    const rows = whatsappChatRoutes(
+      account,
+      [{ ...seen(MARTA, 'direct', 'Marta'), chatName: null }],
+      [grant(PADEL, 'group', 'shop')],
+      [
+        { chatId: PAU, chatKind: 'direct', chatName: 'Pau' },
+        { chatId: MARTA, chatKind: 'direct', chatName: 'Marta B.' },
+        { chatId: PADEL, chatKind: 'group', chatName: 'Padel' },
+      ],
+    );
+    expect(rows.map((row) => [row.chatId, row.chatName, row.grant?.botId ?? null])).toEqual([
+      [MARTA, 'Marta B.', null],
+      [PADEL, 'Padel', 'shop'],
+      [PAU, 'Pau', null],
+    ]);
+  });
+
+  // Breaks if the owner's own chat or the number's chat with itself, which
+  // are nobody's to route, come back through the device's contacts.
+  it('keeps neither the owner’s chat nor the number’s own from a report, and each chat once', () => {
+    expect(
+      whatsappKnownChats(account, [
+        { chatId: OWNER, chatKind: 'direct', chatName: 'Me' },
+        { chatId: NUMBER, chatKind: 'direct' },
+        { chatId: PAU, chatKind: 'direct' },
+        { chatId: PAU, chatKind: 'direct', chatName: 'Pau' },
+      ]),
+    ).toEqual([{ chatId: PAU, chatKind: 'direct', chatName: 'Pau' }]);
+  });
+});
+
+describe('whatsappKnownChatsUnderCap', () => {
+  // Breaks if a full number stops renaming the chats it knows, drops a known
+  // chat for a new one, or grows past its cap on a report.
+  it('keeps every chat already known, then new ones while there is room', () => {
+    const reported = ['new-1', 'old-1', 'new-2', 'old-2', 'new-3'].map((chatId) => ({ chatId }));
+    const known = new Set(['old-1', 'old-2', 'gone']);
+    expect(whatsappKnownChatsUnderCap(known, reported, 5).map((c) => c.chatId)).toEqual([
+      'old-1',
+      'old-2',
+      'new-1',
+      'new-2',
+    ]);
+    expect(whatsappKnownChatsUnderCap(known, reported, 3).map((c) => c.chatId)).toEqual([
+      'old-1',
+      'old-2',
     ]);
   });
 });

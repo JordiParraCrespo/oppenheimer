@@ -226,23 +226,20 @@ describe('whatsappContactAction', () => {
     ...overrides,
   });
 
-  // What breaks this: a bot answering every line of a busy group, or never
-  // answering when someone speaks to it.
-  it('wakes a group only on a mention of the number or a reply to it', () => {
-    expect(whatsappContactAction(linked, true, inGroup()).kind).toBe('ignore');
-    expect(whatsappContactAction(linked, true, inGroup({ mentions: [marta] })).kind).toBe('ignore');
-    expect(whatsappContactAction(linked, true, inGroup({ mentions: [number] }))).toEqual({
+  // What breaks this: a group set to a bot that stays silent until someone
+  // @-mentions the number, which reads as the bot not answering at all.
+  it('wakes an allowed group on any message with words, mention or not', () => {
+    expect(whatsappContactAction(linked, true, inGroup())).toEqual({
       kind: 'contact',
       text: '@Juno what time is the dinner?',
     });
-    expect(whatsappContactAction(linked, true, inGroup({ quotedSenderId: number })).kind).toBe(
+    expect(whatsappContactAction(linked, true, inGroup({ text: 'dinner at 8' })).kind).toBe(
       'contact',
     );
-    // The number as the runner writes a device's id.
-    expect(
-      whatsappContactAction(linked, true, inGroup({ mentions: ['34611000000:12@s.whatsapp.net'] }))
-        .kind,
-    ).toBe('contact');
+    expect(whatsappContactAction(linked, true, inGroup({ text: '', media: 'image' }))).toEqual({
+      kind: 'contact',
+      text: '[image]',
+    });
   });
 
   // What breaks this: a stranger, or a chat the owner never allowed, reaching a bot.

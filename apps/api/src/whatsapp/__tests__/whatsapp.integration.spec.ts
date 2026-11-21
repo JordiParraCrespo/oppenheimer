@@ -7,6 +7,8 @@ import { WhatsappAccountOrmEntity } from '../database/whatsapp-account.orm-entit
 import { WhatsappAccountRepository } from '../database/whatsapp-account.repository';
 import { WhatsappChatGrantOrmEntity } from '../database/whatsapp-chat-grant.orm-entity';
 import { WhatsappChatGrantRepository } from '../database/whatsapp-chat-grant.repository';
+import { WhatsappKnownChatOrmEntity } from '../database/whatsapp-known-chat.orm-entity';
+import { WhatsappKnownChatRepository } from '../database/whatsapp-known-chat.repository';
 import { WhatsappMessageOrmEntity } from '../database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from '../database/whatsapp-message.repository';
 import type { WhatsappMessagesOwed } from '../database/whatsapp-message.repository.port';
@@ -18,6 +20,7 @@ import type { WhatsappMessageDraft } from '../domain/whatsapp-message.types';
 import { hashWhatsappOwnerCode } from '../domain/whatsapp-owner-code.policy';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';
 import { WhatsappChatGrantMapper } from '../whatsapp-chat-grant.mapper';
+import { WhatsappKnownChatMapper } from '../whatsapp-known-chat.mapper';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 
 /**
@@ -34,13 +37,15 @@ import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
  * to the owner are not counted as sends; and entering a code is a write
  * conditional on the code it was checked against, with wrong tries counted
  * in the row. A number allows a chat once, and forgets what it allowed when
- * it is unlinked.
+ * it is unlinked; the chats its device reports are kept once each, renamed in
+ * place, bounded, and forgotten with it.
  */
 describe('whatsapp (integration)', () => {
   let dataSource: DataSource;
   let accounts: WhatsappAccountRepository;
   let messages: WhatsappMessageRepository;
   let grants: WhatsappChatGrantRepository;
+  let known: WhatsappKnownChatRepository;
   let organizationId: string;
   let ana: string;
   let ben: string;
@@ -63,6 +68,7 @@ describe('whatsapp (integration)', () => {
         WhatsappAccountOrmEntity,
         WhatsappMessageOrmEntity,
         WhatsappChatGrantOrmEntity,
+        WhatsappKnownChatOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -80,6 +86,10 @@ describe('whatsapp (integration)', () => {
     grants = new WhatsappChatGrantRepository(
       dataSource.getRepository(WhatsappChatGrantOrmEntity),
       new WhatsappChatGrantMapper(),
+    );
+    known = new WhatsappKnownChatRepository(
+      dataSource.getRepository(WhatsappKnownChatOrmEntity),
+      new WhatsappKnownChatMapper(),
     );
   }, 180000);
 
@@ -180,6 +190,61 @@ describe('whatsapp (integration)', () => {
 
     await accounts.delete(mine);
     expect(await grants.count(of)).toBe(0);
+  });
+
+  // What breaks this: a report sent again adding twins, a renamed group
+  // keeping its old name, a device reporting without bound, a group left
+  // kept forever and filling the cap, or a number's chats outliving it.
+  it('keeps each reported chat once, renames it in place, stops at the cap, forgets the stale, and forgets them on unlink', async () => {
+    const mine = number(ana);
+    await accounts.insert(mine);
+    const of = { organizationId, accountId: mine.id };
+    const family = { chatId: '120363000000000001@g.us', chatKind: 'group' as const };
+    const longAgo = new Date(Date.now() - 86_400_000);
+    await known.record(of, [{ ...family, chatName: 'Family' }], 2, longAgo);
+    await known.record(
+      of,
+      [
+        { ...family, chatName: 'Family 🏠' },
+        { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
+        { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct', chatName: 'Pau' },
+      ],
+      2,
+      longAgo,
+    );
+    expect(await known.findAll(of, 10)).toEqual([
+      { ...family, chatName: 'Family 🏠' },
+      { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
+    ]);
+
+    // Frames that arrive side by side take turns, so together they never
+    // pass the cap.
+    const cap = (await known.findAll(of, 10)).length + 1;
+    await Promise.all(
+      ['34600333601', '34600333602', '34600333603'].map((digits) =>
+        known.record(
+          of,
+          [{ chatId: `${digits}@s.whatsapp.net`, chatKind: 'direct', chatName: digits }],
+          cap,
+          longAgo,
+        ),
+      ),
+    );
+    expect(await known.findAll(of, 10)).toHaveLength(cap);
+
+    // A report once the others went stale forgets them, which frees the cap.
+    await known.record(
+      of,
+      [{ chatId: '34600333555@s.whatsapp.net', chatKind: 'direct', chatName: 'Pau' }],
+      2,
+      new Date(Date.now() + 60_000),
+    );
+    expect(await known.findAll(of, 10)).toEqual([
+      { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct', chatName: 'Pau' },
+    ]);
+
+    await accounts.delete(mine);
+    expect(await known.findAll(of, 10)).toEqual([]);
   });
 
   it('holds one number per host', async () => {
