@@ -1,5 +1,6 @@
 import { loadEnv } from '@oppenheimer/env';
 import type { ExpoConfig } from 'expo/config';
+import { ICONS_DIR } from './native-sources';
 
 // Expo only reads .env files from the app directory, but this monorepo keeps a
 // single .env at the workspace root. This config runs in Node before Metro
@@ -13,10 +14,16 @@ const plugins: ExpoConfig['plugins'] = [
   'expo-localization',
   'expo-dev-client',
   'expo-image',
+  // ccache for the C, C++ and Objective-C in a native build (Swift is not
+  // cached), used when `ccache` is on the PATH at `pod install`
+  // (`brew install ccache`). It speeds up a rebuild of the same checkout after
+  // `prebuild --clean`; a checkout whose native side matches an earlier build
+  // skips the build altogether (build-cache.js).
+  ['expo-build-properties', { ios: { ccacheEnabled: true } }],
   [
     'react-native-nano-icons',
     {
-      iconSets: [{ inputDir: '../../packages/frontend/design-system/mobile/assets/icons/ui' }],
+      iconSets: [{ inputDir: ICONS_DIR }],
     },
   ],
   // oppenheimer:plugins expo-plugins
@@ -46,6 +53,10 @@ const config: ExpoConfig = {
     },
   },
   plugins,
+  // Every session is a worktree of its own, so a native build reused nothing
+  // from the one before. A build is kept per fingerprint on the machine and
+  // installed again wherever the fingerprint matches (build-cache.js).
+  buildCacheProvider: { plugin: './build-cache.js' },
 };
 
 export default config;
