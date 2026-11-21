@@ -1850,6 +1850,11 @@ earlier note:
   and its saved contacts on connect and on each change (`whatsapp.chats`),
   so Settings lists them before anyone writes. The owner's own chat is
   listed first among People, answered by the default bot.
+- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+  editor: the Routines tab's Edit put "Edit your routine: *name*" in the
+  composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
+  a dialog for its name and prompt, and only when it runs (its triggers)
+  is still changed in the chat.
 - `25-bots.md` §4.4 made every GitHub write of a bot's in the owner's own
   name (2026-10-20). On 2026-11-20 a bot became askable on GitHub (§3.3,
   issue #952), and its answer there is posted by Oppenheimer's App instead:
