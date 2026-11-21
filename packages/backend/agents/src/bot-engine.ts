@@ -21,6 +21,12 @@ export interface BotEngineToolResult {
   content: string;
   isError?: boolean;
   data?: BotToolData;
+  /**
+   * Images the model reads with the words, in order (a screenshot). They
+   * reach the model and nothing else: no event carries them, so the caller
+   * offers such a tool only to a model that reads images.
+   */
+  images?: readonly BotTurnImage[];
 }
 
 /** What one call of a tool runs with. */

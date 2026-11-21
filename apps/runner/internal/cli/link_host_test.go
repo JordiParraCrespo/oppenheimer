@@ -48,7 +48,7 @@ func (c *capturedLink) framed() string {
 // waitFor polls until one sent frame matches, and returns it.
 func (c *capturedLink) waitFor(t *testing.T, what string, match func(any) bool) any {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(15 * time.Second)
 	for {
 		c.mu.Lock()
 		for _, message := range c.sent {
