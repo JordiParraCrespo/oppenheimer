@@ -45,18 +45,10 @@ Keys live in **Settings → Model providers**, one per provider for the workspac
 | OpenAI | GPT | API key |
 | xAI | Grok | API key |
 | GLM | GLM, through z.ai | API key |
-| Groq | Voice only: Whisper transcription | API key |
-| ElevenLabs | Voice only: transcription and voices | API key |
 
 **Make default** picks the provider new bots start on. Without one, a bot uses the first provider that has a key, in the order Anthropic, ChatGPT, OpenAI, Grok, GLM. A bot whose provider has no key cannot answer until one is added.
 
-Groq and ElevenLabs run no bot and are never the default; they serve **Voice**, the section under the providers. It has three rows, each **Automatic** until you pick:
-
-- **Speech to text**: what hears dictation in the console and the voice notes your bots are sent (ChatGPT, OpenAI, Groq, ElevenLabs, or the server's own), and the model where the provider offers one.
-- **Voice notes**: what your bots speak in when they reply with a voice note (OpenAI, ElevenLabs, or the server's own), its model and voice. An ElevenLabs voice can be any voice ID in your ElevenLabs library, a cloned one included.
-- **Transcript polish**: the provider and model that tidy what was heard into writing, or **Off** to keep the words as heard.
-
-A provider you pick is tried first; if it has no key any more or fails, the next one you have answers, in its own default model and voice. Automatic tries them in the order listed.
+Groq and ElevenLabs keys serve voice only ([Voice](./voice.md)).
 
 ## How a bot works on code
 
