@@ -137,6 +137,10 @@
         "list": "Listed",
         "more_one": "+{{count}} more",
         "more_other": "+{{count}} more"
+      },
+      "emoji": {
+        "menu": "Emoji",
+        "pick": "Insert {{emoji}} :{{name}}:"
       }
     },
     "search": {
@@ -495,7 +499,7 @@
       "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
       "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
       "VOICE_007": "Too many dictations for now. Try again in a moment.",
-      "VOICE_008": "Voice notes aren’t set up on this server.",
+      "VOICE_008": "Voice notes aren’t set up for this workspace. Add an OpenAI or ElevenLabs key in Settings → Model providers.",
       "VOICE_009": "The voice note couldn’t be spoken. Try again in a moment.",
       "VOICE_010": "Too many voice notes for now. Try again in a moment.",
       "VOICE_011": "That text is too long for one voice note.",
@@ -3975,7 +3979,12 @@
     },
     "modelProviders": {
       "title": "Model providers",
-      "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again. New bots start on the default provider.",
+      "description": "The keys your bots and voice run on. Each bot uses its provider’s key; Groq and ElevenLabs serve voice only. A key is stored encrypted and never shown again. New bots start on the default provider.",
+      "tabs": {
+        "label": "Model providers views",
+        "providers": "Providers",
+        "voice": "Voice"
+      },
       "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
       "loadFailed": "Couldn’t load the model providers.",
       "keyEnding": "Key ending in {{hint}}",
@@ -3998,7 +4007,9 @@
         "glm": "GLM models, through z.ai.",
         "openai": "GPT models, through OpenAI’s API.",
         "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key.",
-        "xai": "Grok models, through xAI’s API."
+        "xai": "Grok models, through xAI’s API.",
+        "groq": "Whisper transcription, fast, through Groq’s API.",
+        "elevenlabs": "Transcription and lifelike voices, through ElevenLabs’ API."
       },
       "dialog": {
         "title": "{{provider}} key",
@@ -4027,6 +4038,46 @@
         "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
         "done": "Done",
         "failed": "Couldn’t sign in to ChatGPT."
+      },
+      "voice": {
+        "title": "Voice",
+        "description": "What hears dictation and the voice notes your bots are sent, what your bots speak voice notes with, and what tidies a transcript. Automatic uses the first provider you have, in the order listed.",
+        "loadFailed": "Couldn’t load the voice settings.",
+        "saveFailed": "Couldn’t save the voice settings.",
+        "automatic": "Automatic",
+        "notConnected": "{{provider}} · not connected",
+        "server": "This server",
+        "search": "Search",
+        "noMatch": "Nothing matches “{{query}}”.",
+        "transcription": {
+          "title": "Speech to text",
+          "meta": "Dictation in the console, and voice notes sent to your bots.",
+          "providerLabel": "Speech-to-text provider",
+          "modelLabel": "Speech-to-text model"
+        },
+        "synthesis": {
+          "title": "Voice notes",
+          "meta": "What your bots speak in when they reply with a voice note.",
+          "providerLabel": "Voice note provider",
+          "modelLabel": "Voice note model",
+          "voiceLabel": "Voice",
+          "ownVoice": "A voice from my library…",
+          "own": "Voice {{id}}"
+        },
+        "polish": {
+          "title": "Transcript polish",
+          "meta": "Tidies what was heard into writing: fillers gone, names spelled the way you write them.",
+          "providerLabel": "Polish provider",
+          "modelLabel": "Polish model",
+          "off": "Off: as heard"
+        },
+        "voiceDialog": {
+          "title": "ElevenLabs voice",
+          "description": "Paste the ID of a voice in your ElevenLabs library, a cloned one included. Bots speak in it from their next voice note.",
+          "label": "Voice ID",
+          "save": "Use this voice",
+          "saving": "Saving…"
+        }
       }
     },
     "cloudAgents": {

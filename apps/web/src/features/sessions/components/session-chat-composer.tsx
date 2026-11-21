@@ -19,6 +19,7 @@ import {
   ChatQueuedRow,
   ChatUsage,
   type ChatUsageContext,
+  ComposerEmojiBox,
   dictateInto,
   dictationSlots,
   useCommandMenu,
@@ -222,7 +223,7 @@ export function SessionChatComposer({
           }}
         />
       ) : null}
-      <div className="relative">
+      <ComposerEmojiBox draft={draft} setDraft={setDraft}>
         {slash.groups ? (
           <SessionSlashMenu
             project={slash.groups.project}
@@ -292,7 +293,7 @@ export function SessionChatComposer({
             attach: t('sessions.chat.composer.attach'),
           }}
         />
-      </div>
+      </ComposerEmojiBox>
       {refusal ? (
         <FieldError className="mx-4.5">
           {refusalText(refusal, t, 'sessions.chat.composer')}

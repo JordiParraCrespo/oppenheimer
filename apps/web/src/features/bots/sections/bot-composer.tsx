@@ -11,7 +11,13 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
+import {
+  ComposerEmojiBox,
+  dictateInto,
+  dictationSlots,
+  ErrorAlert,
+  useDictation,
+} from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
@@ -266,7 +272,7 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div ref={box} className="relative">
+      <ComposerEmojiBox ref={box} draft={draft} setDraft={setDraft}>
         {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
@@ -338,7 +344,7 @@ export function BotComposer({
             }}
           />
         </DropZone>
-      </div>
+      </ComposerEmojiBox>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
   );
