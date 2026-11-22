@@ -43,7 +43,7 @@ export function BotChatSkeleton() {
       </div>
       <div className="@container">
         <div className="px-3 pb-3 @2xl:px-8 @2xl:pb-4">
-          <div className="flex w-full flex-col gap-2">
+          <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
             <ChatComposer
               layout="inline"
               inert
