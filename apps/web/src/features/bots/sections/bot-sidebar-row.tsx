@@ -1,4 +1,4 @@
-import { SortableBotItem } from '@oppenheimer/design-system-web';
+import { SortableBotPreviewItem } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -51,10 +51,9 @@ export function BotSidebarRow({
 
   return (
     <>
-      <SortableBotItem
+      <SortableBotPreviewItem
         {...item}
-        layout="preview"
-        time={bot.lastMessagePreview ? <BotRowTime at={bot.lastActivityAt} /> : undefined}
+        time={<BotRowTime at={bot.lastActivityAt} />}
         disabled={dragDisabled}
         active={active}
         menuOpen={menuOpen}

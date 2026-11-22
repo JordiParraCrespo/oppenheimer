@@ -267,10 +267,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   volume over time is an `AreaChart` (monotone, so it never overshoots),
   rates without volume a `LineChart`. Several Google accounts are a
   `CalendarAccountList`.
-- **An employee is one line.** `BotItem` is a 20px square photo and the
-  name, 32px tall, its last message in the row's tooltip; unread sets the
-  name at 600 with the blue dot, waiting on the reader (`needsInput`) the
-  same with the amber one.
+- **An employee is one line, or two on the bots page.** `BotItem` is a 20px
+  square photo and the name, 32px tall, its last message in the row's
+  tooltip; unread sets the name at 600 with the blue dot, waiting on the
+  reader (`needsInput`) the same with the amber one. `BotPreviewItem` is the
+  bots page's row, a messaging app's chat list: a 32px photo, the name with
+  when it was last active, the last message under it, 52px.
   Its groups head with `SidebarProjectHeader tone="eyebrow"`, the Built-in
   group with a lock `marker`; before the first bot the list is a
   `SidebarEmptyCard`, and the chat a centred `ChatEmptyState` over
