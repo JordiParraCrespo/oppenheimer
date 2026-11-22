@@ -11,13 +11,21 @@ export const IDLE_PLACEHOLDERS = [
   'anything',
 ] as const;
 
+export type IdlePlaceholder = (typeof IDLE_PLACEHOLDERS)[number];
+
 /**
- * The line for this bot on this visit: `salt` is drawn once when the
- * composer mounts, so it holds while the chat is open and differs between
- * bots and between visits.
+ * The line for this visit, from `roll` in [0, 1): the composer draws it once
+ * when it mounts, and it mounts again for each bot.
  */
-export function idlePlaceholder(botId: string, salt: number): (typeof IDLE_PLACEHOLDERS)[number] {
-  let hash = Math.trunc(salt);
-  for (const char of botId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return IDLE_PLACEHOLDERS[Math.abs(hash) % IDLE_PLACEHOLDERS.length] ?? IDLE_PLACEHOLDERS[0];
+export function idlePlaceholder(roll: number): IdlePlaceholder {
+  const index = Math.min(Math.floor(roll * IDLE_PLACEHOLDERS.length), IDLE_PLACEHOLDERS.length - 1);
+  // The index is in range; the fallback only satisfies noUncheckedIndexedAccess.
+  return IDLE_PLACEHOLDERS[index] ?? IDLE_PLACEHOLDERS[0];
+}
+
+/** The placeholder's translation key: Steer while a turn runs, otherwise the visit's line. */
+export function placeholderKey(running: boolean, idle: IdlePlaceholder) {
+  return running
+    ? ('bots.chat.placeholderRunning' as const)
+    : (`bots.chat.placeholders.${idle}` as const);
 }
