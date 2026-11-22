@@ -81,6 +81,8 @@ export function DeviceFrame({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    // A key on a control the screen holds while it has no picture is that control's.
+    if (!frameUrl || event.target !== event.currentTarget) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     const key = KEYS[event.key];
     if (key) {
