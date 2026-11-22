@@ -1,21 +1,21 @@
-import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { SpeechSynthesisPort } from '../../infrastructure/speech-synthesis.port';
-import { SPEECH_SYNTHESIS } from '../../voice.di-tokens';
+import { SynthesisProviderRegistry } from '../../application/synthesis-provider.registry';
 import { FindSpeechSynthesisQuery } from './find-speech-synthesis.query';
 
 /**
- * Whether a voice note can be spoken here, read from config alone: a bot's
- * tool asks it before raising a card, so a deployment without speech refuses
- * the call at once instead of after the owner said yes. It spends nothing.
+ * Whether a voice note can be spoken for the workspace: a key it stored for a
+ * provider that speaks (OpenAI, ElevenLabs), or the deployment's own server.
+ * A bot's tool asks it before raising a card, so a workspace without speech
+ * refuses the call at once instead of after the owner said yes. It reads rows
+ * and config, and spends nothing.
  */
 @QueryHandler(FindSpeechSynthesisQuery)
 export class FindSpeechSynthesisQueryHandler
   implements IQueryHandler<FindSpeechSynthesisQuery, boolean>
 {
-  constructor(@Inject(SPEECH_SYNTHESIS) private readonly speech: SpeechSynthesisPort) {}
+  constructor(private readonly registry: SynthesisProviderRegistry) {}
 
-  async execute(): Promise<boolean> {
-    return this.speech.isConfigured();
+  async execute({ organizationId }: FindSpeechSynthesisQuery): Promise<boolean> {
+    return (await this.registry.availableFor(organizationId)).length > 0;
   }
 }

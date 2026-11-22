@@ -50,6 +50,9 @@ type Device interface {
 // Events is what the device tells the service.
 type Events interface {
 	Received(domain.Received)
+	// Chats is every chat the device can be reached in, read again on
+	// connect and whenever its groups or contacts change.
+	Chats([]domain.KnownChat)
 	Connected(phone, name string)
 	Disconnected()
 	LoggedOut(reason string)
@@ -74,6 +77,8 @@ type Publisher interface {
 	State(domain.Status)
 	// Messages hands it a batch, and reports whether the link took it.
 	Messages([]domain.Inbound) bool
+	// Chats hands it the chats the number can be reached in, one frame's worth.
+	Chats([]domain.KnownChat)
 }
 
 // VoiceNotes keeps what fetching each voice note takes (never the audio), so

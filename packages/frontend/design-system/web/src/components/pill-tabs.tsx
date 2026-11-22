@@ -62,8 +62,16 @@ function PillTab({
       )}
       {...props}
     >
-      {children}
-      {count !== undefined ? <span className="figures text-[11px] text-fg-subtle">{count}</span> : null}
+      {count !== undefined ? (
+        // The label and its smaller mono count share a baseline: centred
+        // on their own, the mono face's taller ascent lifts the count.
+        <span className="inline-flex items-baseline gap-1.5">
+          <span>{children}</span>
+          <span className="figures text-[11px] leading-none text-fg-subtle">{count}</span>
+        </span>
+      ) : (
+        children
+      )}
     </TogglePrimitive>
   );
 }

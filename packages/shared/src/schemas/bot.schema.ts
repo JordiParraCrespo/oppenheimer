@@ -1256,12 +1256,31 @@ export const findBotConversationSchema = z.object({
 });
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
+/** A routine's name and prompt, as long as the bot's own `update_routine` tool takes them. */
+export const BOT_ROUTINE_NAME_MAX = 200;
+export const BOT_ROUTINE_PROMPT_MAX = 8_000;
+
 /**
- * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch. The tab
- * changes whether a routine runs, never what it is: that is the chat's, through
- * the bot's own tool.
+ * The Routines tab's Edit dialog: the two fields a person types. When it runs
+ * (its triggers) is still the chat's, through the bot's own tool.
  */
-export const updateBotRoutineSchema = z.object({ enabled: z.boolean() });
+export const botRoutineTaskSchema = z.object({
+  name: z.string().trim().min(1).max(BOT_ROUTINE_NAME_MAX),
+  prompt: z.string().trim().min(1).max(BOT_ROUTINE_PROMPT_MAX),
+});
+export type BotRoutineTaskDto = z.infer<typeof botRoutineTaskSchema>;
+
+/**
+ * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch and its
+ * Edit dialog. Any of the three, at least one; what is absent stays as it is.
+ */
+export const updateBotRoutineSchema = botRoutineTaskSchema
+  .partial()
+  .extend({ enabled: z.boolean().optional() })
+  .refine(
+    (body) => body.enabled !== undefined || body.name !== undefined || body.prompt !== undefined,
+    { path: ['enabled'], params: { i18nKey: 'validation.required' } },
+  );
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
 
 /**

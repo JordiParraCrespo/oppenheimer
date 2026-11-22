@@ -1,4 +1,8 @@
 import { QueryBase } from '@oppenheimer/backend-ddd';
 
-/** Whether this deployment can speak a voice note (`VOICE_TTS_*`). */
-export class FindSpeechSynthesisQuery extends QueryBase {}
+/** Whether a workspace's bot can speak a voice note: some synthesis provider is available to it. */
+export class FindSpeechSynthesisQuery extends QueryBase {
+  constructor(readonly organizationId: string) {
+    super();
+  }
+}

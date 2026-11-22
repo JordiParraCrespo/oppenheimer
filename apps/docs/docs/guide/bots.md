@@ -32,7 +32,6 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 | Skills | Saved recipes for a task, at most 50. |
 | Permissions | Each tool set to Allow, Ask or Off; standing grants; plain-language rules. |
 | Routines | Its scheduled and event routines ([Routines and watches](./routines-and-watches.md)). |
-| Gateways | Where people reach it: WhatsApp, Telegram, [Slack](./slack.md). |
 | Home host | Where its sessions start when nobody names a machine, or **No home host** (it asks each time). The bot itself always runs in Oppenheimer. |
 
 ## Model providers
@@ -48,6 +47,8 @@ Keys live in **Settings → Model providers**, one per provider for the workspac
 | GLM | GLM, through z.ai | API key |
 
 **Make default** picks the provider new bots start on. Without one, a bot uses the first provider that has a key, in the order Anthropic, ChatGPT, OpenAI, Grok, GLM. A bot whose provider has no key cannot answer until one is added.
+
+Groq and ElevenLabs keys serve voice only ([Voice](./voice.md)).
 
 ## How a bot works on code
 

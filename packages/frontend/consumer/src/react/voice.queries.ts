@@ -1,10 +1,20 @@
 'use client';
 
-import { PERSIST_META, useFeatureFlag, useQuery } from '@oppenheimer/frontend-core/react';
-import type { VoiceStatusDto } from '@oppenheimer/shared/schemas/voice';
+import {
+  PERSIST_META,
+  useFeatureFlag,
+  useQuery,
+  useSuspenseQuery,
+} from '@oppenheimer/frontend-core/react';
+import type {
+  VoiceSettings,
+  VoiceSettingsDto,
+  VoiceStatusDto,
+} from '@oppenheimer/shared/schemas/voice';
 import { type UseMutationOptions, type UseQueryOptions, useMutation } from '@tanstack/react-query';
 import type { VoiceTranscription } from '../modules/voice';
 import { useConsumerApp } from './context';
+import { mutation } from './mutation';
 import { voiceKeys } from './voice.keys';
 
 /**
@@ -84,3 +94,32 @@ export function useVoiceDictation(vocabulary?: () => readonly string[]): VoiceDi
     },
   };
 }
+
+/**
+ * How the workspace hears and speaks (Settings → Model providers, Voice), and
+ * what it can choose from: which providers have a key or a sign-in now. A key
+ * stored or removed changes the second, so `invalidateModelProviders`
+ * re-reads it with the provider list.
+ */
+export function useSuspenseVoiceSettings() {
+  const app = useConsumerApp();
+  return useSuspenseQuery<VoiceSettingsDto, Error>({
+    queryKey: voiceKeys.settings(),
+    queryFn: () => app.voice.settings(),
+  });
+}
+
+/**
+ * Saves the voice choices whole. Once saved the cache holds them, so the
+ * selects show what was stored before the read back lands; then the settings
+ * and the dictation status are read again.
+ */
+export const useUpdateVoiceSettings = mutation<void, VoiceSettings>({
+  run: (app, settings) => app.voice.updateSettings(settings),
+  update: (queryClient, _data, settings) => {
+    queryClient.setQueryData<VoiceSettingsDto>(voiceKeys.settings(), (current) =>
+      current ? { ...current, ...settings } : current,
+    );
+    return queryClient.invalidateQueries({ queryKey: voiceKeys.all });
+  },
+});

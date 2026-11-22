@@ -732,9 +732,9 @@ describe('ReceiveWhatsappMessagesCommandHandler, the chats a number allows', () 
     return staged as WhatsappContactWroteDomainEvent[];
   }
 
-  // What breaks this: the family group's bot never woken when mentioned, or
-  // woken by every line of the group; a person the owner allowed unanswered.
-  it('wakes the chat’s bot on a mention in an allowed group, and on any message of an allowed person', async () => {
+  // What breaks this: the family group's bot left silent on a line that does
+  // not mention the number; a person the owner allowed unanswered.
+  it('wakes the chat’s bot on every message of an allowed group, and of an allowed person', async () => {
     const staged = await receive(
       'bot-default',
       [grant(GROUP, 'group', 'bot-family'), grant(MARTA, 'direct', null)],
@@ -743,6 +743,7 @@ describe('ReceiveWhatsappMessagesCommandHandler, the chats a number allows', () 
       inbound('D1', MARTA, { text: 'Hi Juno' }),
     );
     expect(staged.map((event) => [event.chatId, event.botId, event.text, event.chatKind])).toEqual([
+      [GROUP, 'bot-family', 'message G1', 'group'],
       [GROUP, 'bot-family', '@Juno dinner at 8?', 'group'],
       [MARTA, 'bot-default', 'Hi Juno', 'direct'],
     ]);

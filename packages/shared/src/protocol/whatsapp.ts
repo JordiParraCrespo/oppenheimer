@@ -171,6 +171,36 @@ export const whatsappMessagesSchema = z.object({
 
 export type WhatsappMessagesMessage = z.infer<typeof whatsappMessagesSchema>;
 
+/** How many chats one `whatsapp.chats` carries at most; a longer list goes in several. */
+export const WHATSAPP_CHATS_BATCH_MAX = 500;
+
+/** One chat the number can be reached in, as its device knows it before any message. */
+export const whatsappKnownChatSchema = z.object({
+  chatId: jid(),
+  chatKind: z.enum(['direct', 'group']),
+  /** The group's subject, or the contact's name as the phone saved it or WhatsApp shows it. */
+  chatName: displayName().optional(),
+});
+
+export type WhatsappKnownChat = z.infer<typeof whatsappKnownChatSchema>;
+
+/**
+ * The chats the number can be reached in, so Settings lists them before
+ * anyone writes: the groups it is in and the people among its contacts. The
+ * runner sends the whole list, in frames of `WHATSAPP_CHATS_BATCH_MAX`, when
+ * the device connects, and again when it joins a group, a group is renamed
+ * or its contacts change, so it is a state the control plane keeps, never a
+ * history: no message travels with it. Not acknowledged; a lost frame is
+ * replaced by the next list. A runner from before it sends none, and its
+ * chats appear only once one writes.
+ */
+export const whatsappChatsSchema = z.object({
+  type: z.literal('whatsapp.chats'),
+  chats: z.array(whatsappKnownChatSchema).min(1).max(WHATSAPP_CHATS_BATCH_MAX),
+});
+
+export type WhatsappChatsMessage = z.infer<typeof whatsappChatsSchema>;
+
 /** The control plane stored these messages; the runner forgets them. */
 export const whatsappAckSchema = z.object({
   type: z.literal('whatsapp.ack'),

@@ -1840,6 +1840,29 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
+  bot in a group only when a message @-mentioned the number or replied to
+  it, and listed only the chats a number had seen a message in. On
+  2026-11-21 the owner found a group set to a bot silent ("not answering")
+  and People empty: a group the owner sets to a bot now wakes it on every
+  message with words (up to 120 turns an hour per group; 20 stays a
+  person's chat's), and the runner reports the groups the number is in
+  and its saved contacts on connect and on each change (`whatsapp.chats`),
+  so Settings lists them before anyone writes. The owner's own chat is
+  listed first among People, answered by the default bot.
+- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+  editor: the Routines tab's Edit put "Edit your routine: *name*" in the
+  composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
+  a dialog for its name and prompt, and only when it runs (its triggers)
+  is still changed in the chat.
+- `next-steps/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
+  or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
+  on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
+  be configured with the keys: Settings → Model providers adds Groq and
+  ElevenLabs (voice only) and a Voice tab choosing, for the workspace,
+  the transcription provider and model, the voice-note provider, model and
+  voice, and the polish model or none. A choice is tried first, the old
+  order after it; the env servers stay as the last provider.
 - `next-steps/channels.md` §7.2 had one Oppenheimer Slack app per Slack
   workspace, speaking as each bot. On 2026-11-20, asked for a way to ask a
   bot from Slack (JordiParraCrespo/oppenheimer#954), each bot got an app of
