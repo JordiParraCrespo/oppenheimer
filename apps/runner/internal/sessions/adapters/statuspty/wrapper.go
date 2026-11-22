@@ -142,26 +142,8 @@ func Run(ctx context.Context, opts RunOptions) (int, error) {
 		}
 	}()
 
-	var (
-		ending   bool
-		killed   bool
-		asked    int
-		deadline <-chan time.Time
-		done     = ctx.Done()
-		paneLost = broken
-	)
-	hangUp := func(sig syscall.Signal) {
-		_ = syscall.Kill(-group, sig)
-		if !ending {
-			ending = true
-			deadline = time.After(grace)
-		}
-	}
-	kill := func() {
-		killed = true
-		deadline = nil
-		_ = syscall.Kill(-group, syscall.SIGKILL)
-	}
+	end := &ender{group: group, grace: grace}
+	done, paneLost := ctx.Done(), broken
 	for {
 		select {
 		case sig := <-signals:
@@ -171,27 +153,20 @@ func Run(ctx context.Context, opts RunOptions) (int, error) {
 				}
 				continue
 			}
-			hangUp(sig.(syscall.Signal))
-			// Asked to end twice is asked to end now. Hangups do not count:
-			// closing a pane sends two, tmux's and the kernel's.
-			if sig != syscall.SIGHUP {
-				if asked++; asked > 1 && !killed {
-					kill()
-				}
-			}
+			end.signalled(sig.(syscall.Signal))
 		case <-done:
 			done = nil
-			hangUp(syscall.SIGHUP)
+			end.hangUp(syscall.SIGHUP)
 		case <-paneLost:
 			paneLost = nil
-			hangUp(syscall.SIGHUP)
-		case <-deadline:
-			kill()
+			end.hangUp(syscall.SIGHUP)
+		case <-end.deadline:
+			end.kill()
 		case err := <-exited:
 			// What the program started and left holding its terminal gets
 			// the grace period too, then goes with the group.
 			wait := grace
-			if killed {
+			if end.killed {
 				wait = time.Second
 			}
 			timer := time.NewTimer(wait)
@@ -204,6 +179,47 @@ func Run(ctx context.Context, opts RunOptions) (int, error) {
 			return exitCode(err), nil
 		}
 	}
+}
+
+// ender owns how the program's process group is ended: hung up first,
+// killed once the grace period is over, or at once when asked to end twice.
+type ender struct {
+	group int
+	grace time.Duration
+	// deadline fires when the grace period is over; nil until a hangup and
+	// after the kill.
+	deadline <-chan time.Time
+	ending   bool
+	killed   bool
+	asked    int
+}
+
+// hangUp passes sig on to the group and starts the grace period, once.
+func (e *ender) hangUp(sig syscall.Signal) {
+	_ = syscall.Kill(-e.group, sig)
+	if !e.ending {
+		e.ending = true
+		e.deadline = time.After(e.grace)
+	}
+}
+
+// signalled handles a signal the wrapper was sent. Asked to end twice is
+// asked to end now. Hangups do not count: closing a pane sends two, tmux's
+// and the kernel's.
+func (e *ender) signalled(sig syscall.Signal) {
+	e.hangUp(sig)
+	if sig == syscall.SIGHUP {
+		return
+	}
+	if e.asked++; e.asked > 1 && !e.killed {
+		e.kill()
+	}
+}
+
+func (e *ender) kill() {
+	e.killed = true
+	e.deadline = nil
+	_ = syscall.Kill(-e.group, syscall.SIGKILL)
 }
 
 func exitCode(err error) int {

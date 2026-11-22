@@ -98,16 +98,7 @@ func (s *Service) EndStrayWrappers(ctx context.Context) ([]Wrapper, error) {
 	var stray []Wrapper
 	s.mu.Lock()
 	for _, w := range running {
-		_, creating := s.creating[w.SessionID]
-		if creating || s.busy[w.SessionID] > 0 {
-			continue
-		}
-		// The tmux session is the one witness to trust. A closed or stopped
-		// record alone is not: `runner sessions restart` runs in a process
-		// of its own and gives the session a new tmux session and wrapper
-		// while this one's map still says stopped. Closing or stopping
-		// kills the tmux session, so a session that is over has none.
-		if !live[w.SessionID] {
+		if s.strayLocked(w, live) {
 			stray = append(stray, w)
 		}
 	}
@@ -115,4 +106,18 @@ func (s *Service) EndStrayWrappers(ctx context.Context) ([]Wrapper, error) {
 	// Exactly the processes judged, never a fresh listing: a session
 	// restarted since has a new wrapper, and that one is not stray.
 	return s.endEach(ctx, stray)
+}
+
+// strayLocked reports whether a wrapper's session is over. A session a
+// command is working on, or still being created, is that command's. Past
+// that, the tmux session is the one witness to trust; a closed or stopped
+// record alone is not: `runner sessions restart` runs in a process of its
+// own and gives the session a new tmux session and wrapper while this
+// one's map still says stopped. Closing or stopping kills the tmux
+// session, so a session that is over has none. s.mu is held.
+func (s *Service) strayLocked(w Wrapper, live map[string]bool) bool {
+	if _, creating := s.creating[w.SessionID]; creating || s.busy[w.SessionID] > 0 {
+		return false
+	}
+	return !live[w.SessionID]
 }
