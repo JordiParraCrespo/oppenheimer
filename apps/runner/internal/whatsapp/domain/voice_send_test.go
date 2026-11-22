@@ -11,7 +11,9 @@ import (
 // seconds at 24 kHz mono (what OpenAI's `opus` answers), one a voiced tone
 // under a syllable envelope, one digital silence. Both are whole Ogg/Opus
 // with a two-second granule, so length and container alone cannot tell them
-// apart.
+// apart. A third, made with ffmpeg's libopus, is a tone peaking at -20 dBFS
+// in 2.5 ms frames at 12 kbit/s constant bitrate: every packet is 3 bytes,
+// the size libopus codes a frame of silence in.
 func fixture(t *testing.T, name string) []byte {
 	t.Helper()
 	data, err := os.ReadFile("testdata/" + name)
@@ -30,6 +32,25 @@ func TestCheckVoiceOutRefusesSilence(t *testing.T) {
 	}
 	if err := CheckVoiceOut(fixture(t, "speech-like-2s.ogg"), 2); err != nil {
 		t.Fatalf("speech was refused: %v", err)
+	}
+}
+
+// Packet size follows frame length and bitrate as well as sound: audio in
+// short frames has packets as small as silence however loud it is, and was
+// refused as silence when the check read raw packet size.
+func TestCheckVoiceOutDoesNotJudgeShortFramesSilent(t *testing.T) {
+	tone := fixture(t, "tone-2.5ms-frames-12k-cbr-2s.ogg")
+	if err := CheckVoiceOut(tone, 2); err != nil {
+		t.Fatalf("a loud tone in short frames was refused: %v", err)
+	}
+	loud := 0
+	for _, bar := range VoiceWaveform(tone) {
+		if bar >= 30 {
+			loud++
+		}
+	}
+	if loud < VoiceWaveformBars/2 {
+		t.Fatalf("a loud tone in short frames drew a flat waveform: %v", VoiceWaveform(tone))
 	}
 }
 
