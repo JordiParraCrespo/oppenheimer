@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"syscall"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -28,6 +29,9 @@ type Options struct {
 	Executable string
 	// Dir holds one report file per wrapped session.
 	Dir string
+	// Grace is how long End gives a hung-up program before the kill; zero
+	// is DefaultGrace.
+	Grace time.Duration
 }
 
 // Reports is the session service's view of the wrapper: the words that put
