@@ -2,14 +2,7 @@
  * What the empty composer invites, one line among several so the box does
  * not read the same every time it opens.
  */
-const IDLE_PLACEHOLDERS = [
-  'takeOn',
-  'job',
-  'problem',
-  'session',
-  'listening',
-  'anything',
-] as const;
+const IDLE_PLACEHOLDERS = ['takeOn', 'job', 'problem', 'session', 'listening', 'anything'] as const;
 
 export type IdlePlaceholder = (typeof IDLE_PLACEHOLDERS)[number];
 
