@@ -37,7 +37,15 @@ export type {
 export { AvatarColorPicker, AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
 export { BotFacePicker } from './components/bot-face-picker';
-export { BotItem, BotItemSkeleton, BotList, SortableBotItem } from './components/bot-item';
+export {
+  BotItem,
+  BotItemSkeleton,
+  BotList,
+  BotPreviewItem,
+  BotPreviewItemSkeleton,
+  SortableBotItem,
+  SortableBotPreviewItem,
+} from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system ──────────────────────────────────────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
@@ -76,6 +84,7 @@ export type { ProposedPlanLabels, SubagentState } from './components/chat-cards'
 export {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,

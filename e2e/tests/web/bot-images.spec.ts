@@ -44,7 +44,7 @@ test('an image picked in the composer is sent with the message and stays in the 
   const composer = page.locator('[data-slot="chat-composer"]');
   await expect(composer.getByRole('img', { name: 'dot.png' })).toBeVisible();
   await expect(composer.getByRole('button', { name: 'Remove dot.png' })).toBeVisible();
-  await page.getByPlaceholder('Message Vision Bot').fill('What is in this picture?');
+  await page.getByRole('textbox', { name: 'Message Vision Bot' }).fill('What is in this picture?');
   const send = page.getByRole('button', { name: 'Send' });
   await expect(send).not.toHaveAttribute('aria-disabled', 'true');
   await send.click();
@@ -69,7 +69,7 @@ test('a GLM bot refuses an image and keeps what was written', async ({ page }) =
   await signInAs(page, owner.user);
   await page.goto(`/bots/${bot.id}`);
 
-  const box = page.getByPlaceholder('Message Text Bot');
+  const box = page.getByRole('textbox', { name: 'Message Text Bot' });
   await box.fill('Describe this');
   await pickImage(page);
 

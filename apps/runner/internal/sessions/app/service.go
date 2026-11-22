@@ -56,6 +56,10 @@ type Options struct {
 	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
 	// the screen alone.
 	ProgramStatus ProgramStatus
+	// Wrappers finds and ends the wrapper processes the agents run under,
+	// so an agent that ignores its hangup does not outlive its session; nil
+	// leaves it to tmux's hangup alone.
+	Wrappers Wrappers
 	// Rebooted says the host started after the session map was last
 	// saved: every session it holds as live was lost to that reboot, and a
 	// kept one is brought back (RecoverKept).
@@ -118,6 +122,7 @@ type Service struct {
 	transcripts Transcripts
 	statusLines func(session string) string
 	freePort    func() (int, error)
+	wrappers    Wrappers
 	now         func() time.Time
 }
 
@@ -143,7 +148,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLines: opts.StatusLine, freePort: opts.FreePort, now: now,
+		transcripts: opts.Transcripts, statusLines: opts.StatusLine, freePort: opts.FreePort, wrappers: opts.Wrappers, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -728,7 +733,7 @@ func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
 	if !session.State.Live() {
 		return session, nil
 	}
-	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+	if err := s.endTerminal(ctx, session); err != nil {
 		return domain.Session{}, err
 	}
 	return s.decide(session, domain.StateStopped, ""), nil
@@ -755,7 +760,7 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	if err != nil || over {
 		return session, err
 	}
-	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+	if err := s.endTerminal(ctx, session); err != nil {
 		return domain.Session{}, err
 	}
 	return s.closePlace(ctx, session, in)
@@ -896,6 +901,13 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 			s.decide(session, domain.StateStopped, "")
 		}
 	}
+	// Their agents go with them: an uninstalled runner is not there to
+	// come round for one that ignored its hangup.
+	ids := map[string]bool{}
+	for _, name := range ended {
+		ids[strings.TrimPrefix(name, domain.Prefix)] = true
+	}
+	_ = s.endSessions(ctx, ids)
 	return ended, errors.Join(errs...)
 }
 

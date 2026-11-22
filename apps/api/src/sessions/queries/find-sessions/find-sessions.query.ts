@@ -19,6 +19,8 @@ export class FindSessionsQuery extends QueryBase {
   readonly sort?: SessionSortDto;
   /** Opaque, from the previous page's `meta.nextCursor`. Switches off `page` and the count. */
   readonly cursor?: string;
+  /** `false` leaves resolved sessions out, `true` keeps only them. */
+  readonly resolved?: boolean;
 
   constructor(props: {
     scope: AccessScope;
@@ -31,6 +33,7 @@ export class FindSessionsQuery extends QueryBase {
     agent?: string;
     sort?: SessionSortDto;
     cursor?: string;
+    resolved?: boolean;
   }) {
     super();
     this.scope = props.scope;
@@ -43,5 +46,6 @@ export class FindSessionsQuery extends QueryBase {
     this.agent = props.agent;
     this.sort = props.sort;
     this.cursor = props.cursor;
+    this.resolved = props.resolved;
   }
 }

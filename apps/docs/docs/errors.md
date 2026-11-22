@@ -952,7 +952,7 @@ ElevenLabs key, and no text-to-speech server on the deployment (`VOICE_TTS_*`
 in `.env.example`); the bot is refused before any card and told to send text.
 `VOICE_009` is the provider unreachable, refusing (an ElevenLabs voice the
 account cannot use, say), or answering something that is not Ogg/Opus audio of
-at most two minutes; `VOICE_010` is it rate limiting the key, with
+at most two minutes, or Ogg/Opus that decodes to silence; `VOICE_010` is it rate limiting the key, with
 `Retry-After`. `VOICE_011` is an empty text or one longer than 600 characters.
 
 ## Inbox
@@ -1458,8 +1458,8 @@ not hear.
 `whatsapp.send.voice`, a bot's spoken reply, is answered like a text: `WA_002`,
 `WA_003` (WhatsApp refused the upload or the message) and `WA_004`, the same
 budget a text spends. Before anything is uploaded the host refuses audio
-larger than one frame (`WA_006`) and audio that is not Ogg/Opus or runs
-outside 1 to 120 seconds (`WA_008`). The control plane's link refuses audio
+larger than one frame (`WA_006`) and audio that is not Ogg/Opus, runs
+outside 1 to 120 seconds or is silent from end to end (`WA_008`). The control plane's link refuses audio
 past one frame itself, as `WA_006`, before it is sent (a larger frame would
 close the host's link); the bot reads either as `WHATSAPP_008`.
 
