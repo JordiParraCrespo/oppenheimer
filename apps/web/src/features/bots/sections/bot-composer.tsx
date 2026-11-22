@@ -11,7 +11,13 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
+import {
+  ComposerEmojiBox,
+  dictateInto,
+  dictationSlots,
+  ErrorAlert,
+  useDictation,
+} from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
@@ -21,7 +27,7 @@ import {
 } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
 import { BotPaneDrop } from '@/features/bots/components/bot-pane-drop';
@@ -43,6 +49,7 @@ import {
 } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
+import { idlePlaceholder, placeholderKey } from '@/features/bots/lib/idle-placeholder';
 import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
@@ -119,6 +126,7 @@ export function BotComposer({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [draft, setDraft] = useBotDraft(botId);
+  const [idle] = useState(() => idlePlaceholder(Math.random()));
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const recall = useSentHistory(botId, draft, setDraft);
@@ -266,7 +274,7 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div ref={box} className="relative">
+      <ComposerEmojiBox ref={box} draft={draft} setDraft={setDraft}>
         {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
@@ -308,12 +316,7 @@ export function BotComposer({
                   ))
                 : undefined
             }
-            placeholder={
-              suggested.suggestion ??
-              (running
-                ? t('bots.chat.placeholderRunning', { name })
-                : t('bots.chat.placeholder', { name }))
-            }
+            placeholder={suggested.suggestion ?? t(placeholderKey(running, idle), { name })}
             tools={tools}
             engine={engine}
             above={
@@ -335,10 +338,11 @@ export function BotComposer({
               send: t('bots.chat.send'),
               stop: t('bots.chat.stop'),
               attach: t('bots.chat.images.attach'),
+              field: t('bots.chat.field', { name }),
             }}
           />
         </DropZone>
-      </div>
+      </ComposerEmojiBox>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
   );

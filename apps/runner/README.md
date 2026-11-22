@@ -15,7 +15,10 @@ sessions — a git worktree plus a tmux session with the agent in window 0,
 tabs as further windows, a screen classifier for the sidebar dot, and a close
 that pushes the branch and removes the worktree. The agent runs under
 `runner pty`, which answers its OSC 7501 probe, so an agent that reports its
-own status (Claude Code) is read from that first and the screen second. An
+own status (Claude Code) is read from that first and the screen second.
+Ending a session ends its agent: hung up, given 10 s to save its
+conversation, then killed with its process group, and the daemon ends
+any agent still running for a closed or stopped session every 5 minutes. An
 agent in a session can start, tell and wait on other agents as child
 sessions (`runner --skill`), and a session marked kept comes back on its own
 after a reboot (`product/research/lessons-from-herdr.md` §4).
@@ -57,6 +60,12 @@ a minute, 300 a day). A reply quotes the message it answers when the control
 plane names one (`whatsapp.send`'s `replyTo`). A sender or direct chat that
 WhatsApp addresses by `@lid` is reported by its phone number whenever the
 device knows it, so a bot's owner, named by number, is recognised either way.
+So are the people a message @-mentions and the sender of the message it
+replies to. On connect, and again when it joins a group, a group is renamed
+or its contacts change, the device reports the groups it is in and its
+saved contacts (`whatsapp.chats`), so Settings lists them before anyone
+writes; someone only seen in a group, with no name the phone saved, is not
+reported.
 
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container

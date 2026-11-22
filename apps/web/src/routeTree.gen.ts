@@ -74,8 +74,10 @@ import { Route as AuthenticatedSessionsBotsBotIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 import { Route as AuthenticatedSettingsMailGoogleRouteImport } from './routes/_authenticated/settings/mail_.google'
+import { Route as AuthenticatedSettingsWhatsappAccountIdRouteImport } from './routes/_authenticated/settings/whatsapp_.$accountId'
 import { Route as AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport } from './routes/_authenticated/automations_.$automationId.sessions.$sessionId'
 import { Route as AuthenticatedBotsBotIdSettingsIndexRouteImport } from './routes/_authenticated/bots_.$botId.settings/index'
+import { Route as AuthenticatedBotsBotIdSettingsGatewaysRouteImport } from './routes/_authenticated/bots_.$botId.settings/gateways'
 import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './routes/_authenticated/bots_.$botId.settings/home-host'
 import { Route as AuthenticatedBotsBotIdSettingsInstructionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/instructions'
 import { Route as AuthenticatedBotsBotIdSettingsMemoryRouteImport } from './routes/_authenticated/bots_.$botId.settings/memory'
@@ -444,6 +446,12 @@ const AuthenticatedSettingsMailGoogleRoute =
     path: '/mail/google',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsWhatsappAccountIdRoute =
+  AuthenticatedSettingsWhatsappAccountIdRouteImport.update({
+    id: '/whatsapp_/$accountId',
+    path: '/whatsapp/$accountId',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute =
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport.update({
     id: '/automations_/$automationId/sessions/$sessionId',
@@ -454,6 +462,12 @@ const AuthenticatedBotsBotIdSettingsIndexRoute =
   AuthenticatedBotsBotIdSettingsIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
+const AuthenticatedBotsBotIdSettingsGatewaysRoute =
+  AuthenticatedBotsBotIdSettingsGatewaysRouteImport.update({
+    id: '/gateways',
+    path: '/gateways',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
 const AuthenticatedBotsBotIdSettingsHomeHostRoute =
@@ -579,8 +593,10 @@ export interface FileRoutesByFullPath {
   '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/mail/google': typeof AuthenticatedSettingsMailGoogleRoute
+  '/settings/whatsapp/$accountId': typeof AuthenticatedSettingsWhatsappAccountIdRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/bots/$botId/settings/gateways': typeof AuthenticatedBotsBotIdSettingsGatewaysRoute
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
@@ -649,8 +665,10 @@ export interface FileRoutesByTo {
   '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/mail/google': typeof AuthenticatedSettingsMailGoogleRoute
+  '/settings/whatsapp/$accountId': typeof AuthenticatedSettingsWhatsappAccountIdRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/bots/$botId/settings/gateways': typeof AuthenticatedBotsBotIdSettingsGatewaysRoute
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
@@ -729,8 +747,10 @@ export interface FileRoutesById {
   '/_authenticated/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/mail_/google': typeof AuthenticatedSettingsMailGoogleRoute
+  '/_authenticated/settings/whatsapp_/$accountId': typeof AuthenticatedSettingsWhatsappAccountIdRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/_authenticated/automations_/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/_authenticated/bots_/$botId/settings/gateways': typeof AuthenticatedBotsBotIdSettingsGatewaysRoute
   '/_authenticated/bots_/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/_authenticated/bots_/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/_authenticated/bots_/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
@@ -807,8 +827,10 @@ export interface FileRouteTypes {
     | '/sessions/bots/$botId'
     | '/settings/hosts/new'
     | '/settings/mail/google'
+    | '/settings/whatsapp/$accountId'
     | '/settings/hosts/'
     | '/automations/$automationId/sessions/$sessionId'
+    | '/bots/$botId/settings/gateways'
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
@@ -877,8 +899,10 @@ export interface FileRouteTypes {
     | '/sessions/bots/$botId'
     | '/settings/hosts/new'
     | '/settings/mail/google'
+    | '/settings/whatsapp/$accountId'
     | '/settings/hosts'
     | '/automations/$automationId/sessions/$sessionId'
+    | '/bots/$botId/settings/gateways'
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
@@ -956,8 +980,10 @@ export interface FileRouteTypes {
     | '/_authenticated/sessions/bots/$botId'
     | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/mail_/google'
+    | '/_authenticated/settings/whatsapp_/$accountId'
     | '/_authenticated/settings/hosts/'
     | '/_authenticated/automations_/$automationId/sessions/$sessionId'
+    | '/_authenticated/bots_/$botId/settings/gateways'
     | '/_authenticated/bots_/$botId/settings/home-host'
     | '/_authenticated/bots_/$botId/settings/instructions'
     | '/_authenticated/bots_/$botId/settings/memory'
@@ -1439,6 +1465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMailGoogleRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/whatsapp_/$accountId': {
+      id: '/_authenticated/settings/whatsapp_/$accountId'
+      path: '/whatsapp/$accountId'
+      fullPath: '/settings/whatsapp/$accountId'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappAccountIdRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/automations_/$automationId/sessions/$sessionId': {
       id: '/_authenticated/automations_/$automationId/sessions/$sessionId'
       path: '/automations/$automationId/sessions/$sessionId'
@@ -1451,6 +1484,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/bots/$botId/settings/'
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
+    '/_authenticated/bots_/$botId/settings/gateways': {
+      id: '/_authenticated/bots_/$botId/settings/gateways'
+      path: '/gateways'
+      fullPath: '/bots/$botId/settings/gateways'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsGatewaysRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
     '/_authenticated/bots_/$botId/settings/home-host': {
@@ -1655,6 +1695,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsMailGoogleRoute: typeof AuthenticatedSettingsMailGoogleRoute
+  AuthenticatedSettingsWhatsappAccountIdRoute: typeof AuthenticatedSettingsWhatsappAccountIdRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
   AuthenticatedSettingsHostsHostIdDesktopRoute: typeof AuthenticatedSettingsHostsHostIdDesktopRoute
 }
@@ -1675,6 +1716,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsMailGoogleRoute: AuthenticatedSettingsMailGoogleRoute,
+  AuthenticatedSettingsWhatsappAccountIdRoute:
+    AuthenticatedSettingsWhatsappAccountIdRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
   AuthenticatedSettingsHostsHostIdDesktopRoute:
     AuthenticatedSettingsHostsHostIdDesktopRoute,
@@ -1686,6 +1729,7 @@ const AuthenticatedSettingsRouteWithChildren =
   )
 
 interface AuthenticatedBotsBotIdSettingsRouteChildren {
+  AuthenticatedBotsBotIdSettingsGatewaysRoute: typeof AuthenticatedBotsBotIdSettingsGatewaysRoute
   AuthenticatedBotsBotIdSettingsHomeHostRoute: typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   AuthenticatedBotsBotIdSettingsInstructionsRoute: typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   AuthenticatedBotsBotIdSettingsMemoryRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRoute
@@ -1699,6 +1743,8 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
 
 const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSettingsRouteChildren =
   {
+    AuthenticatedBotsBotIdSettingsGatewaysRoute:
+      AuthenticatedBotsBotIdSettingsGatewaysRoute,
     AuthenticatedBotsBotIdSettingsHomeHostRoute:
       AuthenticatedBotsBotIdSettingsHomeHostRoute,
     AuthenticatedBotsBotIdSettingsInstructionsRoute:

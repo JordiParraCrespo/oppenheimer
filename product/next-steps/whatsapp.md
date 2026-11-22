@@ -163,8 +163,11 @@ A group of its own in Settings → Permissions, **WhatsApp**:
    workspace's dictation providers (its ChatGPT sign-in, else the
    deployment's speech server) after the API decodes the Ogg/Opus in
    process; a note the bot reads in a chat shows its words once heard.
-   Images, and voice replies (a `send_voice` tool over a text-to-speech
-   provider), are next.
+   *Voice replies built 2026-11-20:* `send_whatsapp_voice_note` speaks a
+   short text (600 characters at most) on the deployment's text-to-speech
+   server (`VOICE_TTS_*`, any OpenAI-compatible `/audio/speech` answering
+   Ogg/Opus) and the runner sends it as a push-to-talk voice note
+   (`whatsapp.send.voice`). Images are next.
 4. **WhatsApp as a channel** (`channels.md` §7.1): people write *to* a bot,
    with the owner-only rule and held strangers of `channels.md` §5, on the
    same device. *Designed 2026-11-09 in
@@ -204,3 +207,22 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   it starts: never at intake or in the outbox listener, which must not wait
   minutes on a host and a speech provider. A note read in another chat is
   not transcribed by the read. Kept as text on the row so it is heard once.
+- 2026-11-20: bots speak voice notes as a tool of their own,
+  `send_whatsapp_voice_note`, so allowing texts in a chat does not allow the
+  owner's voice there; its card quotes every word it will say and the chat,
+  and a yes speaks exactly those words to that chat. It spends the same
+  share as a text (the day's 100, the host's own budget), and it is kept on
+  the row as a voice note whose transcript is what it said, never its audio.
+  Speech is the deployment's own text-to-speech server only: no provider is
+  required, a deployment without one refuses the tool before any card, and a
+  ChatGPT sign-in does not speak (it has no route we may call). The audio is
+  made and checked in the API (Ogg/Opus, its length read from its pages),
+  carried in one link frame and held in memory on the host, never on disk.
+  *Fixed 2026-11-22:* the owner's first two bot voice notes (9 and 20
+  seconds, sent as successes) played as silence on the phone. The note now
+  carries its waveform, drawn on the host from its Opus packets (a
+  push-to-talk note without one plays on WhatsApp Web, not on the phones:
+  whatsmeow#517). Audio is decoded in the API before it goes, and audio that
+  decodes to silence counts as that provider failing (`VOICE_009`), so the
+  next one is tried; the host refuses a note silent from end to end
+  (`WA_008`). Which of the two the live notes hit was not established.

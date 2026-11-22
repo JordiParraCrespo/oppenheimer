@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +54,16 @@ const DeviceName = "Oppenheimer"
 // maxReconnectErrors caps whatsmeow's linear backoff (2 s per failed attempt)
 // at 30 s.
 const maxReconnectErrors = 15
+
+// chatsSettle is how long the device waits after a change to its groups or
+// contacts before it reads the list again: a full contact sync is hundreds of
+// events, read once.
+const chatsSettle = 3 * time.Second
+
+// chatsEvery is the least time between two reads of the list: each asks
+// WhatsApp for every group the number is in, which a busy community could
+// otherwise have it ask every few seconds.
+const chatsEvery = time.Minute
 
 // groupNameTTL is how long a group's subject is trusted before it is read
 // again: a rename shows within the hour.
@@ -82,6 +93,10 @@ type Device struct {
 	handler   uint32
 
 	groups sync.Map // types.JID → groupName
+
+	chatsMu    sync.Mutex
+	chatsTimer *time.Timer
+	chatsAt    time.Time // when the list was last read
 }
 
 type groupName struct {
@@ -305,13 +320,43 @@ func (d *Device) Send(ctx context.Context, chatID, text string, quote *domain.Qu
 		return "", time.Time{}, fmt.Errorf("not a WhatsApp chat: %w", err)
 	}
 	resp, err := client.SendMessage(ctx, to, outgoing(text, quote))
-	if errors.Is(err, whatsmeow.ErrIQRateOverLimit) || (err != nil && strings.Contains(err.Error(), "rate-overlimit")) {
-		return "", time.Time{}, fmt.Errorf("%w: %w", domain.ErrRateLimited, err)
-	}
 	if err != nil {
-		return "", time.Time{}, err
+		return "", time.Time{}, rateLimited(err)
 	}
 	return resp.ID, resp.Timestamp, nil
+}
+
+// SendVoice uploads a voice note to WhatsApp's media servers, encrypted
+// there as every attachment is, then sends the message that points at it as
+// push-to-talk, so the phone draws a playable voice note. The audio is only
+// ever in memory: nothing is written to the host's disk.
+func (d *Device) SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	client, _ := d.current()
+	if client == nil || !client.IsLoggedIn() {
+		return "", time.Time{}, domain.ErrNotConnected
+	}
+	to, err := types.ParseJID(chatID)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("not a WhatsApp chat: %w", err)
+	}
+	uploaded, err := client.Upload(ctx, audio, whatsmeow.MediaAudio)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("the upload failed: %w", rateLimited(err))
+	}
+	resp, err := client.SendMessage(ctx, to, outgoingVoice(uploaded, seconds, domain.VoiceWaveform(audio), time.Now()))
+	if err != nil {
+		return "", time.Time{}, rateLimited(err)
+	}
+	return resp.ID, resp.Timestamp, nil
+}
+
+// rateLimited marks WhatsApp's 429 as domain.ErrRateLimited, which pauses the
+// host's sends.
+func rateLimited(err error) error {
+	if errors.Is(err, whatsmeow.ErrIQRateOverLimit) || strings.Contains(err.Error(), "rate-overlimit") {
+		return fmt.Errorf("%w: %w", domain.ErrRateLimited, err)
+	}
+	return err
 }
 
 // Download fetches a voice note from WhatsApp's media servers and decrypts
@@ -439,7 +484,7 @@ func (d *Device) onEvent(raw any) {
 	switch evt := raw.(type) {
 	case *events.Message:
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, logger: d.logger}
+		read := reader{names: clientNames{d: d, client: client}, lids: client.Store.LIDs, self: selfOf(client), logger: d.logger}
 		listener.Received(read.received(ctx, evt))
 		cancel()
 	case *events.Connected:
@@ -456,6 +501,16 @@ func (d *Device) onEvent(raw any) {
 			phone = client.Store.ID.ToNonAD().String()
 		}
 		listener.Connected(phone, name)
+		d.readChatsSoon(client, listener)
+	case *events.GroupInfo:
+		// Only a rename changes the list; joins, leaves and settings do not.
+		if evt.Name != nil {
+			d.readChatsSoon(client, listener)
+		}
+	case *events.JoinedGroup, *events.Contact, *events.AppStateSyncComplete:
+		// A group joined, a contact saved or changed, the phone's contacts
+		// synced: the list Settings shows changed.
+		d.readChatsSoon(client, listener)
 	case *events.Disconnected, *events.KeepAliveTimeout:
 		listener.Disconnected()
 	case *events.LoggedOut:
@@ -480,6 +535,93 @@ func (d *Device) onEvent(raw any) {
 	}
 }
 
+// readChatsSoon reads the device's chats once the changes around it settle,
+// and no sooner than chatsEvery after the last read.
+func (d *Device) readChatsSoon(client *whatsmeow.Client, listener app.Events) {
+	d.chatsMu.Lock()
+	defer d.chatsMu.Unlock()
+	if d.chatsTimer != nil {
+		d.chatsTimer.Stop()
+	}
+	wait := max(chatsSettle, chatsEvery-time.Since(d.chatsAt))
+	d.chatsTimer = time.AfterFunc(wait, func() {
+		if current, _ := d.current(); current != client {
+			return
+		}
+		d.chatsMu.Lock()
+		d.chatsAt = time.Now()
+		d.chatsMu.Unlock()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		chats, err := readChats(ctx, client)
+		if err != nil {
+			d.logger.Warn("whatsapp: the number's groups and contacts could not be read", slog.Any("error", err))
+			return
+		}
+		for _, c := range chats {
+			if c.Kind == domain.ChatGroup && c.Name != "" {
+				if jid, err := types.ParseJID(c.ChatID); err == nil {
+					d.groups.Store(jid, groupName{name: c.Name, at: time.Now()})
+				}
+			}
+		}
+		listener.Chats(chats)
+	})
+}
+
+// readChats is the groups the number is in and the people among its
+// contacts: groups first, then people, each by name. A person is a contact the
+// phone saved (a name of their own, or a business's), never someone only seen
+// in a group with the name they gave themselves, and never the number itself.
+func readChats(ctx context.Context, client *whatsmeow.Client) ([]domain.KnownChat, error) {
+	groups, err := client.GetJoinedGroups(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("joined groups: %w", err)
+	}
+	contacts, err := client.Store.Contacts.GetAllContacts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("contacts: %w", err)
+	}
+	self := selfOf(client)
+	chats := make([]domain.KnownChat, 0, len(groups)+len(contacts))
+	for _, g := range groups {
+		if g == nil {
+			continue
+		}
+		chats = append(chats, domain.KnownChat{ChatID: g.JID.ToNonAD().String(), Kind: domain.ChatGroup, Name: g.Name})
+	}
+	var people []domain.KnownChat
+	for jid, contact := range contacts {
+		jid = jid.ToNonAD()
+		if jid.Server != types.DefaultUserServer || jid == self.phone {
+			continue
+		}
+		name := firstName(contact.FullName, contact.FirstName, contact.BusinessName)
+		if name == "" {
+			continue
+		}
+		people = append(people, domain.KnownChat{ChatID: jid.String(), Kind: domain.ChatDirect, Name: name})
+	}
+	byName := func(a, b domain.KnownChat) int {
+		if c := strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)); c != 0 {
+			return c
+		}
+		return strings.Compare(a.ChatID, b.ChatID)
+	}
+	slices.SortFunc(chats, byName)
+	slices.SortFunc(people, byName)
+	return append(chats, people...), nil
+}
+
+func firstName(names ...string) string {
+	for _, name := range names {
+		if name = strings.TrimSpace(name); name != "" {
+			return name
+		}
+	}
+	return ""
+}
+
 // reconnectOutdated reconnects client after WhatsApp refused it as outdated,
 // once the version it announces has moved.
 func (d *Device) reconnectOutdated(client *whatsmeow.Client) {
@@ -494,6 +636,16 @@ func (d *Device) reconnectOutdated(client *whatsmeow.Client) {
 	if err := client.Connect(); err != nil {
 		d.logger.Warn("whatsapp: reconnecting with the new web version failed", slog.Any("error", err))
 	}
+}
+
+// selfOf is the paired number's own ids, empty before pairing.
+func selfOf(client *whatsmeow.Client) selfIDs {
+	var self selfIDs
+	if client.Store.ID != nil {
+		self.phone = client.Store.ID.ToNonAD()
+	}
+	self.lid = client.Store.LID.ToNonAD()
+	return self
 }
 
 // clientNames reads names off the client's store and, for groups, WhatsApp.

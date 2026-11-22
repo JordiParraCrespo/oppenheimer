@@ -1,6 +1,6 @@
 import {
-  BotItemSkeleton,
   BotList,
+  BotPreviewItemSkeleton,
   Button,
   SidebarProjectGroup,
   SidebarProjectHeader,
@@ -16,7 +16,7 @@ const ROWS = [0, 1, 2, 3] as const;
 /**
  * The Employees sidebar while its bots load, on the loaded list's own parts:
  * the search field with its placeholder, one group under an eyebrow header
- * (a name and a count bar) over `BotItemSkeleton` rows, then New group, which
+ * (a name and a count bar) over `BotPreviewItemSkeleton` rows, then New group, which
  * needs no data. Inert until the list answers.
  */
 export function BotsSidebarSkeleton() {
@@ -41,7 +41,7 @@ export function BotsSidebarSkeleton() {
           />
           <BotList>
             {ROWS.map((row) => (
-              <BotItemSkeleton key={row} index={row} />
+              <BotPreviewItemSkeleton key={row} index={row} />
             ))}
           </BotList>
         </SidebarProjectGroup>

@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import { WhatsappChatGrantOrmEntity } from './database/whatsapp-chat-grant.orm-entity';
 import { WhatsappChatGrantEntity } from './domain/whatsapp-chat-grant.entity';
+import type { WhatsappChatRouteRow } from './domain/whatsapp-chat-route.policy';
 import { WhatsappChatGrantResponseDto } from './dtos/whatsapp-chat-grant.response.dto';
+import { WhatsappChatRouteResponseDto } from './dtos/whatsapp-chat-route.response.dto';
 
 @Injectable()
 export class WhatsappChatGrantMapper
@@ -49,6 +51,18 @@ export class WhatsappChatGrantMapper
     response.botId = entity.botId;
     response.grantedByBotId = entity.grantedByBotId;
     response.grantedAt = entity.createdAt.toISOString();
+    return response;
+  }
+
+  /** A chat of a number as Settings lists it, with its grant when it is answered. */
+  toRouteResponse(row: WhatsappChatRouteRow): WhatsappChatRouteResponseDto {
+    const response = new WhatsappChatRouteResponseDto();
+    response.chatId = row.chatId;
+    response.chatKind = row.chatKind;
+    response.chatName = row.chatName;
+    response.messageCount = row.messageCount;
+    response.lastAt = row.lastAt?.toISOString() ?? null;
+    response.grant = row.grant ? this.toResponse(row.grant) : null;
     return response;
   }
 }

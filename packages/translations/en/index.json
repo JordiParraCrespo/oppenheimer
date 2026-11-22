@@ -137,6 +137,10 @@
         "list": "Listed",
         "more_one": "+{{count}} more",
         "more_other": "+{{count}} more"
+      },
+      "emoji": {
+        "menu": "Emoji",
+        "pick": "Insert {{emoji}} :{{name}}:"
       }
     },
     "search": {
@@ -495,6 +499,10 @@
       "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
       "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
       "VOICE_007": "Too many dictations for now. Try again in a moment.",
+      "VOICE_008": "Voice notes aren’t set up for this workspace. Add an OpenAI or ElevenLabs key in Settings → Model providers.",
+      "VOICE_009": "The voice note couldn’t be spoken. Try again in a moment.",
+      "VOICE_010": "Too many voice notes for now. Try again in a moment.",
+      "VOICE_011": "That text is too long for one voice note.",
       "BOTS_029": "That tool doesn't exist. Reload the page.",
       "BOTS_030": "This tool is approved one call at a time, so it can't be always allowed.",
       "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
@@ -1679,6 +1687,7 @@
       "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
       "emptyGroup": "No bots in this group yet.",
       "noMessages": "No messages yet",
+      "yesterday": "Yesterday",
       "newGroup": "New group",
       "groupName": "Group name",
       "groupActions": "Options for {{name}}",
@@ -1719,7 +1728,15 @@
       "settings": "Settings",
       "delete": "Delete bot",
       "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
-      "placeholder": "Message {{name}}",
+      "field": "Message {{name}}",
+      "placeholders": {
+        "takeOn": "What should {{name}} take on?",
+        "job": "Hand {{name}} a job…",
+        "problem": "Point {{name}} at a problem…",
+        "session": "Ask {{name}} to check on a session…",
+        "listening": "{{name}} is listening…",
+        "anything": "Ask {{name}} anything"
+      },
       "history": "History {{position}}/{{total}}",
       "pasted": {
         "lines": "[Pasted text #{{n}} +{{lines}} lines]",
@@ -1730,7 +1747,7 @@
         "showLess": "Show less"
       },
       "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
-      "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after, Esc stops",
+      "placeholderRunning": "Steer {{name}} mid-flight · ↵ steer · Alt+↵ queue · Esc stop",
       "steered": "Steered in while it worked",
       "send": "Send",
       "stop": "Stop",
@@ -2085,7 +2102,8 @@
         "skills": "Skills",
         "permissions": "Permissions",
         "routines": "Routines",
-        "homeHost": "Home host"
+        "homeHost": "Home host",
+        "gateways": "Gateways"
       },
       "profile": {
         "title": "Profile",
@@ -2309,8 +2327,21 @@
         "resume": "Resume",
         "run": "Run now",
         "running": "Running…",
-        "edit": "Edit in chat",
+        "edit": "Edit routine",
         "delete": "Delete routine",
+        "dialog": {
+          "title": "Edit “{{name}}”",
+          "description": "Change what the routine is called and what it asks the bot on every run.",
+          "name": "Name",
+          "prompt": "Prompt",
+          "promptHint": "What the bot does on every run, as you would ask it in chat.",
+          "when": "Runs",
+          "whenHint": "To change when it runs, ask the bot in chat.",
+          "askInChat": "Ask in chat",
+          "save": "Save",
+          "saving": "Saving…",
+          "saveFailed": "Could not save the routine."
+        },
         "editPrompt": "Edit your routine: {{name}}",
         "deleteTitle": "Delete “{{name}}”?",
         "deleteBody": "This deletes the routine and stops its future runs. This can't be undone.",
@@ -2413,6 +2444,42 @@
             "new": "New allow rule"
           }
         }
+      },
+      "gateways": {
+        "title": "Gateways",
+        "subtitle": "Where people reach this bot: the WhatsApp chats it answers, and the Telegram bots it answers on.",
+        "whatsappFailed": "Couldn’t load your WhatsApp numbers.",
+        "telegramFailed": "Couldn’t load your Telegram bots.",
+        "chatsFailed": "Couldn’t load this number’s chats.",
+        "noWhatsapp": "No WhatsApp number can route chats here yet. Link one and confirm your own number in Settings → WhatsApp.",
+        "whatsappTitle": "WhatsApp · {{label}}",
+        "answers": "Answers {{groups}} groups and {{people}} people",
+        "isDefault": "The default bot on this number",
+        "defaultIs": "Default bot on this number: {{bot}}",
+        "noDefault": "No default bot on this number",
+        "numberSettings": "Number settings",
+        "add": "Add chats",
+        "noneHere": "This bot answers no chat by name on this number yet.",
+        "group": "Group",
+        "person": "Person",
+        "remove": "Remove",
+        "removeLabel": "Stop answering {{chat}}",
+        "routeFailed": "That did not save. Try again.",
+        "addTitle": "Add chats",
+        "addDescription": "Pick the groups and people this bot answers on this number. A chat another bot answers moves to this one.",
+        "tabsLabel": "Groups or people",
+        "groups": "Groups",
+        "people": "People",
+        "search": "Search by name or number",
+        "now": "Now: {{who}}",
+        "nowDefault": "default bot ({{bot}})",
+        "nowNone": "not answered",
+        "anotherBot": "another bot",
+        "noCandidates": "No chat matches.",
+        "addCount_one": "Add {{count}} chat",
+        "addCount_other": "Add {{count}} chats",
+        "telegramTitle": "Telegram · {{name}}",
+        "telegramMeta": "Answers you there. Groups and other people on Telegram come next."
       }
     },
     "delete": {
@@ -3918,7 +3985,12 @@
     },
     "modelProviders": {
       "title": "Model providers",
-      "description": "The keys your bots run on. Each bot uses its provider’s key; the key is stored encrypted and never shown again. New bots start on the default provider.",
+      "description": "The keys your bots and voice run on. Each bot uses its provider’s key; Groq and ElevenLabs serve voice only. A key is stored encrypted and never shown again. New bots start on the default provider.",
+      "tabs": {
+        "label": "Model providers views",
+        "providers": "Providers",
+        "voice": "Voice"
+      },
       "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
       "loadFailed": "Couldn’t load the model providers.",
       "keyEnding": "Key ending in {{hint}}",
@@ -3941,7 +4013,9 @@
         "glm": "GLM models, through z.ai.",
         "openai": "GPT models, through OpenAI’s API.",
         "chatgpt": "GPT models, on your ChatGPT subscription instead of an API key.",
-        "xai": "Grok models, through xAI’s API."
+        "xai": "Grok models, through xAI’s API.",
+        "groq": "Whisper transcription, fast, through Groq’s API.",
+        "elevenlabs": "Transcription and lifelike voices, through ElevenLabs’ API."
       },
       "dialog": {
         "title": "{{provider}} key",
@@ -3970,6 +4044,46 @@
         "connected": "Signed in. Bots on ChatGPT now run on this subscription.",
         "done": "Done",
         "failed": "Couldn’t sign in to ChatGPT."
+      },
+      "voice": {
+        "title": "Voice",
+        "description": "What hears dictation and the voice notes your bots are sent, what your bots speak voice notes with, and what tidies a transcript. Automatic uses the first provider you have, in the order listed.",
+        "loadFailed": "Couldn’t load the voice settings.",
+        "saveFailed": "Couldn’t save the voice settings.",
+        "automatic": "Automatic",
+        "notConnected": "{{provider}} · not connected",
+        "server": "This server",
+        "search": "Search",
+        "noMatch": "Nothing matches “{{query}}”.",
+        "transcription": {
+          "title": "Speech to text",
+          "meta": "Dictation in the console, and voice notes sent to your bots.",
+          "providerLabel": "Speech-to-text provider",
+          "modelLabel": "Speech-to-text model"
+        },
+        "synthesis": {
+          "title": "Voice notes",
+          "meta": "What your bots speak in when they reply with a voice note.",
+          "providerLabel": "Voice note provider",
+          "modelLabel": "Voice note model",
+          "voiceLabel": "Voice",
+          "ownVoice": "A voice from my library…",
+          "own": "Voice {{id}}"
+        },
+        "polish": {
+          "title": "Transcript polish",
+          "meta": "Tidies what was heard into writing: fillers gone, names spelled the way you write them.",
+          "providerLabel": "Polish provider",
+          "modelLabel": "Polish model",
+          "off": "Off: as heard"
+        },
+        "voiceDialog": {
+          "title": "ElevenLabs voice",
+          "description": "Paste the ID of a voice in your ElevenLabs library, a cloned one included. Bots speak in it from their next voice note.",
+          "label": "Voice ID",
+          "save": "Use this voice",
+          "saving": "Saving…"
+        }
       }
     },
     "cloudAgents": {
@@ -4092,8 +4206,8 @@
         "noBot": "None (doesn’t answer)",
         "search": "Find a bot",
         "noMatch": "No bot matches",
-        "none": "No bot answers on this number yet. Pick one to answer your own number.",
-        "chosen": "Answers your own number. Write “Name: …” in the chat to talk to another of your bots.",
+        "none": "No bot answers on this number yet. Pick one to answer your own number and every chat set to “Default bot”.",
+        "chosen": "Answers your own number, and every chat set to “Default bot”. Write “Name: …” in your chat to talk to another of your bots.",
         "failed": "That did not save. Try again."
       },
       "owner": {
@@ -4117,22 +4231,57 @@
         "otherNumber": "Use another number",
         "failed": "That did not work. Try again."
       },
-      "allowed": {
-        "title": "Allowed chats",
-        "none": "Only you talk to your bots on this number. To let a group or another person talk to them, ask a bot in your own chat, for example “allow the family group, Juno answers there”.",
-        "some_one": "{{count}} group or person may talk to your bots on this number. Ask a bot in your own chat to allow another.",
-        "some_other": "{{count}} groups or people may talk to your bots on this number. Ask a bot in your own chat to allow another.",
-        "loadFailed": "Couldn’t load the chats this number allows.",
+      "chats": {
+        "title": "Chats",
+        "linkMeta": "Choose which bot answers each group and person on this number, or none.",
+        "manage": "Manage chats",
+        "manageLabel": "Manage the chats on {{label}}",
+        "pageTitle": "WhatsApp number",
+        "pageDescription": "Who answers on this number: its default bot, and each group and person it knows.",
+        "goneTitle": "This number is no longer linked.",
+        "back": "Back to WhatsApp",
+        "ownerFirst": "Confirm your own number first. Then you can choose who answers each group and person here.",
+        "loadFailed": "Couldn’t load this number’s chats.",
+        "summary_one": "{{answered}} of {{count}} chat answered",
+        "summary_other": "{{answered}} of {{count}} chats answered",
+        "tabsLabel": "Groups or people",
+        "tabs": {
+          "group": "Groups",
+          "person": "People"
+        },
+        "search": "Search by name or number",
+        "byLabel": "Answered by",
+        "byAll": "Anyone or no one",
+        "byAnswered": "Answered",
+        "byDefault": "Default bot",
+        "bySearch": "Search bots",
+        "byNoMatch": "No bot matches “{{query}}”.",
+        "none": "Not answered",
+        "defaultNamed": "Default bot ({{bot}})",
+        "defaultNone": "Default bot (none set)",
         "group": "Group",
         "person": "Person",
-        "allowedBy": "Allowed by {{bot}}",
-        "allowedByRemovedBot": "Allowed by a removed bot",
-        "allowedByYou": "Allowed by you",
-        "botLabel": "The bot that answers in {{chat}}",
-        "defaultBot": "The number’s default bot",
-        "remove": "Remove",
-        "removeLabel": "Stop allowing {{chat}}",
-        "removeFailed": "Couldn’t remove that chat. Try again."
+        "you": "You",
+        "noMessages": "No message yet",
+        "justNow": "Just now",
+        "answerLabel": "Who answers {{chat}}",
+        "selectLabel": "Select {{chat}}",
+        "selectPage": "Select this page",
+        "bulkLabel": "Selected chats",
+        "selected_one": "{{count}} chat selected",
+        "selected_other": "{{count}} chats selected",
+        "answerWith": "Answer with",
+        "apply": "Apply",
+        "stop": "Stop answering",
+        "clear": "Clear",
+        "routeFailed": "That did not save. Try again.",
+        "emptyTitle": "This number hasn’t seen any chat yet",
+        "emptyDescription": "Groups and people appear here once the number connects and reads its groups and contacts, or once someone writes to it.",
+        "noMatch": "No chat matches",
+        "range_one": "{{from}}–{{to}} of {{count}}",
+        "range_other": "{{from}}–{{to}} of {{count}}",
+        "previous": "Previous",
+        "next": "Next"
       }
     },
     "telegram": {

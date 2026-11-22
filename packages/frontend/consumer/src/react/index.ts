@@ -74,11 +74,13 @@ export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
+  type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
+  useUpdateBotRoutine,
 } from './bot-routines.queries';
 export {
   type AddBotSkillVariables,
@@ -355,17 +357,18 @@ export {
   useUnlinkTelegram,
 } from './telegram.queries';
 export {
+  useSuspenseVoiceSettings,
+  useUpdateVoiceSettings,
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
 export {
   useAnswerWhatsappAs,
-  useAnswerWhatsappChatAs,
   useConfirmWhatsappOwner,
   useLinkWhatsapp,
   useRequestWhatsappOwner,
-  useRevokeWhatsappChat,
-  useSuspenseWhatsappChatGrants,
+  useRouteWhatsappChats,
+  useSuspenseWhatsappChats,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

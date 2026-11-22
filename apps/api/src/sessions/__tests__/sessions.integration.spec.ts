@@ -1290,6 +1290,30 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         const second = await repository.findAllPaginated(scope(), { page: 2, limit: 2 });
         expect(next.data.map((work) => work.id)).toEqual(second.data.map((work) => work.id));
       });
+
+      /**
+       * The console asks for `resolved=false` because resolved tombstones pile
+       * up with every session closed: at 499 sessions with 20 open, walking
+       * them made each list read five requests and tripped the rate limit.
+       */
+      it('leaves resolved sessions out, or keeps only them, as `resolved` says', async () => {
+        const [open, closed] = await sessions(2);
+        await repository.appendEvents(closed, [
+          {
+            idempotencyKey: 'close:1',
+            source: 'api',
+            kind: SESSION_EVENT_KINDS.CLOSED,
+            payload: {},
+          },
+        ]);
+        const ids = async (resolved?: boolean) =>
+          (await repository.findAllPaginated(scope(), { page: 1, limit: 10, resolved })).data
+            .map((work) => work.id)
+            .sort();
+        expect(await ids(false)).toEqual([open.id]);
+        expect(await ids(true)).toEqual([closed.id]);
+        expect(await ids()).toEqual([open.id, closed.id].sort());
+      });
     });
   });
 

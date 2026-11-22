@@ -3,14 +3,17 @@ import { useState } from 'react';
 import type { SlashCommand } from '../lib/command-menu';
 
 /**
- * A composer's `/` menu over its draft: while `query` is a command being
- * typed (the caller reads it off the draft, by its own grammar), the rows
+ * A composer's `/` or `:` menu over its draft: while `query` is a command or
+ * a shortcode being typed (the caller reads it off the draft, by its own grammar), the rows
  * `rowsFor` gives for it, in groups whose order is the keyboard's. Up and
  * Down move through every row, Tab or Enter picks one, Escape closes the
  * menu for that draft; none of them while an IME is composing. The highlight belongs to what was typed, so a new
  * letter starts it at the top again with no effect to reset it.
  */
-export function useCommandMenu<Groups extends Record<string, readonly SlashCommand[]>>({
+export function useCommandMenu<
+  Row extends { id: string } = SlashCommand,
+  Groups extends Record<string, readonly Row[]> = Record<string, readonly Row[]>,
+>({
   draft,
   query,
   rowsFor,
@@ -19,12 +22,12 @@ export function useCommandMenu<Groups extends Record<string, readonly SlashComma
   draft: string;
   query: string | null;
   rowsFor: (query: string) => Groups;
-  onPick: (command: SlashCommand) => void;
+  onPick: (row: Row) => void;
 }) {
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<{ query: string; index: number } | null>(null);
   const groups = query !== null && dismissed !== draft ? rowsFor(query) : null;
-  const items = groups ? Object.values(groups).flat() : [];
+  const items: Row[] = groups ? Object.values(groups).flat() : [];
   const open = items.length > 0;
   const index =
     highlight && highlight.query === query ? Math.min(highlight.index, items.length - 1) : 0;
