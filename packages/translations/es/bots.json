@@ -52,7 +52,15 @@
     "settings": "Configuración",
     "delete": "Eliminar bot",
     "hello": "Pregunta a {{name}} lo que quieras. Puede leer tus sesiones y actuar sobre ellas.",
-    "placeholder": "Escribe a {{name}}",
+    "field": "Escribe a {{name}}",
+    "placeholders": {
+      "takeOn": "¿De qué se encarga {{name}}?",
+      "job": "Dale un trabajo a {{name}}…",
+      "problem": "Pon a {{name}} con un problema…",
+      "session": "Pide a {{name}} que mire una sesión…",
+      "listening": "{{name}} te escucha…",
+      "anything": "Pregunta a {{name}} lo que quieras"
+    },
     "history": "Historial {{position}}/{{total}}",
     "pasted": {
       "lines": "[Texto pegado #{{n}} +{{lines}} líneas]",
@@ -63,7 +71,7 @@
       "showLess": "Mostrar menos"
     },
     "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-    "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después, Esc lo detiene",
+    "placeholderRunning": "Reconduce a {{name}} en marcha · ↵ reconduce · Alt+↵ a la cola · Esc detiene",
     "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
