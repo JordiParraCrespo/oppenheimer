@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { DeviceFrame } from '../components/device-frame';
 import { DevicePicker } from '../components/device-picker';
 import { useSessionDevice } from '../hooks/use-session-device';
+import { useSlowWait } from '../hooks/use-slow-wait';
 import { DeviceAgentNote } from './device-agent-note';
 
 /**
@@ -22,8 +23,9 @@ import { DeviceAgentNote } from './device-agent-note';
  */
 export function SessionDevice({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
-  const { status, device, frame, slow, send, type, select, refresh } = useSessionDevice(sessionId);
+  const { status, device, frame, send, type, select, refresh } = useSessionDevice(sessionId);
   const live = status === 'live';
+  const slow = useSlowWait(live && frame === null);
   const name = device?.name ?? t('sessions.preview.simulator');
   const choices = device?.devices ?? [];
 

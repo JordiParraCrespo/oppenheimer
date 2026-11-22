@@ -17,8 +17,9 @@ const KEYS: Record<string, 'enter' | 'backspace' | 'escape' | 'tab'> = {
  * taps, a drag swipes, and typing with the screen focused types into the
  * device. Points go out as fractions of the screen, so nothing here knows
  * the device's resolution. Until the device's first picture arrives the
- * screen shows `children` instead, and takes no taps: there is nothing yet
- * to tap on.
+ * screen is a plain box around `children`, taking neither keys nor taps:
+ * there is nothing yet to touch, and a control among the children keeps its
+ * own keys.
  */
 export function DeviceFrame({
   label,
@@ -62,7 +63,6 @@ export function DeviceFrame({
   };
 
   const onPointerDown = (event: PointerEvent<HTMLElement>) => {
-    if (!frameUrl) return;
     event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
     setPressed(point(event));
@@ -81,8 +81,6 @@ export function DeviceFrame({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    // A key on a control the screen holds while it has no picture is that control's.
-    if (!frameUrl || event.target !== event.currentTarget) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     const key = KEYS[event.key];
     if (key) {
@@ -99,17 +97,17 @@ export function DeviceFrame({
     // the reverse, so it keeps its shape whatever the pane's size.
     <div className="flex size-full items-center justify-center [container-type:size]">
       <div className="flex aspect-[410/864] w-[min(calc(100cqw-40px),calc((100cqh-40px)*410/864))] flex-col rounded-[58px] bg-device-bezel p-2.5 ring-1 ring-border">
-        <section
-          aria-label={label}
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: the screen takes the reader's keys and pointer like a canvas does
-          tabIndex={0}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={() => setPressed(null)}
-          onKeyDown={onKeyDown}
-          className="relative min-h-0 flex-1 cursor-pointer touch-none select-none overflow-hidden rounded-[48px] bg-device-bezel outline-none focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          {frameUrl ? (
+        {frameUrl ? (
+          <section
+            aria-label={label}
+            // biome-ignore lint/a11y/noNoninteractiveTabindex: the screen takes the reader's keys and pointer like a canvas does
+            tabIndex={0}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={() => setPressed(null)}
+            onKeyDown={onKeyDown}
+            className="relative min-h-0 flex-1 cursor-pointer touch-none select-none overflow-hidden rounded-[48px] bg-device-bezel outline-none focus-visible:outline-2 focus-visible:outline-primary"
+          >
             <img
               src={frameUrl}
               alt=""
@@ -117,12 +115,15 @@ export function DeviceFrame({
               onLoad={onDrawn}
               className="pointer-events-none size-full object-contain"
             />
-          ) : (
-            <div className="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
-              {children}
-            </div>
-          )}
-        </section>
+          </section>
+        ) : (
+          <section
+            aria-label={label}
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-[48px] bg-device-bezel px-6 text-center"
+          >
+            {children}
+          </section>
+        )}
       </div>
     </div>
   );
