@@ -41,7 +41,7 @@ export function BotsSidebarSkeleton() {
           />
           <BotList>
             {ROWS.map((row) => (
-              <BotItemSkeleton key={row} index={row} />
+              <BotItemSkeleton key={row} index={row} layout="preview" />
             ))}
           </BotList>
         </SidebarProjectGroup>

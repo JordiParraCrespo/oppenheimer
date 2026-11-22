@@ -84,18 +84,22 @@ export function BotChatBody({
           <BotUsageCard botId={bot.id} />
         </BotChatScroller>
       </ToolCallsShownContext>
-      {/* The scroller's gutter and measure, so the box's edges are the
-          conversation's, on the page and beside a session alike. */}
+      {/* The scroller's gutter, so the box's edges line up with the
+          conversation's on the page and beside a session alike. The box
+          spans the pane, as a messaging app's does; the cards over it keep
+          the conversation's measure. */}
       <div className="@container">
         <div className="px-3 pb-3 @2xl:px-8 @2xl:pb-4">
-          <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
-            <BotApprovalCard botId={bot.id} name={bot.name} />
-            <BotQuestionCard botId={bot.id} />
-            <ErrorAlert
-              error={update.error}
-              fallback={t('bots.chat.saveFailed')}
-              onDismiss={() => update.reset()}
-            />
+          <div className="flex w-full flex-col gap-2">
+            <div className="mx-auto flex w-full max-w-190 flex-col gap-2 empty:hidden">
+              <BotApprovalCard botId={bot.id} name={bot.name} />
+              <BotQuestionCard botId={bot.id} />
+              <ErrorAlert
+                error={update.error}
+                fallback={t('bots.chat.saveFailed')}
+                onDismiss={() => update.reset()}
+              />
+            </div>
             <BotComposer
               key={bot.id}
               dropsOn={dropsOn}

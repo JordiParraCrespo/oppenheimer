@@ -85,6 +85,21 @@ export function BotItemsDemo() {
         </SidebarProjectGroup>
         <BuiltInGroup active={active} onPick={setActive} />
       </div>
+      <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar py-1.5">
+        <BotList>
+          {bots.map(({ color, ...bot }, row) => (
+            <BotItem
+              key={bot.id}
+              {...bot}
+              layout="preview"
+              time={['09:28', '08:17', 'Yesterday', 'Mon'][row]}
+              face={{ color, seed: bot.id }}
+              active={bot.id === active}
+              onClick={() => setActive(bot.id)}
+            />
+          ))}
+        </BotList>
+      </div>
       <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar pb-1.5">
         <SidebarEmptyCard
           title="No bots yet"

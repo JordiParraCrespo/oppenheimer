@@ -11,6 +11,7 @@
     "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
     "emptyGroup": "No bots in this group yet.",
     "noMessages": "No messages yet",
+    "yesterday": "Yesterday",
     "newGroup": "New group",
     "groupName": "Group name",
     "groupActions": "Options for {{name}}",
