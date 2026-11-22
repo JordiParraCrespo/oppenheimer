@@ -343,6 +343,7 @@ export function BotComposer({
               send: t('bots.chat.send'),
               stop: t('bots.chat.stop'),
               attach: t('bots.chat.images.attach'),
+              field: t('bots.chat.field', { name }),
             }}
           />
         </DropZone>

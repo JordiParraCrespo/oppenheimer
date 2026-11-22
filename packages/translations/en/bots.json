@@ -51,6 +51,7 @@
     "settings": "Settings",
     "delete": "Delete bot",
     "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
+    "field": "Message {{name}}",
     "placeholders": {
       "takeOn": "What should {{name}} take on?",
       "job": "Hand {{name}} a job…",

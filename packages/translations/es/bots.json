@@ -52,6 +52,7 @@
     "settings": "Configuración",
     "delete": "Eliminar bot",
     "hello": "Pregunta a {{name}} lo que quieras. Puede leer tus sesiones y actuar sobre ellas.",
+    "field": "Escribe a {{name}}",
     "placeholders": {
       "takeOn": "¿De qué se encarga {{name}}?",
       "job": "Dale un trabajo a {{name}}…",
