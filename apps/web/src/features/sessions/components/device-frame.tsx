@@ -1,5 +1,5 @@
 import type { DeviceInput } from '@oppenheimer/frontend-consumer';
-import { type KeyboardEvent, type PointerEvent, useState } from 'react';
+import { type KeyboardEvent, type PointerEvent, type ReactNode, useState } from 'react';
 
 /** A press that moves less than this (a fraction of the screen) is a tap. */
 const TAP_SLOP = 0.02;
@@ -16,7 +16,9 @@ const KEYS: Record<string, 'enter' | 'backspace' | 'escape' | 'tab'> = {
  * bezel, the screen's live frame, and the reader's hand on it. A click
  * taps, a drag swipes, and typing with the screen focused types into the
  * device. Points go out as fractions of the screen, so nothing here knows
- * the device's resolution.
+ * the device's resolution. Until the device's first picture arrives the
+ * screen shows `children` instead, and takes no taps: there is nothing yet
+ * to tap on.
  */
 export function DeviceFrame({
   label,
@@ -24,6 +26,7 @@ export function DeviceFrame({
   onDrawn,
   onInput,
   onType,
+  children,
 }: {
   /** What a screen reader hears: "App running on Android emulator". */
   label: string;
@@ -32,6 +35,8 @@ export function DeviceFrame({
   onDrawn: () => void;
   onInput: (input: DeviceInput) => void;
   onType: (text: string) => void;
+  /** What the screen says while it has no picture. */
+  children?: ReactNode;
 }) {
   const [pressed, setPressed] = useState<{ x: number; y: number } | null>(null);
 
@@ -57,6 +62,7 @@ export function DeviceFrame({
   };
 
   const onPointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (!frameUrl) return;
     event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
     setPressed(point(event));
@@ -109,7 +115,11 @@ export function DeviceFrame({
               onLoad={onDrawn}
               className="pointer-events-none size-full object-contain"
             />
-          ) : null}
+          ) : (
+            <div className="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
+              {children}
+            </div>
+          )}
         </section>
       </div>
     </div>

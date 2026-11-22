@@ -17,11 +17,17 @@ interface ShownFrame {
 /** Typed characters are sent in bursts: each send is a round trip to the device. */
 const TYPING_BURST_MS = 250;
 
+/** How long a live device may show no picture before the pane says why it might not. */
+const NO_PICTURE_SLOW_MS = 15_000;
+
 /**
  * The session's device, live, for the preview pane: its status, which device
  * it is and which others the host offers, the frame on screen, the reader's
  * input, a pick of another device, and a refresh. The stream is built and
  * disposed by this hook's effect, which syncs with the device's socket.
+ * `slow` says a live device has sent no picture for a while: still booting,
+ * or an app still building, which the pane says rather than show a black
+ * phone.
  */
 export function useSessionDevice(sessionId: string) {
   const open = useSessionDeviceStream(sessionId);
@@ -86,6 +92,18 @@ export function useSessionDevice(sessionId: string) {
     };
   }, [open]);
 
+  // A timer: how long the live device has gone without its first picture.
+  const waiting = status === 'live' && frame === null;
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setTimeout(() => setSlow(true), NO_PICTURE_SLOW_MS);
+    return () => {
+      clearTimeout(timer);
+      setSlow(false);
+    };
+  }, [waiting]);
+
   const flushTyping = useDebouncedCallback(() => {
     const text = typed.current;
     typed.current = '';
@@ -110,5 +128,5 @@ export function useSessionDevice(sessionId: string) {
   const select = (serial: string) => streamRef.current?.select(serial);
   const refresh = () => streamRef.current?.refresh();
 
-  return { status, device, frame, send, type, select, refresh };
+  return { status, device, frame, slow, send, type, select, refresh };
 }

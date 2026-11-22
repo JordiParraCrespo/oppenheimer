@@ -1,9 +1,10 @@
-import { EmptyState, IconButton, StatusDot } from '@oppenheimer/design-system-web';
-import { RotateCwIcon, SmartphoneIcon } from '@oppenheimer/design-system-web/icons';
+import { Button, EmptyState, IconButton, StatusDot } from '@oppenheimer/design-system-web';
+import { LoaderIcon, RotateCwIcon, SmartphoneIcon } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import { DeviceFrame } from '../components/device-frame';
 import { DevicePicker } from '../components/device-picker';
 import { useSessionDevice } from '../hooks/use-session-device';
+import { DeviceAgentNote } from './device-agent-note';
 
 /**
  * The preview pane's Simulator: the session's device, live, in a phone's
@@ -13,10 +14,15 @@ import { useSessionDevice } from '../hooks/use-session-device';
  * a tap. When the host offers more than one, the line is a picker that moves
  * the session onto another free device; Refresh looks at the host's devices
  * again and restarts the screen. Its socket is open while this tab is shown.
+ *
+ * Until the device sends its first picture the phone says so, with what the
+ * agent last said it is doing (a build, a boot), and after a while why the
+ * picture may be late and Refresh beside it, rather than a black screen
+ * under a green dot.
  */
 export function SessionDevice({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
-  const { status, device, frame, send, type, select, refresh } = useSessionDevice(sessionId);
+  const { status, device, frame, slow, send, type, select, refresh } = useSessionDevice(sessionId);
   const live = status === 'live';
   const name = device?.name ?? t('sessions.preview.simulator');
   const choices = device?.devices ?? [];
@@ -58,7 +64,27 @@ export function SessionDevice({ sessionId }: { sessionId: string }) {
             onDrawn={() => frame?.drawn()}
             onInput={send}
             onType={type}
-          />
+          >
+            <LoaderIcon
+              aria-hidden
+              className="size-5 text-device-screen-fg-muted motion-safe:animate-spin"
+            />
+            <div role="status" className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-device-screen-fg">
+                {t('sessions.preview.noPicture')}
+              </p>
+              <p className="text-xs text-device-screen-fg-muted">
+                {t(slow ? 'sessions.preview.noPictureSlow' : 'sessions.preview.noPictureDetail')}
+              </p>
+            </div>
+            <DeviceAgentNote sessionId={sessionId} />
+            {slow ? (
+              <Button size="sm" variant="secondary" onClick={refresh}>
+                <RotateCwIcon />
+                {t('sessions.preview.refreshDevice')}
+              </Button>
+            ) : null}
+          </DeviceFrame>
         ) : (
           <EmptyState className="m-auto max-w-80">
             <EmptyState.Header>
