@@ -27,7 +27,7 @@ import {
 } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
 import { BotPaneDrop } from '@/features/bots/components/bot-pane-drop';
@@ -49,6 +49,7 @@ import {
 } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
+import { idlePlaceholder } from '@/features/bots/lib/idle-placeholder';
 import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
@@ -125,6 +126,7 @@ export function BotComposer({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [draft, setDraft] = useBotDraft(botId);
+  const [salt] = useState(() => Math.floor(Math.random() * 1_000_000));
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const recall = useSentHistory(botId, draft, setDraft);
@@ -318,7 +320,7 @@ export function BotComposer({
               suggested.suggestion ??
               (running
                 ? t('bots.chat.placeholderRunning', { name })
-                : t('bots.chat.placeholder', { name }))
+                : t(`bots.chat.placeholders.${idlePlaceholder(botId, salt)}`, { name }))
             }
             tools={tools}
             engine={engine}
