@@ -6,6 +6,8 @@ import type { VoiceClip } from '../infrastructure/speech-to-text.port';
 export interface PolishModel {
   provider: BotProvider;
   credential: TurnCredential;
+  /** The model the workspace chose for the polish; unset is `VOICE_POLISH_MODEL`, else the provider's default. */
+  model?: string;
 }
 
 /**

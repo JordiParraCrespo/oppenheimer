@@ -51,6 +51,12 @@ export interface SetBotRoutineEnabledVariables extends BotRoutineVariables {
   enabled: boolean;
 }
 
+export interface UpdateBotRoutineVariables extends BotRoutineVariables {
+  /** Only what changed; a field left out stays as the server has it. */
+  name?: string;
+  prompt?: string;
+}
+
 export interface RunBotRoutineVariables extends BotRoutineVariables {
   /** One per click, so a retried request is the same run. */
   idempotencyKey: string;
@@ -81,6 +87,18 @@ export function useSetBotRoutineEnabled(
   return useRoutineWrite(
     ({ id, routineId, enabled }: SetBotRoutineEnabledVariables) =>
       app.bots.setRoutineEnabled(id, routineId, enabled),
+    options,
+  );
+}
+
+/** The Routines tab's Edit dialog: the routine's name and prompt. */
+export function useUpdateBotRoutine(
+  options?: UseMutationOptions<void, Error, UpdateBotRoutineVariables>,
+) {
+  const app = useConsumerApp();
+  return useRoutineWrite(
+    ({ id, routineId, ...changes }: UpdateBotRoutineVariables) =>
+      app.bots.updateRoutine(id, routineId, changes),
     options,
   );
 }

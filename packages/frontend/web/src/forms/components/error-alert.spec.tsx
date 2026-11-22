@@ -43,14 +43,26 @@ describe('ErrorAlert', () => {
     expect(screen.getByRole('alert').textContent).toContain('Nightly triage');
   });
 
-  it('offers a dismiss only when asked', () => {
+  it('hands the dismiss to the caller when it clears the failure', () => {
     const onDismiss = vi.fn();
-    const { rerender } = render(<ErrorAlert error={refused()} fallback="Could not delete" />);
-    expect(screen.queryByRole('button')).toBeNull();
-
-    rerender(<ErrorAlert error={refused()} fallback="Could not delete" onDismiss={onDismiss} />);
+    render(<ErrorAlert error={refused()} fallback="Could not delete" onDismiss={onDismiss} />);
     fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
     expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  // Regression: a failure the caller never clears (a list's load error) left
+  // the reader no way to close the alert.
+  it('closes on its own when the caller gives no dismiss, until a new failure', () => {
+    const first = refused();
+    const { rerender } = render(<ErrorAlert error={first} fallback="Could not load" />);
+    fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    rerender(<ErrorAlert error={first} fallback="Could not load" />);
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    rerender(<ErrorAlert error={refused()} fallback="Could not load" />);
+    expect(screen.getByRole('alert')).toBeTruthy();
   });
 });
 
@@ -64,6 +76,22 @@ describe('ErrorAlert with a resolved message', () => {
   it('renders nothing for an empty message', () => {
     const { container } = render(<ErrorAlert message={null} />);
     expect(container.innerHTML).toBe('');
+  });
+
+  // Regression: a dismissed sentence hid the next identical refusal (a second
+  // wrong password), so the reader got no word that the retry failed.
+  it('shows the same sentence again once the failure cleared or carries a new reference', () => {
+    const { rerender } = render(<ErrorAlert message="Wrong password" correlationId="req-1" />);
+    fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    rerender(<ErrorAlert message="Wrong password" correlationId="req-2" />);
+    expect(screen.getByRole('alert')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
+    rerender(<ErrorAlert message={null} />);
+    rerender(<ErrorAlert message="Wrong password" />);
+    expect(screen.getByRole('alert')).toBeTruthy();
   });
 
   it('takes the caller’s action instead of Dismiss', () => {

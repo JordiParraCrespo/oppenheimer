@@ -55,6 +55,7 @@ import {
   type MailPlan,
   mailPlanSchema,
 } from '@oppenheimer/shared/schemas/mail';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -905,6 +906,20 @@ export class BotsRepository {
     });
   }
 
+  /**
+   * The tab's Edit dialog: the name or prompt that changed, the prompt as the
+   * routine's next revision. A field left out stays as it is.
+   */
+  updateRoutine(
+    id: string,
+    routineId: string,
+    changes: { name?: string; prompt?: string },
+  ): Promise<void> {
+    return callApi(BotsErrors.SAVE_ROUTINE_FAILED, async (api) => {
+      await api.result(heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: changes }));
+    });
+  }
+
   /** Run now: one run, paused or not. */
   runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
     return callApi(BotsErrors.RUN_ROUTINE_FAILED, async (api) => {
@@ -1079,7 +1094,7 @@ export class BotsRepository {
   }
 
   /** Stores the workspace's key for `provider`, replacing the one there. The key is never read back. */
-  putModelProviderKey(provider: BotProvider, apiKey: string): Promise<void> {
+  putModelProviderKey(provider: ModelProvider, apiKey: string): Promise<void> {
     return callApi(BotsErrors.SAVE_PROVIDER_KEY_FAILED, async (api) => {
       await api.result(
         heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
@@ -1094,7 +1109,7 @@ export class BotsRepository {
     });
   }
 
-  removeModelProviderKey(provider: BotProvider): Promise<void> {
+  removeModelProviderKey(provider: ModelProvider): Promise<void> {
     return callApi(BotsErrors.DELETE_PROVIDER_KEY_FAILED, async (api) => {
       await api.result(heyApiSdk.deleteModelProviderCredential({ path: { provider } }));
     });
