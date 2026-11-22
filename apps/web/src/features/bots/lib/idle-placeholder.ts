@@ -2,7 +2,7 @@
  * What the empty composer invites, one line among several so the box does
  * not read the same every time it opens.
  */
-export const IDLE_PLACEHOLDERS = [
+const IDLE_PLACEHOLDERS = [
   'takeOn',
   'job',
   'problem',
