@@ -1695,6 +1695,7 @@
       "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
       "emptyGroup": "No bots in this group yet.",
       "noMessages": "No messages yet",
+      "yesterday": "Yesterday",
       "newGroup": "New group",
       "groupName": "Group name",
       "groupActions": "Options for {{name}}",
@@ -1735,7 +1736,15 @@
       "settings": "Settings",
       "delete": "Delete bot",
       "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
-      "placeholder": "Message {{name}}",
+      "field": "Message {{name}}",
+      "placeholders": {
+        "takeOn": "What should {{name}} take on?",
+        "job": "Hand {{name}} a job…",
+        "problem": "Point {{name}} at a problem…",
+        "session": "Ask {{name}} to check on a session…",
+        "listening": "{{name}} is listening…",
+        "anything": "Ask {{name}} anything"
+      },
       "history": "History {{position}}/{{total}}",
       "pasted": {
         "lines": "[Pasted text #{{n}} +{{lines}} lines]",
@@ -1746,7 +1755,7 @@
         "showLess": "Show less"
       },
       "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
-      "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after, Esc stops",
+      "placeholderRunning": "Steer {{name}} mid-flight · ↵ steer · Alt+↵ queue · Esc stop",
       "steered": "Steered in while it worked",
       "send": "Send",
       "stop": "Stop",

@@ -34,7 +34,9 @@ function speech(
     find: async () => settings,
     put: vi.fn(),
   };
-  const resolver = new VoiceSynthesisResolver(new SynthesisProviderRegistry([voice]));
+  const resolver = new VoiceSynthesisResolver(new SynthesisProviderRegistry([voice]), {
+    peak: async () => 0.5,
+  });
   return { voice, handler: new SynthesizeSpeechCommandHandler(resolver, repository) };
 }
 

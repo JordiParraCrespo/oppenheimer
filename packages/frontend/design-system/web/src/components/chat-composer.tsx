@@ -16,7 +16,13 @@ import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
-type ChatComposerLabels = { send: string; stop: string; attach: string };
+type ChatComposerLabels = {
+  send: string;
+  stop: string;
+  attach: string;
+  /** The field's accessible name, for a placeholder that changes or goes away. */
+  field?: string;
+};
 
 const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
   send: 'Send',
@@ -175,6 +181,7 @@ function ChatComposer({
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={onKeyDown}
       placeholder={placeholder}
+      aria-label={label.field}
       disabled={disabled}
       rows={inline ? 1 : 2}
       wrapperClassName={inline ? 'flex-1' : undefined}
