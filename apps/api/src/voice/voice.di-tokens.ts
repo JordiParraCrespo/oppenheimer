@@ -14,3 +14,5 @@ export const GROQ_SPEECH = Symbol('GROQ_SPEECH');
 export const ELEVENLABS_SPEECH = Symbol('ELEVENLABS_SPEECH');
 /** The workspace's voice choices (`VoiceSettingsRepositoryPort`). */
 export const VOICE_SETTINGS_REPOSITORY = Symbol('VOICE_SETTINGS_REPOSITORY');
+/** What spoken audio sounds like once decoded (`SpokenAudioPort`). */
+export const SPOKEN_AUDIO = Symbol('SPOKEN_AUDIO');

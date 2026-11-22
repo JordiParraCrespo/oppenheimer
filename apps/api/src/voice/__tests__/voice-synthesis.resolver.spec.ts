@@ -4,6 +4,7 @@ import type { Synthesizer } from '../application/synthesis-provider.port';
 import { SynthesisProviderRegistry } from '../application/synthesis-provider.registry';
 import { VoiceSynthesisResolver } from '../application/voice-synthesis.resolver';
 import { VoiceErrors } from '../domain/voice.errors';
+import type { SpokenAudioPort } from '../infrastructure/spoken-audio.port';
 import { oggOpus } from './ogg-opus.spec-support';
 
 /**
@@ -39,8 +40,14 @@ function voice(
   } satisfies Synthesizer<string>;
 }
 
+/** Every answer decodes to speech, except the audio listed as silent. */
+const silent = new Set<Buffer>();
+const spokenAudio: SpokenAudioPort = {
+  peak: async (audio) => (silent.has(audio) ? 0 : 0.5),
+};
+
 const over = (...voices: Synthesizer[]) =>
-  new VoiceSynthesisResolver(new SynthesisProviderRegistry(voices));
+  new VoiceSynthesisResolver(new SynthesisProviderRegistry(voices), spokenAudio);
 
 describe('VoiceSynthesisResolver', () => {
   it('speaks on the first voice available, in its default model and voice, when none was chosen', async () => {
@@ -117,6 +124,23 @@ describe('VoiceSynthesisResolver', () => {
 
     await expect(over(mp3, next).speak(ORG, 'Hola', NOW, AUTOMATIC)).resolves.toMatchObject({
       provider: 'speech_key',
+    });
+  });
+
+  // What breaks this: a provider answering silent Ogg/Opus of the right length
+  // goes out as a voice note that shows its seconds and plays nothing.
+  it('tries the next voice when one answers audio that plays no sound, and refuses it when none speaks', async () => {
+    const mute = voice('openai');
+    const nothing = oggOpus(312 + 48_000 * 9);
+    silent.add(nothing);
+    mute.synthesize.mockResolvedValue(nothing);
+    const next = voice('speech_key');
+
+    await expect(over(mute, next).speak(ORG, 'Hola', NOW, AUTOMATIC)).resolves.toMatchObject({
+      provider: 'speech_key',
+    });
+    await expect(over(mute).speak(ORG, 'Hola', NOW, AUTOMATIC)).rejects.toMatchObject({
+      code: 'VOICE_009',
     });
   });
 

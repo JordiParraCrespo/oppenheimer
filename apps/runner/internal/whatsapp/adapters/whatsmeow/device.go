@@ -343,7 +343,7 @@ func (d *Device) SendVoice(ctx context.Context, chatID string, audio []byte, sec
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("the upload failed: %w", rateLimited(err))
 	}
-	resp, err := client.SendMessage(ctx, to, outgoingVoice(uploaded, seconds, time.Now()))
+	resp, err := client.SendMessage(ctx, to, outgoingVoice(uploaded, seconds, domain.VoiceWaveform(audio), time.Now()))
 	if err != nil {
 		return "", time.Time{}, rateLimited(err)
 	}

@@ -218,3 +218,11 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   ChatGPT sign-in does not speak (it has no route we may call). The audio is
   made and checked in the API (Ogg/Opus, its length read from its pages),
   carried in one link frame and held in memory on the host, never on disk.
+  *Fixed 2026-11-22:* the owner's first two bot voice notes (9 and 20
+  seconds, sent as successes) played as silence on the phone. The note now
+  carries its waveform, drawn on the host from its Opus packets (a
+  push-to-talk note without one plays on WhatsApp Web, not on the phones:
+  whatsmeow#517). Audio is decoded in the API before it goes, and audio that
+  decodes to silence counts as that provider failing (`VOICE_009`), so the
+  next one is tried; the host refuses a note silent from end to end
+  (`WA_008`). Which of the two the live notes hit was not established.
