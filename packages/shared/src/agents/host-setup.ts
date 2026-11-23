@@ -78,6 +78,31 @@ function claudeRelease(platform: ReleasePlatform): string {
   ].join('\n');
 }
 
+/**
+ * Muse Code's launcher, as `dev.meta.ai/install.sh` fetches it but checked
+ * where that script only checks "when advertised": the launcher's response
+ * must carry its `x-content-sha256`, or nothing is installed. The verified
+ * launcher, run with `MUSE_LAUNCHER_INSTALL=1`, then fetches the native binary
+ * from the `muse-stable` channel's manifest and checks it against the
+ * manifest's SHA-256 (its `update_binary`) before it keeps it beside itself.
+ * No profile is edited: the runner puts `~/.local/bin` on its own `PATH`.
+ */
+function museLauncher(platform: ReleasePlatform): string {
+  return [
+    'set -eu',
+    'command -v bash >/dev/null 2>&1 || { echo "muse: its launcher needs bash" >&2; exit 1; }',
+    ...RELEASE_TEMP_DIR,
+    ...sha256Verifier(platform, 'muse'),
+    'curl -fsS --proto \'=https\' --tlsv1.2 -D "$tmp/headers" https://api.meta.ai/muse-launcher.sh -o "$tmp/muse"',
+    // No `-L`, so the headers are the one response the body came from.
+    String.raw`checksum="$(tr -d '\r' <"$tmp/headers" | awk -F': *' 'tolower($1) == "x-content-sha256" { v = tolower($2) } END { print v }')"`,
+    'verify "$tmp/muse" "$checksum"',
+    'mkdir -p "$HOME/.local/bin"',
+    'install -m 0755 "$tmp/muse" "$HOME/.local/bin/muse"',
+    'MUSE_LAUNCHER_INSTALL=1 "$HOME/.local/bin/muse" </dev/null',
+  ].join('\n');
+}
+
 export const AGENT_HOST_SETUP: Readonly<Partial<Record<CodingAgentId, AgentHostSetup>>> =
   Object.freeze({
     'claude-code': Object.freeze({
@@ -175,6 +200,16 @@ export const AGENT_HOST_SETUP: Readonly<Partial<Record<CodingAgentId, AgentHostS
         macos: bunUserInstall('@oh-my-pi/pi-coding-agent'),
         linux: bunUserInstall('@oh-my-pi/pi-coding-agent'),
         bin: '~/.bun/bin',
+      }),
+    }),
+    muse: Object.freeze({
+      // No `update`: Muse has no update command, and its launcher updates the
+      // binary itself, in the background, at most hourly on launch
+      // (`MUSE_UPDATE_INTERVAL_SECONDS`), so the runner leaves it alone.
+      install: Object.freeze({
+        macos: museLauncher('macos'),
+        linux: museLauncher('linux'),
+        bin: '~/.local/bin',
       }),
     }),
   });

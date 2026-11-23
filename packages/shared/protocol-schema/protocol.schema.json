@@ -744,7 +744,8 @@
             "opencode",
             "grok",
             "pi",
-            "omp"
+            "omp",
+            "muse"
           ]
         },
         "model": {
@@ -3251,6 +3252,7 @@
         "grok",
         "pi",
         "omp",
+        "muse",
         "shell"
       ],
       "id": "codingAgentId"

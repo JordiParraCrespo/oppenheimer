@@ -44,6 +44,12 @@ var toolInstalls = map[string]toolInstall{
 		linux: "set -eu\ncommand -v bun >/dev/null 2>&1 || { echo \"bun is not on PATH; install Bun first (bun.sh)\" >&2; exit 1; }\nbun install --global @oh-my-pi/pi-coding-agent",
 		bin:   ".bun/bin",
 	},
+	"muse": {
+		kind:  "agent",
+		macos: "set -eu\ncommand -v bash >/dev/null 2>&1 || { echo \"muse: its launcher needs bash\" >&2; exit 1; }\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nverify() {\n  printf '%s' \"$2\" | grep -Eqx '[0-9a-f]{64}' || { echo \"muse: no published checksum for $1\" >&2; exit 1; }\n  actual=\"$(shasum -a 256 \"$1\" | cut -d ' ' -f 1)\"\n  [ \"$actual\" = \"$2\" ] || { echo \"muse: checksum mismatch for $1\" >&2; exit 1; }\n}\ncurl -fsS --proto '=https' --tlsv1.2 -D \"$tmp/headers\" https://api.meta.ai/muse-launcher.sh -o \"$tmp/muse\"\nchecksum=\"$(tr -d '\\r' <\"$tmp/headers\" | awk -F': *' 'tolower($1) == \"x-content-sha256\" { v = tolower($2) } END { print v }')\"\nverify \"$tmp/muse\" \"$checksum\"\nmkdir -p \"$HOME/.local/bin\"\ninstall -m 0755 \"$tmp/muse\" \"$HOME/.local/bin/muse\"\nMUSE_LAUNCHER_INSTALL=1 \"$HOME/.local/bin/muse\" </dev/null",
+		linux: "set -eu\ncommand -v bash >/dev/null 2>&1 || { echo \"muse: its launcher needs bash\" >&2; exit 1; }\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nverify() {\n  printf '%s' \"$2\" | grep -Eqx '[0-9a-f]{64}' || { echo \"muse: no published checksum for $1\" >&2; exit 1; }\n  actual=\"$(sha256sum \"$1\" | cut -d ' ' -f 1)\"\n  [ \"$actual\" = \"$2\" ] || { echo \"muse: checksum mismatch for $1\" >&2; exit 1; }\n}\ncurl -fsS --proto '=https' --tlsv1.2 -D \"$tmp/headers\" https://api.meta.ai/muse-launcher.sh -o \"$tmp/muse\"\nchecksum=\"$(tr -d '\\r' <\"$tmp/headers\" | awk -F': *' 'tolower($1) == \"x-content-sha256\" { v = tolower($2) } END { print v }')\"\nverify \"$tmp/muse\" \"$checksum\"\nmkdir -p \"$HOME/.local/bin\"\ninstall -m 0755 \"$tmp/muse\" \"$HOME/.local/bin/muse\"\nMUSE_LAUNCHER_INSTALL=1 \"$HOME/.local/bin/muse\" </dev/null",
+		bin:   ".local/bin",
+	},
 	"gh": {
 		kind:  "tool",
 		macos: "set -eu\ncommand -v brew >/dev/null 2>&1 || { echo \"Homebrew is not on PATH; install it from https://brew.sh first\" >&2; exit 1; }\nHOMEBREW_NO_AUTO_UPDATE=1 brew install gh",

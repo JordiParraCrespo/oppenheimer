@@ -191,6 +191,22 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"muse": {
+		command:      "muse",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "muse-spark-1.2",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--approval-mode", "untrusted"}},
+			"auto": {argv: []string{"--approval-mode", "on-request"}},
+			"full": {argv: []string{"--yolo"}},
+		},
+		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"muse-spark-1.3": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+			"muse-spark-1.2": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+			"muse-ember-1.0": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+		},
+	},
 	"shell": {
 		command: "",
 	},
@@ -218,4 +234,5 @@ var inputCatalog = map[string]agentInput{
 	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"muse":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }
