@@ -12,7 +12,7 @@ import {
 } from '@oppenheimer/design-system-web/avatar-picker';
 import { BotFacePicker } from '@oppenheimer/design-system-web/bot-face-picker';
 import { Badge } from '@oppenheimer/design-system-web/badge';
-import { BotItem, BotList, BotPreviewItem } from '@oppenheimer/design-system-web/bot-item';
+import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ChevronLeftIcon, ClockIcon, EllipsisIcon, LockIcon, PencilIcon, PlusIcon, WebhookIcon, XIcon } from '@oppenheimer/design-system-web/icons';
@@ -88,9 +88,10 @@ export function BotItemsDemo() {
       <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar py-1.5">
         <BotList>
           {bots.map(({ color, ...bot }, row) => (
-            <BotPreviewItem
+            <BotItem
               key={bot.id}
               {...bot}
+              layout="preview"
               time={['09:28', '08:17', 'Yesterday', 'Mon'][row]}
               face={{ color, seed: bot.id }}
               active={bot.id === active}

@@ -14,5 +14,5 @@ export function BotRowTime({ at }: { at: Date }) {
   const locale = useLocale();
   const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const time = botRowTime(at, now, locale);
-  return time.kind === 'yesterday' ? t('bots.sidebar.yesterday') : time.text;
+  return time === 'yesterday' ? t('bots.sidebar.yesterday') : time;
 }
