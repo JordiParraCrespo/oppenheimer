@@ -1,4 +1,4 @@
-import { AgentMark, SortableSessionItem } from '@oppenheimer/design-system-web';
+import { AgentMark, SortableSessionItem, useRowMenu } from '@oppenheimer/design-system-web';
 import { Cloud, EyeOff, Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
@@ -90,7 +90,6 @@ export function SessionRow({
   const active = useRouterState({
     select: (state) => state.location.pathname === `/sessions/${session.id}`,
   });
-  const [menuOpen, setMenuOpen] = useState(false);
   const pin = useSessionPin(session.id);
   const unread = useSessionUnread(session.id);
   const selection = useSessionSelected(session.id);
@@ -135,6 +134,7 @@ export function SessionRow({
   // The row has a menu unless the list is selecting (the bar acts) or its name
   // is being typed; every way of opening the menu reads this.
   const hasMenu = !selection.selecting && draft === null;
+  const menu = useRowMenu(hasMenu);
   const statusHint = session.closeRefusal
     ? t('sessions.sidebar.notDeletedHint')
     : session.isClosing
@@ -192,23 +192,16 @@ export function SessionRow({
         selection.pick(how);
       }}
       // A right-click opens the row's own menu, not the browser's.
-      onContextMenu={
-        hasMenu
-          ? (event) => {
-              event.preventDefault();
-              setMenuOpen(true);
-            }
-          : undefined
-      }
+      onContextMenu={menu.onContextMenu}
       selected={selection.selecting ? selection.selected : undefined}
       selectedLabel={t('sessions.sidebar.selected')}
-      menuOpen={menuOpen}
+      menuOpen={menu.open}
       rename={renameField}
       action={
         hasMenu ? (
           <SessionRowMenu
-            open={menuOpen}
-            onOpenChange={setMenuOpen}
+            open={menu.open}
+            onOpenChange={menu.setOpen}
             pinned={pin.pinned}
             onPinChange={pin.setPinned}
             unread={unread.unread}
@@ -220,7 +213,7 @@ export function SessionRow({
             onMove={(projectId) => move.mutate({ id: session.id, projectId })}
             onShare={session.isCloud ? undefined : () => onShare(session)}
             onDelete={() => onDelete(session)}
-            projects={(menuOpen ? (projectsSnapshot() ?? []) : []).map((target) => ({
+            projects={(menu.open ? (projectsSnapshot() ?? []) : []).map((target) => ({
               id: target.id,
               name: target.name,
               isUnassigned: target.isUnassigned,

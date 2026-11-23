@@ -1,4 +1,4 @@
-import { SortableBotItem } from '@oppenheimer/design-system-web';
+import { SortableBotItem, useRowMenu } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -41,7 +41,7 @@ export function BotSidebarRow({
       state.location.pathname === `/bots/${bot.id}` ||
       state.location.pathname.startsWith(`/bots/${bot.id}/`),
   });
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu = useRowMenu();
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
   const pin = useBotPin(bot.id);
@@ -54,17 +54,13 @@ export function BotSidebarRow({
         {...item}
         disabled={dragDisabled}
         active={active}
-        menuOpen={menuOpen}
-        // A right-click opens the row's own menu, not the browser's.
-        onContextMenu={(event) => {
-          event.preventDefault();
-          setMenuOpen(true);
-        }}
+        menuOpen={menu.open}
+        onContextMenu={menu.onContextMenu}
         render={<Link to="/bots/$botId" params={{ botId: bot.id }} />}
         action={
           <BotRowMenu
-            open={menuOpen}
-            onOpenChange={setMenuOpen}
+            open={menu.open}
+            onOpenChange={menu.setOpen}
             groups={groups}
             groupId={bot.groupId}
             pinned={pin.pinned}

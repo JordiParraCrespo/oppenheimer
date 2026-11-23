@@ -1,4 +1,4 @@
-import { SortableBotItem } from '@oppenheimer/design-system-web';
+import { SortableBotItem, useRowMenu } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
@@ -35,7 +35,7 @@ export function SectionBotRow({
   const navigate = useNavigate();
   const { to, params, path } = botChatDestination(section, bot.id);
   const active = useRouterState({ select: (state) => state.location.pathname === path });
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu = useRowMenu();
   const [deleting, setDeleting] = useState(false);
   const item = useBotRowItem(bot);
   const mark = useBotUnread(bot.id);
@@ -45,17 +45,13 @@ export function SectionBotRow({
       <SortableBotItem
         {...item}
         active={active}
-        menuOpen={menuOpen}
-        // A right-click opens the row's own menu, not the browser's.
-        onContextMenu={(event) => {
-          event.preventDefault();
-          setMenuOpen(true);
-        }}
+        menuOpen={menu.open}
+        onContextMenu={menu.onContextMenu}
         render={<Link to={to} params={params} />}
         action={
           <SectionBotRowMenu
-            open={menuOpen}
-            onOpenChange={setMenuOpen}
+            open={menu.open}
+            onOpenChange={menu.setOpen}
             where={t(SECTION_NAMES[section])}
             unread={mark.unread}
             onUnreadChange={mark.setUnread}
