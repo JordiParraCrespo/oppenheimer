@@ -1,0 +1,407 @@
+package workfolder
+
+import (
+	"bufio"
+	"bytes"
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+)
+
+// The guides: every directory the runner makes in the work folder carries a
+// README.md, for the person, and an AGENTS.md, for an agent, saying what the
+// directory is, what is in it and where to go next. The folders are named by
+// ids that never change, so without them nobody could tell which workspace is
+// which, or which session folder holds what.
+const (
+	GuideReadme = "README.md"
+	GuideAgents = "AGENTS.md"
+)
+
+// guideHeader opens every guide the runner writes. A file without it is
+// somebody else's and is never overwritten.
+const guideHeader = "<!-- Written by the Oppenheimer runner and rewritten whenever a workspace or session changes: edits here are lost. -->"
+
+// level is one directory the guides describe.
+type level struct {
+	dir    string
+	readme string
+	agents string
+}
+
+// workspaceInfo and sessionInfo are what the walk found, read off the markers.
+type workspaceInfo struct {
+	tenant   domain.Tenant
+	slug     string
+	sessions []sessionInfo
+}
+
+type sessionInfo struct {
+	slug string
+	meta Meta
+}
+
+type accountInfo struct {
+	id         string
+	workspaces []workspaceInfo
+}
+
+// WriteGuides writes README.md and AGENTS.md into the work folder's root and
+// into every account, workspace, repos.noindex, sessions.noindex and session
+// folder it holds, from their markers. It is best effort: a guide is a
+// convenience, and one that cannot be written is never a reason to refuse
+// the create or the close that called it. It writes nothing until the work
+// folder exists.
+func (f *Folder) WriteGuides() {
+	f.guides.Lock()
+	defer f.guides.Unlock()
+
+	root := f.layout.Root
+	if info, err := os.Stat(filepath.Join(root, LayoutFile)); err != nil || info.IsDir() {
+		return
+	}
+	accounts := f.scan()
+	levels := []level{{dir: root, readme: rootReadme(accounts), agents: rootAgents()}}
+	for _, account := range accounts {
+		levels = append(levels, level{
+			dir: f.layout.Account(account.id), readme: accountReadme(account), agents: accountAgents(account),
+		})
+		for _, ws := range account.workspaces {
+			levels = append(levels,
+				level{dir: f.layout.Workspace(ws.tenant), readme: workspaceReadme(ws), agents: workspaceAgents(ws)},
+				level{dir: f.layout.Repos(ws.tenant), readme: reposReadme(ws), agents: reposAgents(ws)},
+				level{dir: f.layout.Sessions(ws.tenant), readme: sessionsReadme(ws), agents: sessionsAgents(ws)},
+			)
+			for _, session := range ws.sessions {
+				dir := f.layout.Session(ws.tenant, session.slug)
+				levels = append(levels, level{
+					dir: dir, readme: sessionReadme(ws, session), agents: sessionAgents(ws, session),
+				})
+			}
+		}
+	}
+	for _, l := range levels {
+		if info, err := os.Stat(l.dir); err != nil || !info.IsDir() {
+			continue
+		}
+		writeGuide(filepath.Join(l.dir, GuideReadme), l.readme)
+		writeGuide(filepath.Join(l.dir, GuideAgents), l.agents)
+	}
+}
+
+// scan reads the work folder's accounts, workspaces and sessions off their
+// markers. A directory without the marker its level expects is not the
+// runner's, and is left out.
+func (f *Folder) scan() []accountInfo {
+	var accounts []accountInfo
+	for _, accountName := range subdirs(f.layout.Root) {
+		dir := f.layout.Account(accountName)
+		if m, err := readMarker(dir); err != nil || m.Kind != KindAccount {
+			continue
+		}
+		account := accountInfo{id: accountName}
+		for _, wsName := range subdirs(dir) {
+			tenant := domain.Tenant{Account: accountName, Workspace: wsName}
+			m, err := readMarker(f.layout.Workspace(tenant))
+			if err != nil || m.Kind != KindWorkspace {
+				continue
+			}
+			ws := workspaceInfo{tenant: tenant, slug: m.Slug}
+			for _, slug := range subdirs(f.layout.Sessions(tenant)) {
+				sm, err := readMarker(f.layout.Session(tenant, slug))
+				if err != nil || sm.Kind != KindSession {
+					continue
+				}
+				ws.sessions = append(ws.sessions, sessionInfo{slug: slug, meta: sm})
+			}
+			account.workspaces = append(account.workspaces, ws)
+		}
+		accounts = append(accounts, account)
+	}
+	return accounts
+}
+
+// subdirs is dir's visible subdirectories, sorted.
+func subdirs(dir string) []string {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for _, entry := range entries {
+		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+			names = append(names, entry.Name())
+		}
+	}
+	slices.Sort(names)
+	return names
+}
+
+// writeGuide writes content at path unless something there is not a guide
+// this runner wrote (a directory a checkout is named after, a file somebody
+// made), or already says the same.
+func writeGuide(path, content string) {
+	data := []byte(guideHeader + "\n\n" + content)
+	found, err := os.ReadFile(path) // #nosec G304 -- a fixed name under a folder of the work folder
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+	case err != nil:
+		return
+	case !ours(found):
+		return
+	case bytes.Equal(found, data):
+		return
+	}
+	_ = writeAtomic(path, data)
+}
+
+func ours(data []byte) bool {
+	line, _, _ := bufio.NewReader(bytes.NewReader(data)).ReadLine()
+	return string(line) == guideHeader
+}
+
+// The guides' text. Names come from the control plane and are only ever
+// printed, never followed.
+
+func rootReadme(accounts []accountInfo) string {
+	var b strings.Builder
+	b.WriteString("# Oppenheimer work folder\n\n")
+	b.WriteString("The Oppenheimer runner on this host keeps your workspaces here: each one's repositories, ")
+	b.WriteString("and a folder per session with the checkout its agent works in. The runner's own files ")
+	b.WriteString("(identity, binaries, logs) are in `~/.oppenheimer`, not here.\n\n")
+	b.WriteString("## Workspaces\n\n")
+	if count := countWorkspaces(accounts); count == 0 {
+		b.WriteString("None yet. A workspace's folder is made with its first session.\n\n")
+	} else {
+		b.WriteString("| Workspace | Folder | Sessions |\n| --- | --- | --- |\n")
+		for _, account := range accounts {
+			for _, ws := range account.workspaces {
+				path := ws.tenant.Account + "/" + ws.tenant.Workspace
+				fmt.Fprintf(&b, "| %s | [`%s/`](%s/README.md) | %d |\n",
+					cell(workspaceName(ws)), path, path, len(ws.sessions))
+			}
+		}
+		b.WriteString("\n")
+	}
+	fmt.Fprintf(&b, "Sessions made with `runner sessions create` on this host live under `%s/%s/`.\n\n", domain.LocalID, domain.LocalID)
+	b.WriteString("## Layout\n\n")
+	b.WriteString("```\n")
+	b.WriteString("<account>/                        an account, named by its id\n")
+	b.WriteString("  <workspace>/                    a workspace (your organization), named by its id\n")
+	b.WriteString("    repos.noindex/                one bare git store per repository, managed by the runner\n")
+	b.WriteString("    sessions.noindex/<session>/   one folder per session\n")
+	b.WriteString("      <directory>/                the checkout the session's agent works in\n")
+	b.WriteString("```\n\n")
+	b.WriteString("Every folder is named by an id that never changes; its README.md says what it is. ")
+	b.WriteString("`.oppenheimer/meta.json` in a folder is its marker: it says what the folder is and whose, ")
+	b.WriteString("and only a folder whose marker names the session being closed is ever deleted. ")
+	b.WriteString("Names end in `.noindex` so Spotlight does not index the checkouts.\n")
+	return b.String()
+}
+
+func rootAgents() string {
+	return "# AGENTS.md: the Oppenheimer work folder\n\n" +
+		"This directory is the work folder of the Oppenheimer runner: every workspace's repositories " +
+		"and every session's checkout on this host. README.md beside this file lists the workspaces.\n\n" +
+		agentRules
+}
+
+func accountReadme(account accountInfo) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Account `%s`\n\n", account.id)
+	if account.id == domain.LocalID {
+		b.WriteString("The sessions made from this host's own CLI, which no control plane has given an account.\n\n")
+	}
+	b.WriteString("| Workspace | Folder | Sessions |\n| --- | --- | --- |\n")
+	for _, ws := range account.workspaces {
+		fmt.Fprintf(&b, "| %s | [`%s/`](%s/README.md) | %d |\n",
+			cell(workspaceName(ws)), ws.tenant.Workspace, ws.tenant.Workspace, len(ws.sessions))
+	}
+	b.WriteString("\nUp: [the work folder](../README.md)\n")
+	return b.String()
+}
+
+func accountAgents(account accountInfo) string {
+	return fmt.Sprintf("# AGENTS.md: account `%s`\n\n", account.id) +
+		"One account's workspaces, one folder each, named by the workspace's id. README.md beside this file " +
+		"says which is which.\n\n" + agentRules
+}
+
+func workspaceReadme(ws workspaceInfo) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Workspace %s\n\n", cell(workspaceName(ws)))
+	fmt.Fprintf(&b, "Account `%s` · workspace `%s`", ws.tenant.Account, ws.tenant.Workspace)
+	if ws.slug != "" {
+		fmt.Fprintf(&b, " · slug `%s`", ws.slug)
+	}
+	b.WriteString("\n\n")
+	b.WriteString("- [`repos.noindex/`](repos.noindex/README.md): one bare git store per repository, which every session's checkout is a worktree of\n")
+	b.WriteString("- [`sessions.noindex/`](sessions.noindex/README.md): one folder per session\n\n")
+	b.WriteString("## Sessions\n\n")
+	b.WriteString(sessionTable(ws, "sessions.noindex/"))
+	b.WriteString("\nUp: [the account](../README.md) · [the work folder](../../README.md)\n")
+	return b.String()
+}
+
+func workspaceAgents(ws workspaceInfo) string {
+	return fmt.Sprintf("# AGENTS.md: workspace %s\n\n", cell(workspaceName(ws))) +
+		"`repos.noindex/` holds this workspace's bare git stores; `sessions.noindex/` holds one folder per " +
+		"session, and each session's checkout is inside its folder. README.md beside this file lists the sessions.\n\n" +
+		agentRules
+}
+
+func reposReadme(ws workspaceInfo) string {
+	return fmt.Sprintf("# Repositories of %s\n\n", cell(workspaceName(ws))) +
+		"One bare git store per repository, `<owner>--<repo>.git`, cloned once and fetched before each " +
+		"session is made; every session's checkout is a worktree of one of them. `.spares/` holds a worktree " +
+		"made ahead of time, which the next session over that repository takes.\n\n" +
+		"The runner manages everything here: there is no working copy to edit. Your work is in each " +
+		"session's checkout, under [`../sessions.noindex/`](../sessions.noindex/README.md).\n\n" +
+		"Up: [the workspace](../README.md)\n"
+}
+
+func reposAgents(ws workspaceInfo) string {
+	return fmt.Sprintf("# AGENTS.md: repositories of %s\n\n", cell(workspaceName(ws))) +
+		"Bare git stores and spare worktrees the runner manages. Do not edit, fetch into or delete anything " +
+		"here: work in your session's checkout, which is a worktree of one of these stores.\n\n" + agentRules
+}
+
+func sessionsReadme(ws workspaceInfo) string {
+	return fmt.Sprintf("# Sessions of %s\n\n", cell(workspaceName(ws))) +
+		"One folder per session, named by the session's slug. Each holds its checkouts; " +
+		"the folder and everything in it is deleted when the session is closed.\n\n" +
+		sessionTable(ws, "") + "\nUp: [the workspace](../README.md)\n"
+}
+
+func sessionsAgents(ws workspaceInfo) string {
+	return fmt.Sprintf("# AGENTS.md: sessions of %s\n\n", cell(workspaceName(ws))) +
+		"One folder per session. Yours is the one whose checkout you were started in; every other one " +
+		"belongs to another session, which may be working in it right now.\n\n" + agentRules
+}
+
+func sessionReadme(ws workspaceInfo, session sessionInfo) string {
+	m := session.meta
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Session %s\n\n", cell(sessionName(session)))
+	fmt.Fprintf(&b, "Workspace %s · session `%s`", cell(workspaceName(ws)), m.ID)
+	if m.Agent != "" {
+		fmt.Fprintf(&b, " · agent `%s`", m.Agent)
+	}
+	if m.Branch != "" {
+		fmt.Fprintf(&b, " · branch `%s`", m.Branch)
+	}
+	if m.CreatedAt != nil {
+		fmt.Fprintf(&b, " · created %s", m.CreatedAt.UTC().Format(createdFormat))
+	}
+	b.WriteString("\n\n")
+	if len(m.Checkouts) > 0 {
+		b.WriteString("| Checkout | Repository |\n| --- | --- |\n")
+		for _, checkout := range m.Checkouts {
+			fmt.Fprintf(&b, "| [`%s/`](%s/) | %s |\n", checkout.Directory, checkout.Directory, cell(checkout.Repo))
+		}
+		b.WriteString("\nThe agent works in the checkout; each one is a git worktree on the session's branch. ")
+	}
+	b.WriteString("Closing the session deletes this folder.\n\n")
+	b.WriteString("Up: [the sessions](../README.md) · [the workspace](../../README.md)\n")
+	return b.String()
+}
+
+func sessionAgents(ws workspaceInfo, session sessionInfo) string {
+	m := session.meta
+	var b strings.Builder
+	fmt.Fprintf(&b, "# AGENTS.md: session %s\n\n", cell(sessionName(session)))
+	fmt.Fprintf(&b, "The folder of session `%s` in workspace %s.", m.ID, cell(workspaceName(ws)))
+	if len(m.Checkouts) > 0 {
+		dirs := make([]string, 0, len(m.Checkouts))
+		for _, checkout := range m.Checkouts {
+			dirs = append(dirs, "`"+checkout.Directory+"/` ("+cell(checkout.Repo)+")")
+		}
+		fmt.Fprintf(&b, " Its code is in %s", strings.Join(dirs, ", "))
+		if m.Branch != "" {
+			fmt.Fprintf(&b, ", on branch `%s`", m.Branch)
+		}
+		b.WriteString(".")
+	}
+	b.WriteString(" Everything here is deleted when the session is closed: anything worth keeping is committed and pushed.\n\n")
+	b.WriteString(agentRules)
+	return b.String()
+}
+
+// agentRules closes every AGENTS.md.
+const agentRules = "## Rules\n\n" +
+	"- Work in your own session's checkout. Another session's folder is another agent's work in progress: " +
+	"read it if you must, never change it.\n" +
+	"- Never edit or delete `repos.noindex/` (the runner's git stores), a `.oppenheimer/` marker, " +
+	"or these README.md and AGENTS.md files, which the runner rewrites.\n" +
+	"- To start another session, report to the one that started you, or tell the person something, " +
+	"use `runner sessions …`; `runner --skill` is the manual.\n"
+
+const createdFormat = "2006-01-02 15:04 UTC"
+
+func countWorkspaces(accounts []accountInfo) int {
+	n := 0
+	for _, account := range accounts {
+		n += len(account.workspaces)
+	}
+	return n
+}
+
+// sessionTable lists a workspace's sessions, each linked at prefix+slug.
+func sessionTable(ws workspaceInfo, prefix string) string {
+	if len(ws.sessions) == 0 {
+		return "None open.\n"
+	}
+	var b strings.Builder
+	b.WriteString("| Session | Repositories | Branch | Agent | Created | Folder |\n| --- | --- | --- | --- | --- | --- |\n")
+	for _, session := range ws.sessions {
+		m := session.meta
+		repos := make([]string, 0, len(m.Checkouts))
+		for _, checkout := range m.Checkouts {
+			repos = append(repos, checkout.Repo)
+		}
+		created := ""
+		if m.CreatedAt != nil {
+			created = m.CreatedAt.UTC().Format(createdFormat)
+		}
+		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | [`%s%s/`](%s%s/README.md) |\n",
+			cell(sessionName(session)), cell(strings.Join(repos, ", ")), code(m.Branch), code(m.Agent), created,
+			prefix, session.slug, prefix, session.slug)
+	}
+	return b.String()
+}
+
+func workspaceName(ws workspaceInfo) string {
+	if ws.slug != "" {
+		return ws.slug
+	}
+	if ws.tenant.Workspace == domain.LocalID {
+		return "local (this host's CLI)"
+	}
+	return ws.tenant.Workspace
+}
+
+func sessionName(session sessionInfo) string {
+	if session.meta.Name != "" {
+		return session.meta.Name
+	}
+	return session.slug
+}
+
+// cell makes text safe inside one Markdown table cell or heading line.
+func cell(text string) string {
+	text = strings.Join(strings.Fields(text), " ")
+	return strings.NewReplacer("|", `\|`, "<", "&lt;", ">", "&gt;").Replace(text)
+}
+
+func code(text string) string {
+	if text == "" {
+		return ""
+	}
+	return "`" + strings.ReplaceAll(cell(text), "`", "'") + "`"
+}

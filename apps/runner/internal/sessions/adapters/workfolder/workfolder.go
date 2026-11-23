@@ -15,6 +15,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -48,12 +49,22 @@ type Meta struct {
 	// folder is named by the id, which never changes.
 	Slug      string     `json:"slug,omitempty"`
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	// Name, Agent, Branch and Checkouts are a session's, kept so the work
+	// folder's guides can say what each session folder holds. A marker an
+	// older runner wrote has none of them.
+	Name      string                  `json:"name,omitempty"`
+	Agent     string                  `json:"agent,omitempty"`
+	Branch    string                  `json:"branch,omitempty"`
+	Checkouts []domain.FolderCheckout `json:"checkouts,omitempty"`
 }
 
 // Folder is the work folder at a root.
 type Folder struct {
 	layout domain.Layout
 	now    func() time.Time
+	// guides serialises WriteGuides, so the last one to run read the folder
+	// after the change before it.
+	guides sync.Mutex
 }
 
 // Options configure the work folder.
@@ -94,6 +105,14 @@ func (f *Folder) Init() error {
 // another one (a slug can be edited), is brought up to date; the folder's
 // name never changes.
 func (f *Folder) MakeWorkspace(t domain.Tenant, slug string) error {
+	if err := f.makeWorkspace(t, slug); err != nil {
+		return err
+	}
+	f.WriteGuides()
+	return nil
+}
+
+func (f *Folder) makeWorkspace(t domain.Tenant, slug string) error {
 	if err := t.Validate(); err != nil {
 		return domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
@@ -103,14 +122,32 @@ func (f *Folder) MakeWorkspace(t domain.Tenant, slug string) error {
 	if err := ensureMarked(f.layout.Account(t.Account), Meta{Kind: KindAccount, ID: t.Account}, false); err != nil {
 		return err
 	}
-	return ensureMarked(f.layout.Workspace(t), Meta{Kind: KindWorkspace, ID: t.Workspace, Slug: slug}, slug != "")
+	if err := ensureMarked(f.layout.Workspace(t), Meta{Kind: KindWorkspace, ID: t.Workspace, Slug: slug}, slug != ""); err != nil {
+		return err
+	}
+	// Both are made with the workspace, so their guides are there from the
+	// start rather than after the first clone.
+	for _, dir := range []string{f.layout.Repos(t), f.layout.Sessions(t)} {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			return failed("create", dir, err)
+		}
+	}
+	return nil
 }
 
 // MakeSession implements app.Places.
 func (f *Folder) MakeSession(folder domain.SessionFolder) error {
-	if err := f.MakeWorkspace(folder.Tenant, folder.WorkspaceSlug); err != nil {
+	if err := f.makeWorkspace(folder.Tenant, folder.WorkspaceSlug); err != nil {
 		return err
 	}
+	if err := f.makeSession(folder); err != nil {
+		return err
+	}
+	f.WriteGuides()
+	return nil
+}
+
+func (f *Folder) makeSession(folder domain.SessionFolder) error {
 	parent := filepath.Dir(folder.Dir)
 	if err := os.MkdirAll(parent, 0o700); err != nil {
 		return failed("create", parent, err)
@@ -120,7 +157,10 @@ func (f *Folder) MakeSession(folder domain.SessionFolder) error {
 		created = f.now()
 	}
 	created = created.UTC()
-	meta := Meta{Kind: KindSession, ID: folder.SessionID, CreatedAt: &created}
+	meta := Meta{
+		Kind: KindSession, ID: folder.SessionID, CreatedAt: &created,
+		Name: folder.Name, Agent: string(folder.Agent), Branch: folder.Branch, Checkouts: folder.Checkouts,
+	}
 
 	err := os.Mkdir(folder.Dir, 0o700)
 	switch {
@@ -163,6 +203,7 @@ func (f *Folder) RemoveSession(dir, sessionID string) error {
 	if err := os.RemoveAll(dir); err != nil {
 		return failed("remove", dir, err)
 	}
+	f.WriteGuides()
 	return nil
 }
 
@@ -194,9 +235,7 @@ func ensureMarked(dir string, meta Meta, update bool) error {
 	case err != nil:
 		// A marker that does not parse is somebody's edit: left as it is.
 		return nil //nolint:nilerr // not ours to rewrite, and no reason to refuse the create
-	case !update || found == meta:
-		return nil
-	case found.Kind != meta.Kind || found.ID != meta.ID:
+	case !update || found.Kind != meta.Kind || found.ID != meta.ID || found.Slug == meta.Slug:
 		return nil
 	}
 	if err := writeMarker(dir, meta); err != nil {

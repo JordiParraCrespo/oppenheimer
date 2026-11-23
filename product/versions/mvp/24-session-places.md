@@ -69,6 +69,16 @@ the OS's application-support directory, its worktrees under
 - **Stores are bare**, and live beside the sessions rather than holding
   them, so `git status` in a store sees no worktree and no IDE walks into
   one.
+- **Every level carries a `README.md` and an `AGENTS.md`**: the root, each
+  account, workspace, `repos.noindex/`, `sessions.noindex/` and session
+  folder. Since every folder is named by an id, the README is how a person
+  finds their workspace (by its slug) and a session (by its name, its
+  repositories, branch and agent, kept in the session's marker); the
+  AGENTS.md tells an agent where its checkout is and what not to touch. The
+  runner rewrites both on every create and close, and at start; a file at
+  that path it did not write (one without its first-line header, or a
+  checkout named like one) is left as it is. Nothing goes inside a
+  checkout or a store.
 
 ## 3. Three ways to start a session
 
@@ -285,3 +295,7 @@ place with the agent `codex`; what differs is the vendor's CLI:
   a walk the runner bounds by depth, directories read and time, rather
   than an index it keeps; a bare name only, so a typed path is still
   browsed.
+- 2026-11-23: every level of the work folder carries a generated
+  `README.md` and `AGENTS.md` (§2), so a workspace and a session can be
+  found by name although their folders are named by ids; a session's
+  marker also keeps its name, agent, branch and checkouts for them.
