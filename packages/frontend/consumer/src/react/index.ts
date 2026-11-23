@@ -326,6 +326,13 @@ export {
   useSharedSessionStream,
 } from './sessions.stream';
 export {
+  useConnectSlack,
+  useDisconnectSlack,
+  useOpenSlackOwnerLink,
+  useRefreshSlack,
+  useSuspenseBotSlack,
+} from './slack.queries';
+export {
   HOST_HOME,
   type HostHomeSessionInput,
   type LinkTaskSessionVariables,

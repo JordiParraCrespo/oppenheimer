@@ -85,6 +85,7 @@ import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-term
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
+import { SlackAccountOrmEntity } from '../slack/database/slack-account.orm-entity';
 import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
 import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
@@ -164,6 +165,7 @@ export default new DataSource({
     WhatsappChatGrantOrmEntity,
     WhatsappKnownChatOrmEntity,
     TelegramAccountOrmEntity,
+    SlackAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
