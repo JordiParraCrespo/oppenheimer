@@ -4,21 +4,22 @@
  */
 const IDLE_PLACEHOLDERS = ['takeOn', 'job', 'problem', 'session', 'listening', 'anything'] as const;
 
-export type IdlePlaceholder = (typeof IDLE_PLACEHOLDERS)[number];
+/** The same while a turn runs: a line that invites steering, not a list of keys. */
+const RUNNING_PLACEHOLDERS = ['steer', 'nudge', 'context', 'next', 'course'] as const;
 
-/**
- * The line for this visit, from `roll` in [0, 1): the composer draws it once
- * when it mounts, and it mounts again for each bot.
- */
-export function idlePlaceholder(roll: number): IdlePlaceholder {
-  const index = Math.min(Math.floor(roll * IDLE_PLACEHOLDERS.length), IDLE_PLACEHOLDERS.length - 1);
+function pick<T>(lines: readonly [T, ...T[]], roll: number): T {
+  const index = Math.min(Math.floor(roll * lines.length), lines.length - 1);
   // The index is in range; the fallback only satisfies noUncheckedIndexedAccess.
-  return IDLE_PLACEHOLDERS[index] ?? IDLE_PLACEHOLDERS[0];
+  return lines[index] ?? lines[0];
 }
 
-/** The placeholder's translation key: Steer while a turn runs, otherwise the visit's line. */
-export function placeholderKey(running: boolean, idle: IdlePlaceholder) {
+/**
+ * The placeholder's translation key for this visit, from `roll` in [0, 1):
+ * the composer draws the roll once when it mounts, and it mounts again for
+ * each bot, so a visit keeps one idle line and one running line.
+ */
+export function placeholderKey(running: boolean, roll: number) {
   return running
-    ? ('bots.chat.placeholderRunning' as const)
-    : (`bots.chat.placeholders.${idle}` as const);
+    ? (`bots.chat.placeholdersRunning.${pick(RUNNING_PLACEHOLDERS, roll)}` as const)
+    : (`bots.chat.placeholders.${pick(IDLE_PLACEHOLDERS, roll)}` as const);
 }
