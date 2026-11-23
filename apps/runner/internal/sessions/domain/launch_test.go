@@ -45,7 +45,7 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 // ZCode's TUI reads a positional as a subcommand and has no `--model`, so a
 // first task or a model that reaches the runner must add nothing to argv, or
 // `zcode` exits on an unknown command. Its permission is `--mode`, and a
-// restart reopens the worktree's newest conversation.
+// restart sends no `--continue`, which exits when ZCode saved nothing yet.
 func TestZCodeTakesItsModeAndNeitherATaskNorAModel(t *testing.T) {
 	got := Launch{Model: "glm-5.3", Permission: "ask", Prompt: "fix the picker"}.Args(AgentZCode)
 	want := []string{"--mode", "build"}
@@ -53,7 +53,7 @@ func TestZCodeTakesItsModeAndNeitherATaskNorAModel(t *testing.T) {
 		t.Fatalf("zcode argv = %q, want %q", got, want)
 	}
 	got = Launch{Permission: "full", Prompt: "fix the picker", Resume: true}.Args(AgentZCode)
-	want = []string{"--mode", "yolo", "--continue"}
+	want = []string{"--mode", "yolo"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("reopened zcode argv = %q, want %q", got, want)
 	}

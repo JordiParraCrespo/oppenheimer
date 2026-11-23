@@ -110,6 +110,13 @@ func (a Agent) NamesConversation() bool {
 	return len(launchCatalog[a.CatalogID()].conversationCreate) > 0
 }
 
+// TakesTask reports whether this agent's CLI takes a first task on its
+// command line. One that does not (ZCode, the blank terminal) starts with
+// none, and the person types it.
+func (a Agent) TakesTask() bool {
+	return len(launchCatalog[a.CatalogID()].prompt) > 0
+}
+
 // NewAgentServer mints a password for an agent's API on port, for the
 // agent running in directory.
 func NewAgentServer(port int, since int64, directory string) (AgentServer, error) {

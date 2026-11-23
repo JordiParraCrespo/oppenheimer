@@ -25,11 +25,13 @@ export const ZCODE_AGENT: CodingAgentDefinition = Object.freeze({
   // picked in the TUI.
   models: Object.freeze([]),
   launch: Object.freeze({
-    // `--continue` / `-c` reopens the newest session in the working
-    // directory, and a session's worktree is its own and never reused.
-    // `--resume <id>` takes an id ZCode chose, which the runner cannot learn
-    // from the TUI.
-    conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
+    // No `conversation`. `--continue` exits with "No resumable session
+    // found" before the TUI starts when ZCode saved nothing in the folder
+    // (`resume.ts`), which a session restarted before its first message
+    // would hit, and `--resume <id>` takes an id the runner cannot learn from
+    // the TUI. A restart opens a fresh ZCode; the earlier conversation stays
+    // in ZCode's own session list.
+    //
     // `--mode build|edit|plan|yolo|guarded`, which the TUI takes as well as
     // `--prompt` does. `build` asks before writes and side effects, `edit`
     // lets workspace edits through and asks for the rest, `yolo` asks for

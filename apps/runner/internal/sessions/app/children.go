@@ -120,6 +120,9 @@ func (c *Children) Delegate(ctx context.Context, in DelegateInput) (domain.Sessi
 	if in.Task == "" {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("a child needs a task")
 	}
+	if in.Agent != "" && in.Agent != domain.AgentShell && !in.Agent.TakesTask() {
+		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%s takes no task on its command line, so a child on it would start idle", in.Agent)
+	}
 	create := CreateInput{
 		Agent: in.Agent, Name: in.Name, Launch: domain.Launch{Prompt: in.Task},
 		Parent: parent.ID, OutliveParent: in.OutliveParent, Quiet: in.Quiet, Keep: in.Keep,

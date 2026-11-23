@@ -198,7 +198,6 @@ var launchCatalog = map[string]launchMap{
 			"auto": {argv: []string{"--mode", "edit"}},
 			"full": {argv: []string{"--mode", "yolo"}},
 		},
-		conversationResume: []string{"--continue"},
 	},
 	"shell": {
 		command: "",
