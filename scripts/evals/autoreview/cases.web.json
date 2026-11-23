@@ -46,5 +46,20 @@
         "match": "error|fail|retry|isError"
       }
     }
+  ],
+  "bundles": [
+    {
+      "id": "console",
+      "task": "A week of console work on one branch, with two API changes:",
+      "commit": "feat(web): composer, board order, calendar lanes, tag input",
+      "cases": [
+        "draft-lost-on-error",
+        "late-save-wins",
+        "failure-drawn-as-empty",
+        "enter-during-ime",
+        "surrogate-cut",
+        "match-by-id-ok"
+      ]
+    }
   ]
 }

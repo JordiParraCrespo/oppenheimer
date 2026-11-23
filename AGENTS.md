@@ -165,7 +165,9 @@ frontmatter; this is the index.
 
 ## Review guidelines
 
-For automated reviewers (Codex reads this section), and for `/autoreview`:
+For the automated reviewers on a pull request (Codex reads this section).
+`/autoreview` has its own bar, in its brief, which also blocks on a broken
+rule with a cited line:
 
 - **P0**: data loss, a security or authorization hole, a crash on a real path.
 - **P1**: wrong behaviour a person can reach: a race, lost input, a failure

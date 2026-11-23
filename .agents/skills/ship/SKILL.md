@@ -69,11 +69,14 @@ while GitHub computes it; read it again, it is not a conflict) and:
    - GitHub reports it mergeable, no review requests changes, and every
      finding is answered (`steward`, "Babysitting", step 2 says what counts
      as one), its thread resolved;
-   - the Codex review of this head, or of a head whose only change since is
-     a merge of the base, has finished: its summary comment's
-     `codex-review-state` names the SHA with `"status":"completed"`. If it
-     has not started 30 minutes after the request, say so on the pull
-     request and merge without it;
+   - Codex has finished reviewing the last head that changed behavior (the
+     one the pull request was opened or marked ready on, or the last push
+     `steward`, "Babysitting", step 3 asked it about; a later push of
+     comments, docs or tests, or a merge of the base, needs no new review):
+     its summary comment's `codex-review-state` names that SHA with
+     `"status":"completed"`. If it has not finished 30 minutes after it was
+     asked (or after the pull request was opened), say so on the pull request
+     and merge without it. A `research` pull request skips this;
    - no `main-red` issue is open that it does not fix.
 
    Merge with a merge commit pinned to the head SHA, never with admin

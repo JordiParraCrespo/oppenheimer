@@ -5,7 +5,14 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { grade, loadCases, parseReview, summarise, validateCases } from './run.mjs';
+import {
+  grade,
+  loadCases,
+  parseReview,
+  summarise,
+  validateBundles,
+  validateCases,
+} from './run.mjs';
 
 const { cases } = loadCases();
 const byId = (id) => cases.find((c) => c.id === id);
@@ -83,4 +90,22 @@ test('the summary counts planted and decoy cases apart', () => {
     unparsed: 0,
     cost_usd: 2.5,
   });
+});
+
+test('a bundle naming an unknown case, or two cases writing one file, is refused', () => {
+  const loaded = loadCases();
+  assert.deepEqual(validateBundles(loaded), []);
+  const twins = {
+    cases,
+    bundles: [{ id: 'x', task: 't', commit: 'c', cases: ['surrogate-cut', 'surrogate-cut-ok'] }],
+  };
+  assert.ok(validateBundles(twins).some((p) => p.includes('both write')));
+  const unknown = { cases, bundles: [{ id: 'y', task: 't', commit: 'c', cases: ['nope'] }] };
+  assert.ok(validateBundles(unknown).some((p) => p.includes('no case nope')));
+});
+
+test('a reviewer summary that quotes a fence of its own still parses', () => {
+  const text =
+    'Done.\n\n```json\n{"verdict":"FINDINGS","findings":[{"priority":"P1","file":"a.ts","summary":"code inside a ``` fence is rewritten"}]}\n```';
+  assert.equal(parseReview(text)?.findings.length, 1);
 });

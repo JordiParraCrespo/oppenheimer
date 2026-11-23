@@ -73,6 +73,7 @@ export function parseArgs(argv) {
     else if (arg === '--concurrency') args.concurrency = Number(argv[++i]);
     else if (arg === '--ref') args.ref = argv[++i];
     else if (arg === '--keep') args.keep = true;
+    else if (arg === '--bundles') args.bundles = true;
     else if (arg === '--validate') args.mode = 'validate';
     else if (arg === '--grade') {
       args.mode = 'grade';
@@ -114,10 +115,14 @@ export const baseFiles = (id) => filesUnder(join(HERE, 'base', id));
  * kept apart so a project that drops the web app drops them with it.
  */
 export function loadCases() {
-  const { prompt, cases } = JSON.parse(readFileSync(join(HERE, 'cases.json'), 'utf8'));
-  const web = join(HERE, 'cases.web.json');
-  const more = existsSync(web) ? JSON.parse(readFileSync(web, 'utf8')).cases : [];
-  return { prompt, cases: [...cases, ...more] };
+  const main = JSON.parse(readFileSync(join(HERE, 'cases.json'), 'utf8'));
+  const path = join(HERE, 'cases.web.json');
+  const web = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
+  return {
+    prompt: main.prompt,
+    cases: [...main.cases, ...(web.cases ?? [])],
+    bundles: [...(main.bundles ?? []), ...(web.bundles ?? [])],
+  };
 }
 
 // ---- validate: each fixture is a real test of the brief ---------------------
@@ -192,9 +197,17 @@ export function validateCases(cases, { exists = (path) => existsSync(join(ROOT, 
 /** The reviewer's JSON block: the last fenced `json` block, or the whole answer. */
 export function parseReview(text) {
   if (!text) return null;
-  const blocks = [...text.matchAll(/```json\s*\n([\s\S]*?)```/g)];
-  for (const candidate of [blocks.at(-1)?.[1], text]) {
-    if (!candidate) continue;
+  const candidates = [];
+  const open = text.lastIndexOf('```json');
+  if (open > -1) {
+    // To the answer's last fence, not the first one after the opening: a
+    // summary may quote a fence of its own ("``` blocks are rewritten").
+    const body = text.slice(text.indexOf('\n', open) + 1);
+    candidates.push(body.slice(0, body.lastIndexOf('```')));
+    candidates.push(body.slice(0, body.indexOf('```')));
+  }
+  candidates.push(text);
+  for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate.trim());
       if (Array.isArray(parsed.findings)) return parsed;
@@ -242,21 +255,53 @@ export function summarise(entries) {
 
 // ---- agent -------------------------------------------------------------------
 
-function prepare(dir, ref, testCase) {
+/** A worktree at `ref` with the cases' base committed, then the cases as one commit. */
+function prepare(dir, ref, members, commit) {
   git(ROOT, 'worktree', 'add', '-q', '--detach', dir, ref);
   rmSync(join(dir, 'scripts/evals'), { recursive: true, force: true });
   git(dir, 'add', '-A');
   git(dir, 'commit', '-q', '-m', 'eval: hide the evals');
-  if (baseFiles(testCase.id).length) {
-    cpSync(join(HERE, 'base', testCase.id), dir, { recursive: true });
+  const older = members.filter((c) => baseFiles(c.id).length);
+  for (const testCase of older) cpSync(join(HERE, 'base', testCase.id), dir, { recursive: true });
+  if (older.length) {
     git(dir, 'add', '-A');
     git(dir, 'commit', '-q', '-m', 'feat: earlier work');
   }
   const base = git(dir, 'rev-parse', 'HEAD');
-  cpSync(join(HERE, 'cases', testCase.id), dir, { recursive: true });
+  for (const testCase of members)
+    cpSync(join(HERE, 'cases', testCase.id), dir, { recursive: true });
   git(dir, 'add', '-A');
-  git(dir, 'commit', '-q', '-m', testCase.commit);
+  git(dir, 'commit', '-q', '-m', commit);
   return { base, head: git(dir, 'rev-parse', 'HEAD') };
+}
+
+/**
+ * The runs to make: one per case, or with `--bundles` one per bundle, whose
+ * cases land as one branch, the way autoreview meets a real one: several
+ * changes, one diff, each graded on its own.
+ */
+export function unitsOf({ cases, bundles }, { bundles: asBundles, case: only }) {
+  if (!asBundles) {
+    return cases
+      .filter((c) => !only || c.id === only)
+      .map((c) => ({ id: c.id, members: [c], task: c.task, commit: c.commit }));
+  }
+  return bundles
+    .filter((b) => !only || b.id === only)
+    .map((b) => {
+      const members = b.cases.map((id) => {
+        const found = cases.find((c) => c.id === id);
+        if (!found) throw new Error(`bundle ${b.id}: no case ${id}`);
+        return found;
+      });
+      const tasks = [...new Set(members.map((c) => c.task))];
+      return {
+        id: b.id,
+        members,
+        commit: b.commit,
+        task: `${b.task}\n${tasks.map((t) => `- ${t}`).join('\n')}`,
+      };
+    });
 }
 
 function review(dir, prompt, { model, timeout }) {
@@ -321,18 +366,34 @@ function save(report) {
   log(`report ${relative(ROOT, file)}`);
 }
 
+/** What is wrong with the bundles: an unknown case, or two cases writing one path. */
+export function validateBundles({ cases, bundles }) {
+  const problems = [];
+  for (const bundle of bundles) {
+    const seen = new Map();
+    for (const id of bundle.cases) {
+      if (!cases.some((c) => c.id === id)) problems.push(`bundle ${bundle.id}: no case ${id}`);
+      for (const file of [...caseFiles(id), ...baseFiles(id)]) {
+        if (seen.has(file) && seen.get(file) !== id) {
+          problems.push(`bundle ${bundle.id}: ${id} and ${seen.get(file)} both write ${file}`);
+        }
+        seen.set(file, id);
+      }
+    }
+    if (!bundle.task || !bundle.commit) problems.push(`bundle ${bundle.id}: no task or commit`);
+  }
+  return problems;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const { prompt, cases } = loadCases();
-  const selected = args.case ? cases.filter((c) => c.id === args.case) : cases;
-  if (selected.length === 0) throw new Error(`No case named ${args.case}`);
+  const loaded = loadCases();
+  const { prompt, cases } = loaded;
 
   if (args.mode === 'validate') {
-    const problems = validateCases(cases);
+    const problems = [...validateCases(cases), ...validateBundles(loaded)];
     for (const problem of problems) log(`  ✖ ${problem}`);
-    log(
-      `${cases.length - new Set(problems.map((p) => p.split(':')[0])).size}/${cases.length} autoreview eval cases valid`,
-    );
+    log(`${cases.length} cases, ${loaded.bundles.length} bundles: ${problems.length} problem(s)`);
     process.exitCode = problems.length ? 1 : 0;
     return;
   }
@@ -342,7 +403,7 @@ async function main() {
     for (const entry of report.cases) {
       entry.grade = grade(
         cases.find((c) => c.id === entry.id),
-        parseReview(entry.agent?.result),
+        parseReview(entry.result ?? entry.agent?.result),
       );
       printEntry(entry);
     }
@@ -354,29 +415,47 @@ async function main() {
     return;
   }
 
+  const units = unitsOf(loaded, args);
+  if (units.length === 0) throw new Error(`Nothing named ${args.case}`);
   const ref = git(ROOT, 'rev-parse', args.ref);
-  const report = { mode: 'agent', model: args.model, ref, at: new Date().toISOString(), cases: [] };
-  const jobs = selected.flatMap((testCase) =>
-    Array.from({ length: args.trials }, (_, i) => ({ testCase, trial: i + 1 })),
+  const report = {
+    mode: args.bundles ? 'bundles' : 'agent',
+    model: args.model,
+    ref,
+    at: new Date().toISOString(),
+    cases: [],
+  };
+  const queue = units.flatMap((unit) =>
+    Array.from({ length: args.trials }, (_, i) => ({ unit, trial: i + 1 })),
   );
   const root = join(tmpdir(), `autoreview-eval-${Date.now()}`);
-  const queue = [...jobs];
   const worker = async () => {
     for (let job = queue.shift(); job; job = queue.shift()) {
-      const { testCase, trial } = job;
-      const dir = join(root, `${testCase.id}-${trial}`);
+      const { unit, trial } = job;
+      const dir = join(root, `${unit.id}-${trial}`);
       try {
-        const { base, head } = prepare(dir, ref, testCase);
-        const casePrompt = prompt
-          .replace('{task}', testCase.task)
+        const { base, head } = prepare(dir, ref, unit.members, unit.commit);
+        const unitPrompt = prompt
+          .replace('{task}', unit.task)
           .replace('{base}', base)
           .replace('{head}', head);
-        log(`▶ ${testCase.id}${args.trials > 1 ? ` #${trial}` : ''}: ${args.model} reviewing…`);
-        const agent = await review(dir, casePrompt, args);
-        const entry = { id: testCase.id, trial, decoy: Boolean(testCase.decoyOf), agent };
-        entry.grade = grade(testCase, parseReview(agent.result));
-        printEntry(entry);
-        report.cases.push(entry);
+        log(`▶ ${unit.id}${args.trials > 1 ? ` #${trial}` : ''}: ${args.model} reviewing…`);
+        const { result, ...agent } = await review(dir, unitPrompt, args);
+        const parsed = parseReview(result);
+        unit.members.forEach((testCase, i) => {
+          // One review grades every case in the unit; its cost counts once.
+          const entry = {
+            id: testCase.id,
+            unit: unit.id,
+            trial,
+            decoy: Boolean(testCase.decoyOf),
+            result,
+          };
+          if (i === 0) entry.agent = agent;
+          entry.grade = grade(testCase, parsed);
+          printEntry(entry);
+          report.cases.push(entry);
+        });
       } finally {
         if (args.keep) log(`kept ${dir}`);
         else spawnSync('git', ['worktree', 'remove', '--force', dir], { cwd: ROOT });

@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const NOTE = /^product\/(versions\/.+|next-steps\/.+|\d{2}-[^/]+)\.md$/;
 const BRIEF = 'product/brief.html';
 const README = 'product/README.md';
-const TRAILER = /^Product-Sync:\s*\S/m;
+const TRAILER = /^Product-Sync:[ \t]*\S/m;
 
 /**
  * @param {{ changed: string[], messages: string[] }} branch the files the branch

@@ -53,4 +53,7 @@ test('a Product-Sync trailer with a reason excuses the branch; an empty one does
     productSyncProblems({ changed: [note], messages: ['docs: x\n\nProduct-Sync:\n'] }).length,
     1,
   );
+  // The empty trailer is not rescued by the line after it.
+  const followed = 'docs: x\n\nProduct-Sync:\nCo-Authored-By: Claude <noreply@anthropic.com>\n';
+  assert.equal(productSyncProblems({ changed: [note], messages: [followed] }).length, 1);
 });

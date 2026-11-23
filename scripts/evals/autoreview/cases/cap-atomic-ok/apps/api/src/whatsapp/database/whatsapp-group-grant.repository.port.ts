@@ -9,8 +9,9 @@ export interface WhatsappGroupGrant {
 export interface WhatsappGroupGrantRepositoryPort {
   /**
    * Inserts the grant only while the account holds fewer than `cap`, in one
-   * statement, so two allows at once cannot both pass the cap. Answers
-   * whether it inserted.
+   * statement, so two allows at once cannot both pass the cap. A group
+   * already granted is re-pointed at the new bot and takes no new slot.
+   * Answers whether it wrote.
    */
   insertUnderCap(grant: WhatsappGroupGrant, cap: number): Promise<boolean>;
 }

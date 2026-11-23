@@ -123,5 +123,33 @@
         "match": "buffer|stream|memory|while reading|before reading|content-length|whole|entire|unbounded|OOM"
       }
     }
+  ],
+  "bundles": [
+    {
+      "id": "api-a",
+      "task": "A week of API work on one branch:",
+      "commit": "feat(api): routine excerpts, group grants, terminal tickets, Slack replies, schedule words",
+      "cases": [
+        "surrogate-cut",
+        "cap-atomic-ok",
+        "control-under-write-scope",
+        "markdown-rewrites-code",
+        "cron-step-words",
+        "match-by-id-ok"
+      ]
+    },
+    {
+      "id": "api-b",
+      "task": "A week of API work on one branch:",
+      "commit": "feat(api): routine excerpts, group grants, shell guard, pull request owners, voice caps",
+      "cases": [
+        "surrogate-cut-ok",
+        "count-then-insert",
+        "denylist-fails-open",
+        "match-by-branch-name",
+        "rename-leaves-a-caller",
+        "cap-after-buffering"
+      ]
+    }
   ]
 }
