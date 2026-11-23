@@ -189,6 +189,10 @@ The host is offline: the session is queued and starts when it comes back.
 
 Started session {{sessionId}} on host {{hostId}}.{{offline}} The agent works on its own. {{watched}}
 
+<!-- fragment: start-session-channel-link -->
+
+It opens at {{link}} for the person, signed in to the console; this chat draws no buttons, so write that link in your reply when you tell them about the session.
+
 <!-- fragment: start-cloud-session -->
 
 Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the person's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists: an answer with no link is not a start (still starting, queued on an offline host, or failed, most often because the host's CLI is not signed in; read_session says why). A cloud session's conversation stays at its vendor, so read_session_transcript cannot read it; follow it at its link and with get_session. You are subscribed to it unless watch is false. A cursor session takes follow-ups with send_to_session once its run ends; a claude-code or codex one takes follow-ups and answers at its vendor, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.

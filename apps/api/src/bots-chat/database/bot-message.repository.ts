@@ -67,6 +67,29 @@ export class BotMessageRepository
     return stored.length === 1;
   }
 
+  async findOne(
+    scope: AccessScope,
+    botId: string,
+    messageId: string,
+  ): Promise<BotMessageEntity | null> {
+    const record = await this.scopedQuery(scope)
+      .andWhere('message.id = :messageId AND message.botId = :botId', { messageId, botId })
+      .getOne();
+    return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async saveReaction(message: BotMessageEntity): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .update(BotMessageOrmEntity)
+      .set({ reaction: message.reaction, botReaction: message.botReaction })
+      .where('id = :id AND "organizationId" = :organizationId', {
+        id: message.id,
+        organizationId: message.organizationId,
+      })
+      .execute();
+  }
+
   async saveContent(message: BotMessageEntity): Promise<void> {
     // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
     const { content, pendingMedia } = this.mapper.toPersistence(message);

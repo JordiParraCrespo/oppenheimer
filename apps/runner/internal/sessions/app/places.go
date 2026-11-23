@@ -293,12 +293,12 @@ func (s *Service) removeDir(session domain.Session) {
 func (s *Service) placeGone(ctx context.Context, session domain.Session) (_ domain.Session, over bool, err error) {
 	switch {
 	case session.Place == domain.PlaceFolder && s.folderGone(session.Folder):
-		if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+		if err := s.endTerminal(ctx, session); err != nil {
 			return domain.Session{}, false, err
 		}
 		return s.decide(session, domain.StateClosed, ""), true, nil
 	case session.Place == domain.PlaceWorktree && session.Worktree != "" && !s.worktrees.Exists(session.Worktree):
-		if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+		if err := s.endTerminal(ctx, session); err != nil {
 			return domain.Session{}, false, err
 		}
 		// The first checkout is what says the session is still there, so with

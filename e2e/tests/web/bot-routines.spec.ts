@@ -68,7 +68,7 @@ test("a bot's routine on its Routines tab, from the card to Delete", async ({ pa
   edit = page.getByRole('dialog', { name: 'Edit “Evening PR digest”' });
   await edit.getByRole('button', { name: 'Ask in chat' }).click();
   await expect(page).toHaveURL(new RegExp(`/bots/${bot.id}$`));
-  await expect(page.getByPlaceholder('Message Juno')).toHaveValue(
+  await expect(page.getByRole('textbox', { name: 'Message Juno' })).toHaveValue(
     'Edit your routine: Evening PR digest',
   );
 
@@ -117,7 +117,7 @@ test("a routine's change in its bot's chat, and the routine on the Bot routines 
     })
     .toBe(1);
   await page.reload();
-  await expect(page.getByPlaceholder('Message Juno')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Message Juno' })).toBeVisible();
   await expect(page.getByText(/Morning PR digest/)).toHaveCount(0);
 
   // The overview's Bot routines tab lists it under its bot, and the row opens

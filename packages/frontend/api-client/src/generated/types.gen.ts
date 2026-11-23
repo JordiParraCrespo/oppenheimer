@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2308,7 +2308,7 @@ export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity';
     prompt?: string;
 };
 
@@ -2600,7 +2600,7 @@ export type CreateAutomationRequest = {
         query?: string | null;
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2680,7 +2680,7 @@ export type UpdateAutomationRequest = {
         query?: string | null;
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2947,7 +2947,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -4765,6 +4765,14 @@ export type BotMessageResponseDto = {
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
     attachments: Array<BotAttachmentResponseDto>;
+    /**
+     * Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.
+     */
+    reaction: string | null;
+    /**
+     * The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.
+     */
+    botReaction: string | null;
     createdAt: string;
 };
 
@@ -5284,6 +5292,10 @@ export type AnswerBotQuestionRequest = {
 
 export type DismissBotQuestionRequest = {
     note?: string;
+};
+
+export type ReactToBotMessageRequest = {
+    emoji: string | null;
 };
 
 export type BotToolPermissionDto = {
@@ -10246,7 +10258,11 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'shell';
+        /**
+         * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
+         */
+        resolved?: 'true' | 'false';
         /**
          * A live checkout of it
          */
@@ -17443,6 +17459,43 @@ export type DismissBotQuestionResponses = {
 };
 
 export type DismissBotQuestionResponse = DismissBotQuestionResponses[keyof DismissBotQuestionResponses];
+
+export type ReactToBotMessageData = {
+    body: ReactToBotMessageRequest;
+    path: {
+        id: string;
+        messageId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/messages/{messageId}/reaction';
+};
+
+export type ReactToBotMessageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_044 — Message not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_045 — This message takes no reaction
+     */
+    422: ProblemDetailsDto;
+};
+
+export type ReactToBotMessageError = ReactToBotMessageErrors[keyof ReactToBotMessageErrors];
+
+export type ReactToBotMessageResponses = {
+    200: BotMessageResponseDto;
+};
+
+export type ReactToBotMessageResponse = ReactToBotMessageResponses[keyof ReactToBotMessageResponses];
 
 export type FindBotPermissionsData = {
     body?: never;

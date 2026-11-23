@@ -263,6 +263,9 @@ func New(version string) (*App, error) {
 		// probe and keeps what it reports: its own word on what it does,
 		// ahead of the screen classifier.
 		ProgramStatus: programStatus,
+		// The same wrappers, found in the process table: what makes sure an
+		// agent that ignores its hangup does not outlive its session.
+		Wrappers: programStatus,
 	})
 	if err != nil {
 		return nil, err

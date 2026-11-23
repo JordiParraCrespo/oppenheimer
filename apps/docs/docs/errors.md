@@ -813,6 +813,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 | `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
 | `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
+| `BOTS_044` <a id="bots_044" />       | Message not found | 404  |
+| `BOTS_045` <a id="bots_045" />       | This message takes no reaction | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -918,6 +920,11 @@ another bot, or none, to answer there (Settings → Telegram), then delete it.
 the bot of one of its allowed chats: it answers there. Choose another bot, or
 none (Settings → WhatsApp), then delete it.
 
+`BOTS_044` and `BOTS_045` are a reaction in a bot's chat
+(`PUT /bots/:id/messages/:messageId/reaction`). `BOTS_044` is a message that is
+not this bot's or not in the caller's workspace. `BOTS_045` is a reaction to an
+activity line or an event: only your messages and the bot's words take one.
+
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
 ## Voice
@@ -952,7 +959,7 @@ ElevenLabs key, and no text-to-speech server on the deployment (`VOICE_TTS_*`
 in `.env.example`); the bot is refused before any card and told to send text.
 `VOICE_009` is the provider unreachable, refusing (an ElevenLabs voice the
 account cannot use, say), or answering something that is not Ogg/Opus audio of
-at most two minutes; `VOICE_010` is it rate limiting the key, with
+at most two minutes, or Ogg/Opus that decodes to silence; `VOICE_010` is it rate limiting the key, with
 `Retry-After`. `VOICE_011` is an empty text or one longer than 600 characters.
 
 ## Inbox
@@ -1468,8 +1475,8 @@ not hear.
 `whatsapp.send.voice`, a bot's spoken reply, is answered like a text: `WA_002`,
 `WA_003` (WhatsApp refused the upload or the message) and `WA_004`, the same
 budget a text spends. Before anything is uploaded the host refuses audio
-larger than one frame (`WA_006`) and audio that is not Ogg/Opus or runs
-outside 1 to 120 seconds (`WA_008`). The control plane's link refuses audio
+larger than one frame (`WA_006`) and audio that is not Ogg/Opus, runs
+outside 1 to 120 seconds or is silent from end to end (`WA_008`). The control plane's link refuses audio
 past one frame itself, as `WA_006`, before it is sent (a larger frame would
 close the host's link); the bot reads either as `WHATSAPP_008`.
 

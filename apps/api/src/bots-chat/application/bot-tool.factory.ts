@@ -123,6 +123,15 @@ export interface BotSubagentRunner {
   ): Promise<BotSubagentRun[]>;
 }
 
+/**
+ * Whether the call's turn answers in a channel's chat (WhatsApp, Telegram)
+ * rather than the console's: there the chat draws none of the call's data
+ * (a session's button), only the words the bot writes.
+ */
+export function inChannel(context: BotToolCallContext): boolean {
+  return context.conversationId !== context.botId;
+}
+
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
 export interface BotToolContext extends BotToolCallContext {
   approvals: BotApprovalRequesterPort;

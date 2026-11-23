@@ -171,22 +171,15 @@ describe('useSessions', () => {
  */
 describe('a deleted session', () => {
   const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
-  const resolved = { id: 'c-1', isProvisioning: false, isResolved: true } as SessionEntity;
 
   function closing(findAll: ReturnType<typeof vi.fn>) {
     const close = vi.fn().mockResolvedValue(live);
-    const { wrapper } = setup({ findAll, close });
+    const { wrapper, queryClient } = setup({ findAll, close });
     const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
       wrapper,
     });
-    return { result, close };
+    return { result, close, queryClient };
   }
-
-  it('is not listed once resolved', async () => {
-    const { wrapper } = setup({ findAll: vi.fn().mockResolvedValue([resolved]) });
-    const { result } = renderHook(() => useSessions(), { wrapper });
-    await waitFor(() => expect(result.current.data).toEqual([]));
-  });
 
   it('leaves the list on the click, before the API or the host has answered', async () => {
     const findAll = vi.fn().mockResolvedValue([live]);
@@ -204,14 +197,20 @@ describe('a deleted session', () => {
     expect(result.current.list.data).toEqual([]);
   }, 10_000);
 
+  /**
+   * The API leaves a resolved session out of the list, so its row going is
+   * what says the host resolved it, and the session's own detail is read again
+   * for a screen that still has it open: no list row writes it any more.
+   */
   it('is read again until its host has resolved it, then the reads stop', async () => {
     const findAll = vi
       .fn()
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
-      .mockResolvedValue([resolved]);
-    const { result } = closing(findAll);
+      .mockResolvedValue([]);
+    const { result, queryClient } = closing(findAll);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     await waitFor(() => expect(result.current.list.data).toHaveLength(1));
 
     result.current.close.mutate({ id: 'c-1' });
@@ -222,6 +221,7 @@ describe('a deleted session', () => {
     await pause(2_500);
     expect(findAll).toHaveBeenCalledTimes(reads);
     expect(result.current.list.data).toEqual([]);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: sessionsKeys.detail('c-1') });
   }, 15_000);
 
   it('comes back, and is not watched, when the close is refused', async () => {
@@ -319,7 +319,7 @@ describe('a deleted session', () => {
       .fn()
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
-      .mockResolvedValue([resolved]);
+      .mockResolvedValue([]);
     const close = vi.fn().mockResolvedValue(live);
     const { wrapper } = setup({ findAll, close });
     const { result } = renderHook(

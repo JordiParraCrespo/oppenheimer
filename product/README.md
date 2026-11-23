@@ -1853,6 +1853,14 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `versions/mvp/02-runner.md` ("Close") ended a session with `tmux
+  kill-session` and took its hangup to end the agent. On 2026-11-21 one
+  host ran out of memory with ~110 agents of closed sessions still
+  running, because Claude Code ignored the hangup: the `pty` wrapper now
+  kills its program's group 10 s after the hangup, closing a session
+  confirms its processes are gone, and the daemon ends any agent left by
+  a session that is over every 5 minutes. Nothing changed about tmux
+  sessions it does not recognise (still reported, not reaped).
 - `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
   bot in a group only when a message @-mentioned the number or replied to
   it, and listed only the chats a number had seen a message in. On

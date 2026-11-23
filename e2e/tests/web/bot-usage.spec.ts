@@ -32,7 +32,7 @@ test('the /usage command opens the usage card and sends nothing', async ({ page 
 
   await signInAs(page, owner.user);
   await page.goto(`/bots/${bot.id}`);
-  const composer = page.getByPlaceholder('Message Juno');
+  const composer = page.getByRole('textbox', { name: 'Message Juno' });
   await composer.fill('/us');
   const menu = page.getByRole('listbox', { name: 'Commands and skills you can run' });
   await expect(menu.getByRole('option', { name: 'Use /usage' })).toBeVisible();

@@ -58,6 +58,7 @@ import { BotRuleReviewerFactory } from './application/bot-rule-reviewer.factory'
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSentTurnResolver } from './application/bot-sent-turn.resolver';
 import { BotSessionFileToolsFactory } from './application/bot-session-file-tools.factory';
+import { BotSessionLinkResolver } from './application/bot-session-link.resolver';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotSessionWaitResolver } from './application/bot-session-wait.resolver';
 import { BotSessionWakeResolver } from './application/bot-session-wake.resolver';
@@ -159,6 +160,9 @@ import { DismissBotQuestionCommandHandler } from './commands/dismiss-bot-questio
 import { DismissBotQuestionHttpController } from './commands/dismiss-bot-question/dismiss-bot-question.http.controller';
 import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
+import { ReactAsBotCommandHandler } from './commands/react-as-bot/react-as-bot.command-handler';
+import { ReactToBotMessageCommandHandler } from './commands/react-to-bot-message/react-to-bot-message.command-handler';
+import { ReactToBotMessageHttpController } from './commands/react-to-bot-message/react-to-bot-message.http.controller';
 import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
 import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
 import { ResumeBotGoalCommandHandler } from './commands/resume-bot-goal/resume-bot-goal.command-handler';
@@ -295,6 +299,7 @@ const httpControllers = [
   FindPendingBotQuestionHttpController,
   AnswerBotQuestionHttpController,
   DismissBotQuestionHttpController,
+  ReactToBotMessageHttpController,
   FindBotPermissionsHttpController,
   SetBotToolDecisionHttpController,
   CreateBotPermissionRuleHttpController,
@@ -314,6 +319,8 @@ const commandHandlers: Provider[] = [
   DecideBotApprovalCommandHandler,
   AnswerBotQuestionCommandHandler,
   DismissBotQuestionCommandHandler,
+  ReactToBotMessageCommandHandler,
+  ReactAsBotCommandHandler,
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
   DreamBotMemoryCommandHandler,
@@ -472,6 +479,7 @@ const queryHandlers: Provider[] = [
     BotPullRequestWatchResolver,
     BotPlanWatchResolver,
     BotSessionWakeResolver,
+    BotSessionLinkResolver,
     BotSessionWaitResolver,
     BotSubscriptionSubjectResolver,
     BotWatchToolsFactory,

@@ -88,6 +88,8 @@ export class BotMessageMapper
     record.event = entity.event ? { ...entity.event } : null;
     record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
     record.pendingMedia = entity.pendingMedia ? { kind: entity.pendingMedia.kind } : null;
+    record.reaction = entity.reaction;
+    record.botReaction = entity.botReaction;
     return record;
   }
 
@@ -108,6 +110,8 @@ export class BotMessageMapper
         event: toEvent(record.event),
         attachments: (record.attachments ?? []).flatMap(toAttachment),
         pendingMedia: toPendingMedia(record.pendingMedia),
+        reaction: record.reaction ?? null,
+        botReaction: record.botReaction ?? null,
       },
     });
   }
@@ -131,6 +135,8 @@ export class BotMessageMapper
       rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
+    dto.reaction = entity.reaction;
+    dto.botReaction = entity.botReaction;
     dto.attachments = entity.attachments.map((attachment) =>
       Object.assign(new BotAttachmentResponseDto(), attachment),
     );

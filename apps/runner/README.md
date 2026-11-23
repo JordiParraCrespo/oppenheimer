@@ -15,7 +15,10 @@ sessions — a git worktree plus a tmux session with the agent in window 0,
 tabs as further windows, a screen classifier for the sidebar dot, and a close
 that pushes the branch and removes the worktree. The agent runs under
 `runner pty`, which answers its OSC 7501 probe, so an agent that reports its
-own status (Claude Code) is read from that first and the screen second. An
+own status (Claude Code) is read from that first and the screen second.
+Ending a session ends its agent: hung up, given 10 s to save its
+conversation, then killed with its process group, and the daemon ends
+any agent still running for a closed or stopped session every 5 minutes. An
 agent in a session can start, tell and wait on other agents as child
 sessions (`runner --skill`), and a session marked kept comes back on its own
 after a reboot (`product/research/lessons-from-herdr.md` §4).
