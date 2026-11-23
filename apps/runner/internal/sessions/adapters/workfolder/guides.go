@@ -28,11 +28,16 @@ const (
 // somebody else's and is never overwritten.
 const guideHeader = "<!-- Written by the Oppenheimer runner and rewritten whenever a workspace or session changes: edits here are lost. -->"
 
-// level is one directory the guides describe.
-type level struct {
-	dir    string
+// guides is one directory's two files; an empty one is not written.
+type guides struct {
 	readme string
 	agents string
+}
+
+// level is one directory the guides describe.
+type level struct {
+	dir string
+	guides
 }
 
 // workspaceInfo and sessionInfo are what the walk found, read off the markers.
@@ -67,32 +72,17 @@ func (f *Folder) WriteGuides() {
 		return
 	}
 	accounts := f.scan()
-	levels := []level{{dir: root, readme: rootReadme(accounts), agents: rootAgents()}}
+	levels := []level{{root, rootGuides(accounts)}}
 	for _, account := range accounts {
-		levels = append(levels, level{
-			dir: f.layout.Account(account.id), readme: accountReadme(account), agents: accountAgents(account),
-		})
+		levels = append(levels, level{f.layout.Account(account.id), accountGuides(account)})
 		for _, ws := range account.workspaces {
 			levels = append(levels,
-				level{dir: f.layout.Workspace(ws.tenant), readme: workspaceReadme(ws), agents: workspaceAgents(ws)},
-				level{dir: f.layout.Repos(ws.tenant), readme: reposReadme(ws), agents: reposAgents(ws)},
-				level{dir: f.layout.Sessions(ws.tenant), readme: sessionsReadme(ws), agents: sessionsAgents(ws)},
+				level{f.layout.Workspace(ws.tenant), workspaceGuides(ws)},
+				level{f.layout.Repos(ws.tenant), reposGuides(ws)},
+				level{f.layout.Sessions(ws.tenant), sessionsGuides(ws)},
 			)
 			for _, session := range ws.sessions {
-				dir := f.layout.Session(ws.tenant, session.slug)
-				l := level{dir: dir, readme: sessionReadme(ws, session), agents: sessionAgents(ws, session)}
-				// A checkout may be named like a guide, and is made after
-				// the guides are: that guide is left out, so the worktree
-				// finds its path free.
-				for _, checkout := range session.meta.Checkouts {
-					switch {
-					case strings.EqualFold(checkout.Directory, GuideReadme):
-						l.readme = ""
-					case strings.EqualFold(checkout.Directory, GuideAgents):
-						l.agents = ""
-					}
-				}
-				levels = append(levels, l)
+				levels = append(levels, level{f.layout.Session(ws.tenant, session.slug), sessionGuides(ws, session)})
 			}
 		}
 	}
@@ -180,25 +170,22 @@ func ours(data []byte) bool {
 	return string(line) == guideHeader
 }
 
-// The guides' text. Names come from the control plane and are only ever
-// printed, never followed.
+// The guides' text, one function per level. Names come from the control
+// plane and are only ever printed, never followed.
 
-func rootReadme(accounts []accountInfo) string {
+func rootGuides(accounts []accountInfo) guides {
 	var b strings.Builder
-	b.WriteString("# Oppenheimer work folder\n\n")
 	b.WriteString("The Oppenheimer runner on this host keeps your workspaces here: each one's repositories, ")
 	b.WriteString("and a folder per session with the checkout its agent works in. The runner's own files ")
 	b.WriteString("(identity, binaries, logs) are in `~/.oppenheimer`, not here.\n\n")
 	b.WriteString("## Workspaces\n\n")
-	if count := countWorkspaces(accounts); count == 0 {
+	if countWorkspaces(accounts) == 0 {
 		b.WriteString("None yet. A workspace's folder is made with its first session.\n\n")
 	} else {
-		b.WriteString("| Workspace | Folder | Sessions |\n| --- | --- | --- |\n")
+		b.WriteString(workspaceTableHead)
 		for _, account := range accounts {
 			for _, ws := range account.workspaces {
-				path := ws.tenant.Account + "/" + ws.tenant.Workspace
-				fmt.Fprintf(&b, "| %s | [`%s/`](%s/README.md) | %d |\n",
-					cell(workspaceName(ws)), path, path, len(ws.sessions))
+				b.WriteString(workspaceRow(ws, ws.tenant.Account+"/"+ws.tenant.Workspace))
 			}
 		}
 		b.WriteString("\n")
@@ -215,41 +202,35 @@ func rootReadme(accounts []accountInfo) string {
 	b.WriteString("Every folder is named by an id that never changes; its README.md says what it is. ")
 	b.WriteString("`.oppenheimer/meta.json` in a folder is its marker: it says what the folder is and whose, ")
 	b.WriteString("and only a folder whose marker names the session being closed is ever deleted. ")
-	b.WriteString("Names end in `.noindex` so Spotlight does not index the checkouts.\n")
-	return b.String()
+	b.WriteString("Names end in `.noindex` so Spotlight does not index the checkouts.")
+	return guides{
+		readme: readmeGuide("Oppenheimer work folder", b.String()),
+		agents: agentsGuide("the Oppenheimer work folder",
+			"This directory is the work folder of the Oppenheimer runner: every workspace's repositories "+
+				"and every session's checkout on this host. README.md beside this file lists the workspaces."),
+	}
 }
 
-func rootAgents() string {
-	return "# AGENTS.md: the Oppenheimer work folder\n\n" +
-		"This directory is the work folder of the Oppenheimer runner: every workspace's repositories " +
-		"and every session's checkout on this host. README.md beside this file lists the workspaces.\n\n" +
-		agentRules
-}
-
-func accountReadme(account accountInfo) string {
+func accountGuides(account accountInfo) guides {
 	var b strings.Builder
-	fmt.Fprintf(&b, "# Account `%s`\n\n", account.id)
 	if account.id == domain.LocalID {
 		b.WriteString("The sessions made from this host's own CLI, which no control plane has given an account.\n\n")
 	}
-	b.WriteString("| Workspace | Folder | Sessions |\n| --- | --- | --- |\n")
+	b.WriteString(workspaceTableHead)
 	for _, ws := range account.workspaces {
-		fmt.Fprintf(&b, "| %s | [`%s/`](%s/README.md) | %d |\n",
-			cell(workspaceName(ws)), ws.tenant.Workspace, ws.tenant.Workspace, len(ws.sessions))
+		b.WriteString(workspaceRow(ws, ws.tenant.Workspace))
 	}
-	b.WriteString("\nUp: [the work folder](../README.md)\n")
-	return b.String()
+	title := fmt.Sprintf("account `%s`", account.id)
+	return guides{
+		readme: readmeGuide("Account `"+account.id+"`", b.String(), up{"the work folder", "../README.md"}),
+		agents: agentsGuide(title, "One account's workspaces, one folder each, named by the workspace's id. "+
+			"README.md beside this file says which is which."),
+	}
 }
 
-func accountAgents(account accountInfo) string {
-	return fmt.Sprintf("# AGENTS.md: account `%s`\n\n", account.id) +
-		"One account's workspaces, one folder each, named by the workspace's id. README.md beside this file " +
-		"says which is which.\n\n" + agentRules
-}
-
-func workspaceReadme(ws workspaceInfo) string {
+func workspaceGuides(ws workspaceInfo) guides {
+	name := cell(workspaceName(ws))
 	var b strings.Builder
-	fmt.Fprintf(&b, "# Workspace %s\n\n", cell(workspaceName(ws)))
 	fmt.Fprintf(&b, "Account `%s` · workspace `%s`", ws.tenant.Account, ws.tenant.Workspace)
 	if ws.slug != "" {
 		fmt.Fprintf(&b, " · slug `%s`", ws.slug)
@@ -259,51 +240,51 @@ func workspaceReadme(ws workspaceInfo) string {
 	b.WriteString("- [`sessions.noindex/`](sessions.noindex/README.md): one folder per session\n\n")
 	b.WriteString("## Sessions\n\n")
 	b.WriteString(sessionTable(ws, "sessions.noindex/"))
-	b.WriteString("\nUp: [the account](../README.md) · [the work folder](../../README.md)\n")
-	return b.String()
+	return guides{
+		readme: readmeGuide("Workspace "+name, b.String(),
+			up{"the account", "../README.md"}, up{"the work folder", "../../README.md"}),
+		agents: agentsGuide("workspace "+name,
+			"`repos.noindex/` holds this workspace's bare git stores; `sessions.noindex/` holds one folder per "+
+				"session, and each session's checkout is inside its folder. README.md beside this file lists the sessions."),
+	}
 }
 
-func workspaceAgents(ws workspaceInfo) string {
-	return fmt.Sprintf("# AGENTS.md: workspace %s\n\n", cell(workspaceName(ws))) +
-		"`repos.noindex/` holds this workspace's bare git stores; `sessions.noindex/` holds one folder per " +
-		"session, and each session's checkout is inside its folder. README.md beside this file lists the sessions.\n\n" +
-		agentRules
+func reposGuides(ws workspaceInfo) guides {
+	title := "repositories of " + cell(workspaceName(ws))
+	return guides{
+		readme: readmeGuide("Repositories of "+cell(workspaceName(ws)),
+			"One bare git store per repository, `<owner>--<repo>.git`, cloned once and fetched before each "+
+				"session is made; every session's checkout is a worktree of one of them. `.spares/` holds a worktree "+
+				"made ahead of time, which the next session over that repository takes.\n\n"+
+				"The runner manages everything here: there is no working copy to edit. Your work is in each "+
+				"session's checkout, under [`../sessions.noindex/`](../sessions.noindex/README.md).",
+			up{"the workspace", "../README.md"}),
+		agents: agentsGuide(title, "Bare git stores and spare worktrees the runner manages. Do not edit, fetch into "+
+			"or delete anything here: work in your session's checkout, which is a worktree of one of these stores."),
+	}
 }
 
-func reposReadme(ws workspaceInfo) string {
-	return fmt.Sprintf("# Repositories of %s\n\n", cell(workspaceName(ws))) +
-		"One bare git store per repository, `<owner>--<repo>.git`, cloned once and fetched before each " +
-		"session is made; every session's checkout is a worktree of one of them. `.spares/` holds a worktree " +
-		"made ahead of time, which the next session over that repository takes.\n\n" +
-		"The runner manages everything here: there is no working copy to edit. Your work is in each " +
-		"session's checkout, under [`../sessions.noindex/`](../sessions.noindex/README.md).\n\n" +
-		"Up: [the workspace](../README.md)\n"
+func sessionsGuides(ws workspaceInfo) guides {
+	name := cell(workspaceName(ws))
+	return guides{
+		readme: readmeGuide("Sessions of "+name,
+			"One folder per session, named by the session's slug. Each holds its checkouts; "+
+				"the folder and everything in it is deleted when the session is closed.\n\n"+sessionTable(ws, ""),
+			up{"the workspace", "../README.md"}),
+		agents: agentsGuide("sessions of "+name, "One folder per session. Yours is the one whose checkout you were "+
+			"started in; every other one belongs to another session, which may be working in it right now."),
+	}
 }
 
-func reposAgents(ws workspaceInfo) string {
-	return fmt.Sprintf("# AGENTS.md: repositories of %s\n\n", cell(workspaceName(ws))) +
-		"Bare git stores and spare worktrees the runner manages. Do not edit, fetch into or delete anything " +
-		"here: work in your session's checkout, which is a worktree of one of these stores.\n\n" + agentRules
-}
-
-func sessionsReadme(ws workspaceInfo) string {
-	return fmt.Sprintf("# Sessions of %s\n\n", cell(workspaceName(ws))) +
-		"One folder per session, named by the session's slug. Each holds its checkouts; " +
-		"the folder and everything in it is deleted when the session is closed.\n\n" +
-		sessionTable(ws, "") + "\nUp: [the workspace](../README.md)\n"
-}
-
-func sessionsAgents(ws workspaceInfo) string {
-	return fmt.Sprintf("# AGENTS.md: sessions of %s\n\n", cell(workspaceName(ws))) +
-		"One folder per session. Yours is the one whose checkout you were started in; every other one " +
-		"belongs to another session, which may be working in it right now.\n\n" + agentRules
-}
-
-func sessionReadme(ws workspaceInfo, session sessionInfo) string {
+// sessionGuides leaves out a guide whose name a checkout takes, in any case
+// (a Mac's disk does not tell them apart): the worktree is made after the
+// guides, and must find its path free.
+func sessionGuides(ws workspaceInfo, session sessionInfo) guides {
 	m := session.meta
+	name, wsName := cell(sessionName(session)), cell(workspaceName(ws))
+
 	var b strings.Builder
-	fmt.Fprintf(&b, "# Session %s\n\n", cell(sessionName(session)))
-	fmt.Fprintf(&b, "Workspace %s · session `%s`", cell(workspaceName(ws)), m.ID)
+	fmt.Fprintf(&b, "Workspace %s · session `%s`", wsName, m.ID)
 	if m.Agent != "" {
 		fmt.Fprintf(&b, " · agent `%s`", m.Agent)
 	}
@@ -321,30 +302,65 @@ func sessionReadme(ws workspaceInfo, session sessionInfo) string {
 		}
 		b.WriteString("\nThe agent works in the checkout; each one is a git worktree on the session's branch. ")
 	}
-	b.WriteString("Closing the session deletes this folder.\n\n")
-	b.WriteString("Up: [the sessions](../README.md) · [the workspace](../../README.md)\n")
-	return b.String()
-}
+	b.WriteString("Closing the session deletes this folder.")
 
-func sessionAgents(ws workspaceInfo, session sessionInfo) string {
-	m := session.meta
-	var b strings.Builder
-	fmt.Fprintf(&b, "# AGENTS.md: session %s\n\n", cell(sessionName(session)))
-	fmt.Fprintf(&b, "The folder of session `%s` in workspace %s.", m.ID, cell(workspaceName(ws)))
+	var a strings.Builder
+	fmt.Fprintf(&a, "The folder of session `%s` in workspace %s.", m.ID, wsName)
 	if len(m.Checkouts) > 0 {
 		dirs := make([]string, 0, len(m.Checkouts))
 		for _, checkout := range m.Checkouts {
 			dirs = append(dirs, "`"+checkout.Directory+"/` ("+cell(checkout.Repo)+")")
 		}
-		fmt.Fprintf(&b, " Its code is in %s", strings.Join(dirs, ", "))
+		fmt.Fprintf(&a, " Its code is in %s", strings.Join(dirs, ", "))
 		if m.Branch != "" {
-			fmt.Fprintf(&b, ", on branch `%s`", m.Branch)
+			fmt.Fprintf(&a, ", on branch `%s`", m.Branch)
 		}
-		b.WriteString(".")
+		a.WriteString(".")
 	}
-	b.WriteString(" Everything here is deleted when the session is closed: anything worth keeping is committed and pushed.\n\n")
-	b.WriteString(agentRules)
-	return b.String()
+	a.WriteString(" Everything here is deleted when the session is closed: anything worth keeping is committed and pushed.")
+
+	g := guides{
+		readme: readmeGuide("Session "+name, b.String(),
+			up{"the sessions", "../README.md"}, up{"the workspace", "../../README.md"}),
+		agents: agentsGuide("session "+name, a.String()),
+	}
+	for _, checkout := range m.Checkouts {
+		switch {
+		case strings.EqualFold(checkout.Directory, GuideReadme):
+			g.readme = ""
+		case strings.EqualFold(checkout.Directory, GuideAgents):
+			g.agents = ""
+		}
+	}
+	return g
+}
+
+// up is a link from a README.md to one above it.
+type up struct{ label, path string }
+
+// readmeGuide is every README.md: its title, its body, and the links up.
+func readmeGuide(title, body string, ups ...up) string {
+	text := "# " + title + "\n\n" + strings.TrimRight(body, "\n") + "\n"
+	if len(ups) > 0 {
+		links := make([]string, 0, len(ups))
+		for _, u := range ups {
+			links = append(links, "["+u.label+"]("+u.path+")")
+		}
+		text += "\nUp: " + strings.Join(links, " · ") + "\n"
+	}
+	return text
+}
+
+// agentsGuide is every AGENTS.md: where the agent is, then the rules.
+func agentsGuide(title, body string) string {
+	return "# AGENTS.md: " + title + "\n\n" + body + "\n\n" + agentRules
+}
+
+const workspaceTableHead = "| Workspace | Folder | Sessions |\n| --- | --- | --- |\n"
+
+// workspaceRow is a workspace's row in a table of them, linked at path.
+func workspaceRow(ws workspaceInfo, path string) string {
+	return fmt.Sprintf("| %s | [`%s/`](%s/README.md) | %d |\n", cell(workspaceName(ws)), path, path, len(ws.sessions))
 }
 
 // agentRules closes every AGENTS.md.
