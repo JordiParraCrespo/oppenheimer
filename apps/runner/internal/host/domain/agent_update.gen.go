@@ -14,4 +14,5 @@ var agentUpdates = map[string][]string{
 	"pi":       {"update", "--self"},
 	"omp":      {"update"},
 	"fx":       {"upgrade"},
+	"hermes":   {"update", "--yes"},
 }

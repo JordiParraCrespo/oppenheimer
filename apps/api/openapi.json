@@ -9793,6 +9793,7 @@
                 "antigravity",
                 "zcode",
                 "fx",
+                "hermes",
                 "shell"
               ],
               "type": "string"
@@ -15302,6 +15303,272 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/routines/{routineId}/webhook": {
+      "post": {
+        "description": "A new URL for a routine that has a webhook trigger, replacing the one it had, which stops working at once. With `signed`, also a new signing secret every request must be signed with. The URL and the secret are answered this once; only the start of the token is shown afterwards.",
+        "operationId": "issueRoutineWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueRoutineWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedRoutineWebhookResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "AUTOMATIONS_014 — The routine has no webhook trigger",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AUTOMATIONS_015 — Signing is not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issue a routine’s webhook URL",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "delete": {
+        "description": "Posts to it are refused from now on. The routine keeps its webhook trigger; issue a new URL to use it again.",
+        "operationId": "revokeRoutineWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a routine’s webhook URL",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/routine-webhooks/{token}": {
+      "post": {
+        "description": "Runs the routine the URL belongs to: one turn of its bot, which reads the body as outside data, never as instructions. Answers at once with the run, without waiting for the bot. Any content type; the first 16 KiB of the body are kept with the run. A signed URL takes only a request whose `x-oppenheimer-signature` is `t=<unix seconds>,v1=<hex HMAC-SHA256 of \"<t>.<body>\">` under its signing secret, within five minutes of now.",
+        "operationId": "receiveRoutineWebhook",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The token the Routines tab issued, `owh_…`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retried POST with the same key is the same run.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-oppenheimer-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineWebhookReceivedResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTOMATIONS_011 — Bad signature",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_010 — No such webhook",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTOMATIONS_013 — Routine paused",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "AUTOMATIONS_012 — Body too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "none": []
+          }
+        ],
+        "summary": "Post to a routine’s webhook",
+        "tags": [
+          "Routine webhooks"
+        ]
+      }
+    },
     "/api/v1/events": {
       "get": {
         "description": "Server-Sent Events. A `ready` event once the stream is subscribed, then one `change` event per change the caller may read, whose data is `{ type, id, … }` (`@oppenheimer/shared/workspace-events`): an invalidation, never the row, so the client re-reads it through its own endpoint. A `keepalive` event keeps an idle stream under proxy timeouts, and the API ends a stream after a while so the redial is authenticated again.",
@@ -19213,6 +19480,383 @@
         "summary": "Disconnect a Telegram bot",
         "tags": [
           "Telegram"
+        ]
+      }
+    },
+    "/api/v1/slack/accounts": {
+      "get": {
+        "description": "Each connected app, the bot it is and the Slack workspace it is in. Never a token.",
+        "operationId": "findSlackAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SlackAccountResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List your bots’ Slack apps",
+        "tags": [
+          "Slack"
+        ]
+      },
+      "post": {
+        "description": "Slack is asked whose the bot token is first; a token it refuses is not stored. The token and the signing secret are sealed, replace the bot’s earlier ones, and are never returned. The app answers only its owner, once they send it the code of `POST /slack/accounts/{id}/owner-link`.",
+        "operationId": "connectSlack",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectSlackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackAccountResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SLACK_002 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SLACK_005 — That Slack app already answers as another bot",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SLACK_004 — Slack refused the bot token",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "SLACK_007 — Slack's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "SLACK_006 — Slack did not answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SLACK_003 — Slack is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a bot’s own Slack app",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
+    "/api/v1/slack/bots/{botId}/app": {
+      "get": {
+        "description": "The address Slack sends the bot’s events to, its app manifest (the bot’s name, the scopes and events it needs), and the link that opens Slack’s \"Create an app\" with the manifest filled in.",
+        "operationId": "findSlackAppSetup",
+        "parameters": [
+          {
+            "name": "botId",
+            "required": true,
+            "in": "path",
+            "description": "One of the caller’s bots.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackAppSetupResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of yours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SLACK_003 — Slack is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "What creating a bot’s Slack app takes",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
+    "/api/v1/slack/accounts/{id}/owner-link": {
+      "post": {
+        "description": "Answers the message to send the bot’s Slack app in its DM, with a one-time code, and a link that opens that DM. Whoever sends it within ten minutes is recorded as the owner: the only Slack user the bot answers. A new code replaces an open one; it is stored hashed, so only this answer carries it.",
+        "operationId": "openSlackOwnerLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Slack app.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackOwnerLinkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SLACK_001 — No such Slack app",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a one-time code that records the owner",
+        "tags": [
+          "Slack"
+        ]
+      }
+    },
+    "/api/v1/slack/accounts/{id}": {
+      "delete": {
+        "description": "Forgets the app’s token and signing secret, so the bot stops answering in Slack. The app stays in Slack: delete it there to end it. An id that is not one of the caller’s does nothing.",
+        "operationId": "removeSlackAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The connected Slack app.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a bot’s Slack app",
+        "tags": [
+          "Slack"
         ]
       }
     },
@@ -27771,6 +28415,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -27834,6 +28480,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -27939,6 +28587,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -28068,6 +28718,8 @@
               "whatsapp:write",
               "telegram:read",
               "telegram:write",
+              "slack:read",
+              "slack:write",
               "cloud-agents:read",
               "cloud-agents:write",
               "pulls:read",
@@ -28148,6 +28800,7 @@
               "mail",
               "whatsapp",
               "telegram",
+              "slack",
               "cloud-agents",
               "pulls",
               "repositories",
@@ -28242,6 +28895,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -28319,6 +28974,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -28431,6 +29088,8 @@
                 "whatsapp:write",
                 "telegram:read",
                 "telegram:write",
+                "slack:read",
+                "slack:write",
                 "cloud-agents:read",
                 "cloud-agents:write",
                 "pulls:read",
@@ -31527,6 +32186,7 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
               "shell",
               null
             ],
@@ -31615,6 +32275,7 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
               "shell",
               null
             ],
@@ -31683,6 +32344,7 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
               "shell",
               null
             ],
@@ -32223,6 +32885,7 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
               "shell",
               "cursor"
             ],
@@ -32493,6 +33156,7 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
               "shell"
             ]
           },
@@ -33848,7 +34512,8 @@
               "omp",
               "antigravity",
               "zcode",
-              "fx"
+              "fx",
+              "hermes"
             ]
           },
           "prompt": {
@@ -34120,7 +34785,8 @@
               "daily",
               "weekdays",
               "weekly",
-              "monthly"
+              "monthly",
+              "cron"
             ]
           },
           "hour": {
@@ -34148,6 +34814,11 @@
           "date": {
             "type": "string",
             "description": "Once: the local date, `YYYY-MM-DD`."
+          },
+          "expression": {
+            "type": "string",
+            "description": "Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.",
+            "example": "*/15 9-17 * * 1-5"
           },
           "timezone": {
             "type": "string",
@@ -34197,7 +34868,8 @@
             "enum": [
               "schedule",
               "github",
-              "gmail"
+              "gmail",
+              "webhook"
             ]
           },
           "event": {
@@ -34217,9 +34889,10 @@
               "release",
               "check_passed",
               "review",
-              "mail_received"
+              "mail_received",
+              "webhook_received"
             ],
-            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
+            "description": "`schedule`, `webhook_received`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
           },
           "schedule": {
             "$ref": "#/components/schemas/ScheduleResponseDto"
@@ -34424,6 +35097,35 @@
           "updatedAt"
         ]
       },
+      "RoutineWebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "tokenPrefix": {
+            "type": "string",
+            "example": "owh_ab12cd",
+            "description": "The start of the URL’s token."
+          },
+          "signed": {
+            "type": "boolean",
+            "description": "Whether a request must carry a signature."
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the current URL was issued."
+          },
+          "lastReceivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "tokenPrefix",
+          "signed",
+          "issuedAt"
+        ]
+      },
       "BotRoutineResponseDto": {
         "type": "object",
         "properties": {
@@ -34485,6 +35187,16 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
+              }
+            ]
+          },
+          "webhook": {
+            "nullable": true,
+            "description": "Its webhook URL, once one is issued; null without one. Only a routine with a webhook trigger can have one.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoutineWebhookResponseDto"
               }
             ]
           },
@@ -34580,7 +35292,8 @@
                         "daily",
                         "weekdays",
                         "weekly",
-                        "monthly"
+                        "monthly",
+                        "cron"
                       ]
                     },
                     "hour": {
@@ -34619,6 +35332,11 @@
                     "date": {
                       "type": "string",
                       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "expression": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
                     },
                     "timezone": {
                       "type": "string",
@@ -34748,6 +35466,27 @@
                     "event",
                     "connectionId"
                   ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "webhook"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "webhook_received"
+                      ],
+                      "default": "webhook_received"
+                    }
+                  },
+                  "required": [
+                    "source"
+                  ]
                 }
               ]
             }
@@ -34771,6 +35510,7 @@
                   "antigravity",
                   "zcode",
                   "fx",
+                  "hermes",
                   "shell"
                 ]
               },
@@ -35066,7 +35806,8 @@
                         "daily",
                         "weekdays",
                         "weekly",
-                        "monthly"
+                        "monthly",
+                        "cron"
                       ]
                     },
                     "hour": {
@@ -35105,6 +35846,11 @@
                     "date": {
                       "type": "string",
                       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "expression": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
                     },
                     "timezone": {
                       "type": "string",
@@ -35234,6 +35980,27 @@
                     "event",
                     "connectionId"
                   ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "webhook"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "webhook_received"
+                      ],
+                      "default": "webhook_received"
+                    }
+                  },
+                  "required": [
+                    "source"
+                  ]
                 }
               ]
             }
@@ -35257,6 +36024,7 @@
                   "antigravity",
                   "zcode",
                   "fx",
+                  "hermes",
                   "shell"
                 ]
               },
@@ -35805,6 +36573,94 @@
           }
         }
       },
+      "IssueRoutineWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "signed": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "IssuedRoutineWebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "tokenPrefix": {
+            "type": "string",
+            "example": "owh_ab12cd",
+            "description": "The start of the URL’s token."
+          },
+          "signed": {
+            "type": "boolean",
+            "description": "Whether a request must carry a signature."
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the current URL was issued."
+          },
+          "lastReceivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "example": "https://api.example.com/api/v1/routine-webhooks/owh_…"
+          },
+          "signingSecret": {
+            "type": "string",
+            "nullable": true,
+            "description": "The signing secret, when one was asked for. Not shown again."
+          }
+        },
+        "required": [
+          "tokenPrefix",
+          "signed",
+          "issuedAt",
+          "url"
+        ]
+      },
+      "RoutineWebhookReceivedResponseDto": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "skipped",
+              "duplicate"
+            ],
+            "description": "`queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run."
+          },
+          "skipReason": {
+            "type": "string",
+            "enum": [
+              "paused",
+              "deleted",
+              "own_event",
+              "automation_rate_limited",
+              "workspace_rate_limited",
+              "overlapping",
+              "missed",
+              "not_launchable",
+              "agent_unavailable",
+              "unattended",
+              "idle",
+              null
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "runId",
+          "status"
+        ]
+      },
       "TaskSessionLinkResponseDto": {
         "type": "object",
         "properties": {
@@ -36148,6 +37004,7 @@
                   "antigravity",
                   "zcode",
                   "fx",
+                  "hermes",
                   "shell"
                 ]
               },
@@ -37645,6 +38502,152 @@
         },
         "required": [
           "answeringBotId"
+        ]
+      },
+      "SlackAccountResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The Oppenheimer bot the app is."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "revoked"
+            ],
+            "description": "`connected` answers; `revoked` is a token Slack refused (the app was uninstalled, or the token rotated), until it is connected again."
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why it is revoked, in Slack’s words."
+          },
+          "teamId": {
+            "type": "string",
+            "example": "T0123ABCD",
+            "description": "The Slack workspace the app is installed in."
+          },
+          "teamName": {
+            "type": "string",
+            "example": "Acme"
+          },
+          "botUserId": {
+            "type": "string",
+            "example": "U0123ABCD",
+            "description": "The app’s bot user."
+          },
+          "botName": {
+            "type": "string",
+            "example": "juno"
+          },
+          "tokenHint": {
+            "type": "string",
+            "example": "x9Qa",
+            "description": "The bot token’s last characters."
+          },
+          "ownerLinked": {
+            "type": "boolean",
+            "description": "Whether the owner’s Slack user is recorded, by the one-time `link` code."
+          },
+          "linkedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it was first connected."
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "status",
+          "statusReason",
+          "teamId",
+          "teamName",
+          "botUserId",
+          "botName",
+          "tokenHint",
+          "ownerLinked",
+          "linkedAt"
+        ]
+      },
+      "SlackAppSetupResponseDto": {
+        "type": "object",
+        "properties": {
+          "eventsUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://api.example.com/api/v1/slack/events?bot=9f1c…",
+            "description": "The address Slack sends the app’s events to: this bot’s."
+          },
+          "createUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Opens Slack’s \"Create an app\" with the manifest below filled in."
+          },
+          "manifest": {
+            "type": "string",
+            "description": "The app’s manifest, as JSON: its name, scopes and events."
+          }
+        },
+        "required": [
+          "eventsUrl",
+          "createUrl",
+          "manifest"
+        ]
+      },
+      "ConnectSlackRequest": {
+        "type": "object",
+        "properties": {
+          "botId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "botToken": {
+            "type": "string",
+            "maxLength": 260,
+            "pattern": "^xoxb-[A-Za-z0-9-]{20,250}$"
+          },
+          "signingSecret": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        "required": [
+          "botId",
+          "botToken",
+          "signingSecret"
+        ]
+      },
+      "SlackOwnerLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "link Q2xhdWRlIHdh",
+            "description": "What to send the app in its DM."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://slack.com/app_redirect?channel=U0123ABCD&team=T0123ABCD",
+            "description": "Opens the app’s direct messages in Slack."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the code stops working: ten minutes after it was made."
+          }
+        },
+        "required": [
+          "message",
+          "url",
+          "expiresAt"
         ]
       },
       "PullRequestLaneReasonDto": {

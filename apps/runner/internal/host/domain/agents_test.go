@@ -21,6 +21,7 @@ func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
 		{domain.ToolOmp, true},
 		// agy updates itself as it runs; the runner leaves it alone.
 		{domain.ToolAgy, false},
+		{domain.ToolHermes, true},
 		{domain.ToolGit, false},
 		{domain.ToolTmux, false},
 		{domain.ToolOpenCode, true},

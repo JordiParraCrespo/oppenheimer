@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -15,11 +16,36 @@ import (
 // session reads closed. A failure to look for it is not one to fail the
 // close on: EndStrayWrappers comes round again.
 func (s *Service) endTerminal(ctx context.Context, session domain.Session) error {
+	s.quitAgent(ctx, session)
 	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 		return err
 	}
 	_ = s.endSessions(ctx, map[string]bool{session.ID: true})
 	return nil
+}
+
+// quitGrace is how long an agent given lines to quit by has to act on them
+// before its terminal is ended: a turn to stop at its gateway, a chat to close.
+const quitGrace = 2 * time.Second
+
+// quitAgent types the agent's quit lines into window 0, each then its submit,
+// and gives it quitGrace: for an agent whose work outlives its terminal
+// (Hermes, whose turn runs at its gateway), ending the terminal would leave it
+// working. An agent with none is left to the kill. A line that cannot be typed
+// (the window is gone) ends the attempt; the kill still follows.
+func (s *Service) quitAgent(ctx context.Context, session domain.Session) {
+	input := session.Agent.Input()
+	if len(input.Quit) == 0 {
+		return
+	}
+	target := session.Target(0)
+	for _, line := range input.Quit {
+		if s.terminals.SendKeys(ctx, target, line) != nil || !sleep(ctx, input.PasteGap) ||
+			s.terminals.SendKeys(ctx, target, input.Submit) != nil {
+			return
+		}
+	}
+	sleep(ctx, quitGrace)
 }
 
 // endSessions ends every running wrapper of the sessions named.

@@ -24,7 +24,11 @@ import type { AutomationRunOrmEntity } from './database/automation-run.orm-entit
 import type { AutomationEntity } from './domain/automation.entity';
 import type { RunSessionLaunch } from './domain/automation.types';
 import type { RunReadModel } from './domain/automation-read.types';
-import { AutomationRunEntity, type RunCauseSummary } from './domain/automation-run.entity';
+import {
+  AutomationRunEntity,
+  type RunCauseSummary,
+  type RunWebhookPayload,
+} from './domain/automation-run.entity';
 import { AutomationErrors } from './domain/automations.errors';
 import type { RunCheckout, RunEventView } from './domain/run-launch.policy';
 import { AutomationRunSummaryResponseDto } from './dtos/automation.response.dto';
@@ -79,6 +83,7 @@ export class AutomationRunMapper {
         causeKey: record.causeKey,
         causeSummary: this.causeSummaryOf(record.causeSummary),
         inboundEventId: record.inboundEventId,
+        webhookPayload: this.webhookPayloadOf(record.webhookPayload),
         scheduledFor: date(record.scheduledFor),
         outcome: known<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, record.outcome, 'outcome'),
         skipReason: record.skipReason
@@ -113,6 +118,7 @@ export class AutomationRunMapper {
       causeKey: run.causeKey,
       causeSummary: { ...run.causeSummary },
       inboundEventId: run.inboundEventId,
+      webhookPayload: run.webhookPayload ? { ...run.webhookPayload } : null,
       scheduledFor: run.scheduledFor,
       outcome: run.outcome,
       skipReason: run.skipReason,
@@ -217,6 +223,33 @@ export class AutomationRunMapper {
       actorLogin: event.actor.login,
       attributes: event.attributes,
       context: event.context,
+    };
+  }
+
+  /** What was posted to a webhook, as the event its run's prompt carries. */
+  webhookEventViewOf(automation: AutomationEntity, payload: RunWebhookPayload): RunEventView {
+    return {
+      type: 'webhook_received',
+      source: 'webhook',
+      subjectRef: automation.id,
+      subjectName: automation.name,
+      actorLogin: null,
+      attributes: {},
+      context: {
+        ...(payload.contentType ? { contentType: payload.contentType } : {}),
+        body: payload.body,
+        ...(payload.bodyTruncated ? { bodyTruncated: true } : {}),
+      },
+    };
+  }
+
+  private webhookPayloadOf(value: unknown): RunWebhookPayload | null {
+    if (value === null || value === undefined) return null;
+    const payload = asRecord(value);
+    return {
+      contentType: optionalText(payload.contentType) ?? null,
+      body: typeof payload.body === 'string' ? payload.body : '',
+      bodyTruncated: payload.bodyTruncated === true,
     };
   }
 

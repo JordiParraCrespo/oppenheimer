@@ -403,6 +403,9 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (!this.isDeleted && this.props.triggers.length === 0) {
       throw new ArgumentInvalidException('Any trigger starts a run, and there is none');
     }
+    if (this.props.triggers.filter((trigger) => trigger.source === 'webhook').length > 1) {
+      throw new ArgumentInvalidException('A routine has one webhook, so one webhook trigger');
+    }
     if (target.kind === 'bot') {
       if (!target.botId) throw new ArgumentNotProvidedException('A routine belongs to a bot');
       return;
@@ -425,6 +428,16 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     for (const trigger of this.props.triggers) {
       if (trigger.source === 'gmail') {
         throw new ArgumentInvalidException('Mail starts a bot routine, not a session automation');
+      }
+      if (trigger.source === 'webhook') {
+        throw new ArgumentInvalidException(
+          'A webhook starts a bot routine, not a session automation',
+        );
+      }
+      if (trigger.source === 'schedule' && trigger.config.frequency === 'cron') {
+        throw new ArgumentInvalidException(
+          'A cron schedule is a bot routine’s, not a session automation’s',
+        );
       }
       if (trigger.source === 'schedule') continue;
       if (!trigger.config.repositories.every((id) => repositories.has(id))) {

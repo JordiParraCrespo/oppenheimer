@@ -13,6 +13,7 @@ type AgentId =
   | 'antigravity'
   | 'zcode'
   | 'fx'
+  | 'hermes'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -114,6 +115,16 @@ function AntigravityMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+/** Nous Research's Hermes, the bust its agent wears (Lobe Icons' `hermesagent.svg`). */
+function HermesMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden {...props}>
+      <path d="M6 12.8q0 0 .3.2v.1zm2.4-3.4h.7l.6.2h.1-.6L9 9.4l.6.1.8.5h.1l.1.1h.3q0 .2.1.1 0 .2-.3.2v.2q.1.2-.4.2v.1h-.1v.2H10v.1h-.3v.1H8.3Q8.2 11 8 11h.2l.5.1h.6q.5 0 .7-.4l.2-.2-.4-.3q0 .2-.2.2v.3l-.2.2h-.6l-.2-.2v-.2q-.2 0-.1-.4v-.1l-.4.4h-.2v-.2l.1-.4h-.2q.2-.3.6-.5M8 10.8z" />
+      <path clipRule="evenodd" d="M12 0h1.4l2.5.9a7 7 0 0 1 3 2.6l.7 1.5.7 1.7.4 2 .3 1.5.5 2.1 1.2 4.8V19q0 .6-.2 1.2l-1 1.6v.2l.6-.6q.6-.7 1-1.5a4 4 0 0 0 .3-1.7q0-.6-.3-1.2v-.1h.1l.3.4q.5.7.5 1.7a4 4 0 0 1-.5 2q-.5.9-1.5 1.4l-.6.3q-.2.2-.3.4v.6l-.2.1-.1-.1v-.2l-.4-.9-.7-1-1-.4-.6-.2h-.2l.5.2a4 4 0 0 1 2 1.6l.2.5v.6h-.1l-.1-.2-.1-.2-1.4-1.7-.6-.3-1.1-.2h-.6l-.8.4-.8.7-1 1-.3.6v.1h-.4v-.4q0-.5.4-1l.1.1 1-1.1.9-.6h-.1l-.5.2q-.6.1-1.1.5l-.4.4-1 1.7-.1.1v.1h-.6l.4-.5.7-.9.1-.1.8-1q.1 0 .3-.2H14l-.7.5-1.2.7-1 .5.1-.3-.4.3-.4.5-.4.4-.1.1H8.8v-.3h-.2v.3h-.2l.2-.3q-.4 0-.6.3H5.2l.5-.7q.6-.7.7-1.6l-.4.4q-.4.5-1 .5l-.9-.1q-.6-.3-.7-1.1 0-.2-.2-.2L2 20.6a2 2 0 0 1-.8-1.1L1 18.2l.2.5q0 .4.5.9l.9.5h1l.7-.5q.5-.4.6-1.2v-.1.2q-.6.8-1.3 1.1-.5.3-1 .2a2 2 0 0 1-1-.7l-.4-.9v-.9c0-.4.5-1.2.7-1.3v.2l-.1.3-.1.9q0 .3.2.6.3.4.6.4h.8l.3-.6q.3-.5.3-1.1l.2-1V15l.1-.7.1-.7V13l.1-.5V12l.1-.7V11l-.6-.4-.2-.4h-.2l.3.5.2.3q.1 0 .2.2H4a3 3 0 0 1-1.3-.9Q2 9.7 2 8.7v-1q0-1 .4-1.8L3 4.8l.7-1q.8-.9 1.7-1.5A13 13 0 0 1 11.3 0zM10 22.8l-.2.2-.6.9.5-.5.3-.4zm1.7-3.7-.7.6-.3.4-.4.3h-.6v.2l.5.7.4.7.1.4h.2l.9-.5.6-.3 1-.7h.1l-.8-.5-.5-.5-.4-.6zm-5.9.3-.1.3-.5 1q-.3.4-.8.5h-.9v.2l.5.2h.5q.2 0 .4-.2.4-.3.6-.7l.3-1.1zm15-4.6v.6l.2.6v1l-.2 1-.4 1.5v.1l.3-.3q.5-.5.6-1 .3-.7.1-1.6 0-.9-.6-1.9M5.8 8.3v.1l.4.8v.2q-.4 0-.9.2l.2.1v.2l.5.4.2.6q-.2.8-.7 1.2h-.2l-.1.3v.2l.4.5.2.3v.7l.1.1h.5l.5.3.4.2h.3v.2l-.3.1H7h.2q-.5-.3-.9-.1v.3q-.2-.1 0-.3a.2.2 0 0 0-.3.2q0 .1.2.2h.5l-.3.2v.1h-.2l-.2-.2L6 15v-.2q-.1 0 0-.2h-.1l-.2-.4v-.4l.1-.1v-.2l-.1-.4-.5-.5-.1.6q0 .5.2 1 .1.8.5 1.2l1 1.8q.3.3.7.3H8l.9-.2h.5q.3 0 .6.2l1 1.3q0 .2.1 0l.4-.3v-2.1l.4-2.3.3-1.5.2-1.9V9.6q0-.2-.2-.2l-.6-.1q-.2 0-.2-.2v-.2l-.1.2-.1.1H9.4L9.2 9q0-.1-.2 0l-.5.1-.7.4-.3.2h-.2v-.2l.3-.3H7q-.2.2-.4 0L6 8.4zm8.6 9h-.2l-.6.4-.3.2v.6l.3.1h.3q.4 0 .6-.3v-.9zm-.3-2.5-.3 1-.4 1.3.8-.5q0 0 0-.2v-1.6m3.1-8 .1.2.3.7.5 2 .6 1.9.3 1.1.2.8.1.6.1.4V14l-.1-.6v-.2l-.4-1.2-.6-2-.5-1.7-.2-.7-.1-.4-.1-.3zm-11 7.5h-.1l.4.1zm-1-2.3zm0-1.2v.8q.1.3.4.1l-.1-.3q0 0 0-.2l-.2-.2v-.2m0-1-.4.1v.5h.6l.5.2.1.1-.1-.3H5q.4-.2.7 0 0-.2-.2-.3l-.3-.1zm10.3.3-.6.3h-.1l.2.1h1.4l-.5-.3zM8 6.5v.1l.2 1 .5 1v.2H9l-.4-1q-.4-.6-.6-1.3m2.4-6h-.6L9 .7l-.9.3H10l1.3.6a6 6 0 0 1 2.3 2.7l.7 2.4.1.2q.2 0 .3.2 0 .1-.2.3l-.2.3.3-.3.1-.3v-.2l-.1-.1q-.2 0-.2-.2t.2-.4h.3l.5-.1q.2 0 .2.2l-.1.3h-.1a.1.1 0 0 0 0 .2q0 .2.2.4l.6.3h.1l-.6-.3-.1-.1-.2-.2.2-.2.1-.2-.2-1-.8-2-1.4-1.8-1.2-.8-1-.3zM4.1 3.9 4 4l-.4.4-.2.2q-.4.3-.6.9v.2H3V6l-.2.5L3 6l1-2zm13 2.4zM4.2 4.5l-.2.2h-.2q-.2 0-.3.2l-.2.6-.1.3h.4v.3l-.1.1v-.1l.3-.4.1-.1V6q.2-.1.3-.1v.2l.5-1q-.1 0-.4 0l.1-.5q0 .3-.3.1v-.3zm2-.7-.2.4-.5.7q-.1.3-.6.5v-.1l.2-.6L5 5l-.5 1h.1q.2 0 .3-.2l.1-.1.2-.1h.1v.1l.1.2v.1L6 4.6l.3-.8m4-.3.2.6v.4l-.1-.1h-.1v.2l-.3.2h-.1v-.1h-.2l-.4.2v.4l.1.1q.3 0 .7.3l.1-.2h.3v.2q0-.2 0-.4l.4.6v-.6h.1l.2.5v-.4h.3c0-.2-.4-1-.8-1.5zm-2.6.7-.2.6-.2.2h-.6l-.4-.2H6L6 5v.5h.4q.2 0 .4 0l.5-.2h.1l.1.2v-.2l.2.2zm.3.3-.1.1v.1l.1.6h.9l.2.2h.1v-.3l-.3-.6H8M18 2.8l.2.5v.5H18l-.2-.2-.3-.3h-.1l.2.3v.2h-.3l-.2.1V4q.2.2 0 .2l-.1.2h-.2l-.7-.1L16 4l-.1-.2v.5h-.6v.2h.3l.5.3.2.3v-.3l.1.1.2.3v.1h.1l-.4-1 1 .4.2-.2h.1l.3.5.1.3v-.3l-.3-.6q.3.1.6.8l-.1-.5v-.3h.1v-.1l.3.3-.2-.5h.2v-.8l.3.4V4l-.3-.6zm-6.5.3v.4l-.3.1-.1.4-.1.1v.2l.1.2.1.1h.3l.2.1.2-.1h.3v-.3h.1v-.7q.2 0 .3.3l.5.8h.4l-.2-.4H13l-.5-.9-.3-.2-.3.3h-.2l-.1-.3z" />
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -144,6 +155,7 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   antigravity: () => <AntigravityMark className={INKED} />,
   zcode: () => <ZaiMark className={INKED} />,
   fx: () => <FxMark className={SHARED} />,
+  hermes: () => <HermesMark className={INKED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -163,7 +175,7 @@ function markOf(agent: AgentId): React.ReactNode {
  * and wherever a session names its harness; a bot's model picker draws its
  * providers with it too. Claude Code carries Anthropic's orange (a brand
  * colour, so it does not re-point in dark); Codex, OpenCode, Grok,
- * Antigravity, GLM, ChatGPT and Cursor draw in the current ink and invert with the theme, and
+ * Antigravity, Hermes, GLM, ChatGPT and Cursor draw in the current ink and invert with the theme, and
  * ZCode wears Z.ai's mark, as GLM does. ChatGPT has no
  * published mark of its own and wears OpenAI's, as Codex does. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
@@ -175,7 +187,9 @@ function markOf(agent: AgentId): React.ReactNode {
  * OpenCode's from the first glyph of `packages/web/src/assets/logo-ornate-dark.svg`
  * in github.com/sst/opencode; Grok's, Antigravity's and GLM's (Z.ai's) from Lobe Icons
  * (`@lobehub/icons-static-svg` `icons/grok.svg`, `icons/antigravity.svg` and
- * `icons/zai.svg`, MIT);
+ * `icons/zai.svg`, MIT); Hermes' from the same set (`@lobehub/icons-static-svg@1.106.0`
+ * `icons/hermesagent.svg`, MIT), its coordinates rounded to a tenth of a unit
+ * (svgo, precision 1) since the original spends 20 KB on a 15px glyph;
  * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0);
  * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
  * from its site's favicon (`omp.sh/favicon.svg`); fx's from the sign-in page
