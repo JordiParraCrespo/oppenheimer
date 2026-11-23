@@ -746,6 +746,8 @@
             "pi",
             "omp",
             "antigravity",
+            "zcode",
+            "fx",
             "hermes"
           ]
         },
@@ -3254,6 +3256,8 @@
         "pi",
         "omp",
         "antigravity",
+        "zcode",
+        "fx",
         "hermes",
         "shell"
       ],

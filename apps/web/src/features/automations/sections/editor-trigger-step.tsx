@@ -11,7 +11,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
 import { eventLabel, viewerTimeZone } from '@oppenheimer/frontend-web';
-import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
+import { EDITOR_SCHEDULE_FREQUENCIES, GITHUB_EVENT_TYPES } from '@oppenheimer/shared/automations';
 import { MAX_AUTOMATION_TRIGGERS } from '@oppenheimer/shared/schemas/automation';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +85,7 @@ export function EditorTriggerStep({
           <DropdownMenuContent align="start" className="max-h-96 min-w-80">
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t('automations.editor.groupSchedule')}</DropdownMenuLabel>
-              {SCHEDULE_FREQUENCIES.map((frequency) => (
+              {EDITOR_SCHEDULE_FREQUENCIES.map((frequency) => (
                 <DropdownMenuItem
                   key={frequency}
                   onClick={() =>

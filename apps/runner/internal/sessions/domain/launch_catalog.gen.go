@@ -211,6 +211,33 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"--prompt-interactive", "<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"zcode": {
+		command: "zcode",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--mode", "build"}},
+			"auto": {argv: []string{"--mode", "edit"}},
+			"full": {argv: []string{"--mode", "yolo"}},
+		},
+	},
+	"fx": {
+		command:      "fx",
+		model:        []string{"--provider", "gateway", "--model", "<model>"},
+		defaultModel: "spacexai/grok-4.7",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--permission-mode", "ask"}},
+			"auto": {argv: []string{"--permission-mode", "auto"}},
+			"full": {argv: []string{"--permission-mode", "full-access"}},
+		},
+		effort: launchLevel{argv: []string{"--effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"spacexai/grok-4.7":         {"low", "medium", "high", "xhigh"},
+			"openai/gpt-6-astra":        {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6-sol":          {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-sonnet-5": {"low", "medium", "high", "xhigh", "max"},
+		},
+		prompt:             []string{"<prompt>"},
+		conversationResume: []string{"--continue"},
+	},
 	"hermes": {
 		command:            "hermes",
 		always:             []string{"chat"},
@@ -219,7 +246,8 @@ var launchCatalog = map[string]launchMap{
 		conversationResume: []string{"--continue"},
 	},
 	"shell": {
-		command: "",
+		command:    "",
+		taskIsNote: true,
 	},
 }
 
@@ -233,6 +261,7 @@ var loginTargets = map[string][]LoginTarget{
 	"grok":        {{Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
 	"pi":          {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
 	"omp":         {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
+	"fx":          {{Host: "auth.openai.com"}, {Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
 	"hermes":      {{Host: "auth.openai.com"}},
 }
 
@@ -248,5 +277,7 @@ var inputCatalog = map[string]agentInput{
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"antigravity": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200, quit: []string{"/stop", "/quit"}},
 }

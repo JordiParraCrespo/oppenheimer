@@ -140,7 +140,7 @@ describe('coding agent catalog', () => {
     const shell = CODING_AGENTS.shell;
     expect(shell.command).toBe('');
     expect(shell.models).toEqual([]);
-    expect(shell.launch).toEqual({});
+    expect(shell.launch).toEqual({ taskIsNote: true });
     // A shell prints any URL it is asked to; none of them is a login button.
     expect(shell.loginTargets).toBeUndefined();
   });
@@ -432,9 +432,11 @@ describe('agent installs', () => {
   it('installs every agent as the person, never with sudo, and the blank terminal not at all', () => {
     for (const id of CODING_AGENT_IDS) {
       const install = AGENT_HOST_SETUP[id]?.install;
+      // ZCode publishes desktop installers and no terminal CLI release to
+      // verify, so the person installs it themselves and the runner probes it.
       // Hermes' only installer is a piped script that checks nothing, so the
       // person runs it; the runner installs nothing it cannot check.
-      if (id === 'shell' || id === 'hermes') {
+      if (id === 'shell' || id === 'zcode' || id === 'hermes') {
         expect(install).toBeUndefined();
         continue;
       }

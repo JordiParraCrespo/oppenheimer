@@ -76,4 +76,12 @@ export const BotsErrors = {
   RESUME_GOAL_FAILED: { code: 'BOTS_CLIENT_054', message: 'Failed to resume the goal' },
   FETCH_SUGGESTION_FAILED: { code: 'BOTS_CLIENT_055', message: 'Failed to load the suggestion' },
   REACT_FAILED: { code: 'BOTS_CLIENT_056', message: 'Failed to save the reaction' },
+  ISSUE_ROUTINE_WEBHOOK_FAILED: {
+    code: 'BOTS_CLIENT_057',
+    message: 'Failed to make the routine’s webhook URL',
+  },
+  REVOKE_ROUTINE_WEBHOOK_FAILED: {
+    code: 'BOTS_CLIENT_058',
+    message: 'Failed to revoke the routine’s webhook URL',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

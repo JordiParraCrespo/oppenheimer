@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2308,7 +2308,7 @@ export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes';
     prompt?: string;
 };
 
@@ -2422,7 +2422,7 @@ export type AutomationRevisionResponseDto = {
 };
 
 export type ScheduleResponseDto = {
-    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
     hour: number;
     minute: number;
     /**
@@ -2434,6 +2434,10 @@ export type ScheduleResponseDto = {
      * Once: the local date, `YYYY-MM-DD`.
      */
     date?: string;
+    /**
+     * Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.
+     */
+    expression?: string;
     /**
      * The IANA zone the wall time is in.
      */
@@ -2454,11 +2458,11 @@ export type AutomationTriggerResponseDto = {
      * The card’s place in the editor, from 0.
      */
     position: number;
-    source: 'schedule' | 'github' | 'gmail';
+    source: 'schedule' | 'github' | 'gmail' | 'webhook';
     /**
-     * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
+     * `schedule`, `webhook_received`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received' | 'webhook_received';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -2536,6 +2540,22 @@ export type AutomationResponseDto = {
     updatedAt: string;
 };
 
+export type RoutineWebhookResponseDto = {
+    /**
+     * The start of the URL’s token.
+     */
+    tokenPrefix: string;
+    /**
+     * Whether a request must carry a signature.
+     */
+    signed: boolean;
+    /**
+     * When the current URL was issued.
+     */
+    issuedAt: string;
+    lastReceivedAt?: string | null;
+};
+
 export type BotRoutineResponseDto = {
     id: string;
     /**
@@ -2561,6 +2581,10 @@ export type BotRoutineResponseDto = {
      * Its latest run over the listed window; null when it has none.
      */
     lastRun?: AutomationRunSummaryResponseDto | null;
+    /**
+     * Its webhook URL, once one is issued; null without one. Only a routine with a webhook trigger can have one.
+     */
+    webhook?: RoutineWebhookResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2576,12 +2600,13 @@ export type CreateAutomationRequest = {
     name: string;
     triggers: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -2598,9 +2623,12 @@ export type CreateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'webhook';
+        event?: 'webhook_received';
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2656,12 +2684,13 @@ export type UpdateAutomationRequest = {
     name?: string;
     triggers?: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -2678,9 +2707,12 @@ export type UpdateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'webhook';
+        event?: 'webhook_received';
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2843,6 +2875,40 @@ export type UpdateBotRoutineRequest = {
     enabled?: boolean;
 };
 
+export type IssueRoutineWebhookRequest = {
+    signed?: boolean;
+};
+
+export type IssuedRoutineWebhookResponseDto = {
+    /**
+     * The start of the URL’s token.
+     */
+    tokenPrefix: string;
+    /**
+     * Whether a request must carry a signature.
+     */
+    signed: boolean;
+    /**
+     * When the current URL was issued.
+     */
+    issuedAt: string;
+    lastReceivedAt?: string | null;
+    url: string;
+    /**
+     * The signing secret, when one was asked for. Not shown again.
+     */
+    signingSecret?: string | null;
+};
+
+export type RoutineWebhookReceivedResponseDto = {
+    runId: string;
+    /**
+     * `queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run.
+     */
+    status: 'queued' | 'skipped' | 'duplicate';
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
+};
+
 export type TaskSessionLinkResponseDto = {
     sessionId: string;
     /**
@@ -2947,7 +3013,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -10258,7 +10324,7 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'hermes' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'shell';
         /**
          * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
          */
@@ -12807,6 +12873,126 @@ export type RunBotRoutineError = RunBotRoutineErrors[keyof RunBotRoutineErrors];
 export type RunBotRoutineResponses = {
     202: unknown;
 };
+
+export type RevokeRoutineWebhookData = {
+    body?: never;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/webhook';
+};
+
+export type RevokeRoutineWebhookErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RevokeRoutineWebhookError = RevokeRoutineWebhookErrors[keyof RevokeRoutineWebhookErrors];
+
+export type RevokeRoutineWebhookResponses = {
+    204: void;
+};
+
+export type RevokeRoutineWebhookResponse = RevokeRoutineWebhookResponses[keyof RevokeRoutineWebhookResponses];
+
+export type IssueRoutineWebhookData = {
+    body: IssueRoutineWebhookRequest;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/webhook';
+};
+
+export type IssueRoutineWebhookErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_014 — The routine has no webhook trigger
+     */
+    422: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_015 — Signing is not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueRoutineWebhookError = IssueRoutineWebhookErrors[keyof IssueRoutineWebhookErrors];
+
+export type IssueRoutineWebhookResponses = {
+    201: IssuedRoutineWebhookResponseDto;
+};
+
+export type IssueRoutineWebhookResponse = IssueRoutineWebhookResponses[keyof IssueRoutineWebhookResponses];
+
+export type ReceiveRoutineWebhookData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried POST with the same key is the same run.
+         */
+        'Idempotency-Key'?: string;
+        'x-oppenheimer-signature'?: string;
+    };
+    path: {
+        /**
+         * The token the Routines tab issued, `owh_…`.
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/routine-webhooks/{token}';
+};
+
+export type ReceiveRoutineWebhookErrors = {
+    /**
+     * AUTOMATIONS_011 — Bad signature
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_010 — No such webhook
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_013 — Routine paused
+     */
+    409: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_012 — Body too large
+     */
+    413: ProblemDetailsDto;
+};
+
+export type ReceiveRoutineWebhookError = ReceiveRoutineWebhookErrors[keyof ReceiveRoutineWebhookErrors];
+
+export type ReceiveRoutineWebhookResponses = {
+    202: RoutineWebhookReceivedResponseDto;
+};
+
+export type ReceiveRoutineWebhookResponse = ReceiveRoutineWebhookResponses[keyof ReceiveRoutineWebhookResponses];
 
 export type StreamWorkspaceEventsData = {
     body?: never;

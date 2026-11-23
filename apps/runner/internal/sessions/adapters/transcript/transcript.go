@@ -58,6 +58,8 @@ type Reader struct {
 
 	// openCode is which OpenCode works in which conversation, for the chat.
 	openCode *openCodeOwners
+	// zcodeDB is ZCode's conversation database; "" follows none.
+	zcodeDB string
 	// hermes is Hermes' database, for the chat (`hermes.go`).
 	hermes hermesSource
 }
@@ -83,6 +85,9 @@ type Options struct {
 	// GrokSessions is Grok's `sessions/` folder, `~/.grok/sessions` or
 	// `$GROK_HOME/sessions`, for the chat view.
 	GrokSessions string
+	// ZCodeDatabase is ZCode's conversation database,
+	// `~/.zcode/cli/db/db.sqlite`, for the chat view.
+	ZCodeDatabase string
 	// HermesState is Hermes' database, `~/.hermes/state.db` or
 	// `$HERMES_HOME/state.db`, for the chat view.
 	HermesState string
@@ -112,7 +117,7 @@ func New(opts Options) *Reader {
 	}
 	return &Reader{
 		agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir,
-		openCode: newOpenCodeOwners(), hermes: hermesSource{db: opts.HermesState},
+		openCode: newOpenCodeOwners(), zcodeDB: opts.ZCodeDatabase, hermes: hermesSource{db: opts.HermesState},
 	}
 }
 

@@ -34,11 +34,10 @@ const (
 var contexts = []string{"apikeys", "desktop", "devices", "host", "pairing", "ports", "service", "sessions", "telegram", "updates", "whatsapp"}
 
 // confined lists third-party modules only the named packages may import:
-// the adapters that own the systems they speak to. whatsmeow is an
-// unofficial WhatsApp client, and keeping it in one adapter is what keeps
-// replacing it one package's work. The SQLite driver is its store's, and the
-// transcript adapter's, which reads the database Hermes keeps its
-// conversations in (`hermes.go`) and nothing else.
+// the adapters that own the systems they speak to. whatsmeow is an unofficial
+// WhatsApp client, and keeping it (and the SQLite driver its store needs) in
+// one adapter is what keeps replacing it one package's work. The transcript
+// adapter reads ZCode's and Hermes' conversations out of their SQLite databases.
 var confined = map[string][]string{
 	"go.mau.fi/":         {"whatsapp/adapters/whatsmeow"},
 	"modernc.org/sqlite": {"whatsapp/adapters/whatsmeow", "sessions/adapters/transcript"},
@@ -85,11 +84,11 @@ func TestImportBoundaries(t *testing.T) {
 	}
 }
 
-// violatesConfined keeps a confined third-party module in its one package.
+// violatesConfined keeps a confined third-party module in its packages.
 func violatesConfined(from, to string) string {
 	for prefix, owners := range confined {
 		if strings.HasPrefix(to, prefix) && !slices.Contains(owners, from) {
-			return "only " + strings.Join(owners, " and ") + " may import " + prefix
+			return "only " + strings.Join(owners, ", ") + " may import " + prefix
 		}
 	}
 	return ""
