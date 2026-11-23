@@ -1,6 +1,8 @@
 import type {
+  BrowserPageMessage,
   CloudRepliedMessage,
   CommandFailedMessage,
+  ComputerScreenMessage,
   FsFoundMessage,
   FsListingMessage,
   HostExecResultMessage,
@@ -33,6 +35,8 @@ export type LinkReply =
   | SharedPreviewMessage
   | TranscriptPageMessage
   | HostExecResultMessage
+  | ComputerScreenMessage
+  | BrowserPageMessage
   | TerminalScreenMessage
   | CommandFailedMessage;
 

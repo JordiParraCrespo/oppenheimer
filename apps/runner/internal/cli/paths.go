@@ -245,6 +245,17 @@ func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 // runner home, never under the workspaces a bot's own folder sits in.
 func (p Paths) ExecPolicy() string { return filepath.Join(p.Home, "exec.json") }
 
+// ComputerPolicy is whether this host lets bots use its screen (`runner
+// computer`): a file in the runner home, beside the exec policy.
+func (p Paths) ComputerPolicy() string { return filepath.Join(p.Home, "computer.json") }
+
+// BrowserPolicy is whether this host lets bots drive a browser of their own
+// (`runner browser`), beside the other settings; Browsers is where each
+// bot's browser keeps its profile.
+func (p Paths) BrowserPolicy() string { return filepath.Join(p.Home, "browser.json") }
+
+func (p Paths) Browsers() string { return filepath.Join(p.State(), "browsers") }
+
 // Desktop is whether and how this host shares its screen (`runner desktop`):
 // a file in the runner home, written on the host and never over the link.
 func (p Paths) Desktop() string { return filepath.Join(p.Home, "desktop.json") }

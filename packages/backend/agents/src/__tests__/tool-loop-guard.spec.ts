@@ -71,6 +71,32 @@ describe('ToolLoopGuard through runTool', () => {
     ).toBe(true);
   });
 
+  // A screen tool says the same words after every step; what it shows is
+  // the answer. Scrolling a long page with one repeated call must run, and
+  // the same call on a screen that never changes is still a loop.
+  it('reads what a tool shows as part of its answer', async () => {
+    let shot = 0;
+    const scrolling: BotEngineTool = {
+      ...tool(() => ({ content: 'Done.' })),
+      run: async () => ({
+        content: 'Done.',
+        images: [{ mimeType: 'image/jpeg', data: `screen-${shot++}` }],
+      }),
+    };
+    const moving = await callTimes(new ToolLoopGuard(), scrolling, 12);
+    expect(moving.every((result) => !result.isError && result.content === 'Done.')).toBe(true);
+
+    const frozen: BotEngineTool = {
+      ...scrolling,
+      run: async () => ({
+        content: 'Done.',
+        images: [{ mimeType: 'image/jpeg', data: 'same-screen' }],
+      }),
+    };
+    const stuck = await callTimes(new ToolLoopGuard(), frozen, 12);
+    expect(stuck.at(-1)?.isError).toBe(true);
+  });
+
   it('reads the same input however its keys were ordered', async () => {
     const guard = new ToolLoopGuard();
     const failing = tool(() => ({ content: 'nope', isError: true }));
