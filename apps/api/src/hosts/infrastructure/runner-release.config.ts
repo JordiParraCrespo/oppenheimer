@@ -88,7 +88,7 @@ export class RunnerReleaseConfig {
       '- Ask me where session code should live. Add --workspaces with that path to the',
       '  command, or leave it off for ~/oppenheimer.',
       '- Ask me which coding agents this machine should have: claude (Claude Code), codex,',
-      '  opencode, grok, pi, omp, fx, and gh (the GitHub CLI); claude and gh unless I say otherwise.',
+      '  opencode, grok, pi, omp, agy (Antigravity), fx, and gh (the GitHub CLI); claude and gh unless I say otherwise.',
       '  Add --agents with them, comma-separated, or --agents none. The runner installs',
       '  them as this user, without sudo.',
       '- Do not install anything else, run anything as root, or add --force or',

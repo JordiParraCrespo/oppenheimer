@@ -745,6 +745,7 @@
             "grok",
             "pi",
             "omp",
+            "antigravity",
             "fx"
           ]
         },
@@ -3252,6 +3253,7 @@
         "grok",
         "pi",
         "omp",
+        "antigravity",
         "fx",
         "shell"
       ],

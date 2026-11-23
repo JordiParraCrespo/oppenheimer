@@ -9790,6 +9790,7 @@
                 "grok",
                 "pi",
                 "omp",
+                "antigravity",
                 "fx",
                 "shell"
               ],
@@ -31522,6 +31523,7 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
               "fx",
               "shell",
               null
@@ -31608,6 +31610,7 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
               "fx",
               "shell",
               null
@@ -31674,6 +31677,7 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
               "fx",
               "shell",
               null
@@ -32212,6 +32216,7 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
               "fx",
               "shell",
               "cursor"
@@ -32480,6 +32485,7 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
               "fx",
               "shell"
             ]
@@ -33834,6 +33840,7 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
               "fx"
             ]
           },
@@ -34754,6 +34761,7 @@
                   "grok",
                   "pi",
                   "omp",
+                  "antigravity",
                   "fx",
                   "shell"
                 ]
@@ -35238,6 +35246,7 @@
                   "grok",
                   "pi",
                   "omp",
+                  "antigravity",
                   "fx",
                   "shell"
                 ]
@@ -36127,6 +36136,7 @@
                   "grok",
                   "pi",
                   "omp",
+                  "antigravity",
                   "fx",
                   "shell"
                 ]

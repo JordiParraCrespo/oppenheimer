@@ -10,6 +10,7 @@ type AgentId =
   | 'grok'
   | 'pi'
   | 'omp'
+  | 'antigravity'
   | 'fx'
   | 'glm'
   | 'chatgpt'
@@ -104,6 +105,14 @@ function FxMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+function AntigravityMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z" />
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -131,6 +140,7 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   grok: () => <GrokMark className={INKED} />,
   pi: () => <PiMark className={SHARED} />,
   omp: () => <OmpMark className={SHARED} />,
+  antigravity: () => <AntigravityMark className={INKED} />,
   fx: () => <FxMark className={SHARED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
@@ -150,8 +160,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * AgentMark — the coding agent's mark, 15px, in the agent and model picker
  * and wherever a session names its harness; a bot's model picker draws its
  * providers with it too. Claude Code carries Anthropic's orange (a brand
- * colour, so it does not re-point in dark); Codex, OpenCode, Grok, GLM,
- * ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
+ * colour, so it does not re-point in dark); Codex, OpenCode, Grok,
+ * Antigravity, GLM, ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
  * published mark of its own and wears OpenAI's, as Codex does. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
  * Pi's blocks, Oh My Pi's gradient π and fx's black tile carry their own
@@ -160,8 +170,9 @@ function markOf(agent: AgentId): React.ReactNode {
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
  * OpenCode's from the first glyph of `packages/web/src/assets/logo-ornate-dark.svg`
- * in github.com/sst/opencode; Grok's and GLM's (Z.ai's) from Lobe Icons
- * (`@lobehub/icons-static-svg` `icons/grok.svg` and `icons/zai.svg`, MIT);
+ * in github.com/sst/opencode; Grok's, Antigravity's and GLM's (Z.ai's) from Lobe Icons
+ * (`@lobehub/icons-static-svg` `icons/grok.svg`, `icons/antigravity.svg` and
+ * `icons/zai.svg`, MIT);
  * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0);
  * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
  * from its site's favicon (`omp.sh/favicon.svg`); fx's from the sign-in page

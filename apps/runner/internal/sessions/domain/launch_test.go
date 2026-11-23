@@ -37,6 +37,13 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("omp argv = %q, want %q", got, want)
 	}
+	// agy starts in `auto` where the account has it, so Ask is sent; it takes
+	// no positional prompt, so the task rides on `--prompt-interactive`.
+	got = Launch{Model: "gemini-4-neon", Permission: "ask", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentAntigravity)
+	want = []string{"--model", "gemini-4-neon", "--mode", "default", "--effort", "xhigh", "--prompt-interactive", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("antigravity argv = %q, want %q", got, want)
+	}
 	// fx's own default is `auto`, and a mode saved in its settings would
 	// otherwise win, so every level is sent; Full access is `full-access`.
 	got = Launch{Model: "spacexai/grok-4.7", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentFx)
