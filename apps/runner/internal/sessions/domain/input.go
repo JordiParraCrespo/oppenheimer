@@ -8,6 +8,7 @@ import "time"
 type agentInput struct {
 	submit, stop string
 	pasteGapMs   int
+	quit         []string
 }
 
 // Input is how a message is typed into an agent by something other than a
@@ -17,6 +18,10 @@ type Input struct {
 	Submit   string
 	Stop     string
 	PasteGap time.Duration
+	// Quit is typed, each line then Submit, before the agent's terminal is
+	// ended: what ends an agent whose work outlives its terminal (Hermes',
+	// which runs at its gateway). None for the rest.
+	Quit []string
 }
 
 // plainInput is the blank terminal's, and any agent the catalog has no
@@ -29,5 +34,8 @@ func (a Agent) Input() Input {
 	if !ok {
 		return plainInput
 	}
-	return Input{Submit: in.submit, Stop: in.stop, PasteGap: time.Duration(in.pasteGapMs) * time.Millisecond}
+	return Input{
+		Submit: in.submit, Stop: in.stop, PasteGap: time.Duration(in.pasteGapMs) * time.Millisecond,
+		Quit: append([]string(nil), in.quit...),
+	}
 }
