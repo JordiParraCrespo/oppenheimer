@@ -3,7 +3,7 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import type * as React from 'react';
 
-import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
+import { ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import { BotAvatar, type BotFaceSpec } from './avatar-picker';
 import { useSortableControl } from './drag';
@@ -46,7 +46,7 @@ function BotRowFace({
           className="absolute -right-0.75 -bottom-0.75 flex size-2.25 rounded-pill bg-sidebar p-0.5"
         >
           <span className="absolute inset-0 rounded-pill group-hover/bot:bg-hover-surface group-hover/row:bg-hover-surface group-data-menu-open/row:bg-hover-surface group-data-active/bot:hidden" />
-          <span className="absolute inset-0 rounded-pill group-data-active/bot:bg-selected-surface" />
+          <span className="absolute inset-0 rounded-pill group-data-active/bot:bg-active-surface" />
           <span className="relative size-full rounded-pill bg-success" />
         </span>
       ) : null}
@@ -58,16 +58,18 @@ function BotRowFace({
  * The badge at a row's end, the way a messaging app marks a chat that wants
  * you: an 18px green circle, empty for an unread chat, an exclamation mark on
  * the sidebar's ground for a bot waiting on the person (an approval, a
- * question). Waiting wins: a row carries one badge.
+ * question). Waiting wins: a row carries one badge. It stays while the
+ * row's ellipsis shows; `makesRoom` moves it left of the ellipsis on a row
+ * whose line does not already make room.
  */
-function BotRowDots({ needsInput, unread, givesWay }: { needsInput: boolean; unread: boolean; givesWay: boolean }) {
+function BotRowDots({ needsInput, unread, makesRoom }: { needsInput: boolean; unread: boolean; makesRoom: boolean }) {
   if (!needsInput && !unread) return null;
   return (
     <span
       aria-label={needsInput ? 'Needs input' : 'Unread'}
       className={cn(
         'flex size-4.5 shrink-0 items-center justify-center rounded-pill bg-success text-[12px] leading-none font-bold text-sidebar',
-        givesWay && META_GIVES_WAY,
+        makesRoom && 'group-hover/row:mr-6 group-has-focus-visible/row:mr-6 group-data-menu-open/row:mr-6',
       )}
     >
       {needsInput ? '!' : null}
@@ -90,7 +92,7 @@ function BotRowName({ name, working }: { name: string; working: boolean }) {
 }
 
 const ROW_BUTTON =
-  'group/bot flex w-full items-center rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface';
+  'group/bot flex w-full items-center rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:hover:bg-active-surface';
 
 type BotRowProps = Omit<ButtonPrimitive.Props, 'children'> & {
   name: string;
@@ -139,7 +141,7 @@ function rowState({ active, working, unread, needsInput }: { active?: boolean; w
  * radius, rows 1px apart in a `BotList`. `BotPreviewItem` is the two-line row.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
- * hiding the dots while it shows.
+ * the badge moving left of it while it shows.
  */
 function BotItem({
   name,
@@ -174,7 +176,7 @@ function BotItem({
     >
       <BotRowFace image={image} initials={initials} face={face} live={live} size={20} />
       <BotRowName name={name} working={working} />
-      <BotRowDots needsInput={needsInput} unread={unread} givesWay={withAction} />
+      <BotRowDots needsInput={needsInput} unread={unread} makesRoom={withAction} />
     </ButtonPrimitive>
   );
 
@@ -204,8 +206,8 @@ function BotItem({
  * green while the row asks for attention),
  * and under it the last message at 13px in the subtle ink, one line, with
  * `BotItem`'s dots at its end. No tooltip: the message is on the row. 52px,
- * the nav radius. `action` is the ellipsis, over both lines on hover, hiding
- * the time and the dots while it shows.
+ * the nav radius, gray while it is the open chat. `action` is the ellipsis,
+ * over both lines on hover, the time and the badge moving left of it.
  */
 function BotPreviewItem({
   name,
@@ -254,10 +256,7 @@ function BotPreviewItem({
           <BotRowName name={name} working={working} />
           {time ? (
             <span
-              className={cn(
-                'shrink-0 text-[12px] text-fg-subtle tabular-nums group-data-attention/bot:font-medium group-data-attention/bot:text-success',
-                withAction && META_GIVES_WAY,
-              )}
+              className="shrink-0 text-[12px] text-fg-subtle tabular-nums group-data-attention/bot:font-medium group-data-attention/bot:text-success"
             >
               {time}
             </span>
@@ -265,7 +264,7 @@ function BotPreviewItem({
         </span>
         <span className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-[13px] leading-4.5 text-fg-subtle">{preview}</span>
-          <BotRowDots needsInput={needsInput} unread={unread} givesWay={withAction} />
+          <BotRowDots needsInput={needsInput} unread={unread} makesRoom={false} />
         </span>
       </span>
     </ButtonPrimitive>
