@@ -40,13 +40,13 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	// fx's own default is `auto`, and a mode saved in its settings would
 	// otherwise win, so every level is sent; Full access is `full-access`.
 	got = Launch{Model: "spacexai/grok-4.7", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentFx)
-	want = []string{"--model", "spacexai/grok-4.7", "--permission-mode", "full-access", "--effort", "xhigh", "fix the picker"}
+	want = []string{"--provider", "gateway", "--model", "spacexai/grok-4.7", "--permission-mode", "full-access", "--effort", "xhigh", "fix the picker"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fx argv = %q, want %q", got, want)
 	}
 	// An open-weight row offers no effort, so none is sent for it.
 	got = Launch{Model: "moonshotai/kimi-k3", Permission: "auto", Effort: "high", EffortIsLevel: true}.Args(AgentFx)
-	want = []string{"--model", "moonshotai/kimi-k3", "--permission-mode", "auto"}
+	want = []string{"--provider", "gateway", "--model", "moonshotai/kimi-k3", "--permission-mode", "auto"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fx argv = %q, want %q", got, want)
 	}

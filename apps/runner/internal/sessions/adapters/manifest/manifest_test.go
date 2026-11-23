@@ -430,3 +430,19 @@ func TestTheInputBoxUnderASpinnerIsStillWorking(t *testing.T) {
 		t.Fatalf("state = %q, want working", state)
 	}
 }
+
+// fx's status line is `Working` on a line of its own, and its replies say the
+// word too: one that starts a line in prose ("Working tree is clean") must not
+// read as a turn under way, or an idle fx session never shows as needing you.
+func TestFxWorkingIsItsStatusLineNotItsProse(t *testing.T) {
+	c := manifest.New(manifest.Options{})
+
+	if state, _ := c.Classify(app.Screen{Body: "done\n\n⠹ Working (3s · esc to interrupt)"}, domain.AgentFx); state != domain.StateWorking {
+		t.Fatalf("status line: state = %q, want working", state)
+	}
+	for _, prose := range []string{"Working tree is clean.", "- Working directory: /src", "• Working as expected now"} {
+		if state, _ := c.Classify(app.Screen{Body: "fx\n\n" + prose + "\n\n> "}, domain.AgentFx); state == domain.StateWorking {
+			t.Fatalf("prose %q read as working", prose)
+		}
+	}
+}

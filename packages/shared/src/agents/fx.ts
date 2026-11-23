@@ -80,7 +80,12 @@ export const FX_AGENT: CodingAgentDefinition = Object.freeze({
   configDirEnv: 'FX_HOME',
   models: FX_MODELS,
   launch: Object.freeze({
-    model: Object.freeze(['--model', '<model>']),
+    // Every row is an AI Gateway id, and fx hands `--model` to whichever
+    // provider is active: on a host signed in with `fx login codex` or
+    // `fx login grok`, a gateway id would reach Codex or Grok and fail on the
+    // first message. So a chosen model pins the gateway it belongs to; a
+    // session with none runs the host's own provider and its model.
+    model: Object.freeze(['--provider', 'gateway', '--model', '<model>']),
     // fx names its own conversation (no flag takes an id on a create) and
     // remembers the last one per workspace: `-c, --continue` reopens it, and
     // a session's worktree is its own and never reused, so it is this

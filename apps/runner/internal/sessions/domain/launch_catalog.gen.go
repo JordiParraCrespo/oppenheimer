@@ -193,7 +193,7 @@ var launchCatalog = map[string]launchMap{
 	},
 	"fx": {
 		command:      "fx",
-		model:        []string{"--model", "<model>"},
+		model:        []string{"--provider", "gateway", "--model", "<model>"},
 		defaultModel: "spacexai/grok-4.7",
 		permission: map[string]launchLevel{
 			"ask":  {argv: []string{"--permission-mode", "ask"}},
