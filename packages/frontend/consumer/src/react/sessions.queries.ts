@@ -512,8 +512,13 @@ export function useAcknowledgeSessionReport(
     onMutate: async (id, context) => {
       // A list read already in flight answers from before the read was
       // recorded, and would put the dot back. The detail's is left to land: a
-      // pane may be suspended on it, and the answer overwrites it.
-      await queryClient.cancelQueries({ queryKey: sessionsKeys.lists() });
+      // pane may be suspended on it, and the answer overwrites it. A list's
+      // first read is left to land too: called off, the sidebar would wait a
+      // second round trip for rows that have no dot to put back yet.
+      await queryClient.cancelQueries({
+        queryKey: sessionsKeys.lists(),
+        predicate: (query) => query.state.data !== undefined,
+      });
       // Each row written, and the row it replaced.
       const written = new Map<SessionEntity, SessionEntity>();
       const read = (row: SessionEntity) => {
