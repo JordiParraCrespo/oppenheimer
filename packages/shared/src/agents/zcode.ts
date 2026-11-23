@@ -13,7 +13,10 @@ export const ZCODE_AGENT: CodingAgentDefinition = Object.freeze({
   label: 'ZCode',
   // Bare `zcode` is the TUI: `run.ts` routes no positional to `tui`.
   command: 'zcode',
-  input: TYPED_INPUT,
+  // TYPED_INPUT, and Ctrl+U first: ZCode's TUI empties its draft on it
+  // (`app-keyboard.ts`), where Ctrl+C would count towards quitting.
+  // 100 ms: it empties the draft on its next render.
+  input: Object.freeze({ ...TYPED_INPUT, clear: Object.freeze({ keys: '\u0015', settleMs: 100 }) }),
   // No `transcriptLocation`. ZCode keeps its sessions in one SQLite database
   // (`~/.zcode/cli/db/db.sqlite`), not a file per conversation, and its guide
   // warns against depending on the schema. No `configDirEnv`: nothing the

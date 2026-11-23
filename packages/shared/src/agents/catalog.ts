@@ -15,7 +15,8 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`,
+ * that the same way, and `clearOf`, which every sender that types into an
+ * agent asks. Pi and Oh My Pi are defined in `pi-family.ts`,
  * Antigravity in `antigravity.ts`, ZCode in `zcode.ts`, fx in `fx.ts`, Hermes
  * in `hermes.ts` and Muse in `muse.ts`, which this record composes. How the
  * runner installs and updates each CLI is
@@ -352,12 +353,31 @@ export interface CodingAgentInput {
   /** How long to wait between the paste and `submit`, in milliseconds. */
   readonly pasteGapMs: number;
   /**
+   * How to empty the agent's prompt before a message is typed into it, for a
+   * CLI whose prompt can hold text the person did not leave there: ZCode
+   * recalls its last prompt on an Up arrow into an empty prompt (an approval
+   * dialog's Up, a wheel over the terminal), and a message typed after it
+   * would be sent joined to it. Absent: nothing is sent first. Every sender
+   * reads it through `clearOf`.
+   */
+  readonly clear?: CodingAgentClear;
+  /**
    * What is typed, each line then `submit`, before the runner ends the
    * agent's terminal (a stop, a close): for an agent whose work outlives its
    * terminal, the lines that end that work. Absent: ending the terminal ends
    * the agent.
    */
   readonly quit?: readonly string[];
+}
+
+/**
+ * The keys that empty an agent's prompt, and how long to wait before typing
+ * after them: a TUI that empties its prompt on its next render takes words
+ * sent in the same burst into the prompt it has not emptied yet.
+ */
+export interface CodingAgentClear {
+  readonly keys: string;
+  readonly settleMs: number;
 }
 
 export interface CodingAgentDefinition {
@@ -847,6 +867,15 @@ const CODING_AGENT_ID_SET = new Set<string>(CODING_AGENT_IDS);
 
 export function isCodingAgentId(value: unknown): value is CodingAgentId {
   return typeof value === 'string' && CODING_AGENT_ID_SET.has(value);
+}
+
+/**
+ * How to empty `agent`'s prompt before a message is typed into it, or
+ * undefined for an agent that needs nothing (and for any id that is not a
+ * catalog agent: a vendor's cloud agent is not typed into).
+ */
+export function clearOf(agent: string): CodingAgentClear | undefined {
+  return isCodingAgentId(agent) ? CODING_AGENTS[agent].input?.clear : undefined;
 }
 
 /**

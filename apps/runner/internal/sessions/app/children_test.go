@@ -240,3 +240,40 @@ func TestAChildIsRefusedAnAgentThatTakesNoTask(t *testing.T) {
 		t.Fatalf("delegating to zcode = %v, want %s", err, domain.ErrInvalidInput.Code)
 	}
 }
+
+// A message typed into ZCode empties its prompt first: ZCode recalls its last
+// prompt on an Up arrow (an approval dialog's, a wheel over the terminal), so
+// a report pasted after that text would be sent joined to it.
+// Regression: a child's report reaching a ZCode parent as "<its last
+// prompt><the report>".
+func TestTellEmptiesZCodesPromptBeforeTyping(t *testing.T) {
+	f := newFamily(t)
+	z, err := f.svc.Create(context.Background(), app.CreateInput{Repo: "jordi/oppenheimer", BaseBranch: "main", Agent: domain.AgentZCode})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.reports.say(z.ID, "state=idle")
+	before := f.terminals.Screens[z.Target(0)]
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		f.reports.say(z.ID, "state=working")
+	}()
+	if _, err := f.children.Tell(context.Background(), z.ID, "the tests pass"); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimPrefix(f.terminals.Screens[z.Target(0)], before); got != "\x15the tests pass\r" {
+		t.Fatalf("typed %q, want Ctrl+U, the message, then Enter", got)
+	}
+	// An agent with nothing to clear gets the message alone.
+	parentBefore := f.terminals.Screens[f.parent.Target(0)]
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		f.reports.say(f.parent.ID, "state=working")
+	}()
+	if _, err := f.children.Tell(context.Background(), f.parent.ID, "hello"); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimPrefix(f.terminals.Screens[f.parent.Target(0)], parentBefore); got != "hello\r" {
+		t.Fatalf("typed %q into Claude Code, want the message and Enter", got)
+	}
+}

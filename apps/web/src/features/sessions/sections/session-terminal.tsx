@@ -10,6 +10,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { clearOf } from '@oppenheimer/shared/agents';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
@@ -64,12 +65,15 @@ const AGENT_WINDOW = 0;
  */
 export function SessionTerminal({
   sessionId,
+  agent,
   hostId,
   statusItems,
   showLive = true,
   reading,
 }: {
   sessionId: string;
+  /** The session's agent: how its prompt is emptied before the chat types into it. */
+  agent: string;
   hostId: string;
   /** The chat this terminal feeds, and how the pane around it reads it. */
   reading: PaneReading;
@@ -87,6 +91,7 @@ export function SessionTerminal({
   const takeFiles = chatShown && reading.files ? reading.files.deliver : upload.send;
   const terminal = useTerminal(createStream, {
     chat,
+    chatClear: clearOf(agent),
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,

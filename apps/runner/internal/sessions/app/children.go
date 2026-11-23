@@ -179,6 +179,16 @@ func (c *Children) Tell(ctx context.Context, id, text string) (Told, error) {
 	input := session.Agent.Input()
 	// A paste cannot end itself early: the closing bracket is the terminal's.
 	text = strings.ReplaceAll(text, "\x1b[201~", "")
+	if input.Clear != "" {
+		if err := c.terminals.SendKeys(ctx, session.Target(0), input.Clear); err != nil {
+			return Told{}, err
+		}
+		// The agent empties its prompt on its next render, and words that
+		// arrive before it land in the prompt it has not emptied yet.
+		if !sleep(ctx, input.ClearSettle) {
+			return Told{}, ctx.Err()
+		}
+	}
 	if err := c.terminals.Paste(ctx, session.Target(0), "tell-"+id+fmt.Sprint(c.now().UnixNano()), text); err != nil {
 		return Told{}, err
 	}
