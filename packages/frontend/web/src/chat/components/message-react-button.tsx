@@ -20,11 +20,14 @@ import { EmojiPicker } from './emoji-picker';
 export function MessageReactButton({
   selected,
   onReact,
+  align = 'center',
 }: {
   /** The reaction you gave; null for none. */
   selected: string | null;
   /** The emoji to set, or null to take yours back. */
   onReact: (emoji: string | null) => void;
+  /** Where the pill opens along the button: `end` for a message on the right, so it stays on screen. */
+  align?: 'start' | 'center' | 'end';
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -57,7 +60,7 @@ export function MessageReactButton({
       </PopoverTrigger>
       <PopoverContent
         side="top"
-        align="center"
+        align={align}
         sideOffset={8}
         className={
           more

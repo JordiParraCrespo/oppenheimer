@@ -155,6 +155,7 @@ export function BotTurn({
               <>
                 {onReact ? (
                   <MessageReactButton
+                    align="end"
                     selected={message.reaction}
                     onReact={(emoji) => onReact(message.id, emoji)}
                   />
@@ -224,6 +225,7 @@ export function BotTurn({
               <>
                 {lastWords && onReact ? (
                   <MessageReactButton
+                    align="start"
                     selected={lastWords.reaction}
                     onReact={(emoji) => onReact(lastWords.id, emoji)}
                   />
