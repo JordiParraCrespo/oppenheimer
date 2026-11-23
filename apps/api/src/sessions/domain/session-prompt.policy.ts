@@ -1,3 +1,4 @@
+import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
 import type { SessionFold } from './session-state.policy';
 import type { SessionTurnFold } from './session-turn.policy';
 
@@ -111,8 +112,14 @@ export function cloudPromptRefusal(
  */
 export const CLOUD_UNCONFIRMED_HOLD_SECONDS = 15 * 60;
 
-/** The words, then Enter, each one write: the keys the chat view types for a message. */
-export function promptKeys(text: string): string[] {
+/**
+ * The words, then Enter, each one write: the keys the chat view types for a
+ * message. An agent whose prompt can hold text nobody left there (ZCode's,
+ * which recalls its last prompt on an Up arrow) is sent its `clear` keys
+ * first, so the message is not sent joined to that text.
+ */
+export function promptKeys(text: string, agent: string): string[] {
   const words = text.includes('\n') ? `${PASTE_START}${text}${PASTE_END}` : text;
-  return [words, ENTER];
+  const clear = isCodingAgentId(agent) ? CODING_AGENTS[agent].input?.clear : undefined;
+  return clear ? [clear, words, ENTER] : [words, ENTER];
 }

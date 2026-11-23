@@ -343,6 +343,14 @@ export interface CodingAgentInput {
   readonly stop: string;
   /** How long to wait between the paste and `submit`, in milliseconds. */
   readonly pasteGapMs: number;
+  /**
+   * The keys that empty the agent's prompt before a message is typed into it,
+   * for a CLI whose prompt can hold text the person did not leave there:
+   * ZCode recalls its last prompt on an Up arrow into an empty prompt (an
+   * approval dialog's Up, a wheel over the terminal), and a message typed
+   * after it would be sent joined to it. Absent: nothing is sent first.
+   */
+  readonly clear?: string;
 }
 
 export interface CodingAgentDefinition {

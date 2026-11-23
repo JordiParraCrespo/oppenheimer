@@ -216,15 +216,15 @@ function render() {
   // How a message is typed into each agent; the plain terminal has no row.
   lines.push(
     "// inputCatalog is each agent's `input` entry of the catalog: the keys that",
-    '// send and interrupt a message typed into it, and the pause between a',
-    '// paste and its submit, in milliseconds.',
+    '// send and interrupt a message typed into it, the pause between a paste and',
+    '// its submit, in milliseconds, and the keys that empty its prompt first.',
     'var inputCatalog = map[string]agentInput{',
   );
   const inputs = CODING_AGENT_IDS.filter((id) => CODING_AGENTS[id].input).map((id) => {
     const input = CODING_AGENTS[id].input;
     return [
       JSON.stringify(id),
-      `{submit: ${JSON.stringify(input.submit)}, stop: ${JSON.stringify(input.stop)}, pasteGapMs: ${input.pasteGapMs}}`,
+      `{submit: ${JSON.stringify(input.submit)}, stop: ${JSON.stringify(input.stop)}, pasteGapMs: ${input.pasteGapMs}${input.clear ? `, clear: ${JSON.stringify(input.clear)}` : ''}}`,
     ];
   });
   lines.push(...aligned(inputs, '\t'), '}', '');

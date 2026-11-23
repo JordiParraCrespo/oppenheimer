@@ -76,7 +76,7 @@ export class SessionPromptTyperResolver {
 
     const { delivered } = await this.dispatch.typeKeys(session, {
       window: AGENT_WINDOW,
-      keys: promptKeys(prompt.text),
+      keys: promptKeys(prompt.text, session.agent),
       gapMs: PROMPT_SUBMIT_GAP_MS,
     });
     if (!delivered) {

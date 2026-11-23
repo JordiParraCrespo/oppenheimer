@@ -575,6 +575,8 @@ export class SessionChat {
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
+  /** The keys that empty the agent's prompt before a message; null for none. */
+  private clear: string | null = null;
   /** Asks the host for the turns before an offset, lent with the input (`connect`). */
   private askOlder: ((before: number) => void) | null = null;
   /** Where in the transcript the lines held start: 0 for its first line. */
@@ -880,13 +882,16 @@ export class SessionChat {
    * Lends the chat a way to type into the session's PTY, and to ask its host
    * for older turns; the function returned takes them back. `interruptible:
    * false` says the source cannot stop a turn (`ChatState.interruptible`).
+   * `clear` is the agent's keys that empty its prompt before a message
+   * (the catalog's `input.clear`, ZCode's Ctrl+U).
    */
   connect(
     type: (data: string) => void,
     askOlder?: (before: number) => void,
-    { interruptible = true }: { interruptible?: boolean } = {},
+    { interruptible = true, clear }: { interruptible?: boolean; clear?: string } = {},
   ): () => void {
     this.type = type;
+    this.clear = clear ?? null;
     this.askOlder = askOlder ?? null;
     if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
@@ -912,6 +917,10 @@ export class SessionChat {
     const type = this.type;
     const empty = message.trim() === '';
     if (!type || (empty && !withFiles)) return;
+    // A prompt can hold text nobody left there (ZCode recalls its last one on
+    // an Up arrow), which the message would be sent joined to. Not with files:
+    // their paths are already in the prompt, pasted for this message.
+    if (!empty && !withFiles && this.clear) type(this.clear);
     if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
     setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
     // A source that cannot stop the turn says itself what waits with it, and
