@@ -146,6 +146,20 @@ describe('readFeedbackDraft', () => {
     });
   });
 
+  it('reads the question a dismiss asks when a narrow pane wraps it', () => {
+    expect(
+      readFeedbackDraft(
+        screen(['Turn off Claude-drafted feedback? 0 to turn off ·', 'Esc to keep']),
+      ),
+    ).toMatchObject({
+      note: 'Turn off Claude-drafted feedback?',
+      actions: [
+        { action: 'turn off', key: '0' },
+        { action: 'keep', key: ESC },
+      ],
+    });
+  });
+
   // What breaks this: a digit typed from the chat while the terminal's prompt
   // holds text lands in that text instead of answering the card.
   it('offers no key while the terminal prompt holds text, and says so', () => {

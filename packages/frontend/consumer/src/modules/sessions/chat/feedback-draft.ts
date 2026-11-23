@@ -153,6 +153,19 @@ function cardSays(hint: Hint): boolean {
   return hint.actions.length > 0 || hint.blocked || SEND_STATES.has(hint.note ?? '');
 }
 
+/**
+ * The last row of a line that starts at `at` and stands over the input box,
+ * taking in the rows a narrow pane wrapped it onto; -1 when the box does not
+ * follow it.
+ */
+function lineEnd(rows: readonly string[], at: number): number {
+  for (let end = at; end < rows.length && end < at + HINT_ROWS_MAX; end++) {
+    if (boxFollows(rows, end + 1)) return end;
+    if (frame(rows[end + 1] ?? '')) return -1;
+  }
+  return -1;
+}
+
 /** Whether the input box's top edge follows `from` across the card's bottom margin. */
 function boxFollows(rows: readonly string[], from: number): boolean {
   for (let at = from; at < rows.length && at <= from + GAP_ROWS_MAX; at++) {
@@ -181,8 +194,10 @@ export function readFeedbackDraft(rows: readonly string[]): ChatFeedbackDraft | 
   for (let at = rows.length - 1; at >= 0; at--) {
     const line = clean(rows[at] ?? '');
     const turnOff = TURN_OFF.exec(line);
-    if (turnOff && boxFollows(rows, at + 1)) {
-      const hint = hintOf(turnOff[2] ?? '');
+    const end = turnOff ? lineEnd(rows, at) : -1;
+    if (turnOff && end >= 0) {
+      const rest = rows.slice(at + 1, end + 1).map((row) => clean(row));
+      const hint = hintOf([turnOff[2] ?? '', ...rest].join(' ').trim());
       return {
         kind: null,
         title: null,

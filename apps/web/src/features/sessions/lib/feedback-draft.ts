@@ -15,14 +15,16 @@ export function bindFeedbackDraft(
     const buffer = term.buffer.active;
     // A row xterm wrapped onto is joined to the one it continues: the card
     // is read as the lines Claude Code wrote, whatever the pane's width.
+    // Rows are read untrimmed and trimmed once joined, so a space the wrap
+    // fell on stays between the words it separates.
     const rows: string[] = [];
     for (let row = 0; row < term.rows; row++) {
       const line = buffer.getLine(buffer.baseY + row);
-      const text = line?.translateToString(true) ?? '';
+      const text = line?.translateToString(false) ?? '';
       if (line?.isWrapped && rows.length > 0) rows[rows.length - 1] += text;
       else rows.push(text);
     }
-    onFeedback(readFeedbackDraft(rows));
+    onFeedback(readFeedbackDraft(rows.map((row) => row.trimEnd())));
   });
   return () => {
     stop();
