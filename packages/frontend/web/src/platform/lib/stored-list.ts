@@ -16,11 +16,13 @@ export function storedList(key: string): string[] {
   }
 }
 
-export function rememberList(key: string, list: readonly string[]) {
+/** Whether storage took `list`: private browsing or a full quota refuse it. */
+export function rememberList(key: string, list: readonly string[]): boolean {
   try {
     window.localStorage.setItem(key, JSON.stringify(list));
+    return true;
   } catch {
-    // Private browsing or a full quota: the list holds until the page reloads.
+    return false;
   }
 }
 
