@@ -131,7 +131,14 @@ func (s *zcodeStore) messages(ctx context.Context, session string, limit int) ([
 	if db == nil || err != nil {
 		return nil, err
 	}
-	query := `SELECT id, data, time_created FROM message WHERE session_id = ? ORDER BY time_created DESC, id DESC`
+	// The model-only messages are left out here rather than after the read,
+	// so a window of limit counts only what the person sees: ZCode writes
+	// several of them a turn, and a window of its last rows that held few
+	// shown ones would read as the whole conversation.
+	query := `SELECT id, data, time_created FROM message WHERE session_id = ?
+		AND COALESCE(json_extract(data, '$.metadata.visibility'), '') <> 'model-only'
+		AND COALESCE(json_extract(data, '$.semantics.uiVisibility'), '') <> 'hidden'
+		ORDER BY time_created DESC, id DESC`
 	args := []any{session}
 	if limit > 0 {
 		query += ` LIMIT ?`
@@ -143,8 +150,8 @@ func (s *zcodeStore) messages(ctx context.Context, session string, limit int) ([
 	}
 	var messages []openCodeMessage
 	byID := map[string]int{}
-	// oldest is the earliest message read, hidden ones included: no part of
-	// the messages kept was written before it.
+	// oldest is the earliest message read: no part of the messages kept was
+	// written before it.
 	oldest := int64(0)
 	for rows.Next() {
 		var id, data string

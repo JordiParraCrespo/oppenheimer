@@ -3,6 +3,7 @@ package transcript_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -157,4 +158,69 @@ func TestTheChatWaitsForZCodesFirstConversation(t *testing.T) {
 	z.message(t, "sess_new", "msg_a", start.UnixMilli()+5, `{"role":"user","time":{"created":1795000000005}}`, `{"type":"text","text":"hello"}`)
 
 	eventually(t, "the first conversation", func() bool { return lastText(sink) == "hello" })
+}
+
+// A burst of turns after the chat opened all arrive. ZCode writes several
+// model-only messages per turn, so a window of its last rows holds few the
+// person sees; the window counts only those, or a short one is taken for
+// the whole conversation and what fell outside it is never sent.
+// Regression: twenty-five turns written between two reads, most of them lost.
+func TestABurstOfZCodeTurnsArrivesWhole(t *testing.T) {
+	z := newZCodeDB(t)
+	dir := t.TempDir()
+	start := time.UnixMilli(1_795_000_000_000)
+	z.conversation(t, "sess_mine", dir, start.UnixMilli()+1)
+	z.message(t, "sess_mine", "msg_000", start.UnixMilli()+1, `{"role":"user","time":{"created":1795000000001}}`, `{"type":"text","text":"turn 0"}`)
+	sink := &batches{}
+	followZCode(t, z.path, dir, start, sink)
+	eventually(t, "the first turn", func() bool { return lastText(sink) == "turn 0" })
+
+	tx, err := z.db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	at := start.UnixMilli() + 100
+	for turn := 1; turn <= 25; turn++ {
+		for hidden := 0; hidden < 6; hidden++ {
+			at++
+			id := fmt.Sprintf("msg_%03d_h%d", turn, hidden)
+			mustExec(t, tx, `INSERT INTO message (id, session_id, time_created, time_updated, data) VALUES (?, 'sess_mine', ?, ?, ?)`,
+				id, at, at, `{"role":"user","time":{"created":1},"metadata":{"visibility":"model-only"},"semantics":{"uiVisibility":"hidden"}}`)
+			mustExec(t, tx, `INSERT INTO part (id, message_id, session_id, time_created, time_updated, data, sequence) VALUES (?, ?, 'sess_mine', ?, ?, ?, 0)`,
+				id+"-p", id, at, at, `{"type":"text","text":"reminder","synthetic":true}`)
+		}
+		at++
+		id := fmt.Sprintf("msg_%03d_v", turn)
+		mustExec(t, tx, `INSERT INTO message (id, session_id, time_created, time_updated, data) VALUES (?, 'sess_mine', ?, ?, ?)`,
+			id, at, at, fmt.Sprintf(`{"role":"user","time":{"created":%d}}`, at))
+		mustExec(t, tx, `INSERT INTO part (id, message_id, session_id, time_created, time_updated, data, sequence) VALUES (?, ?, 'sess_mine', ?, ?, ?, 0)`,
+			id+"-p", id, at, at, fmt.Sprintf(`{"type":"text","text":"turn %d"}`, turn))
+	}
+	mustExec(t, tx, `UPDATE session SET time_updated = ? WHERE id = 'sess_mine'`, at)
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+
+	eventually(t, "every turn", func() bool { return lastText(sink) == "turn 25" })
+	seen := map[string]bool{}
+	for _, entry := range sink.entries() {
+		if text, _ := blockOf(entry)["text"].(string); text != "" {
+			seen[text] = true
+		}
+	}
+	for turn := 0; turn <= 25; turn++ {
+		if want := fmt.Sprintf("turn %d", turn); !seen[want] {
+			t.Errorf("%q never reached the chat", want)
+		}
+	}
+	if seen["reminder"] {
+		t.Error("a model-only reminder reached the chat")
+	}
+}
+
+func mustExec(t *testing.T, tx *sql.Tx, stmt string, args ...any) {
+	t.Helper()
+	if _, err := tx.Exec(stmt, args...); err != nil {
+		t.Fatal(err)
+	}
 }
