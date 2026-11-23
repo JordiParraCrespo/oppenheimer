@@ -150,7 +150,7 @@ function BotItem({
           <span className="flex min-w-0 items-baseline gap-2">
             {label}
             {time ? (
-              <span className={cn('shrink-0 text-[12px] text-fg-subtle tabular-nums', withAction && META_GIVES_WAY)}>
+              <span className={cn('figures shrink-0 text-[12px] text-fg-subtle', withAction && META_GIVES_WAY)}>
                 {time}
               </span>
             ) : null}
