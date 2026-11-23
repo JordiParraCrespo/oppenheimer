@@ -32,7 +32,7 @@ export function SessionChatLoading({ agent }: { agent: SessionAgent | null }) {
 
       <div aria-hidden className="flex flex-col gap-6">
         <div className="flex justify-end opacity-80">
-          <Skeleton shape="lg" className="h-11 w-60" />
+          <Skeleton shape="md" className="h-11 w-60" />
         </div>
         <div className="flex flex-col gap-2.5 opacity-60">
           <Skeleton shape="sm" className="h-3 w-11/12" />
@@ -40,7 +40,7 @@ export function SessionChatLoading({ agent }: { agent: SessionAgent | null }) {
           <Skeleton shape="sm" className="h-3 w-3/5" />
         </div>
         <div className="flex justify-end opacity-40">
-          <Skeleton shape="lg" className="h-11 w-44" />
+          <Skeleton shape="md" className="h-11 w-44" />
         </div>
         <div className="flex flex-col gap-2.5 opacity-20">
           <Skeleton shape="sm" className="h-3 w-4/5" />

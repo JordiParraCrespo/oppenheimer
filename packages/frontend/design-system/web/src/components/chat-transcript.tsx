@@ -13,7 +13,7 @@ import { cn } from '../lib/utils';
  *
  * - `ChatTranscript`: the column; turns 20px apart.
  * - `ChatUserMessage`: the person's turn, a bubble at 80% of the column with
- *   the 18px radius at 15px, its line breaks kept (Bots); attachments sit
+ *   the 14px radius at 15px, its line breaks kept (Bots); attachments sit
  *   above it, the time and its actions (copy, edit) under it, on hover.
  * - `ChatAttachment`: a file on a turn, a 44px card with the type's glyph
  *   on a 32px tile, the name over its size in mono; `icon` alone is the
