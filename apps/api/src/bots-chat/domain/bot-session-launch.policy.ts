@@ -120,9 +120,9 @@ export function planBotSessionLaunch(
 ): { launch: BotSessionLaunch } | { refusal: string } {
   const definition = CODING_AGENTS[agent];
   // `task` is required, and an agent that takes none on its command line
-  // (ZCode) would drop it. The blank terminal's task is a note the bot then
-  // drives the terminal with, so it is let through.
-  if (agent !== 'shell' && !definition.launch.prompt) {
+  // (ZCode) would drop it, unless the catalog marks the task a note (the
+  // blank terminal's, which the bot then drives the terminal under).
+  if (!definition.launch.prompt && !definition.launch.taskIsNote) {
     return {
       refusal: promptText('tools/sessions.launch-no-task', { label: definition.label }),
     };

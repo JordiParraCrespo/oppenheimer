@@ -140,7 +140,7 @@ describe('coding agent catalog', () => {
     const shell = CODING_AGENTS.shell;
     expect(shell.command).toBe('');
     expect(shell.models).toEqual([]);
-    expect(shell.launch).toEqual({});
+    expect(shell.launch).toEqual({ taskIsNote: true });
     // A shell prints any URL it is asked to; none of them is a login button.
     expect(shell.loginTargets).toBeUndefined();
   });

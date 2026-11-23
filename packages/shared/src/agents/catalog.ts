@@ -270,6 +270,13 @@ export interface CodingAgentLaunch {
    * the first one themselves.
    */
   readonly prompt?: readonly string[];
+  /**
+   * The first task is a note for whoever reads the session, not something the
+   * agent reads: the blank terminal's names the session, and a bot then types
+   * into the terminal itself. An agent with no `prompt` that is not marked so
+   * (ZCode) would drop a task, so a caller that requires one refuses it.
+   */
+  readonly taskIsNote?: true;
 }
 
 /**
@@ -811,7 +818,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // session, and they type the first command themselves.
     command: '',
     models: Object.freeze([]),
-    launch: Object.freeze({}),
+    launch: Object.freeze({ taskIsNote: true as const }),
   }),
 });
 

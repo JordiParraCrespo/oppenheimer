@@ -200,7 +200,8 @@ var launchCatalog = map[string]launchMap{
 		},
 	},
 	"shell": {
-		command: "",
+		command:    "",
+		taskIsNote: true,
 	},
 }
 
