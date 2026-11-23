@@ -79,7 +79,11 @@ held.
    `manifest.json` naming the commit. `anon:/login` takes a signed-out
    route; `--github` connects a stub GitHub installation first, so the
    composer and project screens have repositories; `--phone` adds a 390px
-   width, which a layout change needs. A component in the design system or
+   width, which a layout change needs; `--widths 1440,900,500,390` takes
+   each width named, which a change to a row, a column or a toolbar needs
+   (`.agents/rules/client-state.md`: text overlapped at 500 and 900 on #872).
+   Before photographing, tab through the screen once: every control shows a
+   focus ring, Escape closes only what has focus. A component in the design system or
    the kit is photographed on a console route that renders it.
 
    A state an empty account cannot reach (a dialog open, a row's menu, a

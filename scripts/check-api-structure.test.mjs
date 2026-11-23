@@ -298,6 +298,74 @@ test('a mapper maps: under its cap, and building no domain event', () => {
   );
 });
 
+test('a response DTO built outside a mapper is reported; the mapper and the DTO file may build one', () => {
+  // A response envelope built in the controller, past the mapper.
+  const controller = 'widget/queries/find-widgets/find-widgets.http.controller.ts';
+  for (const body of [
+    '  @Get()\nexport class C { f() { const dto = new WidgetResponseDto(); return dto; } }',
+    '  @Get()\nexport class C { f(w) { return w as WidgetResponseDto; } }',
+    '  @Get()\nexport class C { f(w) { return { id: w.id } satisfies WidgetResponseDto; } }',
+  ]) {
+    assert.deepEqual(kinds(check({ ...CONFORMING, [controller]: body })), [
+      'response-dto-outside-mapper',
+    ]);
+  }
+  // A repository shaping a row into a response is the same breach.
+  assert.deepEqual(
+    kinds(
+      check({
+        ...CONFORMING,
+        'widget/database/widget.repository.ts':
+          'export class WidgetRepository { f(r) { return new WidgetResponseDto(r); } }',
+      }),
+    ),
+    ['response-dto-outside-mapper'],
+  );
+  // The mapper is where it belongs; a type-only mention is not a build.
+  assert.deepEqual(
+    check({
+      ...CONFORMING,
+      'widget/widget.mapper.ts':
+        'export class WidgetMapper { toResponse(w): WidgetResponseDto { const d = new WidgetResponseDto(); return d; } }',
+      [controller]:
+        '  @Get()\nexport class C { f(): Promise<WidgetResponseDto[]> { return this.q; } }',
+    }).outstanding,
+    [],
+  );
+});
+
+test('an ORM entity missing from the seed is reported against each list it is missing from', () => {
+  // A new entity registered with the app but not with the seed's
+  // hand-listed DataSource, so seeding fails at runtime and no test notices.
+  const registered = {
+    'config/data-source.ts':
+      "import { WidgetOrmEntity } from '../widget/database/widget.orm-entity';",
+    'database/seed.ts': 'const entities = [WidgetOrmEntity];',
+  };
+  assert.deepEqual(check({ ...CONFORMING, ...registered }).outstanding, []);
+  assert.deepEqual(
+    kinds(check({ ...CONFORMING, ...registered, 'database/seed.ts': 'const entities = [];' })),
+    ['orm-entity-unregistered'],
+  );
+  assert.deepEqual(
+    kinds(check({ ...CONFORMING, 'config/data-source.ts': '', 'database/seed.ts': '' })),
+    ['orm-entity-unregistered', 'orm-entity-unregistered'],
+  );
+  // A prefix of a registered name is not a registration.
+  assert.deepEqual(
+    kinds(
+      check({
+        ...CONFORMING,
+        ...registered,
+        'widget/database/widget-part.orm-entity.ts': 'export class WidgetPartOrm {}',
+        'config/data-source.ts': 'WidgetOrmEntity WidgetPartOrmEntity',
+        'database/seed.ts': 'WidgetOrmEntity WidgetPartOrmEntity',
+      }),
+    ),
+    ['orm-entity-unregistered', 'orm-entity-unregistered'],
+  );
+});
+
 test('the CLI checks apps/api against the ledger in the script, and it is current', () => {
   // `fileURLToPath`, not `.pathname`: a URL's path is percent-encoded, so a
   // checkout under a directory with a space in it ("Macintosh SSD") spawns

@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "id": "draft-lost-on-error",
+      "from": "#881",
+      "task": "The bot composer clears as soon as the person sends, ready for the next message.",
+      "commit": "feat(bots): clear the composer on send",
+      "expect": {
+        "files": ["apps/web/src/features/bots/hooks/use-bot-reply.ts"],
+        "match": "draft|lost|lose|restor|onError|discard|typed"
+      }
+    },
+    {
+      "id": "late-save-wins",
+      "from": "#884",
+      "task": "Reorder a board's columns by dragging; the board shows the new order at once and keeps what the server stored.",
+      "commit": "feat(tasks): reorder the board's columns",
+      "expect": {
+        "files": ["apps/web/src/features/tasks/hooks/use-column-order.ts"],
+        "match": "order|late|stale|race|older|sequence|overwrit|revert|earlier"
+      }
+    },
+    {
+      "id": "enter-during-ime",
+      "from": "#904",
+      "task": "A tag input: Enter or a comma turns the typed text into a tag.",
+      "commit": "feat(design-system): a tag input",
+      "expect": {
+        "files": ["packages/frontend/design-system/web/src/internal/tag-input-keys.ts"],
+        "match": "IME|compos|229"
+      }
+    },
+    {
+      "id": "enter-during-ime-ok",
+      "decoyOf": "enter-during-ime",
+      "task": "A tag input: Enter or a comma turns the typed text into a tag.",
+      "commit": "feat(design-system): a tag input"
+    },
+    {
+      "id": "failure-drawn-as-empty",
+      "from": "#900",
+      "task": "Lay the calendar's runs on one lane per host; a workspace with no hosts gets the Connect a host prompt.",
+      "commit": "feat(calendar): one lane per host",
+      "expect": {
+        "files": ["apps/web/src/features/calendar/hooks/use-calendar-hosts.ts"],
+        "match": "error|fail|retry|isError"
+      }
+    }
+  ]
+}

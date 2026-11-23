@@ -36,7 +36,9 @@ All research and decisions live in `product/`; start with `product/README.md`.
 - When a decision changes, update the note that made it and add a line to
   the "decisions that changed" list in `product/README.md`. Do not silently
   rewrite history in earlier notes. `product/brief.html` is regenerated from
-  the notes; keep it in sync when a note changes.
+  the notes; keep it in sync when a note changes. `scripts/check-product-sync.mjs`
+  fails a branch whose notes changed without both; an edit that changes no
+  decision says so in a commit trailer, `Product-Sync: <why>`.
 - The runner is `product/versions/mvp/02-runner.md` and
   `…/09-runner-install-and-update.md`; the wire is `…/01-protocol.md`.
 
@@ -147,7 +149,9 @@ frontmatter; this is the index.
 | touching a table, an entity or a migration | `database-design.md`, `typeorm.md`; a new table is `/design-database` |
 | writing or pruning a backend test | `testing-backend.md`; the value bar is `/test-audit` |
 | building a `packages/backend/*` package | `backend-packages.md` (exports, pluggable vs library) |
-| guarding a route | `rbac-roles.md` (roles), `scopes-and-credentials.md` (API tokens, OAuth clients) |
+| guarding a route | `rbac-roles.md` (roles), `scopes-and-credentials.md` (API tokens, OAuth clients, a scope grants no more than its name) |
+| handling text, input, limits, ids, schedules, or removing anything | `edge-cases.md` (where most review-found bugs came from) |
+| reading, writing or subscribing to data in a client (`apps/web`, `apps/mobile`, `packages/frontend`) | `client-state.md` (failures, late answers, live data, widths and focus) |
 | adding or reading a feature flag | `feature-flags.md` |
 | calling a system we do not run | `integrations.md` (rate-limit budgets); a new vendor is `/integrate-provider` and `provider-integrations.md` |
 | writing Go (`apps/runner`, `packages/go`) | `go.md`, `apps/runner/ARCHITECTURE.md`, `packages/go/README.md` |
@@ -158,6 +162,23 @@ frontmatter; this is the index.
 | checking a change end to end | `/local-stack`; the e2e suites are `e2e/README.md` |
 | reading the API's logs or metrics, or adding a metric | `apps/docs/docs/deployment/monitoring.md` (`pnpm logs` is LogQL over the local Loki), `deploy/dev/monitoring/README.md` (`pnpm monitoring:up`) |
 | deploying | `deploy/dev/README.md`, `apps/docs/docs/deployment/` |
+
+## Review guidelines
+
+For automated reviewers (Codex reads this section), and for `/autoreview`:
+
+- **P0**: data loss, a security or authorization hole, a crash on a real path.
+- **P1**: wrong behaviour a person can reach: a race, lost input, a failure
+  drawn as success or as empty, an id matched by name, a limit not checked.
+- **P2**: wrong behaviour that is rare and recoverable.
+- **P3**: a broken repository convention with no change in behaviour (where a
+  mapping lives, a product note out of sync, a missing plural form). A
+  convention is never P1.
+- Each finding names the input or the path that triggers it. Look first where
+  bugs here have come from: `.agents/rules/edge-cases.md`,
+  `.agents/rules/client-state.md`, "A limit, a side effect or a loop is part
+  of the write" in `nestjs-architecture.md`, and "A scope grants no more than
+  its name" in `scopes-and-credentials.md`.
 
 ## Commands
 

@@ -105,6 +105,7 @@
         "fromMail": "Tomado del mensaje al que responde",
         "files_one": "{{count}} archivo",
         "files_other": "{{count}} archivos",
+        "files_many": "{{count}} archivos",
         "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
         "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
         "nobody": "Nadie",
@@ -1256,6 +1257,7 @@
       "writeWarningTitle": "{{who}} actuará como tú en {{host}}",
       "writeWarningCount_one": "{{count}} persona",
       "writeWarningCount_other": "{{count}} personas",
+      "writeWarningCount_many": "{{count}} personas",
       "writeWarningBody": "Todo lo que envíen se ejecuta con tus credenciales y tu token de GitHub. Pueden hacer push, borrar archivos y gastar tu cuota.",
       "writeAck": "Entiendo que actúan como yo en este host",
       "ackRequired": "Confirma que lo entiendes antes de dar acceso de escritura.",
@@ -1421,8 +1423,10 @@
       "failed_many": "{{count}} fallaron",
       "files_one": "{{count}} archivo adjunto",
       "files_other": "{{count}} archivos adjuntos",
+      "files_many": "{{count}} archivos adjuntos",
       "tasks_one": "{{done}} de {{count}} tarea hecha",
       "tasks_other": "{{done}} de {{count}} tareas hechas",
+      "tasks_many": "{{done}} de {{count}} tareas hechas",
       "notice": {
         "interrupted": "Detuviste este turno",
         "compacted": "Contexto compactado"
@@ -1450,24 +1454,34 @@
       "summary": {
         "read_one": "leyó {{count}} archivo",
         "read_other": "leyó {{count}} archivos",
+        "read_many": "leyó {{count}} archivos",
         "search_one": "buscó {{count}} patrón",
         "search_other": "buscó {{count}} patrones",
+        "search_many": "buscó {{count}} patrones",
         "web_one": "consultó {{count}} página",
         "web_other": "consultó {{count}} páginas",
+        "web_many": "consultó {{count}} páginas",
         "edit_one": "editó {{count}} archivo",
         "edit_other": "editó {{count}} archivos",
+        "edit_many": "editó {{count}} archivos",
         "write_one": "escribió {{count}} archivo",
         "write_other": "escribió {{count}} archivos",
+        "write_many": "escribió {{count}} archivos",
         "command_one": "ejecutó {{count}} comando",
         "command_other": "ejecutó {{count}} comandos",
+        "command_many": "ejecutó {{count}} comandos",
         "agent_one": "lanzó {{count}} subagente",
         "agent_other": "lanzó {{count}} subagentes",
+        "agent_many": "lanzó {{count}} subagentes",
         "mcp_one": "llamó {{count}} herramienta",
         "mcp_other": "llamó {{count}} herramientas",
+        "mcp_many": "llamó {{count}} herramientas",
         "question_one": "hizo {{count}} pregunta",
         "question_other": "hizo {{count}} preguntas",
+        "question_many": "hizo {{count}} preguntas",
         "other_one": "usó {{count}} herramienta",
-        "other_other": "usó {{count}} herramientas"
+        "other_other": "usó {{count}} herramientas",
+        "other_many": "usó {{count}} herramientas"
       },
       "verbLive": {
         "command": "Ejecutando",
@@ -1485,6 +1499,7 @@
       "thoughtFor": "Pensó {{seconds}} s",
       "changes_one": "{{count}} archivo cambiado",
       "changes_other": "{{count}} archivos cambiados",
+      "changes_many": "{{count}} archivos cambiados",
       "question": {
         "waiting": "Esperando tu respuesta",
         "dismissed": "Descartaste las preguntas",
@@ -1500,6 +1515,7 @@
       "subagents": {
         "count_one": "{{count}} subagente",
         "count_other": "{{count}} subagentes",
+        "count_many": "{{count}} subagentes",
         "running": "{{count}} en marcha",
         "failed_one": "{{count}} fallido",
         "failed_other": "{{count}} fallidos",
@@ -1507,6 +1523,7 @@
         "untitled": "Subagente",
         "calls_one": "{{count}} llamada",
         "calls_other": "{{count}} llamadas",
+        "calls_many": "{{count}} llamadas",
         "tokens": "{{tokens}} tokens",
         "state": {
           "running": "En marcha",
@@ -1775,6 +1792,7 @@
       "stopFailed": "No se pudo detener el turno.",
       "queuedImages_one": "{{count}} imagen",
       "queuedImages_other": "{{count}} imágenes",
+      "queuedImages_many": "{{count}} imágenes",
       "failed": "{{provider}} no pudo terminar este turno",
       "failedUnknown": "El turno terminó sin decir por qué.",
       "failure": {
@@ -1865,8 +1883,10 @@
         "groupFailed_other": "{{count}} con error",
         "delegated_one": "Ejecutó {{count}} subagente",
         "delegated_other": "Ejecutó {{count}} subagentes",
+        "delegated_many": "Ejecutó {{count}} subagentes",
         "delegating_one": "Ejecutando {{count}} subagente",
         "delegating_other": "Ejecutando {{count}} subagentes",
+        "delegating_many": "Ejecutando {{count}} subagentes",
         "delegatingDone_one": "Ejecutando {{count}} subagente · {{done}} terminado",
         "delegatingDone_many": "Ejecutando {{count}} subagentes · {{done}} terminados",
         "delegatingDone_other": "Ejecutando {{count}} subagentes · {{done}} terminados",
@@ -1965,7 +1985,8 @@
           "progress": "Revisé la sesión «{{name}}»",
           "notice": "La sesión «{{name}}» envió un mensaje",
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
-          "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+          "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»",
+          "matched_many": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
         },
         "pullRequest": {
           "check_failed": "Pull request #{{number}} de {{repository}}: fallaron los checks",
@@ -2057,10 +2078,13 @@
         "every": {
           "minutes_one": "cada minuto",
           "minutes_other": "cada {{count}} minutos",
+          "minutes_many": "cada {{count}} minutos",
           "hours_one": "cada hora",
           "hours_other": "cada {{count}} horas",
+          "hours_many": "cada {{count}} horas",
           "days_one": "cada día",
           "days_other": "cada {{count}} días",
+          "days_many": "cada {{count}} días",
           "selfPaced": "cuando el bot decida"
         },
         "next": "siguiente a las {{time}}",
@@ -2095,6 +2119,7 @@
         "breakdown": "Desglose",
         "models_one": "{{count}} modelo",
         "models_other": "{{count}} modelos",
+        "models_many": "{{count}} modelos",
         "input": "Entrada",
         "output": "Salida",
         "cacheRead": "Lectura de caché",
@@ -2103,12 +2128,16 @@
         "purpose": {
           "goalReview_one": "{{count}} revisión del objetivo",
           "goalReview_other": "{{count}} revisiones del objetivo",
+          "goalReview_many": "{{count}} revisiones del objetivo",
           "summary_one": "{{count}} resumen",
           "summary_other": "{{count}} resúmenes",
+          "summary_many": "{{count}} resúmenes",
           "ruleReview_one": "{{count}} revisión de reglas",
           "ruleReview_other": "{{count}} revisiones de reglas",
+          "ruleReview_many": "{{count}} revisiones de reglas",
           "dream_one": "{{count}} orden de memoria",
           "dream_other": "{{count}} órdenes de memoria",
+          "dream_many": "{{count}} órdenes de memoria",
           "suggestion_one": "{{count}} respuesta sugerida",
           "suggestion_many": "{{count}} respuestas sugeridas",
           "suggestion_other": "{{count}} respuestas sugeridas"
@@ -2243,9 +2272,11 @@
         "learnFailed": "No se ha podido cambiar cómo aprende el bot.",
         "facts_one": "Datos · {{count}}",
         "facts_other": "Datos · {{count}}",
+        "facts_many": "Datos · {{count}}",
         "clearAll": "Borrar todo",
         "clearTitle_one": "¿Borrar {{count}} dato?",
         "clearTitle_other": "¿Borrar los {{count}} datos?",
+        "clearTitle_many": "¿Borrar los {{count}} datos?",
         "clearBody": "El bot olvida todo lo que se le pidió recordar. Su alma y sus instrucciones se mantienen.",
         "clearing": "Borrando…",
         "clearFailed": "No se ha podido borrar la memoria.",
@@ -2297,6 +2328,7 @@
         "subtitle": "Formas guardadas de hacer una tarea. Ejecuta una escribiendo / y su nombre en el chat; el bot usa una por su cuenta cuando una petición encaja.",
         "count_one": "Habilidades · {{count}}",
         "count_other": "Habilidades · {{count}}",
+        "count_many": "Habilidades · {{count}}",
         "empty": "Aún no hay habilidades. Añade una, o pide al bot que guarde como habilidad cómo hizo algo.",
         "add": "Añadir habilidad",
         "edit": "Editar {{name}}",
@@ -2511,6 +2543,7 @@
         "noCandidates": "Ningún chat coincide.",
         "addCount_one": "Añadir {{count}} chat",
         "addCount_other": "Añadir {{count}} chats",
+        "addCount_many": "Añadir {{count}} chats",
         "telegramTitle": "Telegram · {{name}}",
         "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
       }
@@ -2819,6 +2852,7 @@
       "searchRepositories": "Buscar repositorios",
       "repoCount_one": "{{count}} repositorio",
       "repoCount_other": "{{count}} repositorios",
+      "repoCount_many": "{{count}} repositorios",
       "runsIn": "Se ejecuta en",
       "placeHost": "En un host",
       "placeHostDesc": "Un worktree en el host, el agente en su terminal",
@@ -3288,6 +3322,7 @@
       "emptyTitle": "No hay hitos en este proyecto",
       "ofTasks_one": "de {{count}} tarea",
       "ofTasks_other": "de {{count}} tareas",
+      "ofTasks_many": "de {{count}} tareas",
       "today": "Hoy",
       "earlier": "Antes",
       "later": "Después",
@@ -3800,6 +3835,7 @@
       "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
       "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
       "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+      "questionTitle_many": "{{count}} preguntas antes de que {{name}} continúe",
       "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
       "send": "Enviar respuestas",
       "sending": "Enviando…",
@@ -3859,7 +3895,8 @@
       "clearTitle": "Estás al día",
       "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
-      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
     },
     "notice": {
       "title": "{{name}} tiene novedades para ti",
@@ -4000,6 +4037,7 @@
       "saveFailed": "No se pudo guardar lo que escribiste.",
       "learnedTitle_one": "Lo que aprendieron tus bots · {{count}}",
       "learnedTitle_other": "Lo que aprendieron tus bots · {{count}}",
+      "learnedTitle_many": "Lo que aprendieron tus bots · {{count}}",
       "learnedHint": "Datos sobre ti que un bot guardó en un chat. Cada uno se queda con el bot que lo aprendió: cámbialo u olvídalo aquí y todos los bots leen el cambio.",
       "learnedEmpty": "Tus bots aún no han aprendido nada sobre ti.",
       "loadFailed": "No se pudo cargar lo que tus bots saben de ti.",
@@ -4289,6 +4327,7 @@
         "loadFailed": "No se pudieron cargar los chats de este número.",
         "summary_one": "{{answered}} de {{count}} chat con respuesta",
         "summary_other": "{{answered}} de {{count}} chats con respuesta",
+        "summary_many": "{{answered}} de {{count}} chats con respuesta",
         "tabsLabel": "Grupos o personas",
         "tabs": {
           "group": "Grupos",
@@ -4315,6 +4354,7 @@
         "bulkLabel": "Chats seleccionados",
         "selected_one": "{{count}} chat seleccionado",
         "selected_other": "{{count}} chats seleccionados",
+        "selected_many": "{{count}} chats seleccionados",
         "answerWith": "Responder con",
         "apply": "Aplicar",
         "stop": "Dejar de responder",
@@ -4325,6 +4365,7 @@
         "noMatch": "Ningún chat coincide",
         "range_one": "{{from}}–{{to}} de {{count}}",
         "range_other": "{{from}}–{{to}} de {{count}}",
+        "range_many": "{{from}}–{{to}} de {{count}}",
         "previous": "Anterior",
         "next": "Siguiente"
       }
@@ -4831,7 +4872,8 @@
     "badge": {
       "none": "Sesiones de Claude Code",
       "needsYou_one": "{{count}} sesión de Claude Code te necesita",
-      "needsYou_other": "{{count}} sesiones de Claude Code te necesitan"
+      "needsYou_other": "{{count}} sesiones de Claude Code te necesitan",
+      "needsYou_many": "{{count}} sesiones de Claude Code te necesitan"
     },
     "groups": {
       "needsYou": "Te necesitan",
@@ -4844,6 +4886,7 @@
       "nothingRunning": "No hay nada en curso.",
       "stillRunning_one": "{{count}} sesión sigue en curso.",
       "stillRunning_other": "{{count}} sesiones siguen en curso.",
+      "stillRunning_many": "{{count}} sesiones siguen en curso.",
       "notify": "Recibirás un aviso cuando alguna te necesite."
     },
     "openClaude": "Abrir claude.ai/code",

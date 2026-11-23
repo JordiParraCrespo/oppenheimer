@@ -20,6 +20,10 @@
  *  - a controller dispatches and maps; a handler orchestrates. Both have caps
  *  - a mapper translates between shapes and builds nothing of the domain's:
  *    it imports no domain event, and it has a cap too
+ *  - a response DTO is built in a mapper: nowhere else constructs one or
+ *    casts a value into one
+ *  - every ORM entity is registered for the seed (`config/data-source.ts` and
+ *    `database/seed.ts`), or seeding the module fails at runtime
  *
  * Run: pnpm check:api-structure
  */
@@ -59,6 +63,14 @@ const CONTROLLER_LINE_CAP = 110;
 const HANDLER_LINE_CAP = 120;
 const MAPPER_LINE_CAP = 300;
 
+/**
+ * A response DTO assembled where it is not mapped: `new FooResponseDto()`, or a
+ * value forced into one with `as`/`satisfies`. The mapper is where a response
+ * is built; anywhere else, the shape drifts from what `toResponse` answers.
+ */
+const RESPONSE_DTO_BUILT =
+  /\bnew\s+[A-Z]\w*ResponseDto\s*\(|\b(?:as|satisfies)\s+[A-Z]\w*ResponseDto\b/;
+const MAY_BUILD_RESPONSE = /(\.mapper\.ts|\.dto\.ts|\.spec\.ts|\/__tests__\/.*)$/;
 /** An import of a domain event class: `…/domain/events/<name>.domain-event`. */
 const DOMAIN_EVENT_IMPORT = /^\s*import\s[^;]*?from\s+['"][^'"]*\.domain-event['"]/m;
 
@@ -244,6 +256,53 @@ const LEDGER = [
     kind: 'mapper-over-cap',
     reason:
       "plans a session from the bot's input and words the session for the bot; `planSession` and the decision answers are rules that want a policy",
+  },
+  {
+    path: 'apps/api/src/bots-chat/queries/find-bot-goal/find-bot-goal.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "an envelope (`{ goal }`) around the mapper's result; wants a mapper method that answers the envelope",
+  },
+  {
+    path: 'apps/api/src/bots-chat/queries/find-bot-loop/find-bot-loop.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "an envelope around the mapper's result; wants a mapper method that answers the envelope",
+  },
+  {
+    path: 'apps/api/src/bots-chat/queries/find-bot-suggestion/find-bot-suggestion.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "an envelope around the mapper's result; wants a mapper method that answers the envelope",
+  },
+  {
+    path: 'apps/api/src/bots-chat/queries/find-pending-bot-question/find-pending-bot-question.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "an envelope around the mapper's result; wants a mapper method that answers the envelope",
+  },
+  {
+    path: 'apps/api/src/github/commands/add-github-token/add-github-token.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "casts the handler's token read to the response DTO; the github module has no token mapper yet",
+  },
+  {
+    path: 'apps/api/src/github/commands/check-github-token/check-github-token.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "casts the handler's token read to the response DTO; the github module has no token mapper yet",
+  },
+  {
+    path: 'apps/api/src/github/commands/rename-github-token/rename-github-token.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason:
+      "casts the handler's token read to the response DTO; the github module has no token mapper yet",
+  },
+  {
+    path: 'apps/api/src/telegram/commands/open-telegram-owner-link/open-telegram-owner-link.http.controller.ts',
+    kind: 'response-dto-outside-mapper',
+    reason: 'builds the owner-link answer in the controller; wants a telegram mapper method',
   },
 ];
 const tsFiles = (dir) => readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
@@ -524,6 +583,13 @@ function checkModule(name) {
   for (const file of walk(moduleDir)) {
     if (!file.endsWith('.ts')) continue;
     const source = readFileSync(file, 'utf8');
+    if (!MAY_BUILD_RESPONSE.test(file) && RESPONSE_DTO_BUILT.test(source)) {
+      fail(
+        rel(file),
+        'response-dto-outside-mapper',
+        `${rel(file)}: builds a response DTO (\`new …ResponseDto\` or \`as …ResponseDto\`). A response is built by the module's mapper (\`toResponse\` or a named method), injected where it is needed`,
+      );
+    }
     const inSlice = /\/(commands|queries)\/[^/]+\/[^/]+\.http\.controller\.ts$/.test(file);
     // A probe is not a use case. `/health` and `/ready` report on the process,
     // have no command or query behind them and never will, so the contract
@@ -557,6 +623,33 @@ function checkModule(name) {
 }
 
 /**
+ * The seed builds its own DataSource from two lists of entities, apart from
+ * the app's autoloaded ones, so an entity missing from either fails only when
+ * someone seeds. A tree with neither file (a fixture that is not
+ * about the seed) has nothing to check.
+ */
+function checkSeedRegistration() {
+  const lists = ['config/data-source.ts', 'database/seed.ts']
+    .map((path) => join(srcDir, path))
+    .filter((path) => existsSync(path))
+    .map((path) => [path, readFileSync(path, 'utf8')]);
+  if (lists.length === 0) return;
+  for (const file of walk(srcDir)) {
+    if (!file.endsWith('.orm-entity.ts')) continue;
+    for (const [, name] of readFileSync(file, 'utf8').matchAll(/export\s+class\s+(\w+)/g)) {
+      for (const [list, source] of lists) {
+        if (new RegExp(`\\b${name}\\b`).test(source)) continue;
+        fail(
+          rel(file),
+          'orm-entity-unregistered',
+          `${rel(file)}: ${name} is not in ${rel(list)}. The seed's DataSource lists its entities by hand; add it there`,
+        );
+      }
+    }
+  }
+}
+
+/**
  * Check one source tree against the contract.
  *
  * Exported so the fixture suite can drive it over a tree it built, which is the
@@ -576,6 +669,7 @@ export function checkApiStructure(dir, options = {}) {
     .map((e) => e.name)
     .sort();
   for (const name of modules) checkModule(name);
+  checkSeedRegistration();
 
   // Subtract the ledger, and hold the ledger to being current: an entry that no
   // longer describes a real violation is debt that has been paid and not

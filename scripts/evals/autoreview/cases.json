@@ -1,0 +1,127 @@
+{
+  "prompt": "You are the fresh reviewer that the `autoreview` skill spawns: you did not write this branch. Read `.agents/skills/autoreview/SKILL.md` and follow, exactly, the brief its step 1 gives the reviewer, and the rules it points you to. Read-only: change no file, commit nothing, push nothing.\n\nThe task, as the user asked it: {task}\n\nThe target: `git diff {base}...HEAD` on the committed branch, head {head}. Anything it adds that nothing calls yet, and any symbol it imports that does not exist yet (an error code, a port method, a hook, a DTO), lands with a companion pull request, by design: do not report either, and judge the code as if they exist and do what their names say.\n\nAfter your answer, end with one fenced ```json block, the last thing you write: {\"verdict\": \"CLEAN\" | \"FINDINGS\", \"findings\": [{\"priority\": \"P0\" | \"P1\", \"file\": \"<repo-relative path>\", \"line\": <number>, \"summary\": \"<the defect and the input or path that triggers it>\"}]}.",
+  "cases": [
+    {
+      "id": "surrogate-cut",
+      "from": "#959",
+      "task": "Keep an excerpt of the webhook body that started a routine's run, capped, to show on the run's page.",
+      "commit": "feat(automations): keep an excerpt of a routine's webhook body",
+      "expect": {
+        "files": ["apps/api/src/automations/domain/routine-payload-excerpt.policy.ts"],
+        "match": "surrogate|code ?point|utf-?16|emoji|lone|astral|NUL|\\\\u0000"
+      }
+    },
+    {
+      "id": "surrogate-cut-ok",
+      "decoyOf": "surrogate-cut",
+      "task": "Keep an excerpt of the webhook body that started a routine's run, capped, to show on the run's page.",
+      "commit": "feat(automations): keep an excerpt of a routine's webhook body"
+    },
+    {
+      "id": "count-then-insert",
+      "from": "#931",
+      "task": "Let a WhatsApp number answer in a group, up to 50 groups per number.",
+      "commit": "feat(whatsapp): allow a number to answer in a group",
+      "expect": {
+        "files": [
+          "apps/api/src/whatsapp/commands/allow-whatsapp-group/allow-whatsapp-group.command-handler.ts",
+          "apps/api/src/whatsapp/database/whatsapp-group-grant.repository.port.ts"
+        ],
+        "match": "race|concurren|atomic|transaction|lock|simultaneous|at once|interleav|TOCTOU|check-then"
+      }
+    },
+    {
+      "id": "cap-atomic-ok",
+      "decoyOf": "count-then-insert",
+      "task": "Let a WhatsApp number answer in a group, up to 50 groups per number.",
+      "commit": "feat(whatsapp): allow a number to answer in a group"
+    },
+    {
+      "id": "control-under-write-scope",
+      "from": "#799",
+      "task": "Open a login shell on a host from the console, through a one-use ticket the runner accepts.",
+      "commit": "feat(hosts): issue a terminal ticket",
+      "expect": {
+        "files": [
+          "apps/api/src/hosts/commands/issue-terminal-ticket/issue-terminal-ticket.http.controller.ts"
+        ],
+        "match": "scope|hosts:write|escalat|privilege|token"
+      }
+    },
+    {
+      "id": "denylist-fails-open",
+      "from": "#802",
+      "task": "Let a bot run shell commands in its session without asking, except destructive ones, which wait for the owner's approval.",
+      "commit": "feat(bots): run safe shell commands without asking",
+      "expect": {
+        "files": ["apps/api/src/bots-chat/domain/bot-shell-guard.policy.ts"],
+        "match": "fail(s|ing)? ?(open|closed)|quot|unparse|cannot (be )?parse|-C\\b|global option|bypass|'run'|returns run|evad|\\$\\(|subshell|python|interpreter|sudo|rm -fr|-fr|reorder"
+      }
+    },
+    {
+      "id": "match-by-branch-name",
+      "from": "#958",
+      "task": "A routine that reacts to pull requests skips the ones its own bot's session opened.",
+      "commit": "fix(automations): a routine skips its own session's pull request",
+      "expect": {
+        "files": ["apps/api/src/automations/application/pull-request-owner.resolver.ts"],
+        "match": "fork|branch name|same (branch )?name|repositor(y|ies)|headRepositoryId|unrelated|collid"
+      }
+    },
+    {
+      "id": "match-by-id-ok",
+      "decoyOf": "match-by-branch-name",
+      "task": "A routine that reacts to pull requests skips the ones its own bot's session opened.",
+      "commit": "fix(automations): a routine skips its own session's pull request"
+    },
+    {
+      "id": "markdown-rewrites-code",
+      "from": "#961",
+      "task": "Send a bot's Markdown reply to Slack in Slack's own formatting.",
+      "commit": "feat(slack): convert a bot's reply to mrkdwn",
+      "expect": {
+        "files": ["apps/api/src/slack/domain/slack-markdown.policy.ts"],
+        "match": "code|fence|backtick|```|inline|\\*\\*"
+      }
+    },
+    {
+      "id": "cron-step-words",
+      "from": "#957",
+      "task": "Word a routine's cron schedule on the approval card the owner reads before it starts.",
+      "commit": "feat(automations): word a routine's schedule",
+      "expect": {
+        "files": ["packages/shared/src/automations/cron-words.ts"],
+        "match": ":00|:50|wrap|divi|not every|resets|top of the hour|each hour|hour boundary|uneven|irregular|fixed minutes|\\*/25|\\*/7|\\*/45"
+      }
+    },
+    {
+      "id": "rename-leaves-a-caller",
+      "from": "#871",
+      "task": "Rename engineLabel to labelOfEngine, the name the rest of packages/shared uses.",
+      "commit": "refactor(shared): engineLabel is labelOfEngine",
+      "expect": {
+        "files": [
+          "packages/shared/src/agents/engine-picker-words.ts",
+          "packages/shared/src/agents/engine-label.ts"
+        ],
+        "match": "engine-picker-words|enginePickerWords|still imports|engineLabel"
+      },
+      "validate": [
+        {
+          "file": "packages/shared/src/agents/engine-picker-words.ts",
+          "contains": "import { engineLabel } from './engine-label';"
+        }
+      ]
+    },
+    {
+      "id": "cap-after-buffering",
+      "from": "#962",
+      "task": "Refuse a synthesized voice note larger than WhatsApp's 16 MB.",
+      "commit": "feat(voice): refuse audio past WhatsApp's size",
+      "expect": {
+        "files": ["apps/api/src/voice/infrastructure/remote-audio.reader.ts"],
+        "match": "buffer|stream|memory|while reading|before reading|content-length|whole|entire|unbounded|OOM"
+      }
+    }
+  ]
+}

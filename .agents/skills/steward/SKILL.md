@@ -113,14 +113,24 @@ work, in this order:
    the file, both sides in a sentence each and your default; the merge
    stays uncommitted until they answer. Commit it staging files by path,
    then the steps below for the new head.
-2. **Review comments.** Verify each against the code. Fix what is real and
+2. **Review comments.** A finding is any of these, whoever posted it:
+   an inline thread, including one posted from the user's own account (the
+   `[GROK BOT REVIEW]` reviewer posts that way); a point in a review's body
+   that has no inline thread; and a finding in a verifier's `FAIL` or
+   autoreview comment. Verify each against the code. Fix what is real and
    reply with the commit; answer the rest with the reason it stays. Resolve
-   every thread you answered. A comment that asks for more than the task
-   goes to the user.
+   every thread you answered; a body point or a verifier comment gets one
+   reply that answers each of its points. A comment that asks for more than
+   the task goes to the user. Leaving a finding unanswered is not an answer:
+   in the last two hundred pull requests, 190 merged that way.
 3. **Report.** After any push, `pnpm ci:local` on the new head and replace
    the report. Code that changed needs its verdict again (and its
    screenshots, for a visual file), including a conflict resolution that
-   changed behavior; a plain merge of the base does not.
+   changed behavior; a plain merge of the base does not. A push that changes
+   behavior also asks Codex to review the new head: one comment,
+   `@codex review`, naming the SHA. Codex reviews only the head a pull
+   request was opened or marked ready on, so without it the later commits
+   (488 of them in the last two hundred pull requests) merge unreviewed.
 
 Keep one check-in armed about every four hours while it is open, so a
 conflict from another merge is caught without an event; every hour once

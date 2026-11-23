@@ -67,7 +67,13 @@ while GitHub computes it; read it again, it is not a conflict) and:
      on a head whose only change since is a merge of the base with a
      green `pnpm ci:local`;
    - GitHub reports it mergeable, no review requests changes, and every
-     review thread is answered and resolved;
+     finding is answered (`steward`, "Babysitting", step 2 says what counts
+     as one), its thread resolved;
+   - the Codex review of this head, or of a head whose only change since is
+     a merge of the base, has finished: its summary comment's
+     `codex-review-state` names the SHA with `"status":"completed"`. If it
+     has not started 30 minutes after the request, say so on the pull
+     request and merge without it;
    - no `main-red` issue is open that it does not fix.
 
    Merge with a merge commit pinned to the head SHA, never with admin

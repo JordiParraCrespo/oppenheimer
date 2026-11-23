@@ -44,7 +44,7 @@ export const GLOBAL_PATHS = [
  * lint and selects nothing else.
  */
 export const LINT_ONLY_PATHS = [
-  /^scripts\/check-(api-structure|feature-flags|prompt-strings)(\.test)?\.mjs$/,
+  /^scripts\/check-(api-structure|feature-flags|product-sync|prompt-strings)(\.test)?\.mjs$/,
   // oppenheimer:begin web
   /^scripts\/check-(frontend-structure|react-compiler|singletons)(\.test)?\.mjs$/,
   /^scripts\/(query-state-slots|skeleton-shape|skeleton-slab-debt|ui-catalog)(\.test)?\.mjs$/,
