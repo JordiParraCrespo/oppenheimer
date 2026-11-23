@@ -459,7 +459,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		// From inside a session: start a child session with a task.
 		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
 		opts := cli.ChildOptions{}
-		fs.StringVar(&opts.Agent, "agent", cli.DefaultChildAgent, "claude, codex, opencode, grok, pi, omp, antigravity, fx, hermes, muse or shell")
+		fs.StringVar(&opts.Agent, "agent", cli.DefaultChildAgent, "claude, codex, opencode, grok, pi, omp, antigravity, fx, hermes or shell")
 		fs.StringVar(&opts.Name, "name", "", "name for the child")
 		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
 		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
