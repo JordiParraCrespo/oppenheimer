@@ -746,7 +746,8 @@
             "pi",
             "omp",
             "antigravity",
-            "zcode"
+            "zcode",
+            "fx"
           ]
         },
         "model": {
@@ -3255,6 +3256,7 @@
         "omp",
         "antigravity",
         "zcode",
+        "fx",
         "shell"
       ],
       "id": "codingAgentId"
