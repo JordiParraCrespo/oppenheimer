@@ -7,7 +7,8 @@ const CODE = /(```[\s\S]*?```|`[^`\n]+`)/;
 /**
  * The bot's markdown in Slack's own (`mrkdwn`): `&`, `<` and `>` escaped
  * everywhere, and outside code only, `**bold**` and a heading as Slack's
- * `*bold*`, `*italic*` as `_italic_` (a single `*` is bold in Slack), a `> `
+ * `*bold*`, `*italic*` as `_italic_` (a single `*` is bold in Slack; stars with a
+ * space just inside, as in `2 * 3 * 4`, are left as written), a `> `
  * line kept as a quote, `[label](url)` as Slack's `<url|label>`, and
  * `~~gone~~` as `~gone~`. Code keeps its backticks, which Slack reads the same way, and its
  * text as written (`2 ** 3` stays `2 ** 3`, `# a comment` stays a comment).
@@ -26,8 +27,9 @@ function slackProse(text: string): string {
   return text
     .replace(/^&gt;( |$)/gm, '>$1')
     .replace(/^#{1,6}\s+(.+?)\s*#*$/gm, '\u0000$1\u0000')
+    .replace(/\*\*\*(?!\s)([^*\n]*?[^\s*])\*\*\*/g, '\u0000_$1_\u0000')
     .replace(/\*\*(.+?)\*\*/g, '\u0000$1\u0000')
-    .replace(/(?<![*\w])\*([^*\n]+)\*(?![*\w])/g, '_$1_')
+    .replace(/(?<![*\w])\*(?!\s)([^*\n]*?[^\s*])\*(?![*\w])/g, '_$1_')
     .replaceAll('\u0000', '*')
     .replace(/~~(.+?)~~/g, '~$1~')
     .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<$2|$1>');

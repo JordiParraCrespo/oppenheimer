@@ -37,6 +37,15 @@ describe('Slack text', () => {
     );
   });
 
+  // What breaks this: arithmetic or a bullet in prose read as italics, `2 _ 3 _ 4`.
+  it('leaves spaced stars as written, and keeps bold italic whole', () => {
+    expect(slackMrkdwn('Compute 2 * 3 * 4 = 24, O(n * m * k)')).toBe(
+      'Compute 2 * 3 * 4 = 24, O(n * m * k)',
+    );
+    expect(slackMrkdwn('* a * b')).toBe('* a * b');
+    expect(slackMrkdwn('***both***')).toBe('*_both_*');
+  });
+
   // What breaks this: code the owner is meant to run arrives changed.
   it('leaves code as written, restyling only the prose around it', () => {
     const answer =
