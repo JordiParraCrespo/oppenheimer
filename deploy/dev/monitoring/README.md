@@ -11,7 +11,7 @@ API's log file to it, and a Grafana with these dashboards over both.
 |---|---|
 | `prometheus/api.rules.yaml` | Alerts: availability, 5xx and latency by route, event-loop lag and heap, outbox and queue backlog, the backlog sampler's own health, bot turns failing, the bots' prompt cache gone cold, cache reads failing |
 | `grafana/api.json` | The API dashboard: traffic, latency, backlog, process. Provisioned by the local Grafana; elsewhere, import it and pick the Prometheus data source |
-| `server/` | The dev server's Loki (`loki.yaml`), Alloy (`config.alloy`) and Grafana data source, mounted by `../compose.yml` |
+| `server/` | The dev server's Loki (`loki.yaml`), Alloy (`config.alloy`), the Docker API allowlist Alloy reads through (`docker-proxy.conf`) and Grafana's data source, mounted by `../compose.yml` |
 | `grafana/bots.json` | The bots and cache dashboard: engine runs and how they ended, failures by kind, tokens, the prompt cache hit rate, run duration, tools and retries; the Redis cache's hit rate by namespace; log lines by level and the latest errors (Loki) |
 
 What each metric means, and how the API exports it (`METRICS_TOKEN`, HTTP
@@ -68,7 +68,7 @@ yours and the API can write in it.
 deploy:
 
 ```
-every container ─► Docker (local driver, rotated) ◄─ docker-proxy (GET only)
+every container ─► Docker (local driver, rotated) ◄─ docker-proxy (5 read paths)
                                                         ▲  network docker-api
                                                       alloy
                                                         │  network monitoring (10.250.0.0/24)
@@ -82,8 +82,10 @@ every container ─► Docker (local driver, rotated) ◄─ docker-proxy (GET o
   API's lines also carry `level`, and `req_id` and `context` as structured
   metadata, the same as the local stack, so the same LogQL works on both.
   14 days, on the `oppenheimer-dev_lokidata` volume.
-- **How Alloy reads them:** through `docker-proxy`, which answers only `GET`
-  on containers and networks; the socket itself stays out of Alloy. Docker
+- **How Alloy reads them:** through `docker-proxy`, an nginx that answers
+  only the reads Alloy makes (`server/docker-proxy.conf`: list, inspect, logs,
+  networks, ping) and 403 for the rest, a container's `/archive` and `/export`
+  included; the socket itself stays out of Alloy. Docker
   keeps and rotates the logs as before (`cloud-init.yaml`), so nothing here
   writes a file.
 - **How you reach it:** nothing is published (the deploy refuses a port).

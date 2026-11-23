@@ -507,7 +507,8 @@ age -d -i ~/secure/oppenheimer-dev.age.key oppenheimer-<stamp>.pgc.age \
 - **The API connects as the database owner.** The role Postgres creates is
   the one migrations need. The backup role is separate.
 - **Alloy can inspect containers.** The log shipper reads the Docker API
-  through a proxy that allows `GET` only, so it cannot start, stop or exec
+  through a proxy that allows five read paths only (list, inspect, logs,
+  networks, ping), so it cannot start, stop, exec or copy files out of
   anything; but an inspect shows a container's environment, so the API's
   secrets are readable from inside Alloy, a container with no ingress and no
   route out. Grafana has no login: the only way in is SSH to this server.

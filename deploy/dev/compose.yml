@@ -232,28 +232,24 @@ services:
       start_period: 20s
 
   # ---- logs: every container's lines into Loki, read in Grafana ------------
-  # Upstream digests read from Docker Hub on 2026-11-23 (the multi-arch index).
+  # Loki, Alloy and Grafana digests read from Docker Hub on 2026-11-23 (the
+  # multi-arch index).
 
-  # The Docker API, read-only: listing containers and networks and reading
-  # logs, which is what Alloy needs. Alloy never sees the socket itself, which
-  # is root on this server. It can still inspect a container, and an inspect shows the
-  # API's environment (its secrets, see "Known trade-offs"): a process with no
-  # ingress and no route out.
+  # The Docker API as Alloy needs it: listing containers and networks,
+  # inspecting a container and reading its logs, and nothing else (the allowlist
+  # is monitoring/server/docker-proxy.conf). Alloy never sees the socket, which
+  # is root on this server. An inspect still shows a container's environment
+  # (the API's secrets, see "Known trade-offs"), to a process with no ingress
+  # and no route out. The same nginx image as `releases`.
   docker-proxy:
-    image: tecnativa/docker-socket-proxy:v0.4.1@sha256:3400c429c5f9e1b21d62130fb93b16e2e772d4fb7695bd52fc2b743800b9fe9e
+    image: nginx:alpine@sha256:0563c36f94a6d3ec3584161b77859f740f7e20b4853f52c796a864ce6908e8ea
     restart: unless-stopped
     networks: [docker-api]
-    environment:
-      CONTAINERS: "1"
-      POST: "0"
-      INFO: "0"
-      IMAGES: "0"
-      NETWORKS: "1"
-      VOLUMES: "0"
     volumes:
+      - ./monitoring/server/docker-proxy.conf:/etc/nginx/nginx.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     read_only: true
-    tmpfs: [/run, /tmp]
+    tmpfs: [/tmp]
 
   loki:
     image: grafana/loki:3.5.3@sha256:3165cecce301ce5b9b6e3530284b080934a05cd5cafac3d3d82edcb887b45ecd
