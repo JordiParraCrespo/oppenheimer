@@ -126,6 +126,10 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		})
 	case "serve":
 		return serve(ctx)
+	case "mcp":
+		// An agent in a session starts this as its MCP server: the session
+		// commands as tools, on stdin and stdout.
+		return withDelegation(func(d cli.Delegation) error { return cli.MCP(ctx, os.Stdin, os.Stdout, d, version) })
 	case "skill", "--skill":
 		// The manual for an agent in a session: helpers, messages, waits.
 		if err := cli.Skill(os.Stdout); err != nil {
@@ -694,6 +698,7 @@ var commandSections = []struct {
 		{"runner sessions watch-pr <n> [--repo R] [--off]", "be woken by a pull request's checks, reviews,\ncomments and merge"},
 		{"runner sessions wake-in <30m|2h|1d> \"note\"", "be woken then with the note, instead of polling"},
 		{"runner --skill", "the manual for an agent in a session (helpers, messages, waits)"},
+		{"runner mcp", "the same commands as an MCP server on stdio, which each session's agent is given"},
 	}},
 	{"Run by the service, git and agents", []commandEntry{
 		{"runner run", "the host agent (what the service unit starts)"},

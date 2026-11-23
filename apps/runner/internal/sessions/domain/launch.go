@@ -66,6 +66,13 @@ type Launch struct {
 	// reports. It names this host's binary, so it is set at each launch and
 	// never saved.
 	Wrap []string `json:"-"`
+	// Note is the session note's path (Session.Note), handed to an agent that
+	// does not find it on its own; "" hands none. Tools is the command of the
+	// runner's MCP server (`runner mcp`), registered with every agent that
+	// takes one on its command line; nil registers none. Both are this host's,
+	// so they are set at each launch and never saved (briefing.go).
+	Note  string   `json:"-"`
+	Tools []string `json:"-"`
 }
 
 // AgentServer is where an agent's local API listens and the password it
@@ -220,6 +227,7 @@ func (l Launch) Args(agent Agent) []string {
 	if l.Server != nil && agent.ServesConversation() {
 		args = append(args, "--port", strconv.Itoa(l.Server.Port), "--hostname", "127.0.0.1")
 	}
+	args = append(args, l.briefingArgs(agent)...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
@@ -325,18 +333,27 @@ func (l Launch) effortLevel(m launchMap) launchLevel {
 func (l Launch) Env(agent Agent) map[string]string {
 	m := launchCatalog[agent.CatalogID()]
 	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
-	if len(effort) == 0 {
-		return permission
-	}
-	env := make(map[string]string, len(permission)+len(effort))
+	env := make(map[string]string, len(permission)+len(effort)+1)
 	for name, value := range effort {
 		env[name] = value
 	}
 	for name, value := range permission {
 		env[name] = value
 	}
+	if agent == AgentOpenCode {
+		if config := l.briefingConfig(env[openCodeConfig]); config != "" {
+			env[openCodeConfig] = config
+		}
+	}
+	if len(env) == 0 {
+		return nil
+	}
 	return env
 }
+
+// openCodeConfig is the variable OpenCode reads config content from, on top
+// of the person's own config files.
+const openCodeConfig = "OPENCODE_CONFIG_CONTENT"
 
 // PromptWithFiles is the first task followed by the paths of the files
 // attached to it, a blank line after the task and one path to a line: the

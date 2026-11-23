@@ -234,6 +234,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		launch.Server = session.Launch.Server
 		launch.StatusLine = s.statusLine(session.ID)
 		launch.Wrap = s.observer.wrap(session.ID)
+		s.brief(&launch, session)
 		s.trustFolder(session.Agent, session.Cwd())
 		defer s.holdLaunch(ctx, session.Agent)()
 		if err := s.terminals.Launch(ctx, session.Target(0), session.Cwd(), launch.CommandLine(session.Agent)); err != nil {

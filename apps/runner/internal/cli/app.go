@@ -246,6 +246,10 @@ func New(version string) (*App, error) {
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand,
+		// Each agent is handed the runner's MCP server (`runner mcp`), the
+		// same commands as `runner sessions …` as tools. By name: the
+		// session's PATH leads with the runner's commands.
+		Tools: []string{"runner", "mcp"},
 		// OpenCode serves its conversation on a loopback port the runner
 		// picks, which the chat view reads it through.
 		FreePort: freeLoopbackPort,

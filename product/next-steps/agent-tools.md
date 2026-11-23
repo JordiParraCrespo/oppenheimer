@@ -14,6 +14,7 @@ fifth gives a bot §2's line (2026-11-03):
 | 5 | Bots notify | a bot's `notify` tool | an item in the Inbox |
 | 8 | Read the conversation | (nothing: a bot, `opp` or MCP reads it) | nothing new; a bot can quote what the agent did |
 | 9 | Notify the bot that follows | `runner sessions notify "line"` (§2) | the line in the Inbox, and the bot following the session is woken by it |
+| 10 | Every agent knows them | (nothing: the runner hands them over at launch) | nothing new; Codex and OpenCode agents use §1–4 as Claude's do |
 
 They share one shape: the agent runs a `runner` command in its terminal,
 which reaches the runner's daemon over its local socket (as
@@ -339,3 +340,37 @@ its pending approvals reached the Inbox.
 - **Not yet.** An agent cannot address one bot among several: every bot
   that follows the session hears it.
 
+## 10. Every agent knows Oppenheimer (proposed 2026-11-23)
+
+- **Why.** The tools above are taught by the session note, which points at
+  `runner --skill`. The note is `CLAUDE.md` in the session's own folder,
+  above the checkout. Claude Code reads it there. Codex (checked on
+  codex-cli 0.171: `codex debug prompt-input`) reads AGENTS.md only from
+  the checkout down, and OpenCode stops at the repository too, so neither
+  ever learned that the tools exist. It is the first slice of making
+  Plan's tasks something agents take and report on (claim, renew,
+  complete), a direction read from two outside products in this
+  conversation; those need every agent to know Oppenheimer first.
+- **How.** Two things, handed over at every launch and never saved:
+  - **`runner mcp`**, the session commands as an MCP server on stdio, one
+    tool per command (`start_session`, `send_to_session`, `list_children`,
+    `wait_for_children`, `report_to_parent`, `notify`, `send_file`,
+    `watch_pull_request`, `wake_in`). Each tool is the command: the same
+    call to the daemon's local socket, its printed answer the tool's text, a
+    refusal an error result. No new credential: the server runs as the
+    agent's user, in its session, like the commands.
+  - **Each agent's own way in**, added to what the person configured,
+    never replacing it: Claude Code takes the server as
+    `--mcp-config=<json>` (one word: the flag takes several values, and the
+    prompt after a separate value was read as a file); Codex takes
+    `-c developer_instructions=…` (where the note is, and `runner --skill`)
+    and `-c mcp_servers.oppenheimer.command|args`; OpenCode takes
+    `instructions` (the note's path) and `mcp` in `OPENCODE_CONFIG_CONTENT`,
+    merged with the effort level's `agent` key. Each was checked against the
+    real CLI starting `runner mcp` and listing its tools (Claude Code
+    2.1.330, codex-cli 0.171, OpenCode 1.19.6).
+- **Folder sessions** still get no note (the folder is the person's), but
+  they get the server, and Codex there is told about `runner --skill`.
+- **Not yet.** Grok, Pi and omp get neither: their CLIs' ways in are not
+  checked. The tools are the host's commands; Plan's tasks over the same
+  server, and the API's MCP from inside a session, are the next slice.
