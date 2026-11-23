@@ -219,8 +219,11 @@ done: they look over the work every so often. So does a bot now:
   task waiting on a person, or whose stall was told, is looked at again later
   without a wake. A task over, superseded or a session closed ends the checks.
 - **What the bot does.** Reads what the agent did (`read_session_transcript`,
-  else `get_session`) against the task. On track: `nothing_to_report`, so the
-  chat shows only "Checked on session *name*". Off: it tells the person in a
+  else `get_session`) against the task. Moved on since its last line about it:
+  one line under "Checked on session *name*" saying where it stands, what the
+  agent is on and what is left, with no `notify`; nothing moved and nothing
+  off: `nothing_to_report` (2026-11-23; it was `nothing_to_report` whenever
+  on track, so the chat showed only the "Checked" line). Off: it tells the person in a
   sentence or two, with `notify`, and may nudge the agent with
   `send_to_session` when its instructions settle what it needs, asking first
   as always. It never stops or restarts the session on its own.
@@ -495,6 +498,15 @@ blocked, and so on. The table above had no row for Plan; this is it.
   while the task runs. It changes the 2026-10-29 "there is still no
   progress update" and §2's "`in_progress` never wakes" for a task the bot
   handed off; the person still hears only when something is off.
+- 2026-11-23: **a look at a running task says where it stands**, in one
+  line, when it moved since the last line, rather than `nothing_to_report`
+  (§4.2). Oppie started a release
+  session, said it would check before calling it done, and each look was
+  only "Checked on session"; the owner had to ask "Have you finished?" while
+  the release still ran. It changes 2026-11-10's "the person still hears only
+  when something is off": a person who hands work off hears how it is going
+  whenever it moved, up to six in the task's first hour, and `notify` stays for
+  what is off.
 - 2026-11-03: **a bot follows a pull request** (§7.1). The wake is the
   GitHub event's metadata, not a re-read as the owner: it changes §1's
   "the event is thin, the read is fresh" for this kind, because the pull

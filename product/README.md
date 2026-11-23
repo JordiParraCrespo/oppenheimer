@@ -1904,3 +1904,9 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
+  stay quiet (`nothing_to_report`) while the task was on track, so the chat
+  showed only "Checked on session". On 2026-11-23, after the owner had to
+  ask a bot whether the release it delegated had finished while it still
+  ran, each look that finds the task moved says in one line where it stands; `notify` stays for
+  what is off.
