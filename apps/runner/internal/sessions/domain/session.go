@@ -65,16 +65,17 @@ func (s State) Live() bool {
 // Agent is the program window 0 runs.
 type Agent string
 
-// Agents. Claude Code is the MVP's first entry; Codex, OpenCode, Grok, Pi
-// and Oh My Pi are the others, and the shell is the blank terminal with no agent in it.
+// Agents. Claude Code is the MVP's first entry; Codex, OpenCode, Grok, Pi,
+// Oh My Pi and Antigravity are the others, and the shell is the blank terminal with no agent in it.
 const (
-	AgentClaude   Agent = "claude"
-	AgentCodex    Agent = "codex"
-	AgentOpenCode Agent = "opencode"
-	AgentGrok     Agent = "grok"
-	AgentPi       Agent = "pi"
-	AgentOmp      Agent = "omp"
-	AgentShell    Agent = "shell"
+	AgentClaude      Agent = "claude"
+	AgentCodex       Agent = "codex"
+	AgentOpenCode    Agent = "opencode"
+	AgentGrok        Agent = "grok"
+	AgentPi          Agent = "pi"
+	AgentOmp         Agent = "omp"
+	AgentAntigravity Agent = "antigravity"
+	AgentShell       Agent = "shell"
 )
 
 // agentCatalogIDs is the runner's view of the catalog's `CODING_AGENT_IDS`:
@@ -83,13 +84,14 @@ const (
 // read it, so a new agent is one row here and one in the catalog, and a
 // test fails when the generated launch table has an id this map lacks.
 var agentCatalogIDs = map[Agent]string{
-	AgentClaude:   "claude-code",
-	AgentCodex:    "codex",
-	AgentOpenCode: "opencode",
-	AgentGrok:     "grok",
-	AgentPi:       "pi",
-	AgentOmp:      "omp",
-	AgentShell:    "shell",
+	AgentClaude:      "claude-code",
+	AgentCodex:       "codex",
+	AgentOpenCode:    "opencode",
+	AgentGrok:        "grok",
+	AgentPi:          "pi",
+	AgentOmp:         "omp",
+	AgentAntigravity: "antigravity",
+	AgentShell:       "shell",
 }
 
 // Agents is every agent the runner knows how to start, in no promised order.

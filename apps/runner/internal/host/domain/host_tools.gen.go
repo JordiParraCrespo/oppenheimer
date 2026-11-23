@@ -44,6 +44,12 @@ var toolInstalls = map[string]toolInstall{
 		linux: "set -eu\ncommand -v bun >/dev/null 2>&1 || { echo \"bun is not on PATH; install Bun first (bun.sh)\" >&2; exit 1; }\nbun install --global @oh-my-pi/pi-coding-agent",
 		bin:   ".bun/bin",
 	},
+	"agy": {
+		kind:  "agent",
+		macos: "set -eu\ncase \"$(uname -m)\" in x86_64|amd64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"agy: unsupported architecture $(uname -m)\" >&2; exit 1 ;; esac\nplatform=\"darwin_$arch\"\nbase=https://antigravity-cli-auto-updater-974169037036.us-central1.run.app\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nverify() {\n  printf '%s' \"$2\" | grep -Eqx '[0-9a-f]{128}' || { echo \"agy: no published checksum for $1\" >&2; exit 1; }\n  actual=\"$(shasum -a 512 \"$1\" | cut -d ' ' -f 1)\"\n  [ \"$actual\" = \"$2\" ] || { echo \"agy: checksum mismatch for $1\" >&2; exit 1; }\n}\ncurl -fsSL \"$base/manifests/$platform.json\" -o \"$tmp/manifest.json\"\nurl=\"$(tr -d ' \\t\\r\\n' <\"$tmp/manifest.json\" | grep -o '\"url\":\"https://storage\\.googleapis\\.com/antigravity-public/antigravity-cli/[^\"]*\\.tar\\.gz\"' | cut -d '\"' -f 4)\"\nchecksum=\"$(tr -d ' \\t\\r\\n' <\"$tmp/manifest.json\" | grep -o '\"sha512\":\"[0-9a-f]*\"' | cut -d '\"' -f 4)\"\n[ -n \"$url\" ] || { echo \"agy: the manifest for $platform names no release archive\" >&2; exit 1; }\nprintf '%s' \"$checksum\" | grep -Eqx '[0-9a-f]{128}' || { echo \"agy: the manifest for $platform has no checksum\" >&2; exit 1; }\ncurl -fsSL \"$url\" -o \"$tmp/agy.tar.gz\"\nverify \"$tmp/agy.tar.gz\" \"$checksum\"\ntar -xzf \"$tmp/agy.tar.gz\" -C \"$tmp\" antigravity\nmkdir -p \"$HOME/.local/bin\"\ncp \"$tmp/antigravity\" \"$HOME/.local/bin/agy\"\nchmod 0755 \"$HOME/.local/bin/agy\"\nxattr -d com.apple.quarantine \"$HOME/.local/bin/agy\" 2>/dev/null || true",
+		linux: "set -eu\ncase \"$(uname -m)\" in x86_64|amd64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo \"agy: unsupported architecture $(uname -m)\" >&2; exit 1 ;; esac\nif [ -f /lib/libc.musl-x86_64.so.1 ] || [ -f /lib/libc.musl-aarch64.so.1 ] || ldd /bin/ls 2>&1 | grep -q musl; then platform=\"linux_${arch}_musl\"; else platform=\"linux_$arch\"; fi\nbase=https://antigravity-cli-auto-updater-974169037036.us-central1.run.app\ntmp=\"$(mktemp -d)\"\ntrap 'rm -rf \"$tmp\"' EXIT\nverify() {\n  printf '%s' \"$2\" | grep -Eqx '[0-9a-f]{128}' || { echo \"agy: no published checksum for $1\" >&2; exit 1; }\n  actual=\"$(sha512sum \"$1\" | cut -d ' ' -f 1)\"\n  [ \"$actual\" = \"$2\" ] || { echo \"agy: checksum mismatch for $1\" >&2; exit 1; }\n}\ncurl -fsSL \"$base/manifests/$platform.json\" -o \"$tmp/manifest.json\"\nurl=\"$(tr -d ' \\t\\r\\n' <\"$tmp/manifest.json\" | grep -o '\"url\":\"https://storage\\.googleapis\\.com/antigravity-public/antigravity-cli/[^\"]*\\.tar\\.gz\"' | cut -d '\"' -f 4)\"\nchecksum=\"$(tr -d ' \\t\\r\\n' <\"$tmp/manifest.json\" | grep -o '\"sha512\":\"[0-9a-f]*\"' | cut -d '\"' -f 4)\"\n[ -n \"$url\" ] || { echo \"agy: the manifest for $platform names no release archive\" >&2; exit 1; }\nprintf '%s' \"$checksum\" | grep -Eqx '[0-9a-f]{128}' || { echo \"agy: the manifest for $platform has no checksum\" >&2; exit 1; }\ncurl -fsSL \"$url\" -o \"$tmp/agy.tar.gz\"\nverify \"$tmp/agy.tar.gz\" \"$checksum\"\ntar -xzf \"$tmp/agy.tar.gz\" -C \"$tmp\" antigravity\nmkdir -p \"$HOME/.local/bin\"\ncp \"$tmp/antigravity\" \"$HOME/.local/bin/agy\"\nchmod 0755 \"$HOME/.local/bin/agy\"",
+		bin:   ".local/bin",
+	},
 	"gh": {
 		kind:  "tool",
 		macos: "set -eu\ncommand -v brew >/dev/null 2>&1 || { echo \"Homebrew is not on PATH; install it from https://brew.sh first\" >&2; exit 1; }\nHOMEBREW_NO_AUTO_UPDATE=1 brew install gh",
@@ -56,6 +62,7 @@ var toolInstalls = map[string]toolInstall{
 // table is keyed by, where the two differ.
 var installAliases = map[string]string{
 	"claude-code": "claude",
+	"antigravity": "agy",
 }
 
 // updateMethods is each agent's `updateMethods` entry, keyed by its
