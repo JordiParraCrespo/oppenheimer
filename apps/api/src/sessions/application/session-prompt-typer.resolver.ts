@@ -4,9 +4,8 @@ import type {
   WorkSessionRepositoryPort,
 } from '../database/work-session.repository.port';
 import {
-  PROMPT_SUBMIT_GAP_MS,
-  promptKeys,
   promptRefusal,
+  promptTyping,
   type SessionPromptSender,
 } from '../domain/session-prompt.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
@@ -76,8 +75,7 @@ export class SessionPromptTyperResolver {
 
     const { delivered } = await this.dispatch.typeKeys(session, {
       window: AGENT_WINDOW,
-      keys: promptKeys(prompt.text, session.agent),
-      gapMs: PROMPT_SUBMIT_GAP_MS,
+      ...promptTyping(prompt.text, session.agent),
     });
     if (!delivered) {
       await this.sessions.appendEvents(session, [

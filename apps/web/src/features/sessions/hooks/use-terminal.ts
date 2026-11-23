@@ -1,3 +1,4 @@
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import '@xterm/xterm/css/xterm.css';
 import type {
   SessionChat,
@@ -65,8 +66,8 @@ export function useTerminal(
     snapshotKey?: string;
     /** The chat view this stream feeds and types for (0.7). */
     chat?: SessionChat;
-    /** The keys that empty the agent's prompt before the chat types into it. */
-    chatClear?: string;
+    /** How the agent's prompt is emptied before the chat types into it (`clearOf`). */
+    chatClear?: CodingAgentClear;
     /** Where the echo readout is published (`SessionTerminalOptions.latencyKey`). */
     latencyKey?: string;
   } = {},

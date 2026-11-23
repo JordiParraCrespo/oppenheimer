@@ -10,7 +10,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { clearOf } from '@oppenheimer/shared/agents';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
@@ -91,7 +91,7 @@ export function SessionTerminal({
   const takeFiles = chatShown && reading.files ? reading.files.deliver : upload.send;
   const terminal = useTerminal(createStream, {
     chat,
-    chatClear: isCodingAgentId(agent) ? CODING_AGENTS[agent].input?.clear : undefined,
+    chatClear: clearOf(agent),
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,

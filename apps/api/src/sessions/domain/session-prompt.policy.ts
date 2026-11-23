@@ -1,4 +1,4 @@
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { clearOf } from '@oppenheimer/shared/agents';
 import type { SessionFold } from './session-state.policy';
 import type { SessionTurnFold } from './session-turn.policy';
 
@@ -113,13 +113,18 @@ export function cloudPromptRefusal(
 export const CLOUD_UNCONFIRMED_HOLD_SECONDS = 15 * 60;
 
 /**
- * The words, then Enter, each one write: the keys the chat view types for a
- * message. An agent whose prompt can hold text nobody left there (ZCode's,
- * which recalls its last prompt on an Up arrow) is sent its `clear` keys
- * first, so the message is not sent joined to that text.
+ * How a message is typed into `agent`: the words, then Enter, each one write,
+ * the keys the chat view types, with the gap between writes. An agent whose
+ * prompt can hold text nobody left there (ZCode's, which recalls its last
+ * prompt on an Up arrow) is sent its clear keys first, and the writes are
+ * spaced by the time it takes to act on them (`clearOf`).
  */
-export function promptKeys(text: string, agent: string): string[] {
+export function promptTyping(text: string, agent: string): { keys: string[]; gapMs: number } {
   const words = text.includes('\n') ? `${PASTE_START}${text}${PASTE_END}` : text;
-  const clear = isCodingAgentId(agent) ? CODING_AGENTS[agent].input?.clear : undefined;
-  return clear ? [clear, words, ENTER] : [words, ENTER];
+  const clear = clearOf(agent);
+  if (!clear) return { keys: [words, ENTER], gapMs: PROMPT_SUBMIT_GAP_MS };
+  return {
+    keys: [clear.keys, words, ENTER],
+    gapMs: Math.max(PROMPT_SUBMIT_GAP_MS, clear.settleMs),
+  };
 }

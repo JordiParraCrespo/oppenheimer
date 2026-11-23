@@ -898,7 +898,9 @@ describe('typing into the session', () => {
     vi.useFakeTimers();
     const chat = new SessionChat();
     const typed: string[] = [];
-    chat.connect((data) => typed.push(data), undefined, { clear: '\u0015' });
+    chat.connect((data) => typed.push(data), undefined, {
+      clear: { keys: '\u0015', settleMs: 100 },
+    });
     chat.send('Now ship it');
     // The words wait for the agent to act on the clear: in the same burst
     // they would land in the prompt it has not emptied yet.

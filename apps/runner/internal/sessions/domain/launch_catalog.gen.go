@@ -259,7 +259,8 @@ var loginTargets = map[string][]LoginTarget{
 
 // inputCatalog is each agent's `input` entry of the catalog: the keys that
 // send and interrupt a message typed into it, the pause between a paste and
-// its submit, in milliseconds, and the keys that empty its prompt first.
+// its submit, in milliseconds, and the keys that empty its prompt first
+// with the wait after them.
 var inputCatalog = map[string]agentInput{
 	"claude-code": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"codex":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
@@ -268,6 +269,6 @@ var inputCatalog = map[string]agentInput{
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"antigravity": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
-	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200, clear: "\u0015"},
+	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200, clear: "\u0015", clearSettleMs: 100},
 	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }

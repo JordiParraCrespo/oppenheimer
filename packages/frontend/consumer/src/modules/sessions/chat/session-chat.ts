@@ -12,6 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
@@ -326,8 +327,6 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
-/** How long the agent takes to empty its prompt before the words are typed. */
-const CLEAR_SETTLE_MS = 100;
 /**
  * How long a key pressed on the drafted-feedback card holds the next one
  * while the card on screen has not moved: long enough for a double click,
@@ -577,8 +576,8 @@ export class SessionChat {
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
-  /** The keys that empty the agent's prompt before a message; null for none. */
-  private clear: string | null = null;
+  /** How the agent's prompt is emptied before a message; null for an agent that needs nothing. */
+  private clear: CodingAgentClear | null = null;
   /** Asks the host for the turns before an offset, lent with the input (`connect`). */
   private askOlder: ((before: number) => void) | null = null;
   /** Where in the transcript the lines held start: 0 for its first line. */
@@ -884,13 +883,13 @@ export class SessionChat {
    * Lends the chat a way to type into the session's PTY, and to ask its host
    * for older turns; the function returned takes them back. `interruptible:
    * false` says the source cannot stop a turn (`ChatState.interruptible`).
-   * `clear` is the agent's keys that empty its prompt before a message
-   * (the catalog's `input.clear`, ZCode's Ctrl+U).
+   * `clear` empties the agent's prompt before a message (`clearOf`, ZCode's
+   * Ctrl+U).
    */
   connect(
     type: (data: string) => void,
     askOlder?: (before: number) => void,
-    { interruptible = true, clear }: { interruptible?: boolean; clear?: string } = {},
+    { interruptible = true, clear }: { interruptible?: boolean; clear?: CodingAgentClear } = {},
   ): () => void {
     this.type = type;
     this.clear = clear ?? null;
@@ -929,8 +928,8 @@ export class SessionChat {
     // in the same burst land in the prompt it has not emptied yet. Not with
     // files: their paths are already in the prompt, pasted for this message.
     if (!empty && !withFiles && this.clear) {
-      type(this.clear);
-      setTimeout(typeMessage, CLEAR_SETTLE_MS);
+      type(this.clear.keys);
+      setTimeout(typeMessage, this.clear.settleMs);
     } else {
       typeMessage();
     }

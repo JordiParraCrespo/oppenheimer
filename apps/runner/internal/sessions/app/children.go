@@ -157,10 +157,6 @@ type Told struct {
 	Started *bool `json:"started"`
 }
 
-// clearSettle is how long an agent is given to empty its prompt
-// (domain.Input.Clear) before a message is pasted into it.
-const clearSettle = 100 * time.Millisecond
-
 // Tell types a message into a session's agent the way another program
 // should: once the agent is up, as a paste, then the agent's own submit key
 // after its paste gap (domain.Agent.Input).
@@ -189,7 +185,7 @@ func (c *Children) Tell(ctx context.Context, id, text string) (Told, error) {
 		}
 		// The agent empties its prompt on its next render, and words that
 		// arrive before it land in the prompt it has not emptied yet.
-		if !sleep(ctx, clearSettle) {
+		if !sleep(ctx, input.ClearSettle) {
 			return Told{}, ctx.Err()
 		}
 	}
