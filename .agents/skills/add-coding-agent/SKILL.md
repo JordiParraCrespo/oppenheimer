@@ -32,18 +32,29 @@ with the version:
   when the CLI's default is permissive; no approvals means no `permission`.
 - **Effort**: the flag and the levels each model takes.
 - **First task** in an interactive session: a trailing positional, a flag, or
-  none (a positional that is a subcommand counts as none). Never the headless
-  `-p`.
-- **Resume**: how a stopped session reopens its conversation, by id if the
-  runner can learn it, and **what it does when there is nothing to reopen**.
-- **Login**: the sign-in hosts, and the variable that moves the login.
+  none (a positional that is a subcommand, or one that runs headless, counts
+  as none). Never the headless `-p`. Try a task that starts with `-`: a parser
+  that reads it as a flag needs the `--flag=<task>` form.
+- **Resume**: how a stopped session reopens its conversation, and **what it
+  does when there is nothing to reopen yet** (a restart before the first
+  message): run it. A by-id flag the runner learns goes in the existing
+  `conversation.reopen`, not a new field.
+- **Login**: the host of the URL the person is shown (not the API's base),
+  and the variable that moves the login.
 - **Where it keeps the conversation**: a file per session, a local API, a
   database (step 5).
 - **Its screen**: the strings it draws mid-turn, at an approval, at a
-  question, at sign-in, and idle.
+  question, at sign-in, and idle, **seen in tmux**, not only read in the
+  bundle. With no key yet, point the CLI at a fake OpenAI-compatible server
+  on loopback that scripts a tool call, and watch every state.
 - **Its keys**: submit, interrupt, empty the prompt (step 3).
 - **Whether its work outlives its terminal** (a client of its own server or
   gateway).
+- **Its updater, run on the install the runner makes**: one that prints
+  instructions and exits 0 is no updater; one that updates itself at launch
+  may write somewhere else.
+- **What turns its transcript off** (a setting that disables recording takes
+  the chat and resume with it).
 
 ## 2. The catalog entry
 
@@ -56,7 +67,8 @@ into `CODING_AGENTS`. The doc comments on `CodingAgentDefinition` and
 - `models`: a model another agent lists keeps that agent's label. A gateway
   id may pin its provider in `launch.model`. Levels several agents share go
   in `effort-levels.ts`.
-- `launch.permission` / `effort` / `prompt` / `conversation` as read. No first
+- `launch.permission` / `effort` / `prompt` / `conversation` as read, with a
+  `launch_test.go` case for a task that starts with `-`. No first
   task means no `prompt`. New session, bots, `sessions run`, Plan's Start
   session (`takesTask` in `apps/web/src/features/tasks/lib/agent-options.ts`)
   and automations (`automation-agent.policy.ts`, `automation-draft.ts`) derive
@@ -68,7 +80,8 @@ into `CODING_AGENTS`. The doc comments on `CodingAgentDefinition` and
 - `transcriptLocation`, `configDirEnv`, `loginTargets` when they apply.
 - Install and update in `host-setup.ts`, never the catalog: a checksummed
   release (`release-install.ts`) or a registry package
-  (`install-scripts.ts`), never a script piped into a shell. A failed install
+  (`install-scripts.ts`), never a script piped into a shell. `update` only
+  for an updater seen working on that install. A failed install
   removes what it put on `PATH`. No terminal release: no `install`, and the
   catalog spec's install test names the agent and why.
 - A field the catalog lacks is three edits: `catalog.ts`, its line in

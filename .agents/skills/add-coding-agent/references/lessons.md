@@ -41,6 +41,24 @@ to `SKILL.md`.
   sharing a folder resumed each other's conversation; reopening by id fixed it
   (`075bf1e58`, `conversation.reopen`).
 
+- **A task that starts with `-` is a flag.** Qwen Code 0.28.4 read
+  `--prompt-interactive "-v"` as `-v`, printed its version and exited; the
+  `--prompt-interactive=<task>` form does not (found by the skill's eval,
+  `evals/`).
+- **A by-id resume can exit before the first message too.** Qwen's
+  `--resume <id>` says "No saved session found" until it has written a
+  transcript; `--continue` opens a fresh session instead. The runner already
+  reopens a learned id through `conversation.reopen`; a plan that invented a
+  new field missed it (eval).
+- **Read the screen live even without a key.** A fake OpenAI-compatible server
+  on loopback, scripting one tool call, showed every Qwen state in tmux;
+  strings read only from a bundle left a guessed idle rule (eval).
+- **An updater can be a no-op.** `qwen update` on an npm install prints
+  instructions and exits 0; shipped as `update`, it would report success and
+  change nothing (eval).
+- **A login target is what the person sees.** Qwen's OAuth API base is
+  `auth.qwen.ai`; the URL shown is on `chat.qwen.ai` (eval).
+
 ## 2. The catalog entry
 
 - **One label per model id, across agents.** Antigravity labelled a model
