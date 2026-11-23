@@ -7,6 +7,7 @@ import {
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import {
   useBotLive,
+  useReactToBotMessage,
   useSendBotMessage,
   useSuspenseBotConversation,
 } from '@oppenheimer/frontend-consumer/react';
@@ -58,6 +59,7 @@ export function BotTranscript({
   const { data: conversation, error } = useSuspenseBotConversation(botId);
   const live = useBotLive(botId);
   const retry = useSendBotMessage();
+  const react = useReactToBotMessage();
   const navigate = useNavigate();
   const toolCallsShown = useToolCallsShownInChat();
   const all = chatTurns(conversation);
@@ -136,6 +138,7 @@ export function BotTranscript({
                         : undefined
                     }
                     retrying={retry.isPending}
+                    onReact={(messageId, emoji) => react.mutate({ id: botId, messageId, emoji })}
                     onOpenProviders={() => navigate({ to: '/settings/model-providers' })}
                   />
                 )}
@@ -145,6 +148,7 @@ export function BotTranscript({
           {live.resolved.map((event) => (
             <ApprovalEventLine key={event.approvalId} event={event} />
           ))}
+          <ErrorAlert error={react.error} fallback={t('common.chat.emoji.reactFailed')} />
           <ErrorAlert
             error={retry.error}
             fallback={t('bots.chat.sendFailed')}

@@ -173,6 +173,12 @@
     "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
     "AUTOMATIONS_008": "Esa ejecución no existe.",
     "AUTOMATIONS_009": "Esa cuenta de Gmail no puede iniciar una rutina: no es tuya, o hay que volver a conectarla en Ajustes → Correo.",
+    "AUTOMATIONS_010": "Esa URL de webhook ya no es válida: emite una nueva en la pestaña Rutinas.",
+    "AUTOMATIONS_011": "La firma de la petición al webhook falta, es demasiado antigua o no coincide.",
+    "AUTOMATIONS_012": "El cuerpo del webhook es demasiado grande.",
+    "AUTOMATIONS_013": "La rutina está en pausa. Vuelve a activarla en la pestaña Rutinas.",
+    "AUTOMATIONS_014": "Esta rutina no tiene un disparador de webhook. Pide antes al bot que lo añada.",
+    "AUTOMATIONS_015": "La firma de webhooks no está configurada en este despliegue.",
     "TASKS_001": "Esa tarea no existe o se ha eliminado.",
     "TASKS_002": "Ese hito no existe o se ha eliminado.",
     "TASKS_004": "Ese proyecto no admite tareas. Puede que se haya archivado.",
@@ -345,7 +351,9 @@
     "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
     "SESSIONS_058": "Esa terminal ya no está abierta.",
     "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
-    "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
+    "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
+    "BOTS_044": "Ese mensaje ya no está en este chat.",
+    "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
   },
   "notFound": {
     "title": "Esta página no existe",

@@ -29,7 +29,16 @@ export interface RoutineGmailInput {
   query?: string;
 }
 
-export type RoutineTriggerInput = RoutineScheduleInput | RoutineGithubInput | RoutineGmailInput;
+/** A webhook as the bot writes it: just the source. Its URL is issued by the person, on the Routines tab. */
+export interface RoutineWebhookInput {
+  source: 'webhook';
+}
+
+export type RoutineTriggerInput =
+  | RoutineScheduleInput
+  | RoutineGithubInput
+  | RoutineGmailInput
+  | RoutineWebhookInput;
 
 /**
  * How `update_routine`'s triggers become the automations' own trigger input: a
@@ -44,6 +53,9 @@ export function routineTriggers(
   timeZone: string,
 ): { triggers: TriggerInputDto[] } | { refusal: string } {
   const triggers: TriggerInputDto[] = [];
+  if (inputs.filter((input) => input.source === 'webhook').length > 1) {
+    return { refusal: promptText('tools/routine.webhook-trigger-twice') };
+  }
   for (const [index, input] of inputs.entries()) {
     const candidate =
       input.source === 'schedule'
@@ -57,19 +69,21 @@ export function routineTriggers(
             ...(input.frequency === 'once' ? { date: input.date } : {}),
             timezone: input.timezone ?? timeZone,
           }
-        : input.source === 'github'
-          ? {
-              source: 'github',
-              event: input.event,
-              repositories: input.repositories,
-              filter: input.branch ? { op: 'equals', value: input.branch } : { op: 'any' },
-            }
-          : {
-              source: 'gmail',
-              event: 'mail_received',
-              connectionId: input.account,
-              query: input.query || null,
-            };
+        : input.source === 'webhook'
+          ? { source: 'webhook', event: 'webhook_received' }
+          : input.source === 'github'
+            ? {
+                source: 'github',
+                event: input.event,
+                repositories: input.repositories,
+                filter: input.branch ? { op: 'equals', value: input.branch } : { op: 'any' },
+              }
+            : {
+                source: 'gmail',
+                event: 'mail_received',
+                connectionId: input.account,
+                query: input.query || null,
+              };
     const parsed = triggerInputSchema.safeParse(candidate);
     if (!parsed.success) {
       const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'trigger');

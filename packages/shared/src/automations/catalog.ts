@@ -13,10 +13,12 @@
  */
 
 /**
- * Where a trigger comes from. `schedule` is ours; every other source is an
- * external system that delivers events through the inbound-events hub.
+ * Where a trigger comes from. `schedule` is ours; `webhook` is a routine's own
+ * URL, which any outside system posts to and which fires that routine alone,
+ * so it needs no hub; every other source is an external system that delivers
+ * events through the inbound-events hub.
  */
-export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail'] as const;
+export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail', 'webhook'] as const;
 export type TriggerSource = (typeof TRIGGER_SOURCES)[number];
 
 /**
@@ -110,6 +112,31 @@ export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 /** What a watched Gmail account delivers: a message arrived. */
 export const GMAIL_EVENT_TYPES = ['mail_received'] as const;
 export type GmailEventType = (typeof GMAIL_EVENT_TYPES)[number];
+
+/** What a routine's webhook delivers: something posted to its URL. */
+export const WEBHOOK_EVENT_TYPES = ['webhook_received'] as const;
+export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
+
+/**
+ * The most a webhook's body may weigh, in bytes. Larger is refused (`413`)
+ * before anything is checked or stored.
+ */
+export const WEBHOOK_BODY_MAX_BYTES = 256 * 1024;
+
+/**
+ * How much of a webhook's body is kept with its run and reaches the bot, in
+ * characters: the rest is cut, and the run says so.
+ */
+export const WEBHOOK_BODY_KEPT_CHARS = 16 * 1024;
+
+/**
+ * How far a signed webhook's timestamp may be from the server's clock, in
+ * seconds, before it is refused as stale (a replay of an old request).
+ */
+export const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
+
+/** The header a signed webhook carries: `t=<unix seconds>,v1=<hex HMAC-SHA256>`. */
+export const WEBHOOK_SIGNATURE_HEADER = 'x-oppenheimer-signature';
 
 /** Every external event type any source defines. */
 export type ExternalEventType = GithubEventType | GmailEventType;

@@ -12,8 +12,14 @@
  */
 
 import type { CodingAgentId, HostInstall, InstallMethod } from './catalog.js';
+import { fxRelease } from './fx.js';
 import { bunUserInstall, npmUserInstall } from './install-scripts.js';
-import { RELEASE_TEMP_DIR, type ReleasePlatform, sha256Verifier } from './release-install.js';
+import {
+  RELEASE_TEMP_DIR,
+  type ReleasePlatform,
+  sha256Verifier,
+  sha512Verifier,
+} from './release-install.js';
 
 export interface AgentHostSetup {
   /**
@@ -75,6 +81,46 @@ function claudeRelease(platform: ReleasePlatform): string {
     'verify "$tmp/claude" "$checksum"',
     'chmod 0755 "$tmp/claude"',
     '"$tmp/claude" install "$version" </dev/null',
+  ].join('\n');
+}
+
+/**
+ * Antigravity's latest `agy`, as `antigravity.google/cli/install.sh` finds it
+ * but without running that script: the platform's manifest from Google's
+ * release service, the archive it names on Google's storage checked against
+ * the manifest's SHA-512, and its one binary copied to `~/.local/bin/agy`.
+ * Not the script's last step, `agy install`, which edits shell profiles the
+ * runner's own PATH makes unnecessary.
+ */
+function antigravityRelease(platform: ReleasePlatform): string {
+  const target =
+    platform === 'macos'
+      ? ['platform="darwin_$arch"']
+      : [
+          'if [ -f /lib/libc.musl-x86_64.so.1 ] || [ -f /lib/libc.musl-aarch64.so.1 ] || ldd /bin/ls 2>&1 | grep -q musl; then platform="linux_${arch}_musl"; else platform="linux_$arch"; fi',
+        ];
+  return [
+    'set -eu',
+    'case "$(uname -m)" in x86_64|amd64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo "agy: unsupported architecture $(uname -m)" >&2; exit 1 ;; esac',
+    ...target,
+    'base=https://antigravity-cli-auto-updater-974169037036.us-central1.run.app',
+    ...RELEASE_TEMP_DIR,
+    ...sha512Verifier(platform, 'agy'),
+    'curl -fsSL "$base/manifests/$platform.json" -o "$tmp/manifest.json"',
+    // Only an archive on Google's own bucket for the CLI.
+    String.raw`url="$(tr -d ' \t\r\n' <"$tmp/manifest.json" | grep -o '"url":"https://storage\.googleapis\.com/antigravity-public/antigravity-cli/[^"]*\.tar\.gz"' | cut -d '"' -f 4)"`,
+    String.raw`checksum="$(tr -d ' \t\r\n' <"$tmp/manifest.json" | grep -o '"sha512":"[0-9a-f]*"' | cut -d '"' -f 4)"`,
+    '[ -n "$url" ] || { echo "agy: the manifest for $platform names no release archive" >&2; exit 1; }',
+    'printf \'%s\' "$checksum" | grep -Eqx \'[0-9a-f]{128}\' || { echo "agy: the manifest for $platform has no checksum" >&2; exit 1; }',
+    'curl -fsSL "$url" -o "$tmp/agy.tar.gz"',
+    'verify "$tmp/agy.tar.gz" "$checksum"',
+    'tar -xzf "$tmp/agy.tar.gz" -C "$tmp" antigravity',
+    'mkdir -p "$HOME/.local/bin"',
+    'cp "$tmp/antigravity" "$HOME/.local/bin/agy"',
+    'chmod 0755 "$HOME/.local/bin/agy"',
+    ...(platform === 'macos'
+      ? ['xattr -d com.apple.quarantine "$HOME/.local/bin/agy" 2>/dev/null || true']
+      : []),
   ].join('\n');
 }
 
@@ -175,6 +221,30 @@ export const AGENT_HOST_SETUP: Readonly<Partial<Record<CodingAgentId, AgentHostS
         macos: bunUserInstall('@oh-my-pi/pi-coding-agent'),
         linux: bunUserInstall('@oh-my-pi/pi-coding-agent'),
         bin: '~/.bun/bin',
+      }),
+    }),
+    antigravity: Object.freeze({
+      // No `update`. agy updates itself in the background as it runs ("The
+      // Antigravity CLI automatically self-updates in the background during
+      // regular runs", its install script), and nothing documents whether
+      // `agy update` asks before it replaces the binary, which the runner's
+      // unattended updater cannot answer.
+      install: Object.freeze({
+        macos: antigravityRelease('macos'),
+        linux: antigravityRelease('linux'),
+        bin: '~/.local/bin',
+      }),
+    }),
+    fx: Object.freeze({
+      // `fx upgrade` (alias `fx update`): installs the latest release over the
+      // running binary, asking nothing.
+      update: Object.freeze(['upgrade']),
+      // Its GitHub release, checked against the asset's `.sha256`, rather than
+      // `fx.sh/setup.sh`, which checks nothing (`fx.ts`).
+      install: Object.freeze({
+        macos: fxRelease('macos'),
+        linux: fxRelease('linux'),
+        bin: '~/.local/bin',
       }),
     }),
   });

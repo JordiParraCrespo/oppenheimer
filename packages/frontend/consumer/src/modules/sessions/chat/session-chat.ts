@@ -18,6 +18,11 @@ import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
 import { type ChatActivity, sameActivity } from './agent-activity';
 import {
+  type ChatFeedbackAction,
+  type ChatFeedbackDraft,
+  sameFeedbackDraft,
+} from './feedback-draft';
+import {
   type ChatSharedFile,
   SHARED_ENTRY,
   sharedFileOf,
@@ -256,6 +261,13 @@ export interface ChatState {
    */
   suggestion: string | null;
   /**
+   * The feedback report the agent drafted, as the card over the terminal's
+   * input box shows it (`setFeedback`, `readFeedbackDraft`), for the chat to
+   * offer its keys (`pressFeedback`). None while it shows none, or while no
+   * terminal is drawn to read it from.
+   */
+  feedback: ChatFeedbackDraft | null;
+  /**
    * Whether what the chat is connected to can stop the agent's turn: a
    * terminal can (Escape), a Claude Code cloud session's hooks cannot
    * (`connect`). While it cannot, the composer offers no Stop, and a message
@@ -299,6 +311,7 @@ const EMPTY: ChatState = {
   older: 'none',
   activity: null,
   suggestion: null,
+  feedback: null,
   interruptible: true,
   commands: null,
 };
@@ -313,6 +326,12 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
+/**
+ * How long a key pressed on the drafted-feedback card holds the next one
+ * while the card on screen has not moved: long enough for a double click,
+ * short enough that a key the card ignored does not leave it dead.
+ */
+const FEEDBACK_KEY_HOLD_MS = 1500;
 /**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI
@@ -548,6 +567,8 @@ class Transcript {
  * reads it and types through it without knowing there is a stream.
  */
 export class SessionChat {
+  /** When a key last went to the drafted-feedback card whose reading still stands. */
+  private feedbackPressedAt: number | null = null;
   private readonly transcript = new Transcript();
   /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
   private readonly subagents = new Subagents(sidechainTurns);
@@ -941,6 +962,37 @@ export class SessionChat {
   setSuggestion(suggestion: string | null): void {
     if (this.state.suggestion === suggestion) return;
     this.publish({ ...this.state, suggestion });
+  }
+
+  /**
+   * The drafted feedback the terminal under the chat shows now
+   * (`readFeedbackDraft`); none once it is gone. A reading that says what the
+   * last one said publishes nothing.
+   */
+  setFeedback(feedback: ChatFeedbackDraft | null): void {
+    if (sameFeedbackDraft(this.state.feedback, feedback)) return;
+    this.feedbackPressedAt = null;
+    this.publish({ ...this.state, feedback });
+  }
+
+  /**
+   * Answers the drafted-feedback card with one of the keys it names, typed
+   * as the person would type it in the terminal. False when nothing is
+   * connected to type it.
+   */
+  pressFeedback(action: ChatFeedbackAction): boolean {
+    const type = this.type;
+    if (!type) return false;
+    // The card asks twice on purpose (send, then send without reviewing;
+    // dismiss, then turn drafting off): a second press before the screen
+    // shows the card's next state would answer a question nobody saw.
+    const now = Date.now();
+    if (this.feedbackPressedAt !== null && now - this.feedbackPressedAt < FEEDBACK_KEY_HOLD_MS) {
+      return false;
+    }
+    this.feedbackPressedAt = now;
+    type(action.key);
+    return true;
   }
 
   snapshot = (): ChatState => this.state;

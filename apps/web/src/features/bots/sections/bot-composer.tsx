@@ -13,6 +13,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import {
   ComposerEmojiBox,
+  ComposerEmojiButton,
   dictateInto,
   dictationSlots,
   ErrorAlert,
@@ -304,6 +305,7 @@ export function BotComposer({
             sendBlockedReason={blocked}
             allowEmpty={images.images.length > 0}
             onAttach={() => picker.current?.click()}
+            emoji={<ComposerEmojiButton draft={draft} setDraft={setDraft} />}
             onPaste={onPaste}
             attachments={
               images.images.length > 0

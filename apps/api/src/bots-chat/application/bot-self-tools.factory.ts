@@ -11,6 +11,7 @@ import {
   BOT_SECTIONS,
   type BotDocumentName,
   botModelOf,
+  isReactionEmoji,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { CreateBotMemoryFactCommand } from '../../bots/commands/create-bot-memory-fact/create-bot-memory-fact.command';
@@ -25,6 +26,8 @@ import { FindBotDocumentQuery } from '../../bots/queries/find-bot-document/find-
 import { FindBotDocumentsQuery } from '../../bots/queries/find-bot-documents/find-bot-documents.query';
 import { FindBotMemoryQuery } from '../../bots/queries/find-bot-memory/find-bot-memory.query';
 import { FindBotMemoryFactQuery } from '../../bots/queries/find-bot-memory-fact/find-bot-memory-fact.query';
+import { ReactAsBotCommand } from '../commands/react-as-bot/react-as-bot.command';
+import type { ReactAsBotOutcome } from '../commands/react-as-bot/react-as-bot.command-handler';
 import {
   BOT_CHAT_SEARCH_LIMIT_MAX,
   searchWords,
@@ -47,6 +50,7 @@ import {
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
@@ -96,6 +100,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       this.forget(),
       this.recall(),
       this.searchChat(),
+      this.react(),
     ];
   }
 
@@ -399,6 +404,52 @@ export class BotSelfToolsFactory implements BotToolArea {
    * and a summary of the rest, so what fell out of both is found here, in the
    * person's and the bot's own words.
    */
+  /**
+   * A reaction to the person's message, as a person leaves one: shown on
+   * their bubble in the console chat. On a channel conversation it would be
+   * stored where nobody sees it, so the tool says to answer in words there.
+   */
+  private react(): BotToolDefinition {
+    return defineBotTool({
+      name: 'react',
+      scope: 'bots:write',
+      description: promptText('tools/self.react'),
+      input: z.strictObject({
+        emoji: z.string().trim().max(32).describe(promptText('tools/self.react-emoji')),
+        message_id: z.uuid().optional().describe(promptText('tools/self.react-message-id')),
+      }),
+      run: async (input, context) => {
+        if (context.conversationId !== context.botId) {
+          throw new BotToolRefusal(promptText('tools/self.react-console-only'));
+        }
+        const emoji = input.emoji === '' ? null : input.emoji;
+        if (emoji !== null && !isReactionEmoji(emoji)) {
+          throw new BotToolRefusal(promptText('tools/self.react-not-emoji', { emoji }));
+        }
+        const outcome = await this.commandBus.execute<ReactAsBotCommand, ReactAsBotOutcome>(
+          new ReactAsBotCommand({
+            scope: context.owner,
+            organizationId: context.organizationId,
+            botId: context.botId,
+            conversationId: context.conversationId,
+            turnId: context.turnId,
+            messageId: input.message_id ?? null,
+            emoji,
+          }),
+        );
+        if (outcome.kind === 'no_message') {
+          throw new BotToolRefusal(promptText('tools/self.react-no-message'));
+        }
+        if (outcome.kind === 'not_yours') {
+          throw new BotToolRefusal(promptText('tools/self.react-not-yours'));
+        }
+        return emoji
+          ? promptText('tools/self.react-done', { emoji, messageId: outcome.messageId })
+          : promptText('tools/self.react-removed', { messageId: outcome.messageId });
+      },
+    });
+  }
+
   private searchChat(): BotToolDefinition {
     return defineBotTool({
       name: 'search_chat',

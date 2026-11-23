@@ -140,7 +140,29 @@
       },
       "emoji": {
         "menu": "Emoji",
-        "pick": "Insert {{emoji}} :{{name}}:"
+        "pick": "Insert {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Search emoji",
+        "noResults": "No emoji match",
+        "results": "Results",
+        "groups": {
+          "recent": "Recently used",
+          "smileys": "Smileys & emotion",
+          "people": "People & body",
+          "nature": "Animals & nature",
+          "food": "Food & drink",
+          "travel": "Travel & places",
+          "activities": "Activities",
+          "objects": "Objects",
+          "symbols": "Symbols",
+          "flags": "Flags"
+        },
+        "react": "React",
+        "reactWith": "React with {{emoji}}",
+        "removeReaction": "Remove reaction {{emoji}}",
+        "more": "More emoji",
+        "yourReaction": "Your reaction: {{emoji}}",
+        "reactFailed": "Could not save the reaction"
       }
     },
     "search": {
@@ -350,6 +372,12 @@
       "AUTOMATIONS_007": "That project can't hold automations.",
       "AUTOMATIONS_008": "That run doesn't exist.",
       "AUTOMATIONS_009": "That Gmail account can't start a routine: it isn't yours, or it needs reconnecting in Settings → Mail.",
+      "AUTOMATIONS_010": "That webhook URL isn't valid any more: issue a new one on the routine's Routines tab.",
+      "AUTOMATIONS_011": "The webhook request's signature is missing, too old or doesn't match.",
+      "AUTOMATIONS_012": "The webhook body is too large.",
+      "AUTOMATIONS_013": "The routine is paused. Turn it back on from the Routines tab.",
+      "AUTOMATIONS_014": "This routine has no webhook trigger. Ask the bot to add one first.",
+      "AUTOMATIONS_015": "Webhook signing isn't set up on this deployment.",
       "TASKS_001": "That task doesn't exist, or it was deleted.",
       "TASKS_002": "That milestone doesn't exist, or it was deleted.",
       "TASKS_004": "That project can't take tasks. It may have been archived.",
@@ -522,7 +550,9 @@
       "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
       "SESSIONS_058": "That terminal is no longer open.",
       "SESSIONS_059": "The host refused to change the session's terminals.",
-      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
+      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host.",
+      "BOTS_044": "That message is no longer in this chat.",
+      "BOTS_045": "Only your messages and the bot's words take a reaction."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1507,6 +1537,20 @@
         "previous": "Previous match",
         "next": "Next match",
         "close": "Close find"
+      },
+      "feedback": {
+        "label": "Drafted feedback",
+        "review": "Review in terminal",
+        "send": "Send",
+        "dismiss": "Dismiss",
+        "back": "Back",
+        "keep": "Keep",
+        "turnOff": "Turn off",
+        "retry": "Review and retry",
+        "reviewOrDiscard": "Review or discard",
+        "clearPrompt": "Clear the terminal's prompt to answer it.",
+        "more_one": "{{count}} more queued",
+        "more_other": "{{count}} more queued"
       }
     },
     "side": {
@@ -1568,6 +1612,7 @@
       "title": "{{name}} running on this session's host",
       "connecting": "Connecting to the session's device…",
       "connectingDetail": "The screen appears once the host has started streaming it.",
+      "noPicture": "Waiting for the screen…",
       "unavailable": "No device for this session",
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",
@@ -1687,7 +1732,6 @@
       "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
       "emptyGroup": "No bots in this group yet.",
       "noMessages": "No messages yet",
-      "yesterday": "Yesterday",
       "newGroup": "New group",
       "groupName": "Group name",
       "groupActions": "Options for {{name}}",
@@ -2088,7 +2132,8 @@
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."
-      }
+      },
+      "botReacted": "The bot reacted {{emoji}}"
     },
     "settings": {
       "back": "Back to the chat",
@@ -2317,6 +2362,7 @@
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
         "gmail": "Gmail · {{when}}",
+        "webhook": "Webhook · {{when}}",
         "last": "Last",
         "next": "Next",
         "more": "Show more",
@@ -2349,7 +2395,32 @@
         "deleteFailed": "Could not delete the routine.",
         "switchFailed": "Could not change the routine.",
         "runFailed": "Could not run the routine.",
-        "loadFailed": "Could not load the bot's routines."
+        "loadFailed": "Could not load the bot's routines.",
+        "webhookUrl": {
+          "none": "Webhook · no URL yet",
+          "create": "Create URL",
+          "newUrl": "New URL",
+          "creating": "Creating…",
+          "revoke": "Revoke",
+          "revoking": "Revoking…",
+          "revokeTitle": "Revoke the webhook URL of “{{name}}”?",
+          "revokeBody": "Anything posted to it is refused from now on. The routine keeps its webhook trigger: create a new URL to use it again.",
+          "revokeFailed": "Could not revoke the URL.",
+          "isSigned": "Signed",
+          "isUnsigned": "Not signed",
+          "lastReceived": "last received {{when}}",
+          "neverReceived": "nothing received yet",
+          "dialogTitle": "Webhook URL for “{{name}}”",
+          "dialogBody": "Anything that can send a POST (a deploy pipeline, Sentry, a form) runs this routine through this URL. The bot reads what was posted as outside data, never as instructions.",
+          "replaces": "The URL it has now stops working as soon as the new one is made.",
+          "signed": "Require a signature (a signing secret every request is signed with)",
+          "shownOnce": "Copy them now: they’re shown once. Afterwards only the start of the URL is shown.",
+          "url": "URL",
+          "secret": "Signing secret",
+          "signHow": "Send x-oppenheimer-signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of “<t>.<body>” with this secret>. Requests more than five minutes old are refused.",
+          "done": "Done",
+          "failed": "Could not make the URL."
+        }
       },
       "homeHost": {
         "title": "Home host",
@@ -2655,6 +2726,7 @@
       "event": "On {{event}}",
       "mail": "New mail matching “{{query}}”",
       "anyMail": "Any new mail",
+      "webhook": "Something posted to its URL",
       "more": "{{summary}} +{{count}}",
       "manual": "Manual only",
       "monFri": "Mon–Fri",
@@ -3321,7 +3393,9 @@
       "noRepository": "No repository",
       "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
-      "noRepositories": "This project has no repositories. Add one in its settings.",
+      "noRepositories": "No repositories. Give the GitHub app access to one.",
+      "repositoriesLoading": "Loading the workspace’s repositories…",
+      "repositoriesFailed": "Couldn’t load every repository the workspace reaches.",
       "where": "Where it runs",
       "whereSearch": "Search places",
       "noPlaces": "Nowhere to run it.",

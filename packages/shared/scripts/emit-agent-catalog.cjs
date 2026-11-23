@@ -181,6 +181,7 @@ function render() {
       fields.push(['effortLevels', goEffortLevels(agent.models)]);
     }
     if (launch.prompt) fields.push(['prompt', goStrings(launch.prompt)]);
+    if (launch.taskIsNote) fields.push(['taskIsNote', 'true']);
     if (launch.conversation?.create) {
       fields.push(['conversationCreate', goStrings(launch.conversation.create)]);
     }

@@ -26,12 +26,16 @@ import {
   asAgent,
   asPlace,
   NO_REPOSITORY,
+  type RepositoriesStatus,
+  repositoryChipOptions,
+  type StartRepository,
   type StartSessionValues,
   startReadiness,
 } from '../lib/start-session';
 
 /**
- * The launch dialog's form: the prompt, prefilled from the task, and the repository,
+ * The launch dialog's form: the prompt, prefilled from the task, and the repository
+ * (the project's first, then any other the workspace's GitHub installations reach),
  * where it runs, the host, agent and model, defaulted from the project. On a host the
  * repository may be none: the session opens in the host's home. What holds the start or
  * queues it is `startReadiness`'s; this draws its answer. Where is a host, Claude Code's
@@ -47,6 +51,8 @@ import {
 export function StartSessionForm({
   values,
   repositories,
+  repositoriesStatus,
+  onManageRepositories,
   hosts,
   cloudHosts,
   places,
@@ -61,7 +67,12 @@ export function StartSessionForm({
   onCancel,
 }: {
   values: StartSessionValues;
-  repositories: ChipSelectOption[];
+  /** The project's repositories, then every other one the workspace's installations reach. */
+  repositories: readonly StartRepository[];
+  /** Whether the rest are still being read, or a read failed (`repositoriesStatusOf`). */
+  repositoriesStatus: RepositoriesStatus;
+  /** Opens GitHub to grant the app more repositories; absent on a deployment with no app. */
+  onManageRepositories?: () => void;
   hosts: ChipSelectOption[];
   /** The hosts as a place whose host only starts the session lists them: each with its claude.ai account. */
   cloudHosts: ChipSelectOption[];
@@ -88,7 +99,7 @@ export function StartSessionForm({
   const hostId = useWatch({ control, name: 'hostId' });
   const place = useWatch({ control, name: 'place' });
   const promptEmpty = useWatch({ control, name: 'prompt', compute: (prompt) => !prompt.trim() });
-  const noRepository = useWatch({ control, name: 'repositoryId', compute: (id) => id === null });
+  const noRepository = useWatch({ control, name: 'repository', compute: (id) => id === null });
   const rule = AUTOMATION_PLACE_RULES[place];
   const { hold, queues } = startReadiness({
     place,
@@ -97,15 +108,12 @@ export function StartSessionForm({
     hasHosts: hosts.length > 0,
     hostOnline: hostId && rule.host !== null ? online(hostId) : null,
   });
-  const repositoryOptions: ChipSelectOption[] = [
-    {
-      value: NO_REPOSITORY,
-      label: t('tasks.start.noRepository'),
-      description: t('tasks.start.noRepositoryDesc'),
-      disabled: rule.host !== 'runs',
-    },
-    ...repositories,
-  ];
+  const repositoryOptions = repositoryChipOptions({
+    repositories,
+    status: repositoriesStatus,
+    hostRuns: rule.host === 'runs',
+    t,
+  });
   const submit = handleSubmit(onSubmit);
 
   return (
@@ -129,7 +137,7 @@ export function StartSessionForm({
       <div className="flex flex-wrap items-center gap-2">
         <Controller
           control={control}
-          name="repositoryId"
+          name="repository"
           render={({ field }) => (
             <ChipSelect
               value={field.value ?? NO_REPOSITORY}
@@ -140,6 +148,11 @@ export function StartSessionForm({
               placeholder={t('tasks.start.repositoryPlaceholder')}
               searchPlaceholder={t('tasks.start.repositorySearch')}
               emptyText={t('tasks.start.noRepositories')}
+              action={
+                onManageRepositories
+                  ? { label: t('common.repositoryAccess.manage'), onSelect: onManageRepositories }
+                  : undefined
+              }
             />
           )}
         />

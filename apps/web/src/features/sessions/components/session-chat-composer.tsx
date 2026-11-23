@@ -20,6 +20,7 @@ import {
   ChatUsage,
   type ChatUsageContext,
   ComposerEmojiBox,
+  ComposerEmojiButton,
   dictateInto,
   dictationSlots,
   useCommandMenu,
@@ -27,7 +28,7 @@ import {
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
 import { type ChatCommand, SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type HeldFile, useHeldFiles } from '../hooks/use-held-files';
 import { useTakeFiles } from '../hooks/use-take-files';
@@ -95,6 +96,7 @@ export function SessionChatComposer({
   onCompact,
   commands,
   suggestion,
+  feedback,
 }: {
   /** Whose conversation it is, named on the line under the field; none for a guest. */
   agent: SessionAgent | null;
@@ -122,6 +124,8 @@ export function SessionChatComposer({
   commands: readonly ChatCommand[] | null;
   /** The next message the agent suggests; null when it suggests none. */
   suggestion: string | null;
+  /** The feedback the agent drafted, on top of the stack (`ChatFeedbackDraftCard`). */
+  feedback?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -159,8 +163,9 @@ export function SessionChatComposer({
       </div>
     ) : null;
   const above =
-    tasks || queued.length > 0 ? (
+    feedback || tasks || queued.length > 0 ? (
       <ComposerStack>
+        {feedback}
         {tasks}
         {queued.map((message) => (
           <ChatQueuedRow
@@ -259,6 +264,7 @@ export function SessionChatComposer({
           layout="inline"
           dictation={dictationSlots(dictation)}
           onAttach={handOff ? () => picker.current?.click() : undefined}
+          emoji={<ComposerEmojiButton draft={draft} setDraft={setDraft} />}
           attachments={
             files.length > 0
               ? files.map(({ id, file }) => (

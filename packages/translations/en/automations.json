@@ -154,6 +154,7 @@
     "event": "On {{event}}",
     "mail": "New mail matching “{{query}}”",
     "anyMail": "Any new mail",
+    "webhook": "Something posted to its URL",
     "more": "{{summary}} +{{count}}",
     "manual": "Manual only",
     "monFri": "Mon–Fri",
