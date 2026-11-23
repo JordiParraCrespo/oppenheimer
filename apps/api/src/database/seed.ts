@@ -18,6 +18,7 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from '../automations/database/automation-webhook.orm-entity';
 import { BotOrmEntity } from '../bots/database/bot.orm-entity';
 import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
@@ -157,6 +158,7 @@ const dataSource = new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    AutomationWebhookOrmEntity,
     VoiceSettingsOrmEntity,
     TaskOrmEntity,
     MilestoneOrmEntity,

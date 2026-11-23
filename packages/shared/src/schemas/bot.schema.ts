@@ -1284,6 +1284,13 @@ export const updateBotRoutineSchema = botRoutineTaskSchema
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
 
 /**
+ * A new URL for a routine's webhook, from its Routines tab: `signed` also
+ * issues a signing secret every request must then be signed with.
+ */
+export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().default(false) });
+export type IssueRoutineWebhookDto = z.infer<typeof issueRoutineWebhookSchema>;
+
+/**
  * A Needs input card: one call of an asking tool, waiting for the owner.
  * `pending` until they decide; `approved` once the call ran on their yes,
  * `failed` when it ran and failed; `denied`; `expired` when they wrote to the

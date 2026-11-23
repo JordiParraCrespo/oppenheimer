@@ -29,7 +29,8 @@ for ourselves first.
   and one or more **triggers**. "Any trigger starts a run." It is active
   or paused; paused ignores triggers, and **Run now** still works.
 - **Triggers** are of two sources in the frames: a **schedule** (once,
-  hourly, daily, weekdays, weekly, monthly) and a **GitHub event** (eleven
+  hourly, daily, weekdays, weekly, monthly; a bot's routine can also take
+  a five-field **cron** expression, 2026-11-20, issue #955) and a **GitHub event** (eleven
   events, a repository subset, one filter value or "any"). Slack, Linear
   and others are later sources on the same model.
 - **A run** is an ordinary session the trigger started ("Every run is an

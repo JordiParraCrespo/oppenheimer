@@ -1871,6 +1871,12 @@ earlier note:
   the transcription provider and model, the voice-note provider, model and
   voice, and the polish model or none. A choice is tried first, the old
   order after it; the env servers stay as the last provider.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).
 - `next-steps/channels.md` §7.2 had one Oppenheimer Slack app per Slack
   workspace, speaking as each bot. On 2026-11-20, asked for a way to ask a
   bot from Slack (JordiParraCrespo/oppenheimer#954), each bot got an app of

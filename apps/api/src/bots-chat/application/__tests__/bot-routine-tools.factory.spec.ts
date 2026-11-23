@@ -213,6 +213,32 @@ describe('update_routine', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it('asks before saving a cron routine with the schedule in words, storing the expression', async () => {
+    const { call, approvals } = setup();
+    await call({
+      ...create,
+      triggers: [{ source: 'schedule', frequency: 'cron', cron: '*/15 9-17 * * 1-5' }],
+    });
+    const [request] = approvals.request.mock.calls[0];
+    expect(request.summary).toContain('Every 15 minutes from 09:00 to 17:45, Monday to Friday');
+    expect(request.summary).not.toContain('*/15');
+    expect(request.input).toMatchObject({
+      triggers: [{ frequency: 'cron', cron: '*/15 9-17 * * 1-5' }],
+    });
+  });
+
+  it('refuses a cron that does not parse or fires too often, before any card', async () => {
+    const { call, approvals } = setup();
+    for (const cron of ['every monday', '* * * * *', undefined]) {
+      const result = await call({
+        ...create,
+        triggers: [{ source: 'schedule', frequency: 'cron', cron }],
+      });
+      expect(result.content).toContain('Trigger 1 is not valid');
+    }
+    expect(approvals.request).not.toHaveBeenCalled();
+  });
+
   it('refuses a weekly schedule with no days before any card is raised', async () => {
     const { call, approvals } = setup();
     const result = await call({

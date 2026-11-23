@@ -15302,6 +15302,272 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/routines/{routineId}/webhook": {
+      "post": {
+        "description": "A new URL for a routine that has a webhook trigger, replacing the one it had, which stops working at once. With `signed`, also a new signing secret every request must be signed with. The URL and the secret are answered this once; only the start of the token is shown afterwards.",
+        "operationId": "issueRoutineWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueRoutineWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedRoutineWebhookResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "AUTOMATIONS_014 — The routine has no webhook trigger",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AUTOMATIONS_015 — Signing is not configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issue a routine’s webhook URL",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "delete": {
+        "description": "Posts to it are refused from now on. The routine keeps its webhook trigger; issue a new URL to use it again.",
+        "operationId": "revokeRoutineWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Routine not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a routine’s webhook URL",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/routine-webhooks/{token}": {
+      "post": {
+        "description": "Runs the routine the URL belongs to: one turn of its bot, which reads the body as outside data, never as instructions. Answers at once with the run, without waiting for the bot. Any content type; the first 16 KiB of the body are kept with the run. A signed URL takes only a request whose `x-oppenheimer-signature` is `t=<unix seconds>,v1=<hex HMAC-SHA256 of \"<t>.<body>\">` under its signing secret, within five minutes of now.",
+        "operationId": "receiveRoutineWebhook",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The token the Routines tab issued, `owh_…`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retried POST with the same key is the same run.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-oppenheimer-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineWebhookReceivedResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTOMATIONS_011 — Bad signature",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_010 — No such webhook",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTOMATIONS_013 — Routine paused",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "AUTOMATIONS_012 — Body too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "none": []
+          }
+        ],
+        "summary": "Post to a routine’s webhook",
+        "tags": [
+          "Routine webhooks"
+        ]
+      }
+    },
     "/api/v1/events": {
       "get": {
         "description": "Server-Sent Events. A `ready` event once the stream is subscribed, then one `change` event per change the caller may read, whose data is `{ type, id, … }` (`@oppenheimer/shared/workspace-events`): an invalidation, never the row, so the client re-reads it through its own endpoint. A `keepalive` event keeps an idle stream under proxy timeouts, and the API ends a stream after a while so the redial is authenticated again.",
@@ -34512,7 +34778,8 @@
               "daily",
               "weekdays",
               "weekly",
-              "monthly"
+              "monthly",
+              "cron"
             ]
           },
           "hour": {
@@ -34540,6 +34807,11 @@
           "date": {
             "type": "string",
             "description": "Once: the local date, `YYYY-MM-DD`."
+          },
+          "expression": {
+            "type": "string",
+            "description": "Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.",
+            "example": "*/15 9-17 * * 1-5"
           },
           "timezone": {
             "type": "string",
@@ -34589,7 +34861,8 @@
             "enum": [
               "schedule",
               "github",
-              "gmail"
+              "gmail",
+              "webhook"
             ]
           },
           "event": {
@@ -34609,9 +34882,10 @@
               "release",
               "check_passed",
               "review",
-              "mail_received"
+              "mail_received",
+              "webhook_received"
             ],
-            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
+            "description": "`schedule`, `webhook_received`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
           },
           "schedule": {
             "$ref": "#/components/schemas/ScheduleResponseDto"
@@ -34816,6 +35090,35 @@
           "updatedAt"
         ]
       },
+      "RoutineWebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "tokenPrefix": {
+            "type": "string",
+            "example": "owh_ab12cd",
+            "description": "The start of the URL’s token."
+          },
+          "signed": {
+            "type": "boolean",
+            "description": "Whether a request must carry a signature."
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the current URL was issued."
+          },
+          "lastReceivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "tokenPrefix",
+          "signed",
+          "issuedAt"
+        ]
+      },
       "BotRoutineResponseDto": {
         "type": "object",
         "properties": {
@@ -34877,6 +35180,16 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
+              }
+            ]
+          },
+          "webhook": {
+            "nullable": true,
+            "description": "Its webhook URL, once one is issued; null without one. Only a routine with a webhook trigger can have one.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoutineWebhookResponseDto"
               }
             ]
           },
@@ -34972,7 +35285,8 @@
                         "daily",
                         "weekdays",
                         "weekly",
-                        "monthly"
+                        "monthly",
+                        "cron"
                       ]
                     },
                     "hour": {
@@ -35011,6 +35325,11 @@
                     "date": {
                       "type": "string",
                       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "expression": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
                     },
                     "timezone": {
                       "type": "string",
@@ -35139,6 +35458,27 @@
                     "source",
                     "event",
                     "connectionId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "webhook"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "webhook_received"
+                      ],
+                      "default": "webhook_received"
+                    }
+                  },
+                  "required": [
+                    "source"
                   ]
                 }
               ]
@@ -35458,7 +35798,8 @@
                         "daily",
                         "weekdays",
                         "weekly",
-                        "monthly"
+                        "monthly",
+                        "cron"
                       ]
                     },
                     "hour": {
@@ -35497,6 +35838,11 @@
                     "date": {
                       "type": "string",
                       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "expression": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
                     },
                     "timezone": {
                       "type": "string",
@@ -35625,6 +35971,27 @@
                     "source",
                     "event",
                     "connectionId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "webhook"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "webhook_received"
+                      ],
+                      "default": "webhook_received"
+                    }
+                  },
+                  "required": [
+                    "source"
                   ]
                 }
               ]
@@ -36196,6 +36563,94 @@
             "type": "boolean"
           }
         }
+      },
+      "IssueRoutineWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "signed": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "IssuedRoutineWebhookResponseDto": {
+        "type": "object",
+        "properties": {
+          "tokenPrefix": {
+            "type": "string",
+            "example": "owh_ab12cd",
+            "description": "The start of the URL’s token."
+          },
+          "signed": {
+            "type": "boolean",
+            "description": "Whether a request must carry a signature."
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the current URL was issued."
+          },
+          "lastReceivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "example": "https://api.example.com/api/v1/routine-webhooks/owh_…"
+          },
+          "signingSecret": {
+            "type": "string",
+            "nullable": true,
+            "description": "The signing secret, when one was asked for. Not shown again."
+          }
+        },
+        "required": [
+          "tokenPrefix",
+          "signed",
+          "issuedAt",
+          "url"
+        ]
+      },
+      "RoutineWebhookReceivedResponseDto": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "skipped",
+              "duplicate"
+            ],
+            "description": "`queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run."
+          },
+          "skipReason": {
+            "type": "string",
+            "enum": [
+              "paused",
+              "deleted",
+              "own_event",
+              "automation_rate_limited",
+              "workspace_rate_limited",
+              "overlapping",
+              "missed",
+              "not_launchable",
+              "agent_unavailable",
+              "unattended",
+              "idle",
+              null
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "runId",
+          "status"
+        ]
       },
       "TaskSessionLinkResponseDto": {
         "type": "object",
