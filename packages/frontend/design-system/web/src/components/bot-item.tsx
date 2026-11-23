@@ -16,7 +16,7 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * BotItem — an employee in the sidebar. As a `line` (the default), on one line: a 20px square photo
+ * BotItem — an employee in the sidebar, on one line: a 20px square photo
  * (initials in ink until it loads) with a 9px green dot on its corner while
  * the bot is `live`, then the name at 14px, which breathes while it is
  * `working` as a working `SessionItem`'s does (`animate-shimmer`). The last message is the row's
@@ -26,13 +26,8 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
  * dot: both set `data-attention`, which carries the weight. 32px, the nav
  * radius, rows 1px apart in a `BotList`.
  *
- * As a `preview`, the way a messaging app's chat list reads: a 32px photo,
- * then two lines, the name with the `time` of its last activity at the end,
- * and under it the last message at 13px in the subtle ink, one line, with the
- * dots at its end in place of the tooltip. 52px.
- *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
- * hiding the dots (and the time) while it shows.
+ * hiding the dots while it shows.
  */
 function BotItem({
   name,
@@ -40,8 +35,6 @@ function BotItem({
   image,
   face,
   preview,
-  layout = 'line',
-  time,
   live = false,
   working = false,
   unread = false,
@@ -60,12 +53,8 @@ function BotItem({
   image?: string;
   /** The bot's colour and id: with no photo, its drawn face; without, its initials. */
   face?: BotFaceSpec;
-  /** The last message: the row's tooltip as a `line`, its second line as a `preview`. */
+  /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
-  /** One line with the message in a tooltip, or two with it under the name. */
-  layout?: 'line' | 'preview';
-  /** When the bot was last active ("09:28", "Yesterday"), at the end of a `preview` row's name. */
-  time?: React.ReactNode;
   /** The bot is live: the green dot on the photo. */
   live?: boolean;
   /** The bot is at work: the name shimmers, as a working session's does. */
@@ -82,28 +71,9 @@ function BotItem({
   const withAction = action !== undefined;
   const inRow = withAction || rowProps !== undefined;
   const dot = 'size-1.75 shrink-0 rounded-pill';
-  const twoLine = layout === 'preview';
-  const dots =
-    needsInput || unread ? (
-      <span className={cn('flex shrink-0 items-center gap-1.5', withAction && META_GIVES_WAY)}>
-        {needsInput ? <span aria-label="Needs input" className={cn(dot, 'bg-warning')} /> : null}
-        {unread ? <span aria-label="Unread" className={cn(dot, 'bg-primary')} /> : null}
-      </span>
-    ) : null;
-  const label = (
-    <span
-      className={cn(
-        'min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold',
-        working && 'motion-safe:animate-shimmer',
-      )}
-    >
-      {name}
-    </span>
-  );
   const button = (
     <ButtonPrimitive
       data-slot="bot-item"
-      data-layout={layout}
       data-active={active || undefined}
       data-working={working || undefined}
       data-unread={unread || undefined}
@@ -114,15 +84,14 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex w-full items-center rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
-        twoLine ? 'h-13 gap-3' : 'h-8 gap-2.5',
+        'group/bot flex h-8 w-full items-center gap-2.5 rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials }} size={twoLine ? 32 : 20} face={face} />
+        <BotAvatar option={{ image, initials }} size={20} face={face} />
         {live ? (
           // The dot's cutout is the row's ground: the sidebar, under the
           // row's own wash when it is hovered, its menu is open, or it is the
@@ -138,38 +107,24 @@ function BotItem({
           </span>
         ) : null}
       </span>
-      {twoLine ? (
-        <span
-          className={cn(
-            'flex min-w-0 flex-1 flex-col gap-0.5',
-            // Room for the ellipsis, which sits over both lines.
-            withAction &&
-              'group-hover/row:pr-6 group-has-focus-visible/row:pr-6 group-data-menu-open/row:pr-6',
-          )}
-        >
-          <span className="flex min-w-0 items-baseline gap-2">
-            {label}
-            {time ? (
-              <span className={cn('figures shrink-0 text-[12px] text-fg-subtle', withAction && META_GIVES_WAY)}>
-                {time}
-              </span>
-            ) : null}
-          </span>
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-[13px] leading-4.5 text-fg-subtle">{preview}</span>
-            {dots}
-          </span>
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold',
+          working && 'motion-safe:animate-shimmer',
+        )}
+      >
+        {name}
+      </span>
+      {needsInput || unread ? (
+        <span className={cn('flex shrink-0 items-center gap-1.5', withAction && META_GIVES_WAY)}>
+          {needsInput ? <span aria-label="Needs input" className={cn(dot, 'bg-warning')} /> : null}
+          {unread ? <span aria-label="Unread" className={cn(dot, 'bg-primary')} /> : null}
         </span>
-      ) : (
-        <>
-          {label}
-          {dots}
-        </>
-      )}
+      ) : null}
     </ButtonPrimitive>
   );
 
-  const row = preview && !twoLine ? (
+  const row = preview ? (
     <Tooltip>
       <TooltipTrigger render={button} />
       <TooltipContent side="right" align="center" sideOffset={8}>
@@ -192,32 +147,9 @@ const SKELETON_NAMES = ['w-28', 'w-20', 'w-32', 'w-24'] as const;
 
 /**
  * BotItemSkeleton — a `BotItem` while the list loads: the 20px square and a
- * name's bar on the row's 32px line; as a `preview`, the 32px square, the
- * name's bar and a longer one for the message, on its 52px. `index` varies
- * the name's width.
+ * name's bar on the row's 32px line. `index` varies the name's width.
  */
-function BotItemSkeleton({
-  index = 0,
-  layout = 'line',
-  className,
-  ...props
-}: React.ComponentProps<'div'> & { index?: number; layout?: 'line' | 'preview' }) {
-  if (layout === 'preview') {
-    return (
-      <div
-        aria-hidden
-        data-slot="bot-item-skeleton"
-        className={cn('flex h-13 items-center gap-3 px-2.5', className)}
-        {...props}
-      >
-        <Skeleton shape="sm" className="size-8 shrink-0 rounded-xs" />
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <Skeleton shape="sm" className={cn('h-3.5', variedWidth(index, SKELETON_NAMES))} />
-          <Skeleton shape="sm" className="h-3 w-4/5" />
-        </div>
-      </div>
-    );
-  }
+function BotItemSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
   return (
     <div
       aria-hidden
