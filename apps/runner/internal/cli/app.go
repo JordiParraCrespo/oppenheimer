@@ -216,6 +216,7 @@ func New(version string) (*App, error) {
 		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
 		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
 		ZCodeDatabase:  zcodeDatabase(paths),
+		HermesState:    agentHomeFile(paths, "HERMES_HOME", ".hermes", "state.db"),
 	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,

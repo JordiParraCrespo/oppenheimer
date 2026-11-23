@@ -960,3 +960,33 @@ func TestRestartOverTwoRepositoriesWhoseFirstWasDeletedKeepsTheRest(t *testing.T
 		t.Fatal("restart removed the second checkout and the work in it")
 	}
 }
+
+// Stopping a Hermes session ends its turn first: `hermes chat` is a client of
+// Hermes' gateway, which keeps working when its terminal goes, so the runner
+// types the catalog's quit lines (`/stop`, `/quit`) before the kill. An agent
+// with none (Claude Code) has nothing typed. Regression: a session read
+// Stopped while Hermes went on running commands in its worktree.
+func TestStoppingAHermesSessionEndsItsTurnBeforeTheTerminal(t *testing.T) {
+	h := newFakeHarness(t)
+	hermes, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentHermes,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	claude := h.open(t)
+
+	if _, err := h.svc.Stop(context.Background(), hermes.ID); err != nil {
+		t.Fatal(err)
+	}
+	if typed := h.terminals.Screens[hermes.Target(0)]; !strings.HasSuffix(typed, "/stop\r/quit\r") {
+		t.Fatalf("typed into Hermes = %q, want /stop and /quit, each sent, before the kill", typed)
+	}
+	if _, err := h.svc.Stop(context.Background(), claude.ID); err != nil {
+		t.Fatal(err)
+	}
+	if typed := h.terminals.Screens[claude.Target(0)]; strings.Contains(typed, "/quit") {
+		t.Fatalf("typed into Claude Code = %q, want nothing before its kill", typed)
+	}
+}

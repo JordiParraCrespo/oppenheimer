@@ -108,7 +108,7 @@ parses imports only, and fails with the offending file and rule. Its
 `confined` table also keeps a third-party module in the one adapter that owns
 what it speaks to: whatsmeow in `whatsapp/adapters/whatsmeow`, and
 `modernc.org/sqlite` there and in `sessions/adapters/transcript`, which reads
-ZCode's conversations out of ZCode's database. It is the
+ZCode's and Hermes' conversations out of their databases. It is the
 Go equivalent of `apps/api/.dependency-cruiser.cjs` and runs under `pnpm test`.
 
 `internal/arch/catalog_test.go` holds the other public contract: it walks the

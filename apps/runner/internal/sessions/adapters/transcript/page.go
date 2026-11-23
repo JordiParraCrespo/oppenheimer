@@ -35,6 +35,12 @@ func (r *Reader) ReadPage(session domain.Session, req app.TranscriptPageRequest)
 	if session.Agent.ServesConversation() {
 		return app.TranscriptPage{}, app.ErrNoChat
 	}
+	if session.Agent == domain.AgentHermes {
+		if r.hermes.db == "" {
+			return app.TranscriptPage{}, app.ErrNoChat
+		}
+		return readHermesPage(r.hermes, session, req)
+	}
 	source, ok := r.chats[session.Agent]
 	if !ok {
 		return app.TranscriptPage{}, app.ErrNoChat

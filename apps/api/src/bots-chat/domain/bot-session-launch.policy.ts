@@ -120,7 +120,7 @@ export function planBotSessionLaunch(
 ): { launch: BotSessionLaunch } | { refusal: string } {
   const definition = CODING_AGENTS[agent];
   // `task` is required, and an agent that takes none on its command line
-  // (ZCode) would drop it, unless the catalog marks the task a note (the
+  // (ZCode, Muse) would drop it, unless the catalog marks the task a note (the
   // blank terminal's, which the bot then drives the terminal under).
   if (!definition.launch.prompt && !definition.launch.taskIsNote) {
     return {

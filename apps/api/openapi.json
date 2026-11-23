@@ -9793,6 +9793,8 @@
                 "antigravity",
                 "zcode",
                 "fx",
+                "hermes",
+                "muse",
                 "shell"
               ],
               "type": "string"
@@ -32185,6 +32187,8 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
+              "muse",
               "shell",
               null
             ],
@@ -32273,6 +32277,8 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
+              "muse",
               "shell",
               null
             ],
@@ -32341,6 +32347,8 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
+              "muse",
               "shell",
               null
             ],
@@ -32881,6 +32889,8 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
+              "muse",
               "shell",
               "cursor"
             ],
@@ -33151,6 +33161,8 @@
               "antigravity",
               "zcode",
               "fx",
+              "hermes",
+              "muse",
               "shell"
             ]
           },
@@ -34506,7 +34518,9 @@
               "omp",
               "antigravity",
               "zcode",
-              "fx"
+              "fx",
+              "hermes",
+              "muse"
             ]
           },
           "prompt": {
@@ -35503,6 +35517,8 @@
                   "antigravity",
                   "zcode",
                   "fx",
+                  "hermes",
+                  "muse",
                   "shell"
                 ]
               },
@@ -36016,6 +36032,8 @@
                   "antigravity",
                   "zcode",
                   "fx",
+                  "hermes",
+                  "muse",
                   "shell"
                 ]
               },
@@ -36995,6 +37013,8 @@
                   "antigravity",
                   "zcode",
                   "fx",
+                  "hermes",
+                  "muse",
                   "shell"
                 ]
               },

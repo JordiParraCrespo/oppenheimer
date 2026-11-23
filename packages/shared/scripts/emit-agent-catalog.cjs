@@ -216,16 +216,21 @@ function render() {
   // How a message is typed into each agent; the plain terminal has no row.
   lines.push(
     "// inputCatalog is each agent's `input` entry of the catalog: the keys that",
-    '// send and interrupt a message typed into it, the pause between a paste and',
-    '// its submit, in milliseconds, and the keys that empty its prompt first',
-    '// with the wait after them.',
+    '// send and interrupt a message typed into it, the pause between a paste',
+    '// and its submit, in milliseconds, the keys that empty its prompt first',
+    '// with the wait after them, and what is typed before its terminal is',
+    '// ended.',
     'var inputCatalog = map[string]agentInput{',
   );
   const inputs = CODING_AGENT_IDS.filter((id) => CODING_AGENTS[id].input).map((id) => {
     const input = CODING_AGENTS[id].input;
     return [
       JSON.stringify(id),
-      `{submit: ${JSON.stringify(input.submit)}, stop: ${JSON.stringify(input.stop)}, pasteGapMs: ${input.pasteGapMs}${input.clear ? `, clear: ${JSON.stringify(input.clear.keys)}, clearSettleMs: ${input.clear.settleMs}` : ''}}`,
+      `{submit: ${JSON.stringify(input.submit)}, stop: ${JSON.stringify(input.stop)}, pasteGapMs: ${input.pasteGapMs}${
+        input.clear
+          ? `, clear: ${JSON.stringify(input.clear.keys)}, clearSettleMs: ${input.clear.settleMs}`
+          : ''
+      }${input.quit ? `, quit: []string{${input.quit.map((line) => JSON.stringify(line)).join(', ')}}` : ''}}`,
     ];
   });
   lines.push(...aligned(inputs, '\t'), '}', '');

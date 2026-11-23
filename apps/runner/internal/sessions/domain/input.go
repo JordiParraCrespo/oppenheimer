@@ -10,6 +10,7 @@ type agentInput struct {
 	pasteGapMs    int
 	clear         string
 	clearSettleMs int
+	quit          []string
 }
 
 // Input is how a message is typed into an agent by something other than a
@@ -26,6 +27,10 @@ type Input struct {
 	// long the agent takes to act on it before the message may follow.
 	Clear       string
 	ClearSettle time.Duration
+	// Quit is typed, each line then Submit, before the agent's terminal is
+	// ended: what ends an agent whose work outlives its terminal (Hermes',
+	// which runs at its gateway). None for the rest.
+	Quit []string
 }
 
 // plainInput is the blank terminal's, and any agent the catalog has no
@@ -44,5 +49,6 @@ func (a Agent) Input() Input {
 		PasteGap:    time.Duration(in.pasteGapMs) * time.Millisecond,
 		Clear:       in.clear,
 		ClearSettle: time.Duration(in.clearSettleMs) * time.Millisecond,
+		Quit:        append([]string(nil), in.quit...),
 	}
 }
