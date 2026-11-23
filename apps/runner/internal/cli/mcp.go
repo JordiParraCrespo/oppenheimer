@@ -225,7 +225,7 @@ var mcpTools = []mcpTool{
 			"Answers the child's id.",
 		properties: map[string]any{
 			"task":           mcpString("The child's first message."),
-			"agent":          mcpString(DefaultChildAgent + " (default), codex, opencode, grok, pi, antigravity or shell."),
+			"agent":          mcpString(DefaultChildAgent + " (default), codex, opencode, grok, pi, antigravity, zcode or shell."),
 			"name":           mcpString("A name for the child."),
 			"repo":           mcpString("owner/name: give the child a checkout of its own, cut from a pushed branch."),
 			"base":           mcpString("With repo, the branch to cut it from."),

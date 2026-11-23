@@ -385,7 +385,7 @@ its pending approvals reached the Inbox.
   Full the server's tools get an `oppenheimer_*: ask` rule, as the shell
   command they replace was asked about. Claude Code at Ask asks before any
   MCP tool on its own.
-- **Not yet.** Grok, Pi, omp and Antigravity get neither: their CLIs' ways in are not
+- **Not yet.** Grok, Pi, omp, Antigravity and ZCode get neither: their CLIs' ways in are not
   checked. A child session starts at its CLI's default permission, not its
   parent's (as `runner sessions run` always has): whether a child inherits
   the parent's level is open. The tools are the host's commands; Plan's tasks over the same
