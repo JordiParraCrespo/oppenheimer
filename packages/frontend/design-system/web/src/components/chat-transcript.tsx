@@ -73,7 +73,7 @@ function ChatUserMessage({
       {children != null && children !== false ? (
         <div
           className={cn(
-            'relative max-w-[80%] rounded-lg px-4.5 py-2.5 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
+            'relative max-w-[80%] rounded-md px-4.5 py-2.5 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
             tone === 'accent' ? 'bg-selected-surface' : tone === 'wash' ? 'bg-chat-wash' : 'bg-card',
             reaction ? 'mb-3.5' : null,
           )}
