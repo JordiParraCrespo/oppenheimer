@@ -423,6 +423,16 @@ describe('a session read on open', () => {
     await waitFor(() => expect(findAll.mock.calls.length).toBeGreaterThan(reads));
     await waitFor(() => expect(result.current.list.data?.[0]?.state).toBe('ready-for-review'));
   });
+
+  it('is ready for review again when the API cannot be reached to read it or the list', async () => {
+    const { result, findAll } = reading(vi.fn().mockRejectedValue(new Error('offline')));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    findAll.mockRejectedValue(new Error('offline'));
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(result.current.read.isError).toBe(true));
+    expect(result.current.list.data?.[0]?.state).toBe('ready-for-review');
+  });
 });
 
 /**

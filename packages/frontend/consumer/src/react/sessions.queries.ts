@@ -492,16 +492,16 @@ export function useSetSessionHidden(
 /**
  * Read what a session's last turn left. The session falls to `idle` on the
  * click, in its detail and in every list, before the API answers: the
- * sidebar's dot goes the moment the reader opens it. A refused read puts the
- * rows back and reads them again.
+ * sidebar's dot goes the moment the reader opens it. A refused read puts back
+ * each row it changed that nothing has changed since, then reads them again:
+ * an API that cannot be reached cannot answer that read either, and the
+ * session must stay unread for the pane to try again.
  */
 export function useAcknowledgeSessionReport(
   options?: UseMutationOptions<SessionEntity, Error, string>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-  const read = (row: SessionEntity) =>
-    row.state === 'ready-for-review' ? row.with({ state: 'idle' }) : row;
 
   return useMutation({
     mutationFn: (id: string) => app.sessions.acknowledgeReport(id),
@@ -514,15 +514,33 @@ export function useAcknowledgeSessionReport(
       // recorded, and would put the dot back. The detail's is left to land: a
       // pane may be suspended on it, and the answer overwrites it.
       await queryClient.cancelQueries({ queryKey: sessionsKeys.lists() });
+      // Each row written, and the row it replaced.
+      const written = new Map<SessionEntity, SessionEntity>();
+      const read = (row: SessionEntity) => {
+        if (row.state !== 'ready-for-review') return row;
+        const next = row.with({ state: 'idle' });
+        written.set(next, row);
+        return next;
+      };
       queryClient.setQueryData<SessionEntity>(sessionsKeys.detail(id), (row) =>
         row ? read(row) : row,
       );
       queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
         rows?.map((row) => (row.id === id ? read(row) : row)),
       );
-      return options?.onMutate?.(id, context);
+      await options?.onMutate?.(id, context);
+      return { written };
     },
     onError: (error, id, context, mutation) => {
+      const written = (context as { written?: Map<SessionEntity, SessionEntity> } | undefined)
+        ?.written;
+      const back = (row: SessionEntity) => written?.get(row) ?? row;
+      queryClient.setQueryData<SessionEntity>(sessionsKeys.detail(id), (row) =>
+        row ? back(row) : row,
+      );
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map(back),
+      );
       void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
       void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
       return options?.onError?.(error, id, context, mutation);
