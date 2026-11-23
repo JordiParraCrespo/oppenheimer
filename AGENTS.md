@@ -151,7 +151,7 @@ frontmatter; this is the index.
 | building a `packages/backend/*` package | `backend-packages.md` (exports, pluggable vs library) |
 | guarding a route | `rbac-roles.md` (roles), `scopes-and-credentials.md` (API tokens, OAuth clients, a scope grants no more than its name) |
 | handling text, input, limits, ids, schedules, or removing anything | `edge-cases.md` (where most review-found bugs came from) |
-| reading, writing or subscribing to data in a client (`apps/web`, `apps/mobile`, `packages/frontend`) | `client-state.md` (failures, late answers, live data, widths and focus) |
+| reading, writing or subscribing to data in a client (`apps/web`, `apps/mobile`, `apps/extension`, `packages/frontend`) | `client-state.md` (failures, late answers, live data, widths and focus) |
 | adding or reading a feature flag | `feature-flags.md` |
 | calling a system we do not run | `integrations.md` (rate-limit budgets); a new vendor is `/integrate-provider` and `provider-integrations.md` |
 | writing Go (`apps/runner`, `packages/go`) | `go.md`, `apps/runner/ARCHITECTURE.md`, `packages/go/README.md` |
