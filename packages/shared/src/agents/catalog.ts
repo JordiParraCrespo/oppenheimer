@@ -15,8 +15,8 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, which this
- * record composes. How the runner installs and updates each CLI is
+ * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, and fx in
+ * `fx.ts`, which this record composes. How the runner installs and updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
  */
@@ -29,6 +29,7 @@ import {
   GROK_LEVELS,
   levels,
 } from './effort-levels.js';
+import { FX_AGENT } from './fx.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
 import { TYPED_INPUT } from './typed-input.js';
@@ -48,6 +49,7 @@ export const CODING_AGENT_IDS = [
   'grok',
   'pi',
   'omp',
+  'fx',
   'shell',
 ] as const;
 
@@ -798,6 +800,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   }),
   pi: PI_AGENT,
   omp: OMP_AGENT,
+  fx: FX_AGENT,
   shell: Object.freeze({
     id: 'shell',
     // The design's own name for it.

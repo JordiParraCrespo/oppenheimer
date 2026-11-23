@@ -16,7 +16,7 @@ Open **Sessions → New session**. The page is one box ("What should we work on?
 | Where it runs (one chip with the host, e.g. "mac-studio · New worktree") | **New worktree**: clone a repository onto a fresh branch. **Folder on host**: open a directory already on the host as it is; nothing is cloned. **Cloud**: Claude Code's or Codex's cloud started from a host, or Cursor's cloud (below). |
 | Host | Your hosts with their online state. An offline host is allowed: the session waits as Queued. |
 | Repositories | For a new worktree, one to five repositories, each on its own base branch. The agent starts in the first. "Manage repository access" opens the GitHub App's settings. |
-| Agent and model | Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, or **Blank terminal** (a login shell, nothing launched). Each agent lists its models; older ones are under More models. Star a model to keep it under Favourites. |
+| Agent and model | Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, fx, or **Blank terminal** (a login shell, nothing launched). Each agent lists its models; older ones are under More models. Star a model to keep it under Favourites. |
 | Permission level | **Ask for approval** (the agent asks before it runs anything), **Approve for me** (edits and safe commands run, the rest asks; the default), **Full access** (nothing is asked; it can change the machine unattended). Hidden for a blank terminal. |
 | Effort | How long the agent may think, where the model supports levels. |
 

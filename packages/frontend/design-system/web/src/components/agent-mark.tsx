@@ -10,6 +10,7 @@ type AgentId =
   | 'grok'
   | 'pi'
   | 'omp'
+  | 'fx'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -83,6 +84,26 @@ function OmpMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+/**
+ * fx's tile, the white "fx" on a black rounded square, as the binary embeds
+ * it in its sign-in page (fx v0.0.17). The tile stays, unlike Oh My Pi's: it
+ * is the mark itself rather than a backdrop, and the black is fx's own, so it
+ * does not re-point in dark.
+ */
+function FxMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 180 180" aria-hidden {...props}>
+      <rect width="180" height="180" rx="37" fill="#000" />
+      <g transform="translate(34 33.95) scale(0.7186) translate(-166.241 0)">
+        <path
+          fill="#fff"
+          d="M237.892 0C243.178 0 249.383 1.419 253.025 3.074L255.093 4.014L250.076 18.63L247.677 17.746C244.901 16.723 241.938 15.8 238.491 15.8C234.984 15.8 232.787 16.56 231.08 18.321C229.231 20.23 227.629 23.64 226.229 29.758L225.136 34.851H241.669L260.432 34.95L260.694 34.951L260.842 35.169L278.854 61.633L296.736 34.95H320.866L291.676 76.74L322.102 119.75H299.331L299.182 119.546L241.144 40.478L239.35 49.4H222.069L205.688 127.208C203.927 135.709 201.185 142.838 196.777 147.866C192.27 153.008 186.201 155.75 178.342 155.75C174.181 155.75 170.746 155.109 167.909 154.107L166.241 153.519V137.182L166.899 137.4L169.531 138.278C172.182 139.162 174.414 139.8 177.142 139.8C178.528 139.8 179.703 139.526 180.732 138.98C181.764 138.434 182.677 137.6 183.52 136.442C185.304 133.989 186.716 130.135 187.897 124.672L203.76 49.4H189.874L191.759 39.438L192.039 39.346L206.818 34.467L208.154 28.642C210.516 18.207 213.772 10.938 218.708 6.318C223.737 1.612 230.127 0 237.892 0ZM273.987 99.084L260.073 120.25H234.541L261.003 82.022L273.987 99.084Z"
+        />
+      </g>
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -110,6 +131,7 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   grok: () => <GrokMark className={INKED} />,
   pi: () => <PiMark className={SHARED} />,
   omp: () => <OmpMark className={SHARED} />,
+  fx: () => <FxMark className={SHARED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -132,8 +154,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
  * published mark of its own and wears OpenAI's, as Codex does. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
- * Pi's blocks and Oh My Pi's gradient π carry their own colours, which do not
- * re-point in dark either.
+ * Pi's blocks, Oh My Pi's gradient π and fx's black tile carry their own
+ * colours, which do not re-point in dark either.
  *
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
@@ -142,7 +164,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * (`@lobehub/icons-static-svg` `icons/grok.svg` and `icons/zai.svg`, MIT);
  * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0);
  * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
- * from its site's favicon (`omp.sh/favicon.svg`).
+ * from its site's favicon (`omp.sh/favicon.svg`); fx's from the sign-in page
+ * its own binary serves (`vercel-labs/fx` v0.0.17).
  *
  * ```tsx
  * <AgentMark agent="claude-code" />
