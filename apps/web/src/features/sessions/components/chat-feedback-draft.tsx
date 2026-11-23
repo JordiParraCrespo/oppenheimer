@@ -34,8 +34,8 @@ function labelKey(action: string): (typeof ACTION_LABELS)[keyof typeof ACTION_LA
 /**
  * The feedback report the agent drafted, as Claude Code's card over its
  * input box shows it, on top of the chat's composer: its kind and title, the
- * lines of the report the card previews, and a pill for each key the card
- * takes now (Review, Send, Dismiss; then Send and Back to confirm a send, Turn
+ * lines of the report the card previews, and under them a pill for each key
+ * the card takes now (Review, Send, Dismiss; then Send and Back to confirm a send, Turn
  * off and Keep after a dismiss). A pill types its key into the terminal, the
  * way the person would there (`onPress`). Review opens Claude Code's own
  * editor of the draft, which only the terminal draws, so it also switches to
@@ -73,11 +73,7 @@ export function ChatFeedbackDraftCard({
   ].filter((line) => line !== null);
   return (
     <section aria-label={t('sessions.chat.feedback.label')} className="flex flex-col">
-      <ComposerStackRow
-        icon={<MessageSquareWarning />}
-        muted
-        actions={actions.length > 0 ? actions : undefined}
-      >
+      <ComposerStackRow icon={<MessageSquareWarning />} muted>
         {draft.kind ? (
           <>
             <strong>{draft.kind}</strong> {draft.title}
@@ -91,8 +87,13 @@ export function ChatFeedbackDraftCard({
           {draft.details.join('\n')}
         </p>
       ) : null}
-      {foot.length > 0 ? (
-        <p className="m-0 px-3 pb-2 text-[12.5px] text-fg-subtle">{foot.join(' · ')}</p>
+      {foot.length > 0 || actions.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 px-3 pb-2">
+          {foot.length > 0 ? (
+            <p className="m-0 min-w-0 flex-1 text-[12.5px] text-fg-subtle">{foot.join(' · ')}</p>
+          ) : null}
+          {actions.length > 0 ? <div className="flex shrink-0 gap-1">{actions}</div> : null}
+        </div>
       ) : null}
     </section>
   );
