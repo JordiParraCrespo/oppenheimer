@@ -32,6 +32,7 @@ export class FindSessionsQueryHandler implements IQueryHandler<FindSessionsQuery
       state: query.state,
       githubRepoId: query.githubRepoId,
       agent: query.agent,
+      resolved: query.resolved,
       sort,
       // A cursor issued for another sort, or not by this list at all, is a 400.
       cursor: query.cursor ? decodeSessionListCursor(query.cursor, sort) : undefined,

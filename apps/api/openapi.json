@@ -9796,6 +9796,19 @@
             }
           },
           {
+            "name": "resolved",
+            "required": false,
+            "in": "query",
+            "description": "`false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.",
+            "schema": {
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          },
+          {
             "name": "githubRepoId",
             "required": false,
             "in": "query",
@@ -25519,6 +25532,101 @@
           }
         ],
         "summary": "Dismiss a bot's questions",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/messages/{messageId}/reaction": {
+      "put": {
+        "description": "Sets your reaction to a message of yours or of the bot’s: one emoji, replacing the one before; `null` takes it back. The bot is not woken by it.",
+        "operationId": "reactToBotMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactToBotMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotMessageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_044 — Message not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_045 — This message takes no reaction",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "React to a message in a bot’s chat",
         "tags": [
           "Bots"
         ]
@@ -41254,6 +41362,18 @@
               "$ref": "#/components/schemas/BotAttachmentResponseDto"
             }
           },
+          "reaction": {
+            "type": "string",
+            "nullable": true,
+            "example": "👍",
+            "description": "Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one."
+          },
+          "botReaction": {
+            "type": "string",
+            "nullable": true,
+            "example": "👍",
+            "description": "The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -41267,6 +41387,8 @@
           "steps",
           "event",
           "attachments",
+          "reaction",
+          "botReaction",
           "createdAt"
         ]
       },
@@ -42487,6 +42609,18 @@
             "maxLength": 1000
           }
         }
+      },
+      "ReactToBotMessageRequest": {
+        "type": "object",
+        "properties": {
+          "emoji": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "emoji"
+        ]
       },
       "BotToolPermissionDto": {
         "type": "object",

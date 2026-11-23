@@ -235,6 +235,7 @@
   "POST /v1/bots/:id/permissions/rules": ["bots:write"],
   "POST /v1/bots/:id/questions/:questionId/answer": ["bots:write"],
   "POST /v1/bots/:id/questions/:questionId/dismiss": ["bots:write"],
+  "PUT /v1/bots/:id/messages/:messageId/reaction": ["bots:write"],
   "POST /v1/bots/:id/routines/:routineId/run": ["automations:write"],
   "POST /v1/bots/:id/routines/:routineId/webhook": ["automations:write"],
   "POST /v1/bots/:id/turns/:turnId/cancel": ["bots:write"],

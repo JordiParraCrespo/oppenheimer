@@ -251,6 +251,8 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     new Date(dto.createdAt),
     dto.event ? toEvent(dto.event) : null,
     (dto.attachments ?? []).map(toAttachment),
+    dto.reaction ?? null,
+    dto.botReaction ?? null,
   );
 }
 
@@ -774,6 +776,16 @@ export class BotsRepository {
         heyApiSdk.dismissBotQuestion({ path: { id, questionId }, body: {} }),
       );
       return toQuestionCard(data);
+    });
+  }
+
+  /** Your reaction to a message of yours or the bot's: one emoji, or `null` to take it back. */
+  react(id: string, messageId: string, emoji: string | null): Promise<BotMessageEntity> {
+    return callApi(BotsErrors.REACT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.reactToBotMessage({ path: { id, messageId }, body: { emoji } }),
+      );
+      return toMessage(data);
     });
   }
 

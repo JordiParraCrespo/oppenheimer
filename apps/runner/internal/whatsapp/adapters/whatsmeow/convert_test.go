@@ -212,12 +212,12 @@ func TestOutgoingVoiceIsAPlayableVoiceNote(t *testing.T) {
 	m := outgoingVoice(whatsmeow.UploadResponse{
 		URL: "https://mmg.whatsapp.net/v/1", DirectPath: "/v/1", MediaKey: []byte{1},
 		FileEncSHA256: []byte{2}, FileSHA256: []byte{3}, FileLength: 2048,
-	}, 4, at).GetAudioMessage()
+	}, 4, []byte{0, 50, 100}, at).GetAudioMessage()
 	if !m.GetPTT() || m.GetMimetype() != "audio/ogg; codecs=opus" || m.GetSeconds() != 4 ||
 		m.GetDirectPath() != "/v/1" || m.GetURL() != "https://mmg.whatsapp.net/v/1" ||
 		string(m.GetMediaKey()) != "\x01" || string(m.GetFileEncSHA256()) != "\x02" ||
 		string(m.GetFileSHA256()) != "\x03" || m.GetFileLength() != 2048 ||
-		m.GetMediaKeyTimestamp() != at.Unix() {
+		m.GetMediaKeyTimestamp() != at.Unix() || string(m.GetWaveform()) != "\x00\x32\x64" {
 		t.Fatalf("voice note: %v", m)
 	}
 }

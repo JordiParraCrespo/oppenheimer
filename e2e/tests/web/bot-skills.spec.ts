@@ -85,7 +85,7 @@ test("a bot's skill from its Skills tab to the chat's / menu", async ({ page }) 
   // ...so the chat's menu does not offer it, only the built-in /goal;
   // turned back on, it does.
   await page.goto(`/bots/${bot.id}`);
-  const composer = page.getByPlaceholder('Message Juno');
+  const composer = page.getByRole('textbox', { name: 'Message Juno' });
   await composer.fill('/');
   const offered = page.getByRole('listbox', { name: 'Commands and skills you can run' });
   await expect(offered.getByRole('option', { name: 'Use /goal' })).toBeVisible();

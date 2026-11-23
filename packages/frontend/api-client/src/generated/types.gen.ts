@@ -4825,6 +4825,14 @@ export type BotMessageResponseDto = {
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
     attachments: Array<BotAttachmentResponseDto>;
+    /**
+     * Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.
+     */
+    reaction: string | null;
+    /**
+     * The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.
+     */
+    botReaction: string | null;
     createdAt: string;
 };
 
@@ -5344,6 +5352,10 @@ export type AnswerBotQuestionRequest = {
 
 export type DismissBotQuestionRequest = {
     note?: string;
+};
+
+export type ReactToBotMessageRequest = {
+    emoji: string | null;
 };
 
 export type BotToolPermissionDto = {
@@ -10307,6 +10319,10 @@ export type FindSessionsData = {
          */
         sort?: 'recent' | 'oldest' | 'name';
         agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        /**
+         * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
+         */
+        resolved?: 'true' | 'false';
         /**
          * A live checkout of it
          */
@@ -17623,6 +17639,43 @@ export type DismissBotQuestionResponses = {
 };
 
 export type DismissBotQuestionResponse = DismissBotQuestionResponses[keyof DismissBotQuestionResponses];
+
+export type ReactToBotMessageData = {
+    body: ReactToBotMessageRequest;
+    path: {
+        id: string;
+        messageId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/messages/{messageId}/reaction';
+};
+
+export type ReactToBotMessageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_044 — Message not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_045 — This message takes no reaction
+     */
+    422: ProblemDetailsDto;
+};
+
+export type ReactToBotMessageError = ReactToBotMessageErrors[keyof ReactToBotMessageErrors];
+
+export type ReactToBotMessageResponses = {
+    200: BotMessageResponseDto;
+};
+
+export type ReactToBotMessageResponse = ReactToBotMessageResponses[keyof ReactToBotMessageResponses];
 
 export type FindBotPermissionsData = {
     body?: never;

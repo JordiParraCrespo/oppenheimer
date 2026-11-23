@@ -114,6 +114,11 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		defer loops.Done()
 		a.sessionLoop(ctx, logger)
 	}()
+	loops.Add(1)
+	go func() {
+		defer loops.Done()
+		a.strayWrapperLoop(ctx, logger)
+	}()
 	if AgentUpdatesEnabled() {
 		loops.Add(1)
 		go func() {
@@ -309,6 +314,35 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()
+	}
+}
+
+// strayWrapperInterval is how often the runner looks for agents whose
+// session is over but whose process is still running.
+const strayWrapperInterval = 5 * time.Minute
+
+// strayWrapperLoop ends, at boot and every strayWrapperInterval, the agents
+// still running for a session that is closed, stopped or has no tmux
+// session: what a close that could not end its agent (or a runner from
+// before closes did) left behind. Only wrappers this runner started are
+// ever looked at.
+func (a *App) strayWrapperLoop(ctx context.Context, logger *slog.Logger) {
+	ticker := time.NewTicker(strayWrapperInterval)
+	defer ticker.Stop()
+	for {
+		ended, err := a.Sessions.EndStrayWrappers(ctx)
+		if err != nil {
+			logger.Warn("could not end every stray agent", slog.Any("error", err))
+		}
+		for _, w := range ended {
+			logger.Info("ended an agent that outlived its session",
+				slog.String("session", w.SessionID), slog.Int("pid", w.Pid), slog.Int("group", w.Group))
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
 	}
 }
 

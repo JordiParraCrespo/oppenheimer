@@ -27,6 +27,7 @@ import { VoiceSettingsRepository } from './database/voice-settings.repository';
 import { ChatgptSpeechGateway } from './infrastructure/chatgpt-speech.gateway';
 import { ElevenlabsSpeechGateway } from './infrastructure/elevenlabs-speech.gateway';
 import { GroqSpeechGateway } from './infrastructure/groq-speech.gateway';
+import { OggOpusSpokenAudioAdapter } from './infrastructure/ogg-opus-spoken-audio.adapter';
 import { OpenAiCompatibleSpeechGateway } from './infrastructure/openai-compatible-speech.gateway';
 import { OpenAiCompatibleSpeechSynthesisGateway } from './infrastructure/openai-compatible-speech-synthesis.gateway';
 import { OpenAiSpeechGateway } from './infrastructure/openai-speech.gateway';
@@ -44,6 +45,7 @@ import {
   OPENAI_SPEECH,
   POLISH_LLM,
   SPEECH_SYNTHESIS,
+  SPOKEN_AUDIO,
   VOICE_POLISH_ENGINE,
   VOICE_SETTINGS_REPOSITORY,
 } from './voice.di-tokens';
@@ -129,6 +131,7 @@ import {
     { provide: ELEVENLABS_SPEECH, useClass: ElevenlabsSpeechGateway },
     { provide: KEYED_SPEECH, useClass: OpenAiCompatibleSpeechGateway },
     { provide: SPEECH_SYNTHESIS, useClass: OpenAiCompatibleSpeechSynthesisGateway },
+    { provide: SPOKEN_AUDIO, useClass: OggOpusSpokenAudioAdapter },
     { provide: VOICE_POLISH_ENGINE, useFactory: () => createBotEngine() },
     { provide: POLISH_LLM, useClass: PolishLlmAdapter },
   ],

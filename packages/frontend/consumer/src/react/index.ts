@@ -70,6 +70,7 @@ export {
   useBotPendingQuestion,
   useDismissBotQuestion,
 } from './bot-questions.queries';
+export { type ReactToBotMessageVariables, useReactToBotMessage } from './bot-reactions.queries';
 export {
   type BotRoutineVariables,
   type IssueBotRoutineWebhookVariables,
