@@ -55,21 +55,26 @@ function BotRowFace({
 }
 
 /**
+ * Room for the row's ellipsis while it shows: the badge (and on a two-line
+ * row, the time) keeps its place just left of it rather than hiding.
+ */
+const ROOM_FOR_ACTION = 'group-hover/row:mr-6 group-has-focus-visible/row:mr-6 group-data-menu-open/row:mr-6';
+
+/**
  * The badge at a row's end, the way a messaging app marks a chat that wants
  * you: an 18px green circle, empty for an unread chat, an exclamation mark on
  * the sidebar's ground for a bot waiting on the person (an approval, a
  * question). Waiting wins: a row carries one badge. It stays while the
- * row's ellipsis shows; `makesRoom` moves it left of the ellipsis on a row
- * whose line does not already make room.
+ * row's ellipsis shows, left of it (`ROOM_FOR_ACTION`).
  */
-function BotRowDots({ needsInput, unread, makesRoom }: { needsInput: boolean; unread: boolean; makesRoom: boolean }) {
+function BotRowBadge({ needsInput, unread, className }: { needsInput: boolean; unread: boolean; className?: string }) {
   if (!needsInput && !unread) return null;
   return (
     <span
       aria-label={needsInput ? 'Needs input' : 'Unread'}
       className={cn(
         'flex size-4.5 shrink-0 items-center justify-center rounded-pill bg-success text-[12px] leading-none font-bold text-sidebar',
-        makesRoom && 'group-hover/row:mr-6 group-has-focus-visible/row:mr-6 group-data-menu-open/row:mr-6',
+        className,
       )}
     >
       {needsInput ? '!' : null}
@@ -176,7 +181,7 @@ function BotItem({
     >
       <BotRowFace image={image} initials={initials} face={face} live={live} size={20} />
       <BotRowName name={name} working={working} />
-      <BotRowDots needsInput={needsInput} unread={unread} makesRoom={withAction} />
+      <BotRowBadge needsInput={needsInput} unread={unread} className={cn(withAction && ROOM_FOR_ACTION)} />
     </ButtonPrimitive>
   );
 
@@ -248,8 +253,7 @@ function BotPreviewItem({
       <span
         className={cn(
           'flex min-w-0 flex-1 flex-col gap-0.5',
-          // Room for the ellipsis, which sits over both lines.
-          withAction && 'group-hover/row:pr-6 group-has-focus-visible/row:pr-6 group-data-menu-open/row:pr-6',
+          withAction && ROOM_FOR_ACTION,
         )}
       >
         <span className="flex min-w-0 items-baseline gap-2">
@@ -264,7 +268,7 @@ function BotPreviewItem({
         </span>
         <span className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-[13px] leading-4.5 text-fg-subtle">{preview}</span>
-          <BotRowDots needsInput={needsInput} unread={unread} makesRoom={false} />
+          <BotRowBadge needsInput={needsInput} unread={unread} />
         </span>
       </span>
     </ButtonPrimitive>
