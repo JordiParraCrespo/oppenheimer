@@ -9794,6 +9794,7 @@
                 "zcode",
                 "fx",
                 "hermes",
+                "muse",
                 "shell"
               ],
               "type": "string"
@@ -32187,6 +32188,7 @@
               "zcode",
               "fx",
               "hermes",
+              "muse",
               "shell",
               null
             ],
@@ -32276,6 +32278,7 @@
               "zcode",
               "fx",
               "hermes",
+              "muse",
               "shell",
               null
             ],
@@ -32345,6 +32348,7 @@
               "zcode",
               "fx",
               "hermes",
+              "muse",
               "shell",
               null
             ],
@@ -32886,6 +32890,7 @@
               "zcode",
               "fx",
               "hermes",
+              "muse",
               "shell",
               "cursor"
             ],
@@ -33157,6 +33162,7 @@
               "zcode",
               "fx",
               "hermes",
+              "muse",
               "shell"
             ]
           },
@@ -34513,7 +34519,8 @@
               "antigravity",
               "zcode",
               "fx",
-              "hermes"
+              "hermes",
+              "muse"
             ]
           },
           "prompt": {
@@ -35511,6 +35518,7 @@
                   "zcode",
                   "fx",
                   "hermes",
+                  "muse",
                   "shell"
                 ]
               },
@@ -36025,6 +36033,7 @@
                   "zcode",
                   "fx",
                   "hermes",
+                  "muse",
                   "shell"
                 ]
               },
@@ -37005,6 +37014,7 @@
                   "zcode",
                   "fx",
                   "hermes",
+                  "muse",
                   "shell"
                 ]
               },

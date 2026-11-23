@@ -748,7 +748,8 @@
             "antigravity",
             "zcode",
             "fx",
-            "hermes"
+            "hermes",
+            "muse"
           ]
         },
         "model": {
@@ -3259,6 +3260,7 @@
         "zcode",
         "fx",
         "hermes",
+        "muse",
         "shell"
       ],
       "id": "codingAgentId"

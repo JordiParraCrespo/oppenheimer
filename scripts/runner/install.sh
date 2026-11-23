@@ -56,7 +56,7 @@ usage: OPPENHEIMER_REGISTRATION_TOKEN=<token> install.sh --url <control plane UR
                 control plane puts its own in the command it hands you
   --agents      the agent CLIs to install for you, user-level and without sudo:
                 any of claude, codex, opencode, grok, pi, omp, agy (Antigravity),
-                fx and gh (GitHub's CLI),
+                fx, muse and gh (GitHub's CLI),
                 comma-separated, or none. Asked on a terminal when not given,
                 defaulting to the ones of claude and gh that are missing;
                 with no terminal and no --agents, none
@@ -277,7 +277,7 @@ choose_workspaces() {
 # `install` entries), and the ones offered by default: Claude Code is the
 # agent the MVP is built around, and gh is what opens a pull request from a
 # session.
-KNOWN_AGENTS="claude codex opencode grok pi omp agy fx gh"
+KNOWN_AGENTS="claude codex opencode grok pi omp agy fx muse gh"
 DEFAULT_AGENTS="claude gh"
 
 # missing_of <names…> — the ones not on PATH, space-separated.

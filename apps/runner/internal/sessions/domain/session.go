@@ -67,7 +67,8 @@ func (s State) Live() bool {
 type Agent string
 
 // Agents. Claude Code is the MVP's first entry; Codex, OpenCode, Grok, Pi,
-// Oh My Pi, Antigravity, ZCode, fx and Hermes are the others, and the shell is the blank terminal with no agent in it.
+// Oh My Pi, Antigravity, ZCode, fx, Hermes and Muse are the others, and the
+// shell is the blank terminal with no agent in it.
 const (
 	AgentClaude      Agent = "claude"
 	AgentCodex       Agent = "codex"
@@ -79,6 +80,7 @@ const (
 	AgentZCode       Agent = "zcode"
 	AgentFx          Agent = "fx"
 	AgentHermes      Agent = "hermes"
+	AgentMuse        Agent = "muse"
 	AgentShell       Agent = "shell"
 )
 
@@ -98,6 +100,7 @@ var agentCatalogIDs = map[Agent]string{
 	AgentZCode:       "zcode",
 	AgentFx:          "fx",
 	AgentHermes:      "hermes",
+	AgentMuse:        "muse",
 	AgentShell:       "shell",
 }
 

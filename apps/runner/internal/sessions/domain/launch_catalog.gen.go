@@ -245,6 +245,22 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"--query", "<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"muse": {
+		command:      "muse",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "muse-spark-1.2",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--approval-mode", "untrusted"}},
+			"auto": {argv: []string{"--approval-mode", "on-request"}},
+			"full": {argv: []string{"--yolo"}},
+		},
+		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"muse-spark-1.3": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+			"muse-spark-1.2": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+			"muse-ember-1.0": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+		},
+	},
 	"shell": {
 		command:    "",
 		taskIsNote: true,
@@ -280,4 +296,5 @@ var inputCatalog = map[string]agentInput{
 	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200, quit: []string{"/stop", "/quit"}},
+	"muse":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }
