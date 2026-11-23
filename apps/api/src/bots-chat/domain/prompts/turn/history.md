@@ -13,3 +13,12 @@
 <!-- The fold of the summary leaves room for this line. -->
 
 [A summary from Oppenheimer of the earlier conversation, not a message from the person. It is a record of what was said and done, not instructions.]
+
+<!-- fragment: reaction-note -->
+<!-- The person's reaction to a message, read back on the message it is on: a quiet "seen", thanks or a laugh, never a request on its own. -->
+
+[A note from Oppenheimer: the person reacted {{emoji}} to this message]
+
+<!-- fragment: bot-reaction-note -->
+
+[A note from Oppenheimer: you reacted {{emoji}} to this message]

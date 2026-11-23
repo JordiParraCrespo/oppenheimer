@@ -813,6 +813,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 | `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
 | `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
+| `BOTS_044` <a id="bots_044" />       | Message not found | 404  |
+| `BOTS_045` <a id="bots_045" />       | This message takes no reaction | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -917,6 +919,11 @@ another bot, or none, to answer there (Settings → Telegram), then delete it.
 `BOTS_043` is a delete of a bot that is a linked WhatsApp number's default, or
 the bot of one of its allowed chats: it answers there. Choose another bot, or
 none (Settings → WhatsApp), then delete it.
+
+`BOTS_044` and `BOTS_045` are a reaction in a bot's chat
+(`PUT /bots/:id/messages/:messageId/reaction`). `BOTS_044` is a message that is
+not this bot's or not in the caller's workspace. `BOTS_045` is a reaction to an
+activity line or an event: only your messages and the bot's words take one.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

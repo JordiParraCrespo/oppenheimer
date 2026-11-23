@@ -51,7 +51,7 @@ describe('chatTurns', () => {
     const blocks = chatTurns(
       conversation(
         [
-          asked as BotMessageEntity,
+          asked as unknown as BotMessageEntity,
           message('m2', 't1', 'activity'),
           folded,
           message('m4', 't1', 'activity'),

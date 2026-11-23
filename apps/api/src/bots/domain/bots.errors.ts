@@ -257,4 +257,16 @@ export const BotErrors = {
     message: 'The bot answers on a WhatsApp number',
     httpStatus: 409,
   },
+  /** A message of another bot, or in another workspace. */
+  MESSAGE_NOT_FOUND: {
+    code: 'BOTS_044',
+    message: 'Message not found',
+    httpStatus: 404,
+  },
+  /** A reaction to an activity line or an event: only your messages and the bot's words take one. */
+  MESSAGE_NOT_REACTABLE: {
+    code: 'BOTS_045',
+    message: 'This message takes no reaction',
+    httpStatus: 422,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

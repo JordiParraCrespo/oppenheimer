@@ -353,7 +353,9 @@
     "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
     "SESSIONS_058": "Esa terminal ya no está abierta.",
     "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
-    "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
+    "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
+    "BOTS_044": "Ese mensaje ya no está en este chat.",
+    "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
   },
   "notFound": {
     "title": "Esta página no existe",

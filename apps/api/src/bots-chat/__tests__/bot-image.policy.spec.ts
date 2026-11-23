@@ -41,6 +41,8 @@ describe('withEarlierImages', () => {
       role: 'user',
       content: 'Hi',
       event: undefined,
+      reaction: null,
+      botReaction: null,
     });
   });
 

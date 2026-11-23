@@ -254,6 +254,7 @@ export type {
   PutInboxMarksRequest,
   PutModelProviderCredentialRequest,
   PutSessionShareRequest,
+  ReactToBotMessageRequest,
   ReadinessChecksDto,
   ReadinessResponseDto,
   RegisterHostRequest,
