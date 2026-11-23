@@ -9791,6 +9791,7 @@
                 "pi",
                 "omp",
                 "antigravity",
+                "zcode",
                 "fx",
                 "shell"
               ],
@@ -31524,6 +31525,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "fx",
               "shell",
               null
@@ -31611,6 +31613,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "fx",
               "shell",
               null
@@ -31678,6 +31681,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "fx",
               "shell",
               null
@@ -32217,6 +32221,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "fx",
               "shell",
               "cursor"
@@ -32486,6 +32491,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "fx",
               "shell"
             ]
@@ -33841,6 +33847,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "fx"
             ]
           },
@@ -34762,6 +34769,7 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
                   "fx",
                   "shell"
                 ]
@@ -35247,6 +35255,7 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
                   "fx",
                   "shell"
                 ]
@@ -36137,6 +36146,7 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
                   "fx",
                   "shell"
                 ]

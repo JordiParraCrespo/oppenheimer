@@ -211,6 +211,14 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"--prompt-interactive", "<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"zcode": {
+		command: "zcode",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--mode", "build"}},
+			"auto": {argv: []string{"--mode", "edit"}},
+			"full": {argv: []string{"--mode", "yolo"}},
+		},
+	},
 	"fx": {
 		command:      "fx",
 		model:        []string{"--provider", "gateway", "--model", "<model>"},
@@ -231,7 +239,8 @@ var launchCatalog = map[string]launchMap{
 		conversationResume: []string{"--continue"},
 	},
 	"shell": {
-		command: "",
+		command:    "",
+		taskIsNote: true,
 	},
 }
 
@@ -259,5 +268,6 @@ var inputCatalog = map[string]agentInput{
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"antigravity": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }

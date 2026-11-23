@@ -16,7 +16,7 @@
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
  * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`,
- * Antigravity in `antigravity.ts` and fx in `fx.ts`, which this record composes. How the runner installs and updates each CLI is
+ * Antigravity in `antigravity.ts` ZCode in `zcode.ts` and fx in `fx.ts`, which this record composes. How the runner installs and updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
  */
@@ -34,6 +34,7 @@ import { FX_AGENT } from './fx.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
 import { TYPED_INPUT } from './typed-input.js';
+import { ZCODE_AGENT } from './zcode.js';
 
 /**
  * Every agent id, in display order.
@@ -51,6 +52,7 @@ export const CODING_AGENT_IDS = [
   'pi',
   'omp',
   'antigravity',
+  'zcode',
   'fx',
   'shell',
 ] as const;
@@ -272,6 +274,13 @@ export interface CodingAgentLaunch {
    * the first one themselves.
    */
   readonly prompt?: readonly string[];
+  /**
+   * The first task is a note for whoever reads the session, not something the
+   * agent reads: the blank terminal's names the session, and a bot then types
+   * into the terminal itself. An agent with no `prompt` that is not marked so
+   * (ZCode) would drop a task, so a caller that requires one refuses it.
+   */
+  readonly taskIsNote?: true;
 }
 
 /**
@@ -803,6 +812,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   pi: PI_AGENT,
   omp: OMP_AGENT,
   antigravity: ANTIGRAVITY_AGENT,
+  zcode: ZCODE_AGENT,
   fx: FX_AGENT,
   shell: Object.freeze({
     id: 'shell',
@@ -814,7 +824,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // session, and they type the first command themselves.
     command: '',
     models: Object.freeze([]),
-    launch: Object.freeze({}),
+    launch: Object.freeze({ taskIsNote: true as const }),
   }),
 });
 
