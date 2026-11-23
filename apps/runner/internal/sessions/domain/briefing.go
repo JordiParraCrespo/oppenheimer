@@ -85,7 +85,11 @@ func (l Launch) briefingConfig(config string) string {
 		merged["instructions"] = []string{l.Note}
 	}
 	if len(l.Tools) > 0 {
-		merged["mcp"] = map[string]any{ToolsServer: map[string]any{"type": "local", "command": l.Tools}}
+		// OpenCode bounds a request to the server, a tool call included, to
+		// `timeout` ms, 5 s unless set; a wait may take its longest.
+		merged["mcp"] = map[string]any{ToolsServer: map[string]any{
+			"type": "local", "command": l.Tools, "timeout": (LongestToolCall + time.Minute).Milliseconds(),
+		}}
 	}
 	encoded, err := json.Marshal(merged)
 	if err != nil {

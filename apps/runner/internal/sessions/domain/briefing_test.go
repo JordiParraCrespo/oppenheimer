@@ -90,6 +90,7 @@ func TestOpenCodeConfigCarriesTheNoteAndToolsBesideTheEffort(t *testing.T) {
 		MCP          map[string]struct {
 			Type    string   `json:"type"`
 			Command []string `json:"command"`
+			Timeout int64    `json:"timeout"`
 		} `json:"mcp"`
 	}
 	if err := json.Unmarshal([]byte(launch.Env(AgentOpenCode)[openCodeConfig]), &config); err != nil {
@@ -101,7 +102,9 @@ func TestOpenCodeConfigCarriesTheNoteAndToolsBesideTheEffort(t *testing.T) {
 	if !reflect.DeepEqual(config.Instructions, []string{briefed.Note}) {
 		t.Fatalf("instructions = %q", config.Instructions)
 	}
-	if server := config.MCP[ToolsServer]; server.Type != "local" || !reflect.DeepEqual(server.Command, briefed.Tools) {
+	// OpenCode bounds a tool call to 5 s unless told otherwise; a wait may run
+	// to LongestToolCall.
+	if server := config.MCP[ToolsServer]; server.Type != "local" || !reflect.DeepEqual(server.Command, briefed.Tools) || server.Timeout != 1_860_000 {
 		t.Fatalf("mcp = %+v", config.MCP)
 	}
 }

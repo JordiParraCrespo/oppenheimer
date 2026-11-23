@@ -61,7 +61,7 @@ func TestACodexSessionIsBriefedWhenCreatedAndWhenRestarted(t *testing.T) {
 
 type ownInstructions string
 
-func (o ownInstructions) OwnInstructions(agent domain.Agent) string {
+func (o ownInstructions) OwnInstructions(agent domain.Agent, _ string) string {
 	if agent != domain.AgentCodex {
 		return ""
 	}

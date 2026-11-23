@@ -427,10 +427,11 @@ type Trust interface {
 	Trust(agent domain.Agent, dir string) error
 }
 
-// OwnInstructions reads what the person told an agent in its own config
-// that a launch would otherwise replace: Codex's `developer_instructions`,
-// which the runner's `-c` override of the same key sets outright
-// (domain.Launch.OwnInstructions). "" is none, or an agent with no such key.
+// OwnInstructions reads what the person told an agent running in dir, in
+// its own config, that a launch would otherwise replace: Codex's
+// `developer_instructions`, which the runner's `-c` override of the same key
+// sets outright (domain.Launch.OwnInstructions). "" is none, or an agent with
+// no such key.
 type OwnInstructions interface {
-	OwnInstructions(agent domain.Agent) string
+	OwnInstructions(agent domain.Agent, dir string) string
 }

@@ -367,12 +367,14 @@ its pending approvals reached the Inbox.
     `--mcp-config=<json>` (one word: the flag takes several values, and the
     prompt after a separate value was read as a file); Codex takes
     `-c developer_instructions=…` (where the note is, and `runner --skill`)
-    (after the person's own value of the key, read from their config.toml,
-    which the override would otherwise replace), `-c
+    (after the value Codex would otherwise run with, which the override
+    replaces: the checkout's `.codex/config.toml`, else the person's own
+    config.toml), `-c
     mcp_servers.oppenheimer.command|args`, and a `tool_timeout_sec` of 31
     minutes, since Codex gives a tool call 60 s and a wait may take 30;
     OpenCode takes
-    `instructions` (the note's path) and `mcp` in `OPENCODE_CONFIG_CONTENT`,
+    `instructions` (the note's path) and `mcp`, with a `timeout` of 31
+    minutes (5 s unless set, tool calls included), in `OPENCODE_CONFIG_CONTENT`,
     merged with the effort level's `agent` key. Each was checked against the
     real CLI starting `runner mcp` and listing its tools (Claude Code
     2.1.330, codex-cli 0.171, OpenCode 1.19.6).

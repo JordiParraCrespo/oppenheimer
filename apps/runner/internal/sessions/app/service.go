@@ -661,7 +661,7 @@ func (s *Service) brief(launch *domain.Launch, agent domain.Agent, session domai
 		launch.Tools = s.tools(session.ID)
 	}
 	if s.own != nil {
-		launch.OwnInstructions = s.own.OwnInstructions(agent)
+		launch.OwnInstructions = s.own.OwnInstructions(agent, session.Cwd())
 	}
 }
 
