@@ -88,8 +88,8 @@ func TestTheGuidesFollowSessionsBeingMadeAndClosed(t *testing.T) {
 }
 
 // A README.md the runner did not write, at the root of a work folder the
-// person chose, and a checkout directory named like a guide are left as they
-// are. Regresses if a guide is written over whatever is at its path.
+// person chose, is left as it is. Regresses if a guide is written over
+// whatever is at its path.
 func TestAGuideNeverReplacesWhatTheRunnerDidNotWrite(t *testing.T) {
 	f, layout := setup(t)
 	if err := f.Init(); err != nil {
@@ -99,26 +99,34 @@ func TestAGuideNeverReplacesWhatTheRunnerDidNotWrite(t *testing.T) {
 	if err := os.WriteFile(mine, []byte("my notes\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	folder := detailed(layout, "sess-1", "fix-login")
-	folder.Checkouts = []domain.FolderCheckout{{Repo: "acme/docs", Directory: "AGENTS.md"}}
-	if err := f.MakeSession(folder); err != nil {
+	if err := f.MakeSession(detailed(layout, "sess-1", "fix-login")); err != nil {
 		t.Fatalf("make: %v", err)
 	}
-	checkout := filepath.Join(folder.Dir, "AGENTS.md")
-	if err := os.Remove(checkout); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Mkdir(checkout, 0o700); err != nil {
-		t.Fatal(err)
-	}
-
-	f.WriteGuides()
 
 	if got := read(t, mine); got != "my notes\n" {
 		t.Fatalf("the person's README.md was rewritten:\n%s", got)
 	}
-	if info, err := os.Stat(checkout); err != nil || !info.IsDir() {
-		t.Fatalf("the checkout named AGENTS.md is gone: %v", err)
+}
+
+// A repository checked out in a directory named like a guide, in any case
+// (a Mac's disk does not tell them apart), finds its path free when its
+// worktree is added after the guides. Regresses if the session folder's
+// guide takes the checkout's path and the create fails as "already exists".
+func TestACheckoutNamedLikeAGuideKeepsItsPath(t *testing.T) {
+	f, layout := setup(t)
+	folder := detailed(layout, "sess-1", "fix-login")
+	folder.Checkouts = []domain.FolderCheckout{{Repo: "acme/agents.md", Directory: "agents.md"}}
+	if err := f.MakeSession(folder); err != nil {
+		t.Fatalf("make: %v", err)
+	}
+
+	for _, name := range []string{"AGENTS.md", "agents.md"} {
+		if _, err := os.Lstat(filepath.Join(folder.Dir, name)); !os.IsNotExist(err) {
+			t.Fatalf("%s is taken before the checkout is made: %v", name, err)
+		}
+	}
+	if text := read(t, filepath.Join(folder.Dir, "README.md")); !strings.Contains(text, "acme/agents.md") {
+		t.Fatalf("the README does not list the checkout:\n%s", text)
 	}
 }
 

@@ -80,9 +80,19 @@ func (f *Folder) WriteGuides() {
 			)
 			for _, session := range ws.sessions {
 				dir := f.layout.Session(ws.tenant, session.slug)
-				levels = append(levels, level{
-					dir: dir, readme: sessionReadme(ws, session), agents: sessionAgents(ws, session),
-				})
+				l := level{dir: dir, readme: sessionReadme(ws, session), agents: sessionAgents(ws, session)}
+				// A checkout may be named like a guide, and is made after
+				// the guides are: that guide is left out, so the worktree
+				// finds its path free.
+				for _, checkout := range session.meta.Checkouts {
+					switch {
+					case strings.EqualFold(checkout.Directory, GuideReadme):
+						l.readme = ""
+					case strings.EqualFold(checkout.Directory, GuideAgents):
+						l.agents = ""
+					}
+				}
+				levels = append(levels, l)
 			}
 		}
 	}
@@ -90,8 +100,12 @@ func (f *Folder) WriteGuides() {
 		if info, err := os.Stat(l.dir); err != nil || !info.IsDir() {
 			continue
 		}
-		writeGuide(filepath.Join(l.dir, GuideReadme), l.readme)
-		writeGuide(filepath.Join(l.dir, GuideAgents), l.agents)
+		if l.readme != "" {
+			writeGuide(filepath.Join(l.dir, GuideReadme), l.readme)
+		}
+		if l.agents != "" {
+			writeGuide(filepath.Join(l.dir, GuideAgents), l.agents)
+		}
 	}
 }
 
