@@ -225,7 +225,9 @@ function render() {
     return [
       JSON.stringify(id),
       `{submit: ${JSON.stringify(input.submit)}, stop: ${JSON.stringify(input.stop)}, pasteGapMs: ${input.pasteGapMs}${
-        input.quit ? `, quit: []string{${input.quit.map((line) => JSON.stringify(line)).join(', ')}}` : ''
+        input.quit
+          ? `, quit: []string{${input.quit.map((line) => JSON.stringify(line)).join(', ')}}`
+          : ''
       }}`,
     ];
   });
