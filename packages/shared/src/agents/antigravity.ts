@@ -30,7 +30,8 @@ export const ANTIGRAVITY_AGENT: CodingAgentDefinition = Object.freeze({
   // model". The thinking level is `--effort`, never folded into the id
   // (`gemini-4-neon-xhigh`), since agy refuses an id that carries one
   // beside an `--effort` that differs. The Claude rows are Antigravity's own
-  // "(Thinking)" models, which take no level of ours.
+  // "(Thinking)" models, which take no level of ours, labelled as Claude
+  // Code's are: a model is named by its id across the console, one label each.
   models: Object.freeze([
     Object.freeze({
       id: 'gemini-4-neon',
@@ -58,8 +59,8 @@ export const ANTIGRAVITY_AGENT: CodingAgentDefinition = Object.freeze({
       label: 'Gemini 3.8 Flash',
       effort: levels(GEMINI_FLASH_LEVELS, 'medium'),
     }),
-    Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5' }),
-    Object.freeze({ id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
+    Object.freeze({ id: 'claude-opus-5-5', label: 'Opus 5.5' }),
+    Object.freeze({ id: 'claude-sonnet-5-5', label: 'Sonnet 5.5' }),
   ]),
   launch: Object.freeze({
     model: Object.freeze(['--model', '<model>']),
