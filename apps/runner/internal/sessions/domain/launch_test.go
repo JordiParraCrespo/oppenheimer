@@ -42,6 +42,23 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 // Pi has no approvals: a permission level that reaches the runner anyway
 // becomes no flag at all, rather than one pi would refuse to start on. Its
 // thinking levels stop at `xhigh`, so omp's `max` is dropped for it.
+// ZCode's TUI reads a positional as a subcommand and has no `--model`, so a
+// first task or a model that reaches the runner must add nothing to argv, or
+// `zcode` exits on an unknown command. Its permission is `--mode`, and a
+// restart reopens the worktree's newest conversation.
+func TestZCodeTakesItsModeAndNeitherATaskNorAModel(t *testing.T) {
+	got := Launch{Model: "glm-5.3", Permission: "ask", Prompt: "fix the picker"}.Args(AgentZCode)
+	want := []string{"--mode", "build"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("zcode argv = %q, want %q", got, want)
+	}
+	got = Launch{Permission: "full", Prompt: "fix the picker", Resume: true}.Args(AgentZCode)
+	want = []string{"--mode", "yolo", "--continue"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("reopened zcode argv = %q, want %q", got, want)
+	}
+}
+
 func TestPiTakesNoPermissionAndItsOwnThinkingLevels(t *testing.T) {
 	got := Launch{Model: "anthropic/claude-opus-5-5", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "go"}.Args(AgentPi)
 	want := []string{"--model", "anthropic/claude-opus-5-5", "--thinking", "xhigh", "go"}

@@ -191,6 +191,15 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"zcode": {
+		command: "zcode",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--mode", "build"}},
+			"auto": {argv: []string{"--mode", "edit"}},
+			"full": {argv: []string{"--mode", "yolo"}},
+		},
+		conversationResume: []string{"--continue"},
+	},
 	"shell": {
 		command: "",
 	},
@@ -218,4 +227,5 @@ var inputCatalog = map[string]agentInput{
 	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }

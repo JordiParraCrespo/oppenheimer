@@ -427,7 +427,9 @@ describe('agent installs', () => {
   it('installs every agent as the person, never with sudo, and the blank terminal not at all', () => {
     for (const id of CODING_AGENT_IDS) {
       const install = AGENT_HOST_SETUP[id]?.install;
-      if (id === 'shell') {
+      // ZCode publishes desktop installers and no terminal CLI release to
+      // verify, so the person installs it themselves and the runner probes it.
+      if (id === 'shell' || id === 'zcode') {
         expect(install).toBeUndefined();
         continue;
       }
