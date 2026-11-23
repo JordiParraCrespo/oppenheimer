@@ -248,8 +248,15 @@ func New(version string) (*App, error) {
 		StatusLine: statusLineCommand,
 		// Each agent is handed the runner's MCP server (`runner mcp`), the
 		// same commands as `runner sessions …` as tools. By name: the
-		// session's PATH leads with the runner's commands.
-		Tools: []string{"runner", "mcp"},
+		// session's PATH leads with the runner's commands. The session and
+		// the socket are its arguments, not its environment, which Codex
+		// does not pass to an MCP server.
+		Tools: func(session string) []string {
+			return []string{"runner", "mcp", "--session", session, "--socket", paths.Socket()}
+		},
+		// Codex's developer_instructions, which the briefing sets, keep the
+		// person's own first.
+		OwnInstructions: trust,
 		// OpenCode serves its conversation on a loopback port the runner
 		// picks, which the chat view reads it through.
 		FreePort: freeLoopbackPort,

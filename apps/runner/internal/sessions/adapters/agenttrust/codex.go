@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // trustCodex records dir, and the repository a worktree belongs to, as
@@ -51,4 +53,27 @@ func (s *Store) trustCodex(dir string) error {
 		return fmt.Errorf("adding the folder would leave %s unreadable: %w", file.path, err)
 	}
 	return file.write(out)
+}
+
+// OwnInstructions is the person's `developer_instructions` in Codex's
+// config.toml, for a launch that sets the key itself to keep; "" for any
+// other agent, for none, or for a file that does not parse, which Codex
+// would refuse anyway.
+func (s *Store) OwnInstructions(agent domain.Agent) string {
+	if agent != domain.AgentCodex || s.codexConfig == "" {
+		return ""
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	file, err := readConfig(s.codexConfig)
+	if err != nil {
+		return ""
+	}
+	var config struct {
+		DeveloperInstructions string `toml:"developer_instructions"`
+	}
+	if err := toml.Unmarshal(file.raw, &config); err != nil {
+		return ""
+	}
+	return config.DeveloperInstructions
 }

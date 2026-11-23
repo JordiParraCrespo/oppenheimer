@@ -73,6 +73,11 @@ type Launch struct {
 	// so they are set at each launch and never saved (briefing.go).
 	Note  string   `json:"-"`
 	Tools []string `json:"-"`
+	// OwnInstructions is what the person told the agent in a key of its
+	// config the briefing sets outright (Codex's developer_instructions),
+	// kept ahead of the briefing's line. It is read at each launch and never
+	// saved.
+	OwnInstructions string `json:"-"`
 }
 
 // AgentServer is where an agent's local API listens and the password it

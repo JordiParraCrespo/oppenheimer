@@ -128,8 +128,24 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return serve(ctx)
 	case "mcp":
 		// An agent in a session starts this as its MCP server: the session
-		// commands as tools, on stdin and stdout.
-		return withDelegation(func(d cli.Delegation) error { return cli.MCP(ctx, os.Stdin, os.Stdout, d, version) })
+		// commands as tools, on stdin and stdout. The runner names the session
+		// and the socket on its command line, since an agent may not pass its
+		// environment on to the server.
+		fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+		session := fs.String("session", "", "the session the tools act for (default: OPPENHEIMER_SESSION)")
+		socket := fs.String("socket", "", "the daemon's socket (default: OPPENHEIMER_SOCKET, else this host's)")
+		if err := fs.Parse(args); err != nil {
+			return cli.ExitUsage, err
+		}
+		return withDelegation(func(d cli.Delegation) error {
+			if *session != "" {
+				d.Self = *session
+			}
+			if *socket != "" {
+				d.Socket = *socket
+			}
+			return cli.MCP(ctx, os.Stdin, os.Stdout, d, version)
+		})
 	case "skill", "--skill":
 		// The manual for an agent in a session: helpers, messages, waits.
 		if err := cli.Skill(os.Stdout); err != nil {

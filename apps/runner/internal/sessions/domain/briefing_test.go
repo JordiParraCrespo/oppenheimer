@@ -35,7 +35,9 @@ func TestCodexIsToldWhereTheNoteIsAndGivenTheRunnersTools(t *testing.T) {
 			t.Fatalf("instructions %q do not mention %q", instructions, says)
 		}
 	}
-	for _, override := range []string{`mcp_servers.oppenheimer.command="runner"`, `mcp_servers.oppenheimer.args=["mcp"]`} {
+	// Codex bounds a tool call to 60 s unless told otherwise; a wait may run
+	// to LongestToolCall.
+	for _, override := range []string{`mcp_servers.oppenheimer.command="runner"`, `mcp_servers.oppenheimer.args=["mcp"]`, "mcp_servers.oppenheimer.tool_timeout_sec=1860"} {
 		if !slices.Contains(got, override) {
 			t.Fatalf("codex argv %q lacks %q", got, override)
 		}
@@ -121,5 +123,19 @@ func TestNothingIsHandedWhereThereIsNothingOrNoWayIn(t *testing.T) {
 		if got := strings.Join(briefed.Args(agent), " "); strings.Contains(got, "mcp") || strings.Contains(got, "CLAUDE.md") {
 			t.Fatalf("%s argv = %q", agent, got)
 		}
+	}
+}
+
+// A `-c developer_instructions` override sets the key outright, so the
+// person's own value in config.toml would be lost in every Codex session; it
+// is kept, ahead of the briefing.
+func TestCodexKeepsThePersonsOwnDeveloperInstructions(t *testing.T) {
+	launch := briefed
+	launch.OwnInstructions = "Always answer in Catalan.\n"
+	got := launch.Args(AgentCodex)
+	var instructions string
+	_ = json.Unmarshal([]byte(strings.TrimPrefix(got[slices.Index(got, "-c")+1], "developer_instructions=")), &instructions)
+	if !strings.HasPrefix(instructions, "Always answer in Catalan.\n\n") || !strings.Contains(instructions, briefed.Note) {
+		t.Fatalf("instructions = %q", instructions)
 	}
 }

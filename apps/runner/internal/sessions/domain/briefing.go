@@ -2,12 +2,19 @@ package domain
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // ToolsServer is the name the runner's MCP server is registered under in
 // each agent's configuration.
 const ToolsServer = "oppenheimer"
+
+// LongestToolCall is the longest a call to the runner's MCP server may take:
+// a wait on child sessions, capped there. An agent that bounds a tool call
+// is told to allow it.
+const LongestToolCall = 30 * time.Minute
 
 // briefingArgs is how a launch hands the agent the session note and the
 // runner's MCP server on its command line, spelled the agent's own way, and
@@ -18,7 +25,9 @@ const ToolsServer = "oppenheimer"
 //   - Codex reads AGENTS.md only from its checkout down, never the session's
 //     folder above it, so it is told where the note is in
 //     `developer_instructions`, which sits beside the repository's own
-//     AGENTS.md; the server is a `-c mcp_servers.<name>` override.
+//     AGENTS.md and after the person's own value of the key
+//     (OwnInstructions), which the override would otherwise replace; the
+//     server is a `-c mcp_servers.<name>` override.
 //   - OpenCode takes both in its config, which is an environment variable
 //     (briefingConfig).
 //
@@ -39,12 +48,18 @@ func (l Launch) briefingArgs(agent Agent) []string {
 	case AgentCodex:
 		var args []string
 		if l.Note != "" || len(l.Tools) > 0 {
-			args = append(args, "-c", "developer_instructions="+tomlString(l.briefing()))
+			instructions := l.briefing()
+			if own := strings.TrimSpace(l.OwnInstructions); own != "" {
+				instructions = own + "\n\n" + instructions
+			}
+			args = append(args, "-c", "developer_instructions="+tomlString(instructions))
 		}
 		if len(l.Tools) > 0 {
 			args = append(args,
 				"-c", "mcp_servers."+ToolsServer+".command="+tomlString(l.Tools[0]),
-				"-c", "mcp_servers."+ToolsServer+".args="+tomlStrings(l.Tools[1:]))
+				"-c", "mcp_servers."+ToolsServer+".args="+tomlStrings(l.Tools[1:]),
+				// Codex gives a tool call 60 s; a wait may take its longest.
+				"-c", "mcp_servers."+ToolsServer+".tool_timeout_sec="+strconv.Itoa(int(LongestToolCall.Seconds())+60))
 		}
 		return args
 	}

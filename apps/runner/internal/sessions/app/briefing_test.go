@@ -21,7 +21,8 @@ func TestACodexSessionIsBriefedWhenCreatedAndWhenRestarted(t *testing.T) {
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
 		Store: &memoryStore{}, Publisher: &recorder{}, Files: fake.NewFiles(), Places: fake.NewPlaces(),
-		Layout: domain.Layout{Root: "/home/jordi/oppenheimer"}, Tools: []string{"runner", "mcp"},
+		Layout: domain.Layout{Root: "/home/jordi/oppenheimer"}, Tools: func(id string) []string { return []string{"runner", "mcp", "--session", id} },
+		OwnInstructions: ownInstructions("Always answer in Catalan."),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -33,8 +34,12 @@ func TestACodexSessionIsBriefedWhenCreatedAndWhenRestarted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The tools act for this session, named on their command line; and the
+	// person's own instructions, which the override replaces, are kept.
 	briefed := func(line string) bool {
-		return strings.Contains(line, session.Note()) && strings.Contains(line, "mcp_servers.oppenheimer.command=")
+		return strings.Contains(line, session.Note()) &&
+			strings.Contains(line, `mcp_servers.oppenheimer.args=["mcp","--session","`+session.ID+`"]`) &&
+			strings.Contains(line, "Always answer in Catalan.")
 	}
 	if line := terminals.Launches[session.Target(0)].Command; !briefed(line) {
 		t.Fatalf("window 0 runs %q, want the note and the tools", line)
@@ -52,4 +57,13 @@ func TestACodexSessionIsBriefedWhenCreatedAndWhenRestarted(t *testing.T) {
 	if line := terminals.CommandOf(restarted.TmuxName()); !briefed(line) {
 		t.Fatalf("restarted window 0 runs %q, want the note and the tools", line)
 	}
+}
+
+type ownInstructions string
+
+func (o ownInstructions) OwnInstructions(agent domain.Agent) string {
+	if agent != domain.AgentCodex {
+		return ""
+	}
+	return string(o)
 }

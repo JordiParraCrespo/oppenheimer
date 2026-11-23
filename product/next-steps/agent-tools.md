@@ -358,13 +358,20 @@ its pending approvals reached the Inbox.
     `watch_pull_request`, `wake_in`). Each tool is the command: the same
     call to the daemon's local socket, its printed answer the tool's text, a
     refusal an error result. No new credential: the server runs as the
-    agent's user, in its session, like the commands.
+    agent's user, in its session, like the commands. The session and the
+    socket are its arguments (`runner mcp --session <id> --socket <path>`):
+    Codex starts an MCP server with almost none of its own environment, so
+    `OPPENHEIMER_SESSION` never reached it, even named in the server's `env`.
   - **Each agent's own way in**, added to what the person configured,
     never replacing it: Claude Code takes the server as
     `--mcp-config=<json>` (one word: the flag takes several values, and the
     prompt after a separate value was read as a file); Codex takes
     `-c developer_instructions=…` (where the note is, and `runner --skill`)
-    and `-c mcp_servers.oppenheimer.command|args`; OpenCode takes
+    (after the person's own value of the key, read from their config.toml,
+    which the override would otherwise replace), `-c
+    mcp_servers.oppenheimer.command|args`, and a `tool_timeout_sec` of 31
+    minutes, since Codex gives a tool call 60 s and a wait may take 30;
+    OpenCode takes
     `instructions` (the note's path) and `mcp` in `OPENCODE_CONFIG_CONTENT`,
     merged with the effort level's `agent` key. Each was checked against the
     real CLI starting `runner mcp` and listing its tools (Claude Code

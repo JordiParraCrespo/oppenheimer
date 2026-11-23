@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // MCP is `runner mcp`: the commands an agent types in its session
@@ -201,7 +203,7 @@ func (s *mcpServer) run(ctx context.Context, d Delegation, name string, args mcp
 	case "wait_for_children":
 		timeout := 10 * time.Minute
 		if args.TimeoutMinutes > 0 {
-			timeout = time.Duration(args.TimeoutMinutes) * time.Minute
+			timeout = min(time.Duration(args.TimeoutMinutes)*time.Minute, sessionsdomain.LongestToolCall)
 		}
 		return d.Wait(ctx, "", args.IDs, timeout)
 	case "report_to_parent":
@@ -262,7 +264,7 @@ var mcpTools = []map[string]any{
 	mcpTool("list_children", "List this session's children: their state and what they last said.", map[string]any{}),
 	mcpTool("wait_for_children", "Wait until the children have finished, are blocked, or ended. They keep running past the timeout.", map[string]any{
 		"ids":             map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Only these children (default: all)."},
-		"timeout_minutes": map[string]any{"type": "integer", "description": "How long to wait (default 10)."},
+		"timeout_minutes": map[string]any{"type": "integer", "description": "How long to wait (default 10, at most 30)."},
 	}),
 	mcpTool("report_to_parent", "As a child, tell the session that started you what you found or did.", map[string]any{
 		"message": mcpString("The report."),
