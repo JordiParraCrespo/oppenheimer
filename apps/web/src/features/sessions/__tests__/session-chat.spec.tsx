@@ -1,4 +1,4 @@
-import { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
+import { SessionChat as Chat, type ChatFeedbackDraft } from '@oppenheimer/frontend-consumer';
 import {
   act,
   cleanup,
@@ -1419,15 +1419,15 @@ describe("the agent's suggestion", () => {
 });
 
 describe('feedback the agent drafted', () => {
-  const draft = {
+  const draft: ChatFeedbackDraft = {
     kind: 'Bug report',
     title: 'Took write actions after "View only"',
     details: ['- What happened: wrote after the user said view only.'],
     note: null,
     actions: [
-      { action: 'review', key: '1' },
-      { action: 'send', key: '2' },
-      { action: 'dismiss', key: '0' },
+      { action: 'review', kind: 'review', key: '1', opensTerminal: true },
+      { action: 'send', kind: 'send', key: '2', opensTerminal: false },
+      { action: 'dismiss', kind: 'dismiss', key: '0', opensTerminal: false },
     ],
     promptHoldsText: false,
     more: 0,
@@ -1467,8 +1467,8 @@ describe('feedback the agent drafted', () => {
         ...draft,
         note: 'Send without reviewing (full draft + env, no transcript)?',
         actions: [
-          { action: 'send', key: '2' },
-          { action: 'back', key: '\u001b' },
+          { action: 'send', kind: 'send', key: '2', opensTerminal: false },
+          { action: 'back', kind: 'back', key: '\u001b', opensTerminal: false },
         ],
       }),
     );

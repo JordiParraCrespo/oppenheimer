@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { ChatFeedbackAction, ChatFeedbackDraft } from '../feedback-draft';
 import { type ChatStep, classify, SessionChat, toTurns } from '../session-chat';
 
 /**
@@ -1408,12 +1409,12 @@ describe('SessionChat.connect', () => {
 });
 
 describe('the drafted-feedback card', () => {
-  const card = (note: string | null) => ({
+  const card = (note: string | null): ChatFeedbackDraft => ({
     kind: 'Bug report',
     title: 'Wrote after view only',
     details: [],
     note,
-    actions: [{ action: 'send', key: '2' }],
+    actions: [{ action: 'send', kind: 'send', key: '2', opensTerminal: false }],
     promptHoldsText: false,
     more: 0,
   });
@@ -1425,7 +1426,12 @@ describe('the drafted-feedback card', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.setFeedback(card(null));
-    const send = { action: 'send', key: '2' };
+    const send: ChatFeedbackAction = {
+      action: 'send',
+      kind: 'send',
+      key: '2',
+      opensTerminal: false,
+    };
     expect(chat.pressFeedback(send)).toBe(true);
     expect(chat.pressFeedback(send)).toBe(false);
     expect(typed).toEqual(['2']);

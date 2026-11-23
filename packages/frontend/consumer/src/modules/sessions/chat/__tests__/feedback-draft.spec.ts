@@ -40,9 +40,9 @@ describe('readFeedbackDraft', () => {
       ],
       note: null,
       actions: [
-        { action: 'review', key: '1' },
-        { action: 'send', key: '2' },
-        { action: 'dismiss', key: '0' },
+        { action: 'review', kind: 'review', key: '1', opensTerminal: true },
+        { action: 'send', kind: 'send', key: '2', opensTerminal: false },
+        { action: 'dismiss', kind: 'dismiss', key: '0', opensTerminal: false },
       ],
       promptHoldsText: false,
       more: 0,
@@ -59,8 +59,8 @@ describe('readFeedbackDraft', () => {
     );
     expect(draft?.note).toBe('Send without reviewing (full draft + env, no transcript)?');
     expect(draft?.actions).toEqual([
-      { action: 'send', key: '2' },
-      { action: 'back', key: ESC },
+      { action: 'send', kind: 'send', key: '2', opensTerminal: false },
+      { action: 'back', kind: 'back', key: ESC, opensTerminal: false },
     ]);
   });
 
@@ -128,8 +128,8 @@ describe('readFeedbackDraft', () => {
     );
     expect(draft?.note).toBe('Failed to reach the server.');
     expect(draft?.actions).toEqual([
-      { action: 'review & retry', key: '1' },
-      { action: 'dismiss', key: ESC },
+      { action: 'review & retry', kind: 'retry', key: '1', opensTerminal: true },
+      { action: 'dismiss', kind: 'dismiss', key: ESC, opensTerminal: false },
     ]);
   });
 
@@ -140,8 +140,8 @@ describe('readFeedbackDraft', () => {
       kind: null,
       note: 'Turn off Claude-drafted feedback?',
       actions: [
-        { action: 'turn off', key: '0' },
-        { action: 'keep', key: ESC },
+        { action: 'turn off', kind: 'turnOff', key: '0', opensTerminal: false },
+        { action: 'keep', kind: 'keep', key: ESC, opensTerminal: false },
       ],
     });
   });
@@ -154,8 +154,8 @@ describe('readFeedbackDraft', () => {
     ).toMatchObject({
       note: 'Turn off Claude-drafted feedback?',
       actions: [
-        { action: 'turn off', key: '0' },
-        { action: 'keep', key: ESC },
+        { action: 'turn off', kind: 'turnOff', key: '0', opensTerminal: false },
+        { action: 'keep', kind: 'keep', key: ESC, opensTerminal: false },
       ],
     });
   });

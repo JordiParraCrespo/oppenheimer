@@ -1,11 +1,49 @@
+/** What a key on the card does, for the ones the console names in its own words. */
+export type ChatFeedbackActionKind =
+  | 'review'
+  | 'send'
+  | 'dismiss'
+  | 'back'
+  | 'keep'
+  | 'turnOff'
+  | 'retry'
+  | 'reviewOrDiscard';
+
+/** The card's words for its keys, by what each does. */
+const ACTION_KINDS: Readonly<Record<string, ChatFeedbackActionKind>> = {
+  review: 'review',
+  send: 'send',
+  dismiss: 'dismiss',
+  back: 'back',
+  keep: 'keep',
+  'turn off': 'turnOff',
+  'review & retry': 'retry',
+  'review or discard': 'reviewOrDiscard',
+};
+
+/** The keys that open Claude Code's review of the draft, an editor only its terminal draws. */
+const OPENS_TERMINAL: ReadonlySet<ChatFeedbackActionKind> = new Set([
+  'review',
+  'retry',
+  'reviewOrDiscard',
+]);
+
 /**
- * A key the card over Claude Code's input box takes, as the card names it:
- * the word it prints after the key (`review`, `send`, `dismiss`, `back`,
- * `keep`, `turn off`, `review & retry`), and what to type for it.
+ * A key the card over Claude Code's input box takes: the word it prints
+ * after the key, what that word does (none for one the console does not
+ * know, which is shown as the card says it), what to type for it, and
+ * whether it opens an editor only the terminal draws.
  */
 export interface ChatFeedbackAction {
   action: string;
+  kind: ChatFeedbackActionKind | null;
   key: string;
+  opensTerminal: boolean;
+}
+
+function actionOf(word: string, key: string): ChatFeedbackAction {
+  const kind = Object.hasOwn(ACTION_KINDS, word) ? (ACTION_KINDS[word] ?? null) : null;
+  return { action: word, kind, key, opensTerminal: kind !== null && OPENS_TERMINAL.has(kind) };
 }
 
 /**
@@ -115,7 +153,7 @@ function hintOf(line: string): Hint {
       continue;
     }
     if (lead?.[1]) words.push(lead[1]);
-    actions.push({ action: (chord[2] ?? '').trim(), key: keyOf(chord[1] ?? '') });
+    actions.push(actionOf((chord[2] ?? '').trim(), keyOf(chord[1] ?? '')));
   }
   const note = unmarked(words.join(' ').trim());
   return { note: note || null, actions, more, blocked };

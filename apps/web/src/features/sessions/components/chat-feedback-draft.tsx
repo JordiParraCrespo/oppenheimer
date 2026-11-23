@@ -1,35 +1,26 @@
 import { ComposerStackAction, ComposerStackRow } from '@oppenheimer/design-system-web';
 import { MessageSquareWarning } from '@oppenheimer/design-system-web/icons';
-import type { ChatFeedbackAction, ChatFeedbackDraft } from '@oppenheimer/frontend-consumer';
+import type {
+  ChatFeedbackAction,
+  ChatFeedbackActionKind,
+  ChatFeedbackDraft,
+} from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
 
-/** The card's words for its keys, and the console's for each; a word it does not know is shown as it says it. */
+/** The console's words for each key the card names. */
 const ACTION_LABELS = {
   review: 'sessions.chat.feedback.review',
   send: 'sessions.chat.feedback.send',
   dismiss: 'sessions.chat.feedback.dismiss',
   back: 'sessions.chat.feedback.back',
   keep: 'sessions.chat.feedback.keep',
-  'turn off': 'sessions.chat.feedback.turnOff',
-  'review & retry': 'sessions.chat.feedback.retry',
-  'review or discard': 'sessions.chat.feedback.reviewOrDiscard',
-} as const;
-
-/** The actions that open Claude Code's review of the draft, an editor only its terminal draws. */
-const OPENS_REVIEW: ReadonlySet<string> = new Set([
-  'review',
-  'review & retry',
-  'review or discard',
-]);
+  turnOff: 'sessions.chat.feedback.turnOff',
+  retry: 'sessions.chat.feedback.retry',
+  reviewOrDiscard: 'sessions.chat.feedback.reviewOrDiscard',
+} as const satisfies Record<ChatFeedbackActionKind, string>;
 
 /** Escape steps back; the rest act on the draft. */
 const ESCAPE = '\u001b';
-
-function labelKey(action: string): (typeof ACTION_LABELS)[keyof typeof ACTION_LABELS] | null {
-  return Object.hasOwn(ACTION_LABELS, action)
-    ? ACTION_LABELS[action as keyof typeof ACTION_LABELS]
-    : null;
-}
 
 /**
  * The feedback report the agent drafted, as Claude Code's card over its
@@ -52,17 +43,16 @@ export function ChatFeedbackDraftCard({
 }) {
   const { t } = useTranslation();
   const actions = draft.actions.map((action) => {
-    const key = labelKey(action.action);
     return (
       <ComposerStackAction
         key={`${action.key}:${action.action}`}
         variant={action.key === ESCAPE ? 'quiet' : 'outline'}
         onClick={() => {
           onPress(action);
-          if (OPENS_REVIEW.has(action.action)) onOpenTerminal?.();
+          if (action.opensTerminal) onOpenTerminal?.();
         }}
       >
-        {key ? t(key) : action.action}
+        {action.kind ? t(ACTION_LABELS[action.kind]) : action.action}
       </ComposerStackAction>
     );
   });
