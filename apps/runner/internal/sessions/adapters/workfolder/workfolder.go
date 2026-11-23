@@ -112,45 +112,50 @@ func (f *Folder) Init() error {
 // another one (a slug can be edited), is brought up to date; the folder's
 // name never changes.
 func (f *Folder) MakeWorkspace(t domain.Tenant, slug string) error {
-	if err := f.makeWorkspace(t, slug); err != nil {
+	renamed, err := f.makeWorkspace(t, slug)
+	if err != nil {
 		return err
 	}
-	f.writeGuides(scope{tenant: t})
+	f.writeGuides(scope{tenant: t, everySession: renamed})
 	return nil
 }
 
-func (f *Folder) makeWorkspace(t domain.Tenant, slug string) error {
+// makeWorkspace reports whether the workspace's slug changed, which every
+// one of its sessions' guides names.
+func (f *Folder) makeWorkspace(t domain.Tenant, slug string) (renamed bool, err error) {
 	if err := t.Validate(); err != nil {
-		return domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
+		return false, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
 	if err := f.Init(); err != nil {
-		return failed("create the work folder", f.layout.Root, err)
+		return false, failed("create the work folder", f.layout.Root, err)
 	}
-	if err := ensureMarked(f.layout.Account(t.Account), Meta{Kind: KindAccount, ID: t.Account}, false); err != nil {
-		return err
+	if _, err := ensureMarked(f.layout.Account(t.Account), Meta{Kind: KindAccount, ID: t.Account}, false); err != nil {
+		return false, err
 	}
-	if err := ensureMarked(f.layout.Workspace(t), Meta{Kind: KindWorkspace, ID: t.Workspace, Slug: slug}, slug != ""); err != nil {
-		return err
+	renamed, err = ensureMarked(f.layout.Workspace(t), Meta{Kind: KindWorkspace, ID: t.Workspace, Slug: slug}, slug != "")
+	if err != nil {
+		return false, err
 	}
 	// Both are made with the workspace, so their guides are there from the
 	// start rather than after the first clone.
 	for _, dir := range []string{f.layout.Repos(t), f.layout.Sessions(t)} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
-			return failed("create", dir, err)
+			return false, failed("create", dir, err)
 		}
 	}
-	return nil
+	return renamed, nil
 }
 
 // MakeSession implements app.Places.
 func (f *Folder) MakeSession(folder domain.SessionFolder) error {
-	if err := f.makeWorkspace(folder.Tenant, folder.WorkspaceSlug); err != nil {
+	renamed, err := f.makeWorkspace(folder.Tenant, folder.WorkspaceSlug)
+	if err != nil {
 		return err
 	}
 	if err := f.makeSession(folder); err != nil {
 		return err
 	}
-	f.writeGuides(scope{tenant: folder.Tenant, session: filepath.Base(folder.Dir)})
+	f.writeGuides(scope{tenant: folder.Tenant, session: filepath.Base(folder.Dir), everySession: renamed})
 	return nil
 }
 
@@ -216,6 +221,11 @@ func (f *Folder) RemoveSession(dir, sessionID string) error {
 	unlock()
 	if err != nil {
 		gone = dir
+	} else {
+		// A rename keeps the folder's mtime, which is what tells a removal
+		// in progress from one a dead process left.
+		now := f.now()
+		_ = os.Chtimes(gone, now, now)
 	}
 	if err := os.RemoveAll(gone); err != nil {
 		return failed("remove", dir, err)
@@ -277,24 +287,26 @@ func (f *Folder) CheckFolder(path string) error {
 
 // ensureMarked makes dir with its marker when it is new, and writes the
 // marker into a dir that has none. update rewrites a marker of the same kind
-// and id whose fields differ.
-func ensureMarked(dir string, meta Meta, update bool) error {
+// and id whose slug differs, and reports it.
+func ensureMarked(dir string, meta Meta, update bool) (rewrote bool, err error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return failed("create", dir, err)
+		return false, failed("create", dir, err)
 	}
 	found, err := readMarker(dir)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
 		// A marker that does not parse is somebody's edit: left as it is.
-		return nil //nolint:nilerr // not ours to rewrite, and no reason to refuse the create
+		return false, nil //nolint:nilerr // not ours to rewrite, and no reason to refuse the create
 	case !update || found.Kind != meta.Kind || found.ID != meta.ID || found.Slug == meta.Slug:
-		return nil
+		return false, nil
+	default:
+		rewrote = true
 	}
 	if err := writeMarker(dir, meta); err != nil {
-		return failed("mark", dir, err)
+		return false, failed("mark", dir, err)
 	}
-	return nil
+	return rewrote, nil
 }
 
 // readMarker reads dir's marker; fs.ErrNotExist when it has none.

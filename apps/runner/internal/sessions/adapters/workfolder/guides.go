@@ -67,12 +67,15 @@ type scope struct {
 	all     bool
 	tenant  domain.Tenant
 	session string
+	// everySession covers each of the workspace's session folders, whose
+	// guides name it: for a workspace whose slug changed.
+	everySession bool
 }
 
 func (s scope) covers(t domain.Tenant) bool { return s.all || s.tenant == t }
 
 func (s scope) coversSession(t domain.Tenant, slug string) bool {
-	return s.all || (s.tenant == t && s.session == slug)
+	return s.all || (s.tenant == t && (s.everySession || s.session == slug))
 }
 
 // WriteGuides writes README.md and AGENTS.md into the work folder's root and

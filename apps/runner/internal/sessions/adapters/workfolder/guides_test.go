@@ -150,3 +150,25 @@ func TestAWorkFolderFromAnOlderRunnerGetsItsGuides(t *testing.T) {
 		t.Fatalf("the session is not listed by its slug:\n%s", index)
 	}
 }
+
+// A workspace renamed in the console (its slug) is renamed in every guide
+// that names it, its sessions' included, on the next create. Regresses if a
+// create rewrites only the session it makes.
+func TestARenamedWorkspaceIsRenamedInItsSessionsGuides(t *testing.T) {
+	f, layout := setup(t)
+	first := detailed(layout, "sess-1", "fix-login")
+	if err := f.MakeSession(first); err != nil {
+		t.Fatalf("make: %v", err)
+	}
+	second := detailed(layout, "sess-2", "add-search")
+	second.WorkspaceSlug = "acme-labs"
+	if err := f.MakeSession(second); err != nil {
+		t.Fatalf("make: %v", err)
+	}
+
+	for _, name := range []string{"README.md", "AGENTS.md"} {
+		if text := read(t, filepath.Join(first.Dir, name)); !strings.Contains(text, "acme-labs") {
+			t.Fatalf("the first session's %s still names the old workspace:\n%s", name, text)
+		}
+	}
+}
