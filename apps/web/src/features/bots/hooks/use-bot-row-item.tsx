@@ -9,9 +9,9 @@ import { useBotUnread } from './use-bot-unread';
  * section's Bots), the way a session's row reads: its name and face, its last
  * message (its description before the first) in the tooltip, its markdown
  * read rather than shown; then one state, first match wins. Waiting on you
- * (a card pending, a turn failed since you read the chat) is the amber dot;
+ * (a card pending, a turn failed since you read the chat) is the needs-input badge;
  * working (a turn queued or running) shimmers the name; done with a message
- * you have not read, or marked unread on this device, is the blue dot. The
+ * you have not read, or marked unread on this device, is the green unread badge. The
  * rows add their own route, menu and drag.
  */
 export function useBotRowItem(bot: BotEntity) {

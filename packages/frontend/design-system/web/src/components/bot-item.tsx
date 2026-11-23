@@ -54,14 +54,23 @@ function BotRowFace({
   );
 }
 
-/** The amber dot of a bot waiting on the person and the blue one of an unread chat, at a row's end. */
+/**
+ * The badge at a row's end, the way a messaging app marks a chat that wants
+ * you: an 18px green circle, empty for an unread chat, an exclamation mark on
+ * the sidebar's ground for a bot waiting on the person (an approval, a
+ * question). Waiting wins: a row carries one badge.
+ */
 function BotRowDots({ needsInput, unread, givesWay }: { needsInput: boolean; unread: boolean; givesWay: boolean }) {
   if (!needsInput && !unread) return null;
-  const dot = 'size-1.75 shrink-0 rounded-pill';
   return (
-    <span className={cn('flex shrink-0 items-center gap-1.5', givesWay && META_GIVES_WAY)}>
-      {needsInput ? <span aria-label="Needs input" className={cn(dot, 'bg-warning')} /> : null}
-      {unread ? <span aria-label="Unread" className={cn(dot, 'bg-primary')} /> : null}
+    <span
+      aria-label={needsInput ? 'Needs input' : 'Unread'}
+      className={cn(
+        'flex size-4.5 shrink-0 items-center justify-center rounded-pill bg-success text-[12px] leading-none font-bold text-sidebar',
+        givesWay && META_GIVES_WAY,
+      )}
+    >
+      {needsInput ? '!' : null}
     </span>
   );
 }
@@ -96,7 +105,7 @@ type BotRowProps = Omit<ButtonPrimitive.Props, 'children'> & {
   /** The bot is at work: the name shimmers, as a working session's does. */
   working?: boolean;
   unread?: boolean;
-  /** The bot is waiting on the person (an approval, a question): the amber dot. */
+  /** The bot is waiting on the person (an approval, a question): the badge with an exclamation mark. */
   needsInput?: boolean;
   active?: boolean;
   action?: React.ReactNode;
@@ -123,9 +132,10 @@ function rowState({ active, working, unread, needsInput }: { active?: boolean; w
  * the bot is `live`, then the name at 14px, which breathes while it is
  * `working` as a working `SessionItem`'s does (`animate-shimmer`). The last message is the row's
  * tooltip, beside it on hover ("You: …" when it was yours). An unread chat
- * sets the name at 600 with a 7px blue dot at the end; one waiting on the
- * person (`needsInput`: an approval, a question) does the same with an amber
- * dot: both set `data-attention`, which carries the weight. 32px, the nav
+ * sets the name at 600 with an 18px green badge at the end; one waiting on
+ * the person (`needsInput`: an approval, a question) does the same with an
+ * exclamation mark in the badge: both set `data-attention`, which carries the
+ * weight. 32px, the nav
  * radius, rows 1px apart in a `BotList`. `BotPreviewItem` is the two-line row.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
@@ -190,7 +200,8 @@ function BotItem({
 /**
  * BotPreviewItem — an employee in the sidebar the way a messaging app's chat
  * list reads it: a 32px photo with `BotItem`'s live dot, then two lines, the
- * name with the `time` of its last activity at the end (12px, subtle ink),
+ * name with the `time` of its last activity at the end (12px, subtle ink,
+ * green while the row asks for attention),
  * and under it the last message at 13px in the subtle ink, one line, with
  * `BotItem`'s dots at its end. No tooltip: the message is on the row. 52px,
  * the nav radius. `action` is the ellipsis, over both lines on hover, hiding
@@ -242,7 +253,12 @@ function BotPreviewItem({
         <span className="flex min-w-0 items-baseline gap-2">
           <BotRowName name={name} working={working} />
           {time ? (
-            <span className={cn('shrink-0 text-[12px] text-fg-subtle tabular-nums', withAction && META_GIVES_WAY)}>
+            <span
+              className={cn(
+                'shrink-0 text-[12px] text-fg-subtle tabular-nums group-data-attention/bot:font-medium group-data-attention/bot:text-success',
+                withAction && META_GIVES_WAY,
+              )}
+            >
               {time}
             </span>
           ) : null}
