@@ -544,7 +544,9 @@
       "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
       "SESSIONS_058": "That terminal is no longer open.",
       "SESSIONS_059": "The host refused to change the session's terminals.",
-      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
+      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host.",
+      "BOTS_044": "That message is no longer in this chat.",
+      "BOTS_045": "Only your messages and the bot's words take a reaction."
     },
     "notFound": {
       "title": "That page does not exist",
