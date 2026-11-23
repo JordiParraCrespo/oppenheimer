@@ -110,19 +110,15 @@ func (h hermesSource) conversation(ctx context.Context, db *sql.DB, session doma
 	if cwd == "" {
 		return hermesConversation{}, nil
 	}
-	dirs := make([]any, 0, 2)
+	dirs := make([]string, 0, 2)
 	for dir := range sameDirectory(cwd) {
 		dirs = append(dirs, dir)
 	}
-	args := append(dirs, float64(session.Created.Add(-hermesSince).UnixMilli())/1000)
-	for _, source := range hermesCLISources {
-		args = append(args, source)
-	}
 	var tip string
 	err := db.QueryRowContext(ctx,
-		`SELECT id FROM sessions WHERE cwd IN (`+marks(len(dirs))+`) AND started_at >= ?
-		 AND source IN (`+marks(len(hermesCLISources))+`) ORDER BY started_at DESC, id DESC LIMIT 1`,
-		args...).Scan(&tip)
+		`SELECT id FROM sessions WHERE cwd IN (SELECT value FROM json_each(?)) AND started_at >= ?
+		 AND source IN (SELECT value FROM json_each(?)) ORDER BY started_at DESC, id DESC LIMIT 1`,
+		jsonList(dirs), float64(session.Created.Add(-hermesSince).UnixMilli())/1000, jsonList(hermesCLISources)).Scan(&tip)
 	if errors.Is(err, sql.ErrNoRows) {
 		return hermesConversation{}, nil
 	}
@@ -153,8 +149,8 @@ func (h hermesSource) conversation(ctx context.Context, db *sql.DB, session doma
 	}
 	conversation := hermesConversation{ids: ids}
 	err = db.QueryRowContext(ctx,
-		`SELECT COALESCE(SUM(transcript_revision), 0) FROM sessions WHERE id IN (`+marks(len(ids))+`)`,
-		anys(ids)...).Scan(&conversation.revision)
+		`SELECT COALESCE(SUM(transcript_revision), 0) FROM sessions WHERE id IN (SELECT value FROM json_each(?))`,
+		jsonList(ids)).Scan(&conversation.revision)
 	return conversation, err
 }
 
@@ -164,13 +160,13 @@ func (h hermesSource) messages(ctx context.Context, db *sql.DB, ids []string, af
 	rows, err := db.QueryContext(ctx,
 		`SELECT id, session_id, role, COALESCE(content, ''), COALESCE(tool_calls, ''), COALESCE(tool_call_id, ''),
 		        COALESCE(tool_name, ''), COALESCE(reasoning, ''), timestamp
-		 FROM messages WHERE session_id IN (`+marks(len(ids))+`) AND (active = 1 OR compacted = 1) AND id > ?
+		 FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND (active = 1 OR compacted = 1) AND id > ?
 		 ORDER BY id`,
-		append(anys(ids), after)...)
+		jsonList(ids), after)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []hermesMessage
 	for rows.Next() {
 		var m hermesMessage
@@ -187,8 +183,8 @@ func (h hermesSource) messages(ctx context.Context, db *sql.DB, ids []string, af
 func (h hermesSource) shown(ctx context.Context, db *sql.DB, ids []string, through int64) (int, error) {
 	var n int
 	err := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM messages WHERE session_id IN (`+marks(len(ids))+`) AND (active = 1 OR compacted = 1) AND id <= ?`,
-		append(anys(ids), through)...).Scan(&n)
+		`SELECT COUNT(*) FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND (active = 1 OR compacted = 1) AND id <= ?`,
+		jsonList(ids), through).Scan(&n)
 	return n, err
 }
 
@@ -309,7 +305,7 @@ func readHermesPage(source hermesSource, session domain.Session, req app.Transcr
 	if err != nil || db == nil {
 		return page, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	ctx := context.Background()
 	conversation, err := source.conversation(ctx, db, session)
 	if err != nil || len(conversation.ids) == 0 {
@@ -558,15 +554,9 @@ func hermesStamp(seconds float64) string {
 	return time.UnixMilli(int64(seconds * 1000)).UTC().Format(time.RFC3339Nano)
 }
 
-// marks is n SQL placeholders.
-func marks(n int) string {
-	return strings.TrimSuffix(strings.Repeat("?, ", n), ", ")
-}
-
-func anys(values []string) []any {
-	out := make([]any, len(values))
-	for i, value := range values {
-		out[i] = value
-	}
-	return out
+// jsonList is values as one JSON array, which a query reads with
+// `json_each`: a list in one parameter, so no query is ever built from text.
+func jsonList(values []string) string {
+	encoded, _ := json.Marshal(values)
+	return string(encoded)
 }
