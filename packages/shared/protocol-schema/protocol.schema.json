@@ -745,7 +745,9 @@
             "grok",
             "pi",
             "omp",
-            "antigravity"
+            "antigravity",
+            "zcode",
+            "fx"
           ]
         },
         "model": {
@@ -3253,6 +3255,8 @@
         "pi",
         "omp",
         "antigravity",
+        "zcode",
+        "fx",
         "shell"
       ],
       "id": "codingAgentId"

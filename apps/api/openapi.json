@@ -9791,6 +9791,8 @@
                 "pi",
                 "omp",
                 "antigravity",
+                "zcode",
+                "fx",
                 "shell"
               ],
               "type": "string"
@@ -31915,6 +31917,8 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
+              "fx",
               "shell",
               null
             ],
@@ -32001,6 +32005,8 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
+              "fx",
               "shell",
               null
             ],
@@ -32067,6 +32073,8 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
+              "fx",
               "shell",
               null
             ],
@@ -32605,6 +32613,8 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
+              "fx",
               "shell",
               "cursor"
             ],
@@ -32873,6 +32883,8 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
+              "fx",
               "shell"
             ]
           },
@@ -34226,7 +34238,9 @@
               "grok",
               "pi",
               "omp",
-              "antigravity"
+              "antigravity",
+              "zcode",
+              "fx"
             ]
           },
           "prompt": {
@@ -35147,6 +35161,8 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
+                  "fx",
                   "shell"
                 ]
               },
@@ -35631,6 +35647,8 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
+                  "fx",
                   "shell"
                 ]
               },
@@ -36520,6 +36538,8 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
+                  "fx",
                   "shell"
                 ]
               },
