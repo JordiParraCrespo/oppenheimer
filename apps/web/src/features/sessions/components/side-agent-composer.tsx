@@ -1,5 +1,5 @@
 import { ChatComposer } from '@oppenheimer/design-system-web';
-import { ComposerEmojiBox } from '@oppenheimer/frontend-web';
+import { ComposerEmojiBox, ComposerEmojiButton } from '@oppenheimer/frontend-web';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -38,6 +38,7 @@ export function SideAgentComposer({
         onSubmit={() => onSubmit(draft.trim())}
         allowEmpty
         disabled={starting}
+        emoji={<ComposerEmojiButton draft={draft} setDraft={setDraft} disabled={starting} />}
         placeholder={t('sessions.new.composer.placeholder')}
         tools={tools}
         engine={engine}

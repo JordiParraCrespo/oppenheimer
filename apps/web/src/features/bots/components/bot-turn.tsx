@@ -1,9 +1,15 @@
-import { ChatUserMessage, IconButton, MessageTrail } from '@oppenheimer/design-system-web';
+import {
+  ChatReaction,
+  ChatUserMessage,
+  IconButton,
+  MessageTrail,
+} from '@oppenheimer/design-system-web';
 import { RotateCcw } from '@oppenheimer/design-system-web/icons';
 import {
   CopyTextButton,
   dateFormatter,
   formatTimeAway,
+  MessageReactButton,
   useLocale,
 } from '@oppenheimer/frontend-web';
 import {
@@ -51,6 +57,11 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * behind the one the bot is on draws neither (`current`), so the chat shows
  * one live line at a time; a turn that never reached its model has no trail,
  * and neither does one that only ran tools while the chat hides them.
+ *
+ * You react to your message from its actions, and to the bot's answer from
+ * its trail, which reacts to its last words (`onReact`): a pill of quick
+ * reactions, "+" for every emoji. A reaction sits on your bubble's lower
+ * edge, and under the bot's words it answers; tapping it takes it back.
  */
 export function BotTurn({
   block,
@@ -63,6 +74,7 @@ export function BotTurn({
   onRetry,
   retrying = false,
   onOpenProviders,
+  onReact,
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
@@ -87,6 +99,8 @@ export function BotTurn({
   retrying?: boolean;
   /** Opens Settings → Model providers, where a refused key or sign-in is fixed. */
   onOpenProviders?: () => void;
+  /** Sets your reaction to a message of yours or the bot's words; null takes it back. */
+  onReact?: (messageId: string, emoji: string | null) => void;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -103,6 +117,19 @@ export function BotTurn({
   const silent = phase === 'completed' && block.answer.length === 0 && tokens === 0;
   const trail = turnTrail(block, phase, useToolCallsShownInChat(), Boolean(onRetry));
   const ran = turn ? turnDurationMs(turn) : null;
+  // The trail's reaction is to the bot's last words in the turn.
+  const lastWords = [...block.answer]
+    .reverse()
+    .find((message) => message.role === 'assistant' && message.content);
+  const reactionOf = (message: { id: string; reaction: string | null }) =>
+    message.reaction && onReact ? (
+      <ChatReaction
+        emoji={message.reaction}
+        aria-label={t('common.chat.emoji.removeReaction', { emoji: message.reaction })}
+        title={t('common.chat.emoji.removeReaction', { emoji: message.reaction })}
+        onClick={() => onReact(message.id, null)}
+      />
+    ) : undefined;
   const meta = turn
     ? [
         phase === 'cancelled' ? t('bots.chat.turn.stopped') : null,
@@ -125,10 +152,19 @@ export function BotTurn({
             data-message-id={message.id}
             time={time.format(message.createdAt)}
             actions={
-              message.content ? (
-                <CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />
-              ) : undefined
+              <>
+                {onReact ? (
+                  <MessageReactButton
+                    selected={message.reaction}
+                    onReact={(emoji) => onReact(message.id, emoji)}
+                  />
+                ) : null}
+                {message.content ? (
+                  <CopyTextButton text={message.content} label={t('bots.chat.copyMessage')} />
+                ) : null}
+              </>
             }
+            reaction={reactionOf(message)}
             attachments={message.attachments.length > 0 ? images(message.attachments) : undefined}
           >
             {message.content ? <BotMessageText text={message.content} /> : null}
@@ -147,10 +183,13 @@ export function BotTurn({
               message={message}
               time={time.format(message.createdAt)}
             />
-          ) : message.attachments.length > 0 ? (
+          ) : message.attachments.length > 0 || message.reaction ? (
             <div key={message.id} className="flex flex-col gap-3">
               {message.content ? <BotReply content={message.content} /> : null}
-              <div className="flex flex-wrap gap-1.5">{images(message.attachments)}</div>
+              {message.attachments.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">{images(message.attachments)}</div>
+              ) : null}
+              {message.reaction ? <div className="flex">{reactionOf(message)}</div> : null}
             </div>
           ) : (
             <BotReply key={message.id} content={message.content} />
@@ -183,6 +222,12 @@ export function BotTurn({
           <MessageTrail
             actions={
               <>
+                {lastWords && onReact ? (
+                  <MessageReactButton
+                    selected={lastWords.reaction}
+                    onReact={(emoji) => onReact(lastWords.id, emoji)}
+                  />
+                ) : null}
                 {text ? <CopyTextButton text={text} label={t('bots.chat.copyReply')} /> : null}
                 {onRetry && phase !== 'failed' ? (
                   <IconButton

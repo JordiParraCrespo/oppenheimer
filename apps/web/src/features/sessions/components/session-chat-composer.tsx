@@ -20,6 +20,7 @@ import {
   ChatUsage,
   type ChatUsageContext,
   ComposerEmojiBox,
+  ComposerEmojiButton,
   dictateInto,
   dictationSlots,
   useCommandMenu,
@@ -263,6 +264,7 @@ export function SessionChatComposer({
           layout="inline"
           dictation={dictationSlots(dictation)}
           onAttach={handOff ? () => picker.current?.click() : undefined}
+          emoji={<ComposerEmojiButton draft={draft} setDraft={setDraft} />}
           attachments={
             files.length > 0
               ? files.map(({ id, file }) => (

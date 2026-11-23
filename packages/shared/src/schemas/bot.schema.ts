@@ -1632,12 +1632,6 @@ export const updatePersonAboutSchema = z.object({
 });
 export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
 
-/**
- * The reactions the chat offers in one tap, in their order, before the
- * whole picker: approval, love, laughter, surprise, sadness, thanks.
- */
-export const BOT_QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const;
-
 /** The most UTF-16 code units a reaction holds: the longest family or flag sequence, with room. */
 export const BOT_REACTION_MAX = 32;
 
