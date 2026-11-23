@@ -1,4 +1,4 @@
-import { SortableBotItem } from '@oppenheimer/design-system-web';
+import { SortableBotPreviewItem } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -6,14 +6,17 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
+import { BotRowTime } from '@/features/bots/components/bot-row-time';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useBotPin } from '@/features/bots/hooks/use-bot-pins';
 import { useBotRowItem } from '@/features/bots/hooks/use-bot-row-item';
+import { useBotUnread } from '@/features/bots/hooks/use-bot-unread';
 
 /**
- * One bot in the Employees sidebar, on one line: its face on its colour
- * and the name, with its last message (its description before the first) in
- * the row's tooltip, its markdown read rather than shown. A section because it
+ * One bot in the Employees sidebar, the way a messaging app's chat list
+ * reads: its face on its colour, the name with when it was last active, and
+ * under it its last message (its description before the first), its
+ * markdown read rather than shown. A section because it
  * subscribes to the route (lit on its chat and on its settings), owns the
  * move, and keeps the delete dialog open past the menu that asked for it.
  * `groups` are the Move pane's targets; its pin is the sidebar's
@@ -43,12 +46,14 @@ export function BotSidebarRow({
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
   const pin = useBotPin(bot.id);
+  const mark = useBotUnread(bot.id);
   const item = useBotRowItem(bot);
 
   return (
     <>
-      <SortableBotItem
+      <SortableBotPreviewItem
         {...item}
+        time={<BotRowTime at={bot.lastActivityAt} />}
         disabled={dragDisabled}
         active={active}
         menuOpen={menuOpen}
@@ -61,6 +66,8 @@ export function BotSidebarRow({
             groupId={bot.groupId}
             pinned={pin.pinned}
             onPinChange={pin.setPinned}
+            unread={mark.unread}
+            onUnreadChange={mark.setUnread}
             onSettings={() =>
               navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
             }

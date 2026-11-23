@@ -4,6 +4,7 @@ import {
   FieldError,
   FieldLabel,
   Input,
+  TaskPriorityIcon,
   Textarea,
 } from '@oppenheimer/design-system-web';
 import {
@@ -14,7 +15,7 @@ import {
   useZodResolver,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
-import { createTaskSchema, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
+import { createTaskSchema, TASK_PRIORITIES, TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import type { ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +28,7 @@ import { TaskMilestoneRow } from './task-milestone-row';
 
 /**
  * The task dialog's form: the title and notes as the design system's labelled fields, then the rows
- * — Status, Project, Milestone, the sessions (the dialog's, passed in), To do (the day it is on To
+ * — Status, Priority, Project, Milestone, the sessions (the dialog's, passed in), To do (the day it is on To
  * do from), Due — and the footer. Enter in the title saves. The notes can be dictated.
  */
 export function TaskForm({
@@ -43,6 +44,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
   onDelete,
+  offTodo,
 }: {
   values: TaskFormValues;
   projects: readonly { id: string; name: string }[];
@@ -57,6 +59,8 @@ export function TaskForm({
   onSubmit: (values: TaskFormOutput) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  /** For a task that exists: the TODO day row's Remove from TODO. */
+  offTodo?: { value: boolean; onChange: (off: boolean) => void };
 }) {
   const { t } = useTranslation();
   const { register, control, handleSubmit, setValue, getValues, formState } = useForm<
@@ -110,6 +114,22 @@ export function TaskForm({
         />
         <Controller
           control={control}
+          name="priority"
+          render={({ field }) => (
+            <ChoiceRow
+              label={t('tasks.dialog.priority')}
+              choices={[null, ...TASK_PRIORITIES].map((priority) => ({
+                value: priority,
+                label: t(priority ? `tasks.priority.${priority}` : 'tasks.dialog.none'),
+                icon: <TaskPriorityIcon priority={priority} />,
+              }))}
+              value={field.value ?? null}
+              onChange={field.onChange}
+            />
+          )}
+        />
+        <Controller
+          control={control}
           name="projectId"
           render={({ field }) => (
             <ProjectSelectRow
@@ -134,7 +154,7 @@ export function TaskForm({
         />
         <TaskMilestoneRow control={control} milestones={milestones} />
         {sessions}
-        <TaskFocusRow control={control} today={today} />
+        <TaskFocusRow control={control} today={today} offTodo={offTodo} />
         <TaskDueRow control={control} today={today} />
       </div>
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />

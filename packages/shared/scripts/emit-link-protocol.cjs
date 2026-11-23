@@ -63,6 +63,8 @@ const INTEGER_TYPES = {
   'hello.protocol.max': 'int',
   'heartbeat.load.memoryAvailableBytes': 'uint64',
   'hint.retryAfterSeconds': 'int',
+  'whatsapp.messages.messages[].voiceSeconds': 'int',
+  'whatsapp.send.voice.seconds': 'int',
   'welcome.protocol': 'int',
   'welcome.epoch': 'uint64',
   'attachment.credit.bytes': 'int',
@@ -102,6 +104,7 @@ const NESTED_NAMES = {
   'session.create.checkouts[]': 'Checkout',
   'port.listing.ports[]': 'ListedPort',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
+  'whatsapp.chats.chats[]': 'WhatsappKnownChat',
 };
 
 /** Doc comments for the constants, which the schema carries as bare values. */
@@ -152,6 +155,7 @@ const CONSTANT_DOCS = {
     'carries; the runner compacts each line first and drops one still bigger.',
   ],
   chatBatchMaxEntries: ['ChatBatchMaxEntries is the most entries one `attachment.chat` holds.'],
+  chatCommandsMax: ['ChatCommandsMax is the most slash commands one `attachment.chat` names.'],
   execOutputMaxBytes: [
     'ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`',
     'keeps: the last ones.',
@@ -413,6 +417,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.chatBatchMaxEntries),
     `const ChatBatchMaxEntries = ${constants.chatBatchMaxEntries}`,
+    '',
+    ...comment(CONSTANT_DOCS.chatCommandsMax),
+    `const ChatCommandsMax = ${constants.chatCommandsMax}`,
     '',
     ...comment(CONSTANT_DOCS.execOutputMaxBytes),
     `const ExecOutputMaxBytes = ${constants.execOutputMaxBytes}`,

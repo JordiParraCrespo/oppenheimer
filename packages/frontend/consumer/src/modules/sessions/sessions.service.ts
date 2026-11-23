@@ -9,6 +9,7 @@ import type {
   AttachTicket,
   CreateSessionInput,
   OpenedSessionWindow,
+  OpenSessionWindowInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
@@ -73,6 +74,10 @@ export class SessionsService {
 
   setHidden(id: string, hidden: boolean): Promise<SessionEntity> {
     return this.repository.setHidden(id, hidden);
+  }
+
+  acknowledgeReport(id: string): Promise<SessionEntity> {
+    return this.repository.acknowledgeReport(id);
   }
 
   move(id: string, projectId: string): Promise<SessionEntity> {
@@ -140,9 +145,13 @@ export class SessionsService {
     return this.repository.listWindows(id);
   }
 
-  /** Opens a plain shell in the session's worktree; stream it with `openStream(id, window.index)`. */
-  openWindow(id: string): Promise<OpenedSessionWindow> {
-    return this.repository.openWindow(id);
+  /**
+   * Opens a plain shell in the session's worktree, or with `agent` a second
+   * coding agent there, started as `input` says; stream it with
+   * `openStream(id, window.index)`.
+   */
+  openWindow(id: string, input?: OpenSessionWindowInput): Promise<OpenedSessionWindow> {
+    return this.repository.openWindow(id, input);
   }
 
   /** Closes one of the session's shells, and answers with the windows left. */

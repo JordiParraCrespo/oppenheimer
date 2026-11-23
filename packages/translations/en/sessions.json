@@ -325,6 +325,9 @@
     "pinned": "Pinned",
     "pin": "Pin",
     "unpin": "Unpin",
+    "markUnread": "Mark as unread",
+    "markRead": "Mark as read",
+    "unreadLabel": "Unread",
     "hide": "Hide",
     "show": "Show",
     "hidden": "Hidden",
@@ -387,6 +390,7 @@
     "repository": "Repository",
     "agent": "Agent",
     "host": "Host",
+    "status": "Status",
     "sort": "Sort by",
     "clear": "Clear filters",
     "remove": "Clear filter",
@@ -403,13 +407,19 @@
     "showAll": "Show all projects",
     "pinnedOnly": "Pinned only",
     "showHidden": "Show hidden sessions",
-    "newProject": "New project…"
+    "newProject": "New project…",
+    "allStatuses": "All statuses",
+    "statuses": {
+      "needs-you": "Needs input",
+      "done": "Ready for review"
+    }
   },
   "sort": {
     "custom": "Custom order",
     "recent": "Last activity",
     "oldest": "Oldest first",
-    "name": "Name"
+    "name": "Name",
+    "attention": "Needs input first"
   },
   "share": {
     "title": "Share session",
@@ -563,6 +573,7 @@
     "composer": {
       "placeholder": "Message {{agent}}",
       "placeholderAnyAgent": "Message the agent",
+      "suggestion": "{{suggestion}}  ·  Tab to use it",
       "send": "Send",
       "stop": "Stop",
       "attach": "Attach files",
@@ -572,6 +583,20 @@
       "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
       "attaching": "Attaching files…"
     },
+    "slash": {
+      "menu": "Commands you can run",
+      "pick": "Use /{{name}}",
+      "builtInLabel": "Claude Code",
+      "projectLabel": "This project",
+      "builtIn": {
+        "clear": "Start a new conversation, with an empty context.",
+        "compact": "Summarise the conversation so far to free up context.",
+        "context": "Show what fills the context window now.",
+        "cost": "Show what this conversation has spent.",
+        "init": "Write a CLAUDE.md that describes this repository.",
+        "review": "Review a pull request."
+      }
+    },
     "turn": {
       "working": "Working for",
       "worked": "Worked for",
@@ -579,6 +604,7 @@
       "interrupted": "Interrupted"
     },
     "copyMessage": "Copy message",
+    "sending": "Sending…",
     "copyReply": "Copy reply",
     "thinking": "Thinking",
     "plan": "Plan",
@@ -686,6 +712,29 @@
         "failed": "Failed",
         "stopped": "Stopped"
       }
+    },
+    "find": {
+      "label": "Find in chat",
+      "placeholder": "Find in chat",
+      "count": "{{current}} of {{total}}",
+      "none": "No results",
+      "previous": "Previous match",
+      "next": "Next match",
+      "close": "Close find"
+    },
+    "feedback": {
+      "label": "Drafted feedback",
+      "review": "Review in terminal",
+      "send": "Send",
+      "dismiss": "Dismiss",
+      "back": "Back",
+      "keep": "Keep",
+      "turnOff": "Turn off",
+      "retry": "Review and retry",
+      "reviewOrDiscard": "Review or discard",
+      "clearPrompt": "Clear the terminal's prompt to answer it.",
+      "more_one": "{{count}} more queued",
+      "more_other": "{{count}} more queued"
     }
   },
   "side": {
@@ -715,7 +764,12 @@
       "bots": "Pick a bot",
       "searchBots": "Search bots",
       "noBots": "No bot yet. Create one under Employees.",
-      "noMatch": "Nothing matches “{{query}}”."
+      "noMatch": "Nothing matches “{{query}}”.",
+      "agent": "Agent",
+      "agentDetail": "Another agent in this worktree",
+      "agents": "Pick an agent",
+      "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
+      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -728,7 +782,13 @@
       "gone": "This terminal has closed"
     },
     "openFull": "Open on its own page",
-    "sessionLoadFailed": "Couldn't load that session"
+    "sessionLoadFailed": "Couldn't load that session",
+    "agent": {
+      "name": "{{agent}} {{index}}",
+      "opening": "Starting {{agent}}…",
+      "openFailed": "The agent didn't start",
+      "start": "Start {{agent}}"
+    }
   },
   "preview": {
     "simulator": "Simulator",
@@ -736,6 +796,7 @@
     "title": "{{name}} running on this session's host",
     "connecting": "Connecting to the session's device…",
     "connectingDetail": "The screen appears once the host has started streaming it.",
+    "noPicture": "Waiting for the screen…",
     "unavailable": "No device for this session",
     "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
     "offline": "The host is offline",

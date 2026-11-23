@@ -3,11 +3,13 @@ import { DEVICE_CHOICES_MAX, deviceChoiceSchema, deviceSwipeDurationSchema } fro
 import { attachTicketHintSchema } from './hint.js';
 import {
   CHAT_BATCH_MAX_ENTRIES,
+  CHAT_COMMANDS_MAX,
   CHAT_ENTRY_MAX_BYTES,
   DEVICE_BUTTONS,
   DEVICE_INPUT_KINDS,
   DEVICE_KEYS,
 } from './link.js';
+import { chatCommandSchema } from './messages.js';
 
 /**
  * The browser attach socket's control vocabulary — the second of the two
@@ -204,6 +206,8 @@ export const attachChatSchema = z.object({
   /** The runner's `older`: a page asked for with `chat.older`, `end` on its last batch. */
   older: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
+  /** The runner's `commands`: the project's slash commands, on a `reset`. */
+  commands: z.array(chatCommandSchema).max(CHAT_COMMANDS_MAX).optional(),
 });
 
 /**

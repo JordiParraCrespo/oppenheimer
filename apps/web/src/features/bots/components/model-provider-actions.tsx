@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * What one Model providers row offers, decided from the row alone: Make
- * default on a provider with a key that new bots do not start on, Remove
+ * default on a bot provider with a key that new bots do not start on, Remove
  * on one with a key, and Add key or Replace on every row. A sign-in provider
  * (ChatGPT) says Disconnect, and Connect ChatGPT or Sign in again, instead.
  * `unavailable` is a server that cannot seal keys: the key buttons are off,
@@ -14,6 +14,7 @@ export function ModelProviderActions({
   signIn,
   configured,
   isDefault,
+  runsBots = true,
   unavailableReason,
   makingDefault,
   defaultBusy,
@@ -27,6 +28,8 @@ export function ModelProviderActions({
   signIn: boolean;
   configured: boolean;
   isDefault: boolean;
+  /** A bot can run on it; a voice-only provider (Groq, ElevenLabs) is never the default. */
+  runsBots?: boolean;
   unavailableReason?: string;
   /** This row's Make default is in flight. */
   makingDefault: boolean;
@@ -42,7 +45,7 @@ export function ModelProviderActions({
 
   return (
     <>
-      {configured && !isDefault ? (
+      {configured && runsBots && !isDefault ? (
         <Button
           size="sm"
           variant="ghost"

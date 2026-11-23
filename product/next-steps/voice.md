@@ -331,6 +331,42 @@ Adding a provider is a class implementing `SpeechProvider` (with a gateway
 of its own behind an `UpstreamLimiter`), its id in `VOICE_PROVIDERS`, and its
 place in the registry's list.
 
+## Voice on the workspace's own providers (2026-11-21)
+
+The owner asked for voice to be configured where the keys are, and more
+configurable: until now dictation and WhatsApp voice notes were heard on the
+ChatGPT sign-in or the deployment's `VOICE_STT_*` server, and bots spoke
+voice notes only on the deployment's `VOICE_TTS_*`, with one voice set in
+env. Asked what to configure, the owner chose a workspace-wide setting (not
+per bot) for the transcription provider, the voice-note provider and voice,
+and the polish model, and two new providers, ElevenLabs and Groq. Telegram's
+voice notes, to come, read the same settings.
+
+- **Settings → Model providers lists Groq and ElevenLabs** beside the bot
+  providers, each a key sealed like the others. They serve voice only: a
+  bot never runs on them, and neither can be the default.
+- **A Voice tab beside the providers** (the page's second tab, `?tab=voice`;
+  the owner asked for tabs over one long page) picks, per row: Speech to text
+  (ChatGPT, OpenAI, Groq, ElevenLabs, this server; a model for those that
+  offer one), Voice notes (OpenAI, ElevenLabs, this server; a model and a
+  voice: OpenAI's set, or any ElevenLabs voice id the account holds) and
+  Transcript polish (any bot provider and model, or off). Each defaults to
+  Automatic, the order from before, so nothing changes for a workspace that
+  never opens it. Stored in `voice_settings`, one row per workspace.
+- **A choice is tried first, never alone.** The chosen provider goes first
+  and the others follow in the usual order, so a key removed later leaves
+  the workspace heard and spoken for. A chosen model or voice goes only to
+  its provider; another one answering speaks in its own defaults. The
+  fallback rule is unchanged (a rate limit is answered at once).
+- **Speech synthesis is a provider list now** (`SynthesisProviderRegistry`,
+  `VoiceSynthesisResolver`), like transcription; the deployment's server is
+  its last provider. A bot's voice-note tool asks whether the workspace, not
+  the deployment, can speak.
+
+Open: ElevenLabs' Ogg/Opus output (`opus_48000_64`) is asked for and judged
+by its bytes like every answer; it has not been tried against the live API
+from here.
+
 ## Dictate everywhere as built (2026-10-17)
 
 The owner asked for dictation in every input someone writes prose into, as

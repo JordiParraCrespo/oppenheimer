@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
+import type { OpenSessionWindowBody } from '@oppenheimer/shared';
 import type {
   SessionWindowCloseMessage,
   SessionWindowOpenMessage,
   SessionWindowsListMessage,
 } from '@oppenheimer/shared/protocol';
 import type {
+  SessionWindowOpenOutcome,
   SessionWindowsOutcome,
   SessionWindowsPort,
 } from '../../sessions/application/session-windows.port';
@@ -30,6 +32,8 @@ type WindowCommand =
  * then the `session.windows` or `command.failed` that names it, through
  * `LinkRepliesPort`. Sent only to a runner whose hello named
  * `session.windows.list`: an older one opens a window without a word back.
+ * An open that names an agent goes only to a runner that also named
+ * `session.window.agent`: an older one would open a plain shell and ignore it.
  */
 @Injectable()
 export class RelaySessionWindowsAdapter implements SessionWindowsPort {
@@ -44,8 +48,29 @@ export class RelaySessionWindowsAdapter implements SessionWindowsPort {
     return this.ask(hostId, { type: 'session.windows.list', commandId: randomUUID(), sessionId });
   }
 
-  open(hostId: string, sessionId: string): Promise<SessionWindowsOutcome> {
-    return this.ask(hostId, { type: 'session.window.open', commandId: randomUUID(), sessionId });
+  open(
+    hostId: string,
+    sessionId: string,
+    window: OpenSessionWindowBody = {},
+  ): Promise<SessionWindowOpenOutcome> {
+    const { agent } = window;
+    // A runner that answers no window command at all is `not_supported`
+    // from `ask`, as for a shell; only one that opens shells but not agents
+    // is told apart.
+    const capabilities = this.links.find(hostId)?.capabilities ?? [];
+    if (
+      agent !== undefined &&
+      capabilities.includes('session.windows.list') &&
+      !capabilities.includes('session.window.agent')
+    ) {
+      return Promise.resolve({ kind: 'agent_not_supported' });
+    }
+    return this.ask(hostId, {
+      type: 'session.window.open',
+      commandId: randomUUID(),
+      sessionId,
+      ...(agent !== undefined ? agentLaunch({ ...window, agent }) : {}),
+    });
   }
 
   close(hostId: string, sessionId: string, window: number): Promise<SessionWindowsOutcome> {
@@ -82,4 +107,25 @@ export class RelaySessionWindowsAdapter implements SessionWindowsPort {
       ...(reply.opened !== undefined ? { opened: reply.opened } : {}),
     };
   }
+}
+
+/**
+ * The agent an open names, how it starts and its first task, each field only
+ * when it was given: an absent launch field is the session's own, which the
+ * runner fills in, and an absent prompt starts the agent with no task.
+ */
+function agentLaunch({
+  agent,
+  model,
+  effort,
+  permission,
+  prompt,
+}: OpenSessionWindowBody & { agent: NonNullable<OpenSessionWindowBody['agent']> }) {
+  return {
+    agent,
+    ...(model !== undefined ? { model } : {}),
+    ...(effort !== undefined ? { effort } : {}),
+    ...(permission !== undefined ? { permission } : {}),
+    ...(prompt !== undefined ? { prompt } : {}),
+  };
 }

@@ -15,11 +15,13 @@ export function SessionChatAttachingSend({
   chat,
   agent,
   attach,
+  onOpenTerminal,
   onSent,
 }: {
   chat: Chat;
   agent: SessionAgent | null;
   attach: ChatAttach;
+  onOpenTerminal?: () => void;
   onSent: () => void;
 }) {
   const paste = usePasteSessionFile(attach.sessionId, AGENT_WINDOW);
@@ -29,6 +31,8 @@ export function SessionChatAttachingSend({
       agent={agent}
       files={attach.files}
       upload={(file) => paste.mutateAsync(file)}
+      hostCommands
+      onOpenTerminal={onOpenTerminal}
       onSent={onSent}
     />
   );

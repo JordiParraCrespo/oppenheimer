@@ -186,9 +186,10 @@ no legacy: launch Codex sessions on the cloud as it is now. Decided:
   repository's default branch out; the first message starts with "Start
   from the `<branch>` branch."
 - **The link.** A thread opens in Codex's app at `codex://threads/<id>`;
-  its web address is not in Codex's source, so the console links a new
-  Codex cloud session to chatgpt.com/codex, and an older one (`task_…`) to
-  its task page as before.
+  since 2026-11-17 the console opens its web page at
+  `https://chatgpt.com/local/<id>`, preserving the thread the runner started.
+  Previously it linked only to the Codex home page, losing that thread.
+  An older session (`task_…`) keeps its legacy task link.
 - **Refusals.** `SESS_022` a host not signed in to ChatGPT (none, an API
   key, expired, or refused); `SESS_010` an environment id the account does
   not have; `SESS_011` ChatGPT asking the host to wait, which pauses the

@@ -24,11 +24,13 @@ import {
   describeTaskInFull,
   dueTimeHasDate,
   expectedVersionInput,
+  priorityInput,
   statusInput,
   TASKS_LIMIT_MAX,
   timeOfDay,
   todayIn,
 } from '../bot-plan-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { formatToolList } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
@@ -72,13 +74,12 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'list_projects',
       readOnly: true,
       scope: 'projects:read',
-      description:
-        "Lists the workspace's projects with their ids, how many repositories each holds, and the host and agent a new session is offered. Archived projects are left out unless include_archived is true. Use get_project for one project's repositories.",
+      description: promptText('tools/plan.list-projects'),
       input: z.object({
         include_archived: z
           .boolean()
           .default(false)
-          .describe('Also list retired projects, marked archived.'),
+          .describe(promptText('tools/plan.list-projects-include-archived')),
       }),
       run: async (input, context) => {
         const projects = await this.queryBus.execute<FindProjectsQuery, ProjectEntity[]>(
@@ -90,7 +91,7 @@ export class BotPlanToolsFactory implements BotToolArea {
         return formatToolList(
           'Projects',
           projects.map((project) => describeProject(project, context)),
-          'There are no projects. A task with no project is filed under Unassigned.',
+          promptText('tools/plan.list-projects-there-projects-task'),
         );
       },
     });
@@ -101,9 +102,10 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'get_project',
       readOnly: true,
       scope: 'projects:read',
-      description:
-        'Reads one project: its name, its repositories with their base branches (the default marked) and the installation_id and github_repo_id update_project takes back, and the host and agent a new session is offered. Use plan_summary for how its tasks stand, and list_sessions with project_id for the sessions in it.',
-      input: z.object({ project_id: z.uuid().describe('A project id from list_projects.') }),
+      description: promptText('tools/plan.get-project'),
+      input: z.object({
+        project_id: z.uuid().describe(promptText('tools/plan.get-project-project-id')),
+      }),
       run: async (input, context) => {
         const project = await this.queryBus.execute<FindProjectQuery, ProjectEntity>(
           new FindProjectQuery({ scope: context.owner, projectId: input.project_id }),
@@ -118,14 +120,17 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'list_tasks',
       readOnly: true,
       scope: 'tasks:read',
-      description: `Lists tasks on the plan's board with their column, version, project, milestone, due date and blocked reason, filtered by project, milestone, column or due dates; at most ${TASKS_LIMIT_MAX} per call. Use get_task for a task's notes and sessions, and plan_summary for progress and what needs the person. No tasks means none match the filters, not that the board is empty.`,
+      description: promptText('tools/plan.list-tasks', { tasksLimitMax: String(TASKS_LIMIT_MAX) }),
       input: z
         .object({
-          project_id: z.uuid().optional().describe('Only tasks of this project (list_projects).'),
-          milestone_id: z.uuid().optional().describe('Only tasks under this milestone.'),
+          project_id: z.uuid().optional().describe(promptText('tools/plan.list-tasks-project-id')),
+          milestone_id: z
+            .uuid()
+            .optional()
+            .describe(promptText('tools/plan.list-tasks-milestone-id')),
           status: statusInput.optional(),
-          due_from: calendarDate.optional().describe('Due on or after this day, YYYY-MM-DD.'),
-          due_to: calendarDate.optional().describe('Due on or before this day, YYYY-MM-DD.'),
+          due_from: calendarDate.optional().describe(promptText('tools/plan.list-tasks-due-from')),
+          due_to: calendarDate.optional().describe(promptText('tools/plan.list-tasks-due-to')),
           limit: z.number().int().min(1).max(TASKS_LIMIT_MAX).default(25),
         })
         .refine((value) => !value.due_from || !value.due_to || value.due_from <= value.due_to, {
@@ -151,7 +156,7 @@ export class BotPlanToolsFactory implements BotToolArea {
         return formatToolList('Tasks', shown.map(describeTask), 'No tasks match.', {
           shown: shown.length,
           total: matching.length,
-          hint: 'Narrow by project_id, milestone_id, status or due dates, or raise limit.',
+          hint: promptText('tools/plan.list-tasks-hint'),
         });
       },
     });
@@ -162,8 +167,7 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'get_task',
       readOnly: true,
       scope: 'tasks:read',
-      description:
-        'Reads one task: its title, column, version, project, milestone, due date, blocked reason, notes, and the sessions working on it. Read it again before update_task or move_task when your version may be old.',
+      description: promptText('tools/plan.get-task'),
       input: z.object({ task_id: z.uuid().describe('A task id from list_tasks.') }),
       run: async (input, context) => {
         const task = await this.readTask(input.task_id, context);
@@ -177,10 +181,9 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'plan_summary',
       readOnly: true,
       scope: 'tasks:read',
-      description:
-        "Says where each project stands: tasks done of total, what is in progress, what needs the person (blocked, or past its due date in the person's zone), the next task due, and each milestone's progress and target date. Pass project_id for one project. Projects with no task and no milestone are not listed.",
+      description: promptText('tools/plan.plan-summary'),
       input: z.object({
-        project_id: z.uuid().optional().describe('Only this project (list_projects).'),
+        project_id: z.uuid().optional().describe(promptText('tools/plan.plan-summary-project-id')),
       }),
       run: async (input, context) => {
         const [summaries, projects] = await Promise.all([
@@ -197,12 +200,19 @@ export class BotPlanToolsFactory implements BotToolArea {
         ]);
         if (summaries.length === 0) {
           return input.project_id
-            ? 'That project has no tasks and no milestones yet.'
-            : 'The plan is empty: no project has a task or a milestone yet.';
+            ? promptText('tools/plan.plan-summary-project-has-tasks')
+            : promptText('tools/plan.plan-summary-plan-empty-project');
         }
         const names = new Map(projects.map((project) => [project.id, project.name]));
         const totals = totalPlan(summaries);
-        const head = `Plan: ${totals.done} of ${totals.total} tasks done, ${totals.doing} in progress, ${totals.needsInput} need the person, ${totals.milestonesCompleted} of ${totals.milestones} milestones complete.`;
+        const head = promptText('tools/plan.plan-summary-plan-tasks-done', {
+          done: String(totals.done),
+          total: String(totals.total),
+          doing: String(totals.doing),
+          needsInput: String(totals.needsInput),
+          milestonesCompleted: String(totals.milestonesCompleted),
+          milestones: String(totals.milestones),
+        });
         return [
           head,
           ...summaries.map((summary) => describeSummary(summary, names.get(summary.projectId))),
@@ -215,16 +225,23 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_task',
       scope: 'tasks:write',
-      description: `Adds a task to the plan's board, at the end of its column (Not started unless status says otherwise). A task you make waits in your person's Inbox until they take it up. Without project_id or milestone_id it is filed under Unassigned; a milestone brings its own project. Title up to ${TASK_TITLE_MAX} characters, notes up to ${TASK_NOTES_MAX}. Use list_tasks first when the task may already exist.`,
+      description: promptText('tools/plan.create-task', {
+        taskTitleMax: String(TASK_TITLE_MAX),
+        taskNotesMax: String(TASK_NOTES_MAX),
+      }),
       input: z
         .object({
           title: z.string().trim().min(1).max(TASK_TITLE_MAX).describe('What the work is.'),
           notes: z.string().max(TASK_NOTES_MAX).optional().describe('Details, in Markdown.'),
           status: statusInput.default('todo'),
-          project_id: z.uuid().optional().describe('The project to file it under.'),
-          milestone_id: z.uuid().optional().describe('A milestone of that project.'),
+          project_id: z.uuid().optional().describe(promptText('tools/plan.create-task-project-id')),
+          milestone_id: z
+            .uuid()
+            .optional()
+            .describe(promptText('tools/plan.create-task-milestone-id')),
           due_date: calendarDate.optional().describe('A calendar day, YYYY-MM-DD.'),
-          due_time: timeOfDay.optional().describe('HH:MM on the due day; needs due_date.'),
+          due_time: timeOfDay.optional().describe(promptText('tools/plan.create-task-due-time')),
+          priority: priorityInput.optional(),
         })
         .refine(dueTimeHasDate, { path: ['due_time'], message: 'due_time needs a due_date' }),
       run: async (input, context) => {
@@ -243,6 +260,7 @@ export class BotPlanToolsFactory implements BotToolArea {
               milestoneId: input.milestone_id,
               dueDate: input.due_date,
               dueTime: input.due_time,
+              priority: input.priority,
             },
           }),
         );
@@ -256,24 +274,27 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_task',
       scope: 'tasks:write',
-      description: `Edits a task's title, notes, project, milestone, due date or blocked reason; only the fields you pass change, and null clears one. Use move_task to change its column. blocked_reason (up to ${TASK_BLOCKED_REASON_MAX} characters) marks it as waiting on the person; null unblocks it. Needs the version you read.`,
+      description: promptText('tools/plan.update-task', {
+        taskBlockedReasonMax: String(TASK_BLOCKED_REASON_MAX),
+      }),
       input: z
         .object({
           task_id: z.uuid().describe('A task id from list_tasks.'),
           expected_version: expectedVersionInput,
           title: z.string().trim().min(1).max(TASK_TITLE_MAX).optional(),
           notes: z.string().max(TASK_NOTES_MAX).optional().describe('Replaces the notes whole.'),
-          project_id: z
-            .uuid()
-            .optional()
-            .describe('File it under this project; a milestone of another project is dropped.'),
+          project_id: z.uuid().optional().describe(promptText('tools/plan.update-task-project-id')),
           milestone_id: z
             .uuid()
             .nullable()
             .optional()
-            .describe("A milestone (it moves the task to the milestone's project), or null."),
-          due_date: calendarDate.nullable().optional().describe('YYYY-MM-DD, or null to clear.'),
+            .describe(promptText('tools/plan.update-task-milestone-id')),
+          due_date: calendarDate
+            .nullable()
+            .optional()
+            .describe(promptText('tools/plan.update-task-due-date')),
           due_time: timeOfDay.nullable().optional().describe('HH:MM, or null to clear.'),
+          priority: priorityInput.nullable().optional(),
           blocked_reason: z
             .string()
             .trim()
@@ -281,7 +302,7 @@ export class BotPlanToolsFactory implements BotToolArea {
             .max(TASK_BLOCKED_REASON_MAX)
             .nullable()
             .optional()
-            .describe('Why it waits on the person, in a sentence; null unblocks it.'),
+            .describe(promptText('tools/plan.update-task-blocked-reason')),
         })
         .refine(
           (value) =>
@@ -292,9 +313,10 @@ export class BotPlanToolsFactory implements BotToolArea {
               'milestone_id',
               'due_date',
               'due_time',
+              'priority',
               'blocked_reason',
             ].some((field) => value[field as keyof typeof value] !== undefined),
-          { message: 'nothing to change: pass at least one field' },
+          { message: promptText('tools/plan.update-task-message') },
         ),
       run: async (input, context) => {
         const taskId = await this.commandBus.execute<UpdateTaskCommand, string>(
@@ -310,13 +332,19 @@ export class BotPlanToolsFactory implements BotToolArea {
               milestoneId: input.milestone_id,
               dueDate: input.due_date,
               dueTime: input.due_time,
+              priority: input.priority,
               blockedReason: input.blocked_reason,
               expectedVersion: input.expected_version,
             },
           }),
         );
         const task = await this.readTask(taskId, context);
-        return `Updated task ${task.id} "${task.title}", now at v${task.version}.\n${describeTaskInFull(task, context)}`;
+        return promptText('tools/plan.update-task-updated-task-now', {
+          id: task.id,
+          title: task.title,
+          version: String(task.version),
+          describeTaskInFull: describeTaskInFull(task, context),
+        });
       },
     });
   }
@@ -325,8 +353,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'move_task',
       scope: 'tasks:write',
-      description:
-        'Moves a task to a column (todo, doing, review, done), first in it or directly after another task of that column. Moving to done completes it and clears a blocked reason; moving out of done reopens it. Needs the version you read. Use update_task for anything but the column or the order.',
+      description: promptText('tools/plan.move-task'),
       input: z.object({
         task_id: z.uuid().describe('A task id from list_tasks.'),
         status: statusInput,
@@ -334,9 +361,7 @@ export class BotPlanToolsFactory implements BotToolArea {
           .uuid()
           .nullable()
           .default(null)
-          .describe(
-            'Place it directly after this task of the target column; omit or null for first.',
-          ),
+          .describe(promptText('tools/plan.move-task-after-task-id')),
         expected_version: expectedVersionInput,
       }),
       run: async (input, context) => {
@@ -354,7 +379,13 @@ export class BotPlanToolsFactory implements BotToolArea {
         );
         const task = await this.readTask(taskId, context);
         const place = input.after_task_id ? `after task ${input.after_task_id}` : 'first';
-        return `Moved task ${task.id} "${task.title}" to ${COLUMN_NAMES[task.status]} (${place}), now at v${task.version}.`;
+        return promptText('tools/plan.move-task-moved-task-now', {
+          id: task.id,
+          title: task.title,
+          status: COLUMN_NAMES[task.status],
+          place,
+          version: String(task.version),
+        });
       },
     });
   }

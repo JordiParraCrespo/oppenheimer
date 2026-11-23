@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import {
+  type AccessScope,
+  applyAccessScope,
+  ScopedRepositoryBase,
+} from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import {
   BOT_ACTIVE_TURN_STATUSES,
@@ -12,6 +16,7 @@ import {
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
+import { BotOrmEntity } from '../../bots/database/bot.orm-entity';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -211,6 +216,7 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
     busyPrefix: string | null,
+    perHour?: number,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }> {
     if (!turn.sourceKey) throw new Error('A turn queued once carries its source key');
     return this.outbox.transaction(async (manager) => {
@@ -232,6 +238,16 @@ export class BotTurnRepository
           [turn.organizationId, turn.botId, busyPrefix],
         );
         if (active) return { outcome: 'busy' as const, turnId: turn.id };
+      }
+      if (perHour !== undefined) {
+        // IDX_bot_turn_conversation: a chat's turns in an hour are a handful.
+        const [{ sent }]: { sent: number }[] = await manager.query(
+          `SELECT count(*)::int AS sent FROM bot_turn
+            WHERE "organizationId" = $1 AND "conversationId" = $2
+              AND "createdAt" >= now() - interval '1 hour'`,
+          [turn.organizationId, turn.conversationId],
+        );
+        if (sent >= perHour) return { outcome: 'busy' as const, turnId: turn.id };
       }
       const outcome = await enqueueLocked(
         manager,
@@ -541,6 +557,8 @@ export class BotTurnRepository
         .execute();
       if (result.affected !== 1) return false;
       turn.markPersisted();
+      await this.outbox.stageEvents(manager, turn.domainEvents);
+      turn.clearEvents();
       await stageNext(this.outbox, manager, turn, correlationId);
       if (isChannelOrigin(turn.origin)) {
         await this.outbox.stageJob(manager, {
@@ -627,6 +645,38 @@ export class BotTurnRepository
       status: 'running',
     });
     return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async findWorkingBotIds(scope: AccessScope): Promise<string[]> {
+    // IDX_bot_turn_active: a workspace's queued and running turns are a handful per bot.
+    const rows: { botId: string }[] = await this.scopedQuery(scope)
+      .select('turn.botId', 'botId')
+      .distinct(true)
+      .andWhere('turn.status IN (:...active)', { active: BOT_ACTIVE_TURN_STATUSES })
+      .getRawMany();
+    return rows.map((row) => row.botId);
+  }
+
+  async findBotIdsWithUnreadFailure(scope: AccessScope): Promise<string[]> {
+    // From the workspace's bots (a handful), each one's last ended turn through
+    // IDX_bot_turn_ended: never the turns' history.
+    const rows: { botId: string }[] = await applyAccessScope(
+      this.repository.manager.createQueryBuilder(BotOrmEntity, 'bot'),
+      BotResource,
+      scope,
+    )
+      .select('bot.id', 'botId')
+      .andWhere(
+        `EXISTS (SELECT 1 FROM (
+           SELECT last.status, last."endedAt" FROM bot_turn last
+            WHERE last."organizationId" = bot."organizationId" AND last."botId" = bot.id
+              AND last."endedAt" IS NOT NULL
+            ORDER BY last."endedAt" DESC LIMIT 1) latest
+          WHERE latest.status = 'failed'
+            AND (bot."acknowledgedAt" IS NULL OR latest."endedAt" > bot."acknowledgedAt"))`,
+      )
+      .getRawMany();
+    return rows.map((row) => row.botId);
   }
 
   async requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean> {
@@ -741,6 +791,8 @@ export async function enqueueLocked(
   await ensureConsoleWithin(manager, turn);
   await manager.getRepository(BotTurnOrmEntity).insert(turns.toPersistence(turn));
   await insertMessageWithin(manager, messages, message);
+  await outbox.stageEvents(manager, turn.domainEvents);
+  turn.clearEvents();
   if (active > 0) return 'waiting';
   await stageRun(outbox, manager, turn.botId, turn.id, turn.lane, correlationId);
   return 'staged';
@@ -751,8 +803,10 @@ export async function enqueueLocked(
  * lock on the bot: its message becomes the turn's newest (after the turn's
  * last stored position, as of now), so a worker that dies before the
  * transcript places it still reads it in order, and its queued turn is
- * deleted. Null, and nothing written, when the turn is no longer queued or
- * its message carries images.
+ * deleted. A queued turn with a source key (a channel's message) is ended
+ * instead, empty, so its key still makes a delivery twice of that message
+ * one turn (`UQ_bot_turn_source`). Null, and nothing written, when the turn
+ * is no longer queued or its message carries images.
  */
 async function moveSteerWithin(
   manager: EntityManager,
@@ -773,7 +827,12 @@ async function moveSteerWithin(
         RETURNING id, content
      ), gone AS (
        DELETE FROM bot_turn
-        WHERE "organizationId" = $1 AND id = $2 AND EXISTS (SELECT 1 FROM moved)
+        WHERE "organizationId" = $1 AND id = $2 AND "sourceKey" IS NULL
+          AND EXISTS (SELECT 1 FROM moved)
+     ), kept AS (
+       UPDATE bot_turn SET "status" = 'completed', "endedAt" = now()
+        WHERE "organizationId" = $1 AND id = $2 AND "sourceKey" IS NOT NULL
+          AND EXISTS (SELECT 1 FROM moved)
      )
      SELECT id, content FROM moved`,
     [running.organizationId, steer.id, running.id],

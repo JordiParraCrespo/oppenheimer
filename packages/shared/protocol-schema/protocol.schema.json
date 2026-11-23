@@ -429,9 +429,7 @@
           }
         },
         "prompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2048
+          "$ref": "#/$defs/promptText"
         },
         "images": {
           "maxItems": 5,
@@ -737,6 +735,46 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 200
+        },
+        "agent": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "codex",
+            "opencode",
+            "grok",
+            "pi",
+            "omp"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "permission": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "auto",
+            "full"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ]
+        },
+        "prompt": {
+          "$ref": "#/$defs/promptText"
         }
       },
       "required": [
@@ -1625,6 +1663,36 @@
             "minLength": 1,
             "maxLength": 65536
           }
+        },
+        "commands": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "skill",
+                  "command"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "required": [
+              "name",
+              "kind"
+            ]
+          }
         }
       },
       "required": [
@@ -2266,6 +2334,25 @@
                 "minLength": 1,
                 "maxLength": 128
               },
+              "quotedSenderId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "mentions": {
+                "maxItems": 64,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 128
+                }
+              },
+              "voiceSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 86400
+              },
               "sentAt": {
                 "type": "string",
                 "format": "date-time",
@@ -2288,6 +2375,50 @@
       "required": [
         "type",
         "messages"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.chats"
+        },
+        "chats": {
+          "minItems": 1,
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "chatId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "chatKind": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "group"
+                ]
+              },
+              "chatName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "chatId",
+              "chatKind"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "chats"
       ]
     },
     {
@@ -2365,6 +2496,46 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "whatsapp.send.voice"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "mimetype": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 480600
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "mimetype",
+        "data",
+        "seconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "whatsapp.sent"
         },
         "commandId": {
@@ -2386,6 +2557,62 @@
         "commandId",
         "id",
         "sentAt"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.media.get"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "messageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "messageId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.media"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "mimetype": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 480600
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "mimetype",
+        "data"
       ]
     },
     {
@@ -3094,6 +3321,12 @@
       "maxLength": 255,
       "id": "gitRef"
     },
+    "promptText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "id": "promptText"
+    },
     "hostPath": {
       "type": "string",
       "minLength": 1,
@@ -3162,16 +3395,20 @@
       "session.teleport",
       "session.watch",
       "whatsapp",
+      "whatsapp.voice",
+      "whatsapp.voice.send",
       "telegram",
       "shared.preview",
       "transcript.read",
       "host.exec",
       "terminal.drive",
-      "session.windows.list"
+      "session.windows.list",
+      "session.window.agent"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
     "chatBatchMaxEntries": 256,
+    "chatCommandsMax": 200,
     "execOutputMaxBytes": 32768,
     "terminalScreenMaxBytes": 32768
   }

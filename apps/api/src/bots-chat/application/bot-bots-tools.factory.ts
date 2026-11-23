@@ -9,7 +9,7 @@ import {
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
-  type BotProvider,
+  botProvidersOf,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
@@ -37,6 +37,7 @@ import {
   type SendBotPeerMessageResult,
 } from '../commands/send-bot-peer-message/send-bot-peer-message.command';
 import { BOT_PEER_MESSAGES_PER_TURN } from '../domain/bot-peer-message.policy';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
 import {
@@ -88,7 +89,9 @@ export class BotPeerToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'message_bot',
       scope: 'bots:write',
-      description: `Sends another of the person's bots a message without waiting for an answer: a heads-up, a hand-off, or something it should act on in its own job. It reads it as its next turn after the person's own messages, marked as from you; nothing it writes comes back to you. Use ask_bot instead when you need its answer, and list_bots for its id. It does not see this chat, so say everything it needs. At most ${BOT_PEER_MESSAGES_PER_TURN} messages to other bots a turn, and never a token, key or password.`,
+      description: promptText('tools/bots.message-bot', {
+        peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
+      }),
       input: peerMessageInput,
       run: (input, context) => this.send(input, context, false),
     });
@@ -98,7 +101,9 @@ export class BotPeerToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'ask_bot',
       scope: 'bots:write',
-      description: `Asks another of the person's bots a question, or gives it a task, and gets its answer back: when it has finished, its answer arrives in this chat as a new message from Oppenheimer and you carry on from there. You do not wait for it in this turn: after asking, tell the person in a sentence what you asked and of whom, and end your turn unless other work is left. It does not see this chat, so say everything it needs. Use list_bots for its id. At most ${BOT_PEER_MESSAGES_PER_TURN} messages to other bots a turn, and never a token, key or password.`,
+      description: promptText('tools/bots.ask-bot', {
+        peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
+      }),
       input: peerMessageInput,
       run: (input, context) => this.send(input, context, true),
     });
@@ -112,7 +117,9 @@ export class BotPeerToolsFactory implements BotToolArea {
   ): Promise<string> {
     if (!context.budget.take('bot_messages', BOT_PEER_MESSAGES_PER_TURN)) {
       throw new BotToolRefusal(
-        `You have already sent ${BOT_PEER_MESSAGES_PER_TURN} messages to other bots this turn, the most one turn may send. Finish with what you have.`,
+        promptText('tools/bots.send-have-already-sent', {
+          peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
+        }),
       );
     }
     const result = await this.commandBus.execute<
@@ -131,8 +138,14 @@ export class BotPeerToolsFactory implements BotToolArea {
     );
     if (!result.sent) throw new BotToolRefusal(result.refusal);
     return expectsReply
-      ? `Asked ${result.botName} (${input.bot_id}). Its answer will arrive in this chat as a new message once it has finished; do not ask again or wait for it now.`
-      : `Sent to ${result.botName} (${input.bot_id}). It will read it after the person's own messages to it; it will not reply to you.`;
+      ? promptText('tools/bots.send-asked-answer-will', {
+          botName: result.botName,
+          botId: input.bot_id,
+        })
+      : promptText('tools/bots.send-sent-will-read', {
+          botName: result.botName,
+          botId: input.bot_id,
+        });
   }
 
   private createBot(): BotToolDefinition {
@@ -140,8 +153,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'create_bot',
       scope: 'bots:write',
       asks: true,
-      description:
-        'Creates a new bot for the person, marked as created by you: its name, what it is for, its soul (persona and tone) and instructions (its job and rules), and what runs it. The provider and model default to yours; only a provider the workspace has a key for is accepted. Its permission defaults to Approve for me and is never looser than yours. It can go in an existing group (by name or id from the sidebar); you cannot create groups. Use list_bots first so you do not make a second bot for the same job.',
+      description: promptText('tools/bots.create-bot'),
       input: z.strictObject({
         name: z.string().trim().min(1).max(BOT_NAME_MAX).describe("The new bot's name."),
         description: z
@@ -149,46 +161,43 @@ export class BotPeerToolsFactory implements BotToolArea {
           .trim()
           .max(BOT_DESCRIPTION_MAX)
           .optional()
-          .describe('What it is for, in a sentence.'),
+          .describe(promptText('tools/bots.bot-description')),
         soul: z
           .string()
           .max(BOT_DOCUMENT_MAX)
           .optional()
-          .describe(
-            'Its SOUL.md, in Markdown: who it is and how it speaks. A template that says its name when omitted.',
-          ),
+          .describe(promptText('tools/bots.create-bot-soul')),
         instructions: z
           .string()
           .max(BOT_DOCUMENT_MAX)
           .optional()
-          .describe('Its INSTRUCTIONS.md, in Markdown: its job and rules. Empty when omitted.'),
-        provider: z.enum(BOT_PROVIDERS).optional().describe('Who answers it; yours when omitted.'),
+          .describe(promptText('tools/bots.create-bot-instructions')),
+        provider: z
+          .enum(BOT_PROVIDERS)
+          .optional()
+          .describe(promptText('tools/bots.create-bot-provider')),
         model: z
           .string()
           .min(1)
           .max(128)
           .nullable()
           .optional()
-          .describe(
-            "A model id or label the provider offers; yours on the same provider when omitted, else the provider's default (also null).",
-          ),
+          .describe(promptText('tools/bots.create-bot-model')),
         effort: z
           .enum(SESSION_EFFORTS)
           .nullable()
           .optional()
-          .describe("Only for a model that takes one; null is the model's own default."),
+          .describe(promptText('tools/bots.create-bot-effort')),
         permission: z
           .enum(BOT_PERMISSIONS)
           .optional()
-          .describe(
-            'auto (Approve for me) or full (Full access); never looser than yours. auto when omitted.',
-          ),
+          .describe(promptText('tools/bots.create-bot-permission')),
         group: z
           .string()
           .min(1)
           .max(80)
           .optional()
-          .describe('An existing bot group, by name or id; ungrouped when omitted.'),
+          .describe(promptText('tools/bots.create-bot-group')),
       }),
       normalize: async (input, context) =>
         explicitCreateBotInput(input, await this.plan(input, context)),
@@ -234,7 +243,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           )
         : Promise.resolve([]),
     ]);
-    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const keyed = botProvidersOf(credentials.map((credential) => credential.provider));
     const plan = planBotCreation(input, creator, keyed, groups);
     if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
     return plan;
@@ -245,13 +254,13 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'update_bot',
       scope: 'bots:write',
       asks: true,
-      description: `Changes the settings of one or more of the person's bots (you included) in one call: what runs them (provider, model and effort), their permission, their group, their name, description and avatar colour, and whether they save what they learn without asking. Give every bot the change applies to in bot_ids (from list_bots), at most ${BOT_UPDATE_MAX}; a field left out stays as it is. A model is an id or label of the bot's provider (the one named here, else each bot's own); a provider needs a workspace key. Permission is never looser than yours; a rename goes to one bot at a time; you cannot create groups. It does not edit a bot's soul or instructions.`,
+      description: promptText('tools/bots.update-bot', { updateMax: String(BOT_UPDATE_MAX) }),
       input: z.strictObject({
         bot_ids: z
           .array(z.uuid())
           .min(1)
           .max(BOT_UPDATE_MAX)
-          .describe('The bots to change, from list_bots.'),
+          .describe(promptText('tools/bots.update-bot-bot-ids')),
         name: z
           .string()
           .trim()
@@ -264,44 +273,42 @@ export class BotPeerToolsFactory implements BotToolArea {
           .trim()
           .max(BOT_DESCRIPTION_MAX)
           .optional()
-          .describe('What it is for, in a sentence.'),
+          .describe(promptText('tools/bots.bot-description')),
         avatar_color: z
           .enum(BOT_AVATAR_COLORS)
           .optional()
-          .describe('The colour its face is drawn in.'),
+          .describe(promptText('tools/bots.update-bot-avatar-color')),
         provider: z
           .enum(BOT_PROVIDERS)
           .optional()
-          .describe(
-            "Who answers them; switching provider without a model runs that provider's default.",
-          ),
+          .describe(promptText('tools/bots.update-bot-provider')),
         model: z
           .string()
           .min(1)
           .max(128)
           .nullable()
           .optional()
-          .describe("A model id or label the provider offers; null is the provider's default."),
+          .describe(promptText('tools/bots.update-bot-model')),
         effort: z
           .enum(SESSION_EFFORTS)
           .nullable()
           .optional()
-          .describe("Only for a model that takes one; null is the model's own default."),
+          .describe(promptText('tools/bots.create-bot-effort')),
         permission: z
           .enum(BOT_PERMISSIONS)
           .optional()
-          .describe('auto (Approve for me) or full (Full access); never looser than yours.'),
+          .describe(promptText('tools/bots.update-bot-permission')),
         group: z
           .string()
           .min(1)
           .max(80)
           .nullable()
           .optional()
-          .describe('An existing bot group, by name or id; null takes them out of their group.'),
+          .describe(promptText('tools/bots.update-bot-group')),
         learn_automatically: z
           .boolean()
           .optional()
-          .describe('Whether what they decide to remember is saved without asking.'),
+          .describe(promptText('tools/bots.update-bot-learn-automatically')),
       }),
       // The card stores the group by id, so a rename while it waits cannot
       // send the bots to another group of the old name.
@@ -367,17 +374,18 @@ export class BotPeerToolsFactory implements BotToolArea {
         : Promise.resolve([]),
     ]);
     const caller = all.find((bot) => bot.id === context.botId);
-    if (!caller) throw new BotToolRefusal('You are no longer one of the workspace’s bots.');
+    if (!caller)
+      throw new BotToolRefusal(promptText('tools/bots.update-plan-longer-one-workspaces'));
     const byId = new Map(all.map((bot) => [bot.id, bot]));
     const ids = [...new Set(input.bot_ids)];
     const unknown = ids.filter((id) => !byId.has(id));
     if (unknown.length) {
       throw new BotToolRefusal(
-        `The workspace has no bot ${unknown.join(', ')}. Use list_bots for their ids.`,
+        promptText('tools/bots.update-plan-workspace-has-bot', { unknown: unknown.join(', ') }),
       );
     }
     const bots = ids.map((id) => byId.get(id) as BotEntity);
-    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const keyed = botProvidersOf(credentials.map((credential) => credential.provider));
     const plan = planBotUpdate(input, caller, bots, keyed, groups);
     if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
     return plan;
@@ -395,8 +403,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'list_bots',
       readOnly: true,
       scope: 'bots:read',
-      description:
-        "Lists the workspace's bots (you included, marked) with what each is for, its sidebar group, its provider and model, and its home host. Use get_bot for one bot's details.",
+      description: promptText('tools/bots.list-bots'),
       input: z.strictObject({}),
       run: async (_input, context) => {
         const [bots, groups] = await Promise.all([
@@ -419,8 +426,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'get_bot',
       readOnly: true,
       scope: 'bots:read',
-      description:
-        "Reads one bot of the workspace: its name, what it is for, its provider and model, its home host and when its chat was last used. It does not read the bot's soul, instructions, memory or chat.",
+      description: promptText('tools/bots.get-bot'),
       input: z.strictObject({ bot_id: z.uuid().describe('A bot id from list_bots.') }),
       run: async (input, context) => {
         const [bot, groups] = await Promise.all([
@@ -429,15 +435,21 @@ export class BotPeerToolsFactory implements BotToolArea {
           ),
           this.groups(context),
         ]);
-        return [
-          `Bot ${bot.id} "${bot.name}"${bot.id === context.botId ? ' (you)' : ''}`,
-          `- for: ${bot.description || '(no description)'}`,
-          `- runs on: ${engineLabelOf(bot.provider, bot.model)} (provider ${bot.provider}, model ${bot.model ?? 'default'}, effort ${bot.effort ?? 'default'})`,
-          `- permission: ${BOT_PERMISSION_LABELS[bot.permission]} (${bot.permission})`,
-          `- group: ${groupLabelOf(bot, groups)}`,
-          `- home host: ${bot.homeHostId ?? 'none chosen'}`,
-          `- last message: ${formatToolTime(bot.lastMessageAt, context.timeZone)}`,
-        ].join('\n');
+        return promptText('tools/bots.get-bot-bot-runs-provider', {
+          id: bot.id,
+          name: bot.name,
+          id2: bot.id === context.botId ? ' (you)' : '',
+          description: bot.description || '(no description)',
+          engineLabel: engineLabelOf(bot.provider, bot.model),
+          provider: bot.provider,
+          model: bot.model ?? 'default',
+          effort: bot.effort ?? 'default',
+          permission: BOT_PERMISSION_LABELS[bot.permission],
+          permission2: bot.permission,
+          groupLabel: groupLabelOf(bot, groups),
+          homeHostId: bot.homeHostId ?? 'none chosen',
+          formatToolTime: formatToolTime(bot.lastMessageAt, context.timeZone),
+        });
       },
     });
   }
@@ -447,13 +459,13 @@ export class BotPeerToolsFactory implements BotToolArea {
 const BOT_UPDATE_MAX = 25;
 
 const peerMessageInput = z.strictObject({
-  bot_id: z.uuid().describe('The other bot, from list_bots. Not yourself.'),
+  bot_id: z.uuid().describe(promptText('tools/bots.peer-message-bot-id')),
   message: z
     .string()
     .trim()
     .min(1)
     .max(BOT_MESSAGE_MAX)
-    .describe('What you are telling or asking it, complete on its own: it does not see this chat.'),
+    .describe(promptText('tools/bots.peer-message-message')),
 });
 
 function summarizeBot(

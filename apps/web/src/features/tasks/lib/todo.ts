@@ -1,4 +1,9 @@
-import { compareRank, type SessionEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
+import {
+  comparePriority,
+  compareRank,
+  type SessionEntity,
+  type TaskEntity,
+} from '@oppenheimer/frontend-consumer';
 import { searchText, todayIn } from '@oppenheimer/frontend-web';
 import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
@@ -72,7 +77,9 @@ function isOverdueOn(task: TaskEntity, day: string, today: string): boolean {
  * not done. A task carried or overdue that is ticked done stays on the day
  * it was done, so finishing it does not make it vanish. A past day lists its
  * own and what was finished on it. `projectIds` narrows it as the board's
- * Project filter does (`undefined` is every project).
+ * Project filter does (`undefined` is every project). A task its person took
+ * off To do (`offTodo`) is on no day, whatever its dates, until it gets a TODO
+ * day again or its due date changes.
  */
 export function todoEntries(
   tasks: readonly TaskEntity[],
@@ -80,7 +87,7 @@ export function todoEntries(
   options: TodoOptions,
 ): TodoEntry[] {
   const inScope = (task: TaskEntity) =>
-    !options.projectIds || options.projectIds.includes(task.projectId);
+    !task.offTodo && (!options.projectIds || options.projectIds.includes(task.projectId));
   const listed = new Set<string>();
   const take = (rows: TaskEntity[], reason: TodoReason): TodoEntry[] =>
     rows.flatMap((task) => {
@@ -187,8 +194,9 @@ export const NO_ADD_FILTER: AddFilter = { projectIds: [], statuses: [] };
 
 /**
  * What Add tasks offers for a day: the open tasks not already on its list,
- * in the projects and columns the filter picks (every one when unset), in
- * the board's order. Adding one puts it on that day; its due date stays.
+ * in the projects and columns the filter picks (every one when unset), most
+ * important first and in the board's order within a priority. Adding one puts
+ * it on that day; its due date stays.
  */
 export function addableTasks(
   tasks: readonly TaskEntity[],
@@ -200,7 +208,7 @@ export function addableTasks(
       (task) =>
         !task.isDone && !onDay.has(task.id) && inProjects(task, filter) && inStatuses(task, filter),
     )
-    .sort(compareRank);
+    .sort((a, b) => comparePriority(a, b) || compareRank(a, b));
 }
 
 const inProjects = (task: TaskEntity, filter: AddFilter) =>

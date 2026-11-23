@@ -1,5 +1,6 @@
 import { type ChannelTurnProps, channelTurn } from './bot-channel-turn.policy';
 import type { BotMessageEntity } from './bot-message.entity';
+import { fenceUntrusted } from './bot-tool-text.policy';
 import type { BotTurnEntity } from './bot-turn.entity';
 
 /** What a message of the owner's on WhatsApp is, for the turn it queues. */
@@ -12,7 +13,18 @@ export interface BotWhatsappMessage {
   messageRowId: string;
   /** What the owner wrote, without a switch's "Name:" prefix. */
   text: string;
+  /** An uncaptioned voice note: `text` is ignored, and the turn reads the note when it starts. */
+  voiceNote: boolean;
 }
+
+/**
+ * What a turn on the owner's uncaptioned voice note shows until the turn
+ * reads the note, which its opening's `pendingMedia` says it must: never
+ * matched on, so the owner typing it changes nothing. Queued with this rather
+ * than heard first, so the turn takes its place among the owner's messages
+ * at once, in the order they were sent.
+ */
+export const WHATSAPP_VOICE_NOTE_OPENING = '[voice note]';
 
 /**
  * The key that makes the owner's WhatsApp message one turn however often it
@@ -30,8 +42,15 @@ export function whatsappSourceKey(message: {
 
 /** The stored WhatsApp message a turn answers, from its key; null for a turn that answers none. */
 export function whatsappMessageRowIdOf(sourceKey: string | null): string | null {
-  const match = /^whatsapp:[0-9a-f-]{36}:([0-9a-f-]{36})$/.exec(sourceKey ?? '');
-  return match?.[1] ?? null;
+  return whatsappMessageOf(sourceKey)?.messageRowId ?? null;
+}
+
+/** The number and the stored message a turn answers, from its key; null for a turn that answers none. */
+export function whatsappMessageOf(
+  sourceKey: string | null,
+): { whatsappAccountId: string; messageRowId: string } | null {
+  const match = /^whatsapp:([0-9a-f-]{36}):([0-9a-f-]{36})$/.exec(sourceKey ?? '');
+  return match?.[1] && match[2] ? { whatsappAccountId: match[1], messageRowId: match[2] } : null;
 }
 
 /** The turn the owner's message on WhatsApp queues, in the chat's own conversation. */
@@ -43,6 +62,71 @@ export function whatsappTurn(
     origin: 'whatsapp',
     sourceKey: whatsappSourceKey(message),
     conversationId: message.conversationId,
-    text: message.text,
+    text: message.voiceNote ? WHATSAPP_VOICE_NOTE_OPENING : message.text,
+    pendingMedia: message.voiceNote ? { kind: 'whatsapp_voice_note' } : null,
+  });
+}
+
+/** The most turns a person's chat the number allows is sent in an hour. */
+export const WHATSAPP_CONTACT_TURNS_PER_HOUR = 20;
+
+/**
+ * The most turns a group the number allows is sent in an hour. Every line of
+ * a group with words wakes its bot, so a group talks far more than a person:
+ * at a person's cap a lively group would fall silent within minutes.
+ */
+export const WHATSAPP_GROUP_TURNS_PER_HOUR = 120;
+
+const TURNS_PER_HOUR: Record<'direct' | 'group', number> = {
+  direct: WHATSAPP_CONTACT_TURNS_PER_HOUR,
+  group: WHATSAPP_GROUP_TURNS_PER_HOUR,
+};
+
+/** The most turns a contact's chat of this kind is sent in an hour. */
+export function whatsappTurnsPerHour(chatKind: 'direct' | 'group'): number {
+  return TURNS_PER_HOUR[chatKind];
+}
+
+/** What a contact wrote in a chat the number allows, for the turn it queues. */
+export interface BotWhatsappContactMessage {
+  conversationId: string;
+  whatsappAccountId: string;
+  messageRowId: string;
+  chatKind: 'direct' | 'group';
+  chatName: string | null;
+  senderName: string | null;
+  /** Who wrote it, as their phone number (`+34600111222`), or their JID when it is no number. */
+  sender: string;
+  text: string;
+}
+
+/**
+ * A contact's message as the bot reads it: who wrote it, and in which group,
+ * then what they wrote, all inside one `<whatsapp>` fence, since every word
+ * of it (their name and the group's included) is theirs, not the owner's.
+ */
+export function whatsappContactOpening(message: BotWhatsappContactMessage): string {
+  const who = message.senderName ? `${message.senderName} (${message.sender})` : message.sender;
+  const where =
+    message.chatKind === 'group' ? ` in the group "${message.chatName ?? 'unnamed'}"` : '';
+  return fenceUntrusted('whatsapp', `${who} wrote${where}:\n${message.text}`);
+}
+
+/**
+ * The turn a contact's message queues (`channelTurn` with `contact`): a
+ * contact's turn on the owner's account, in the chat's own conversation,
+ * keyed by the stored row as the owner's are, opened by what they wrote,
+ * fenced.
+ */
+export function whatsappContactTurn(
+  props: ChannelTurnProps,
+  message: BotWhatsappContactMessage,
+): { turn: BotTurnEntity; opening: BotMessageEntity } {
+  return channelTurn(props, {
+    origin: 'whatsapp',
+    sourceKey: whatsappSourceKey(message),
+    conversationId: message.conversationId,
+    text: whatsappContactOpening(message),
+    contact: message.chatKind,
   });
 }

@@ -348,6 +348,27 @@ describe('tasks: the board (integration)', () => {
     expect((await eventsOf(a.id)).map((e) => e.kind)).toEqual(['created', 'rescheduled']);
   });
 
+  it('keeps a priority without moving the task in its column, clears it with null, and refuses a level it does not know', async () => {
+    const a = await add('a');
+    const b = await add('b');
+    const before = (await reload(b.id)).rank;
+
+    const urgent = await reload(b.id);
+    urgent.edit({ priority: 'urgent' });
+    expect(await tasks.saveFields(urgent)).toBe('saved');
+    expect(await reload(b.id)).toMatchObject({ priority: 'urgent', rank: before });
+    expect((await reload(a.id)).priority).toBeNull();
+
+    const cleared = await reload(b.id);
+    cleared.edit({ priority: null });
+    await tasks.saveFields(cleared);
+    expect((await reload(b.id)).priority).toBeNull();
+
+    await expect(
+      dataSource.query(`UPDATE task SET priority = 'critical' WHERE id = $1`, [b.id]),
+    ).rejects.toThrow(/CHK_task_priority/);
+  });
+
   it('keeps a task an agent made waiting until its person takes it up, by a session or a dismissal', async () => {
     const agent: PlanActor = { type: 'agent', userId, agentId: randomUUID() };
     const make = async (title: string) => {

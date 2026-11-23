@@ -325,6 +325,9 @@
     "pinned": "Fijadas",
     "pin": "Fijar",
     "unpin": "Desfijar",
+    "markUnread": "Marcar como no leída",
+    "markRead": "Marcar como leída",
+    "unreadLabel": "No leída",
     "hide": "Ocultar",
     "show": "Mostrar",
     "hidden": "Oculta",
@@ -390,6 +393,7 @@
     "repository": "Repositorio",
     "agent": "Agente",
     "host": "Equipo",
+    "status": "Estado",
     "sort": "Ordenar por",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
@@ -407,13 +411,19 @@
     "showAll": "Mostrar todos los proyectos",
     "pinnedOnly": "Solo fijadas",
     "showHidden": "Mostrar sesiones ocultas",
-    "newProject": "Nuevo proyecto…"
+    "newProject": "Nuevo proyecto…",
+    "allStatuses": "Todos los estados",
+    "statuses": {
+      "needs-you": "Necesita tu respuesta",
+      "done": "Listo para revisar"
+    }
   },
   "sort": {
     "custom": "Orden personalizado",
     "recent": "Última actividad",
     "oldest": "Más antiguas primero",
-    "name": "Nombre"
+    "name": "Nombre",
+    "attention": "Primero las que necesitan respuesta"
   },
   "share": {
     "title": "Compartir sesión",
@@ -567,6 +577,7 @@
     "composer": {
       "placeholder": "Escribe a {{agent}}",
       "placeholderAnyAgent": "Escribe al agente",
+      "suggestion": "{{suggestion}}  ·  Tab para usarlo",
       "send": "Enviar",
       "stop": "Detener",
       "attach": "Adjuntar archivos",
@@ -576,6 +587,20 @@
       "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto.",
       "attaching": "Adjuntando archivos…"
     },
+    "slash": {
+      "menu": "Comandos que puedes ejecutar",
+      "pick": "Usar /{{name}}",
+      "builtInLabel": "Claude Code",
+      "projectLabel": "Este proyecto",
+      "builtIn": {
+        "clear": "Empieza una conversación nueva, con el contexto vacío.",
+        "compact": "Resume la conversación hasta ahora para liberar contexto.",
+        "context": "Muestra lo que ocupa ahora la ventana de contexto.",
+        "cost": "Muestra lo que ha gastado esta conversación.",
+        "init": "Escribe un CLAUDE.md que describe este repositorio.",
+        "review": "Revisa una pull request."
+      }
+    },
     "turn": {
       "working": "Trabajando desde hace",
       "worked": "Trabajó",
@@ -583,6 +608,7 @@
       "interrupted": "Interrumpido"
     },
     "copyMessage": "Copiar mensaje",
+    "sending": "Enviando…",
     "copyReply": "Copiar respuesta",
     "thinking": "Pensando",
     "plan": "Plan",
@@ -692,6 +718,30 @@
         "failed": "Falló",
         "stopped": "Detenido"
       }
+    },
+    "find": {
+      "label": "Buscar en el chat",
+      "placeholder": "Buscar en el chat",
+      "count": "{{current}} de {{total}}",
+      "none": "Sin resultados",
+      "previous": "Coincidencia anterior",
+      "next": "Coincidencia siguiente",
+      "close": "Cerrar búsqueda"
+    },
+    "feedback": {
+      "label": "Comentario redactado",
+      "review": "Revisar en la terminal",
+      "send": "Enviar",
+      "dismiss": "Descartar",
+      "back": "Atrás",
+      "keep": "Mantener",
+      "turnOff": "Desactivar",
+      "retry": "Revisar y reintentar",
+      "reviewOrDiscard": "Revisar o descartar",
+      "clearPrompt": "Vacía el prompt de la terminal para responder.",
+      "more_one": "{{count}} más en cola",
+      "more_many": "{{count}} más en cola",
+      "more_other": "{{count}} más en cola"
     }
   },
   "side": {
@@ -721,7 +771,12 @@
       "bots": "Elige un bot",
       "searchBots": "Buscar bots",
       "noBots": "Aún no hay bots. Crea uno en Empleados.",
-      "noMatch": "Nada coincide con «{{query}}»."
+      "noMatch": "Nada coincide con «{{query}}».",
+      "agent": "Agente",
+      "agentDetail": "Otro agente en este worktree",
+      "agents": "Elige un agente",
+      "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
+      "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -734,7 +789,13 @@
       "gone": "Esta terminal se ha cerrado"
     },
     "openFull": "Abrir en su propia página",
-    "sessionLoadFailed": "No se pudo cargar esa sesión"
+    "sessionLoadFailed": "No se pudo cargar esa sesión",
+    "agent": {
+      "name": "{{agent}} {{index}}",
+      "opening": "Iniciando {{agent}}…",
+      "openFailed": "El agente no se inició",
+      "start": "Iniciar {{agent}}"
+    }
   },
   "preview": {
     "simulator": "Simulador",
@@ -742,6 +803,7 @@
     "title": "{{name}} ejecutándose en el host de esta sesión",
     "connecting": "Conectando con el dispositivo de la sesión…",
     "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+    "noPicture": "Esperando la pantalla…",
     "unavailable": "Esta sesión no tiene dispositivo",
     "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
     "offline": "El host está desconectado",

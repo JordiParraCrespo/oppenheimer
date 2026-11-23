@@ -11,7 +11,7 @@ import { BotsSidebar } from '../sections/bots-sidebar';
  * open) and the search box, whose keystrokes
  * must reach no row until the search settles.
  *
- * The rows are counted at `SortableBotItem`, the design system's row.
+ * The rows are counted at `SortableBotPreviewItem`, the design system's row.
  */
 
 vi.mock('react-i18next', () => ({
@@ -41,7 +41,7 @@ const world = vi.hoisted(() => {
 
 vi.mock('@oppenheimer/design-system-web', async (original) => ({
   ...(await original<typeof import('@oppenheimer/design-system-web')>()),
-  SortableBotItem: ({ name, active }: { name: string; active?: boolean }) => {
+  SortableBotPreviewItem: ({ name, active }: { name: string; active?: boolean }) => {
     renders.set(name, (renders.get(name) ?? 0) + 1);
     return <div data-active={active ? '' : undefined}>{name}</div>;
   },
@@ -69,7 +69,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useCreateBotGroup: idle,
   useCreateBot: idle,
   useDeleteBot: idle,
-  useBotNeedsInput: () => false,
+  useBotWorking: () => false,
+  useBotWaitingOnYou: () => false,
 }));
 
 vi.mock('@tanstack/react-router', () => ({

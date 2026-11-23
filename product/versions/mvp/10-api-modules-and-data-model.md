@@ -410,6 +410,12 @@ for:
 - **`ready-for-review` versus `idle`** is not a state at all, it is a
   hash comparison: a report exists and `reportHash != ackedReportHash`.
   "Finished and you have not looked" needs no read-receipt table.
+  The report is the end of a turn: an `agent.observed` that takes the
+  agent from `working` or `blocked` to `idle` or `done` sets `reportHash`
+  to `turn:<seq>`, and opening the session in the console writes
+  `report.acknowledged` for it (`POST /sessions/:id/report/acknowledge`).
+  That is the sidebar's blue dot (added 2026-11-17: until then nothing
+  wrote a report, so no session ever reached `ready-for-review`).
 
 Two rules that are easy to get wrong and both load-bearing:
 
@@ -467,6 +473,9 @@ configured, the title is the prompt's own opening words instead. The result is a
 /sessions/{id}` can overwrite it at any time. The create path waits for the name,
 asking while it dispatches, so its response carries it (03); the runner's path
 does not wait. A session with a first prompt is never left on its slug.
+Once the agent has answered the person's second prompt, the resolver names
+it once more from their prompts so far (`source: conversation`), unless a
+person has named it (03).
 Reading the transcript is the posture note 06 already
 takes with the CLIs' usage files: the runner reads what the CLI writes
 and sends one line of it; the transcript never leaves the host. The one

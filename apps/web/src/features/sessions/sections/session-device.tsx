@@ -1,5 +1,5 @@
 import { EmptyState, IconButton, StatusDot } from '@oppenheimer/design-system-web';
-import { RotateCwIcon, SmartphoneIcon } from '@oppenheimer/design-system-web/icons';
+import { LoaderIcon, RotateCwIcon, SmartphoneIcon } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import { DeviceFrame } from '../components/device-frame';
 import { DevicePicker } from '../components/device-picker';
@@ -14,8 +14,11 @@ import { useSessionDevice } from '../hooks/use-session-device';
  * a tap. When the host offers more than one, the line is a picker that moves
  * the session onto another free device; Refresh looks at the host's devices
  * again and restarts the screen. Its socket is open while this tab is shown.
- * While the stream redials, the last frame stays with a notice over it, and
- * taps made meanwhile are held and sent once it is live again.
+ *
+ * Until the device sends its first picture the phone says it is waiting,
+ * rather than a black screen under a green dot. While the stream redials,
+ * the last picture stays with a notice over it, and taps made meanwhile are
+ * held and sent once it is live again.
  */
 export function SessionDevice({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
@@ -64,7 +67,19 @@ export function SessionDevice({ sessionId }: { sessionId: string }) {
             onInput={send}
             onType={type}
           >
-            {reconnecting ? <DeviceReconnecting offline={status === 'offline'} /> : null}
+            {reconnecting ? (
+              <DeviceReconnecting offline={status === 'offline'} />
+            ) : frame ? null : (
+              <>
+                <LoaderIcon
+                  aria-hidden
+                  className="size-5 text-device-screen-fg-muted motion-safe:animate-spin"
+                />
+                <p role="status" className="text-sm font-medium text-device-screen-fg">
+                  {t('sessions.preview.noPicture')}
+                </p>
+              </>
+            )}
           </DeviceFrame>
         ) : (
           <EmptyState className="m-auto max-w-80">

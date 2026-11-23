@@ -15,7 +15,9 @@ import { PreviewFrame } from '../components/preview-frame';
 import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
+import { useReadOnOpen } from '../hooks/use-read-on-open';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
+import { useClearUnreadOnOpen } from '../hooks/use-session-unread';
 import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
 import type { PreviewTab } from '../lib/preview-open';
@@ -111,6 +113,9 @@ export function SessionPane({
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
   const { data: session, error } = useSuspenseSession(sessionId);
+  // Opening a session reads what its last turn left: its blue dot goes.
+  useReadOnOpen(session);
+  useClearUnreadOnOpen(sessionId);
   const previewTabs: PreviewTab[] = [
     ...(browserOffered ? (['browser'] as const) : []),
     ...(simulatorOffered ? (['simulator'] as const) : []),
@@ -127,6 +132,7 @@ export function SessionPane({
         agent={session.agent}
         readOnly={false}
         attach={{ sessionId, files }}
+        onOpenTerminal={() => setView('terminal')}
       />
     ),
     files,
@@ -288,6 +294,7 @@ export function SessionPane({
             <Suspense fallback={null}>
               <SessionSidePane
                 sessionId={session.id}
+                sessionEngine={{ agent: session.agent, ...session.launch }}
                 hostId={session.hostId}
                 previews={previewTabs}
                 onClose={() => preview.toggle(false)}

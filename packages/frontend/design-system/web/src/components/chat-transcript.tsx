@@ -62,11 +62,11 @@ function ChatUserMessage({
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
-      {attachments ? <div className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
+      {attachments ? <div data-slot="chat-user-message-attachments" className="mb-0.5 flex flex-wrap justify-end gap-1.5">{attachments}</div> : null}
       {children != null && children !== false ? (
         <div
           className={cn(
-            'max-w-[80%] rounded-lg px-4.5 py-2.5 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
+            'max-w-[80%] rounded-sm px-3.5 py-2 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
             tone === 'accent' ? 'bg-selected-surface' : tone === 'wash' ? 'bg-chat-wash' : 'bg-card',
           )}
         >
@@ -74,7 +74,7 @@ function ChatUserMessage({
         </div>
       ) : null}
       {time || actions ? (
-        <div className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
+        <div data-slot="chat-user-message-trail" className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
           {time ? <span className="figures pr-1 font-mono text-[11px]">{time}</span> : null}
           {actions}
         </div>
@@ -85,19 +85,15 @@ function ChatUserMessage({
 
 /**
  * ChatCommand — the `/command` a message starts with (`/ship`, `/usage`),
- * in the link blue on the selected wash, an `@file` mention's colours, in a
- * sent message and in the composer as it is written. The wash reaches past
- * the letters by a shadow, not padding, so the composer's copy of the text
+ * in the link blue with no wash, in a sent message and in the composer as
+ * it is written. It adds no padding, so the composer's copy of the text
  * lays out exactly as the textarea's.
  */
 function ChatCommand({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="chat-command"
-      className={cn(
-        'rounded-[4px] bg-selected-surface text-link shadow-[0_0_0_2px_var(--color-selected-surface)]',
-        className,
-      )}
+      className={cn('text-link', className)}
       {...props}
     />
   );

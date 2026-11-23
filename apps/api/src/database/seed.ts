@@ -100,7 +100,10 @@ import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity'
 import { TelegramAccountOrmEntity } from '../telegram/database/telegram-account.orm-entity';
 import { TelegramMessageOrmEntity } from '../telegram/database/telegram-message.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { VoiceSettingsOrmEntity } from '../voice/database/voice-settings.orm-entity';
 import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappChatGrantOrmEntity } from '../whatsapp/database/whatsapp-chat-grant.orm-entity';
+import { WhatsappKnownChatOrmEntity } from '../whatsapp/database/whatsapp-known-chat.orm-entity';
 import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 const dataSource = new DataSource({
@@ -153,6 +156,7 @@ const dataSource = new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    VoiceSettingsOrmEntity,
     TaskOrmEntity,
     MilestoneOrmEntity,
     PlanEventOrmEntity,
@@ -163,6 +167,8 @@ const dataSource = new DataSource({
     MailSendOrmEntity,
     WhatsappAccountOrmEntity,
     WhatsappMessageOrmEntity,
+    WhatsappChatGrantOrmEntity,
+    WhatsappKnownChatOrmEntity,
     TelegramAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,

@@ -46,7 +46,8 @@
     "title": "Projects",
     "new": "New project",
     "noRepositories": "No repositories",
-    "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
+    "emptyTitle": "No projects yet",
+    "empty": "A project groups your sessions and starts new ones with its repositories, host and agent.",
     "loadFailed": "Could not load your projects.",
     "status": {
       "needsInput": "Needs input",

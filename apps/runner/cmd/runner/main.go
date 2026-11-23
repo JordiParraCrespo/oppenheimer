@@ -60,7 +60,8 @@ func run() int {
 
 	code, err := dispatch(ctx, os.Args[1:])
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "error: "+message(err))
+		look := cli.LookFor(os.Stderr)
+		_, _ = fmt.Fprintln(os.Stderr, look.Label("fail", "error:")+" "+message(err))
 	}
 	return code
 }
@@ -112,7 +113,7 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 	case "statusline":
 		// Claude Code calls this for a session's status line, the payload on
 		// stdin; it never fails the CLI.
-		_ = cli.StatusLine(ctx, os.Stdin, os.Stdout)
+		_ = cli.StatusLine(ctx, args, os.Stdin, os.Stdout)
 		return cli.ExitOK, nil
 	case "selfcheck":
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
@@ -598,67 +599,110 @@ func serve(ctx context.Context) (int, error) {
 	return cli.ExitOK, nil
 }
 
+// usage is `runner help`: the commands grouped by who runs them and when,
+// under the mark. On a terminal the commands are the accent blue; anywhere
+// else it is the same text, plain.
 func usage(w *os.File) {
-	_, _ = fmt.Fprint(w, `oppenheimer-runner — the host agent
+	look := cli.LookFor(w)
+	look.Banner(w, " "+look.Dim(version), "the host agent: sessions on a machine you own, driven from the console")
+	var b strings.Builder
+	if !look.Decorated() {
+		b.WriteString("oppenheimer-runner — the host agent\n")
+	}
+	for i, section := range commandSections {
+		if i > 0 || !look.Decorated() {
+			b.WriteString("\n")
+		}
+		b.WriteString(look.Bold(section.title) + "\n")
+		for _, entry := range section.entries {
+			var lines []string
+			if entry.what != "" {
+				lines = strings.Split(entry.what, "\n")
+			}
+			if len(lines) > 0 && len(entry.command) <= usageColumn-4 {
+				pad := strings.Repeat(" ", usageColumn-2-len([]rune(entry.command)))
+				b.WriteString("  " + look.Accent(entry.command) + pad + lines[0] + "\n")
+				lines = lines[1:]
+			} else {
+				b.WriteString("  " + look.Accent(entry.command) + "\n")
+			}
+			for _, line := range lines {
+				b.WriteString(strings.Repeat(" ", usageColumn) + line + "\n")
+			}
+		}
+	}
+	b.WriteString("\n" + look.Bold("Exit codes") + "\n")
+	b.WriteString("  0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable,\n" +
+		"  7 incomplete (uninstall erased the identity, but the host is still paired at the control plane)\n")
+	_, _ = fmt.Fprint(w, b.String())
+}
 
-  runner run                      the host agent (what the service unit starts)
-  runner register --url … [--token-file F|-] [--workspaces DIR] [--keep-existing] [--allow-container]
-                                  pair this machine with your account; the token can
-                                  also come from OPPENHEIMER_REGISTRATION_TOKEN
-  runner install [--print]        install the launchd agent or systemd user unit
-  runner uninstall [--keep-identity] [--force]
-                                  stop the service and unpair this machine; refuses while
-                                  sessions run unless --force, which ends them
-  runner workspaces [--set DIR]   where sessions' checkouts live, or move it
-  runner sessions ls              what this host is running
-  runner sessions create --repo owner/name [--remote URL] [--base main] [--agent claude]
-  runner sessions attach <id> [--window N]
-  runner sessions window <id>     open another tab in a session
-  runner sessions restart <id>    recreate window 0 after a reboot
-  runner sessions close <id> [--no-push] [--force]
-  runner status                   platform, pairing, service, tools, disk
-  runner update [--check|--force|--pin V|--unpin|--rollback]
-  runner agents update            bring every installed agent CLI to its latest release
-                                  (run does it on its own unless RUNNER_AGENT_UPDATES=off)
-  runner agents install <name>    install an agent CLI (claude, codex, opencode, grok, pi, omp) as you,
-                                  from a checksum-verified release or npm; no sudo
-  runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
-  runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
-                                  manager's command is printed, the runner never uses sudo)
-  runner desktop [status]         whether the console may watch and drive this screen (off unless you say so)
-  runner desktop on [--port N] [--username U] [--password-file F]
-  runner desktop off              share this host's screen-sharing server (127.0.0.1:5900) with the console, or stop
-  runner exec [status]            what bots may run on this host (off unless you say so)
-  runner exec mode off|allowlist|full
-                                  off runs nothing, allowlist runs the programs listed, full runs anything
-  runner exec allow <program|/abs/path|/abs/glob/*>...
-  runner exec deny <entry>...     add or remove programs on the allowlist; bots run them with argv
-                                  (no shell) in ~/oppenheimer/bots/<bot> unless they name a folder
-  runner credential-helper get    git's credential protocol, answered over the socket
-  runner sessions run [--agent A] [--repo R] [--outlive-parent] "task"
-                                  from inside a session: start a child session with a task
-  runner sessions send <id> "msg" type a message into a session's agent (paste, then submit)
-  runner sessions wait [<id>...]  wait for this session's children to finish, block or end
-  runner sessions report "msg"    from inside a child: send the parent a message
-  runner sessions children        this session's children and what each one says
-  runner sessions send-file <path> [--caption "line"]
-                                  from inside a session: show the person a file in its chat
-  runner sessions notify "line"   from inside a session: tell the person, in the console's Inbox
-  runner sessions watch-pr <n> [--repo R] [--off]
-                                  from inside a session: be woken by a pull request's checks, reviews,
-                                  comments and merge
-  runner sessions wake-in <30m|2h|1d> "note"
-                                  from inside a session: be woken then with the note, instead of polling
-  runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
-  runner --skill                  the manual for an agent in a session (helpers, messages, waits)
-  runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
-  runner selfcheck                what a staged binary must pass to be activated
-  runner serve                    the HTTP service on a TCP port (containers)
-  runner version
+// usageColumn is where a command's description starts.
+const usageColumn = 34
 
-Exit codes: 0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable,
-7 incomplete (uninstall erased the identity, but the host is still paired at the control plane).
-`)
+type commandEntry struct{ command, what string }
+
+// commandSections is `runner help`, in the order a person meets the
+// commands: pairing the machine, then working on it, then what agents and
+// the service call on their own.
+var commandSections = []struct {
+	title   string
+	entries []commandEntry
+}{
+	{"Set up this machine", []commandEntry{
+		{"runner register --url … [--token-file F|-] [--workspaces DIR] [--keep-existing] [--allow-container]",
+			"pair this machine with your account; the token can\nalso come from OPPENHEIMER_REGISTRATION_TOKEN"},
+		{"runner install [--print]", "install the launchd agent or systemd user unit"},
+		{"runner uninstall [--keep-identity] [--force]",
+			"stop the service and unpair this machine; refuses while\nsessions run unless --force, which ends them"},
+		{"runner status", "platform, pairing, service, tools, disk"},
+		{"runner update [--check|--force|--pin V|--unpin|--rollback]", ""},
+		{"runner workspaces [--set DIR]", "where sessions' checkouts live, or move it"},
+	}},
+	{"Sessions", []commandEntry{
+		{"runner sessions ls", "what this host is running"},
+		{"runner sessions create --repo owner/name [--remote URL] [--base main] [--agent claude]", ""},
+		{"runner sessions attach <id> [--window N]", ""},
+		{"runner sessions window <id>", "open another tab in a session"},
+		{"runner sessions restart <id>", "recreate window 0 after a reboot"},
+		{"runner sessions close <id> [--no-push] [--force]", ""},
+		{"runner sessions keep [<id>] [--off]", "bring a session back on its own after a reboot"},
+	}},
+	{"Agents and tools", []commandEntry{
+		{"runner agents update", "bring every installed agent CLI to its latest release\n(run does it on its own unless RUNNER_AGENT_UPDATES=off)"},
+		{"runner agents install <name>", "install an agent CLI (claude, codex, opencode, grok, pi, omp) as you,\nfrom a checksum-verified release or npm; no sudo"},
+		{"runner tools [ls]", "git, tmux, gh and the agents: versions, and how to get what is missing"},
+		{"runner tools install gh", "install GitHub's CLI into ~/.local/bin (git and tmux: the package\nmanager's command is printed, the runner never uses sudo)"},
+	}},
+	{"What the console may do here", []commandEntry{
+		{"runner desktop [status]", "whether the console may watch and drive this screen (off unless you say so)"},
+		{"runner desktop on [--port N] [--username U] [--password-file F]", ""},
+		{"runner desktop off", "share this host's screen-sharing server (127.0.0.1:5900) with the console, or stop"},
+		{"runner exec [status]", "what bots may run on this host (off unless you say so)"},
+		{"runner exec mode off|allowlist|full", "off runs nothing, allowlist runs the programs listed, full runs anything"},
+		{"runner exec allow <program|/abs/path|/abs/glob/*>...", ""},
+		{"runner exec deny <entry>...", "add or remove programs on the allowlist; bots run them with argv\n(no shell) in ~/oppenheimer/bots/<bot> unless they name a folder"},
+	}},
+	{"From inside a session", []commandEntry{
+		{"runner sessions run [--agent A] [--repo R] [--outlive-parent] \"task\"", "start a child session with a task"},
+		{"runner sessions send <id> \"msg\"", "type a message into a session's agent (paste, then submit)"},
+		{"runner sessions wait [<id>...]", "wait for this session's children to finish, block or end"},
+		{"runner sessions report \"msg\"", "from inside a child: send the parent a message"},
+		{"runner sessions children", "this session's children and what each one says"},
+		{"runner sessions send-file <path> [--caption \"line\"]", "show the person a file in its chat"},
+		{"runner sessions notify \"line\"", "tell the person, in the console's Inbox"},
+		{"runner sessions watch-pr <n> [--repo R] [--off]", "be woken by a pull request's checks, reviews,\ncomments and merge"},
+		{"runner sessions wake-in <30m|2h|1d> \"note\"", "be woken then with the note, instead of polling"},
+		{"runner --skill", "the manual for an agent in a session (helpers, messages, waits)"},
+	}},
+	{"Run by the service, git and agents", []commandEntry{
+		{"runner run", "the host agent (what the service unit starts)"},
+		{"runner credential-helper get", "git's credential protocol, answered over the socket"},
+		{"runner pty [--report F] -- CMD", "run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)"},
+		{"runner selfcheck", "what a staged binary must pass to be activated"},
+		{"runner serve", "the HTTP service on a TCP port (containers)"},
+		{"runner version", ""},
+	}},
 }
 
 func message(err error) string {

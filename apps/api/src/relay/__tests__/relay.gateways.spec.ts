@@ -1683,14 +1683,17 @@ describe('browser attach socket', () => {
           reset: true,
           history: 'end',
           entries: [entry],
+          commands: [{ name: 'recap', kind: 'skill', description: 'Close the task' }],
         }),
       );
-      // `history` too: without it the console guesses where a long history ends.
+      // `history` too: without it the console guesses where a long history ends;
+      // `commands` too: without it the composer's `/` menu has no project skills.
       expect((await chat).text).toEqual({
         type: 'chat',
         reset: true,
         history: 'end',
         entries: [entry],
+        commands: [{ name: 'recap', kind: 'skill', description: 'Close the task' }],
       });
 
       // An attachment that is not open has nobody to read it.

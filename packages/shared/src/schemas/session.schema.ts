@@ -566,6 +566,15 @@ export const listSessionsQuerySchema = paginationSchema.extend({
   agent: codingAgentSchema.optional(),
   sort: sessionSortSchema.optional(),
   cursor: z.string().min(1).max(512).optional(),
+  /**
+   * `false` leaves resolved sessions out, `true` keeps only them; absent, both.
+   * The two literals, parsed as themselves: `z.coerce.boolean()` would read
+   * `?resolved=false` as `true`.
+   */
+  resolved: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
 });
 
 export type ListSessionsQueryDto = z.infer<typeof listSessionsQuerySchema>;

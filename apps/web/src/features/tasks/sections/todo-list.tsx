@@ -9,7 +9,7 @@ import {
   TaskSessionChip,
   TodoRow,
 } from '@oppenheimer/design-system-web';
-import { Play } from '@oppenheimer/design-system-web/icons';
+import { ListFilter, Play, X } from '@oppenheimer/design-system-web/icons';
 import {
   useMoveTask,
   useSuspenseTaskBoard,
@@ -29,6 +29,9 @@ import { todoStatusOf } from '../lib/todo-status';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
+/** Remove: off To do, its TODO day cleared; the server puts it back on a new TODO day or due date. */
+const REMOVE_FROM_TODO = { focusDate: null, offTodo: true } as const;
+
 /**
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
  * milestone, since when it has been carried and when it is due under the
@@ -40,6 +43,9 @@ const todo = getRouteApi('/_authenticated/plan/todo');
  * (`useTodoOrder`). Its Move button puts it on another TODO day, Tomorrow
  * or one picked on a month, unless its deadline holds it on the day shown
  * (`heldByDeadline`), where moving its TODO day would change nothing on screen.
+ * Its Remove button takes it off To do altogether: off every day, its due
+ * date included, until Add tasks puts it on a day again or its due date
+ * changes (`offTodo`).
  *
  * A task an agent is working on (a session running or queued, none waiting
  * on the person) leaves the list for the "With agents" strip under it, its
@@ -60,6 +66,8 @@ export function TodoList() {
   const read = useSuspenseTaskBoard();
   const move = useMoveTask();
   const update = useUpdateTask();
+  // Its own mutation, so a failed Remove says so in its own words and a Move's alert stays its own.
+  const remove = useUpdateTask();
   const projects = new Map(read.projects.map((row) => [row.id, row]));
   const milestones = new Map(read.milestones.map((row) => [row.id, row.name]));
   const sessions = new Map(read.sessions.map((row) => [row.id, row]));
@@ -129,6 +137,16 @@ export function TodoList() {
           {...dragIgnore}
           type="button"
           size="sm"
+          aria-label={t('tasks.todo.remove', { title: task.title })}
+          title={t('tasks.todo.removeTitle')}
+          onClick={() => remove.mutate({ id: task.id, input: REMOVE_FROM_TODO })}
+        >
+          <X />
+        </IconButton>
+        <IconButton
+          {...dragIgnore}
+          type="button"
+          size="sm"
           aria-label={t('tasks.todo.startSession', { title: task.title })}
           title={t('tasks.dialog.startSession')}
           onClick={() => navigate({ search: (previous) => ({ ...previous, start: task.id }) })}
@@ -175,13 +193,27 @@ export function TodoList() {
         fallback={t('tasks.todo.moveFailed')}
         onDismiss={update.reset}
       />
+      <ErrorAlert
+        error={remove.error}
+        fallback={t('tasks.todo.removeFailed')}
+        onDismiss={remove.reset}
+      />
       {listed.length === 0 && withAgents.length === 0 ? (
         <EmptyState className="rounded-lg bg-card">
-          <EmptyState.Header>
-            <EmptyState.Description>
-              {dayHasAny ? t('tasks.todo.noMatch') : t('tasks.todo.empty')}
-            </EmptyState.Description>
-          </EmptyState.Header>
+          {dayHasAny ? (
+            <EmptyState.Header>
+              <EmptyState.Media variant="icon">
+                <ListFilter />
+              </EmptyState.Media>
+              <EmptyState.Description>{t('tasks.todo.noMatch')}</EmptyState.Description>
+            </EmptyState.Header>
+          ) : (
+            <EmptyState.Header>
+              <EmptyState.Art name="tasks" />
+              <EmptyState.Title>{t('tasks.todo.emptyTitle')}</EmptyState.Title>
+              <EmptyState.Description>{t('tasks.todo.empty')}</EmptyState.Description>
+            </EmptyState.Header>
+          )}
         </EmptyState>
       ) : (
         <DragProvider

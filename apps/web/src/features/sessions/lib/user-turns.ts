@@ -306,6 +306,16 @@ export function bindUserTurns(
       scan();
     });
   };
+  // Output is scanned as soon as it is parsed, before xterm renders it in this
+  // frame, so the bubble and the repaint move with the message. Scanned after
+  // the render instead, they sat a frame on the row the message had left, and
+  // every Enter (the agent redrawing its screen) made the pane jump. Not
+  // inside a synchronized frame, which xterm does not draw either: the grid is
+  // half-way through the agent's redraw there.
+  const onParsed = term.onWriteParsed(() => {
+    if (!term.modes.synchronizedOutputMode) scan();
+  });
+  // Everything else that moves a message (the reader scrolling, a resize).
   const onRender = term.onRender(schedule);
   const onBuffer = term.buffer.onBufferChange(() => {
     for (const turn of drawn) clear(turn);
@@ -324,6 +334,7 @@ export function bindUserTurns(
     },
     dispose() {
       if (frame !== null) cancelAnimationFrame(frame);
+      onParsed.dispose();
       onRender.dispose();
       onBuffer.dispose();
       for (const turn of drawn) clear(turn);

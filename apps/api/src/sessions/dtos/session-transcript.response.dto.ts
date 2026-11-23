@@ -85,6 +85,12 @@ export class SessionTranscriptPageResponseDto implements SessionTranscriptPage {
   atEnd!: boolean;
 
   @ApiProperty({
+    description:
+      'The conversation has entries before this page: read with `from=start` and follow `nextCursor` to have all of it.',
+  })
+  hasEarlier!: boolean;
+
+  @ApiProperty({
     description: 'The cursor no longer applied, so the page starts the current conversation over.',
   })
   restarted!: boolean;

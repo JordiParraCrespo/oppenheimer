@@ -20,8 +20,9 @@ type Terminals interface {
 	// command (empty for a plain shell), carrying env.
 	Create(ctx context.Context, name, dir, command string, env map[string]string) error
 	// NewWindow opens another window in the same session and directory and
-	// returns its index.
-	NewWindow(ctx context.Context, name, dir string) (int, error)
+	// returns its index. title names the window and keeps it so; empty lets
+	// tmux name it after the program running in it.
+	NewWindow(ctx context.Context, name, dir, title string) (int, error)
 	// KillWindow closes one window.
 	KillWindow(ctx context.Context, target string) error
 	// Kill ends the whole tmux session.
@@ -243,6 +244,36 @@ type ProgramStatus interface {
 	Forget(sessionID string)
 }
 
+// Wrappers are the `pty` wrapper processes this runner started, one around
+// each session's agent. A wrapper whose pane is gone must not outlive it:
+// an agent that ignores the hangup otherwise idles on the host for good.
+type Wrappers interface {
+	// Running lists the wrappers alive on this host. Only processes this
+	// runner started are ever listed, never the user's own.
+	Running(ctx context.Context) ([]Wrapper, error)
+	// End hangs the wrapper's program up, gives it a grace period to save
+	// its conversation and exit, then kills its process group and the
+	// wrapper. It returns once they are gone or killed.
+	End(ctx context.Context, wrapper Wrapper) error
+}
+
+// Wrapper is one running wrapper.
+type Wrapper struct {
+	// SessionID is the session whose report file it keeps.
+	SessionID string
+	Pid       int
+	// Group is its program's process group; 0 once the program is gone.
+	Group int
+}
+
+// SlashCommands lists the commands a project gives Claude Code, from the
+// folder its agent runs in: what the chat composer's `/` menu offers beside
+// the agent's built-ins. A folder with none, or one it cannot read, is an
+// empty list, at most max of them.
+type SlashCommands interface {
+	InFolder(dir string, max int) []domain.SlashCommand
+}
+
 // Transcripts reads what an agent's own transcript says, on this host. The
 // transcript is the CLI's. Two things leave the host from it: the first
 // message, at most domain.FirstPromptMaxBytes of it, and, while a browser is
@@ -283,6 +314,19 @@ type Transcripts interface {
 	// conversation itself. "" while there is none yet, and for an agent whose
 	// transcripts this runner cannot read.
 	Teleported(agent domain.Agent, dir string, since time.Time) string
+	// CurrentConversation is the conversation the session's window-0 agent
+	// is in now, by the same rule its chat follows: the one it last said it
+	// is in, which is not the one it was launched in once the person clears
+	// or resumes another (Claude Code, through the runner's status line),
+	// once that one's transcript exists; otherwise the one the session
+	// holds. "" for an agent that never says.
+	CurrentConversation(session domain.Session) string
+	// ServedConversation is the conversation the session's agent, one that
+	// serves its conversation (domain.Agent.ServesConversation), was last
+	// heard working in: its process is listened to from the first ask until
+	// it is no longer asked about, or ctx ends. "" while it has said nothing,
+	// and for any other agent.
+	ServedConversation(ctx context.Context, session domain.Session) string
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the
@@ -301,6 +345,9 @@ type ChatBatch struct {
 	// coming, HistoryEnd on its last batch.
 	Older   string
 	Entries []string
+	// Commands are the project's slash commands, on a batch that carries
+	// Reset, for an agent that takes them; nil otherwise.
+	Commands []domain.SlashCommand
 }
 
 // The values of ChatBatch.History.

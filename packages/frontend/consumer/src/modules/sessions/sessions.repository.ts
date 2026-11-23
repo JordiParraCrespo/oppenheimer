@@ -1,6 +1,7 @@
 import {
   type CreateSessionRequest,
   heyApiSdk,
+  type OpenSessionWindowRequest,
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
   type SessionShareResponseDto,
@@ -22,6 +23,7 @@ import {
   type AttachTicket,
   type CreateSessionInput,
   type OpenedSessionWindow,
+  type OpenSessionWindowInput,
   type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
@@ -186,6 +188,29 @@ export function toStartCloudSessionRequest(
   };
 }
 
+/**
+ * The open's body: nothing for a plain shell (`shell` included, which the API
+ * refuses as an agent), and for an agent its id with each launch choice that
+ * was made and its first task. A choice left out is the session's own, which the host fills in.
+ */
+function toOpenSessionWindowRequest({
+  agent,
+  model,
+  effort,
+  permission,
+  prompt,
+}: OpenSessionWindowInput): OpenSessionWindowRequest {
+  if (agent === undefined || agent === 'shell') return {};
+  return {
+    agent,
+    ...(model ? { model } : {}),
+    ...(effort ? { effort } : {}),
+    ...(permission ? { permission } : {}),
+    // A task of only whitespace is no task: the API would refuse it.
+    ...(prompt?.trim() ? { prompt } : {}),
+  };
+}
+
 export function toCreateSessionRequest(input: CreateSessionInput): CreateSessionRequest {
   const launch = input.launch
     ? {
@@ -220,9 +245,14 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
 @injectable()
 export class SessionsRepository {
   /**
-   * Every session in the workspace, whatever the endpoint's page size: the
-   * sidebar groups, searches and filters the whole list in the browser, so a
-   * page would be a list that silently ends.
+   * Every session in the workspace that is not resolved, whatever the
+   * endpoint's page size: the sidebar groups, searches and filters the whole
+   * list in the browser, so a page would be a list that silently ends.
+   *
+   * Resolved sessions are left out on the API (`resolved=false`): they are
+   * tombstones no list draws, and they pile up with every session closed, so
+   * walking them made each read of the list several requests (five at 499
+   * sessions with 20 open), on every refetch the workspace stream asks for.
    *
    * The list is walked **by cursor**, at the largest page the API allows, until
    * `meta.nextCursor` is null: no page pays for an offset or a count, and a
@@ -235,7 +265,11 @@ export class SessionsRepository {
       for (;;) {
         const data = await api.body(
           heyApiSdk.findSessions({
-            query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
+            query: {
+              limit: PAGINATION.MAX_LIMIT,
+              resolved: 'false',
+              ...(cursor ? { cursor } : {}),
+            },
           }),
           (body) => Array.isArray(body.data),
         );
@@ -348,6 +382,14 @@ export class SessionsRepository {
       const data = await api.body(
         heyApiSdk.setSessionVisibility({ path: { id }, body: { hidden } }),
       );
+      return toEntity(data);
+    });
+  }
+
+  /** What the agent's last turn left, read: the session is no longer ready for review. */
+  acknowledgeReport(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.REPORT_ACKNOWLEDGE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.acknowledgeSessionReport({ path: { id } }));
       return toEntity(data);
     });
   }
@@ -502,10 +544,16 @@ export class SessionsRepository {
     });
   }
 
-  /** Opens a plain shell in the session's worktree: the window it made, and every window after. */
-  openWindow(id: string): Promise<OpenedSessionWindow> {
+  /**
+   * Opens a window in the session's worktree, a plain shell or with `agent`
+   * that coding agent started in it: the window it made, and every window
+   * after. `shell` is the plain shell, sent as no agent at all, and how an
+   * agent starts is sent only with one.
+   */
+  openWindow(id: string, input: OpenSessionWindowInput = {}): Promise<OpenedSessionWindow> {
     return callApi(SessionsErrors.WINDOW_OPEN_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.openSessionWindow({ path: { id } }));
+      const body = toOpenSessionWindowRequest(input);
+      const data = await api.body(heyApiSdk.openSessionWindow({ path: { id }, body }));
       return { window: toWindow(data.window), windows: data.windows.map(toWindow) };
     });
   }

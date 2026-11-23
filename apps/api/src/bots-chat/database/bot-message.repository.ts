@@ -4,6 +4,7 @@ import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-aut
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
+import type { ChannelTurnLine } from '../domain/bot-channel-turn.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
@@ -57,13 +58,28 @@ export class BotMessageRepository
     // nowhere to go, and nothing is stored.
     const stored: { id: string }[] = await this.dataSource.query(
       `INSERT INTO bot_message (${MESSAGE_COLUMNS}, "createdAt")
-       SELECT ${MESSAGE_VALUES}, $12
+       SELECT ${MESSAGE_VALUES}, $13
         WHERE EXISTS (SELECT 1 FROM bot_conversation WHERE "organizationId" = $2 AND id = $11)
        ON CONFLICT (id) DO NOTHING
        RETURNING id`,
       [...messageParameters(this.mapper.toPersistence(message)), message.createdAt],
     );
     return stored.length === 1;
+  }
+
+  async saveContent(message: BotMessageEntity): Promise<void> {
+    // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
+    const { content, pendingMedia } = this.mapper.toPersistence(message);
+    await this.repository
+      .createQueryBuilder()
+      .update(BotMessageOrmEntity)
+      .set({ content, pendingMedia: () => ':pendingMedia::jsonb' })
+      .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
+      .where('id = :id AND "organizationId" = :organizationId', {
+        id: message.id,
+        organizationId: message.organizationId,
+      })
+      .execute();
   }
 
   async saveSteps(message: BotMessageEntity): Promise<void> {
@@ -123,7 +139,11 @@ export class BotMessageRepository
             WHERE message."organizationId" = $1 AND message."botId" = $2
               AND message.role IN ('user', 'assistant') AND message.content <> ''
             ORDER BY message."createdAt" DESC, message.position DESC
-            LIMIT 1)
+            LIMIT 1),
+          "lastReplyAt" = (
+           SELECT max(message."createdAt") FROM bot_message message
+            WHERE message."organizationId" = $1 AND message."botId" = $2
+              AND message.role = 'assistant' AND message.content <> '')
           WHERE "organizationId" = $1 AND id = $2`,
         [turn.organizationId, turn.botId],
       );
@@ -245,6 +265,16 @@ export class BotMessageRepository
     return records.map((record) => record.content);
   }
 
+  async findTurnLines(organizationId: string, turnId: string): Promise<ChannelTurnLine[]> {
+    // IDX_bot_message_turn.
+    const records = await this.repository.find({
+      where: { organizationId, turnId, role: In(['assistant', 'activity']) },
+      order: { position: 'ASC' },
+      select: { id: true, role: true, content: true, position: true },
+    });
+    return records.map((record) => this.mapper.toChannelTurnLine(record));
+  }
+
   async turnCalledTools(organizationId: string, turnId: string): Promise<boolean> {
     // IDX_bot_message_turn.
     const rows: unknown[] = await this.repository.query(
@@ -262,6 +292,7 @@ export class BotMessageRepository
     turnId: string,
     afterMessageId: string | null,
     limit: number,
+    contactsOnly = false,
   ): Promise<BotMessageEntity[]> {
     // IDX_bot_message_conversation: the conversation's messages before this
     // turn was sent.
@@ -275,6 +306,12 @@ export class BotMessageRepository
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
       );
+    if (contactsOnly) {
+      // PK_bot_turn, once per message read.
+      query.andWhere(
+        `EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      );
+    }
     const records = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
@@ -296,6 +333,11 @@ export class BotMessageRepository
         botId,
       })
       .andWhere(`message.role <> 'activity'`)
+      // A contact's turn is not the owner's words: a dream never learns from it.
+      // PK_bot_turn, once per message read.
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM bot_turn t WHERE t.id = message."turnId" AND t.contact IS NOT NULL)`,
+      )
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .take(limit)
@@ -372,8 +414,9 @@ function isTurnGone(error: unknown): boolean {
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */
-const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId"`;
-const MESSAGE_VALUES = '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11';
+const MESSAGE_COLUMNS = `id, "organizationId", "botId", "turnId", "role", "content", "steps", "position", "event", "attachments", "conversationId", "pendingMedia"`;
+const MESSAGE_VALUES =
+  '$1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9::jsonb, $10::jsonb, $11, $12::jsonb';
 
 function messageParameters(record: BotMessageOrmEntity): unknown[] {
   return [
@@ -388,6 +431,7 @@ function messageParameters(record: BotMessageOrmEntity): unknown[] {
     record.event ? JSON.stringify(record.event) : null,
     JSON.stringify(record.attachments),
     record.conversationId,
+    record.pendingMedia ? JSON.stringify(record.pendingMedia) : null,
   ];
 }
 
@@ -410,10 +454,12 @@ export async function insertMessageWithin(
   // or the images a bot showed are none, and leave the bot's last words there.
   if (message.role === 'activity' || message.role === 'event') return;
   if (message.role === 'assistant' && !message.content) return;
+  // A reply also moves `lastReplyAt`, the sidebar's blue dot; your own words never do.
   await manager.query(
-    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')}
+    `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = ${previewOf('$3::text')},
+       "lastReplyAt" = CASE WHEN $4 = 'assistant' THEN now() ELSE "lastReplyAt" END
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, record.content],
+    [message.organizationId, message.botId, record.content, message.role],
   );
 }
 

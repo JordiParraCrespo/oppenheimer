@@ -26,6 +26,16 @@ export type TaskStatus = z.infer<typeof taskStatusSchema>;
 export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['todo'];
 
 /**
+ * How much a task matters, most first: the order a list sorted by priority
+ * draws them in, and the order of the picker. A task with none (`null`, the
+ * default) sorts after Low. Priority never moves a card on the board: its
+ * place in a column is the person's own order.
+ */
+export const TASK_PRIORITIES = ['urgent', 'high', 'medium', 'low'] as const;
+export const taskPrioritySchema = z.enum(TASK_PRIORITIES);
+export type TaskPriority = z.infer<typeof taskPrioritySchema>;
+
+/**
  * Who made a task: its person, or an agent working for them (a bot, or a call
  * on an API token or an OAuth grant). An agent's task waits in Plan's Inbox
  * until the person triages it.
@@ -91,6 +101,7 @@ export const createTaskSchema = z
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
     focusDate: calendarDateSchema.nullable().optional(),
+    priority: taskPrioritySchema.nullable().optional(),
   })
   .refine(dueTimeHasDate, { path: ['dueTime'] });
 
@@ -112,6 +123,13 @@ export const updateTaskSchema = z
     dueTime: timeOfDaySchema.nullable().optional(),
     /** The day it is on To do from; `null` takes it off. */
     focusDate: calendarDateSchema.nullable().optional(),
+    /**
+     * `true` takes it off To do, its due date included, until it gets a TODO
+     * day again or its due date changes, which put it back on their own.
+     */
+    offTodo: z.boolean().optional(),
+    /** `null` takes the priority off. */
+    priority: taskPrioritySchema.nullable().optional(),
     /** Marks the task blocked and says why; `null` unblocks it. Done unblocks it too. */
     blockedReason: blockedReasonSchema.nullable().optional(),
     expectedVersion: expectedVersionSchema.optional(),

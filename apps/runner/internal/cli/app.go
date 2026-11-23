@@ -38,6 +38,7 @@ import (
 	filestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/slashcommands"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/statuspty"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
@@ -244,7 +245,7 @@ func New(version string) (*App, error) {
 		Transcripts: transcripts,
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
-		StatusLine: statusLineCommand(),
+		StatusLine: statusLineCommand,
 		// OpenCode serves its conversation on a loopback port the runner
 		// picks, which the chat view reads it through.
 		FreePort: freeLoopbackPort,
@@ -252,13 +253,16 @@ func New(version string) (*App, error) {
 		// probe and keeps what it reports: its own word on what it does,
 		// ahead of the screen classifier.
 		ProgramStatus: programStatus,
+		// The same wrappers, found in the process table: what makes sure an
+		// agent that ignores its hangup does not outlive its session.
+		Wrappers: programStatus,
 	})
 	if err != nil {
 		return nil, err
 	}
 	app.Sessions = sessions
 	app.Conversations = sessionsapp.NewConversations(sessionsapp.ConversationsOptions{
-		Sessions: sessions, Transcripts: transcripts,
+		Sessions: sessions, Transcripts: transcripts, Commands: slashcommands.Reader{},
 	})
 	// Agents run agents: children of a session's agent, on this host.
 	app.Children = sessionsapp.NewChildren(sessionsapp.ChildrenOptions{

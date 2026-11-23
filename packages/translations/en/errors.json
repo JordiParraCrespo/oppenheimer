@@ -248,6 +248,10 @@
     "WHATSAPP_012": "No number is waiting for a code. Enter your number first.",
     "WHATSAPP_013": "That can't be your own number here. Enter the number you write from, not the one linked.",
     "WHATSAPP_014": "Too many wrong codes. Ask for a new code and try again.",
+    "WHATSAPP_015": "Confirm your own number first. Only then can other chats be allowed on this number.",
+    "WHATSAPP_016": "That chat isn’t allowed on this number any more.",
+    "WHATSAPP_017": "Your own chat with the number is always yours, and the number can’t talk to itself.",
+    "WHATSAPP_018": "This number allows as many chats as it can. Remove one first.",
     "TELEGRAM_001": "That Telegram bot isn't connected any more.",
     "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
     "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
@@ -318,6 +322,10 @@
     "VOICE_005": "Dictation isn’t set up. Sign in to ChatGPT in Settings → Model providers.",
     "VOICE_006": "The recording couldn’t be transcribed. Try again in a moment.",
     "VOICE_007": "Too many dictations for now. Try again in a moment.",
+    "VOICE_008": "Voice notes aren’t set up for this workspace. Add an OpenAI or ElevenLabs key in Settings → Model providers.",
+    "VOICE_009": "The voice note couldn’t be spoken. Try again in a moment.",
+    "VOICE_010": "Too many voice notes for now. Try again in a moment.",
+    "VOICE_011": "That text is too long for one voice note.",
     "BOTS_029": "That tool doesn't exist. Reload the page.",
     "BOTS_030": "This tool is approved one call at a time, so it can't be always allowed.",
     "BOTS_031": "This bot already has as many rules as it can hold. Remove one first.",
@@ -336,7 +344,8 @@
     "SESSIONS_056": "This host's runner can't open or close terminals. Update the runner on the host.",
     "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
     "SESSIONS_058": "That terminal is no longer open.",
-    "SESSIONS_059": "The host refused to change the session's terminals."
+    "SESSIONS_059": "The host refused to change the session's terminals.",
+    "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
   },
   "notFound": {
     "title": "That page does not exist",

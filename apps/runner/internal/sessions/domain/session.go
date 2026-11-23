@@ -304,6 +304,17 @@ func (s Session) RepositoryOf(checkout Checkout) Repository {
 // TmuxName is the tmux session name: the id, prefixed.
 func (s Session) TmuxName() string { return Prefix + s.ID }
 
+// TakesSecond reports whether agent may run in another window of this
+// session without taking over the session's conversation, which is window
+// 0's. Any other kind of agent may: each keeps its own store. A second copy
+// of the session's own agent may only when the session is found by its
+// conversation's id: not when the agent is found by its folder
+// (Agent.NamesConversation), and not when the session continues a cloud
+// one, whose restart continues the newest conversation in the folder.
+func (s Session) TakesSecond(agent Agent) bool {
+	return agent != s.Agent || (agent.NamesConversation() && s.Launch.Teleport == "")
+}
+
 // Target addresses one window for tmux.
 func (s Session) Target(window int) string {
 	return fmt.Sprintf("%s:%d", s.TmuxName(), window)
@@ -361,6 +372,20 @@ func NewID() (string, error) {
 		return "", err
 	}
 	return idEncoding.EncodeToString(raw)[:12], nil
+}
+
+// controlPlaneIDPattern is the shape of a session id the control plane mints:
+// a UUID, which is what the link protocol's `sessionId` accepts.
+var controlPlaneIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// KnownToControlPlane says whether a session id came from the control plane.
+// A session the host minted itself with NewID (a child from `runner sessions
+// run`, one from `runner sessions create`) is the host's alone: the console
+// never sees it, and the link must not carry it, because the control plane
+// refuses any frame naming a session id that is not a UUID — a hello holding
+// one is refused whole and the host stays offline.
+func KnownToControlPlane(id string) bool {
+	return controlPlaneIDPattern.MatchString(id)
 }
 
 // repoPattern is `owner/name` with the characters GitHub allows.

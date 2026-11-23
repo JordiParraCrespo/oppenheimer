@@ -171,22 +171,15 @@ describe('useSessions', () => {
  */
 describe('a deleted session', () => {
   const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
-  const resolved = { id: 'c-1', isProvisioning: false, isResolved: true } as SessionEntity;
 
   function closing(findAll: ReturnType<typeof vi.fn>) {
     const close = vi.fn().mockResolvedValue(live);
-    const { wrapper } = setup({ findAll, close });
+    const { wrapper, queryClient } = setup({ findAll, close });
     const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
       wrapper,
     });
-    return { result, close };
+    return { result, close, queryClient };
   }
-
-  it('is not listed once resolved', async () => {
-    const { wrapper } = setup({ findAll: vi.fn().mockResolvedValue([resolved]) });
-    const { result } = renderHook(() => useSessions(), { wrapper });
-    await waitFor(() => expect(result.current.data).toEqual([]));
-  });
 
   it('leaves the list on the click, before the API or the host has answered', async () => {
     const findAll = vi.fn().mockResolvedValue([live]);
@@ -204,14 +197,20 @@ describe('a deleted session', () => {
     expect(result.current.list.data).toEqual([]);
   }, 10_000);
 
+  /**
+   * The API leaves a resolved session out of the list, so its row going is
+   * what says the host resolved it, and the session's own detail is read again
+   * for a screen that still has it open: no list row writes it any more.
+   */
   it('is read again until its host has resolved it, then the reads stop', async () => {
     const findAll = vi
       .fn()
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
-      .mockResolvedValue([resolved]);
-    const { result } = closing(findAll);
+      .mockResolvedValue([]);
+    const { result, queryClient } = closing(findAll);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     await waitFor(() => expect(result.current.list.data).toHaveLength(1));
 
     result.current.close.mutate({ id: 'c-1' });
@@ -222,6 +221,7 @@ describe('a deleted session', () => {
     await pause(2_500);
     expect(findAll).toHaveBeenCalledTimes(reads);
     expect(result.current.list.data).toEqual([]);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: sessionsKeys.detail('c-1') });
   }, 15_000);
 
   it('comes back, and is not watched, when the close is refused', async () => {
@@ -319,7 +319,7 @@ describe('a deleted session', () => {
       .fn()
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
-      .mockResolvedValue([resolved]);
+      .mockResolvedValue([]);
     const close = vi.fn().mockResolvedValue(live);
     const { wrapper } = setup({ findAll, close });
     const { result } = renderHook(
@@ -568,12 +568,42 @@ describe("a session's terminal windows", () => {
     );
     await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent]));
 
-    const opened = await result.current.open.mutateAsync('s-1');
+    const opened = await result.current.open.mutateAsync({ sessionId: 's-1' });
 
     expect(opened.window).toEqual(shell);
     await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, shell]));
     expect(listWindows).toHaveBeenCalledTimes(1);
-    expect(openWindow).toHaveBeenCalledWith('s-1');
+    expect(openWindow).toHaveBeenCalledWith('s-1', {});
+  });
+
+  it('opens a second agent by name, and adds its window to the session’s', async () => {
+    const codex = { index: 2, name: 'codex', agent: false };
+    const listWindows = vi.fn().mockResolvedValue({ state: 'listed', windows: [agent] });
+    const openWindow = vi.fn().mockResolvedValue({ window: codex, windows: [agent, codex] });
+    const { wrapper } = setup({ listWindows, openWindow });
+    const { result } = renderHook(
+      () => ({ read: useSessionWindows('s-1'), open: useOpenSessionWindow() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent]));
+
+    await result.current.open.mutateAsync({
+      sessionId: 's-1',
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'auto',
+      prompt: 'Fix the picker',
+    });
+
+    expect(openWindow).toHaveBeenCalledWith('s-1', {
+      agent: 'codex',
+      model: 'gpt-6.1-terra',
+      effort: 'high',
+      permission: 'auto',
+      prompt: 'Fix the picker',
+    });
+    await waitFor(() => expect(result.current.read.data?.windows).toEqual([agent, codex]));
   });
 
   it('a close leaves the windows the host answered with', async () => {

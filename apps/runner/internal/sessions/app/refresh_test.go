@@ -235,7 +235,7 @@ func TestRefreshKeepsAWindowOpenedMeanwhile(t *testing.T) {
 	session := h.open(t)
 
 	h.refreshDuring(t, session.ID, func() {
-		if _, err := h.svc.OpenWindow(context.Background(), session.ID); err != nil {
+		if _, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{}); err != nil {
 			t.Errorf("open window: %v", err)
 		}
 	})
@@ -331,7 +331,7 @@ func TestRefreshesRacingCommandsStayConsistent(t *testing.T) {
 		}()
 	}
 	for range 20 {
-		if w, err := h.svc.OpenWindow(ctx, session.ID); err == nil {
+		if w, err := h.svc.OpenWindow(ctx, session.ID, app.WindowInput{}); err == nil {
 			_ = h.svc.CloseWindow(ctx, session.ID, w.Index)
 		}
 	}
@@ -356,7 +356,7 @@ func TestCloseWindowOfAnExitedShellSucceeds(t *testing.T) {
 	h := newRefreshHarness(t)
 	session := h.open(t)
 	ctx := context.Background()
-	shell, err := h.svc.OpenWindow(ctx, session.ID)
+	shell, err := h.svc.OpenWindow(ctx, session.ID, app.WindowInput{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -585,6 +585,7 @@ are never reissued.
 | `SESSIONS_057` <a id="sessions_057" /> | The agent's window cannot be closed; close the session instead | 409 |
 | `SESSIONS_058` <a id="sessions_058" /> | The session has no such terminal | 404 |
 | `SESSIONS_059` <a id="sessions_059" /> | The host refused to change the session's terminals | 409 |
+| `SESSIONS_060` <a id="sessions_060" /> | This host's runner cannot start a second agent in a session | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -662,6 +663,9 @@ closing window 0, refused before the host is asked. `058` is a window the host d
 hold (the runner's `SESS_001`), and `059` any other refusal, with the runner's code as
 `upstreamCode`. A host with no link is `SESSIONS_016` and one that does not answer
 `SESSIONS_031`; reading the windows answers both of the first two as a `state` instead.
+`SESSIONS_060` is an open that asks for a second coding agent in the new window on a host
+whose live runner did not name `session.window.agent`: that runner would open a plain shell
+and ignore the agent, so the open is refused before the host is asked.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -910,9 +914,9 @@ never dreamed, or its latest dream was undone already: only the latest can be.
 `BOTS_042` is a delete of a bot that answers you on a Telegram bot. Choose
 another bot, or none, to answer there (Settings → Telegram), then delete it.
 
-`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default: it
-answers you there. Choose another bot, or none (Settings → WhatsApp), then
-delete it.
+`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default, or
+the bot of one of its allowed chats: it answers there. Choose another bot, or
+none (Settings → WhatsApp), then delete it.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -930,12 +934,26 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 | `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
 | `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
 | `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
+| `VOICE_008` <a id="voice_008" />     | Speech synthesis is not set up for this workspace            | 409  |
+| `VOICE_009` <a id="voice_009" />     | The text-to-speech provider could not speak the text         | 502  |
+| `VOICE_010` <a id="voice_010" />     | The text-to-speech provider is rate limiting this workspace  | 429  |
+| `VOICE_011` <a id="voice_011" />     | That text cannot be spoken as one voice note                 | 422  |
 
 `VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
-(Settings → Model providers), or give the deployment a speech-to-text server.
-A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
-falls back to the deployment's server when there is one; a rate limit
+or add an OpenAI, Groq or ElevenLabs key (Settings → Model providers), or give
+the deployment a speech-to-text server. The provider chosen under Voice on that
+page is tried first; one that cannot transcribe (`VOICE_006`, or a lapsed
+sign-in or removed key) falls back to the next one available; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
+
+`VOICE_008` to `VOICE_011` are a bot's WhatsApp voice note being spoken.
+`VOICE_008` is a workspace with no provider that speaks: no OpenAI or
+ElevenLabs key, and no text-to-speech server on the deployment (`VOICE_TTS_*`
+in `.env.example`); the bot is refused before any card and told to send text.
+`VOICE_009` is the provider unreachable, refusing (an ElevenLabs voice the
+account cannot use, say), or answering something that is not Ogg/Opus audio of
+at most two minutes, or Ogg/Opus that decodes to silence; `VOICE_010` is it rate limiting the key, with
+`Retry-After`. `VOICE_011` is an empty text or one longer than 600 characters.
 
 ## Inbox
 
@@ -1125,6 +1143,10 @@ one of their hosts, and the messages it sees, kept for their bots. See
 | `WHATSAPP_012` <a id="whatsapp_012" /> | No number is waiting to be confirmed                        | 409  |
 | `WHATSAPP_013` <a id="whatsapp_013" /> | That number cannot be your own number here                  | 422  |
 | `WHATSAPP_014` <a id="whatsapp_014" /> | Too many wrong codes                                        | 429  |
+| `WHATSAPP_015` <a id="whatsapp_015" /> | Confirm your own number before allowing other chats         | 409  |
+| `WHATSAPP_016` <a id="whatsapp_016" /> | That chat is not allowed on this number                     | 404  |
+| `WHATSAPP_017` <a id="whatsapp_017" /> | That chat cannot be allowed                                 | 422  |
+| `WHATSAPP_018` <a id="whatsapp_018" /> | That is as many chats as one number allows                  | 409  |
 
 `WHATSAPP_005` is a runner that predates WhatsApp, or one started with
 `RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
@@ -1141,6 +1163,15 @@ a phone number, or is the linked number itself. `WHATSAPP_011` is a wrong
 code, or one past its ten minutes; after five wrong codes it is locked
 (`WHATSAPP_014`) and a new one has to be asked for. `WHATSAPP_012` is a
 confirm with no code waiting.
+
+`WHATSAPP_015` to `WHATSAPP_018` are a number's allowed chats
+(`/v1/whatsapp/accounts/{id}/grants`, `/v1/whatsapp/accounts/{id}/routes`, and
+the bot tool `allow_whatsapp_chat`):
+the groups and people besides the owner who may talk to the number's bots,
+each with the bot that answers there. Nothing is allowed until the owner's own
+number is confirmed (`WHATSAPP_015`). `WHATSAPP_017` is the owner's own chat,
+which is always theirs, or the number's chat with itself. A number allows
+1,000 chats at most (`WHATSAPP_018`).
 
 ## Telegram
 
@@ -1309,6 +1340,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
 | `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
+| `WA_005` <a id="wa_005" />           | This host knows no such WhatsApp voice note  | 404  |
+| `WA_006` <a id="wa_006" />           | The WhatsApp voice note is too large to hand over | 413  |
+| `WA_007` <a id="wa_007" />           | WhatsApp would not hand over the voice note  | 502  |
+| `WA_008` <a id="wa_008" />           | That audio is not a voice note WhatsApp can play | 415  |
 | `TG_001` <a id="tg_001" />           | Telegram refused the bot's token             | 400  |
 | `TG_002` <a id="tg_002" />           | This host already holds another Telegram bot | 409  |
 | `TG_003` <a id="tg_003" />           | No Telegram bot is connected on this host    | 503  |
@@ -1411,6 +1446,22 @@ for a linked device, and going over one costs the number. `WA_003`
 after WhatsApp's own `rate-overlimit` also stops every send from the host for
 ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
 for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
+
+`WA_005` to `WA_007` answer `whatsapp.media.get`, the control plane asking
+for a voice note to transcribe. The host keeps what fetching one takes (its
+media key and path, never the audio) for 48 hours, so an older one, or one
+from before the host was updated, is `WA_005`. `WA_006` is a note longer than
+one link frame carries, about two minutes. `WA_007` is WhatsApp's media
+server refusing the download. The bot then reads the note as one it could
+not hear.
+
+`whatsapp.send.voice`, a bot's spoken reply, is answered like a text: `WA_002`,
+`WA_003` (WhatsApp refused the upload or the message) and `WA_004`, the same
+budget a text spends. Before anything is uploaded the host refuses audio
+larger than one frame (`WA_006`) and audio that is not Ogg/Opus, runs
+outside 1 to 120 seconds or is silent from end to end (`WA_008`). The control plane's link refuses audio
+past one frame itself, as `WA_006`, before it is sent (a larger frame would
+close the host's link); the bot reads either as `WHATSAPP_008`.
 
 The `TG_*` codes reach the control plane the same way, in answer to
 `telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).

@@ -1,4 +1,5 @@
 import type { BotSessionWakeState } from '@oppenheimer/shared';
+import { promptText } from './bot-prompt-text.policy';
 import { wakeStateOf } from './bot-subscription.policy';
 
 /**
@@ -48,7 +49,10 @@ export function sessionWaitAnswer(
   waitedSeconds: number,
 ): string {
   if (!outcome.settled) {
-    return `Session ${sessionId} is still working after ${waitedSeconds}s. Wait again, watch it with watch_session to be woken when it ends, or tell the person it is under way.`;
+    return promptText('tools/sessions.wait-still-working', {
+      sessionId,
+      waitedSeconds: String(waitedSeconds),
+    });
   }
   const what =
     outcome.state === 'resolved'
@@ -62,5 +66,9 @@ export function sessionWaitAnswer(
             : outcome.state === 'cancelled'
               ? 'had its task stopped'
               : 'had its task expire before it ran';
-  return `Session ${sessionId} ${what} (after ${waitedSeconds}s). get_session shows its result or what it waits on; read_session what it did.`;
+  return promptText('tools/sessions.wait-ended', {
+    sessionId,
+    what,
+    waitedSeconds: String(waitedSeconds),
+  });
 }

@@ -322,6 +322,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
 		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
 		ChatBatchMaxEntries  int               `json:"chatBatchMaxEntries"`
+		ChatCommandsMax      int               `json:"chatCommandsMax"`
 		ExecOutputMaxBytes   int               `json:"execOutputMaxBytes"`
 		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
 	}
@@ -352,6 +353,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
 		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
 		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
+		"chatCommandsMax":      {constants.ChatCommandsMax, link.ChatCommandsMax},
 		"execOutputMaxBytes":   {constants.ExecOutputMaxBytes, link.ExecOutputMaxBytes},
 		"terminalScreenMax":    {constants.TerminalScreenMax, link.TerminalScreenMaxBytes},
 	} {
@@ -374,13 +376,14 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionCloudReply, link.CapabilitySessionTeleport,
 		link.CapabilitySessionWatch,
-		link.CapabilityWhatsapp,
+		link.CapabilityWhatsapp, link.CapabilityWhatsappVoice, link.CapabilityWhatsappVoiceSend,
 		link.CapabilityTelegram,
 		link.CapabilitySharedPreview,
 		link.CapabilityTranscriptRead,
 		link.CapabilityHostExec,
 		link.CapabilityTerminalDrive,
 		link.CapabilitySessionWindowsList,
+		link.CapabilitySessionWindowAgent,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

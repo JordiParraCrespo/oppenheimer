@@ -2,7 +2,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { SessionTerminalWindow } from '@oppenheimer/shared';
 import { SessionErrors } from '../domain/sessions.errors';
 import { SessionWindowMapper } from '../session-window.mapper';
-import type { SessionWindowsOutcome } from './session-windows.port';
+import type { SessionWindowOpenOutcome } from './session-windows.port';
 
 /** The runner's `SESS_001`: no such session or window on the host. */
 const RUNNER_NOT_FOUND = 'SESS_001';
@@ -13,10 +13,11 @@ const RUNNER_NOT_FOUND = 'SESS_001';
  * session) the host does not hold, and any other refusal is `SESSIONS_059`
  * with the runner's code kept as `upstreamCode`, so a code a later runner adds
  * is still a documented problem. Not reaching the host is `SESSIONS_016`, a
- * runner too old to answer `SESSIONS_056`, no answer in time `SESSIONS_031`.
+ * runner too old to answer `SESSIONS_056`, one too old to start a second
+ * agent `SESSIONS_060`, no answer in time `SESSIONS_031`.
  */
 export function changedOrThrow(
-  outcome: SessionWindowsOutcome,
+  outcome: SessionWindowOpenOutcome,
   hostId: string,
 ): { windows: SessionTerminalWindow[]; opened?: number } {
   switch (outcome.kind) {
@@ -32,6 +33,10 @@ export function changedOrThrow(
     case 'not_supported':
       throw new AppError(SessionErrors.WINDOWS_UNSUPPORTED_BY_RUNNER, {
         detail: `Update the runner on host ${hostId} to open terminals in a session`,
+      });
+    case 'agent_not_supported':
+      throw new AppError(SessionErrors.WINDOW_AGENT_UNSUPPORTED_BY_RUNNER, {
+        detail: `Update the runner on host ${hostId} to start a second agent in a session`,
       });
     case 'timed_out':
       throw new AppError(SessionErrors.FOLDERS_TIMED_OUT, {

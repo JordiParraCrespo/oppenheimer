@@ -68,6 +68,26 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async acknowledge(scope: AccessScope, id: string): Promise<boolean> {
+    // Read through the scope first: the write names the row the caller may reach.
+    const found = await this.scopedQuery(scope)
+      .select(['bot.id', 'bot.organizationId'])
+      .andWhere('bot.id = :id', { id })
+      .getOne();
+    if (!found) return false;
+    await this.repository
+      .createQueryBuilder()
+      .update(BotOrmEntity)
+      // The database's clock, the one every message's time is written with.
+      .set({ acknowledgedAt: () => 'now()' })
+      .where('id = :id AND "organizationId" = :organizationId', {
+        id: found.id,
+        organizationId: found.organizationId,
+      })
+      .execute();
+    return true;
+  }
+
   async findForTurn(organizationId: string, botId: string): Promise<Option<BotEntity>> {
     // UQ_bot_organization_id.
     const record = await this.repository.findOne({ where: { organizationId, id: botId } });
@@ -160,15 +180,19 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
 
   async delete(bot: BotEntity): Promise<'deleted' | { boundTo: BotDeleteBinding }> {
     // Documents, revisions and memory cascade with the bot (their composite
-    // keys); a Telegram bot it answers on, or a WhatsApp number it is the
-    // default of, holds it (`NO ACTION`).
+    // keys); a Telegram bot it answers on, a WhatsApp number it is the
+    // default of, or a WhatsApp chat it answers in, holds it (`NO ACTION`).
     try {
       await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
       return 'deleted';
     } catch (error) {
       const constraint = constraintOf(error);
       if (constraint === 'FK_telegram_account_answering_bot') return { boundTo: 'telegram' };
-      if (constraint === 'FK_whatsapp_account_answering_bot') return { boundTo: 'whatsapp' };
+      if (
+        constraint === 'FK_whatsapp_account_answering_bot' ||
+        constraint === 'FK_whatsapp_chat_grant_bot'
+      )
+        return { boundTo: 'whatsapp' };
       throw error;
     }
   }

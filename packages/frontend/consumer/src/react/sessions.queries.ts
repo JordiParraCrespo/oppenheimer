@@ -19,6 +19,7 @@ import {
 import type {
   CreateSessionInput,
   OpenedSessionWindow,
+  OpenSessionWindowInput,
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
@@ -130,9 +131,11 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
  * The sessions in the caller's workspace: the sidebar and the sessions list.
  *
  * A resolved session is a tombstone the API keeps so its directory and branch
- * are never reissued; the list leaves it out, though its detail is still
- * written for a screen that has it open. It polls while a row is starting or a
- * close this console asked for has not resolved.
+ * are never reissued; the list asks the API to leave it out
+ * (`SessionsRepository.findAll`). A close this console watched that ends with
+ * its row gone re-reads that one session's detail, for a screen that has it
+ * open. It polls while a row is starting or a close this console asked for has
+ * not resolved.
  *
  * Each row is also written to that session's detail, so opening a session from
  * the list renders on the click; a detail read after this list was asked for
@@ -183,15 +186,15 @@ export function useSessionListQuery() {
       const askedAt = Date.now();
       const sessions = await app.sessions.findAll();
       seedDetails(queryClient, sessions, sessionsKeys.detail, askedAt);
-      const unresolved = sessions.filter((session) => !session.isResolved);
       const closing = closesOf(queryClient);
       for (const id of closing.keys()) {
-        const row = unresolved.find((session) => session.id === id);
+        const row = sessions.find((session) => session.id === id);
         // Resolved, or refused by its host: either way the host has answered,
         // and a refused row comes back saying so.
         if (!row || row.closeRefusal) unwatchClose(queryClient, id);
+        if (!row) void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
       }
-      return unresolved.filter((session) => !closing.has(session.id));
+      return sessions.filter((session) => !closing.has(session.id));
     },
   };
 }
@@ -486,6 +489,16 @@ export function useSetSessionHidden(
   return useSessionPatch(({ sessions }, { id, hidden }) => sessions.setHidden(id, hidden), options);
 }
 
+/**
+ * Mark what the session's last turn left as read, as opening it does: its
+ * group falls from `ready-for-review` to `idle` and the sidebar's blue dot goes.
+ */
+export function useAcknowledgeSessionReport(
+  options?: UseMutationOptions<SessionEntity, Error, string>,
+) {
+  return useSessionPatch(({ sessions }, id) => sessions.acknowledgeReport(id), options);
+}
+
 export function useMoveSession(
   options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
 ) {
@@ -774,10 +787,20 @@ export function useSessionWindows(sessionId: string | undefined) {
   });
 }
 
-/** Opens a shell in a session; its answer is written to the session's windows. */
-export const useOpenSessionWindow = mutation<OpenedSessionWindow, string>({
-  run: (app, sessionId) => app.sessions.openWindow(sessionId),
-  update: (queryClient, opened, sessionId) => {
+/**
+ * Opens a window in a session: no `agent` (or `shell`) for a plain shell, or
+ * a coding agent beside the session's own in window 0, started with the
+ * `model`, `effort` and `permission` picked for it, each left out the
+ * session's own, and on the first `prompt` typed for it. A runner too old to start one refuses with `SESSIONS_060`.
+ */
+export interface OpenSessionWindowVariables extends OpenSessionWindowInput {
+  sessionId: string;
+}
+
+/** Opens a shell, or a second agent, in a session; its answer is written to the session's windows. */
+export const useOpenSessionWindow = mutation<OpenedSessionWindow, OpenSessionWindowVariables>({
+  run: (app, { sessionId, ...input }) => app.sessions.openWindow(sessionId, input),
+  update: (queryClient, opened, { sessionId }) => {
     queryClient.setQueryData<SessionWindows>(sessionsKeys.windows(sessionId), {
       state: 'listed',
       windows: opened.windows,

@@ -11,7 +11,13 @@ import {
   useSendBotMessage,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
-import { dictateInto, dictationSlots, ErrorAlert, useDictation } from '@oppenheimer/frontend-web';
+import {
+  ComposerEmojiBox,
+  dictateInto,
+  dictationSlots,
+  ErrorAlert,
+  useDictation,
+} from '@oppenheimer/frontend-web';
 import {
   BOT_MESSAGE_MAX,
   BOT_PROVIDER_CATALOG,
@@ -21,7 +27,7 @@ import {
 } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
 import { BotPaneDrop } from '@/features/bots/components/bot-pane-drop';
@@ -31,6 +37,7 @@ import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBotPastes } from '@/features/bots/hooks/use-bot-pastes';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useComposerSuggestion } from '@/features/bots/hooks/use-composer-suggestion';
 import { useEscapeToStop } from '@/features/bots/hooks/use-escape-to-stop';
 import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
@@ -42,6 +49,7 @@ import {
 } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
+import { idlePlaceholder, placeholderKey } from '@/features/bots/lib/idle-placeholder';
 import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
@@ -72,6 +80,11 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * the field brings back what you sent before and Down walks back to your
  * draft (`useSentHistory`); while it does, the box's caption says which
  * one ("History 1/2").
+ *
+ * Once the bot has answered and the field is empty, it offers a guess at
+ * what you will write next, greyed out where the placeholder is, the way
+ * Claude Code does (`useComposerSuggestion`): Tab writes it into the field, to
+ * send as it is or to edit first; typing anything else ignores it.
  *
  * Images ride the message: the paperclip, a paste, or a drop holds them as
  * tiles over the text, each uploaded at once (`useBotImages`). On the bot's
@@ -113,6 +126,7 @@ export function BotComposer({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [draft, setDraft] = useBotDraft(botId);
+  const [idle] = useState(() => idlePlaceholder(Math.random()));
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const recall = useSentHistory(botId, draft, setDraft);
@@ -154,6 +168,12 @@ export function BotComposer({
     builtIn.notice;
   const failure = send.error ?? cancel.error ?? builtIn.error;
   const running = active?.status === 'running';
+  const suggested = useComposerSuggestion(botId, field, {
+    busy: active !== null || send.isPending || waiting > 0,
+    draft,
+    images: images.images.length,
+    notice: Boolean(builtIn.notice),
+  });
   const message = (steer: boolean) => ({
     id: botId,
     content: pastes.content,
@@ -205,10 +225,12 @@ export function BotComposer({
     pastes.onPaste(event);
   }
 
-  // A long paste's label is taken out whole first; the rest of the keys belong
-  // to the `/` menu while it is open, else to the walk through what you sent.
+  // A long paste's label is taken out whole first, then Tab takes the
+  // suggestion; the rest of the keys belong to the `/` menu while it is open,
+  // else to the walk through what you sent.
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     if (pastes.onKeyDownCapture(event)) return;
+    if (suggested.onKeyDownCapture(event)) return;
     if (slash.open) slash.onKeyDownCapture(event);
     else recall.onKeyDownCapture(event);
   }
@@ -252,8 +274,8 @@ export function BotComposer({
           builtIn.reset();
         }}
       />
-      <div ref={box} className="relative">
-        {slash.open ? (
+      <ComposerEmojiBox ref={box} draft={draft} setDraft={setDraft}>
+        {slash.groups ? (
           <BotSlashMenu
             builtIns={slash.groups.builtIns}
             skills={slash.groups.skills}
@@ -294,11 +316,7 @@ export function BotComposer({
                   ))
                 : undefined
             }
-            placeholder={
-              running
-                ? t('bots.chat.placeholderRunning', { name })
-                : t('bots.chat.placeholder', { name })
-            }
+            placeholder={suggested.suggestion ?? t(placeholderKey(running, idle), { name })}
             tools={tools}
             engine={engine}
             above={
@@ -320,10 +338,11 @@ export function BotComposer({
               send: t('bots.chat.send'),
               stop: t('bots.chat.stop'),
               attach: t('bots.chat.images.attach'),
+              field: t('bots.chat.field', { name }),
             }}
           />
         </DropZone>
-      </div>
+      </ComposerEmojiBox>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
     </>
   );

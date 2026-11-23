@@ -1,8 +1,13 @@
-import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
+import {
+  type SessionChat as Chat,
+  offeredSuggestion,
+  type SessionAgent,
+} from '@oppenheimer/frontend-consumer';
 import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatFeedbackDraftCard } from '../components/chat-feedback-draft';
 import { type ChatSendResult, SessionChatComposer } from '../components/session-chat-composer';
 import type { HeldFile } from '../hooks/use-held-files';
 import { useChatState } from '../hooks/use-session-chat';
@@ -50,6 +55,8 @@ export function SessionChatSend({
   agent,
   files,
   upload,
+  hostCommands = false,
+  onOpenTerminal,
   onSent,
 }: {
   chat: Chat;
@@ -59,6 +66,14 @@ export function SessionChatSend({
   files?: FileHandOff;
   /** Puts one file in the agent's prompt; resolves once the host has pasted its path. */
   upload?: (file: File) => Promise<void>;
+  /**
+   * The agent runs on a host, which names the project's slash commands: the
+   * composer offers a `/` menu for a Claude Code session. A cloud session's
+   * replies take none.
+   */
+  hostCommands?: boolean;
+  /** Shows the session's terminal, where Claude Code's own review of a drafted report opens. */
+  onOpenTerminal?: () => void;
   onSent: () => void;
 }) {
   const { t } = useTranslation();
@@ -145,6 +160,19 @@ export function SessionChatSend({
           onSendQueued={(id) => chat.sendQueued(id)}
           onUnqueue={(id) => chat.unqueue(id)}
           onCompact={() => chat.post('/compact')}
+          // Claude Code's commands are the ones the menu knows; a host that
+          // predates the project's list still takes the built-ins.
+          suggestion={offeredSuggestion(last, state.suggestion)}
+          commands={hostCommands && agent === 'claude-code' ? (state.commands ?? []) : null}
+          feedback={
+            state.feedback ? (
+              <ChatFeedbackDraftCard
+                draft={state.feedback}
+                onPress={(action) => chat.pressFeedback(action)}
+                onOpenTerminal={onOpenTerminal}
+              />
+            ) : undefined
+          }
         />
       </div>
     </div>

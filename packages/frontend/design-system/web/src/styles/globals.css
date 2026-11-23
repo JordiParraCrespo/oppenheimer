@@ -162,6 +162,12 @@
     --danger-surface: rgba(232, 39, 44, 0.11);
     --info-surface: rgba(0, 113, 227, 0.11);
 
+    /* ---- Find — a match painted in text, and the one the find is on --
+       Status amber, not the selection's blue: a found word must not read as
+       text the reader selected. The current match is the stronger wash. */
+    --find-match: rgba(255, 179, 0, 0.28);
+    --find-current: rgba(255, 149, 0, 0.62);
+
     /* ---- Sidebar — its own surface tier ------------------------------ */
     --sidebar: #fafafb;
     --sidebar-fg: var(--op-gray-900);
@@ -219,6 +225,10 @@
        the frame's own near-black, `#0b0b0c`, in both themes, because it is
        the hardware's colour and not the UI's. */
     --device-bezel: #0b0b0c;
+    /* Words on that screen while it has no picture: light on the bezel's
+       black in both themes, for the same reason. */
+    --device-screen-fg: rgba(255, 255, 255, 0.88);
+    --device-screen-fg-muted: rgba(255, 255, 255, 0.58);
     --term-selection: rgba(0, 113, 227, 0.16);
     /* ANSI magenta and cyan have no UI counterpart — nothing in the product is
        coloured with them — but a real PTY emits all sixteen slots, so the two
@@ -292,6 +302,38 @@
     --file-icon-yml: var(--file-icon-red);
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
+    /* The types internal/file-icon-set.ts adds: vendors' marks and the PDF page. */
+    --file-icon-clojure: var(--file-icon-blue);
+    --file-icon-cmake: var(--file-icon-blue);
+    --file-icon-crystal: var(--file-icon-gray);
+    --file-icon-dart: var(--file-icon-cyan);
+    --file-icon-dotnet: var(--file-icon-indigo);
+    --file-icon-elixir: var(--file-icon-purple);
+    --file-icon-elm: var(--file-icon-cyan);
+    --file-icon-erlang: var(--file-icon-red);
+    --file-icon-font: var(--file-icon-gray);
+    --file-icon-fsharp: var(--file-icon-cyan);
+    --file-icon-git: var(--file-icon-red);
+    --file-icon-gleam: var(--file-icon-pink);
+    --file-icon-gnu: var(--file-icon-red);
+    --file-icon-gradle: var(--file-icon-teal);
+    --file-icon-haskell: var(--file-icon-indigo);
+    --file-icon-java: var(--file-icon-orange);
+    --file-icon-julia: var(--file-icon-purple);
+    --file-icon-jupyter: var(--file-icon-orange);
+    --file-icon-kotlin: var(--file-icon-purple);
+    --file-icon-lua: var(--file-icon-blue);
+    --file-icon-nim: var(--file-icon-yellow);
+    --file-icon-nix: var(--file-icon-blue);
+    --file-icon-ocaml: var(--file-icon-orange);
+    --file-icon-pdf: var(--file-icon-red);
+    --file-icon-perl: var(--file-icon-blue);
+    --file-icon-php: var(--file-icon-indigo);
+    --file-icon-purescript: var(--file-icon-gray);
+    --file-icon-r: var(--file-icon-blue);
+    --file-icon-scala: var(--file-icon-red);
+    --file-icon-solidity: var(--file-icon-gray);
+    --file-icon-vim: var(--file-icon-green);
 
     /* A bot's avatar: its drawn face (or its initials) on one of the
        export's eight colours (`AV_COLORS`), an identity like a file's mark,
@@ -586,6 +628,9 @@
     --danger-surface: rgba(255, 69, 58, 0.14);
     --info-surface: rgba(41, 151, 255, 0.14);
 
+    --find-match: rgba(255, 179, 0, 0.24);
+    --find-current: rgba(255, 159, 10, 0.55);
+
     --sidebar: #161618;
     --sidebar-fg: var(--op-gray-50);
     --sidebar-muted: #8f8f95;
@@ -848,6 +893,8 @@
   --color-warning-surface: var(--warning-surface);
   --color-danger-surface: var(--danger-surface);
   --color-info-surface: var(--info-surface);
+  --color-find-match: var(--find-match);
+  --color-find-current: var(--find-current);
   --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar-item-hover: var(--sidebar-item-hover);
   --color-sidebar-item-active: var(--sidebar-item-active);
@@ -859,6 +906,8 @@
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
   --color-device-bezel: var(--device-bezel);
+  --color-device-screen-fg: var(--device-screen-fg);
+  --color-device-screen-fg-muted: var(--device-screen-fg-muted);
   --color-chat-ground: var(--chat-ground);
   --color-chat-wash: var(--chat-wash);
   --color-chat-spinner: var(--chat-spinner);
@@ -1363,6 +1412,8 @@
   --trees-file-icon-color-database: var(--file-icon-database);
   --trees-file-icon-color-docker: var(--file-icon-docker);
   --trees-file-icon-color-eslint: var(--file-icon-eslint);
+  --trees-file-icon-color-font: var(--file-icon-font);
+  --trees-file-icon-color-git: var(--file-icon-git);
   --trees-file-icon-color-go: var(--file-icon-go);
   --trees-file-icon-color-graphql: var(--file-icon-graphql);
   --trees-file-icon-color-html: var(--file-icon-html);

@@ -1,8 +1,16 @@
-import { heyApiSdk, type WhatsappAccountResponseDto } from '@oppenheimer/api-client';
+import {
+  heyApiSdk,
+  type WhatsappAccountResponseDto,
+  type WhatsappChatGrantResponseDto,
+  type WhatsappChatRouteResponseDto,
+} from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
+import { WHATSAPP_ROUTE_CHATS_MAX } from '@oppenheimer/shared/schemas/whatsapp';
 import { injectable } from 'inversify';
 import { WhatsappErrors } from './whatsapp.errors';
 import { WhatsappAccountEntity } from './whatsapp-account.entity';
+import { WhatsappChatGrantEntity } from './whatsapp-chat-grant.entity';
+import { type WhatsappChatAnswer, WhatsappChatRouteEntity } from './whatsapp-chat-route.entity';
 
 function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
   return new WhatsappAccountEntity(
@@ -21,6 +29,34 @@ function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
     data.ownerNumber ?? null,
     data.ownerPendingNumber ?? null,
     data.ownerCodeExpiresAt ? new Date(data.ownerCodeExpiresAt) : null,
+  );
+}
+
+function toGrant(data: WhatsappChatGrantResponseDto): WhatsappChatGrantEntity {
+  return new WhatsappChatGrantEntity(
+    data.id,
+    data.accountId,
+    data.chatId,
+    data.chatKind,
+    data.chatName ?? null,
+    data.botId ?? null,
+    data.grantedByBotId ?? null,
+    new Date(data.grantedAt),
+  );
+}
+
+function toChatRoute(
+  accountId: string,
+  data: WhatsappChatRouteResponseDto,
+): WhatsappChatRouteEntity {
+  return new WhatsappChatRouteEntity(
+    accountId,
+    data.chatId,
+    data.chatKind,
+    data.chatName ?? null,
+    data.messageCount,
+    data.lastAt ? new Date(data.lastAt) : null,
+    data.grant ? toGrant(data.grant) : null,
   );
 }
 
@@ -82,6 +118,47 @@ export class WhatsappRepository {
     return callApi(WhatsappErrors.OWNER_CONFIRM_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.confirmWhatsappOwner({ path: { id }, body: { code } }));
       return toAccount(data);
+    });
+  }
+
+  /** Every chat a number has seen, newest first, then any it allows with no message kept. */
+  findChats(accountId: string): Promise<WhatsappChatRouteEntity[]> {
+    return callApi(WhatsappErrors.FETCH_CHATS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWhatsappChatRoutes({ path: { id: accountId } }));
+      return data.map((row) => toChatRoute(accountId, row));
+    });
+  }
+
+  /**
+   * Who answers up to 200 of a number's chats from now on: no one, the
+   * number's default, or one of the reader's bots. Answers every chat as it
+   * is now.
+   */
+  /**
+   * Who answers `chatIds` from now on. The API takes `WHATSAPP_ROUTE_CHATS_MAX`
+   * chats a call, so a longer selection goes in turns of that many, and the
+   * last answer, every chat of the number, is the one returned.
+   */
+  routeChats(
+    accountId: string,
+    chatIds: readonly string[],
+    answer: WhatsappChatAnswer,
+  ): Promise<WhatsappChatRouteEntity[]> {
+    return callApi(WhatsappErrors.ROUTE_FAILED, async (api) => {
+      let data: WhatsappChatRouteResponseDto[] = [];
+      for (let at = 0; at < chatIds.length; at += WHATSAPP_ROUTE_CHATS_MAX) {
+        data = await api.body(
+          heyApiSdk.routeWhatsappChats({
+            path: { id: accountId },
+            body: {
+              chatIds: chatIds.slice(at, at + WHATSAPP_ROUTE_CHATS_MAX),
+              route: answer.kind,
+              ...(answer.kind === 'bot' ? { botId: answer.botId } : {}),
+            },
+          }),
+        );
+      }
+      return data.map((row) => toChatRoute(accountId, row));
     });
   }
 

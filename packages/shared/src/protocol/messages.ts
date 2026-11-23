@@ -1,5 +1,10 @@
 import { z } from 'zod/v4';
-import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import {
+  type HostCloudAgentId,
+  isHostCloudAgent,
+  SESSION_EFFORTS,
+  SESSION_PERMISSIONS,
+} from '../agents/catalog.js';
 import { cloudRepliedSchema, cloudReplySchema } from './cloud-reply.js';
 import {
   desktopCloseSchema,
@@ -15,7 +20,7 @@ import {
   deviceSelectSchema,
 } from './devices.js';
 import { hintSchema } from './hint.js';
-import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_COMMANDS_MAX, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {
   portCloseSchema,
   portListingSchema,
@@ -39,6 +44,7 @@ import {
   sessionIdSchema,
   sessionSnapshotSchema,
   sessionWindowSchema,
+  windowAgentSchema,
   windowIndexSchema,
 } from './primitives.js';
 import {
@@ -59,9 +65,13 @@ import {
 import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
+  whatsappChatsSchema,
   whatsappLinkSchema,
+  whatsappMediaGetSchema,
+  whatsappMediaSchema,
   whatsappMessagesSchema,
   whatsappSendSchema,
+  whatsappSendVoiceSchema,
   whatsappSentSchema,
   whatsappStateSchema,
   whatsappUnlinkSchema,
@@ -188,10 +198,21 @@ export const RUNNER_CAPABILITIES = [
   'session.watch',
   /**
    * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
-   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
-   * `whatsapp.messages`.
+   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state`,
+   * `whatsapp.messages` and `whatsapp.chats`.
    */
   'whatsapp',
+  /**
+   * Hands over a voice note its WhatsApp device received: it sends
+   * `voiceSeconds` on each, and answers `whatsapp.media.get` with
+   * `whatsapp.media`, so the owner's bots hear them.
+   */
+  'whatsapp.voice',
+  /**
+   * Answers `whatsapp.send.voice` with `whatsapp.sent`: a voice note a bot
+   * spoke, sent as a playable push-to-talk message.
+   */
+  'whatsapp.voice.send',
   /**
    * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
    * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
@@ -229,6 +250,13 @@ export const RUNNER_CAPABILITIES = [
    * word back.
    */
   'session.windows.list',
+  /**
+   * Takes `agent` on `session.window.open`: the new window starts that coding
+   * agent in the session's worktree, beside the session's own in window 0. A
+   * runner without it would open a plain shell and ignore the field, so the
+   * control plane refuses the open before sending it.
+   */
+  'session.window.agent',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -673,6 +701,34 @@ export const sessionWindowOpenSchema = z.object({
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
   name: z.string().min(1).max(200).optional(),
+  /**
+   * A second coding agent to start in the new window, in the same worktree.
+   * Absent is a plain shell. Sent only to a runner whose hello named
+   * `session.window.agent`. Window 0 stays the session's agent, the one its
+   * state is read from.
+   */
+  agent: windowAgentSchema.optional(),
+  /**
+   * How that agent is started, as `session.create`'s launch carries it, and
+   * meaningful only with `agent`. Each one given wins; each one absent falls
+   * back to the session's own: its permission level always, its model and
+   * effort only when `agent` is the session's agent (a model names one CLI's).
+   * A runner from before these fields ignores them and takes that fallback.
+   * The bounds are `launchOptionsSchema`'s, spelled again rather than shared:
+   * a schema used twice is lifted into the JSON Schema's `$defs`, which would
+   * rename `session.create`'s launch fields for every generator.
+   */
+  model: z.string().min(1).max(128).optional(),
+  permission: z.enum(SESSION_PERMISSIONS).optional(),
+  /** As `launchOptionsSchema.effort`: a level the model does not offer is dropped. */
+  effort: z.enum(SESSION_EFFORTS).optional(),
+  /**
+   * The agent's first task, bounded as `session.create`'s, meaningful only
+   * with `agent`: the runner hands it to the CLI as its trailing positional,
+   * as it does window 0's, and never logs it. A runner from before this field
+   * ignores it and starts the agent with no task.
+   */
+  prompt: promptTextSchema.optional(),
 });
 
 export type SessionWindowOpenMessage = z.infer<typeof sessionWindowOpenSchema>;
@@ -1310,6 +1366,24 @@ export type AttachmentPathMessage = z.infer<typeof attachmentPathSchema>;
 /* ------------------------------------------------------------------ the chat view (0.7) */
 
 /**
+ * A slash command the session's agent takes, for the chat composer's `/`
+ * menu: one of the project's skills (`.claude/skills/<name>/SKILL.md`) or
+ * commands (`.claude/commands/<name>.md`, a subfolder joined with `:`), read
+ * from the folder the agent runs in.
+ */
+export const chatCommandSchema = z.object({
+  name: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[A-Za-z0-9][A-Za-z0-9_.:-]*$/),
+  kind: z.enum(['skill', 'command']),
+  description: z.string().max(300).optional(),
+});
+
+export type ChatCommand = z.infer<typeof chatCommandSchema>;
+
+/**
  * Entries of a session's agent transcript, for the chat view beside the
  * terminal. The agent still runs in tmux, unmodified, and the terminal is still
  * its interface: this is a second reading of the same conversation, from the
@@ -1348,6 +1422,12 @@ export const attachmentChatSchema = z.object({
    */
   older: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
+  /**
+   * The slash commands the session's project gives its agent, on a batch
+   * that carries `reset`. Absent from a runner that predates it, or for an
+   * agent it reads none for: the console then offers its built-ins alone.
+   */
+  commands: z.array(chatCommandSchema).max(CHAT_COMMANDS_MAX).optional(),
 });
 
 export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
@@ -1440,9 +1520,13 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappUnlinkSchema,
   whatsappStateSchema,
   whatsappMessagesSchema,
+  whatsappChatsSchema,
   whatsappAckSchema,
   whatsappSendSchema,
+  whatsappSendVoiceSchema,
   whatsappSentSchema,
+  whatsappMediaGetSchema,
+  whatsappMediaSchema,
   telegramLinkSchema,
   telegramUnlinkSchema,
   telegramStateSchema,

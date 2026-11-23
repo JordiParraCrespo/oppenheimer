@@ -44,6 +44,7 @@ export class SessionTranscriptMapper {
       status: SessionTranscriptStatus;
       redactions: number;
       nextCursor: string | null;
+      restarted: boolean;
     },
   ): SessionTranscriptPage {
     return {
@@ -54,7 +55,8 @@ export class SessionTranscriptMapper {
       entries: read.entries,
       nextCursor: read.nextCursor,
       atEnd: page.atEnd,
-      restarted: page.restarted ?? false,
+      hasEarlier: page.from > 0,
+      restarted: read.restarted,
       dropped: page.dropped ?? 0,
       redactions: read.redactions,
     };
@@ -74,10 +76,30 @@ export class SessionTranscriptMapper {
       entries: [],
       nextCursor: null,
       atEnd: false,
+      hasEarlier: false,
       restarted: false,
       dropped: 0,
       redactions: 0,
     };
+  }
+
+  /**
+   * The entries a person could have typed, oldest first: {@link toEntries}
+   * without the lines the agent wrote under the person's role, which Claude
+   * Code flags: a skill's or a command's expansion (`isMeta`), a subagent's
+   * conversation (`isSidechain`), the summary a compaction left (`isCompactSummary`).
+   */
+  static toTypedEntries(raw: readonly string[]): SessionTranscriptEntry[] {
+    return SessionTranscriptMapper.toEntries(
+      raw.filter((line) => {
+        try {
+          const entry = recordOf(JSON.parse(line));
+          return !entry.isMeta && !entry.isSidechain && !entry.isCompactSummary;
+        } catch {
+          return false;
+        }
+      }),
+    );
   }
 
   /** The entries a page carried, oldest first; one that is not a message is left out. */

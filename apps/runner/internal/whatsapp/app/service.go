@@ -27,7 +27,10 @@ const (
 type Options struct {
 	Device Device
 	Outbox Outbox
-	Logger *slog.Logger
+	// VoiceNotes keeps the voice notes the control plane may ask for; nil
+	// keeps none, and every ask is WA_005.
+	VoiceNotes VoiceNotes
+	Logger     *slog.Logger
 	// Budget is the host's own send limit; nil is domain.SendsPerMinute and
 	// domain.SendsPerDay.
 	Budget *domain.Budget
@@ -39,6 +42,7 @@ type Options struct {
 type Service struct {
 	device Device
 	outbox Outbox
+	voices VoiceNotes
 	logger *slog.Logger
 	budget *domain.Budget
 	now    func() time.Time
@@ -49,6 +53,8 @@ type Service struct {
 	pairing   bool
 	pairedAt  time.Time
 	publisher Publisher
+	// chats is the device's last list of chats, handed to every new link.
+	chats []domain.KnownChat
 	// inFlight is when each message was last handed to the link, until its
 	// ack; a flush skips what was handed on less than ackTimeout ago.
 	inFlight map[string]time.Time
@@ -71,7 +77,7 @@ func New(opts Options) *Service {
 		logger = slog.Default()
 	}
 	return &Service{
-		device: opts.Device, outbox: opts.Outbox, logger: logger, budget: budget, now: now,
+		device: opts.Device, outbox: opts.Outbox, voices: opts.VoiceNotes, logger: logger, budget: budget, now: now,
 		status: domain.Status{State: domain.StateUnlinked}, inFlight: map[string]time.Time{},
 	}
 }
@@ -134,6 +140,7 @@ func (s *Service) LinkUp(ctx context.Context) {
 	s.inFlight = map[string]time.Time{}
 	s.mu.Unlock()
 	s.publish()
+	s.publishChats()
 	s.Flush(ctx)
 }
 
@@ -192,8 +199,14 @@ func (s *Service) Unlink(ctx context.Context) error {
 	if err := s.outbox.Clear(ctx); err != nil {
 		s.logger.Warn("whatsapp: the outbox could not be emptied", slog.Any("error", err))
 	}
+	if s.voices != nil {
+		if err := s.voices.ClearVoiceNotes(ctx); err != nil {
+			s.logger.Warn("whatsapp: the kept voice notes could not be forgotten", slog.Any("error", err))
+		}
+	}
 	s.mu.Lock()
 	s.inFlight = map[string]time.Time{}
+	s.chats = nil
 	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateUnlinked, Reason: "unlinked from Oppenheimer"})
 	return nil
@@ -203,6 +216,27 @@ func (s *Service) Unlink(ctx context.Context) error {
 // quoting the message it replies to when there is one. A quoted reply spends
 // the budget exactly as a plain message does.
 func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Quote) (string, time.Time, error) {
+	return s.spend(func() (string, time.Time, error) { return s.device.Send(ctx, chatID, text, quote) })
+}
+
+// SendVoice sends a voice note as the paired number, inside the same budget
+// a text spends: one note is one message to WhatsApp. Audio that is not a
+// voice note WhatsApp plays is refused before it spends anything (WA_006,
+// WA_008); an upload or a send WhatsApp refuses is WA_003, as a text's is.
+func (s *Service) SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	if s.Status().State != domain.StateConnected {
+		return "", time.Time{}, domain.ErrNotConnected
+	}
+	if err := domain.CheckVoiceOut(audio, seconds); err != nil {
+		return "", time.Time{}, err
+	}
+	return s.spend(func() (string, time.Time, error) { return s.device.SendVoice(ctx, chatID, audio, seconds) })
+}
+
+// spend runs one send inside the host's budget: refused while the device is
+// not connected or the budget is spent, refunded when WhatsApp refuses it,
+// and pausing every send after WhatsApp's 429.
+func (s *Service) spend(send func() (string, time.Time, error)) (string, time.Time, error) {
 	if s.Status().State != domain.StateConnected {
 		return "", time.Time{}, domain.ErrNotConnected
 	}
@@ -211,7 +245,7 @@ func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Q
 		return "", time.Time{}, domain.ErrBudgetExceeded.WithDetail(
 			"at most %d a minute and %d a day", domain.SendsPerMinute, domain.SendsPerDay)
 	}
-	id, sentAt, err := s.device.Send(ctx, chatID, text, quote)
+	id, sentAt, err := send()
 	if err != nil {
 		s.budget.Refund(at)
 		if errors.Is(err, domain.ErrRateLimited) {
@@ -220,6 +254,37 @@ func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Q
 		return "", time.Time{}, domain.ErrSendRefused.WithDetail("%v", err)
 	}
 	return id, sentAt.UTC(), nil
+}
+
+// VoiceNote fetches a voice note the number received, for the control plane
+// to transcribe: one it still keeps (domain.VoiceNoteKept), no larger than a
+// frame carries. Fetching spends no send budget: it is a download from
+// WhatsApp's media servers, which the phone itself makes for every note.
+func (s *Service) VoiceNote(ctx context.Context, chatID, id string) ([]byte, string, error) {
+	if s.Status().State != domain.StateConnected {
+		return nil, "", domain.ErrNotConnected
+	}
+	if s.voices == nil {
+		return nil, "", domain.ErrNoVoiceNote
+	}
+	voice, ok, err := s.voices.Find(ctx, chatID, id)
+	if err != nil {
+		return nil, "", domain.ErrNoVoiceNote.WithDetail("the kept voice notes could not be read: %v", err)
+	}
+	if !ok {
+		return nil, "", domain.ErrNoVoiceNote.WithDetail("none kept for %s; they are kept %s", id, domain.VoiceNoteKept)
+	}
+	if voice.TooLarge() {
+		return nil, "", domain.ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", voice.Size, domain.VoiceNoteMaxBytes)
+	}
+	data, mimetype, err := s.device.Download(ctx, voice.Ref)
+	if err != nil {
+		return nil, "", domain.ErrVoiceDownload.WithDetail("%v", err)
+	}
+	if len(data) > domain.VoiceNoteMaxBytes {
+		return nil, "", domain.ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", len(data), domain.VoiceNoteMaxBytes)
+	}
+	return data, mimetype, nil
 }
 
 // Ack forgets what the control plane stored.
@@ -285,11 +350,39 @@ func (s *Service) Received(r domain.Received) {
 		return
 	}
 	ctx := context.Background()
+	if r.Voice != nil && s.voices != nil {
+		// Kept before the message goes out, so an ask for it never finds nothing.
+		if err := s.voices.Keep(ctx, message.ChatID, message.ID, *r.Voice); err != nil {
+			s.logger.Warn("whatsapp: a voice note could not be kept; bots will not hear it", slog.Any("error", err))
+			message.VoiceSeconds = 0
+		}
+	}
 	if err := s.outbox.Put(ctx, message); err != nil {
 		s.logger.Error("whatsapp: a message could not be kept; it is lost", slog.Any("error", err))
 		return
 	}
 	s.Flush(ctx)
+}
+
+// Chats keeps the device's chats and hands them to the link. A list lost to a
+// link that is down goes with the next LinkUp.
+func (s *Service) Chats(chats []domain.KnownChat) {
+	s.mu.Lock()
+	s.chats = chats
+	s.mu.Unlock()
+	s.publishChats()
+}
+
+func (s *Service) publishChats() {
+	s.mu.Lock()
+	publisher, chats := s.publisher, s.chats
+	s.mu.Unlock()
+	if publisher == nil {
+		return
+	}
+	for _, batch := range domain.ChatBatches(chats) {
+		publisher.Chats(batch)
+	}
 }
 
 // Connected is the device online.
@@ -312,6 +405,9 @@ func (s *Service) Disconnected() {
 // LoggedOut is the phone removing the device, or WhatsApp logging it out:
 // its keys are gone, and it is not retried.
 func (s *Service) LoggedOut(reason string) {
+	s.mu.Lock()
+	s.chats = nil
+	s.mu.Unlock()
 	s.set(domain.Status{State: domain.StateLoggedOut, Reason: domain.Fit(reason, 200)})
 }
 

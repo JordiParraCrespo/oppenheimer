@@ -23,6 +23,13 @@ export interface WhatsappMessage {
   sentAt: Date;
   /** The bot that sent it through `send_whatsapp_message`; null for everything else. */
   sentByBotId: string | null;
+  /**
+   * How long a voice note runs, in seconds; null on anything else, and on a
+   * voice note from a runner that cannot hand one over.
+   */
+  voiceSeconds: number | null;
+  /** What a voice note says, once a bot needed it heard; null until then. */
+  transcript: string | null;
 }
 
 /**
@@ -34,6 +41,13 @@ export type WhatsappMessageDraft = Omit<WhatsappMessage, 'id'> & {
   switchesToBotId: string | null;
   /** A bot's answer to the owner's own message: not counted as one of its sends. */
   isReply: boolean;
+  /**
+   * Whom it @-mentions and who wrote the message it replies to, by phone
+   * number where the runner knows it: what tells whether a group's message
+   * speaks to the number. Read at intake only, never stored.
+   */
+  mentions: readonly string[];
+  quotedSenderId: string | null;
 };
 
 /**
@@ -63,6 +77,13 @@ export interface WhatsappChat {
   chatName: string | null;
   messageCount: number;
   last: WhatsappMessage;
+}
+
+/** A chat the number's device says it can be reached in, before any message there. */
+export interface WhatsappKnownChat {
+  chatId: string;
+  chatKind: 'direct' | 'group';
+  chatName: string | null;
 }
 
 /** Where a message goes: a chat the number has, or a new direct chat with a phone number. */

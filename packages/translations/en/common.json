@@ -136,6 +136,10 @@
       "list": "Listed",
       "more_one": "+{{count}} more",
       "more_other": "+{{count}} more"
+    },
+    "emoji": {
+      "menu": "Emoji",
+      "pick": "Insert {{emoji}} :{{name}}:"
     }
   },
   "search": {
@@ -146,5 +150,10 @@
     "hosts": "Search hosts",
     "groups": "Search groups",
     "noMatch": "Nothing matches “{{query}}”."
+  },
+  "projectFilter": {
+    "label": "Project",
+    "all": "All projects",
+    "none": "No project"
   }
 }

@@ -3,7 +3,9 @@ import { QueryBus } from '@nestjs/cqrs';
 import { SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import { FindBotsQuery } from '../../bots/queries/find-bots/find-bots.query';
+import type { WhatsappChatGrantRepositoryPort } from '../database/whatsapp-chat-grant.repository.port';
 import type { WhatsappMessagesOwed } from '../database/whatsapp-message.repository.port';
+import { WhatsappContactWroteDomainEvent } from '../domain/events/whatsapp-contact-wrote.domain-event';
 import { WhatsappOwnerWroteDomainEvent } from '../domain/events/whatsapp-owner-wrote.domain-event';
 import type { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
 import {
@@ -11,6 +13,7 @@ import {
   WHATSAPP_NO_BOT_LINE,
   WHATSAPP_STOP_LINE,
   type WhatsappOwnerCommand,
+  whatsappContactAction,
   whatsappHelpLine,
   whatsappInboundAction,
   whatsappSwitchedLine,
@@ -20,6 +23,7 @@ import type {
   WhatsappMessageDraft,
   WhatsappStoredMessage,
 } from '../domain/whatsapp-message.types';
+import { WHATSAPP_CHAT_GRANT_REPOSITORY } from '../whatsapp.di-tokens';
 import { WhatsappReplyResolver } from './whatsapp-reply.resolver';
 
 /** What a message of a batch came to, once a "Name:" was matched against the owner's bots. */
@@ -30,7 +34,11 @@ export type WhatsappDecidedAction =
       text: string;
       /** The bot a "Name: …" switched to; null when it named none, or several. */
       switchedTo: { id: string; name: string } | null;
+      /** A voice note with no caption, heard when the bot is woken. */
+      voiceNote: boolean;
     }
+  /** Someone else, in a chat the number allows, spoke to it: `botId` answers. */
+  | { kind: 'contact'; text: string; botId: string }
   | { kind: 'ignore' };
 
 /** A batch as intake stores it: the drafts (switches resolved) and what each came to. */
@@ -43,7 +51,9 @@ export interface WhatsappDecidedBatch {
 
 /**
  * What new messages to a linked number come to, and are answered with besides
- * a bot's turn: only the confirmed owner's, in their own chat, come to anything. A
+ * a bot's turn: the confirmed owner's, in their own chat, and, in a chat the
+ * number allows, a contact's that speaks to it (`whatsappContactAction`),
+ * which wakes the chat's bot and is answered by nothing else. A
  * "Name: …" switches the chat to the one bot of the owner's with that name
  * (ignoring case), resolved now so a later rename changes nothing; a name
  * that is no bot's, or several bots', leaves the message as written. The
@@ -56,6 +66,8 @@ export class WhatsappAnswerResolver {
     private readonly queryBus: QueryBus,
     @Inject(SCOPE_RESOLVER) private readonly scopes: ScopeResolverPort,
     private readonly replies: WhatsappReplyResolver,
+    @Inject(WHATSAPP_CHAT_GRANT_REPOSITORY)
+    private readonly grants: WhatsappChatGrantRepositoryPort,
   ) {}
 
   async decide(
@@ -67,11 +79,12 @@ export class WhatsappAnswerResolver {
       (action) => action.kind === 'owner' && (action.switchName || action.command === 'help'),
     );
     const bots = needsBots ? await this.ownBots(account) : [];
+    const answerFor = await this.contactBots(account, drafts, raw);
     const actions = new Map<string, WhatsappDecidedAction>();
     const decided = drafts.map((draft, index) => {
       const action = raw[index] ?? { kind: 'ignore' };
       if (action.kind !== 'owner') {
-        actions.set(keyOf(draft), action);
+        actions.set(keyOf(draft), contactActionOf(account, draft, answerFor));
         return draft;
       }
       const wanted = action.switchName?.toLowerCase();
@@ -82,6 +95,7 @@ export class WhatsappAnswerResolver {
         command: action.command,
         text: bot || !action.switchName ? action.text : draft.text.trim(),
         switchedTo: bot ? { id: bot.id, name: bot.name } : null,
+        voiceNote: action.voiceNote,
       });
       return bot ? { ...draft, switchesToBotId: bot.id } : draft;
     });
@@ -106,11 +120,23 @@ export class WhatsappAnswerResolver {
     return {
       answeringBotId: account.answeringBotId,
       isOwners: (draft) => batch.actionOf(draft).kind === 'owner',
+      contactEventFor: (message) => {
+        const action = batch.actionOf(message);
+        return action.kind === 'contact' ? contactEventOf(account, message, action) : null;
+      },
       eventFor: (message, place) => {
         const action = batch.actionOf(message);
         if (action.kind !== 'owner' || action.command === 'help' || !place.botId) return null;
-        if (action.command === 'message' && !action.text) return null;
-        return eventOf(account, message, place, place.botId, action.command, action.text);
+        if (action.command === 'message' && !action.text && !action.voiceNote) return null;
+        return eventOf(
+          account,
+          message,
+          place,
+          place.botId,
+          action.command,
+          action.text,
+          action.voiceNote,
+        );
       },
     };
   }
@@ -135,6 +161,31 @@ export class WhatsappAnswerResolver {
     }
   }
 
+  /**
+   * The bot that answers each chat of the batch the number allows: the one
+   * chosen for it, else the number's default; a chat answered by none (no
+   * choice and no default) is left out, so it is stored and wakes no one.
+   * Read only when the batch holds a message that is not the owner's own.
+   */
+  private async contactBots(
+    account: WhatsappAccountEntity,
+    drafts: readonly WhatsappMessageDraft[],
+    raw: readonly { kind: string }[],
+  ): Promise<ReadonlyMap<string, string>> {
+    const others = drafts.some((draft, index) => raw[index]?.kind !== 'owner' && !draft.fromMe);
+    if (!others || !account.ownerPhone) return new Map();
+    const grants = await this.grants.findAll({
+      organizationId: account.organizationId,
+      accountId: account.id,
+    });
+    return new Map(
+      grants.flatMap((grant) => {
+        const botId = grant.botId ?? account.answeringBotId;
+        return botId ? [[grant.chatId, botId] as const] : [];
+      }),
+    );
+  }
+
   /** The bots the number's owner made in its workspace, read as the owner. */
   private async ownBots(account: WhatsappAccountEntity): Promise<BotEntity[]> {
     const scope = await this.scopes.resolve({
@@ -148,6 +199,41 @@ export class WhatsappAnswerResolver {
     );
     return bots.filter((bot) => bot.createdByUserId === account.userId);
   }
+}
+
+/** What a message that is not the owner's own comes to, given who answers each allowed chat. */
+function contactActionOf(
+  account: WhatsappAccountEntity,
+  draft: WhatsappMessageDraft,
+  answerFor: ReadonlyMap<string, string>,
+): WhatsappDecidedAction {
+  const botId = answerFor.get(draft.chatId);
+  const action = whatsappContactAction(account, botId !== undefined, draft);
+  return action.kind === 'contact' && botId ? { ...action, botId } : { kind: 'ignore' };
+}
+
+/** A contact spoke to the number in a chat it allows: what wakes the chat's bot, staged with the message. */
+function contactEventOf(
+  account: WhatsappAccountEntity,
+  message: WhatsappStoredMessage,
+  action: Extract<WhatsappDecidedAction, { kind: 'contact' }>,
+): WhatsappContactWroteDomainEvent {
+  return new WhatsappContactWroteDomainEvent({
+    aggregateId: account.id,
+    reason: `someone wrote to WhatsApp number ${account.id} in a chat it allows, and bot ${action.botId} answers that chat`,
+    organizationId: account.organizationId,
+    userId: account.userId,
+    accountId: account.id,
+    chatId: message.chatId,
+    chatKind: message.chatKind,
+    chatName: message.chatName,
+    senderId: message.senderId,
+    senderName: message.senderName,
+    messageRowId: message.id,
+    seq: message.seq,
+    botId: action.botId,
+    text: action.text,
+  });
 }
 
 function keyOf(message: Pick<WhatsappMessageDraft, 'chatId' | 'externalId'>): string {
@@ -178,6 +264,7 @@ function eventOf(
   botId: string,
   command: 'message' | 'new' | 'stop',
   text: string,
+  voiceNote: boolean,
 ): WhatsappOwnerWroteDomainEvent {
   return new WhatsappOwnerWroteDomainEvent({
     aggregateId: account.id,
@@ -193,5 +280,6 @@ function eventOf(
     startsHere: place.startsAt === message.seq,
     command,
     text,
+    voiceNote,
   });
 }

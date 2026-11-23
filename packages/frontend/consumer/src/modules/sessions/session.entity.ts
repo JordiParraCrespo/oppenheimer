@@ -164,6 +164,22 @@ export type SessionWindows = SessionWindowsResponse;
 /** A shell just opened in the session, and every window after it. */
 export type OpenedSessionWindow = OpenedSessionWindowResponse;
 
+/**
+ * What to open in a session's worktree: no agent (or `shell`) for a plain
+ * shell, or a coding agent beside the session's own, started with the
+ * `model`, `effort` and `permission` picked for it. Each one left out is the
+ * session's own: its permission level always, its model and effort only when
+ * the agent is the session's.
+ */
+export interface OpenSessionWindowInput {
+  agent?: CodingAgentId;
+  model?: string;
+  effort?: SessionEffort;
+  permission?: SessionPermission;
+  /** The agent's first task, which it starts on; left out, it starts with none. */
+  prompt?: string;
+}
+
 /** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
 export interface SessionPreview {
   url: string;
@@ -345,8 +361,7 @@ export class SessionEntity {
 
   /**
    * The cloud session's page at its vendor, once it has one: claude.ai/code
-   * for Claude Code's; for Codex, an older session's task page, or Codex on
-   * chatgpt.com for a cloud thread, whose web address is not known.
+   * for Claude Code's; for Codex, its legacy task page or current cloud thread.
    */
   get cloudUrl(): string | null {
     if (!this.cloudSessionId) return null;
@@ -354,7 +369,7 @@ export class SessionEntity {
     if (this.agent !== 'codex') return `https://claude.ai/code/${id}`;
     return this.cloudSessionId.startsWith('task_')
       ? `https://chatgpt.com/codex/tasks/${id}`
-      : 'https://chatgpt.com/codex';
+      : `https://chatgpt.com/local/${id}`;
   }
 
   /**

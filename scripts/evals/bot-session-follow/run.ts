@@ -29,7 +29,6 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BotWatchToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-watch-tools.factory';
-import { BotSubscriptionMapper } from '../../../apps/api/src/bots-chat/bot-subscription.mapper';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
   composeTurnContext,
@@ -98,12 +97,7 @@ const WATCH = 'watch_session';
 function watchTool(
   context: Parameters<ReturnType<BotWatchToolsFactory['definitions']>[number]['bind']>[0],
 ): EvalTool {
-  const factory = new BotWatchToolsFactory(
-    {} as never,
-    {} as never,
-    new BotSubscriptionMapper(),
-    {} as never,
-  );
+  const factory = new BotWatchToolsFactory({} as never, {} as never, {} as never);
   const definition = factory.definitions().find((d) => d.name === WATCH);
   if (!definition) throw new Error('No production watch_session.');
   const bound = definition.bind(context);

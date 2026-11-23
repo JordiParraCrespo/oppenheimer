@@ -43,8 +43,12 @@ type Options struct {
 	// none. The chat and transcript pages are Conversations'.
 	Transcripts Transcripts
 	// StatusLine is the command a Claude Code session runs for its status
-	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
-	StatusLine string
+	// line (`domain.Launch.StatusLine`): given the session whose window-0
+	// agent it is, a line that also reports which conversation that agent
+	// is in (Transcripts.CurrentConversation); given "", one for an agent
+	// in another window, which reports none. Nil, or an empty command,
+	// leaves the CLI's own.
+	StatusLine func(session string) string
 	// FreePort finds a loopback port nothing listens on, for the local API
 	// of an agent that keeps its conversation behind one (OpenCode); nil
 	// launches it without one, and its session has no chat view.
@@ -52,6 +56,10 @@ type Options struct {
 	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
 	// the screen alone.
 	ProgramStatus ProgramStatus
+	// Wrappers finds and ends the wrapper processes the agents run under,
+	// so an agent that ignores its hangup does not outlive its session; nil
+	// leaves it to tmux's hangup alone.
+	Wrappers Wrappers
 	// Rebooted says the host started after the session map was last
 	// saved: every session it holds as live was lost to that reboot, and a
 	// kept one is brought back (RecoverKept).
@@ -112,8 +120,9 @@ type Service struct {
 	gate        LaunchGate
 	trust       Trust
 	transcripts Transcripts
-	statusLine  string
+	statusLines func(session string) string
 	freePort    func() (int, error)
+	wrappers    Wrappers
 	now         func() time.Time
 }
 
@@ -139,7 +148,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLine: opts.StatusLine, freePort: opts.FreePort, now: now,
+		transcripts: opts.Transcripts, statusLines: opts.StatusLine, freePort: opts.FreePort, wrappers: opts.Wrappers, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -222,10 +231,35 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
-// OpenWindow adds a tab: a plain shell where the agent runs. It holds the
+// WindowInput is what a window is opened with: no agent for a plain shell,
+// or the coding agent to start in it and how, each of Model, Permission and
+// Effort empty to take the session's own (windowLaunch). Prompt is the
+// agent's first task, empty for none; like any launch's, it is never logged.
+type WindowInput struct {
+	Agent      domain.Agent
+	Model      string
+	Permission string
+	Effort     string
+	Prompt     string
+}
+
+// OpenWindow adds a tab where the agent runs: a plain shell, or with agent
+// set a second coding agent started in the session's worktree. It holds the
 // session like every command, so a refresh running meanwhile keeps the
 // window (see observe).
-func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
+//
+// The second agent starts as the open chose (windowLaunch), the session's
+// own launch filling in what it left out, with the first task it was given if
+// any. It starts a conversation of its own, so it is launched with no
+// conversation id, no first-task files, no server and no observer wrapper; window 0 stays the
+// session's agent, the one its state is read from. An agent that would take
+// the session's conversation over is refused (domain.Session.TakesSecond). A
+// launch that fails takes its window with it.
+func (s *Service) OpenWindow(ctx context.Context, id string, in WindowInput) (domain.Window, error) {
+	agent := in.Agent
+	if agent != "" && agent.Command() == "" {
+		return domain.Window{}, domain.ErrInvalidInput.WithDetail("%q is not an agent a window can start", agent)
+	}
 	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
@@ -234,15 +268,71 @@ func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, err
 	if !session.State.Live() {
 		return domain.Window{}, domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
-	index, err := s.terminals.NewWindow(ctx, session.TmuxName(), session.Cwd())
+	if agent != "" && !session.TakesSecond(agent) {
+		return domain.Window{}, domain.ErrInvalidInput.WithDetail(
+			"a second %s in this worktree would take over the session's conversation", agent.CatalogID())
+	}
+	index, err := s.terminals.NewWindow(ctx, session.TmuxName(), session.Cwd(), agent.CatalogID())
 	if err != nil {
 		return domain.Window{}, err
 	}
 	window := domain.Window{Index: index, Name: "shell"}
+	if agent != "" {
+		if err := s.launchInWindow(ctx, session, index, in); err != nil {
+			_ = s.terminals.KillWindow(context.WithoutCancel(ctx), session.Target(index))
+			return domain.Window{}, err
+		}
+		window.Name = agent.CatalogID()
+	}
 	session.Windows = append(session.Windows, window)
 	session.Updated = s.now().UTC()
 	s.record(session)
 	return window, nil
+}
+
+// launchInWindow starts in.Agent in one of session's windows, the way a
+// create starts window 0's: its folder trusted, the agent's executable held
+// still while it starts.
+func (s *Service) launchInWindow(ctx context.Context, session domain.Session, index int, in WindowInput) error {
+	agent := in.Agent
+	launch := windowLaunch(session, in)
+	// The runner's status line keeps what Claude Code hands it under the
+	// conversation's own id, so a second Claude's figures never reach the
+	// session's chat, which reads window 0's conversation; and it names no
+	// session, so this agent's conversation never becomes the session's.
+	launch.StatusLine = s.statusLine("")
+	s.trustFolder(agent, session.Cwd())
+	defer s.holdLaunch(ctx, agent)()
+	return s.terminals.Launch(ctx, session.Target(index), session.Cwd(), launch.CommandLine(agent))
+}
+
+// windowLaunch is how a window's agent starts: each choice the open made,
+// and for each it did not, the session's own: its permission level always,
+// its model and effort only for the session's own agent, since a model names
+// one CLI's. A choice the agent has no spelling for is dropped by the
+// catalog (Launch.Args), as it is at create, never a refusal.
+func windowLaunch(session domain.Session, in WindowInput) domain.Launch {
+	launch := domain.Launch{Permission: session.Launch.Permission}
+	if in.Agent == session.Agent {
+		launch.Model = session.Launch.Model
+		launch.Effort = session.Launch.Effort
+		launch.EffortIsLevel = session.Launch.EffortIsLevel
+	}
+	if in.Permission != "" {
+		launch.Permission = in.Permission
+	}
+	if in.Model != "" {
+		launch.Model = in.Model
+	}
+	// An effort chosen now is the CLI's own level name, as at create.
+	if in.Effort != "" {
+		launch.Effort, launch.EffortIsLevel = in.Effort, true
+	}
+	// The first task rides as the CLI's trailing positional, as window 0's
+	// does. With no conversation named, the catalog still sends it: the
+	// agent starts a conversation of its own with it.
+	launch.Prompt = in.Prompt
+	return launch
 }
 
 // Windows lists a live session's windows as tmux holds them now, and keeps
@@ -336,6 +426,9 @@ func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer, 
 	server, err := domain.NewAgentServer(port, since, directory)
 	if err != nil {
 		return nil
+	}
+	if previous != nil {
+		server.Conversation = previous.Conversation
 	}
 	return &server
 }
@@ -548,41 +641,13 @@ func (s *Service) ReportFirstPrompts() {
 	}
 }
 
-// FindTeleported is the poll loop's step for a session that continues a
-// cloud one: Claude Code names the teleported conversation itself, so the
-// newest transcript in the session's folder since the agent opened it is
-// taken as the session's conversation, and kept. From then on the chat
-// view, question detection and the status line read it by that name, as
-// they read any other session's.
-func (s *Service) FindTeleported() {
-	if s.transcripts == nil {
-		return
+// statusLine is the status line command for window 0's agent of session,
+// or for another window's with "", or "" when the runner draws none.
+func (s *Service) statusLine(session string) string {
+	if s.statusLines == nil {
+		return ""
 	}
-	s.mu.Lock()
-	var waiting []domain.Session
-	for _, session := range s.sessions {
-		if session.State.Live() && session.Launch.Teleport != "" && session.Launch.Conversation == "" {
-			waiting = append(waiting, session.Clone())
-		}
-	}
-	s.mu.Unlock()
-	for _, session := range waiting {
-		since := session.Launch.TeleportSince
-		if since.IsZero() {
-			since = session.Created
-		}
-		conversation := s.transcripts.Teleported(session.Agent, session.Cwd(), since)
-		if conversation == "" {
-			continue
-		}
-		s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
-			if !known || cur.Launch.Teleport == "" || cur.Launch.Conversation != "" {
-				return cur, false
-			}
-			cur.Launch.Conversation = conversation
-			return cur, true
-		})
-	}
+	return s.statusLines(session)
 }
 
 // promptReported records that the control plane has a session's first
@@ -627,6 +692,13 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// Resuming also drops the stored first task, which is right: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
+	//
+	// The conversation is the one the agent was last in, which a `/clear`
+	// or a `/resume` since the launch made another than the one it opened,
+	// even when the poll loop has not kept it yet (FindReportedConversations).
+	if moved := s.movedConversation(session); moved != "" {
+		session.Launch.Conversation = moved
+	}
 	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server, session.Cwd())
 	// `--continue` may reopen a teleported conversation under a name of its
 	// own, so it is looked for again from now (FindTeleported).
@@ -636,7 +708,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	}
 	launch := session.Launch
 	launch.Resume = true
-	launch.StatusLine = s.statusLine
+	launch.StatusLine = s.statusLine(session.ID)
 	launch.Wrap = s.observer.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
@@ -661,7 +733,7 @@ func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
 	if !session.State.Live() {
 		return session, nil
 	}
-	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+	if err := s.endTerminal(ctx, session); err != nil {
 		return domain.Session{}, err
 	}
 	return s.decide(session, domain.StateStopped, ""), nil
@@ -688,7 +760,7 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	if err != nil || over {
 		return session, err
 	}
-	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+	if err := s.endTerminal(ctx, session); err != nil {
 		return domain.Session{}, err
 	}
 	return s.closePlace(ctx, session, in)
@@ -829,6 +901,13 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 			s.decide(session, domain.StateStopped, "")
 		}
 	}
+	// Their agents go with them: an uninstalled runner is not there to
+	// come round for one that ignored its hangup.
+	ids := map[string]bool{}
+	for _, name := range ended {
+		ids[strings.TrimPrefix(name, domain.Prefix)] = true
+	}
+	_ = s.endSessions(ctx, ids)
 	return ended, errors.Join(errs...)
 }
 

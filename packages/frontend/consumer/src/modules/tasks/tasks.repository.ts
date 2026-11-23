@@ -72,6 +72,8 @@ function toTask(data: TaskResponseDto): Task {
     data.focusDate ?? null,
     data.origin,
     data.triagedAt ? new Date(data.triagedAt) : null,
+    data.priority ?? null,
+    data.offTodo ?? false,
   );
 }
 

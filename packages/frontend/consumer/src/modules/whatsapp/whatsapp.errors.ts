@@ -25,4 +25,12 @@ export const WhatsappErrors = {
     code: 'WHATSAPP_CLIENT_006',
     message: 'Failed to confirm your number',
   },
+  FETCH_CHATS_FAILED: {
+    code: 'WHATSAPP_CLIENT_010',
+    message: 'Failed to load this number’s chats',
+  },
+  ROUTE_FAILED: {
+    code: 'WHATSAPP_CLIENT_011',
+    message: 'Failed to change who answers those chats',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

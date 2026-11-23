@@ -26,8 +26,11 @@ import (
 // bounds, and the whole conversation from its start otherwise. With the
 // conversation a page was read from, the lines after req.After. A cursor
 // for another conversation, past the file's end or not where a line starts
-// (the CLI replaced the file) is read from the start, Restarted. Only whole
-// lines are read: one the CLI is still writing waits for the next page.
+// (the CLI replaced the file) is read from the start, Restarted. The control
+// plane relies on that to read from the start until the link has a field for
+// it: it names a conversation no file is called (TRANSCRIPT_START_CONVERSATION)
+// and drops the Restarted that comes back. Only whole lines are read: one the
+// CLI is still writing waits for the next page.
 func (r *Reader) ReadPage(session domain.Session, req app.TranscriptPageRequest) (app.TranscriptPage, error) {
 	if session.Agent.ServesConversation() {
 		return app.TranscriptPage{}, app.ErrNoChat

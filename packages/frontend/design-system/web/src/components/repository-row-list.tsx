@@ -5,7 +5,14 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
-import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import {
+  ChipSelectCombobox,
+  ChipSelectEmpty,
+  ChipSelectItem,
+  ChipSelectList,
+  ChipSelectPopup,
+  ChipSelectSearch,
+} from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 type RepositoryRowBranch = { value: string; label?: string; description?: string };
@@ -176,13 +183,12 @@ function RepositoryRow({
             <ChevronDownIcon className="size-3 shrink-0" aria-hidden />
           </PopoverTrigger>
           <ChipSelectPopup width={260} side="bottom" align="start">
+            <ChipSelectCombobox query={query} onQueryChange={setQuery} autoHighlight="always">
             <ChipSelectSearch
-              value={query}
               placeholder={branchSearchPlaceholder}
               aria-label={branchSearchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
             />
-            <div role="listbox" aria-label={branchLabel} className="max-h-[220px] overflow-y-auto">
+            <ChipSelectList aria-label={branchLabel} className="max-h-[220px]">
               {branches.length > 0 ? (
                 branches.map((branch) => (
                   <ChipSelectItem
@@ -202,7 +208,8 @@ function RepositoryRow({
               ) : (
                 <ChipSelectEmpty className="text-left text-fg-subtle">{branchEmptyText(query)}</ChipSelectEmpty>
               )}
-            </div>
+            </ChipSelectList>
+            </ChipSelectCombobox>
           </ChipSelectPopup>
         </Popover>
       </div>

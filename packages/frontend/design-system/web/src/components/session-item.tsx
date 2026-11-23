@@ -34,6 +34,13 @@ type SessionRename = {
   label?: string;
 };
 
+/** Each kind of dot: its colour, and what a screen reader hears when the caller names nothing. */
+const ATTENTION = {
+  'needs-you': { label: 'Needs input', className: 'bg-warning' },
+  done: { label: 'Done', className: 'bg-primary' },
+  unread: { label: 'Unread', className: 'bg-primary' },
+} as const;
+
 /**
  * SessionItem — the sidebar row for one orchestrated session. There will be
  * hundreds, so the row is a glyph and a name: the branch icon coloured by run
@@ -60,6 +67,7 @@ function SessionItem({
   status,
   state = 'idle',
   attention,
+  attentionLabel,
   working,
   active,
   icon,
@@ -87,9 +95,12 @@ function SessionItem({
   state?: StatusState;
   /**
    * A 7px dot at the row's end, its name set at 600: amber for `needs-you`,
-   * blue for `done`. It gives way to the ellipsis like the age.
+   * blue for `done` and for `unread`, a row the reader marked to come back to.
+   * It gives way to the ellipsis like the age.
    */
-  attention?: 'needs-you' | 'done';
+  attention?: 'needs-you' | 'done' | 'unread';
+  /** What a screen reader hears for the dot, in the reader's language; English by default. */
+  attentionLabel?: string;
   /** Whether the agent is at work: the name shimmers while it is. */
   working?: boolean;
   active?: boolean;
@@ -192,10 +203,10 @@ function SessionItem({
       )}
       {attention && !rename ? (
         <span
-          aria-label={attention === 'needs-you' ? 'Needs input' : 'Done'}
+          aria-label={attentionLabel ?? ATTENTION[attention].label}
           className={cn(
             'size-1.75 shrink-0 rounded-pill',
-            attention === 'needs-you' ? 'bg-warning' : 'bg-primary',
+            ATTENTION[attention].className,
             withAction && META_GIVES_WAY,
           )}
         />

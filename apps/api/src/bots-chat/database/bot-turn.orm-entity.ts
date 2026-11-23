@@ -26,6 +26,9 @@ export interface BotTurnPlanLimitsRecord {
 @Unique('UQ_bot_turn_organization_id', ['organizationId', 'id'])
 @Index('IDX_bot_turn_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('IDX_bot_turn_conversation', ['organizationId', 'conversationId'])
+@Index('IDX_bot_turn_ended', ['organizationId', 'botId', 'endedAt'], {
+  where: '"endedAt" IS NOT NULL',
+})
 @Index('IDX_bot_turn_active', ['organizationId', 'botId', 'createdAt'], {
   where: `"status" IN ('queued', 'running')`,
 })
@@ -175,6 +178,14 @@ export class BotTurnOrmEntity {
    */
   @Column({ type: 'boolean', default: false })
   steer!: boolean;
+
+  /**
+   * A contact's turn (`1795172296524-AddBotTurnContact`): run for someone who
+   * is not the owner, without the owner's tools or memory; `direct` or
+   * `group`, null for any other turn.
+   */
+  @Column({ type: 'varchar', length: 8, nullable: true })
+  contact!: string | null;
 
   /** On an answer's turn: the turn it answers. */
   @Column({ type: 'uuid', nullable: true })

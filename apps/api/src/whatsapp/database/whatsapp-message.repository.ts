@@ -58,7 +58,9 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
         this.mapper.toStored(message, row, places.get(row.id) ?? null),
       );
       const events = stored.flatMap((message) => {
-        const event = message.place ? owed?.eventFor(message, message.place) : null;
+        const event = message.place
+          ? owed?.eventFor(message, message.place)
+          : (owed?.contactEventFor?.(message) ?? null);
         return event ? [event] : [];
       });
       if (events.length > 0) await this.outbox.stageEvents(manager, events);
@@ -86,6 +88,21 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
       accountId: account.accountId,
     });
     return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async saveTranscript(account: WhatsappAccountRef, id: string, transcript: string): Promise<void> {
+    // Conditional, so a second delivery never overwrites what the first heard.
+    await this.repository
+      .createQueryBuilder()
+      .update(WhatsappMessageOrmEntity)
+      .set({ transcript: this.mapper.transcriptToPersistence(transcript) })
+      .where('"id" = :id AND "organizationId" = :organizationId AND "accountId" = :accountId', {
+        id,
+        organizationId: account.organizationId,
+        accountId: account.accountId,
+      })
+      .andWhere('"transcript" IS NULL')
+      .execute();
   }
 
   async findSwitchedBot(account: WhatsappAccountRef, chatId: string): Promise<string | null> {

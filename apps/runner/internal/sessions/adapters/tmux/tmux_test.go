@@ -98,7 +98,7 @@ func TestWindowsAreTheSessionsTabs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	index, err := s.NewWindow(ctx, "opp-tabs", dir)
+	index, err := s.NewWindow(ctx, "opp-tabs", dir, "")
 	if err != nil {
 		t.Fatalf("new-window: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestTheEnvironmentIsInheritedByEveryWindow(t *testing.T) {
 	if err := s.Create(ctx, "opp-env", dir, "", env); err != nil {
 		t.Fatal(err)
 	}
-	index, err := s.NewWindow(ctx, "opp-env", dir)
+	index, err := s.NewWindow(ctx, "opp-env", dir, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,6 +206,31 @@ func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 	}
 	if has, err := s.Has(ctx, "opp-attach"); err != nil || !has {
 		t.Fatal("detaching must leave the session running — that is the whole product")
+	}
+}
+
+// A link a program prints (Claude Code's `[24093](https://…)` is an OSC 8
+// hyperlink) reaches the browser with its URL. tmux keeps hyperlinks only for
+// a client whose terminal declares them; without that the reader sees the
+// link's text and nothing to click.
+func TestAHyperlinkReachesTheBrowserWithItsURL(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-link", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	attachment, err := s.Attach(ctx, "opp-link:0", app.Size{Cols: 80, Rows: 24}, false)
+	if err != nil {
+		t.Fatalf("attach: %v", err)
+	}
+	t.Cleanup(func() { _ = attachment.Close() })
+
+	// The URL is whole only in the command's output, never in what was typed.
+	if _, err := io.WriteString(attachment, `printf '\033]8;;https://%s/order\033\\order\033]8;;\033\\\n' example.com`+"\n"); err != nil {
+		t.Fatal(err)
+	}
+	if !readUntil(t, attachment, ";https://example.com/order\x1b\\") {
+		t.Fatal("the hyperlink's URL never came through the PTY")
 	}
 }
 
@@ -449,7 +474,7 @@ func TestWatchingAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 	if err := s.Create(ctx, "opp-view", t.TempDir(), "", nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir()); err != nil {
+	if _, err := s.NewWindow(ctx, "opp-view", t.TempDir(), ""); err != nil {
 		t.Fatal(err)
 	}
 	agent, err := s.Attach(ctx, "opp-view:0", app.Size{Cols: 120, Rows: 40}, false)
@@ -529,10 +554,58 @@ func TestOpeningAShellLeavesTheAgentsTerminalOnTheAgent(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 	}
 
-	if _, err := s.NewWindow(ctx, "opp-bg", t.TempDir()); err != nil {
+	if _, err := s.NewWindow(ctx, "opp-bg", t.TempDir(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if got := current(); got != "0" {
 		t.Fatalf("the agent's client is on window %q after a shell opened, want 0", got)
+	}
+}
+
+// A window opened with a title keeps it once a program runs in it: tmux
+// renames a window it named itself after the program, and the tab would
+// then say `node` where the agent it holds is codex.
+func TestATitledWindowKeepsItsNameWhileAProgramRuns(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := s.Create(ctx, "opp-titled", dir, "", nil); err != nil {
+		t.Fatal(err)
+	}
+	index, err := s.NewWindow(ctx, "opp-titled", dir, "codex")
+	if err != nil {
+		t.Fatalf("new-window: %v", err)
+	}
+	if err := s.Launch(ctx, "opp-titled:"+itoa(index), dir, "sleep 30"); err != nil {
+		t.Fatalf("launch: %v", err)
+	}
+
+	windows, err := s.Windows(ctx, "opp-titled")
+	if err != nil || len(windows) != 2 {
+		t.Fatalf("windows = %v, err = %v", windows, err)
+	}
+	if windows[1].Name != "codex" || windows[1].Agent {
+		t.Fatalf("the titled window is %+v, want codex and not the session's agent", windows[1])
+	}
+}
+
+// A launch that fails says which window, never what was launched: the
+// command line carries the person's first task, and this error is logged and
+// sent back as `command.failed`'s detail.
+func TestAFailedLaunchKeepsTheCommandOutOfItsError(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	dir := t.TempDir()
+	if err := s.Create(ctx, "opp-secret", dir, "", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	err := s.Launch(ctx, "opp-secret:9", dir, "codex 'the private first task'")
+
+	if err == nil {
+		t.Fatal("a launch into a window that does not exist succeeded")
+	}
+	if strings.Contains(err.Error(), "private first task") || !strings.Contains(err.Error(), "opp-secret:9") {
+		t.Fatalf("err = %v, want the window named and the command left out", err)
 	}
 }

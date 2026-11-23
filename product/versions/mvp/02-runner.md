@@ -436,6 +436,26 @@ plane is what refuses the close unless the caller accepts the loss (10).
 Stop is not close: it ends the agent and the tmux session and leaves
 every checkout on disk for Restart.
 
+**The agent goes with its session** (2026-11-21). `kill-session` only
+hangs the pane up, and Claude Code was seen ignoring that hangup: on one
+host ~110 agents of closed sessions idled for ten days, ~8–10 GB, until
+the machine ran out of memory. So ending a terminal is now three steps.
+`runner pty` hangs its program's process group up when it is told to end
+(SIGHUP, SIGTERM, SIGINT, SIGQUIT) or its pane stops taking output, gives
+it 10 s to save its conversation and exit, then kills the group; a
+second SIGTERM, SIGINT or SIGQUIT kills at once (two SIGHUPs do not: a
+closing pane sends tmux's and the kernel's). Stop, close and `uninstall
+--force` then find the session's wrapper in the process table and do the
+same from outside, so `closed` means nothing of the session runs. And
+the daemon looks at boot and every 5 minutes for a wrapper whose session
+has no tmux session (closing and stopping kill it), and ends it the same
+way, logging the session and pid. The tmux session is the witness, not
+the daemon's map: `runner sessions restart` runs in a process of its own,
+and a session it restarts still reads stopped in the daemon for a while. A wrapper is this runner's only when it runs
+as this account and its command line is `pty --report <file> --` with
+the file in this runner's own `state/program-status/`: the user's own
+tmux and their other `claude` processes are never looked at.
+
 **Adoption on boot.** The runner lists tmux sessions on its socket,
 adopts those the control plane's snapshot reconciliation confirms,
 rehydrates each ring buffer from `capture-pane`, and **reports** the
@@ -465,7 +485,18 @@ every tab has its own scrollback and resize, and a phone-sized tab does
 not shrink the laptop's. Window 0 is the agent; the side pane's Terminal
 tab opens plain shells as windows 1 and up, and the runner answers each
 open, close and listing with the windows tmux lists then (`session.windows`,
-01), so a shell its user ended with `exit` is gone from the next listing. Closing the session is `kill-session`. Working
+01), so a shell its user ended with `exit` is gone from the next listing.
+An open may name a second coding agent instead (`agent`,
+`session.window.agent`): the window is made the same way, named by the
+agent's catalog id (`new-window -n codex`, which tmux then never renames),
+and the agent is started in it as window 0's is at create, with
+`respawn-pane` after its folder is trusted and its executable held still,
+with the model, effort and permission level the open picked for it; each
+one not picked is the session's (its permission level always, its model and
+effort only when it is the session's own agent). A first task the open
+carries is the CLI's trailing positional, as window 0's is. A launch that fails kills the window. It is never
+the session's agent: state dots, the chat and the first prompt stay window
+0's. Closing the session is `kill-session`. Working
 directory, environment, and the credential helper socket are set once at
 creation and inherited by every window. The runner attaches by spawning
 a PTY running `tmux attach -t <id>:<window>` per browser connection, so

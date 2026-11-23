@@ -15,7 +15,10 @@ sessions — a git worktree plus a tmux session with the agent in window 0,
 tabs as further windows, a screen classifier for the sidebar dot, and a close
 that pushes the branch and removes the worktree. The agent runs under
 `runner pty`, which answers its OSC 7501 probe, so an agent that reports its
-own status (Claude Code) is read from that first and the screen second. An
+own status (Claude Code) is read from that first and the screen second.
+Ending a session ends its agent: hung up, given 10 s to save its
+conversation, then killed with its process group, and the daemon ends
+any agent still running for a closed or stopped session every 5 minutes. An
 agent in a session can start, tell and wait on other agents as child
 sessions (`runner --skill`), and a session marked kept comes back on its own
 after a reboot (`product/research/lessons-from-herdr.md` §4).
@@ -61,12 +64,51 @@ a minute, 300 a day). A reply quotes the message it answers when the control
 plane names one (`whatsapp.send`'s `replyTo`). A sender or direct chat that
 WhatsApp addresses by `@lid` is reported by its phone number whenever the
 device knows it, so a bot's owner, named by number, is recognised either way.
+So are the people a message @-mentions and the sender of the message it
+replies to. On connect, and again when it joins a group, a group is renamed
+or its contacts change, the device reports the groups it is in and its
+saved contacts (`whatsapp.chats`), so Settings lists them before anyone
+writes; someone only seen in a group, with no name the phone saved, is not
+reported.
 
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
 image runs and what the API talks to today. **Nothing product-shaped
 should be built on the key-minting endpoints** — pairing replaces them as
 the way this host proves who it is, and they go when the link lands.
+
+## Identity
+
+The runner is the product on a machine you own, so it wears the console's
+mark and colours wherever a person meets it.
+
+<p>
+  <img src="packaging/macos/AppIcon.png" width="96" alt="The runner's macOS icon: a white fedora on an ink tile">
+</p>
+
+- **The mark** is the console's fedora on its ink tile
+  (`apps/web/public/favicon.svg`). On macOS it is the app icon of
+  `OppenheimerRunner.app` (`packaging/macos/AppIcon.svg`, packed into
+  `AppIcon.icns` by `node scripts/runner/app-icon.mjs`), which Login Items,
+  Privacy & Security and every permission prompt show. On a terminal it is
+  the same hat in six rows of block characters beside the name, at the top of
+  `runner help`, `runner status` and the installer.
+- **Colour is rationed** the way the design system rations it
+  (`packages/frontend/design-system/web`): one blue for what to type or open
+  (commands, URLs), green, amber and red only for state, dim for what
+  supports a line (paths, details). A 24-bit terminal gets the design
+  system's own hues; any other gets the nearest of its sixteen.
+- **A state is a dot and a word**, as in the console's sidebar: `● running`,
+  `▲ not found`, `✕ not installed`; `error:` is red, `warning:` amber.
+- **Only for a person at a terminal.** Piped, redirected, in the service's
+  log or a test, every line reads exactly as it would without any of this:
+  no escape codes, no mark. `NO_COLOR` or `TERM=dumb` turns it off on a
+  terminal; `CLICOLOR_FORCE=1` turns it on without one
+  (`internal/cli/look.go`).
+
+| `runner status`, light terminal | dark terminal |
+| --- | --- |
+| ![runner status on a light terminal](docs/identity/status-light.png) | ![runner status on a dark terminal](docs/identity/status-dark.png) |
 
 ## Subcommands
 

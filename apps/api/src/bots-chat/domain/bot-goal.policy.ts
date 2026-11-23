@@ -13,6 +13,7 @@ import {
 import { BotGoalEntity, goalKeyPrefix } from './bot-goal.entity';
 import type { BotGoalVerdict } from './bot-goal-review.policy';
 import { BotMessageEntity } from './bot-message.entity';
+import { promptText } from './bot-prompt-text.policy';
 import { BotTurnEntity, isTurnLimitFailure } from './bot-turn.entity';
 
 /**
@@ -85,7 +86,12 @@ export type GoalDecision =
 
 /** How a goal ends, as its line says it. */
 export interface GoalEnding {
-  activity: Exclude<BotGoalActivity, 'continued' | 'paused' | 'resumed'>;
+  /**
+   * How a goal ends now. `impossible` is not one of them: a reviewer's
+   * "impossible" pauses the goal as blocked, for the person to decide. The
+   * shared list keeps it for the lines goals left before that.
+   */
+  activity: Exclude<BotGoalActivity, 'continued' | 'paused' | 'resumed' | 'impossible'>;
   reason: string | null;
 }
 
@@ -241,12 +247,7 @@ export function continueOrStop<Props>(
  * the condition as its directive, and says how it will be judged.
  */
 export function goalSetPrompt(condition: string): string {
-  return [
-    `The person set you a goal with /goal. Work toward it now: ${condition}`,
-    'After each of your turns another one comes, for as long as the goal is open: take a real step each turn and report it. There is no limit on turns, so do the work properly rather than fast.',
-    'When the condition holds, run the check it names, say what it answered, and call end_goal with outcome met: a reviewer then reads what you showed and ends the goal, or sends you on with its reason. It judges only what your words show: a claim with no shown check does not count.',
-    'If the goal cannot go on without the person, call end_goal with outcome blocked and say what you need.',
-  ].join('\n');
+  return promptText('turn/slash-command.goal-set', { condition });
 }
 
 /**
@@ -259,8 +260,17 @@ export function continuationCountText(
   step: number,
   noun: 'continuation' | 'continuations' = 'continuation',
 ): string {
-  const of = goal.limit === null ? '' : ` of ${goal.limit}`;
-  return noun === 'continuations' ? `${step}${of} continuations` : `continuation ${step}${of}`;
+  const count = { step: String(step) };
+  if (goal.limit === null) {
+    return promptText(
+      noun === 'continuations' ? 'wake/goal.continuations' : 'wake/goal.continuation',
+      count,
+    );
+  }
+  return promptText(
+    noun === 'continuations' ? 'wake/goal.continuations-of' : 'wake/goal.continuation-of',
+    { ...count, limit: String(goal.limit) },
+  );
 }
 
 /**
@@ -276,19 +286,20 @@ export function goalContinuationText(
   lastStoppedAtLimit = false,
 ): string {
   return [
-    `Continue toward your goal (${continuationCountText(goal, step)}): ${goal.objective}`,
-    lastStoppedAtLimit
-      ? "Your last turn stopped before it finished (its model went silent, the server restarted, or the model provider's limit stopped it and has since passed); what it did is kept. Check the state of anything it left in progress before repeating it."
-      : null,
-    reason
-      ? `You said the goal is met, and a reviewer read your turn: it is not met yet. ${reason}`
-      : 'Nobody wrote to you: this turn exists to make progress on the goal.',
+    promptText('wake/goal.continue', {
+      count: continuationCountText(goal, step),
+      objective: goal.objective,
+    }),
+    lastStoppedAtLimit ? promptText('wake/goal.last-turn-stopped') : null,
+    reason ? promptText('wake/goal.not-met-yet', { reason }) : promptText('wake/goal.nobody-wrote'),
     goal.tokenBudget === null
       ? null
-      : `Budget: ${goal.tokensUsed.toLocaleString('en')} of ${goal.tokenBudget.toLocaleString('en')} tokens spent. The goal pauses when it is spent.`,
-    'Read what your last turns did, take the next step, and say what it showed. A turn that calls no tool is not progress: after ' +
-      `${BOT_GOAL_IDLE_TURNS} of them in a row the goal pauses.`,
-    'When the goal is met, run its check, say what it answered and call end_goal with outcome met. When it cannot go on without the person, call end_goal with outcome blocked and say what you need.',
+      : promptText('wake/goal.budget', {
+          used: goal.tokensUsed.toLocaleString('en'),
+          budget: goal.tokenBudget.toLocaleString('en'),
+        }),
+    promptText('wake/goal.take-the-next-step', { idleTurns: String(BOT_GOAL_IDLE_TURNS) }),
+    promptText('wake/goal.how-it-ends'),
   ]
     .filter(Boolean)
     .join('\n');
@@ -334,21 +345,22 @@ export function goalContinuationTurn(
 }
 
 const END_WORDS: Record<GoalEnding['activity'], string> = {
-  met: 'A reviewer found your goal met',
-  impossible: 'A reviewer found your goal cannot be met without the person',
-  cleared: 'The person stopped your goal',
-  exhausted: 'Your goal used all its continuations and stopped',
-  stopped: 'Your goal stopped because its owner can no longer act in the workspace',
+  met: promptText('wake/goal.ended-met'),
+  cleared: promptText('wake/goal.ended-cleared'),
+  exhausted: promptText('wake/goal.ended-exhausted'),
+  stopped: promptText('wake/goal.ended-stopped'),
 };
 
 /** Why a goal paused, as the bot reads it in its history. */
 const PAUSE_WORDS: Record<BotGoalPauseReason, string> = {
-  blocked: 'Your goal is paused: it cannot go on without the person',
-  usage_limit: 'Your goal is paused: the model provider refused for a limit, quota or sign-in',
-  no_progress: `Your goal is paused: ${BOT_GOAL_IDLE_TURNS} of its turns in a row called no tool`,
-  budget: 'Your goal is paused: it spent its token budget',
-  stopped: 'Your goal is paused: the person stopped a turn of it',
-  failed: 'Your goal is paused: a turn of it failed',
+  blocked: promptText('wake/goal.paused-blocked'),
+  usage_limit: promptText('wake/goal.paused-usage-limit'),
+  no_progress: promptText('wake/goal.paused-no-progress', {
+    idleTurns: String(BOT_GOAL_IDLE_TURNS),
+  }),
+  budget: promptText('wake/goal.paused-budget'),
+  stopped: promptText('wake/goal.paused-stopped'),
+  failed: promptText('wake/goal.paused-failed'),
 };
 
 /**
@@ -362,11 +374,14 @@ export function goalPauseLine(
   const paused = goal.paused;
   const content =
     activity === 'resumed'
-      ? `The person resumed your goal: ${goal.objective}`
+      ? promptText('wake/goal.resumed', { objective: goal.objective })
       : [
-          `${paused ? PAUSE_WORDS[paused.reason] : 'Your goal is paused'}: ${goal.objective}`,
-          paused?.note ? `Why: ${paused.note}` : null,
-          'It stays open; the person resumes it.',
+          promptText('wake/goal.pause-line', {
+            paused: paused ? PAUSE_WORDS[paused.reason] : promptText('wake/goal.paused'),
+            objective: goal.objective,
+          }),
+          paused?.note ? promptText('wake/goal.why', { note: paused.note }) : null,
+          promptText('wake/goal.stays-open'),
         ]
           .filter(Boolean)
           .join('\n');
@@ -402,8 +417,12 @@ export function goalEndLine(
     turnId: null,
     role: 'event',
     content: [
-      `${END_WORDS[activity]} (${continuationCountText(goal, goal.continuations, 'continuations')}): ${goal.objective}`,
-      activity === 'stopped' || !reason ? null : `Reason: ${reason}`,
+      promptText('wake/goal.end-line', {
+        ended: END_WORDS[activity],
+        count: continuationCountText(goal, goal.continuations, 'continuations'),
+        objective: goal.objective,
+      }),
+      activity === 'stopped' || !reason ? null : promptText('wake/goal.reason', { reason }),
     ]
       .filter(Boolean)
       .join('\n'),

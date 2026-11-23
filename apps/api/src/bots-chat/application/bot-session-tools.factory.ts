@@ -29,6 +29,7 @@ import {
   sessionLaunchRefusal,
   sessionSummary,
 } from '../bot-session-tool.mapper';
+import { promptText } from '../domain/bot-prompt-text.policy';
 import { answerNeedsPerson, SESSION_UNBLOCK_RULE } from '../domain/bot-session-decision.policy';
 import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
@@ -42,6 +43,7 @@ import {
   cloudStartAnswer,
   planCloudSession,
 } from './bot-cloud-session.policy';
+import { BotSessionLinkResolver } from './bot-session-link.resolver';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -72,9 +74,7 @@ const CLOUD_START_WAIT_MAX_SECONDS = 120;
 const HIDDEN_SESSION_INPUT = z
   .boolean()
   .optional()
-  .describe(
-    "Start it hidden from the person's sidebar in the console (default false): for work they need not watch. It runs like any other, and they can show hidden sessions whenever they want.",
-  );
+  .describe(promptText('tools/sessions.hidden-session'));
 
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
@@ -86,6 +86,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     private readonly commandBus: CommandBus,
     private readonly watches: BotSessionWatchResolver,
     private readonly waits: BotSessionWaitResolver,
+    private readonly links: BotSessionLinkResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -116,8 +117,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           label: project?.name ?? `project ${input.project_id}`,
         };
       },
-      description:
-        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work that needs a shell or a checkout, as \"Working on code through sessions\" says; it returns at once with the session's id, and the agent works on its own. If the host is offline the answer says the session is queued: report it as queued, not running. You are subscribed to it unless watch is false. The host defaults to the project's default host, then your home host.",
+      description: promptText('tools/sessions.start-session'),
       input: z.object({
         // The session's first prompt, held to the same rule here so a task
         // too long is the tool's own error, before any card is raised. Only
@@ -128,32 +128,34 @@ export class BotSessionToolsFactory implements BotToolArea {
           .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
           .refine(fitsPromptBound, {
-            message: `Too long: at most ${FIELD_BOUNDS.prompt.maxBytes} bytes (UTF-8). Write a shorter brief; the agent can read files and the repository for the rest.`,
+            message: promptText('tools/sessions.start-session-task-message', {
+              maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
+            }),
           })
           .describe(
-            `What the agent should do: it starts with only this. At most ${FIELD_BOUNDS.prompt.maxBytes} bytes, so keep it to a focused brief and point at files rather than pasting them.`,
+            promptText('tools/sessions.start-session-task', {
+              maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
+            }),
           ),
         project_id: z
           .uuid()
           .optional()
-          .describe('The project whose repository to work in (from list_projects).'),
+          .describe(promptText('tools/sessions.start-session-project-id')),
         repository: z
           .string()
           .max(200)
           .optional()
-          .describe(
-            "owner/name of one of the project's repositories; its default one when omitted.",
-          ),
+          .describe(promptText('tools/sessions.start-session-repository')),
         folder: z
           .string()
           .max(1_024)
           .optional()
-          .describe('Instead of a repository: an absolute path to a folder already on the host.'),
-        host_id: z.uuid().optional().describe('The host to run on (from list_hosts).'),
+          .describe(promptText('tools/sessions.start-session-folder')),
+        host_id: z.uuid().optional().describe(promptText('tools/sessions.start-session-host-id')),
         agent: z
           .enum(CODING_AGENT_IDS)
           .optional()
-          .describe('Which coding agent; claude-code when omitted.'),
+          .describe(promptText('tools/sessions.start-session-agent')),
         model: z
           .string()
           .trim()
@@ -161,35 +163,33 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(128)
           .optional()
           .describe(
-            `The agent's model, by id or by name as the person said it. ${modelChoicesByAgent()} A model the agent does not have is refused with the list it has.`,
+            promptText('tools/sessions.start-session-model', {
+              modelChoicesByAgent: modelChoicesByAgent(),
+            }),
           ),
         effort: z
           .enum(SESSION_EFFORTS)
           .optional()
-          .describe(
-            "How hard the model thinks, as the CLI names it (low, medium, high, xhigh, max; Codex also minimal and ultra). The model's own default when omitted; a level the model does not offer is refused with the ones it does.",
-          ),
+          .describe(promptText('tools/sessions.start-session-effort')),
         permission: z
           .enum(SESSION_PERMISSIONS)
           .optional()
-          .describe(
-            'What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).',
-          ),
+          .describe(promptText('tools/sessions.start-session-permission')),
         base_branch: z
           .string()
           .trim()
           .min(1)
           .max(255)
           .optional()
-          .describe(
-            "The branch the session's own branch starts from; the repository's base branch when omitted. Not with folder.",
-          ),
-        name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
-        hidden: HIDDEN_SESSION_INPUT,
-        watch: z
-          .boolean()
+          .describe(promptText('tools/sessions.start-session-base-branch')),
+        name: z
+          .string()
+          .min(1)
+          .max(80)
           .optional()
-          .describe('Be woken when its task needs input or ends (default true).'),
+          .describe(promptText('tools/sessions.start-session-name')),
+        hidden: HIDDEN_SESSION_INPUT,
+        watch: z.boolean().optional().describe(promptText('tools/sessions.start-session-watch')),
       }),
       summarize: async (input, context) => {
         // A project the owner cannot read still gets a card, naming it by id: the call says why.
@@ -218,7 +218,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ' The host is offline: the session is queued and starts when it comes back.'
+          ? ` ${promptText('tools/sessions.start-session-host-offline-session')}`
           : '';
         const watched = await this.watches.follow(
           context,
@@ -226,10 +226,17 @@ export class BotSessionToolsFactory implements BotToolArea {
           'first_task',
           input.watch,
         );
-        return {
-          content: `Started session ${result.sessionId} on host ${hostId}.${offline} The agent works on its own. ${watched}`,
+        const started = promptText('tools/sessions.start-session-content', {
           sessionId: result.sessionId,
-        };
+          hostId,
+          offline,
+          watched,
+        });
+        const link = this.links.forTurn(context, result.sessionId);
+        const channelLink = link
+          ? ` ${promptText('tools/sessions.start-session-channel-link', { link })}`
+          : '';
+        return { content: `${started}${channelLink}`, sessionId: result.sessionId };
       },
     });
   }
@@ -256,8 +263,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           label: project?.name ?? `project ${input.project_id}`,
         };
       },
-      description:
-        "Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the person's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists: an answer with no link is not a start (still starting, queued on an offline host, or failed, most often because the host's CLI is not signed in; read_session says why). A cloud session's conversation stays at its vendor, so read_session_transcript cannot read it; follow it at its link and with get_session. You are subscribed to it unless watch is false. A cursor session takes follow-ups with send_to_session once its run ends; a claude-code or codex one takes follow-ups and answers at its vendor, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.",
+      description: promptText('tools/sessions.start-cloud-session'),
       input: z.object({
         task: z
           .string()
@@ -265,62 +271,61 @@ export class BotSessionToolsFactory implements BotToolArea {
           .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
           .refine(fitsPromptBound, {
-            message: `Too long: at most ${FIELD_BOUNDS.prompt.maxBytes} bytes (UTF-8). Write a shorter brief; the agent can read the repository for the rest.`,
+            message: promptText('tools/sessions.start-cloud-session-task-message', {
+              maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
+            }),
           })
           .describe(
-            `What the cloud agent should do: it starts with only this. At most ${FIELD_BOUNDS.prompt.maxBytes} bytes.`,
+            promptText('tools/sessions.start-cloud-session-task', {
+              maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
+            }),
           ),
-        project_id: z
-          .uuid()
-          .describe('The project whose repository it works on (from list_projects).'),
+        project_id: z.uuid().describe(promptText('tools/sessions.start-cloud-session-project-id')),
         repository: z
           .string()
           .max(200)
           .optional()
-          .describe(
-            "owner/name of one of the project's repositories; its default one when omitted.",
-          ),
+          .describe(promptText('tools/sessions.start-session-repository')),
         agent: z
           .enum(CLOUD_SESSION_AGENTS)
           .optional()
-          .describe('Which cloud: claude-code when omitted, codex, or cursor.'),
+          .describe(promptText('tools/sessions.start-cloud-session-agent')),
         host_id: z
           .uuid()
           .optional()
-          .describe(
-            'claude-code and codex only: the host that starts it (from list_hosts); its CLI account runs the session.',
-          ),
+          .describe(promptText('tools/sessions.start-cloud-session-host-id')),
         codex_environment: z
           .string()
           .trim()
           .min(1)
           .max(200)
           .optional()
-          .describe(
-            "codex only: a Codex cloud environment id (from ChatGPT Settings → Codex Cloud); Codex's default environment with the repository when omitted.",
-          ),
+          .describe(promptText('tools/sessions.start-cloud-session-codex-environment')),
         model: z
           .string()
           .trim()
           .min(1)
           .max(128)
           .optional()
-          .describe("cursor only: one of Cursor's models; Cursor's own pick when omitted."),
-        name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+          .describe(promptText('tools/sessions.start-cloud-session-model')),
+        name: z
+          .string()
+          .min(1)
+          .max(80)
+          .optional()
+          .describe(promptText('tools/sessions.start-session-name')),
         hidden: HIDDEN_SESSION_INPUT,
         watch: z
           .boolean()
           .optional()
-          .describe('Be woken when its task needs input, ends or fails (default true).'),
+          .describe(promptText('tools/sessions.start-cloud-session-watch')),
         wait_seconds: z
           .number()
           .int()
           .min(0)
           .max(CLOUD_START_WAIT_MAX_SECONDS)
           .default(60)
-          .describe(
-            "How long to wait for the session's link at its vendor before answering without it.",
-          ),
+          .describe(promptText('tools/sessions.start-cloud-session-wait-seconds')),
       }),
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id).catch(() => null);
@@ -356,23 +361,25 @@ export class BotSessionToolsFactory implements BotToolArea {
       scope: 'sessions:write',
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description:
-        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works the prompt is refused, so end your turn and let your watch wake you when it is back at its prompt; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A closed session takes no prompt, ever. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours, and the answer gives the entry it was sent at: read_session with that after_seq shows what followed, and read_session_transcript shows the agent's own words. You are subscribed to the task it starts unless watch is false.",
+      description: promptText('tools/sessions.send-to-session'),
       input: z.object({
-        session_id: z.uuid().describe('The session to prompt (from list_sessions).'),
+        session_id: z.uuid().describe(promptText('tools/sessions.send-to-session-session-id')),
         text: z
           .string()
           .trim()
           .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
           .refine(fitsPromptBound, {
-            message: `Too long: at most ${FIELD_BOUNDS.prompt.maxBytes} bytes (UTF-8). Write a shorter prompt.`,
+            message: promptText('tools/sessions.send-to-session-text-message', {
+              maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
+            }),
           })
-          .describe(`What to tell the agent. At most ${FIELD_BOUNDS.prompt.maxBytes} bytes.`),
-        watch: z
-          .boolean()
-          .optional()
-          .describe('Be woken when the task it starts needs input or ends (default true).'),
+          .describe(
+            promptText('tools/sessions.send-to-session-text', {
+              maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
+            }),
+          ),
+        watch: z.boolean().optional().describe(promptText('tools/sessions.send-to-session-watch')),
       }),
       summarize: async (input, context) =>
         promptSummary(input, await this.session(context, input.session_id)),
@@ -388,7 +395,11 @@ export class BotSessionToolsFactory implements BotToolArea {
           }),
         );
         const watched = await this.watches.follow(context, input.session_id, { turn }, input.watch);
-        return `Sent the prompt to session ${input.session_id}. ${watched}${readAfterHint(sent.seq)}`;
+        return promptText('tools/sessions.send-to-session-sent-prompt-session', {
+          sessionId: input.session_id,
+          watched,
+          readAfterHint: readAfterHint(sent.seq),
+        });
       },
     });
   }
@@ -407,10 +418,16 @@ export class BotSessionToolsFactory implements BotToolArea {
           context.permission,
         ),
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared. You are subscribed to the task you unblocked unless watch is false.`,
+      description: promptText('tools/sessions.answer-session', {
+        sessionUnblockRule: SESSION_UNBLOCK_RULE,
+      }),
       input: z.object({
-        session_id: z.uuid().describe('The session (from list_sessions).'),
-        decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),
+        session_id: z.uuid().describe(promptText('tools/sessions.answer-session-session-id')),
+        decision_id: z
+          .string()
+          .min(1)
+          .max(128)
+          .describe(promptText('tools/sessions.answer-session-decision-id')),
         answers: z
           .array(
             z.object({
@@ -418,31 +435,26 @@ export class BotSessionToolsFactory implements BotToolArea {
                 .array(z.number().int().min(0))
                 .max(6)
                 .default([])
-                .describe('Option indexes; one for a single-choice question.'),
+                .describe(promptText('tools/sessions.answer-session-answers-picks')),
               other: z
                 .string()
                 .max(1_000)
                 .optional()
-                .describe('Words of your own, in place of or beside the picks.'),
+                .describe(promptText('tools/sessions.answer-session-answers-other')),
             }),
           )
           .min(1)
           .max(4)
           .optional()
-          .describe('For a question: one answer per question, in order.'),
+          .describe(promptText('tools/sessions.answer-session-answers')),
         option: z
           .number()
           .int()
           .min(0)
           .max(8)
           .optional()
-          .describe("For a permission dialog: the option's index."),
-        watch: z
-          .boolean()
-          .optional()
-          .describe(
-            'Be woken when the task you unblocked needs input again or ends (default true).',
-          ),
+          .describe(promptText('tools/sessions.answer-session-option')),
+        watch: z.boolean().optional().describe(promptText('tools/sessions.answer-session-watch')),
       }),
       summarize: async (input, context) => {
         const summary = decisionAnswerSummary(input, await this.session(context, input.session_id));
@@ -452,7 +464,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       run: async (input, context) => {
         if ((input.answers === undefined) === (input.option === undefined)) {
           throw new BotToolRefusal(
-            'Give answers (for a question) or option (for a permission dialog), not both.',
+            promptText('tools/sessions.answer-session-give-answers-question'),
           );
         }
         // Read first: the task answered, so its end wakes the bot even if it comes before the watch.
@@ -473,7 +485,11 @@ export class BotSessionToolsFactory implements BotToolArea {
           task ? { answered: task.seq } : 'now',
           input.watch,
         );
-        return `Answered session ${input.session_id}. The agent takes it from here. ${watched}${readAfterHint(answered.seq)}`;
+        return promptText('tools/sessions.answer-session-answered-session-agent', {
+          sessionId: input.session_id,
+          watched,
+          readAfterHint: readAfterHint(answered.seq),
+        });
       },
     });
   }
@@ -482,10 +498,9 @@ export class BotSessionToolsFactory implements BotToolArea {
     return this.sessionAction({
       name: 'stop_session',
       verb: 'stop',
-      description:
-        "Stops a running session's agent. The worktree and its changes are kept. Use it when the person asks to stop one, or for a session you started that went wrong. It stops once its host hears it: get_session shows when it has.",
+      description: promptText('tools/sessions.stop-session'),
       input: z.object({
-        session_id: z.uuid().describe('The session to stop (from list_sessions).'),
+        session_id: z.uuid().describe(promptText('tools/sessions.stop-session-session-id')),
       }),
       summary: (session) => `Stop the session "${session.name}" (${session.id})`,
       command: (input, context) =>
@@ -503,14 +518,13 @@ export class BotSessionToolsFactory implements BotToolArea {
     return this.sessionAction({
       name: 'close_session',
       verb: 'close',
-      description:
-        "Closes a session you started (a bot's session), most often one that failed or that you no longer need, so it leaves the person's sidebar: its agent ends, each branch is pushed and the worktree is removed. A session the person, an automation or a review started is refused: tell the person instead. Work never pushed is kept, and the close refused by the host, unless accept_unpushed_work is true; only set it when the person said the work can go. A failed session that never started has nothing to lose. It closes once its host hears it: get_session shows when it has.",
+      description: promptText('tools/sessions.close-session'),
       input: z.object({
-        session_id: z.uuid().describe('The session to close (from list_sessions).'),
+        session_id: z.uuid().describe(promptText('tools/sessions.close-session-session-id')),
         accept_unpushed_work: z
           .boolean()
           .optional()
-          .describe('Remove the worktree even with work never pushed (default false).'),
+          .describe(promptText('tools/sessions.close-session-accept-unpushed-work')),
       }),
       refusal: botSessionRefusal,
       doneHere: (session) => session.closesWithoutItsHost,

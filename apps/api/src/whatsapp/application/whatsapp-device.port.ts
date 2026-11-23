@@ -16,6 +16,16 @@ export type WhatsappSendOutcome =
   /** The runner refused it: `code` is its `WHATSAPP_*` (002 not connected, 003 WhatsApp refused, 004 budget). */
   | { kind: 'failed'; code: string; detail?: string };
 
+/** What asking the host for a voice note came to. */
+export type WhatsappVoiceNoteOutcome =
+  | { kind: 'fetched'; data: Buffer; mimetype: string }
+  | { kind: 'host_offline' }
+  /** The host's runner predates handing voice notes over (`whatsapp.voice`). */
+  | { kind: 'not_supported' }
+  | { kind: 'timed_out' }
+  /** The runner refused: `WA_002` not connected, `WA_005` unknown or too old, `WA_006` too large, `WA_007` WhatsApp refused. */
+  | { kind: 'failed'; code: string; detail?: string };
+
 /**
  * A host's WhatsApp linked device, over its runner link: the socket and the
  * keys are the runner's, so everything the control plane does to the device is
@@ -38,4 +48,17 @@ export interface WhatsappDevicePort {
     text: string,
     replyTo?: WhatsappQuote,
   ): Promise<WhatsappSendOutcome>;
+  /**
+   * Send a voice note: Ogg/Opus audio running `seconds`, which the host
+   * uploads and sends as push-to-talk. `not_supported` is a runner from
+   * before it (`whatsapp.voice.send`).
+   */
+  sendVoice(
+    hostId: string,
+    chatId: string,
+    audio: Buffer,
+    seconds: number,
+  ): Promise<WhatsappSendOutcome>;
+  /** Fetch a voice note the number received, by its chat and WhatsApp id. */
+  voiceNote(hostId: string, chatId: string, messageId: string): Promise<WhatsappVoiceNoteOutcome>;
 }

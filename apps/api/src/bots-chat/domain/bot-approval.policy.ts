@@ -12,6 +12,7 @@ import {
 } from '@oppenheimer/shared';
 import type { BotApprovalEntity } from './bot-approval.entity';
 import { BotMessageEntity } from './bot-message.entity';
+import { promptText } from './bot-prompt-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
@@ -39,12 +40,12 @@ export function grantedLine(subjectLabel: string): string {
 
 /** What the model reads when its call became a card: nothing ran, and its turn should end. */
 export function askedForApproval(summary: string): string {
-  return `Not done yet: this needs the person's approval, so it is now waiting on an approval card in the chat ("${summary}"). Nothing has run. End your turn now: say in one sentence what you asked for and that you will carry on once they answer. Do not try to do it another way meanwhile.`;
+  return promptText('tools/approval.asked-for-approval', { summary });
 }
 
 /** What the model reads when an earlier card still waits: one at a time. */
 export function waitingForApproval(pendingSummary: string): string {
-  return `Not done: an earlier request of yours is still waiting for the person's approval ("${pendingSummary}"), and only one can wait at a time. End your turn now and say you are waiting for their answer.`;
+  return promptText('tools/approval.waiting-for-approval', { pendingSummary });
 }
 
 /** How far a yes reaches; null for a no. */
@@ -67,18 +68,24 @@ export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null 
  * the bot reads this and says it is on it (`approvalAsk`).
  */
 export function approvalStartedWords(approval: BotApprovalEntity, by: string): string {
-  return `${who(by)} approved: ${approval.summary}\nIt is running now.`;
+  return promptText('wake/approval.started', { who: who(by), summary: approval.summary });
 }
 
 /** The words that open the turn reporting an approved call: what it was, and its answer. */
 export function approvalFinishedWords(approval: BotApprovalEntity, by: string): string {
-  const answer = approval.status === 'failed' ? 'It ran and failed' : 'It ran';
-  return `${who(by)} approved a call, and it finished: ${approval.summary}\n${answer}: ${approval.result ?? ''}`;
+  return promptText('wake/approval.finished', {
+    who: who(by),
+    summary: approval.summary,
+    answer: promptText(
+      approval.status === 'failed' ? 'wake/approval.it-ran-and-failed' : 'wake/approval.it-ran',
+    ),
+    result: approval.result ?? '',
+  });
 }
 
 /** The words that open the turn a no gives the bot: what was refused, and the note. */
 export function deniedWords(approval: BotApprovalEntity, by: string): string {
-  return denialWords(approval, `${who(by)} denied`);
+  return denialWords(approval, 'wake/approval.denied', by);
 }
 
 /**
@@ -87,14 +94,10 @@ export function deniedWords(approval: BotApprovalEntity, by: string): string {
  * came of the card (how the call went, or the no).
  */
 export function approvalAsk(stage: BotApprovalEventStage | undefined): string {
-  return stage === 'started' ? APPROVAL_STARTED_ASK : APPROVAL_DECIDED_ASK;
+  return promptText(
+    stage === 'started' ? 'wake/approval.ask-started' : 'wake/approval.ask-decided',
+  );
 }
-
-const APPROVAL_DECIDED_ASK =
-  'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it ran, check it as "Check before you report" says before you call it done. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
-
-const APPROVAL_STARTED_ASK =
-  'They just approved the call you asked for, and Oppenheimer is running it now. Before it finishes, tell them in one short sentence, in your own voice and their language, that you are on it and what you are doing (for example: "On it, archiving those 25 now."). Do not say it is done, do not guess how it will go, and do not call any tool: how it went comes in your next turn, and you report it then.';
 
 /**
  * The approval a turn's opening says was approved and is running: the turn
@@ -112,12 +115,19 @@ export function approvalStartedBy(
 
 /** Who decided, by name, as the bot is told; "The person" when the name is unknown. */
 function who(by: string): string {
-  return by.trim() || 'The person';
+  return by.trim() || promptText('wake/approval.the-person');
 }
 
 /** A no in words: what was refused, then the person's note when they added one. */
-function denialWords(approval: BotApprovalEntity, lead: string): string {
-  return [`${lead}: ${approval.summary}`, approval.note ? `Their note: ${approval.note}` : null]
+function denialWords(
+  approval: BotApprovalEntity,
+  lead: 'wake/approval.denied' | 'wake/approval.denied-and-stopped',
+  by: string,
+): string {
+  return [
+    promptText(lead, { who: who(by), summary: approval.summary }),
+    approval.note ? promptText('wake/approval.their-note', { note: approval.note }) : null,
+  ]
     .filter(Boolean)
     .join('\n');
 }
@@ -183,7 +193,7 @@ export function stoppedLine(approval: BotApprovalEntity, by: string): BotMessage
     botId: approval.botId,
     turnId: null,
     role: 'event',
-    content: denialWords(approval, `${who(by)} denied and stopped your turn`),
+    content: denialWords(approval, 'wake/approval.denied-and-stopped', by),
     event: { ...approvalEventOf(approval), outcome: 'stopped' },
     steps: [],
     position: 0,

@@ -12,6 +12,7 @@ import {
   TASK_STATUSES_BEFORE_WORK,
   TASK_TITLE_MAX,
   type TaskOrigin,
+  type TaskPriority,
   type TaskStatus,
 } from '@oppenheimer/shared';
 import { TaskActivityLoggedDomainEvent } from './events/task-activity-logged.domain-event';
@@ -19,6 +20,7 @@ import { TaskChangedDomainEvent } from './events/task-changed.domain-event';
 import { TaskSessionLinkedDomainEvent } from './events/task-session-linked.domain-event';
 import type { PlanActor, PlanChange, PlanWriteKind } from './plan-change.types';
 import { taskActivityOf } from './task-activity.policy';
+import { offTodoAfterEdit } from './task-off-todo.policy';
 import { isRank } from './task-rank.policy';
 
 /** How a session came to be on a task: started from it, or linked afterwards. */
@@ -49,6 +51,13 @@ export interface TaskProps {
   dueTime: string | null;
   /** The day it is on To do from, until it is done; apart from when it is due. */
   focusDate: string | null;
+  /**
+   * Taken off To do by its person: off every day's list, its due date
+   * included, until it gets a TODO day again or its due date changes.
+   */
+  offTodo: boolean;
+  /** How much it matters, or null for none; never moves it on the board. */
+  priority: TaskPriority | null;
   /** When it last moved to Done; cleared when it leaves. */
   completedAt: Date | null;
   /** Why it waits on a person, or null; Done clears it. */
@@ -80,6 +89,7 @@ export interface CreateTaskProps {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  priority?: TaskPriority | null;
   createdByUserId: string;
   actor: PlanActor;
   /** Who made it, as the request came in: an agent's waits for its person. */
@@ -94,6 +104,9 @@ export interface TaskEdit {
   dueDate?: string | null;
   dueTime?: string | null;
   focusDate?: string | null;
+  /** `true` takes it off To do; a new TODO day or due date puts it back. */
+  offTodo?: boolean;
+  priority?: TaskPriority | null;
 }
 
 /**
@@ -129,6 +142,8 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         dueDate: props.dueDate ?? null,
         dueTime: props.dueDate ? (props.dueTime ?? null) : null,
         focusDate: props.focusDate ?? null,
+        offTodo: false,
+        priority: props.priority ?? null,
         completedAt: props.status === 'done' ? new Date() : null,
         blockedReason: null,
         blockedAt: null,
@@ -232,6 +247,12 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get focusDate(): string | null {
     return this.props.focusDate;
   }
+  get offTodo(): boolean {
+    return this.props.offTodo;
+  }
+  get priority(): TaskPriority | null {
+    return this.props.priority;
+  }
   get completedAt(): Date | null {
     return this.props.completedAt;
   }
@@ -285,9 +306,18 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
     }
     if (changes.dueTime !== undefined) this.props.dueTime = changes.dueTime;
     if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
+    if (changes.priority !== undefined) this.props.priority = changes.priority;
+    const rescheduled = due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime;
+    this.props.offTodo = offTodoAfterEdit({
+      current: this.props.offTodo,
+      offTodo: changes.offTodo,
+      focusDate: changes.focusDate,
+      dueDateBefore: due.dueDate,
+      dueDateAfter: this.props.dueDate,
+    });
     this.setUpdatedAt(new Date());
     this.validate();
-    if (due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime) {
+    if (rescheduled) {
       this.record('rescheduled', {
         from: due,
         to: { dueDate: this.props.dueDate, dueTime: this.props.dueTime },

@@ -46,7 +46,8 @@
     "markDone": "Marcar como hecha",
     "markNotDone": "Marcar como no hecha",
     "start": "Iniciar sesión de trabajo",
-    "openSession": "Abrir la sesión {{name}}"
+    "openSession": "Abrir la sesión {{name}}",
+    "priority": "Prioridad: {{level}}"
   },
   "sessionState": {
     "waiting": "Necesita respuesta",
@@ -96,6 +97,7 @@
     "deleting": "Eliminando…"
   },
   "dialog": {
+    "offTodo": "Fuera de TODO hasta que tenga un día",
     "newTitle": "Nueva tarea",
     "editTitle": "Editar tarea",
     "titleLabel": "Título",
@@ -123,7 +125,8 @@
     "loadFailed": "No se ha podido cargar el tablero.",
     "gone": "Esta tarea ya no existe.",
     "deleting": "Eliminando…",
-    "focus": "Día en TODO"
+    "focus": "Día en TODO",
+    "priority": "Prioridad"
   },
   "link": {
     "search": "Buscar sesiones",
@@ -193,7 +196,8 @@
     "todayWeek": "Hoy · Semana {{week}}",
     "weekNumber": "Semana {{week}}",
     "includeOverdue": "Incluir vencidas",
-    "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
+    "empty": "Añade una tarea arriba o elige algunas con Añadir tareas.",
+    "emptyTitle": "Aún no hay nada en este día",
     "noMatch": "Ninguna tarea coincide con estos filtros.",
     "add": "Añadir una tarea",
     "addLabel": "Añadir una tarea para este día",
@@ -231,7 +235,10 @@
     },
     "move": "Mover {{title}} a otro día",
     "moveTitle": "Mover a otro día",
-    "moveFailed": "No se pudo mover la tarea a otro día."
+    "moveFailed": "No se pudo mover la tarea a otro día.",
+    "remove": "Quitar {{title}} de TODO",
+    "removeTitle": "Quitar de TODO",
+    "removeFailed": "No se pudo quitar la tarea de TODO."
   },
   "selection": {
     "count_one": "{{count}} seleccionada",
@@ -252,5 +259,11 @@
     "partial_one": "{{count}} tarea no se ha eliminado",
     "partial_many": "{{count}} de tareas no se han eliminado",
     "partial_other": "{{count}} tareas no se han eliminado"
+  },
+  "priority": {
+    "urgent": "Urgente",
+    "high": "Alta",
+    "medium": "Media",
+    "low": "Baja"
   }
 }

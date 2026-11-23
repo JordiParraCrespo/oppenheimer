@@ -16,7 +16,13 @@ import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
-type ChatComposerLabels = { send: string; stop: string; attach: string };
+type ChatComposerLabels = {
+  send: string;
+  stop: string;
+  attach: string;
+  /** The field's accessible name, for a placeholder that changes or goes away. */
+  field?: string;
+};
 
 const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
   send: 'Send',
@@ -175,6 +181,7 @@ function ChatComposer({
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={onKeyDown}
       placeholder={placeholder}
+      aria-label={label.field}
       disabled={disabled}
       rows={inline ? 1 : 2}
       wrapperClassName={inline ? 'flex-1' : undefined}
@@ -310,7 +317,7 @@ function ChatComposer({
         )}
       </div>
       {inline && (tools || engine) ? (
-        <div data-slot="chat-composer-meta" className="flex min-h-7 items-center gap-3 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
+        <div data-slot="chat-composer-meta" className="@container/composer-meta flex min-h-7 flex-wrap items-center gap-x-3 gap-y-1 px-4.5 pt-1.5 text-[12.5px] text-fg-muted">
           {tools}
           <span className="ml-auto flex items-center gap-2">{engine}</span>
         </div>

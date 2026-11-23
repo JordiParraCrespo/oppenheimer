@@ -13,6 +13,8 @@ import { BotApprovalStartedPolicy } from './application/bot-approval-started.pol
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
+import { BotChannelAsItGoesFactory } from './application/bot-channel-as-it-goes.factory';
+import { BotChannelReplyResolver } from './application/bot-channel-reply.resolver';
 import { BotChannelWakeResolver } from './application/bot-channel-wake.resolver';
 import { BotCompletionResolver } from './application/bot-completion.resolver';
 import { BotDreamResolver } from './application/bot-dream.resolver';
@@ -36,6 +38,7 @@ import { BotMailWriteToolsFactory } from './application/bot-mail-write-tools.fac
 import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
 import { BotNoticeToolsFactory } from './application/bot-notice-tools.factory';
+import { BotOpeningMediaResolver } from './application/bot-opening-media.resolver';
 import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPermissionsResolver } from './application/bot-permissions.resolver';
@@ -53,6 +56,7 @@ import { BotRuleReviewerFactory } from './application/bot-rule-reviewer.factory'
 import { BotSelfToolsFactory } from './application/bot-self-tools.factory';
 import { BotSentTurnResolver } from './application/bot-sent-turn.resolver';
 import { BotSessionFileToolsFactory } from './application/bot-session-file-tools.factory';
+import { BotSessionLinkResolver } from './application/bot-session-link.resolver';
 import { BotSessionToolsFactory } from './application/bot-session-tools.factory';
 import { BotSessionWaitResolver } from './application/bot-session-wait.resolver';
 import { BotSessionWakeResolver } from './application/bot-session-wake.resolver';
@@ -62,6 +66,7 @@ import { BotSteeringFactory } from './application/bot-steering.factory';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
+import { BotSuggestionResolver } from './application/bot-suggestion.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
 import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
@@ -74,13 +79,17 @@ import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver'
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotWhatsappAccountsResolver } from './application/bot-whatsapp-accounts.resolver';
+import { BotWhatsappGrantToolsFactory } from './application/bot-whatsapp-grant-tools.factory';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
+import { BotWhatsappVoiceNoteResolver } from './application/bot-whatsapp-voice-note.resolver';
 import { BotMilestoneDeletedDomainEventHandler } from './application/event-handlers/bot-milestone-deleted.domain-event-handler';
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { BotTaskWakeDomainEventHandler } from './application/event-handlers/bot-task-wake.domain-event-handler';
 import { BotTelegramWakeDomainEventHandler } from './application/event-handlers/bot-telegram-wake.domain-event-handler';
+import { BotWhatsappContactWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-contact-wake.domain-event-handler';
 import { BotWhatsappWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from './application/turn-write.factory';
@@ -111,6 +120,7 @@ import {
   BOT_MEMORY_DREAM_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
   BOT_NOTICE_REPOSITORY,
+  BOT_OPENING_MEDIA_READERS,
   BOT_PERMISSION_RULE_REPOSITORY,
   BOT_QUESTION_REPOSITORY,
   BOT_STALL_CHECKS,
@@ -171,6 +181,7 @@ import { WakeOnTaskActivityCommandHandler } from './commands/wake-on-task-activi
 import { WakeOnTelegramCommandHandler } from './commands/wake-on-telegram/wake-on-telegram.command-handler';
 import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
 import { WakeOnWhatsappCommandHandler } from './commands/wake-on-whatsapp/wake-on-whatsapp.command-handler';
+import { WakeOnWhatsappContactCommandHandler } from './commands/wake-on-whatsapp-contact/wake-on-whatsapp-contact.command-handler';
 import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
 import { BotApprovalRepository } from './database/bot-approval.repository';
@@ -222,6 +233,8 @@ import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter
 import { StorageBotAttachmentFilesAdapter } from './infrastructure/storage-bot-attachment-files.adapter';
 import { ExportBotConversationHttpController } from './queries/export-bot-conversation/export-bot-conversation.http.controller';
 import { ExportBotConversationQueryHandler } from './queries/export-bot-conversation/export-bot-conversation.query-handler';
+import { FindBotActivityHttpController } from './queries/find-bot-activity/find-bot-activity.http.controller';
+import { FindBotActivityQueryHandler } from './queries/find-bot-activity/find-bot-activity.query-handler';
 import { FindBotApprovalQueryHandler } from './queries/find-bot-approval/find-bot-approval.query-handler';
 import { FindBotApprovalsHttpController } from './queries/find-bot-approvals/find-bot-approvals.http.controller';
 import { FindBotApprovalsQueryHandler } from './queries/find-bot-approvals/find-bot-approvals.query-handler';
@@ -237,6 +250,8 @@ import { FindBotMemoryDreamQueryHandler } from './queries/find-bot-memory-dream/
 import { FindBotPermissionsHttpController } from './queries/find-bot-permissions/find-bot-permissions.http.controller';
 import { FindBotPermissionsQueryHandler } from './queries/find-bot-permissions/find-bot-permissions.query-handler';
 import { FindBotQuestionQueryHandler } from './queries/find-bot-question/find-bot-question.query-handler';
+import { FindBotSuggestionHttpController } from './queries/find-bot-suggestion/find-bot-suggestion.http.controller';
+import { FindBotSuggestionQueryHandler } from './queries/find-bot-suggestion/find-bot-suggestion.query-handler';
 import { FindBotTurnQueryHandler } from './queries/find-bot-turn/find-bot-turn.query-handler';
 import { FindBotUsageHttpController } from './queries/find-bot-usage/find-bot-usage.http.controller';
 import { FindBotUsageQueryHandler } from './queries/find-bot-usage/find-bot-usage.query-handler';
@@ -265,6 +280,7 @@ const httpControllers = [
   FindBotGoalHttpController,
   ClearBotLoopHttpController,
   FindBotLoopHttpController,
+  FindBotSuggestionHttpController,
   FindBotUsageHttpController,
   FindBotMemoryDreamHttpController,
   RequestBotMemoryDreamHttpController,
@@ -272,6 +288,7 @@ const httpControllers = [
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
+  FindBotActivityHttpController,
   FindWorkspaceBotNoticesHttpController,
   DecideBotApprovalHttpController,
   FindPendingBotQuestionHttpController,
@@ -309,6 +326,7 @@ const commandHandlers: Provider[] = [
   WakeOnTaskActivityCommandHandler,
   WakeOnTelegramCommandHandler,
   WakeOnWhatsappCommandHandler,
+  WakeOnWhatsappContactCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
   ResumeBotGoalCommandHandler,
@@ -317,6 +335,7 @@ const commandHandlers: Provider[] = [
   FinishBotLoopRunCommandHandler,
   ClearBotLoopCommandHandler,
   FindBotLoopQueryHandler,
+  FindBotSuggestionQueryHandler,
   FindBotUsageQueryHandler,
   SetBotToolDecisionCommandHandler,
   CreateBotPermissionRuleCommandHandler,
@@ -336,6 +355,7 @@ const queryHandlers: Provider[] = [
   FindPendingBotQuestionQueryHandler,
   FindBotApprovalsQueryHandler,
   FindWorkspaceBotApprovalsQueryHandler,
+  FindBotActivityQueryHandler,
   FindWorkspaceBotNoticesQueryHandler,
   FindBotAttachmentQueryHandler,
   ReadBotAttachmentQueryHandler,
@@ -407,6 +427,15 @@ const queryHandlers: Provider[] = [
     BotUsageMapper,
     BotTurnContextResolver,
     BotTurnOpeningResolver,
+    BotOpeningMediaResolver,
+    BotWhatsappVoiceNoteResolver,
+    // The readers of what a turn's opening still has to read, one per kind of
+    // `BOT_PENDING_MEDIA_KINDS`. A new kind is a reader and a place here.
+    {
+      provide: BOT_OPENING_MEDIA_READERS,
+      inject: [BotWhatsappVoiceNoteResolver],
+      useFactory: (whatsappVoiceNotes: BotWhatsappVoiceNoteResolver) => [whatsappVoiceNotes],
+    },
     BotApprovalStartedPolicy,
     BotMessageAttachmentsResolver,
     BotSteeringFactory,
@@ -417,6 +446,8 @@ const queryHandlers: Provider[] = [
     BotDreamResolver,
     BotModelAccessResolver,
     BotTurnChannelPolicy,
+    BotChannelReplyResolver,
+    BotChannelAsItGoesFactory,
     BotTurnHoldPolicy,
     BotChannelWakeResolver,
     BotApprovalRequestFactory,
@@ -438,6 +469,7 @@ const queryHandlers: Provider[] = [
     BotPullRequestWatchResolver,
     BotPlanWatchResolver,
     BotSessionWakeResolver,
+    BotSessionLinkResolver,
     BotSessionWaitResolver,
     BotSubscriptionSubjectResolver,
     BotWatchToolsFactory,
@@ -450,6 +482,7 @@ const queryHandlers: Provider[] = [
     BotSentTurnResolver,
     BotGoalReviewResolver,
     BotCompletionResolver,
+    BotSuggestionResolver,
     BotSelfToolsFactory,
     BotSkillToolsFactory,
     BotGuideToolsFactory,
@@ -466,6 +499,8 @@ const queryHandlers: Provider[] = [
     BotWebToolsFactory,
     BotMailToolsFactory,
     BotWhatsappToolsFactory,
+    BotWhatsappGrantToolsFactory,
+    BotWhatsappAccountsResolver,
     BotTelegramToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,
@@ -482,6 +517,7 @@ const queryHandlers: Provider[] = [
     BotMilestoneDeletedDomainEventHandler,
     BotTelegramWakeDomainEventHandler,
     BotWhatsappWakeDomainEventHandler,
+    BotWhatsappContactWakeDomainEventHandler,
     TurnCancelWatchFactory,
     BotBackgroundTurnsProcessor,
     BotTurnsProcessor,

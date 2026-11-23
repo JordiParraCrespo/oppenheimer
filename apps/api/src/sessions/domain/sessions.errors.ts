@@ -438,4 +438,14 @@ export const SessionErrors = {
     message: "The host refused to change the session's terminals",
     httpStatus: 409,
   },
+  /**
+   * An open that asks for a second coding agent, on a host whose live runner
+   * did not name `session.window.agent`: it would open a plain shell and
+   * ignore the agent, so it is refused before the host is asked.
+   */
+  WINDOW_AGENT_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_060',
+    message: "This host's runner cannot start a second agent in a session",
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

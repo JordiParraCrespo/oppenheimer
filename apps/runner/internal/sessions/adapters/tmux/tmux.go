@@ -171,9 +171,15 @@ func (s *Server) Create(ctx context.Context, name, dir, command string, env map[
 
 // NewWindow opens a tab: a plain shell in the same worktree. In the
 // background (-d): without it tmux makes it the session's current window, and
-// every client watching the agent's switches to the shell.
-func (s *Server) NewWindow(ctx context.Context, name, dir string) (int, error) {
-	out, err := s.command(ctx, "new-window", "-d", "-t", name+":", "-c", dir, "-P", "-F", "#{window_index}")
+// every client watching the agent's switches to the shell. A title (-n) names
+// the window for good: tmux renames a window it named itself after whatever
+// runs in it, and one named here keeps saying which agent it holds.
+func (s *Server) NewWindow(ctx context.Context, name, dir, title string) (int, error) {
+	args := []string{"new-window", "-d", "-t", name + ":", "-c", dir, "-P", "-F", "#{window_index}"}
+	if title != "" {
+		args = append(args, "-n", title)
+	}
+	out, err := s.command(ctx, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -399,13 +405,21 @@ func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (
 // on a fresh screen: no line is typed for it, and neither the shell's prompt
 // nor its scrollback survives. The command runs with the session's
 // environment, under the runner's PATH rather than a login shell's.
+//
+// A failure names the window, never the command: the command line carries
+// the first task, which is the person's and never goes into a log or a
+// `command.failed` detail.
 func (s *Server) Launch(ctx context.Context, target, dir, command string) error {
 	args := []string{"respawn-pane", "-k", "-t", target, "-c", dir}
 	if command != "" {
 		args = append(args, command)
 	}
-	_, err := s.command(ctx, args...)
-	return err
+	out, err := s.run(ctx, args...)
+	if err != nil {
+		return domain.ErrTmuxCommand.WithDetail(
+			"tmux respawn-pane -t %s: %s", target, firstLine(out, err)).WithCause(err)
+	}
+	return nil
 }
 
 // Paste puts text into a window through a tmux buffer. `-p` makes it a
@@ -442,6 +456,10 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 	} else if name, window, ok := strings.Cut(target, ":"); ok && window != "0" {
 		rest = viewOf(name, window)
 	}
+	// Best effort, and on its own: in one `;` group a tmux without the
+	// option (before 3.2) would drop the attach after it.
+	_, _ = s.run(ctx, hyperlinks()...) //nolint:errcheck // an older tmux only loses clickable links
+
 	cmd := exec.CommandContext(ctx, s.binary, s.args(rest...)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 	file, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
@@ -449,6 +467,21 @@ func (s *Server) Attach(ctx context.Context, target string, size app.Size, readO
 		return nil, domain.ErrTmuxCommand.WithDetail("attach %s: %v", target, err).WithCause(err)
 	}
 	return &attachment{file: file, cmd: cmd}, nil
+}
+
+// hyperlinks tells tmux the browser's terminal draws OSC 8 hyperlinks
+// (Claude Code's `[24093](https://…)`), ahead of an attach. tmux keeps a
+// pane's hyperlinks but writes them only to a client whose terminal has the
+// `hyperlinks` feature (tmux 3.4), and xterm-256color's defaults do not; the
+// reader got the link's text and nothing to click.
+//
+// It is set on every attach rather than in Config, which tmux reads only when
+// its server starts: the servers already holding sessions on a host never
+// read it. An indexed entry keeps the default features and stays one entry
+// however many times it is set; tmux 3.2 and 3.3 skip the feature they do not
+// know, and an older tmux has no such option.
+func hyperlinks() []string {
+	return []string{"set-option", "-s", "terminal-features[90]", "xterm*:hyperlinks"}
 }
 
 type attachment struct {

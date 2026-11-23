@@ -1449,6 +1449,11 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/19-plan-tasks-and-goals.md` gave a task no priority. On
+  2026-11-17 the owner asked for a few levels after looking at Linear and
+  ClickUp: a task has an optional priority, Urgent, High, Medium or Low,
+  drawn with Linear's icons (the "!" square for Urgent), that never
+  reorders a column (§9, "Priority").
 - `versions/mvp/29-inbox.md` gathered what needs the person from the
   sessions, bots, pull requests, runs and reports, and a task an agent made
   went straight onto the board with nothing to say so. On 2026-11-12 the
@@ -1729,3 +1734,140 @@ earlier note:
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
   and then on the page: the chat greets with the bot's face, its name and
   one line, over the composer's one-row layout, in both places.
+- `versions/mvp/20-plan-calendar.md` §1 drew the calendar nearly
+  achromatic: busy events in ink on the control wash, free ones and
+  automation runs muted, only a Google account's ring in its colour. On
+  2026-11-17 the owner asked for colour, like Google Calendar's: each item
+  is a wash of its colour with a bar down its edge (personal events blue,
+  tasks violet, each Google account its own; automation runs stay grey),
+  and the first Google accounts moved off blue and violet to keep the
+  legend unambiguous.
+- `versions/mvp/20-plan-calendar.md` counted every item of the view in the
+  header whatever layers were on. On 2026-11-17 the owner asked for filters
+  (kind, project, status, who added a task, §7) and the counts now follow
+  what the calendar shows: a hidden layer counts nothing.
+- `versions/mvp/25-bots.md` §8 put a bot's prompt files in two folders,
+  `system/` and `turn/`, with the wakes in `turn/`. On 2026-11-18 the owner
+  asked to expand that with sibling folders: what opens a turn an event
+  started is `wake/` now, and `turn/` keeps what a turn carries besides
+  its opening (`research/prompt-file-formats.md` §4.1).
+  started is `wake/` now, and `turn/` keeps what goes with a turn the
+  person started (`research/prompt-file-formats.md` §4.1).
+
+- On 2026-11-17, a runner-started Codex cloud session was confirmed complete
+  while its console link opened only the Codex home page. The console now
+  preserves the thread id at `https://chatgpt.com/local/<id>`
+  (`next-steps/cloud-agents.md`, "On Codex's current cloud").
+- `versions/mvp/05-screens.md` had GPT-6.1 Sol as Codex's default. On
+  2026-11-17 OpenAI released GPT-6.2 Sol and GPT-6.2 Astra, and the owner
+  asked for both in new sessions and in bots: they lead Codex's list,
+  GPT-6.2 Sol is the default, and OpenCode's `openai/` row gains both. The
+  OpenAI and ChatGPT bots read Codex's list, so they follow.
+- `versions/mvp/20-plan-calendar.md` let a task leave TODO only by moving
+  its TODO day, which a due date today or overdue overrides. On 2026-11-18
+  the owner asked to remove a task from TODO, and chose that removing one
+  keeps it off every day, its due date included, until it gets a TODO day
+  again or its due date changes (`task."offTodo"`).
+- `versions/mvp/25-bots.md` §2 had a summary job delay itself until the
+  reset on a refusal for "rate or quota", but a spent credit or a refused
+  key carries no reset, so it went to the queue's eight retries and each
+  job's last one was reported as an error (Sentry OPPENHEIMER-API-7,
+  14–17 Nov). On 2026-11-17 a job the provider refused for the account
+  (`usage_limit`, `credential`) ends without a retry or a report; the next
+  turn past the threshold folds again once the account is sorted.
+- `next-steps/whatsapp.md` §3 kept a message's media on the phone, the bot
+  told only its kind ("[audio]"). On 2026-11-18 the owner asked for bots
+  that hear voice notes: the runner keeps each voice note's media key and
+  path for 48 hours and hands the audio over when asked
+  (`whatsapp.media.get`), and the API hears it through voice's providers
+  when the turn the owner's voice note queued starts, keeping the transcript
+  on the row, never the audio. Images and the bot's own voice replies come next.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had a
+  group, and any allowed contact, added only in the console, from a list per
+  number. On 2026-11-18 the owner asked for a bot to do it too, in the
+  conversation with the person who confirmed the number, and to see and
+  manage the list in Settings: a bot allows a chat, and picks the bot that
+  answers there, with `allow_whatsapp_chat`, offered only in the owner's
+  console chat and their own chat with the number; Settings → WhatsApp lists
+  the allowed chats with who allowed each, their bot and Remove. Which bots
+  answer on a number is its default plus a bot per allowed chat, not a list
+  of bots per number (`next-steps/whatsapp.md`, open question 1).
+- `versions/mvp/09-runner-install-and-update.md` §5 (2026-11-04) had a Mac
+  that a runner from before the bundle updated run the bare binary out of
+  the new archive, then reinstall itself as the bundle. That bare binary is
+  the bundle's executable, sealed to the bundle by its signature, and macOS
+  kills it outside the bundle, so no Mac on 0.1.12 or older updated to 0.1.13
+  or later (seen on 2026-11-19, with 22 failed stages left in `.staging`).
+  With one Mac on the runner, already moved by hand, the owner chose on
+  2026-11-20 not to build a way across: §5 now says such a Mac is moved by
+  hand. A failed stage is now deleted, and a boot sweeps old ones.
+- `versions/mvp/03-control-plane.md` named a session from its first prompt
+  only, once. On 2026-11-19 the owner asked for names that follow the
+  conversation: after the agent answers the person's second prompt, a
+  derived name is written once more from their prompts so far
+  (`source: conversation`); a name a person typed is never replaced.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
+  channel turn's answer once, at its end, and had a message sent meanwhile
+  wait for the next turn: asked to check something, the bot went quiet for
+  minutes, then answered. On 2026-11-20 the owner asked for a bot that
+  answers first, works, and comes back with the result, answering what they
+  ask in between: on the owner's own chat, what the bot writes before a tool
+  call goes out as the call begins ("On it, checking your sessions"), a
+  message sent meanwhile steers the running turn as a console message can,
+  and the end sends only what came after the last call. Telegram's typing
+  action and the fifteen-second line are not built.
+- `25-bots.md` §3 first kept a bot's "done" dot on the device (2026-11-20):
+  what you had seen was the bot's last message time while its chat was open,
+  per browser, beside the green dot on a working bot's face. The owner asked
+  for the bots to read exactly as the sessions do, so the same day the read
+  moved to the API (`bot."acknowledgedAt"`, set by opening the chat, on every
+  device, only the bot's replies counting), the amber dot took in questions
+  and failed turns, the green face dot went, and Mark as unread came in as a
+  device mark like a session's.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §3 (2026-11-09) gave a
+  contact's turn the customer turn's narrow tools: answer, the bot's
+  documents, memory for the conversation, `hand_off`. On 2026-11-20 the
+  owner asked for WhatsApp groups and other people to be answered next; the
+  first version gives a contact's turn no tools at all, and counts its limit
+  of 20 turns an hour per chat rather than per person. The narrow tools
+  come after.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-18) had a
+  chat allowed only by asking a bot in the owner's own chat, Settings
+  listing the allowed ones, at most 50 per number. On 2026-11-20 the owner,
+  with 25 groups and 200 contacts in mind, asked for settings that scale
+  and for a bot to show its gateways: Settings lists every chat a number
+  has seen, with search, filters and changes to many at once, and choosing
+  a bot there allows the chat; a bot's settings show the chats it answers
+  and add more. Only listed chats are answered (no catch-all), and a
+  number allows up to 1,000.
+- `versions/mvp/02-runner.md` ("Close") ended a session with `tmux
+  kill-session` and took its hangup to end the agent. On 2026-11-21 one
+  host ran out of memory with ~110 agents of closed sessions still
+  running, because Claude Code ignored the hangup: the `pty` wrapper now
+  kills its program's group 10 s after the hangup, closing a session
+  confirms its processes are gone, and the daemon ends any agent left by
+  a session that is over every 5 minutes. Nothing changed about tmux
+  sessions it does not recognise (still reported, not reaped).
+- `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
+  bot in a group only when a message @-mentioned the number or replied to
+  it, and listed only the chats a number had seen a message in. On
+  2026-11-21 the owner found a group set to a bot silent ("not answering")
+  and People empty: a group the owner sets to a bot now wakes it on every
+  message with words (up to 120 turns an hour per group; 20 stays a
+  person's chat's), and the runner reports the groups the number is in
+  and its saved contacts on connect and on each change (`whatsapp.chats`),
+  so Settings lists them before anyone writes. The owner's own chat is
+  listed first among People, answered by the default bot.
+- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+  editor: the Routines tab's Edit put "Edit your routine: *name*" in the
+  composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
+  a dialog for its name and prompt, and only when it runs (its triggers)
+  is still changed in the chat.
+- `next-steps/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
+  or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
+  on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
+  be configured with the keys: Settings → Model providers adds Groq and
+  ElevenLabs (voice only) and a Voice tab choosing, for the workspace,
+  the transcription provider and model, the voice-note provider, model and
+  voice, and the polish model or none. A choice is tried first, the old
+  order after it; the env servers stay as the last provider.

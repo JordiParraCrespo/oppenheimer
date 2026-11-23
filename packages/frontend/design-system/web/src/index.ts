@@ -37,7 +37,15 @@ export type {
 export { AvatarColorPicker, AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
 export { BotFacePicker } from './components/bot-face-picker';
-export { BotItem, BotItemSkeleton, BotList, SortableBotItem } from './components/bot-item';
+export {
+  BotItem,
+  BotItemSkeleton,
+  BotList,
+  BotPreviewItem,
+  BotPreviewItemSkeleton,
+  SortableBotItem,
+  SortableBotPreviewItem,
+} from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system ──────────────────────────────────────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
@@ -76,6 +84,7 @@ export type { ProposedPlanLabels, SubagentState } from './components/chat-cards'
 export {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
@@ -197,6 +206,7 @@ export {
   ChipSelect,
   ChipSelectActionRow,
   ChipSelectBack,
+  ChipSelectCombobox,
   ChipSelectEmpty,
   ChipSelectHeading,
   ChipSelectItem,
@@ -316,7 +326,7 @@ export {
 } from './components/editor-page';
 export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
-export { EmptyState } from './components/empty-state';
+export { type EmptyArtName, EmptyState } from './components/empty-state';
 export type { FacetOption } from './components/facet-select';
 export {
   FacetSelect,
@@ -383,7 +393,7 @@ export { JsonTree } from './components/json-tree';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
-export { MilestoneCard, MilestoneEmpty, MilestoneGrid } from './components/milestone-card';
+export { MilestoneCard, MilestoneGrid } from './components/milestone-card';
 export type {
   MilestoneTimelineControls,
   TimelineMilestone,
@@ -395,7 +405,7 @@ export type {
   CalendarEntryData,
   CalendarEntryKind,
 } from './components/month-calendar';
-export { CalendarEntry, MonthCalendar } from './components/month-calendar';
+export { CALENDAR_KIND_ACCENT, CalendarEntry, MonthCalendar } from './components/month-calendar';
 export { NumberStepper } from './components/number-stepper';
 export {
   PageHeader,
@@ -473,7 +483,6 @@ export {
 export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
 export {
   RoutineTable,
-  RoutineTableEmpty,
   RoutineTableHead,
   RoutineTableRow,
   RoutineTableRowSkeleton,
@@ -573,7 +582,7 @@ export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
 export { Switch } from './components/switch';
-export type { TaskDueTone, TaskStatus } from './components/task-board';
+export type { TaskDueTone, TaskPriority, TaskStatus } from './components/task-board';
 export {
   TASK_STATUS_STATE,
   TaskBoard,
@@ -584,6 +593,7 @@ export {
   TaskColumnMore,
   TaskComposer,
   TaskMarquee,
+  TaskPriorityIcon,
   TaskSelectionBar,
   TaskSessionChip,
 } from './components/task-board';

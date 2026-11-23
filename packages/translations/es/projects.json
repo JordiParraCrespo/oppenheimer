@@ -48,7 +48,8 @@
     "title": "Proyectos",
     "new": "Nuevo proyecto",
     "noRepositories": "Sin repositorios",
-    "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
+    "emptyTitle": "Aún no hay proyectos",
+    "empty": "Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
     "loadFailed": "No se pudieron cargar tus proyectos.",
     "status": {
       "needsInput": "Necesita tu respuesta",

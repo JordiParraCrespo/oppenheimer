@@ -107,7 +107,10 @@ export const SESSION_EVENT_KINDS = {
   CLOSE_REQUESTED: 'session.close_requested',
   /** Branches pushed, worktrees removed. The row is kept for ever as a tombstone. */
   CLOSED: 'session.closed',
-  /** The display name changed — by a person, or by the namer reading the first prompt. */
+  /**
+   * The display name changed: by a person, by the namer reading the first prompt,
+   * or once more by the namer reading the conversation so far.
+   */
   NAMED: 'session.named',
   /**
    * Hidden from the console's sidebar, or shown again. Payload `{ hidden }`.
@@ -190,9 +193,12 @@ export const SESSION_EVENT_KINDS = {
    * `SESSION_SHARED_FILES_MAX` for bots to list and show.
    */
   FILE_SHARED: FILE_SHARED_EVENT_KIND,
-  /** The agent left a report. Payload `{ hash }` — never the report itself. */
+  /**
+   * The agent left a report. Payload `{ hash }` — never the report itself. A
+   * turn that ends publishes one of its own off `agent.observed` (`turn:<seq>`).
+   */
   REPORT_PUBLISHED: 'report.published',
-  /** Somebody read that report. Payload `{ hash }`. */
+  /** Somebody read that report (the console opened the session). Payload `{ hash }`. */
   REPORT_ACKNOWLEDGED: 'report.acknowledged',
 } as const;
 
@@ -254,10 +260,33 @@ const REFUSAL_CODE_MAX = 32;
 const REFUSAL_DETAIL_MAX = 500;
 
 /**
- * Who chose the name: a person, a model reading the first prompt, or the first
- * prompt's own words when no model answered in time.
+ * Who chose the name: a person, a model reading the first prompt, the first
+ * prompt's own words when no model answered in time, or a model reading the
+ * conversation once it had gone further (`conversation`).
  */
-export type SessionNameSource = 'user' | 'model' | 'prompt';
+export type SessionNameSource = 'user' | 'model' | 'prompt' | 'conversation';
+
+/**
+ * Which name wins, whichever order the entries arrive in: a name replaces one
+ * of the same rank or lower, never higher. A person's name outranks every
+ * derived one, and the title written from the conversation outranks the one
+ * from the first prompt alone.
+ */
+const NAME_SOURCE_RANK: Readonly<Record<SessionNameSource, number>> = {
+  prompt: 1,
+  model: 1,
+  conversation: 2,
+  user: 3,
+};
+
+function nameSourceRank(source: SessionNameSource | null): number {
+  return source === null ? 0 : NAME_SOURCE_RANK[source];
+}
+
+/** A name the namer chose and may still replace: from the first prompt, by a model or its words. */
+export function isFirstPromptName(source: SessionNameSource | null): boolean {
+  return source === 'model' || source === 'prompt';
+}
 
 /**
  * Everything the fold produces, and every one of these is a column on
@@ -275,7 +304,7 @@ export interface SessionFold {
   stoppedAt: Date | null;
   /** Null until something names the session; the slug stands in until then. */
   name: string | null;
-  /** A derived title (`model` or `prompt`) never overwrites one a person typed. */
+  /** A derived title (`model`, `prompt` or `conversation`) never overwrites one a person typed. */
   nameSource: SessionNameSource | null;
   /** Which checkout the agent was launched in. Null is the session directory itself. */
   cwdCheckoutId: string | null;
@@ -601,10 +630,10 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       if (!name) return next;
       const recorded = stringField(event.payload, 'source');
       const source: SessionNameSource =
-        recorded === 'model' || recorded === 'prompt' ? recorded : 'user';
-      // A title derived from the first prompt — by a model or from its words —
-      // never overwrites a name a person typed, whichever order the two arrive in.
-      if (source !== 'user' && next.nameSource === 'user') return next;
+        recorded === 'model' || recorded === 'prompt' || recorded === 'conversation'
+          ? recorded
+          : 'user';
+      if (NAME_SOURCE_RANK[source] < nameSourceRank(next.nameSource)) return next;
       next.name = name;
       next.nameSource = source;
       return next;
@@ -648,6 +677,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
         next.observedSince = next.observedSince ?? event.occurredAt;
         return next;
       }
+      next.reportHash = turnEndReport(next.lastObservedState, state, event.seq) ?? next.reportHash;
       // The first report of a state records the transition but claims no duration
       // yet — one report cannot be evidence of having been stuck.
       next.lastObservedState = state;
@@ -699,6 +729,9 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       ].slice(-SESSION_SHARED_FILES_MAX);
       return next;
     }
+    // No writer today: a turn's end is the only report, and `agent.observed`
+    // derives it ({@link turnEndReport}). Kept for a report the agent leaves
+    // itself, which would replace the turn's by the same comparison.
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:
       next.reportHash = stringField(event.payload, 'hash') ?? next.reportHash;
       return next;
@@ -708,6 +741,25 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     default:
       return next;
   }
+}
+
+/**
+ * The report an observation publishes, or null: a turn that ends leaves one
+ * for the reader, and the session is `ready-for-review` until it is read. A
+ * turn ends when the agent was `working` or `blocked` and is now at its prompt
+ * (`idle`, or `done`, the manifest's own end); from nothing or `unknown` it is
+ * the agent loading. The entry's place in the log (`seq`) is the report's
+ * identity, so a replay derives the same one and the next turn's end is a new
+ * report however the last one was read.
+ */
+function turnEndReport(
+  previous: AgentObservedState | null,
+  state: AgentObservedState,
+  seq: number,
+): string | null {
+  const wasAtWork = previous === 'working' || previous === 'blocked';
+  const atPrompt = state === 'idle' || state === 'done';
+  return wasAtWork && atPrompt ? `turn:${seq}` : null;
 }
 
 /** `initial` exists so a fold can resume from a stored row. */

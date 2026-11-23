@@ -22,6 +22,7 @@ describe('resolveCapabilities', () => {
       bot_providers: false,
       cloud_agents: false,
       voice_transcription: false,
+      voice_synthesis: false,
       session_previews: false,
     });
   });
@@ -32,6 +33,20 @@ describe('resolveCapabilities', () => {
     expect(
       resolveCapabilities(configWith({ ...server, 'voice.sttModel': 'whisper-1' }))
         .voice_transcription,
+    ).toBe(true);
+  });
+
+  // What breaks this: the startup log saying voice notes work where the tool refuses, or the reverse.
+  it('reports voice synthesis only with a model and a server, its own or the speech-to-text one', () => {
+    const model = { 'voice.ttsModel': 'gpt-4o-mini-tts' };
+    expect(resolveCapabilities(configWith(model)).voice_synthesis).toBe(false);
+    expect(
+      resolveCapabilities(configWith({ ...model, 'voice.sttBaseUrl': 'https://api.example/v1' }))
+        .voice_synthesis,
+    ).toBe(true);
+    expect(
+      resolveCapabilities(configWith({ ...model, 'voice.ttsBaseUrl': 'https://tts.example' }))
+        .voice_synthesis,
     ).toBe(true);
   });
 
