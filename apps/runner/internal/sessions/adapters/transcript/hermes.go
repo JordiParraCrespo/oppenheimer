@@ -37,9 +37,18 @@ import (
 //
 // What the chat shows is what Hermes shows: the rows that are live or were
 // archived by a compaction (`active = 1 OR compacted = 1`), never a turn the
-// person undid. An undo, a rewrite in place (Hermes counts those in the
-// row's `transcript_revision`) or a new conversation starts the chat's
-// history over.
+// person undid, and never a row only the model reads (`model_only` in its
+// `display_metadata`, as a micro-compaction's merge of the turns it keeps
+// showing). A compaction copies the turns it keeps into new rows, so each
+// message is shown once, at its first row: copies share role, content and
+// time, and a tool's reply or the summary also its `message_uid`
+// (`_dedupe_display_generations` in Hermes). An undo, a rewrite in place
+// (Hermes counts those in the row's `transcript_revision`) or a new
+// conversation starts the chat's history over.
+//
+// Hermes adds columns as it goes (`_schema_history.py`), and a host can run a
+// release from before any of them, so rows are read by column name and a
+// column the database lacks reads as Hermes' own default.
 //
 // What it costs Hermes: two small reads every hermesCheckEvery, only while a
 // browser is attached; the whole conversation is read once per attachment.
@@ -75,6 +84,20 @@ type hermesMessage struct {
 	toolName   string
 	reasoning  string
 	at         float64
+	// uid is the message's `message_uid`, which a compaction's copy keeps.
+	uid string
+	// summary is whether the row carries a compaction's summary.
+	summary bool
+	// active and compacted are the row's flags: live, and archived by a
+	// compaction. Only one of them set is a row the chat shows.
+	active, compacted bool
+	// modelOnly is a row Hermes keeps for the model and never shows.
+	modelOnly bool
+}
+
+// visible is whether the row is one Hermes shows, before copies fold.
+func (m hermesMessage) visible() bool {
+	return (m.active || m.compacted) && !m.modelOnly
 }
 
 // hermesConversation is where a session's conversation stands: its rows,
@@ -148,43 +171,143 @@ func (h hermesSource) conversation(ctx context.Context, db *sql.DB, session doma
 		current = parent.String
 	}
 	conversation := hermesConversation{ids: ids}
+	columns, err := hermesColumns(ctx, db, "sessions")
+	if err != nil || !columns["transcript_revision"] {
+		// Hermes before schema 32 counts no rewrites: an undo still shows.
+		return conversation, err
+	}
 	err = db.QueryRowContext(ctx,
 		`SELECT COALESCE(SUM(transcript_revision), 0) FROM sessions WHERE id IN (SELECT value FROM json_each(?))`,
 		jsonList(ids)).Scan(&conversation.revision)
 	return conversation, err
 }
 
-// messages are the conversation's rows the chat shows with an id past after,
-// first to last.
+// hermesColumns are the columns table has in this database.
+func hermesColumns(ctx context.Context, db *sql.DB, table string) (map[string]bool, error) {
+	rows, err := db.QueryContext(ctx, `SELECT name FROM pragma_table_info(?)`, table)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	columns := map[string]bool{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		columns[name] = true
+	}
+	return columns, rows.Err()
+}
+
+// messages are the conversation's rows with an id past after, first to
+// last, those the chat does not show included: the caller moves past them.
 func (h hermesSource) messages(ctx context.Context, db *sql.DB, ids []string, after int64) ([]hermesMessage, error) {
 	rows, err := db.QueryContext(ctx,
-		`SELECT id, session_id, role, COALESCE(content, ''), COALESCE(tool_calls, ''), COALESCE(tool_call_id, ''),
-		        COALESCE(tool_name, ''), COALESCE(reasoning, ''), timestamp
-		 FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND (active = 1 OR compacted = 1) AND id > ?
-		 ORDER BY id`,
+		`SELECT * FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND id > ? ORDER BY id`,
 		jsonList(ids), after)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
+	names, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	values := make([]any, len(names))
+	targets := make([]any, len(names))
+	for i := range values {
+		targets[i] = &values[i]
+	}
 	var out []hermesMessage
 	for rows.Next() {
-		var m hermesMessage
-		if err := rows.Scan(&m.id, &m.session, &m.role, &m.content, &m.toolCalls, &m.toolCallID, &m.toolName, &m.reasoning, &m.at); err != nil {
+		if err := rows.Scan(targets...); err != nil {
 			return nil, err
 		}
-		out = append(out, m)
+		row := make(map[string]any, len(names))
+		for i, name := range names {
+			row[name] = values[i]
+		}
+		out = append(out, hermesRow(row))
 	}
 	return out, rows.Err()
 }
 
+// hermesRow reads one row of `messages`, a column it lacks as Hermes'
+// default: live, not archived, shown.
+func hermesRow(row map[string]any) hermesMessage {
+	text := func(name string) string {
+		switch v := row[name].(type) {
+		case string:
+			return v
+		case []byte:
+			return string(v)
+		}
+		return ""
+	}
+	number := func(name string, fallback float64) float64 {
+		switch v := row[name].(type) {
+		case int64:
+			return float64(v)
+		case float64:
+			return v
+		}
+		return fallback
+	}
+	id, _ := row["id"].(int64)
+	m := hermesMessage{
+		id: id, session: text("session_id"), role: text("role"), content: text("content"),
+		toolCalls: text("tool_calls"), toolCallID: text("tool_call_id"), toolName: text("tool_name"),
+		reasoning: text("reasoning"), at: number("timestamp", 0), uid: text("message_uid"),
+		summary: row["_compressed_summary"] != nil && number("_compressed_summary", 1) != 0,
+		active:  number("active", 1) != 0, compacted: number("compacted", 0) != 0,
+	}
+	var display struct {
+		ModelOnly any `json:"model_only"`
+	}
+	if meta := text("display_metadata"); meta != "" && json.Unmarshal([]byte(meta), &display) == nil {
+		m.modelOnly = truthy(display.ModelOnly)
+	}
+	return m
+}
+
+// truthy is a JSON value as Python's bool reads it.
+func truthy(v any) bool {
+	switch v := v.(type) {
+	case bool:
+		return v
+	case float64:
+		return v != 0
+	case string:
+		return v != ""
+	case nil:
+		return false
+	case []any:
+		return len(v) > 0
+	case map[string]any:
+		return len(v) > 0
+	}
+	return true
+}
+
 // shown counts the conversation's rows the chat shows up to id through, which
 // moves when one already sent is undone.
+// It counts by the flags alone, as messages' visible does before
+// `model_only`, which an undo does not move.
 func (h hermesSource) shown(ctx context.Context, db *sql.DB, ids []string, through int64) (int, error) {
+	columns, err := hermesColumns(ctx, db, "messages")
+	if err != nil {
+		return 0, err
+	}
+	query := `SELECT COUNT(*) FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND id <= ?`
+	switch {
+	case columns["active"] && columns["compacted"]:
+		query = `SELECT COUNT(*) FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND (active = 1 OR compacted = 1) AND id <= ?`
+	case columns["active"]:
+		query = `SELECT COUNT(*) FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND active = 1 AND id <= ?`
+	}
 	var n int
-	err := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM messages WHERE session_id IN (SELECT value FROM json_each(?)) AND (active = 1 OR compacted = 1) AND id <= ?`,
-		jsonList(ids), through).Scan(&n)
+	err = db.QueryRowContext(ctx, query, jsonList(ids), through).Scan(&n)
 	return n, err
 }
 
@@ -245,6 +368,9 @@ func (f *hermesFollower) check(ctx context.Context) {
 	}
 	conversation, err := f.source.conversation(ctx, f.db, f.session)
 	if err != nil {
+		// What was owed still goes: a first attachment gets its empty history
+		// rather than waiting on one.
+		f.out.flush()
 		return
 	}
 	if !f.continues(ctx, conversation) {
@@ -258,6 +384,7 @@ func (f *hermesFollower) check(ctx context.Context) {
 	if len(conversation.ids) > 0 {
 		messages, err := f.source.messages(ctx, f.db, conversation.ids, f.last)
 		if err != nil {
+			f.out.flush()
 			return
 		}
 		for _, message := range messages {
@@ -265,7 +392,9 @@ func (f *hermesFollower) check(ctx context.Context) {
 				f.out.pending = append(f.out.pending, string(entry))
 			}
 			f.last = message.id
-			f.count++
+			if message.active || message.compacted {
+				f.count++
+			}
 		}
 	}
 	f.out.flush()
@@ -350,8 +479,8 @@ func readHermesPage(source hermesSource, session domain.Session, req app.Transcr
 // hermesChat turns Hermes' rows into the chat's entries (`claude_chat.go`'s
 // shape), remembering what it needs from one row to the next.
 type hermesChat struct {
-	// seen are the user's messages already shown, by when and what, so the
-	// turn a compaction copies into its child row is shown once.
+	// seen are the messages already shown, by what a compaction's copy
+	// keeps of them, so each is shown once.
 	seen map[string]bool
 	// names are the tools of the calls made, by call id, for their replies.
 	names map[string]string
@@ -361,18 +490,37 @@ func newHermesChat() *hermesChat {
 	return &hermesChat{seen: map[string]bool{}, names: map[string]string{}}
 }
 
+// copied is whether m is a copy of a message already shown, remembering it
+// when it is not. Copies share role, content, time and call; a tool's reply
+// and a compaction's summary are also one message by their `message_uid`,
+// whatever a copy rewrote of them.
+func (c *hermesChat) copied(m hermesMessage) bool {
+	at := strconv.FormatFloat(m.at, 'f', -1, 64)
+	keys := []string{strings.Join([]string{m.role, m.content, at, m.toolCallID, m.toolCalls, m.toolName}, "\x00")}
+	if m.uid != "" && (m.role == "tool" || m.summary) {
+		keys = append(keys, "uid\x00"+m.uid+"\x00"+at)
+	}
+	copied := false
+	for _, key := range keys {
+		copied = copied || c.seen[key]
+		c.seen[key] = true
+	}
+	return copied
+}
+
 func (c *hermesChat) entries(m hermesMessage, max int) [][]byte {
 	id := "hermes:" + strconv.FormatInt(m.id, 10)
 	at := hermesStamp(m.at)
+	if !m.visible() || c.copied(m) {
+		return nil
+	}
 	var out [][]byte
 	switch m.role {
 	case "user":
 		text := hermesText(m.content)
-		key := strconv.FormatFloat(m.at, 'f', -1, 64) + "\x00" + text
-		if strings.TrimSpace(text) == "" || c.seen[key] {
+		if strings.TrimSpace(text) == "" {
 			return nil
 		}
-		c.seen[key] = true
 		clipped, cut := truncate(text, chatTextMax)
 		out = userEntry(id, at, []chatBlock{{Type: "text", Text: clipped, Truncated: cut}})
 	case "assistant":

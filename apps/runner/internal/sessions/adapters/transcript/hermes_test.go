@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -45,13 +46,19 @@ CREATE TABLE messages (
 // keeps it, and a writer standing in for Hermes.
 func hermesHome(t *testing.T) (string, *sql.DB) {
 	t.Helper()
+	return hermesHomeOf(t, hermesSchema)
+}
+
+// hermesHomeOf is a Hermes home whose database has schema.
+func hermesHomeOf(t *testing.T, schema string) (string, *sql.DB) {
+	t.Helper()
 	path := filepath.Join(t.TempDir(), "state.db")
 	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=journal_mode(WAL)")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = db.Close() })
-	if _, err := db.Exec(hermesSchema); err != nil {
+	if _, err := db.Exec(schema); err != nil {
 		t.Fatal(err)
 	}
 	return path, db
@@ -277,4 +284,116 @@ func TestAHermesConversationReadsAPageAtATime(t *testing.T) {
 	if err != nil || !stale.Restarted || len(stale.Entries) != 3 {
 		t.Fatalf("a stale cursor read %+v, %v; want the whole conversation, restarted", stale, err)
 	}
+}
+
+// Hermes' default compaction is in place: it archives the conversation's rows
+// (`active = 0, compacted = 1`), then writes the turns it keeps again as live
+// rows, a tool's reply rewritten to a stub under the same `message_uid`, and a
+// micro-compaction joins turns into a row only the model reads. The chat shows
+// each message once, as Hermes does. Regression: every kept turn of a
+// compacted conversation shown twice, and joined prompts a third time.
+func TestAHermesChatShowsACompactedInPlaceConversationOnce(t *testing.T) {
+	path, db := hermesHome(t)
+	exec(t, db, `ALTER TABLE messages ADD COLUMN message_uid TEXT`)
+	exec(t, db, `ALTER TABLE messages ADD COLUMN display_metadata TEXT`)
+	worktree := t.TempDir()
+	created := time.Now().Add(-time.Minute)
+	hermesSession(t, db, "s1", "cli", worktree, time.Now())
+	at := float64(time.Now().UnixMilli()) / 1000
+	row := func(role, content, callID, calls, uid, meta string, stamp float64, active, compacted int) {
+		t.Helper()
+		exec(t, db, `INSERT INTO messages (session_id, role, content, tool_call_id, tool_calls, message_uid, display_metadata,
+			timestamp, active, compacted) VALUES ('s1', ?, ?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?)`,
+			role, content, callID, calls, uid, meta, stamp, active, compacted)
+	}
+	call, _ := json.Marshal([]any{hermesCall("c1", "terminal", map[string]any{"command": "go test ./..."})})
+	// The rows before the compaction, archived.
+	row("user", "Port the API", "", "", "u1", "", at, 0, 1)
+	row("assistant", "", "", string(call), "a1", "", at+1, 0, 1)
+	row("tool", `{"output": "ok", "exit_code": 0}`, "c1", "", "t1", "", at+2, 0, 1)
+	row("assistant", "Ported.", "", "", "a2", "", at+3, 0, 1)
+	// What the compaction kept, written again as live rows.
+	row("assistant", "", "", string(call), "a1", "", at+1, 1, 0)
+	row("tool", `{"output": "[pruned]"}`, "c1", "", "t1", "", at+2, 1, 0)
+	row("assistant", "Ported.", "", "", "a2", "", at+3, 1, 0)
+	// Two prompts after it, and the join only the model reads.
+	row("user", "Now the docs", "", "", "u2", "", at+4, 1, 0)
+	row("user", "and the changelog", "", "", "u3", "", at+5, 1, 0)
+	row("user", "Now the docs\nand the changelog", "", "", "u4", `{"model_only": true}`, at+5, 1, 0)
+
+	sink := &batches{}
+	followSession(t, transcript.Options{HermesState: path},
+		domain.Session{Agent: domain.AgentHermes, Worktree: worktree, Created: created}, sink)
+	eventually(t, "the conversation", func() bool { return sink.historyEnded() })
+	var texts []string
+	for _, entry := range sink.entries() {
+		for _, block := range blocksOf(entry) {
+			switch block["type"] {
+			case "text":
+				texts = append(texts, block["text"].(string))
+			case "tool_use":
+				texts = append(texts, "tool_use")
+			case "tool_result":
+				texts = append(texts, "tool_result")
+			}
+		}
+	}
+	want := []string{"Port the API", "tool_use", "tool_result", "Ported.", "Now the docs", "and the changelog"}
+	if !slices.Equal(texts, want) {
+		t.Fatalf("the chat shows %q, want %q", texts, want)
+	}
+}
+
+// A host can run a Hermes from before the columns the reader knows were
+// added: its conversation still reads as the chat. Regression: a Chat tab
+// that waited forever on a database with no `transcript_revision`.
+func TestAnOlderHermesDatabaseStillReadsAsTheChat(t *testing.T) {
+	path, db := hermesHomeOf(t, `
+CREATE TABLE sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, parent_session_id TEXT,
+    started_at REAL NOT NULL, ended_at REAL, end_reason TEXT, cwd TEXT);
+CREATE TABLE messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, role TEXT NOT NULL,
+    content TEXT, tool_call_id TEXT, tool_calls TEXT, tool_name TEXT, timestamp REAL NOT NULL, reasoning TEXT,
+    active INTEGER NOT NULL DEFAULT 1);`)
+	worktree := t.TempDir()
+	created := time.Now().Add(-time.Minute)
+	hermesSession(t, db, "s1", "cli", worktree, time.Now())
+	hermesRow(t, db, "s1", "user", "Fix the wallet test", nil)
+	hermesRow(t, db, "s1", "assistant", "Fixed.", nil)
+
+	sink := &batches{}
+	followSession(t, transcript.Options{HermesState: path},
+		domain.Session{Agent: domain.AgentHermes, Worktree: worktree, Created: created}, sink)
+	eventually(t, "the conversation", func() bool { return len(sink.entries()) == 2 })
+	if text := blockOf(sink.entries()[1])["text"]; text != "Fixed." {
+		t.Fatalf("the reply reads %v, want Fixed.", text)
+	}
+}
+
+// blocksOf is every content block of an entry, its content as one text block
+// when it is text.
+func blocksOf(entry map[string]any) []map[string]any {
+	message, _ := entry["message"].(map[string]any)
+	if text, ok := message["content"].(string); ok {
+		return []map[string]any{{"type": "text", "text": text}}
+	}
+	raw, _ := message["content"].([]any)
+	var out []map[string]any
+	for _, block := range raw {
+		if b, ok := block.(map[string]any); ok {
+			out = append(out, b)
+		}
+	}
+	return out
+}
+
+// historyEnded is whether the history a reset started has all arrived.
+func (b *batches) historyEnded() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, batch := range b.got {
+		if batch.History == app.HistoryEnd {
+			return true
+		}
+	}
+	return false
 }
