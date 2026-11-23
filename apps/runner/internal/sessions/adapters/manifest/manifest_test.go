@@ -431,16 +431,18 @@ func TestTheInputBoxUnderASpinnerIsStillWorking(t *testing.T) {
 	}
 }
 
-// fx's status line is `Working` on a line of its own, and its replies say the
+// fx's status line is `Working` or `Thinking` on a line of its own, and its replies say the
 // word too: one that starts a line in prose ("Working tree is clean") must not
 // read as a turn under way, or an idle fx session never shows as needing you.
 func TestFxWorkingIsItsStatusLineNotItsProse(t *testing.T) {
 	c := manifest.New(manifest.Options{})
 
-	if state, _ := c.Classify(app.Screen{Body: "done\n\n⠹ Working (3s · esc to interrupt)"}, domain.AgentFx); state != domain.StateWorking {
-		t.Fatalf("status line: state = %q, want working", state)
+	for _, status := range []string{"⠹ Working (3s · esc to interrupt)", " Thinking"} {
+		if state, _ := c.Classify(app.Screen{Body: "done\n\n" + status}, domain.AgentFx); state != domain.StateWorking {
+			t.Fatalf("status line %q: state = %q, want working", status, state)
+		}
 	}
-	for _, prose := range []string{"Working tree is clean.", "- Working directory: /src", "• Working as expected now"} {
+	for _, prose := range []string{"Working tree is clean.", "- Working directory: /src", "• Working as expected now", "Thinking about it, the bug is in the parser."} {
 		if state, _ := c.Classify(app.Screen{Body: "fx\n\n" + prose + "\n\n> "}, domain.AgentFx); state == domain.StateWorking {
 			t.Fatalf("prose %q read as working", prose)
 		}
