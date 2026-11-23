@@ -11,6 +11,7 @@ type AgentId =
   | 'pi'
   | 'omp'
   | 'antigravity'
+  | 'zcode'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -120,6 +121,7 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   pi: () => <PiMark className={SHARED} />,
   omp: () => <OmpMark className={SHARED} />,
   antigravity: () => <AntigravityMark className={INKED} />,
+  zcode: () => <ZaiMark className={INKED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -139,7 +141,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * and wherever a session names its harness; a bot's model picker draws its
  * providers with it too. Claude Code carries Anthropic's orange (a brand
  * colour, so it does not re-point in dark); Codex, OpenCode, Grok,
- * Antigravity, GLM, ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
+ * Antigravity, GLM, ChatGPT and Cursor draw in the current ink and invert with the theme, and
+ * ZCode wears Z.ai's mark, as GLM does. ChatGPT has no
  * published mark of its own and wears OpenAI's, as Codex does. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
  * Pi's blocks and Oh My Pi's gradient π carry their own colours, which do not

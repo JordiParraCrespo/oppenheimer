@@ -122,6 +122,15 @@ func (a Agent) NamesConversation() bool {
 	return len(launchCatalog[a.CatalogID()].conversationCreate) > 0
 }
 
+// DropsTask reports whether a first task given to this agent never reaches
+// it: its CLI takes none on the command line (ZCode) and the task is not a
+// note for the person, as the blank terminal's is. A caller that requires a
+// task refuses such an agent rather than start it idle.
+func (a Agent) DropsTask() bool {
+	m := launchCatalog[a.CatalogID()]
+	return len(m.prompt) == 0 && !m.taskIsNote
+}
+
 // NewAgentServer mints a password for an agent's API on port, for the
 // agent running in directory.
 func NewAgentServer(port int, since int64, directory string) (AgentServer, error) {
@@ -174,6 +183,9 @@ type launchMap struct {
 	effortUnset  string
 	effortLevels map[string][]string
 	prompt       []string
+	// taskIsNote says the first task is a note for whoever reads the session
+	// (the blank terminal's), not something the agent reads.
+	taskIsNote bool
 	// How the agent's own conversation is named at launch and reopened
 	// afterwards. These CLIs keep the transcript themselves, so what a resume
 	// needs is a name both sides agree on: the session's id, pinned here.

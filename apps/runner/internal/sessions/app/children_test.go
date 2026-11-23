@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 // Agents run agents: a session's agent starts helpers as sessions of its
@@ -222,5 +224,19 @@ func waitUntil(t *testing.T, cond func() bool) {
 			t.Fatal("timed out")
 		}
 		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// A child exists to take a task. ZCode takes none on its command line, so a
+// child on it would start idle with the task lost: the delegate refuses it
+// rather than start one.
+func TestAChildIsRefusedAnAgentThatTakesNoTask(t *testing.T) {
+	f := newFamily(t)
+	_, err := f.children.Delegate(context.Background(), app.DelegateInput{
+		Parent: f.parent.ID, Agent: domain.AgentZCode, Task: "review src/x.go, read-only",
+	})
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != domain.ErrInvalidInput.Code {
+		t.Fatalf("delegating to zcode = %v, want %s", err, domain.ErrInvalidInput.Code)
 	}
 }

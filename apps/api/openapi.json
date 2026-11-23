@@ -9791,6 +9791,7 @@
                 "pi",
                 "omp",
                 "antigravity",
+                "zcode",
                 "shell"
               ],
               "type": "string"
@@ -31523,6 +31524,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "shell",
               null
             ],
@@ -31609,6 +31611,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "shell",
               null
             ],
@@ -31675,6 +31678,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "shell",
               null
             ],
@@ -32213,6 +32217,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "shell",
               "cursor"
             ],
@@ -32481,6 +32486,7 @@
               "pi",
               "omp",
               "antigravity",
+              "zcode",
               "shell"
             ]
           },
@@ -33834,7 +33840,8 @@
               "grok",
               "pi",
               "omp",
-              "antigravity"
+              "antigravity",
+              "zcode"
             ]
           },
           "prompt": {
@@ -34755,6 +34762,7 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
                   "shell"
                 ]
               },
@@ -35239,6 +35247,7 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
                   "shell"
                 ]
               },
@@ -36128,6 +36137,7 @@
                   "pi",
                   "omp",
                   "antigravity",
+                  "zcode",
                   "shell"
                 ]
               },
