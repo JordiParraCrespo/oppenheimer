@@ -142,3 +142,31 @@ func TestCodexKeepsThePersonsOwnDeveloperInstructions(t *testing.T) {
 		t.Fatalf("instructions = %q", instructions)
 	}
 }
+
+// OpenCode allows any tool no rule names, and its Ask and Approve for me
+// levels name only edits, the shell and the web: without a rule, an agent
+// could start another agent through the server where the same command in
+// the shell waits for the person. The server's tools ask unless the level
+// is Full. Checked on OpenCode 1.19.6: its MCP tools are named
+// `<server>_<tool>`, and the rule sits beside OPENCODE_PERMISSION's.
+func TestOpenCodeAsksBeforeTheRunnersToolsShortOfFullAccess(t *testing.T) {
+	rules := func(permission string) map[string]any {
+		launch := briefed
+		launch.Permission = permission
+		var config struct {
+			Permission map[string]any `json:"permission"`
+		}
+		if err := json.Unmarshal([]byte(launch.Env(AgentOpenCode)[openCodeConfig]), &config); err != nil {
+			t.Fatal(err)
+		}
+		return config.Permission
+	}
+	for _, level := range []string{"ask", "auto", ""} {
+		if got := rules(level)["oppenheimer_*"]; got != "ask" {
+			t.Fatalf("at %q the tools are %v, want ask", level, got)
+		}
+	}
+	if got := rules("full"); got != nil {
+		t.Fatalf("at Full the tools are held by %v", got)
+	}
+}

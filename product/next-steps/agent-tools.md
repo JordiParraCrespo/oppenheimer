@@ -380,6 +380,13 @@ its pending approvals reached the Inbox.
     2.1.330, codex-cli 0.171, OpenCode 1.19.6).
 - **Folder sessions** still get no note (the folder is the person's), but
   they get the server, and Codex there is told about `runner --skill`.
+- **Asking first.** OpenCode allows a tool no rule names, and its Ask and
+  Approve for me levels name only edits, the shell and the web; so short of
+  Full the server's tools get an `oppenheimer_*: ask` rule, as the shell
+  command they replace was asked about. Claude Code at Ask asks before any
+  MCP tool on its own.
 - **Not yet.** Grok, Pi and omp get neither: their CLIs' ways in are not
-  checked. The tools are the host's commands; Plan's tasks over the same
+  checked. A child session starts at its CLI's default permission, not its
+  parent's (as `runner sessions run` always has): whether a child inherits
+  the parent's level is open. The tools are the host's commands; Plan's tasks over the same
   server, and the API's MCP from inside a session, are the next slice.

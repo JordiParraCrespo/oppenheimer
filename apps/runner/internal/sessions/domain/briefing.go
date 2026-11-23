@@ -100,6 +100,18 @@ func (l Launch) openCodeConfig(config string) (string, bool) {
 		merged["mcp"] = map[string]any{ToolsServer: map[string]any{
 			"type": "local", "command": l.Tools, "timeout": toolCallBound().Milliseconds(),
 		}}
+		// OpenCode allows a tool no rule names, and the permission levels
+		// short of Full name only its own tools. Starting an agent was a
+		// shell command those levels ask about, so the server's tools ask
+		// too; Full allows them, as it allows the shell.
+		if l.Permission != "full" {
+			rules, _ := merged["permission"].(map[string]any)
+			if rules == nil {
+				rules = map[string]any{}
+			}
+			rules[ToolsServer+"_*"] = "ask"
+			merged["permission"] = rules
+		}
 	}
 	encoded, err := json.Marshal(merged)
 	if err != nil {
