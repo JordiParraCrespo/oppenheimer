@@ -11,304 +11,199 @@ everything about it is **data in one catalog entry**
 runner reads through generated Go tables. The code is the runner's screen
 manifest, an optional chat reader, and the places that list agents by name.
 
-The agents added this way, and what each one taught (read the commit before
-copying its shape):
+This file is the process. The why behind each rule, with the commit that
+learnt it, is `references/lessons.md`, filed by step: read a step's section
+there when the step raises a question, and add what this integration learns
+to it. Its table names the agent whose commit is the closest shape to copy.
 
-| Agent | Commit | What it taught |
-| --- | --- | --- |
-| Grok | `83f361787` | the minimal shape; a manifest that trusts only what was seen |
-| Pi, Oh My Pi | `3b5d38192`, `c1c5084f5` | an agent family in its own module; no approvals means no `permission`; send Ask even when the CLI defaults to yolo |
-| Antigravity | `fd6277d28`, `79ace7978`, `a4dc02789` | an executable named unlike its id needs an installer alias; one label per model id across agents |
-| fx | `d577bfe64`, `5ffc607ee`, `3e653460e` | a model id may need its provider pinned; anchor the working rule to the status line, and list every working word |
-| ZCode | #985, #994 | no first task on argv; a resume flag that fails; a chat view from a SQLite database; a prompt the agent recalls by itself |
-| Hermes | `af020b8eb`, `37ef2996d`, `3887274fe`, `d19b81759`, `788f60f93` | a CLI that is a client of its own gateway, so killing the terminal does not stop the turn; a database reader by column name across versions; compaction writes a conversation twice |
-| Muse | `d2644b596`, `6dd44e03f`, `ba75005b3` | an installer that fails half way must not leave a launcher that probes as installed; every picker that starts with a task leaves out an agent that takes none |
-| OpenCode (chat) | `9b0c57f9f`, `2cc185b6e`, `075bf1e58`, `15c13b76a` | a chat through the agent's own API; secrets off argv; the session's own conversation among others in its folder; reopen by id |
-| Codex, Grok (chat) | `dc675593a`, `c18fdf18d`, `e65405548` | a chat from a transcript file; a new CLI version moves its fields |
-
-Lane: a new agent is new behaviour, so `/propose` (`/cook` picks it). Each step
-below runs in the order `steward` writes down.
+Lane: a new agent is new behaviour, so `/propose` (`/cook` picks it). The
+steps run in the order `steward` writes down.
 
 ## 1. Read the CLI, not its docs
 
 Install or build the real CLI and read its **argument parser and TUI source**
-(or `--help` and the guide it installs when there is no source). Docs and blog
-posts were wrong or stale more than once. Write down, with the version:
+(or `--help` and the guide it installs when there is no source). Write down,
+with the version:
 
-- **The binary** and how a person installs it: a release with checksums, an
-  npm or Bun package, or nothing (desktop installers only).
-- **Model**: the flag, the ids it takes, its default. No `--model` at all means
-  the entry lists no models, and a model must never reach argv: a strict parser
-  exits on an unknown flag.
-- **Permission**: the flag and its values for Ask, Auto and Full access. When
-  the CLI's own default is permissive, Ask is still sent (omp). No approvals by
-  design means no `permission` (Pi).
+- **The binary**, and how a person installs it: a release with checksums, an
+  npm or Bun package, or nothing.
+- **Model**: the flag, the ids, the default. No `--model` means no models.
+- **Permission**: the values for Ask, Auto and Full access. Ask is sent even
+  when the CLI's default is permissive; no approvals means no `permission`.
 - **Effort**: the flag and the levels each model takes.
-- **First task**: how an interactive session takes one. A trailing positional
-  (Claude Code, Grok), a flag (`--prompt-interactive`, OpenCode's `--prompt`),
-  or none: a CLI that reads a positional as a **subcommand** takes no task, and
-  one sent would make it exit (ZCode). Never the headless `-p`, which answers
-  and exits.
-- **Resume**: how a stopped session reopens its conversation, and **what it
-  does when there is nothing to reopen**. ZCode's `--continue` exits before its
-  TUI starts, so a session restarted before its first message would come back
-  with no agent; a flag that fails like that is left out. "The newest in this
-  folder" can be another session's when two share a folder (OpenCode); reopen
-  by id when the runner can learn it (`conversation.reopen`).
-- **Login**: the hosts its sign-in URLs use, and the variable that moves its
-  login (`configDirEnv`), if any.
-- **Where it keeps the conversation**: a file per session, a local API, or a
-  database. This decides the chat view (step 5).
-- **Its screen**: the exact strings its TUI draws while a turn runs, at an
-  approval dialog, at a question, at sign-in, and idle at its prompt.
-- **Its keys**: submit, interrupt, and how to empty its prompt (step 3).
-- **Headless output**, for later: `--output-format`, what its `result` line
-  carries. The runner's headless drive (16 §Q2) is not built yet.
+- **First task** in an interactive session: a trailing positional, a flag, or
+  none (a positional that is a subcommand counts as none). Never the headless
+  `-p`.
+- **Resume**: how a stopped session reopens its conversation, by id if the
+  runner can learn it, and **what it does when there is nothing to reopen**.
+- **Login**: the sign-in hosts, and the variable that moves the login.
+- **Where it keeps the conversation**: a file per session, a local API, a
+  database (step 5).
+- **Its screen**: the strings it draws mid-turn, at an approval, at a
+  question, at sign-in, and idle.
+- **Its keys**: submit, interrupt, empty the prompt (step 3).
+- **Whether its work outlives its terminal** (a client of its own server or
+  gateway).
 
 ## 2. The catalog entry
 
-`packages/shared/src/agents/`. Claude Code, Codex, OpenCode and Grok sit in
-`catalog.ts`; every later agent has a module of its own (`pi-family.ts`,
-`antigravity.ts`, `fx.ts`, `zcode.ts`, `hermes.ts`, `muse.ts`) that
-`CODING_AGENTS` composes. Give a new one its module. Every field's doc comment in
-`CodingAgentDefinition` and `CodingAgentLaunch` is the contract; read them.
+In a module of its own beside `catalog.ts` (`hermes.ts`, `muse.ts`), composed
+into `CODING_AGENTS`. The doc comments on `CodingAgentDefinition` and
+`CodingAgentLaunch` are the contract.
 
-- Add the id to `CODING_AGENT_IDS` (before `shell`) and the entry to
-  `CODING_AGENTS`. Comment each field with where its value was read and the
-  version, as the other entries do.
-- `models`: the CLI's ids with the console's labels. **A label is per id across
-  every agent**: a model another agent already lists reuses that label
-  (`a4dc02789`). A gateway id may need its provider pinned in `launch.model`
-  (fx's `--provider gateway`).
-- `effort`: a model family whose levels several agents offer keeps them once
-  in `effort-levels.ts` (Antigravity's `GEMINI_4_LEVELS`).
-- `launch.permission` / `effort` / `prompt` / `conversation`: as read in step 1.
-  No first task means no `prompt`; then New session lets the task be empty and
-  a bot's `start_session`, `runner sessions run` and Plan's Start session
-  (`apps/web/src/features/tasks/lib/agent-options.ts`, `takesTask`) leave the
-  agent out or refuse it, all derived from the catalog, and so does
-  automations' choice of agent (`automation-agent.policy.ts` in the API,
-  `automation-draft.ts` in the console; they also need permission and models).
-  Their comments name the agents left out: add the new one. A new place that
-  starts a session with a task asks `takesTask` too, or the task moves to In
-  progress while the agent sits idle (`ba75005b3`). Only an agent whose task is a note for the person
-  (the blank terminal) says `taskIsNote`.
-- `input`: `TYPED_INPUT`, plus `clear` when the agent's prompt can hold text
-  nobody left there (step 3), plus `quit` when **the agent's work outlives
-  its terminal**: `hermes chat` is a client of Hermes' gateway, which runs the
-  turn, so killing tmux only detached and a stopped session kept working.
-  `quit` is the lines typed, each then `submit`, before the runner ends the
-  terminal (Hermes: `/stop`, `/quit`, `d19b81759`). Check it live: stop a
-  session mid-turn and see the work stop.
+- The id in `CODING_AGENT_IDS` (before `shell`). Comment each field with where
+  its value was read, and the version.
+- `models`: a model another agent lists keeps that agent's label. A gateway
+  id may pin its provider in `launch.model`. Levels several agents share go
+  in `effort-levels.ts`.
+- `launch.permission` / `effort` / `prompt` / `conversation` as read. No first
+  task means no `prompt`. New session, bots, `sessions run`, Plan's Start
+  session (`takesTask` in `apps/web/src/features/tasks/lib/agent-options.ts`)
+  and automations (`automation-agent.policy.ts`, `automation-draft.ts`) derive
+  from it; add the agent to their comments. `taskIsNote` is the blank
+  terminal's alone.
+- `input`: `TYPED_INPUT`; `clear` when the prompt can hold text nobody left
+  (step 3); `quit` when the work outlives the terminal (the lines that end
+  it, each then `submit`).
 - `transcriptLocation`, `configDirEnv`, `loginTargets` when they apply.
-- **How the runner installs and updates it** goes in `host-setup.ts`, never in
-  the catalog: the console loads the catalog on its first page (`22ee3f839`).
-  A release goes through `release-install.ts` (checked against the vendor's
-  SHA-256 or SHA-512), a registry package through `install-scripts.ts` (npm or
-  Bun). Never a script piped into a shell. No terminal release at all: no
-  `install`, and the catalog spec's install test names the agent and why.
-  An install that fails half way removes what it put on `PATH`: a launcher
-  left without its binary probes as installed, and nothing retries
-  (`6dd44e03f`).
-- Run `pnpm --filter @oppenheimer/shared build`: it writes
-  `launch_catalog.gen.go`, `host_tools.gen.go`, `agent_update.gen.go` and
-  `protocol-schema/protocol.schema.json`. The link only grows, and a new enum
-  value is allowed: an old runner never probes the new binary, and the API
-  refuses an agent whose command has no entry at all in the host's tool
-  inventory, which is what an old runner sends (`SESSIONS_011`). Whether the
-  agent is installed is not checked there.
-- **A field the catalog does not have yet** (as `clear` and `quit` were) is
-  three edits, not one: the field and its doc comment in `catalog.ts`, its line
-  in `scripts/emit-agent-catalog.cjs`, and the Go that reads it
-  (`internal/sessions/domain/input.go` or `launch.go`), with a test in the
-  runner. Emit it only for agents that set it, so the other rows stay as they
-  are.
+- Install and update in `host-setup.ts`, never the catalog: a checksummed
+  release (`release-install.ts`) or a registry package
+  (`install-scripts.ts`), never a script piped into a shell. A failed install
+  removes what it put on `PATH`. No terminal release: no `install`, and the
+  catalog spec's install test names the agent and why.
+- A field the catalog lacks is three edits: `catalog.ts`, its line in
+  `scripts/emit-agent-catalog.cjs` (emitted only for agents that set it), and
+  the Go that reads it (`internal/sessions/domain/input.go` or `launch.go`),
+  with a runner test.
+- `pnpm --filter @oppenheimer/shared build` writes `launch_catalog.gen.go`,
+  `host_tools.gen.go`, `agent_update.gen.go` and the protocol schema. The new
+  enum value is a compatible change: an old runner sends no entry for the
+  command, which the API refuses (`SESSIONS_011`).
 
 ## 3. Typing into it
 
-Three paths type a message into an agent: the console's chat composer
-(`SessionChat.send`), the API's prompt typer (`promptTyping`, for bots, wakes
-and `opp prompt`), and the runner's `Children.Tell` (child sessions and their
-reports to the parent). All three read the catalog's `input`: the TypeScript
-two through `clearOf(agent)`, the runner through the generated table
-(`Agent.Input()`). Never write an agent's keys or timing into one of them.
+Three senders: the console's chat (`SessionChat.send`), the API's
+`promptTyping` (bots, wakes, `opp prompt`) and the runner's `Children.Tell`.
+They read `input` from the catalog: TypeScript through `clearOf(agent)`, the
+runner through `Agent.Input()`. Never put an agent's keys or timing in one of
+them.
 
-- Find out how the TUI empties its prompt (ZCode: Ctrl+U; never Ctrl+C, which
-  counts towards quitting), and whether **anything puts text in it the person
-  did not leave there**. ZCode recalls its last prompt on an Up arrow into an
-  empty prompt; an approval dialog's Up or a wheel over the terminal sends one.
-  If so, set `input.clear: { keys, settleMs }`.
-- `settleMs` exists because the clear and the words must **not arrive in one
-  burst**: a TUI that applies the clear on its next render inserts the words
-  into the prompt it has not emptied yet (ZCode: 100). The chat and `Tell`
-  wait it out; the API spaces the whole message by it. A message whose files
-  were just pasted is not cleared over them.
-- Prove it live: recall a prompt into the agent's input, send from the chat
-  and through `POST /sessions/{id}/prompt`, and read what the agent stored.
+- Find the key that empties the prompt (not one that counts towards quitting)
+  and whether **anything puts text there the person did not**. If so,
+  `input.clear: { keys, settleMs }`, with `settleMs` the time the TUI takes to
+  act on it.
+- Prove it live: put text in the agent's prompt the way it does, send from the
+  chat and through `POST /sessions/{id}/prompt`, and read what the agent
+  stored.
 
 ## 4. The runner
 
-- `internal/sessions/domain/session.go`: the `Agent` constant and its
-  `agentCatalogIDs` row (and the comment listing the agents).
-- `internal/host/domain/facts.go`: the `Tool` constant (the binary's name) and
-  `ProbedTools`.
-- `cmd/runner/main.go`: the agent in `sessions new --agent`'s help; in
-  `sessions run --agent`'s only when it takes a task (`muse` is listed there
-  today by mistake, and `DropsTask` refuses it at run time: do not copy it);
-  in `runner agents install <name>`'s only when the runner installs it.
-- **The screen manifest**, `internal/sessions/adapters/manifest/manifests/<Agent>.json`,
-  named by the runner's `Agent` value, not the catalog id (`claude.json` for
-  `claude-code`):
-  - Rules come from strings in the CLI's source or seen live, each with a
-    `note` saying where and on which version; `notes` says what is not yet
-    watched.
-  - A working rule is anchored to the status line, not to any line that
-    starts with the word: fx's "Working" matched a reply saying "Working tree
-    is clean". List every word the status line takes (fx also says
-    "Thinking", which read as unknown mid-turn).
-  - Give the idle prompt a rule too. A dialog that reads as `unknown` for one
-    sample resets the 30 seconds the API waits before a blocked session
-    counts as waiting on you.
-  - The raw PTY stream splits words with cursor moves, so check a pattern
-    against what `tmux capture-pane -p` shows, not against bytes.
-- Add the agent to `TestBundledManifestsLoad`'s list, a launch test in
-  `launch_test.go` for its argv (a model or a task it does not take adds
-  nothing; Ask is sent; a restart sends the right resume), and, when the
-  runner installs it, `TestInstallScriptsByKindAndPlatform`
-  (`internal/host/domain/install_test.go`) and
-  `TestOnlyUnattendedAgentUpdatersAreRun` (`agents_test.go`), where an agent
-  that updates itself (Muse) goes in with `false`.
-- Only when the runner installs it: `scripts/runner/install.sh`, the binary in
-  `KNOWN_AGENTS` and its usage line, and **an alias when the agent id is not the binary's name**
-  (`antigravity` → `agy`); `apps/api/src/hosts/infrastructure/runner-release.config.ts`'s
-  Add host prompt lists the same names, and so does the runner README's
-  `runner agents install` row. An agent with no `install` (ZCode, Hermes) is in
-  none of them. A missed alias stopped a pairing
-  (`79ace7978`).
+- `internal/sessions/domain/session.go`: the `Agent` constant, its
+  `agentCatalogIDs` row, the comment listing agents.
+- `internal/host/domain/facts.go`: the `Tool` constant and `ProbedTools`.
+- `cmd/runner/main.go` help: `sessions new --agent`; `sessions run --agent`
+  only if it takes a task; `agents install <name>` only if the runner installs
+  it.
+- **The manifest**, `internal/sessions/adapters/manifest/manifests/<Agent>.json`,
+  named by the runner's `Agent` value (`claude.json` for `claude-code`). Each
+  rule from the CLI's source or seen live, with a `note` saying where and on
+  which version; `notes` says what is not yet watched. The working rule is
+  anchored to the status line and lists every word it takes; the idle prompt
+  has a rule; patterns are checked against `tmux capture-pane -p`.
+- Tests: `TestBundledManifestsLoad`'s list; a `launch_test.go` case for argv
+  (what it does not take adds nothing, Ask is sent, a restart resumes right);
+  if the runner installs it, `TestInstallScriptsByKindAndPlatform` and
+  `TestOnlyUnattendedAgentUpdatersAreRun` (`false` for one that updates
+  itself).
+- If the runner installs it: `KNOWN_AGENTS` and the usage line in
+  `scripts/runner/install.sh`, with an alias when the id is not the binary's
+  name; the Add host prompt in
+  `apps/api/src/hosts/infrastructure/runner-release.config.ts`; the runner
+  README's `runner agents install` row.
 
 ## 5. The chat view
 
 The runner turns the agent's conversation into the transcript lines the
-console already draws (Claude Code's shape, `claude_chat.go`); nothing in the
-console changes. Pick the source by where the agent keeps it:
+console already draws (`claude_chat.go`'s shape); the console does not change.
 
 | The agent keeps | Read it with | Example |
 | --- | --- | --- |
-| a file per conversation | a `chatSource` in `transcript/` (finder + transcriber) | `codex.go`, `grok.go` |
-| a local API | an `openCodeStore` over that API | `opencode_api.go` |
-| a database in OpenCode's shapes | an `openCodeStore` over the file, read-only | `zcode.go` |
-| a database of its own | a store over the file, read-only | `hermes.go` |
+| a file per conversation | a `chatSource` (finder + transcriber) | `codex.go`, `grok.go` |
+| a local API | an `openCodeStore` over the API | `opencode_api.go` |
+| a database in OpenCode's shapes | an `openCodeStore` over the file | `zcode.go` |
+| a database of its own | a store over the file | `hermes.go` |
 
-- **Wire the reader in**, or it never runs:
-  - an `Options` field for where the store is
-    (`transcript.go`, as `ZCodeDatabase`, `HermesState`) and its source on
-    `Reader`;
-  - the path, from `internal/cli/app.go` (`agentHomeFile(paths, "HERMES_HOME",
-    ".hermes", "state.db")`, honouring the agent's home variable);
-  - a file source: its `chats[...]` entry in `transcript.go`. A store: a
-    branch for the agent in `follow.go` (live) and `page.go` (older pages).
-- **Find the session's own conversation**: in its directory, touched since the
-  session launched, never another session's in the same folder (OpenCode,
-  `075bf1e58`), never an internal thread the CLI writes beside it (Codex's
-  reviews and compactions, `e65405548`).
-- **Leave out what the person never sees** (system reminders, environment
-  messages, model-only rows), and do it **before** any window or limit: ZCode
-  writes six hidden rows a turn, and a "last 20" window that dropped them after
-  the read took a short window for the whole conversation and lost a burst of
-  turns (`b92eac989`).
-- **A database the agent owns is not a schema you own.** Read rows by column
-  name and tolerate a column an older version lacks (Hermes before
-  `transcript_revision`, `788f60f93`); never build SQL from text, pass a list
-  as one JSON parameter read with `json_each` (`3887274fe`, gosec G202); check
-  every `Close`. When the agent compacts, it may archive rows and write the
-  turns it keeps again: fold each message's copies as the agent does, or the
-  chat shows them twice.
-- **Open the agent's files read-only** and never change them. A database is
-  opened `mode=ro`; one that does not exist yet is "nothing said yet", not a
-  failure. `modernc.org/sqlite` is confined: `sessions/adapters/transcript`
-  already owns it, so a reader there needs nothing; a reader in any other
-  package needs its own row in `internal/arch`'s `confined` table and in
-  `ARCHITECTURE.md`.
-- **Secrets stay off argv**: a password for the agent's API goes in the
-  session's tmux environment, not on the command line every account can read
-  (`2cc185b6e`).
-- **Test against real samples.** Record the rows or lines a real session
-  writes (one with a tool call) and test the reader on them. A CLI's next
-  version moves fields (Codex 0.167, `c18fdf18d`): when the store's shape is
-  undocumented, say so in the reader and in the changeset.
-- The guide's Sessions page names which agents have a chat; the runner's
-  README says which answer `transcript.read`.
+- **Wire it in**: an `Options` field and a source on `Reader` in
+  `transcript.go`; the path from `internal/cli/app.go` (`agentHomeFile`,
+  honouring the agent's home variable); a `chats[...]` entry for a file
+  source, or a branch in `follow.go` and `page.go` for a store.
+- **Only this session's conversation**: in its directory, since it launched,
+  never a neighbour's or an internal thread the CLI writes beside it.
+- **Hidden rows out, before any window or limit.**
+- **Read-only**: a database opened `mode=ro`, a missing one is "nothing said
+  yet", columns read by name, no SQL built from text (a list is one JSON
+  parameter with `json_each`), every `Close` checked, compaction copies folded
+  as the agent folds them. `modernc.org/sqlite` is confined to
+  `sessions/adapters/transcript`; a reader elsewhere needs a `confined` row in
+  `internal/arch` and a line in `ARCHITECTURE.md`.
+- **Secrets off argv**: in the session's tmux environment.
+- **Tested on samples a real session wrote**, one with a tool call. Say in the
+  reader when the store's shape is undocumented.
+- The guide's Sessions page and the runner README name the agents with a chat.
 
 ## 6. The console and the docs
 
-- `packages/frontend/design-system/web/src/components/agent-mark.tsx`: the
-  agent's mark from its published brand asset (or a mark it shares, as ZCode
-  wears Z.ai's), its line in the doc comment, and its source in
-  `packages/frontend/design-system/AGENTS.md` (that list stops at fx today;
-  add the new one anyway). With none, it draws the bot glyph.
-- `apps/web/src/features/sessions/lib/agent-choices.ts`: a new agent is off in
-  New session until switched on in Settings → Agents; name it in the comment
-  above `OFFERED_BY_DEFAULT`. Settings → Agents lists every catalog agent on
-  its own.
-- `pnpm generate:api-client` (the agent enum reaches the OpenAPI document).
-- The guide (`apps/docs/docs/guide/`): `overview.md`, `faq.md`, `sessions.md`
-  (picker, chat line), `hosts.md` (the install list, or why it is not
-  offered); then `pnpm generate:guide`. The runner README's install list.
+- `agent-mark.tsx` (design system): the mark from the agent's published brand
+  asset, its line in the doc comment, its source in
+  `packages/frontend/design-system/AGENTS.md`. With none, the bot glyph.
+- `apps/web/src/features/sessions/lib/agent-choices.ts`: off in New session
+  until switched on in Settings → Agents; name it above `OFFERED_BY_DEFAULT`.
+- `pnpm generate:api-client`.
+- The guide (`apps/docs/docs/guide/`): `overview.md`, `faq.md`, `sessions.md`,
+  `hosts.md`; then `pnpm generate:guide`.
 - A changeset naming every package touched.
-- Screenshots, light and dark: `/settings/agents` and New session with the
+- Light and dark screenshots of `/settings/agents` and New session with the
   agent picked (`local-stack`, "Show a visual change").
 
 ## 7. Prove it live
 
-Unit tests and a stand-in binary prove the wiring; only the real CLI proves
-the flags, the screen strings and the chat. Do both.
+Unit tests and a stand-in prove the wiring; only the real CLI proves the
+flags, the screen and the chat.
 
-1. **The real CLI on this machine.** Build or install it somewhere every
-   account can read (`/opt/<agent>`), with a wrapper that gives it this
-   sandbox's proxy and CA (`HTTPS_PROXY`, `NODE_EXTRA_CA_CERTS`, or the CLI's
-   own variables such as `ZCODE_HTTP_PROXY`). The proxy's port changes when
-   the session's worker restarts: refresh the wrapper before each run.
-   Running a downloaded project's install scripts needs the user's go-ahead.
+1. **The real CLI**, built or installed where every account can read it
+   (`/opt/<agent>`), behind a wrapper with this sandbox's proxy and CA
+   (`HTTPS_PROXY`, `NODE_EXTRA_CA_CERTS` or the CLI's own variables). Refresh
+   the proxy port before each run. A downloaded project's install scripts need
+   the user's go-ahead.
 2. **Its key** through `request_credential` for the model API's host, never
-   pasted in chat; the CLI's own config gets a placeholder key the proxy
-   replaces. Check it with one headless call first.
-3. **A real runner**: the fleet on this machine,
-   `cd e2e && E2E_FLEET=1 FLEET_HOSTS=local npx playwright test --project=fleet <throwaway spec> --reporter=list --trace off`,
-   with the stack up (`node scripts/stack/stack.mjs up --web`). In the spec:
-   `pairedHosts`, then as the host user put the wrapper on `~/bin` and the
-   CLI's config in its home, `killRunner()` so it probes again, and poll
-   `GET /hosts` until its tools list the binary; then
-   `createSession(api, hostId, installationId, { agent, launch: { permission } })`.
-4. **Drive it like a person**: type into `.xterm`, read the screen from
-   `.xterm-rows` (not the raw socket bytes), switch Terminal → Chat with the
-   "How to read this session" group, send from the chat composer, and check
-   what the agent itself stored (its database or transcript, read as the host
-   user) as well as what the chat shows. Cover an approval dialog, a restart,
-   and a message from the chat after the agent recalled or kept text in its
-   prompt.
-5. Delete the throwaway spec. Screenshots go to the user and the pull request.
+   from chat; the CLI's config gets a placeholder the proxy replaces. One
+   headless call checks it.
+3. **A real runner**: with `node scripts/stack/stack.mjs up --web`, a
+   throwaway spec run by
+   `cd e2e && E2E_FLEET=1 FLEET_HOSTS=local npx playwright test --project=fleet <spec> --reporter=list --trace off`.
+   In it: `pairedHosts`; as the host user, the wrapper on `~/bin` and the
+   CLI's config in its home; `killRunner()`; poll `GET /hosts` until the
+   tools list the binary; `createSession(api, hostId, installationId, { agent, launch: { permission } })`.
+4. **Drive it like a person**: type into `.xterm`, read `.xterm-rows`, switch
+   to Chat ("How to read this session"), send from the composer, and read what
+   the agent stored as the host user. Cover an approval, a stop mid-turn, a
+   restart, and a message after text was left in the prompt.
+5. Delete the throwaway spec; the screenshots go to the user and the PR.
 
-What stays in the repository is a **stand-in**: a script in `e2e/fleet/<binary>`
-that draws the agent's screen and writes its conversation the way the real one
-does, its `COPY` in `e2e/fleet/Dockerfile` and its name in `SHIMS`
-(`e2e/support/fleet-local.ts`), and a fleet spec for what the agent adds: a
-chat view (`e2e/tests/fleet/hermes-chat.spec.ts`), or the launch and screen
-states (`agents.spec.ts`, with Grok's stand-in).
-
-Then the fresh verifier of `steward` and `ship` gets the same recipe in its
-brief, so it can run the real CLI too.
+What stays committed is a **stand-in**: `e2e/fleet/<binary>` drawing the
+agent's screen and writing its conversation as the real one does, its `COPY`
+in `e2e/fleet/Dockerfile`, its name in `SHIMS` (`e2e/support/fleet-local.ts`),
+and a fleet spec for what it adds (`hermes-chat.spec.ts`, `agents.spec.ts`).
+The fresh verifier gets this recipe in its brief.
 
 ## 8. Before the pull request
 
-- `pnpm --filter @oppenheimer/shared check:generated`, the runner's
-  `go test ./internal/sessions/... ./internal/host/... ./internal/arch/...`,
-  the shared `src/agents` specs, then `pnpm ci:local`.
-- Another agent landing on `main` meanwhile conflicts in every list above:
-  merge `main` in and keep both, then rebuild the generated files rather than
-  resolving them by hand. Two catalog fields added at once (`clear`, `quit`)
-  meet in `input.go` and the emitter: keep both. After the merge, look at
-  `agent-mark.tsx` whole: a union of two SVG cases cut a mark's closing tags
-  twice (`7bc18337f`, `dfdb86b47`).
-- The description says what was watched live and what was only read from the
-  source, and lists what is left (a sign-in rule not yet seen, subagents the
-  chat does not show yet, a schema the reader depends on).
+- `pnpm --filter @oppenheimer/shared check:generated`; the runner's
+  `go test ./internal/sessions/... ./internal/host/... ./internal/arch/...`;
+  the shared `src/agents` specs; `pnpm ci:local`.
+- Another agent landing meanwhile conflicts in every list above: merge `main`,
+  keep both sides, rebuild the generated files, and read `agent-mark.tsx`
+  whole afterwards.
+- The description says what was watched live and what was only read, and
+  what is left.
+- New lessons go in `references/lessons.md` under their step.
