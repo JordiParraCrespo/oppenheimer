@@ -10,6 +10,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -457,3 +458,20 @@ func Slug(branch, id string) string {
 // DefaultBranchName is what a session's own branch is called when the user
 // did not name one: readable in a PR list, unique by construction.
 func DefaultBranchName(id string) string { return "oppenheimer/" + id }
+
+// NoteFile is the session note's name in a worktree session's own folder:
+// how the session is set up, for its agent. Claude Code reads CLAUDE.md from
+// every folder above the one it runs in, and the session's folder holds the
+// checkout without being part of it, so the note reaches that agent and can
+// never be committed. Other agents are handed its path at launch
+// (Launch.Note).
+const NoteFile = "CLAUDE.md"
+
+// Note is the session note's absolute path, or "" for a folder session,
+// whose folder is the person's own and gets none.
+func (s Session) Note() string {
+	if s.Place == PlaceFolder || s.Dir == "" {
+		return ""
+	}
+	return filepath.Join(s.Dir, NoteFile)
+}

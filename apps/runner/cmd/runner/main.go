@@ -126,6 +126,26 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		})
 	case "serve":
 		return serve(ctx)
+	case "mcp":
+		// An agent in a session starts this as its MCP server: the session
+		// commands as tools, on stdin and stdout. The runner names the session
+		// and the socket on its command line, since an agent may not pass its
+		// environment on to the server.
+		fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+		session := fs.String("session", "", "the session the tools act for (default: OPPENHEIMER_SESSION)")
+		socket := fs.String("socket", "", "the daemon's socket (default: OPPENHEIMER_SOCKET, else this host's)")
+		if err := fs.Parse(args); err != nil {
+			return cli.ExitUsage, err
+		}
+		return withDelegation(func(d cli.Delegation) error {
+			if *session != "" {
+				d.Self = *session
+			}
+			if *socket != "" {
+				d.Socket = *socket
+			}
+			return cli.MCP(ctx, os.Stdin, os.Stdout, d, version)
+		})
 	case "skill", "--skill":
 		// The manual for an agent in a session: helpers, messages, waits.
 		if err := cli.Skill(os.Stdout); err != nil {
@@ -405,7 +425,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		// From inside a session: start a child session with a task.
 		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
 		opts := cli.ChildOptions{}
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp, antigravity, fx, hermes, muse or shell")
+		fs.StringVar(&opts.Agent, "agent", cli.DefaultChildAgent, "claude, codex, opencode, grok, pi, omp, antigravity, fx, hermes, muse or shell")
 		fs.StringVar(&opts.Name, "name", "", "name for the child")
 		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
 		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
@@ -694,6 +714,7 @@ var commandSections = []struct {
 		{"runner sessions watch-pr <n> [--repo R] [--off]", "be woken by a pull request's checks, reviews,\ncomments and merge"},
 		{"runner sessions wake-in <30m|2h|1d> \"note\"", "be woken then with the note, instead of polling"},
 		{"runner --skill", "the manual for an agent in a session (helpers, messages, waits)"},
+		{"runner mcp", "the same commands as an MCP server on stdio, which each session's agent is given"},
 	}},
 	{"Run by the service, git and agents", []commandEntry{
 		{"runner run", "the host agent (what the service unit starts)"},

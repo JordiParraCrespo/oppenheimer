@@ -66,6 +66,18 @@ type Launch struct {
 	// reports. It names this host's binary, so it is set at each launch and
 	// never saved.
 	Wrap []string `json:"-"`
+	// Note is the session note's path (Session.Note), handed to an agent that
+	// does not find it on its own; "" hands none. Tools is the command of the
+	// runner's MCP server (`runner mcp`), registered with every agent that
+	// takes one on its command line; nil registers none. Both are this host's,
+	// so they are set at each launch and never saved (briefing.go).
+	Note  string   `json:"-"`
+	Tools []string `json:"-"`
+	// OwnInstructions is what the person told the agent in a key of its
+	// config the briefing sets outright (Codex's developer_instructions),
+	// kept ahead of the briefing's line. It is read at each launch and never
+	// saved.
+	OwnInstructions string `json:"-"`
 }
 
 // AgentServer is where an agent's local API listens and the password it
@@ -232,6 +244,7 @@ func (l Launch) Args(agent Agent) []string {
 	if l.Server != nil && agent.ServesConversation() {
 		args = append(args, "--port", strconv.Itoa(l.Server.Port), "--hostname", "127.0.0.1")
 	}
+	args = append(args, l.briefingFor(agent, nil).args...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
@@ -337,15 +350,18 @@ func (l Launch) effortLevel(m launchMap) launchLevel {
 func (l Launch) Env(agent Agent) map[string]string {
 	m := launchCatalog[agent.CatalogID()]
 	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
-	if len(effort) == 0 {
-		return permission
-	}
-	env := make(map[string]string, len(permission)+len(effort))
+	env := make(map[string]string, len(permission)+len(effort)+1)
 	for name, value := range effort {
 		env[name] = value
 	}
 	for name, value := range permission {
 		env[name] = value
+	}
+	for name, value := range l.briefingFor(agent, env).env {
+		env[name] = value
+	}
+	if len(env) == 0 {
+		return nil
 	}
 	return env
 }
