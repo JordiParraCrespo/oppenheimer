@@ -30,6 +30,7 @@ export function SessionChatAttachingSend({
       files={attach.files}
       upload={(file) => paste.mutateAsync(file)}
       hostCommands
+      onOpenTerminal={attach.openTerminal}
       onSent={onSent}
     />
   );

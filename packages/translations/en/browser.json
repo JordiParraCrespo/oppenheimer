@@ -1507,6 +1507,20 @@
         "previous": "Previous match",
         "next": "Next match",
         "close": "Close find"
+      },
+      "feedback": {
+        "label": "Drafted feedback",
+        "review": "Review in terminal",
+        "send": "Send",
+        "dismiss": "Dismiss",
+        "back": "Back",
+        "keep": "Keep",
+        "turnOff": "Turn off",
+        "retry": "Review and retry",
+        "reviewOrDiscard": "Review or discard",
+        "clearPrompt": "Clear the terminal's prompt to answer it.",
+        "more_one": "{{count}} more queued",
+        "more_other": "{{count}} more queued"
       }
     },
     "side": {

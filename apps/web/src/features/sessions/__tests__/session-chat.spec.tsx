@@ -1417,3 +1417,84 @@ describe("the agent's suggestion", () => {
     expect(field.value).toBe('something else');
   });
 });
+
+describe('feedback the agent drafted', () => {
+  const draft = {
+    kind: 'Bug report',
+    title: 'Took write actions after "View only"',
+    details: ['- What happened: wrote after the user said view only.'],
+    note: null,
+    actions: [
+      { action: 'review', key: '1' },
+      { action: 'send', key: '2' },
+      { action: 'dismiss', key: '0' },
+    ],
+    promptHoldsText: false,
+    more: 0,
+  };
+
+  function renderWithDraft() {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    const openTerminal = vi.fn();
+    render(
+      <SessionChat
+        chat={chat}
+        agent="claude-code"
+        readOnly={false}
+        attach={{ sessionId: 's1', files: createFileHandOff(), openTerminal }}
+      />,
+    );
+    return { chat, typed, openTerminal };
+  }
+
+  // What breaks this: the draft shown only on the terminal's card, so a
+  // reader in the chat never learns it is there or how to answer it.
+  it("shows the draft over the composer, each pill typing the card's key", () => {
+    const { chat, typed, openTerminal } = renderWithDraft();
+    act(() => chat.setFeedback(draft));
+    expect(screen.getByText('Bug report')).toBeTruthy();
+    expect(screen.getByText(draft.details[0] ?? '')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.feedback.send' }));
+    expect(typed).toEqual(['2']);
+    expect(openTerminal).not.toHaveBeenCalled();
+
+    act(() =>
+      chat.setFeedback({
+        ...draft,
+        note: 'Send without reviewing (full draft + env, no transcript)?',
+        actions: [
+          { action: 'send', key: '2' },
+          { action: 'back', key: '\u001b' },
+        ],
+      }),
+    );
+    expect(
+      screen.getByText('Send without reviewing (full draft + env, no transcript)?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.feedback.back' }));
+    expect(typed).toEqual(['2', '\u001b']);
+
+    act(() => chat.setFeedback(null));
+    expect(screen.queryByText('Bug report')).toBeNull();
+  });
+
+  // What breaks this: Review opening Claude Code's editor out of sight, in a
+  // terminal the reader is not looking at.
+  it('switches to the terminal on Review, where its editor opens', () => {
+    const { chat, typed, openTerminal } = renderWithDraft();
+    act(() => chat.setFeedback(draft));
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.feedback.review' }));
+    expect(typed).toEqual(['1']);
+    expect(openTerminal).toHaveBeenCalledOnce();
+  });
+
+  it('offers no key while the terminal prompt holds text, and says why', () => {
+    const { chat } = renderWithDraft();
+    act(() => chat.setFeedback({ ...draft, actions: [], promptHoldsText: true }));
+    expect(screen.getByText('sessions.chat.feedback.clearPrompt')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'sessions.chat.feedback.send' })).toBeNull();
+  });
+});

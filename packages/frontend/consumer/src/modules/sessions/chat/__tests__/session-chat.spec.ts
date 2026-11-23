@@ -443,6 +443,7 @@ describe('SessionChat', () => {
       older: 'none',
       activity: null,
       suggestion: null,
+      feedback: null,
       interruptible: true,
       commands: null,
     });

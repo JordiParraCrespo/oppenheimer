@@ -131,7 +131,7 @@ export function SessionPane({
         chat={chat}
         agent={session.agent}
         readOnly={false}
-        attach={{ sessionId, files }}
+        attach={{ sessionId, files, openTerminal: () => setView('terminal') }}
       />
     ),
     files,
