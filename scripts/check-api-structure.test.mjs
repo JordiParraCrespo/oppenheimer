@@ -351,6 +351,18 @@ test('an ORM entity missing from the seed is reported against each list it is mi
     kinds(check({ ...CONFORMING, 'config/data-source.ts': '', 'database/seed.ts': '' })),
     ['orm-entity-unregistered', 'orm-entity-unregistered'],
   );
+  // Imported but left out of the seed's `entities` array is not registered.
+  assert.deepEqual(
+    kinds(
+      check({
+        ...CONFORMING,
+        ...registered,
+        'database/seed.ts':
+          "import { WidgetOrmEntity } from '../widget/database/widget.orm-entity';\nnew DataSource({ entities: [OtherOrmEntity] });",
+      }),
+    ),
+    ['orm-entity-unregistered'],
+  );
   // A prefix of a registered name is not a registration.
   assert.deepEqual(
     kinds(

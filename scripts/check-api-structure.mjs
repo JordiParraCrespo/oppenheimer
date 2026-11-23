@@ -628,11 +628,27 @@ function checkModule(name) {
  * someone seeds. A tree with neither file (a fixture that is not
  * about the seed) has nothing to check.
  */
+/**
+ * The text of a DataSource's `entities: [ … ]` array, or the whole file when
+ * it has none. An import alone registers nothing; only the array does.
+ */
+function entityList(source) {
+  const start = source.search(/\bentities\s*:\s*\[/);
+  if (start === -1) return source;
+  const open = source.indexOf('[', start);
+  let depth = 0;
+  for (let i = open; i < source.length; i += 1) {
+    if (source[i] === '[') depth += 1;
+    else if (source[i] === ']' && --depth === 0) return source.slice(open, i + 1);
+  }
+  return source.slice(open);
+}
+
 function checkSeedRegistration() {
   const lists = ['config/data-source.ts', 'database/seed.ts']
     .map((path) => join(srcDir, path))
     .filter((path) => existsSync(path))
-    .map((path) => [path, readFileSync(path, 'utf8')]);
+    .map((path) => [path, entityList(readFileSync(path, 'utf8'))]);
   if (lists.length === 0) return;
   for (const file of walk(srcDir)) {
     if (!file.endsWith('.orm-entity.ts')) continue;

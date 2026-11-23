@@ -41,6 +41,9 @@ describe('translator', () => {
 
   it('counts a million in Spanish with its own form, not the raw key', () => {
     const t = createTranslator('es').t;
-    expect(t('badge.needsYou', { count: 1_000_000 })).not.toContain('needsYou');
+    // Without `_many`, i18next falls back to the English catalog here.
+    expect(t('badge.needsYou', { count: 1_000_000 })).toBe(
+      '1000000 sesiones de Claude Code te necesitan',
+    );
   });
 });
