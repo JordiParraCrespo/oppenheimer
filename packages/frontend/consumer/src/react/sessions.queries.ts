@@ -490,10 +490,6 @@ export function useSetSessionHidden(
 }
 
 /**
- * Mark what the session's last turn left as read, as opening it does: its
- * group falls from `ready-for-review` to `idle` and the sidebar's blue dot goes.
- */
-/**
  * Read what a session's last turn left. The session falls to `idle` on the
  * click, in its detail and in every list, before the API answers: the
  * sidebar's dot goes the moment the reader opens it. A refused read puts the

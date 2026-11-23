@@ -389,10 +389,6 @@ describe('a deleted session', () => {
 });
 
 /**
- * Opening a session from the sidebar should not wait on a second read of a row
- * the list already holds: the list writes each row through to its detail.
- */
-/**
  * Opening a finished session reads its turn, and the sidebar's dot is the
  * row's `ready-for-review`. It waited on the API's answer and the lists read
  * after it, so the dot outlived the click by a round trip or two.
@@ -429,6 +425,10 @@ describe('a session read on open', () => {
   });
 });
 
+/**
+ * Opening a session from the sidebar should not wait on a second read of a row
+ * the list already holds: the list writes each row through to its detail.
+ */
 describe('session detail from the list', () => {
   const listed = { id: 's-1', name: 'from the list', isProvisioning: false } as SessionEntity;
   const read = { id: 's-1', name: 'from the detail', isProvisioning: false } as SessionEntity;
