@@ -121,23 +121,28 @@ function hintOf(line: string): Hint {
   return { note: note || null, actions, more, blocked };
 }
 
-/** How a line of the card's keys opens: a key, the send's question, its state, or why it holds no keys. */
-const HINT_OPENS =
-  /^(?:(?:\d|Esc|Escape|Enter) to |Send without reviewing|clear text to |Sending…|[✓✔✗✘×]\s)/iu;
+/** A row the line of keys breaks after: mid-list (`… 2 to send ·`), or on a key's dangling `to`. */
+const BREAKS_MID_HINT = /(?:·|(?:\d|Esc|Escape|Enter) to)$/iu;
+/** A row that opens the card's own words over its keys: the send's question, or a failure with a key after it. */
+const OPENS_HINT = /^(?:Send without reviewing|[✗✘×]\s.*(?:\d|Esc|Escape|Enter) to )/iu;
 /** The most rows a wrapped line of keys takes. */
 const HINT_ROWS_MAX = 3;
 
 /**
- * Where the line of keys starts among the card's rows under its head: the
- * highest of its last rows that opens like one, so a line the pane wrapped
- * is read whole; the last row when none does.
+ * Where the line of keys starts among the card's rows under its head. A pane
+ * narrower than the line wraps it, so a row above its last is taken in only
+ * when the line plainly goes on from it, never because a row of the report
+ * happens to read like a key (`3 to 5 times, then failed.`).
  */
 function hintStart(lines: readonly string[]): number {
   const last = lines.length - 1;
-  for (let at = Math.max(0, last - HINT_ROWS_MAX + 1); at < last; at++) {
-    if (HINT_OPENS.test(lines[at] ?? '')) return at;
+  let start = last;
+  while (start > 0 && last - start < HINT_ROWS_MAX - 1) {
+    const above = lines[start - 1] ?? '';
+    if (!BREAKS_MID_HINT.test(above) && !OPENS_HINT.test(above)) break;
+    start--;
   }
-  return last;
+  return start;
 }
 
 /** A send under way, and one done: the two lines the card prints with no key. */

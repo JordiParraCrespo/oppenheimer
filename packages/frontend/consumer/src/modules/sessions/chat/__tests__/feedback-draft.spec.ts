@@ -86,6 +86,31 @@ describe('readFeedbackDraft', () => {
     expect(keys?.details).toHaveLength(2);
   });
 
+  // What breaks this: a row of the report that reads like a key taken into
+  // the line of keys, a pill labelled with report text typing its digit.
+  it('keeps a row of the report that reads like a key in the report', () => {
+    for (const row of [
+      '│   3 to 5 times, then failed.',
+      '│   Enter to send; nothing happens.',
+      '│ ✓ unit suite passed',
+    ]) {
+      const draft = readFeedbackDraft(
+        screen([HEAD, PREVIEW[0] ?? '', row, '1 to review · 2 to send · 0 to dismiss']),
+      );
+      expect(draft?.actions.map((action) => action.action)).toEqual(['review', 'send', 'dismiss']);
+      expect(draft?.details).toHaveLength(2);
+      expect(draft?.note).toBeNull();
+    }
+  });
+
+  it('reads a wrapped failure whole', () => {
+    const draft = readFeedbackDraft(
+      screen([HEAD, "✗ Couldn't send feedback. 1 to review &", 'retry · Esc to dismiss']),
+    );
+    expect(draft?.note).toBe("Couldn't send feedback.");
+    expect(draft?.actions.map((action) => action.action)).toEqual(['review & retry', 'dismiss']);
+  });
+
   it('reads where a send stands and how many drafts wait behind this one', () => {
     expect(readFeedbackDraft(screen([HEAD, 'Sending…']))?.note).toBe('Sending…');
     expect(readFeedbackDraft(screen([HEAD, '✓ Sent']))?.note).toBe('Sent');
