@@ -1,4 +1,5 @@
 import type { AutomationSkipReason } from '@oppenheimer/shared/automations';
+import type { AutomationTarget } from './automation.types';
 import type { AutomationLimits } from './automation-limits.policy';
 
 /**
@@ -35,6 +36,22 @@ export function pausedGuard(paused: boolean, manual: boolean): GuardVerdict {
 /** An event our own App caused — a run's push, its comment — never starts another run. */
 export function loopGuard(actorIsOwnApp: boolean): GuardVerdict {
   return actorIsOwnApp ? { kind: 'skip', reason: 'own_event' } : ALLOW;
+}
+
+/**
+ * A routine woken by an event on the branch of a session its own bot started
+ * would review its own work, and could start the next session that wakes it.
+ * The session acts as the owner on GitHub, so `loopGuard` cannot tell; the
+ * branch can. `branchBots` are the bots whose sessions are on the event's
+ * branch. Other bots' routines and session automations still fire.
+ */
+export function ownSessionGuard(
+  target: AutomationTarget,
+  branchBots: ReadonlySet<string>,
+): GuardVerdict {
+  return target.kind === 'bot' && branchBots.has(target.botId)
+    ? { kind: 'skip', reason: 'own_session_event' }
+    : ALLOW;
 }
 
 /** The hourly caps, per automation and per workspace, counted from stored runs. */

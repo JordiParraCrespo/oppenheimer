@@ -92,6 +92,12 @@ export interface WorkSessionProps extends SessionFold {
   /** Who asked for the session: a person, or an automation's run. Immutable. */
   origin: SessionOrigin;
   /**
+   * The bot that started it, for a `bot` session; null otherwise, and on the
+   * bot sessions from before it was kept. Immutable. A routine reads it to
+   * tell its own bot's pull requests from a person's (`ownSessionGuard`).
+   */
+  botId: string | null;
+  /**
    * The session's latest turn, as the repository last read it under the row
    * lock. Null before the first prompt. Folded by `recordEvent` like every other
    * projection; the changed turns are written back by the repository.
@@ -120,6 +126,8 @@ export interface CreateWorkSessionProps {
   idempotencyKey?: string | null;
   /** Absent is a person's session. */
   origin?: SessionOrigin;
+  /** The bot that asked, with origin `bot` and only with it. */
+  botId?: string | null;
 }
 
 /** A session in a vendor's cloud: no host, folder or checkout; its agent is the vendor's. */
@@ -136,6 +144,7 @@ export interface CreateCloudSessionProps {
   name?: string;
   idempotencyKey?: string | null;
   origin?: SessionOrigin;
+  botId?: string | null;
 }
 
 /**
@@ -203,6 +212,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         checkouts: [],
         cloudRun: null,
         origin: props.origin ?? 'person',
+        botId: botIdOf(props),
         latestTurn: null,
         name: props.name ?? props.slug,
         nameSource: props.name ? 'user' : null,
@@ -247,6 +257,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         checkouts: [],
         cloudRun: props.cloudRun,
         origin: props.origin ?? 'person',
+        botId: botIdOf(props),
         latestTurn: null,
         name: props.name ?? props.slug,
         nameSource: props.name ? 'user' : null,
@@ -260,6 +271,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get origin(): SessionOrigin {
     return this.props.origin;
+  }
+
+  get botId(): string | null {
+    return this.props.botId;
   }
 
   get latestTurn(): SessionTurnFold | null {
@@ -767,4 +782,13 @@ function terminalMatchOf(payload: unknown): { watchId: string; count: number } |
   return typeof watchId === 'string' && Number.isInteger(count) && (count as number) > 0
     ? { watchId, count: count as number }
     : null;
+}
+
+/** A session names the bot that started it only when a bot did; the row's CHECK holds the same. */
+function botIdOf(props: { origin?: SessionOrigin; botId?: string | null }): string | null {
+  if (!props.botId) return null;
+  if (props.origin !== 'bot') {
+    throw new ArgumentInvalidException('Only a bot session names the bot that started it');
+  }
+  return props.botId;
 }

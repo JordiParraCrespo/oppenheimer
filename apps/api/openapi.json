@@ -36239,6 +36239,7 @@
               "paused",
               "deleted",
               "own_event",
+              "own_session_event",
               "automation_rate_limited",
               "workspace_rate_limited",
               "overlapping",
