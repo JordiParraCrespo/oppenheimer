@@ -215,6 +215,7 @@ func New(version string) (*App, error) {
 		FilesDir:       paths.Files(),
 		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
 		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
+		HermesState:    agentHomeFile(paths, "HERMES_HOME", ".hermes", "state.db"),
 	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
