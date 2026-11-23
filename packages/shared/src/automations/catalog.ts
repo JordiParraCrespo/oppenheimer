@@ -49,7 +49,11 @@ export function isExternalTriggerSource(value: unknown): value is ExternalTrigge
 // Schedules
 // ---------------------------------------------------------------------------
 
-/** The six frequencies the editor offers, in the frames' order. */
+/**
+ * Every frequency a schedule can have. `cron` (2026-11-20) is a five-field
+ * expression for what the others cannot say; bots write it from plain words,
+ * and only a bot's routine holds one (the editor has no field for it).
+ */
 export const SCHEDULE_FREQUENCIES = [
   'once',
   'hourly',
@@ -57,8 +61,14 @@ export const SCHEDULE_FREQUENCIES = [
   'weekdays',
   'weekly',
   'monthly',
+  'cron',
 ] as const;
 export type ScheduleFrequency = (typeof SCHEDULE_FREQUENCIES)[number];
+
+/** The six frequencies the automations editor offers, in the frames' order. */
+export const EDITOR_SCHEDULE_FREQUENCIES = SCHEDULE_FREQUENCIES.filter(
+  (frequency): frequency is Exclude<ScheduleFrequency, 'cron'> => frequency !== 'cron',
+);
 
 export interface ScheduleFrequencyDefinition {
   readonly frequency: ScheduleFrequency;
@@ -73,6 +83,7 @@ export const SCHEDULE_FREQUENCY_CATALOG: readonly ScheduleFrequencyDefinition[] 
   { frequency: 'weekdays', label: 'Weekdays', description: 'Monday to Friday at a chosen time' },
   { frequency: 'weekly', label: 'Weekly', description: 'On the days you pick' },
   { frequency: 'monthly', label: 'Monthly', description: 'On one day of the month' },
+  { frequency: 'cron', label: 'Custom', description: 'On a cron expression' },
 ];
 
 /**

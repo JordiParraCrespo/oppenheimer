@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'host-desktops' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox' | 'inbox-reports';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'host-desktops' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'slack' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox' | 'inbox-reports';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -2422,7 +2422,7 @@ export type AutomationRevisionResponseDto = {
 };
 
 export type ScheduleResponseDto = {
-    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
     hour: number;
     minute: number;
     /**
@@ -2434,6 +2434,10 @@ export type ScheduleResponseDto = {
      * Once: the local date, `YYYY-MM-DD`.
      */
     date?: string;
+    /**
+     * Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.
+     */
+    expression?: string;
     /**
      * The IANA zone the wall time is in.
      */
@@ -2596,12 +2600,13 @@ export type CreateAutomationRequest = {
     name: string;
     triggers: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -2679,12 +2684,13 @@ export type UpdateAutomationRequest = {
     name?: string;
     triggers?: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -3583,6 +3589,80 @@ export type TelegramOwnerLinkResponseDto = {
 
 export type UpdateTelegramAccountRequest = {
     answeringBotId: string | null;
+};
+
+export type SlackAccountResponseDto = {
+    id: string;
+    /**
+     * The Oppenheimer bot the app is.
+     */
+    botId: string;
+    /**
+     * `connected` answers; `revoked` is a token Slack refused (the app was uninstalled, or the token rotated), until it is connected again.
+     */
+    status: 'connected' | 'revoked';
+    /**
+     * Why it is revoked, in Slack’s words.
+     */
+    statusReason: string | null;
+    /**
+     * The Slack workspace the app is installed in.
+     */
+    teamId: string;
+    teamName: string;
+    /**
+     * The app’s bot user.
+     */
+    botUserId: string;
+    botName: string;
+    /**
+     * The bot token’s last characters.
+     */
+    tokenHint: string;
+    /**
+     * Whether the owner’s Slack user is recorded, by the one-time `link` code.
+     */
+    ownerLinked: boolean;
+    /**
+     * When it was first connected.
+     */
+    linkedAt: string;
+};
+
+export type SlackAppSetupResponseDto = {
+    /**
+     * The address Slack sends the app’s events to: this bot’s.
+     */
+    eventsUrl: string;
+    /**
+     * Opens Slack’s "Create an app" with the manifest below filled in.
+     */
+    createUrl: string;
+    /**
+     * The app’s manifest, as JSON: its name, scopes and events.
+     */
+    manifest: string;
+};
+
+export type ConnectSlackRequest = {
+    botId: string;
+    botToken: string;
+    signingSecret: string;
+};
+
+export type SlackOwnerLinkResponseDto = {
+    /**
+     * What to send the app in its DM.
+     */
+    message: string;
+    /**
+     * Opens the app’s direct messages in Slack.
+     */
+    url: string;
+    /**
+     * When the code stops working: ten minutes after it was made.
+     */
+    expiresAt: string;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -14885,6 +14965,191 @@ export type UpdateTelegramAccountResponses = {
 };
 
 export type UpdateTelegramAccountResponse = UpdateTelegramAccountResponses[keyof UpdateTelegramAccountResponses];
+
+export type FindSlackAccountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/slack/accounts';
+};
+
+export type FindSlackAccountsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindSlackAccountsError = FindSlackAccountsErrors[keyof FindSlackAccountsErrors];
+
+export type FindSlackAccountsResponses = {
+    200: Array<SlackAccountResponseDto>;
+};
+
+export type FindSlackAccountsResponse = FindSlackAccountsResponses[keyof FindSlackAccountsResponses];
+
+export type ConnectSlackData = {
+    body: ConnectSlackRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/slack/accounts';
+};
+
+export type ConnectSlackErrors = {
+    /**
+     * SLACK_002 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SLACK_005 — That Slack app already answers as another bot
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SLACK_004 — Slack refused the bot token
+     */
+    422: ProblemDetailsDto;
+    /**
+     * SLACK_007 — Slack's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SLACK_006 — Slack did not answer
+     */
+    502: ProblemDetailsDto;
+    /**
+     * SLACK_003 — Slack is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectSlackError = ConnectSlackErrors[keyof ConnectSlackErrors];
+
+export type ConnectSlackResponses = {
+    201: SlackAccountResponseDto;
+};
+
+export type ConnectSlackResponse = ConnectSlackResponses[keyof ConnectSlackResponses];
+
+export type FindSlackAppSetupData = {
+    body?: never;
+    path: {
+        /**
+         * One of the caller’s bots.
+         */
+        botId: string;
+    };
+    query?: never;
+    url: '/api/v1/slack/bots/{botId}/app';
+};
+
+export type FindSlackAppSetupErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SLACK_003 — Slack is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindSlackAppSetupError = FindSlackAppSetupErrors[keyof FindSlackAppSetupErrors];
+
+export type FindSlackAppSetupResponses = {
+    200: SlackAppSetupResponseDto;
+};
+
+export type FindSlackAppSetupResponse = FindSlackAppSetupResponses[keyof FindSlackAppSetupResponses];
+
+export type OpenSlackOwnerLinkData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Slack app.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/slack/accounts/{id}/owner-link';
+};
+
+export type OpenSlackOwnerLinkErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SLACK_001 — No such Slack app
+     */
+    404: ProblemDetailsDto;
+};
+
+export type OpenSlackOwnerLinkError = OpenSlackOwnerLinkErrors[keyof OpenSlackOwnerLinkErrors];
+
+export type OpenSlackOwnerLinkResponses = {
+    201: SlackOwnerLinkResponseDto;
+};
+
+export type OpenSlackOwnerLinkResponse = OpenSlackOwnerLinkResponses[keyof OpenSlackOwnerLinkResponses];
+
+export type RemoveSlackAccountData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Slack app.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/slack/accounts/{id}';
+};
+
+export type RemoveSlackAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RemoveSlackAccountError = RemoveSlackAccountErrors[keyof RemoveSlackAccountErrors];
+
+export type RemoveSlackAccountResponses = {
+    204: void;
+};
+
+export type RemoveSlackAccountResponse = RemoveSlackAccountResponses[keyof RemoveSlackAccountResponses];
 
 export type FindPullRequestsData = {
     body?: never;

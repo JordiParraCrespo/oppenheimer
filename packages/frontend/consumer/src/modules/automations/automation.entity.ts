@@ -41,6 +41,8 @@ export interface ScheduleTrigger {
   dayOfMonth?: number;
   /** `YYYY-MM-DD`, for `once`. */
   date?: string;
+  /** The five cron fields, for `cron` (a bot's routine only). */
+  expression?: string;
   timezone: string;
   nextFireAt: Date | null;
 }

@@ -56,7 +56,10 @@ export function scheduleCauseSummary(
   );
   return {
     label: 'Schedule',
-    text: `${frequency?.label ?? 'Scheduled'} run`,
+    text:
+      trigger.config.frequency === 'cron'
+        ? 'Scheduled run'
+        : `${frequency?.label ?? 'Scheduled'} run`,
     eventType: 'schedule',
   };
 }

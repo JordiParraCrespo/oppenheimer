@@ -23,6 +23,7 @@ there.
 | — | [WhatsApp](whatsapp.md) | Bots read your own WhatsApp number's chats and write in them, OpenClaw's linked device held by the runner on your host; built 2026-10-30, version not set |
 | — | [Telegram](telegram.md) | Bots read and answer the chats of a Telegram bot you made with @BotFather, OpenClaw's Bot API route long-polled by the runner on your host, the token kept there; built 2026-11-08, version not set |
 | — | [Answering on Telegram and WhatsApp](answering-on-telegram-and-whatsapp.md) | Your bots answer there: a Telegram bot per Oppenheimer bot, a default bot and routes on a WhatsApp number, the owner recorded by a `start` link or their personal number, strangers held, a contact's or group's turn narrowed; proposed 2026-11-09, version not set |
+| — | [Slack for bots](slack-for-bots.md) | Ask a bot from Slack, with a mention or in its DM: an app of the bot's own made from a manifest, the owner's Slack user only, answers in the thread; built 2026-11-20, version not set |
 | — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
@@ -136,3 +137,5 @@ where these land is the first open question below.
   (`answering-on-telegram-and-whatsapp.md`), Telegram slice 3 and
   WhatsApp slice 4 in one design, ahead of their routine triggers, from
   OpenClaw and Hermes Agent.
+- 2026-11-20: Slack for bots added (`slack-for-bots.md`), Channels §7.2's
+  Slack with one app per bot instead of one per workspace.

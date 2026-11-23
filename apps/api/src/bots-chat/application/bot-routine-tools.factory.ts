@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
+import {
+  cronToEnglish,
+  GITHUB_EVENT_TYPES,
+  SCHEDULE_FREQUENCIES,
+} from '@oppenheimer/shared/automations';
 import { z } from 'zod/v4';
 import { DeleteBotRoutineCommand } from '../../automations/commands/delete-bot-routine/delete-bot-routine.command';
 import { RunBotRoutineCommand } from '../../automations/commands/run-bot-routine/run-bot-routine.command';
@@ -44,6 +48,7 @@ const scheduleTrigger = z.object({
     .describe('Weekly: 0 = Sunday … 6 = Saturday.'),
   day_of_month: z.number().int().min(1).max(28).optional(),
   date: z.string().optional().describe('Once: YYYY-MM-DD.'),
+  cron: z.string().optional().describe(promptText('tools/routine.schedule-trigger-cron')),
   timezone: z.string().optional().describe(promptText('tools/routine.schedule-trigger-timezone')),
 });
 
@@ -344,6 +349,10 @@ function describeCall(
     return `GitHub ${trigger.event}${trigger.branch ? ` on ${trigger.branch}` : ''}`;
   }
   if (trigger.source === 'webhook') return promptText('tools/automation.describe-trigger-webhook');
+  if (trigger.frequency === 'cron') {
+    // The owner approves words, never the raw fields.
+    return cronToEnglish(trigger.cron ?? '') ?? 'a custom schedule';
+  }
   const at = `${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`;
   return trigger.frequency === 'hourly'
     ? `hourly at minute ${trigger.minute}`

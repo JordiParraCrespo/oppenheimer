@@ -7,13 +7,13 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * and validated in a statement of its own, so adding it does not scan the
  * table; every row already holds an origin the wider list allows.
  */
-export class AddBotGithubAskOrigin1795193316737 implements MigrationInterface {
-  name = 'AddBotGithubAskOrigin1795193316737';
+export class AddBotGithubAskOrigin1795459673874 implements MigrationInterface {
+  name = 'AddBotGithubAskOrigin1795459673874';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE bot_turn DROP CONSTRAINT "CHK_bot_turn_origin"`);
     await queryRunner.query(
-      `ALTER TABLE bot_turn ADD CONSTRAINT "CHK_bot_turn_origin" CHECK ("origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp', 'github')) NOT VALID`,
+      `ALTER TABLE bot_turn ADD CONSTRAINT "CHK_bot_turn_origin" CHECK ("origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp', 'slack', 'github')) NOT VALID`,
     );
     await queryRunner.query(`ALTER TABLE bot_turn VALIDATE CONSTRAINT "CHK_bot_turn_origin"`);
   }
@@ -22,7 +22,7 @@ export class AddBotGithubAskOrigin1795193316737 implements MigrationInterface {
     await queryRunner.query(`DELETE FROM bot_turn WHERE "origin" = 'github'`);
     await queryRunner.query(`ALTER TABLE bot_turn DROP CONSTRAINT "CHK_bot_turn_origin"`);
     await queryRunner.query(
-      `ALTER TABLE bot_turn ADD CONSTRAINT "CHK_bot_turn_origin" CHECK ("origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp')) NOT VALID`,
+      `ALTER TABLE bot_turn ADD CONSTRAINT "CHK_bot_turn_origin" CHECK ("origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp', 'slack')) NOT VALID`,
     );
     await queryRunner.query(`ALTER TABLE bot_turn VALIDATE CONSTRAINT "CHK_bot_turn_origin"`);
   }

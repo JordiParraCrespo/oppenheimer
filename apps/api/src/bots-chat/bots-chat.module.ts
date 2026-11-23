@@ -90,6 +90,7 @@ import { BotMilestoneDeletedDomainEventHandler } from './application/event-handl
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
+import { BotSlackWakeDomainEventHandler } from './application/event-handlers/bot-slack-wake.domain-event-handler';
 import { BotTaskWakeDomainEventHandler } from './application/event-handlers/bot-task-wake.domain-event-handler';
 import { BotTelegramWakeDomainEventHandler } from './application/event-handlers/bot-telegram-wake.domain-event-handler';
 import { BotWhatsappContactWakeDomainEventHandler } from './application/event-handlers/bot-whatsapp-contact-wake.domain-event-handler';
@@ -185,6 +186,7 @@ import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachm
 import { WakeOnAgentNoticeCommandHandler } from './commands/wake-on-agent-notice/wake-on-agent-notice.command-handler';
 import { WakeOnGithubAskCommandHandler } from './commands/wake-on-github-ask/wake-on-github-ask.command-handler';
 import { WakeOnPullRequestCommandHandler } from './commands/wake-on-pull-request/wake-on-pull-request.command-handler';
+import { WakeOnSlackCommandHandler } from './commands/wake-on-slack/wake-on-slack.command-handler';
 import { WakeOnTaskActivityCommandHandler } from './commands/wake-on-task-activity/wake-on-task-activity.command-handler';
 import { WakeOnTelegramCommandHandler } from './commands/wake-on-telegram/wake-on-telegram.command-handler';
 import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
@@ -338,6 +340,7 @@ const commandHandlers: Provider[] = [
   WakeOnPullRequestCommandHandler,
   WakeOnTaskActivityCommandHandler,
   WakeOnTelegramCommandHandler,
+  WakeOnSlackCommandHandler,
   WakeOnWhatsappCommandHandler,
   WakeOnWhatsappContactCommandHandler,
   ContinueBotGoalCommandHandler,
@@ -533,6 +536,7 @@ const queryHandlers: Provider[] = [
     BotTaskWakeDomainEventHandler,
     BotMilestoneDeletedDomainEventHandler,
     BotTelegramWakeDomainEventHandler,
+    BotSlackWakeDomainEventHandler,
     BotWhatsappWakeDomainEventHandler,
     BotWhatsappContactWakeDomainEventHandler,
     TurnCancelWatchFactory,
