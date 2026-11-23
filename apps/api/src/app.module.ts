@@ -57,6 +57,7 @@ import {
   relayConfig,
   retentionConfig,
   sessionsConfig,
+  slackConfig,
   storageConfig,
   throttlingConfig,
   voiceConfig,
@@ -87,6 +88,7 @@ import { RedisModule } from './redis/redis.module';
 import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { SlackModule } from './slack/slack.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
@@ -119,6 +121,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         calendarConfig,
         mailConfig,
         cloudAgentsConfig,
+        slackConfig,
         retentionConfig,
         throttlingConfig,
         voiceConfig,
@@ -286,6 +289,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     MailModule,
     WhatsappModule,
     TelegramModule,
+    SlackModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

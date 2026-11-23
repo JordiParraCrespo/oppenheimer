@@ -11,13 +11,13 @@ import {
 } from 'typeorm';
 
 /** What a conversation is: the console chat, or a channel's chat with the bot. */
-export type BotConversationKind = 'console' | 'telegram' | 'whatsapp';
+export type BotConversationKind = 'console' | 'telegram' | 'whatsapp' | 'slack';
 
 /**
  * One of a bot's conversations (`1794241820830-AnswerOnTelegram`,
- * `1794256897181-AnswerOnWhatsapp`): its console chat, whose id is the bot's
- * own, or a channel's chat with the bot (Telegram, WhatsApp) from one start
- * to the next. A channel chat's account is null once it was disconnected;
+ * `1794256897181-AnswerOnWhatsapp`, `1795193700000-AddSlack`): its console
+ * chat, whose id is the bot's own, or a channel's chat with the bot
+ * (Telegram, WhatsApp) from one start to the next, or a Slack thread. A channel chat's account is null once it was disconnected;
  * its history stays the bot's.
  */
 @Entity('bot_conversation')
@@ -39,7 +39,15 @@ export type BotConversationKind = 'console' | 'telegram' | 'whatsapp';
 @Index('IDX_bot_conversation_whatsapp_account', ['organizationId', 'whatsappAccountId'], {
   where: '"whatsappAccountId" IS NOT NULL',
 })
-@Check('CHK_bot_conversation_kind', `kind IN ('console', 'telegram', 'whatsapp')`)
+@Index(
+  'UQ_bot_conversation_slack_chat',
+  ['slackAccountId', 'chatId', 'botId', 'startsAtMessageId'],
+  { unique: true, where: '"slackAccountId" IS NOT NULL' },
+)
+@Index('IDX_bot_conversation_slack_account', ['organizationId', 'slackAccountId'], {
+  where: '"slackAccountId" IS NOT NULL',
+})
+@Check('CHK_bot_conversation_kind', `kind IN ('console', 'telegram', 'whatsapp', 'slack')`)
 @Check('CHK_bot_conversation_console', `(kind = 'console') = (id = "botId")`)
 @Check(
   'CHK_bot_conversation_channel',
@@ -47,7 +55,7 @@ export type BotConversationKind = 'console' | 'telegram' | 'whatsapp';
 )
 @Check(
   'CHK_bot_conversation_account',
-  `(kind = 'telegram' OR "telegramAccountId" IS NULL) AND (kind = 'whatsapp' OR "whatsappAccountId" IS NULL)`,
+  `(kind = 'telegram' OR "telegramAccountId" IS NULL) AND (kind = 'whatsapp' OR "whatsappAccountId" IS NULL) AND (kind = 'slack' OR "slackAccountId" IS NULL)`,
 )
 export class BotConversationOrmEntity {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_bot_conversation' })
@@ -68,13 +76,17 @@ export class BotConversationOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   whatsappAccountId!: string | null;
 
-  /** The chat's id on its channel: Telegram's number, or WhatsApp's JID. */
+  @Column({ type: 'uuid', nullable: true })
+  slackAccountId!: string | null;
+
+  /** The chat's id on its channel: Telegram's number, WhatsApp's JID, or a Slack `<channel>:<thread ts>`. */
   @Column({ type: 'varchar', length: 128, nullable: true })
   chatId!: string | null;
 
   /**
    * The message the conversation starts at, in the chat's order: Telegram's
-   * message id, or the `whatsapp_message.seq`; 0 for a chat's first. It
+   * message id, or the `whatsapp_message.seq`; 0 for a chat's first, and
+   * for every Slack thread, which is one conversation from its start. It
    * holds the chat's messages up to the next conversation's start.
    */
   @Column({ type: 'bigint', nullable: true })

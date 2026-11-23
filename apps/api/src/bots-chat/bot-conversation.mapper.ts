@@ -5,12 +5,18 @@ import type { BotChannelChat } from './database/bot-conversation.repository.port
 /** The columns a channel conversation is read back with. */
 export type BotConversationChatRecord = Pick<
   BotConversationOrmEntity,
-  'organizationId' | 'botId' | 'kind' | 'telegramAccountId' | 'whatsappAccountId' | 'chatId'
+  | 'organizationId'
+  | 'botId'
+  | 'kind'
+  | 'telegramAccountId'
+  | 'whatsappAccountId'
+  | 'slackAccountId'
+  | 'chatId'
 >;
 
 /**
- * A bot conversation's row as the channel chat it is with: Telegram's or
- * WhatsApp's, with the account it came through; null for the console's, or
+ * A bot conversation's row as the channel chat it is with: Telegram's,
+ * WhatsApp's or Slack's, with the account it came through; null for the console's, or
  * for a chat whose account is gone (disconnected or unlinked).
  */
 @Injectable()
@@ -34,6 +40,15 @@ export class BotConversationMapper {
         botId,
         chatId,
         whatsappAccountId: record.whatsappAccountId,
+      };
+    }
+    if (record.kind === 'slack' && record.slackAccountId) {
+      return {
+        kind: 'slack',
+        organizationId,
+        botId,
+        chatId,
+        slackAccountId: record.slackAccountId,
       };
     }
     return null;
