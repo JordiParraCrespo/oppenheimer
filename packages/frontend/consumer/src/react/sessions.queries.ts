@@ -493,10 +493,45 @@ export function useSetSessionHidden(
  * Mark what the session's last turn left as read, as opening it does: its
  * group falls from `ready-for-review` to `idle` and the sidebar's blue dot goes.
  */
+/**
+ * Read what a session's last turn left. The session falls to `idle` on the
+ * click, in its detail and in every list, before the API answers: the
+ * sidebar's dot goes the moment the reader opens it. A refused read puts the
+ * rows back and reads them again.
+ */
 export function useAcknowledgeSessionReport(
   options?: UseMutationOptions<SessionEntity, Error, string>,
 ) {
-  return useSessionPatch(({ sessions }, id) => sessions.acknowledgeReport(id), options);
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  const read = (row: SessionEntity) =>
+    row.state === 'ready-for-review' ? row.with({ state: 'idle' }) : row;
+
+  return useMutation({
+    mutationFn: (id: string) => app.sessions.acknowledgeReport(id),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+    onMutate: async (id, context) => {
+      // A list read already in flight answers from before the read was
+      // recorded, and would put the dot back. The detail's is left to land: a
+      // pane may be suspended on it, and the answer overwrites it.
+      await queryClient.cancelQueries({ queryKey: sessionsKeys.lists() });
+      queryClient.setQueryData<SessionEntity>(sessionsKeys.detail(id), (row) =>
+        row ? read(row) : row,
+      );
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map((row) => (row.id === id ? read(row) : row)),
+      );
+      return options?.onMutate?.(id, context);
+    },
+    onError: (error, id, context, mutation) => {
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      return options?.onError?.(error, id, context, mutation);
+    },
+  });
 }
 
 export function useMoveSession(
