@@ -15,6 +15,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -32,6 +33,12 @@ const (
 	MarkerDir = ".oppenheimer"
 	// MarkerFile is the marker: what the folder is, and whose.
 	MarkerFile = "meta.json"
+	// LockFile is at the work folder's root: the lock the guides are written
+	// under, by whichever process holds it.
+	LockFile = ".guides.lock"
+	// removingPrefix names a session folder being deleted: renamed first, in
+	// one step, so nothing writes into it while it goes.
+	removingPrefix = ".removing-"
 )
 
 // Kinds a marker names.
@@ -108,7 +115,7 @@ func (f *Folder) MakeWorkspace(t domain.Tenant, slug string) error {
 	if err := f.makeWorkspace(t, slug); err != nil {
 		return err
 	}
-	f.WriteGuides()
+	f.writeGuides(scope{tenant: t})
 	return nil
 }
 
@@ -143,7 +150,7 @@ func (f *Folder) MakeSession(folder domain.SessionFolder) error {
 	if err := f.makeSession(folder); err != nil {
 		return err
 	}
-	f.WriteGuides()
+	f.writeGuides(scope{tenant: folder.Tenant, session: filepath.Base(folder.Dir)})
 	return nil
 }
 
@@ -200,12 +207,58 @@ func (f *Folder) RemoveSession(dir, sessionID string) error {
 	if err != nil || meta.Kind != KindSession || meta.ID != sessionID {
 		return fmt.Errorf("%s: %w", dir, domain.ErrNotOurs)
 	}
-	if err := os.RemoveAll(dir); err != nil {
+	// Renamed out of the way first, under the guides' lock: a guide written
+	// into the folder while RemoveAll walks it would leave the folder behind
+	// with its marker gone, never the runner's to delete again.
+	gone := filepath.Join(filepath.Dir(dir), fmt.Sprintf("%s%s-%d", removingPrefix, filepath.Base(dir), f.now().UnixNano()))
+	unlock := f.lockGuides()
+	err = os.Rename(dir, gone)
+	unlock()
+	if err != nil {
+		gone = dir
+	}
+	if err := os.RemoveAll(gone); err != nil {
 		return failed("remove", dir, err)
 	}
-	f.WriteGuides()
+	f.writeGuides(f.scopeOf(dir))
 	return nil
 }
+
+// scopeOf is the guides a session folder at dir touches: its workspace's, or
+// all of them for a folder outside the layout.
+func (f *Folder) scopeOf(dir string) scope {
+	rel, err := filepath.Rel(f.layout.Root, dir)
+	parts := strings.Split(filepath.ToSlash(rel), "/")
+	if err != nil || len(parts) != 4 {
+		return scope{all: true}
+	}
+	t := domain.Tenant{Account: parts[0], Workspace: parts[1]}
+	if f.layout.Session(t, parts[3]) != filepath.Clean(dir) {
+		return scope{all: true}
+	}
+	return scope{tenant: t}
+}
+
+// sweepRemovals finishes the removals a process that died left half done: a
+// renamed session folder nothing has touched for a while.
+func (f *Folder) sweepRemovals(sessions string) {
+	entries, err := os.ReadDir(sessions)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() || !strings.HasPrefix(entry.Name(), removingPrefix) {
+			continue
+		}
+		if info, err := entry.Info(); err == nil && f.now().Sub(info.ModTime()) > abandonedRemoval {
+			_ = os.RemoveAll(filepath.Join(sessions, entry.Name()))
+		}
+	}
+}
+
+// abandonedRemoval is how long a removal goes untouched before it is taken
+// for one whose process died: RemoveAll changes the folder as it empties it.
+const abandonedRemoval = 10 * time.Minute
 
 // CheckFolder implements app.Places. It follows a symlink: a link to a
 // directory is a directory to run in.

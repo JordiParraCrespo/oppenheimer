@@ -78,7 +78,11 @@ the OS's application-support directory, its worktrees under
   runner rewrites both on every create and close, and at start; a file at
   that path it did not write (one without its first-line header, or a
   checkout named like one) is left as it is. Nothing goes inside a
-  checkout or a store.
+  checkout or a store. A create or close rewrites only the guides of its
+  own workspace (and the root's and account's counts), under a lock at the
+  root (`.guides.lock`) that the daemon and the host's CLI share; a close
+  renames the session folder to a hidden `.removing-…` name before
+  deleting it, so no guide lands in a folder being emptied.
 
 ## 3. Three ways to start a session
 

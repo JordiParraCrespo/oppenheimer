@@ -42,9 +42,12 @@ type level struct {
 
 // workspaceInfo and sessionInfo are what the walk found, read off the markers.
 type workspaceInfo struct {
-	tenant   domain.Tenant
-	slug     string
+	tenant domain.Tenant
+	slug   string
+	// sessions is read only for a workspace whose guides are being written;
+	// count is how many session folders every workspace holds.
 	sessions []sessionInfo
+	count    int
 }
 
 type sessionInfo struct {
@@ -57,13 +60,34 @@ type accountInfo struct {
 	workspaces []workspaceInfo
 }
 
+// scope is what one write of the guides covers: everything, or the levels a
+// change in one workspace touches. The root and the account are always
+// among them, since they count the workspace's sessions.
+type scope struct {
+	all     bool
+	tenant  domain.Tenant
+	session string
+}
+
+func (s scope) covers(t domain.Tenant) bool { return s.all || s.tenant == t }
+
+func (s scope) coversSession(t domain.Tenant, slug string) bool {
+	return s.all || (s.tenant == t && s.session == slug)
+}
+
 // WriteGuides writes README.md and AGENTS.md into the work folder's root and
 // into every account, workspace, repos.noindex, sessions.noindex and session
-// folder it holds, from their markers. It is best effort: a guide is a
-// convenience, and one that cannot be written is never a reason to refuse
-// the create or the close that called it. It writes nothing until the work
-// folder exists.
+// folder it holds, from their markers: what `runner run` does at start, for a
+// folder an older runner made and for anything changed while none ran. A
+// create or a close writes only the guides its change touches. Either is best
+// effort: a guide is a convenience, and one that cannot be written is never a
+// reason to refuse the create or the close that called it. It writes nothing
+// until the work folder exists.
 func (f *Folder) WriteGuides() {
+	f.writeGuides(scope{all: true})
+}
+
+func (f *Folder) writeGuides(s scope) {
 	f.guides.Lock()
 	defer f.guides.Unlock()
 
@@ -71,18 +95,35 @@ func (f *Folder) WriteGuides() {
 	if info, err := os.Stat(filepath.Join(root, LayoutFile)); err != nil || info.IsDir() {
 		return
 	}
-	accounts := f.scan()
+	defer f.lockGuides()()
+
+	accounts := f.scan(s)
+	if s.all {
+		for _, account := range accounts {
+			for _, ws := range account.workspaces {
+				f.sweepRemovals(f.layout.Sessions(ws.tenant))
+			}
+		}
+	}
 	levels := []level{{root, rootGuides(accounts)}}
 	for _, account := range accounts {
+		if !s.all && account.id != s.tenant.Account {
+			continue
+		}
 		levels = append(levels, level{f.layout.Account(account.id), accountGuides(account)})
 		for _, ws := range account.workspaces {
+			if !s.covers(ws.tenant) {
+				continue
+			}
 			levels = append(levels,
 				level{f.layout.Workspace(ws.tenant), workspaceGuides(ws)},
 				level{f.layout.Repos(ws.tenant), reposGuides(ws)},
 				level{f.layout.Sessions(ws.tenant), sessionsGuides(ws)},
 			)
 			for _, session := range ws.sessions {
-				levels = append(levels, level{f.layout.Session(ws.tenant, session.slug), sessionGuides(ws, session)})
+				if s.coversSession(ws.tenant, session.slug) {
+					levels = append(levels, level{f.layout.Session(ws.tenant, session.slug), sessionGuides(ws, session)})
+				}
 			}
 		}
 	}
@@ -99,10 +140,12 @@ func (f *Folder) WriteGuides() {
 	}
 }
 
-// scan reads the work folder's accounts, workspaces and sessions off their
-// markers. A directory without the marker its level expects is not the
-// runner's, and is left out.
-func (f *Folder) scan() []accountInfo {
+// scan reads the work folder's accounts and workspaces off their markers,
+// and the sessions of each workspace s covers; every other workspace's are
+// only counted, by their markers' presence, which keeps a create's cost to
+// its own workspace however many the host holds. A directory without the
+// marker its level expects is not the runner's, and is left out.
+func (f *Folder) scan(s scope) []accountInfo {
 	var accounts []accountInfo
 	for _, accountName := range subdirs(f.layout.Root) {
 		dir := f.layout.Account(accountName)
@@ -118,11 +161,19 @@ func (f *Folder) scan() []accountInfo {
 			}
 			ws := workspaceInfo{tenant: tenant, slug: m.Slug}
 			for _, slug := range subdirs(f.layout.Sessions(tenant)) {
-				sm, err := readMarker(f.layout.Session(tenant, slug))
+				sessionDir := f.layout.Session(tenant, slug)
+				if !s.covers(tenant) {
+					if _, err := os.Stat(filepath.Join(sessionDir, MarkerDir, MarkerFile)); err == nil {
+						ws.count++
+					}
+					continue
+				}
+				sm, err := readMarker(sessionDir)
 				if err != nil || sm.Kind != KindSession {
 					continue
 				}
 				ws.sessions = append(ws.sessions, sessionInfo{slug: slug, meta: sm})
+				ws.count++
 			}
 			account.workspaces = append(account.workspaces, ws)
 		}
@@ -360,7 +411,7 @@ const workspaceTableHead = "| Workspace | Folder | Sessions |\n| --- | --- | ---
 
 // workspaceRow is a workspace's row in a table of them, linked at path.
 func workspaceRow(ws workspaceInfo, path string) string {
-	return fmt.Sprintf("| %s | [`%s/`](%s/README.md) | %d |\n", cell(workspaceName(ws)), path, path, len(ws.sessions))
+	return fmt.Sprintf("| %s | [`%s/`](%s/README.md) | %d |\n", cell(workspaceName(ws)), path, path, ws.count)
 }
 
 // agentRules closes every AGENTS.md.
