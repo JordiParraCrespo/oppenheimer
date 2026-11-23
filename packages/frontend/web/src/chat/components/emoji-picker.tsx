@@ -15,6 +15,7 @@ import {
 } from '@oppenheimer/design-system-web/icons';
 import { cn } from '@oppenheimer/design-system-web/utils';
 import { type KeyboardEvent, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useStoredList, withListedFirst } from '../../platform';
 import { useEmojiCatalog } from '../hooks/use-emoji-catalog';
@@ -82,8 +83,11 @@ export function EmojiPicker({
   }
 
   function jumpTo(id: EmojiGroupId) {
-    setQuery('');
-    setCurrent(id);
+    // The grid's headings come back with the search cleared: commit that before looking for one.
+    flushSync(() => {
+      setQuery('');
+      setCurrent(id);
+    });
     const box = grid.current;
     const heading = box?.querySelector<HTMLElement>(`[data-emoji-group="${id}"]`);
     if (box && heading) box.scrollTop = heading.offsetTop - box.offsetTop;

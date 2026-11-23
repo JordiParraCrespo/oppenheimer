@@ -85,6 +85,10 @@ function ChatUserMessage({
             </span>
           ) : null}
         </div>
+      ) : reaction ? (
+        <span data-slot="chat-user-message-reaction" className="-mt-2.5 mr-3 flex justify-end">
+          {reaction}
+        </span>
       ) : null}
       {time || actions ? (
         <div data-slot="chat-user-message-trail" className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
