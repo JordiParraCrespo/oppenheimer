@@ -4769,6 +4769,10 @@ export type BotMessageResponseDto = {
      * Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.
      */
     reaction: string | null;
+    /**
+     * The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.
+     */
+    botReaction: string | null;
     createdAt: string;
 };
 

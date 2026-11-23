@@ -422,7 +422,8 @@
       },
       "empty": "Este chat aún no ha gastado nada.",
       "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-    }
+    },
+    "botReacted": "El bot reaccionó con {{emoji}}"
   },
   "settings": {
     "back": "Volver al chat",

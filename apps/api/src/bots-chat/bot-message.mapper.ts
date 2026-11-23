@@ -89,6 +89,7 @@ export class BotMessageMapper
     record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
     record.pendingMedia = entity.pendingMedia ? { kind: entity.pendingMedia.kind } : null;
     record.reaction = entity.reaction;
+    record.botReaction = entity.botReaction;
     return record;
   }
 
@@ -110,6 +111,7 @@ export class BotMessageMapper
         attachments: (record.attachments ?? []).flatMap(toAttachment),
         pendingMedia: toPendingMedia(record.pendingMedia),
         reaction: record.reaction ?? null,
+        botReaction: record.botReaction ?? null,
       },
     });
   }
@@ -134,6 +136,7 @@ export class BotMessageMapper
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.reaction = entity.reaction;
+    dto.botReaction = entity.botReaction;
     dto.attachments = entity.attachments.map((attachment) =>
       Object.assign(new BotAttachmentResponseDto(), attachment),
     );

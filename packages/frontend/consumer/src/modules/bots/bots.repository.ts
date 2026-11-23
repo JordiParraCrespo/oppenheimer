@@ -239,6 +239,7 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     dto.event ? toEvent(dto.event) : null,
     (dto.attachments ?? []).map(toAttachment),
     dto.reaction ?? null,
+    dto.botReaction ?? null,
   );
 }
 

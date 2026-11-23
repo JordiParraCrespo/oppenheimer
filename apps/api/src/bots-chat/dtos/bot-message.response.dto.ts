@@ -592,6 +592,15 @@ export class BotMessageResponseDto {
   })
   reaction!: string | null;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '👍',
+    description:
+      'The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.',
+  })
+  botReaction!: string | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;
 }

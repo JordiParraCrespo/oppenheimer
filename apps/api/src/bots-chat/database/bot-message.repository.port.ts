@@ -48,7 +48,7 @@ export interface BotMessageRepositoryPort {
   saveSteps(message: BotMessageEntity): Promise<void>;
   /** One message of a bot in the caller's workspace, in any of its conversations; null when none is. */
   findOne(scope: AccessScope, botId: string, messageId: string): Promise<BotMessageEntity | null>;
-  /** Writes your reaction to a message (`BotMessageEntity.react`), and nothing else. */
+  /** Writes the reactions to a message, yours and the bot's (`react`, `reactAsBot`), and nothing else. */
   saveReaction(message: BotMessageEntity): Promise<void>;
   /** Writes what a message says now and what it still has to read (`BotMessageEntity.read`). */
   saveContent(message: BotMessageEntity): Promise<void>;

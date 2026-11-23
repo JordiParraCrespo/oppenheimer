@@ -62,6 +62,8 @@ export class BotMessageEntity {
     public readonly attachments: readonly BotAttachment[] = [],
     /** Your reaction to it, one emoji; `null` for none. Only your messages and the bot's words take one. */
     public readonly reaction: string | null = null,
+    /** The bot's reaction to a message of yours (its `react` tool); `null` for none. */
+    public readonly botReaction: string | null = null,
   ) {}
 
   /** Whether you may react to it: a message of yours, or the bot's words. */
@@ -81,6 +83,7 @@ export class BotMessageEntity {
       this.event,
       this.attachments,
       emoji,
+      this.botReaction,
     );
   }
 }

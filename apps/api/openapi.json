@@ -40931,6 +40931,12 @@
             "example": "👍",
             "description": "Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one."
           },
+          "botReaction": {
+            "type": "string",
+            "nullable": true,
+            "example": "👍",
+            "description": "The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -40945,6 +40951,7 @@
           "event",
           "attachments",
           "reaction",
+          "botReaction",
           "createdAt"
         ]
       },

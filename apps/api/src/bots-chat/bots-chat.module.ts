@@ -158,6 +158,7 @@ import { DismissBotQuestionCommandHandler } from './commands/dismiss-bot-questio
 import { DismissBotQuestionHttpController } from './commands/dismiss-bot-question/dismiss-bot-question.http.controller';
 import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
+import { ReactAsBotCommandHandler } from './commands/react-as-bot/react-as-bot.command-handler';
 import { ReactToBotMessageCommandHandler } from './commands/react-to-bot-message/react-to-bot-message.command-handler';
 import { ReactToBotMessageHttpController } from './commands/react-to-bot-message/react-to-bot-message.http.controller';
 import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
@@ -317,6 +318,7 @@ const commandHandlers: Provider[] = [
   AnswerBotQuestionCommandHandler,
   DismissBotQuestionCommandHandler,
   ReactToBotMessageCommandHandler,
+  ReactAsBotCommandHandler,
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
   DreamBotMemoryCommandHandler,

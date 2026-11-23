@@ -82,7 +82,7 @@ export class BotMessageRepository
     await this.repository
       .createQueryBuilder()
       .update(BotMessageOrmEntity)
-      .set({ reaction: message.reaction })
+      .set({ reaction: message.reaction, botReaction: message.botReaction })
       .where('id = :id AND "organizationId" = :organizationId', {
         id: message.id,
         organizationId: message.organizationId,

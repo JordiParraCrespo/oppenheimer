@@ -62,6 +62,8 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * its trail, which reacts to its last words (`onReact`): a pill of quick
  * reactions, "+" for every emoji. A reaction sits on your bubble's lower
  * edge, and under the bot's words it answers; tapping it takes it back.
+ * The bot's own reaction to your message (its `react` tool) sits beside
+ * yours on the bubble, and is the bot's to take back.
  */
 export function BotTurn({
   block,
@@ -165,7 +167,20 @@ export function BotTurn({
                 ) : null}
               </>
             }
-            reaction={reactionOf(message)}
+            reaction={
+              message.botReaction || (message.reaction && onReact) ? (
+                <span className="flex gap-1">
+                  {message.botReaction ? (
+                    <ChatReaction
+                      emoji={message.botReaction}
+                      aria-label={t('bots.chat.botReacted', { emoji: message.botReaction })}
+                      title={t('bots.chat.botReacted', { emoji: message.botReaction })}
+                    />
+                  ) : null}
+                  {reactionOf(message)}
+                </span>
+              ) : undefined
+            }
             attachments={message.attachments.length > 0 ? images(message.attachments) : undefined}
           >
             {message.content ? <BotMessageText text={message.content} /> : null}

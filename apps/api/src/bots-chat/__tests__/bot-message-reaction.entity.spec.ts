@@ -41,3 +41,25 @@ describe('BotMessageEntity.react', () => {
     expect(() => activity.react('👍')).toThrow('takes a reaction');
   });
 });
+
+/**
+ * The bot's own reaction sits beside yours on a message of yours, and only
+ * there. Breaks if the bot can react to its own words or an activity line,
+ * or if its reaction replaces yours.
+ */
+describe('BotMessageEntity.reactAsBot', () => {
+  it('keeps the bot’s reaction beside yours on your message', () => {
+    const message = line({ role: 'user', content: 'Book the room' });
+    message.react('🙏');
+    message.reactAsBot('👍');
+    expect([message.reaction, message.botReaction]).toEqual(['🙏', '👍']);
+    message.reactAsBot(null);
+    expect([message.reaction, message.botReaction]).toEqual(['🙏', null]);
+  });
+
+  it('refuses a bot reaction on its own words', () => {
+    const reply = line({});
+    expect(() => reply.reactAsBot('👍')).toThrow('only to a message of yours');
+    expect(reply.botReaction).toBeNull();
+  });
+});

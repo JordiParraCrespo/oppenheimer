@@ -92,6 +92,8 @@ export interface BotMessageProps {
   pendingMedia?: BotPendingMedia | null;
   /** Your reaction to it, one emoji; null for none. Only a message of yours or the bot's has one. */
   reaction?: string | null;
+  /** The bot's reaction to a message of yours, one emoji (its `react` tool); null for none. */
+  botReaction?: string | null;
 }
 
 /** One thing the chat draws. */
@@ -154,6 +156,22 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
     return this.props.reaction ?? null;
   }
 
+  get botReaction(): string | null {
+    return this.props.botReaction ?? null;
+  }
+
+  /** The bot's reaction to this message of yours, replacing its one before; null takes it back. */
+  reactAsBot(emoji: string | null): void {
+    const before = this.props.botReaction ?? null;
+    this.props.botReaction = emoji;
+    try {
+      this.validate();
+    } catch (error) {
+      this.props.botReaction = before;
+      throw error;
+    }
+  }
+
   /** Whether the chat lets you react to it: a message of yours or the bot's words. */
   get reactable(): boolean {
     return this.props.role === 'user' || this.props.role === 'assistant';
@@ -201,6 +219,13 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
       throw new ArgumentInvalidException('Only a message of yours or the bot’s takes a reaction');
     }
     if (reaction !== null && !isReactionEmoji(reaction)) {
+      throw new ArgumentInvalidException('A reaction is one emoji');
+    }
+    const botReaction = props.botReaction ?? null;
+    if (botReaction !== null && props.role !== 'user') {
+      throw new ArgumentInvalidException('The bot reacts only to a message of yours');
+    }
+    if (botReaction !== null && !isReactionEmoji(botReaction)) {
       throw new ArgumentInvalidException('A reaction is one emoji');
     }
     if (props.role !== 'activity' && !props.content && attachments.length === 0) {

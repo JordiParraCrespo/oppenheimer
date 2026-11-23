@@ -21,6 +21,7 @@ import {
 @Check('CHK_bot_message_position', `"position" >= 0`)
 @Check('CHK_bot_message_turn', `"turnId" IS NOT NULL OR "role" = 'event'`)
 @Check('CHK_bot_message_reaction', `"reaction" IS NULL OR "role" IN ('user', 'assistant')`)
+@Check('CHK_bot_message_bot_reaction', `"botReaction" IS NULL OR "role" = 'user'`)
 export class BotMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -67,6 +68,10 @@ export class BotMessageOrmEntity {
   /** Your reaction, one emoji (`1795443646000-AddBotMessageReaction`); null for none. */
   @Column({ type: 'varchar', length: 32, nullable: true })
   reaction!: string | null;
+
+  /** The bot's reaction to a message of yours (`1795446286144-AddBotMessageBotReaction`); null for none. */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  botReaction!: string | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
