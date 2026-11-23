@@ -113,6 +113,13 @@ export interface GmailTriggerConfig {
   filter: TriggerFilter;
 }
 
+/**
+ * A webhook trigger's config: nothing. What fires it is a POST to its
+ * routine's URL, which belongs to the routine (`automation_webhook`), not to
+ * the trigger, so an edit that rewrites the triggers keeps the URL.
+ */
+export type WebhookTriggerConfig = Record<string, never>;
+
 export type AutomationTriggerProps =
   | {
       id: string;
@@ -140,10 +147,19 @@ export type AutomationTriggerProps =
       config: GmailTriggerConfig;
       timezone: null;
       nextFireAt: null;
+    }
+  | {
+      id: string;
+      position: number;
+      source: 'webhook';
+      eventType: 'webhook_received';
+      config: WebhookTriggerConfig;
+      timezone: null;
+      nextFireAt: null;
     };
 
-/** The external triggers: everything a delivered event can fire. */
-export type EventTriggerProps = Exclude<AutomationTriggerProps, { source: 'schedule' }>;
+/** The hub's triggers: everything a delivered event can fire. */
+export type EventTriggerProps = Exclude<AutomationTriggerProps, { source: 'schedule' | 'webhook' }>;
 
 export interface AutomationLimits {
   overlap: AutomationOverlapPolicy | null;

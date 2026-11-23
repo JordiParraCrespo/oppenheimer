@@ -10,6 +10,11 @@ type AgentId =
   | 'grok'
   | 'pi'
   | 'omp'
+  | 'antigravity'
+  | 'zcode'
+  | 'fx'
+  | 'hermes'
+  | 'muse'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -83,6 +88,53 @@ function OmpMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+/**
+ * fx's tile, the white "fx" on a black rounded square, as the binary embeds
+ * it in its sign-in page (fx v0.0.17). The tile stays, unlike Oh My Pi's: it
+ * is the mark itself rather than a backdrop, and the black is fx's own, so it
+ * does not re-point in dark.
+ */
+function FxMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 180 180" aria-hidden {...props}>
+      <rect width="180" height="180" rx="37" fill="#000" />
+      <g transform="translate(34 33.95) scale(0.7186) translate(-166.241 0)">
+        <path
+          fill="#fff"
+          d="M237.892 0C243.178 0 249.383 1.419 253.025 3.074L255.093 4.014L250.076 18.63L247.677 17.746C244.901 16.723 241.938 15.8 238.491 15.8C234.984 15.8 232.787 16.56 231.08 18.321C229.231 20.23 227.629 23.64 226.229 29.758L225.136 34.851H241.669L260.432 34.95L260.694 34.951L260.842 35.169L278.854 61.633L296.736 34.95H320.866L291.676 76.74L322.102 119.75H299.331L299.182 119.546L241.144 40.478L239.35 49.4H222.069L205.688 127.208C203.927 135.709 201.185 142.838 196.777 147.866C192.27 153.008 186.201 155.75 178.342 155.75C174.181 155.75 170.746 155.109 167.909 154.107L166.241 153.519V137.182L166.899 137.4L169.531 138.278C172.182 139.162 174.414 139.8 177.142 139.8C178.528 139.8 179.703 139.526 180.732 138.98C181.764 138.434 182.677 137.6 183.52 136.442C185.304 133.989 186.716 130.135 187.897 124.672L203.76 49.4H189.874L191.759 39.438L192.039 39.346L206.818 34.467L208.154 28.642C210.516 18.207 213.772 10.938 218.708 6.318C223.737 1.612 230.127 0 237.892 0ZM273.987 99.084L260.073 120.25H234.541L261.003 82.022L273.987 99.084Z"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function AntigravityMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z" />
+    </svg>
+  );
+}
+
+/** Nous Research's Hermes, the bust its agent wears (Lobe Icons' `hermesagent.svg`). */
+function HermesMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" aria-hidden {...props}>
+      <path d="M6 12.8q0 0 .3.2v.1zm2.4-3.4h.7l.6.2h.1-.6L9 9.4l.6.1.8.5h.1l.1.1h.3q0 .2.1.1 0 .2-.3.2v.2q.1.2-.4.2v.1h-.1v.2H10v.1h-.3v.1H8.3Q8.2 11 8 11h.2l.5.1h.6q.5 0 .7-.4l.2-.2-.4-.3q0 .2-.2.2v.3l-.2.2h-.6l-.2-.2v-.2q-.2 0-.1-.4v-.1l-.4.4h-.2v-.2l.1-.4h-.2q.2-.3.6-.5M8 10.8z" />
+      <path clipRule="evenodd" d="M12 0h1.4l2.5.9a7 7 0 0 1 3 2.6l.7 1.5.7 1.7.4 2 .3 1.5.5 2.1 1.2 4.8V19q0 .6-.2 1.2l-1 1.6v.2l.6-.6q.6-.7 1-1.5a4 4 0 0 0 .3-1.7q0-.6-.3-1.2v-.1h.1l.3.4q.5.7.5 1.7a4 4 0 0 1-.5 2q-.5.9-1.5 1.4l-.6.3q-.2.2-.3.4v.6l-.2.1-.1-.1v-.2l-.4-.9-.7-1-1-.4-.6-.2h-.2l.5.2a4 4 0 0 1 2 1.6l.2.5v.6h-.1l-.1-.2-.1-.2-1.4-1.7-.6-.3-1.1-.2h-.6l-.8.4-.8.7-1 1-.3.6v.1h-.4v-.4q0-.5.4-1l.1.1 1-1.1.9-.6h-.1l-.5.2q-.6.1-1.1.5l-.4.4-1 1.7-.1.1v.1h-.6l.4-.5.7-.9.1-.1.8-1q.1 0 .3-.2H14l-.7.5-1.2.7-1 .5.1-.3-.4.3-.4.5-.4.4-.1.1H8.8v-.3h-.2v.3h-.2l.2-.3q-.4 0-.6.3H5.2l.5-.7q.6-.7.7-1.6l-.4.4q-.4.5-1 .5l-.9-.1q-.6-.3-.7-1.1 0-.2-.2-.2L2 20.6a2 2 0 0 1-.8-1.1L1 18.2l.2.5q0 .4.5.9l.9.5h1l.7-.5q.5-.4.6-1.2v-.1.2q-.6.8-1.3 1.1-.5.3-1 .2a2 2 0 0 1-1-.7l-.4-.9v-.9c0-.4.5-1.2.7-1.3v.2l-.1.3-.1.9q0 .3.2.6.3.4.6.4h.8l.3-.6q.3-.5.3-1.1l.2-1V15l.1-.7.1-.7V13l.1-.5V12l.1-.7V11l-.6-.4-.2-.4h-.2l.3.5.2.3q.1 0 .2.2H4a3 3 0 0 1-1.3-.9Q2 9.7 2 8.7v-1q0-1 .4-1.8L3 4.8l.7-1q.8-.9 1.7-1.5A13 13 0 0 1 11.3 0zM10 22.8l-.2.2-.6.9.5-.5.3-.4zm1.7-3.7-.7.6-.3.4-.4.3h-.6v.2l.5.7.4.7.1.4h.2l.9-.5.6-.3 1-.7h.1l-.8-.5-.5-.5-.4-.6zm-5.9.3-.1.3-.5 1q-.3.4-.8.5h-.9v.2l.5.2h.5q.2 0 .4-.2.4-.3.6-.7l.3-1.1zm15-4.6v.6l.2.6v1l-.2 1-.4 1.5v.1l.3-.3q.5-.5.6-1 .3-.7.1-1.6 0-.9-.6-1.9M5.8 8.3v.1l.4.8v.2q-.4 0-.9.2l.2.1v.2l.5.4.2.6q-.2.8-.7 1.2h-.2l-.1.3v.2l.4.5.2.3v.7l.1.1h.5l.5.3.4.2h.3v.2l-.3.1H7h.2q-.5-.3-.9-.1v.3q-.2-.1 0-.3a.2.2 0 0 0-.3.2q0 .1.2.2h.5l-.3.2v.1h-.2l-.2-.2L6 15v-.2q-.1 0 0-.2h-.1l-.2-.4v-.4l.1-.1v-.2l-.1-.4-.5-.5-.1.6q0 .5.2 1 .1.8.5 1.2l1 1.8q.3.3.7.3H8l.9-.2h.5q.3 0 .6.2l1 1.3q0 .2.1 0l.4-.3v-2.1l.4-2.3.3-1.5.2-1.9V9.6q0-.2-.2-.2l-.6-.1q-.2 0-.2-.2v-.2l-.1.2-.1.1H9.4L9.2 9q0-.1-.2 0l-.5.1-.7.4-.3.2h-.2v-.2l.3-.3H7q-.2.2-.4 0L6 8.4zm8.6 9h-.2l-.6.4-.3.2v.6l.3.1h.3q.4 0 .6-.3v-.9zm-.3-2.5-.3 1-.4 1.3.8-.5q0 0 0-.2v-1.6m3.1-8 .1.2.3.7.5 2 .6 1.9.3 1.1.2.8.1.6.1.4V14l-.1-.6v-.2l-.4-1.2-.6-2-.5-1.7-.2-.7-.1-.4-.1-.3zm-11 7.5h-.1l.4.1zm-1-2.3zm0-1.2v.8q.1.3.4.1l-.1-.3q0 0 0-.2l-.2-.2v-.2m0-1-.4.1v.5h.6l.5.2.1.1-.1-.3H5q.4-.2.7 0 0-.2-.2-.3l-.3-.1zm10.3.3-.6.3h-.1l.2.1h1.4l-.5-.3zM8 6.5v.1l.2 1 .5 1v.2H9l-.4-1q-.4-.6-.6-1.3m2.4-6h-.6L9 .7l-.9.3H10l1.3.6a6 6 0 0 1 2.3 2.7l.7 2.4.1.2q.2 0 .3.2 0 .1-.2.3l-.2.3.3-.3.1-.3v-.2l-.1-.1q-.2 0-.2-.2t.2-.4h.3l.5-.1q.2 0 .2.2l-.1.3h-.1a.1.1 0 0 0 0 .2q0 .2.2.4l.6.3h.1l-.6-.3-.1-.1-.2-.2.2-.2.1-.2-.2-1-.8-2-1.4-1.8-1.2-.8-1-.3zM4.1 3.9 4 4l-.4.4-.2.2q-.4.3-.6.9v.2H3V6l-.2.5L3 6l1-2zm13 2.4zM4.2 4.5l-.2.2h-.2q-.2 0-.3.2l-.2.6-.1.3h.4v.3l-.1.1v-.1l.3-.4.1-.1V6q.2-.1.3-.1v.2l.5-1q-.1 0-.4 0l.1-.5q0 .3-.3.1v-.3zm2-.7-.2.4-.5.7q-.1.3-.6.5v-.1l.2-.6L5 5l-.5 1h.1q.2 0 .3-.2l.1-.1.2-.1h.1v.1l.1.2v.1L6 4.6l.3-.8m4-.3.2.6v.4l-.1-.1h-.1v.2l-.3.2h-.1v-.1h-.2l-.4.2v.4l.1.1q.3 0 .7.3l.1-.2h.3v.2q0-.2 0-.4l.4.6v-.6h.1l.2.5v-.4h.3c0-.2-.4-1-.8-1.5zm-2.6.7-.2.6-.2.2h-.6l-.4-.2H6L6 5v.5h.4q.2 0 .4 0l.5-.2h.1l.1.2v-.2l.2.2zm.3.3-.1.1v.1l.1.6h.9l.2.2h.1v-.3l-.3-.6H8M18 2.8l.2.5v.5H18l-.2-.2-.3-.3h-.1l.2.3v.2h-.3l-.2.1V4q.2.2 0 .2l-.1.2h-.2l-.7-.1L16 4l-.1-.2v.5h-.6v.2h.3l.5.3.2.3v-.3l.1.1.2.3v.1h.1l-.4-1 1 .4.2-.2h.1l.3.5.1.3v-.3l-.3-.6q.3.1.6.8l-.1-.5v-.3h.1v-.1l.3.3-.2-.5h.2v-.8l.3.4V4l-.3-.6zm-6.5.3v.4l-.3.1-.1.4-.1.1v.2l.1.2.1.1h.3l.2.1.2-.1h.3v-.3h.1v-.7q.2 0 .3.3l.5.8h.4l-.2-.4H13l-.5-.9-.3-.2-.3.3h-.2l-.1-.3z" />
+    </svg>
+  );
+}
+
+/** Meta's mark, which Muse Code, a Meta product with no mark of its own, wears. */
+function MetaMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z" />
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -110,6 +162,11 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   grok: () => <GrokMark className={INKED} />,
   pi: () => <PiMark className={SHARED} />,
   omp: () => <OmpMark className={SHARED} />,
+  antigravity: () => <AntigravityMark className={INKED} />,
+  zcode: () => <ZaiMark className={INKED} />,
+  fx: () => <FxMark className={SHARED} />,
+  hermes: () => <HermesMark className={INKED} />,
+  muse: () => <MetaMark className={INKED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -128,21 +185,28 @@ function markOf(agent: AgentId): React.ReactNode {
  * AgentMark — the coding agent's mark, 15px, in the agent and model picker
  * and wherever a session names its harness; a bot's model picker draws its
  * providers with it too. Claude Code carries Anthropic's orange (a brand
- * colour, so it does not re-point in dark); Codex, OpenCode, Grok, GLM,
- * ChatGPT and Cursor draw in the current ink and invert with the theme. ChatGPT has no
- * published mark of its own and wears OpenAI's, as Codex does. "Blank
+ * colour, so it does not re-point in dark); Codex, OpenCode, Grok,
+ * Antigravity, Hermes, Muse, GLM, ChatGPT and Cursor draw in the current ink
+ * and invert with the theme, and ZCode wears Z.ai's mark, as GLM does. ChatGPT
+ * has no published mark of its own and wears OpenAI's, as Codex does, and
+ * Muse Code wears Meta's. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
- * Pi's blocks and Oh My Pi's gradient π carry their own colours, which do not
- * re-point in dark either.
+ * Pi's blocks, Oh My Pi's gradient π and fx's black tile carry their own
+ * colours, which do not re-point in dark either.
  *
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
  * OpenCode's from the first glyph of `packages/web/src/assets/logo-ornate-dark.svg`
- * in github.com/sst/opencode; Grok's and GLM's (Z.ai's) from Lobe Icons
- * (`@lobehub/icons-static-svg` `icons/grok.svg` and `icons/zai.svg`, MIT);
- * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0);
+ * in github.com/sst/opencode; Grok's, Antigravity's and GLM's (Z.ai's) from Lobe Icons
+ * (`@lobehub/icons-static-svg` `icons/grok.svg`, `icons/antigravity.svg` and
+ * `icons/zai.svg`, MIT); Hermes' from the same set (`@lobehub/icons-static-svg@1.106.0`
+ * `icons/hermesagent.svg`, MIT), its coordinates rounded to a tenth of a unit
+ * (svgo, precision 1) since the original spends 20 KB on a 15px glyph;
+ * Cursor's and Meta's from Simple Icons (`simple-icons@16.0.0`
+ * `icons/cursor.svg` and `icons/meta.svg`, CC0);
  * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
- * from its site's favicon (`omp.sh/favicon.svg`).
+ * from its site's favicon (`omp.sh/favicon.svg`); fx's from the sign-in page
+ * its own binary serves (`vercel-labs/fx` v0.0.17).
  *
  * ```tsx
  * <AgentMark agent="claude-code" />

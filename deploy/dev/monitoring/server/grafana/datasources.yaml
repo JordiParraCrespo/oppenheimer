@@ -1,0 +1,15 @@
+# The Loki beside this Grafana (../../../compose.yml). Same uid as the local
+# stack's, so a dashboard's Loki panels resolve on both. No Prometheus runs on
+# the server yet, so it is the only data source.
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+    editable: false
+    jsonData:
+      maxLines: 1000

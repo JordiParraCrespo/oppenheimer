@@ -16,8 +16,11 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop"
 	desktopapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/app"
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/chrome"
+	hostdesktop "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/desktop"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/policyfile"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -161,9 +164,16 @@ func New(version string) (*App, error) {
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
-		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
-		ExecPolicies:  execpolicy.File{Path: paths.ExecPolicy()},
-		Executor:      system.Executor{},
+		ClaudeAccount:    func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:     execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:         system.Executor{},
+		ComputerPolicies: policyfile.Computer{Path: paths.ComputerPolicy()},
+		BrowserPolicies:  policyfile.Browser{Path: paths.BrowserPolicy()},
+		Browsers:         chrome.New(chrome.Options{Dir: paths.Browsers()}),
+		Desktop: hostdesktop.New(hostdesktop.Options{
+			Display: os.Getenv("DISPLAY"), Home: paths.UserHome,
+			Wayland: hostdesktop.WaylandSession(os.Getenv("XDG_SESSION_TYPE"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")),
+		}),
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -215,6 +225,8 @@ func New(version string) (*App, error) {
 		FilesDir:       paths.Files(),
 		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
 		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
+		ZCodeDatabase:  zcodeDatabase(paths),
+		HermesState:    agentHomeFile(paths, "HERMES_HOME", ".hermes", "state.db"),
 	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
@@ -246,6 +258,17 @@ func New(version string) (*App, error) {
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand,
+		// Each agent is handed the runner's MCP server (`runner mcp`), the
+		// same commands as `runner sessions …` as tools. By name: the
+		// session's PATH leads with the runner's commands. The session and
+		// the socket are its arguments, not its environment, which Codex
+		// does not pass to an MCP server.
+		Tools: func(session string) []string {
+			return []string{"runner", "mcp", "--session", session, "--socket", paths.Socket()}
+		},
+		// Codex's developer_instructions, which the briefing sets, keep the
+		// person's own first.
+		OwnInstructions: trust,
 		// OpenCode serves its conversation on a loopback port the runner
 		// picks, which the chat view reads it through.
 		FreePort: freeLoopbackPort,
@@ -577,6 +600,15 @@ func claudeProjectsPath(paths Paths) string {
 // user's home. "" when there is no home to look in.
 func agentSessionsPath(paths Paths, homeEnv, folder string) string {
 	return agentHomeFile(paths, homeEnv, folder, "sessions")
+}
+
+// zcodeDatabase is where ZCode keeps its conversations, under the person's
+// home; "" when there is no home to look in.
+func zcodeDatabase(paths Paths) string {
+	if paths.UserHome == "" {
+		return ""
+	}
+	return filepath.Join(paths.UserHome, ".zcode", "cli", "db", "db.sqlite")
 }
 
 // agentHomeFile is name inside an agent CLI's home: `$<homeEnv>` when that is

@@ -41,6 +41,8 @@ export interface ScheduleTrigger {
   dayOfMonth?: number;
   /** `YYYY-MM-DD`, for `once`. */
   date?: string;
+  /** The five cron fields, for `cron` (a bot's routine only). */
+  expression?: string;
   timezone: string;
   nextFireAt: Date | null;
 }
@@ -65,7 +67,17 @@ export interface GmailTrigger {
   query: string | null;
 }
 
-export type AutomationTrigger = ScheduleTrigger | GithubTrigger | GmailTrigger;
+/**
+ * A webhook trigger: something posted to the routine's URL. The URL is the
+ * routine's ({@link BotRoutineEntity.webhook}), not the trigger's. Bot routines only.
+ */
+export interface WebhookTrigger {
+  source: 'webhook';
+  id: string | null;
+  event: 'webhook_received';
+}
+
+export type AutomationTrigger = ScheduleTrigger | GithubTrigger | GmailTrigger | WebhookTrigger;
 
 /** A repository an automation's runs clone. */
 export interface AutomationRepository {

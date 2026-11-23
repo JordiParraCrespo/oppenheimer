@@ -31,10 +31,19 @@ export const RELEASE_TEMP_DIR: readonly string[] = Object.freeze([
  * `shasum -a 256` on macOS, which is what each ships.
  */
 export function sha256Verifier(platform: ReleasePlatform, tool: string): readonly string[] {
-  const hash = platform === 'macos' ? 'shasum -a 256' : 'sha256sum';
+  return verifier(platform, tool, 256);
+}
+
+/** `sha256Verifier`'s twin for a vendor that publishes SHA-512 (Antigravity's manifest). */
+export function sha512Verifier(platform: ReleasePlatform, tool: string): readonly string[] {
+  return verifier(platform, tool, 512);
+}
+
+function verifier(platform: ReleasePlatform, tool: string, bits: 256 | 512): readonly string[] {
+  const hash = platform === 'macos' ? `shasum -a ${bits}` : `sha${bits}sum`;
   return [
     'verify() {',
-    `  printf '%s' "$2" | grep -Eqx '[0-9a-f]{64}' || { echo "${tool}: no published checksum for $1" >&2; exit 1; }`,
+    `  printf '%s' "$2" | grep -Eqx '[0-9a-f]{${bits / 4}}' || { echo "${tool}: no published checksum for $1" >&2; exit 1; }`,
     `  actual="$(${hash} "$1" | cut -d ' ' -f 1)"`,
     `  [ "$actual" = "$2" ] || { echo "${tool}: checksum mismatch for $1" >&2; exit 1; }`,
     '}',

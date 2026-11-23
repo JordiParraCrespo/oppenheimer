@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { None, Some } from 'oxide.ts';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
+import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type {
   BotChannelChat,
   BotConversationRepositoryPort,
@@ -85,6 +87,7 @@ function setup(
   turn: BotTurnEntity | null,
   chat: BotChannelChat | null = null,
   lines: ChannelTurnLine[] = LINES,
+  pendingApprovalOf: string | null = null,
 ) {
   const turns = {
     findForRun: vi.fn(async (id: string) => (turn && id === turn.id ? Some(turn) : None)),
@@ -97,14 +100,22 @@ function setup(
     // console turn off the channels.
     findChannelChat: vi.fn(async () => chat),
   } satisfies Partial<BotConversationRepositoryPort>;
+  const approvals = {
+    findPending: vi.fn(async () =>
+      pendingApprovalOf ? Some({ turnId: pendingApprovalOf }) : None,
+    ),
+  };
+  const config = { get: vi.fn(() => 'https://console.example/') };
   const bus = { execute: vi.fn(async () => 1) };
   const handler = new DeliverChannelReplyCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     messages as unknown as BotMessageRepositoryPort,
+    approvals as unknown as BotApprovalRepositoryPort,
     new BotChannelReplyResolver(
       conversations as unknown as BotConversationRepositoryPort,
       bus as unknown as CommandBus,
     ),
+    config as unknown as ConfigService,
   );
   const deliver = () =>
     handler.execute(new DeliverChannelReplyCommand({ turnId: turn?.id ?? randomUUID() }));
@@ -198,6 +209,25 @@ describe('DeliverChannelReplyCommandHandler', () => {
       text: 'Green since 10:12.',
       botId,
     });
+  });
+
+  // Breaks if a turn that stopped on a card leaves the chat with no way to it:
+  // the card is answered only in the console.
+  it('links to the bot in the console when the turn ended on its approval card, and not for another turn’s', async () => {
+    const turn = ended(telegram());
+    const waiting = setup(turn, telegramChat, LINES, turn.id);
+    await waiting.deliver();
+    const [sent] = waiting.bus.execute.mock.calls[0] as unknown as [ReplyOnTelegramCommand];
+    expect(sent.text).toMatch(
+      new RegExp(
+        `Waiting for your approval in Oppenheimer: https://console\\.example/bots/${botId}$`,
+      ),
+    );
+
+    const other = setup(turn, telegramChat, LINES, randomUUID());
+    await other.deliver();
+    const [plain] = other.bus.execute.mock.calls[0] as unknown as [ReplyOnTelegramCommand];
+    expect(plain.text).not.toMatch(/approval/);
   });
 
   it('tells the owner a failed turn failed, with why', async () => {

@@ -36,6 +36,24 @@ call, and is never written by the control plane. On a host set to `full` a
 bot can also drive a blank-terminal session (`terminal.drive`): type into
 it and read its screen back.
 
+A bot can use the host's screen, mouse and keyboard over the link too
+(`computer.act`, `25-bots.md` §4.2, "Using a computer"), only after `runner
+computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
+default and never written by the control plane. On a Mac it drives the main
+screen through `screencapture` and `osascript` (the runner needs Screen
+Recording and Accessibility); on Linux an X display through `xdotool` and
+ImageMagick's `import`, starting a virtual one (Xvfb, locked with an `xauth`
+key in `~/.Xauthority`) on a host that has none; a Wayland session is
+refused. The Mac path has not been run on a Mac yet.
+
+A bot can also drive a browser of its own here (`browser.act`, `25-bots.md`
+§4.2, "Using a browser"), only after `runner browser on`: a third switch, in
+`~/.oppenheimer/browser.json`. The runner starts the host's Chrome, Chromium
+or Edge headless, one per bot with a profile under
+`~/.oppenheimer/state/browsers/<bot>`, and drives it over the DevTools
+protocol on a pipe (no debugging port is opened; downloads are refused): the page is read as elements with refs, and a ref is what a click
+or typed text acts on.
+
 A session's Simulator tab streams the iOS simulator or Android emulator its
 host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the
@@ -119,17 +137,18 @@ mark and colours wherever a person meets it.
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
 | `runner sessions run\|send\|wait\|report\|children\|keep` | from inside a session, through the running daemon's socket: start a child session with a task (`--repo`, `--outlive-parent`, `--quiet`, `--keep`), type a message into an agent, wait for children to settle, report to the parent, list children, keep a session across reboots. `SESS_012` is an agent not up after 30 s, `HOST_012` no daemon on the socket |
-| `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/next-steps/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). It answers `transcript.read` too, a page of a session's conversation read off the agent's transcript, as the chat view's entries (§8; `SESS_018` for an agent with no transcript file, OpenCode's). `SESS_013` is a path that is not a readable regular file |
+| `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/next-steps/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). It answers `transcript.read` too, a page of a session's conversation read off the agent's transcript, as the chat view's entries (§8; `SESS_018` for an agent with no transcript file, OpenCode's and ZCode's). `SESS_013` is a path that is not a readable regular file |
 | `runner sessions notify "line"` | from inside a session: tells the person a line, at most 500 bytes, which the console's Inbox lists until it is marked done (`product/next-steps/agent-tools.md` §2). `SESS_014` is a runner with no link to the control plane |
 | `runner sessions watch-pr <n> [--repo owner/name] [--off]` | from inside a session: be woken when the pull request's checks finish, it is reviewed or commented on, or it merges; a line is typed in once the agent is at its prompt (`product/next-steps/agent-tools.md` §3). `SESS_015` is a runner with no link to the control plane |
 | `runner sessions wake-in <30m\|2h\|1d> "note"` | from inside a session: be woken then with the note, a minute to seven days away, once the agent is at its prompt; the control plane holds the wake (`product/next-steps/agent-tools.md` §4). `SESS_015` is a runner with no link to the control plane |
 | `runner --skill` | the manual an agent in a session reads for the commands above; every session's note points at it |
+| `runner mcp` | the same commands as an MCP server on stdio (`start_session`, `send_to_session`, `list_children`, `wait_for_children`, `report_to_parent`, `notify`, `send_file`, `watch_pull_request`, `wake_in`), which each session's agent is given at launch as `runner mcp --session <id> --socket <path>` (arguments, since Codex does not pass its environment to an MCP server): Claude Code as `--mcp-config`, Codex as a `-c mcp_servers.oppenheimer` override, OpenCode in `OPENCODE_CONFIG_CONTENT`, each beside the person's own servers. Codex is also told where the session note is (`developer_instructions`, after the value of the key the override would replace, the checkout's `.codex/config.toml` or else the person's own) and, like OpenCode, allowed 31 minutes a tool call, for a wait and OpenCode reads it (`instructions`), since neither looks in the session's folder above the checkout (`product/next-steps/agent-tools.md` §10) |
 | `runner pty [--report F] -- CMD` | what window 0 runs the agent under: a PTY of its own that answers OSC 7501's probe, keeps the agent's reports in F and passes every other byte through |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner agents update` | runs every installed agent CLI's unattended updater now, the round `run` does on its own unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
-| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`, `pi`, `omp`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
+| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`, `pi`, `omp`, `fx`, `muse`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
 | `runner tools [ls]` | every probed tool with its version and path, and for a missing one the line that installs it |
 | `runner tools install gh` | GitHub's CLI into `~/.local/bin` (Homebrew on macOS). For `git` and `tmux` it prints the package manager's command and runs nothing |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |

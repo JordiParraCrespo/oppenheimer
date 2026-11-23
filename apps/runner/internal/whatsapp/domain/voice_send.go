@@ -19,8 +19,10 @@ const VoiceSendMaxSeconds = 120
 var ErrNotVoiceNote = problem.New("WA_008", http.StatusUnsupportedMediaType, "That audio is not a voice note WhatsApp can play")
 
 // CheckVoiceOut is why a voice note to send cannot go, before any of it is
-// uploaded: empty, larger than a frame carries (WA_006), not Ogg/Opus, or
-// running a length the link does not allow (WA_008). Nil when it can go.
+// uploaded: empty, larger than a frame carries (WA_006), not Ogg/Opus,
+// running a length the link does not allow, or silent from end to end
+// (WA_008), which would otherwise go as a note of the right length that
+// plays nothing. Nil when it can go.
 func CheckVoiceOut(audio []byte, seconds int) error {
 	if len(audio) > VoiceNoteMaxBytes {
 		return ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", len(audio), VoiceNoteMaxBytes)
@@ -30,6 +32,9 @@ func CheckVoiceOut(audio []byte, seconds int) error {
 	}
 	if seconds < 1 || seconds > VoiceSendMaxSeconds {
 		return ErrNotVoiceNote.WithDetail("it runs %d seconds; a voice note sent here runs 1 to %d", seconds, VoiceSendMaxSeconds)
+	}
+	if isSilent(audio) {
+		return ErrNotVoiceNote.WithDetail("it is silent from start to end")
 	}
 	return nil
 }

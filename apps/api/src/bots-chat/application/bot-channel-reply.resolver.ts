@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { ReplyOnSlackCommand } from '../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
@@ -17,12 +18,14 @@ type ChannelReply = Omit<
   'accountId' | 'replyToId'
 >;
 
+type ChannelReplyCommand = ReplyOnTelegramCommand | ReplyOnWhatsappCommand | ReplyOnSlackCommand;
+
 /** The reply for a chat's channel, quoting the message the turn's key names. */
 function replyOn(
   chat: BotChannelChat,
   sourceKey: string | null,
   reply: ChannelReply,
-): ReplyOnTelegramCommand | ReplyOnWhatsappCommand {
+): ChannelReplyCommand {
   switch (chat.kind) {
     case 'telegram':
       return new ReplyOnTelegramCommand({
@@ -36,13 +39,16 @@ function replyOn(
         accountId: chat.whatsappAccountId,
         replyToRowId: whatsappMessageRowIdOf(sourceKey),
       });
+    // A Slack chat is the thread itself, so the answer needs nothing to quote.
+    case 'slack':
+      return new ReplyOnSlackCommand({ ...reply, accountId: chat.slackAccountId });
   }
 }
 
 /**
  * Sends a channel turn's words to the chat its conversation is, as a reply to
  * the message that opened the turn, through the module of the chat's channel
- * (telegram, whatsapp), which sends only while this bot still answers that
+ * (telegram, whatsapp, slack), which sends only while this bot still answers that
  * chat. Answers how many messages went: none for a conversation that is no
  * channel's chat (any more), a chat this bot no longer answers, or a host
  * that did not send. What the turn's end owes and what it sends as it goes
@@ -70,8 +76,6 @@ export class BotChannelReplyResolver {
       botId: turn.botId,
       metadata: { correlationId },
     };
-    return this.commands.execute<ReplyOnTelegramCommand | ReplyOnWhatsappCommand, number>(
-      replyOn(chat, turn.sourceKey, reply),
-    );
+    return this.commands.execute<ChannelReplyCommand, number>(replyOn(chat, turn.sourceKey, reply));
   }
 }

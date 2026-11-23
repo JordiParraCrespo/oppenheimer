@@ -163,12 +163,18 @@ export {
   TraceOutput,
   TraceStep,
 } from './components/chat-trace';
-export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
+export type {
+  ChatReactionBarLabels,
+  TurnHeaderLabels,
+  TurnState,
+} from './components/chat-transcript';
 export {
   ChatAttachment,
   ChatCommand,
   ChatCommandText,
   ChatMention,
+  ChatReaction,
+  ChatReactionBar,
   ChatReply,
   ChatTranscript,
   ChatUserMessage,

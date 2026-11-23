@@ -10,6 +10,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -65,16 +66,22 @@ func (s State) Live() bool {
 // Agent is the program window 0 runs.
 type Agent string
 
-// Agents. Claude Code is the MVP's first entry; Codex, OpenCode, Grok, Pi
-// and Oh My Pi are the others, and the shell is the blank terminal with no agent in it.
+// Agents. Claude Code is the MVP's first entry; Codex, OpenCode, Grok, Pi,
+// Oh My Pi, Antigravity, ZCode, fx, Hermes and Muse are the others, and the
+// shell is the blank terminal with no agent in it.
 const (
-	AgentClaude   Agent = "claude"
-	AgentCodex    Agent = "codex"
-	AgentOpenCode Agent = "opencode"
-	AgentGrok     Agent = "grok"
-	AgentPi       Agent = "pi"
-	AgentOmp      Agent = "omp"
-	AgentShell    Agent = "shell"
+	AgentClaude      Agent = "claude"
+	AgentCodex       Agent = "codex"
+	AgentOpenCode    Agent = "opencode"
+	AgentGrok        Agent = "grok"
+	AgentPi          Agent = "pi"
+	AgentOmp         Agent = "omp"
+	AgentAntigravity Agent = "antigravity"
+	AgentZCode       Agent = "zcode"
+	AgentFx          Agent = "fx"
+	AgentHermes      Agent = "hermes"
+	AgentMuse        Agent = "muse"
+	AgentShell       Agent = "shell"
 )
 
 // agentCatalogIDs is the runner's view of the catalog's `CODING_AGENT_IDS`:
@@ -83,13 +90,18 @@ const (
 // read it, so a new agent is one row here and one in the catalog, and a
 // test fails when the generated launch table has an id this map lacks.
 var agentCatalogIDs = map[Agent]string{
-	AgentClaude:   "claude-code",
-	AgentCodex:    "codex",
-	AgentOpenCode: "opencode",
-	AgentGrok:     "grok",
-	AgentPi:       "pi",
-	AgentOmp:      "omp",
-	AgentShell:    "shell",
+	AgentClaude:      "claude-code",
+	AgentCodex:       "codex",
+	AgentOpenCode:    "opencode",
+	AgentGrok:        "grok",
+	AgentPi:          "pi",
+	AgentOmp:         "omp",
+	AgentAntigravity: "antigravity",
+	AgentZCode:       "zcode",
+	AgentFx:          "fx",
+	AgentHermes:      "hermes",
+	AgentMuse:        "muse",
+	AgentShell:       "shell",
 }
 
 // Agents is every agent the runner knows how to start, in no promised order.
@@ -446,3 +458,20 @@ func Slug(branch, id string) string {
 // DefaultBranchName is what a session's own branch is called when the user
 // did not name one: readable in a PR list, unique by construction.
 func DefaultBranchName(id string) string { return "oppenheimer/" + id }
+
+// NoteFile is the session note's name in a worktree session's own folder:
+// how the session is set up, for its agent. Claude Code reads CLAUDE.md from
+// every folder above the one it runs in, and the session's folder holds the
+// checkout without being part of it, so the note reaches that agent and can
+// never be committed. Other agents are handed its path at launch
+// (Launch.Note).
+const NoteFile = "CLAUDE.md"
+
+// Note is the session note's absolute path, or "" for a folder session,
+// whose folder is the person's own and gets none.
+func (s Session) Note() string {
+	if s.Place == PlaceFolder || s.Dir == "" {
+		return ""
+	}
+	return filepath.Join(s.Dir, NoteFile)
+}

@@ -58,6 +58,10 @@ type Reader struct {
 
 	// openCode is which OpenCode works in which conversation, for the chat.
 	openCode *openCodeOwners
+	// zcodeDB is ZCode's conversation database; "" follows none.
+	zcodeDB string
+	// hermes is Hermes' database, for the chat (`hermes.go`).
+	hermes hermesSource
 }
 
 var _ app.Transcripts = (*Reader)(nil)
@@ -81,6 +85,12 @@ type Options struct {
 	// GrokSessions is Grok's `sessions/` folder, `~/.grok/sessions` or
 	// `$GROK_HOME/sessions`, for the chat view.
 	GrokSessions string
+	// ZCodeDatabase is ZCode's conversation database,
+	// `~/.zcode/cli/db/db.sqlite`, for the chat view.
+	ZCodeDatabase string
+	// HermesState is Hermes' database, `~/.hermes/state.db` or
+	// `$HERMES_HOME/state.db`, for the chat view.
+	HermesState string
 	// Logger reports a transcript that could not be read, which the session
 	// service treats as none yet; nil is the process's default logger.
 	Logger *slog.Logger
@@ -105,7 +115,10 @@ func New(opts Options) *Reader {
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
-	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir, openCode: newOpenCodeOwners()}
+	return &Reader{
+		agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir,
+		openCode: newOpenCodeOwners(), zcodeDB: opts.ZCodeDatabase, hermes: hermesSource{db: opts.HermesState},
+	}
 }
 
 // ServedConversation implements app.Transcripts: OpenCode's, through its

@@ -1,0 +1,51 @@
+# Loki on the dev server (../../compose.yml): one process, chunks and index
+# on the `lokidata` volume, 14 days. No auth: it sits on the internal
+# `monitoring` network, reached by Alloy and Grafana and, from a tailnet
+# machine, through an SSH tunnel (../README.md, "On the dev server").
+# Same shape as the local one, docker/monitoring/loki/loki.yaml.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  retention_period: 336h
+  # Structured metadata (the correlation id, the logger's context) is what
+  # keeps per-line ids out of the labels, where each value is a new stream.
+  allow_structured_metadata: true
+  # Alloy reads each container's log from where it left off; a container it
+  # first sees may hold lines from days ago: take them.
+  reject_old_samples: false
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: filesystem
+
+analytics:
+  reporting_enabled: false

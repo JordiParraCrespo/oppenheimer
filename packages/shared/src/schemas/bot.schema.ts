@@ -1003,12 +1003,13 @@ export const BOT_TURN_ORIGINS = [
   'loop',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * The turns a person is waiting on: one they started by writing (in the
- * console, on Telegram or on WhatsApp), or by deciding a card. A routine's
+ * console, on Telegram, WhatsApp or Slack), or by deciding a card. A routine's
  * run, a wake and a goal's continuation run with nobody there, so a tool
  * that needs someone to answer is not offered on them.
  */
@@ -1018,6 +1019,7 @@ export const BOT_ATTENDED_ORIGINS = [
   'question',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**
@@ -1028,6 +1030,7 @@ export const BOT_ATTENDED_ORIGINS = [
 export const BOT_CHANNEL_ORIGINS = [
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 export type BotChannelOrigin = (typeof BOT_CHANNEL_ORIGINS)[number];
 
@@ -1279,6 +1282,13 @@ export const updateBotRoutineSchema = botRoutineTaskSchema
     { path: ['enabled'], params: { i18nKey: 'validation.required' } },
   );
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
+
+/**
+ * A new URL for a routine's webhook, from its Routines tab: `signed` also
+ * issues a signing secret every request must then be signed with.
+ */
+export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().default(false) });
+export type IssueRoutineWebhookDto = z.infer<typeof issueRoutineWebhookSchema>;
 
 /**
  * A Needs input card: one call of an asking tool, waiting for the owner.
@@ -1631,3 +1641,27 @@ export const updatePersonAboutSchema = z.object({
   about: z.string().trim().max(PERSON_ABOUT_MAX),
 });
 export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
+
+/** The most UTF-16 code units a reaction holds: the longest family or flag sequence, with room. */
+export const BOT_REACTION_MAX = 32;
+
+/** One pictograph, with what joins and modifies it (skin tones, ZWJ sequences, flags, subdivision flags, keycaps). */
+const SINGLE_EMOJI =
+  /^(?:\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}️?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:‍\p{Extended_Pictographic}️?\p{Emoji_Modifier}?)*)$/u;
+
+/**
+ * Whether `text` is one emoji, as a reaction must be: a word, two emoji or
+ * an emoji with text around it is not.
+ */
+export function isReactionEmoji(text: string): boolean {
+  return text.length > 0 && text.length <= BOT_REACTION_MAX && SINGLE_EMOJI.test(text);
+}
+
+/**
+ * `PUT /bots/:id/messages/:messageId/reaction`: your reaction to a message
+ * of yours or of the bot's, one at a time; null takes it back.
+ */
+export const reactToBotMessageSchema = z.object({
+  emoji: z.string().refine(isReactionEmoji, { message: 'A reaction is one emoji' }).nullable(),
+});
+export type ReactToBotMessageDto = z.infer<typeof reactToBotMessageSchema>;

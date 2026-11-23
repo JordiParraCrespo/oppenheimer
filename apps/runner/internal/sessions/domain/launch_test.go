@@ -37,11 +37,48 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("omp argv = %q, want %q", got, want)
 	}
+	// agy starts in `auto` where the account has it, so Ask is sent; it takes
+	// no positional prompt, so the task rides on `--prompt-interactive`.
+	got = Launch{Model: "gemini-4-neon", Permission: "ask", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentAntigravity)
+	want = []string{"--model", "gemini-4-neon", "--mode", "default", "--effort", "xhigh", "--prompt-interactive", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("antigravity argv = %q, want %q", got, want)
+	}
+	// fx's own default is `auto`, and a mode saved in its settings would
+	// otherwise win, so every level is sent; Full access is `full-access`.
+	got = Launch{Model: "spacexai/grok-4.7", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentFx)
+	want = []string{"--provider", "gateway", "--model", "spacexai/grok-4.7", "--permission-mode", "full-access", "--effort", "xhigh", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fx argv = %q, want %q", got, want)
+	}
+	// An open-weight row offers no effort, so none is sent for it.
+	got = Launch{Model: "moonshotai/kimi-k3", Permission: "auto", Effort: "high", EffortIsLevel: true}.Args(AgentFx)
+	want = []string{"--provider", "gateway", "--model", "moonshotai/kimi-k3", "--permission-mode", "auto"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fx argv = %q, want %q", got, want)
+	}
 }
 
 // Pi has no approvals: a permission level that reaches the runner anyway
 // becomes no flag at all, rather than one pi would refuse to start on. Its
 // thinking levels stop at `xhigh`, so omp's `max` is dropped for it.
+// ZCode's TUI reads a positional as a subcommand and has no `--model`, so a
+// first task or a model that reaches the runner must add nothing to argv, or
+// `zcode` exits on an unknown command. Its permission is `--mode`, and a
+// restart sends no `--continue`, which exits when ZCode saved nothing yet.
+func TestZCodeTakesItsModeAndNeitherATaskNorAModel(t *testing.T) {
+	got := Launch{Model: "glm-5.3", Permission: "ask", Prompt: "fix the picker"}.Args(AgentZCode)
+	want := []string{"--mode", "build"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("zcode argv = %q, want %q", got, want)
+	}
+	got = Launch{Permission: "full", Prompt: "fix the picker", Resume: true}.Args(AgentZCode)
+	want = []string{"--mode", "yolo"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("reopened zcode argv = %q, want %q", got, want)
+	}
+}
+
 func TestPiTakesNoPermissionAndItsOwnThinkingLevels(t *testing.T) {
 	got := Launch{Model: "anthropic/claude-opus-5-5", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "go"}.Args(AgentPi)
 	want := []string{"--model", "anthropic/claude-opus-5-5", "--thinking", "xhigh", "go"}
