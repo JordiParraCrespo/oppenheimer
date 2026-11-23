@@ -140,7 +140,29 @@
       },
       "emoji": {
         "menu": "Emoji",
-        "pick": "Insert {{emoji}} :{{name}}:"
+        "pick": "Insert {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Search emoji",
+        "noResults": "No emoji match",
+        "results": "Results",
+        "groups": {
+          "recent": "Recently used",
+          "smileys": "Smileys & emotion",
+          "people": "People & body",
+          "nature": "Animals & nature",
+          "food": "Food & drink",
+          "travel": "Travel & places",
+          "activities": "Activities",
+          "objects": "Objects",
+          "symbols": "Symbols",
+          "flags": "Flags"
+        },
+        "react": "React",
+        "reactWith": "React with {{emoji}}",
+        "removeReaction": "Remove reaction {{emoji}}",
+        "more": "More emoji",
+        "yourReaction": "Your reaction: {{emoji}}",
+        "reactFailed": "Could not save the reaction"
       }
     },
     "search": {
@@ -522,7 +544,9 @@
       "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
       "SESSIONS_058": "That terminal is no longer open.",
       "SESSIONS_059": "The host refused to change the session's terminals.",
-      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
+      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host.",
+      "BOTS_044": "That message is no longer in this chat.",
+      "BOTS_045": "Only your messages and the bot's words take a reaction."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1702,7 +1726,6 @@
       "emptyBody": "Bots you create appear here. Make one and tell it the job: it writes its own instructions from your answer.",
       "emptyGroup": "No bots in this group yet.",
       "noMessages": "No messages yet",
-      "yesterday": "Yesterday",
       "newGroup": "New group",
       "groupName": "Group name",
       "groupActions": "Options for {{name}}",
@@ -2103,7 +2126,8 @@
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."
-      }
+      },
+      "botReacted": "The bot reacted {{emoji}}"
     },
     "settings": {
       "back": "Back to the chat",
@@ -3335,7 +3359,9 @@
       "noRepository": "No repository",
       "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
-      "noRepositories": "This project has no repositories. Add one in its settings.",
+      "noRepositories": "No repositories. Give the GitHub app access to one.",
+      "repositoriesLoading": "Loading the workspace’s repositories…",
+      "repositoriesFailed": "Couldn’t load every repository the workspace reaches.",
       "where": "Where it runs",
       "whereSearch": "Search places",
       "noPlaces": "Nowhere to run it.",

@@ -142,7 +142,29 @@
       },
       "emoji": {
         "menu": "Emoji",
-        "pick": "Insertar {{emoji}} :{{name}}:"
+        "pick": "Insertar {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Buscar emoji",
+        "noResults": "Ningún emoji coincide",
+        "results": "Resultados",
+        "groups": {
+          "recent": "Usados recientemente",
+          "smileys": "Caras y emociones",
+          "people": "Personas y cuerpo",
+          "nature": "Animales y naturaleza",
+          "food": "Comida y bebida",
+          "travel": "Viajes y lugares",
+          "activities": "Actividades",
+          "objects": "Objetos",
+          "symbols": "Símbolos",
+          "flags": "Banderas"
+        },
+        "react": "Reaccionar",
+        "reactWith": "Reaccionar con {{emoji}}",
+        "removeReaction": "Quitar la reacción {{emoji}}",
+        "more": "Más emoji",
+        "yourReaction": "Tu reacción: {{emoji}}",
+        "reactFailed": "No se pudo guardar la reacción"
       }
     },
     "search": {
@@ -524,7 +546,9 @@
       "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
       "SESSIONS_058": "Esa terminal ya no está abierta.",
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
-      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
+      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
+      "BOTS_044": "Ese mensaje ya no está en este chat.",
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1721,7 +1745,6 @@
       "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
       "emptyGroup": "Aún no hay bots en este grupo.",
       "noMessages": "Aún no hay mensajes",
-      "yesterday": "Ayer",
       "newGroup": "Nuevo grupo",
       "groupName": "Nombre del grupo",
       "groupActions": "Opciones de {{name}}",
@@ -2132,7 +2155,8 @@
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-      }
+      },
+      "botReacted": "El bot reaccionó con {{emoji}}"
     },
     "settings": {
       "back": "Volver al chat",
@@ -3373,7 +3397,9 @@
       "noRepository": "Sin repositorio",
       "noRepositoryDesc": "Se abre en la carpeta personal del host",
       "repositorySearch": "Buscar repositorios",
-      "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
+      "noRepositories": "No hay repositorios. Da acceso a uno a la app de GitHub.",
+      "repositoriesLoading": "Cargando los repositorios del espacio de trabajo…",
+      "repositoriesFailed": "No se pudieron cargar todos los repositorios del espacio de trabajo.",
       "where": "Dónde se ejecuta",
       "whereSearch": "Buscar lugares",
       "noPlaces": "No hay dónde ejecutarla.",
