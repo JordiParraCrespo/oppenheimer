@@ -53,13 +53,16 @@ export interface AutomationDraft {
 
 /**
  * The agents an automation can run: the API's `automationAgentSupported`,
- * every one with a model to drive and permission levels to set. Not the blank
- * terminal, and not Pi, which has no approvals and so no unattended mode the
- * API will save.
+ * every one with a model to drive, permission levels to set and a task taken
+ * on the command line. Not the blank terminal, not Pi, which has no approvals
+ * and so no unattended mode the API will save, and not Muse, whose TUI takes
+ * no task at launch, so a run's would never reach it.
  */
 export const AUTOMATION_AGENTS = (Object.keys(CODING_AGENTS) as CodingAgentId[]).filter(
   (agent) =>
-    CODING_AGENTS[agent].models.length > 0 && CODING_AGENTS[agent].launch.permission !== undefined,
+    CODING_AGENTS[agent].models.length > 0 &&
+    CODING_AGENTS[agent].launch.permission !== undefined &&
+    CODING_AGENTS[agent].launch.prompt !== undefined,
 );
 
 let cardSequence = 0;

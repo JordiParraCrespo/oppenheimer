@@ -20,7 +20,7 @@ import {
   type AutomationPlace,
   isVendorPlace,
 } from '@oppenheimer/shared/automations';
-import { defaultModelFor } from './agent-options';
+import { defaultModelFor, takesTask } from './agent-options';
 
 /**
  * Where the session runs: on the host, in Claude Code's cloud started from
@@ -269,7 +269,9 @@ export function startDefaults(
     hosts.find((row) => row.id === project?.defaultHostId) ??
     hosts.find((row) => row.online) ??
     hosts[0];
-  const agent = project?.defaultAgent ?? 'claude-code';
+  // A project's default that takes no task (Muse) is not one this dialog offers.
+  const agent =
+    project?.defaultAgent && takesTask(project.defaultAgent) ? project.defaultAgent : 'claude-code';
   return {
     prompt: [task.title, task.notes.trim()].filter(Boolean).join('\n\n'),
     repository: repository ? repositoryKey(repository) : null,

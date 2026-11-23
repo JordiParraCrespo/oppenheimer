@@ -16,7 +16,9 @@
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
  * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`,
- * Antigravity in `antigravity.ts`, ZCode in `zcode.ts`, fx in `fx.ts` and Hermes in `hermes.ts`, which this record composes. How the runner installs and updates each CLI is
+ * Antigravity in `antigravity.ts`, ZCode in `zcode.ts`, fx in `fx.ts`, Hermes
+ * in `hermes.ts` and Muse in `muse.ts`, which this record composes. How the
+ * runner installs and updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
  */
@@ -32,6 +34,7 @@ import {
 } from './effort-levels.js';
 import { FX_AGENT } from './fx.js';
 import { HERMES_AGENT } from './hermes.js';
+import { MUSE_AGENT } from './muse.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
 import { TYPED_INPUT } from './typed-input.js';
@@ -56,6 +59,7 @@ export const CODING_AGENT_IDS = [
   'zcode',
   'fx',
   'hermes',
+  'muse',
   'shell',
 ] as const;
 
@@ -280,7 +284,7 @@ export interface CodingAgentLaunch {
    * The first task is a note for whoever reads the session, not something the
    * agent reads: the blank terminal's names the session, and a bot then types
    * into the terminal itself. An agent with no `prompt` that is not marked so
-   * (ZCode) would drop a task, so a caller that requires one refuses it.
+   * (ZCode, Muse) would drop a task, so a caller that requires one refuses it.
    */
   readonly taskIsNote?: true;
 }
@@ -824,6 +828,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   zcode: ZCODE_AGENT,
   fx: FX_AGENT,
   hermes: HERMES_AGENT,
+  muse: MUSE_AGENT,
   shell: Object.freeze({
     id: 'shell',
     // The design's own name for it.

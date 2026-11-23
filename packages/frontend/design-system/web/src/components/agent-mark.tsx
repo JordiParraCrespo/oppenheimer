@@ -14,6 +14,7 @@ type AgentId =
   | 'zcode'
   | 'fx'
   | 'hermes'
+  | 'muse'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -125,6 +126,15 @@ function HermesMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+/** Meta's mark, which Muse Code, a Meta product with no mark of its own, wears. */
+function MetaMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a6.624 6.624 0 0 0 .265.86 5.297 5.297 0 0 0 .371.761c.696 1.159 1.818 1.927 3.593 1.927 1.497 0 2.633-.671 3.965-2.444.76-1.012 1.144-1.626 2.663-4.32l.756-1.339.186-.325c.061.1.121.196.183.3l2.152 3.595c.724 1.21 1.665 2.556 2.47 3.314 1.046.987 1.992 1.22 3.06 1.22 1.075 0 1.876-.355 2.455-.843a3.743 3.743 0 0 0 .81-.973c.542-.939.861-2.127.861-3.745 0-2.72-.681-5.357-2.084-7.45-1.282-1.912-2.957-2.93-4.716-2.93-1.047 0-2.088.467-3.053 1.308-.652.57-1.257 1.29-1.82 2.05-.69-.875-1.335-1.547-1.958-2.056-1.182-.966-2.315-1.303-3.454-1.303zm10.16 2.053c1.147 0 2.188.758 2.992 1.999 1.132 1.748 1.647 4.195 1.647 6.4 0 1.548-.368 2.9-1.839 2.9-.58 0-1.027-.23-1.664-1.004-.496-.601-1.343-1.878-2.832-4.358l-.617-1.028a44.908 44.908 0 0 0-1.255-1.98c.07-.109.141-.224.211-.327 1.12-1.667 2.118-2.602 3.358-2.602zm-10.201.553c1.265 0 2.058.791 2.675 1.446.307.327.737.871 1.234 1.579l-1.02 1.566c-.757 1.163-1.882 3.017-2.837 4.338-1.191 1.649-1.81 1.817-2.486 1.817-.524 0-1.038-.237-1.383-.794-.263-.426-.464-1.13-.464-2.046 0-2.221.63-4.535 1.66-6.088.454-.687.964-1.226 1.533-1.533a2.264 2.264 0 0 1 1.088-.285z" />
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -156,6 +166,7 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   zcode: () => <ZaiMark className={INKED} />,
   fx: () => <FxMark className={SHARED} />,
   hermes: () => <HermesMark className={INKED} />,
+  muse: () => <MetaMark className={INKED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -175,9 +186,10 @@ function markOf(agent: AgentId): React.ReactNode {
  * and wherever a session names its harness; a bot's model picker draws its
  * providers with it too. Claude Code carries Anthropic's orange (a brand
  * colour, so it does not re-point in dark); Codex, OpenCode, Grok,
- * Antigravity, Hermes, GLM, ChatGPT and Cursor draw in the current ink and invert with the theme, and
- * ZCode wears Z.ai's mark, as GLM does. ChatGPT has no
- * published mark of its own and wears OpenAI's, as Codex does. "Blank
+ * Antigravity, Hermes, Muse, GLM, ChatGPT and Cursor draw in the current ink
+ * and invert with the theme, and ZCode wears Z.ai's mark, as GLM does. ChatGPT
+ * has no published mark of its own and wears OpenAI's, as Codex does, and
+ * Muse Code wears Meta's. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
  * Pi's blocks, Oh My Pi's gradient π and fx's black tile carry their own
  * colours, which do not re-point in dark either.
@@ -190,7 +202,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * `icons/zai.svg`, MIT); Hermes' from the same set (`@lobehub/icons-static-svg@1.106.0`
  * `icons/hermesagent.svg`, MIT), its coordinates rounded to a tenth of a unit
  * (svgo, precision 1) since the original spends 20 KB on a 15px glyph;
- * Cursor's from Simple Icons (`simple-icons@16.0.0` `icons/cursor.svg`, CC0);
+ * Cursor's and Meta's from Simple Icons (`simple-icons@16.0.0`
+ * `icons/cursor.svg` and `icons/meta.svg`, CC0);
  * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
  * from its site's favicon (`omp.sh/favicon.svg`); fx's from the sign-in page
  * its own binary serves (`vercel-labs/fx` v0.0.17).

@@ -102,6 +102,9 @@ describe('planBotSessionLaunch', () => {
     expect(planBotSessionLaunch('zcode', {})).toEqual({
       refusal: expect.stringContaining('ZCode takes no task on its command line'),
     });
+    expect(planBotSessionLaunch('muse', {})).toEqual({
+      refusal: expect.stringContaining('Muse takes no task on its command line'),
+    });
     expect(planBotSessionLaunch('shell', {})).toHaveProperty('launch');
   });
 });
