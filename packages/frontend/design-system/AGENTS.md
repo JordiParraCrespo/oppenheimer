@@ -75,8 +75,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   pick, and Escape closes it.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
-  Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's
-  gradient π from their published brand assets,
+  Grok's slashed circle, Antigravity's arch, Cursor's cube, Pi's three
+  blocks, Oh My Pi's gradient π and fx's tile from their published brand assets,
   and for a bot's providers Z.ai's mark for GLM and OpenAI's for ChatGPT (it
   publishes none of its own), in the vendor's colour where it has one
   and the current ink otherwise. An agent with no published mark takes the
@@ -267,12 +267,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   volume over time is an `AreaChart` (monotone, so it never overshoots),
   rates without volume a `LineChart`. Several Google accounts are a
   `CalendarAccountList`.
-- **An employee is one line, or two on the bots page.** `BotItem` is a 20px
-  square photo and the name, 32px tall, its last message in the row's
-  tooltip; unread sets the name at 600 with the blue dot, waiting on the
-  reader (`needsInput`) the same with the amber one. `BotPreviewItem` is the
-  bots page's row, a messaging app's chat list: a 32px photo, the name with
-  when it was last active, the last message under it, 52px.
+- **An employee is one line.** `BotItem` is a 20px square photo and the
+  name, 32px tall, its last message in the row's tooltip; unread sets the
+  name at 600 with the blue dot, waiting on the reader (`needsInput`) the
+  same with the amber one.
   Its groups head with `SidebarProjectHeader tone="eyebrow"`, the Built-in
   group with a lock `marker`; before the first bot the list is a
   `SidebarEmptyCard`, and the chat a centred `ChatEmptyState` over

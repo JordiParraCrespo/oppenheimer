@@ -97,7 +97,8 @@ function eventText(event: GithubEventType, t: TFunction): string {
 export type TriggerWords =
   | ({ source: 'schedule' } & ScheduleWords)
   | { source: 'github'; event: GithubEventType }
-  | { source: 'gmail'; query: string | null };
+  | { source: 'gmail'; query: string | null }
+  | { source: 'webhook' };
 
 function triggerText(trigger: TriggerWords, locale: string, t: TFunction): string {
   switch (trigger.source) {
@@ -109,6 +110,8 @@ function triggerText(trigger: TriggerWords, locale: string, t: TFunction): strin
       return trigger.query
         ? t('automations.trigger.mail', { query: trigger.query })
         : t('automations.trigger.anyMail');
+    case 'webhook':
+      return t('automations.trigger.webhook');
   }
 }
 

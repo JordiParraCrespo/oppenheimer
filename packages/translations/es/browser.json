@@ -142,7 +142,29 @@
       },
       "emoji": {
         "menu": "Emoji",
-        "pick": "Insertar {{emoji}} :{{name}}:"
+        "pick": "Insertar {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Buscar emoji",
+        "noResults": "Ningún emoji coincide",
+        "results": "Resultados",
+        "groups": {
+          "recent": "Usados recientemente",
+          "smileys": "Caras y emociones",
+          "people": "Personas y cuerpo",
+          "nature": "Animales y naturaleza",
+          "food": "Comida y bebida",
+          "travel": "Viajes y lugares",
+          "activities": "Actividades",
+          "objects": "Objetos",
+          "symbols": "Símbolos",
+          "flags": "Banderas"
+        },
+        "react": "Reaccionar",
+        "reactWith": "Reaccionar con {{emoji}}",
+        "removeReaction": "Quitar la reacción {{emoji}}",
+        "more": "Más emoji",
+        "yourReaction": "Tu reacción: {{emoji}}",
+        "reactFailed": "No se pudo guardar la reacción"
       }
     },
     "search": {
@@ -352,6 +374,12 @@
       "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
       "AUTOMATIONS_008": "Esa ejecución no existe.",
       "AUTOMATIONS_009": "Esa cuenta de Gmail no puede iniciar una rutina: no es tuya, o hay que volver a conectarla en Ajustes → Correo.",
+      "AUTOMATIONS_010": "Esa URL de webhook ya no es válida: emite una nueva en la pestaña Rutinas.",
+      "AUTOMATIONS_011": "La firma de la petición al webhook falta, es demasiado antigua o no coincide.",
+      "AUTOMATIONS_012": "El cuerpo del webhook es demasiado grande.",
+      "AUTOMATIONS_013": "La rutina está en pausa. Vuelve a activarla en la pestaña Rutinas.",
+      "AUTOMATIONS_014": "Esta rutina no tiene un disparador de webhook. Pide antes al bot que lo añada.",
+      "AUTOMATIONS_015": "La firma de webhooks no está configurada en este despliegue.",
       "TASKS_001": "Esa tarea no existe o se ha eliminado.",
       "TASKS_002": "Ese hito no existe o se ha eliminado.",
       "TASKS_004": "Ese proyecto no admite tareas. Puede que se haya archivado.",
@@ -524,7 +552,9 @@
       "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
       "SESSIONS_058": "Esa terminal ya no está abierta.",
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
-      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
+      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
+      "BOTS_044": "Ese mensaje ya no está en este chat.",
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1523,6 +1553,21 @@
         "previous": "Coincidencia anterior",
         "next": "Coincidencia siguiente",
         "close": "Cerrar búsqueda"
+      },
+      "feedback": {
+        "label": "Comentario redactado",
+        "review": "Revisar en la terminal",
+        "send": "Enviar",
+        "dismiss": "Descartar",
+        "back": "Atrás",
+        "keep": "Mantener",
+        "turnOff": "Desactivar",
+        "retry": "Revisar y reintentar",
+        "reviewOrDiscard": "Revisar o descartar",
+        "clearPrompt": "Vacía el prompt de la terminal para responder.",
+        "more_one": "{{count}} más en cola",
+        "more_many": "{{count}} más en cola",
+        "more_other": "{{count}} más en cola"
       }
     },
     "side": {
@@ -1584,6 +1629,7 @@
       "title": "{{name}} ejecutándose en el host de esta sesión",
       "connecting": "Conectando con el dispositivo de la sesión…",
       "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+      "noPicture": "Esperando la pantalla…",
       "unavailable": "Esta sesión no tiene dispositivo",
       "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
       "offline": "El host está desconectado",
@@ -1705,7 +1751,6 @@
       "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
       "emptyGroup": "Aún no hay bots en este grupo.",
       "noMessages": "Aún no hay mensajes",
-      "yesterday": "Ayer",
       "newGroup": "Nuevo grupo",
       "groupName": "Nombre del grupo",
       "groupActions": "Opciones de {{name}}",
@@ -2120,7 +2165,8 @@
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-      }
+      },
+      "botReacted": "El bot reaccionó con {{emoji}}"
     },
     "settings": {
       "back": "Volver al chat",
@@ -2351,6 +2397,7 @@
         "schedule": "Horario · {{when}}",
         "github": "GitHub · {{when}}",
         "gmail": "Gmail · {{when}}",
+        "webhook": "Webhook · {{when}}",
         "last": "Última",
         "next": "Próxima",
         "more": "Mostrar más",
@@ -2383,7 +2430,32 @@
         "deleteFailed": "No se pudo eliminar la rutina.",
         "switchFailed": "No se pudo cambiar la rutina.",
         "runFailed": "No se pudo ejecutar la rutina.",
-        "loadFailed": "No se pudieron cargar las rutinas del bot."
+        "loadFailed": "No se pudieron cargar las rutinas del bot.",
+        "webhookUrl": {
+          "none": "Webhook · aún sin URL",
+          "create": "Crear URL",
+          "newUrl": "Nueva URL",
+          "creating": "Creando…",
+          "revoke": "Revocar",
+          "revoking": "Revocando…",
+          "revokeTitle": "¿Revocar la URL del webhook de «{{name}}»?",
+          "revokeBody": "Lo que se envíe a ella se rechaza a partir de ahora. La rutina conserva su disparador de webhook: crea una URL nueva para volver a usarlo.",
+          "revokeFailed": "No se pudo revocar la URL.",
+          "isSigned": "Firmada",
+          "isUnsigned": "Sin firma",
+          "lastReceived": "última recepción {{when}}",
+          "neverReceived": "aún no ha recibido nada",
+          "dialogTitle": "URL del webhook de «{{name}}»",
+          "dialogBody": "Cualquier cosa que pueda enviar un POST (un pipeline de despliegue, Sentry, un formulario) ejecuta esta rutina a través de esta URL. El bot lee lo enviado como datos externos, nunca como instrucciones.",
+          "replaces": "La URL que tiene ahora deja de funcionar en cuanto se crea la nueva.",
+          "signed": "Exigir firma (un secreto con el que se firma cada petición)",
+          "shownOnce": "Cópialos ahora: solo se muestran una vez. Después solo se ve el principio de la URL.",
+          "url": "URL",
+          "secret": "Secreto de firma",
+          "signHow": "Envía x-oppenheimer-signature: t=<segundos unix>,v1=<HMAC-SHA256 en hex de «<t>.<cuerpo>» con este secreto>. Se rechazan las peticiones de hace más de cinco minutos.",
+          "done": "Listo",
+          "failed": "No se pudo crear la URL."
+        }
       },
       "homeHost": {
         "title": "Máquina principal",
@@ -2692,6 +2764,7 @@
       "event": "Al ocurrir: {{event}}",
       "mail": "Correo nuevo que coincide con «{{query}}»",
       "anyMail": "Cualquier correo nuevo",
+      "webhook": "Algo enviado a su URL",
       "more": "{{summary}} +{{count}}",
       "manual": "Solo manual",
       "monFri": "lun–vie",
@@ -3361,7 +3434,9 @@
       "noRepository": "Sin repositorio",
       "noRepositoryDesc": "Se abre en la carpeta personal del host",
       "repositorySearch": "Buscar repositorios",
-      "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
+      "noRepositories": "No hay repositorios. Da acceso a uno a la app de GitHub.",
+      "repositoriesLoading": "Cargando los repositorios del espacio de trabajo…",
+      "repositoriesFailed": "No se pudieron cargar todos los repositorios del espacio de trabajo.",
       "where": "Dónde se ejecuta",
       "whereSearch": "Buscar lugares",
       "noPlaces": "No hay dónde ejecutarla.",

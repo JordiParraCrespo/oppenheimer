@@ -60,7 +60,32 @@ export class BotMessageEntity {
     public readonly event: BotMessageEvent | null = null,
     /** The images a message of yours carries, in the order you attached them; none on any other. */
     public readonly attachments: readonly BotAttachment[] = [],
+    /** Your reaction to it, one emoji; `null` for none. Only your messages and the bot's words take one. */
+    public readonly reaction: string | null = null,
+    /** The bot's reaction to a message of yours (its `react` tool); `null` for none. */
+    public readonly botReaction: string | null = null,
   ) {}
+
+  /** Whether you may react to it: a message of yours, or the bot's words. */
+  get reactable(): boolean {
+    return this.role === 'user' || this.role === 'assistant';
+  }
+
+  /** The same line with `emoji` as your reaction, or none. */
+  withReaction(emoji: string | null): BotMessageEntity {
+    return new BotMessageEntity(
+      this.id,
+      this.turnId,
+      this.role,
+      this.content,
+      this.steps,
+      this.createdAt,
+      this.event,
+      this.attachments,
+      emoji,
+      this.botReaction,
+    );
+  }
 }
 
 /** What the model's context held: the tokens, against its window when the engine knew it. */
@@ -153,6 +178,18 @@ export class BotConversationEntity {
     /** For each turn still queued or running, how many blocks of text it has stored in all. */
     private readonly textBlocksStored: Readonly<Record<string, number>> = {},
   ) {}
+
+  /** The same chat with `emoji` as your reaction to message `messageId`, or none. */
+  withReaction(messageId: string, emoji: string | null): BotConversationEntity {
+    return new BotConversationEntity(
+      this.messages.map((message) =>
+        message.id === messageId ? message.withReaction(emoji) : message,
+      ),
+      this.turns,
+      this.messageCount,
+      this.textBlocksStored,
+    );
+  }
 
   /** When the newest message was written; `null` for an empty chat. */
   get lastMessageAt(): Date | null {

@@ -740,6 +740,12 @@ owner. See `product/versions/mvp/16-automations-architecture.md`.
 | `AUTOMATIONS_007` <a id="automations_007" /> | That project cannot hold automations        | 422  |
 | `AUTOMATIONS_008` <a id="automations_008" /> | Run not found                               | 404  |
 | `AUTOMATIONS_009` <a id="automations_009" /> | That Gmail account cannot start a routine   | 422  |
+| `AUTOMATIONS_010` <a id="automations_010" /> | Webhook not found                           | 404  |
+| `AUTOMATIONS_011` <a id="automations_011" /> | The webhook signature is missing, stale or wrong | 401 |
+| `AUTOMATIONS_012` <a id="automations_012" /> | The webhook body is too large               | 413  |
+| `AUTOMATIONS_013` <a id="automations_013" /> | The routine is paused                       | 409  |
+| `AUTOMATIONS_014` <a id="automations_014" /> | The routine has no webhook trigger          | 422  |
+| `AUTOMATIONS_015` <a id="automations_015" /> | Webhook signing is not configured on this deployment | 503 |
 
 `AUTOMATIONS_001` is also returned for an automation in another workspace, and for a
 deleted one: its runs stay readable, but it cannot be edited or run.
@@ -757,6 +763,20 @@ past, or a rule with nothing to fire on.
 
 `AUTOMATIONS_007` is a project that is archived, or the workspace's Unassigned
 project, which holds sessions that name none and no automations.
+
+`AUTOMATIONS_010` to `AUTOMATIONS_013` answer a POST to a routine's webhook URL
+(`/api/v1/routine-webhooks/{token}`). `010` is a token no routine holds: never
+issued, replaced by a newer URL, revoked, or its routine's webhook trigger removed.
+`011` is a signed URL's request whose `x-oppenheimer-signature` is absent, not
+`t=<unix seconds>,v1=<hex>`, more than five minutes from the server's clock, or not
+the HMAC-SHA256 of `<t>.<body>` under the signing secret. `012` is a body over
+256 KiB. `013` is a paused routine: turn it on from its Routines tab. A POST past
+these is `202` with the run's id, even when an hourly cap skipped it.
+
+`AUTOMATIONS_014` is asking for a URL for a routine whose triggers have no webhook:
+the bot adds one in chat. `AUTOMATIONS_015` is asking for a signing secret, or
+receiving on a signed URL, while `BOTS_PROVIDER_KEY` is unset or was replaced, so
+the secret cannot be kept or opened.
 
 A run the owner can no longer start is not an error to the caller: it is recorded
 on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
@@ -813,6 +833,8 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 | `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
 | `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
+| `BOTS_044` <a id="bots_044" />       | Message not found | 404  |
+| `BOTS_045` <a id="bots_045" />       | This message takes no reaction | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -917,6 +939,11 @@ another bot, or none, to answer there (Settings → Telegram), then delete it.
 `BOTS_043` is a delete of a bot that is a linked WhatsApp number's default, or
 the bot of one of its allowed chats: it answers there. Choose another bot, or
 none (Settings → WhatsApp), then delete it.
+
+`BOTS_044` and `BOTS_045` are a reaction in a bot's chat
+(`PUT /bots/:id/messages/:messageId/reaction`). `BOTS_044` is a message that is
+not this bot's or not in the caller's workspace. `BOTS_045` is a reaction to an
+activity line or an event: only your messages and the bot's words take one.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

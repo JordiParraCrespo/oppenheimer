@@ -12,15 +12,25 @@ export function withEarlierImages(
   message: HistoryMessage & { attachments: readonly { id?: string; name: string }[] },
 ): HistoryMessage {
   const { role, content, event, steps, attachments } = message;
-  if (attachments.length === 0) return { role, content, event, steps };
+  // The reactions ride along whatever the images say (`reactionNotes`).
+  const reactions = {
+    reaction: message.reaction ?? null,
+    botReaction: message.botReaction ?? null,
+  };
+  if (attachments.length === 0) return { role, content, event, steps, ...reactions };
   const note =
     role === 'user'
       ? imagesNote(attachments)
       : role === 'assistant'
         ? shownNote(attachments.map((attachment) => attachment.name))
         : null;
-  if (!note) return { role, content, event, steps };
-  return { role, content: [content.trim(), note].filter(Boolean).join('\n\n'), event };
+  if (!note) return { role, content, event, steps, ...reactions };
+  return {
+    role,
+    content: [content.trim(), note].filter(Boolean).join('\n\n'),
+    event,
+    ...reactions,
+  };
 }
 
 /** The sentence that stands for the images the bot showed the person here. */

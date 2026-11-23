@@ -721,6 +721,20 @@
       "previous": "Previous match",
       "next": "Next match",
       "close": "Close find"
+    },
+    "feedback": {
+      "label": "Drafted feedback",
+      "review": "Review in terminal",
+      "send": "Send",
+      "dismiss": "Dismiss",
+      "back": "Back",
+      "keep": "Keep",
+      "turnOff": "Turn off",
+      "retry": "Review and retry",
+      "reviewOrDiscard": "Review or discard",
+      "clearPrompt": "Clear the terminal's prompt to answer it.",
+      "more_one": "{{count}} more queued",
+      "more_other": "{{count}} more queued"
     }
   },
   "side": {
@@ -782,6 +796,7 @@
     "title": "{{name}} running on this session's host",
     "connecting": "Connecting to the session's device…",
     "connectingDetail": "The screen appears once the host has started streaming it.",
+    "noPicture": "Waiting for the screen…",
     "unavailable": "No device for this session",
     "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
     "offline": "The host is offline",

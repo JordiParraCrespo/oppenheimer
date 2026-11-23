@@ -1,0 +1,92 @@
+// Grafana Alloy on the dev server (../../compose.yml): reads every container
+// of the `oppenheimer-dev` project through the Docker socket proxy (read-only:
+// listing and logs, nothing that changes a container) and pushes the lines to
+// the Loki beside it. Docker keeps and rotates the logs (the `local` driver,
+// cloud-init.yaml), so nothing here writes a file.
+//
+// Labels match the local stack's (docker/monitoring/alloy/config.alloy), so
+// the same queries and dashboards work on both: `app` is the compose service
+// (api, web, cloudflared, postgres, …) and `level` the API's pino level.
+// `container` tells the two APIs of a rolling deploy apart. The correlation id
+// and the logger's context are structured metadata: `{app="api"} | req_id="…"`.
+
+discovery.docker "project" {
+  host             = "tcp://docker-proxy:2375"
+  refresh_interval = "10s"
+
+  filter {
+    name   = "label"
+    values = ["com.docker.compose.project=oppenheimer-dev"]
+  }
+}
+
+discovery.relabel "project" {
+  targets = discovery.docker.project.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "app"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+}
+
+loki.source.docker "project" {
+  host          = "tcp://docker-proxy:2375"
+  targets       = discovery.docker.project.targets
+  relabel_rules = discovery.relabel.project.rules
+  forward_to    = [loki.process.api.receiver]
+}
+
+loki.process "api" {
+  forward_to = [loki.write.server.receiver]
+
+  // The API writes pino JSON on stdout in production. Other services' lines
+  // pass through as they are, with no level.
+  stage.match {
+    selector = "{app=\"api\"}"
+
+    stage.json {
+      expressions = {
+        level   = "level",
+        time    = "time",
+        context = "context",
+        req_id  = "req.id",
+      }
+    }
+
+    stage.template {
+      source   = "level"
+      template = `{{ if eq .Value "10" }}trace{{ else if eq .Value "20" }}debug{{ else if eq .Value "30" }}info{{ else if eq .Value "40" }}warn{{ else if eq .Value "50" }}error{{ else if eq .Value "60" }}fatal{{ else }}unknown{{ end }}`
+    }
+
+    stage.labels {
+      values = { level = "" }
+    }
+
+    stage.structured_metadata {
+      values = { context = "", req_id = "" }
+    }
+
+    stage.timestamp {
+      source            = "time"
+      format            = "UnixMs"
+      action_on_failure = "skip"
+    }
+  }
+}
+
+loki.write "server" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

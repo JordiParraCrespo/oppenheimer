@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { rememberList, storedList, withFold, withListedFirst } from './stored-list';
+import { rememberList, storedList, storedLists, withFold, withListedFirst } from './stored-list';
 
 /**
  * What the sidebar keeps on this device (pins, folds) reads back as written,
@@ -38,5 +38,30 @@ describe('withFold', () => {
   it('folds a key once however often it is folded, and opens it again', () => {
     expect(withFold(withFold(['a'], 'a', false), 'a', false)).toEqual(['a']);
     expect(withFold(['a', 'b'], 'a', true)).toEqual(['b']);
+  });
+});
+
+/**
+ * The store without React: a write reaches a subscriber of its key and no
+ * other, and another tab's write is read back. What breaks this: a stale
+ * snapshot after a storage event, or a write that wakes every key.
+ */
+describe('storedLists', () => {
+  it('tells the subscribers of the key written, and reads another tab’s write', () => {
+    const woken: string[] = [];
+    const offA = storedLists.subscribe('lists.a', () => woken.push('a'));
+    const offB = storedLists.subscribe('lists.b', () => woken.push('b'));
+
+    storedLists.write('lists.a', (current) => [...current, 'x']);
+    expect(storedLists.read('lists.a')).toEqual(['x']);
+    expect(woken).toEqual(['a']);
+
+    window.localStorage.setItem('lists.b', JSON.stringify(['y']));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'lists.b' }));
+    expect(woken).toEqual(['a', 'b']);
+    expect(storedLists.read('lists.b')).toEqual(['y']);
+
+    offA();
+    offB();
   });
 });

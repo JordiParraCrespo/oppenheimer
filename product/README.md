@@ -1871,6 +1871,12 @@ earlier note:
   the transcription provider and model, the voice-note provider, model and
   voice, and the polish model or none. A choice is tried first, the old
   order after it; the env servers stay as the last provider.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).
 - `25-bots.md` §4.4 made every GitHub write of a bot's in the owner's own
   name (2026-10-20). On 2026-11-20 a bot became askable on GitHub (§3.3,
   issue #952), and its answer there is posted by Oppenheimer's App instead:
