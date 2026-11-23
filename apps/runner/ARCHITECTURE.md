@@ -45,7 +45,7 @@ and `09-runner-install-and-update.md`. Six of them exist:
 | `pairing` | the registration token, the Ed25519 host key, `config.json`, the boot JWT every dial is signed with |
 | `service` | the launchd agent and the systemd user unit, rendered and controlled |
 | `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
-| `whatsapp` | the host's one WhatsApp linked device, on whatsmeow (`adapters/whatsmeow`, the only package that may import it or the SQLite driver): pairing by QR, the reconnects, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends inside the host's own budget (`product/next-steps/whatsapp.md`) |
+| `whatsapp` | the host's one WhatsApp linked device, on whatsmeow (`adapters/whatsmeow`, the only package that may import it, and with the transcript adapter the only one that may import the SQLite driver): pairing by QR, the reconnects, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends inside the host's own budget (`product/next-steps/whatsapp.md`) |
 | `telegram` | the host's one Telegram bot on the Bot API (`adapters/botapi`, four HTTPS calls on `net/http`, no library): its token checked and kept in the state directory, `getUpdates` long-polled with backoff, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends paced to Telegram's own limits (`product/next-steps/telegram.md`) |
 | `sessions` | the lifecycle: the work folder (bare stores, session folders and their markers, 24 §2), worktree or folder sessions, the tmux session and its windows, the screen classifier, adoption after a restart, close |
 
@@ -106,8 +106,9 @@ on a different `net.Listener`.
 `internal/arch/arch_test.go` enforces the table. It walks every non-test file,
 parses imports only, and fails with the offending file and rule. Its
 `confined` table also keeps a third-party module in the one adapter that owns
-what it speaks to: whatsmeow and `modernc.org/sqlite` in
-`whatsapp/adapters/whatsmeow`. It is the
+what it speaks to: whatsmeow in `whatsapp/adapters/whatsmeow`, and
+`modernc.org/sqlite` there and in `sessions/adapters/transcript`, which reads
+ZCode's and Hermes' conversations out of their databases. It is the
 Go equivalent of `apps/api/.dependency-cruiser.cjs` and runs under `pnpm test`.
 
 `internal/arch/catalog_test.go` holds the other public contract: it walks the

@@ -1,5 +1,5 @@
 import { RoutineCard } from '@oppenheimer/design-system-web';
-import { Clock, GitPullRequest, Mail } from '@oppenheimer/design-system-web/icons';
+import { Clock, GitPullRequest, Mail, Webhook } from '@oppenheimer/design-system-web/icons';
 import type { BotRoutineEntity } from '@oppenheimer/frontend-consumer';
 import { useRunBotRoutine, useSetBotRoutineEnabled } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
@@ -8,12 +8,14 @@ import { useTranslation } from 'react-i18next';
 import { DeleteBotRoutineDialog } from '@/features/bots/dialogs/delete-bot-routine';
 import { EditBotRoutineDialog } from '@/features/bots/dialogs/edit-bot-routine';
 import { routineMoment, routineWhen } from '@/features/bots/lib/routine-text';
+import { BotRoutineWebhook } from '@/features/bots/sections/bot-routine-webhook';
 
 /** A routine's glyph, by what wakes it first. */
 const ROUTINE_ICONS = {
   schedule: <Clock />,
   github: <GitPullRequest />,
   gmail: <Mail />,
+  webhook: <Webhook />,
 } as const;
 
 /**
@@ -65,6 +67,7 @@ export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotR
           less: t('bots.settings.routines.less'),
         }}
       />
+      {routine.hasWebhookTrigger ? <BotRoutineWebhook botId={botId} routine={routine} /> : null}
       <ErrorAlert
         error={toggle.error}
         fallback={t('bots.settings.routines.switchFailed')}

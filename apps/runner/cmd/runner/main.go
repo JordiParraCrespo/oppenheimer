@@ -423,7 +423,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
 		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
 		fs.StringVar(&opts.Name, "name", "", "name for the session")
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp, antigravity or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp, antigravity, zcode, fx, hermes, muse or shell")
 		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
 		if err := fs.Parse(args); err != nil {
 			return cli.ExitUsage, err
@@ -439,7 +439,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		// From inside a session: start a child session with a task.
 		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
 		opts := cli.ChildOptions{}
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp, antigravity or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp, antigravity, fx, hermes, muse or shell")
 		fs.StringVar(&opts.Name, "name", "", "name for the child")
 		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
 		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
@@ -704,7 +704,7 @@ var commandSections = []struct {
 	}},
 	{"Agents and tools", []commandEntry{
 		{"runner agents update", "bring every installed agent CLI to its latest release\n(run does it on its own unless RUNNER_AGENT_UPDATES=off)"},
-		{"runner agents install <name>", "install an agent CLI (claude, codex, opencode, grok, pi, omp, antigravity) as you,\nfrom a checksum-verified release or npm; no sudo"},
+		{"runner agents install <name>", "install an agent CLI (claude, codex, opencode, grok, pi, omp, antigravity, fx, muse) as you,\nfrom a checksum-verified release or npm; no sudo"},
 		{"runner tools [ls]", "git, tmux, gh and the agents: versions, and how to get what is missing"},
 		{"runner tools install gh", "install GitHub's CLI into ~/.local/bin (git and tmux: the package\nmanager's command is printed, the runner never uses sudo)"},
 	}},

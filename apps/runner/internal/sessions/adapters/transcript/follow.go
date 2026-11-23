@@ -33,7 +33,8 @@ const (
 // then sends only its last turns as the history, with Before, and answers
 // each offset on older with the turns before it (`follow_older.go`). Without
 // it, the whole history, so nothing is ever out of the reader's reach. OpenCode's conversation is read through its own API
-// instead (`opencode.go`). A batch emit refuses (the link's queue is full)
+// instead (`opencode.go`), ZCode's in its database, in OpenCode's shapes
+// (`zcode.go`), and Hermes' out of its database (`hermes.go`). A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
 func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(app.ChatBatch) error) error {
 	if session.Agent.ServesConversation() {
@@ -41,6 +42,20 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 			return app.ErrNoChat
 		}
 		followOpenCode(ctx, r.openCode, *session.Launch.Server, entryMax, batchMax, emit)
+		return nil
+	}
+	if session.Agent == domain.AgentZCode {
+		if r.zcodeDB == "" {
+			return app.ErrNoChat
+		}
+		followZCode(ctx, r.zcodeDB, session.Created.UnixMilli(), openCodeDirectory(session.Cwd()), entryMax, batchMax, emit)
+		return nil
+	}
+	if session.Agent == domain.AgentHermes {
+		if r.hermes.db == "" {
+			return app.ErrNoChat
+		}
+		followHermes(ctx, r.hermes, session, entryMax, batchMax, emit)
 		return nil
 	}
 	source, ok := r.chats[session.Agent]

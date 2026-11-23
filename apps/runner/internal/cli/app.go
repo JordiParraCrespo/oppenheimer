@@ -225,6 +225,8 @@ func New(version string) (*App, error) {
 		FilesDir:       paths.Files(),
 		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
 		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
+		ZCodeDatabase:  zcodeDatabase(paths),
+		HermesState:    agentHomeFile(paths, "HERMES_HOME", ".hermes", "state.db"),
 	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
@@ -587,6 +589,15 @@ func claudeProjectsPath(paths Paths) string {
 // user's home. "" when there is no home to look in.
 func agentSessionsPath(paths Paths, homeEnv, folder string) string {
 	return agentHomeFile(paths, homeEnv, folder, "sessions")
+}
+
+// zcodeDatabase is where ZCode keeps its conversations, under the person's
+// home; "" when there is no home to look in.
+func zcodeDatabase(paths Paths) string {
+	if paths.UserHome == "" {
+		return ""
+	}
+	return filepath.Join(paths.UserHome, ".zcode", "cli", "db", "db.sqlite")
 }
 
 // agentHomeFile is name inside an agent CLI's home: `$<homeEnv>` when that is
