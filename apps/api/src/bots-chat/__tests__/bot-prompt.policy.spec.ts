@@ -41,6 +41,28 @@ describe('composeBotSystemPrompt', () => {
     expect(composeBotSystemPrompt(base)).not.toMatch(/about the person/);
   });
 
+  // What breaks this: a bot that reads mail and can save routines but never
+  // offers to watch the inbox (2026-11-23); or one that offers a routine its
+  // turn could not save, or offers to a turn with no mail to watch.
+  it('offers to watch the inbox only to a turn that can read mail and save the routine', () => {
+    const tool = (name: string) => ({ name, description: `${name}.` });
+    const both = composeBotSystemPrompt({
+      ...base,
+      tools: [tool('search_mail'), tool('update_routine'), tool('remember')],
+    });
+    expect(both).toContain('# Watching their inbox');
+    expect(both).toContain('calls nothing_to_report and writes nothing');
+    expect(both).toContain('do not offer again; save with `remember`');
+    const noMemory = composeBotSystemPrompt({
+      ...base,
+      tools: [tool('search_mail'), tool('update_routine')],
+    });
+    expect(noMemory).toContain('If they say no, do not offer again.');
+    for (const tools of [[tool('search_mail')], [tool('update_routine')]]) {
+      expect(composeBotSystemPrompt({ ...base, tools })).not.toContain('# Watching their inbox');
+    }
+  });
+
   // What breaks this: a bot told to save only in the tool's own description,
   // which saved almost nothing after its first chat; or one told to save
   // with no `remember` to save with.

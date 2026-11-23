@@ -98,6 +98,7 @@ const SECTIONS: readonly PromptSection[] = [
     sessions ? workingOnCode(commands, terminals.size > 0) : null,
   ({ commands }) => (commands ? promptText('system/commands-on-a-host') : null),
   ({ commands, terminals }) => (terminals.size > 0 ? drivingATerminal(commands, terminals) : null),
+  ({ offered }) => watchingMail(offered),
   ({ input }) => written(input.soul, (content) => promptText('system/documents.soul', { content })),
   // Its instructions, or, while it has none, how a new bot sets itself up.
   ({ input }) =>
@@ -120,6 +121,19 @@ const SECTIONS: readonly PromptSection[] = [
   ({ input }) =>
     listed(input.facts, (facts) => promptText('system/documents.own-memory', { facts })),
 ];
+
+/**
+ * The offer to watch the person's inbox (2026-11-23), sent only to a turn that
+ * can both read their mail and save the routine, so it never offers what the
+ * turn could not set up.
+ */
+function watchingMail(offered: readonly string[]): string | null {
+  if (!offered.includes('search_mail') || !offered.includes('update_routine')) return null;
+  const declined = offered.includes('remember')
+    ? promptText('system/watching-mail.remember-declined')
+    : '';
+  return promptText('system/watching-mail.body', { declined });
+}
 
 /** What `words` makes of a text someone wrote, trimmed; nothing when they wrote none. */
 function written(text: string, words: (text: string) => string): string | null {
