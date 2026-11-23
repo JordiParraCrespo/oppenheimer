@@ -7,6 +7,7 @@ import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatFeedbackDraftCard } from '../components/chat-feedback-draft';
 import { type ChatSendResult, SessionChatComposer } from '../components/session-chat-composer';
 import type { HeldFile } from '../hooks/use-held-files';
 import { useChatState } from '../hooks/use-session-chat';
@@ -55,6 +56,7 @@ export function SessionChatSend({
   files,
   upload,
   hostCommands = false,
+  onOpenTerminal,
   onSent,
 }: {
   chat: Chat;
@@ -70,6 +72,8 @@ export function SessionChatSend({
    * replies take none.
    */
   hostCommands?: boolean;
+  /** Shows the session's terminal, where Claude Code's own review of a drafted report opens. */
+  onOpenTerminal?: () => void;
   onSent: () => void;
 }) {
   const { t } = useTranslation();
@@ -160,6 +164,15 @@ export function SessionChatSend({
           // predates the project's list still takes the built-ins.
           suggestion={offeredSuggestion(last, state.suggestion)}
           commands={hostCommands && agent === 'claude-code' ? (state.commands ?? []) : null}
+          feedback={
+            state.feedback ? (
+              <ChatFeedbackDraftCard
+                draft={state.feedback}
+                onPress={(action) => chat.pressFeedback(action)}
+                onOpenTerminal={onOpenTerminal}
+              />
+            ) : undefined
+          }
         />
       </div>
     </div>

@@ -727,6 +727,21 @@
       "previous": "Coincidencia anterior",
       "next": "Coincidencia siguiente",
       "close": "Cerrar búsqueda"
+    },
+    "feedback": {
+      "label": "Comentario redactado",
+      "review": "Revisar en la terminal",
+      "send": "Enviar",
+      "dismiss": "Descartar",
+      "back": "Atrás",
+      "keep": "Mantener",
+      "turnOff": "Desactivar",
+      "retry": "Revisar y reintentar",
+      "reviewOrDiscard": "Revisar o descartar",
+      "clearPrompt": "Vacía el prompt de la terminal para responder.",
+      "more_one": "{{count}} más en cola",
+      "more_many": "{{count}} más en cola",
+      "more_other": "{{count}} más en cola"
     }
   },
   "side": {
