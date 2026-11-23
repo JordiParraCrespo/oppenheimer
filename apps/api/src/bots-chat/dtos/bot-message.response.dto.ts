@@ -3,6 +3,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_MESSAGE_ROLES,
@@ -16,6 +17,7 @@ import {
   type BotApprovalEventStage,
   type BotDreamActivity,
   type BotEventOutcome,
+  type BotGithubAskVia,
   type BotGoalActivity,
   type BotLoopActivity,
   type BotMessageRole,
@@ -347,6 +349,48 @@ export class BotPullRequestEventResponseDto {
   event!: PullRequestWakeEvent;
 }
 
+/** The owner asked the bot on GitHub: a mention, or a `bot:` label. */
+export class BotGithubAskEventResponseDto {
+  @ApiProperty({ enum: ['github_ask'] })
+  kind!: 'github_ask';
+
+  @ApiProperty({
+    enum: BOT_GITHUB_ASK_VIAS,
+    description:
+      '`mention` for `@oppenheimer <bot>` in a comment or a review, `label` for `bot:<bot>`.',
+  })
+  via!: BotGithubAskVia;
+
+  @ApiProperty({ format: 'uuid', description: 'The installation the answer is posted through.' })
+  installationId!: string;
+
+  @ApiProperty({ description: "GitHub's repository id, as a string: it is a bigint." })
+  githubRepoId!: string;
+
+  @ApiProperty({ description: '`owner/name`.' })
+  repository!: string;
+
+  @ApiProperty({ description: 'The issue or pull request number.' })
+  number!: number;
+
+  @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description: 'Whether `number` is a pull request; null when GitHub did not say.',
+  })
+  isPullRequest!: boolean | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The comment, review or issue the ask was made on.',
+  })
+  url!: string | null;
+
+  @ApiProperty({ description: 'The GitHub login that asked: the owner.' })
+  actorLogin!: string;
+}
+
 /** A task on a project or milestone the bot follows changed. */
 export class BotTaskEventResponseDto {
   @ApiProperty({ enum: ['task'] })
@@ -512,6 +556,7 @@ export type BotMessageEventResponseDto =
   | BotPeerReplyEventResponseDto
   | BotSessionEventResponseDto
   | BotPullRequestEventResponseDto
+  | BotGithubAskEventResponseDto
   | BotTaskEventResponseDto
   | BotGoalEventResponseDto
   | BotLoopEventResponseDto
@@ -527,6 +572,7 @@ export type BotMessageEventResponseDto =
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
   BotPullRequestEventResponseDto,
+  BotGithubAskEventResponseDto,
   BotTaskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
@@ -564,6 +610,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
       { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
+      { $ref: getSchemaPath(BotGithubAskEventResponseDto) },
       { $ref: getSchemaPath(BotTaskEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },

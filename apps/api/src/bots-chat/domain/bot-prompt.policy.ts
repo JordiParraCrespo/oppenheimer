@@ -1,5 +1,6 @@
 import type { BotApprovalEventStage, BotMessageEvent, BotToolGroup } from '@oppenheimer/shared';
 import { approvalAsk } from './bot-approval.policy';
+import { githubAskPrompt } from './bot-github-ask.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { type PlainPromptId, promptText } from './bot-prompt-text.policy';
@@ -563,6 +564,8 @@ function eventPrompt(event: BotMessageEvent, content: string): string {
       return sessionWakePrompt(event, content);
     case 'pull_request':
       return pullRequestWakePrompt(event, content);
+    case 'github_ask':
+      return githubAskPrompt(content);
     case 'task':
       return taskWakePrompt(event, content);
     case 'routine':

@@ -481,6 +481,7 @@ export type {
   BotDocumentRevisionResponseDto,
   BotDreamEventResponseDto,
   BotFaceDto,
+  BotGithubAskEventResponseDto,
   BotGoalEventResponseDto,
   BotGoalPausedResponseDto,
   BotGoalPauseReason,

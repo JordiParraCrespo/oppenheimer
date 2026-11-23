@@ -116,6 +116,16 @@ export class GithubAccessResolver {
   }
 
   /**
+   * The installation's own token, to write as Oppenheimer's App rather than
+   * as anyone: only an answer to an ask on GitHub is written this way
+   * (`IssueAccessPort.addAppComment`), and GitHub marks what it posts as the
+   * App's, which is what keeps it from waking anything of ours again.
+   */
+  appCredential(scope: AccessScope, address: InstallationAddress): Promise<GithubCredential> {
+    return this.readCredential(scope, address);
+  }
+
+  /**
    * Every repository the caller's own tokens open, archived ones aside, as
    * `tokens` addresses. Empty when tokens are not configured here.
    */

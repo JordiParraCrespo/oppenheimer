@@ -4677,6 +4677,42 @@ export type BotPullRequestEventResponseDto = {
     event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
 };
 
+export type BotGithubAskEventResponseDto = {
+    kind: 'github_ask';
+    /**
+     * `mention` for `@oppenheimer <bot>` in a comment or a review, `label` for `bot:<bot>`.
+     */
+    via: 'mention' | 'label';
+    /**
+     * The installation the answer is posted through.
+     */
+    installationId: string;
+    /**
+     * GitHub's repository id, as a string: it is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * `owner/name`.
+     */
+    repository: string;
+    /**
+     * The issue or pull request number.
+     */
+    number: number;
+    /**
+     * Whether `number` is a pull request; null when GitHub did not say.
+     */
+    isPullRequest: boolean | null;
+    /**
+     * The comment, review or issue the ask was made on.
+     */
+    url: string | null;
+    /**
+     * The GitHub login that asked: the owner.
+     */
+    actorLogin: string;
+};
+
 export type BotTaskEventResponseDto = {
     kind: 'task';
     /**
@@ -4900,7 +4936,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */

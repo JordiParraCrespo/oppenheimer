@@ -2001,6 +2001,10 @@
           "comment": "Pull request #{{number}} of {{repository}}: new comment",
           "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
         },
+        "githubAsk": {
+          "mention": "Asked on GitHub, in a comment on #{{number}} of {{repository}}",
+          "label": "Asked on GitHub, with a label on #{{number}} of {{repository}}"
+        },
         "task": {
           "created": "“{{title}}” was added to {{to}}",
           "status_changed": "“{{title}}” moved from {{from}} to {{to}}",

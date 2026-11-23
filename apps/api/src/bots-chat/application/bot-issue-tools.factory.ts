@@ -23,6 +23,7 @@ import {
   type RepositoryView,
   UNTRUSTED_NOTE,
 } from '../bot-github-tool.mapper';
+import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { cut, formatToolList } from '../domain/bot-tool-text.policy';
 import {
@@ -165,6 +166,7 @@ export class BotIssueToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_issue',
       scope: 'pulls:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       asks: true,
       sharesOutside: true,
       subject: async (input, context) =>
@@ -212,6 +214,7 @@ export class BotIssueToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'comment_on_issue',
       scope: 'pulls:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       asks: true,
       sharesOutside: true,
       subject: async (input, context) =>

@@ -41446,6 +41446,67 @@
           "event"
         ]
       },
+      "BotGithubAskEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "github_ask"
+            ]
+          },
+          "via": {
+            "type": "string",
+            "enum": [
+              "mention",
+              "label"
+            ],
+            "description": "`mention` for `@oppenheimer <bot>` in a comment or a review, `label` for `bot:<bot>`."
+          },
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The installation the answer is posted through."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub's repository id, as a string: it is a bigint."
+          },
+          "repository": {
+            "type": "string",
+            "description": "`owner/name`."
+          },
+          "number": {
+            "type": "number",
+            "description": "The issue or pull request number."
+          },
+          "isPullRequest": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether `number` is a pull request; null when GitHub did not say."
+          },
+          "url": {
+            "type": "string",
+            "nullable": true,
+            "description": "The comment, review or issue the ask was made on."
+          },
+          "actorLogin": {
+            "type": "string",
+            "description": "The GitHub login that asked: the owner."
+          }
+        },
+        "required": [
+          "kind",
+          "via",
+          "installationId",
+          "githubRepoId",
+          "repository",
+          "number",
+          "isPullRequest",
+          "url",
+          "actorLogin"
+        ]
+      },
       "BotTaskEventResponseDto": {
         "type": "object",
         "properties": {
@@ -41941,6 +42002,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotPullRequestEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotGithubAskEventResponseDto"
               },
               {
                 "$ref": "#/components/schemas/BotTaskEventResponseDto"
