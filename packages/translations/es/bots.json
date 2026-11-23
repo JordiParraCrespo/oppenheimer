@@ -71,7 +71,13 @@
       "showLess": "Mostrar menos"
     },
     "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-    "placeholderRunning": "Reconduce a {{name}} en marcha · ↵ reconduce · Alt+↵ a la cola · Esc detiene",
+    "placeholdersRunning": {
+      "steer": "Reconduce a {{name}} mientras trabaja…",
+      "nudge": "Empuja a {{name}} por otro lado…",
+      "context": "Cuéntale a {{name}} algo que deba saber…",
+      "next": "Deja en cola lo siguiente para {{name}}…",
+      "course": "Cambia el rumbo de {{name}} en marcha…"
+    },
     "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
