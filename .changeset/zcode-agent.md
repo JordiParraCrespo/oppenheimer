@@ -18,4 +18,11 @@ required, refuse it. The runner
 does not install it: Z.ai publishes desktop installers and no terminal
 release. Its screen manifest reads `esc to interrupt` as working and the
 approval dialog as waiting on the person. Off in New session's picker until
-switched on in Settings → Agents; terminal only, no chat view.
+switched on in Settings → Agents.
+
+ZCode has a chat view. ZCode keeps its conversations in one SQLite database
+(`~/.zcode/cli/db/db.sqlite`) in OpenCode's shapes, so the runner reads it
+read-only with OpenCode's chat follower, over a store that stands in for
+OpenCode's API, and leaves out the messages ZCode writes for the model alone.
+ZCode calls those tables an implementation detail: a release that moves them
+breaks the chat view until the reader follows.
