@@ -15,12 +15,13 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, which this
- * record composes. How the runner installs and updates each CLI is
+ * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, and
+ * Antigravity in `antigravity.ts`, which this record composes. How the runner installs and updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
  */
 
+import { ANTIGRAVITY_AGENT } from './antigravity.js';
 import { CODEX_MODELS } from './codex-models.js';
 import {
   CLAUDE_4_6_LEVELS,
@@ -48,6 +49,7 @@ export const CODING_AGENT_IDS = [
   'grok',
   'pi',
   'omp',
+  'antigravity',
   'shell',
 ] as const;
 
@@ -798,6 +800,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   }),
   pi: PI_AGENT,
   omp: OMP_AGENT,
+  antigravity: ANTIGRAVITY_AGENT,
   shell: Object.freeze({
     id: 'shell',
     // The design's own name for it.

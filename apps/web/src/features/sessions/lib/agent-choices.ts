@@ -32,7 +32,7 @@ function isChoosableAgentId(id: string): id is ChoosableAgentId {
 /**
  * The agents a fresh device offers: the four most people run, the blank
  * terminal, and a cloud agent once its key is saved. Every other catalog
- * agent (Pi, Oh My Pi) is there to switch on.
+ * agent (Pi, Oh My Pi, Antigravity) is there to switch on.
  */
 const OFFERED_BY_DEFAULT: readonly ChoosableAgentId[] = [
   'claude-code',
