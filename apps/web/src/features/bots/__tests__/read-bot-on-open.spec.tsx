@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useReadBotOnOpen } from '../hooks/use-read-bot-on-open';
 
 /**
- * The open chat is read on the API, so its green unread badge (and a failed turn's
+ * The open chat is read on the API, so its blue dot (and a failed turn's
  * amber one) goes on every device, as an open session's report is: once per
  * new message, never again for the same one, and not for a bot with nothing
  * to read.
@@ -39,7 +39,7 @@ describe('reading a bot’s chat on open', () => {
     expect(api.acknowledge).toHaveBeenCalledTimes(2);
   });
 
-  it('reads a bot that waits on you, so a failed turn’s needs-input badge goes', () => {
+  it('reads a bot that waits on you, so a failed turn’s amber dot goes', () => {
     api.waiting = true;
     renderHook(() => useReadBotOnOpen({ id: 'b1', unread: false, lastActivityAt: at(1_000) }));
     expect(api.acknowledge).toHaveBeenCalledWith('b1');

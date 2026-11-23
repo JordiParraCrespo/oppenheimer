@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 /**
  * The open chat is read, as an open session's report is: while it is drawn
  * and the tab is in front, a bot with a message the person has not read (the
- * sidebar's green unread badge) or that waits on them (a failed turn's needs-input badge) is
+ * sidebar's blue dot) or that waits on them (a failed turn's amber dot) is
  * acknowledged, at once or when the reader comes back to the tab, on every
  * device. One try per bot and last message; coming back to the tab tries a
  * failed read again, so an API that is down is not asked in a loop.

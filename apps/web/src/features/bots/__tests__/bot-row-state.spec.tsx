@@ -6,9 +6,9 @@ import { useBotUnread, useClearBotUnreadOnOpen } from '../hooks/use-bot-unread';
 
 /**
  * A bot's sidebar row reads as a session's: one state, first match wins.
- * Waiting on you (a card pending, a failed turn unread) is the needs-input badge and
+ * Waiting on you (a card pending, a failed turn unread) is the amber dot and
  * hides the shimmer; working shimmers the name; a reply you have not read, or
- * the reader's own unread mark, is the green unread badge, which no working bot shows.
+ * the reader's own unread mark, is the blue dot, which no working bot shows.
  * The mark is kept on this device and opening the chat takes it off.
  */
 
@@ -57,22 +57,22 @@ function bot(unread: boolean): BotEntity {
 
 const state = (unread: boolean) => {
   const { result } = renderHook(() => useBotRowItem(bot(unread)));
-  const { needsInput, working, unread: badge } = result.current;
-  return { needsInput, working, unread: badge };
+  const { needsInput, working, unread: blue } = result.current;
+  return { needsInput, working, unread: blue };
 };
 
 describe('a bot row’s state', () => {
-  it('shows a reply you have not read as the green unread badge, and nothing once read', () => {
+  it('shows a reply you have not read as the blue dot, and nothing once read', () => {
     expect(state(true)).toEqual({ needsInput: false, working: false, unread: true });
     expect(state(false)).toEqual({ needsInput: false, working: false, unread: false });
   });
 
-  it('shimmers while working and holds the green unread badge until the bot stops', () => {
+  it('shimmers while working and holds the blue dot until the bot stops', () => {
     activity.working = true;
     expect(state(true)).toEqual({ needsInput: false, working: true, unread: false });
   });
 
-  it('shows waiting on you as the needs-input badge alone, over working and unread', () => {
+  it('shows waiting on you as the amber dot alone, over working and unread', () => {
     activity.working = true;
     activity.waiting = true;
     expect(state(true)).toEqual({ needsInput: true, working: false, unread: false });
