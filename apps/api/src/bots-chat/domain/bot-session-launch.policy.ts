@@ -159,6 +159,16 @@ export function planBotSessionLaunch(
       };
     }
   }
+  // A bot always hands the session a task; an agent that takes none at launch
+  // (Muse) would open without it while the bot waits on it. The blank
+  // terminal is a shell the bot types into, not an agent it briefs.
+  if (definition.command !== '' && !definition.launch.prompt) {
+    return {
+      refusal: promptText('tools/sessions.launch-no-task', {
+        label: definition.label,
+      }),
+    };
+  }
   if (input.permission !== undefined && !definition.launch.permission) {
     return {
       refusal: promptText('tools/sessions.launch-no-approvals', {

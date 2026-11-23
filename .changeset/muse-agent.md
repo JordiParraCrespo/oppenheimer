@@ -15,5 +15,7 @@ response carries no checksum, and the launcher fetches the native binary
 against its release manifest's SHA-256 and keeps it current itself.
 
 Muse is off in Settings → Agents until switched on, terminal only, and takes
-no task on the command line: the person types the first one, a restarted
-session opens a fresh Muse, and automations do not offer it.
+no task on the command line: New session starts it without one, as it does
+the blank terminal, and the person types the first task in its terminal; a
+restarted session opens a fresh Muse; automations do not offer it, and a bot
+asked to start one is told to pick another agent.

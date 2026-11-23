@@ -99,7 +99,9 @@ function museLauncher(platform: ReleasePlatform): string {
     'verify "$tmp/muse" "$checksum"',
     'mkdir -p "$HOME/.local/bin"',
     'install -m 0755 "$tmp/muse" "$HOME/.local/bin/muse"',
-    'MUSE_LAUNCHER_INSTALL=1 "$HOME/.local/bin/muse" </dev/null',
+    // A launcher left without its binary would read as installed to the
+    // next probe, and no retry would fetch the binary.
+    'MUSE_LAUNCHER_INSTALL=1 "$HOME/.local/bin/muse" </dev/null || { rm -f "$HOME/.local/bin/muse"; exit 1; }',
   ].join('\n');
 }
 

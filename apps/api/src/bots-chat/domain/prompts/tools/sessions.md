@@ -20,6 +20,10 @@ You may approve its permissions and answer its questions yourself, with care: yo
 
 {{which}} has no effort "{{effort}}". Its levels, faster to smarter: {{levels}}.
 
+<!-- fragment: launch-no-task -->
+
+{{label}} takes no task when it starts, so a session you start on it would never get yours. Pick another agent.
+
 <!-- fragment: launch-no-approvals -->
 
 {{label}} has no approvals to set. Leave permission out.

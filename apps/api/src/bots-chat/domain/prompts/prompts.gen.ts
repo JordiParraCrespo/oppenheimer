@@ -618,6 +618,7 @@ export type PromptId =
   | "tools/sessions.launch-unknown-model"
   | "tools/sessions.launch-no-effort"
   | "tools/sessions.launch-unknown-effort"
+  | "tools/sessions.launch-no-task"
   | "tools/sessions.launch-no-approvals"
   | "tools/sessions.close-not-a-bots-session"
   | "tools/sessions.read-budget-spent"
@@ -1328,6 +1329,7 @@ export interface PromptSlots {
   "tools/sessions.launch-unknown-model": { label: string; model: string; modelChoices: string };
   "tools/sessions.launch-no-effort": { which: string };
   "tools/sessions.launch-unknown-effort": { which: string; effort: string; levels: string };
+  "tools/sessions.launch-no-task": { label: string };
   "tools/sessions.launch-no-approvals": { label: string };
   "tools/sessions.close-not-a-bots-session": { id: string; article: string; origin: string };
   "tools/sessions.read-budget-spent": { sessionReadCharsPerTurn: string };
@@ -2155,6 +2157,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "tools/sessions.launch-unknown-model": "{{label}} has no model \"{{model}}\". Its models: {{modelChoices}}. Ask the person which one if none is what they meant.",
   "tools/sessions.launch-no-effort": "{{which}} takes no effort level. Leave effort out.",
   "tools/sessions.launch-unknown-effort": "{{which}} has no effort \"{{effort}}\". Its levels, faster to smarter: {{levels}}.",
+  "tools/sessions.launch-no-task": "{{label}} takes no task when it starts, so a session you start on it would never get yours. Pick another agent.",
   "tools/sessions.launch-no-approvals": "{{label}} has no approvals to set. Leave permission out.",
   "tools/sessions.close-not-a-bots-session": "Session {{id}} was not started by a bot (it is {{article}} {{origin}} session), so you cannot close it. Tell the person; they can close it from the console.",
   "tools/sessions.read-budget-spent": "Refused: this turn has already read about {{sessionReadCharsPerTurn}} characters of your sessions' logs and conversations, the per-turn limit; reading more would overflow your own context and lose the turn. Stop reading and answer from what you have. If you must look further, do it in a new turn, or read a narrower slice: a smaller limit, a cursor or after_seq to read on from where you were, or search_sessions to go straight to the one session that matters.",
