@@ -67,9 +67,10 @@ posts were wrong or stale more than once. Write down, with the version:
 
 ## 2. The catalog entry
 
-`packages/shared/src/agents/`. Small agents sit in `catalog.ts`; an agent with
-a module of its own (`antigravity.ts`, `fx.ts`, `zcode.ts`, `pi-family.ts`) is
-composed into `CODING_AGENTS`. Every field's doc comment in
+`packages/shared/src/agents/`. Claude Code, Codex, OpenCode and Grok sit in
+`catalog.ts`; every later agent has a module of its own (`pi-family.ts`,
+`antigravity.ts`, `fx.ts`, `zcode.ts`, `hermes.ts`, `muse.ts`) that
+`CODING_AGENTS` composes. Give a new one its module. Every field's doc comment in
 `CodingAgentDefinition` and `CodingAgentLaunch` is the contract; read them.
 
 - Add the id to `CODING_AGENT_IDS` (before `shell`) and the entry to
@@ -79,11 +80,16 @@ composed into `CODING_AGENTS`. Every field's doc comment in
   every agent**: a model another agent already lists reuses that label
   (`a4dc02789`). A gateway id may need its provider pinned in `launch.model`
   (fx's `--provider gateway`).
+- `effort`: a model family whose levels several agents offer keeps them once
+  in `effort-levels.ts` (Antigravity's `GEMINI_4_LEVELS`).
 - `launch.permission` / `effort` / `prompt` / `conversation`: as read in step 1.
   No first task means no `prompt`; then New session lets the task be empty and
   a bot's `start_session`, `runner sessions run` and Plan's Start session
   (`apps/web/src/features/tasks/lib/agent-options.ts`, `takesTask`) leave the
-  agent out or refuse it, all derived from the catalog. A new place that
+  agent out or refuse it, all derived from the catalog, and so does
+  automations' choice of agent (`automation-agent.policy.ts` in the API,
+  `automation-draft.ts` in the console; they also need permission and models).
+  Their comments name the agents left out: add the new one. A new place that
   starts a session with a task asks `takesTask` too, or the task moves to In
   progress while the agent sits idle (`ba75005b3`). Only an agent whose task is a note for the person
   (the blank terminal) says `taskIsNote`.
@@ -108,16 +114,24 @@ composed into `CODING_AGENTS`. Every field's doc comment in
   `launch_catalog.gen.go`, `host_tools.gen.go`, `agent_update.gen.go` and
   `protocol-schema/protocol.schema.json`. The link only grows, and a new enum
   value is allowed: an old runner never probes the new binary, and the API
-  refuses an agent the host's tool inventory lacks (`SESSIONS_011`).
+  refuses an agent whose command has no entry at all in the host's tool
+  inventory, which is what an old runner sends (`SESSIONS_011`). Whether the
+  agent is installed is not checked there.
+- **A field the catalog does not have yet** (as `clear` and `quit` were) is
+  three edits, not one: the field and its doc comment in `catalog.ts`, its line
+  in `scripts/emit-agent-catalog.cjs`, and the Go that reads it
+  (`internal/sessions/domain/input.go` or `launch.go`), with a test in the
+  runner. Emit it only for agents that set it, so the other rows stay as they
+  are.
 
 ## 3. Typing into it
 
 Three paths type a message into an agent: the console's chat composer
 (`SessionChat.send`), the API's prompt typer (`promptTyping`, for bots, wakes
 and `opp prompt`), and the runner's `Children.Tell` (child sessions and their
-reports to the parent). All three read the catalog's `input`, and its `clear`
-only through `clearOf(agent)`; never write an agent's keys or timing into one
-of them.
+reports to the parent). All three read the catalog's `input`: the TypeScript
+two through `clearOf(agent)`, the runner through the generated table
+(`Agent.Input()`). Never write an agent's keys or timing into one of them.
 
 - Find out how the TUI empties its prompt (ZCode: Ctrl+U; never Ctrl+C, which
   counts towards quitting), and whether **anything puts text in it the person
@@ -138,9 +152,13 @@ of them.
   `agentCatalogIDs` row (and the comment listing the agents).
 - `internal/host/domain/facts.go`: the `Tool` constant (the binary's name) and
   `ProbedTools`.
-- `cmd/runner/main.go`: the agent in `sessions new --agent`'s help, and in
-  `sessions run --agent`'s only when the agent takes a task.
-- **The screen manifest**, `internal/sessions/adapters/manifest/manifests/<agent>.json`:
+- `cmd/runner/main.go`: the agent in `sessions new --agent`'s help; in
+  `sessions run --agent`'s only when it takes a task (`muse` is listed there
+  today by mistake, and `DropsTask` refuses it at run time: do not copy it);
+  in `runner agents install <name>`'s only when the runner installs it.
+- **The screen manifest**, `internal/sessions/adapters/manifest/manifests/<Agent>.json`,
+  named by the runner's `Agent` value, not the catalog id (`claude.json` for
+  `claude-code`):
   - Rules come from strings in the CLI's source or seen live, each with a
     `note` saying where and on which version; `notes` says what is not yet
     watched.
@@ -155,12 +173,17 @@ of them.
     against what `tmux capture-pane -p` shows, not against bytes.
 - Add the agent to `TestBundledManifestsLoad`'s list, a launch test in
   `launch_test.go` for its argv (a model or a task it does not take adds
-  nothing; Ask is sent; a restart sends the right resume), and the updater
-  and install tests' lists when it has those.
-- `scripts/runner/install.sh`: the binary in `KNOWN_AGENTS` and its usage
-  line, and **an alias when the agent id is not the binary's name**
+  nothing; Ask is sent; a restart sends the right resume), and, when the
+  runner installs it, `TestInstallScriptsByKindAndPlatform`
+  (`internal/host/domain/install_test.go`) and
+  `TestOnlyUnattendedAgentUpdatersAreRun` (`agents_test.go`), where an agent
+  that updates itself (Muse) goes in with `false`.
+- Only when the runner installs it: `scripts/runner/install.sh`, the binary in
+  `KNOWN_AGENTS` and its usage line, and **an alias when the agent id is not the binary's name**
   (`antigravity` → `agy`); `apps/api/src/hosts/infrastructure/runner-release.config.ts`'s
-  Add host prompt lists the same names. A missed alias stopped a pairing
+  Add host prompt lists the same names, and so does the runner README's
+  `runner agents install` row. An agent with no `install` (ZCode, Hermes) is in
+  none of them. A missed alias stopped a pairing
   (`79ace7978`).
 
 ## 5. The chat view
@@ -176,6 +199,14 @@ console changes. Pick the source by where the agent keeps it:
 | a database in OpenCode's shapes | an `openCodeStore` over the file, read-only | `zcode.go` |
 | a database of its own | a store over the file, read-only | `hermes.go` |
 
+- **Wire the reader in**, or it never runs:
+  - an `Options` field for where the store is
+    (`transcript.go`, as `ZCodeDatabase`, `HermesState`) and its source on
+    `Reader`;
+  - the path, from `internal/cli/app.go` (`agentHomeFile(paths, "HERMES_HOME",
+    ".hermes", "state.db")`, honouring the agent's home variable);
+  - a file source: its `chats[...]` entry in `transcript.go`. A store: a
+    branch for the agent in `follow.go` (live) and `page.go` (older pages).
 - **Find the session's own conversation**: in its directory, touched since the
   session launched, never another session's in the same folder (OpenCode,
   `075bf1e58`), never an internal thread the CLI writes beside it (Codex's
@@ -194,8 +225,9 @@ console changes. Pick the source by where the agent keeps it:
   chat shows them twice.
 - **Open the agent's files read-only** and never change them. A database is
   opened `mode=ro`; one that does not exist yet is "nothing said yet", not a
-  failure. A third-party module the runner confines (`modernc.org/sqlite`)
-  needs its new owner in `internal/arch`'s `confined` table and in
+  failure. `modernc.org/sqlite` is confined: `sessions/adapters/transcript`
+  already owns it, so a reader there needs nothing; a reader in any other
+  package needs its own row in `internal/arch`'s `confined` table and in
   `ARCHITECTURE.md`.
 - **Secrets stay off argv**: a password for the agent's API goes in the
   session's tmux environment, not on the command line every account can read
@@ -212,8 +244,8 @@ console changes. Pick the source by where the agent keeps it:
 - `packages/frontend/design-system/web/src/components/agent-mark.tsx`: the
   agent's mark from its published brand asset (or a mark it shares, as ZCode
   wears Z.ai's), its line in the doc comment, and its source in
-  `packages/frontend/design-system/AGENTS.md`. With none, it draws the bot
-  glyph.
+  `packages/frontend/design-system/AGENTS.md` (that list stops at fx today;
+  add the new one anyway). With none, it draws the bot glyph.
 - `apps/web/src/features/sessions/lib/agent-choices.ts`: a new agent is off in
   New session until switched on in Settings → Agents; name it in the comment
   above `OFFERED_BY_DEFAULT`. Settings → Agents lists every catalog agent on
@@ -255,6 +287,13 @@ the flags, the screen strings and the chat. Do both.
    and a message from the chat after the agent recalled or kept text in its
    prompt.
 5. Delete the throwaway spec. Screenshots go to the user and the pull request.
+
+What stays in the repository is a **stand-in**: a script in `e2e/fleet/<binary>`
+that draws the agent's screen and writes its conversation the way the real one
+does, its `COPY` in `e2e/fleet/Dockerfile` and its name in `SHIMS`
+(`e2e/support/fleet-local.ts`), and a fleet spec for what the agent adds: a
+chat view (`e2e/tests/fleet/hermes-chat.spec.ts`), or the launch and screen
+states (`agents.spec.ts`, with Grok's stand-in).
 
 Then the fresh verifier of `steward` and `ship` gets the same recipe in its
 brief, so it can run the real CLI too.
