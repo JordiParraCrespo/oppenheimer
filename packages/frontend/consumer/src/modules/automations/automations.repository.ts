@@ -164,6 +164,7 @@ function toTriggerRequest(trigger: TriggerInput): TriggerRequest {
       ...(trigger.days ? { days: trigger.days } : {}),
       ...(trigger.dayOfMonth !== undefined ? { dayOfMonth: trigger.dayOfMonth } : {}),
       ...(trigger.date ? { date: trigger.date } : {}),
+      ...(trigger.expression ? { expression: trigger.expression } : {}),
     };
   }
   if (trigger.source === 'gmail') {

@@ -14,7 +14,7 @@ Triggers a routine can have:
 
 | Trigger | Examples |
 | --- | --- |
-| Schedule | Once on a date, hourly, daily, weekdays, weekly on chosen days, monthly, in your time zone |
+| Schedule | Once on a date, hourly, daily, weekdays, weekly on chosen days, monthly, in your time zone; or a custom schedule the bot writes from your words, for what those cannot say: several times a day, every 15 minutes during work hours, the last weekday of the month, the second Tuesday. A custom schedule fires at most every five minutes, and the Routines tab says it in words |
 | GitHub event | Pull request opened, pushed or merged, check failed, checks passed, review submitted, comment, issue opened, label added, mention, push, release (on repositories the GitHub App covers) |
 | Gmail | Mail received in a connected Gmail account, optionally matching a search |
 | Webhook | Anything posted to the routine's own URL: a deploy pipeline, Sentry, a form, a home-automation hub |

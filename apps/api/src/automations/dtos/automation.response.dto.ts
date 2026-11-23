@@ -108,6 +108,13 @@ export class ScheduleResponseDto {
   @ApiPropertyOptional({ description: 'Once: the local date, `YYYY-MM-DD`.' })
   date?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.',
+    example: '*/15 9-17 * * 1-5',
+  })
+  expression?: string;
+
   @ApiProperty({ description: 'The IANA zone the wall time is in.', example: 'Europe/Madrid' })
   timezone!: string;
 }

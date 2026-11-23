@@ -2422,7 +2422,7 @@ export type AutomationRevisionResponseDto = {
 };
 
 export type ScheduleResponseDto = {
-    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
     hour: number;
     minute: number;
     /**
@@ -2434,6 +2434,10 @@ export type ScheduleResponseDto = {
      * Once: the local date, `YYYY-MM-DD`.
      */
     date?: string;
+    /**
+     * Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.
+     */
+    expression?: string;
     /**
      * The IANA zone the wall time is in.
      */
@@ -2596,12 +2600,13 @@ export type CreateAutomationRequest = {
     name: string;
     triggers: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -2679,12 +2684,13 @@ export type UpdateAutomationRequest = {
     name?: string;
     triggers?: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';

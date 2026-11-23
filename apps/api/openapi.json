@@ -34386,7 +34386,8 @@
               "daily",
               "weekdays",
               "weekly",
-              "monthly"
+              "monthly",
+              "cron"
             ]
           },
           "hour": {
@@ -34414,6 +34415,11 @@
           "date": {
             "type": "string",
             "description": "Once: the local date, `YYYY-MM-DD`."
+          },
+          "expression": {
+            "type": "string",
+            "description": "Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.",
+            "example": "*/15 9-17 * * 1-5"
           },
           "timezone": {
             "type": "string",
@@ -34887,7 +34893,8 @@
                         "daily",
                         "weekdays",
                         "weekly",
-                        "monthly"
+                        "monthly",
+                        "cron"
                       ]
                     },
                     "hour": {
@@ -34926,6 +34933,11 @@
                     "date": {
                       "type": "string",
                       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "expression": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
                     },
                     "timezone": {
                       "type": "string",
@@ -35394,7 +35406,8 @@
                         "daily",
                         "weekdays",
                         "weekly",
-                        "monthly"
+                        "monthly",
+                        "cron"
                       ]
                     },
                     "hour": {
@@ -35433,6 +35446,11 @@
                     "date": {
                       "type": "string",
                       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "expression": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
                     },
                     "timezone": {
                       "type": "string",
