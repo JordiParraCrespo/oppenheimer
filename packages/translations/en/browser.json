@@ -1582,6 +1582,7 @@
       "title": "{{name}} running on this session's host",
       "connecting": "Connecting to the session's device…",
       "connectingDetail": "The screen appears once the host has started streaming it.",
+      "noPicture": "Waiting for the screen…",
       "unavailable": "No device for this session",
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",

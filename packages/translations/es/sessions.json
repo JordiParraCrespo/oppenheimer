@@ -803,6 +803,7 @@
     "title": "{{name}} ejecutándose en el host de esta sesión",
     "connecting": "Conectando con el dispositivo de la sesión…",
     "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+    "noPicture": "Esperando la pantalla…",
     "unavailable": "Esta sesión no tiene dispositivo",
     "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
     "offline": "El host está desconectado",
