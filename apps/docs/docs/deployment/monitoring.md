@@ -136,11 +136,21 @@ restart the API. Each line is labelled `app` (the file's name) and `level`
 `context` (the class that logged) are structured metadata, filterable
 without being labels.
 
+A request's line takes its level from how it ended: `info` for a success,
+`warn` for a refused request (4xx), `error` for a failure (5xx), so
+`level="warn"` is every refusal. When the API answered with a problem
+document, the line carries its `errorCode` (`AUTH_001`), which tells a
+missing route (no code) from a missing row. A successful `/health` or
+`/ready` is not logged, since probes call them every few seconds; a failing
+one is. Every line's text is `msg`. Nest's list of the modules and routes it
+loaded is logged at `debug`.
+
 ```bash
 pnpm logs                                              # the last 15 minutes
 pnpm logs '{app="api", level=~"error|fatal"}' --since 1h
 pnpm logs '{app="api"} | req_id="<x-correlation-id>"'  # one request, every line
 pnpm logs '{app="api"} | context="RunBotTurnCommandHandler"' --raw | jq .
+pnpm logs '{app="api", level="warn"} | json | errorCode="SESS_014"'
 ```
 
 `pnpm logs` (`scripts/monitoring/logs.mjs`) is how a person or an agent reads

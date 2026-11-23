@@ -85,6 +85,7 @@ export class StartCloudSessionCommandHandler
       name: input.name,
       idempotencyKey: command.idempotencyKey,
       origin: command.origin,
+      botId: command.botId,
     });
 
     const created = await this.sessions.createIfUnclaimed(session, [

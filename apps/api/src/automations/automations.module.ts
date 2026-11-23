@@ -20,6 +20,7 @@ import { AutomationPlanFactory } from './application/automation-plan.factory';
 import type { AutomationRunTargetPort } from './application/automation-run-target.port';
 import { AutomationRunTargetRegistry } from './application/automation-run-target.registry';
 import { BotRoutineResolver } from './application/bot-routine.resolver';
+import { BranchSessionBotsResolver } from './application/branch-session-bots.resolver';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
@@ -212,6 +213,7 @@ const queryHandlers: Provider[] = [
     BotRoutineResolver,
     RoutineWebhookResolver,
     AutomationLimitsResolver,
+    BranchSessionBotsResolver,
     OwnerScopeResolver,
     RunDispatchResolver,
     AutomationRunTargetRegistry,

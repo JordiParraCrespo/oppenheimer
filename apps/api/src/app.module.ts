@@ -137,6 +137,9 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         // the logger's threshold (info by default) swallows them.
         level: configService.get('database.logQueries') ? 'debug' : undefined,
         file: configService.get('app.logFile'),
+        // The container's healthcheck and the deploy gate call these every
+        // few seconds; a failing one is still logged.
+        quietPaths: ['/api/v1/health', '/api/v1/ready'],
       }),
     }),
     // The registry `/api/v1/metrics` renders; every module's metrics register
@@ -323,6 +326,6 @@ export class AppModule implements NestModule {
   // 401, 403 or 429 a guard throws carries the same id as the log line and
   // the `x-correlation-id` response header. See `RequestContextMiddleware`.
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestContextMiddleware).forRoutes('*');
+    consumer.apply(RequestContextMiddleware).forRoutes('{*splat}');
   }
 }

@@ -47,7 +47,7 @@ export interface BotTurnPlanLimitsRecord {
 @Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
 @Check(
   'CHK_bot_turn_origin',
-  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp', 'slack')`,
+  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram', 'whatsapp', 'slack', 'github')`,
 )
 @Check(
   'CHK_bot_turn_failure',

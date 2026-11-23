@@ -284,6 +284,10 @@
         "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
         "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
       },
+      "githubAsk": {
+        "mention": "Preguntado en GitHub, en un comentario de #{{number}} de {{repository}}",
+        "label": "Preguntado en GitHub, con una etiqueta en #{{number}} de {{repository}}"
+      },
       "task": {
         "created": "«{{title}}» se añadió a {{to}}",
         "status_changed": "«{{title}}» pasó de {{from}} a {{to}}",

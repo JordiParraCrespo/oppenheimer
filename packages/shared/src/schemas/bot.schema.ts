@@ -765,6 +765,36 @@ export interface BotPullRequestEvent {
 }
 
 /**
+ * How the owner asked a bot on GitHub: `@oppenheimer <bot>` in a comment or a
+ * review, or the label `bot:<bot>` on an issue or a pull request.
+ */
+export const BOT_GITHUB_ASK_VIAS = ['mention', 'label'] as const;
+export type BotGithubAskVia = (typeof BOT_GITHUB_ASK_VIAS)[number];
+
+/**
+ * The owner asked the bot on GitHub, and its last words are posted back there
+ * by Oppenheimer's GitHub App. Where it was asked, never what was written:
+ * the words reach the bot as outside data, in the turn's prompt alone.
+ */
+export interface BotGithubAskEvent {
+  kind: 'github_ask';
+  via: BotGithubAskVia;
+  /** The installation the answer is posted through, and the bot's tools read with. */
+  installationId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** Whether `number` is a pull request's; null when GitHub did not say. */
+  isPullRequest: boolean | null;
+  /** The comment, review or issue the ask was made on; null when GitHub sent none. */
+  url: string | null;
+  /** The GitHub login that asked: the owner's. */
+  actorLogin: string;
+}
+
+/**
  * What a bot following a project, or one milestone of it, can be woken by: the
  * changes Plan logs for a task. The bot names the ones it wants;
  * `BOT_TASK_WAKE_DEFAULT` is what it follows when it names none, where the task
@@ -989,9 +1019,10 @@ export interface BotGoal {
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, a goal it set itself, a loop's run, or a
- * message of yours to the bot on a channel: your Telegram bot, or your spare
- * WhatsApp number.
+ * session the bot is subscribed to, a goal it set itself, a loop's run, a
+ * message of yours to the bot on a channel (your Telegram bot, or your spare
+ * WhatsApp number), or your ask of it on GitHub: a mention in a comment, or a
+ * `bot:<name>` label.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -1004,6 +1035,7 @@ export const BOT_TURN_ORIGINS = [
   'telegram',
   'whatsapp',
   'slack',
+  'github',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
@@ -1159,6 +1191,7 @@ export type BotMessageEvent =
   | BotPeerReplyEvent
   | BotSessionEvent
   | BotPullRequestEvent
+  | BotGithubAskEvent
   | BotTaskEvent
   | BotGoalEvent
   | BotLoopEvent
@@ -1174,6 +1207,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_reply',
   'session',
   'pull_request',
+  'github_ask',
   'task',
   'goal',
   'loop',

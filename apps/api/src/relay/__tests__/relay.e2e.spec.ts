@@ -194,6 +194,7 @@ async function boot(): Promise<World> {
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
     ownedBy: vi.fn().mockResolvedValue([]),
+    ownerOf: vi.fn().mockResolvedValue(null),
   };
 
   const registry = new InProcessLinkRegistry(() => 0);

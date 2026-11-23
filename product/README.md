@@ -1898,3 +1898,9 @@ earlier note:
   fills in, its token and secret pasted and sealed, answering only its
   owner's Slack user in the thread asked in. A channel turn that ends on an
   approval card now says so with a link, on Telegram and WhatsApp too.
+- `25-bots.md` §4.4 made every GitHub write of a bot's in the owner's own
+  name (2026-10-20). On 2026-11-20 a bot became askable on GitHub (§3.3,
+  issue #952), and its answer there is posted by Oppenheimer's App instead:
+  it is told apart from what the owner wrote, and the App's comments wake
+  nothing (`loopGuard`), so an answer never asks a bot again. The guide's
+  "writing to a bot only in the console" stopped holding the same day.

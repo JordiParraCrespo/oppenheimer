@@ -631,5 +631,6 @@ export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useFileDrag } from './hooks/use-file-drag';
 export { useIsMobile } from './hooks/use-mobile';
 export { useNow } from './hooks/use-now';
+export { useRowMenu } from './hooks/use-row-menu';
 export { useStickToBottom } from './hooks/use-stick-to-bottom';
 export { cn } from './lib/utils';

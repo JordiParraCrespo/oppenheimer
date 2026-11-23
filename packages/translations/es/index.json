@@ -2049,6 +2049,10 @@
           "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
           "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
         },
+        "githubAsk": {
+          "mention": "Preguntado en GitHub, en un comentario de #{{number}} de {{repository}}",
+          "label": "Preguntado en GitHub, con una etiqueta en #{{number}} de {{repository}}"
+        },
         "task": {
           "created": "«{{title}}» se añadió a {{to}}",
           "status_changed": "«{{title}}» pasó de {{from}} a {{to}}",
@@ -2746,6 +2750,7 @@
       "paused": "Omitida: la automatización estaba en pausa",
       "deleted": "Omitida: la automatización se eliminó",
       "own_event": "Omitida: el evento era nuestro",
+      "own_session_event": "Omitida: la causó una sesión que inició este bot",
       "automation_rate_limited": "Omitida: límite por hora de esta automatización",
       "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
       "overlapping": "Omitida: otra ejecución seguía en curso",
