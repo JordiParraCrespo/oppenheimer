@@ -27,6 +27,17 @@ export function triggerFromInput(input: TriggerInputDto, position: number): Auto
       nextFireAt: null,
     };
   }
+  if (input.source === 'webhook') {
+    return {
+      id: randomUUID(),
+      position,
+      source: 'webhook',
+      eventType: 'webhook_received',
+      config: {},
+      timezone: null,
+      nextFireAt: null,
+    };
+  }
   if (input.source === 'gmail') {
     return {
       id: randomUUID(),

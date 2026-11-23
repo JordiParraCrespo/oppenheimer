@@ -1,5 +1,6 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -11,6 +12,10 @@ import {
 
 /** One firing of an automation. */
 @Entity('automation_run')
+@Check(
+  'CHK_automation_run_webhook_payload',
+  `"webhookPayload" IS NULL OR (jsonb_typeof("webhookPayload") = 'object' AND "inboundEventId" IS NULL)`,
+)
 @Unique('UQ_automation_run_automation_cause', ['automationId', 'causeKey'])
 @Index('IDX_automation_run_organization_created', ['organizationId', 'createdAt', 'id'])
 @Index('IDX_automation_run_automation_created', [
@@ -71,6 +76,10 @@ export class AutomationRunOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   inboundEventId!: string | null;
+
+  /** What was posted to a routine's webhook (`RunWebhookPayload`); never set with `inboundEventId`. */
+  @Column({ type: 'jsonb', nullable: true })
+  webhookPayload!: Record<string, unknown> | null;
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   scheduledFor!: Date | null;

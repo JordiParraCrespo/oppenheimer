@@ -107,6 +107,13 @@ describe('BotNoticeToolsFactory', () => {
     const quiet = new BotNoticeToolsFactory({} as BotNoticeRepositoryPort)
       .definitions()
       .find((definition) => definition.name === 'nothing_to_report');
-    expect(quiet?.notOn).toEqual(['message', 'approval', 'question', 'telegram', 'whatsapp']);
+    expect(quiet?.notOn).toEqual([
+      'message',
+      'approval',
+      'question',
+      'telegram',
+      'whatsapp',
+      'slack',
+    ]);
   });
 });
