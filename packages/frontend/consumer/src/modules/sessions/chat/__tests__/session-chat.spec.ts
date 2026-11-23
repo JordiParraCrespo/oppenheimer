@@ -1406,3 +1406,32 @@ describe('SessionChat.connect', () => {
     expect(chat.snapshot().interruptible).toBe(false);
   });
 });
+
+describe('the drafted-feedback card', () => {
+  const card = (note: string | null) => ({
+    kind: 'Bug report',
+    title: 'Wrote after view only',
+    details: [],
+    note,
+    actions: [{ action: 'send', key: '2' }],
+    promptHoldsText: false,
+    more: 0,
+  });
+
+  // What breaks this: a double click typing the key twice, the second
+  // answering the card's own "send without reviewing?" before anyone saw it.
+  it('types one key per state of the card, so a double click answers one question', () => {
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.setFeedback(card(null));
+    const send = { action: 'send', key: '2' };
+    expect(chat.pressFeedback(send)).toBe(true);
+    expect(chat.pressFeedback(send)).toBe(false);
+    expect(typed).toEqual(['2']);
+
+    chat.setFeedback(card('Send without reviewing (full draft + env, no transcript)?'));
+    expect(chat.pressFeedback(send)).toBe(true);
+    expect(typed).toEqual(['2', '2']);
+  });
+});

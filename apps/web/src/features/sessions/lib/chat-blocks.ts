@@ -52,8 +52,6 @@ export interface PaneReading {
 export interface ChatAttach {
   sessionId: string;
   files: FileHandOff;
-  /** Switches the pane to the terminal, for what only the terminal draws. */
-  openTerminal?: () => void;
 }
 
 /**

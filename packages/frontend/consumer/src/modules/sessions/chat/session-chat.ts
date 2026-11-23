@@ -327,6 +327,12 @@ const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
 /**
+ * How long a key pressed on the drafted-feedback card holds the next one
+ * while the card on screen has not moved: long enough for a double click,
+ * short enough that a key the card ignored does not leave it dead.
+ */
+const FEEDBACK_KEY_HOLD_MS = 1500;
+/**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI
  * answers itself) must not hold the rest of the queue.
@@ -561,6 +567,8 @@ class Transcript {
  * reads it and types through it without knowing there is a stream.
  */
 export class SessionChat {
+  /** When a key last went to the drafted-feedback card whose reading still stands. */
+  private feedbackPressedAt: number | null = null;
   private readonly transcript = new Transcript();
   /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
   private readonly subagents = new Subagents(sidechainTurns);
@@ -963,6 +971,7 @@ export class SessionChat {
    */
   setFeedback(feedback: ChatFeedbackDraft | null): void {
     if (sameFeedbackDraft(this.state.feedback, feedback)) return;
+    this.feedbackPressedAt = null;
     this.publish({ ...this.state, feedback });
   }
 
@@ -974,6 +983,14 @@ export class SessionChat {
   pressFeedback(action: ChatFeedbackAction): boolean {
     const type = this.type;
     if (!type) return false;
+    // The card asks twice on purpose (send, then send without reviewing;
+    // dismiss, then turn drafting off): a second press before the screen
+    // shows the card's next state would answer a question nobody saw.
+    const now = Date.now();
+    if (this.feedbackPressedAt !== null && now - this.feedbackPressedAt < FEEDBACK_KEY_HOLD_MS) {
+      return false;
+    }
+    this.feedbackPressedAt = now;
     type(action.key);
     return true;
   }

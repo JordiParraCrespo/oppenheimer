@@ -1443,7 +1443,8 @@ describe('feedback the agent drafted', () => {
         chat={chat}
         agent="claude-code"
         readOnly={false}
-        attach={{ sessionId: 's1', files: createFileHandOff(), openTerminal }}
+        attach={{ sessionId: 's1', files: createFileHandOff() }}
+        onOpenTerminal={openTerminal}
       />,
     );
     return { chat, typed, openTerminal };

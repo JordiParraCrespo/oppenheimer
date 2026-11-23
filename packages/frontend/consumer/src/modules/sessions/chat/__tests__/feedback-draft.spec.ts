@@ -64,6 +64,28 @@ describe('readFeedbackDraft', () => {
     ]);
   });
 
+  // What breaks this: a pane narrower than the line wraps it, its last row
+  // alone names no key, and the card leaves the chat just as it asks.
+  it('reads a line of keys the pane wrapped onto several rows', () => {
+    const confirm = readFeedbackDraft(
+      screen([
+        HEAD,
+        ...PREVIEW,
+        'Send without reviewing (full draft + env, no transcript)? 2 to send · Esc to',
+        'back',
+      ]),
+    );
+    expect(confirm?.note).toBe('Send without reviewing (full draft + env, no transcript)?');
+    expect(confirm?.actions.map((action) => action.action)).toEqual(['send', 'back']);
+    expect(confirm?.details).toHaveLength(2);
+
+    const keys = readFeedbackDraft(
+      screen([HEAD, ...PREVIEW, '1 to review · 2 to send ·', '0 to dismiss']),
+    );
+    expect(keys?.actions.map((action) => action.key)).toEqual(['1', '2', '0']);
+    expect(keys?.details).toHaveLength(2);
+  });
+
   it('reads where a send stands and how many drafts wait behind this one', () => {
     expect(readFeedbackDraft(screen([HEAD, 'Sending…']))?.note).toBe('Sending…');
     expect(readFeedbackDraft(screen([HEAD, '✓ Sent']))?.note).toBe('Sent');

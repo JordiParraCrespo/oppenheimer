@@ -121,6 +121,25 @@ function hintOf(line: string): Hint {
   return { note: note || null, actions, more, blocked };
 }
 
+/** How a line of the card's keys opens: a key, the send's question, its state, or why it holds no keys. */
+const HINT_OPENS =
+  /^(?:(?:\d|Esc|Escape|Enter) to |Send without reviewing|clear text to |Sending…|[✓✔✗✘×]\s)/iu;
+/** The most rows a wrapped line of keys takes. */
+const HINT_ROWS_MAX = 3;
+
+/**
+ * Where the line of keys starts among the card's rows under its head: the
+ * highest of its last rows that opens like one, so a line the pane wrapped
+ * is read whole; the last row when none does.
+ */
+function hintStart(lines: readonly string[]): number {
+  const last = lines.length - 1;
+  for (let at = Math.max(0, last - HINT_ROWS_MAX + 1); at < last; at++) {
+    if (HINT_OPENS.test(lines[at] ?? '')) return at;
+  }
+  return last;
+}
+
 /** A send under way, and one done: the two lines the card prints with no key. */
 const SEND_STATES: ReadonlySet<string> = new Set(['Sending…', 'Sent']);
 
@@ -191,10 +210,13 @@ function cardFrom(
       body.push(raw);
       continue;
     }
-    const hint = hintOf(clean(raw));
+    // A pane narrower than the line wraps it onto the rows above its last.
+    const lines = [...body, raw].map((line) => clean(line));
+    const start = hintStart(lines);
+    const hint = hintOf(lines.slice(start).join(' '));
     if (!cardSays(hint)) return null;
-    const details = body
-      .map((line) => clean(line))
+    const details = lines
+      .slice(0, start)
       .filter((line, index, all) => line !== '' || (index > 0 && index < all.length - 1));
     return {
       kind: kind.trim(),
