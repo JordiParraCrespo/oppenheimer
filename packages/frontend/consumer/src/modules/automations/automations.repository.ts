@@ -41,7 +41,13 @@ export function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger 
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
   }
-  if (dto.source === 'github' && dto.event !== 'schedule' && dto.event !== 'mail_received') {
+  if (dto.source === 'webhook') return { source: 'webhook', id: dto.id, event: 'webhook_received' };
+  if (
+    dto.source === 'github' &&
+    dto.event !== 'schedule' &&
+    dto.event !== 'mail_received' &&
+    dto.event !== 'webhook_received'
+  ) {
     return {
       source: 'github',
       id: dto.id,
@@ -158,6 +164,7 @@ function toTriggerRequest(trigger: TriggerInput): TriggerRequest {
       ...(trigger.days ? { days: trigger.days } : {}),
       ...(trigger.dayOfMonth !== undefined ? { dayOfMonth: trigger.dayOfMonth } : {}),
       ...(trigger.date ? { date: trigger.date } : {}),
+      ...(trigger.expression ? { expression: trigger.expression } : {}),
     };
   }
   if (trigger.source === 'gmail') {
@@ -168,6 +175,7 @@ function toTriggerRequest(trigger: TriggerInput): TriggerRequest {
       query: trigger.query,
     };
   }
+  if (trigger.source === 'webhook') return { source: 'webhook', event: trigger.event };
   return {
     source: 'github',
     event: trigger.event,

@@ -22,6 +22,8 @@ import { AutomationSettingsOrmEntity } from '../database/automation-settings.orm
 import { AutomationSettingsRepository } from '../database/automation-settings.repository';
 import { AutomationTriggerOrmEntity } from '../database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from '../database/automation-webhook.orm-entity';
+import { AutomationWebhookRepository } from '../database/automation-webhook.repository';
 import { AutomationEntity, type RevisionInput } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
 import { AutomationRunEntity } from '../domain/automation-run.entity';
@@ -88,6 +90,7 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         AutomationTriggerSubjectOrmEntity,
         AutomationRunOrmEntity,
         AutomationSettingsOrmEntity,
+        AutomationWebhookOrmEntity,
       ],
       synchronize: false,
     });
@@ -541,6 +544,45 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await automations.insert(routine);
       await dataSource.query(`DELETE FROM bot WHERE id = $1`, [botId]);
       expect((await automations.findOneByIdForSystem(routine.id)).isNone()).toBe(true);
+    });
+
+    it('drops its webhook URL in the same save that drops its webhook trigger, and keeps it otherwise', async () => {
+      const botId = await insertBot();
+      const webhook = triggerFromInput({ source: 'webhook', event: 'webhook_received' }, 0);
+      const routine = AutomationEntity.createRoutine({
+        organizationId,
+        ownerUserId: userId,
+        botId,
+        name: 'Deploy watch',
+        prompt: 'Say whether it failed.',
+        triggers: [webhook],
+        active: true,
+        credentialScopes: null,
+        now: new Date(),
+      });
+      await automations.insert(routine);
+      const webhooks = new AutomationWebhookRepository(
+        dataSource.getRepository(AutomationWebhookOrmEntity),
+      );
+      await webhooks.issue({
+        organizationId,
+        automationId: routine.id,
+        tokenHash: 'a'.repeat(64),
+        tokenPrefix: 'owh_aaaaaa',
+        signingSecretSealed: null,
+      });
+      const views = () => webhooks.findViews(organizationId, [routine.id]);
+
+      // An edit that keeps the webhook trigger (a new id, as every edit gives) keeps the URL.
+      const kept = (await automations.findOneByIdForSystem(routine.id)).unwrap();
+      kept.change({ triggers: [webhook, hourly(5)] }, new Date());
+      expect(await automations.save(kept, kept.version)).toBe('saved');
+      expect((await views()).has(routine.id)).toBe(true);
+
+      const dropped = (await automations.findOneByIdForSystem(routine.id)).unwrap();
+      dropped.change({ triggers: [hourly(5)] }, new Date());
+      expect(await automations.save(dropped, dropped.version)).toBe('saved');
+      expect((await views()).has(routine.id)).toBe(false);
     });
 
     it('takes the scopes of the credential behind an edit, and keeps them through a pause', async () => {

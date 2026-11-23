@@ -120,14 +120,14 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
     hostId: revision.hostId,
     agent: revision.agent,
     model: revision.model,
-    // A mail trigger belongs to a bot's routine, which this editor never opens.
+    // A mail or webhook trigger belongs to a bot's routine, which this editor never opens.
     triggers: automation.triggers.flatMap((trigger): TriggerCard[] => {
       const repositoryCount = revision.repositories.length;
       if (trigger.source === 'schedule') {
         const { id: _id, nextFireAt: _next, ...rule } = trigger;
         return [{ ...rule, key: nextKey() }];
       }
-      if (trigger.source === 'gmail') return [];
+      if (trigger.source === 'gmail' || trigger.source === 'webhook') return [];
       return [
         {
           source: 'github',
