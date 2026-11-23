@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2308,7 +2308,7 @@ export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx';
     prompt?: string;
 };
 
@@ -2600,7 +2600,7 @@ export type CreateAutomationRequest = {
         query?: string | null;
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2680,7 +2680,7 @@ export type UpdateAutomationRequest = {
         query?: string | null;
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2947,7 +2947,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -10258,7 +10258,7 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell';
         /**
          * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
          */
