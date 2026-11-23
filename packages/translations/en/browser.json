@@ -3320,7 +3320,7 @@
       "noRepository": "No repository",
       "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
-      "noRepositories": "This project has no repositories. Add one in its settings.",
+      "noRepositories": "No repositories. Give the GitHub app access to one.",
       "where": "Where it runs",
       "whereSearch": "Search places",
       "noPlaces": "Nowhere to run it.",

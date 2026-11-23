@@ -2,23 +2,39 @@ import { Callout, DialogDescription, FieldDescription } from '@oppenheimer/desig
 import { shortName } from '@oppenheimer/frontend-consumer';
 import {
   useCloudAgentStatus,
+  useInstallationRepositoriesFor,
+  useInstallations,
+  useRefreshInstallations,
+  useStartInstallation,
   useStartTaskSession,
   useSuspenseStartSession,
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  notifySuccess,
+  RelativeTime,
+  useManageRepositoryAccess,
+} from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StartSessionForm } from '../forms/start-session-form';
-import { placeOptions, startDefaults, toStartSession } from '../lib/start-session';
+import {
+  placeOptions,
+  startDefaults,
+  startRepositories,
+  toStartSession,
+} from '../lib/start-session';
 
 /**
  * Start session's form, in `StartSessionDialog`'s `QueryState.Data`: it reads
  * the tasks, the projects and the hosts with their presence under Suspense,
  * side by side, and finds the task it is given and its project. Whether
  * the reader has a Cursor key is read beside them, without holding the form:
- * until it answers, Cursor is offered disabled. A task
+ * until it answers, Cursor is offered disabled. The repositories the
+ * workspace's GitHub installations reach are read the same way: the project's
+ * are offered at once, the rest join them as they load. A task
  * or project that is gone says so instead of the form. The idempotency key is
  * this form's, so a retried submit does not start two sessions. A refetch
  * that fails keeps the form and says so above it.
@@ -30,6 +46,11 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
   const { data: cloudStatus } = useCloudAgentStatus();
   const task = tasks.find((row) => row.id === taskId);
   const project = projects.find((row) => row.id === task?.projectId);
+  const installations = useInstallations();
+  const reachable = useInstallationRepositoriesFor(
+    (installations.data ?? []).map((installation) => installation.id),
+  );
+  const manageAccess = useManageRepositoryAccess(useStartInstallation(), useRefreshInstallations());
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const voice = useVoiceDictation(() => (project ? [project.name] : []));
   const launch = useStartTaskSession({
@@ -48,20 +69,28 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
       </>
     );
   const found = { task, project, hosts };
+  const repositories = startRepositories(project, reachable.repositories);
 
   return (
     <div className="flex flex-col gap-4">
       <DialogDescription>{t('tasks.start.for', { title: task.title })}</DialogDescription>
       <ErrorAlert error={error} fallback={t('tasks.start.loadFailed')} />
+      <ErrorAlert
+        error={manageAccess.error}
+        fallback={t('common.repositoryAccess.failed')}
+        onDismiss={manageAccess.dismiss}
+      />
       <StartSessionForm
         values={startDefaults(found.task, found.project, found.hosts)}
         voice={voice}
-        repositories={found.project.repositories.map((row) => ({
-          value: row.id,
+        repositories={repositories.map((row) => ({
+          value: row.key,
           label: shortName(row.fullName),
           description: `${row.fullName} · ${row.baseBranch}`,
           mono: true,
         }))}
+        repositoriesLoading={installations.isPending || reachable.isPending}
+        onManageRepositories={manageAccess.onManage}
         hosts={found.hosts.map((host) => ({
           value: host.id,
           label: host.name,
@@ -129,7 +158,7 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
         error={launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null}
         onCancel={onClose}
         onSubmit={(values) => {
-          const body = toStartSession(values, found.project);
+          const body = toStartSession(values, repositories);
           if (body)
             launch.mutate({
               id: found.task.id,

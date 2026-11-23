@@ -1,8 +1,13 @@
-import { ProjectEntity } from '@oppenheimer/frontend-consumer';
+import { ProjectEntity, RepositoryEntity } from '@oppenheimer/frontend-consumer';
 import { HOST_HOME } from '@oppenheimer/frontend-consumer/react';
 import { DEFAULT_SESSION_PERMISSION } from '@oppenheimer/shared/agents';
 import { describe, expect, it } from 'vitest';
-import { type StartSessionValues, startReadiness, toStartSession } from '../lib/start-session';
+import {
+  type StartSessionValues,
+  startReadiness,
+  startRepositories,
+  toStartSession,
+} from '../lib/start-session';
 
 /**
  * What Start session sends for each place: New session's body on a host, the
@@ -30,10 +35,12 @@ const project = new ProjectEntity(
   new Date(),
 );
 
+const repositories = startRepositories(project, []);
+
 function values(overrides: Partial<StartSessionValues> = {}): StartSessionValues {
   return {
     prompt: 'Fix the login',
-    repositoryId: 'r-1',
+    repository: 'i-1:101',
     place: 'host',
     hostId: 'h-1',
     agent: 'codex',
@@ -47,7 +54,7 @@ const checkout = { installationId: 'i-1', githubRepoId: 101, baseBranch: 'main' 
 describe('the body Start session sends', () => {
   it('starts the picked agent on the host in auto mode, never bypassing permissions', () => {
     expect(DEFAULT_SESSION_PERMISSION).toBe('auto');
-    expect(toStartSession(values(), project)).toEqual({
+    expect(toStartSession(values(), repositories)).toEqual({
       session: {
         hostId: 'h-1',
         agent: 'codex',
@@ -60,28 +67,28 @@ describe('the body Start session sends', () => {
   });
 
   it('starts Claude Code in its cloud from the host, with no permission level', () => {
-    const body = toStartSession(values({ place: 'claude-cloud' }), project);
+    const body = toStartSession(values({ place: 'claude-cloud' }), repositories);
     expect(body).toMatchObject({ session: { agent: 'claude-code', cloud: true, hostId: 'h-1' } });
     expect(body).not.toHaveProperty('session.launch.permission');
   });
 
   it('launches Cursor with no host, on the repository’s base branch', () => {
-    expect(toStartSession(values({ place: 'cursor', model: 'gpt-5' }), project)).toEqual({
+    expect(toStartSession(values({ place: 'cursor', model: 'gpt-5' }), repositories)).toEqual({
       cloud: { provider: 'cursor', checkout, prompt: 'Fix the login', model: 'gpt-5' },
     });
   });
 
   it('sends nothing to the cloud without a task, and a host session with none', () => {
-    expect(toStartSession(values({ place: 'cursor', prompt: ' ' }), project)).toBeNull();
-    expect(toStartSession(values({ place: 'claude-cloud', prompt: '' }), project)).toBeNull();
-    expect(toStartSession(values({ prompt: '' }), project)).toMatchObject({
+    expect(toStartSession(values({ place: 'cursor', prompt: ' ' }), repositories)).toBeNull();
+    expect(toStartSession(values({ place: 'claude-cloud', prompt: '' }), repositories)).toBeNull();
+    expect(toStartSession(values({ prompt: '' }), repositories)).toMatchObject({
       session: { prompt: undefined },
     });
   });
 
   it('opens a session with no repository in the host’s home, never in the cloud', () => {
-    const none = values({ repositoryId: null });
-    expect(toStartSession(none, project)).toEqual({
+    const none = values({ repository: null });
+    expect(toStartSession(none, repositories)).toEqual({
       session: {
         hostId: 'h-1',
         agent: 'codex',
@@ -90,8 +97,57 @@ describe('the body Start session sends', () => {
         prompt: 'Fix the login',
       },
     });
-    expect(toStartSession({ ...none, place: 'claude-cloud' }, project)).toBeNull();
-    expect(toStartSession({ ...none, place: 'cursor' }, project)).toBeNull();
+    expect(toStartSession({ ...none, place: 'claude-cloud' }, repositories)).toBeNull();
+    expect(toStartSession({ ...none, place: 'cursor' }, repositories)).toBeNull();
+  });
+});
+
+describe('the repositories Start session offers', () => {
+  const reachable = [
+    {
+      installationId: 'i-1',
+      repository: new RepositoryEntity(101, 'mobile', 'acme/mobile', 'develop', true, false, null),
+    },
+    {
+      installationId: 'i-1',
+      repository: new RepositoryEntity(202, 'web', 'acme/web', 'trunk', true, false, null),
+    },
+    {
+      installationId: 'i-2',
+      repository: new RepositoryEntity(303, 'api', 'beta/api', 'main', true, false, null),
+    },
+  ];
+
+  it('lists the project’s repositories first, then every other one the workspace reaches, once', () => {
+    expect(
+      startRepositories(project, reachable).map((row) => [row.key, row.baseBranch, row.inProject]),
+    ).toEqual([
+      ['i-1:101', 'main', true],
+      ['i-1:202', 'trunk', false],
+      ['i-2:303', 'main', false],
+    ]);
+  });
+
+  it('starts from a repository outside the project, on its default branch', () => {
+    const bare = new ProjectEntity(
+      'p-2',
+      'Bare',
+      'bare',
+      false,
+      null,
+      'codex',
+      [],
+      new Date(),
+      new Date(),
+    );
+    expect(
+      toStartSession(values({ repository: 'i-2:303' }), startRepositories(bare, reachable)),
+    ).toMatchObject({
+      session: {
+        checkouts: [{ installationId: 'i-2', githubRepoId: 303, baseBranch: 'main' }],
+        cwdGithubRepoId: 303,
+      },
+    });
   });
 });
 

@@ -1,4 +1,10 @@
-import type { HostEntity, ProjectEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
+import {
+  type HostEntity,
+  type ProjectEntity,
+  type RepositoryEntity,
+  repositoryKey,
+  type TaskEntity,
+} from '@oppenheimer/frontend-consumer';
 import { HOST_HOME, type StartTaskSessionVariables } from '@oppenheimer/frontend-consumer/react';
 import {
   CODING_AGENTS,
@@ -24,8 +30,8 @@ export type StartPlace = AutomationPlace;
 /** The Start session dialog's choices. */
 export interface StartSessionValues {
   prompt: string;
-  /** The project repository's row id; null starts on a host with none, in its home. */
-  repositoryId: string | null;
+  /** The picked repository's key (`repositoryKey`); null starts on a host with none, in its home. */
+  repository: string | null;
   place: StartPlace;
   /** The host it runs on or starts from; unread at a vendor. */
   hostId: string;
@@ -40,11 +46,59 @@ export type StartSessionBody =
   | Pick<Extract<StartTaskSessionVariables, { cloud: unknown }>, 'cloud'>;
 
 /**
- * The repository chip's value for "No repository" (`repositoryId: null`):
+ * The repository chip's value for "No repository" (`repository: null`):
  * on a host, a folder session in the host's home, as Open terminal starts.
  * A cloud starts from a repository.
  */
 export const NO_REPOSITORY = 'none';
+
+/**
+ * A repository the session can start from: the project's, on the base branch
+ * the project set, or any other the workspace's GitHub installations reach, on
+ * its default branch.
+ */
+export interface StartRepository {
+  /** `repositoryKey` of the pair, the chip's value. */
+  key: string;
+  installationId: string;
+  githubRepoId: number;
+  fullName: string;
+  baseBranch: string;
+  /** One of the project's repositories, listed first. */
+  inProject: boolean;
+}
+
+/**
+ * The repositories the chip offers: the project's first, in its order, then
+ * every other one the installations reach, by name. A project repository the
+ * installations also list is offered once, as the project's.
+ */
+export function startRepositories(
+  project: ProjectEntity,
+  reachable: readonly { repository: RepositoryEntity; installationId: string }[],
+): StartRepository[] {
+  const own: StartRepository[] = project.repositories.map((row) => ({
+    key: repositoryKey(row),
+    installationId: row.installationId,
+    githubRepoId: Number(row.githubRepoId),
+    fullName: row.fullName,
+    baseBranch: row.baseBranch,
+    inProject: true,
+  }));
+  const taken = new Set(own.map((row) => row.key));
+  const others = reachable
+    .map(({ repository, installationId }) => ({
+      key: repositoryKey({ installationId, githubRepoId: repository.githubRepoId }),
+      installationId,
+      githubRepoId: repository.githubRepoId,
+      fullName: repository.fullName,
+      baseBranch: repository.defaultBranch,
+      inProject: false,
+    }))
+    .filter((row) => !taken.has(row.key))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+  return [...own, ...others];
+}
 
 /** What holds the start: a cloud's missing task or repository, a host that must name its home, no hosts. */
 export type StartHold = 'task' | 'repository' | 'home' | 'host';
@@ -155,7 +209,7 @@ export function startDefaults(
   const agent = project?.defaultAgent ?? 'claude-code';
   return {
     prompt: [task.title, task.notes.trim()].filter(Boolean).join('\n\n'),
-    repositoryId: repository?.id ?? null,
+    repository: repository ? repositoryKey(repository) : null,
     place: 'host',
     hostId: host?.id ?? '',
     agent,
@@ -164,7 +218,8 @@ export function startDefaults(
 }
 
 /**
- * The body the choices make, from the one repository on its base branch:
+ * The body the choices make, from the one repository picked among
+ * `repositories` (`startRepositories`), on its base branch:
  * - on a host, the launch New session would send for this agent unpicked —
  *   the default permission level (`auto`) where the agent takes one, the
  *   CLI's own effort; with no repository, a folder session in the host's
@@ -177,17 +232,17 @@ export function startDefaults(
  */
 export function toStartSession(
   values: StartSessionValues,
-  project: ProjectEntity,
+  repositories: readonly StartRepository[],
 ): StartSessionBody | null {
-  const repository = project.repositories.find((row) => row.id === values.repositoryId);
-  if (values.repositoryId !== null && !repository) return null;
+  const repository = repositories.find((row) => row.key === values.repository);
+  if (values.repository !== null && !repository) return null;
   const prompt = values.prompt.trim() || undefined;
   const rule = AUTOMATION_PLACE_RULES[values.place];
   // A place whose host does not run the session (a cloud) starts on a task, from a repository.
   if (rule.host !== 'runs' && (!prompt || !repository)) return null;
   const checkout = repository && {
     installationId: repository.installationId,
-    githubRepoId: Number(repository.githubRepoId),
+    githubRepoId: repository.githubRepoId,
     baseBranch: repository.baseBranch,
   };
   if (isVendorPlace(values.place) && prompt && checkout) {

@@ -3357,7 +3357,7 @@
       "noRepository": "Sin repositorio",
       "noRepositoryDesc": "Se abre en la carpeta personal del host",
       "repositorySearch": "Buscar repositorios",
-      "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
+      "noRepositories": "No hay repositorios. Da acceso a uno a la app de GitHub.",
       "where": "Dónde se ejecuta",
       "whereSearch": "Buscar lugares",
       "noPlaces": "No hay dónde ejecutarla.",
