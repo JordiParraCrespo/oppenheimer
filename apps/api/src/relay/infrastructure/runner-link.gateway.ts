@@ -436,6 +436,8 @@ export class RunnerLinkGateway {
       case 'transcript.page':
       case 'host.exec.result':
       case 'terminal.screen':
+      case 'computer.screen':
+      case 'browser.page':
         // Only ever an answer to a request this process is waiting on; a late
         // one (past its timeout) has nobody left to read it.
         if (!this.replies.settle(link.hostId, message)) {
@@ -490,6 +492,8 @@ export class RunnerLinkGateway {
         return this.whatsapp.onState(link, message);
       case 'whatsapp.messages':
         return this.whatsapp.onMessages(link, message);
+      case 'whatsapp.chats':
+        return this.whatsapp.onChats(link, message);
       case 'telegram.state':
         return this.telegram.onState(link, message);
       case 'telegram.messages':

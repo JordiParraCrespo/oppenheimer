@@ -1,11 +1,12 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, type ICommand } from '@nestjs/cqrs';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
 import { ContinueBotGoalCommand } from '../commands/continue-bot-goal/continue-bot-goal.command';
 import { DeliverBotAnswerCommand } from '../commands/deliver-bot-answer/deliver-bot-answer.command';
 import { DeliverChannelReplyCommand } from '../commands/deliver-channel-reply/deliver-channel-reply.command';
+import { DeliverGithubAnswerCommand } from '../commands/deliver-github-answer/deliver-github-answer.command';
 import { FinishBotLoopRunCommand } from '../commands/finish-bot-loop-run/finish-bot-loop-run.command';
 import { RunBotLoopCommand } from '../commands/run-bot-loop/run-bot-loop.command';
 import { RunBotTurnCommand } from '../commands/run-bot-turn/run-bot-turn.command';
@@ -14,10 +15,25 @@ import {
   CONTINUE_BOT_GOAL_JOB,
   DELIVER_BOT_ANSWER_JOB,
   DELIVER_CHANNEL_REPLY_JOB,
+  DELIVER_GITHUB_ANSWER_JOB,
   DELIVER_TELEGRAM_REPLY_JOB,
   FINISH_BOT_LOOP_RUN_JOB,
   RUN_BOT_TURN_JOB,
 } from '../database/bot-turn.repository';
+
+/** The command each job about one turn runs, by its name; a new one is a row. */
+const TURN_JOBS: ReadonlyMap<string, (turnId: string) => ICommand> = new Map<
+  string,
+  (turnId: string) => ICommand
+>([
+  [RUN_BOT_TURN_JOB, (turnId) => new RunBotTurnCommand({ turnId })],
+  [DELIVER_BOT_ANSWER_JOB, (turnId) => new DeliverBotAnswerCommand({ turnId })],
+  [DELIVER_CHANNEL_REPLY_JOB, (turnId) => new DeliverChannelReplyCommand({ turnId })],
+  [DELIVER_TELEGRAM_REPLY_JOB, (turnId) => new DeliverChannelReplyCommand({ turnId })],
+  [DELIVER_GITHUB_ANSWER_JOB, (turnId) => new DeliverGithubAnswerCommand({ turnId })],
+  [CONTINUE_BOT_GOAL_JOB, (turnId) => new ContinueBotGoalCommand({ turnId })],
+  [FINISH_BOT_LOOP_RUN_JOB, (turnId) => new FinishBotLoopRunCommand({ turnId })],
+]);
 
 /** How many turns one API process runs at once, across every bot. */
 const TURNS_PER_PROCESS = 8;
@@ -28,7 +44,8 @@ const TURNS_PER_PROCESS = 8;
  * bot that asked (`DELIVER_BOT_ANSWER_JOB`), and one per channel turn
  * (Telegram, WhatsApp) that ended, which sends its answer to the chat
  * (`DELIVER_CHANNEL_REPLY_JOB`, or the Telegram slice's name for it, still
- * in flight for one release). A turn runs for as long as the model works, so the job is not
+ * in flight for one release), and one per ask on GitHub that ended, which
+ * posts its answer there (`DELIVER_GITHUB_ANSWER_JOB`). A turn runs for as long as the model works, so the job is not
  * retried on a failure: the turn records it, and a worker that died under one
  * leaves it running for the next pickup to fail. A turn of a bot with a goal
  * that ended owes one more, which decides whether the goal goes on
@@ -54,27 +71,9 @@ export class BotTurnsProcessor extends WorkerHost {
       );
       return;
     }
-    if (turnId && job.name === FINISH_BOT_LOOP_RUN_JOB) {
-      await this.commandBus.execute(new FinishBotLoopRunCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === RUN_BOT_TURN_JOB) {
-      await this.commandBus.execute(new RunBotTurnCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === DELIVER_BOT_ANSWER_JOB) {
-      await this.commandBus.execute(new DeliverBotAnswerCommand({ turnId }));
-      return;
-    }
-    if (
-      turnId &&
-      (job.name === DELIVER_CHANNEL_REPLY_JOB || job.name === DELIVER_TELEGRAM_REPLY_JOB)
-    ) {
-      await this.commandBus.execute(new DeliverChannelReplyCommand({ turnId }));
-      return;
-    }
-    if (turnId && job.name === CONTINUE_BOT_GOAL_JOB) {
-      await this.commandBus.execute(new ContinueBotGoalCommand({ turnId }));
+    const command = turnId ? TURN_JOBS.get(job.name)?.(turnId) : undefined;
+    if (command) {
+      await this.commandBus.execute(command);
       return;
     }
     this.logger.warn({ message: 'Unknown bot-turns job', jobName: job.name, jobId: job.id });

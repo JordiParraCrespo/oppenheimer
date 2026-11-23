@@ -48,6 +48,8 @@ Keys live in **Settings → Model providers**, one per provider for the workspac
 
 **Make default** picks the provider new bots start on. Without one, a bot uses the first provider that has a key, in the order Anthropic, ChatGPT, OpenAI, Grok, GLM. A bot whose provider has no key cannot answer until one is added.
 
+Groq and ElevenLabs keys serve voice only ([Voice](./voice.md)).
+
 ## How a bot works on code
 
 A bot answers what its own tools, web search and web fetch can answer. When the work needs a shell or a checkout (tests, a build, a fix) it starts a session: a coding agent on a host, in a known project's repository or a folder it was given, on the host you named, else the project's default, else its home host. Name a model, effort, permission level or base branch ("on Opus 5.5 at high effort, from develop") and it uses them; the rest is the CLI's default, at Approve for me. Full access is approved session by session. It follows that session, is woken when the agent needs input, finishes, fails or looks stuck, looks in every few minutes while the agent works, and reports what the session shows. When something fails, it looks for another way to the same end before it reports: if a session it started fails because of the host it picked (the agent there is not signed in or not installed), it starts the same task on another of your hosts that can run it, asking first under Approve for me; it never moves work off a host you named, and asks you instead. It follows a session it prompted or unblocked the same way, and any other it says it will come back to (`watch_session`), at a time it names if it said one.
@@ -79,4 +81,4 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 - A turn has no step or time limit: it runs until the bot answers. When it has read about 90,000 tokens it summarises what came before and carries on, and the chat shows a line where it did. It stops if the model sends nothing for 5 minutes while no tool runs, or if it keeps repeating calls that change nothing. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
-- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail, WhatsApp or Telegram.
+- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from mail.

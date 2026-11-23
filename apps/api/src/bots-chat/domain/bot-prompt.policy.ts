@@ -1,5 +1,6 @@
 import type { BotApprovalEventStage, BotMessageEvent, BotToolGroup } from '@oppenheimer/shared';
 import { approvalAsk } from './bot-approval.policy';
+import { githubAskPrompt } from './bot-github-ask.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { type PlainPromptId, promptText } from './bot-prompt-text.policy';
@@ -98,6 +99,10 @@ const SECTIONS: readonly PromptSection[] = [
     sessions ? workingOnCode(commands, terminals.size > 0) : null,
   ({ commands }) => (commands ? promptText('system/commands-on-a-host') : null),
   ({ commands, terminals }) => (terminals.size > 0 ? drivingATerminal(commands, terminals) : null),
+  ({ offered }) =>
+    offered.includes('use_computer') ? promptText('system/using-a-computer') : null,
+  ({ offered }) =>
+    offered.includes('use_browser') ? usingABrowser(offered.includes('use_computer')) : null,
   ({ offered }) => watchingMail(offered),
   ({ input }) => written(input.soul, (content) => promptText('system/documents.soul', { content })),
   // Its instructions, or, while it has none, how a new bot sets itself up.
@@ -387,7 +392,15 @@ function whatYouCanDo(
     }),
   ];
   if (lines.length === 0) lines.push(promptText('system/what-you-can-do.answer-only'));
-  const reachable = promptText(REACHABLE[`${commands}:${terminals}`]);
+  const reachable = [
+    promptText(REACHABLE[`${commands}:${terminals}`]),
+    ...(offersTool(tools, 'use_computer')
+      ? [promptText('system/what-you-can-do.and-a-screen')]
+      : []),
+    ...(offersTool(tools, 'use_browser')
+      ? [promptText('system/what-you-can-do.and-a-browser')]
+      : []),
+  ].join(' ');
   const refusal = promptText('system/what-you-can-do.plain-refusal');
   const closing = sessions
     ? [reachable, promptText('system/what-you-can-do.code-work-goes-to-sessions'), refusal]
@@ -408,6 +421,21 @@ const REACHABLE: Readonly<Record<`${boolean}:${boolean}`, PlainPromptId>> = {
   'false:true': 'system/what-you-can-do.nothing-else-but-terminals',
   'true:true': 'system/what-you-can-do.nothing-else-but-commands-and-terminals',
 };
+
+/** Whether the turn offers the tool `name`. */
+function offersTool(tools: readonly BotPromptTool[], name: string): boolean {
+  return tools.some((tool) => tool.name === name);
+}
+
+/**
+ * How a bot uses its browser. `computer` says it also has `use_computer`, so
+ * it is told which of the two a website goes to.
+ */
+function usingABrowser(computer: boolean): string {
+  return promptText('system/using-a-browser.body', {
+    besideAComputer: computer ? `\n- ${promptText('system/using-a-browser.not-the-computer')}` : '',
+  });
+}
 
 /** Which of the terminal tools the turn is offered; empty when none. */
 function offeredTerminalTools(tools: readonly BotPromptTool[]): ReadonlySet<string> {
@@ -550,6 +578,8 @@ function eventPrompt(event: BotMessageEvent, content: string): string {
       return sessionWakePrompt(event, content);
     case 'pull_request':
       return pullRequestWakePrompt(event, content);
+    case 'github_ask':
+      return githubAskPrompt(content);
     case 'task':
       return taskWakePrompt(event, content);
     case 'routine':

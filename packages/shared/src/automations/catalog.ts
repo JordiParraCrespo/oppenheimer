@@ -13,10 +13,12 @@
  */
 
 /**
- * Where a trigger comes from. `schedule` is ours; every other source is an
- * external system that delivers events through the inbound-events hub.
+ * Where a trigger comes from. `schedule` is ours; `webhook` is a routine's own
+ * URL, which any outside system posts to and which fires that routine alone,
+ * so it needs no hub; every other source is an external system that delivers
+ * events through the inbound-events hub.
  */
-export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail'] as const;
+export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail', 'webhook'] as const;
 export type TriggerSource = (typeof TRIGGER_SOURCES)[number];
 
 /**
@@ -47,7 +49,11 @@ export function isExternalTriggerSource(value: unknown): value is ExternalTrigge
 // Schedules
 // ---------------------------------------------------------------------------
 
-/** The six frequencies the editor offers, in the frames' order. */
+/**
+ * Every frequency a schedule can have. `cron` (2026-11-20) is a five-field
+ * expression for what the others cannot say; bots write it from plain words,
+ * and only a bot's routine holds one (the editor has no field for it).
+ */
 export const SCHEDULE_FREQUENCIES = [
   'once',
   'hourly',
@@ -55,8 +61,14 @@ export const SCHEDULE_FREQUENCIES = [
   'weekdays',
   'weekly',
   'monthly',
+  'cron',
 ] as const;
 export type ScheduleFrequency = (typeof SCHEDULE_FREQUENCIES)[number];
+
+/** The six frequencies the automations editor offers, in the frames' order. */
+export const EDITOR_SCHEDULE_FREQUENCIES = SCHEDULE_FREQUENCIES.filter(
+  (frequency): frequency is Exclude<ScheduleFrequency, 'cron'> => frequency !== 'cron',
+);
 
 export interface ScheduleFrequencyDefinition {
   readonly frequency: ScheduleFrequency;
@@ -71,6 +83,7 @@ export const SCHEDULE_FREQUENCY_CATALOG: readonly ScheduleFrequencyDefinition[] 
   { frequency: 'weekdays', label: 'Weekdays', description: 'Monday to Friday at a chosen time' },
   { frequency: 'weekly', label: 'Weekly', description: 'On the days you pick' },
   { frequency: 'monthly', label: 'Monthly', description: 'On one day of the month' },
+  { frequency: 'cron', label: 'Custom', description: 'On a cron expression' },
 ];
 
 /**
@@ -110,6 +123,31 @@ export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 /** What a watched Gmail account delivers: a message arrived. */
 export const GMAIL_EVENT_TYPES = ['mail_received'] as const;
 export type GmailEventType = (typeof GMAIL_EVENT_TYPES)[number];
+
+/** What a routine's webhook delivers: something posted to its URL. */
+export const WEBHOOK_EVENT_TYPES = ['webhook_received'] as const;
+export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
+
+/**
+ * The most a webhook's body may weigh, in bytes. Larger is refused (`413`)
+ * before anything is checked or stored.
+ */
+export const WEBHOOK_BODY_MAX_BYTES = 256 * 1024;
+
+/**
+ * How much of a webhook's body is kept with its run and reaches the bot, in
+ * characters: the rest is cut, and the run says so.
+ */
+export const WEBHOOK_BODY_KEPT_CHARS = 16 * 1024;
+
+/**
+ * How far a signed webhook's timestamp may be from the server's clock, in
+ * seconds, before it is refused as stale (a replay of an old request).
+ */
+export const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
+
+/** The header a signed webhook carries: `t=<unix seconds>,v1=<hex HMAC-SHA256>`. */
+export const WEBHOOK_SIGNATURE_HEADER = 'x-oppenheimer-signature';
 
 /** Every external event type any source defines. */
 export type ExternalEventType = GithubEventType | GmailEventType;
@@ -391,6 +429,11 @@ export const AUTOMATION_SKIP_REASONS = [
   'deleted',
   /** An event our own App caused (a run's push, its comment). */
   'own_event',
+  /**
+   * A routine's event on the branch of a session its own bot started: the
+   * session opened the pull request as the owner, so `own_event` cannot see it.
+   */
+  'own_session_event',
   /** The per-automation hourly cap. */
   'automation_rate_limited',
   /** The per-workspace hourly cap. */

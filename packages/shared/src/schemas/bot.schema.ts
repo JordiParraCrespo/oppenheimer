@@ -175,7 +175,7 @@ You are {name}. You are becoming someone, not a chatbot.
 - **Trustworthy.** Do what you are asked, fully. Never pretend a step finished when it did not. Ask before anything public or hard to undo that nobody asked for.
 
 ## Vibe
-Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant.
+Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant. On a phone you text like a person, not a help desk: short, natural, never repeating their words back.
 
 ## This file
 It is yours to evolve: as you learn who you are, update it with \`edit_soul\`, and tell the person when you do.
@@ -765,6 +765,36 @@ export interface BotPullRequestEvent {
 }
 
 /**
+ * How the owner asked a bot on GitHub: `@oppenheimer <bot>` in a comment or a
+ * review, or the label `bot:<bot>` on an issue or a pull request.
+ */
+export const BOT_GITHUB_ASK_VIAS = ['mention', 'label'] as const;
+export type BotGithubAskVia = (typeof BOT_GITHUB_ASK_VIAS)[number];
+
+/**
+ * The owner asked the bot on GitHub, and its last words are posted back there
+ * by Oppenheimer's GitHub App. Where it was asked, never what was written:
+ * the words reach the bot as outside data, in the turn's prompt alone.
+ */
+export interface BotGithubAskEvent {
+  kind: 'github_ask';
+  via: BotGithubAskVia;
+  /** The installation the answer is posted through, and the bot's tools read with. */
+  installationId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** Whether `number` is a pull request's; null when GitHub did not say. */
+  isPullRequest: boolean | null;
+  /** The comment, review or issue the ask was made on; null when GitHub sent none. */
+  url: string | null;
+  /** The GitHub login that asked: the owner's. */
+  actorLogin: string;
+}
+
+/**
  * What a bot following a project, or one milestone of it, can be woken by: the
  * changes Plan logs for a task. The bot names the ones it wants;
  * `BOT_TASK_WAKE_DEFAULT` is what it follows when it names none, where the task
@@ -989,9 +1019,10 @@ export interface BotGoal {
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, a goal it set itself, a loop's run, or a
- * message of yours to the bot on a channel: your Telegram bot, or your spare
- * WhatsApp number.
+ * session the bot is subscribed to, a goal it set itself, a loop's run, a
+ * message of yours to the bot on a channel (your Telegram bot, or your spare
+ * WhatsApp number), or your ask of it on GitHub: a mention in a comment, or a
+ * `bot:<name>` label.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -1003,12 +1034,14 @@ export const BOT_TURN_ORIGINS = [
   'loop',
   'telegram',
   'whatsapp',
+  'slack',
+  'github',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * The turns a person is waiting on: one they started by writing (in the
- * console, on Telegram or on WhatsApp), or by deciding a card. A routine's
+ * console, on Telegram, WhatsApp or Slack), or by deciding a card. A routine's
  * run, a wake and a goal's continuation run with nobody there, so a tool
  * that needs someone to answer is not offered on them.
  */
@@ -1018,6 +1051,7 @@ export const BOT_ATTENDED_ORIGINS = [
   'question',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**
@@ -1028,6 +1062,7 @@ export const BOT_ATTENDED_ORIGINS = [
 export const BOT_CHANNEL_ORIGINS = [
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 export type BotChannelOrigin = (typeof BOT_CHANNEL_ORIGINS)[number];
 
@@ -1156,6 +1191,7 @@ export type BotMessageEvent =
   | BotPeerReplyEvent
   | BotSessionEvent
   | BotPullRequestEvent
+  | BotGithubAskEvent
   | BotTaskEvent
   | BotGoalEvent
   | BotLoopEvent
@@ -1171,6 +1207,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_reply',
   'session',
   'pull_request',
+  'github_ask',
   'task',
   'goal',
   'loop',
@@ -1253,13 +1290,39 @@ export const findBotConversationSchema = z.object({
 });
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
+/** A routine's name and prompt, as long as the bot's own `update_routine` tool takes them. */
+export const BOT_ROUTINE_NAME_MAX = 200;
+export const BOT_ROUTINE_PROMPT_MAX = 8_000;
+
 /**
- * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch. The tab
- * changes whether a routine runs, never what it is: that is the chat's, through
- * the bot's own tool.
+ * The Routines tab's Edit dialog: the two fields a person types. When it runs
+ * (its triggers) is still the chat's, through the bot's own tool.
  */
-export const updateBotRoutineSchema = z.object({ enabled: z.boolean() });
+export const botRoutineTaskSchema = z.object({
+  name: z.string().trim().min(1).max(BOT_ROUTINE_NAME_MAX),
+  prompt: z.string().trim().min(1).max(BOT_ROUTINE_PROMPT_MAX),
+});
+export type BotRoutineTaskDto = z.infer<typeof botRoutineTaskSchema>;
+
+/**
+ * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch and its
+ * Edit dialog. Any of the three, at least one; what is absent stays as it is.
+ */
+export const updateBotRoutineSchema = botRoutineTaskSchema
+  .partial()
+  .extend({ enabled: z.boolean().optional() })
+  .refine(
+    (body) => body.enabled !== undefined || body.name !== undefined || body.prompt !== undefined,
+    { path: ['enabled'], params: { i18nKey: 'validation.required' } },
+  );
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
+
+/**
+ * A new URL for a routine's webhook, from its Routines tab: `signed` also
+ * issues a signing secret every request must then be signed with.
+ */
+export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().default(false) });
+export type IssueRoutineWebhookDto = z.infer<typeof issueRoutineWebhookSchema>;
 
 /**
  * A Needs input card: one call of an asking tool, waiting for the owner.
@@ -1612,3 +1675,27 @@ export const updatePersonAboutSchema = z.object({
   about: z.string().trim().max(PERSON_ABOUT_MAX),
 });
 export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
+
+/** The most UTF-16 code units a reaction holds: the longest family or flag sequence, with room. */
+export const BOT_REACTION_MAX = 32;
+
+/** One pictograph, with what joins and modifies it (skin tones, ZWJ sequences, flags, subdivision flags, keycaps). */
+const SINGLE_EMOJI =
+  /^(?:\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}️?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:‍\p{Extended_Pictographic}️?\p{Emoji_Modifier}?)*)$/u;
+
+/**
+ * Whether `text` is one emoji, as a reaction must be: a word, two emoji or
+ * an emoji with text around it is not.
+ */
+export function isReactionEmoji(text: string): boolean {
+  return text.length > 0 && text.length <= BOT_REACTION_MAX && SINGLE_EMOJI.test(text);
+}
+
+/**
+ * `PUT /bots/:id/messages/:messageId/reaction`: your reaction to a message
+ * of yours or of the bot's, one at a time; null takes it back.
+ */
+export const reactToBotMessageSchema = z.object({
+  emoji: z.string().refine(isReactionEmoji, { message: 'A reaction is one emoji' }).nullable(),
+});
+export type ReactToBotMessageDto = z.infer<typeof reactToBotMessageSchema>;

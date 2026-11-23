@@ -9,7 +9,7 @@ import {
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
-  type BotProvider,
+  botProvidersOf,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
@@ -36,6 +36,7 @@ import {
   SendBotPeerMessageCommand,
   type SendBotPeerMessageResult,
 } from '../commands/send-bot-peer-message/send-bot-peer-message.command';
+import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { BOT_PEER_MESSAGES_PER_TURN } from '../domain/bot-peer-message.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
@@ -101,6 +102,7 @@ export class BotPeerToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'ask_bot',
       scope: 'bots:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       description: promptText('tools/bots.ask-bot', {
         peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
       }),
@@ -243,7 +245,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           )
         : Promise.resolve([]),
     ]);
-    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const keyed = botProvidersOf(credentials.map((credential) => credential.provider));
     const plan = planBotCreation(input, creator, keyed, groups);
     if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
     return plan;
@@ -385,7 +387,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       );
     }
     const bots = ids.map((id) => byId.get(id) as BotEntity);
-    const keyed: BotProvider[] = credentials.map((credential) => credential.provider);
+    const keyed = botProvidersOf(credentials.map((credential) => credential.provider));
     const plan = planBotUpdate(input, caller, bots, keyed, groups);
     if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
     return plan;

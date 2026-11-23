@@ -19,6 +19,7 @@ import {
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
   type PersonMemoryResponseDto,
+  type RoutineWebhookResponseDto,
   type WorkspaceBotApprovalResponseDto,
   type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
@@ -27,6 +28,7 @@ import {
   BOT_APPROVAL_DECISIONS,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_PLAN_WATCH_SCOPES,
@@ -55,6 +57,7 @@ import {
   type MailPlan,
   mailPlanSchema,
 } from '@oppenheimer/shared/schemas/mail';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -65,10 +68,12 @@ import {
   BotGroupEntity,
   BotMemoryFactEntity,
   BotRoutineEntity,
+  type BotRoutineWebhook,
   BotSkillEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
   type CreateBotSkillInput,
+  type IssuedBotRoutineWebhook,
   ModelProviderEntity,
   PersonMemoryEntity,
   type SaveBotDocumentInput,
@@ -182,7 +187,17 @@ function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
     dto.triggers.flatMap((trigger) => triggerOf(trigger) ?? []),
     dto.lastRun ? { status: dto.lastRun.status, createdAt: new Date(dto.lastRun.createdAt) } : null,
     new Date(dto.updatedAt),
+    dto.webhook ? toRoutineWebhook(dto.webhook) : null,
   );
+}
+
+function toRoutineWebhook(dto: RoutineWebhookResponseDto): BotRoutineWebhook {
+  return {
+    tokenPrefix: dto.tokenPrefix,
+    signed: dto.signed,
+    issuedAt: new Date(dto.issuedAt),
+    lastReceivedAt: dto.lastReceivedAt ? new Date(dto.lastReceivedAt) : null,
+  };
 }
 
 function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
@@ -237,6 +252,8 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     new Date(dto.createdAt),
     dto.event ? toEvent(dto.event) : null,
     (dto.attachments ?? []).map(toAttachment),
+    dto.reaction ?? null,
+    dto.botReaction ?? null,
   );
 }
 
@@ -329,6 +346,22 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             repository: dto.repository,
             number: dto.number,
             event,
+          }
+        : null;
+    }
+    case 'github_ask': {
+      const via = BOT_GITHUB_ASK_VIAS.find((candidate) => candidate === dto.via);
+      return via
+        ? {
+            kind: 'github_ask',
+            via,
+            installationId: dto.installationId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            isPullRequest: dto.isPullRequest ?? null,
+            url: dto.url ?? null,
+            actorLogin: dto.actorLogin,
           }
         : null;
     }
@@ -763,6 +796,16 @@ export class BotsRepository {
     });
   }
 
+  /** Your reaction to a message of yours or the bot's: one emoji, or `null` to take it back. */
+  react(id: string, messageId: string, emoji: string | null): Promise<BotMessageEntity> {
+    return callApi(BotsErrors.REACT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.reactToBotMessage({ path: { id, messageId }, body: { emoji } }),
+      );
+      return toMessage(data);
+    });
+  }
+
   /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */
   openStream(id: string): BotStream {
     return new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
@@ -905,6 +948,20 @@ export class BotsRepository {
     });
   }
 
+  /**
+   * The tab's Edit dialog: the name or prompt that changed, the prompt as the
+   * routine's next revision. A field left out stays as it is.
+   */
+  updateRoutine(
+    id: string,
+    routineId: string,
+    changes: { name?: string; prompt?: string },
+  ): Promise<void> {
+    return callApi(BotsErrors.SAVE_ROUTINE_FAILED, async (api) => {
+      await api.result(heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: changes }));
+    });
+  }
+
   /** Run now: one run, paused or not. */
   runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
     return callApi(BotsErrors.RUN_ROUTINE_FAILED, async (api) => {
@@ -914,6 +971,30 @@ export class BotsRepository {
           headers: { 'Idempotency-Key': idempotencyKey },
         }),
       );
+    });
+  }
+
+  /** A new URL for a routine's webhook; the old one stops working. Its URL and secret are only in this answer. */
+  issueRoutineWebhook(
+    id: string,
+    routineId: string,
+    signed: boolean,
+  ): Promise<IssuedBotRoutineWebhook> {
+    return callApi(BotsErrors.ISSUE_ROUTINE_WEBHOOK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.issueRoutineWebhook({ path: { id, routineId }, body: { signed } }),
+      );
+      return {
+        ...toRoutineWebhook(data),
+        url: data.url,
+        signingSecret: data.signingSecret ?? null,
+      };
+    });
+  }
+
+  revokeRoutineWebhook(id: string, routineId: string): Promise<void> {
+    return callApi(BotsErrors.REVOKE_ROUTINE_WEBHOOK_FAILED, async (api) => {
+      await api.result(heyApiSdk.revokeRoutineWebhook({ path: { id, routineId } }));
     });
   }
 
@@ -1079,7 +1160,7 @@ export class BotsRepository {
   }
 
   /** Stores the workspace's key for `provider`, replacing the one there. The key is never read back. */
-  putModelProviderKey(provider: BotProvider, apiKey: string): Promise<void> {
+  putModelProviderKey(provider: ModelProvider, apiKey: string): Promise<void> {
     return callApi(BotsErrors.SAVE_PROVIDER_KEY_FAILED, async (api) => {
       await api.result(
         heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
@@ -1094,7 +1175,7 @@ export class BotsRepository {
     });
   }
 
-  removeModelProviderKey(provider: BotProvider): Promise<void> {
+  removeModelProviderKey(provider: ModelProvider): Promise<void> {
     return callApi(BotsErrors.DELETE_PROVIDER_KEY_FAILED, async (api) => {
       await api.result(heyApiSdk.deleteModelProviderCredential({ path: { provider } }));
     });

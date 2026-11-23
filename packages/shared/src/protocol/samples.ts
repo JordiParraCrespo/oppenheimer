@@ -185,6 +185,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     name: 'Jordi',
     reason: 'paired from the console',
   },
+  'whatsapp.chats': {
+    type: 'whatsapp.chats',
+    chats: [
+      { chatId: '120363000000000001@g.us', chatKind: 'group', chatName: 'Family' },
+      { chatId: '34600333444@s.whatsapp.net', chatKind: 'direct', chatName: 'Marta' },
+      { chatId: '34600333555@s.whatsapp.net', chatKind: 'direct' },
+    ],
+  },
   'whatsapp.messages': {
     type: 'whatsapp.messages',
     messages: [
@@ -223,6 +231,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     chatId: '34600333444@s.whatsapp.net',
     text: 'Tuesday works.',
     replyTo: { id: '3EB0C7A1F2', senderId: '34600333444@s.whatsapp.net' },
+  },
+  'whatsapp.send.voice': {
+    type: 'whatsapp.send.voice',
+    commandId,
+    chatId: '34600333444@s.whatsapp.net',
+    mimetype: 'audio/ogg; codecs=opus',
+    data: 'T2dnUwACAAAAAAAAAAA=',
+    seconds: 4,
   },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
   'whatsapp.media.get': {
@@ -332,6 +348,41 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
       'jordi@mac:~$ ssh build-02 uptime\n 10:02:11 up 12 days,  load average: 0.10\njordi@mac:~$ ',
     matched: true,
     waitedMs: 1240,
+  },
+  'computer.act': {
+    type: 'computer.act',
+    commandId,
+    action: 'click',
+    x: 640,
+    y: 412,
+  },
+  'computer.screen': {
+    type: 'computer.screen',
+    commandId,
+    image:
+      '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+    width: 1280,
+    height: 800,
+    display: ':99',
+  },
+  'browser.act': {
+    type: 'browser.act',
+    commandId,
+    browser: 'juno-3f2a',
+    action: 'click',
+    ref: 'e7',
+    picture: true,
+  },
+  'browser.page': {
+    type: 'browser.page',
+    commandId,
+    url: 'https://example.com/pricing',
+    title: 'Pricing',
+    elements: [
+      { ref: 'e1', role: 'link', name: 'Home' },
+      { ref: 'e2', role: 'textbox', name: 'Email', value: 'jordi@example.com' },
+      { ref: 'e3', role: 'button', name: 'Start free trial' },
+    ],
   },
   'transcript.page': {
     type: 'transcript.page',

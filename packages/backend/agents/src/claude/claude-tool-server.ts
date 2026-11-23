@@ -70,7 +70,17 @@ export function createToolServer(
       { steering: turn.steering, signal: turn.signal, callId },
       made,
     );
-    return { content: [{ type: 'text' as const, text }], isError: result.isError };
+    return {
+      content: [
+        { type: 'text' as const, text },
+        ...(result.images ?? []).map((image) => ({
+          type: 'image' as const,
+          data: image.data,
+          mimeType: image.mimeType,
+        })),
+      ],
+      isError: result.isError,
+    };
   });
 
   return mcp;

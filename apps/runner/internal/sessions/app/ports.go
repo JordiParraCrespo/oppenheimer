@@ -244,6 +244,28 @@ type ProgramStatus interface {
 	Forget(sessionID string)
 }
 
+// Wrappers are the `pty` wrapper processes this runner started, one around
+// each session's agent. A wrapper whose pane is gone must not outlive it:
+// an agent that ignores the hangup otherwise idles on the host for good.
+type Wrappers interface {
+	// Running lists the wrappers alive on this host. Only processes this
+	// runner started are ever listed, never the user's own.
+	Running(ctx context.Context) ([]Wrapper, error)
+	// End hangs the wrapper's program up, gives it a grace period to save
+	// its conversation and exit, then kills its process group and the
+	// wrapper. It returns once they are gone or killed.
+	End(ctx context.Context, wrapper Wrapper) error
+}
+
+// Wrapper is one running wrapper.
+type Wrapper struct {
+	// SessionID is the session whose report file it keeps.
+	SessionID string
+	Pid       int
+	// Group is its program's process group; 0 once the program is gone.
+	Group int
+}
+
 // SlashCommands lists the commands a project gives Claude Code, from the
 // folder its agent runs in: what the chat composer's `/` menu offers beside
 // the agent's built-ins. A folder with none, or one it cannot read, is an
@@ -403,4 +425,13 @@ type LaunchGate interface {
 // starts, and the question is then on the screen for whoever opens it.
 type Trust interface {
 	Trust(agent domain.Agent, dir string) error
+}
+
+// OwnInstructions reads what the person told an agent running in dir, in
+// its own config, that a launch would otherwise replace: Codex's
+// `developer_instructions`, which the runner's `-c` override of the same key
+// sets outright (domain.Launch.OwnInstructions). "" is none, or an agent with
+// no such key.
+type OwnInstructions interface {
+	OwnInstructions(agent domain.Agent, dir string) string
 }

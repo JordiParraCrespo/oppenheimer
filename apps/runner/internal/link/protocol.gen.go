@@ -75,6 +75,14 @@ const ExecOutputMaxBytes = 32768
 // carries: the last bytes.
 const TerminalScreenMaxBytes = 32768
 
+// ComputerScreenMaxEdge is the long edge, in pixels, of the image
+// `computer.screen` carries; `computer.act` points in that image.
+const ComputerScreenMaxEdge = 1280
+
+// ComputerScreenshotMaxBytes is the largest image `computer.screen`
+// carries, before base64.
+const ComputerScreenshotMaxBytes = 262144
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -100,11 +108,14 @@ const (
 	CapabilitySessionWatch             = "session.watch"
 	CapabilityWhatsapp                 = "whatsapp"
 	CapabilityWhatsappVoice            = "whatsapp.voice"
+	CapabilityWhatsappVoiceSend        = "whatsapp.voice.send"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
 	CapabilityTranscriptRead           = "transcript.read"
 	CapabilityHostExec                 = "host.exec"
 	CapabilityTerminalDrive            = "terminal.drive"
+	CapabilityComputerUse              = "computer.use"
+	CapabilityBrowserUse               = "browser.use"
 	CapabilitySessionWindowsList       = "session.windows.list"
 	CapabilitySessionWindowAgent       = "session.window.agent"
 )
@@ -149,6 +160,10 @@ const (
 	TypeHostExecResult          = "host.exec.result"
 	TypeTerminalDrive           = "terminal.drive"
 	TypeTerminalScreen          = "terminal.screen"
+	TypeComputerAct             = "computer.act"
+	TypeComputerScreen          = "computer.screen"
+	TypeBrowserAct              = "browser.act"
+	TypeBrowserPage             = "browser.page"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -175,8 +190,10 @@ const (
 	TypeWhatsappUnlink          = "whatsapp.unlink"
 	TypeWhatsappState           = "whatsapp.state"
 	TypeWhatsappMessages        = "whatsapp.messages"
+	TypeWhatsappChats           = "whatsapp.chats"
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
+	TypeWhatsappSendVoice       = "whatsapp.send.voice"
 	TypeWhatsappSent            = "whatsapp.sent"
 	TypeWhatsappMediaGet        = "whatsapp.media.get"
 	TypeWhatsappMedia           = "whatsapp.media"
@@ -233,6 +250,10 @@ var MessageTypes = []string{
 	TypeHostExecResult,
 	TypeTerminalDrive,
 	TypeTerminalScreen,
+	TypeComputerAct,
+	TypeComputerScreen,
+	TypeBrowserAct,
+	TypeBrowserPage,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -259,8 +280,10 @@ var MessageTypes = []string{
 	TypeWhatsappUnlink,
 	TypeWhatsappState,
 	TypeWhatsappMessages,
+	TypeWhatsappChats,
 	TypeWhatsappAck,
 	TypeWhatsappSend,
+	TypeWhatsappSendVoice,
 	TypeWhatsappSent,
 	TypeWhatsappMediaGet,
 	TypeWhatsappMedia,
@@ -357,6 +380,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(TerminalDrive), true
 	case TypeTerminalScreen:
 		return new(TerminalScreen), true
+	case TypeComputerAct:
+		return new(ComputerAct), true
+	case TypeComputerScreen:
+		return new(ComputerScreen), true
+	case TypeBrowserAct:
+		return new(BrowserAct), true
+	case TypeBrowserPage:
+		return new(BrowserPage), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -409,10 +440,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappState), true
 	case TypeWhatsappMessages:
 		return new(WhatsappMessages), true
+	case TypeWhatsappChats:
+		return new(WhatsappChats), true
 	case TypeWhatsappAck:
 		return new(WhatsappAck), true
 	case TypeWhatsappSend:
 		return new(WhatsappSend), true
+	case TypeWhatsappSendVoice:
+		return new(WhatsappSendVoice), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
 	case TypeWhatsappMediaGet:
@@ -872,6 +907,71 @@ type TerminalScreen struct {
 	WaitedMs  int64  `json:"waitedMs"`
 }
 
+// ComputerAct is the `computer.act` message.
+type ComputerAct struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Action    string   `json:"action"`
+	X         int      `json:"x,omitempty"`
+	Y         int      `json:"y,omitempty"`
+	ToX       int      `json:"toX,omitempty"`
+	ToY       int      `json:"toY,omitempty"`
+	ScrollX   int      `json:"scrollX,omitempty"`
+	ScrollY   int      `json:"scrollY,omitempty"`
+	Text      string   `json:"text,omitempty"`
+	Keys      []string `json:"keys,omitempty"`
+	Seconds   int      `json:"seconds,omitempty"`
+}
+
+// ComputerScreen is the `computer.screen` message.
+type ComputerScreen struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Image     string `json:"image"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	Display   string `json:"display,omitempty"`
+}
+
+// BrowserAct is the `browser.act` message.
+type BrowserAct struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Browser   string   `json:"browser"`
+	Action    string   `json:"action"`
+	URL       string   `json:"url,omitempty"`
+	Ref       string   `json:"ref,omitempty"`
+	X         int      `json:"x,omitempty"`
+	Y         int      `json:"y,omitempty"`
+	ScrollY   int      `json:"scrollY,omitempty"`
+	Text      string   `json:"text,omitempty"`
+	Keys      []string `json:"keys,omitempty"`
+	Seconds   int      `json:"seconds,omitempty"`
+	Picture   bool     `json:"picture,omitempty"`
+}
+
+// BrowserPage is the `browser.page` message.
+type BrowserPage struct {
+	Type          string                `json:"type"`
+	CommandID     string                `json:"commandId"`
+	URL           string                `json:"url"`
+	Title         string                `json:"title"`
+	Elements      []BrowserPageElements `json:"elements,omitempty"`
+	MoreElements  bool                  `json:"moreElements,omitempty"`
+	Text          string                `json:"text,omitempty"`
+	TextTruncated bool                  `json:"textTruncated,omitempty"`
+	Image         string                `json:"image,omitempty"`
+	Closed        bool                  `json:"closed,omitempty"`
+}
+
+// BrowserPageElements is BrowserPage.Elements.
+type BrowserPageElements struct {
+	Ref   string `json:"ref"`
+	Role  string `json:"role"`
+	Name  string `json:"name"`
+	Value string `json:"value,omitempty"`
+}
+
 // AttachmentDirectOffer is the `attachment.direct.offer` message.
 type AttachmentDirectOffer struct {
 	Type         string   `json:"type"`
@@ -1112,6 +1212,19 @@ type WhatsappInbound struct {
 	SentAt         time.Time `json:"sentAt"`
 }
 
+// WhatsappChats is the `whatsapp.chats` message.
+type WhatsappChats struct {
+	Type  string              `json:"type"`
+	Chats []WhatsappKnownChat `json:"chats"`
+}
+
+// WhatsappKnownChat is WhatsappChats.Chats.
+type WhatsappKnownChat struct {
+	ChatID   string `json:"chatId"`
+	ChatKind string `json:"chatKind"`
+	ChatName string `json:"chatName,omitempty"`
+}
+
 // WhatsappAck is the `whatsapp.ack` message.
 type WhatsappAck struct {
 	Type string   `json:"type"`
@@ -1131,6 +1244,16 @@ type WhatsappSend struct {
 type WhatsappSendReplyTo struct {
 	ID       string `json:"id"`
 	SenderID string `json:"senderId"`
+}
+
+// WhatsappSendVoice is the `whatsapp.send.voice` message.
+type WhatsappSendVoice struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	Mimetype  string `json:"mimetype"`
+	Data      string `json:"data"`
+	Seconds   int    `json:"seconds"`
 }
 
 // WhatsappSent is the `whatsapp.sent` message.

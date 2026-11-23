@@ -1,10 +1,7 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { BotChannelWakeResolver } from '../../application/bot-channel-wake.resolver';
 import { phoneOf } from '../../bot-whatsapp-tool.mapper';
-import {
-  WHATSAPP_CONTACT_TURNS_PER_HOUR,
-  whatsappContactTurn,
-} from '../../domain/bot-whatsapp-turn.policy';
+import { whatsappContactTurn, whatsappTurnsPerHour } from '../../domain/bot-whatsapp-turn.policy';
 import { WakeOnWhatsappContactCommand } from './wake-on-whatsapp-contact.command';
 
 /**
@@ -13,8 +10,9 @@ import { WakeOnWhatsappContactCommand } from './wake-on-whatsapp-contact.command
  * conversation, one per chat and bot ('0': a contact has no `/new`), keyed by
  * the stored row so a delivery twice is one turn. The resolver wakes only a
  * bot the number's owner made, and nothing past
- * `WHATSAPP_CONTACT_TURNS_PER_HOUR` turns of the chat in an hour: those
- * messages are kept and wake no one.
+ * `WHATSAPP_CONTACT_TURNS_PER_HOUR` turns of a person's chat, or
+ * `WHATSAPP_GROUP_TURNS_PER_HOUR` of a group's, in an hour: those messages
+ * are kept and wake no one.
  */
 @CommandHandler(WakeOnWhatsappContactCommand)
 export class WakeOnWhatsappContactCommandHandler
@@ -31,7 +29,7 @@ export class WakeOnWhatsappContactCommandHandler
       messageId: command.seq,
       command: 'message',
       correlationId: command.metadata.correlationId,
-      turnsPerHour: WHATSAPP_CONTACT_TURNS_PER_HOUR,
+      turnsPerHour: whatsappTurnsPerHour(command.chatKind),
       turn: (props, conversationId) =>
         whatsappContactTurn(props, {
           conversationId,

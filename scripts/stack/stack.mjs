@@ -251,6 +251,7 @@ const KEPT_KEYS = [
   'GITHUB_USER_TOKEN_KEY',
   'BOTS_PROVIDER_KEY',
   'CLOUD_AGENTS_KEY',
+  'SLACK_TOKEN_KEY',
 ];
 
 /**
@@ -320,6 +321,7 @@ async function up(flags) {
   await startStub('github-stub', 4319);
   await startStub('namer-stub', 4320);
   await startStub('cursor-stub', 4321);
+  await startStub('slack-stub', 4322);
   // Asked once: what is already answering is left alone, and what is not is
   // built — in one turbo run — and started. The console's Vite serves the
   // app's own source but resolves the workspace packages it imports from their
@@ -387,7 +389,7 @@ async function down(flags) {
     log('the API is down; the rest of the stack is left as it was');
     return;
   }
-  for (const name of ['web', 'api', 'github-stub', 'namer-stub', 'cursor-stub']) {
+  for (const name of ['web', 'api', 'github-stub', 'namer-stub', 'cursor-stub', 'slack-stub']) {
     if (state.pids[name]) await stop(state.pids[name]);
   }
   if (state.compose && succeeds('docker', ['info'])) run('docker', [...COMPOSE, 'down']);
@@ -404,6 +406,7 @@ async function status() {
     ['github-stub', await portOpen(4319)],
     ['namer-stub', await portOpen(4320)],
     ['cursor-stub', await portOpen(4321)],
+    ['slack-stub', await portOpen(4322)],
     ['api', await httpOk(API_HEALTH)],
     ['web', await httpOk(WEB_URL)],
   ];

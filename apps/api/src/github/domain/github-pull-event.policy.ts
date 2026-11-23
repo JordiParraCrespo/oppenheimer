@@ -69,6 +69,12 @@ export function isRepositoryInsider(association: string | null | undefined): boo
 }
 
 /** A login as GitHub allows one, or nothing: no other character reaches the reader. */
+/**
+ * The handle a comment mentions Oppenheimer by (`@oppenheimer`): what the
+ * `mention` event is, and what asks a bot by name (`@oppenheimer <bot>`).
+ */
+export const GITHUB_MENTION_HANDLE = 'oppenheimer';
+
 export function githubLogin(value: string | null): string | null {
   return value && /^[A-Za-z0-9-]{1,39}(\[bot\])?$/.test(value) ? value : null;
 }

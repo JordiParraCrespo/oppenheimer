@@ -6,8 +6,10 @@ import { provisionedUser, signInAs } from '../../support/web';
  * A bot's Routines tab in a browser, against the real control plane. The chat
  * is where a routine is made, through the bot's own tool and a real model, so
  * the routine is seeded; what is under test is the tab: the card reads the
- * routine, the switch pauses and resumes it on the server, Edit hands the
- * change to the chat with the routine named, and Delete takes it away.
+ * routine, the switch pauses and resumes it on the server, Edit changes its
+ * name and prompt on the server (and hands when it runs to the chat, the
+ * routine named), and Delete takes it away. What breaks this: an Edit that
+ * saves nothing, or saves and leaves the card showing the old routine.
  */
 
 test("a bot's routine on its Routines tab, from the card to Delete", async ({ page }) => {
@@ -40,17 +42,40 @@ test("a bot's routine on its Routines tab, from the card to Delete", async ({ pa
   await expect(card).not.toHaveAttribute('data-paused', 'true');
   await expect.poll(() => routinePausedAt(routineId)).toBeNull();
 
-  // Edit goes to the chat, the routine named in the composer.
-  await card.getByRole('button', { name: 'Edit in chat' }).click();
+  // Edit changes the name and prompt by hand, on the server and on the card.
+  await card.getByRole('button', { name: 'Edit routine' }).click();
+  let edit = page.getByRole('dialog', { name: 'Edit “Morning PR digest”' });
+  await expect(edit).toContainText('Schedule · Daily at 09:00');
+  await edit.getByLabel('Name').fill('Evening PR digest');
+  await edit.getByLabel('Prompt').fill('List the pull requests merged today.');
+  await edit.getByRole('button', { name: 'Save' }).click();
+  await expect(edit).toBeHidden();
+  const edited = page
+    .locator('[data-slot="routine-card"]')
+    .filter({ hasText: 'Evening PR digest' });
+  await expect(edited).toContainText('List the pull requests merged today.');
+  const [stored] = (await (await owner.api.get(`/api/v1/bots/${bot.id}/routines`)).json()) as {
+    name: string;
+    prompt: string;
+  }[];
+  expect(stored).toMatchObject({
+    name: 'Evening PR digest',
+    prompt: 'List the pull requests merged today.',
+  });
+
+  // When it runs is the chat's: Ask in chat names the routine in the composer.
+  await edited.getByRole('button', { name: 'Edit routine' }).click();
+  edit = page.getByRole('dialog', { name: 'Edit “Evening PR digest”' });
+  await edit.getByRole('button', { name: 'Ask in chat' }).click();
   await expect(page).toHaveURL(new RegExp(`/bots/${bot.id}$`));
-  await expect(page.getByPlaceholder('Message Juno')).toHaveValue(
-    'Edit your routine: Morning PR digest',
+  await expect(page.getByRole('textbox', { name: 'Message Juno' })).toHaveValue(
+    'Edit your routine: Evening PR digest',
   );
 
   // Delete asks first, then the tab is empty again.
   await page.goto(`/bots/${bot.id}/settings/routines`);
-  await card.getByRole('button', { name: 'Delete routine' }).click();
-  const confirm = page.getByRole('alertdialog', { name: 'Delete “Morning PR digest”?' });
+  await edited.getByRole('button', { name: 'Delete routine' }).click();
+  const confirm = page.getByRole('alertdialog', { name: 'Delete “Evening PR digest”?' });
   await confirm.getByRole('button', { name: 'Delete routine' }).click();
   await expect(confirm).toBeHidden();
   await expect(page.getByText(/Ask it in chat to set one up/)).toBeVisible();
@@ -92,7 +117,7 @@ test("a routine's change in its bot's chat, and the routine on the Bot routines 
     })
     .toBe(1);
   await page.reload();
-  await expect(page.getByPlaceholder('Message Juno')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Message Juno' })).toBeVisible();
   await expect(page.getByText(/Morning PR digest/)).toHaveCount(0);
 
   // The overview's Bot routines tab lists it under its bot, and the row opens

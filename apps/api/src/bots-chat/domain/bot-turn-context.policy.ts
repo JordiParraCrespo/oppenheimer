@@ -60,6 +60,7 @@ export interface TurnContextInput {
 const CHANNEL_LINES: Readonly<Record<BotChannelOrigin, PlainPromptId>> = {
   telegram: 'turn/context.on-telegram',
   whatsapp: 'turn/context.on-whatsapp',
+  slack: 'turn/context.on-slack',
 };
 
 /** How many hosts the turn context lists; the rest are counted. */
@@ -111,6 +112,7 @@ const CONTEXT_LINES: readonly ContextLine[] = [
       : promptText('turn/context.no-home-host'),
   ({ input }) => describeHosts(input.hosts),
   ({ input }) => (input.channel ? promptText(CHANNEL_LINES[input.channel]) : null),
+  ({ input }) => (input.channel ? promptText('turn/context.on-a-phone') : null),
   ({ input }) => (input.channel && input.asItGoes ? promptText('turn/context.as-it-goes') : null),
   ({ input }) => describeRoom(input.lastContext),
   ({ input, zone }) => describeLog(input.memory?.log ?? [], zone),

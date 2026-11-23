@@ -134,6 +134,7 @@ function Composer({
   attachments,
   onRemoveAttachment,
   onAttach,
+  emoji,
   dictation,
   tools,
   engine,
@@ -163,6 +164,8 @@ function Composer({
   onRemoveAttachment?: (id: string) => void;
   /** Present: shows the attach button. */
   onAttach?: () => void;
+  /** An emoji button, after the attach button. */
+  emoji?: React.ReactNode;
   /** Dictation: the mic before send, the recorder in the foot row's place, the notice under the box. */
   dictation?: DictationSlot;
   /** Controls after attach: what the run may touch (the permission level). */
@@ -267,6 +270,7 @@ function Composer({
                   <PaperclipIcon className="size-[15px]" />
                 </IconButton>
               ) : null}
+              {emoji}
               {tools}
             </>
           }
@@ -322,6 +326,7 @@ function ComposerPill({
   attachments,
   onRemoveAttachment,
   onAttach,
+  emoji,
   dictation,
   labels,
   className,
@@ -342,6 +347,8 @@ function ComposerPill({
   onRemoveAttachment?: (id: string) => void;
   /** Present: shows Add files at the line's start. */
   onAttach?: () => void;
+  /** An emoji button, after Add files at the line's start. */
+  emoji?: React.ReactNode;
   /** Dictation: the mic before send, the recorder as the box in the line's place, the notice under the box. */
   dictation?: DictationSlot;
   /** The icon buttons' accessible names; any left out stay in English. */
@@ -388,17 +395,20 @@ function ComposerPill({
         </ComposerRecorder>
       ) : (
         <div className="flex items-end">
-          {onAttach ? (
-            <span className="flex shrink-0 items-center p-1.5 pr-0">
-              <IconButton
-                aria-label={label.attach}
-                title={label.attach}
-                size="sm"
-                onClick={onAttach}
-                className="size-8 text-fg-muted"
-              >
-                <PlusIcon className="size-4.25" />
-              </IconButton>
+          {onAttach || emoji ? (
+            <span className="flex shrink-0 items-center gap-0.5 p-1.5 pr-0">
+              {onAttach ? (
+                <IconButton
+                  aria-label={label.attach}
+                  title={label.attach}
+                  size="sm"
+                  onClick={onAttach}
+                  className="size-8 text-fg-muted"
+                >
+                  <PlusIcon className="size-4.25" />
+                </IconButton>
+              ) : null}
+              {emoji}
             </span>
           ) : null}
           <textarea
@@ -412,7 +422,7 @@ function ComposerPill({
             rows={1}
             className={cn(
               'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-              onAttach ? 'pl-1' : 'pl-4.5',
+              onAttach || emoji ? 'pl-1' : 'pl-4.5',
             )}
           />
           <span className="flex shrink-0 items-center gap-1 p-1.5">

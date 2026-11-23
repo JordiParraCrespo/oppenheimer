@@ -1395,6 +1395,19 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
+  `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
+  the owner asked that a bot can use a computer on a host remotely:
+  `use_computer` looks at a host's screen and uses its mouse and keyboard
+  through the runner, on a Mac's own desktop or a Linux X display (a virtual
+  one where there is none), only after `runner computer on` on that host.
+  Nothing runs on the control plane, which is what §2 was protecting.
+- `versions/mvp/25-bots.md` gave a bot the web through fetching a public
+  page only. On 2026-11-11 the owner asked for browser use beside computer
+  use: `use_browser` drives a browser of the bot's own on a host through the
+  runner, reading a page as elements with refs and acting on a ref, only
+  after `runner browser on` on that host. Fetching stays for a public page a
+  bot only reads.
 - `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
   "about the person (their name, their role, their preferences)", read by
   all their bots. Bots filed their job there: Facturas read another bot's
@@ -1840,3 +1853,54 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `versions/mvp/02-runner.md` ("Close") ended a session with `tmux
+  kill-session` and took its hangup to end the agent. On 2026-11-21 one
+  host ran out of memory with ~110 agents of closed sessions still
+  running, because Claude Code ignored the hangup: the `pty` wrapper now
+  kills its program's group 10 s after the hangup, closing a session
+  confirms its processes are gone, and the daemon ends any agent left by
+  a session that is over every 5 minutes. Nothing changed about tmux
+  sessions it does not recognise (still reported, not reaped).
+- `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
+  bot in a group only when a message @-mentioned the number or replied to
+  it, and listed only the chats a number had seen a message in. On
+  2026-11-21 the owner found a group set to a bot silent ("not answering")
+  and People empty: a group the owner sets to a bot now wakes it on every
+  message with words (up to 120 turns an hour per group; 20 stays a
+  person's chat's), and the runner reports the groups the number is in
+  and its saved contacts on connect and on each change (`whatsapp.chats`),
+  so Settings lists them before anyone writes. The owner's own chat is
+  listed first among People, answered by the default bot.
+- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+  editor: the Routines tab's Edit put "Edit your routine: *name*" in the
+  composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
+  a dialog for its name and prompt, and only when it runs (its triggers)
+  is still changed in the chat.
+- `next-steps/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
+  or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
+  on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
+  be configured with the keys: Settings → Model providers adds Groq and
+  ElevenLabs (voice only) and a Voice tab choosing, for the workspace,
+  the transcription provider and model, the voice-note provider, model and
+  voice, and the polish model or none. A choice is tried first, the old
+  order after it; the env servers stay as the last provider.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).
+- `next-steps/channels.md` §7.2 had one Oppenheimer Slack app per Slack
+  workspace, speaking as each bot. On 2026-11-20, asked for a way to ask a
+  bot from Slack (JordiParraCrespo/oppenheimer#954), each bot got an app of
+  its own instead, so it has its own name and face and nothing routes by
+  mention (`next-steps/slack-for-bots.md`): made from a manifest the console
+  fills in, its token and secret pasted and sealed, answering only its
+  owner's Slack user in the thread asked in. A channel turn that ends on an
+  approval card now says so with a link, on Telegram and WhatsApp too.
+- `25-bots.md` §4.4 made every GitHub write of a bot's in the owner's own
+  name (2026-10-20). On 2026-11-20 a bot became askable on GitHub (§3.3,
+  issue #952), and its answer there is posted by Oppenheimer's App instead:
+  it is told apart from what the owner wrote, and the App's comments wake
+  nothing (`loopGuard`), so an answer never asks a bot again. The guide's
+  "writing to a bot only in the console" stopped holding the same day.

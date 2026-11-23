@@ -43,6 +43,7 @@ import {
   cloudStartAnswer,
   planCloudSession,
 } from './bot-cloud-session.policy';
+import { BotSessionLinkResolver } from './bot-session-link.resolver';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -85,6 +86,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     private readonly commandBus: CommandBus,
     private readonly watches: BotSessionWatchResolver,
     private readonly waits: BotSessionWaitResolver,
+    private readonly links: BotSessionLinkResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -213,6 +215,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             input: body,
             idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
             origin: 'bot',
+            botId: context.botId,
           }),
         );
         const offline = result.hints.includes('host_offline')
@@ -224,15 +227,17 @@ export class BotSessionToolsFactory implements BotToolArea {
           'first_task',
           input.watch,
         );
-        return {
-          content: promptText('tools/sessions.start-session-content', {
-            sessionId: result.sessionId,
-            hostId,
-            offline,
-            watched,
-          }),
+        const started = promptText('tools/sessions.start-session-content', {
           sessionId: result.sessionId,
-        };
+          hostId,
+          offline,
+          watched,
+        });
+        const link = this.links.forTurn(context, result.sessionId);
+        const channelLink = link
+          ? ` ${promptText('tools/sessions.start-session-channel-link', { link })}`
+          : '';
+        return { content: `${started}${channelLink}`, sessionId: result.sessionId };
       },
     });
   }
@@ -625,6 +630,7 @@ function cloudSessionCommand(
     userId: context.owner.userId,
     idempotencyKey: idempotencyKeyOf(context.turnId, plan.body, context.approvalId),
     origin: 'bot' as const,
+    botId: context.botId,
   };
   return plan.kind === 'host'
     ? new CreateSessionCommand({ ...props, input: plan.body })

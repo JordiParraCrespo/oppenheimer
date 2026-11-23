@@ -420,16 +420,22 @@ clock, spent tokens to say `nothing_to_report`. So:
 
 ## 7. The Routines tab
 
-Bot settings gain **Routines**. As in Grok Bot, the chat is the editor and
-the tab is controls: it changes whether and when a routine runs, never
-what it is.
+Bot settings gain **Routines**. As in Grok Bot, the chat is where a
+routine is made and where its triggers change; the tab is controls, plus
+a hand edit of the routine's name and prompt (changed 2026-11-21, below).
 
 - **A row** is the name, the *when* in words ("Weekdays around 09:00",
   "When a PR opens in atlas") or "Paused", and a switch ("Pause *name*,
   *when*"). Its menu: Pause or Resume, **Run now** ("Running…" while its
   run is live), **Edit**, **Delete**.
-- **Edit** puts "Edit your routine: *name*" in the chat's composer, so the
-  bot changes it through `update_routine` and its card.
+- **Edit** opens a dialog with the routine's name and prompt to change by
+  hand, and its *when* read-only with **Ask in chat**, which puts "Edit your
+  routine: *name*" in the chat's composer so the bot changes the triggers
+  through `update_routine` and its card. **Changed 2026-11-21:** Edit only
+  sent you to the chat; the owner wanted to fix a prompt without asking the
+  bot to rewrite it, so `PATCH /bots/:id/routines/:routineId` takes `name`
+  and `prompt` beside `enabled`, the prompt saved as the routine's next
+  revision with the editing credential's scopes, as `update_routine` does.
 - **Delete** confirms: "This deletes the routine and stops its future
   runs. This can't be undone."
 - **Opening a row** shows its instruction (the prompt, as Markdown), *when
@@ -437,8 +443,8 @@ what it is.
 - **Empty**: "Routines are tasks this bot runs on a schedule or when
   something happens. Ask it in chat to set one up."
 
-The switch, Run now and Delete are the owner acting, so there is no
-card. They dispatch the same commands `update_routine` does, so their
+The switch, Run now, Edit's Save and Delete are the owner acting, so
+there is no card. They dispatch the same commands `update_routine` does, so their
 activity lines come from the same listener (§4, "In the chat").
 `/automations` lists bot routines too, with the bot that runs them, on a
 tab of their own (`/automations/routines`) between Automations and Runs.
@@ -471,7 +477,9 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   The general `spread` is still to build.
 - **E. More triggers.** "When a session ends" (§5), then a webhook with a
   key per routine (`POST /automations/webhook/{id}`, `Authorization:
-  Bearer`), as Grok Bot offers.
+  Bearer`), as Grok Bot offers. **The webhook was built 2026-11-20 in
+  another shape** (see Decided, 2026-11-20): an unguessable token in the
+  URL, `POST /api/v1/routine-webhooks/{token}`, optionally signed.
 
 ## Decided
 
@@ -538,3 +546,24 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   day.** Existing ones moved to 09:00 and 18:00 in the owner's zone and
   paused; a beat with nothing new in the chat since the last one spends no
   model turn (§6, "Changed 2026-11-15").
+- 2026-11-20, building slice E's webhook (#953): **the URL is the
+  credential, and it is the routine's.** `POST /api/v1/routine-webhooks/{token}`
+  with an unguessable token in the path, not `Authorization: Bearer` on the
+  routine's id: the senders it is for (Sentry, a deploy pipeline, a form, a
+  home-automation hub) are often given a URL and nothing else. One URL per
+  routine, kept in `automation_webhook` beside the routine rather than on its
+  trigger, because an edit rewrites the triggers with new ids; triggers saved
+  without a webhook take the URL with them. Only the token's SHA-256 is kept,
+  so the URL is shown once. An optional signing secret, sealed under
+  `BOTS_PROVIDER_KEY`, makes the URL take only `x-oppenheimer-signature:
+  t=…,v1=…` (HMAC-SHA256 of `<t>.<body>`, Stripe's scheme), within five
+  minutes. The bot writes the trigger in chat with `update_routine` but never
+  sees the URL or the secret: the person issues, replaces and revokes them on
+  the Routines tab. The body (the first 16 KiB of up to 256 KiB) is stored on
+  the run (`automation_run."webhookPayload"`), not in the inbound-events hub,
+  so the endpoint answers `202` with the run's id at once; it reaches the bot
+  in the untrusted-data envelope, as GitHub and mail text do. The guards are
+  the event triggers': paused is refused (`409`), the hourly caps record a
+  skip, a run in progress and a provider with no key are the dispatcher's.
+  `Idempotency-Key` makes a retried POST the same run. Session automations
+  do not get it yet: their editor would need its own URL screen.

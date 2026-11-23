@@ -4,12 +4,18 @@ import { externalEventDefinition, matchesTriggerFilter } from '@oppenheimer/shar
 import type { InboundEventLookupPort } from '../../../inbound-events/application/inbound-event-lookup.port';
 import { INBOUND_EVENT_LOOKUP } from '../../../inbound-events/inbound-events.di-tokens';
 import { AutomationLimitsResolver } from '../../application/automation-limits.resolver';
+import { BranchSessionBotsResolver } from '../../application/branch-session-bots.resolver';
 import { AutomationRunMapper } from '../../automation-run.mapper';
 import { AUTOMATION_REPOSITORY, AUTOMATION_RUN_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import { AutomationRunEntity } from '../../domain/automation-run.entity';
-import { firstRefusal, loopGuard, rateGuard } from '../../domain/fire-guard.policy';
+import {
+  firstRefusal,
+  loopGuard,
+  ownSessionGuard,
+  rateGuard,
+} from '../../domain/fire-guard.policy';
 import { eventCauseSummary } from '../../domain/run-launch.policy';
 import { FireEventTriggersCommand } from './fire-event-triggers.command';
 
@@ -19,8 +25,9 @@ const HOUR = 60 * 60 * 1000;
  * Match an event to the triggers watching its subject, apply each trigger's
  * filter, and queue one run per automation it fires — keyed by the event, so a
  * redelivery queues nothing twice. Paused automations ignore it. An event our
- * own App caused (the loop guard) and one past the hourly caps become a
- * recorded skip with its reason, never a silent drop.
+ * own App caused (the loop guard), one on the branch of a session a
+ * routine's own bot started (`ownSessionGuard`) and one past the hourly caps
+ * become a recorded skip with its reason, never a silent drop.
  */
 @CommandHandler(FireEventTriggersCommand)
 export class FireEventTriggersCommandHandler
@@ -35,6 +42,7 @@ export class FireEventTriggersCommandHandler
     private readonly events: InboundEventLookupPort,
     private readonly limits: AutomationLimitsResolver,
     private readonly mapper: AutomationRunMapper,
+    private readonly branchBots: BranchSessionBotsResolver,
   ) {}
 
   async execute(command: FireEventTriggersCommand): Promise<number> {
@@ -61,6 +69,10 @@ export class FireEventTriggersCommandHandler
     const since = new Date(now.getTime() - HOUR);
     // Every candidate is of this workspace: its overrides are read once.
     const workspace = await this.limits.workspace(command.organizationId);
+    const branchBots = await this.branchBots.of(
+      { ...command, subjectName: found.unwrap().subject.name },
+      matching.some(({ automation }) => automation.target.kind === 'bot'),
+    );
     let queued = 0;
     // One run per automation, even when two of its triggers match the same event.
     const seen = new Set<string>();
@@ -87,6 +99,7 @@ export class FireEventTriggersCommandHandler
         (recent) => {
           const verdict = firstRefusal(
             () => loopGuard(command.actorIsOwnApp),
+            () => ownSessionGuard(automation.target, branchBots),
             () => rateGuard(limits, recent, false),
           );
           return verdict.kind === 'skip'

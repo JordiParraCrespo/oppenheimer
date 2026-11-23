@@ -49,6 +49,8 @@ export interface SessionFilters {
   /** Sessions with a live checkout of this repository. */
   githubRepoId?: number;
   agent?: string;
+  /** `false` leaves resolved sessions out, `true` keeps only them; absent, both. */
+  resolved?: boolean;
   /** Last activity first by default. */
   sort?: SessionSortDto;
 }
@@ -163,6 +165,19 @@ export interface WorkSessionRepositoryPort {
     githubRepoId: string,
     number: number,
   ): Promise<WorkSessionEntity[]>;
+
+  /**
+   * The bots that started a session in this workspace on this repository's
+   * branch: a host session's checkout of it (retired ones included), or a
+   * cloud session's run that pushed it, whose repository is its URL. Ended
+   * sessions count: a pull request outlives the session that opened it. For
+   * a routine woken by a GitHub event on that branch; no person scopes a
+   * webhook.
+   */
+  findBotsOnBranchForSystem(
+    organizationId: string,
+    repository: { githubRepoId: string; repositoryFullName: string; branch: string },
+  ): Promise<string[]>;
 
   /**
    * How many sessions are running on each of these hosts, by the same rule.

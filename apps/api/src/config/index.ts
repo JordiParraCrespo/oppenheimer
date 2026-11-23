@@ -15,6 +15,7 @@ export { redisConfig } from './redis.config';
 export { relayConfig } from './relay.config';
 export { retentionConfig } from './retention.config';
 export { sessionsConfig } from './sessions.config';
+export { slackConfig, slackTokenKeyOf } from './slack.config';
 export { storageConfig } from './storage.config';
 export { throttlingConfig } from './throttling.config';
-export { speechKeyIsConfigured, voiceConfig } from './voice.config';
+export { speechKeyIsConfigured, speechSynthesisIsConfigured, voiceConfig } from './voice.config';

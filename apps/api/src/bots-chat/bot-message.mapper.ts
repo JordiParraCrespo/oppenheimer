@@ -6,6 +6,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
   BOT_LOOP_ACTIVITIES,
@@ -45,6 +46,7 @@ import {
   BotApprovalEventResponseDto,
   BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
+  BotGithubAskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
   type BotMessageEventResponseDto,
@@ -88,6 +90,8 @@ export class BotMessageMapper
     record.event = entity.event ? { ...entity.event } : null;
     record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
     record.pendingMedia = entity.pendingMedia ? { kind: entity.pendingMedia.kind } : null;
+    record.reaction = entity.reaction;
+    record.botReaction = entity.botReaction;
     return record;
   }
 
@@ -108,6 +112,8 @@ export class BotMessageMapper
         event: toEvent(record.event),
         attachments: (record.attachments ?? []).flatMap(toAttachment),
         pendingMedia: toPendingMedia(record.pendingMedia),
+        reaction: record.reaction ?? null,
+        botReaction: record.botReaction ?? null,
       },
     });
   }
@@ -131,6 +137,8 @@ export class BotMessageMapper
       rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
+    dto.reaction = entity.reaction;
+    dto.botReaction = entity.botReaction;
     dto.attachments = entity.attachments.map((attachment) =>
       Object.assign(new BotAttachmentResponseDto(), attachment),
     );
@@ -322,6 +330,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotSessionEventResponseDto(), event);
     case 'pull_request':
       return Object.assign(new BotPullRequestEventResponseDto(), event);
+    case 'github_ask':
+      return Object.assign(new BotGithubAskEventResponseDto(), event);
     case 'task':
       return Object.assign(new BotTaskEventResponseDto(), event);
     case 'goal':
@@ -417,6 +427,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   if (raw.kind === 'pull_request') return pullRequestEventOf(raw);
+  if (raw.kind === 'github_ask') return githubAskEventOf(raw);
   if (raw.kind === 'task') return taskEventOf(raw);
   if (raw.kind === 'goal') {
     const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
@@ -478,6 +489,25 @@ function pullRequestEventOf(raw: Record<string, unknown>): BotMessageEvent | nul
     repository: String(raw.repository ?? ''),
     number,
     event,
+  };
+}
+
+/** A stored ask on GitHub, narrowed once; one the mapper did not write reads as none. */
+function githubAskEventOf(raw: Record<string, unknown>): BotMessageEvent | null {
+  const via = BOT_GITHUB_ASK_VIAS.find((known) => known === raw.via);
+  const { installationId, githubRepoId, number, actorLogin } = raw;
+  if (!via || typeof installationId !== 'string' || typeof githubRepoId !== 'string') return null;
+  if (typeof number !== 'number' || typeof actorLogin !== 'string') return null;
+  return {
+    kind: 'github_ask',
+    via,
+    installationId,
+    githubRepoId,
+    repository: String(raw.repository ?? ''),
+    number,
+    isPullRequest: typeof raw.isPullRequest === 'boolean' ? raw.isPullRequest : null,
+    url: typeof raw.url === 'string' ? raw.url : null,
+    actorLogin,
   };
 }
 

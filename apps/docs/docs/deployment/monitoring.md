@@ -150,6 +150,13 @@ store, and the bots dashboard has the error and warning lines. An agent that
 speaks MCP can also query both stores through Grafana's own MCP server
 (`mcp-grafana`) pointed at `http://localhost:3030`.
 
+On the dev server no file is needed: Alloy reads every container's stdout
+from Docker and Loki keeps 14 days, with the same labels (`app` is the
+compose service there). Nothing is published, so you reach it over an SSH
+tunnel from a tailnet machine, then
+`pnpm logs --url http://localhost:3101 …`; `deploy/dev/monitoring/README.md`,
+"On the dev server", has the command.
+
 ## Alerts and the dashboard
 
 `deploy/dev/monitoring/` holds the Prometheus alert rules

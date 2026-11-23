@@ -40,4 +40,13 @@ export class WorkspaceLookupRepository implements WorkspaceLookupPort {
     });
     return owned.map((member) => member.organizationId);
   }
+
+  async ownerOf(organizationId: string): Promise<string | null> {
+    const owner = await this.members.findOne({
+      where: { organizationId, role: ORGANIZATION_ROLES.OWNER },
+      select: { userId: true },
+      order: { createdAt: 'ASC' },
+    });
+    return owner?.userId ?? null;
+  }
 }

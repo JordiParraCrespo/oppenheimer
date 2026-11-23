@@ -131,9 +131,11 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
  * The sessions in the caller's workspace: the sidebar and the sessions list.
  *
  * A resolved session is a tombstone the API keeps so its directory and branch
- * are never reissued; the list leaves it out, though its detail is still
- * written for a screen that has it open. It polls while a row is starting or a
- * close this console asked for has not resolved.
+ * are never reissued; the list asks the API to leave it out
+ * (`SessionsRepository.findAll`). A close this console watched that ends with
+ * its row gone re-reads that one session's detail, for a screen that has it
+ * open. It polls while a row is starting or a close this console asked for has
+ * not resolved.
  *
  * Each row is also written to that session's detail, so opening a session from
  * the list renders on the click; a detail read after this list was asked for
@@ -184,15 +186,15 @@ export function useSessionListQuery() {
       const askedAt = Date.now();
       const sessions = await app.sessions.findAll();
       seedDetails(queryClient, sessions, sessionsKeys.detail, askedAt);
-      const unresolved = sessions.filter((session) => !session.isResolved);
       const closing = closesOf(queryClient);
       for (const id of closing.keys()) {
-        const row = unresolved.find((session) => session.id === id);
+        const row = sessions.find((session) => session.id === id);
         // Resolved, or refused by its host: either way the host has answered,
         // and a refused row comes back saying so.
         if (!row || row.closeRefusal) unwatchClose(queryClient, id);
+        if (!row) void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
       }
-      return unresolved.filter((session) => !closing.has(session.id));
+      return sessions.filter((session) => !closing.has(session.id));
     },
   };
 }

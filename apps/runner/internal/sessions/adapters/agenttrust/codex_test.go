@@ -193,3 +193,63 @@ func TestTrustKeepsADanglingCodexConfigLinkALink(t *testing.T) {
 		t.Fatal("the folder was not trusted in the file the link names")
 	}
 }
+
+// A Codex launch sets developer_instructions itself, which replaces the
+// person's own; the store reads theirs so the launch can keep it. Nothing
+// is read for another agent, a missing file or one that does not parse.
+func TestOwnInstructionsReadsThePersonsCodexDeveloperInstructions(t *testing.T) {
+	config := filepath.Join(t.TempDir(), "config.toml")
+	store := agenttrust.New(agenttrust.Options{CodexConfig: config})
+	if got := store.OwnInstructions(domain.AgentCodex, ""); got != "" {
+		t.Fatalf("with no file: %q", got)
+	}
+	if err := os.WriteFile(config, []byte("model = \"gpt-5\"\ndeveloper_instructions = \"Always answer in Catalan.\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := store.OwnInstructions(domain.AgentCodex, ""); got != "Always answer in Catalan." {
+		t.Fatalf("codex = %q", got)
+	}
+	if got := store.OwnInstructions(domain.AgentClaude, ""); got != "" {
+		t.Fatalf("claude = %q", got)
+	}
+	if err := os.WriteFile(config, []byte("developer_instructions = \"unterminated\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := store.OwnInstructions(domain.AgentCodex, ""); got != "" {
+		t.Fatalf("a file that does not parse gave %q", got)
+	}
+}
+
+// Codex ranks a project's `.codex/config.toml` over the person's own, so a
+// checkout that sets developer_instructions is what a launch keeps; a folder
+// above the checkout's root is not the project's.
+func TestOwnInstructionsPrefersTheCheckoutsCodexConfig(t *testing.T) {
+	root := t.TempDir()
+	user := filepath.Join(root, "home", "config.toml")
+	checkout := filepath.Join(root, "sessions", "bold-otter", "oppenheimer")
+	for path, text := range map[string]string{
+		user: "developer_instructions = \"the person's\"\n",
+		filepath.Join(root, "sessions", ".codex", "config.toml"): "developer_instructions = \"above the checkout\"\n",
+		filepath.Join(checkout, ".codex", "config.toml"):         "developer_instructions = \"the project's\"\n",
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(checkout, ".git"), []byte("gitdir: elsewhere\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	store := agenttrust.New(agenttrust.Options{CodexConfig: user})
+	if got := store.OwnInstructions(domain.AgentCodex, filepath.Join(checkout, "src")); got != "the project's" {
+		t.Fatalf("in the checkout: %q", got)
+	}
+	if err := os.Remove(filepath.Join(checkout, ".codex", "config.toml")); err != nil {
+		t.Fatal(err)
+	}
+	if got := store.OwnInstructions(domain.AgentCodex, checkout); got != "the person's" {
+		t.Fatalf("with no project value: %q", got)
+	}
+}

@@ -53,8 +53,11 @@ export class WhatsappMessageMapper {
     botId: string | null;
     isReply?: boolean;
     quotedId?: string | null;
+    /** Set for a voice note: how long it runs. `text` is then what it said. */
+    voiceSeconds?: number;
   }): WhatsappMessageDraft {
     const { account, chat, sent } = props;
+    const voice = props.voiceSeconds !== undefined;
     return {
       accountId: account.id,
       organizationId: account.organizationId,
@@ -65,13 +68,13 @@ export class WhatsappMessageMapper {
       senderId: account.phone ?? 'me',
       senderName: account.displayName,
       fromMe: true,
-      text: props.text,
-      media: null,
+      text: voice ? '' : props.text,
+      media: voice ? 'audio' : null,
       quotedId: props.quotedId ?? null,
       sentAt: sent.sentAt,
       sentByBotId: props.botId,
-      voiceSeconds: null,
-      transcript: null,
+      voiceSeconds: props.voiceSeconds ?? null,
+      transcript: voice ? props.text : null,
       switchesToBotId: null,
       isReply: (props.isReply ?? false) && props.botId !== null,
       mentions: [],

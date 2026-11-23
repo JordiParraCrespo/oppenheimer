@@ -11,7 +11,7 @@ import {
   weekdayName,
 } from '@oppenheimer/frontend-web';
 import {
-  SCHEDULE_FREQUENCIES,
+  EDITOR_SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
   timeZoneAbbreviation,
 } from '@oppenheimer/shared/automations';
@@ -78,7 +78,7 @@ export function ScheduleTriggerCard({
           size="md"
           label={t(`automations.frequency.${card.frequency}.label`)}
           value={card.frequency}
-          options={SCHEDULE_FREQUENCIES.map((frequency) => ({
+          options={EDITOR_SCHEDULE_FREQUENCIES.map((frequency) => ({
             value: frequency,
             label: t(`automations.frequency.${frequency}.label`),
             description: t(`automations.frequency.${frequency}.desc`),
