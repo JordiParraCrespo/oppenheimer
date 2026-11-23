@@ -15,12 +15,14 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, and Muse
- * in `muse.ts`, which this record composes. How the runner installs and
- * updates each CLI is `host-setup.ts`, kept apart so the console, which never
- * installs anything, does not load those scripts with the catalog.
+ * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`,
+ * Antigravity in `antigravity.ts`, ZCode in `zcode.ts` and Muse in `muse.ts`,
+ * which this record composes. How the runner installs and updates each CLI is
+ * `host-setup.ts`, kept apart so the console, which never installs anything,
+ * does not load those scripts with the catalog.
  */
 
+import { ANTIGRAVITY_AGENT } from './antigravity.js';
 import { CODEX_MODELS } from './codex-models.js';
 import {
   CLAUDE_4_6_LEVELS,
@@ -33,6 +35,7 @@ import { MUSE_AGENT } from './muse.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
 import { TYPED_INPUT } from './typed-input.js';
+import { ZCODE_AGENT } from './zcode.js';
 
 /**
  * Every agent id, in display order.
@@ -49,6 +52,8 @@ export const CODING_AGENT_IDS = [
   'grok',
   'pi',
   'omp',
+  'antigravity',
+  'zcode',
   'muse',
   'shell',
 ] as const;
@@ -270,6 +275,13 @@ export interface CodingAgentLaunch {
    * the first one themselves.
    */
   readonly prompt?: readonly string[];
+  /**
+   * The first task is a note for whoever reads the session, not something the
+   * agent reads: the blank terminal's names the session, and a bot then types
+   * into the terminal itself. An agent with no `prompt` that is not marked so
+   * (ZCode, Muse) would drop a task, so a caller that requires one refuses it.
+   */
+  readonly taskIsNote?: true;
 }
 
 /**
@@ -800,6 +812,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   }),
   pi: PI_AGENT,
   omp: OMP_AGENT,
+  antigravity: ANTIGRAVITY_AGENT,
+  zcode: ZCODE_AGENT,
   muse: MUSE_AGENT,
   shell: Object.freeze({
     id: 'shell',
@@ -811,7 +825,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // session, and they type the first command themselves.
     command: '',
     models: Object.freeze([]),
-    launch: Object.freeze({}),
+    launch: Object.freeze({ taskIsNote: true as const }),
   }),
 });
 

@@ -745,6 +745,8 @@
             "grok",
             "pi",
             "omp",
+            "antigravity",
+            "zcode",
             "muse"
           ]
         },
@@ -3252,6 +3254,8 @@
         "grok",
         "pi",
         "omp",
+        "antigravity",
+        "zcode",
         "muse",
         "shell"
       ],

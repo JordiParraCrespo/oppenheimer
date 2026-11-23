@@ -119,6 +119,14 @@ export function planBotSessionLaunch(
   input: BotSessionLaunchInput,
 ): { launch: BotSessionLaunch } | { refusal: string } {
   const definition = CODING_AGENTS[agent];
+  // `task` is required, and an agent that takes none on its command line
+  // (ZCode, Muse) would drop it, unless the catalog marks the task a note (the
+  // blank terminal's, which the bot then drives the terminal under).
+  if (!definition.launch.prompt && !definition.launch.taskIsNote) {
+    return {
+      refusal: promptText('tools/sessions.launch-no-task', { label: definition.label }),
+    };
+  }
   let model: CodingAgentModel | null = null;
   if (input.model !== undefined) {
     if (definition.models.length === 0) {
@@ -158,16 +166,6 @@ export function planBotSessionLaunch(
         }),
       };
     }
-  }
-  // A bot always hands the session a task; an agent that takes none at launch
-  // (Muse) would open without it while the bot waits on it. The blank
-  // terminal is a shell the bot types into, not an agent it briefs.
-  if (definition.command !== '' && !definition.launch.prompt) {
-    return {
-      refusal: promptText('tools/sessions.launch-no-task', {
-        label: definition.label,
-      }),
-    };
   }
   if (input.permission !== undefined && !definition.launch.permission) {
     return {

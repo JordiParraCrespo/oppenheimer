@@ -64,14 +64,14 @@ export function NewSessionSend({
     name: ['where', 'scope', 'folder'],
     compute: ([where, scope, folder]) => hasPlace({ where, scope, folder }),
   });
-  // An agent that takes no task at launch (the blank terminal, Muse) starts
-  // on nothing, and what is typed only names the session; a vendor's cloud
-  // agent always reads one.
+  // An agent that takes no task on its command line (the blank terminal,
+  // ZCode) starts on nothing, and the person types the first one there; a
+  // vendor's cloud agent always takes one.
   const taskOptional = useWatch({
     control,
     name: ['agent', 'where'],
     compute: ([agent, where]) =>
-      where !== 'cloud' && isCodingAgentId(agent) && !CODING_AGENTS[agent].launch.prompt,
+      isCodingAgentId(agent) && !CODING_AGENTS[agent].launch.prompt && where !== 'cloud',
   });
   // Whether the picked host is still one this workspace has. A remembered host
   // that was removed since the last visit would otherwise leave send enabled

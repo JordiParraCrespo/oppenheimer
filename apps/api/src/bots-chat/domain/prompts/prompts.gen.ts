@@ -614,11 +614,11 @@ export type PromptId =
   | "tools/session-transcript.page-end"
   | "tools/session-transcript.page-more"
   | "tools/sessions.unblock-rule"
+  | "tools/sessions.launch-no-task"
   | "tools/sessions.launch-no-models"
   | "tools/sessions.launch-unknown-model"
   | "tools/sessions.launch-no-effort"
   | "tools/sessions.launch-unknown-effort"
-  | "tools/sessions.launch-no-task"
   | "tools/sessions.launch-no-approvals"
   | "tools/sessions.close-not-a-bots-session"
   | "tools/sessions.read-budget-spent"
@@ -1325,11 +1325,11 @@ export interface PromptSlots {
   "tools/session-transcript.page-redacted": { redactions: string };
   "tools/session-transcript.page-end": { nextCursor: string };
   "tools/session-transcript.page-more": { nextCursor: string };
+  "tools/sessions.launch-no-task": { label: string };
   "tools/sessions.launch-no-models": { label: string };
   "tools/sessions.launch-unknown-model": { label: string; model: string; modelChoices: string };
   "tools/sessions.launch-no-effort": { which: string };
   "tools/sessions.launch-unknown-effort": { which: string; effort: string; levels: string };
-  "tools/sessions.launch-no-task": { label: string };
   "tools/sessions.launch-no-approvals": { label: string };
   "tools/sessions.close-not-a-bots-session": { id: string; article: string; origin: string };
   "tools/sessions.read-budget-spent": { sessionReadCharsPerTurn: string };
@@ -2153,11 +2153,11 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "tools/session-transcript.page-end": "That is all so far. To read what comes next later, pass cursor \"{{nextCursor}}\".",
   "tools/session-transcript.page-more": "More follows: read_session_transcript with cursor \"{{nextCursor}}\".",
   "tools/sessions.unblock-rule": "You may approve its permissions and answer its questions yourself, with care: you are a chef in this kitchen, not a waiter who carries every order back to the person. Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Think each answer through against the task before you send it, and say in a sentence what it asked and why you answered as you did. Whether the person approves first is your permissions' call, not yours: when they ask first, letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) goes to them on a card of its own even past what they allowed before; when they let you act, it is yours, so weigh it with extra care. Either way, call answer_session with the option you recommend.",
+  "tools/sessions.launch-no-task": "{{label}} takes no task on its command line, so a session on it would start idle with the task lost. Start it on another agent, or ask the person to start this one from the console and type the task there.",
   "tools/sessions.launch-no-models": "{{label}} takes no model. Leave model out.",
   "tools/sessions.launch-unknown-model": "{{label}} has no model \"{{model}}\". Its models: {{modelChoices}}. Ask the person which one if none is what they meant.",
   "tools/sessions.launch-no-effort": "{{which}} takes no effort level. Leave effort out.",
   "tools/sessions.launch-unknown-effort": "{{which}} has no effort \"{{effort}}\". Its levels, faster to smarter: {{levels}}.",
-  "tools/sessions.launch-no-task": "{{label}} takes no task when it starts, so a session you start on it would never get yours. Pick another agent.",
   "tools/sessions.launch-no-approvals": "{{label}} has no approvals to set. Leave permission out.",
   "tools/sessions.close-not-a-bots-session": "Session {{id}} was not started by a bot (it is {{article}} {{origin}} session), so you cannot close it. Tell the person; they can close it from the console.",
   "tools/sessions.read-budget-spent": "Refused: this turn has already read about {{sessionReadCharsPerTurn}} characters of your sessions' logs and conversations, the per-turn limit; reading more would overflow your own context and lose the turn. Stop reading and answer from what you have. If you must look further, do it in a new turn, or read a narrower slice: a smaller limit, a cursor or after_seq to read on from where you were, or search_sessions to go straight to the one session that matters.",

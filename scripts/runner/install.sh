@@ -55,7 +55,8 @@ usage: OPPENHEIMER_REGISTRATION_TOKEN=<token> install.sh --url <control plane UR
                 where the signed manifest and artifacts are served from; your
                 control plane puts its own in the command it hands you
   --agents      the agent CLIs to install for you, user-level and without sudo:
-                any of claude, codex, opencode, grok, pi, omp, muse and gh (GitHub's CLI),
+                any of claude, codex, opencode, grok, pi, omp, agy (Antigravity),
+                muse and gh (GitHub's CLI),
                 comma-separated, or none. Asked on a terminal when not given,
                 defaulting to the ones of claude and gh that are missing;
                 with no terminal and no --agents, none
@@ -276,7 +277,7 @@ choose_workspaces() {
 # `install` entries), and the ones offered by default: Claude Code is the
 # agent the MVP is built around, and gh is what opens a pull request from a
 # session.
-KNOWN_AGENTS="claude codex opencode grok pi omp muse gh"
+KNOWN_AGENTS="claude codex opencode grok pi omp agy muse gh"
 DEFAULT_AGENTS="claude gh"
 
 # missing_of <names…> — the ones not on PATH, space-separated.
@@ -287,13 +288,15 @@ missing_of() {
 }
 
 # known_agents <answer> — the answer as the names the runner installs: commas
-# read as spaces, `claude-code` as `claude`, `none` as nothing. A name it does
-# not know stops the install, before anything is downloaded.
+# read as spaces, `claude-code` as `claude`, `antigravity` as `agy`, `none`
+# as nothing. A name it does not know stops the install, before anything is
+# downloaded.
 known_agents() {
 	for a in $(printf '%s' "$1" | tr ',' ' '); do
 		case "$a" in
 		none) ;;
 		claude-code) printf 'claude ' ;;
+		antigravity) printf 'agy ' ;;
 		*)
 			case " $KNOWN_AGENTS " in
 			*" $a "*) printf '%s ' "$a" ;;

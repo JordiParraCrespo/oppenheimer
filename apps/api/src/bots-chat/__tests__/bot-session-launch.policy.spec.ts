@@ -77,13 +77,6 @@ describe('planBotSessionLaunch', () => {
     expect(planBotSessionLaunch('claude-code', {})).toEqual({ launch: { permission: 'auto' } });
   });
 
-  // Muse takes no task at launch: a bot that started it would watch for a
-  // first task Muse never received.
-  it('refuses an agent that cannot be handed the task', () => {
-    expect(planBotSessionLaunch('muse', {})).toHaveProperty('refusal');
-    expect(planBotSessionLaunch('shell', {})).toEqual({ launch: { permission: 'auto' } });
-  });
-
   it('refuses what the agent does not take, with what it does take', () => {
     const unknown = planBotSessionLaunch('claude-code', { model: 'gpt-6.1-sol' });
     expect(unknown).toEqual({
@@ -101,6 +94,18 @@ describe('planBotSessionLaunch', () => {
     expect(planBotSessionLaunch('shell', { permission: 'full' })).toEqual({
       refusal: expect.stringContaining('no approvals'),
     });
+  });
+
+  // What breaks this: a bot starting ZCode, which takes no task on its command
+  // line, and the required task dropped while the session sits idle.
+  it('refuses an agent that takes no task, and lets the blank terminal through', () => {
+    expect(planBotSessionLaunch('zcode', {})).toEqual({
+      refusal: expect.stringContaining('ZCode takes no task on its command line'),
+    });
+    expect(planBotSessionLaunch('muse', {})).toEqual({
+      refusal: expect.stringContaining('Muse takes no task on its command line'),
+    });
+    expect(planBotSessionLaunch('shell', {})).toHaveProperty('launch');
   });
 });
 

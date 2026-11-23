@@ -9790,6 +9790,8 @@
                 "grok",
                 "pi",
                 "omp",
+                "antigravity",
+                "zcode",
                 "muse",
                 "shell"
               ],
@@ -31522,6 +31524,8 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
+              "zcode",
               "muse",
               "shell",
               null
@@ -31608,6 +31612,8 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
+              "zcode",
               "muse",
               "shell",
               null
@@ -31674,6 +31680,8 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
+              "zcode",
               "muse",
               "shell",
               null
@@ -32212,6 +32220,8 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
+              "zcode",
               "muse",
               "shell",
               "cursor"
@@ -32480,6 +32490,8 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
+              "zcode",
               "muse",
               "shell"
             ]
@@ -33834,6 +33846,8 @@
               "grok",
               "pi",
               "omp",
+              "antigravity",
+              "zcode",
               "muse"
             ]
           },
@@ -34754,6 +34768,8 @@
                   "grok",
                   "pi",
                   "omp",
+                  "antigravity",
+                  "zcode",
                   "muse",
                   "shell"
                 ]
@@ -35238,6 +35254,8 @@
                   "grok",
                   "pi",
                   "omp",
+                  "antigravity",
+                  "zcode",
                   "muse",
                   "shell"
                 ]
@@ -36127,6 +36145,8 @@
                   "grok",
                   "pi",
                   "omp",
+                  "antigravity",
+                  "zcode",
                   "muse",
                   "shell"
                 ]
