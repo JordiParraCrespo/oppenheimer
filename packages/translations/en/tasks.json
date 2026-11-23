@@ -145,6 +145,8 @@
     "noRepositoryDesc": "Opens in the host’s home folder",
     "repositorySearch": "Search repositories",
     "noRepositories": "No repositories. Give the GitHub app access to one.",
+    "repositoriesLoading": "Loading the workspace’s repositories…",
+    "repositoriesFailed": "Couldn’t load every repository the workspace reaches.",
     "where": "Where it runs",
     "whereSearch": "Search places",
     "noPlaces": "Nowhere to run it.",

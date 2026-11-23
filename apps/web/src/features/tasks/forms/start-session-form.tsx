@@ -30,6 +30,9 @@ import {
   startReadiness,
 } from '../lib/start-session';
 
+/** The disabled row that says the workspace's repositories are loading or failed; never picked. */
+const REPOSITORIES_STATUS = 'repositories-status';
+
 /**
  * The launch dialog's form: the prompt, prefilled from the task, and the repository
  * (the project's first, then any other the workspace's GitHub installations reach),
@@ -48,7 +51,7 @@ import {
 export function StartSessionForm({
   values,
   repositories,
-  repositoriesLoading,
+  repositoriesStatus,
   onManageRepositories,
   hosts,
   cloudHosts,
@@ -66,8 +69,11 @@ export function StartSessionForm({
   values: StartSessionValues;
   /** The project's repositories, then every other one the workspace's installations reach. */
   repositories: ChipSelectOption[];
-  /** The installations' repositories are still being read; the project's are already listed. */
-  repositoriesLoading: boolean;
+  /**
+   * The workspace's repositories beyond the project's: still being read, or a read that
+   * failed. Said in a row under the ones already listed, which stay pickable.
+   */
+  repositoriesStatus: 'loading' | 'failed' | null;
   /** Opens GitHub to grant the app more repositories; absent on a deployment with no app. */
   onManageRepositories?: () => void;
   hosts: ChipSelectOption[];
@@ -113,6 +119,19 @@ export function StartSessionForm({
       disabled: rule.host !== 'runs',
     },
     ...repositories,
+    ...(repositoriesStatus
+      ? [
+          {
+            value: REPOSITORIES_STATUS,
+            label: t(
+              repositoriesStatus === 'loading'
+                ? 'tasks.start.repositoriesLoading'
+                : 'tasks.start.repositoriesFailed',
+            ),
+            disabled: true,
+          },
+        ]
+      : []),
   ];
   const submit = handleSubmit(onSubmit);
 
@@ -148,7 +167,6 @@ export function StartSessionForm({
               placeholder={t('tasks.start.repositoryPlaceholder')}
               searchPlaceholder={t('tasks.start.repositorySearch')}
               emptyText={t('tasks.start.noRepositories')}
-              loading={repositoriesLoading}
               action={
                 onManageRepositories
                   ? { label: t('common.repositoryAccess.manage'), onSelect: onManageRepositories }

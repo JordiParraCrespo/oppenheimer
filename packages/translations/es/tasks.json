@@ -146,6 +146,8 @@
     "noRepositoryDesc": "Se abre en la carpeta personal del host",
     "repositorySearch": "Buscar repositorios",
     "noRepositories": "No hay repositorios. Da acceso a uno a la app de GitHub.",
+    "repositoriesLoading": "Cargando los repositorios del espacio de trabajo…",
+    "repositoriesFailed": "No se pudieron cargar todos los repositorios del espacio de trabajo.",
     "where": "Dónde se ejecuta",
     "whereSearch": "Buscar lugares",
     "noPlaces": "No hay dónde ejecutarla.",

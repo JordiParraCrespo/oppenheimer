@@ -34,7 +34,8 @@ import {
  * the reader has a Cursor key is read beside them, without holding the form:
  * until it answers, Cursor is offered disabled. The repositories the
  * workspace's GitHub installations reach are read the same way: the project's
- * are offered at once, the rest join them as they load. A task
+ * are offered at once, the rest join them as they load, and a read that fails
+ * says so under the ones that did. A task
  * or project that is gone says so instead of the form. The idempotency key is
  * this form's, so a retried submit does not start two sessions. A refetch
  * that fails keeps the form and says so above it.
@@ -89,7 +90,13 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
           description: `${row.fullName} · ${row.baseBranch}`,
           mono: true,
         }))}
-        repositoriesLoading={installations.isPending || reachable.isPending}
+        repositoriesStatus={
+          installations.error || reachable.error
+            ? 'failed'
+            : installations.isPending || reachable.isPending
+              ? 'loading'
+              : null
+        }
         onManageRepositories={manageAccess.onManage}
         hosts={found.hosts.map((host) => ({
           value: host.id,
