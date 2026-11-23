@@ -20,7 +20,7 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
  * deletes it for good, behind the same confirmation as in Employees. A
  * section because it subscribes to the route, to light up on its own chat.
  * The row drags by itself (a click still opens the chat) on its heading's
- * drag layer.
+ * drag layer. A right-click opens the row's menu at its ellipsis.
  */
 export function SectionBotRow({
   bot,
@@ -46,6 +46,11 @@ export function SectionBotRow({
         {...item}
         active={active}
         menuOpen={menuOpen}
+        // A right-click opens the row's own menu, not the browser's.
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setMenuOpen(true);
+        }}
         render={<Link to={to} params={params} />}
         action={
           <SectionBotRowMenu

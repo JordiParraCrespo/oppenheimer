@@ -20,7 +20,8 @@ import { useBotUnread } from '@/features/bots/hooks/use-bot-unread';
  * `groups` are the Move pane's targets; its pin is the sidebar's
  * (`BotPinsContext`), which draws a pinned row under Pinned; `onHide`
  * takes it out of the sidebar. The row drags by
- * itself (a click still opens the chat) unless `dragDisabled`.
+ * itself (a click still opens the chat) unless `dragDisabled`. A right-click
+ * opens the row's menu at its ellipsis.
  */
 export function BotSidebarRow({
   bot,
@@ -54,6 +55,11 @@ export function BotSidebarRow({
         disabled={dragDisabled}
         active={active}
         menuOpen={menuOpen}
+        // A right-click opens the row's own menu, not the browser's.
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setMenuOpen(true);
+        }}
         render={<Link to="/bots/$botId" params={{ botId: bot.id }} />}
         action={
           <BotRowMenu
