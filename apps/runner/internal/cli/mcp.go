@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -102,7 +101,7 @@ func (s *mcpServer) handle(ctx context.Context, req mcpRequest) {
 	case "ping":
 		s.reply(req.ID, map[string]any{}, nil)
 	case "tools/list":
-		s.reply(req.ID, map[string]any{"tools": mcpTools}, nil)
+		s.reply(req.ID, map[string]any{"tools": toolList()}, nil)
 	case "tools/call":
 		var params struct {
 			Name      string          `json:"name"`
@@ -144,6 +143,10 @@ func (s *mcpServer) reply(id json.RawMessage, result any, failure *mcpError) {
 	_, _ = s.out.Write(append(encoded, '\n'))
 }
 
+// DefaultChildAgent is the agent a child session runs when none is named,
+// by `runner sessions run` and by start_session alike.
+const DefaultChildAgent = "claude"
+
 // mcpArgs is every tool's arguments; each tool reads its own.
 type mcpArgs struct {
 	Task           string   `json:"task"`
@@ -166,133 +169,186 @@ type mcpArgs struct {
 
 // call runs one tool as its command, returning what the command prints.
 func (s *mcpServer) call(ctx context.Context, name string, raw json.RawMessage) (string, error) {
+	tool, ok := toolNamed(name)
+	if !ok {
+		return "", fmt.Errorf("no tool %q", name)
+	}
+	if len(raw) == 0 {
+		raw = json.RawMessage("{}")
+	}
+	var given map[string]any
 	var args mcpArgs
-	if len(raw) > 0 {
-		if err := json.Unmarshal(raw, &args); err != nil {
-			return "", fmt.Errorf("arguments: %w", err)
+	if err := json.Unmarshal(raw, &given); err != nil {
+		return "", fmt.Errorf("arguments: %w", err)
+	}
+	if err := json.Unmarshal(raw, &args); err != nil {
+		return "", fmt.Errorf("arguments: %w", err)
+	}
+	var missing []string
+	for _, field := range tool.required {
+		if value, set := given[field]; !set || value == nil || value == "" || value == float64(0) {
+			missing = append(missing, field)
 		}
+	}
+	if len(missing) > 0 {
+		return "", fmt.Errorf("%s needs %s", name, strings.Join(missing, " and "))
 	}
 	var out bytes.Buffer
 	d := s.d
 	d.Out = &out
-	err := s.run(ctx, d, name, args)
+	err := tool.run(ctx, d, args)
 	return strings.TrimSpace(out.String()), err
-}
-
-func (s *mcpServer) run(ctx context.Context, d Delegation, name string, args mcpArgs) error {
-	switch name {
-	case "start_session":
-		if args.Task == "" {
-			return errors.New("task is required")
-		}
-		agent := args.Agent
-		if agent == "" {
-			agent = "claude"
-		}
-		return d.Run(ctx, ChildOptions{
-			Agent: agent, Name: args.Name, Repo: args.Repo, Base: args.Base,
-			OutliveParent: args.OutliveParent, Keep: args.Keep,
-		}, args.Task)
-	case "send_to_session":
-		if args.ID == "" || args.Message == "" {
-			return errors.New("id and message are required")
-		}
-		return d.Send(ctx, args.ID, args.Message)
-	case "list_children":
-		return d.Children(ctx, "")
-	case "wait_for_children":
-		timeout := 10 * time.Minute
-		if args.TimeoutMinutes > 0 {
-			timeout = min(time.Duration(args.TimeoutMinutes)*time.Minute, sessionsdomain.LongestToolCall)
-		}
-		return d.Wait(ctx, "", args.IDs, timeout)
-	case "report_to_parent":
-		if args.Message == "" {
-			return errors.New("message is required")
-		}
-		return d.Report(ctx, args.Message)
-	case "notify":
-		if args.Message == "" {
-			return errors.New("message is required")
-		}
-		return d.Notify(ctx, args.Message)
-	case "send_file":
-		if args.Path == "" {
-			return errors.New("path is required")
-		}
-		return d.SendFile(ctx, args.Path, args.Caption)
-	case "watch_pull_request":
-		if args.Number < 1 {
-			return errors.New("number is required")
-		}
-		return d.WatchPull(ctx, args.Repo, args.Number, !args.Off)
-	case "wake_in":
-		if args.Delay == "" || args.Message == "" {
-			return errors.New("delay and message are required")
-		}
-		delay, err := ParseWakeDelay(args.Delay)
-		if err != nil {
-			return err
-		}
-		return d.WakeIn(ctx, delay, args.Message)
-	}
-	return fmt.Errorf("no tool %q", name)
 }
 
 const mcpInstructions = "Tools for the Oppenheimer session this agent runs in: start other agents as sessions " +
 	"of your own and hear back from them, tell the person, show them a file, and be woken later or by a " +
 	"pull request. They are the `runner sessions` commands; `runner --skill` is the full manual."
 
-// mcpTools is what tools/list answers: each command, described for the
-// agent that will choose it.
-var mcpTools = []map[string]any{
-	mcpTool("start_session", "Start another agent as a child session of this one, with a task. "+
-		"By default it runs in this session's folder, on the same files: give it work that does not collide with yours. "+
-		"Answers the child's id.", map[string]any{
-		"task":           mcpString("The child's first message."),
-		"agent":          mcpString("claude (default), codex, opencode, grok, pi or shell."),
-		"name":           mcpString("A name for the child."),
-		"repo":           mcpString("owner/name: give the child a checkout of its own, cut from a pushed branch."),
-		"base":           mcpString("With repo, the branch to cut it from."),
-		"outlive_parent": mcpBool("Keep the child running when this session ends."),
-		"keep":           mcpBool("Bring the child back on its own after the host reboots."),
-	}, "task"),
-	mcpTool("send_to_session", "Type a message into a child session's agent and submit it.", map[string]any{
-		"id":      mcpString("The session's id."),
-		"message": mcpString("What to send."),
-	}, "id", "message"),
-	mcpTool("list_children", "List this session's children: their state and what they last said.", map[string]any{}),
-	mcpTool("wait_for_children", "Wait until the children have finished, are blocked, or ended. They keep running past the timeout.", map[string]any{
-		"ids":             map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Only these children (default: all)."},
-		"timeout_minutes": map[string]any{"type": "integer", "description": "How long to wait (default 10, at most 30)."},
-	}),
-	mcpTool("report_to_parent", "As a child, tell the session that started you what you found or did.", map[string]any{
-		"message": mcpString("The report."),
-	}, "message"),
-	mcpTool("notify", "Put a line in the person's Inbox in the console, for something they should know or act on.", map[string]any{
-		"message": mcpString("The line."),
-	}, "message"),
-	mcpTool("send_file", "Show the person a file in this session's chat: an image as a picture, a small text file as its text.", map[string]any{
-		"path":    mcpString("The file, absolute or relative to where you run."),
-		"caption": mcpString("A line about the file."),
-	}, "path"),
-	mcpTool("watch_pull_request", "Be woken when your pull request's checks finish, someone reviews or comments, or it merges. End your turn after.", map[string]any{
-		"number": map[string]any{"type": "integer", "description": "The pull request's number."},
-		"repo":   mcpString("owner/name (default: this session's first checkout)."),
-		"off":    mcpBool("Stop watching it."),
-	}, "number"),
-	mcpTool("wake_in", "Be woken later with a message to yourself. End your turn after.", map[string]any{
-		"delay":   mcpString("30m, 2h, 1d and the like."),
-		"message": mcpString("What to tell yourself then."),
-	}, "delay", "message"),
+// mcpTool is one tool: what tools/list says of it and what tools/call runs,
+// so the two cannot disagree. Its required fields are checked before run is
+// called, from the same list the schema publishes.
+type mcpTool struct {
+	name        string
+	description string
+	properties  map[string]any
+	required    []string
+	run         func(ctx context.Context, d Delegation, args mcpArgs) error
 }
 
-func mcpTool(name, description string, properties map[string]any, required ...string) map[string]any {
-	schema := map[string]any{"type": "object", "properties": properties}
-	if len(required) > 0 {
-		schema["required"] = required
+// mcpTools are the session commands, described for the agent that will
+// choose one; each runs the command's Delegation call.
+var mcpTools = []mcpTool{
+	{
+		name: "start_session",
+		description: "Start another agent as a child session of this one, with a task. " +
+			"By default it runs in this session's folder, on the same files: give it work that does not collide with yours. " +
+			"Answers the child's id.",
+		properties: map[string]any{
+			"task":           mcpString("The child's first message."),
+			"agent":          mcpString(DefaultChildAgent + " (default), codex, opencode, grok, pi or shell."),
+			"name":           mcpString("A name for the child."),
+			"repo":           mcpString("owner/name: give the child a checkout of its own, cut from a pushed branch."),
+			"base":           mcpString("With repo, the branch to cut it from."),
+			"outlive_parent": mcpBool("Keep the child running when this session ends."),
+			"keep":           mcpBool("Bring the child back on its own after the host reboots."),
+		},
+		required: []string{"task"},
+		run: func(ctx context.Context, d Delegation, a mcpArgs) error {
+			agent := a.Agent
+			if agent == "" {
+				agent = DefaultChildAgent
+			}
+			return d.Run(ctx, ChildOptions{
+				Agent: agent, Name: a.Name, Repo: a.Repo, Base: a.Base, OutliveParent: a.OutliveParent, Keep: a.Keep,
+			}, a.Task)
+		},
+	},
+	{
+		name:        "send_to_session",
+		description: "Type a message into a child session's agent and submit it.",
+		properties: map[string]any{
+			"id":      mcpString("The session's id."),
+			"message": mcpString("What to send."),
+		},
+		required: []string{"id", "message"},
+		run:      func(ctx context.Context, d Delegation, a mcpArgs) error { return d.Send(ctx, a.ID, a.Message) },
+	},
+	{
+		name:        "list_children",
+		description: "List this session's children: their state and what they last said.",
+		properties:  map[string]any{},
+		run:         func(ctx context.Context, d Delegation, _ mcpArgs) error { return d.Children(ctx, "") },
+	},
+	{
+		name:        "wait_for_children",
+		description: "Wait until the children have finished, are blocked, or ended. They keep running past the timeout.",
+		properties: map[string]any{
+			"ids":             map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Only these children (default: all)."},
+			"timeout_minutes": map[string]any{"type": "integer", "description": "How long to wait (default 10, at most 30)."},
+		},
+		run: func(ctx context.Context, d Delegation, a mcpArgs) error {
+			timeout := 10 * time.Minute
+			if a.TimeoutMinutes > 0 {
+				timeout = min(time.Duration(a.TimeoutMinutes)*time.Minute, sessionsdomain.LongestToolCall)
+			}
+			return d.Wait(ctx, "", a.IDs, timeout)
+		},
+	},
+	{
+		name:        "report_to_parent",
+		description: "As a child, tell the session that started you what you found or did.",
+		properties:  map[string]any{"message": mcpString("The report.")},
+		required:    []string{"message"},
+		run:         func(ctx context.Context, d Delegation, a mcpArgs) error { return d.Report(ctx, a.Message) },
+	},
+	{
+		name:        "notify",
+		description: "Put a line in the person's Inbox in the console, for something they should know or act on.",
+		properties:  map[string]any{"message": mcpString("The line.")},
+		required:    []string{"message"},
+		run:         func(ctx context.Context, d Delegation, a mcpArgs) error { return d.Notify(ctx, a.Message) },
+	},
+	{
+		name:        "send_file",
+		description: "Show the person a file in this session's chat: an image as a picture, a small text file as its text.",
+		properties: map[string]any{
+			"path":    mcpString("The file, absolute or relative to where you run."),
+			"caption": mcpString("A line about the file."),
+		},
+		required: []string{"path"},
+		run:      func(ctx context.Context, d Delegation, a mcpArgs) error { return d.SendFile(ctx, a.Path, a.Caption) },
+	},
+	{
+		name:        "watch_pull_request",
+		description: "Be woken when your pull request's checks finish, someone reviews or comments, or it merges. End your turn after.",
+		properties: map[string]any{
+			"number": map[string]any{"type": "integer", "description": "The pull request's number."},
+			"repo":   mcpString("owner/name (default: this session's first checkout)."),
+			"off":    mcpBool("Stop watching it."),
+		},
+		required: []string{"number"},
+		run: func(ctx context.Context, d Delegation, a mcpArgs) error {
+			return d.WatchPull(ctx, a.Repo, a.Number, !a.Off)
+		},
+	},
+	{
+		name:        "wake_in",
+		description: "Be woken later with a message to yourself. End your turn after.",
+		properties: map[string]any{
+			"delay":   mcpString("30m, 2h, 1d and the like."),
+			"message": mcpString("What to tell yourself then."),
+		},
+		required: []string{"delay", "message"},
+		run: func(ctx context.Context, d Delegation, a mcpArgs) error {
+			delay, err := ParseWakeDelay(a.Delay)
+			if err != nil {
+				return err
+			}
+			return d.WakeIn(ctx, delay, a.Message)
+		},
+	},
+}
+
+func toolNamed(name string) (mcpTool, bool) {
+	for _, tool := range mcpTools {
+		if tool.name == name {
+			return tool, true
+		}
 	}
-	return map[string]any{"name": name, "description": description, "inputSchema": schema}
+	return mcpTool{}, false
+}
+
+// toolList is tools/list's answer, read off mcpTools.
+func toolList() []map[string]any {
+	list := make([]map[string]any, 0, len(mcpTools))
+	for _, tool := range mcpTools {
+		schema := map[string]any{"type": "object", "properties": tool.properties}
+		if len(tool.required) > 0 {
+			schema["required"] = tool.required
+		}
+		list = append(list, map[string]any{"name": tool.name, "description": tool.description, "inputSchema": schema})
+	}
+	return list
 }
 
 func mcpString(description string) map[string]any {

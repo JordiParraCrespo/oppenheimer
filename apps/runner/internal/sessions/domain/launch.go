@@ -232,7 +232,7 @@ func (l Launch) Args(agent Agent) []string {
 	if l.Server != nil && agent.ServesConversation() {
 		args = append(args, "--port", strconv.Itoa(l.Server.Port), "--hostname", "127.0.0.1")
 	}
-	args = append(args, l.briefingArgs(agent)...)
+	args = append(args, l.briefingFor(agent, nil).args...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
@@ -345,20 +345,14 @@ func (l Launch) Env(agent Agent) map[string]string {
 	for name, value := range permission {
 		env[name] = value
 	}
-	if agent == AgentOpenCode {
-		if config := l.briefingConfig(env[openCodeConfig]); config != "" {
-			env[openCodeConfig] = config
-		}
+	for name, value := range l.briefingFor(agent, env).env {
+		env[name] = value
 	}
 	if len(env) == 0 {
 		return nil
 	}
 	return env
 }
-
-// openCodeConfig is the variable OpenCode reads config content from, on top
-// of the person's own config files.
-const openCodeConfig = "OPENCODE_CONFIG_CONTENT"
 
 // PromptWithFiles is the first task followed by the paths of the files
 // attached to it, a blank line after the task and one path to a line: the

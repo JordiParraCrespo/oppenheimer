@@ -16,69 +16,79 @@ const ToolsServer = "oppenheimer"
 // is told to allow it.
 const LongestToolCall = 30 * time.Minute
 
-// briefingArgs is how a launch hands the agent the session note and the
-// runner's MCP server on its command line, spelled the agent's own way, and
-// added to what the person configured rather than replacing it:
+// briefingDelta is what a launch adds to hand the agent the session note
+// and the runner's MCP server: words for its command line and variables for
+// its environment.
+type briefingDelta struct {
+	args []string
+	env  map[string]string
+}
+
+// briefingFor is the one place each agent's way in is spelled, added to what
+// the person configured rather than replacing it; Args and Env only apply
+// it. env is what the launch's levels already set, for an agent whose way in
+// is a variable those may have written first.
 //
 //   - Claude Code finds the note itself (NoteFile) and takes the server as
 //     `--mcp-config`, which adds to the person's own servers.
 //   - Codex reads AGENTS.md only from its checkout down, never the session's
 //     folder above it, so it is told where the note is in
 //     `developer_instructions`, which sits beside the repository's own
-//     AGENTS.md and after the person's own value of the key
-//     (OwnInstructions), which the override would otherwise replace; the
-//     server is a `-c mcp_servers.<name>` override.
-//   - OpenCode takes both in its config, which is an environment variable
-//     (briefingConfig).
+//     AGENTS.md and after the value the override would otherwise replace
+//     (OwnInstructions); the server is a `-c mcp_servers.<name>` override.
+//   - OpenCode takes both in its config content, an environment variable
+//     the effort level writes its `agent` key into.
 //
 // The other agents get neither: their CLIs have no way in that has been
 // checked.
-func (l Launch) briefingArgs(agent Agent) []string {
+func (l Launch) briefingFor(agent Agent, env map[string]string) briefingDelta {
+	if l.Note == "" && len(l.Tools) == 0 {
+		return briefingDelta{}
+	}
 	switch agent {
 	case AgentClaude:
 		if len(l.Tools) == 0 {
-			return nil
+			return briefingDelta{}
 		}
 		config, _ := json.Marshal(map[string]any{"mcpServers": map[string]any{
 			ToolsServer: map[string]any{"type": "stdio", "command": l.Tools[0], "args": l.Tools[1:]},
 		}})
 		// One word: the flag takes several values, so a prompt after a
 		// separate value would be read as another config file.
-		return []string{"--mcp-config=" + string(config)}
+		return briefingDelta{args: []string{"--mcp-config=" + string(config)}}
 	case AgentCodex:
-		var args []string
-		if l.Note != "" || len(l.Tools) > 0 {
-			instructions := l.briefing()
-			if own := strings.TrimSpace(l.OwnInstructions); own != "" {
-				instructions = own + "\n\n" + instructions
-			}
-			args = append(args, "-c", "developer_instructions="+tomlString(instructions))
+		instructions := l.briefing()
+		if own := strings.TrimSpace(l.OwnInstructions); own != "" {
+			instructions = own + "\n\n" + instructions
 		}
+		args := []string{"-c", "developer_instructions=" + tomlString(instructions)}
 		if len(l.Tools) > 0 {
 			args = append(args,
 				"-c", "mcp_servers."+ToolsServer+".command="+tomlString(l.Tools[0]),
 				"-c", "mcp_servers."+ToolsServer+".args="+tomlStrings(l.Tools[1:]),
 				// Codex gives a tool call 60 s; a wait may take its longest.
-				"-c", "mcp_servers."+ToolsServer+".tool_timeout_sec="+strconv.Itoa(int(LongestToolCall.Seconds())+60))
+				"-c", "mcp_servers."+ToolsServer+".tool_timeout_sec="+strconv.Itoa(int(toolCallBound().Seconds())))
 		}
-		return args
+		return briefingDelta{args: args}
+	case AgentOpenCode:
+		config, ok := l.openCodeConfig(env[openCodeConfig])
+		if !ok {
+			return briefingDelta{}
+		}
+		return briefingDelta{env: map[string]string{openCodeConfig: config}}
 	}
-	return nil
+	return briefingDelta{}
 }
 
-// briefingConfig merges the note and the server into OpenCode's config
-// content: config is what the effort level already put there (its `agent`
-// key), or "". It is returned unchanged when there is nothing to add, or
-// when it is not a JSON object, which would make OpenCode refuse the launch
-// either way.
-func (l Launch) briefingConfig(config string) string {
-	if l.Note == "" && len(l.Tools) == 0 {
-		return config
-	}
+// openCodeConfig merges the note and the server into OpenCode's config
+// content, config being what the levels already put there or "". It is not
+// ok when that is not a JSON object, which OpenCode would refuse either way,
+// so it is left as it was.
+func (l Launch) openCodeConfig(config string) (string, bool) {
 	merged := map[string]any{}
 	if config != "" {
 		if err := json.Unmarshal([]byte(config), &merged); err != nil {
-			return config
+			return "", false
 		}
 	}
 	if l.Note != "" {
@@ -88,15 +98,23 @@ func (l Launch) briefingConfig(config string) string {
 		// OpenCode bounds a request to the server, a tool call included, to
 		// `timeout` ms, 5 s unless set; a wait may take its longest.
 		merged["mcp"] = map[string]any{ToolsServer: map[string]any{
-			"type": "local", "command": l.Tools, "timeout": (LongestToolCall + time.Minute).Milliseconds(),
+			"type": "local", "command": l.Tools, "timeout": toolCallBound().Milliseconds(),
 		}}
 	}
 	encoded, err := json.Marshal(merged)
 	if err != nil {
-		return config
+		return "", false
 	}
-	return string(encoded)
+	return string(encoded), true
 }
+
+// toolCallBound is what an agent that bounds a tool call is told to allow:
+// the longest call, and a minute for the answer to come back.
+func toolCallBound() time.Duration { return LongestToolCall + time.Minute }
+
+// openCodeConfig is the variable OpenCode reads config content from, on top
+// of the person's own config files.
+const openCodeConfig = "OPENCODE_CONFIG_CONTENT"
 
 // briefing is the line an agent that does not read the note itself is
 // given: where the note is, and what the runner offers it.

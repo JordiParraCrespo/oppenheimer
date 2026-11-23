@@ -57,6 +57,7 @@ func TestTheMCPServerRunsTheSessionCommandsAsTools(t *testing.T) {
 		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"start_session","arguments":{"task":"review src/x.go","agent":"claude"}}}`,
 		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"send_to_session","arguments":{"id":"nosuchsession","message":"hello"}}}`,
 		`{"jsonrpc":"2.0","id":5,"method":"no/such"}`,
+		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"wake_in","arguments":{"delay":"30m"}}}`,
 	}, "\n") + "\n"
 	var out bytes.Buffer
 	d := Delegation{Socket: socket, Self: parent.ID}
@@ -82,8 +83,8 @@ func TestTheMCPServerRunsTheSessionCommandsAsTools(t *testing.T) {
 		}
 		answers[a.ID] = a
 	}
-	if len(answers) != 5 {
-		t.Fatalf("answered %d requests, want 5 (a notification gets none):\n%s", len(answers), out.String())
+	if len(answers) != 6 {
+		t.Fatalf("answered %d requests, want 6 (a notification gets none):\n%s", len(answers), out.String())
 	}
 	if answers[1].Result.ProtocolVersion != "2025-06-18" {
 		t.Fatalf("initialize = %+v", answers[1])
@@ -110,5 +111,10 @@ func TestTheMCPServerRunsTheSessionCommandsAsTools(t *testing.T) {
 	}
 	if answers[5].Error == nil || answers[5].Error.Code != -32601 {
 		t.Fatalf("an unknown method = %+v", answers[5])
+	}
+	// A field the schema lists as required is checked from that same list,
+	// before the daemon is asked.
+	if short := answers[6].Result; !short.IsError || !strings.Contains(short.Content[0].Text, "wake_in needs message") {
+		t.Fatalf("a call missing a required field = %+v", short)
 	}
 }
