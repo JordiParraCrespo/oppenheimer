@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -132,7 +131,7 @@ func (s *zcodeStore) messages(ctx context.Context, session string, limit int) ([
 	if db == nil || err != nil {
 		return nil, err
 	}
-	query := `SELECT id, data FROM message WHERE session_id = ? ORDER BY time_created DESC, id DESC`
+	query := `SELECT id, data, time_created FROM message WHERE session_id = ? ORDER BY time_created DESC, id DESC`
 	args := []any{session}
 	if limit > 0 {
 		query += ` LIMIT ?`
@@ -144,12 +143,17 @@ func (s *zcodeStore) messages(ctx context.Context, session string, limit int) ([
 	}
 	var messages []openCodeMessage
 	byID := map[string]int{}
+	// oldest is the earliest message read, hidden ones included: no part of
+	// the messages kept was written before it.
+	oldest := int64(0)
 	for rows.Next() {
 		var id, data string
-		if err := rows.Scan(&id, &data); err != nil {
+		var created int64
+		if err := rows.Scan(&id, &data, &created); err != nil {
 			_ = rows.Close()
 			return nil, err
 		}
+		oldest = created
 		var head zcodeMessage
 		if json.Unmarshal([]byte(data), &head) != nil || head.hidden() {
 			continue
@@ -170,22 +174,18 @@ func (s *zcodeStore) messages(ctx context.Context, session string, limit int) ([
 	if len(messages) == 0 {
 		return messages, nil
 	}
-	if err := s.readParts(ctx, db, session, messages, byID); err != nil {
+	if err := s.readParts(ctx, db, session, oldest, messages, byID); err != nil {
 		return nil, err
 	}
 	return messages, nil
 }
 
-// readParts fills in each message's parts, in the order ZCode wrote them.
-func (s *zcodeStore) readParts(ctx context.Context, db *sql.DB, session string, messages []openCodeMessage, byID map[string]int) error {
-	marks := strings.TrimSuffix(strings.Repeat("?,", len(byID)), ",")
-	args := []any{session}
-	for _, message := range messages {
-		args = append(args, message.Info.ID)
-	}
+// readParts fills in each message's parts, in the order ZCode wrote them:
+// the conversation's parts written since oldest, kept for the messages read.
+func (s *zcodeStore) readParts(ctx context.Context, db *sql.DB, session string, oldest int64, messages []openCodeMessage, byID map[string]int) error {
 	rows, err := db.QueryContext(ctx,
-		`SELECT message_id, id, data FROM part WHERE session_id = ? AND message_id IN (`+marks+`) ORDER BY COALESCE(sequence, 0), time_created, id`,
-		args...)
+		`SELECT message_id, id, data FROM part WHERE session_id = ? AND time_created >= ? ORDER BY COALESCE(sequence, 0), time_created, id`,
+		session, oldest)
 	if err != nil {
 		return err
 	}
