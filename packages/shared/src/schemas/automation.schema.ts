@@ -11,6 +11,7 @@ import {
   RUN_WINDOWS,
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
+  WEBHOOK_EVENT_TYPES,
 } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
 import { CLOUD_AGENT_IDS } from './cloud-agent.schema.js';
@@ -115,10 +116,24 @@ export const gmailTriggerInputSchema = z.object({
 
 export type GmailTriggerInputDto = z.infer<typeof gmailTriggerInputSchema>;
 
+/**
+ * A webhook card: the routine runs when something is posted to its URL. The
+ * URL and its signing secret are issued on the Routines tab, never in the
+ * trigger, so whoever writes the trigger (the bot) never holds them. At most
+ * one per routine; bot routines only.
+ */
+export const webhookTriggerInputSchema = z.object({
+  source: z.literal('webhook'),
+  event: z.enum(WEBHOOK_EVENT_TYPES).default('webhook_received'),
+});
+
+export type WebhookTriggerInputDto = z.infer<typeof webhookTriggerInputSchema>;
+
 export const triggerInputSchema = z.union([
   scheduleTriggerInputSchema,
   githubTriggerInputSchema,
   gmailTriggerInputSchema,
+  webhookTriggerInputSchema,
 ]);
 
 export type TriggerInputDto = z.infer<typeof triggerInputSchema>;
