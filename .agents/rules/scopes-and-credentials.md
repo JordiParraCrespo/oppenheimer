@@ -86,17 +86,16 @@ spec refuses to guess.
 ## A scope grants no more than its name
 
 A scope is read by the person who grants it: `hosts:write` reads as "edit my
-hosts", not "take control of my desktop". Two routes broke that:
+hosts", not "take control of my desktop".
 
 - **A route that hands over control or binds an identity needs a scope of
-  its own**, never the area's `:write`. Minting a desktop or terminal ticket
-  (#799), binding a phone as a channel's owner (#785), issuing a credential
+  its own**, never the area's `:write`. Minting a desktop or terminal ticket, binding a phone as a channel's owner, issuing a credential
   or a delegated session: each is its own catalog entry, named for the power
   it gives, and absent from every preset that did not already grant it.
 - **A check that decides whether something dangerous may run fails
   closed.** An approval that cannot be read, a command that cannot be
   parsed, a model answer that does not fit the schema: each is a refusal,
-  never "safe" (#802). A denylist is the last line, not the only one: it
+  never "safe". A denylist is the last line, not the only one: it
   normalises global options first (`git -C dir`, `git -c k=v`), and covers
   the interpreters (`python -c`, `node -e`), pipes into a shell
   (`curl … | sh`) and the destructive forms of every command it names
@@ -105,7 +104,7 @@ hosts", not "take control of my desktop". Two routes broke that:
   contact or a channel guest is not the owner: their turn loads only their
   own conversation, never the owner's history, and only the tools granted to
   them, including the engine's own (web search, todos), which are off unless
-  granted (#949).
+  granted.
 
 ## Credential handling
 

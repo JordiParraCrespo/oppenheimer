@@ -81,7 +81,7 @@ held.
    composer and project screens have repositories; `--phone` adds a 390px
    width, which a layout change needs; `--widths 1440,900,500,390` takes
    each width named, which a change to a row, a column or a toolbar needs
-   (`.agents/rules/client-state.md`: text overlapped at 500 and 900 on #872).
+   (`.agents/rules/client-state.md`: long text overlaps first at those widths).
    Before photographing, tab through the screen once: every control shows a
    focus ring, Escape closes only what has focus. A component in the design system or
    the kit is photographed on a console route that renders it.

@@ -121,16 +121,16 @@ work, in this order:
    reply with the commit; answer the rest with the reason it stays. Resolve
    every thread you answered; a body point or a verifier comment gets one
    reply that answers each of its points. A comment that asks for more than
-   the task goes to the user. Leaving a finding unanswered is not an answer:
-   in the last two hundred pull requests, 190 merged that way.
+   the task goes to the user. A finding left without a reply is not an
+   answer, whoever posted it.
 3. **Report.** After any push, `pnpm ci:local` on the new head and replace
    the report. Code that changed needs its verdict again (and its
    screenshots, for a visual file), including a conflict resolution that
    changed behavior; a plain merge of the base does not. A push that changes
    behavior also asks Codex to review the new head: one comment,
    `@codex review`, naming the SHA. Codex reviews only the head a pull
-   request was opened or marked ready on, so without it the later commits
-   (488 of them in the last two hundred pull requests) merge unreviewed.
+   request was opened or marked ready on, so without it every later commit
+   merges unreviewed.
 
 Keep one check-in armed about every four hours while it is open, so a
 conflict from another merge is caught without an event; every hour once

@@ -55,9 +55,9 @@ idioms.
 - A path that comes from a session, a repository or the control plane is
   resolved with `filepath.EvalSymlinks` and checked against its root after
   resolving, never before: a symlinked command file pointed outside the
-  session's worktree (#937).
+  session's worktree.
 - A test against a host tool (tmux, git, a shell) states the oldest version
-  it supports and passes on it, or skips with that version named (#935).
+  it supports and passes on it, or skips with that version named.
 
 ## Dependency injection
 

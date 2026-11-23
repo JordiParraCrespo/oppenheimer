@@ -37,8 +37,7 @@ nothing about what it covered, is incomplete, not clean.
 
 ### The hunt list
 
-Autoreview said `CLEAN` on nineteen of the last two hundred pull requests
-where a bot then found a real bug. These are the bugs it missed, as
+The kinds of bug a review that only reads the main path lets through, as
 questions; the rule behind each one is in `.agents/rules/edge-cases.md`,
 `.agents/rules/client-state.md`, `nestjs-architecture.md` ("A limit, a side
 effect or a loop is part of the write") and `scopes-and-credentials.md` ("A
@@ -93,7 +92,7 @@ The pull request description gets a `## Autoreview` section: the SHA
 reviewed, `CLEAN` or each finding with fixed, declined or wrong and its
 one line. A line that says the review covered a case ("short notes",
 "constant bitrate") names the test that feeds it; without one, leave the
-claim out. #975's autoreview claimed exactly the case Codex then broke.
+claim out: an untested "covered" is the claim a later review breaks.
 
 `scripts/evals/autoreview/` measures this brief against planted copies of
 the bugs it missed. Run it when the brief or the hunt list changes.

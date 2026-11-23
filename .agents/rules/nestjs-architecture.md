@@ -185,35 +185,32 @@ repository) follows the same rules by hand.
 
 ### A limit, a side effect or a loop is part of the write
 
-Versioned and conditional writes cover one row. Reviewers kept finding the
-races around them:
+Versioned and conditional writes cover one row. The races around them:
 
 - **A cap is checked in the statement or the lock that inserts.** "Count,
-  then insert if under 50" in two statements lets two requests both see 49
-  (#931, #965). Serialize per owner in the insert's transaction
+  then insert if under 50" in two statements lets two requests both see 49. Serialize per owner in the insert's transaction
   (`SELECT … FOR UPDATE` on the owner's row, or
   `pg_advisory_xact_lock(hashtext(owner))`), or make the insert one
   statement that counts (`INSERT … SELECT … WHERE (SELECT count(*) …) < $cap`)
   and read `affected`.
 - **What a save implies happens in the save's transaction, or through the
-  outbox.** Revoking the URL a trigger used to have (#959), clearing the code
+  outbox.** Revoking the URL a trigger used to have, clearing the code
   a request replaced: done as a call after the commit, a failure leaves the
   two disagreeing.
 - **Clearing a pending value is conditional on it still being yours.** A
-  failed send that clears "the pending code" can clear a newer request's code
-  (#785): clear `WHERE code = $theOneThisCallCreated`.
+  failed send that clears "the pending code" can clear a newer request's code: clear `WHERE code = $theOneThisCallCreated`.
 - **Claim before you classify.** A batch that decides who owns a
   conversation and then wakes on it claims the owner first, or a later
-  message in the same batch loses its wake (#772).
+  message in the same batch loses its wake.
 - **A loop of writes is one transaction, or reports what it changed.** A
   failure halfway through a bulk update leaves earlier items changed; either
-  roll them back or answer with the ones that applied (#880).
+  roll them back or answer with the ones that applied.
 - **A slot is held until the work behind it is done.** A concurrency limit
   released when the response headers arrive, before the body is read, lets
-  the next request start while this one still streams (#962).
+  the next request start while this one still streams.
 - **An older observation never overwrites a newer record.** A follower's
   view, a replayed event or a recovered flag compares a version or a
-  timestamp before it writes (#920, #797).
+  timestamp before it writes.
 
 ## Mapper
 
