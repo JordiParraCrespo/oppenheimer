@@ -151,6 +151,7 @@ frontmatter; this is the index.
 | adding or reading a feature flag | `feature-flags.md` |
 | calling a system we do not run | `integrations.md` (rate-limit budgets); a new vendor is `/integrate-provider` and `provider-integrations.md` |
 | writing Go (`apps/runner`, `packages/go`) | `go.md`, `apps/runner/ARCHITECTURE.md`, `packages/go/README.md` |
+| adding a coding agent a session can run, or changing how one launches, is typed into or reads in the chat | `/add-coding-agent` |
 | placing frontend code | `frontend-architecture.md`, `packages/frontend/ARCHITECTURE.md`, `apps/web/ARCHITECTURE.md`; a new screen is `/scaffold-feature`, a review is `/frontend-audit` |
 | writing markup or styles | `frontend-ui.md` and the design system's `AGENTS.md`; a design export is `/design-export-port` |
 | building a form | `forms.md` |
