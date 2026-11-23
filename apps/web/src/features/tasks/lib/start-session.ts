@@ -1,8 +1,10 @@
+import type { ChipSelectOption } from '@oppenheimer/design-system-web';
 import {
   type HostEntity,
   type ProjectEntity,
   type RepositoryEntity,
   repositoryKey,
+  shortName,
   type TaskEntity,
 } from '@oppenheimer/frontend-consumer';
 import { HOST_HOME, type StartTaskSessionVariables } from '@oppenheimer/frontend-consumer/react';
@@ -64,8 +66,6 @@ export interface StartRepository {
   githubRepoId: number;
   fullName: string;
   baseBranch: string;
-  /** One of the project's repositories, listed first. */
-  inProject: boolean;
 }
 
 /**
@@ -83,7 +83,6 @@ export function startRepositories(
     githubRepoId: Number(row.githubRepoId),
     fullName: row.fullName,
     baseBranch: row.baseBranch,
-    inProject: true,
   }));
   const taken = new Set(own.map((row) => row.key));
   const others = reachable
@@ -93,12 +92,76 @@ export function startRepositories(
       githubRepoId: repository.githubRepoId,
       fullName: repository.fullName,
       baseBranch: repository.defaultBranch,
-      inProject: false,
     }))
     .filter((row) => !taken.has(row.key))
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
   return [...own, ...others];
 }
+
+/** The workspace's repositories beyond the project's: still being read, or a read failed. */
+export type RepositoriesStatus = 'loading' | 'failed' | null;
+
+/** Where the reads behind the reachable repositories stand: a failure outranks a pending read. */
+export function repositoriesStatusOf(
+  reads: readonly { error: unknown; isPending: boolean }[],
+): RepositoriesStatus {
+  if (reads.some((read) => read.error)) return 'failed';
+  return reads.some((read) => read.isPending) ? 'loading' : null;
+}
+
+/** The value of the status row `repositoryChipOptions` adds; disabled, so never picked. */
+const REPOSITORIES_STATUS = 'repositories-status';
+
+/**
+ * The repository chip's rows: "No repository" (offered only where the host runs
+ * the session), the repositories, then a disabled row saying the rest are
+ * loading or failed, under the ones already listed so those stay pickable.
+ */
+export function repositoryChipOptions({
+  repositories,
+  status,
+  hostRuns,
+  t,
+}: {
+  repositories: readonly StartRepository[];
+  status: RepositoriesStatus;
+  hostRuns: boolean;
+  t: (key: RepositoryChipCopyKey) => string;
+}): ChipSelectOption[] {
+  return [
+    {
+      value: NO_REPOSITORY,
+      label: t('tasks.start.noRepository'),
+      description: t('tasks.start.noRepositoryDesc'),
+      disabled: !hostRuns,
+    },
+    ...repositories.map((row) => ({
+      value: row.key,
+      label: shortName(row.fullName),
+      description: `${row.fullName} · ${row.baseBranch}`,
+      mono: true,
+    })),
+    ...(status
+      ? [
+          {
+            value: REPOSITORIES_STATUS,
+            label: t(
+              status === 'loading'
+                ? 'tasks.start.repositoriesLoading'
+                : 'tasks.start.repositoriesFailed',
+            ),
+            disabled: true,
+          },
+        ]
+      : []),
+  ];
+}
+
+type RepositoryChipCopyKey =
+  | 'tasks.start.noRepository'
+  | 'tasks.start.noRepositoryDesc'
+  | 'tasks.start.repositoriesLoading'
+  | 'tasks.start.repositoriesFailed';
 
 /** What holds the start: a cloud's missing task or repository, a host that must name its home, no hosts. */
 export type StartHold = 'task' | 'repository' | 'home' | 'host';

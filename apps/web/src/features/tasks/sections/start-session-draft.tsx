@@ -1,5 +1,4 @@
 import { Callout, DialogDescription, FieldDescription } from '@oppenheimer/design-system-web';
-import { shortName } from '@oppenheimer/frontend-consumer';
 import {
   useCloudAgentStatus,
   useInstallationRepositoriesFor,
@@ -22,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { StartSessionForm } from '../forms/start-session-form';
 import {
   placeOptions,
+  repositoriesStatusOf,
   startDefaults,
   startRepositories,
   toStartSession,
@@ -84,19 +84,8 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
       <StartSessionForm
         values={startDefaults(found.task, found.project, found.hosts)}
         voice={voice}
-        repositories={repositories.map((row) => ({
-          value: row.key,
-          label: shortName(row.fullName),
-          description: `${row.fullName} · ${row.baseBranch}`,
-          mono: true,
-        }))}
-        repositoriesStatus={
-          installations.error || reachable.error
-            ? 'failed'
-            : installations.isPending || reachable.isPending
-              ? 'loading'
-              : null
-        }
+        repositories={repositories}
+        repositoriesStatus={repositoriesStatusOf([installations, reachable])}
         onManageRepositories={manageAccess.onManage}
         hosts={found.hosts.map((host) => ({
           value: host.id,

@@ -26,12 +26,12 @@ import {
   asAgent,
   asPlace,
   NO_REPOSITORY,
+  type RepositoriesStatus,
+  repositoryChipOptions,
+  type StartRepository,
   type StartSessionValues,
   startReadiness,
 } from '../lib/start-session';
-
-/** The disabled row that says the workspace's repositories are loading or failed; never picked. */
-const REPOSITORIES_STATUS = 'repositories-status';
 
 /**
  * The launch dialog's form: the prompt, prefilled from the task, and the repository
@@ -68,12 +68,9 @@ export function StartSessionForm({
 }: {
   values: StartSessionValues;
   /** The project's repositories, then every other one the workspace's installations reach. */
-  repositories: ChipSelectOption[];
-  /**
-   * The workspace's repositories beyond the project's: still being read, or a read that
-   * failed. Said in a row under the ones already listed, which stay pickable.
-   */
-  repositoriesStatus: 'loading' | 'failed' | null;
+  repositories: readonly StartRepository[];
+  /** Whether the rest are still being read, or a read failed (`repositoriesStatusOf`). */
+  repositoriesStatus: RepositoriesStatus;
   /** Opens GitHub to grant the app more repositories; absent on a deployment with no app. */
   onManageRepositories?: () => void;
   hosts: ChipSelectOption[];
@@ -111,28 +108,12 @@ export function StartSessionForm({
     hasHosts: hosts.length > 0,
     hostOnline: hostId && rule.host !== null ? online(hostId) : null,
   });
-  const repositoryOptions: ChipSelectOption[] = [
-    {
-      value: NO_REPOSITORY,
-      label: t('tasks.start.noRepository'),
-      description: t('tasks.start.noRepositoryDesc'),
-      disabled: rule.host !== 'runs',
-    },
-    ...repositories,
-    ...(repositoriesStatus
-      ? [
-          {
-            value: REPOSITORIES_STATUS,
-            label: t(
-              repositoriesStatus === 'loading'
-                ? 'tasks.start.repositoriesLoading'
-                : 'tasks.start.repositoriesFailed',
-            ),
-            disabled: true,
-          },
-        ]
-      : []),
-  ];
+  const repositoryOptions = repositoryChipOptions({
+    repositories,
+    status: repositoriesStatus,
+    hostRuns: rule.host === 'runs',
+    t,
+  });
   const submit = handleSubmit(onSubmit);
 
   return (

@@ -3,6 +3,7 @@ import { HOST_HOME } from '@oppenheimer/frontend-consumer/react';
 import { DEFAULT_SESSION_PERMISSION } from '@oppenheimer/shared/agents';
 import { describe, expect, it } from 'vitest';
 import {
+  repositoriesStatusOf,
   type StartSessionValues,
   startReadiness,
   startRepositories,
@@ -119,12 +120,10 @@ describe('the repositories Start session offers', () => {
   ];
 
   it('lists the project’s repositories first, then every other one the workspace reaches, once', () => {
-    expect(
-      startRepositories(project, reachable).map((row) => [row.key, row.baseBranch, row.inProject]),
-    ).toEqual([
-      ['i-1:101', 'main', true],
-      ['i-1:202', 'trunk', false],
-      ['i-2:303', 'main', false],
+    expect(startRepositories(project, reachable).map((row) => [row.key, row.baseBranch])).toEqual([
+      ['i-1:101', 'main'],
+      ['i-1:202', 'trunk'],
+      ['i-2:303', 'main'],
     ]);
   });
 
@@ -148,6 +147,18 @@ describe('the repositories Start session offers', () => {
         cwdGithubRepoId: 303,
       },
     });
+  });
+});
+
+describe('what the repository chip says of the rest', () => {
+  it('says a failed read even while another is pending, so a partial list is never shown as whole', () => {
+    const pending = { error: null, isPending: true };
+    const done = { error: null, isPending: false };
+    expect(repositoriesStatusOf([pending, { error: new Error('502'), isPending: false }])).toBe(
+      'failed',
+    );
+    expect(repositoriesStatusOf([done, pending])).toBe('loading');
+    expect(repositoriesStatusOf([done, done])).toBeNull();
   });
 });
 
