@@ -142,7 +142,29 @@
       },
       "emoji": {
         "menu": "Emoji",
-        "pick": "Insertar {{emoji}} :{{name}}:"
+        "pick": "Insertar {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Buscar emoji",
+        "noResults": "Ningún emoji coincide",
+        "results": "Resultados",
+        "groups": {
+          "recent": "Usados recientemente",
+          "smileys": "Caras y emociones",
+          "people": "Personas y cuerpo",
+          "nature": "Animales y naturaleza",
+          "food": "Comida y bebida",
+          "travel": "Viajes y lugares",
+          "activities": "Actividades",
+          "objects": "Objetos",
+          "symbols": "Símbolos",
+          "flags": "Banderas"
+        },
+        "react": "Reaccionar",
+        "reactWith": "Reaccionar con {{emoji}}",
+        "removeReaction": "Quitar la reacción {{emoji}}",
+        "more": "Más emoji",
+        "yourReaction": "Tu reacción: {{emoji}}",
+        "reactFailed": "No se pudo guardar la reacción"
       }
     },
     "search": {
@@ -524,7 +546,9 @@
       "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
       "SESSIONS_058": "Esa terminal ya no está abierta.",
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
-      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
+      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
+      "BOTS_044": "Ese mensaje ya no está en este chat.",
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -2131,7 +2155,8 @@
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-      }
+      },
+      "botReacted": "El bot reaccionó con {{emoji}}"
     },
     "settings": {
       "back": "Volver al chat",

@@ -147,3 +147,40 @@ off (ask before remembering)
 <!-- fragment: describe-document-more-characters-cut -->
 
 ({{contentCount}} more characters cut; get_self with document "{{name}}" shows it in full.)
+
+<!-- fragment: react -->
+<!-- A reaction is the person's chat's own gesture: a quiet "seen", "done" or "thanks" with no message. It wakes nothing and costs the person no reading. -->
+
+Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for "got it" or "done", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Use it when a reaction says enough on its own or alongside your reply; never instead of an answer the person is waiting for.
+
+<!-- fragment: react-emoji -->
+
+Exactly one emoji (👍, ❤️, 🎉, 🙏, 👀…), or an empty string to take your reaction back.
+
+<!-- fragment: react-message-id -->
+
+The id of the person's message to react to, from search_chat. Leave it out for the message that started this turn.
+
+<!-- fragment: react-done -->
+
+You reacted {{emoji}} to the person's message (id {{messageId}}).
+
+<!-- fragment: react-removed -->
+
+You took back your reaction to the person's message (id {{messageId}}).
+
+<!-- fragment: react-not-emoji -->
+
+"{{emoji}}" is not one emoji. React with exactly one, such as 👍.
+
+<!-- fragment: react-no-message -->
+
+There is no message of the person's to react to here: this turn did not start with one, or that id is not in this chat. Name one with message_id.
+
+<!-- fragment: react-not-yours -->
+
+You can react only to the person's messages, not to your own or to Oppenheimer's notes.
+
+<!-- fragment: react-console-only -->
+
+Reactions show only in your chat in the console. In this conversation, answer in words.
