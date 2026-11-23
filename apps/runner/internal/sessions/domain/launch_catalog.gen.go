@@ -217,8 +217,9 @@ var loginTargets = map[string][]LoginTarget{
 }
 
 // inputCatalog is each agent's `input` entry of the catalog: the keys that
-// send and interrupt a message typed into it, and the pause between a
-// paste and its submit, in milliseconds.
+// send and interrupt a message typed into it, the pause between a paste
+// and its submit, in milliseconds, and what is typed before its terminal
+// is ended.
 var inputCatalog = map[string]agentInput{
 	"claude-code": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"codex":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
@@ -226,5 +227,5 @@ var inputCatalog = map[string]agentInput{
 	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
-	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200, quit: []string{"/stop", "/quit"}},
 }

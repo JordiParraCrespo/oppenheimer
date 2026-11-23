@@ -334,6 +334,13 @@ export interface CodingAgentInput {
   readonly stop: string;
   /** How long to wait between the paste and `submit`, in milliseconds. */
   readonly pasteGapMs: number;
+  /**
+   * What is typed, each line then `submit`, before the runner ends the
+   * agent's terminal (a stop, a close): for an agent whose work outlives its
+   * terminal, the lines that end that work. Absent: ending the terminal ends
+   * the agent.
+   */
+  readonly quit?: readonly string[];
 }
 
 export interface CodingAgentDefinition {

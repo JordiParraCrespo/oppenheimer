@@ -15,7 +15,12 @@ export const HERMES_AGENT: CodingAgentDefinition = Object.freeze({
   id: 'hermes',
   label: 'Hermes',
   command: 'hermes',
-  input: TYPED_INPUT,
+  // `hermes chat` is a client of Hermes' gateway, which runs the turn: closing
+  // the terminal only detaches ("accepted work continues at the gateway"), so
+  // a stopped session would keep working. `/stop` ends the turn and `/quit`
+  // the chat and its background work (the CLI guide's "The classic CLI is a
+  // gateway client").
+  input: Object.freeze({ ...TYPED_INPUT, quit: Object.freeze(['/stop', '/quit']) }),
   // `hermes auth add openai-codex --type oauth` signs in to a ChatGPT
   // subscription through OpenAI's own OAuth. The Nous Portal's sign-in
   // (`hermes setup --portal`) is left off until a session shows which URL it
