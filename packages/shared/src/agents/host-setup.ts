@@ -8,7 +8,8 @@
  * page and never installs anything: these scripts are a third of the
  * catalog's bytes. Keyed by the catalog's ids, and checked against them by
  * the type: an agent missing here is one the runner neither installs nor
- * updates (the blank terminal).
+ * updates (the blank terminal), and one with no `install` is one the person
+ * installs themselves (Hermes).
  */
 
 import type { CodingAgentId, HostInstall, InstallMethod } from './catalog.js';
@@ -176,5 +177,17 @@ export const AGENT_HOST_SETUP: Readonly<Partial<Record<CodingAgentId, AgentHostS
         linux: bunUserInstall('@oh-my-pi/pi-coding-agent'),
         bin: '~/.bun/bin',
       }),
+    }),
+    hermes: Object.freeze({
+      // `hermes update --yes`: updates the checkout its installer made to the
+      // latest release of its channel (`stable` by default), and `--yes`
+      // answers what it would otherwise ask on a terminal.
+      update: Object.freeze(['update', '--yes']),
+      // No `install`. Nous publishes one installer, `curl … install.sh | bash`,
+      // which clones the repository and bootstraps uv, Python and Node, with
+      // nothing to check the script or what it fetches against; the PyPI
+      // package (`hermes-agent`) trails the releases by several versions,
+      // older than the `--query` this catalog starts it with. So the runner
+      // leaves the install to the person, who runs Nous's installer.
     }),
   });

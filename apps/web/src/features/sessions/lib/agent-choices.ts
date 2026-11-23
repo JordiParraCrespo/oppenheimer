@@ -16,7 +16,8 @@ export const AGENT_CHOICES_KEY = 'oppenheimer.engine.agents';
 
 /**
  * The agents a fresh device offers: the four most people run, and the blank
- * terminal. Every other catalog agent (Pi, Oh My Pi) is there to switch on.
+ * terminal. Every other catalog agent (Pi, Oh My Pi, Hermes) is there to switch
+ * on.
  */
 const OFFERED_BY_DEFAULT: readonly CodingAgentId[] = [
   'claude-code',

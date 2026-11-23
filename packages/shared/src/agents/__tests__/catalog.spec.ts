@@ -193,6 +193,10 @@ describe('coding agent catalog', () => {
       const grok = pattern('grok');
       expect(grok.test('https://accounts.x.ai/sign-in?redirect=grok-build')).toBe(true);
       expect(grok.test('https://auth.x.ai/oauth2/authorize?client_id=x')).toBe(true);
+
+      const hermes = pattern('hermes');
+      expect(hermes.test('https://auth.openai.com/oauth/authorize?client_id=x')).toBe(true);
+      expect(hermes.test('https://claude.ai/oauth/authorize')).toBe(false);
     });
 
     it('compare hosts whole, so a lookalike host is not a login URL (F3)', () => {
@@ -254,8 +258,9 @@ describe('launch mapping', () => {
     for (const id of CODING_AGENT_IDS) {
       const { permission } = CODING_AGENTS[id].launch;
       // A blank terminal has no approvals, and neither has pi, which runs
-      // every tool call by design; everything else states all three.
-      if (id === 'shell' || id === 'pi') {
+      // every tool call by design, nor Hermes, whose approvals are its own
+      // config with `--yolo` the only flag; everything else states all three.
+      if (id === 'shell' || id === 'pi' || id === 'hermes') {
         expect(permission).toBeUndefined();
         continue;
       }
@@ -427,7 +432,9 @@ describe('agent installs', () => {
   it('installs every agent as the person, never with sudo, and the blank terminal not at all', () => {
     for (const id of CODING_AGENT_IDS) {
       const install = AGENT_HOST_SETUP[id]?.install;
-      if (id === 'shell') {
+      // Hermes' only installer is a piped script that checks nothing, so the
+      // person runs it; the runner installs nothing it cannot check.
+      if (id === 'shell' || id === 'hermes') {
         expect(install).toBeUndefined();
         continue;
       }

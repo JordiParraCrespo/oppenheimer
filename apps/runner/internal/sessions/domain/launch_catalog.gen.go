@@ -191,6 +191,13 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"hermes": {
+		command:            "hermes",
+		always:             []string{"chat"},
+		model:              []string{"--model", "<model>"},
+		prompt:             []string{"--query", "<prompt>"},
+		conversationResume: []string{"--continue"},
+	},
 	"shell": {
 		command: "",
 	},
@@ -206,6 +213,7 @@ var loginTargets = map[string][]LoginTarget{
 	"grok":        {{Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
 	"pi":          {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
 	"omp":         {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
+	"hermes":      {{Host: "auth.openai.com"}},
 }
 
 // inputCatalog is each agent's `input` entry of the catalog: the keys that
@@ -218,4 +226,5 @@ var inputCatalog = map[string]agentInput{
 	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }
