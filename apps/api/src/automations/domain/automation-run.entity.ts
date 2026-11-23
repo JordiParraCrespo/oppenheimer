@@ -31,6 +31,17 @@ export interface RunCauseSummary {
   eventType: string;
 }
 
+/**
+ * What was posted to a routine's webhook, as its run keeps it: the body as
+ * text, cut to `WEBHOOK_BODY_KEPT_CHARS`, and its content type. Untrusted:
+ * it reaches the bot inside the outside-data envelope only.
+ */
+export interface RunWebhookPayload {
+  contentType: string | null;
+  body: string;
+  bodyTruncated: boolean;
+}
+
 export interface AutomationRunProps {
   organizationId: string;
   automationId: string;
@@ -41,6 +52,8 @@ export interface AutomationRunProps {
   causeKey: string;
   causeSummary: RunCauseSummary;
   inboundEventId: string | null;
+  /** What a webhook run was posted; null for every other cause. */
+  webhookPayload: RunWebhookPayload | null;
   scheduledFor: Date | null;
   outcome: AutomationRunOutcome;
   skipReason: AutomationSkipReason | null;
@@ -56,8 +69,15 @@ export interface AutomationRunProps {
 
 export type NewRunProps = Omit<
   AutomationRunProps,
-  'outcome' | 'skipReason' | 'availableAt' | 'attempts' | 'sessionId' | 'botTurnId' | 'dispatchedAt'
->;
+  | 'outcome'
+  | 'skipReason'
+  | 'availableAt'
+  | 'attempts'
+  | 'sessionId'
+  | 'botTurnId'
+  | 'dispatchedAt'
+  | 'webhookPayload'
+> & { webhookPayload?: RunWebhookPayload | null };
 
 /**
  * One firing of an automation, and what became of it before a session existed.
@@ -91,6 +111,7 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
       id: randomUUID(),
       props: {
         ...props,
+        webhookPayload: props.webhookPayload ?? null,
         outcome: 'pending',
         skipReason: null,
         availableAt: now,
@@ -125,6 +146,9 @@ export class AutomationRunEntity extends AggregateRoot<AutomationRunProps> {
   }
   get inboundEventId(): string | null {
     return this.props.inboundEventId;
+  }
+  get webhookPayload(): RunWebhookPayload | null {
+    return this.props.webhookPayload;
   }
   get scheduledFor(): Date | null {
     return this.props.scheduledFor;

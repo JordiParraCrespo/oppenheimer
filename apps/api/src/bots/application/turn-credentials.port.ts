@@ -1,4 +1,4 @@
-import type { BotProvider } from '@oppenheimer/shared';
+import type { ModelProvider } from '@oppenheimer/shared';
 
 /** What a turn runs on: the provider's key, or a sign-in's access token and the account it acts for. Never logged. */
 export interface TurnCredential {
@@ -13,11 +13,11 @@ export interface TurnCredential {
  */
 export interface TurnCredentialsPort {
   /** `BOTS_013` when the workspace has none for that provider. */
-  forTurn(organizationId: string, provider: BotProvider, now: Date): Promise<TurnCredential>;
+  forTurn(organizationId: string, provider: ModelProvider, now: Date): Promise<TurnCredential>;
   /**
    * Whether the workspace has a credential for `provider` that `forTurn`
    * could open: a stored key or sign-in, and the key it is sealed under.
    * A row read, never a refresh, so a caller can ask it on every request.
    */
-  has(organizationId: string, provider: BotProvider): Promise<boolean>;
+  has(organizationId: string, provider: ModelProvider): Promise<boolean>;
 }

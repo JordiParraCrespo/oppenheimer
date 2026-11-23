@@ -97,7 +97,7 @@ describe('BotComposer’s suggested next message', () => {
   it('leaves Tab to the page when there is no suggestion, or with a modifier', () => {
     state.suggestion = null;
     const field = composer();
-    expect(field.placeholder).toBe('bots.chat.placeholder');
+    expect(field.placeholder).toMatch(/^bots\.chat\.placeholders\./);
     expect(tab(field)).toBe(true);
     expect(botDraft('b1')).toBe('');
     cleanup();

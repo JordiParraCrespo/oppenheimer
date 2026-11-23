@@ -301,6 +301,11 @@ export class WorkSessionRepository
     if (filters.hostId) query.andWhere('session.hostId = :hostId', filters);
     if (filters.state) query.andWhere('session.state = :state', filters);
     if (filters.agent) query.andWhere('session.agent = :agent', filters);
+    if (filters.resolved !== undefined) {
+      query.andWhere(`session.state ${filters.resolved ? '=' : '<>'} :resolvedState`, {
+        resolvedState: 'resolved',
+      });
+    }
     if (filters.githubRepoId !== undefined) {
       // A live checkout of the repository. The child table is read by the
       // session ids the scoped root query already admits, never on its own.

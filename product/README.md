@@ -1840,6 +1840,14 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `versions/mvp/02-runner.md` ("Close") ended a session with `tmux
+  kill-session` and took its hangup to end the agent. On 2026-11-21 one
+  host ran out of memory with ~110 agents of closed sessions still
+  running, because Claude Code ignored the hangup: the `pty` wrapper now
+  kills its program's group 10 s after the hangup, closing a session
+  confirms its processes are gone, and the daemon ends any agent left by
+  a session that is over every 5 minutes. Nothing changed about tmux
+  sessions it does not recognise (still reported, not reaped).
 - `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
   bot in a group only when a message @-mentioned the number or replied to
   it, and listed only the chats a number had seen a message in. On
@@ -1855,3 +1863,17 @@ earlier note:
   composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
   a dialog for its name and prompt, and only when it runs (its triggers)
   is still changed in the chat.
+- `next-steps/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
+  or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
+  on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
+  be configured with the keys: Settings → Model providers adds Groq and
+  ElevenLabs (voice only) and a Voice tab choosing, for the workspace,
+  the transcription provider and model, the voice-note provider, model and
+  voice, and the polish model or none. A choice is tried first, the old
+  order after it; the env servers stay as the last provider.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).

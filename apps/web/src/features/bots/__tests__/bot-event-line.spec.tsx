@@ -1,5 +1,5 @@
 import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEventLine } from '../components/bot-event-line';
 
@@ -166,6 +166,24 @@ describe('BotEventLine', () => {
     render(<BotEventLine message={reply('failed')} />);
     expect(screen.getByText('bots.chat.event.peerFailed|Grace')).toBeTruthy();
   });
+  // What breaks this: a long answer from another bot spread open across the
+  // transcript again, or a fold the person cannot open to read it.
+  it('folds another bot’s answer to its lead until the person opens it', () => {
+    const answered = {
+      id: 'e5',
+      role: 'event',
+      content: 'Automatic replies use a text-only path.',
+      event: { kind: 'bot_reply', fromBotId: 'b2', fromBotName: 'Oppie', outcome: 'answered' },
+    } as unknown as BotMessageEntity;
+    const { container } = render(<BotEventLine message={answered} />);
+    const lead = screen.getByRole('button', { name: /bots\.chat\.event\.peerAnswered\|Oppie/ });
+    expect(lead.getAttribute('aria-expanded')).toBe('false');
+    expect(container.textContent).not.toContain('text-only path');
+    fireEvent.click(lead);
+    expect(lead.getAttribute('aria-expanded')).toBe('true');
+    expect(container.textContent).toContain('Automatic replies use a text-only path.');
+  });
+
   // What breaks this: a session that failed drawn like one that finished,
   // or a wake with no way to the session the person has to look at.
   it('draws a followed session that woke the bot by its state, with the session to open', () => {

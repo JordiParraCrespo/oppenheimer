@@ -258,6 +258,7 @@ export function describeTrigger(
               : `at ${at}`;
     return `schedule ${config.frequency} ${detail} ${trigger.timezone}, next ${trigger.nextFireAt ? formatToolTime(trigger.nextFireAt, context.timeZone) : 'none'}`;
   }
+  if (trigger.source === 'webhook') return promptText('tools/automation.describe-trigger-webhook');
   if (trigger.source === 'gmail') {
     const query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
     return promptText('tools/automation.describe-trigger-gmail-mail-received', {

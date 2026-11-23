@@ -14,7 +14,7 @@ push to main ──► Deploy dev workflow
                                                              compose up → health → or roll back
 
 internet ─► Cloudflare ─► cloudflared (outbound tunnel) ─► web (nginx) ─► api ─► postgres, redis
-admin    ─► Tailscale ─► ssh (tailscale0 only)
+admin    ─► Tailscale ─► ssh (tailscale0 only) ─(-L)─► grafana, loki (container logs, via alloy)
 ```
 
 No inbound port is open: the Hetzner Cloud Firewall has no inbound rules, ufw
@@ -35,7 +35,7 @@ applies them to Oppenheimer.
 | `systemd/` | `oppenheimer-backup@.service` and the three timers that run it, plus a unit that alerts when one fails |
 | `cloud-init.yaml` | First-boot setup: users, Docker, Tailscale, ufw, security updates |
 | `config/*.example` | The server's settings. `oppctl setup` writes the real files to `/srv/oppenheimer/config` |
-| `monitoring/` | The API's Prometheus alert rules and Grafana dashboard, for whoever runs the monitoring stack (none runs here yet) |
+| `monitoring/` | The API's Prometheus alert rules and Grafana dashboards, and the server's log stack (Loki, Alloy, Grafana, reached over an SSH tunnel; its README says how) |
 
 ## What it costs and what you need
 
@@ -321,7 +321,7 @@ From a tailnet machine: `ssh admin@oppenheimer-dev`, then `sudo -u deploy oppctl
 | | |
 |---|---|
 | `oppctl status` | Release, previous release, an interrupted deploy if there was one, containers, newest local dumps, disk |
-| `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow |
+| `oppctl logs api` | Compose logs, `--tail 200`. Add `-f` to follow. For search and history (14 days), Grafana over the tunnel in `monitoring/README.md` |
 | `oppctl psql` | psql as the app's role |
 | `oppctl rollback` | Run the previous release's images and config again |
 | `oppctl reload` | Replace api, web and cloudflared from the current release, without downtime, so a change to `config/` takes effect |
@@ -506,6 +506,12 @@ age -d -i ~/secure/oppenheimer-dev.age.key oppenheimer-<stamp>.pgc.age \
   the server shows them. The database passwords use compose secrets.
 - **The API connects as the database owner.** The role Postgres creates is
   the one migrations need. The backup role is separate.
+- **Alloy can inspect containers.** The log shipper reads the Docker API
+  through a proxy that allows five read paths only (list, inspect, logs,
+  networks, ping), so it cannot start, stop, exec or copy files out of
+  anything; but an inspect shows a container's environment, so the API's
+  secrets are readable from inside Alloy, a container with no ingress and no
+  route out. Grafana has no login: the only way in is SSH to this server.
 - **One server.** No staging in front of it: this *is* the rehearsal
   environment. A production server is the same directory with a second
   `config/` and its own environment in GitHub.

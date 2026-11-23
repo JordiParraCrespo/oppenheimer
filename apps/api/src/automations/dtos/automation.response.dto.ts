@@ -15,6 +15,7 @@ import {
   type ScheduleFrequency,
   TRIGGER_SOURCES,
   type TriggerSource,
+  WEBHOOK_EVENT_TYPES,
 } from '@oppenheimer/shared/automations';
 
 export class AutomationRepositoryResponseDto {
@@ -131,8 +132,9 @@ export class AutomationTriggerResponseDto {
   // The enum is the contract: a trigger is written only through the catalog
   // (`externalEventDefinition`), so a stored event is always one of these.
   @ApiProperty({
-    enum: ['schedule', ...GITHUB_EVENT_TYPES, ...GMAIL_EVENT_TYPES],
-    description: '`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).',
+    enum: ['schedule', ...GITHUB_EVENT_TYPES, ...GMAIL_EVENT_TYPES, ...WEBHOOK_EVENT_TYPES],
+    description:
+      '`schedule`, `webhook_received`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).',
   })
   event!: string;
 

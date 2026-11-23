@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2308,7 +2308,7 @@ export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx';
     prompt?: string;
 };
 
@@ -2458,11 +2458,11 @@ export type AutomationTriggerResponseDto = {
      * The card’s place in the editor, from 0.
      */
     position: number;
-    source: 'schedule' | 'github' | 'gmail';
+    source: 'schedule' | 'github' | 'gmail' | 'webhook';
     /**
-     * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
+     * `schedule`, `webhook_received`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received' | 'webhook_received';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -2540,6 +2540,22 @@ export type AutomationResponseDto = {
     updatedAt: string;
 };
 
+export type RoutineWebhookResponseDto = {
+    /**
+     * The start of the URL’s token.
+     */
+    tokenPrefix: string;
+    /**
+     * Whether a request must carry a signature.
+     */
+    signed: boolean;
+    /**
+     * When the current URL was issued.
+     */
+    issuedAt: string;
+    lastReceivedAt?: string | null;
+};
+
 export type BotRoutineResponseDto = {
     id: string;
     /**
@@ -2565,6 +2581,10 @@ export type BotRoutineResponseDto = {
      * Its latest run over the listed window; null when it has none.
      */
     lastRun?: AutomationRunSummaryResponseDto | null;
+    /**
+     * Its webhook URL, once one is issued; null without one. Only a routine with a webhook trigger can have one.
+     */
+    webhook?: RoutineWebhookResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2603,9 +2623,12 @@ export type CreateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'webhook';
+        event?: 'webhook_received';
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2684,9 +2707,12 @@ export type UpdateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'webhook';
+        event?: 'webhook_received';
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2849,6 +2875,40 @@ export type UpdateBotRoutineRequest = {
     enabled?: boolean;
 };
 
+export type IssueRoutineWebhookRequest = {
+    signed?: boolean;
+};
+
+export type IssuedRoutineWebhookResponseDto = {
+    /**
+     * The start of the URL’s token.
+     */
+    tokenPrefix: string;
+    /**
+     * Whether a request must carry a signature.
+     */
+    signed: boolean;
+    /**
+     * When the current URL was issued.
+     */
+    issuedAt: string;
+    lastReceivedAt?: string | null;
+    url: string;
+    /**
+     * The signing secret, when one was asked for. Not shown again.
+     */
+    signingSecret?: string | null;
+};
+
+export type RoutineWebhookReceivedResponseDto = {
+    runId: string;
+    /**
+     * `queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run.
+     */
+    status: 'queued' | 'skipped' | 'duplicate';
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
+};
+
 export type TaskSessionLinkResponseDto = {
     sessionId: string;
     /**
@@ -2953,7 +3013,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -4336,7 +4396,7 @@ export type UpdateBotGroupRequest = {
 };
 
 export type ModelProviderCredentialResponseDto = {
-    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'groq' | 'elevenlabs';
     /**
      * Whether the workspace has a key for this provider.
      */
@@ -4771,6 +4831,14 @@ export type BotMessageResponseDto = {
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
     attachments: Array<BotAttachmentResponseDto>;
+    /**
+     * Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.
+     */
+    reaction: string | null;
+    /**
+     * The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.
+     */
+    botReaction: string | null;
     createdAt: string;
 };
 
@@ -5292,6 +5360,10 @@ export type DismissBotQuestionRequest = {
     note?: string;
 };
 
+export type ReactToBotMessageRequest = {
+    emoji: string | null;
+};
+
 export type BotToolPermissionDto = {
     /**
      * The tool, as the bot knows it (`merge_pull_request`).
@@ -5381,7 +5453,7 @@ export type VoiceTranscriptionResponseDto = {
     /**
      * Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server.
      */
-    provider: 'chatgpt' | 'speech_key';
+    provider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key';
     /**
      * Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough.
      */
@@ -5396,7 +5468,34 @@ export type VoiceStatusResponseDto = {
     /**
      * The providers available, in the order a dictation tries them.
      */
-    providers: Array<'chatgpt' | 'speech_key'>;
+    providers: Array<'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key'>;
+};
+
+export type VoiceSettingsAvailableDto = {
+    transcription: Array<'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key'>;
+    synthesis: Array<'openai' | 'elevenlabs' | 'speech_key'>;
+    polish: Array<'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai'>;
+};
+
+export type VoiceSettingsResponseDto = {
+    transcriptionProvider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key';
+    transcriptionModel: string | null;
+    synthesisProvider: 'openai' | 'elevenlabs' | 'speech_key';
+    synthesisModel: string | null;
+    synthesisVoice: string | null;
+    polishProvider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'off';
+    polishModel: string | null;
+    available: VoiceSettingsAvailableDto;
+};
+
+export type UpdateVoiceSettingsRequest = {
+    transcriptionProvider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key' | null;
+    transcriptionModel: string | null;
+    synthesisProvider: 'openai' | 'elevenlabs' | 'speech_key' | null;
+    synthesisModel: string | null;
+    synthesisVoice: string | null;
+    polishProvider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'off' | null;
+    polishModel: string | null;
 };
 
 export type InboxMarkResponseDto = {
@@ -10225,7 +10324,11 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'shell';
+        /**
+         * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
+         */
+        resolved?: 'true' | 'false';
         /**
          * A live checkout of it
          */
@@ -12770,6 +12873,126 @@ export type RunBotRoutineError = RunBotRoutineErrors[keyof RunBotRoutineErrors];
 export type RunBotRoutineResponses = {
     202: unknown;
 };
+
+export type RevokeRoutineWebhookData = {
+    body?: never;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/webhook';
+};
+
+export type RevokeRoutineWebhookErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RevokeRoutineWebhookError = RevokeRoutineWebhookErrors[keyof RevokeRoutineWebhookErrors];
+
+export type RevokeRoutineWebhookResponses = {
+    204: void;
+};
+
+export type RevokeRoutineWebhookResponse = RevokeRoutineWebhookResponses[keyof RevokeRoutineWebhookResponses];
+
+export type IssueRoutineWebhookData = {
+    body: IssueRoutineWebhookRequest;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/webhook';
+};
+
+export type IssueRoutineWebhookErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_014 — The routine has no webhook trigger
+     */
+    422: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_015 — Signing is not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueRoutineWebhookError = IssueRoutineWebhookErrors[keyof IssueRoutineWebhookErrors];
+
+export type IssueRoutineWebhookResponses = {
+    201: IssuedRoutineWebhookResponseDto;
+};
+
+export type IssueRoutineWebhookResponse = IssueRoutineWebhookResponses[keyof IssueRoutineWebhookResponses];
+
+export type ReceiveRoutineWebhookData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried POST with the same key is the same run.
+         */
+        'Idempotency-Key'?: string;
+        'x-oppenheimer-signature'?: string;
+    };
+    path: {
+        /**
+         * The token the Routines tab issued, `owh_…`.
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/routine-webhooks/{token}';
+};
+
+export type ReceiveRoutineWebhookErrors = {
+    /**
+     * AUTOMATIONS_011 — Bad signature
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_010 — No such webhook
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_013 — Routine paused
+     */
+    409: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_012 — Body too large
+     */
+    413: ProblemDetailsDto;
+};
+
+export type ReceiveRoutineWebhookError = ReceiveRoutineWebhookErrors[keyof ReceiveRoutineWebhookErrors];
+
+export type ReceiveRoutineWebhookResponses = {
+    202: RoutineWebhookReceivedResponseDto;
+};
+
+export type ReceiveRoutineWebhookResponse = ReceiveRoutineWebhookResponses[keyof ReceiveRoutineWebhookResponses];
 
 export type StreamWorkspaceEventsData = {
     body?: never;
@@ -17423,6 +17646,43 @@ export type DismissBotQuestionResponses = {
 
 export type DismissBotQuestionResponse = DismissBotQuestionResponses[keyof DismissBotQuestionResponses];
 
+export type ReactToBotMessageData = {
+    body: ReactToBotMessageRequest;
+    path: {
+        id: string;
+        messageId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/messages/{messageId}/reaction';
+};
+
+export type ReactToBotMessageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_044 — Message not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_045 — This message takes no reaction
+     */
+    422: ProblemDetailsDto;
+};
+
+export type ReactToBotMessageError = ReactToBotMessageErrors[keyof ReactToBotMessageErrors];
+
+export type ReactToBotMessageResponses = {
+    200: BotMessageResponseDto;
+};
+
+export type ReactToBotMessageResponse = ReactToBotMessageResponses[keyof ReactToBotMessageResponses];
+
 export type FindBotPermissionsData = {
     body?: never;
     path: {
@@ -17689,6 +17949,66 @@ export type FindVoiceStatusResponses = {
 };
 
 export type FindVoiceStatusResponse = FindVoiceStatusResponses[keyof FindVoiceStatusResponses];
+
+export type FindVoiceSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/settings';
+};
+
+export type FindVoiceSettingsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindVoiceSettingsError = FindVoiceSettingsErrors[keyof FindVoiceSettingsErrors];
+
+export type FindVoiceSettingsResponses = {
+    200: VoiceSettingsResponseDto;
+};
+
+export type FindVoiceSettingsResponse = FindVoiceSettingsResponses[keyof FindVoiceSettingsResponses];
+
+export type UpdateVoiceSettingsData = {
+    body: UpdateVoiceSettingsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/settings';
+};
+
+export type UpdateVoiceSettingsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdateVoiceSettingsError = UpdateVoiceSettingsErrors[keyof UpdateVoiceSettingsErrors];
+
+export type UpdateVoiceSettingsResponses = {
+    204: void;
+};
+
+export type UpdateVoiceSettingsResponse = UpdateVoiceSettingsResponses[keyof UpdateVoiceSettingsResponses];
 
 export type FindInboxMarksData = {
     body?: never;

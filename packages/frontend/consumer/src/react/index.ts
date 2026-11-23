@@ -70,12 +70,16 @@ export {
   useBotPendingQuestion,
   useDismissBotQuestion,
 } from './bot-questions.queries';
+export { type ReactToBotMessageVariables, useReactToBotMessage } from './bot-reactions.queries';
 export {
   type BotRoutineVariables,
+  type IssueBotRoutineWebhookVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
+  useIssueBotRoutineWebhook,
+  useRevokeBotRoutineWebhook,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
@@ -357,6 +361,8 @@ export {
   useUnlinkTelegram,
 } from './telegram.queries';
 export {
+  useSuspenseVoiceSettings,
+  useUpdateVoiceSettings,
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';

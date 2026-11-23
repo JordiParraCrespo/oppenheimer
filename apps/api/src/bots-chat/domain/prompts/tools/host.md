@@ -83,11 +83,15 @@ unblock it with answer_session; tell the person only when it waits on something 
 
 <!-- fragment: show-session -->
 
-Gives the person a button that opens a session in the console, on this call's line in the chat: use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer). A session you start with start_session already carries one. Do not write the session's address in your reply; this is the link. The button adds to your answer and is never the answer: still say in your reply, in words, what you found (what the session did, why it failed, what it waits on).
+Points the person at a session: in the console chat it draws a button that opens it on this call's line; in a WhatsApp or Telegram chat, which draws no buttons, it answers with the session's link for you to write in your reply. Use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer), and whenever they ask for a session's link. A session you start with start_session already carries one. The button or link adds to your answer and is never the answer: still say in your reply, in words, what you found (what the session did, why it failed, what it waits on).
 
 <!-- fragment: show-session-content -->
 
 The person has a button that opens session {{id}} "{{name}}" on this call's line. It only opens the session and answers nothing: now write your reply as if there were no button, with what you found in words (what the session did, why it failed, what it waits on). The person reads your reply, never your thinking.
+
+<!-- fragment: show-session-channel-content -->
+
+Session {{id}} "{{name}}" opens at {{link}} for the person, signed in to the console. This chat draws no buttons, so write that link in your reply, on a line of its own, exactly as it is; never say a button was sent. It only opens the session and answers nothing: still write what you found in words (what the session did, why it failed, what it waits on). Someone other than the person needs a share link, which only the person can make, from the session's Share in the console.
 
 <!-- fragment: read-session -->
 

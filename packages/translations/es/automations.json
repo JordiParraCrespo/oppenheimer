@@ -157,6 +157,7 @@
     "event": "Al ocurrir: {{event}}",
     "mail": "Correo nuevo que coincide con «{{query}}»",
     "anyMail": "Cualquier correo nuevo",
+    "webhook": "Algo enviado a su URL",
     "more": "{{summary}} +{{count}}",
     "manual": "Solo manual",
     "monFri": "lun–vie",

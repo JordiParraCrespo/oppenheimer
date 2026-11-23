@@ -51,7 +51,15 @@
     "settings": "Settings",
     "delete": "Delete bot",
     "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
-    "placeholder": "Message {{name}}",
+    "field": "Message {{name}}",
+    "placeholders": {
+      "takeOn": "What should {{name}} take on?",
+      "job": "Hand {{name}} a job…",
+      "problem": "Point {{name}} at a problem…",
+      "session": "Ask {{name}} to check on a session…",
+      "listening": "{{name}} is listening…",
+      "anything": "Ask {{name}} anything"
+    },
     "history": "History {{position}}/{{total}}",
     "pasted": {
       "lines": "[Pasted text #{{n}} +{{lines}} lines]",
@@ -62,7 +70,7 @@
       "showLess": "Show less"
     },
     "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
-    "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after, Esc stops",
+    "placeholderRunning": "Steer {{name}} mid-flight · ↵ steer · Alt+↵ queue · Esc stop",
     "steered": "Steered in while it worked",
     "send": "Send",
     "stop": "Stop",
@@ -403,7 +411,8 @@
       },
       "empty": "Nothing spent in this chat yet.",
       "loadFailed": "Could not load the usage. Try again."
-    }
+    },
+    "botReacted": "The bot reacted {{emoji}}"
   },
   "settings": {
     "back": "Back to the chat",
@@ -632,6 +641,7 @@
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
       "gmail": "Gmail · {{when}}",
+      "webhook": "Webhook · {{when}}",
       "last": "Last",
       "next": "Next",
       "more": "Show more",
@@ -664,7 +674,32 @@
       "deleteFailed": "Could not delete the routine.",
       "switchFailed": "Could not change the routine.",
       "runFailed": "Could not run the routine.",
-      "loadFailed": "Could not load the bot's routines."
+      "loadFailed": "Could not load the bot's routines.",
+      "webhookUrl": {
+        "none": "Webhook · no URL yet",
+        "create": "Create URL",
+        "newUrl": "New URL",
+        "creating": "Creating…",
+        "revoke": "Revoke",
+        "revoking": "Revoking…",
+        "revokeTitle": "Revoke the webhook URL of “{{name}}”?",
+        "revokeBody": "Anything posted to it is refused from now on. The routine keeps its webhook trigger: create a new URL to use it again.",
+        "revokeFailed": "Could not revoke the URL.",
+        "isSigned": "Signed",
+        "isUnsigned": "Not signed",
+        "lastReceived": "last received {{when}}",
+        "neverReceived": "nothing received yet",
+        "dialogTitle": "Webhook URL for “{{name}}”",
+        "dialogBody": "Anything that can send a POST (a deploy pipeline, Sentry, a form) runs this routine through this URL. The bot reads what was posted as outside data, never as instructions.",
+        "replaces": "The URL it has now stops working as soon as the new one is made.",
+        "signed": "Require a signature (a signing secret every request is signed with)",
+        "shownOnce": "Copy them now: they’re shown once. Afterwards only the start of the URL is shown.",
+        "url": "URL",
+        "secret": "Signing secret",
+        "signHow": "Send x-oppenheimer-signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of “<t>.<body>” with this secret>. Requests more than five minutes old are refused.",
+        "done": "Done",
+        "failed": "Could not make the URL."
+      }
     },
     "homeHost": {
       "title": "Home host",

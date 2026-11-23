@@ -73,6 +73,10 @@ const gmailTrigger = z.object({
     .describe(promptText('tools/routine.gmail-trigger-query')),
 });
 
+const webhookTrigger = z
+  .object({ source: z.literal('webhook') })
+  .describe(promptText('tools/routine.webhook-trigger'));
+
 const routineInput = z.object({
   action: z.enum(ROUTINE_ACTIONS).describe(promptText('tools/routine.routine-action')),
   routine_id: z.uuid().optional().describe(promptText('tools/routine.routine-routine-id')),
@@ -85,7 +89,7 @@ const routineInput = z.object({
     .optional()
     .describe(promptText('tools/routine.routine-prompt')),
   triggers: z
-    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger]))
+    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger, webhookTrigger]))
     .min(1)
     .max(TRIGGERS_MAX)
     .optional()
@@ -296,7 +300,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
   }
 
   private async listing(context: BotToolCallContext): Promise<string> {
-    const { automations, digests } = await this.routines(context);
+    const { automations, digests, webhooks } = await this.routines(context);
     return formatToolList(
       'Your routines',
       automations.map((routine) => {
@@ -304,6 +308,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
         const parts = [
           routine.isPaused ? 'paused' : 'on',
           `when: ${routine.triggers.map((trigger) => describeTrigger(trigger, context)).join(' or ')}`,
+          ...webhookUrlState(routine, webhooks),
           lastRun
             ? `last run ${lastRun.status} ${formatToolTime(lastRun.createdAt, context.timeZone)}`
             : 'no runs yet',
@@ -314,6 +319,21 @@ export class BotRoutineToolsFactory implements BotToolArea {
       { shown: automations.length, total: automations.length, hint: '' },
     );
   }
+}
+
+/** Whether a routine with a webhook trigger has its URL yet; nothing for any other routine. */
+function webhookUrlState(
+  routine: AutomationEntity,
+  webhooks: AutomationListing['webhooks'],
+): string[] {
+  if (!routine.triggers.some((trigger) => trigger.source === 'webhook')) return [];
+  return [
+    promptText(
+      webhooks?.has(routine.id)
+        ? 'tools/routine.describe-webhook-issued'
+        : 'tools/routine.describe-webhook-not-issued',
+    ),
+  ];
 }
 
 /** A trigger as the card states it, before it is saved. */
@@ -328,6 +348,7 @@ function describeCall(
   if (trigger.source === 'github') {
     return `GitHub ${trigger.event}${trigger.branch ? ` on ${trigger.branch}` : ''}`;
   }
+  if (trigger.source === 'webhook') return promptText('tools/automation.describe-trigger-webhook');
   if (trigger.frequency === 'cron') {
     // The owner approves words, never the raw fields.
     return cronToEnglish(trigger.cron ?? '') ?? 'a custom schedule';

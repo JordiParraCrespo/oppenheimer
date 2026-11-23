@@ -18,6 +18,7 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from '../automations/database/automation-webhook.orm-entity';
 import { BotOrmEntity } from '../bots/database/bot.orm-entity';
 import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
@@ -100,6 +101,7 @@ import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity'
 import { TelegramAccountOrmEntity } from '../telegram/database/telegram-account.orm-entity';
 import { TelegramMessageOrmEntity } from '../telegram/database/telegram-message.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { VoiceSettingsOrmEntity } from '../voice/database/voice-settings.orm-entity';
 import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
 import { WhatsappChatGrantOrmEntity } from '../whatsapp/database/whatsapp-chat-grant.orm-entity';
 import { WhatsappKnownChatOrmEntity } from '../whatsapp/database/whatsapp-known-chat.orm-entity';
@@ -155,6 +157,8 @@ const dataSource = new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    AutomationWebhookOrmEntity,
+    VoiceSettingsOrmEntity,
     TaskOrmEntity,
     MilestoneOrmEntity,
     PlanEventOrmEntity,
