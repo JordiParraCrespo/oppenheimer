@@ -13,6 +13,9 @@
 #   · every image is pinned by digest
 #   · `data` is internal, and Postgres and Redis sit on it alone
 #
+# The logs (Loki, Alloy, Grafana) sit on internal networks of their own, at
+# the end of this file; deploy/dev/monitoring/README.md is how to read them.
+#
 # Upstream digests were read from Docker Hub on 2026-10-07. Bump them
 # deliberately, in their own commit:
 #   docker buildx imagetools inspect postgres:16-alpine --format '{{.Manifest.Digest}}'
@@ -32,6 +35,19 @@ networks:
   # The uploader's way out, shared with nothing that can reach the database.
   egress:
     driver: bridge
+  # Loki, Alloy and Grafana. Internal: none of them needs the internet. A fixed
+  # subnet, so Loki and Grafana keep the addresses an SSH tunnel from a tailnet
+  # machine forwards to (the host reaches an internal bridge; nothing else does).
+  monitoring:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.250.0.0/24
+  # Alloy to the Docker socket proxy, and nothing else.
+  docker-api:
+    driver: bridge
+    internal: true
 
 volumes:
   pgdata:
@@ -42,6 +58,12 @@ volumes:
     name: oppenheimer-dev_uploads
   backup-work:
     name: oppenheimer-dev_backup-work
+  lokidata:
+    name: oppenheimer-dev_lokidata
+  alloydata:
+    name: oppenheimer-dev_alloydata
+  grafanadata:
+    name: oppenheimer-dev_grafanadata
 
 secrets:
   # Outside Swarm a compose secret is a bind mount of a host file: it keeps the
@@ -208,6 +230,73 @@ services:
       timeout: 5s
       retries: 6
       start_period: 20s
+
+  # ---- logs: every container's lines into Loki, read in Grafana ------------
+  # Loki, Alloy and Grafana digests read from Docker Hub on 2026-11-23 (the
+  # multi-arch index).
+
+  # The Docker API as Alloy needs it: listing containers and networks,
+  # inspecting a container and reading its logs, and nothing else (the allowlist
+  # is monitoring/server/docker-proxy.conf). Alloy never sees the socket, which
+  # is root on this server. An inspect still shows a container's environment
+  # (the API's secrets, see "Known trade-offs"), to a process with no ingress
+  # and no route out. The same nginx image as `releases`.
+  docker-proxy:
+    image: nginx:alpine@sha256:0563c36f94a6d3ec3584161b77859f740f7e20b4853f52c796a864ce6908e8ea
+    restart: unless-stopped
+    networks: [docker-api]
+    volumes:
+      - ./monitoring/server/docker-proxy.conf:/etc/nginx/nginx.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs: [/tmp]
+
+  loki:
+    image: grafana/loki:3.5.3@sha256:3165cecce301ce5b9b6e3530284b080934a05cd5cafac3d3d82edcb887b45ecd
+    restart: unless-stopped
+    networks:
+      monitoring:
+        ipv4_address: 10.250.0.10
+    command: [-config.file=/etc/loki/loki.yaml]
+    volumes:
+      - ./monitoring/server/loki.yaml:/etc/loki/loki.yaml:ro
+      - lokidata:/loki
+
+  alloy:
+    image: grafana/alloy:v1.10.2@sha256:bcf27f18c4402869af112fb39e35e1db3804a404686f4caa20bdf77814219223
+    restart: unless-stopped
+    networks: [monitoring, docker-api]
+    depends_on: [loki, docker-proxy]
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - --disable-reporting
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./monitoring/server/config.alloy:/etc/alloy/config.alloy:ro
+      - alloydata:/var/lib/alloy/data
+
+  # Explore → Loki. Anonymous and an Admin with no login form, like the local
+  # one: the only way in is the SSH tunnel, so whoever reaches it already has a
+  # shell on this server.
+  grafana:
+    image: grafana/grafana:12.1.1@sha256:a1701c2180249361737a99a01bc770db39381640e4d631825d38ff4535efa47d
+    restart: unless-stopped
+    networks:
+      monitoring:
+        ipv4_address: 10.250.0.11
+    depends_on: [loki]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - ./monitoring/server/grafana:/etc/grafana/provisioning/datasources:ro
+      - grafanadata:/var/lib/grafana
 
   # ---- backups: started by `oppctl backup`, never by `up` -------------------
 
