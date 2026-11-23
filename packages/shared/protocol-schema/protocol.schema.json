@@ -748,6 +748,7 @@
             "antigravity",
             "zcode",
             "fx",
+            "hermes",
             "muse"
           ]
         },
@@ -3258,6 +3259,7 @@
         "antigravity",
         "zcode",
         "fx",
+        "hermes",
         "muse",
         "shell"
       ],

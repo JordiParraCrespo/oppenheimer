@@ -238,6 +238,13 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"hermes": {
+		command:            "hermes",
+		always:             []string{"chat"},
+		model:              []string{"--model", "<model>"},
+		prompt:             []string{"--query", "<prompt>"},
+		conversationResume: []string{"--continue"},
+	},
 	"muse": {
 		command:      "muse",
 		model:        []string{"--model", "<model>"},
@@ -271,11 +278,13 @@ var loginTargets = map[string][]LoginTarget{
 	"pi":          {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
 	"omp":         {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
 	"fx":          {{Host: "auth.openai.com"}, {Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
+	"hermes":      {{Host: "auth.openai.com"}},
 }
 
 // inputCatalog is each agent's `input` entry of the catalog: the keys that
-// send and interrupt a message typed into it, and the pause between a
-// paste and its submit, in milliseconds.
+// send and interrupt a message typed into it, the pause between a paste
+// and its submit, in milliseconds, and what is typed before its terminal
+// is ended.
 var inputCatalog = map[string]agentInput{
 	"claude-code": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"codex":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
@@ -286,5 +295,6 @@ var inputCatalog = map[string]agentInput{
 	"antigravity": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200, quit: []string{"/stop", "/quit"}},
 	"muse":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }

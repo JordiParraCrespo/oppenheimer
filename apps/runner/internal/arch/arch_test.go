@@ -37,7 +37,7 @@ var contexts = []string{"apikeys", "desktop", "devices", "host", "pairing", "por
 // the adapters that own the systems they speak to. whatsmeow is an unofficial
 // WhatsApp client, and keeping it (and the SQLite driver its store needs) in
 // one adapter is what keeps replacing it one package's work. The transcript
-// adapter reads ZCode's conversations out of ZCode's SQLite database.
+// adapter reads ZCode's and Hermes' conversations out of their SQLite databases.
 var confined = map[string][]string{
 	"go.mau.fi/":         {"whatsapp/adapters/whatsmeow"},
 	"modernc.org/sqlite": {"whatsapp/adapters/whatsmeow", "sessions/adapters/transcript"},

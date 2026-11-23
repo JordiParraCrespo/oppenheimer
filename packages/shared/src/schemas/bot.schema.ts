@@ -1003,12 +1003,13 @@ export const BOT_TURN_ORIGINS = [
   'loop',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * The turns a person is waiting on: one they started by writing (in the
- * console, on Telegram or on WhatsApp), or by deciding a card. A routine's
+ * console, on Telegram, WhatsApp or Slack), or by deciding a card. A routine's
  * run, a wake and a goal's continuation run with nobody there, so a tool
  * that needs someone to answer is not offered on them.
  */
@@ -1018,6 +1019,7 @@ export const BOT_ATTENDED_ORIGINS = [
   'question',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**
@@ -1028,6 +1030,7 @@ export const BOT_ATTENDED_ORIGINS = [
 export const BOT_CHANNEL_ORIGINS = [
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 export type BotChannelOrigin = (typeof BOT_CHANNEL_ORIGINS)[number];
 

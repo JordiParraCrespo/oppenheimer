@@ -27,6 +27,8 @@ import type { PullRequestsRepository } from '../modules/pull-requests';
 import { PullRequestsModule } from '../modules/pull-requests';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
+import type { SlackRepository } from '../modules/slack';
+import { SlackModule } from '../modules/slack';
 import type { TasksRepository } from '../modules/tasks';
 import { TasksModule } from '../modules/tasks';
 import type { TelegramRepository } from '../modules/telegram';
@@ -53,6 +55,7 @@ export const consumerModules = [
   MailModule,
   WhatsappModule,
   TelegramModule,
+  SlackModule,
   HostsModule,
   InboxModule,
   InstallationsModule,
@@ -145,6 +148,11 @@ export class ConsumerApp {
   /** The reader's WhatsApp numbers, linked as devices on their hosts for their bots. */
   get whatsapp(): WhatsappRepository {
     return this.kernel.container.get(TOKENS.WhatsappRepository);
+  }
+
+  /** The reader's bots' own Slack apps, through which they ask their bots in Slack. */
+  get slack(): SlackRepository {
+    return this.kernel.container.get(TOKENS.SlackRepository);
   }
 
   /** The reader's Telegram bots, made with @BotFather and polled by their hosts for their bots. */
