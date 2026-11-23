@@ -1631,3 +1631,33 @@ export const updatePersonAboutSchema = z.object({
   about: z.string().trim().max(PERSON_ABOUT_MAX),
 });
 export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
+
+/**
+ * The reactions the chat offers in one tap, in their order, before the
+ * whole picker: approval, love, laughter, surprise, sadness, thanks.
+ */
+export const BOT_QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const;
+
+/** The most UTF-16 code units a reaction holds: the longest family or flag sequence, with room. */
+export const BOT_REACTION_MAX = 32;
+
+/** One pictograph, with what joins and modifies it (skin tones, ZWJ sequences, flags, subdivision flags, keycaps). */
+const SINGLE_EMOJI =
+  /^(?:\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}️?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:‍\p{Extended_Pictographic}️?\p{Emoji_Modifier}?)*)$/u;
+
+/**
+ * Whether `text` is one emoji, as a reaction must be: a word, two emoji or
+ * an emoji with text around it is not.
+ */
+export function isReactionEmoji(text: string): boolean {
+  return text.length > 0 && text.length <= BOT_REACTION_MAX && SINGLE_EMOJI.test(text);
+}
+
+/**
+ * `PUT /bots/:id/messages/:messageId/reaction`: your reaction to a message
+ * of yours or of the bot's, one at a time; null takes it back.
+ */
+export const reactToBotMessageSchema = z.object({
+  emoji: z.string().refine(isReactionEmoji, { message: 'A reaction is one emoji' }).nullable(),
+});
+export type ReactToBotMessageDto = z.infer<typeof reactToBotMessageSchema>;

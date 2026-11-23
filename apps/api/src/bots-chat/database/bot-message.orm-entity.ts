@@ -20,6 +20,7 @@ import {
 @Check('CHK_bot_message_event', `("role" = 'event') = ("event" IS NOT NULL)`)
 @Check('CHK_bot_message_position', `"position" >= 0`)
 @Check('CHK_bot_message_turn', `"turnId" IS NOT NULL OR "role" = 'event'`)
+@Check('CHK_bot_message_reaction', `"reaction" IS NULL OR "role" IN ('user', 'assistant')`)
 export class BotMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -62,6 +63,10 @@ export class BotMessageOrmEntity {
   /** Media still to read when its turn starts (`BotPendingMedia`); null for none. */
   @Column({ type: 'jsonb', nullable: true })
   pendingMedia!: Record<string, unknown> | null;
+
+  /** Your reaction, one emoji (`1795443646000-AddBotMessageReaction`); null for none. */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  reaction!: string | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

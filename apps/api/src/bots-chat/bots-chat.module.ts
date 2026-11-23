@@ -158,6 +158,8 @@ import { DismissBotQuestionCommandHandler } from './commands/dismiss-bot-questio
 import { DismissBotQuestionHttpController } from './commands/dismiss-bot-question/dismiss-bot-question.http.controller';
 import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
+import { ReactToBotMessageCommandHandler } from './commands/react-to-bot-message/react-to-bot-message.command-handler';
+import { ReactToBotMessageHttpController } from './commands/react-to-bot-message/react-to-bot-message.http.controller';
 import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
 import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
 import { ResumeBotGoalCommandHandler } from './commands/resume-bot-goal/resume-bot-goal.command-handler';
@@ -294,6 +296,7 @@ const httpControllers = [
   FindPendingBotQuestionHttpController,
   AnswerBotQuestionHttpController,
   DismissBotQuestionHttpController,
+  ReactToBotMessageHttpController,
   FindBotPermissionsHttpController,
   SetBotToolDecisionHttpController,
   CreateBotPermissionRuleHttpController,
@@ -313,6 +316,7 @@ const commandHandlers: Provider[] = [
   DecideBotApprovalCommandHandler,
   AnswerBotQuestionCommandHandler,
   DismissBotQuestionCommandHandler,
+  ReactToBotMessageCommandHandler,
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
   DreamBotMemoryCommandHandler,

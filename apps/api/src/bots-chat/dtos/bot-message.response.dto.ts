@@ -583,6 +583,15 @@ export class BotMessageResponseDto {
   })
   attachments!: BotAttachmentResponseDto[];
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '👍',
+    description:
+      'Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.',
+  })
+  reaction!: string | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;
 }
