@@ -39,9 +39,15 @@ then end with a JSON block of findings.
 node scripts/evals/autoreview/run.mjs --validate                 # the fixtures, no agent (CI runs run.test.mjs)
 node scripts/evals/autoreview/run.mjs                            # every case, the skill and rules at HEAD
 node scripts/evals/autoreview/run.mjs --ref origin/main          # the same, with main's skill and rules
+node scripts/evals/autoreview/run.mjs --bundles --trials 3              # cases landed together as one branch
 node scripts/evals/autoreview/run.mjs --case surrogate-cut --trials 3
 node scripts/evals/autoreview/run.mjs --grade results/<report>.json
 ```
+
+A bundle (`bundles` in `cases.json` and `cases.web.json`) lands several cases
+as one branch and grades each on its own. A lone case in a short diff is easy;
+a bundle is closer to the branch autoreview actually reviews, and it is where
+the old brief missed bugs (`RESULTS.md`).
 
 Grading:
 
