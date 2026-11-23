@@ -16,8 +16,9 @@
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
  * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`,
- * Antigravity in `antigravity.ts`, ZCode in `zcode.ts` and Muse in `muse.ts`,
- * which this record composes. How the runner installs and updates each CLI is
+ * Antigravity in `antigravity.ts`, ZCode in `zcode.ts`, fx in `fx.ts` and Muse
+ * in `muse.ts`, which this record composes. How the runner installs and
+ * updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
  */
@@ -31,6 +32,7 @@ import {
   GROK_LEVELS,
   levels,
 } from './effort-levels.js';
+import { FX_AGENT } from './fx.js';
 import { MUSE_AGENT } from './muse.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
@@ -54,6 +56,7 @@ export const CODING_AGENT_IDS = [
   'omp',
   'antigravity',
   'zcode',
+  'fx',
   'muse',
   'shell',
 ] as const;
@@ -814,6 +817,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   omp: OMP_AGENT,
   antigravity: ANTIGRAVITY_AGENT,
   zcode: ZCODE_AGENT,
+  fx: FX_AGENT,
   muse: MUSE_AGENT,
   shell: Object.freeze({
     id: 'shell',

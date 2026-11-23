@@ -9792,6 +9792,7 @@
                 "omp",
                 "antigravity",
                 "zcode",
+                "fx",
                 "muse",
                 "shell"
               ],
@@ -31526,6 +31527,7 @@
               "omp",
               "antigravity",
               "zcode",
+              "fx",
               "muse",
               "shell",
               null
@@ -31614,6 +31616,7 @@
               "omp",
               "antigravity",
               "zcode",
+              "fx",
               "muse",
               "shell",
               null
@@ -31682,6 +31685,7 @@
               "omp",
               "antigravity",
               "zcode",
+              "fx",
               "muse",
               "shell",
               null
@@ -32222,6 +32226,7 @@
               "omp",
               "antigravity",
               "zcode",
+              "fx",
               "muse",
               "shell",
               "cursor"
@@ -32492,6 +32497,7 @@
               "omp",
               "antigravity",
               "zcode",
+              "fx",
               "muse",
               "shell"
             ]
@@ -33848,6 +33854,7 @@
               "omp",
               "antigravity",
               "zcode",
+              "fx",
               "muse"
             ]
           },
@@ -34770,6 +34777,7 @@
                   "omp",
                   "antigravity",
                   "zcode",
+                  "fx",
                   "muse",
                   "shell"
                 ]
@@ -35256,6 +35264,7 @@
                   "omp",
                   "antigravity",
                   "zcode",
+                  "fx",
                   "muse",
                   "shell"
                 ]
@@ -36147,6 +36156,7 @@
                   "omp",
                   "antigravity",
                   "zcode",
+                  "fx",
                   "muse",
                   "shell"
                 ]

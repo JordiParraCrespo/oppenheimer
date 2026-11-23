@@ -747,6 +747,7 @@
             "omp",
             "antigravity",
             "zcode",
+            "fx",
             "muse"
           ]
         },
@@ -3256,6 +3257,7 @@
         "omp",
         "antigravity",
         "zcode",
+        "fx",
         "muse",
         "shell"
       ],

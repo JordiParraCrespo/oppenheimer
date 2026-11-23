@@ -12,6 +12,7 @@
  */
 
 import type { CodingAgentId, HostInstall, InstallMethod } from './catalog.js';
+import { fxRelease } from './fx.js';
 import { bunUserInstall, npmUserInstall } from './install-scripts.js';
 import {
   RELEASE_TEMP_DIR,
@@ -258,6 +259,18 @@ export const AGENT_HOST_SETUP: Readonly<Partial<Record<CodingAgentId, AgentHostS
       install: Object.freeze({
         macos: antigravityRelease('macos'),
         linux: antigravityRelease('linux'),
+        bin: '~/.local/bin',
+      }),
+    }),
+    fx: Object.freeze({
+      // `fx upgrade` (alias `fx update`): installs the latest release over the
+      // running binary, asking nothing.
+      update: Object.freeze(['upgrade']),
+      // Its GitHub release, checked against the asset's `.sha256`, rather than
+      // `fx.sh/setup.sh`, which checks nothing (`fx.ts`).
+      install: Object.freeze({
+        macos: fxRelease('macos'),
+        linux: fxRelease('linux'),
         bin: '~/.local/bin',
       }),
     }),
