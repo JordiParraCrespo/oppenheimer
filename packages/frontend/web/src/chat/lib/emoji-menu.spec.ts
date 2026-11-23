@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { type EmojiRow, emojiQuery, insertEmoji, loadEmoji, matchingEmoji } from './emoji-menu';
+import {
+  type EmojiRow,
+  emojiQuery,
+  insertAtCaret,
+  insertEmoji,
+  loadEmoji,
+  matchingEmoji,
+} from './emoji-menu';
 
 /**
  * Which emoji a composer's `:` menu offers and what a pick writes. What breaks
@@ -62,5 +69,25 @@ describe('loadEmoji', () => {
     expect(matchingEmoji(rows, 'hap').map((r) => `${r.emoji}:${r.name}`)).toEqual(
       expect.arrayContaining(['😀:grinning', '😃:smiley', '😄:smile', '😆:laughing']),
     );
+  });
+});
+
+/**
+ * Where a picked emoji goes in a composer. Breaks if it lands at the end
+ * while the caret is mid-text, or keeps text the reader had selected.
+ */
+describe('insertAtCaret', () => {
+  it('puts the emoji at the caret and the caret after it', () => {
+    expect(insertAtCaret('hi there', { start: 2, end: 2 }, '👋')).toEqual({
+      text: 'hi👋 there',
+      caret: 4,
+    });
+  });
+
+  it('replaces what is selected', () => {
+    expect(insertAtCaret('I love it', { start: 2, end: 6 }, '❤️')).toEqual({
+      text: 'I ❤️ it',
+      caret: 4,
+    });
   });
 });

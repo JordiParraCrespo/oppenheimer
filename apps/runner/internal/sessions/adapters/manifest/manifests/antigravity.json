@@ -1,0 +1,17 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "antigravity",
+  "version": "2026.11.23.1",
+  "minEngine": 1,
+  "notes": "One rule, read off agy 1.5.15's binary and not yet watched in a live session: its tool-permission prompt reads `Allow access to this file?` or `Requesting permission for:`. Everything else is `unknown` until a soak produces patterns of agy's own.",
+  "rules": [
+    {
+      "id": "approval",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:12",
+      "any": ["(?i)\\b(requesting permission for:|allow access to this file\\?)"],
+      "note": "agy's permission prompt, as its binary spells it (`Requesting permission for:`, `Allow access to this file?`). Read off 1.5.15, not yet watched."
+    }
+  ]
+}

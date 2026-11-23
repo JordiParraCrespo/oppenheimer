@@ -11,7 +11,6 @@
     "emptyBody": "Los bots que crees aparecen aquí. Crea uno y dile qué trabajo tiene: escribe sus propias instrucciones a partir de tu respuesta.",
     "emptyGroup": "Aún no hay bots en este grupo.",
     "noMessages": "Aún no hay mensajes",
-    "yesterday": "Ayer",
     "newGroup": "Nuevo grupo",
     "groupName": "Nombre del grupo",
     "groupActions": "Opciones de {{name}}",
@@ -422,7 +421,8 @@
       },
       "empty": "Este chat aún no ha gastado nada.",
       "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-    }
+    },
+    "botReacted": "El bot reaccionó con {{emoji}}"
   },
   "settings": {
     "back": "Volver al chat",
