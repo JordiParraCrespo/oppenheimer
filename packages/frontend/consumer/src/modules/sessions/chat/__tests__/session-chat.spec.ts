@@ -900,6 +900,11 @@ describe('typing into the session', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data), undefined, { clear: '\u0015' });
     chat.send('Now ship it');
+    // The words wait for the agent to act on the clear: in the same burst
+    // they would land in the prompt it has not emptied yet.
+    expect(typed).toEqual(['\u0015']);
+    vi.advanceTimersByTime(99);
+    expect(typed).toEqual(['\u0015']);
     vi.runAllTimers();
     chat.send('What is in these?', { withFiles: true });
     vi.runAllTimers();

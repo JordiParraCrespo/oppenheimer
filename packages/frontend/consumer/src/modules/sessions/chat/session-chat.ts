@@ -326,6 +326,8 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
+/** How long the agent takes to empty its prompt before the words are typed. */
+const CLEAR_SETTLE_MS = 100;
 /**
  * How long a key pressed on the drafted-feedback card holds the next one
  * while the card on screen has not moved: long enough for a double click,
@@ -917,12 +919,21 @@ export class SessionChat {
     const type = this.type;
     const empty = message.trim() === '';
     if (!type || (empty && !withFiles)) return;
+    const typeMessage = () => {
+      if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
+      setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    };
     // A prompt can hold text nobody left there (ZCode recalls its last one on
-    // an Up arrow), which the message would be sent joined to. Not with files:
-    // their paths are already in the prompt, pasted for this message.
-    if (!empty && !withFiles && this.clear) type(this.clear);
-    if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
-    setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    // an Up arrow), which the message would be sent joined to: the clear keys
+    // go first, and the words once the agent has acted on them, since words
+    // in the same burst land in the prompt it has not emptied yet. Not with
+    // files: their paths are already in the prompt, pasted for this message.
+    if (!empty && !withFiles && this.clear) {
+      type(this.clear);
+      setTimeout(typeMessage, CLEAR_SETTLE_MS);
+    } else {
+      typeMessage();
+    }
     // A source that cannot stop the turn says itself what waits with it, and
     // one taken into the turn under way opens no prompt to replace it.
     if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);
