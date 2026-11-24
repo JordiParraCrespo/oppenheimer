@@ -68,12 +68,13 @@ export function SideTerminal({
         hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
       >
         {/* The padding is the wrapper's, not the grid host's: the fit addon
-            counts its host's padding as usable space. */}
-        <div className="min-h-0 flex-1 overflow-hidden px-3 py-3">
+            counts its host's padding as usable space. The gutter is the
+            session column's, 20px, so the prompt does not read flush. */}
+        <div className="min-h-0 flex-1 overflow-hidden px-5 py-3">
           <div ref={containerRef} className="isolate size-full" />
         </div>
         {ended === 'forbidden' || ended === 'refused' ? (
-          <div className="px-3 pb-3">
+          <div className="px-5 pb-3">
             <ErrorAlert
               message={t(`sessions.session.ended.${ended}`)}
               action={
@@ -85,7 +86,7 @@ export function SideTerminal({
           </div>
         ) : null}
         {upload.failure ? (
-          <div className="px-3 pb-3">
+          <div className="px-5 pb-3">
             <ErrorAlert
               error={upload.failure}
               fallback={t('errors.fallback')}
