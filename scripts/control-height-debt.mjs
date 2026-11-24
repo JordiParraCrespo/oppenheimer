@@ -7,12 +7,7 @@
  * comes down, so this list only shrinks. Nothing is added here; a new control
  * takes the ramp where it is written.
  */
-export const CONTROL_HEIGHT_DEBT = new Map([
-  ['packages/frontend/design-system/web/src/components/avatar-picker.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/chat-cards.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/chat-elements.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/chat-status.tsx', 1],
-]);
+export const CONTROL_HEIGHT_DEBT = new Map([]);
 
 /**
  * What the scanner lists that is not a control standing in a row of
@@ -22,8 +17,32 @@ export const CONTROL_HEIGHT_DEBT = new Map([
  */
 export const NOT_A_CONTROL = new Map([
   [
+    'packages/frontend/design-system/web/src/components/chat-cards.tsx',
+    {
+      count: 1,
+      why: "the subagent card's Stop all, kept at 24px by the user's call (pass 4; .agents/answers.md)",
+    },
+  ],
+  [
+    'packages/frontend/design-system/web/src/components/chat-elements.tsx',
+    {
+      count: 1,
+      why: "a source pill under a reply, kept at 26px by the user's call (pass 4; .agents/answers.md)",
+    },
+  ],
+  [
+    'packages/frontend/design-system/web/src/components/chat-status.tsx',
+    {
+      count: 1,
+      why: "a chat error's action, kept at 26px by the user's call (pass 4; .agents/answers.md)",
+    },
+  ],
+  [
     'packages/frontend/design-system/web/src/components/avatar-picker.tsx',
-    { count: 1, why: 'the colour swatches, a grid of choices' },
+    {
+      count: 2,
+      why: "the colour swatches, a grid of choices; and Shuffle, kept at 30px by the user's call (pass 4; .agents/answers.md)",
+    },
   ],
   [
     'packages/frontend/design-system/web/src/components/bot-item.tsx',
