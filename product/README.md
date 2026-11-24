@@ -2044,3 +2044,9 @@ earlier note:
   list's empty state as one muted "Nothing needs you." row. On 2026-11-24
   the owner asked for more: the list shows "Inbox zero" over a check in a
   green disc, and "No matches" when filters match nothing ("Inbox zero").
+- `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
+  (`runner exec`, `runner computer`, `runner browser`) on the host alone,
+  never written by the control plane. On 2026-11-24 the owner, told by a
+  bot to run `runner browser on` after saying "do it yourself", did not want
+  that guardrail: a bot changes them with `set_host_settings` when the
+  person asks in their own chat ("The host's switches").
