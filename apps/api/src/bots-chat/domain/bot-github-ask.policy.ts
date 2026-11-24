@@ -154,14 +154,14 @@ export function githubAskText(ask: GithubAsk): string {
   const target = event.isPullRequest ? 'pull request' : 'issue';
   const headline =
     event.via === 'label'
-      ? promptText('wake/github-ask.headline-label', {
+      ? promptText('github/wake-ask.headline-label', {
           actor: event.actorLogin,
           label: ask.label ?? '',
           target,
           number,
           repository: event.repository,
         })
-      : promptText('wake/github-ask.headline-mention', {
+      : promptText('github/wake-ask.headline-mention', {
           actor: event.actorLogin,
           target,
           number,
@@ -169,13 +169,13 @@ export function githubAskText(ask: GithubAsk): string {
         });
   const instructions = [
     headline,
-    promptText('wake/github-ask.read-it', {
+    promptText('github/wake-ask.read-it', {
       installationId: event.installationId,
       repoId: event.githubRepoId,
       number,
     }),
-    promptText('wake/github-ask.answer'),
-    promptText('wake/github-ask.closing'),
+    promptText('github/wake-ask.answer'),
+    promptText('github/wake-ask.closing'),
   ].join('\n\n');
   return (
     composeRunPrompt(instructions, {

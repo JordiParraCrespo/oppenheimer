@@ -36,20 +36,20 @@ const account = z
   .trim()
   .min(1)
   .max(320)
-  .describe(promptText('tools/mail-organize.account'));
+  .describe(promptText('mail/tools-organize.account'));
 const ids = (what: string) =>
   z
     .array(z.string().trim().min(1).max(100))
     .max(MAIL_ORGANIZE_MAX)
     .default([])
     .describe(
-      promptText('tools/mail-organize.ids', { what, mailOrganizeMax: String(MAIL_ORGANIZE_MAX) }),
+      promptText('mail/tools-organize.ids', { what, mailOrganizeMax: String(MAIL_ORGANIZE_MAX) }),
     );
 const labelNames = z
   .array(z.string().trim().min(1).max(225))
   .max(20)
   .default([])
-  .describe(promptText('tools/mail-organize.label-names'));
+  .describe(promptText('mail/tools-organize.label-names'));
 
 /** Threads and messages to change: at least one, at most `MAIL_ORGANIZE_MAX` together. */
 const targets = z.object({ account, thread_ids: ids('Thread'), message_ids: ids('Message') });
@@ -60,7 +60,7 @@ type Targets = { account: string; thread_ids: string[]; message_ids?: string[] }
 const resolvedNames = z
   .record(z.string(), z.string())
   .optional()
-  .describe(promptText('tools/mail-organize.resolved-names'));
+  .describe(promptText('mail/tools-organize.resolved-names'));
 
 /**
  * Labels a bot may not put on mail itself: Trash and Spam move it out of
@@ -106,19 +106,19 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'mark_mail',
       asks: true,
       scope: 'mail:write',
-      description: promptText('tools/mail-organize.mark-mail', {
+      description: promptText('mail/tools-organize.mark-mail', {
         mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
       }),
       input: targets.extend({
-        read: z.boolean().optional().describe(promptText('tools/mail-organize.mark-mail-read')),
+        read: z.boolean().optional().describe(promptText('mail/tools-organize.mark-mail-read')),
         starred: z
           .boolean()
           .optional()
-          .describe(promptText('tools/mail-organize.mark-mail-starred')),
+          .describe(promptText('mail/tools-organize.mark-mail-starred')),
         important: z
           .boolean()
           .optional()
-          .describe(promptText('tools/mail-organize.mark-mail-important')),
+          .describe(promptText('mail/tools-organize.mark-mail-important')),
       }),
       normalize: (call, context) => {
         assertChanges(markChange(call));
@@ -139,12 +139,12 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'label_mail',
       asks: true,
       scope: 'mail:write',
-      description: promptText('tools/mail-organize.label-mail', {
+      description: promptText('mail/tools-organize.label-mail', {
         mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
       }),
       input: targets.extend({
-        add: labelNames.describe(promptText('tools/mail-organize.label-mail-add')),
-        remove: labelNames.describe(promptText('tools/mail-organize.label-mail-remove')),
+        add: labelNames.describe(promptText('mail/tools-organize.label-mail-add')),
+        remove: labelNames.describe(promptText('mail/tools-organize.label-mail-remove')),
         names: resolvedNames,
       }),
       // The card stores the labels' ids, so a yes changes the labels it named even if one is renamed.
@@ -178,7 +178,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'archive_mail',
       asks: true,
       scope: 'mail:write',
-      description: promptText('tools/mail-organize.archive-mail', {
+      description: promptText('mail/tools-organize.archive-mail', {
         mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
       }),
       input: threadsOnly,
@@ -195,7 +195,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'trash_mail',
       asks: 'always',
       scope: 'mail:write',
-      description: promptText('tools/mail-organize.trash-mail', {
+      description: promptText('mail/tools-organize.trash-mail', {
         mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
       }),
       input: threadsOnly,
@@ -211,7 +211,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'untrash_mail',
       scope: 'mail:write',
-      description: promptText('tools/mail-organize.untrash-mail', {
+      description: promptText('mail/tools-organize.untrash-mail', {
         mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
       }),
       input: threadsOnly,
@@ -225,7 +225,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       name: 'create_label',
       asks: true,
       scope: 'mail:write',
-      description: promptText('tools/mail-organize.create-label'),
+      description: promptText('mail/tools-organize.create-label'),
       input: z.object({ account, name: z.string().trim().min(1).max(225) }),
       normalize: async (call, context) => ({
         ...call,
@@ -276,7 +276,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
     const change = labelChangeOf(labels, call.add, call.remove);
     if (change.missing.length) {
       throw new BotToolRefusal(
-        promptText('tools/mail-organize.label-change', {
+        promptText('mail/tools-organize.label-change', {
           missing: change.missing.map((name) => `"${name}"`).join(', '),
         }),
       );
@@ -343,7 +343,7 @@ function organized(done: string, outcome: GmailBulkOutcome): BotToolAnswer {
 /** A label change that changes nothing is refused, before a card or a call. */
 function assertChanges(change: MailLabelChange): void {
   if (change.add.length + change.remove.length === 0) {
-    throw new BotToolRefusal(promptText('tools/mail-organize.assert-changes'));
+    throw new BotToolRefusal(promptText('mail/tools-organize.assert-changes'));
   }
 }
 
@@ -356,7 +356,7 @@ function changeOf<Change extends MailLabelChange>(change: Change): Change {
 /** Trash and its kin are refused by name or id, before any label is looked up. */
 function assertNotReserved(added: readonly string[]): void {
   if (added.some((label) => RESERVED_ADD.has(label.trim().toUpperCase()))) {
-    throw new BotToolRefusal(promptText('tools/mail-organize.assert-not-reserved'));
+    throw new BotToolRefusal(promptText('mail/tools-organize.assert-not-reserved'));
   }
 }
 
@@ -364,11 +364,11 @@ function assertTargets(call: Targets): void {
   const count = call.thread_ids.length + (call.message_ids?.length ?? 0);
   if (count === 0)
     throw new BotToolRefusal(
-      promptText('tools/mail-organize.assert-targets-name-threads-messages'),
+      promptText('mail/tools-organize.assert-targets-name-threads-messages'),
     );
   if (count > MAIL_ORGANIZE_MAX) {
     throw new BotToolRefusal(
-      promptText('tools/mail-organize.assert-targets-once-one-call', {
+      promptText('mail/tools-organize.assert-targets-once-one-call', {
         count: String(count),
         mailOrganizeMax: String(MAIL_ORGANIZE_MAX),
       }),

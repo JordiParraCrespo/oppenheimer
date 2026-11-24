@@ -19,7 +19,7 @@ While a bot's `INSTRUCTIONS.md` is empty its prompt carries Getting started
   sessions never suggests running coding agents.
 
 A change to Getting started, `AREA_INTROS` or its phrases
-(`prompts/system/getting-started-areas.md`), or the default soul
+(`prompts/core/system-getting-started-areas.md`), or the default soul
 (`botSoulFor`) is what this eval is for.
 
 ## The cases

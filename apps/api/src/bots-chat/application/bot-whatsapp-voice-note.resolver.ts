@@ -19,7 +19,7 @@ export class BotWhatsappVoiceNoteResolver implements BotOpeningMediaReaderPort {
 
   async read(turn: BotTurnEntity): Promise<string> {
     const source = whatsappMessageOf(turn.sourceKey);
-    if (!source) return promptText('turn/voice-note');
+    if (!source) return promptText('core/turn-voice-note');
     return this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
       new TranscribeWhatsappVoiceNoteCommand({
         organizationId: turn.organizationId,

@@ -4,15 +4,16 @@
  * beside them only decides which are sent.
  *
  * A file is one prompt, or several fragments the code chooses among. A
- * folder, one level deep, says where its words are sent (`system/` for
- * sections of the system prompt, `turn/` for what a turn carries besides
- * its opening, `wake/` for what an event says to the bot, `jobs/` for a
- * model call that is not a bot's turn, `tools/` for what a tool tells the
- * model), and is part of the id:
+ * folder, one level deep, groups the files and is part of the id: in the
+ * bots' module a folder is a capability (`core/`, `mail/`, `sessions/`) and
+ * a file's first word says where its words are sent (`system`, `turn`,
+ * `wake`, `job`, `tools`); a module with few prompts keeps one folder per
+ * kind (`system/`, `turn/`, `wake/`):
  *
- *   system/rules.md               one prompt, id `system/rules`
- *   system/what-you-can-do.md     with `<!-- fragment: plain-refusal -->`
- *                                 markers: `system/what-you-can-do.plain-refusal`
+ *   core/system-rules.md          one prompt, id `core/system-rules`
+ *   core/system-what-you-can-do.md
+ *                                 with `<!-- fragment: plain-refusal -->`
+ *                                 markers: `core/system-what-you-can-do.plain-refusal`
  *
  * `{{name}}` is a slot the code fills; a prompt's slots become its type. Any
  * other HTML comment is a note for whoever edits the file: it goes above the

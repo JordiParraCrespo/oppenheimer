@@ -35,7 +35,7 @@ const AUTOMATIONS_LIMIT_MAX = 50;
 const RUNS_LIMIT_MAX = 25;
 const PROMPT_MAX = 1_500;
 
-const TEST_RESULTS_NOTE = promptText('tools/automation.test-results-note');
+const TEST_RESULTS_NOTE = promptText('routines/tools-automation.test-results-note');
 
 /**
  * Automations, the reads: the workspace's automations,
@@ -58,14 +58,14 @@ export class BotAutomationToolsFactory implements BotToolArea {
       name: 'list_automations',
       readOnly: true,
       scope: 'automations:read',
-      description: promptText('tools/automation.list-automations', {
+      description: promptText('routines/tools-automation.list-automations', {
         automationsLimitMax: String(AUTOMATIONS_LIMIT_MAX),
       }),
       input: z.object({
         project_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/automation.list-automations-project-id')),
+          .describe(promptText('routines/tools-automation.list-automations-project-id')),
         limit: z.number().int().min(1).max(AUTOMATIONS_LIMIT_MAX).default(25),
       }),
       run: async (input, context) => {
@@ -79,12 +79,12 @@ export class BotAutomationToolsFactory implements BotToolArea {
             describeAutomation(automation, listing.digests.get(automation.id), context),
           ),
           input.project_id
-            ? promptText('tools/automation.list-none-in-project')
-            : promptText('tools/automation.list-none-in-workspace'),
+            ? promptText('routines/tools-automation.list-none-in-project')
+            : promptText('routines/tools-automation.list-none-in-workspace'),
           {
             shown: shown.length,
             total: listing.automations.length,
-            hint: promptText('tools/automation.list-automations-hint'),
+            hint: promptText('routines/tools-automation.list-automations-hint'),
           },
         );
       },
@@ -96,13 +96,13 @@ export class BotAutomationToolsFactory implements BotToolArea {
       name: 'get_automation',
       readOnly: true,
       scope: 'automations:read',
-      description: promptText('tools/automation.get-automation', {
+      description: promptText('routines/tools-automation.get-automation', {
         runHistoryDays: String(RUN_HISTORY_DAYS),
       }),
       input: z.object({
         automation_id: z
           .uuid()
-          .describe(promptText('tools/automation.get-automation-automation-id')),
+          .describe(promptText('routines/tools-automation.get-automation-automation-id')),
       }),
       run: async (input, context) => {
         const { automation, digest } = await this.queryBus.execute<
@@ -120,16 +120,16 @@ export class BotAutomationToolsFactory implements BotToolArea {
           `- state: ${describeState(automation)}`,
           `- project: ${target.projectId}`,
           `- runs ${describePlace(revision)}; agent ${revision.agent}${revision.model ? `, model ${revision.model}` : ''}; permission ${revision.permission}${revision.effort ? `; effort ${revision.effort}` : ''}`,
-          `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : promptText('tools/automation.get-automation-none-runs-checkout')}`,
+          `- repositories: ${revision.repositories.length ? revision.repositories.map((repository) => repository.fullName).join(', ') : promptText('routines/tools-automation.get-automation-none-runs-checkout')}`,
           `- revision: ${revision.number}, saved ${formatToolTime(revision.createdAt, context.timeZone)}`,
-          promptText('tools/automation.get-automation-when-another-run', {
+          promptText('routines/tools-automation.get-automation-when-another-run', {
             overlap: automation.overlap ?? 'the workspace default',
           }),
           `- hourly cap: ${automation.maxRunsPerHour === null ? "the workspace's" : `${automation.maxRunsPerHour} runs`}`,
           'Triggers:',
           ...(automation.triggers.length
             ? automation.triggers.map((trigger) => `  - ${describeTrigger(trigger, context)}`)
-            : [`  ${promptText('tools/automation.get-automation-none-runs-only')}`]),
+            : [`  ${promptText('routines/tools-automation.get-automation-none-runs-only')}`]),
           `Prompt:\n${cut(revision.prompt, PROMPT_MAX)}`,
           describeDigest(digest, context),
         ];
@@ -143,27 +143,27 @@ export class BotAutomationToolsFactory implements BotToolArea {
       name: 'run_history',
       readOnly: true,
       scope: 'automations:read',
-      description: promptText('tools/automation.run-history', {
+      description: promptText('routines/tools-automation.run-history', {
         runsLimitMax: String(RUNS_LIMIT_MAX),
       }),
       input: z.object({
         automation_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/automation.run-history-automation-id')),
+          .describe(promptText('routines/tools-automation.run-history-automation-id')),
         project_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/automation.run-history-project-id')),
+          .describe(promptText('routines/tools-automation.run-history-project-id')),
         status: z
           .array(z.enum(AUTOMATION_RUN_STATUSES))
           .min(1)
           .optional()
-          .describe(promptText('tools/automation.run-history-status')),
+          .describe(promptText('routines/tools-automation.run-history-status')),
         window: z
           .enum(RUN_WINDOWS)
           .default('7d')
-          .describe(promptText('tools/automation.run-history-window')),
+          .describe(promptText('routines/tools-automation.run-history-window')),
         limit: z.number().int().min(1).max(RUNS_LIMIT_MAX).default(10),
       }),
       run: async (input, context) => {
@@ -183,18 +183,20 @@ export class BotAutomationToolsFactory implements BotToolArea {
         const listing = formatToolList(
           `Runs, last ${input.window}`,
           page.items.map((run) => describeRun(run, context)),
-          promptText('tools/automation.run-history-runs-last-match', { window: input.window }),
+          promptText('routines/tools-automation.run-history-runs-last-match', {
+            window: input.window,
+          }),
           {
             shown: page.items.length,
             total: page.total,
-            hint: promptText('tools/automation.run-history-hint'),
+            hint: promptText('routines/tools-automation.run-history-hint'),
           },
         );
         if (page.items.length === 0) return listing;
         const { counts } = page;
         return [
           listing,
-          promptText('tools/automation.run-history-window-completed-failed', {
+          promptText('routines/tools-automation.run-history-window-completed-failed', {
             completed: String(counts.completed),
             failed: String(counts.failed),
             running: String(counts.running),
@@ -258,14 +260,15 @@ export function describeTrigger(
               : `at ${at}`;
     return `schedule ${config.frequency} ${detail} ${trigger.timezone}, next ${trigger.nextFireAt ? formatToolTime(trigger.nextFireAt, context.timeZone) : 'none'}`;
   }
-  if (trigger.source === 'webhook') return promptText('tools/automation.describe-trigger-webhook');
+  if (trigger.source === 'webhook')
+    return promptText('routines/tools-automation.describe-trigger-webhook');
   if (trigger.source === 'gmail') {
     const query = trigger.config.filter.op === 'equals' ? trigger.config.filter.value : null;
-    return promptText('tools/automation.describe-trigger-gmail-mail-received', {
+    return promptText('routines/tools-automation.describe-trigger-gmail-mail-received', {
       connectionId: trigger.config.connectionId,
       query: query
         ? ` matching "${query}"`
-        : ` ${promptText('tools/automation.describe-trigger-every-new-message')}`,
+        : ` ${promptText('routines/tools-automation.describe-trigger-every-new-message')}`,
     });
   }
   const filter =
@@ -280,12 +283,12 @@ function describeDigest(
   context: BotToolCallContext,
 ): string {
   if (!digest || digest.runCount === 0) {
-    return promptText('tools/automation.describe-digest-runs-none-last', {
+    return promptText('routines/tools-automation.describe-digest-runs-none-last', {
       runHistoryDays: String(RUN_HISTORY_DAYS),
     });
   }
   return [
-    promptText('tools/automation.describe-digest-runs-last-days', {
+    promptText('routines/tools-automation.describe-digest-runs-last-days', {
       runCount: String(digest.runCount),
       runHistoryDays: String(RUN_HISTORY_DAYS),
       running: digest.running ? ', one live now' : '',
@@ -313,9 +316,11 @@ function describeRun(run: RunReadModel, context: BotToolCallContext): string {
 function describePlace(revision: { place: string; hostId: string | null }): string {
   if (revision.place === 'host') return `on: host ${revision.hostId}`;
   if (revision.place === 'claude-cloud') {
-    return promptText('tools/automation.describe-place-claude-codes-cloud', {
+    return promptText('routines/tools-automation.describe-place-claude-codes-cloud', {
       hostId: String(revision.hostId),
     });
   }
-  return promptText('tools/automation.describe-place-s-cloud-owners', { place: revision.place });
+  return promptText('routines/tools-automation.describe-place-s-cloud-owners', {
+    place: revision.place,
+  });
 }

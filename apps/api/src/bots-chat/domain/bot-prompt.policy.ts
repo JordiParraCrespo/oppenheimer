@@ -84,31 +84,31 @@ type PromptSection = (facts: PromptFacts) => string | null;
  * is sent. An empty document is left out rather than shown blank.
  */
 const SECTIONS: readonly PromptSection[] = [
-  ({ input }) => promptText('system/identity.opening', { name: input.name }),
+  ({ input }) => promptText('core/system-identity.opening', { name: input.name }),
   ({ input }) =>
     written(input.description, (description) =>
-      promptText('system/identity.description', { description }),
+      promptText('core/system-identity.description', { description }),
     ),
   ({ offered }) => howATurnGoes(offered.includes('remember')),
-  () => promptText('system/check-before-report'),
-  () => promptText('system/turn-context', { tag: TURN_CONTEXT_TAG }),
+  () => promptText('core/system-check-before-report'),
+  () => promptText('core/system-turn-context', { tag: TURN_CONTEXT_TAG }),
   ({ input, sessions, commands, terminals }) =>
     whatYouCanDo(input.engineCapabilities, input.tools, sessions, commands, terminals.size > 0),
-  () => promptText('system/rules'),
+  () => promptText('core/system-rules'),
   ({ sessions, commands, terminals }) =>
     sessions ? workingOnCode(commands, terminals.size > 0) : null,
-  ({ commands }) => (commands ? promptText('system/commands-on-a-host') : null),
+  ({ commands }) => (commands ? promptText('sessions/system-commands-on-a-host') : null),
   ({ commands, terminals }) => (terminals.size > 0 ? drivingATerminal(commands, terminals) : null),
-  ({ offered }) =>
-    offered.includes('use_computer') ? promptText('system/using-a-computer') : null,
+  ({ offered }) => (offered.includes('use_computer') ? promptText('computer/system') : null),
   ({ offered }) =>
     offered.includes('use_browser') ? usingABrowser(offered.includes('use_computer')) : null,
   ({ offered }) => watchingMail(offered),
-  ({ input }) => written(input.soul, (content) => promptText('system/documents.soul', { content })),
+  ({ input }) =>
+    written(input.soul, (content) => promptText('core/system-documents.soul', { content })),
   // Its instructions, or, while it has none, how a new bot sets itself up.
   ({ input }) =>
     written(input.instructions, (content) =>
-      promptText('system/documents.instructions', { content }),
+      promptText('core/system-documents.instructions', { content }),
     ) ?? gettingStarted(input.name, input.tools),
   ({ input, offered }) =>
     skillsPromptSection(
@@ -117,14 +117,14 @@ const SECTIONS: readonly PromptSection[] = [
     ) || null,
   ({ input }) =>
     written(input.personAbout ?? '', (content) =>
-      promptText('system/documents.person-about', { content }),
+      promptText('core/system-documents.person-about', { content }),
     ),
   ({ input }) =>
     listed(input.personFacts ?? [], (facts) =>
-      promptText('system/documents.general-memory', { facts }),
+      promptText('core/system-documents.general-memory', { facts }),
     ),
   ({ input }) =>
-    listed(input.facts, (facts) => promptText('system/documents.own-memory', { facts })),
+    listed(input.facts, (facts) => promptText('core/system-documents.own-memory', { facts })),
 ];
 
 /**
@@ -135,9 +135,9 @@ const SECTIONS: readonly PromptSection[] = [
 function watchingMail(offered: readonly string[]): string | null {
   if (!offered.includes('search_mail') || !offered.includes('update_routine')) return null;
   const declined = offered.includes('remember')
-    ? promptText('system/watching-mail.remember-declined')
+    ? promptText('mail/system-watching.remember-declined')
     : '';
-  return promptText('system/watching-mail.body', { declined });
+  return promptText('mail/system-watching.body', { declined });
 }
 
 /** What `words` makes of a text someone wrote, trimmed; nothing when they wrote none. */
@@ -187,13 +187,15 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
 function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
   const setup = [
     ...projectHint(tools),
-    promptText('system/getting-started.look-before-you-ask', { connectOffer: connectOffer(tools) }),
+    promptText('core/system-getting-started.look-before-you-ask', {
+      connectOffer: connectOffer(tools),
+    }),
     ...tools.flatMap((tool) => (tool.setupStep ? [tool.setupStep] : [])),
-    promptText('system/getting-started.draft-instructions'),
+    promptText('core/system-getting-started.draft-instructions'),
   ];
   const numbered = (steps: readonly string[]) =>
     steps.map((step, i) => `${i + 1}. ${step}`).join('\n');
-  return promptText('system/getting-started.body', {
+  return promptText('core/system-getting-started.body', {
     welcome: numbered(welcomeLines(name, tools)),
     setup: numbered(setup),
   });
@@ -222,52 +224,52 @@ interface AreaIntro {
  */
 const AREA_INTROS: readonly AreaIntro[] = [
   {
-    does: 'system/getting-started-areas.hosts-does',
+    does: 'core/system-getting-started-areas.hosts-does',
     doneBy: ['start_session', 'start_cloud_session'],
-    connects: 'system/getting-started-areas.hosts-connects',
-    example: 'system/getting-started-areas.hosts-example',
+    connects: 'core/system-getting-started-areas.hosts-connects',
+    example: 'core/system-getting-started-areas.hosts-example',
   },
-  { does: 'system/getting-started-areas.commands-does', doneBy: ['run_command'] },
+  { does: 'core/system-getting-started-areas.commands-does', doneBy: ['run_command'] },
   {
-    does: 'system/getting-started-areas.plan-does',
+    does: 'core/system-getting-started-areas.plan-does',
     doneBy: ['create_task', 'update_task'],
-    example: 'system/getting-started-areas.plan-example',
+    example: 'core/system-getting-started-areas.plan-example',
   },
   {
-    does: 'system/getting-started-areas.gmail-does',
+    does: 'core/system-getting-started-areas.gmail-does',
     doneBy: ['send_mail', 'send_draft'],
-    connects: 'system/getting-started-areas.gmail-connects',
-    example: 'system/getting-started-areas.gmail-example',
+    connects: 'core/system-getting-started-areas.gmail-connects',
+    example: 'core/system-getting-started-areas.gmail-example',
   },
   {
-    does: 'system/getting-started-areas.whatsapp-does',
+    does: 'core/system-getting-started-areas.whatsapp-does',
     doneBy: ['send_whatsapp_message'],
-    connects: 'system/getting-started-areas.whatsapp-connects',
+    connects: 'core/system-getting-started-areas.whatsapp-connects',
   },
   {
-    does: 'system/getting-started-areas.telegram-does',
+    does: 'core/system-getting-started-areas.telegram-does',
     doneBy: ['send_telegram_message'],
-    connects: 'system/getting-started-areas.telegram-connects',
+    connects: 'core/system-getting-started-areas.telegram-connects',
   },
   {
-    does: 'system/getting-started-areas.github-does',
+    does: 'core/system-getting-started-areas.github-does',
     doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
-    connects: 'system/getting-started-areas.github-connects',
-    example: 'system/getting-started-areas.github-example',
+    connects: 'core/system-getting-started-areas.github-connects',
+    example: 'core/system-getting-started-areas.github-example',
   },
   {
-    does: 'system/getting-started-areas.routines-does',
+    does: 'core/system-getting-started-areas.routines-does',
     doneBy: ['update_routine'],
-    example: 'system/getting-started-areas.routines-example',
+    example: 'core/system-getting-started-areas.routines-example',
   },
   {
-    does: 'system/getting-started-areas.bots-does',
+    does: 'core/system-getting-started-areas.bots-does',
     doneBy: ['message_bot', 'create_bot', 'update_bot'],
   },
   {
-    does: 'system/getting-started-areas.web-does',
+    does: 'core/system-getting-started-areas.web-does',
     doneBy: ['web_fetch'],
-    example: 'system/getting-started-areas.web-example',
+    example: 'core/system-getting-started-areas.web-example',
   },
 ];
 
@@ -290,7 +292,7 @@ function jobExamples(tools: readonly BotPromptTool[]): string[] {
   );
   return examples.length
     ? examples.slice(0, MAX_JOB_EXAMPLES)
-    : [promptText('system/getting-started.answering-questions')];
+    : [promptText('core/system-getting-started.answering-questions')];
 }
 
 /**
@@ -301,10 +303,12 @@ function jobExamples(tools: readonly BotPromptTool[]): string[] {
  */
 function welcomeLines(name: string, tools: readonly BotPromptTool[]): string[] {
   return [
-    promptText('system/getting-started.welcome-greet'),
-    promptText('system/getting-started.welcome-name', { name }),
-    promptText('system/getting-started.welcome-help', { areas: helpAreas(tools) }),
-    promptText('system/getting-started.welcome-ask', { examples: jobExamples(tools).join(' or ') }),
+    promptText('core/system-getting-started.welcome-greet'),
+    promptText('core/system-getting-started.welcome-name', { name }),
+    promptText('core/system-getting-started.welcome-help', { areas: helpAreas(tools) }),
+    promptText('core/system-getting-started.welcome-ask', {
+      examples: jobExamples(tools).join(' or '),
+    }),
   ];
 }
 
@@ -312,10 +316,10 @@ function welcomeLines(name: string, tools: readonly BotPromptTool[]): string[] {
 function helpAreas(tools: readonly BotPromptTool[]): string {
   const areas = offeredAreas(tools);
   return areas.length
-    ? promptText('system/getting-started.help-areas', {
+    ? promptText('core/system-getting-started.help-areas', {
         areas: areas.map((area) => promptText(area.does)).join('; '),
       })
-    : promptText('system/getting-started.answering-questions');
+    : promptText('core/system-getting-started.answering-questions');
 }
 
 /**
@@ -325,7 +329,7 @@ function helpAreas(tools: readonly BotPromptTool[]): string {
  */
 function projectHint(tools: readonly BotPromptTool[]): string[] {
   if (!tools.some((tool) => tool.name === 'list_projects')) return [];
-  return [promptText('system/getting-started.project-hint')];
+  return [promptText('core/system-getting-started.project-hint')];
 }
 
 /**
@@ -337,7 +341,7 @@ function connectOffer(tools: readonly BotPromptTool[]): string {
     area.connects ? [promptText(area.connects)] : [],
   );
   return connects.length
-    ? ` ${promptText('system/getting-started.connect-offer', { services: connects.join(', ') })}`
+    ? ` ${promptText('core/system-getting-started.connect-offer', { services: connects.join(', ') })}`
     : '';
 }
 
@@ -347,8 +351,8 @@ function connectOffer(tools: readonly BotPromptTool[]): string {
  * description saved almost nothing past its first chat.
  */
 function howATurnGoes(remembers: boolean): string {
-  const body = promptText('system/how-a-turn-goes.body', { recovery: recoveryBullets() });
-  return remembers ? `${body}\n${promptText('system/how-a-turn-goes.save-as-you-go')}` : body;
+  const body = promptText('core/system-how-a-turn-goes.body', { recovery: recoveryBullets() });
+  return remembers ? `${body}\n${promptText('core/system-how-a-turn-goes.save-as-you-go')}` : body;
 }
 
 /** How the prompt names each area of tools; the order is the list's. */
@@ -391,21 +395,21 @@ function whatYouCanDo(
       return names ? [`- ${label}: ${names.join(', ')}`] : [];
     }),
   ];
-  if (lines.length === 0) lines.push(promptText('system/what-you-can-do.answer-only'));
+  if (lines.length === 0) lines.push(promptText('core/system-what-you-can-do.answer-only'));
   const reachable = [
     promptText(REACHABLE[`${commands}:${terminals}`]),
     ...(offersTool(tools, 'use_computer')
-      ? [promptText('system/what-you-can-do.and-a-screen')]
+      ? [promptText('core/system-what-you-can-do.and-a-screen')]
       : []),
     ...(offersTool(tools, 'use_browser')
-      ? [promptText('system/what-you-can-do.and-a-browser')]
+      ? [promptText('core/system-what-you-can-do.and-a-browser')]
       : []),
   ].join(' ');
-  const refusal = promptText('system/what-you-can-do.plain-refusal');
+  const refusal = promptText('core/system-what-you-can-do.plain-refusal');
   const closing = sessions
-    ? [reachable, promptText('system/what-you-can-do.code-work-goes-to-sessions'), refusal]
+    ? [reachable, promptText('core/system-what-you-can-do.code-work-goes-to-sessions'), refusal]
     : [reachable, refusal];
-  return promptText('system/what-you-can-do.body', {
+  return promptText('core/system-what-you-can-do.body', {
     lines: lines.join('\n'),
     closing: closing.join(' '),
   });
@@ -416,10 +420,10 @@ function whatYouCanDo(
  * host: `${commands}:${terminals}`.
  */
 const REACHABLE: Readonly<Record<`${boolean}:${boolean}`, PlainPromptId>> = {
-  'false:false': 'system/what-you-can-do.nothing-else',
-  'true:false': 'system/what-you-can-do.nothing-else-but-commands',
-  'false:true': 'system/what-you-can-do.nothing-else-but-terminals',
-  'true:true': 'system/what-you-can-do.nothing-else-but-commands-and-terminals',
+  'false:false': 'core/system-what-you-can-do.nothing-else',
+  'true:false': 'core/system-what-you-can-do.nothing-else-but-commands',
+  'false:true': 'core/system-what-you-can-do.nothing-else-but-terminals',
+  'true:true': 'core/system-what-you-can-do.nothing-else-but-commands-and-terminals',
 };
 
 /** Whether the turn offers the tool `name`. */
@@ -432,8 +436,8 @@ function offersTool(tools: readonly BotPromptTool[], name: string): boolean {
  * it is told which of the two a website goes to.
  */
 function usingABrowser(computer: boolean): string {
-  return promptText('system/using-a-browser.body', {
-    besideAComputer: computer ? `\n- ${promptText('system/using-a-browser.not-the-computer')}` : '',
+  return promptText('browser/system.body', {
+    besideAComputer: computer ? `\n- ${promptText('browser/system.not-the-computer')}` : '',
   });
 }
 
@@ -466,11 +470,11 @@ function delegateTail(commands: boolean, terminals: boolean): string {
   if (commands) {
     return ` ${promptText(
       terminals
-        ? 'system/working-on-code.run-command-or-session-with-terminal'
-        : 'system/working-on-code.run-command-or-session',
+        ? 'sessions/system-working-on-code.run-command-or-session-with-terminal'
+        : 'sessions/system-working-on-code.run-command-or-session',
     )}`;
   }
-  return terminals ? '' : ` ${promptText('system/working-on-code.never-runs-commands')}`;
+  return terminals ? '' : ` ${promptText('sessions/system-working-on-code.never-runs-commands')}`;
 }
 
 /**
@@ -483,10 +487,10 @@ function delegateTail(commands: boolean, terminals: boolean): string {
 function workingOnCode(commands: boolean, terminals: boolean): string {
   const opening = promptText(
     terminals
-      ? 'system/working-on-code.delegates-code-work'
-      : 'system/working-on-code.delegates-not-a-terminal',
+      ? 'sessions/system-working-on-code.delegates-code-work'
+      : 'sessions/system-working-on-code.delegates-not-a-terminal',
   );
-  return promptText('system/working-on-code.body', {
+  return promptText('sessions/system-working-on-code.body', {
     delegate: `${opening}${delegateTail(commands, terminals)}`,
     hostCases: hostCases(),
   });
@@ -509,7 +513,7 @@ function drivingATerminal(commands: boolean, tools: ReadonlySet<string>): string
   const lines = TERMINAL_LINES.filter((line) => line.when(has)).map(
     (line) => `- ${promptText(line.id)}`,
   );
-  return promptText('system/driving-a-terminal.body', {
+  return promptText('sessions/system-driving-a-terminal.body', {
     tools: named.join(', '),
     lines: lines.join('\n'),
   });
@@ -531,24 +535,30 @@ interface TerminalLine {
 
 /** The terminal section's lines, in order; each shows only when its tools are offered. */
 const TERMINAL_LINES: readonly TerminalLine[] = [
-  { when: (has) => has.commands && has.types, id: 'system/driving-a-terminal.prefer-run-command' },
-  { when: (has) => has.opens, id: 'system/driving-a-terminal.look-before-you-guess' },
-  { when: (has) => has.opens && has.reads, id: 'system/driving-a-terminal.open-then-read' },
+  {
+    when: (has) => has.commands && has.types,
+    id: 'sessions/system-driving-a-terminal.prefer-run-command',
+  },
+  { when: (has) => has.opens, id: 'sessions/system-driving-a-terminal.look-before-you-guess' },
+  {
+    when: (has) => has.opens && has.reads,
+    id: 'sessions/system-driving-a-terminal.open-then-read',
+  },
   {
     when: (has) => has.opens && !has.reads && has.types,
-    id: 'system/driving-a-terminal.open-then-wait',
+    id: 'sessions/system-driving-a-terminal.open-then-wait',
   },
-  { when: (has) => !has.opens, id: 'system/driving-a-terminal.cannot-open' },
-  { when: (has) => has.types, id: 'system/driving-a-terminal.type-a-command' },
-  { when: (has) => !has.types && has.reads, id: 'system/driving-a-terminal.read-only' },
-  { when: (has) => has.opens, id: 'system/driving-a-terminal.one-terminal-per-job' },
-  { when: (has) => has.types, id: 'system/driving-a-terminal.never-type-a-secret' },
-  { when: (has) => !has.types, id: 'system/driving-a-terminal.never-read-a-secret' },
-  { when: () => true, id: 'system/driving-a-terminal.screen-is-outside-text' },
-  { when: () => true, id: 'system/driving-a-terminal.host-must-allow' },
+  { when: (has) => !has.opens, id: 'sessions/system-driving-a-terminal.cannot-open' },
+  { when: (has) => has.types, id: 'sessions/system-driving-a-terminal.type-a-command' },
+  { when: (has) => !has.types && has.reads, id: 'sessions/system-driving-a-terminal.read-only' },
+  { when: (has) => has.opens, id: 'sessions/system-driving-a-terminal.one-terminal-per-job' },
+  { when: (has) => has.types, id: 'sessions/system-driving-a-terminal.never-type-a-secret' },
+  { when: (has) => !has.types, id: 'sessions/system-driving-a-terminal.never-read-a-secret' },
+  { when: () => true, id: 'sessions/system-driving-a-terminal.screen-is-outside-text' },
+  { when: () => true, id: 'sessions/system-driving-a-terminal.host-must-allow' },
   {
     when: (has) => has.opens || has.types,
-    id: 'system/driving-a-terminal.leave-it-for-the-person',
+    id: 'sessions/system-driving-a-terminal.leave-it-for-the-person',
   },
 ];
 
@@ -569,7 +579,7 @@ function eventPrompt(event: BotMessageEvent, content: string): string {
     case 'approval':
       return approvalPrompt(content, event.stage);
     case 'question':
-      return `${eventNote(content)}\n\n${promptText('wake/question-answered')}`;
+      return `${eventNote(content)}\n\n${promptText('core/wake-question-answered')}`;
     case 'bot_message':
       return peerMessagePrompt(event, content);
     case 'bot_reply':

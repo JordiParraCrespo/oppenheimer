@@ -27,16 +27,16 @@ const askUserInput = z.object({
           .string()
           .max(BOT_QUESTION_HEADER_MAX)
           .optional()
-          .describe(promptText('tools/questions.ask-user-questions-header')),
+          .describe(promptText('core/tools-questions.ask-user-questions-header')),
         question: z
           .string()
           .min(1)
           .max(BOT_QUESTION_TEXT_MAX)
-          .describe(promptText('tools/questions.ask-user-questions-question')),
+          .describe(promptText('core/tools-questions.ask-user-questions-question')),
         multiSelect: z
           .boolean()
           .optional()
-          .describe(promptText('tools/questions.ask-user-questions-multi-select')),
+          .describe(promptText('core/tools-questions.ask-user-questions-multi-select')),
         options: z
           .array(
             z.object({
@@ -45,12 +45,12 @@ const askUserInput = z.object({
                 .string()
                 .max(BOT_QUESTION_OPTION_DESCRIPTION_MAX)
                 .optional()
-                .describe(promptText('tools/questions.option-description')),
+                .describe(promptText('core/tools-questions.option-description')),
             }),
           )
           .min(BOT_QUESTION_OPTIONS_MIN)
           .max(BOT_QUESTION_OPTIONS_MAX)
-          .describe(promptText('tools/questions.options')),
+          .describe(promptText('core/tools-questions.options')),
       }),
     )
     .min(1)
@@ -80,7 +80,7 @@ export class BotQuestionToolsFactory implements BotToolArea {
         name: 'ask_user',
         scope: 'bots:write',
         attendedOnly: true,
-        description: promptText('tools/questions.ask-user', {
+        description: promptText('core/tools-questions.ask-user', {
           questionsMax: String(BOT_QUESTIONS_MAX),
           questionOptionsMin: String(BOT_QUESTION_OPTIONS_MIN),
           questionOptionsMax: String(BOT_QUESTION_OPTIONS_MAX),

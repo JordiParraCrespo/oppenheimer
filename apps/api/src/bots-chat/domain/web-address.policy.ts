@@ -79,14 +79,14 @@ function embeddedIpv4(address: string): string | null {
 /** Why a URL is refused before anything is resolved, or null when it may be tried. */
 export function refuseUrl(url: URL): string | null {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return promptText('tools/web.refused-not-http', { protocol: String(url.protocol) });
+    return promptText('web/tools.refused-not-http', { protocol: String(url.protocol) });
   }
-  if (url.username || url.password) return promptText('tools/web.refused-has-credentials');
+  if (url.username || url.password) return promptText('web/tools.refused-has-credentials');
   const host = url.hostname.replace(/^\[|\]$/g, '');
-  if (isIP(host) && !isPublicAddress(host)) return promptText('tools/web.refused-not-public');
+  if (isIP(host) && !isPublicAddress(host)) return promptText('web/tools.refused-not-public');
   const lower = host.toLowerCase();
   if (lower === 'localhost' || lower.endsWith('.localhost') || lower.endsWith('.internal')) {
-    return promptText('tools/web.refused-not-public');
+    return promptText('web/tools.refused-not-public');
   }
   return null;
 }

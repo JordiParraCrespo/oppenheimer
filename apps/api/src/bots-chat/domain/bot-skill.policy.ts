@@ -88,19 +88,19 @@ export function skillsPromptSection(
   const parts: string[] = [];
   if (usable.length > 0) {
     parts.push(
-      promptText('system/skills.using-them'),
+      promptText('skills/system.using-them'),
       usable.map((skill) => `- \`${skill.name}\`: ${skill.description}`).join('\n'),
     );
   }
   if (offered.save) {
     parts.push(
-      promptText('system/skills.saving-them', {
+      promptText('skills/system.saving-them', {
         steps: String(BOT_SKILL_NUDGE_AFTER_STEPS),
         tag: SKILL_NUDGE_TAG,
       }),
     );
   }
-  return parts.length > 0 ? promptText('system/skills.body', { parts: parts.join('\n\n') }) : null;
+  return parts.length > 0 ? promptText('skills/system.body', { parts: parts.join('\n\n') }) : null;
 }
 
 /** A skill as the model reads it: its body, fenced and named. */
@@ -110,7 +110,7 @@ export function skillBlock(skill: Pick<BotSkillView, 'name' | 'body'>): string {
 
 /** The line `use_skill` opens with. */
 export function describeSkillUse(skill: Pick<BotSkillView, 'name' | 'description'>): string {
-  return promptText('tools/skills.used', {
+  return promptText('skills/tools.used', {
     name: skill.name,
     description: skill.description,
   });
@@ -128,9 +128,9 @@ export function skillInvocationPrompt(
   prompt: string,
 ): string {
   const input = promptText(
-    command.args ? 'turn/slash-command.with-input' : 'turn/slash-command.with-no-input',
+    command.args ? 'core/turn-slash-command.with-input' : 'core/turn-slash-command.with-no-input',
   );
-  const ran = promptText('turn/slash-command.ran-a-skill', { name: skill.name, input });
+  const ran = promptText('core/turn-slash-command.ran-a-skill', { name: skill.name, input });
   return `${ran}\n\n${skillBlock(skill)}\n\n${prompt}`;
 }
 
@@ -150,9 +150,9 @@ export function unknownSkillPrompt(
     .map((skill) => `/${skill.name}`)
     .sort();
   const yours = runnable.length
-    ? promptText('turn/slash-command.skills-they-can-run', { skills: runnable.join(', ') })
-    : promptText('turn/slash-command.no-skills-to-run');
-  const note = promptText('turn/slash-command.not-a-skill', { name: command.name, yours });
+    ? promptText('core/turn-slash-command.skills-they-can-run', { skills: runnable.join(', ') })
+    : promptText('core/turn-slash-command.no-skills-to-run');
+  const note = promptText('core/turn-slash-command.not-a-skill', { name: command.name, yours });
   return `${note}\n\n${prompt}`;
 }
 
@@ -162,7 +162,7 @@ export function unknownSkillPrompt(
  * reads one that came from before that rule, so the bot answers in a line.
  */
 function goalCommandPrompt(prompt: string): string {
-  return `${promptText('turn/slash-command.goal-command')}\n\n${prompt}`;
+  return `${promptText('core/turn-slash-command.goal-command')}\n\n${prompt}`;
 }
 
 /**

@@ -1904,3 +1904,10 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- The bots' prompt files were sorted by where their words are sent
+  (`system/`, `turn/`, `wake/`, `jobs/`, `tools/`, 2026-11-18). On
+  2026-11-23 they were sorted by capability instead, one folder each
+  (`core/`, `mail/`, `sessions/`, `github/`…), the kind becoming the file's
+  first word (`mail/tools-write.md`), so everything a bot is told about one
+  area is in one place and a new area is a new folder
+  (`apps/api/AGENTS.md`, "What a model is told is prose").

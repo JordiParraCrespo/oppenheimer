@@ -34,26 +34,26 @@ import {
 const OPEN_SESSIONS_SHOWN = 20;
 
 const repositoryInput = z.object({
-  installation_id: z.uuid().describe(promptText('tools/projects.repository-installation-id')),
+  installation_id: z.uuid().describe(promptText('plan/tools-projects.repository-installation-id')),
   github_repo_id: z
     .number()
     .int()
     .positive()
-    .describe(promptText('tools/projects.repository-github-repo-id')),
+    .describe(promptText('plan/tools-projects.repository-github-repo-id')),
   base_branch: z
     .string()
     .trim()
     .min(FIELD_BOUNDS.gitRef.min)
     .max(FIELD_BOUNDS.gitRef.max)
-    .describe(promptText('tools/projects.repository-base-branch')),
-  is_default: z.boolean().describe(promptText('tools/projects.repository-is-default')),
+    .describe(promptText('plan/tools-projects.repository-base-branch')),
+  is_default: z.boolean().describe(promptText('plan/tools-projects.repository-is-default')),
 });
 
 const repositoriesInput = z
   .array(repositoryInput)
   .max(MAX_PROJECT_REPOSITORIES)
   .describe(
-    promptText('tools/projects.repositories', {
+    promptText('plan/tools-projects.repositories', {
       maxProjectRepositories: String(MAX_PROJECT_REPOSITORIES),
     }),
   );
@@ -67,7 +67,7 @@ const nameInput = z
 const allowSameNameInput = z
   .boolean()
   .default(false)
-  .describe(promptText('tools/projects.allow-same-name'));
+  .describe(promptText('plan/tools-projects.allow-same-name'));
 
 /**
  * Projects, the writes: make one, change its name, repositories and defaults,
@@ -106,9 +106,9 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_project',
       scope: 'projects:write',
-      description: promptText('tools/projects.create-project'),
+      description: promptText('plan/tools-projects.create-project'),
       input: z.object({
-        name: nameInput.describe(promptText('tools/projects.create-project-name')),
+        name: nameInput.describe(promptText('plan/tools-projects.create-project-name')),
         repositories: repositoriesInput.default([]),
         default_host_id: z.uuid().optional().describe('A host from list_hosts.'),
         default_agent: z.enum(CODING_AGENT_IDS).optional(),
@@ -129,10 +129,12 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_project',
       scope: 'projects:write',
-      description: promptText('tools/projects.update-project'),
+      description: promptText('plan/tools-projects.update-project'),
       input: z
         .object({
-          project_id: z.uuid().describe(promptText('tools/projects.update-project-project-id')),
+          project_id: z
+            .uuid()
+            .describe(promptText('plan/tools-projects.update-project-project-id')),
           name: nameInput.optional(),
           repositories: repositoriesInput.optional(),
           default_host_id: z.uuid().nullable().optional().describe('A host, or null to clear.'),
@@ -145,7 +147,7 @@ export class BotProjectToolsFactory implements BotToolArea {
             value.repositories !== undefined ||
             value.default_host_id !== undefined ||
             value.default_agent !== undefined,
-          { message: promptText('tools/projects.update-project-message') },
+          { message: promptText('plan/tools-projects.update-project-message') },
         ),
       run: async (input, context) => {
         if (input.name !== undefined) {
@@ -170,18 +172,18 @@ export class BotProjectToolsFactory implements BotToolArea {
       scope: 'projects:write',
       asks: 'always',
       perCallOnly: true,
-      description: promptText('tools/projects.archive-project'),
+      description: promptText('plan/tools-projects.archive-project'),
       input: z.object({
-        project_id: z.uuid().describe(promptText('tools/projects.update-project-project-id')),
+        project_id: z.uuid().describe(promptText('plan/tools-projects.update-project-project-id')),
       }),
       normalize: async (input, context) => {
         const project = await this.project(context, input.project_id);
         if (project.isUnassigned) {
-          throw new BotToolRefusal(promptText('tools/projects.archive-unassigned'));
+          throw new BotToolRefusal(promptText('plan/tools-projects.archive-unassigned'));
         }
         if (project.isArchived) {
           throw new BotToolRefusal(
-            promptText('tools/projects.archive-already-archived', {
+            promptText('plan/tools-projects.archive-already-archived', {
               name: project.name,
             }),
           );
@@ -192,7 +194,7 @@ export class BotProjectToolsFactory implements BotToolArea {
             (session) => `${session.id} "${session.name}" (${session.state})`,
           );
           throw new BotToolRefusal(
-            promptText('tools/projects.archive-open-sessions', {
+            promptText('plan/tools-projects.archive-open-sessions', {
               name: project.name,
               listed: listed.join(', '),
             }),
@@ -208,7 +210,7 @@ export class BotProjectToolsFactory implements BotToolArea {
         const project = await this.commandBus.execute<ArchiveProjectCommand, ProjectEntity>(
           new ArchiveProjectCommand({ scope: context.owner, projectId: input.project_id }),
         );
-        return promptText('tools/projects.archive-project-archived-project-tasks', {
+        return promptText('plan/tools-projects.archive-project-archived-project-tasks', {
           id: project.id,
           name: project.name,
         });
@@ -220,9 +222,9 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'restore_project',
       scope: 'projects:write',
-      description: promptText('tools/projects.restore-project'),
+      description: promptText('plan/tools-projects.restore-project'),
       input: z.object({
-        project_id: z.uuid().describe(promptText('tools/projects.restore-project-project-id')),
+        project_id: z.uuid().describe(promptText('plan/tools-projects.restore-project-project-id')),
       }),
       run: async (input, context) => {
         const { project, restored } = await this.commandBus.execute<
@@ -230,12 +232,12 @@ export class BotProjectToolsFactory implements BotToolArea {
           RestoreProjectResult
         >(new RestoreProjectCommand({ scope: context.owner, projectId: input.project_id }));
         if (!restored) {
-          return promptText('tools/projects.restore-not-archived', {
+          return promptText('plan/tools-projects.restore-not-archived', {
             id: project.id,
             name: project.name,
           });
         }
-        return promptText('tools/projects.restore-project-restored-project-work', {
+        return promptText('plan/tools-projects.restore-project-restored-project-work', {
           id: project.id,
           name: project.name,
           describeProjectInFull: describeProjectInFull(project, context),
@@ -248,13 +250,13 @@ export class BotProjectToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'move_session',
       scope: 'sessions:write',
-      description: promptText('tools/projects.move-session'),
+      description: promptText('plan/tools-projects.move-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/projects.move-session-session-id')),
+        session_id: z.uuid().describe(promptText('plan/tools-projects.move-session-session-id')),
         project_id: z
           .uuid()
           .nullable()
-          .describe(promptText('tools/projects.move-session-project-id')),
+          .describe(promptText('plan/tools-projects.move-session-project-id')),
       }),
       run: async (input, context) => {
         const [session, projects] = await Promise.all([
@@ -270,21 +272,23 @@ export class BotProjectToolsFactory implements BotToolArea {
         if (!target) {
           throw new BotToolRefusal(
             input.project_id === null
-              ? promptText('tools/projects.move-session-workspace-has-unassigned')
-              : promptText('tools/projects.move-session-project-workspace-list', {
+              ? promptText('plan/tools-projects.move-session-workspace-has-unassigned')
+              : promptText('plan/tools-projects.move-session-project-workspace-list', {
                   projectId: input.project_id,
                 }),
           );
         }
         if (target.isArchived) {
           throw new BotToolRefusal(
-            promptText('tools/projects.move-session-project-archived-so', { name: target.name }),
+            promptText('plan/tools-projects.move-session-project-archived-so', {
+              name: target.name,
+            }),
           );
         }
         const from = projects.find((project) => project.id === session.projectId);
         const fromLabel = from ? `"${from.name}"` : `project ${session.projectId}`;
         if (session.projectId === target.id) {
-          return promptText('tools/projects.move-session-session-already-nothing', {
+          return promptText('plan/tools-projects.move-session-session-already-nothing', {
             id: session.id,
             name: session.name,
             name2: target.name,
@@ -297,7 +301,7 @@ export class BotProjectToolsFactory implements BotToolArea {
             projectId: target.id,
           }),
         );
-        return promptText('tools/projects.move-session-moved-session-from', {
+        return promptText('plan/tools-projects.move-session-moved-session-from', {
           id: session.id,
           name: session.name,
           fromLabel,

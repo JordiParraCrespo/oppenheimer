@@ -240,7 +240,7 @@ export class BotToolboxFactory {
     const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
     if (!definition)
       return {
-        content: promptText('tools/toolbox.run-approved-content-run-longer-tool', {
+        content: promptText('core/tools-toolbox.run-approved-content-run-longer-tool', {
           tool: call.tool,
         }),
         isError: true,
@@ -248,7 +248,7 @@ export class BotToolboxFactory {
     // Turned Off while the card waited: the owner's latest word stands.
     if (toolDecision(standing.permissions, definition.traits, standing.preset) === 'off') {
       return {
-        content: promptText('tools/toolbox.run-approved-content-run-turned-off', {
+        content: promptText('core/tools-toolbox.run-approved-content-run-turned-off', {
           tool: call.tool,
         }),
         isError: true,
@@ -256,7 +256,7 @@ export class BotToolboxFactory {
     }
     if (granted !== null && !expandScopes(granted).has(definition.scope)) {
       return {
-        content: promptText('tools/toolbox.approved-not-covered-by-credential', {
+        content: promptText('core/tools-toolbox.approved-not-covered-by-credential', {
           scope: definition.scope,
         }),
         isError: true,
