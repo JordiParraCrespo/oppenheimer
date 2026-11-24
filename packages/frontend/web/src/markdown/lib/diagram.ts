@@ -32,6 +32,8 @@ function configure(theme: DiagramTheme): void {
     themeVariables: theme.variables,
     htmlLabels: false,
     look: 'neo',
+    // Nodes and notes round their corners as the console's cards do.
+    themeCSS: '.node rect, .note, rect.actor, .statediagram-state rect { rx: 6px; ry: 6px; }',
     flowchart: { curve: 'basis', padding: 12, nodeSpacing: 40, rankSpacing: 44 },
     sequence: {
       mirrorActors: false,

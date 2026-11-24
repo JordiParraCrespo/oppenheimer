@@ -72,7 +72,7 @@ function DiagramPicture({ diagram, alt }: { diagram: DrawnDiagram; alt: string }
       // The edges fade only where there is more of the drawing to scroll to.
       style={before || after ? { maskImage: fade } : undefined}
     >
-      <div className="px-5 py-6">
+      <div className="px-5 py-4">
         <img
           src={diagram.src}
           alt={alt}
@@ -83,11 +83,12 @@ function DiagramPicture({ diagram, alt }: { diagram: DrawnDiagram; alt: string }
           // The drawing's own size decides its box; inline so no prose style around it can.
           style={{
             display: 'block',
-            width: '100%',
-            maxWidth: diagram.width,
+            // A tall drawing (a pie) shrinks to the chat's height, never stretched.
+            width: 'auto',
+            maxWidth: `min(100%, ${diagram.width}px)`,
+            maxHeight: 'min(28rem, 70vh)',
             minWidth: floor,
             height: 'auto',
-            maxHeight: 'none',
             margin: '0 auto',
             borderRadius: 0,
           }}
